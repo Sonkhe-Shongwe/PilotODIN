@@ -1,0 +1,34 @@
+# Runtime data, uploads and trusted model artifacts
+data/
+*.sqlite3
+*.joblib
+# Private keys
+.env
+.env.*
+!.env.example
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+# Node
+node_modules/
+dist/
+.vite/
+# OS
+.DS_Store
+Thumbs.db
+# Windows DPAPI encrypted credentials and AI preferences (stored in data/)
+ai_secrets.dpapi
+ai_settings.json
+
+# Rust and desktop build artifacts
+src-tauri/target/
+src-tauri/binaries/*.exe
+src-tauri/binaries/*.pdb
+frontend/package-lock.json.old
+*.spec
+output/
+release/
+*.gguf
+*.onnx
