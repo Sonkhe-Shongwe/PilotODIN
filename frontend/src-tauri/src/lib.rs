@@ -205,7 +205,7 @@ pub fn run() {
                 }
                 if let Ok(mut backend) = state.backend.lock() {
                     if let Some(worker) = backend.take() {let _ = worker.child.kill();}
-                }
+                };
             }
         });
 }
