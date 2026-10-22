@@ -1,0 +1,50 @@
+name: Build E Verified Bundled Offline Windows Installer
+
+on:
+  push:
+    branches: [build-e]
+    paths:
+      - '.github/workflows/bundled-windows-installer.yml'
+      - 'desktop/Stage_Pinned_Offline_AI.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-windows-installer:
+    name: Stage Qwen3, build Tauri/NSIS installer
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - name: Stage real pinned offline inference assets, licenses and checksums
+        shell: pwsh
+        run: ./desktop/Stage_Pinned_Offline_AI.ps1
+      - name: Build actual Windows desktop installer (fail closed)
+        shell: pwsh
+        run: ./desktop/Build_Windows_Installer.ps1
+      - name: Verify NSIS installer exists
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem 'frontend/src-tauri/target/release/bundle/nsis/' -Filter '*.exe' -File)
+          if ($installers.Count -lt 1) {throw 'Windows NSIS installer was not produced'}
+          foreach ($installer in $installers) {
+            if ($installer.Length -lt 100MB) {throw 'Installer is implausibly small for bundled offline AI'}
+          }
+          Write-Host 'Unsigned installer package produced; installation and inference still require end-to-end testing.'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PilotODIN-Build-E-Windows-Bundled-Qwen3-UNSIGNED
+          path: frontend/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 7
