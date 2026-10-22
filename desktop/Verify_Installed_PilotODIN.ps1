@@ -47,7 +47,11 @@ foreach ($exe in @($desktop, $engine, $inference)) {
     # A Windows PE executable can be small when it delegates to adjacent DLLs.
     # Require a real PE header, then cryptographically validate the inference
     # server instead of inventing a minimum file-size policy for that binary.
-    if ($exe.Length -lt 64KB) {throw "Executable is unexpectedly small: $($exe.Name)"}
+    # The pinned llama.cpp CPU launcher is 9,216 bytes; most of its code is
+    # shipped as separately manifested ggml DLLs. Its exact SHA-256 is checked
+    # against the staged release manifest below.
+    $minimum = if ($exe.FullName -eq $inference.FullName) {4KB} else {64KB}
+    if ($exe.Length -lt $minimum) {throw "Executable is unexpectedly small: $($exe.Name)"}
     $stream = [System.IO.File]::OpenRead($exe.FullName)
     try {
         $head = New-Object byte[] 2
