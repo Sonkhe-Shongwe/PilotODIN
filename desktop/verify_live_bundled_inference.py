@@ -62,7 +62,7 @@ def main() -> int:
     log_path = root / 'build' / 'offline-inference-startup.log'
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open('wb') as log:
-        proc = subprocess.Popen(args, cwd=root, env=env, stdin=subprocess.DEVNULL,
+        proc = subprocess.Popen(args, cwd=dlls, env=env, stdin=subprocess.DEVNULL,
                                 stdout=log, stderr=subprocess.STDOUT,
                                 creationflags=flags)
     base = f'http://127.0.0.1:{listen_port}'
