@@ -1,0 +1,73 @@
+name: Build E Frontend and Backend Verification
+
+on:
+  push:
+    branches:
+      - build-e
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: React/Vite build (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Build E sources are present
+        shell: pwsh
+        run: |
+          $required = @("frontend/src/UnifiedShell.tsx", "frontend/src/workspaceLayout.ts", "backend/autonomy.py", "backend/quality_approvals.py", "backend/reports.py")
+          foreach ($file in $required) {
+            if (-not (Test-Path $file)) { throw "Build E source missing: $file. The archived Build A source cannot be validated as Build E." }
+          }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          if (Test-Path package-lock.json) {
+            npm ci --no-audit --no-fund
+          } else {
+            Write-Warning "No package-lock.json yet. npm install is nonreproducible until a lockfile is committed."
+            npm install --no-audit --no-fund
+          }
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm run test:workspace
+      - name: Typecheck and compile React/Vite frontend
+        working-directory: frontend
+        run: npm run build
+      - name: Check generated assets
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "frontend/dist/index.html")) { throw "index.html not produced" }
+          $assets = @(Get-ChildItem "frontend/dist/assets" -Filter "*.js" -ErrorAction SilentlyContinue)
+          if ($assets.Count -lt 1) { throw "Vite produced no JavaScript assets" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pilotodin-build-e-frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  backend:
+    name: Python backend regression (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Build E backend is present
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "backend/autonomy.py")) { throw "Build E backend not yet uploaded to this branch" }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend test dependencies
+        run: python -m pip install -r backend/requirements.txt pytest httpx
+      - name: Run Python tests
+        run: python -m pytest -q
