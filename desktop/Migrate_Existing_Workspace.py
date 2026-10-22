@@ -6,6 +6,7 @@ modifies the original source folder and never overwrites existing destination.
 from __future__ import annotations
 
 import argparse
+from contextlib import closing
 import os
 from pathlib import Path
 import shutil
@@ -34,7 +35,7 @@ def migrate(source_inner_folder: Path, destination_data: Path) -> tuple[int, int
     temporary = target.parent / (".pilotodin-migration-" + uuid.uuid4().hex)
     try:
         shutil.copytree(source, temporary)
-        with sqlite3.connect(temporary / "pilotodin.sqlite3") as conn:
+        with closing(sqlite3.connect(temporary / "pilotodin.sqlite3")) as conn:
             projects = conn.execute("SELECT id, dataset_path FROM projects").fetchall()
             for project_id, old_path in projects:
                 filename = Path(old_path).name
