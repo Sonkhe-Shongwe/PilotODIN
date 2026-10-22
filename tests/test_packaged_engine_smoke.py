@@ -20,3 +20,16 @@ def test_engine_smoke_contract_uses_real_running_backend():
         'passed': True, 'auth_required': True, 'wrong_origin_rejected': True,
         'user_storage_isolated': True, 'model_started': False,
     }
+
+
+def test_smoke_cleanup_checks_unlocked_sqlite_file(tmp_path):
+    db = tmp_path / 'pilotodin.sqlite3'
+    db.write_bytes(b'SQLite format 3\\x00')
+    mod._wait_for_database_unlock(db, timeout_seconds=1)
+    assert db.exists()
+    assert db.read_bytes().startswith(b'SQLite format 3')
+    assert not db.with_name(db.name + '.smoke-unlock-check').exists()
+
+
+def test_smoke_cleanup_tolerates_database_never_created(tmp_path):
+    mod._wait_for_database_unlock(tmp_path / 'never-created.sqlite3', timeout_seconds=1)
