@@ -7,6 +7,10 @@ on:
       - '.github/workflows/bundled-windows-installer.yml'
       - 'desktop/Stage_Pinned_Offline_AI.ps1'
       - 'desktop/verify_live_bundled_inference.py'
+      - 'desktop/verify_packaged_engine.py'
+      - 'desktop/Build_Python_Sidecar.ps1'
+      - 'desktop/Build_Windows_Installer.ps1'
+      - 'tests/test_packaged_engine_smoke.py'
   workflow_dispatch:
 
 permissions:
