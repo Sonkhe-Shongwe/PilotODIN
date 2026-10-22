@@ -158,14 +158,16 @@ def test_bundle_preflight_accepts_verified_offline_assets(tmp_path):
     model = root_model / 'qwen3-1.7b-q4_k_m.gguf'
     # Sparse synthetic fixture is deliberately not a real redistributable model.
     with model.open('wb') as handle:
+        handle.write(b'GGUF')
         handle.truncate(10_000_001)
     exe = root_binary / 'pilotodin-inference-x86_64-pc-windows-msvc.exe'
-    exe.write_bytes(b'fake-inference')
+    exe.write_bytes(b'MZfake-inference')
     dll = root_dlls / 'mock.dll'
     dll.write_bytes(b'fake-dll')
     digest=lambda b: hashlib.sha256(b).hexdigest()
     model_digest=hashlib.sha256(model.read_bytes()).hexdigest()
     (root_model/'model-manifest.json').write_text(json.dumps({
+        'schema_version': 1,
         'model_file': 'qwen3-1.7b-q4_k_m.gguf',
         'model_alias': bundled_inference.MODEL_ALIAS,
         'model_sha256': model_digest,
