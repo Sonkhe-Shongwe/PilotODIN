@@ -57,9 +57,14 @@ def main() -> int:
             '--threads', '2', '--parallel', '1', '--gpu-layers', '0',
             '--no-webui', '--no-agent']
     flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-    proc = subprocess.Popen(args, cwd=root, env=env, stdin=subprocess.DEVNULL,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                            creationflags=flags)
+    # Startup diagnostics identify missing vendor DLLs and unsupported flags.
+    # Bound and redact output; no user documents are involved in this CI check.
+    log_path = root / 'build' / 'offline-inference-startup.log'
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open('wb') as log:
+        proc = subprocess.Popen(args, cwd=root, env=env, stdin=subprocess.DEVNULL,
+                                stdout=log, stderr=subprocess.STDOUT,
+                                creationflags=flags)
     base = f'http://127.0.0.1:{listen_port}'
     try:
         deadline = time.monotonic() + 150
@@ -92,6 +97,13 @@ def main() -> int:
         return 0
     except (OSError, ValueError, RuntimeError) as exc:
         print(f'LIVE OFFLINE AI CHECK FAILED: {exc}', file=sys.stderr)
+        try:
+            transcript = log_path.read_bytes()[-12_000:].decode('utf-8', errors='replace')
+            transcript = transcript.replace(token, '[REDACTED]')
+            for line in transcript.splitlines()[-45:]:
+                print('LLAMA STARTUP DIAGNOSTIC: ' + line[:320], file=sys.stderr)
+        except OSError:
+            print('LLAMA STARTUP DIAGNOSTIC: startup log unavailable', file=sys.stderr)
         return 1
     finally:
         if os.name == 'nt' and proc.poll() is None:
@@ -105,6 +117,7 @@ def main() -> int:
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait(timeout=8)
+        log_path.unlink(missing_ok=True)
 
 
 if __name__ == '__main__':
