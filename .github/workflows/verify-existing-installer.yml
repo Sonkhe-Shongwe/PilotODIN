@@ -1,0 +1,54 @@
+name: Verify Existing Build E Windows Installer
+
+# Verification-only pass against the existing, already successfully built
+# 1.49 GiB NSIS artifact. Avoids another expensive PyInstaller/Tauri rebuild.
+# Source artifact is from immutable build-e commit 9e417ac82e694bcbae3df8e9a1b4a6b2e93a077f.
+on:
+  workflow_dispatch:
+  push:
+    branches: [build-e]
+    paths:
+      - 'desktop/Verify_Installed_PilotODIN.ps1'
+      - '.github/workflows/verify-existing-installer.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  clean-install:
+    name: Install previously built PilotODIN and verify offline payload
+    runs-on: windows-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download immutable successful installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PilotODIN-Build-E-Windows-Bundled-Qwen3-UNSIGNED
+          repository: Sonkhe-Shongwe/PilotODIN
+          run-id: 39843439842
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: installer
+      - name: Validate NSIS installer identity and size
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem 'installer' -Filter '*.exe' -Recurse -File)
+          if ($installers.Count -ne 1) {throw "Expected one archived installer; found $($installers.Count)"}
+          if ($installers[0].Length -lt 1GB) {throw "Archived offline installer is unexpectedly small"}
+          Write-Host ("Verifying existing NSIS installer {0}, size={1:N0} bytes" -f $installers[0].Name,$installers[0].Length)
+      - name: Clean install and test installed backend on Windows
+        shell: pwsh
+        run: |
+          $installer = @(Get-ChildItem 'installer' -Filter '*.exe' -Recurse -File)[0]
+          ./desktop/Verify_Installed_PilotODIN.ps1 -InstallerPath $installer.FullName
+      - name: Save installation-test proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: pilotodin-build-e-existing-installer-installation-proof
+          path: build/installed-engine-smoke-result.json
+          if-no-files-found: error
+          retention-days: 7
