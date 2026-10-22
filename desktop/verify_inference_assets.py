@@ -2,6 +2,7 @@
 from __future__ import annotations
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -31,6 +32,17 @@ def verify(root: Path) -> None:
     model = models / data['model_file']
     if not model.is_file() or model.stat().st_size < 10_000_000:
         raise ValueError('Bundled model is absent or implausibly small')
+    if data.get('schema_version') != 1:
+        raise ValueError('Incomplete or inconsistent inference manifest schema')
+    with model.open('rb') as handle:
+        if handle.read(4) != b'GGUF':
+            raise ValueError('Bundled model is not a GGUF file')
+    with binary.open('rb') as handle:
+        if handle.read(2) != b'MZ':
+            raise ValueError('Bundled Windows server is not a PE executable')
+    for k in ('model_sha256', 'server_sha256'):
+        if not isinstance(data[k], str) or not re.fullmatch(r'[0-9a-fA-F]{64}', data[k]):
+            raise ValueError(f'Invalid {k} checksum format')
     if sha256(model) != str(data['model_sha256']).lower():
         raise ValueError('Bundled model checksum failed')
     if sha256(binary) != str(data['server_sha256']).lower():
@@ -38,9 +50,15 @@ def verify(root: Path) -> None:
     checks = data['runtime_dll_sha256']
     if not isinstance(checks, dict):
         raise ValueError('Invalid runtime DLL manifest')
+    allowed = set(checks)
+    unexpected = {file.name for file in dlls.glob('*.dll')} - allowed
+    if unexpected:
+        raise ValueError('Unmanifested DLLs found in inference runtime directory')
     for filename, expected_hash in checks.items():
         if not isinstance(filename, str) or Path(filename).name != filename or not filename.lower().endswith('.dll'):
             raise ValueError('Unsafe bundled DLL path')
+        if not isinstance(expected_hash, str) or not re.fullmatch(r'[0-9a-fA-F]{64}', expected_hash):
+            raise ValueError('Invalid DLL checksum format')
         dll = dlls / filename
         if not dll.is_file() or sha256(dll) != str(expected_hash).lower():
             raise ValueError('Bundled DLL checksum failed')
