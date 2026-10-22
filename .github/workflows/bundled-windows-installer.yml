@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/bundled-windows-installer.yml'
       - 'desktop/Stage_Pinned_Offline_AI.ps1'
+      - 'desktop/verify_live_bundled_inference.py'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +31,9 @@ jobs:
       - name: Stage real pinned offline inference assets, licenses and checksums
         shell: pwsh
         run: ./desktop/Stage_Pinned_Offline_AI.ps1
+      - name: Load the real offline Qwen3 model and generate an authenticated response
+        shell: pwsh
+        run: python ./desktop/verify_live_bundled_inference.py
       - name: Build actual Windows desktop installer (fail closed)
         shell: pwsh
         run: ./desktop/Build_Windows_Installer.ps1
