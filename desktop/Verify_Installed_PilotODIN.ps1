@@ -1,0 +1,54 @@
+# Verify that the actual NSIS artifact installs with all offline dependencies.
+# This intentionally runs on a clean Windows CI runner and never needs Ollama.
+param(
+    [Parameter(Mandatory=$true)][string]$InstallerPath
+)
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$installer = (Resolve-Path -LiteralPath $InstallerPath).Path
+$destination = Join-Path $env:RUNNER_TEMP 'PilotODIN-CI-NSIS-Install'
+if (Test-Path -LiteralPath $destination) {
+    throw 'Refusing to install over existing CI target'
+}
+Write-Host 'Performing isolated Windows NSIS install without Python, Node or Ollama on the target.'
+# /D must be the last NSIS argument. GitHub Windows runner is disposable.
+$job = Start-Process -FilePath $installer -ArgumentList @('/S',("/D=" + $destination)) -PassThru
+if (-not $job.WaitForExit(480000)) {
+    try {$job.Kill()} catch {}
+    throw 'NSIS installer did not finish within the verification limit'
+}
+if ($job.ExitCode -ne 0) {throw "NSIS installer failed with exit code $($job.ExitCode)"}
+if (-not (Test-Path -LiteralPath $destination -PathType Container)) {
+    throw 'NSIS did not create the designated isolated install directory'
+}
+$files = @(Get-ChildItem -LiteralPath $destination -Recurse -File)
+function RequireOne([string]$name) {
+    $found = @($files | Where-Object {$_.Name -ieq $name})
+    if ($found.Count -ne 1) {
+        throw "Installer payload missing or ambiguous: $name ($($found.Count) matching files)"
+    }
+    return $found[0]
+}
+$desktop = RequireOne 'pilotODIN.exe'
+$engine = RequireOne 'pilotodin-engine.exe'
+$inference = RequireOne 'pilotodin-inference.exe'
+$model = RequireOne 'qwen3-1.7b-q4_k_m.gguf'
+$manifest = RequireOne 'model-manifest.json'
+$licenseOne = RequireOne 'llama.cpp-MIT-LICENSE.txt'
+$licenseTwo = RequireOne 'Qwen3-Apache-2.0-LICENSE.txt'
+if ($model.Length -lt 1GB) {throw 'Installed GGUF model is unexpectedly small'}
+if ($desktop.Length -lt 1MB -or $engine.Length -lt 10MB -or $inference.Length -lt 1MB) {
+    throw 'Installed executables are implausibly small'
+}
+$expected = Get-Content -LiteralPath $manifest.FullName -Raw | ConvertFrom-Json
+$actual = (Get-FileHash -LiteralPath $model.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actual -ne $expected.model_sha256) {throw 'Installed GGUF differs from the verified staged model'}
+$dlls = @($files | Where-Object {$_.Extension -ieq '.dll' -and $_.DirectoryName -like '*llama-runtime*'})
+if ($dlls.Count -lt 1) {throw 'Bundled CPU runtime DLL directory is empty'}
+Write-Host 'Now verifying the actual INSTALLED Python engine can serve authenticated local API requests...'
+$smoke = Join-Path $root 'desktop\verify_packaged_engine.py'
+& python $smoke --exe $engine.FullName --startup-seconds 120 `
+    --result-json (Join-Path $root 'build\installed-engine-smoke-result.json')
+if ($LASTEXITCODE -ne 0) {throw 'Installed Python engine did not start securely'}
+Write-Host 'WINDOWS INSTALLATION CHECK PASSED: offline payload installed and installed engine booted.'
