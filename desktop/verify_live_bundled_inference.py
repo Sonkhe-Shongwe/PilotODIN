@@ -75,8 +75,13 @@ def main() -> int:
             time.sleep(0.6)
         else:
             raise RuntimeError('Local GGUF did not become healthy within 150 seconds')
-        if send(base + '/v1/models', timeout=5)[0] != 401:
-            raise RuntimeError('Local inference API failed to reject unauthenticated access')
+        unauthenticated_probe = {
+            'model': 'pilotodin-qwen3-1.7b',
+            'messages': [{'role': 'user', 'content': 'Ping'}],
+            'max_tokens': 1, 'stream': False,
+        }
+        if send(base + '/v1/chat/completions', body=unauthenticated_probe, timeout=5)[0] != 401:
+            raise RuntimeError('Local inference API failed to reject unauthenticated generation')
         status, result = send(base + '/v1/chat/completions', token,
                               {'model': 'pilotodin-qwen3-1.7b',
                                'messages': [{'role': 'user', 'content': 'Respond with READY.'}],
