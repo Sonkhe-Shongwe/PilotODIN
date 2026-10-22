@@ -11,6 +11,7 @@ on:
       - 'desktop/Build_Python_Sidecar.ps1'
       - 'desktop/Build_Windows_Installer.ps1'
       - 'tests/test_packaged_engine_smoke.py'
+      - 'desktop/Verify_Installed_PilotODIN.ps1'
   workflow_dispatch:
 
 permissions:
@@ -50,6 +51,12 @@ jobs:
             if ($installer.Length -lt 100MB) {throw 'Installer is implausibly small for bundled offline AI'}
           }
           Write-Host 'Unsigned installer package produced; installation and inference still require end-to-end testing.'
+      - name: Install NSIS payload and verify offline components and analytical engine
+        shell: pwsh
+        run: |
+          $installer = @(Get-ChildItem 'frontend/src-tauri/target/release/bundle/nsis/' -Filter '*.exe' -File)
+          if ($installer.Count -ne 1) {throw "Expected one NSIS installer, found $($installer.Count)"}
+          ./desktop/Verify_Installed_PilotODIN.ps1 -InstallerPath $installer[0].FullName
       - uses: actions/upload-artifact@v4
         with:
           name: PilotODIN-Build-E-Windows-Bundled-Qwen3-UNSIGNED
