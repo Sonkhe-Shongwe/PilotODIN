@@ -1,0 +1,88 @@
+name: Build E Native Windows Compilation
+
+on:
+  push:
+    branches: [build-e]
+    paths:
+      - 'frontend/src-tauri/**'
+      - '.github/workflows/native-windows-compile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-native-check:
+    name: Tauri/Rust compilation (no installer)
+    runs-on: windows-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust MSVC
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - name: Cache Rust build objects
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri -> target
+      - name: Create intentionally INVALID compile-only assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json"
+          )
+          foreach ($file in $assets) {
+            if (Test-Path -LiteralPath $file) {throw "Refusing to overwrite staged release asset: $file"}
+          }
+          New-Item -ItemType Directory -Force "$tauri/binaries","$tauri/resources/models","$tauri/resources/llama-runtime" | Out-Null
+          Set-Content -LiteralPath "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt" -Value "NEVER DISTRIBUTE - COMPILE-ONLY"
+          foreach ($file in $assets) {
+            [System.IO.File]::WriteAllBytes((Join-Path $PWD $file), [byte[]](0x00,0x01,0x02))
+          }
+          Write-Host 'Only intentionally invalid, tiny resources were staged. NO Qwen3 model or installer is present.'
+      - name: Ensure the release preflight rejects these placeholders
+        shell: pwsh
+        run: |
+          python desktop/verify_inference_assets.py
+          if ($LASTEXITCODE -ne 2) {
+            throw "Expected installer preflight rejection code 2; received $LASTEXITCODE"
+          }
+      - name: Compile the Tauri/Rust host on Windows
+        shell: pwsh
+        run: cargo check --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
+      - name: Remove compile-only resources
+        if: always()
+        shell: pwsh
+        run: |
+          $marker = 'frontend/src-tauri/NATIVE_COMPILE_PROBE_ONLY.txt'
+          if (-not (Test-Path -LiteralPath $marker)) {return}
+          $files = @(
+            'frontend/src-tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe',
+            'frontend/src-tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe',
+            'frontend/src-tauri/resources/models/qwen3-1.7b-q4_k_m.gguf',
+            'frontend/src-tauri/resources/models/model-manifest.json'
+          )
+          foreach ($file in $files) {
+            if (Test-Path -LiteralPath $file) {
+              if ((Get-Item -LiteralPath $file).Length -gt 256) {
+                throw "Non-fixture content detected; refusing cleanup: $file"
+              }
+              Remove-Item -LiteralPath $file -Force
+            }
+          }
+          Remove-Item -LiteralPath $marker -Force
+          Write-Host 'All compile-only fixtures removed. No installer was made.'
+      - name: Confirm nothing shippable was produced
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path 'frontend/src-tauri/NATIVE_COMPILE_PROBE_ONLY.txt') {throw 'Probe marker remains'}
+          if (Test-Path 'frontend/src-tauri/resources/models/qwen3-1.7b-q4_k_m.gguf') {throw 'Invalid GGUF remains'}
+          if (Test-Path 'frontend/src-tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe') {throw 'Invalid inference EXE remains'}
+          Write-Host 'Rust compilation check only: NOT an installer/runtime validation.'
