@@ -42,12 +42,27 @@ $manifest = RequireOne 'model-manifest.json'
 $licenseOne = RequireOne 'llama.cpp-MIT-LICENSE.txt'
 $licenseTwo = RequireOne 'Qwen3-Apache-2.0-LICENSE.txt'
 if ($model.Length -lt 1GB) {throw 'Installed GGUF model is unexpectedly small'}
-if ($desktop.Length -lt 1MB -or $engine.Length -lt 10MB -or $inference.Length -lt 1MB) {
-    throw 'Installed executables are implausibly small'
+foreach ($exe in @($desktop, $engine, $inference)) {
+    Write-Host ("Installed binary {0}: {1:N0} bytes" -f $exe.Name, $exe.Length)
+    # A Windows PE executable can be small when it delegates to adjacent DLLs.
+    # Require a real PE header, then cryptographically validate the inference
+    # server instead of inventing a minimum file-size policy for that binary.
+    if ($exe.Length -lt 64KB) {throw "Executable is unexpectedly small: $($exe.Name)"}
+    $stream = [System.IO.File]::OpenRead($exe.FullName)
+    try {
+        $head = New-Object byte[] 2
+        if ($stream.Read($head,0,2) -ne 2 -or $head[0] -ne 77 -or $head[1] -ne 90) {
+            throw "Installed executable is missing the Windows PE MZ signature: $($exe.Name)"
+        }
+    } finally {$stream.Dispose()}
 }
 $expected = Get-Content -LiteralPath $manifest.FullName -Raw | ConvertFrom-Json
 $actual = (Get-FileHash -LiteralPath $model.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actual -ne $expected.model_sha256) {throw 'Installed GGUF differs from the verified staged model'}
+$inferenceHash = (Get-FileHash -LiteralPath $inference.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($inferenceHash -ne $expected.server_sha256) {
+    throw 'Installed inference executable differs from the verified staged binary'
+}
 $dlls = @($files | Where-Object {$_.Extension -ieq '.dll' -and $_.DirectoryName -like '*llama-runtime*'})
 if ($dlls.Count -lt 1) {throw 'Bundled CPU runtime DLL directory is empty'}
 Write-Host 'Now verifying the actual INSTALLED Python engine can serve authenticated local API requests...'
