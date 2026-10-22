@@ -30,7 +30,11 @@ function RequireOne([string]$name) {
     }
     return $found[0]
 }
-$desktop = RequireOne 'pilotODIN.exe'
+# Cargo package names the executable pilotodin-desktop.exe; productName may
+# influence the displayed application name but not always the binary name.
+$desktop = @($files | Where-Object {$_.Name -in @('pilotodin-desktop.exe','pilotODIN.exe')})
+if ($desktop.Count -ne 1) {throw "Application executable is missing or ambiguous ($($desktop.Count) matches)"}
+$desktop = $desktop[0]
 $engine = RequireOne 'pilotodin-engine.exe'
 $inference = RequireOne 'pilotodin-inference.exe'
 $model = RequireOne 'qwen3-1.7b-q4_k_m.gguf'
