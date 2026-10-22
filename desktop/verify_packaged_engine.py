@@ -35,6 +35,38 @@ def _request(url: str, headers: dict[str, str] | None = None) -> tuple[int, obje
         return exc.code, json.loads(exc.read(1024 * 1024))
 
 
+def _wait_for_database_unlock(db: Path, timeout_seconds: float = 25) -> None:
+    """Wait for Windows to release the backend's SQLite handle after termination.
+
+    taskkill /T waits for process termination, but the kernel or a child can
+    briefly retain a handle. Do not report a successful packaging check while
+    the test database remains locked. POSIX also supports this guard.
+    """
+    deadline = time.monotonic() + timeout_seconds
+    probe = db.with_name(db.name + '.smoke-unlock-check')
+    last_error: OSError | None = None
+    while time.monotonic() < deadline:
+        if not db.exists():
+            return
+        try:
+            db.rename(probe)
+            probe.rename(db)
+            return
+        except OSError as error:
+            last_error = error
+            # If the first rename succeeded but the second did not, restore
+            # the original name rather than silently leaving stray test data.
+            if probe.exists() and not db.exists():
+                try:
+                    probe.rename(db)
+                except OSError:
+                    pass
+            time.sleep(0.3)
+    raise RuntimeError(
+        'Desktop engine has not released its temporary SQLite database after shutdown'
+    ) from last_error
+
+
 def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float = 90) -> dict:
     """Return nonsecret observations or raise if a packaged/local runner misbehaves."""
     if not command or not all(isinstance(arg, str) and arg for arg in command):
@@ -112,6 +144,10 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
             except subprocess.TimeoutExpired:
                 child.kill()
                 child.wait(timeout=8)
+            # A successful API probe is not sufficient if the frozen
+            # subprocess leaves SQLite handles behind. Wait for the file
+            # to become renamable before TemporaryDirectory cleanup.
+            _wait_for_database_unlock(data_dir / 'pilotodin.sqlite3')
 
 
 def main() -> int:
