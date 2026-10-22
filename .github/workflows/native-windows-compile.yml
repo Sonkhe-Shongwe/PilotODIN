@@ -53,6 +53,7 @@ jobs:
           if ($LASTEXITCODE -ne 2) {
             throw "Expected installer preflight rejection code 2; received $LASTEXITCODE"
           }
+          exit 0  # The expected rejection was verified; do not propagate its exit status.
       - name: Compile the Tauri/Rust host on Windows
         shell: pwsh
         run: cargo check --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
