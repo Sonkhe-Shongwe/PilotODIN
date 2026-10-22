@@ -53,7 +53,8 @@
     "resources": {
       "resources/models/qwen3-1.7b-q4_k_m.gguf": "models/qwen3-1.7b-q4_k_m.gguf",
       "resources/models/model-manifest.json": "models/model-manifest.json",
-      "resources/llama-runtime/": "llama-runtime/"
+      "resources/llama-runtime/": "llama-runtime/",
+      "resources/licenses/": "licenses/"
     }
   }
 }
