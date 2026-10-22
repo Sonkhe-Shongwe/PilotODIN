@@ -1,0 +1,48 @@
+name: Build E Packaged Python Engine Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build-e]
+    paths:
+      - 'backend/**'
+      - 'desktop/Build_Python_Sidecar.ps1'
+      - 'desktop/verify_packaged_engine.py'
+      - 'tests/test_packaged_engine_smoke.py'
+      - '.github/workflows/windows-engine-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  packaged-engine:
+    name: Freeze and launch Windows analytics EXE
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Package actual Python backend and smoke its HTTP API
+        shell: pwsh
+        run: ./desktop/Build_Python_Sidecar.ps1
+      - name: Check smoke test proof
+        shell: pwsh
+        run: |
+          $result = Get-Content build/engine-smoke-result.json -Raw | ConvertFrom-Json
+          if (-not $result.passed -or -not $result.auth_required -or -not $result.wrong_origin_rejected -or -not $result.user_storage_isolated) {
+            throw 'Packaged executable failed mandatory runtime assertions'
+          }
+          if ($result.model_started) {throw 'Model started during backend-only verification'}
+          if (-not (Test-Path 'frontend/src-tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe')) {
+            throw 'Bundled analytical sidecar missing'
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pilotodin-analytics-engine-windows-verified
+          path: |
+            build/engine-smoke-result.json
+            frontend/src-tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe
+          if-no-files-found: error
+          retention-days: 7
