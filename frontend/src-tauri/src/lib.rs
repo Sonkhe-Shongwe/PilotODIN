@@ -154,7 +154,7 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
     let runtime_dlls = resources.join("llama-runtime");
     let old_path = std::env::var_os("PATH").unwrap_or_default();
-    let mut paths = vec![runtime_dlls];
+    let mut paths = vec![runtime_dlls.clone()];
     paths.extend(std::env::split_paths(&old_path));
     let runtime_path = std::env::join_paths(paths).map_err(|_| "Invalid inference runtime path".to_string())?;
     let token = settings.token.clone();
@@ -167,6 +167,10 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
                "--no-webui", "--no-agent"])
         .env("LLAMA_API_KEY", token.as_str())
         .env("PATH", runtime_path)
+        // ggml_backend_load_all scans the executable directory and current
+        // working directory, not PATH, for version-specific CPU backends.
+        // Keep the runtime DLL directory as the process working directory.
+        .current_dir(&runtime_dlls)
         .set_process_group(true);
     let (mut events, child) = command.spawn().map_err(|e| format!("Could not launch local model: {e}"))?;
     *active = Some(ActiveInference { child, token: token.clone() });
