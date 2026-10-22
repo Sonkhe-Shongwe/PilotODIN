@@ -102,6 +102,14 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
                 raise RuntimeError(f'Packaged engine smoke verification failed: {error}; '
                                    f'examine local test logs without uploading secrets') from error
             finally:
+                # PyInstaller --onefile starts a child process on Windows. Killing
+                # only the bootloader parent leaves that child holding the smoke
+                # log handle, which makes TemporaryDirectory cleanup fail.
+                if os.name == 'nt' and child.poll() is None:
+                    subprocess.run(['taskkill', '/PID', str(child.pid), '/T', '/F'],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   timeout=15, check=False,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
                 if child.poll() is None:
                     child.terminate()
                 try:
