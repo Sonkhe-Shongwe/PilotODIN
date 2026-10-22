@@ -1,0 +1,699 @@
+"""PilotODIN local-first FastAPI application."""
+from __future__ import annotations
+
+import io
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+import json
+import math
+import os
+import re
+import traceback
+import hmac
+from fastapi.responses import JSONResponse, FileResponse, Response
+from pathlib import Path
+
+import joblib
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from starlette.background import BackgroundTask
+
+try:
+    from . import ai_provider, ai_context, engine, storage, quality, analytics, data_exports, quality_approvals, reports
+except ImportError:
+    import ai_provider, ai_context, engine, storage, quality, analytics, data_exports, quality_approvals, reports
+
+@asynccontextmanager
+async def _lifespan(_app:FastAPI):
+    """Start responsive: verify configured cloud providers in background only after consent."""
+    checks=[]
+    try:
+        cfg=ai_provider.config_status()
+        if cfg.get('cloud_enabled') and cfg.get('share_aggregates'):
+            for provider in cfg['providers']:
+                if provider['connected']:
+                    ai_provider._health[provider['id']]={'status':'checking'}
+                    checks.append(asyncio.create_task(asyncio.to_thread(ai_provider.test_connection,provider['id'])))
+    except (OSError,ValueError):
+        pass  # Local analysis must start even with corrupt optional AI configuration.
+    yield
+    for job in checks:
+        if not job.done():job.cancel()
+
+app = FastAPI(title="PilotODIN", version="0.8.0",description="Local-first intelligent analytics workspace",lifespan=_lifespan)
+app.add_middleware(CORSMiddleware,
+                   allow_origin_regex=r"(?:http://(?:localhost|127\.0\.0\.1):517[3-9]|https?://tauri\.localhost|tauri://localhost)",
+                   allow_credentials=False,allow_methods=["*"],allow_headers=["*"])
+MAX_BYTES = 40 * 1024 * 1024
+
+# Desktop mode uses a randomly generated per-launch secret supplied by the
+# Rust shell through the SIDE-CAR ENVIRONMENT, never through a URL or bundle.
+# CORS alone cannot protect a loopback HTTP server against local processes.
+# Existing browser-only dev mode remains unchanged when the secret is absent.
+_DESKTOP_ORIGINS = {"http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"}
+
+
+def _allowed_desktop_origin(origin: str) -> bool:
+    if origin in _DESKTOP_ORIGINS:
+        return True
+    return bool(os.environ.get("PILOTODIN_DESKTOP_ALLOW_DEV") == "1" and
+                re.fullmatch(r"http://(?:localhost|127\.0\.0\.1):517[3-9]", origin))
+
+
+@app.middleware("http")
+async def desktop_session_guard(request: Request, call_next):
+    secret = os.environ.get("PILOTODIN_DESKTOP_SESSION", "")
+    if not secret:
+        return await call_next(request)
+    # Let CORSMiddleware handle preflight; it must not grant an arbitrary
+    # cross-site origin permission. Browser actual requests still need token.
+    if request.method == "OPTIONS":
+        return await call_next(request)
+    origin = request.headers.get("origin", "")
+    if origin and not _allowed_desktop_origin(origin):
+        return JSONResponse({"detail": "Untrusted desktop request origin"}, status_code=403)
+    host = request.url.hostname
+    if host not in ("127.0.0.1", "localhost", "testserver"):
+        return JSONResponse({"detail": "Desktop API is local-only"}, status_code=403)
+    provided = request.headers.get("x-pilotodin-session", "")
+    if not hmac.compare_digest(provided, secret):
+        return JSONResponse({"detail": "Desktop session authentication required"}, status_code=401)
+    return await call_next(request)
+
+
+class ExperimentRequest(BaseModel):
+    target: str
+    task: str
+    excluded_features: list[str] = Field(default_factory=list)
+    models: list[str] = Field(min_length=1,max_length=5)
+    acknowledge_random_split: bool = False
+    split_strategy: str = 'random'
+    split_column: str | None = None
+    expected_quality_version: int | None = Field(default=None, ge=0)
+
+class SelectionRequest(BaseModel):
+    model_key: str
+
+class QualityVersionRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+
+class QualityDecisionRequest(QualityVersionRequest):
+    issue_id: str = Field(min_length=1, max_length=128)
+    decision: str
+
+class QualityUndoRequest(QualityVersionRequest):
+    action_id: str = Field(min_length=1, max_length=128)
+
+class QualityRestoreRequest(QualityVersionRequest):
+    target_version: int = Field(ge=0)
+
+class PredictRequest(BaseModel):
+    values: dict[str, str | float | int | bool | None]
+
+
+def project_or_404(pid):
+    p = storage.get_project(pid)
+    if p is None: raise HTTPException(status_code=404,detail="Project not found")
+    return p
+
+
+def experiment_or_404(eid):
+    exp=storage.get_experiment(eid)
+    if exp is None: raise HTTPException(status_code=404,detail="Experiment not found")
+    return exp
+
+
+def df_for(p, expected_version: int | None = None):
+    try:
+        df, version = quality.current_data(p["id"])
+        if expected_version is not None and expected_version != version:
+            raise HTTPException(status_code=409, detail=f"Dataset version changed from {expected_version} to {version}. Refresh before training.")
+        return df
+    except quality.QualityError as e:
+        raise HTTPException(status_code=e.status,detail=str(e)) from e
+    except (ValueError, OSError) as e:
+        raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+@app.get("/api/health")
+def health():
+    return {"status":"ok","mode":"local_with_opt_in_cloud","cloud_ai":ai_provider.config_status()["cloud_enabled"]}
+
+
+@app.get("/api/projects")
+def projects(): return storage.list_projects()
+
+
+@app.post("/api/projects",status_code=201)
+async def create_project(file: UploadFile = File(...)):
+    filename=Path(file.filename or "dataset").name
+    ext=Path(filename).suffix.lower()
+    if ext not in (".csv",".xlsx"):
+        raise HTTPException(status_code=400,detail="Please upload a CSV or XLSX dataset")
+    b=await file.read(MAX_BYTES+1)
+    await file.close()
+    if len(b)>MAX_BYTES:
+        raise HTTPException(status_code=413,detail="File exceeds local 40 MB limit")
+    if not b: raise HTTPException(status_code=400,detail="Empty file")
+    path=storage.HOME / "datasets" / f"{storage.uid()}{ext}"
+    path.write_bytes(b)
+    pid=None
+    try:
+        df=engine.read_data(str(path),ext)
+        prof=engine.profile(df,filename)
+        pid=storage.save_project(Path(filename).stem,filename,ext,path,prof)
+        quality.register(pid)  # Anchor the immutable source hash at upload.
+    except Exception as e:
+        if pid is not None:
+            with storage.connect() as con:
+                con.execute("DELETE FROM quality_versions WHERE project_id=?", (pid,))
+                con.execute("DELETE FROM quality_state WHERE project_id=?", (pid,))
+                con.execute("DELETE FROM projects WHERE id=?", (pid,))
+        path.unlink(missing_ok=True)
+        raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}")
+    return {"id":pid,"name":Path(filename).stem,"profile":prof}
+
+
+@app.get("/api/projects/{project_id}")
+def get_project(project_id:str):
+    p=project_or_404(project_id)
+    p.pop("dataset_path",None)
+    return {**p, "experiments":storage.recent_experiments(project_id),"ai":ai_provider.LocalRulesProvider().interpret(p["profile"])}
+
+
+@app.get("/api/projects/{project_id}/preparation")
+def prepare(project_id:str,target:str):
+    p=project_or_404(project_id)
+    try: return engine.preparation(df_for(p),target)
+    except ValueError as e: raise HTTPException(status_code=422,detail=str(e))
+
+
+def train_background(eid:str,pid:str,config:dict):
+    storage.mark(eid,"running")
+    try:
+        p=storage.get_project(pid)
+        df=df_for(p,config["quality_version"])
+        result, pipes, x_test, y_test = engine.run_training(df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")})
+        # Only locally produced artifacts are loaded; untrusted model uploads are prohibited.
+        path=storage.HOME / "models" / eid
+        path.mkdir(parents=True,exist_ok=True)
+        for name,pipe in pipes.items(): joblib.dump(pipe,path/f"{name}.joblib")
+        joblib.dump((x_test,y_test),path/"test_set.joblib")
+        storage.mark(eid,"completed",results=result)
+    except Exception as e:
+        storage.mark(eid,"failed",error=f"{type(e).__name__}: {str(e)[:600]}")
+
+
+@app.post("/api/projects/{project_id}/experiments",status_code=202)
+def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:BackgroundTasks):
+    p=project_or_404(project_id)
+    if body.split_strategy not in ('random','group','time'):
+        raise HTTPException(status_code=422,detail='Choose random, group, or time validation')
+    if body.split_strategy=='random' and not body.acknowledge_random_split:
+        raise HTTPException(status_code=422,detail="Confirm that a random split is appropriate (no grouped individuals or time-based leakage).")
+    if body.split_strategy!='random' and not body.split_column:
+        raise HTTPException(status_code=422,detail='A group or date column is required')
+    try:
+        df, version = quality.current_data(project_id)
+        if body.expected_quality_version is not None and body.expected_quality_version != version:
+            raise HTTPException(status_code=409, detail=f"Dataset version changed from {body.expected_quality_version} to {version}. Refresh before training.")
+        engine.validate_config(df,body.target,body.excluded_features,body.models,body.task)
+        if body.split_column and body.split_column not in df.columns:raise ValueError('Split column not found')
+    except quality.QualityError as e:
+        raise HTTPException(status_code=e.status,detail=str(e)) from e
+    except ValueError as e: raise HTTPException(status_code=422,detail=str(e))
+    config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,"quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column}
+    eid=storage.new_experiment(project_id,config)
+    background_tasks.add_task(train_background,eid,project_id,config)
+    return {"id":eid,"status":"queued"}
+
+
+@app.get("/api/experiments/{experiment_id}")
+def get_experiment(experiment_id:str):
+    e=experiment_or_404(experiment_id)
+    current_version=quality.current_version(e["project_id"])
+    return {"dataset_version":e["config"].get("quality_version",0),"current_version":current_version,"is_stale":e["config"].get("quality_version",0)!=current_version,"id":e["id"],"project_id":e["project_id"],"status":e["status"],"config":e["config"],
+            "results":e["results"],"error":e["error"],"selected_model":e["selected_model"],"final_results":e["final_results"]}
+
+
+@app.post("/api/experiments/{experiment_id}/select")
+def choose_model(experiment_id:str,body:SelectionRequest):
+    e=experiment_or_404(experiment_id)
+    if e["status"]!="completed": raise HTTPException(status_code=409,detail="Experiment not ready")
+    if e["config"].get("quality_version",0)!=quality.current_version(e["project_id"]):
+        raise HTTPException(status_code=409,detail="Dataset changed since training. Start a new experiment on the current version.")
+    if e["selected_model"]:
+        if e["selected_model"]==body.model_key:
+            return {"selected_model":e["selected_model"],"final_results":e["final_results"]}
+        raise HTTPException(status_code=409,detail="This experiment already has a final selected model. Create a new experiment to compare final outcomes.")
+    ready={m["key"] for m in e["results"]["models"] if m["status"]=="ready"}
+    if body.model_key not in ready: raise HTTPException(status_code=422,detail="Select a successfully trained model")
+    base=storage.HOME/"models"/experiment_id
+    model=joblib.load(base/f"{body.model_key}.joblib")
+    x_test,y_test=joblib.load(base/"test_set.joblib")
+    predictions=model.predict(x_test)
+    prob=None
+    if e["results"]["task"]=="classification" and hasattr(model,"predict_proba"):
+        if len(model.named_steps["model"].classes_)==2:
+            prob=model.predict_proba(x_test)[:,1]
+    metrics=engine.model_report(e["results"]["task"],y_test,predictions,prob)
+    metrics["sample_count"]=len(y_test)
+    metrics["target"]=e["config"]["target"]
+    metrics["evaluation_rows"]=[{"actual":engine.native(a),"predicted":engine.native(b)} for a,b in list(zip(y_test,predictions))[:120]]
+    metrics["baseline_cv"]=e["results"]["baseline_cv"]
+    metrics["cv_score"]=next((m.get("cv_metric") for m in e["results"]["models"] if m["key"]==body.model_key),None)
+    metrics["reliability"]=engine.reliability_report(e["results"],metrics,body.model_key)
+    if not storage.select_model(experiment_id,body.model_key,metrics):
+        raise HTTPException(status_code=409,detail="Model was already selected")
+    return {"selected_model":body.model_key,"final_results":metrics}
+
+
+@app.post("/api/experiments/{experiment_id}/predict")
+def predict(experiment_id:str,body:PredictRequest):
+    e=experiment_or_404(experiment_id)
+    if not e["selected_model"]: raise HTTPException(status_code=409,detail="Select and evaluate a model first")
+    if e["config"].get("quality_version",0)!=quality.current_version(e["project_id"]):
+        raise HTTPException(status_code=409,detail="This model was trained on an older dataset version. Retrain before new predictions.")
+    artifact=storage.HOME/"models"/experiment_id/f"{e['selected_model']}.joblib"
+    if not artifact.is_file(): raise HTTPException(status_code=500,detail="Selected model artifact not found")
+    pipe=joblib.load(artifact)
+    try:
+        result=engine.predict_one(pipe,e["results"]["input_schema"],body.values)
+        result["target"]=e["config"]["target"]
+        result["task"]=e["config"]["task"]
+        result["dataset_version"]=e["config"].get("quality_version",0)
+        result["experimental_only"]=True
+        result["warning"]="Model predictions are estimates, not guaranteed outcomes or professional advice."
+        if e.get("final_results") and e["final_results"].get("reliability",{}).get("level") == "warning":
+            result["warning"]="CAUTION: This model failed reliability checks. Do not use this prediction for real decisions. " + result["warning"]
+        return result
+    except ValueError as ex: raise HTTPException(status_code=422,detail=str(ex))
+
+
+# v0.2B Increment 1. Independent versioned quality engine: existing ML routes
+# still use the uploaded dataset until the approved integration increment.
+def quality_response(call, *args, **kwargs):
+    try:
+        return call(*args, **kwargs)
+    except quality.QualityError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+
+
+@app.get("/api/projects/{project_id}/quality")
+def get_quality(project_id: str):
+    return quality_response(quality.snapshot, project_id)
+
+
+@app.get("/api/projects/{project_id}/quality/preview")
+def get_quality_preview(project_id: str, issue_id: str | None = None,
+                        offset: int = 0, limit: int = 20):
+    return quality_response(quality.preview, project_id, issue_id, offset, limit)
+
+
+@app.post("/api/projects/{project_id}/quality/export")
+def export_cleaned_dataset(project_id: str, body: data_exports.ExportRequest):
+    """Export a specific immutable version without changing the working dataset."""
+    try:
+        path, filename, count, version = data_exports.prepare(project_id, body)
+    except quality.QualityError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    return FileResponse(
+        path, filename=filename,
+        media_type='text/csv' if body.format == 'csv' else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'X-PilotODIN-Dataset-Version': str(version), 'X-PilotODIN-Exported-Rows': str(count),
+                 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'},
+        background=BackgroundTask(path.unlink, missing_ok=True))
+
+
+@app.get("/api/projects/{project_id}/quality/history")
+def get_quality_history(project_id: str):
+    return quality_response(quality.history, project_id)
+
+
+@app.post("/api/projects/{project_id}/quality/proposals")
+def preview_quality_change(project_id:str, body: quality_approvals.ProposalRequest):
+    return quality_response(quality_approvals.prepare, project_id, body)
+
+
+@app.post("/api/projects/{project_id}/quality/commit")
+def commit_quality_change(project_id:str, body: quality_approvals.ApprovalCommit):
+    return quality_response(quality_approvals.commit, project_id, body)
+
+
+@app.post("/api/projects/{project_id}/quality/autopilot")
+def run_quality_autopilot(project_id: str, body: QualityVersionRequest):
+    raise HTTPException(status_code=428,detail='First review /quality/proposals, then approve /quality/commit')
+
+
+@app.post("/api/projects/{project_id}/quality/decisions")
+def decide_quality(project_id: str, body: QualityDecisionRequest):
+    if body.decision == 'reject':
+        return quality_response(quality.decide, project_id, body.issue_id,
+                                body.expected_version, body.decision)
+    raise HTTPException(status_code=428,detail='Approval requires a reviewed, version-bound /quality/proposals receipt')
+
+
+@app.post("/api/projects/{project_id}/quality/undo")
+def undo_quality(project_id: str, body: QualityUndoRequest):
+    raise HTTPException(status_code=428,detail='Undo requires a reviewed /quality/proposals receipt')
+
+
+@app.post("/api/projects/{project_id}/quality/restore")
+def restore_quality(project_id: str, body: QualityRestoreRequest):
+    raise HTTPException(status_code=428,detail='Restore requires a reviewed /quality/proposals receipt')
+
+
+# Integrated macro workspace: read-only analysis from the currently approved
+# working version. Responses are intentionally bounded for browser safety.
+@app.get("/api/projects/{project_id}/explore/overview")
+def explore_overview(project_id: str):
+    project_or_404(project_id)
+    return analytics.describe(*quality.current_data(project_id))
+
+
+@app.get("/api/projects/{project_id}/explore/chart")
+def explore_chart(project_id: str, x: str, y: str | None = None,
+                  kind: str = 'auto', aggregation: str = 'mean', bins: int = Query(16, ge=4, le=40)):
+    project_or_404(project_id)
+    try:
+        df, version = quality.current_data(project_id)
+        return analytics.chart(df,version,x,y,kind,aggregation,bins)
+    except ValueError as e:
+        raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+@app.get("/api/projects/{project_id}/explore/insights")
+def explore_insights(project_id: str):
+    project_or_404(project_id)
+    return analytics.insights(*quality.current_data(project_id))
+
+
+@app.get("/api/projects/{project_id}/features")
+def feature_recommendations(project_id: str, target: str):
+    project_or_404(project_id)
+    try:
+        df,version=quality.current_data(project_id)
+        return analytics.recommend_features(df,target,version)
+    except ValueError as e:
+        raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1,max_length=350)
+
+
+@app.post("/api/projects/{project_id}/assistant")
+def ask_assistant(project_id: str, body: AskRequest):
+    project_or_404(project_id)
+    try:
+        df,version=quality.current_data(project_id)
+        return analytics.answer(df,version,body.question)
+    except ValueError as e:
+        raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+# v0.4: opt-in multi-provider intelligence. Keys never returned by API.
+# These routes are exclusively for the localhost user interface.
+class AISettingsRequest(BaseModel):
+    cloud_enabled: bool = False
+    share_aggregates: bool = False
+    auto_insights: bool = False
+    provider_order: list[str] = Field(default_factory=lambda: list(ai_provider.PROVIDERS))
+    timeout_seconds: int = Field(default=20, ge=3, le=45)
+    preferred_provider: str = 'auto'
+    workspace_preferences: dict[str,str] = Field(default_factory=dict)
+    intelligence_mode: str = 'hybrid'
+    local_model: str = 'qwen3:1.7b'
+    local_model_enabled: bool = True
+    local_timeout_seconds: int = Field(default=60,ge=5,le=180)
+
+class AIKeyRequest(BaseModel):
+    provider: str
+    key: str | None = Field(default=None, max_length=512)
+    remove: bool = False
+
+class AIInsightRequest(BaseModel):
+    context: str = 'assistant'
+    question: str = Field(default='', max_length=900)
+    target: str | None = Field(default=None, max_length=200)
+    experiment_id: str | None = Field(default=None, max_length=128)
+    prediction: dict | None = None
+    deep: bool = False
+    selected_provider: str | None = None
+    continuation_text: str | None = Field(default=None, max_length=16000)
+
+
+def _local_request(request:Request):
+    # CORS is not an authorization boundary. Forbid cross-site browsers from
+    # writing keys or triggering paid/external calls on localhost.
+    origin=request.headers.get('origin','')
+    allowed = (_allowed_desktop_origin(origin) if os.environ.get('PILOTODIN_DESKTOP_SESSION')
+               else bool(re.fullmatch(r'http://(?:localhost|127\.0\.0\.1):517[3-9]',origin)))
+    if origin and not allowed:
+        raise HTTPException(status_code=403,detail='AI controls are limited to the local PilotODIN interface')
+    host=request.url.hostname
+    if host not in ('localhost','127.0.0.1','testserver'):
+        raise HTTPException(status_code=403,detail='Local access only')
+
+
+@app.get('/api/ai/settings')
+def ai_settings(request:Request):
+    _local_request(request)
+    return ai_provider.config_status()
+
+
+@app.put('/api/ai/settings')
+def save_ai_settings(body:AISettingsRequest,request:Request):
+    _local_request(request)
+    try:return ai_provider.update_settings(**body.model_dump())
+    except ValueError as e:raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+@app.put('/api/ai/key')
+def save_ai_key(body:AIKeyRequest,request:Request):
+    _local_request(request)
+    try:return ai_provider.set_key(body.provider,body.key,body.remove)
+    except ValueError as e:raise HTTPException(status_code=422,detail=str(e)) from e
+    except OSError as e:raise HTTPException(status_code=500,detail='Secure credential storage unavailable') from e
+
+
+@app.post('/api/projects/{project_id}/ai/insight')
+def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
+    _local_request(request)
+    project_or_404(project_id)
+    if body.context not in ai_context.TASKS:
+        raise HTTPException(status_code=422,detail='Unsupported workspace context')
+    try:
+        df,version=quality.current_data(project_id)
+        question=body.question.strip() or ai_context.TASKS[body.context]
+        context=ai_context.build(project_id,body.context,question,body.target,body.experiment_id,body.prediction)
+        local=analytics.answer(df,version,question[:350])['answer'] if body.context=='assistant' else ai_context.local_advice(context,body.context)
+        plan=None if body.continuation_text else analytics.plan_investigation(df,version,question,body.context)
+        if plan:
+            context['verified_investigation']=plan['safe_context']
+            # This report is computed locally. Do not claim that a pattern proves MNAR.
+            local=(f"Inspected {plan['local_report']['missing_rows']} missing values in {plan['column']}. "
+                   f"Compared the available numeric and categorical groups; see the verified investigation below. "
+                   "No treatment has been applied. Observed associations do not prove the missingness mechanism.")
+        result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text)
+        return {**result,'dataset_version':version,'privacy':'summary_only_no_rows',
+                'scope':body.context,'investigation':plan['local_report'] if plan else None,
+                'investigation_steps':plan['steps'] if plan else [],
+                'limitations':'AI suggestions are advisory; verified local engines perform calculations and modifications.'}
+    except (ValueError,quality.QualityError) as e:
+        raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+@app.get('/api/ai/local/status')
+def local_ai_status(request:Request):
+    _local_request(request)
+    return ai_provider.test_local_connection()
+
+
+@app.post('/api/ai/verify-connected')
+def verify_ai_providers(request:Request):
+    """Bounded health check for opt-in configured providers, never dataset rows."""
+    _local_request(request)
+    return ai_provider.verify_connected()
+
+
+@app.post('/api/ai/test/{provider}')
+def test_ai_provider(provider:str,request:Request):
+    _local_request(request)
+    try:return ai_provider.test_connection(provider)
+    except ValueError as exc:raise HTTPException(status_code=422,detail=str(exc)) from exc
+
+@app.get('/api/projects/{project_id}/live-profile')
+def live_profile(project_id:str):
+    """Profile the CURRENT approved working version, not stale upload metadata."""
+    p=project_or_404(project_id)
+    df,version=quality.current_data(project_id)
+    return {'version':version,'profile':engine.profile(df,p['filename'])}
+
+# Persistent investigation objects are a v1 design spike, separate from the
+# older, narrow /investigate helper. Endpoints below are read-only against data.
+try:
+    from . import investigations
+except ImportError:
+    import investigations
+
+class NewCanvasInvestigationRequest(BaseModel):
+    objective: str = Field(min_length=8, max_length=400)
+
+class CanvasToolRunRequest(BaseModel):
+    operation: str
+    params: dict = Field(default_factory=dict)
+    expected_version: int = Field(ge=0)
+
+@app.get('/api/projects/{project_id}/investigations')
+def list_canvas_investigations(project_id: str):
+    project_or_404(project_id)
+    return investigations.listing(project_id)
+
+@app.post('/api/projects/{project_id}/investigations',status_code=201)
+def create_canvas_investigation(project_id: str,body:NewCanvasInvestigationRequest):
+    project_or_404(project_id)
+    objective = body.objective.strip()
+    if len(objective) < 8:
+        raise HTTPException(status_code=422,detail='Provide a meaningful investigation objective')
+    return investigations.create(project_id,objective)
+
+@app.get('/api/investigations/{investigation_id}')
+def get_canvas_investigation(investigation_id: str):
+    result=investigations.load(investigation_id)
+    if not result:raise HTTPException(status_code=404,detail='Investigation not found')
+    return result
+
+@app.post('/api/investigations/{investigation_id}/runs')
+def run_canvas_tool(investigation_id: str,body:CanvasToolRunRequest):
+    try:
+        return investigations.run(investigation_id,body.operation,body.params,body.expected_version)
+    except KeyError as e:
+        raise HTTPException(status_code=404,detail=str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=409,detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+# Build E: durable, bounded, local-model investigation controller. All tools
+# execute through the existing read-only investigation engine.
+try:
+    from . import autonomy
+except ImportError:
+    import autonomy
+
+class AutonomousStartRequest(BaseModel):
+    max_steps: int = Field(default=5,ge=1,le=8)
+
+@app.get('/api/investigations/{investigation_id}/autonomy')
+def get_autonomous_run(investigation_id: str):
+    if investigations.load(investigation_id) is None:
+        raise HTTPException(status_code=404,detail='Investigation not found')
+    return autonomy.for_investigation(investigation_id)
+
+@app.post('/api/investigations/{investigation_id}/autonomy/start',status_code=202)
+def start_autonomous_run(investigation_id: str,body:AutonomousStartRequest):
+    try:return autonomy.start(investigation_id,max_steps=body.max_steps)
+    except KeyError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
+    except PermissionError as exc:raise HTTPException(status_code=403,detail=str(exc)) from exc
+    except RuntimeError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+    except ValueError as exc:raise HTTPException(status_code=422,detail=str(exc)) from exc
+
+@app.post('/api/investigations/{investigation_id}/autonomy/resume',status_code=202)
+def resume_autonomous_run(investigation_id: str):
+    try:return autonomy.resume(investigation_id)
+    except KeyError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
+    except RuntimeError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+@app.post('/api/investigations/{investigation_id}/autonomy/cancel')
+def cancel_autonomous_run(investigation_id: str):
+    try:return autonomy.cancel(investigation_id)
+    except KeyError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
+
+class InvestigationRequest(BaseModel):
+    operation: str
+    column: str | None = None
+
+@app.post('/api/projects/{project_id}/investigate')
+def investigate_project(project_id:str,body:InvestigationRequest):
+    project_or_404(project_id)
+    try:
+        df,version=quality.current_data(project_id)
+        return analytics.investigate(df,version,body.operation,body.column)
+    except ValueError as e:
+        raise HTTPException(status_code=422,detail=str(e)) from e
+
+@app.get('/api/projects/{project_id}/quality/missingness')
+def quality_missingness(project_id:str,column:str):
+    project_or_404(project_id)
+    try:return analytics.missingness_diagnostics(*quality.current_data(project_id),column)
+    except ValueError as e:raise HTTPException(status_code=422,detail=str(e)) from e
+
+
+class ImputationRequest(QualityVersionRequest):
+    issue_id: str = Field(min_length=1,max_length=128)
+    column: str = Field(min_length=1,max_length=200)
+    strategy: str = 'median'
+
+
+@app.post('/api/projects/{project_id}/quality/impute')
+def quality_impute(project_id:str,body:ImputationRequest,request:Request):
+    _local_request(request)
+    raise HTTPException(status_code=428,detail='Median imputation requires a reviewed /quality/proposals receipt')
+
+
+@app.get('/api/projects/{project_id}/explore/recommended')
+def recommended_exploration(project_id:str):
+    project_or_404(project_id)
+    return analytics.recommended_charts(*quality.current_data(project_id))
+
+
+# Build E: durable evidence-backed report revision API.
+class ReportSaveRequest(BaseModel):
+    title: str = Field(min_length=5,max_length=180)
+    narrative: str = Field(default='',max_length=6000)
+    evidence_ids: list[str] = Field(min_length=1,max_length=15)
+
+
+def _report_call(operation):
+    try:return operation()
+    except reports.ReportError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+
+@app.get('/api/projects/{project_id}/report-evidence')
+def list_available_report_evidence(project_id: str):
+    return _report_call(lambda: reports.evidence_options(project_id))
+
+@app.get('/api/projects/{project_id}/reports')
+def list_saved_reports(project_id: str):
+    return _report_call(lambda: reports.listing(project_id))
+
+@app.post('/api/projects/{project_id}/reports',status_code=201)
+def create_saved_report(project_id: str,body:ReportSaveRequest):
+    return _report_call(lambda: reports.save(project_id,body.title,body.narrative,body.evidence_ids))
+
+@app.get('/api/reports/{report_id}')
+def read_saved_report(report_id: str,revision: int | None = Query(default=None,ge=1)):
+    return _report_call(lambda: reports.load(report_id,revision))
+
+@app.post('/api/reports/{report_id}/revisions',status_code=201)
+def revise_saved_report(report_id: str,body:ReportSaveRequest):
+    current=_report_call(lambda: reports.load(report_id))
+    return _report_call(lambda: reports.save(current['project_id'],body.title,body.narrative,body.evidence_ids,report_id))
+
+@app.get('/api/reports/{report_id}/export/{format}')
+def export_saved_report(report_id: str,format: str,revision: int | None = Query(default=None,ge=1)):
+    if format not in ('html','pdf'):
+        raise HTTPException(status_code=404,detail='Choose html or pdf')
+    current=_report_call(lambda: reports.load(report_id,revision))
+    content=reports.render_html(current) if format=='html' else reports.render_pdf(current)
+    mime='text/html; charset=utf-8' if format=='html' else 'application/pdf'
+    fname=f"pilotodin_report_{report_id[:12]}_rev{current['revision']}.{format}"
+    return Response(content=content,media_type=mime,headers={
+        'Content-Disposition':f'attachment; filename="{fname}"',
+        'X-Content-Type-Options':'nosniff',
+        'Cache-Control':'no-store'
+    })

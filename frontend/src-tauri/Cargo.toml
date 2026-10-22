@@ -1,0 +1,20 @@
+[package]
+name = "pilotodin-desktop"
+version = "1.0.0-alpha.1"
+description = "PilotODIN intelligent data science desktop"
+edition = "2021"
+
+[lib]
+name = "pilotodin_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+uuid = { version = "1", features = ["v4"] }
+sha2 = "0.10"
+serde_json = "1"

@@ -1,0 +1,72 @@
+name: Build E - Frontend Compilation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'frontend/**'
+      - 'desktop/Verify_Frontend_Windows.ps1'
+      - 'desktop/Verify_Frontend.cmd'
+      - '.github/workflows/frontend-compile.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-compile.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-frontend:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out application source
+        uses: actions/checkout@v4
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+        # When a checked-in lockfile becomes available, setup-node can use npm cache.
+        if: ${{ hashFiles('frontend/package-lock.json') != '' }}
+      - name: Install Node.js 22 without a checked-in lockfile
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+        if: ${{ hashFiles('frontend/package-lock.json') == '' }}
+      - name: Install exact locked dependencies
+        shell: pwsh
+        if: ${{ hashFiles('frontend/package-lock.json') != '' }}
+        run: npm ci --no-audit --no-fund
+      - name: Bootstrap dependency lock (until first successful build)
+        shell: pwsh
+        if: ${{ hashFiles('frontend/package-lock.json') == '' }}
+        run: npm install --no-audit --no-fund
+      - name: Run frontend behavioral tests
+        shell: pwsh
+        run: npm run test:workspace
+      - name: Compile TypeScript and bundle React frontend
+        shell: pwsh
+        run: npm run build
+      - name: Verify production asset output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'dist/index.html')) { throw 'Vite did not produce dist/index.html' }
+          $bundles = @(Get-ChildItem -Path dist/assets -Recurse -File -Filter '*.js' -ErrorAction Stop)
+          if ($bundles.Count -eq 0) { throw 'Vite produced no JavaScript bundle' }
+          Write-Host "Verified $($bundles.Count) JavaScript asset(s)."
+      - name: Publish frontend proof and generated lockfile
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pilotodin-frontend-verification-${{ github.run_number }}
+          path: |
+            frontend/package-lock.json
+            frontend/dist/
+          if-no-files-found: warn
+          retention-days: 14

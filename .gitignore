@@ -32,3 +32,11 @@ output/
 release/
 *.gguf
 *.onnx
+
+# Bundled third-party release binaries and proprietary/local resource payloads
+frontend/src-tauri/resources/models/*.gguf
+frontend/src-tauri/resources/models/model-manifest.json
+frontend/src-tauri/resources/llama-runtime/*.dll
+frontend/src-tauri/binaries/pilotodin-inference-*.exe
+# Local Windows frontend compilation evidence
+frontend-check-results/

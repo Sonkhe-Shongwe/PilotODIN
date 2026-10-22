@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PilotODIN Navigator symbol">
+<rect width="64" height="64" rx="17" fill="#111B37"/>
+<circle cx="32" cy="32" r="19" fill="none" stroke="#FFFFFF" stroke-width="2.8"/>
+<circle cx="32" cy="32" r="9" fill="none" stroke="#D6D5FF" stroke-width="2.4"/>
+<path d="M32 8v10 M56 32H46 M32 56V46 M8 32h10" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M32 21 43 32 32 43 21 32Z" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round"/>
+<path d="M32 21 43 32H32V21Z" fill="#148F9B"/>
+<circle cx="32" cy="32" r="3" fill="#FFFFFF"/>
+<circle cx="32" cy="8" r="2.6" fill="#148F9B"/>
+<circle cx="56" cy="32" r="2.6" fill="#7466EF"/>
+<circle cx="8" cy="32" r="2.6" fill="#148F9B"/>
+</svg>
