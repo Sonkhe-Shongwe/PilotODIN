@@ -103,7 +103,7 @@ def _save_keys(keys:dict[str,str])->None:
         return
     import tempfile
     protected=base64.b64encode(_dpapi(json.dumps(keys).encode('utf-8')))
-    fd,temporary=tempfile.mkstemp(dir=storage.HOME,prefix='.secrets-',suffix='.tmp')
+    fd,temporary=tempfile.mkstemp(dir=SECRETS_PATH.parent,prefix='.secrets-',suffix='.tmp')
     try:
         with os.fdopen(fd,'wb') as fp:fp.write(protected)
         os.replace(temporary,SECRETS_PATH)
