@@ -16,26 +16,9 @@ try {
     Write-Host 'Validating mandatory self-contained offline AI assets...'
     & $python 'desktop\verify_inference_assets.py'
     if ($LASTEXITCODE -ne 0) { throw 'Offline AI assets missing or invalid; refusing to create a misleading installer' }
-    & $python -m pip install --upgrade pip
-    if ($LASTEXITCODE -ne 0) { throw 'Could not update pip' }
-    & $python -m pip install -r 'backend\requirements.txt' 'pyinstaller>=6,<7'
-    if ($LASTEXITCODE -ne 0) { throw 'Could not install Python build dependencies' }
-
-    Write-Host 'Packaging the scientific Python runtime for Windows...'
-    & $python -m PyInstaller --noconfirm --clean --onefile --name pilotodin-engine `
-      --paths $root --collect-all sklearn --collect-all scipy `
-      --collect-submodules sklearn --hidden-import uvicorn.logging `
-      --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols.http.auto `
-      --hidden-import uvicorn.protocols.websockets.auto --hidden-import uvicorn.lifespan.on `
-      --distpath (Join-Path $root 'build\py-dist') `
-      --workpath (Join-Path $root 'build\py-work') `
-      --specpath (Join-Path $root 'build') `
-      'backend\desktop_runner.py'
-    if ($LASTEXITCODE -ne 0) { throw 'PyInstaller build failed' }
-    $binary = Join-Path $root 'build\py-dist\pilotodin-engine.exe'
-    if (-not (Test-Path $binary)) { throw "Missing packaged Python engine: $binary" }
-    Copy-Item -Force $binary 'frontend\src-tauri\binaries\pilotodin-engine-x86_64-pc-windows-msvc.exe'
-
+    # The same frozen-engine builder and real startup check is used by Windows CI.
+    # Failed loopback/readiness/auth verification MUST block any installer.
+    & (Join-Path $PSScriptRoot 'Build_Python_Sidecar.ps1')
 
     Push-Location (Join-Path $root 'frontend')
     try {
