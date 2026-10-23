@@ -91,11 +91,16 @@ jobs:
           }
           Write-Host 'Created nonfunctional compile-only placeholders; not building an installer.'
 
-      - name: Compile the patched native desktop executable
+      - name: Compile the production Tauri executable without making an installer
+        working-directory: frontend
         shell: pwsh
         run: |
-          cargo build --release --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
-          if ($LASTEXITCODE -ne 0) {throw 'Rust release build failed'}
+          # IMPORTANT: plain cargo build --release leaves tauri/custom-protocol
+          # disabled and loads devUrl (127.0.0.1:5173) rather than embedded dist.
+          # The Tauri CLI enables the production protocol and still supports
+          # an EXE-only output using --no-bundle.
+          npm run desktop:build -- --no-bundle --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) {throw 'Production Tauri EXE-only build failed'}
 
       - name: Validate and isolate the EXE-only replacement
         shell: pwsh
