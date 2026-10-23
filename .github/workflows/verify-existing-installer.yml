@@ -21,12 +21,12 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Download immutable successful installer artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: PilotODIN-Build-E-Windows-Bundled-Qwen3-UNSIGNED
           repository: Sonkhe-Shongwe/PilotODIN
@@ -46,7 +46,7 @@ jobs:
           $installer = @(Get-ChildItem 'installer' -Filter '*.exe' -Recurse -File)[0]
           ./desktop/Verify_Installed_PilotODIN.ps1 -InstallerPath $installer.FullName
       - name: Save installation-test proof
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pilotodin-build-e-existing-installer-installation-proof
           path: build/installed-engine-smoke-result.json

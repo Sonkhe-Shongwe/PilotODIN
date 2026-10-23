@@ -25,9 +25,9 @@ jobs:
         working-directory: frontend
     steps:
       - name: Check out application source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -35,7 +35,7 @@ jobs:
         # When a checked-in lockfile becomes available, setup-node can use npm cache.
         if: ${{ hashFiles('frontend/package-lock.json') != '' }}
       - name: Install Node.js 22 without a checked-in lockfile
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
         if: ${{ hashFiles('frontend/package-lock.json') == '' }}
@@ -62,7 +62,7 @@ jobs:
           Write-Host "Verified $($bundles.Count) JavaScript asset(s)."
       - name: Publish frontend proof and generated lockfile
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pilotodin-frontend-verification-${{ github.run_number }}
           path: |

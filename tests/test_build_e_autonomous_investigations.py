@@ -169,6 +169,30 @@ def test_changing_dataset_version_stops_the_investigation():
     assert not investigations.load(inv_id)['artifacts']
 
 
+def test_terminal_status_wins_worker_poll_race():
+    """A completed worker must not be labelled interrupted by a stale SELECT."""
+    _, inv_id = new_inv()
+    run = autonomy.start(inv_id, planner=lambda ctx: propose('overview') if not ctx['verified_evidence'] else propose(intent='suggest_finish'))
+    assert await_done(inv_id)['status'] == 'ready_for_review'
+    # Simulate a stale status read followed by worker completion before is_alive().
+    with storage.connect() as con:
+        con.execute("UPDATE odin_runs SET status='running' WHERE id=?", (run['id'],))
+
+    class FinishedBetweenChecks:
+        def is_alive(self):
+            with storage.connect() as con:
+                con.execute("UPDATE odin_runs SET status='ready_for_review' WHERE id=?", (run['id'],))
+            return False
+
+    with autonomy._LOCK:
+        autonomy._ACTIVE[run['id']] = FinishedBetweenChecks()
+    try:
+        assert autonomy.for_investigation(inv_id)['status'] == 'ready_for_review'
+    finally:
+        with autonomy._LOCK:
+            autonomy._ACTIVE.pop(run['id'], None)
+
+
 def test_no_model_is_a_reported_failure_not_fabricated_evidence():
     _,inv_id=new_inv()
     def unavailable(ctx):raise RuntimeError('Offline model unavailable')

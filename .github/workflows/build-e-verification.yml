@@ -18,7 +18,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Confirm Build E sources are present
         shell: pwsh
         run: |
@@ -26,7 +26,7 @@ jobs:
           foreach ($file in $required) {
             if (-not (Test-Path $file)) { throw "Build E source missing: $file. The archived Build A source cannot be validated as Build E." }
           }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Install frontend dependencies
@@ -51,7 +51,7 @@ jobs:
           if (-not (Test-Path "frontend/dist/index.html")) { throw "index.html not produced" }
           $assets = @(Get-ChildItem "frontend/dist/assets" -Filter "*.js" -ErrorAction SilentlyContinue)
           if ($assets.Count -lt 1) { throw "Vite produced no JavaScript assets" }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: pilotodin-build-e-frontend-dist
           path: frontend/dist/
@@ -62,12 +62,12 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Confirm Build E backend is present
         shell: pwsh
         run: |
           if (-not (Test-Path "backend/autonomy.py")) { throw "Build E backend not yet uploaded to this branch" }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install backend test dependencies

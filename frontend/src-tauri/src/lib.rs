@@ -147,9 +147,14 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
     // Only one local inference worker is permitted on constrained hardware.
     let mut active = state.inference.lock().map_err(|_| "AI state unavailable".to_string())?;
     if active.is_some() {return Ok(());}
-    let settings = state.inference_settings.lock()
-        .map_err(|_| "AI configuration unavailable".to_string())?;
-    let settings = settings.as_ref().ok_or("Start analytics before AI")?;
+    // Copy the settings before doing model integrity checks or spawning the worker.
+    // A borrowed settings reference cannot be dropped to release the mutex.
+    let (token, port) = {
+        let guard = state.inference_settings.lock()
+            .map_err(|_| "AI configuration unavailable".to_string())?;
+        let settings = guard.as_ref().ok_or("Start analytics before AI")?;
+        (settings.token.clone(), settings.port)
+    };
     let model = verify_bundled_model(&app)?;
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
     let runtime_dlls = resources.join("llama-runtime");
@@ -157,12 +162,11 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
     let mut paths = vec![runtime_dlls.clone()];
     paths.extend(std::env::split_paths(&old_path));
     let runtime_path = std::env::join_paths(paths).map_err(|_| "Invalid inference runtime path".to_string())?;
-    let token = settings.token.clone();
     let command = app.shell().sidecar("pilotodin-inference")
         .map_err(|_| "Bundled inference executable missing".to_string())?
         .args(["--model", model.to_str().ok_or("Invalid model path")?,
                "--alias", "pilotodin-qwen3-1.7b", "--host", "127.0.0.1",
-               "--port", &settings.port.to_string(), "--ctx-size", "2048",
+               "--port", &port.to_string(), "--ctx-size", "2048",
                "--threads", "2", "--parallel", "1", "--gpu-layers", "0",
                "--no-webui", "--no-agent"])
         .env("LLAMA_API_KEY", token.as_str())
@@ -174,7 +178,6 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
         .set_process_group(true);
     let (mut events, child) = command.spawn().map_err(|e| format!("Could not launch local model: {e}"))?;
     *active = Some(ActiveInference { child, token: token.clone() });
-    drop(settings);
     drop(active);
     let owner = app.clone();
     tauri::async_runtime::spawn(async move {
