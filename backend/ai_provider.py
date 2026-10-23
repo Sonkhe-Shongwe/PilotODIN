@@ -317,6 +317,25 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
     prefer_local=selected=='ollama' or mode=='local' or (selected=='auto' and mode=='hybrid')
     local_failed='not_requested'
 
+    def local_failure_code(exc: Exception) -> str:
+        """Safe diagnostic categories only, never a raw error or user payload."""
+        if isinstance(exc, TimeoutError):
+            return 'timeout'
+        if isinstance(exc, urllib.error.HTTPError):
+            return 'model_loading' if exc.code == 503 else 'authentication_failed' if exc.code in (401, 403) else 'worker_http_error'
+        if isinstance(exc, (urllib.error.URLError, ConnectionError, ConnectionRefusedError)):
+            return 'worker_not_reachable'
+        if isinstance(exc, RuntimeError):
+            # These messages originate only from the trusted bundled adapter.
+            detail = str(exc).lower()
+            if 'not configured' in detail:
+                return 'not_configured'
+            if 'no usable text' in detail or 'no choices' in detail:
+                return 'empty_response'
+            if 'timed out' in detail:
+                return 'timeout'
+        return 'generation_failed'
+
     def local_try()->dict|None:
         nonlocal local_failed
         if not cfg.get('local_model_enabled',True):
@@ -336,9 +355,10 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
                     'fallback':False,'reason':None,'attempts':[],'intelligence_mode':mode,
                     'local_status':'ready','incomplete':bool(answer.incomplete),
                     'finish_reason':answer.finish_reason}
-        except Exception:
-            # No exception strings returned: they could contain sensitive provider details.
-            local_failed='unavailable'
+        except Exception as exc:
+            # Expose only allowlisted categories. Never return raw model errors,
+            # local paths, prompts, credentials or exception messages.
+            local_failed=local_failure_code(exc)
             return None
 
     if prefer_local:
@@ -347,14 +367,14 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
     fallback['local_status']=local_failed
     # An explicit local-only model choice must NEVER fall back to cloud.
     if selected=='ollama' or mode=='local':
-        fallback['reason']='Local model unavailable; verified deterministic analysis used'
+        fallback['reason']=f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used'
         return fallback
     if not cloud_allowed:
         if not prefer_local and cfg.get('local_model_enabled',True):
             local_result=local_try()
             if local_result:return local_result
             fallback['local_status']=local_failed
-        fallback['reason']='Cloud disabled or consent not granted; local analytics used'
+        fallback['reason']=(f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used' if local_failed not in ('not_requested','disabled') else 'Cloud disabled or consent not granted; verified deterministic analysis used')
         return fallback
 
     order=list(cfg['provider_order'])
@@ -399,7 +419,7 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
             return local_result
     fallback['attempts']=attempted
     fallback['local_status']=local_failed
-    fallback['reason']='Configured AI models unavailable; deterministic local analysis used'
+    fallback['reason']=f'Configured AI models unavailable; deterministic local analysis used (local model: {local_failed})'
     return fallback
 
 
