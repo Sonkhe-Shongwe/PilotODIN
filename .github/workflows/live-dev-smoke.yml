@@ -1,0 +1,62 @@
+name: Live Development Fast Checks
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+  pull_request:
+    branches:
+      - fix/build-e-offline-odin-diagnostics-20261023
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-and-frontend:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Check launcher Python syntax
+        shell: pwsh
+        run: python -m py_compile tools/live_dev.py
+      - name: Check PowerShell runner syntax
+        shell: pwsh
+        run: |
+          foreach ($name in @('run_live_backend.ps1', 'run_live_frontend.ps1')) {
+            $path = Join-Path 'tools' $name
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $path).Path, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) { throw "PowerShell parse errors in $path : $errors" }
+          }
+      - name: Check production data isolation contract
+        shell: pwsh
+        run: |
+          $code = Get-Content tools/live_dev.py -Raw
+          $backend = Get-Content tools/run_live_backend.ps1 -Raw
+          if (-not $code.Contains('".pilotodin-dev-data"')) { throw 'Developer data directory missing' }
+          if (-not $backend.Contains("'.pilotodin-dev-data'")) { throw 'Backend isolation missing' }
+          if (-not (Get-Content .gitignore -Raw).Contains('.pilotodin-dev-data/')) { throw 'Runtime data must be gitignored' }
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install React dependencies
+        working-directory: frontend
+        shell: pwsh
+        run: npm.cmd install --no-audit --no-fund
+      - name: Build frontend (no installer)
+        working-directory: frontend
+        shell: pwsh
+        run: npm.cmd run build
+      - name: Run workspace frontend tests
+        working-directory: frontend
+        shell: pwsh
+        run: npm.cmd run test:workspace
