@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - build-e
+  pull_request:
+    branches:
+      - build-e
   workflow_dispatch:
 
 permissions:
