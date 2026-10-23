@@ -40,3 +40,8 @@ frontend/src-tauri/resources/llama-runtime/*.dll
 frontend/src-tauri/binaries/pilotodin-inference-*.exe
 # Local Windows frontend compilation evidence
 frontend-check-results/
+
+# Isolated, disposable live development runtime (never commit local projects)
+.pilotodin-dev-data/
+.pilotodin-dev-cache/
+.venv-live/

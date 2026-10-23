@@ -1,0 +1,18 @@
+/*
+ * PilotODIN's central, editable design variables.
+ * Change a value, save, and Vite refreshes the live browser preview.
+ * This is the start of the design-system consolidation, not a completed theme engine.
+ * Keep these declarations last in the stylesheet import order.
+ */
+:root {
+  --po-font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+  --po-primary: #5538c6;
+  --po-brand: #31218d;
+  --po-teal: #087b87;
+  --po-bg: #f7f8fc;
+  --po-border: #e2e5ef;
+}
+
+.po-unified-shell {
+  font-family: var(--po-font-family);
+}

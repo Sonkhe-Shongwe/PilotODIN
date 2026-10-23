@@ -4,6 +4,7 @@ import {UnifiedShell} from './UnifiedShell';
 import {isDesktop, startDesktopBackend} from './desktopBootstrap';
 import './styles.css';
 import './studio.css';
+import './design-tokens.css';
 
 const root = createRoot(document.getElementById('root')!);
 
