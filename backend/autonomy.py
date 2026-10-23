@@ -86,10 +86,17 @@ def _row(run_id: str) -> dict | None:
         alive=bool(t and t.is_alive())
     if d['status'] in ('running','waiting_for_resources') and not alive:
         # A past process cannot be assumed to exist after restart.
-        d['status']='interrupted'
+        # A worker may complete between our SELECT and its liveness check.
+        # Do not report an interrupted run when a terminal status has won the race.
         with storage.connect() as con:
-            con.execute("UPDATE odin_runs SET status='interrupted', updated_at=? WHERE id=? AND status IN ('running','waiting_for_resources')",
-                        (storage.now(),run_id))
+            changed = con.execute("UPDATE odin_runs SET status='interrupted', updated_at=? WHERE id=? AND status IN ('running','waiting_for_resources')",
+                                  (storage.now(),run_id))
+            if changed.rowcount:
+                d['status']='interrupted'
+            else:
+                latest = con.execute('SELECT status FROM odin_runs WHERE id=?',(run_id,)).fetchone()
+                if latest:
+                    d['status']=latest['status']
     try:
         d['stale'] = quality.current_version(d['project_id']) != d['dataset_version']
     except Exception:

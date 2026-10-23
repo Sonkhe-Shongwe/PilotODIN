@@ -22,7 +22,9 @@ test('only intentional AI operations can launch local worker',()=>{
 test('explicit cloud-provider requests never wake the local model',()=>{
  for(const provider of ['gemini','groq','openrouter'])
   assert.equal(shouldLaunchBundledAI('/projects/id/ai/insight','POST',{selected_provider:provider}),false);
- for(const provider of ['local','ollama','auto',undefined])
+ // Explicit rules-only analysis must not allocate the bundled LLM.
+ assert.equal(shouldLaunchBundledAI('/projects/id/ai/insight','POST',{selected_provider:'local'}),false);
+ for(const provider of ['ollama','auto',undefined])
   assert.equal(shouldLaunchBundledAI('/projects/id/ai/insight','POST',{selected_provider:provider}),true);
 });
 test('secondary panes are barred from primary global controls',()=>{
@@ -31,4 +33,12 @@ test('secondary panes are barred from primary global controls',()=>{
  assert.match(app,/if\(embedded\)\{setError\('Import a new dataset from the primary workspace/);
  assert.match(app,/if\(embedded\)return;\s*const handler=\(event:KeyboardEvent\)/);
  assert.match(app,/if\(embedded\)return;\s*let live=true/);
+});
+
+test('Ask ODIN labels deterministic fallback and exposes the explicit offline model route',()=>{
+ const assistant=fs.readFileSync(path.join(__dirname,'../src/AssistantWorkspace.tsx'),'utf8');
+ assert.match(assistant,/value="ollama"/);
+ assert.match(assistant,/VERIFIED RULES · NO LLM/);
+ assert.match(assistant,/local_startup_issue/);
+ assert.match(assistant,/No language-model answer was generated/);
 });

@@ -189,3 +189,35 @@ def test_desktop_status_is_idle_without_loading_model(monkeypatch):
     monkeypatch.setattr(bundled_inference,'_request',unreachable)
     assert bundled_inference.status()['status']=='idle'
     assert ai_provider.test_local_connection()['status']=='idle'
+
+
+def test_offline_generation_timeout_is_classified_without_leaking_details(monkeypatch):
+    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION', 'a'*64)
+    monkeypatch.setattr(ai_provider, '_read_config', lambda: {**ai_provider.DEFAULTS, 'intelligence_mode': 'local'})
+
+    def timed_out(*_args, **_kwargs):
+        raise TimeoutError('private local filesystem path and raw prompt must not leak')
+
+    monkeypatch.setattr(bundled_inference, 'generate', timed_out)
+    result = ai_provider.respond({'row_count': 150}, 'assistant', 'What does the equal median mean?', 'Verified data fallback')
+    assert result['fallback'] is True
+    assert result['source'] == 'local_computed_rules'
+    assert result['local_status'] == 'timeout'
+    assert 'timeout' in result['reason']
+    assert 'private' not in str(result)
+    assert 'filesystem' not in str(result)
+
+
+def test_offline_generation_invalid_response_is_reported_safely(monkeypatch):
+    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION', 'a'*64)
+    monkeypatch.setattr(ai_provider, '_read_config', lambda: {**ai_provider.DEFAULTS, 'intelligence_mode': 'local'})
+
+    def bad_answer(*_args, **_kwargs):
+        raise RuntimeError('Bundled model returned no usable text')
+
+    monkeypatch.setattr(bundled_inference, 'generate', bad_answer)
+    result = ai_provider.respond({}, 'assistant', 'Give an interpretation', 'Verified fallback')
+    assert result['fallback'] is True
+    assert result['local_status'] == 'empty_response'
+    assert result['answer'] == 'Verified fallback'
+    assert 'Bundled model' not in result['reason']

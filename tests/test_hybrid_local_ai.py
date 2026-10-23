@@ -65,7 +65,8 @@ def test_hybrid_local_failure_then_consented_cloud(monkeypatch):
     calls=[]
     monkeypatch.setattr(ai_provider,'_call_provider',lambda *args: (calls.append(args[0]) or 'Grounded cloud explanation'))
     r=ai_provider.respond(ctx(),'quality','What should I check?','local')
-    assert r['provider']=='gemini' and r['local_status']=='unavailable'
+    # A local TimeoutError is now reported precisely without leaking its message.
+    assert r['provider']=='gemini' and r['local_status']=='timeout'
     assert calls==['gemini']
     assert 'LOCAL_PRIVATE_ERROR' not in json.dumps(r)
 

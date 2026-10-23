@@ -43,17 +43,36 @@ export function shouldLaunchBundledAI(path:string, method:'GET'|'POST', body?:un
   if(!(/^\/projects\/[^/]+\/ai\/insight$/.test(path)))return false;
   if(body&&typeof body==='object'&&!Array.isArray(body)){
     const provider=(body as {selected_provider?:unknown}).selected_provider;
-    if(provider==='gemini'||provider==='groq'||provider==='openrouter')return false;
+    if(provider==='gemini'||provider==='groq'||provider==='openrouter'||provider==='local')return false;
   }
   return true;
 }
-async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Promise<void>{
- if(!desktopEndpoint || !shouldLaunchBundledAI(path,method,body))return;
- // Local inference failure is nonfatal; deterministic analytics remain available.
- try {await invoke('launch_bundled_ai');} catch { /* backend reports degraded local AI */ }
+// A desktop launch error must not disappear when the analytical fallback works.
+// Only return fixed diagnostic categories, never Tauri exception text or paths.
+function bundledStartIssue(error:unknown):string {
+ const detail=String(error).toLowerCase();
+ if(detail.includes('integrity')||detail.includes('checksum'))return 'model_integrity_failed';
+ if(detail.includes('manifest')||detail.includes('model missing'))return 'model_assets_missing';
+ if(detail.includes('inference executable')||detail.includes('sidecar'))return 'inference_runtime_missing';
+ if(detail.includes('start analytics'))return 'analytics_not_started';
+ return 'worker_launch_failed';
 }
-export async function get<T>(path:string, options?:{signal?:AbortSignal}):Promise<T>{await requestLocalAI(path,'GET');return check(await fetchLocal(path,{headers:authHeaders(),signal:options?.signal}));}
-export async function post<T>(path:string, body:unknown):Promise<T>{await requestLocalAI(path,'POST',body);return check(await fetchLocal(path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));}
+async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Promise<string|null>{
+ if(!desktopEndpoint || !shouldLaunchBundledAI(path,method,body))return null;
+ try {await invoke('launch_bundled_ai');return null;}
+ catch (error) {return bundledStartIssue(error);}
+}
+export async function get<T>(path:string, options?:{signal?:AbortSignal}):Promise<T>{return check(await fetchLocal(path,{headers:authHeaders(),signal:options?.signal}));}
+export async function post<T>(path:string, body:unknown):Promise<T>{
+ const startupIssue=await requestLocalAI(path,'POST',body);
+ const result=await check(await fetchLocal(path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));
+ // Preserve deterministic answers, but attach the verified desktop startup
+ // failure so the UI does not describe a fallback as successful offline AI.
+ if(startupIssue&&result&&typeof result==='object'&&result.fallback===true){
+  return {...result,local_startup_issue:startupIssue} as T;
+ }
+ return result as T;
+}
 export async function put<T>(path:string, body:unknown):Promise<T>{return check(await fetchLocal(path,{method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));}
 export async function upload(file:File):Promise<{id:string;name:string;profile:Profile}>{
  const form=new FormData();form.append('file',file);
