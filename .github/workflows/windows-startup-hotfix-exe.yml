@@ -1,0 +1,140 @@
+name: PilotODIN Windows Startup Hotfix (EXE only)
+
+on:
+  push:
+    branches:
+      - fix/windows-startup-stack-overflow
+    paths:
+      - 'frontend/src-tauri/src/**'
+      - 'frontend/src-tauri/Cargo.toml'
+      - 'frontend/src/**'
+      - 'frontend/package.json'
+      - '.github/workflows/windows-startup-hotfix-exe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-hotfix:
+    name: Compile corrected Windows app without installer
+    runs-on: windows-latest
+    timeout-minutes: 85
+    steps:
+      - name: Checkout exact hotfix revision
+        uses: actions/checkout@v4
+
+      - name: Ensure this branch includes the heap-allocation correction
+        shell: pwsh
+        run: |
+          $source = Get-Content 'frontend/src-tauri/src/lib.rs' -Raw
+          if (-not $source.Contains('let mut chunk = vec![0u8; 1024 * 1024];')) {
+            throw 'The Windows stack-overflow fix is not in this source revision'
+          }
+          if ($source.Contains('let mut chunk = [0u8; 1024 * 1024];')) {
+            throw 'Unsafe 1 MiB stack allocation still exists'
+          }
+
+      - name: Install Node.js 22 for the embedded React interface
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Compile the real frontend to embed in the executable
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          if (Test-Path package-lock.json) {
+            npm ci --no-audit --no-fund
+          } else {
+            Write-Warning 'Repository has no frontend lockfile; resolving dependencies for this build.'
+            npm install --no-audit --no-fund
+          }
+          if ($LASTEXITCODE -ne 0) {throw 'npm install failed'}
+          npm run test:workspace
+          if ($LASTEXITCODE -ne 0) {throw 'Frontend workspace tests failed'}
+          npm run build
+          if ($LASTEXITCODE -ne 0) {throw 'Frontend build failed'}
+          if (-not (Test-Path dist/index.html)) {throw 'Frontend distribution missing'}
+
+      - name: Install Rust MSVC
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust compilation dependencies
+        uses: SwatinEm/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri -> target
+
+      - name: Stage tiny compile-only resources
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $placeholders = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json"
+          )
+          foreach ($path in $placeholders) {
+            if (Test-Path -LiteralPath $path) {
+              throw "Refusing to modify a real packaged asset: $path"
+            }
+          }
+          foreach ($dir in @("$tauri/binaries", "$tauri/resources/models", "$tauri/resources/llama-runtime", "$tauri/resources/licenses")) {
+            New-Item -ItemType Directory -Force $dir | Out-Null
+          }
+          foreach ($path in $placeholders) {
+            [System.IO.File]::WriteAllBytes((Join-Path $PWD $path), [byte[]](0x00,0x01,0x02))
+          }
+          Write-Host 'Created nonfunctional compile-only placeholders; not building an installer.'
+
+      - name: Compile the production Tauri executable without making an installer
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          # IMPORTANT: plain cargo build --release leaves tauri/custom-protocol
+          # disabled and loads devUrl (127.0.0.1:5173) rather than embedded dist.
+          # The Tauri CLI enables the production protocol and still supports
+          # an EXE-only output using --no-bundle.
+          npm run desktop:build -- --no-bundle --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) {throw 'Production Tauri EXE-only build failed'}
+
+      - name: Validate and isolate the EXE-only replacement
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = 'frontend/src-tauri/target/x86_64-pc-windows-msvc/release/pilotodin-desktop.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {throw 'Compiled desktop EXE is missing'}
+          $info = Get-Item -LiteralPath $exe
+          if ($info.Length -lt 1MB -or $info.Length -gt 100MB) {
+            throw "Unexpected application executable size: $($info.Length)"
+          }
+          $stream = [System.IO.File]::OpenRead((Resolve-Path $exe).Path)
+          try {
+            $header = New-Object byte[] 2
+            if ($stream.Read($header,0,2) -ne 2 -or $header[0] -ne 77 -or $header[1] -ne 90) {
+              throw 'Not a Windows MZ executable'
+            }
+          } finally { $stream.Dispose() }
+          $output = 'build/startup-hotfix'
+          New-Item -ItemType Directory -Force $output | Out-Null
+          Copy-Item -LiteralPath $exe -Destination "$output/pilotodin-desktop.exe"
+          $sha = (Get-FileHash -LiteralPath "$output/pilotodin-desktop.exe" -Algorithm SHA256).Hash
+          "SHA256 $sha  pilotodin-desktop.exe" | Set-Content "$output/SHA256.txt"
+          Write-Host "HOTFIX SHA256: $sha"
+          Write-Host "EXE-only replacement size: $($info.Length) bytes."
+          if (Test-Path "$output/pilotodin-engine.exe") {throw 'Backend must not be shipped in this hotfix'}
+          if (@(Get-ChildItem -Path $output -Filter '*.gguf').Count -gt 0) {throw 'AI model must not be shipped in this hotfix'}
+
+      - name: Publish small executable replacement
+        uses: actions/upload-artifact@v4
+        with:
+          name: PilotODIN-Windows-Startup-Hotfix-EXE-ONLY
+          path: |
+            build/startup-hotfix/pilotodin-desktop.exe
+            build/startup-hotfix/SHA256.txt
+          if-no-files-found: error
+          retention-days: 14

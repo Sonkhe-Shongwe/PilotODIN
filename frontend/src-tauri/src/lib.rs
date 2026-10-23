@@ -129,7 +129,9 @@ fn verify_bundled_model(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     let model = resources.join("models").join(&manifest.model_file);
     let mut reader = File::open(&model).map_err(|_| "Bundled offline model missing".to_string())?;
     let mut hash = Sha256::new();
-    let mut chunk = [0u8; 1024 * 1024];
+    // Allocate the 1 MiB hashing buffer on the heap. A fixed-size local array can
+    // overflow Windows' default 1 MiB thread stack before model verification runs.
+    let mut chunk = vec![0u8; 1024 * 1024];
     loop {
         let count = reader.read(&mut chunk).map_err(|_| "Could not verify local AI model".to_string())?;
         if count == 0 {break;}
@@ -197,6 +199,8 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .manage(DesktopState::default())
         .invoke_handler(tauri::generate_handler![launch_backend, launch_bundled_ai])
         .build(tauri::generate_context!())

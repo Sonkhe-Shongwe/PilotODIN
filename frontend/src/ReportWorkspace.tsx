@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import {FileDown,FileText,History,Save,ShieldCheck,AlertCircle,Plus} from 'lucide-react';
 import {get,post,downloadReportFile} from './api';
+import {saveExport} from './saveExport';
 import './report-workspace.css';
 
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>};
@@ -53,13 +54,15 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  }
  async function download(format:'html'|'pdf'){
    if(!activeId||!opened)return;
-   setBusy('export');setError('');
+   setBusy('export');setError('');setNotice('');
    try{
      const rev=revision??opened.revision;
      const {blob,filename}=await downloadReportFile(`/reports/${encodeURIComponent(activeId)}/export/${format}?revision=${rev}`);
-     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;
-     document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);
-   }catch(e){setError((e as Error).message)}finally{setBusy('')}
+     const result=await saveExport(blob,filename);
+     setNotice(result==='saved'?`Saved ${filename}.`
+       :result==='requested'?`Download requested for ${filename}.`
+       :'Export cancelled. No file was saved.');
+   }catch(e){setError(`Export failed: ${e instanceof Error?e.message:String(e)}`)}finally{setBusy('')}
  }
  const availableMap=new Map<string,EvidenceOption>([...projectEvidence,...availableEvidence].map(e=>[e.id,e] as const));
  const options=[...availableMap.values()].slice(0,150);
