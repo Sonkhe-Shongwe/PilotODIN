@@ -1,6 +1,15 @@
 name: Build E Verified Bundled Offline Windows Installer
 
 on:
+  pull_request:
+    branches: [build-e]
+    paths:
+      - '.github/workflows/bundled-windows-installer.yml'
+      - 'backend/**'
+      - 'frontend/src-tauri/**'
+      - 'frontend/src/**'
+      - 'desktop/**'
+      - 'tests/**'
   push:
     branches: [build-e]
     paths:
