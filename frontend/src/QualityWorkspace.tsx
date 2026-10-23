@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useState} from 'react';
 import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, History, LoaderCircle, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Download, FileSpreadsheet, X} from 'lucide-react';
 import {downloadCleanedData,get,post} from './api';
+import {saveExport} from './saveExport';
 
 export type QualityIssue={id:string;kind:string;column:string|null;affected_rows:number;title:string;explanation:string;severity:'automatic'|'review'|'information';automatic:boolean;proposal:null|{kind:string;column:string;from?:string;to?:string};evidence:Record<string,unknown>;decision:string};
 type Quality={project_id:string;version:number;rows:number;columns:number;summary:{issues:number;automatic_available:number;review_required:number;information:number;applied_actions:number};issues:QualityIssue[]};
@@ -28,6 +29,7 @@ export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChang
   const [exportFilterColumn,setExportFilterColumn]=useState('');
   const [exportFilterValue,setExportFilterValue]=useState('');
   const [exporting,setExporting]=useState(false);
+  const [exportFeedback,setExportFeedback]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
@@ -81,7 +83,7 @@ export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChang
     finally{setBusy(false)}
   }
   async function exportCleanedData(){
-    setExporting(true);setError('');setNotice('');
+    setExporting(true);setError('');setNotice('');setExportFeedback('');
     try{
       const filters=exportFilterColumn&&exportFilterValue?[
         {column:exportFilterColumn,operator:'contains',value:exportFilterValue}
@@ -89,12 +91,15 @@ export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChang
       const {blob,filename}=await downloadCleanedData(`/projects/${projectId}/quality/export`,{
         version:exportVersion,format:exportFormat,columns:exportColumns.length?exportColumns:null,filters
       });
-      const url=URL.createObjectURL(blob);
-      try{const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;
-        document.body.appendChild(anchor);anchor.click();anchor.remove();}
-      finally{setTimeout(()=>URL.revokeObjectURL(url),60000)}
-      setNotice(`Prepared ${filename}. Your original dataset remains unchanged.`);
-    }catch(e){setError((e as Error).message)}finally{setExporting(false)}
+      const result=await saveExport(blob,filename);
+      const message=result==='saved'?`Saved ${filename}. Your original dataset remains unchanged.`
+        :result==='requested'?`Download requested for ${filename}. Check your browser downloads.`
+        :'Export cancelled. No file was saved.';
+      setExportFeedback(message);setNotice(message);
+    }catch(e){
+      const message=`Export failed: ${e instanceof Error?e.message:String(e)}`;
+      setError(message);setExportFeedback(message);
+    }finally{setExporting(false)}
   }
   async function diagnoseMissing(column:string){
     setDiagnosing(true);setDiagnostics(null);setError('');
@@ -136,6 +141,7 @@ export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChang
         {exportFilterColumn&&<input aria-label="Filter contains" placeholder="Contains…" value={exportFilterValue} onChange={e=>setExportFilterValue(e.target.value)} />}
         <button className="btn primary" disabled={!quality||exporting||busy} onClick={()=>void exportCleanedData()}><FileSpreadsheet size={15}/>{exporting?'Exporting…':'Export dataset'}</button>
       </div>
+      {exportFeedback&&<p role="status" className="muted-caption" style={{marginTop:8}}>{exportFeedback}</p>}
       <details style={{marginTop:8}}><summary>Choose specific columns (optional)</summary>
         <p className="muted-caption">If none are selected, every column will be exported.</p>
         <div style={{display:'flex',flexWrap:'wrap',gap:12,marginTop:8}}>
