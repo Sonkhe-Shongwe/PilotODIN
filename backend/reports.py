@@ -230,18 +230,26 @@ def evidence_options(project_id: str):
             e.created_at, i.objective FROM evidence_v1 e JOIN investigations_v1 i
             ON i.id=e.investigation_id WHERE i.project_id=? AND e.status='completed'
             ORDER BY e.created_at DESC,e.rowid DESC LIMIT 100""",(project_id,)).fetchall()
-        snapshots=con.execute("""SELECT id,title,dataset_version,created_at,sha256
-            FROM explore_snapshots_v1 WHERE project_id=?
+        snapshots=con.execute("""SELECT * FROM explore_snapshots_v1
+            WHERE project_id=?
             ORDER BY created_at DESC,rowid DESC LIMIT 50""",(project_id,)).fetchall()
     options=[{'id':r['id'],'operation':r['operation'],'params':json.loads(r['params']),
               'version':r['dataset_version'],'stale':r['dataset_version']!=current,
               'objective':r['objective'],'created_at':r['created_at'],'source':'investigation'} for r in rows]
-    options.extend({
-        'id':r['id'], 'operation':'explore_snapshot',
-        'params':{'title':r['title'],'source_snapshot_sha256':r['sha256']},
-        'version':r['dataset_version'], 'stale':r['dataset_version']!=current,
-        'objective':r['title'],'created_at':r['created_at'],'source':'saved_explore'
-    } for r in snapshots)
+    # Only offer snapshots that can *actually* become verified report exhibits.
+    # Old result-only snapshots stay readable in Explore, but their settings
+    # were never cryptographically bound to the computed values.
+    for r in snapshots:
+        try:
+            _explore_evidence(r)
+        except (ReportError,KeyError,ValueError,TypeError):
+            continue
+        options.append({
+            'id':r['id'], 'operation':'explore_snapshot',
+            'params':{'title':r['title'],'source_snapshot_sha256':r['sha256']},
+            'version':r['dataset_version'], 'stale':r['dataset_version']!=current,
+            'objective':r['title'],'created_at':r['created_at'],'source':'saved_explore'
+        })
     return sorted(options,key=lambda entry:(entry['created_at'],entry['id']),reverse=True)[:150]
 
 
