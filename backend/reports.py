@@ -80,6 +80,12 @@ def _explore_evidence(row: sqlite3.Row) -> dict:
     if digest != row['sha256']:
         raise ReportError('Saved Explore analysis failed integrity verification',409)
     snapshot = json.loads(raw)
+    # The snapshot SHA covers the stored configuration SHA. Verify both before
+    # turning a saved Explore view into a report's verified evidence exhibit.
+    bound_config_hash=snapshot.get('configuration_sha256')
+    observed_config_hash=hashlib.sha256(row['configuration_json'].encode('utf-8')).hexdigest()
+    if not bound_config_hash or bound_config_hash!=observed_config_hash:
+        raise ReportError('Saved Explore configuration is unverified or altered',409)
     config = json.loads(row['configuration_json'])
     if snapshot.get('version') != row['dataset_version']:
         raise ReportError('Saved Explore analysis dataset version disagrees with its evidence',409)
