@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, analytics, data_exports, quality_approvals, reports
+    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, data_exports, quality_approvals, reports
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, analytics, data_exports, quality_approvals, reports
+    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, data_exports, quality_approvals, reports
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -392,6 +392,69 @@ def explore_correlation(project_id: str, method: str = "pearson"):
         return analytics.correlation(df,version,method)
     except ValueError as exc:
         raise HTTPException(status_code=422,detail=str(exc)) from exc
+
+
+class ExploreFilterClause(BaseModel):
+    column: str = Field(min_length=1, max_length=256)
+    op: str
+    value: str | None = Field(default=None, max_length=256)
+    min: float | None = None
+    max: float | None = None
+
+
+class ExploreWorkbenchRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    filters: list[ExploreFilterClause] = Field(default_factory=list, max_length=4)
+    x: str = Field(min_length=1, max_length=256)
+    y: str | None = Field(default=None, max_length=256)
+    kind: str = "auto"
+    aggregation: str = "mean"
+    bins: int = Field(default=16, ge=4, le=40)
+    correlation_method: str = "pearson"
+
+
+@app.get("/api/projects/{project_id}/explore/filter-options")
+def explore_filter_options(project_id: str):
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    return explore_filters.catalog(frame, version)
+
+
+@app.post("/api/projects/{project_id}/explore/workbench")
+def explore_workbench(project_id: str, body: ExploreWorkbenchRequest):
+    """Calculate linked plots and counts on one immutable-version read snapshot."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(status_code=409, detail="Working dataset version changed. Refresh Explore and review filters.")
+    try:
+        subset = explore_filters.apply(frame, [item.model_dump() for item in body.filters])
+        summary = analytics.describe(subset, version)
+        graph = None
+        chart_message = ""
+        if len(subset):
+            try:
+                graph = analytics.chart(subset, version, body.x, body.y, body.kind,
+                                        body.aggregation, body.bins)
+            except ValueError as exc:
+                # An otherwise valid selection may have no eligible numeric values.
+                if "requires numeric" not in str(exc).lower() and not any(
+                    text in str(exc).lower() for text in ("no numeric", "needs numeric",
+                      "must be numeric", "numeric values", "two numeric columns",
+                      "no chartable", "requires two", "empty")
+                ):
+                    raise
+                chart_message = str(exc)
+        else:
+            chart_message = "No rows match these filters. Adjust or clear them."
+        matrix = analytics.correlation(subset, version, body.correlation_method)
+        return {"version": version, "total_rows": int(len(frame)),
+                "filtered_rows": int(len(subset)), "filter_count": len(body.filters),
+                "overview": summary, "chart": graph, "chart_message": chart_message,
+                "correlation": matrix,
+                "note": "All displayed results use the same approved dataset version and active filters."}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.get("/api/projects/{project_id}/explore/insights")
