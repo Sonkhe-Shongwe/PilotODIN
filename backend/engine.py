@@ -133,23 +133,59 @@ def infer_task(series: pd.Series) -> str:
 
 
 def preparation(df: pd.DataFrame, target: str) -> dict:
+    """Show the ACTUAL pipeline plan, including exclusions and risk provenance.
+
+    The audit is deterministic and does not estimate predictive importance:
+    leakage and identifiers require domain review, not automatic deletion.
+    """
     if target not in df.columns: raise ValueError("Target column not found")
     task = infer_task(df[target])
     predictors = [x for x in df.columns if x != target]
-    recommendations = []
+    recommendations, feature_audit, high_risk = [], [], []
     for name in predictors:
-        s = df[name]
+        series = df[name]
+        kind = inferred_kind(series)
+        missing = int(series.isna().sum())
+        distinct = int(series.nunique(dropna=True))
         reasons = []
-        if s.isna().all(): reasons.append("all values missing")
-        if s.nunique(dropna=True) <= 1: reasons.append("constant or empty column")
-        if any(k in name.lower().replace(" ", "_") for k in LEAK_TERMS): reasons.append("possible outcome leakage")
-        if name.lower().endswith(("id", "key")) and s.nunique() >= len(df)*.9: reasons.append("likely identifier")
+        if missing == len(df): reasons.append("all values missing")
+        if distinct <= 1: reasons.append("constant or empty column")
+        normalized = name.lower().replace(" ", "_")
+        leakage = any(term in normalized for term in LEAK_TERMS)
+        identifier = (normalized.endswith(("id","key")) and distinct >= len(df)*.9)
+        if leakage: reasons.append("possible outcome leakage")
+        if identifier: reasons.append("likely identifier")
         if reasons:
             recommendations.append({"column":name,"reason":"; ".join(reasons),"requires_review":True})
-    return {"task": task, "target":target,"available_features": predictors, "recommend_exclude": recommendations,
-            "missing_targets": int(df[target].isna().sum()), "transformations": ["Numeric predictors: median imputation", "Categorical predictors: mode imputation, then one-hot encoding", "Learned transformations fitted within each training fold"],
-            "warnings": ["Target selection, feature timing and grouped/temporal structure require human judgement.",
-                         "The MVP uses random splitting. Do not train temporal/grouped records without appropriate validation."]}
+        risk = "high" if leakage or identifier else "review" if reasons else "low"
+        if risk == "high": high_risk.append(name)
+        treatment = ("Excluded from modelling if all values are missing"
+                     if missing == len(df) or distinct == 0 else
+                     "Numeric: median imputation fitted on training folds" if kind == "numeric" else
+                     "Categorical: mode imputation + capped one-hot encoding fitted on training folds")
+        feature_audit.append({
+            "column":name,"kind":kind,"missing":missing,
+            "missing_pct":round(100*missing/len(df),2),
+            "distinct":distinct,"risk":risk,
+            "reasons":reasons,"treatment":treatment,
+            "default_included":bool(distinct>0),
+        })
+    return {
+        "task":task,"target":target,"available_features":predictors,
+        "recommend_exclude":recommendations,"feature_audit":feature_audit,
+        "high_risk_features":high_risk,
+        "missing_targets":int(df[target].isna().sum()),
+        "transformations":[
+            "Numeric: training-fold median imputation; all-missing columns omitted",
+            "Categorical: training-fold mode imputation and capped one-hot encoding",
+            "Preprocessing fitted separately within cross-validation folds and final training",
+        ],
+        "warnings":[
+            "Feature availability after the outcome and repeated individuals are not inferred from data alone.",
+            "High-risk features remain user-controlled; including any requires an explicit review acknowledgement.",
+            "A time or group validation strategy should be used whenever random independence is not defensible.",
+        ],
+    }
 
 
 def make_estimator(task: str, key: str):
@@ -296,6 +332,12 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
         order=np.argsort(times.to_numpy(),kind='stable')
         cut=int(len(y)*.8)
         if cut<20 or len(y)-cut<5:raise ValueError('Time split requires at least 20 train and 5 test cases')
+        sorted_times=times.iloc[order].reset_index(drop=True)
+        if sorted_times.iloc[cut-1] == sorted_times.iloc[cut]:
+            raise ValueError(
+                'Time split boundary crosses identical timestamps. Use a different time grain '
+                'or review the data; equal-time observations must not cross train and holdout.'
+            )
         X_train,X_test=X.iloc[order[:cut]],X.iloc[order[cut:]]
         y_train,y_test=y.iloc[order[:cut]],y.iloc[order[cut:]]
         folds=3 if len(y_train)>=36 else 2
