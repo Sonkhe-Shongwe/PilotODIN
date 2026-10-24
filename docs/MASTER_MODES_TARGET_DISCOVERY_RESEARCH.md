@@ -33,6 +33,18 @@ Proposed deterministic and reviewable pipeline:
 
 **Non-negotiable:** A “cleaning score” or large number of edits is not a quality goal. Data must remain fit for the real business question.
 
+## Agreed product decision — the user always selects the target (24 October 2026)
+
+**DECIDED:** Intelligent Target Discovery investigates, screens, **ranks and recommends** plausible target variables, but **never finalises the target or starts supervised model training autonomously**. The user makes an explicit selection from the ranked options or manually selects an eligible alternative. Do not preselect a target in a way that silently authorises a run.
+
+- **Target/output variable** means what is being predicted (e.g. fraud investigation outcome, future claim cost). **Predictor/input features** are the data used to predict that target. PilotODIN should handle ordinary feature selection and processing automatically *after* the target choice, with established high-risk review rules retained.
+- Each ranked suggestion explains the proposed question, business usefulness, modelling readiness, scientific blockers and why it ranks above alternatives. Provide direct access to all eligible columns, including lower-ranked targets.
+- A lower-ranked but eligible target can be chosen; its warnings remain visible. A structurally invalid, unsafe or unsubstantiated target cannot be used for misleading one-click training merely by clicking past a warning. Ask for the specific missing fact or require a defensible redefinition.
+- Even if only one option is recommended, the user **must explicitly select it** before an autonomous supervised ML run. If no credible target exists, say so and offer unlabelled analysis rather than train a fabricated task.
+- Once the choice is made, the Master Scientist orchestrator may automate the heavy technical work (candidate feature roles/exclusions, preprocessing, split design, baseline/model comparisons, evaluation and reporting) within approved safeguards and occasional consequential review gates.
+
+**User intent:** Reduce the burden of configuring features, not surrender control over *what problem the model solves*.
+
 ## Initiative 1B — Master Data Scientist (proposed)
 
 **User experience:** Import dataset → optionally give decision or outcome → click **Run Master Data Science** → PilotODIN identifies credible opportunities, prepares predictors, runs a bounded model search, evaluates honestly, explains limits and saves the result.
