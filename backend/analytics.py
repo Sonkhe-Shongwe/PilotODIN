@@ -110,6 +110,8 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
     elif kind=='box':
         s=pd.to_numeric(xs,errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
         if s.empty: raise ValueError('Box summary needs numeric values')
+        out['valid_observations']=int(len(s))
+        out['excluded_observations']=int(len(xs)-len(s))
         q1=float(s.quantile(.25));q3=float(s.quantile(.75));iqr=q3-q1
         low,high=q1-1.5*iqr,q3+1.5*iqr
         inliers=s[(s>=low)&(s<=high)]
