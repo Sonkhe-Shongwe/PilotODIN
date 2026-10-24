@@ -3,6 +3,7 @@ import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, Histor
 import {downloadCleanedData,get,post} from './api';
 import {resolveQualityFocus} from './qualityHandoff';
 import type {QualityFocus} from './qualityHandoff';
+import './quality-investigation.css';
 
 export type QualityIssue={id:string;kind:string;column:string|null;affected_rows:number;title:string;explanation:string;severity:'automatic'|'review'|'information';automatic:boolean;proposal:null|{kind:string;column:string;from?:string;to?:string};evidence:Record<string,unknown>;decision:string};
 type Quality={project_id:string;version:number;rows:number;columns:number;summary:{issues:number;automatic_available:number;review_required:number;information:number;applied_actions:number};issues:QualityIssue[]};
