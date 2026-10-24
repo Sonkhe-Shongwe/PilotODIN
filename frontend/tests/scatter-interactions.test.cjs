@@ -17,7 +17,7 @@ test('scatter view offers real zoom/pan interactions and reset with bounded cont
  assert.match(scatter,/aria-label="Zoom in"/);
  assert.match(scatter,/aria-label="Reset scatter view"/);
  assert.match(scatter,/onSelect\(point\.row_ref\)/);
- assert.match(scatter,/point\.x>=xMin&&point\.x<=xMax/);
+ assert.match(scatter,/p\.x>=xMin&&p\.x<=xMax/);
  assert.match(style,/@media\(prefers-reduced-motion:reduce\)/);
 });
 
