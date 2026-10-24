@@ -47,6 +47,19 @@ Example: `fraud_reported` + Y/N strongly indicates a binary field and a plausibl
 
 **Local-first implementation route:** cheap rule/pattern signatures and seeded bounded value samples; expandable curated domain glossary; table-level context reconciliation; optional local Ask ODIN only to explain and propose constrained schema-validated hypotheses. Record which signals support each claim and which are missing.
 
+## Confirmed user-ownership decision — explicit target selection (24 October 2026)
+
+**Agreed:** Target Intelligence is a **recommendation and screening engine**, not a target-selection agent. Present business-relevant target suggestions ranked by decision value and readiness, but the person must click/select their preferred **target variable** before the autonomous supervised modelling workflow may run.
+
+- Recommendations and ranking are automatic; target commitment is user-controlled even when the system is highly confident.
+- The user may choose any eligible candidate from the full searchable field list, not just the top-ranked suggestions. Explain a lower rank and show unresolved risks without paternalistically forcing the first choice.
+- An explicitly selected target is still subject to objective scientific/operational gates (invalid labels, outcome leakage, sensitive or unsupported use, no defensible split). Human target choice does **not** turn prohibited/invalid data into a valid model.
+- No target is silently preselected as an implicit authorisation; this avoids wasted training and unwanted objective selection. One click to select/confirm the target is a purposeful human decision.
+- Routine **predictor features** should be chosen, engineered and screened by the system after target commitment, while existing training-risk acknowledgment and irreversible-action approvals remain applicable.
+- If the dataset has no eligible supervised target, present the evidence and the option to perform descriptive/unlabelled discovery instead.
+
+**Interface flow:** Dataset understanding → ranked target suggestions (no fitting) → explicit **Choose prediction target** → automatic feature preparation/validation/ML/reporting.
+
 ## B. Proposed cheap ranking engine — no blanket model training
 
 ### Gate 0 — available task types
