@@ -1,0 +1,17 @@
+/* Quantitative charts: interval histograms and scale-aligned Tukey plots. */
+.po-histogram{border:1px solid #e3e7f3;border-radius:13px;padding:18px 16px 12px;background:linear-gradient(180deg,#fff,#f8faff)}
+.po-hist-meta{display:flex;justify-content:space-between;gap:12px;color:#65738d;font-size:12px;margin-bottom:12px}
+.po-hist-bars{display:grid;align-items:stretch;gap:1px;height:235px;border-bottom:1px solid #aab9d1;background:repeating-linear-gradient(to top,transparent 0,transparent 24.5%,#ecedf6 25%)}
+.po-hist-bin{display:flex;flex-direction:column;justify-content:flex-end;min-width:0;height:100%;outline-offset:3px;position:relative}
+.po-hist-rectangle{width:100%;background:linear-gradient(180deg,#7770ef,#22b9bd);border-radius:3px 3px 0 0;min-height:2px;transition:filter .16s ease}
+.po-hist-bin:is(:hover,:focus) .po-hist-rectangle{filter:brightness(1.17)}
+.po-hist-tick{position:absolute;top:calc(100% + 4px);left:0;white-space:nowrap;color:#7587a3;font-size:9px;transform:translateX(-4px)}
+.po-hist-foot{text-align:center;color:#697993;font-size:12px;margin-top:28px}
+.po-box-outlier{position:absolute;top:50%;width:10px;height:10px;transform:translate(-50%,-50%);border-radius:50%;background:#d26a39;border:2px solid white;box-shadow:0 0 0 1px #bc6e4b;z-index:2}
+.po-box-scale{display:flex;justify-content:space-between;font-size:11px;color:#60708c;margin:7px 0 14px}
+.po-box-facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.po-box-facts span{border-radius:8px;background:#f3f4ff;padding:8px 7px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.po-box-facts small{font-size:10px;color:#697693}
+.po-box-facts strong{font-size:12px;color:#272c5d;overflow-wrap:anywhere}
+@media(max-width:700px){.po-box-facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.po-hist-rectangle{transition:none}}

@@ -1,9 +1,10 @@
 import {useEffect,useState} from 'react';
 import {Activity, BarChart3, ChevronDown, LoaderCircle, RefreshCw, Sparkles} from 'lucide-react';
 import {get} from './api';
+import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
-type Plot={version:number;type:string;x:string;y:string|null;data:{label?:string;value?:number;x?:number;y?:number;min?:number;q1?:number;median?:number;q3?:number;max?:number}[];sampled:boolean;truncated?:boolean;note:string};
+type Plot={version:number;type:string;x:string;y:string|null;data:{label?:string;value?:number;x?:number;y?:number;min?:number;q1?:number;median?:number;q3?:number;max?:number;start?:number;end?:number;whisker_low?:number;whisker_high?:number;outliers?:number[];outliers_total?:number}[];sampled:boolean;truncated?:boolean;valid_observations?:number;excluded_observations?:number;note:string};
 type Finding={category:string;column:string|null;title:string;detail:string};
 type ChartSuggestion={title:string;x:string;y:string|null;kind:string;aggregation:string;reason:string};
 type ExplorePreferences={x:string;y:string;kind:string;aggregation:string};
@@ -31,7 +32,11 @@ function Viz({plot}:{plot:Plot}){
   }
   if(plot.type==='box'){
     const d=data[0],scale=(v:number)=>Math.max(3,Math.min(97,((v-(d.min??0))/((d.max??0)-(d.min??0)||1))*94+3));
-    return <div className="boxplot"><div className="boxplot-track"><div className="boxplot-whisker" style={{left:`${scale(d.min??0)}%`,width:`${scale(d.max??0)-scale(d.min??0)}%`}}/><div className="boxplot-iqr" style={{left:`${scale(d.q1??0)}%`,width:`${scale(d.q3??0)-scale(d.q1??0)}%`}}/><div className="boxplot-median" style={{left:`${scale(d.median??0)}%`}}/></div><div className="boxplot-stats">{(['min','q1','median','q3','max'] as const).map(k=><span key={k}><small>{k.toUpperCase()}</small><b>{format(d[k]??0)}</b></span>)}</div></div>;
+    return <div className="boxplot"><div className="boxplot-track"><div className="boxplot-whisker" style={{left:`${scale(d.whisker_low??d.min??0)}%`,width:`${scale(d.whisker_high??d.max??0)-scale(d.whisker_low??d.min??0)}%`}}/><div className="boxplot-iqr" style={{left:`${scale(d.q1??0)}%`,width:`${scale(d.q3??0)-scale(d.q1??0)}%`}}/><div className="boxplot-median" style={{left:`${scale(d.median??0)}%`}}/>{d.outliers?.map((v,i)=><span className="po-box-outlier" style={{left:`${scale(v)}%`}} key={i} title={`Outlying observation: ${format(v)}`}/>)}</div><div className="po-box-scale"><span>{format(d.min??0)}</span><span>{format(d.max??0)}</span></div><div className="po-box-facts">{[['Lower whisker',d.whisker_low??d.min],['Q1',d.q1],['Median',d.median],['Q3',d.q3],['Upper whisker',d.whisker_high??d.max]].map(([label,value])=><span key={String(label)}><small>{label}</small><strong>{format(Number(value??0))}</strong></span>)}</div><p className="muted-caption">{d.outliers_total??0} outlying observations beyond 1.5×IQR; {Math.min(40,d.outliers?.length??0)} rendered as dots.</p></div>;
+  }
+  if(plot.type==='histogram'){
+    const top=Math.max(1,...data.map(d=>d.value??0));
+    return <div className="po-histogram" role="group" aria-label={`Histogram of ${plot.x} with ${data.length} equal-width numeric intervals`}><div className="po-hist-meta"><span>Frequency ↑</span><span>{plot.valid_observations??data.reduce((n,d)=>n+(d.value??0),0)} valid · {plot.excluded_observations??0} excluded</span></div><div className="po-hist-bars" style={{gridTemplateColumns:`repeat(${data.length},minmax(0,1fr))`}}>{data.map((d,i)=><div className="po-hist-bin" key={i} title={`${d.label}: ${d.value} observations`} tabIndex={0} aria-label={`${d.label}: ${d.value} observations`}><div className="po-hist-rectangle" style={{height:`${Math.max(1,((d.value??0)/top)*100)}%`}}/><span className="po-hist-tick">{i%Math.max(1,Math.ceil(data.length/6))===0?format(d.start??0):''}</span></div>)}</div><div className="po-hist-foot">{plot.x} → · Hover or focus a bin for its interval and count.</div></div>;
   }
   const numeric=data.map(d=>d.value??0);const max=Math.max(1,...numeric.map(Math.abs));
   if(plot.type==='line'){
@@ -52,6 +57,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
   const [y,setY]=useState(()=>readPreferences(projectId).y);
   const [kind,setKind]=useState(()=>readPreferences(projectId).kind);
   const [aggregation,setAggregation]=useState(()=>readPreferences(projectId).aggregation);
+  const [bins,setBins]=useState(16);
   useEffect(()=>{if(!overview)return;try{localStorage.setItem(preferencesKey(projectId),JSON.stringify({x,y,kind,aggregation}))}catch{/* Project evidence is stored in the backend, not here. */}},[projectId,x,y,kind,aggregation,overview]);
   const [plot,setPlot]=useState<Plot|null>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(false);
   useEffect(()=>{let active=true;Promise.all([get<Overview>(`/projects/${projectId}/explore/overview`),get<{findings:Finding[]}>(`/projects/${projectId}/explore/insights`),get<{recommendations:ChartSuggestion[]}>(`/projects/${projectId}/explore/recommended`)]).then(([d,f,recommended])=>{if(!active)return;setOverview(d);setFindings(f.findings);setSuggestions(recommended.recommendations);const goodCategory=d.columns.find(c=>c.kind==='categorical'&&!/(?:id|key|code|number)$/i.test(c.name)&&c.unique<=Math.min(100,Math.max(2,d.rows*.5)));
@@ -64,11 +70,11 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
           if(goodCategory&&measure)setY(measure.name);
           if(measure&&measure.mean!==undefined&&measure.median!==undefined&&Math.abs(measure.mean-measure.median)>Math.max(Math.abs(measure.median)*.4,1))setAggregation('median');
         }}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[projectId,versionToken]);
-  useEffect(()=>{if(!x)return;let live=true;setLoading(true);setError('');if(kind==='scatter'&&(overview?.columns.find(c=>c.name===x)?.kind!=='numeric'||overview?.columns.find(c=>c.name===y)?.kind!=='numeric'||x===y))return;
-    const params=new URLSearchParams({x,kind,aggregation});if(y)params.set('y',y);
+  useEffect(()=>{if(!x)return;let live=true;setLoading(true);setError('');if(kind==='scatter'&&(overview?.columns.find(c=>c.name===x)?.kind!=='numeric'||overview?.columns.find(c=>c.name===y)?.kind!=='numeric'||x===y)){setLoading(false);setPlot(null);return;}
+    const params=new URLSearchParams({x,kind,aggregation});if(y&&kind!=='histogram'&&kind!=='box')params.set('y',y);if(kind==='histogram')params.set('bins',String(bins));
     get<Plot>(`/projects/${projectId}/explore/chart?${params}`).then(p=>{if(live)setPlot(p)}).catch(e=>{if(live){setError(e.message);setPlot(null)}}).finally(()=>{if(live)setLoading(false)});
     return()=>{live=false};
-  },[projectId,x,y,kind,aggregation,versionToken,overview]);
+  },[projectId,x,y,kind,aggregation,bins,versionToken,overview]);
   const cols=overview?.columns??[];const numerical=cols.filter(c=>c.kind==='numeric');
   const selectedX=cols.find(c=>c.name===x);
   const selectedY=cols.find(c=>c.name===y);
@@ -82,7 +88,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
       const second=selectedY?.kind==='numeric'&&y!==first?y:numerical.find(c=>c.name!==first)!.name;
       setX(first);setY(second);
     }
-    if((next==='histogram'||next==='box')&&selectedX?.kind!=='numeric'&&numerical.length){setX(numerical[0].name);setY('')}
+    if(next==='histogram'||next==='box'){setY('');if(selectedX?.kind!=='numeric'&&numerical.length)setX(numerical[0].name)}
     setKind(next);
   }
   function changeX(next:string){setX(next);if(kind==='scatter'&&cols.find(c=>c.name===next)?.kind!=='numeric')setKind('bar');
@@ -93,7 +99,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
     <div className="quality-stats"><div><small>RECORDS</small><strong>{overview?format(overview.rows):'—'}</strong></div><div><small>FIELDS</small><strong>{cols.length||'—'}</strong></div><div><small>MISSING CELLS</small><strong>{overview?format(overview.missing_cells):'—'}</strong></div><div><small>EXACT DUPLICATES</small><strong>{overview?format(overview.exact_duplicates):'—'}</strong></div></div>
     {suggestions.length>0&&<section className="panel"><div className="panel-title"><Sparkles size={18}/><h2>Recommended investigations</h2><span className="pill muted">LOCAL EVIDENCE</span></div><div className="recommend-grid">{suggestions.slice(0,6).map((r,i)=><button key={i} className="recommend-card" onClick={()=>{setX(r.x);setY(r.y??'');setKind(r.kind);setAggregation(r.aggregation)}}><strong>{r.title}</strong><small>{r.reason}</small><span>Open chart →</span></button>)}</div></section>}
     <section className="panel"><div className="panel-title"><BarChart3 size={19}/><h2>Interactive chart builder</h2><span className="pill muted">COMPUTED LOCALLY</span></div>
-      <div className="chart-controls"><label>Chart type<select className="input" value={kind} onChange={(e:any)=>changeKind(e.target.value)}><option value="auto">Automatic</option><option value="bar">Bar / categories</option><option value="histogram">Histogram</option><option value="scatter" disabled={!scatterReady}>Scatter · two numeric columns</option><option value="line">Line / trend</option><option value="box">Box summary</option></select></label><label>X variable<select className="input" value={x} onChange={(e:any)=>changeX(e.target.value)}>{cols.map(c=><option key={c.name}>{c.name}</option>)}</select></label><label>Y variable<select className="input" value={y} onChange={(e:any)=>setY(e.target.value)}><option value="">None · record frequency</option>{numerical.filter(c=>c.name!==x).map(c=><option key={c.name}>{c.name}</option>)}</select></label><label>Aggregation<select className="input" value={aggregation} onChange={(e:any)=>setAggregation(e.target.value)}>{['mean','sum','median','count'].map(a=><option key={a} value={a}>{a}</option>)}</select></label></div>
+      <div className="chart-controls"><label>Chart type<select className="input" value={kind} onChange={(e:any)=>changeKind(e.target.value)}><option value="auto">Automatic</option><option value="bar">Bar / categories</option><option value="histogram">Histogram</option><option value="scatter" disabled={!scatterReady}>Scatter · two numeric columns</option><option value="line">Line / trend</option><option value="box">Box summary</option></select></label><label>X variable<select className="input" value={x} onChange={(e:any)=>changeX(e.target.value)}>{cols.map(c=><option key={c.name}>{c.name}</option>)}</select></label>{kind!=='histogram'&&kind!=='box'&&<label>Y variable<select className="input" value={y} onChange={(e:any)=>setY(e.target.value)}><option value="">None · record frequency</option>{numerical.filter(c=>c.name!==x).map(c=><option key={c.name}>{c.name}</option>)}</select></label>}{!['histogram','box','scatter'].includes(kind)&&<label>Aggregation<select className="input" value={aggregation} onChange={(e:any)=>setAggregation(e.target.value)}>{['mean','sum','median','count'].map(a=><option key={a} value={a}>{a}</option>)}</select></label>}{kind==='histogram'&&<label>Histogram bins<select className="input" value={bins} onChange={e=>setBins(Number(e.target.value))}>{[8,12,16,24,32].map(n=><option key={n} value={n}>{n} bins</option>)}</select></label>}</div>
       {chartWarning&&<div className="mini-info warn-icon" role="status">{chartWarning}</div>}
       {error&&<div className="alert-error"><Activity size={16}/>{error}</div>}
       {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating chart…</div>:plot&&<><h3 className="chart-title">{plot.x}{plot.y?` vs ${plot.y}`:''} · {plot.type}</h3><Viz plot={plot}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
