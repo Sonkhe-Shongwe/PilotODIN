@@ -63,3 +63,16 @@
 .po-inspect-pagination{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin:12px 0}
 .po-inspect-pagination>span{font-size:12px;font-weight:700;color:#62718f;margin-right:auto}
 @media(prefers-reduced-motion:reduce){.po-inspect-point{transition:none}}
+
+
+/* Bring a selected chart's records into view and briefly confirm arrival.
+   Prefer reduced motion on systems that request it. */
+.po-record-inspector{scroll-margin-top:24px;animation:po-inspector-arrival .85s ease-out both}
+.po-record-inspector:focus-visible{outline:2px solid #6e5de9;outline-offset:3px}
+@keyframes po-inspector-arrival{
+  from{box-shadow:0 0 0 5px rgba(111,92,232,.22)}
+  to{box-shadow:0 0 0 0 rgba(111,92,232,0)}
+}
+@media(prefers-reduced-motion:reduce){
+  .po-record-inspector{animation:none}
+}
