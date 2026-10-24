@@ -23,6 +23,10 @@ They are **product proposals, not implemented phases**. The second initiative is
 
 Read both linked research documents for the precise distinction between selecting the output (human) and selecting input features (usually automated).
 
+## Windows result — real insurance invalid hour rejection PASSED (24 October 2026)
+
+Following the domain-guard patch, the user supplied a **Live Dev Predict Studio** screenshot for `insurance_claims_CLEANED` showing **`incident_hour_of_the_day must not exceed 23`** and the prediction panel reset to **Ready when you are**. This is direct Windows UI evidence that the `25` case was rejected without issuing a new prediction. A second screenshot confirms the unusual-value warning workflow still appears and displays held-out 82.0% accuracy, without revealing the exact output class or incident-hour input. **Valid-hour=12, negative vehicle count, experiment reopen/persistence, remaining sensitivity/baseline review, and focused Python regressions after this patch still lack demonstrated acceptance**. Update QA Issue #2 with observed evidence, not a blanket A3-complete claim.
+
 ## New Predict Studio functional evidence & targeted validation patch (24 October 2026)
 
 Owner's insurance claims Predict Studio screenshots visibly displayed **missing-input training-fitted imputation warnings**, **out-of-training-range warnings** for deliberately extreme values, and an **82.0% held-out performance reference**. The exact prediction class/probabilities were not visible in the submitted crop. Source audit found that `HourOfDay` strict numeric checks did not recognise the real input `incident_hour_of_the_day`. The backend now recognises exactly that alias and `number_of_vehicles_involved` as a nonnegative integral count; a focused regression test also covers pre-change saved schemas. **This source patch is not Windows-tested yet**, so A3's final invalid-value and reopen/persistence acceptance remain open. No automatic blanket bounds were added to unusual financial amounts.
