@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {BookOpen,Check,History,LoaderCircle,Save,ShieldCheck} from 'lucide-react';
+import {BookOpen,Check,History,LoaderCircle,Save,ShieldCheck,ArrowRight} from 'lucide-react';
 import {get,post} from './api';
 import './saved-explore-analyses.css';
 
@@ -18,9 +18,9 @@ type FrozenEvidence={
 type SavedAnalysis=SavedSummary&{project_id:string;current_dataset_version:number;configuration:ExploreState;snapshot:FrozenEvidence};
 function number(n:number){return n.toLocaleString(undefined,{maximumFractionDigits:2})}
 
-export function SavedExploreAnalyses({projectId,version,configuration,onRestore,ready}:{
+export function SavedExploreAnalyses({projectId,version,configuration,onRestore,onSendToDeliver,ready}:{
  projectId:string;version:number|null;configuration:ExploreState;
- onRestore:(config:ExploreState)=>void;ready:boolean;
+ onRestore:(config:ExploreState)=>void;onSendToDeliver?:(id:string)=>void;ready:boolean;
 }){
  const [title,setTitle]=useState('');
  const [list,setList]=useState<SavedSummary[]>([]);
@@ -81,12 +81,13 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
   </div>
   {selected&&<div className="po-saved-frozen" aria-label="Saved analytical evidence">
     <div className="po-saved-frozen-title"><ShieldCheck size={18}/><strong>{selected.title}</strong><span className={selected.stale?'po-saved-stale':'po-saved-current'}>{selected.stale?'HISTORICAL SNAPSHOT':'VERIFIED SNAPSHOT'}</span></div>
+    {onSendToDeliver&&<button type="button" className="btn po-saved-deliver" disabled={busy!==''} onClick={()=>onSendToDeliver(selected.id)}><ArrowRight size={15}/> Use verified evidence in Deliver</button>}
     <p className="body-muted">{selected.stale?'This evidence belongs to an older approved dataset version. Its results are frozen and were not recalculated on the current data.':'The saved configuration is available in Explore. Its evidence below is the original verified, frozen result.'}</p>
     <div className="po-saved-kpis"><span><small>Version</small><strong>{selected.dataset_version}</strong></span><span><small>Rows in original dataset</small><strong>{number(selected.snapshot.total_rows)}</strong></span><span><small>Filtered rows</small><strong>{number(selected.snapshot.filtered_rows)}</strong></span><span><small>Chart</small><strong>{selected.snapshot.chart?.type??'No chartable rows'}</strong></span></div>
     <p className="muted-caption">Chart: {selected.configuration.x}{selected.configuration.y?` vs ${selected.configuration.y}`:''} · {selected.configuration.filters.length} filters · {selected.configuration.aggregation} aggregation</p>
     {selected.snapshot.chart&&selected.snapshot.chart.type==='bar'&&<div className="po-saved-summary-table"><table><thead><tr><th>Saved group</th><th>Saved value</th></tr></thead><tbody>{selected.snapshot.chart.data.slice(0,12).map((row,i)=><tr key={i}><td>{row.label??'—'}</td><td>{row.value===undefined?'—':number(row.value)}</td></tr>)}</tbody></table></div>}
     <p className="muted-caption">SHA-256: <code>{selected.sha256}</code></p>
-    <p className="muted-caption">These results are locally computed descriptive evidence, not causal conclusions. Export and attachment to Deliver will be handled in the reporting macro.</p>
+    <p className="muted-caption">These results are locally computed descriptive evidence, not causal conclusions. Select Use verified evidence in Deliver to prepare a report containing this immutable snapshot, including historical versions.</p>
   </div>}
  </section>;
 }
