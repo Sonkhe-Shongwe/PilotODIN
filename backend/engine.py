@@ -560,11 +560,17 @@ def input_schema(X: pd.DataFrame) -> list[dict]:
 
 
 def _prediction_domain(name: str) -> dict | None:
-    """Strict bounds only for explicitly recognized clock and count fields."""
+    """Strict bounds only for recognizable clock and nonnegative count fields.
+
+    The first guardrail covered HourOfDay in demo data but missed the exact
+    incident_hour_of_the_day field in real insurance claims. Use small,
+    reviewed field-name aliases, not broad substring guessing: arbitrary
+    fields containing 'hour', 'vehicle' or 'loss' need domain-specific meaning.
+    """
     normalized = ''.join(c for c in name.lower() if c.isalnum())
-    if normalized == "hourofday":
+    if normalized in {"hourofday", "incidenthouroftheday"}:
         return {"min": 0, "max": 23, "integer": True}
-    if normalized == "transactionsinlasthour":
+    if normalized in {"transactionsinlasthour", "numberofvehiclesinvolved"}:
         return {"min": 0, "integer": True}
     return None
 
