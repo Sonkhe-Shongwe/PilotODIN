@@ -106,6 +106,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
   window.addEventListener('hashchange',sync);window.addEventListener('pilotodin:route-commit',sync);return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync)}
  },[embeddedStage]);
   function go(next:Stage){
+    if(next!=='quality')setQualityFocus(null);
     scrollRef.current[page]=mainRef.current?.scrollTop??0;
     if(embedded){
       // Embedded views cannot navigate the main window or escape the dock registry.
