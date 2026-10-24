@@ -173,6 +173,10 @@ def preparation(df: pd.DataFrame, target: str) -> dict:
     return {
         "task":task,"target":target,"available_features":predictors,
         "recommend_exclude":recommendations,"feature_audit":feature_audit,
+        "resource_plan":training_resource_plan(
+            df.loc[:,[col for col in predictors if df[col].nunique(dropna=True)>0]],
+            int(df[target].notna().sum())),
+        "resource_plan_scope":"Preflight estimate for all usable candidate predictors before manual exclusions; the training request recomputes the actual budget.",
         "high_risk_features":high_risk,
         "missing_targets":int(df[target].isna().sum()),
         "transformations":[
