@@ -59,6 +59,8 @@ def test_save_is_server_recomputed_immutable_with_integrity_proof(saved_store):
     assert result["snapshot"]["configuration_sha256"]==hashlib.sha256(saved["configuration_json"].encode()).hexdigest()
     assert df.equals(before)
     assert len(saved_analyses.listing("a"))==1
+    assert saved_analyses.listing("a")[0]["results_valid"] is True
+    assert saved_analyses.listing("a")[0]["configuration_verified"] is True
 
 
 def test_stale_read_shows_frozen_result_without_auto_recomputation(saved_store):
@@ -151,3 +153,19 @@ def test_legacy_snapshot_checksum_still_readable_but_settings_unverified(saved_s
     legacy=saved_analyses.load("a",result["id"])
     assert legacy["configuration_verified"] is False
     assert legacy["snapshot"]["filtered_rows"]==3
+    metadata=saved_analyses.listing("a")[0]
+    assert metadata["results_valid"] is True
+    assert metadata["configuration_verified"] is False
+
+
+def test_library_detects_corrupt_result_without_exposing_source_records(saved_store):
+    _,_,conn=saved_store
+    result=save_example()
+    with conn() as con:
+        con.execute("UPDATE explore_snapshots_v1 SET snapshot_json=? WHERE id=?",
+                    ('{"tampered":true}',result["id"]))
+    listing=saved_analyses.listing("a")
+    assert len(listing)==1
+    assert listing[0]["results_valid"] is False
+    assert listing[0]["configuration_verified"] is False
+    assert "snapshot_json" not in listing[0] and "configuration_json" not in listing[0]
