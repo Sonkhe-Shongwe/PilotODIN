@@ -8,6 +8,16 @@
 
 **Acceptance state (owner Windows checkpoint, 24 October 2026):** Focused local checks **passed: 99 frontend tests, 27 backend tests**, TypeScript/Vite build and Python syntax compilation (~23.2 seconds). **Interactive training → Evaluate was observed on 24 Oct 2026 using insurance_claims_CLEANED: populated CV leaderboard, post-selection held-out metrics and confusion matrix. This is partial functional acceptance, not a full A3 sign-off. Predict-domain inputs, saved experiment reopening, lower-page baseline/explainability details, realistic 8 GB stress and installed/offline desktop acceptance remain pending.** This is not an exhaustive backend suite. See [living handoff](./CONTINUE_HERE.md).
 
+### A3 preflight follow-up — split metadata should not consume model memory (25 October 2026)
+
+After Windows demonstrated the invalid-hour prediction rejection, a source audit found that group/time split keys were removed from predictors **only after** the 8 GB resource guard had already estimated model input size. A high-cardinality group ID or timestamp could therefore cause an invalid false refusal of an otherwise eligible experiment.
+
+**Source fix committed:** both `backend/main.py::new_experiment` and `backend/engine.py::run_training` now compute effective training exclusions (`excluded_features` plus any non-random split key) **before calling** `validate_config`. The original user's manual exclusion list is kept unchanged in the saved configuration, while the split column remains available for its real validation strategy. The API now also rejects target-as-split immediately rather than enqueueing a doomed experiment.
+
+**Coverage committed:** `tests/test_ml_a3_preparation_and_split_safety.py` parametrically checks group and time flows, ensures split columns are absent from preflight and fitted input schema, verifies the source frame and user exclusions remain unchanged, and rejects target-as-split.
+
+**Verification status:** Re-fetched committed files and verified source contracts; **new Python tests have not yet run on owner Windows**, and no full A3/8 GB acceptance is claimed. Existing Windows evidence for the insurance prediction hour guard is separate. The next consolidated local A3 script run will include the new tests.
+
 ## What changed
 
 1. Prepare returns one backend-authored, version-dependent audit row per candidate feature: numeric/categorical role, null and distinct counts, treatment used by the existing scikit-learn pipeline, and review reasons. Empty-only features are excluded by the existing backend `validate_config`; target and split keys are never predictors.
