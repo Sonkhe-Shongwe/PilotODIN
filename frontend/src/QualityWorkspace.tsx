@@ -244,7 +244,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
                <button className="btn" type="button" disabled={investigating||busy} onClick={()=>void investigateFinding(issue)}>{investigating?<LoaderCircle size={15} className="spin"/>:<Sparkles size={15}/>} Investigate {issue.kind==='outliers'?'unusual values':'identifier characteristics'}</button>
                <button className="btn" type="button" onClick={showAffectedRecords}><FileSpreadsheet size={15}/> Show matching source rows</button>
              </div>
-             {investigation?.issue_id===issue.id&&investigation.version===quality.version&&<div className="po-quality-investigation-result" role="region" aria-label="Read-only finding investigation">
+             {investigation?.issue_id===issue.id&&investigation.version===quality?.version&&<div className="po-quality-investigation-result" role="region" aria-label="Read-only finding investigation">
                <div className="po-quality-investigation-heading"><strong>{investigation.statistical_method}</strong><span className="pill muted">VERIFIED · v{investigation.version}</span></div>
                <p><b>{investigation.affected_rows.toLocaleString()}</b> affected of {investigation.dataset_rows.toLocaleString()} records · field <b>{investigation.column}</b> · stored dtype <code>{investigation.stored_dtype}</code>.</p>
                <div className="po-quality-investigation-stats">{Object.entries(investigation.statistics).filter(([,value])=>typeof value==='number'||typeof value==='string').map(([name,value])=><div key={name}><small>{name.replaceAll('_',' ')}</small><strong>{typeof value==='number'?value.toLocaleString(undefined,{maximumFractionDigits:4}):String(value)}</strong></div>)}</div>
