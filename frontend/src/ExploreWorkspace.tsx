@@ -6,6 +6,7 @@ import type {ExploreState} from './SavedExploreAnalyses';
 import {insightQualityKind} from './qualityHandoff';
 import type {QualityFocus} from './qualityHandoff';
 import {ScatterExplorer} from './ScatterExplorer';
+import {revealRecordInspector} from './revealRecordInspector';
 import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
@@ -136,15 +137,13 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendT
       .finally(()=>{if(live)setLoading(false)});
     return()=>{live=false};
   },[projectId,x,y,kind,aggregation,bins,versionToken,overview,filterCatalog,filters,corrMethod,colorBy]);
-  // Bring the newly opened inspector into view immediately, even while rows load.
-  // Honour OS reduced-motion settings and never scroll again during pagination.
+  // Reveal each new chart selection with a slower eased motion. Never repeat
+  // for record pagination; cancel if selection changes or the user scrolls.
   useLayoutEffect(()=>{
     if(!selection)return;
     const panel=inspectorRef.current;
     if(!panel)return;
-    const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    panel.focus({preventScroll:true});
-    panel.scrollIntoView({behavior:reducedMotion?'auto':'smooth',block:'start',inline:'nearest'});
+    return revealRecordInspector(panel);
   },[selection]);
   // Chart selections and their row references never survive filters, version
   // changes or a new chart configuration. No selection is persisted as an ID.
