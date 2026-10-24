@@ -2,7 +2,7 @@
 
 **Branch:** `feature/live-dev-workspace-20261023`  
 **Checkpoint:** A3-1 through A3-4: audited features, leak-aware splits, held-out evaluation, bounded post-selection sensitivity, conservative 8 GB-local resource controls and group-identity integrity  
-**Acceptance state (owner Windows checkpoint, 24 October 2026):** Focused local checks **passed: 99 frontend tests, 27 backend tests**, TypeScript/Vite build and Python syntax compilation (~23.2 seconds). **Interactive Prepare → Model Lab → Evaluate → Predict, realistic 8 GB stress and installed/offline desktop acceptance remain pending.** This is not an exhaustive backend suite. See [living handoff](./CONTINUE_HERE.md).
+**Acceptance state (owner Windows checkpoint, 24 October 2026):** Focused local checks **passed: 99 frontend tests, 27 backend tests**, TypeScript/Vite build and Python syntax compilation (~23.2 seconds). **Interactive training → Evaluate was observed on 24 Oct 2026 using insurance_claims_CLEANED: populated CV leaderboard, post-selection held-out metrics and confusion matrix. This is partial functional acceptance, not a full A3 sign-off. Predict-domain inputs, saved experiment reopening, lower-page baseline/explainability details, realistic 8 GB stress and installed/offline desktop acceptance remain pending.** This is not an exhaustive backend suite. See [living handoff](./CONTINUE_HERE.md).
 
 ## What changed
 
