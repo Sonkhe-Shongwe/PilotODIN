@@ -172,62 +172,178 @@ def load(report_id: str, revision: int | None = None):
             **content}
 
 
+def _display_value(value) -> str:
+    """Display a stored, verified value without recomputing or reinterpreting it."""
+    if value is None:
+        return "Not recorded"
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
+    if isinstance(value, (int, float, str)):
+        return str(value)
+    if isinstance(value, list):
+        if not value:
+            return "None"
+        return ", ".join(_display_value(v) for v in value[:12]) + (f" (+{len(value)-12} more)" if len(value)>12 else "")
+    if isinstance(value, dict):
+        return "; ".join(f"{str(k).replace('_',' ')}: {_display_value(v)}" for k, v in list(value.items())[:12])
+    return str(value)
+
+
+def _exhibit(artifact: dict):
+    """Shared typed display model for both HTML and PDF (snapshot is immutable)."""
+    operation=artifact.get("operation","verified analysis")
+    result=artifact.get("result") or {}
+    params=artifact.get("params") or {}
+    facts=[]
+    if isinstance(result.get("summary"),dict):
+        facts.extend((str(k).replace("_"," ").title(),_display_value(v)) for k,v in result["summary"].items())
+    for key,val in result.items():
+        if key in ("summary","data","findings","method","operation","warning","note"):
+            continue
+        if isinstance(val,(int,float,str,bool)) or val is None:
+            facts.append((key.replace("_"," ").title(),_display_value(val)))
+    table_head=[]
+    table_rows=[]
+    group_data=result.get("data")
+    if isinstance(group_data,list) and group_data and isinstance(group_data[0],dict):
+        if operation=="compare":
+            table_head=["Group", f"Verified median: {params.get('y','measure')}"]
+            table_rows=[[_display_value(row.get("label")),_display_value(row.get("value"))] for row in group_data[:50]]
+        else:
+            keys=list(group_data[0])[:5]
+            table_head=[str(k).replace("_"," ").title() for k in keys]
+            table_rows=[[_display_value(row.get(k)) for k in keys] for row in group_data[:40] if isinstance(row,dict)]
+    elif isinstance(result.get("findings"),list):
+        table_head=["Finding","Detail"]
+        table_rows=[[_display_value(r.get("title",r.get("column","Finding"))),_display_value(r.get("detail",r.get("explanation","")))] for r in result["findings"][:30] if isinstance(r,dict)]
+    # Keep the compact printed exhibit readable. The complete snapshot remains in
+    # report_revisions_v1 and can always be audited using the saved evidence ID.
+    if not facts and not table_rows:
+        for k,v in list(result.items())[:20]:
+            facts.append((str(k).replace("_"," ").title(),_display_value(v)))
+    return facts[:24],table_head,table_rows
+
+
 def render_html(report: dict) -> bytes:
     e=lambda x:escape(str(x),quote=True)
-    pieces=['<!doctype html><html lang="en"><head><meta charset="utf-8"><title>',e(report['title']),
-            '</title><style>body{font:15px/1.55 system-ui,Arial;color:#19213b;margin:40px auto;max-width:850px;padding:0 24px}',
-            'h1,h2{color:#31218D}header{border-bottom:3px solid #148F9B;padding-bottom:16px}',
-            'section{border-top:1px solid #ddd;padding:22px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f8fc;padding:14px}',
-            '.meta{color:#596480}.warn{background:#fff7e2;padding:12px}@media print{body{margin:15mm;max-width:initial}}</style></head><body>',
-            '<header><small>pilotODIN · Saved Report</small><h1>',e(report['title']),'</h1><p class="meta">Report ',e(report['id']),
-            ' · Revision ',e(report['revision']),' · Content SHA-256 ',e(report['content_sha256']),'</p></header>',
-            '<h2>Narrative (user-authored)</h2><p>',e(report['narrative']).replace('\n','<br>'),'</p>']
+    css='''<style>
+    :root{color-scheme:light}body{font:15px/1.55 system-ui,-apple-system,Arial,sans-serif;
+    background:#f5f7fc;color:#1c2847;margin:0}.page{max-width:900px;margin:32px auto;padding:24px 32px 40px;
+    background:white;border:1px solid #e0e5f0;border-radius:15px;box-shadow:0 15px 35px #26316d0c}
+    header{padding:12px 0 22px;border-bottom:3px solid #10a8bd}
+    header .brand{font-weight:800;letter-spacing:.07em;color:#4932ad;font-size:12px}
+    h1{font-size:30px;margin:10px 0;color:#172447;line-height:1.17}h2{font-size:20px;color:#35259c;margin:16px 0}
+    h3{font-size:14px;color:#263354}p{overflow-wrap:anywhere}.meta{color:#65728d;font-size:12px}
+    .narrative{background:#f6f7ff;border-left:4px solid #6d55e5;padding:15px;border-radius:5px}
+    .evidence{border:1px solid #e0e5f0;border-radius:12px;padding:18px 20px;margin:20px 0;break-inside:avoid-page}
+    .pill{display:inline-block;background:#e5f6f4;color:#0a776f;font-size:11px;font-weight:750;border-radius:99px;padding:4px 8px}
+    table{border-collapse:collapse;width:100%;font-size:12px;margin:12px 0 15px;table-layout:fixed}
+    th,td{padding:9px 10px;border-bottom:1px solid #e5e9f2;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+    th{background:#f2f2ff;color:#312390;font-weight:700}
+    .warning{padding:12px;background:#fff7e6;color:#76510e;border-radius:8px}
+    footer{border-top:1px solid #e0e5f0;padding-top:15px;margin-top:22px}
+    @media print{body{background:white}.page{border:0;box-shadow:none;max-width:none;margin:0;padding:0}
+    .evidence{break-inside:avoid-page}thead{display:table-header-group}}
+    </style>'''
+    pieces=['<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>',
+            e(report['title']),'</title>',css,'</head><body><main class="page">',
+            '<header><div class="brand">pilot<span style="color:#5b18c8">ODIN</span> · VERIFIED REPORT</div><h1>',e(report['title']),'</h1>',
+            '<div class="meta">Report ',e(report['id']),' · Revision ',e(report['revision']),' · Dataset versions ',
+            e(", ".join(str(v) for v in report['dataset_versions'])),'</div></header>',
+            '<section><h2>Interpretation and limitations</h2><p class="narrative">',
+            e(report.get('narrative') or 'No interpretation was provided. The exhibits below contain verified local calculations.').replace('\n','<br>'),'</p>',
+            '<p class="meta">Narrative is user-authored and is not independently verified.</p></section>']
     if len(report['dataset_versions'])>1:
-        pieces.append('<p class="warn">Cross-version report: evidence originates from dataset versions '+e(', '.join(map(str,report['dataset_versions'])))+'.</p>')
+        pieces+=['<p class="warning">Cross-version report: evidence comes from more than one dataset version.</p>']
     for art in report['evidence']:
-        pieces.extend(['<section><h2>',e(art['operation'].replace('_',' ').title()),'</h2><p class="meta">Evidence ',e(art['id']),
-            ' · Dataset v',e(art['dataset_version']),' · Tool ',e(art['tool_version']),
-            ' · Computed ',e(art['computed_at']),'</p><p>Investigation: ',e(art['objective']),'</p>',
-            '<h3>Parameters</h3><pre>',e(json.dumps(art['params'],indent=2,sort_keys=True,ensure_ascii=False)),'</pre>',
-            '<h3>Verified result</h3><pre>',e(json.dumps(art['result'],indent=2,sort_keys=True,ensure_ascii=False)),'</pre></section>'])
-    pieces.extend(['<h2>Limitations</h2><ul>',*(f'<li>{e(x)}</li>' for x in report['limitations']),'</ul></body></html>'])
+        facts,columns,records=_exhibit(art)
+        pieces+=['<section class="evidence"><span class="pill">VERIFIED LOCAL</span><h2>',
+                 e(art['operation'].replace('_',' ').title()),'</h2><p class="meta">Dataset v',e(art['dataset_version']),
+                 ' · Tool ',e(art['tool_version']),' · Computed ',e(art['computed_at']),'</p>',
+                 '<p><strong>Investigation:</strong> ',e(art['objective']),'</p>']
+        if facts:
+            pieces+=['<table><thead><tr><th>Measure</th><th>Verified value</th></tr></thead><tbody>']
+            for name,value in facts:
+                pieces+=['<tr><td>',e(name),'</td><td>',e(value),'</td></tr>']
+            pieces+=['</tbody></table>']
+        if records:
+            pieces+=['<h3>Verified observations</h3><table><thead><tr>']
+            for h in columns:pieces+=['<th>',e(h),'</th>']
+            pieces+=['</tr></thead><tbody>']
+            for row in records:
+                pieces+=['<tr>']
+                for cell in row:pieces+=['<td>',e(cell),'</td>']
+                pieces+=['</tr>']
+            pieces+=['</tbody></table>']
+        pieces+=['<p class="meta">Evidence ID ',e(art['id']),' · Parameters ',
+                 e('; '.join(f'{k}={_display_value(v)}' for k,v in art['params'].items()) or 'None'),'</p></section>']
+    pieces+=['<footer><h2>Methodology and limitations</h2><ul>']
+    pieces.extend('<li>'+e(x)+'</li>' for x in report['limitations'])
+    pieces+=['</ul><p class="meta">Immutable report content SHA-256: ',e(report['content_sha256']),
+             '</p><p class="meta">Evidence identifiers and version history are preserved in the saved PilotODIN project.</p>',
+             '</footer></main></body></html>']
     return ''.join(pieces).encode('utf-8')
 
 
 def render_pdf(report: dict) -> bytes:
-    # Programmatic, offline ReportLab renderer. The same immutable snapshot as HTML.
-    out=BytesIO()
-    pdf=SimpleDocTemplate(out,pagesize=A4,rightMargin=42,leftMargin=42,topMargin=40,bottomMargin=40,
+    """Print the same exhibit summaries as HTML, with provenance and page numbers."""
+    from reportlab.platypus import Table, TableStyle
+    output=BytesIO()
+    doc=SimpleDocTemplate(output,pagesize=A4,rightMargin=43,leftMargin=43,topMargin=40,bottomMargin=46,
                           title=report['title'],author='pilotODIN')
     styles=getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='ODIN',parent=styles['Title'],fontSize=19,leading=24,textColor=colors.HexColor('#31218D'),alignment=TA_LEFT,spaceAfter=14))
+    styles.add(ParagraphStyle(name='ODIN',parent=styles['Title'],fontSize=19,leading=24,
+                              textColor=colors.HexColor('#34258D'),alignment=TA_LEFT,spaceAfter=12))
     styles.add(ParagraphStyle(name='ODINBody',parent=styles['BodyText'],fontSize=9,leading=13,spaceAfter=8,wordWrap='CJK'))
-    styles.add(ParagraphStyle(name='ODINMeta',parent=styles['BodyText'],fontSize=7,leading=10,textColor=colors.HexColor('#526178'),spaceAfter=8,wordWrap='CJK'))
-    styles.add(ParagraphStyle(name='ODINCode',parent=styles['BodyText'],fontName='Courier',fontSize=6.7,leading=9.5,wordWrap='CJK',leftIndent=10))
-    story=[Paragraph('pilotODIN · Saved Report',styles['ODINMeta']),Paragraph(escape(report['title']),styles['ODIN']),
-           Paragraph(escape(f"Report {report['id']} · Revision {report['revision']} · SHA-256 {report['content_sha256']}"),styles['ODINMeta']),
-           HRFlowable(width='100%',color=colors.HexColor('#148F9B'),thickness=2),Spacer(1,14),
-           Paragraph('Narrative (user-authored)',styles['Heading2']),
-           Paragraph(escape(report['narrative']).replace('\n','<br/>'),styles['ODINBody'])]
+    styles.add(ParagraphStyle(name='ODINMeta',parent=styles['BodyText'],fontSize=7.5,leading=10,
+                              textColor=colors.HexColor('#596781'),spaceAfter=7,wordWrap='CJK'))
+    styles.add(ParagraphStyle(name='ODINHeading',parent=styles['Heading2'],fontSize=13,leading=16,
+                              textColor=colors.HexColor('#35259C'),spaceBefore=12,spaceAfter=8))
+    def p(value,style='ODINBody'):
+        return Paragraph(escape(str(value)).replace('\n','<br/>'),styles[style])
+    def table(headers,records):
+        if not headers or not records:return []
+        width=doc.width/max(len(headers),1)
+        cells=[[p(v,'ODINMeta') for v in headers]]
+        cells.extend([p(v,'ODINBody') for v in row] for row in records)
+        obj=Table(cells,colWidths=[width]*len(headers),repeatRows=1,hAlign='LEFT')
+        obj.setStyle(TableStyle([
+          ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#f0efff')),
+          ('BOTTOMPADDING',(0,0),(-1,0),9),('TOPPADDING',(0,0),(-1,0),8),
+          ('BOTTOMPADDING',(0,1),(-1,-1),6),('TOPPADDING',(0,1),(-1,-1),6),
+          ('LINEBELOW',(0,0),(-1,-1),.35,colors.HexColor('#dee2ee')),
+          ('VALIGN',(0,0),(-1,-1),'TOP')]))
+        return [obj,Spacer(1,10)]
+    story=[p('pilotODIN · VERIFIED LOCAL REPORT','ODINMeta'),p(report['title'],'ODIN'),
+           p(f"Report {report['id']} · Revision {report['revision']}",'ODINMeta'),
+           p(f"Content SHA-256 {report['content_sha256']}",'ODINMeta'),
+           HRFlowable(width='100%',color=colors.HexColor('#1499aa'),thickness=2),Spacer(1,13),
+           p('Interpretation and limitations','ODINHeading'),
+           p(report.get('narrative') or 'No interpretation supplied. Verified local exhibits follow.'),
+           p('Narrative is user-authored and is not independently verified.','ODINMeta')]
     if len(report['dataset_versions'])>1:
-        story.append(Paragraph('Cross-version report: datasets '+escape(', '.join(map(str,report['dataset_versions']))),styles['ODINBody']))
+        story.append(p('Cross-version report: evidence comes from multiple dataset versions.'))
     for art in report['evidence']:
-        story.extend([Spacer(1,10),HRFlowable(width='100%',color=colors.HexColor('#DBDDE8')),
-          Paragraph(escape(art['operation'].replace('_',' ').title()),styles['Heading2']),
-          Paragraph(escape(f"Evidence {art['id']} · Dataset v{art['dataset_version']} · Tool {art['tool_version']} · Computed {art['computed_at']}"),styles['ODINMeta']),
-          Paragraph('Investigation: '+escape(art['objective']),styles['ODINBody']),
-          Paragraph('Parameters',styles['Heading3'])])
-        for key, obj in [('parameters',art['params']),('result',art['result'])]:
-            if key=='result':story.append(Paragraph('Verified result',styles['Heading3']))
-            # Serialize scalars as escaped text (not executable PDF markup). Each source
-            # JSON line is wrapped for the page width; no numerical result is recomputed.
-            raw=json.dumps(obj,indent=2,sort_keys=True,ensure_ascii=False)
-            for line in raw.splitlines():
-                # Allow extremely long strings to wrap rather than exceed page margins.
-                story.append(Paragraph(escape(line) if line.strip() else '&#160;',styles['ODINCode']))
-    story.extend([Spacer(1,10),Paragraph('Limitations',styles['Heading2'])])
-    story.extend(Paragraph('• '+escape(text),styles['ODINBody']) for text in report['limitations'])
-    pdf.build(story)
-    return out.getvalue()
+        facts,columns,records=_exhibit(art)
+        story.extend([Spacer(1,8),HRFlowable(width='100%',color=colors.HexColor('#dce0ef')),
+                      p(art['operation'].replace('_',' ').title(),'ODINHeading'),
+                      p(f"Evidence {art['id']} · Dataset v{art['dataset_version']} · Tool {art['tool_version']} · Computed {art['computed_at']}",'ODINMeta'),
+                      p('Investigation: '+art['objective'])])
+        story.extend(table(['Measure','Verified value'],facts))
+        if records:
+            story.append(p('Verified observations','ODINHeading'))
+            story.extend(table(columns,records))
+        story.append(p('Parameters: '+'; '.join(f'{k}={_display_value(v)}' for k,v in art['params'].items()),'ODINMeta'))
+    story.extend([p('Methodology and limitations','ODINHeading')])
+    story.extend(p('• '+str(t)) for t in report['limitations'])
+    def footer(canvas,document):
+        canvas.saveState()
+        canvas.setFont('Helvetica',7)
+        canvas.setFillColor(colors.HexColor('#6b7690'))
+        canvas.drawString(43,27,'PilotODIN · Verified, version-linked analytical evidence')
+        canvas.drawRightString(A4[0]-43,27,f"Page {document.page}")
+        canvas.restoreState()
+    doc.build(story,onFirstPage=footer,onLaterPages=footer)
+    return output.getvalue()
 
 init()
