@@ -79,6 +79,14 @@ def test_selection_records_comparable_heldout_baseline_and_warns_on_a_tie(monkey
     assert sensitivity["scores"][0]["mean_importance"]==0
     assert len(store)==1 and store[0] is final
 
+    def unavailable(*_args):
+        raise ArithmeticError("intentional diagnostic failure")
+    monkeypatch.setattr(main.engine,"bounded_feature_sensitivity",unavailable)
+    fallback=main.choose_model(exp_id,main.SelectionRequest(model_key="logistic_regression"))["final_results"]
+    assert fallback["feature_sensitivity"]["status"]=="unavailable"
+    assert fallback["sample_count"]==40
+    assert fallback["baseline_test_metric"]==final["baseline_test_metric"]
+
 
 class ProbabilityDummy:
     named_steps={"model":type("Names",(),{"classes_":np.array(["No","Yes"])})()}
