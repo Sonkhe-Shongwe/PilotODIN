@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, data_exports, quality_approvals, reports
+    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, data_exports, quality_approvals, reports
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, data_exports, quality_approvals, reports
+    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, data_exports, quality_approvals, reports
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -367,6 +367,33 @@ def restore_quality(project_id: str, body: QualityRestoreRequest):
 
 # Integrated macro workspace: read-only analysis from the currently approved
 # working version. Responses are intentionally bounded for browser safety.
+@app.get("/api/projects/{project_id}/columns/overview")
+def column_investigation_overview(project_id: str):
+    """Describe each stored dtype and analytical role in the CURRENT approved version."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    try:
+        return column_intelligence.overview(frame, version)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/projects/{project_id}/columns/detail")
+def column_investigation_detail(
+    project_id: str, name: str = Query(min_length=1, max_length=256),
+    expected_version: int = Query(ge=0)
+):
+    """Bounded on-demand examination; never silently cross a quality-version change."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(status_code=409, detail="Working dataset changed. Refresh Your data before inspecting a column.")
+    try:
+        return column_intelligence.detail(frame, version, name)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @app.get("/api/projects/{project_id}/explore/overview")
 def explore_overview(project_id: str):
     project_or_404(project_id)
