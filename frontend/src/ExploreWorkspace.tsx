@@ -14,7 +14,9 @@ type Plot={version:number;type:string;x:string;y:string|null;aggregation?:string
 type CorrelationCell={x:string;y:string;r:number|null;n:number};
 type Correlation={version:number;method:string;columns:string[];cells:CorrelationCell[];note:string};
 type Finding={category:string;column:string|null;title:string;detail:string};
-type ChartSelection={kind:'category';label:string}|{kind:'bin';bin_index:number}|{kind:'point';row_ref:number};
+type ChartSelection={kind:'category';label:string}|{kind:'bin';bin_index:number}
+ |{kind:'point';row_ref:number}|{kind:'line_category';label:string}
+ |{kind:'box_inliers'|'box_outliers'}|{kind:'box_outlier';value:number};
 type InspectedRow={filtered_row_number:number;cells:(string|number|boolean|null)[]};
 type InspectorResponse={version:number;selection_kind:string;description:string;matched_rows:number;measure_rows:number;offset:number;limit:number;columns:string[];rows:InspectedRow[];truncated_columns:boolean;note:string;total_filtered_rows:number};
 type FilterColumn={name:string;kind:'numeric'|'categorical';options?:string[];min?:number;max?:number;missing:number};
@@ -52,7 +54,7 @@ function Viz({plot,onSelect}:{plot:Plot;onSelect:(choice:ChartSelection)=>void})
   if(plot.type==='scatter')return <ScatterExplorer key={`${plot.x}-${plot.y}-${plot.version}-${plot.color_by??'none'}`} plot={plot} onSelect={row_ref=>onSelect({kind:'point',row_ref})}/>;
   if(plot.type==='box'){
     const d=data[0],scale=(v:number)=>Math.max(3,Math.min(97,((v-(d.min??0))/((d.max??0)-(d.min??0)||1))*94+3));
-    return <div className="boxplot"><div className="boxplot-track"><div className="boxplot-whisker" style={{left:`${scale(d.whisker_low??d.min??0)}%`,width:`${scale(d.whisker_high??d.max??0)-scale(d.whisker_low??d.min??0)}%`}}/><div className="boxplot-iqr" style={{left:`${scale(d.q1??0)}%`,width:`${scale(d.q3??0)-scale(d.q1??0)}%`}}/><div className="boxplot-median" style={{left:`${scale(d.median??0)}%`}}/>{d.outliers?.map((v,i)=><span className="po-box-outlier" style={{left:`${scale(v)}%`}} key={i} title={`Outlying observation: ${format(v)}`}/>)}</div><div className="po-box-scale"><span>{format(d.min??0)}</span><span>{format(d.max??0)}</span></div><div className="po-box-facts">{[['Lower whisker',d.whisker_low??d.min],['Q1',d.q1],['Median',d.median],['Q3',d.q3],['Upper whisker',d.whisker_high??d.max]].map(([label,value])=><span key={String(label)}><small>{label}</small><strong>{format(Number(value??0))}</strong></span>)}</div><p className="muted-caption">{d.outliers_total??0} outlying observations beyond 1.5×IQR; {Math.min(40,d.outliers?.length??0)} rendered as dots.</p></div>;
+    return <div className="boxplot"><div className="boxplot-track"><div className="boxplot-whisker" style={{left:`${scale(d.whisker_low??d.min??0)}%`,width:`${scale(d.whisker_high??d.max??0)-scale(d.whisker_low??d.min??0)}%`}}/><div className="boxplot-iqr" style={{left:`${scale(d.q1??0)}%`,width:`${scale(d.q3??0)-scale(d.q1??0)}%`}}/><div className="boxplot-median" style={{left:`${scale(d.median??0)}%`}}/>{d.outliers?.map((v,i)=><button type="button" className="po-box-outlier" style={{left:`${scale(v)}%`}} key={i} title={`Inspect records with box outlier value ${format(v)}`} aria-label={`Inspect outlier value ${format(v)} in ${plot.x}`} onClick={()=>onSelect({kind:'box_outlier',value:v})}/>)}</div><div className="po-box-scale"><span>{format(d.min??0)}</span><span>{format(d.max??0)}</span></div><div className="po-box-facts">{[['Lower whisker',d.whisker_low??d.min],['Q1',d.q1],['Median',d.median],['Q3',d.q3],['Upper whisker',d.whisker_high??d.max]].map(([label,value])=><span key={String(label)}><small>{label}</small><strong>{format(Number(value??0))}</strong></span>)}</div><div className="po-box-actions"><button type="button" className="btn" onClick={()=>onSelect({kind:'box_inliers'})}>Inspect inlier records</button><button type="button" className="btn" disabled={!d.outliers_total} onClick={()=>onSelect({kind:'box_outliers'})}>Inspect all {d.outliers_total??0} outlier records</button></div><p className="muted-caption">{d.outliers_total??0} observations beyond 1.5×IQR; {Math.min(40,d.outliers?.length??0)} clickable value markers. Values may repeat. Every source record remains read-only.</p></div>;
   }
   if(plot.type==='histogram'){
     const top=Math.max(1,...data.map(d=>d.value??0));
@@ -60,11 +62,13 @@ function Viz({plot,onSelect}:{plot:Plot;onSelect:(choice:ChartSelection)=>void})
   }
   const numeric=data.map(d=>d.value??0);const max=Math.max(1,...numeric.map(Math.abs));
   if(plot.type==='line'){
-    const w=740,h=300,pad=35;
-    const min=Math.min(0,...numeric);
-    const scaleY=(v:number)=>pad+(1-(v-min)/(max-min||1))*(h-pad*2);
-    const pts=data.map((d,i)=>`${pad+(i/(data.length-1||1))*(w-pad*2)},${scaleY(d.value??0)}`).join(' ');
-    return <div className="chart-scroll"><svg viewBox={`0 0 ${w} ${h}`} className="pilot-chart" role="img" aria-label="Aggregated line chart"><line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#aac6bb"/><polyline points={pts} stroke="#168769" strokeWidth="3" fill="none" strokeLinejoin="round"/>{data.map((d,i)=><circle key={i} r="4" fill="#168769" cx={pad+i/(data.length-1||1)*(w-pad*2)} cy={scaleY(d.value??0)}><title>{`${d.label}: ${format(d.value??0)}`}</title></circle>)}</svg><div className="axis-hint">{data[0].label} → {data[data.length-1].label}</div></div>;
+    const w=740,h=300,pad=40;
+    const min=Math.min(0,...numeric),maxLine=Math.max(0,...numeric);
+    const span=Math.max(1e-9,maxLine-min);
+    const scaleY=(v:number)=>pad+(1-(v-min)/span)*(h-pad*2);
+    const posX=(i:number)=>pad+(i/(data.length-1||1))*(w-pad*2);
+    const pts=data.map((d,i)=>`${posX(i)},${scaleY(d.value??0)}`).join(' ');
+    return <div className="chart-scroll po-interactive-line"><svg viewBox={`0 0 ${w} ${h}`} className="pilot-chart" role="group" aria-label={`Interactive line chart of ${plot.y} grouped by ${plot.x}`}><line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#aac6bb"/><line x1={pad} y1={pad} x2={pad} y2={h-pad} stroke="#aac6bb"/><polyline points={pts} stroke="#168769" strokeWidth="3" fill="none" strokeLinejoin="round"/>{data.map((d,i)=><circle key={i} role="button" tabIndex={0} aria-label={`Inspect line group ${d.label}, ${plot.aggregation} ${plot.y}: ${format(d.value??0)}`} className="po-inspect-line-point" r="6" fill="#168769" cx={posX(i)} cy={scaleY(d.value??0)} onClick={()=>onSelect({kind:'line_category',label:d.label??''})} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();onSelect({kind:'line_category',label:d.label??''})}}}><title>{`${d.label}: ${format(d.value??0)} — inspect records`}</title></circle>)}<text x={pad-7} y={pad} textAnchor="end" fontSize="11" fill="#5c708a">{format(maxLine)}</text><text x={pad-7} y={h-pad} textAnchor="end" fontSize="11" fill="#5c708a">{format(min)}</text></svg><div className="axis-hint">{data[0].label} → {data[data.length-1].label} · Select a point to inspect its finite-measure records.</div></div>;
   }
   return <div className="chart-bars">{data.map((d,i)=><button type="button" className="chart-bar-item po-inspect-bar" key={`${d.label}-${i}`} onClick={()=>onSelect({kind:'category',label:d.label??''})} title={`Inspect records in ${d.label}`}><span title={d.label} className="bar-label">{d.label}</span><div className="chart-track"><div style={{width:`${Math.max(0,Math.abs(d.value??0)/max*100)}%`}} className="chart-fill"/></div><strong>{format(d.value??0)}</strong></button>)}</div>;
 }
