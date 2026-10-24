@@ -253,7 +253,7 @@ def validate_config(df: pd.DataFrame, target: str, excluded: list[str], models: 
     if len(y) < 30: raise ValueError("At least 30 labelled rows are required for the local MVP")
     if task == "classification" and int(y.value_counts().min()) < 6:
         raise ValueError("Classification requires at least 6 cases in every class for stable splitting and cross-validation")
-    budget=training_resource_plan(X,len(y))
+    budget=training_resource_plan(X,len(y),models)
     if not budget["within_local_budget"]:
         raise ValueError(
             "Local training resource guardrail exceeded: "
@@ -262,7 +262,8 @@ def validate_config(df: pd.DataFrame, target: str, excluded: list[str], models: 
             +"This 8 GB-friendly build supports up to "
             +str(MAX_ML_LABELLED_ROWS)+" labelled rows and "
             +str(MAX_DENSE_TRAIN_BYTES//(1024*1024))+" MB estimated dense features. "
-            +"Reduce rows/columns in a separate reviewed dataset; the source project remains unchanged."
+            +budget["selected_model_guard"]+". "
+            +"Reduce rows/columns or choose a less costly model; the source project remains unchanged."
         )
     if task == "regression":
         y = pd.to_numeric(y, errors="coerce")
@@ -274,9 +275,11 @@ def validate_config(df: pd.DataFrame, target: str, excluded: list[str], models: 
 # this budget applies ONLY to fitting a model, not to opening or exploring it.
 MAX_ML_LABELLED_ROWS = 30_000
 MAX_DENSE_TRAIN_BYTES = 256 * 1024 * 1024
+MAX_KERNEL_MODEL_ROWS = 5_000  # nonlinear SVC/SVR train-time scales poorly
+MAX_NEIGHBOUR_MODEL_ROWS = 12_000  # preserve practical CPU predict responsiveness
 
 
-def training_resource_plan(X: pd.DataFrame, labelled_rows: int) -> dict:
+def training_resource_plan(X: pd.DataFrame, labelled_rows: int, models: list[str] | None = None) -> dict:
     """Conservative dense-matrix estimate before starting expensive CV.
 
     Capped one-hot encoding uses no more than 25 output columns per category
@@ -286,14 +289,26 @@ def training_resource_plan(X: pd.DataFrame, labelled_rows: int) -> dict:
     categories=[col for col in X if inferred_kind(X[col])!="numeric"]
     encoded_width=numerical + sum(min(25,max(1,int(X[col].nunique(dropna=True)))) for col in categories)
     estimated=int(math.ceil(labelled_rows*.8)*encoded_width*8)
+    selected=set(models or [])
+    if selected.intersection(("svm","svr")):
+        model_row_limit=MAX_KERNEL_MODEL_ROWS
+        model_guard="Kernel SVM/SVR: at most 5,000 labelled rows"
+    elif "knn" in selected:
+        model_row_limit=MAX_NEIGHBOUR_MODEL_ROWS
+        model_guard="K-nearest neighbours: at most 12,000 labelled rows"
+    else:
+        model_row_limit=MAX_ML_LABELLED_ROWS
+        model_guard="No additional model-family row limit"
     return {
         "labelled_rows":int(labelled_rows),
         "source_features":int(X.shape[1]),
         "estimated_encoded_columns":int(encoded_width),
         "estimated_dense_training_mb":round(estimated/(1024*1024),2),
         "row_limit":MAX_ML_LABELLED_ROWS,
+        "selected_model_row_limit":model_row_limit,
+        "selected_model_guard":model_guard,
         "estimated_dense_mb_limit":MAX_DENSE_TRAIN_BYTES//(1024*1024),
-        "within_local_budget":bool(labelled_rows<=MAX_ML_LABELLED_ROWS and estimated<=MAX_DENSE_TRAIN_BYTES),
+        "within_local_budget":bool(labelled_rows<=model_row_limit and estimated<=MAX_DENSE_TRAIN_BYTES),
         "note":"Approximate one dense 80% training feature matrix; model, CV, pandas and OS overhead are additional. Not a peak RAM measurement."
     }
 
@@ -433,7 +448,11 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     if X.empty or not X.shape[1]:raise ValueError('No predictor fields after split-column exclusion')
     cv_groups=None
     if split_strategy=='group':
-        groups=df.loc[X.index,split_column].fillna('(Missing group)').astype(str)
+        # Factorization preserves actual identifiers, mixed string/numeric IDs,
+        # and a unique code for missing values. Avoid coalescing nulls into
+        # legitimate source text such as '(Missing group)'.
+        groups=pd.Series(pd.factorize(df.loc[X.index,split_column],sort=False)[0],
+                         index=X.index,dtype='int64')
         if groups.nunique()<6:raise ValueError('Group splitting requires at least 6 distinct groups')
         train_idx,test_idx=next(GroupShuffleSplit(n_splits=1,test_size=.2,random_state=SEED).split(X,y,groups))
         X_train,X_test=X.iloc[train_idx],X.iloc[test_idx]
