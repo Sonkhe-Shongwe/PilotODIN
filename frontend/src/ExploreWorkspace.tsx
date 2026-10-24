@@ -153,7 +153,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendT
   // changes or a new chart configuration. No selection is persisted as an ID.
   useEffect(()=>{
     setSelection(null);setInspection(null);setInspectOffset(0);setInspectError('');
-  },[projectId,versionToken,x,y,kind,aggregation,bins,filters]);
+  },[projectId,versionToken,x,y,kind,aggregation,bins,filters,colorBy]);
   useEffect(()=>{
     if(!selection||!overview||!filterCatalog||overview.version!==filterCatalog.version)return;
     let live=true;setInspectLoading(true);setInspectError('');setInspection(null);
