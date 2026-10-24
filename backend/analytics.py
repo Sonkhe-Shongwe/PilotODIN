@@ -23,7 +23,7 @@ def describe(df: pd.DataFrame, version: int) -> dict:
         numeric=pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s)
         info={"name":name,"kind":"numeric" if numeric else "categorical",
               "unique":int(s.nunique(dropna=True)),"missing":int(s.isna().sum()),
-              "missing_pct":round(float(s.isna().mean())*100,2)}
+              "missing_pct":round(float(s.isna().mean())*100,2) if len(s) else 0.0}
         if numeric:
             v=pd.to_numeric(s,errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
             if not v.empty:
