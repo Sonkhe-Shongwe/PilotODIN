@@ -320,6 +320,12 @@ def plan_investigation(df:pd.DataFrame,version:int,question:str,task:str='assist
     cells=[]
     for y in fields:
         for x in fields:
+            if x==y:
+                clean=view[x].dropna()
+                n=int(len(clean))
+                score=1.0 if n>=3 and clean.nunique()>=2 else None
+                cells.append({'x':x,'y':y,'r':score,'n':n})
+                continue
             clean=view[[x,y]].dropna()
             n=int(len(clean))
             if n<3 or clean[x].nunique()<2 or clean[y].nunique()<2:
