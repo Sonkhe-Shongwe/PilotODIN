@@ -42,3 +42,24 @@
 .po-filter-remove:focus-visible{outline:2px solid #5538c6;outline-offset:2px}
 @media(max-width:760px){.po-filter-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px}.po-filter-row label:first-child{grid-column:1/-1}.po-filter-toolbar>span{width:100%;margin-left:0}}
 @media(max-width:470px){.po-filter-row{grid-template-columns:minmax(0,1fr) 40px}.po-filter-row label{grid-column:1}.po-filter-row .po-filter-remove{grid-column:2;grid-row:1}}
+
+
+/* Macro A2: chart-to-record drill-down, read-only and keyboard accessible. */
+.po-hist-bin{padding:0;border:0;background:transparent;text-align:left;cursor:pointer}
+.po-hist-bin:focus-visible,.po-inspect-bar:focus-visible,.po-inspect-point:focus-visible{outline:3px solid #5538c6;outline-offset:3px}
+.po-inspect-point{cursor:pointer;transition:opacity .15s ease,stroke-width .15s ease}
+.po-inspect-point:hover,.po-inspect-point:focus-visible{opacity:1;stroke:#2a1b7a;stroke-width:2px}
+.po-inspect-bar{width:100%;font-family:inherit;font-size:inherit;cursor:pointer;border:1px solid transparent;background:transparent;text-align:left}
+.po-inspect-bar:hover{background:#f4f1ff;border-color:#ddd5ff;border-radius:8px}
+.po-record-inspector{border:1px solid #cabef5;background:linear-gradient(150deg,#fff,#f9faff)}
+.po-record-inspector .panel-title{display:flex;align-items:center;gap:10px}
+.po-inspect-dismiss{margin-left:auto;width:35px;height:35px;display:grid;place-items:center;border:1px solid #ded8f6;background:#fff;color:#4b3f82;border-radius:9px;cursor:pointer}
+.po-inspect-dismiss:focus-visible{outline:2px solid #5538c6;outline-offset:2px}
+.po-inspect-summary{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#334269;font-size:13px;padding:10px 0}
+.po-inspect-summary>span{color:#5b668a;font-weight:700}
+.po-inspect-scroll{max-height:410px;overflow:auto}
+.po-inspect-scroll table{min-width:max-content}
+.po-inspect-scroll td{max-width:260px;overflow-wrap:anywhere;vertical-align:top}
+.po-inspect-pagination{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin:12px 0}
+.po-inspect-pagination>span{font-size:12px;font-weight:700;color:#62718f;margin-right:auto}
+@media(prefers-reduced-motion:reduce){.po-inspect-point{transition:none}}
