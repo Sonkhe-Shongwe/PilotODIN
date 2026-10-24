@@ -27,3 +27,9 @@ test('Sidebar icon remains mounted and rotates, and active highlight fades',()=>
  assert.match(css,/\.po-rail-compact \.po-toggle-glyph\{transform:rotate\(180deg\)\}/);
  assert.match(css,/\.po-rail-active::after\{opacity:1\}/);
 });
+
+test('Reduced-motion preference is visible and responds to a live settings change',()=>{
+ assert.match(shell,/matchMedia\?\.\('\(prefers-reduced-motion: reduce\)'\)/);
+ assert.match(shell,/media\.addEventListener\('change',updateMotion\)/);
+ assert.match(shell,/Animations reduced by system/);
+});

@@ -260,3 +260,7 @@
 .po-global-rail .po-nav-group-caption{transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),opacity 280ms ease}
 .po-global-rail.po-rail-compact .po-nav-group-caption{transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),opacity 180ms ease}
 @media(prefers-reduced-motion:reduce){.po-unified-shell .po-global-rail{transition:none!important}}
+
+/* Show a real reduced-motion diagnosis instead of silently appearing broken. */
+.po-motion-reduced{flex:0 0 auto;font-size:10px;font-weight:750;color:#804b64;padding:6px 9px;background:#fff4f4;border:1px solid #edcedc;border-radius:999px;white-space:nowrap}
+@media(max-width:900px){.po-motion-reduced{font-size:9px;padding:5px 6px}}

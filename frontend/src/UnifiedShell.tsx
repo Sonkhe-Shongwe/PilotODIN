@@ -51,6 +51,14 @@ const PANEL_MIN_WIDTH=300;
 /** One persistent desktop shell. Tabs and layouts are scoped to a project, not to its data. */
 export function UnifiedShell(){
  const [active,setActive]=useState<View>(routeView);
+ const [motionReduced,setMotionReduced]=useState(()=>window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false);
+ useEffect(()=>{
+  const media=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  if(!media)return;
+  const updateMotion=()=>setMotionReduced(media.matches);
+  media.addEventListener('change',updateMotion);
+  return()=>media.removeEventListener('change',updateMotion);
+ },[]);
  const [sidebarMode,setSidebarMode]=useState<SidebarMode>(()=>{
   try{return resolveSidebarMode(localStorage.getItem(SIDEBAR_KEY),window.innerWidth)}
   catch{return resolveSidebarMode(null,window.innerWidth)}
@@ -169,6 +177,7 @@ export function UnifiedShell(){
   <header className="po-shell-title">
    <div className="po-shell-brand"><img className="po-brand-symbol" src="/pilotodin-symbol.svg" alt="" aria-hidden="true"/><span className="po-brand-wordmark"><span className="po-pilot">pilot</span><b>ODIN</b></span></div>
    <span className="po-shell-mode">LOCAL INTELLIGENCE WORKSPACE</span>
+   {motionReduced&&<span className="po-motion-reduced" role="status" title="Windows or your browser requests reduced motion. PilotODIN honours this accessibility setting.">Animations reduced by system</span>}
    <div className="po-project-switcher"><Database size={15}/><select aria-label="Active project" value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
   </header>
   <div className="po-shell-row">
