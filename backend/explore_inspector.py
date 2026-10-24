@@ -69,6 +69,39 @@ def inspect(
         mask = numeric.ge(item["start"]) & (numeric.le(item["end"]) if bin_index == len(plot["data"]) - 1 else numeric.lt(item["end"]))
         positions = np.flatnonzero(mask.to_numpy())
         detail = f"Histogram interval {item['label']} in {x}"
+    elif chosen == "line_category" and plot["type"] == "line":
+        label = selection.get("label")
+        shown = {item["label"] for item in plot["data"]}
+        if not isinstance(label, str) or label not in shown:
+            raise ValueError("Select a visible line-chart group")
+        # The same finite-Y and missing-X treatment is used by analytics.chart.
+        group = frame[x].fillna("(Missing)").astype(str).eq(label)
+        numeric = pd.to_numeric(frame[y], errors="coerce").replace([np.inf, -np.inf], np.nan)
+        positions = np.flatnonzero((group & numeric.notna()).to_numpy())
+        detail = f"Line chart group {label} in {x} (finite {y} measurements)"
+    elif chosen in ("box_inliers", "box_outliers", "box_outlier") and plot["type"] == "box":
+        values = pd.to_numeric(frame[x], errors="coerce").replace([np.inf, -np.inf], np.nan)
+        # Use the quartiles from the same chart response; no separate fence
+        # calculation can quietly diverge from the displayed box plot.
+        box = plot["data"][0]
+        iqr = box["q3"] - box["q1"]
+        low = box["q1"] - 1.5 * iqr
+        high = box["q3"] + 1.5 * iqr
+        outside = values.lt(low) | values.gt(high)
+        if chosen == "box_inliers":
+            mask = values.notna() & ~outside
+            detail = f"Inlier observations within Tukey fences for {x}"
+        elif chosen == "box_outliers":
+            mask = outside
+            detail = f"All {box['outliers_total']} IQR outlier observations in {x}"
+        else:
+            picked = selection.get("value")
+            rendered = box.get("outliers", [])
+            if isinstance(picked, bool) or not isinstance(picked,(int,float)) or not math.isfinite(picked) or picked not in rendered:
+                raise ValueError("Select a visible box outlier value")
+            mask = outside & values.eq(float(picked))
+            detail = f"Box outlier value {picked:g} in {x}"
+        positions = np.flatnonzero(mask.fillna(False).to_numpy())
     elif chosen == "point" and plot["type"] == "scatter":
         row_ref = selection.get("row_ref")
         displayed = {item["row_ref"] for item in plot["data"]}
