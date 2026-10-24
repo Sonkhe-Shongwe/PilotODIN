@@ -85,6 +85,65 @@ def test_train_api_refuses_unreviewed_included_risks_and_records_acknowledgement
     assert captured[1][1]["reviewed_high_risk_features"]==[]
 
 
+@pytest.mark.parametrize("strategy,split_column", [
+    ("group", "GroupKey"), ("time", "RecordTime"),
+])
+def test_group_and_time_keys_are_excluded_before_api_and_worker_resource_checks(
+        monkeypatch, strategy, split_column):
+    """Split metadata may be high-cardinality, but it must never consume model RAM."""
+    n = 72
+    frame = pd.DataFrame({
+        "GroupKey": [f"cust_{i//6:02d}" for i in range(n)],
+        "RecordTime": [(date(2026, 1, 1) + timedelta(days=i)).isoformat()
+                       for i in range(n)],
+        "Signal": [float(i%7) for i in range(n)],
+        "Outcome": ["Yes" if i%2 else "No" for i in range(n)],
+    })
+    original = frame.copy(deep=True)
+    real_plan = engine.training_resource_plan
+    planned_predictors = []
+
+    def audited_plan(X, rows, models=None):
+        if models is not None:
+            # preparation() intentionally displays a broad BEFORE-exclusions
+            # estimate. Training and API cost checks must use fitted columns.
+            assert split_column not in X.columns
+            planned_predictors.append(list(X.columns))
+        return real_plan(X, rows, models)
+
+    monkeypatch.setattr(engine, "training_resource_plan", audited_plan)
+    monkeypatch.setattr(main, "project_or_404", lambda _: {"id": "demo"})
+    monkeypatch.setattr(main.quality, "current_data", lambda _: (frame, 3))
+    captured = []
+    monkeypatch.setattr(main.storage, "new_experiment",
+                        lambda pid, cfg: (captured.append(cfg) or "example"))
+
+    body = main.ExperimentRequest(
+        target="Outcome", task="classification", excluded_features=[],
+        models=["logistic_regression"], split_strategy=strategy,
+        split_column=split_column, expected_quality_version=3,
+    )
+    accepted = main.new_experiment("demo", body, BackgroundTasks())
+    assert accepted["status"] == "queued"
+    assert captured[0]["split_column"] == split_column
+    assert captured[0]["excluded"] == []  # no silent rewriting of user choices
+
+    report, _, _, _ = engine.run_training(
+        frame, "Outcome", [], ["logistic_regression"], "classification",
+        split_strategy=strategy, split_column=split_column)
+    assert split_column not in report["features"]
+    assert split_column not in {field["name"] for field in report["input_schema"]}
+    assert len(planned_predictors) == 2  # one API check and one worker check
+    assert all(split_column not in columns for columns in planned_predictors)
+    assert frame.equals(original)
+
+    invalid = body.model_copy(update={"split_column": "Outcome"})
+    with pytest.raises(HTTPException, match="Target cannot also be a split column") as error:
+        main.new_experiment("demo", invalid, BackgroundTasks())
+    assert error.value.status_code == 422
+    assert len(captured) == 1
+
+
 def test_chronological_holdout_rejects_identical_boundary_timestamps():
     # 72 rows, two per date: 80% cut = 57; that splits one day's observations.
     frame=time_frame(72)
