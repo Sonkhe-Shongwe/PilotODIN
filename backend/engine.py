@@ -307,6 +307,8 @@ def training_resource_plan(X: pd.DataFrame, labelled_rows: int, models: list[str
         "row_limit":MAX_ML_LABELLED_ROWS,
         "selected_model_row_limit":model_row_limit,
         "selected_model_guard":model_guard,
+        "model_family_row_limits":{"svm":MAX_KERNEL_MODEL_ROWS,"svr":MAX_KERNEL_MODEL_ROWS,
+                                   "knn":MAX_NEIGHBOUR_MODEL_ROWS},
         "estimated_dense_mb_limit":MAX_DENSE_TRAIN_BYTES//(1024*1024),
         "within_local_budget":bool(labelled_rows<=model_row_limit and estimated<=MAX_DENSE_TRAIN_BYTES),
         "note":"Approximate one dense 80% training feature matrix; model, CV, pandas and OS overhead are additional. Not a peak RAM measurement."
