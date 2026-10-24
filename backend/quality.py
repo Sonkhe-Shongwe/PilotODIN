@@ -216,6 +216,31 @@ def _issue(kind: str, column: str | None, count: int, title: str, explanation: s
             "proposal": proposal, "evidence": evidence or {}}
 
 
+
+def _outlier_profile(series: pd.Series) -> dict | None:
+    """One finite-value Tukey rule for detection, preview and investigation.
+
+    A Boolean is not a measurement. Non-finite values are not quietly treated
+    as outside the IQR fences; they are counted separately as unusable values.
+    """
+    if not pd.api.types.is_numeric_dtype(series) or pd.api.types.is_bool_dtype(series):
+        return None
+    numeric = pd.to_numeric(series,errors="coerce").replace([float("inf"),float("-inf")],float("nan"))
+    finite = numeric.dropna()
+    if len(finite)<20 or finite.nunique()<6:
+        return None
+    q1,q3=float(finite.quantile(.25)),float(finite.quantile(.75))
+    iqr=q3-q1
+    if not iqr>0:
+        return None
+    low,high=q1-1.5*iqr,q3+1.5*iqr
+    mask=(numeric.lt(low)|numeric.gt(high)).fillna(False)
+    return {"mask":mask, "q1":q1,"q3":q3,"iqr":iqr,"low":float(low),
+            "high":float(high),"outliers":int(mask.sum()),"finite_count":int(len(finite)),
+            "excluded_count":int(series.notna().sum()-len(finite)),
+            "median":float(finite.median()),"min":float(finite.min()),"max":float(finite.max())}
+
+
 def _issues(df: pd.DataFrame) -> list[dict]:
     issues: list[dict] = []
     count = len(df)
@@ -237,18 +262,14 @@ def _issues(df: pd.DataFrame) -> list[dict]:
             issues.append(_issue("identifier", name, count, "Possible identifier or high-cardinality feature",
                                  "Inspect before modelling; leading zeros and unique values may be meaningful.",
                                  severity="information", evidence={"unique": int(s.nunique(dropna=True))}))
-        if pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s):
-            numeric = pd.to_numeric(s, errors="coerce").dropna()
-            if len(numeric) >= 20 and numeric.nunique() >= 6:
-                q1, q3 = numeric.quantile(.25), numeric.quantile(.75)
-                iqr = q3 - q1
-                if iqr > 0:
-                    low, high = float(q1 - 1.5 * iqr), float(q3 + 1.5 * iqr)
-                    n_outlier = int(((numeric < low) | (numeric > high)).sum())
-                    if n_outlier:
-                        issues.append(_issue("outliers", name, n_outlier, "Unusual numerical values",
-                                             "Values outside the IQR fences warrant investigation, not automatic removal.",
-                                             evidence={"lower_fence": round(low, 4), "upper_fence": round(high, 4)}))
+        profile=_outlier_profile(s)
+        if profile and profile["outliers"]:
+            issues.append(_issue("outliers", name, profile["outliers"], "Unusual numerical values",
+                                 "Values outside finite-data IQR fences warrant investigation, not automatic removal.",
+                                 evidence={"lower_fence":round(profile["low"],4),
+                                           "upper_fence":round(profile["high"],4),
+                                           "finite_values":profile["finite_count"],
+                                           "excluded_nonfinite":profile["excluded_count"]}))
         if not (pd.api.types.is_object_dtype(s) or pd.api.types.is_string_dtype(s)):
             continue
         vals = s.dropna()
@@ -588,11 +609,12 @@ def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int =
             elif issue["kind"]=="missing" and col:
                 indexes=current.index[current[col].map(lambda v: pd.isna(v) or (isinstance(v,str) and not v.strip()))].tolist()
             elif issue["kind"]=="outliers" and col:
-                numeric=pd.to_numeric(current[col],errors="coerce")
-                clean=numeric.replace([float("inf"),float("-inf")],float("nan")).dropna()
-                q1,q3=clean.quantile(.25),clean.quantile(.75)
-                iqr=q3-q1
-                indexes=current.index[(numeric<q1-1.5*iqr)|(numeric>q3+1.5*iqr)].tolist()
+                outlier_profile=_outlier_profile(current[col])
+                indexes=current.index[outlier_profile["mask"]].tolist() if outlier_profile else []
+            elif issue["kind"]=="exact_duplicates":
+                indexes=current.index[current.duplicated(keep="first")].tolist()
+            elif issue["kind"]=="identifier" and col:
+                indexes=current.index[current[col].notna()].tolist()
             else:
                 indexes=list(current.index)
         else:
