@@ -6,8 +6,6 @@ imputation, type coercions or data exports.
 """
 from __future__ import annotations
 
-import math
-
 import pandas as pd
 
 from . import quality
@@ -41,8 +39,9 @@ def inspect(project_id: str, issue_id: str, expected_version: int) -> dict:
         rows=frame.index[profile["mask"]].tolist()
         if len(rows)!=issue["affected_rows"]:
             raise quality.QualityError("Outlier detection disagrees with preview counts",409)
-        lower=int((pd.to_numeric(series,errors="coerce")<profile["low"]).fillna(False).sum())
-        upper=int((pd.to_numeric(series,errors="coerce")>profile["high"]).fillna(False).sum())
+        finite=pd.to_numeric(series,errors="coerce").replace([float("inf"),float("-inf")],float("nan"))
+        lower=int(finite.lt(profile["low"]).fillna(False).sum())
+        upper=int(finite.gt(profile["high"]).fillna(False).sum())
         return {**common,"affected_row_numbers":[int(i)+1 for i in rows[:MAX_EXAMPLE_ROWS]],
                 "shown_row_numbers":min(len(rows),MAX_EXAMPLE_ROWS),
                 "statistical_method":"Tukey 1.5×IQR fences on finite numeric observations",
@@ -63,8 +62,8 @@ def inspect(project_id: str, issue_id: str, expected_version: int) -> dict:
     present=series.dropna()
     unique=int(present.nunique())
     sampled=present.astype(str).str.slice(0,120).value_counts().head(MAX_TOP_GROUPS)
-    return {**common,"affected_row_numbers":[int(i)+1 for i in frame.index[series.notna()][:MAX_EXAMPLE_ROWS]],
-            "shown_row_numbers":min(int(series.notna().sum()),MAX_EXAMPLE_ROWS),
+    return {**common,"affected_row_numbers":[int(i)+1 for i in frame.index[:MAX_EXAMPLE_ROWS]],
+            "shown_row_numbers":min(total,MAX_EXAMPLE_ROWS),
             "statistical_method":"Distinct-value and identifier-name heuristic, not an enforced key constraint",
             "statistics":{
                 "non_missing":int(series.notna().sum()),"missing":int(series.isna().sum()),
