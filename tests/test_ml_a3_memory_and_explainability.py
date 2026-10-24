@@ -98,3 +98,15 @@ def test_prepare_exposes_candid_before_exclusion_estimate():
     assert plan["within_local_budget"] is True
     assert "before manual exclusions" in prep["resource_plan_scope"]
     assert "Not a peak RAM measurement" in plan["note"]
+
+
+def test_dense_memory_preflight_uses_all_labelled_rows_as_safe_group_split_upper_bound():
+    # 16k x 100 capped categorical fields is 320MB, while a fixed 80% guess
+    # could accept an uneven group holdout that trains on >80% of source rows.
+    x=pd.DataFrame({f"F{i:03d}":[f"C{k:02d}" for k in range(25)] for i in range(100)})
+    plan=engine.training_resource_plan(x,16_000,["random_forest"])
+    assert plan["estimated_encoded_columns"]==2500
+    assert plan["estimated_dense_training_mb"]==round(16_000*2500*8/(1024**2),2)
+    assert plan["estimated_dense_training_mb"]>256
+    assert plan["within_local_budget"] is False
+    assert "uneven group splits" in plan["note"]
