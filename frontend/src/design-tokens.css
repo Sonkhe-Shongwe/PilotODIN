@@ -14,5 +14,9 @@
   --po-border: #dfe4f1;
   --po-sidebar-compact: 64px;
   --po-sidebar-expanded: 236px;
+  --po-motion-fast: 145ms;
+  --po-motion-stage: 220ms;
+  --po-motion-sidebar: 290ms;
+  --po-motion-ease: cubic-bezier(.22,1,.36,1);
 }
 .po-unified-shell { font-family: var(--po-font-family); }

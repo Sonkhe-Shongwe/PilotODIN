@@ -81,3 +81,41 @@
  .po-global-rail.po-rail-compact{width:var(--po-sidebar-compact);flex:0 0 var(--po-sidebar-compact)}
 }
 @media(prefers-reduced-motion:reduce){.po-global-rail{transition:none!important}}
+
+/* Live-dev motion system: immediate navigation, restrained visual response. */
+@keyframes po-stage-arrive{from{opacity:.65;transform:translate3d(0,7px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes po-pane-arrive{from{opacity:.8;transform:translate3d(0,4px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.po-pane-content{animation:po-pane-arrive var(--po-motion-stage) var(--po-motion-ease) both}
+.po-pane-content .studio-app .content.po-motion-stage{animation:po-stage-arrive var(--po-motion-stage) var(--po-motion-ease) both}
+.po-global-rail{transition:width var(--po-motion-sidebar) var(--po-motion-ease),flex-basis var(--po-motion-sidebar) var(--po-motion-ease),box-shadow var(--po-motion-fast) ease}
+.po-global-rail .po-nav-label{display:block;max-width:170px;opacity:1;transition:opacity var(--po-motion-fast) ease 80ms,max-width var(--po-motion-sidebar) var(--po-motion-ease)}
+.po-global-rail.po-rail-compact .po-nav-label{display:block;max-width:0;opacity:0;transition:opacity 90ms ease,max-width var(--po-motion-sidebar) var(--po-motion-ease)}
+.po-global-rail .po-nav-group-caption{display:block;max-height:26px;opacity:1;overflow:hidden;transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),opacity var(--po-motion-fast) ease}
+.po-global-rail.po-rail-compact .po-nav-group-caption{display:block;max-height:0;opacity:0;padding-top:0;padding-bottom:0;transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),opacity 90ms ease}
+.po-global-rail button.po-nav-item{transition:background-color var(--po-motion-fast) ease,border-color var(--po-motion-fast) ease,color var(--po-motion-fast) ease,transform var(--po-motion-fast) var(--po-motion-ease),width var(--po-motion-sidebar) var(--po-motion-ease),padding var(--po-motion-sidebar) var(--po-motion-ease)}
+.po-global-rail button.po-rail-toggle{transition:background-color var(--po-motion-fast) ease,border-color var(--po-motion-fast) ease,color var(--po-motion-fast) ease,transform var(--po-motion-fast) var(--po-motion-ease)}
+.po-global-rail button.po-rail-toggle:active{transform:scale(.94)}
+.po-global-rail button.po-nav-item:active{transform:scale(.98)}
+.po-tab{transition:background-color var(--po-motion-fast) ease,border-color var(--po-motion-fast) ease,box-shadow var(--po-motion-fast) ease}
+.po-global-tabs .po-tab>button{transition:color var(--po-motion-fast) ease,transform var(--po-motion-fast) ease}
+.po-global-tabs .po-tab>button:hover{color:var(--po-primary)}
+.po-global-tabs .po-tab>button:active{transform:scale(.96)}
+.po-unified-shell .studio-app .btn:not(:disabled){transition:background-color var(--po-motion-fast) ease,border-color var(--po-motion-fast) ease,color var(--po-motion-fast) ease,box-shadow var(--po-motion-stage) ease,transform var(--po-motion-fast) var(--po-motion-ease),filter var(--po-motion-fast) ease}
+.po-unified-shell .studio-app .btn.primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 11px 24px #6252d847}
+.po-unified-shell .studio-app .btn:not(.primary):hover:not(:disabled){transform:translateY(-1px)}
+.po-unified-shell .studio-app .btn:active:not(:disabled){transform:translateY(0) scale(.985);box-shadow:0 2px 8px #31218d22}
+.po-unified-shell .studio-app .action-panel .btn svg{transition:transform var(--po-motion-stage) var(--po-motion-ease)}
+.po-unified-shell .studio-app .action-panel .btn:hover:not(:disabled) svg{transform:translateX(4px)}
+.po-unified-shell .studio-app .model-choice{transition:background-color var(--po-motion-fast) ease,border-color var(--po-motion-fast) ease,transform var(--po-motion-fast) var(--po-motion-ease),box-shadow var(--po-motion-stage) ease}
+.po-unified-shell .studio-app .model-choice:hover{transform:translateY(-2px);border-color:#c7bafa;box-shadow:0 8px 20px #40378c14}
+.po-unified-shell .studio-app .model-choice:active{transform:translateY(0) scale(.985)}
+@media(max-width:760px){
+ .po-nav-backdrop{display:block;opacity:0;pointer-events:none;transition:opacity var(--po-motion-sidebar) ease}
+ .po-nav-backdrop.po-nav-backdrop-open{opacity:1;pointer-events:auto}
+}
+@media(hover:hover){.po-global-rail button.po-nav-item:hover:not(.po-rail-active){transform:translateX(2px)}}
+@media(prefers-reduced-motion:reduce){
+ .po-pane-content,.po-pane-content .studio-app .content.po-motion-stage{animation:none!important}
+ .po-unified-shell .po-global-rail *,.po-unified-shell .studio-app .btn,.po-unified-shell .studio-app .model-choice,.po-nav-backdrop{transition:none!important}
+ .po-unified-shell .studio-app .btn:hover,.po-unified-shell .studio-app .model-choice:hover,.po-global-rail button.po-nav-item:hover{transform:none!important}
+}

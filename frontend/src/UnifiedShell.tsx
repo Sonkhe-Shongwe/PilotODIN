@@ -170,7 +170,7 @@ export function UnifiedShell(){
    <div className="po-project-switcher"><Database size={15}/><select aria-label="Active project" value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="">Choose a project</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
   </header>
   <div className="po-shell-row">
-   {sidebarMode==='expanded'&&<button type="button" className="po-nav-backdrop" aria-label="Close sidebar" onClick={toggleSidebar}/>}
+   <button type="button" className={`po-nav-backdrop ${sidebarMode==='expanded'?'po-nav-backdrop-open':''}`} aria-label="Close sidebar" aria-hidden={sidebarMode!=='expanded'} tabIndex={sidebarMode==='expanded'?0:-1} disabled={sidebarMode!=='expanded'} onClick={toggleSidebar}/>
    <nav className={`po-global-rail po-rail-${sidebarMode}`} aria-label="Workspace navigation">
     <div className="po-rail-heading"><span>NAVIGATION</span>
      <button type="button" className="po-rail-toggle" aria-label={sidebarMode==='expanded'?'Collapse navigation sidebar':'Expand navigation sidebar'} aria-expanded={sidebarMode==='expanded'} aria-controls="po-nav-items" title={sidebarMode==='expanded'?'Collapse sidebar':'Expand sidebar'} onClick={toggleSidebar}>{sidebarMode==='expanded'?<PanelLeftClose size={20}/>:<PanelLeftOpen size={20}/>}</button>
