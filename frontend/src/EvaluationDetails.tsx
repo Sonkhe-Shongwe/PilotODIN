@@ -1,8 +1,10 @@
 import {Activity,AlertTriangle,BarChart3,CheckCircle2,ShieldAlert} from 'lucide-react';
 import type {Experiment} from './api';
+import {FeatureSensitivity} from './FeatureSensitivity';
+import type {FeatureSensitivityEvidence} from './FeatureSensitivity';
 type ClassRow={label:string|number;precision:number;recall:number;f1:number;support:number};
 type Sample={actual:string|number;predicted:string|number};
-type Eval={accuracy?:number;f1_macro?:number;precision_macro?:number;recall_macro?:number;roc_auc?:number;mae?:number;rmse?:number;r2?:number;class_labels?:(string|number)[];class_report?:ClassRow[];confusion_matrix?:number[][];evaluation_rows?:Sample[];reliability?:{level:string;issues:string[];message:string};sample_count?:number;baseline_test_metric?:number;baseline_test_label?:string;baseline_test_reference?:string;beats_heldout_baseline?:boolean;baseline_test_note?:string;baseline_cv?:number;cv_score?:number};
+type Eval={accuracy?:number;f1_macro?:number;precision_macro?:number;recall_macro?:number;roc_auc?:number;mae?:number;rmse?:number;r2?:number;class_labels?:(string|number)[];class_report?:ClassRow[];confusion_matrix?:number[][];evaluation_rows?:Sample[];reliability?:{level:string;issues:string[];message:string};sample_count?:number;baseline_test_metric?:number;baseline_test_label?:string;baseline_test_reference?:string;beats_heldout_baseline?:boolean;baseline_test_note?:string;baseline_cv?:number;cv_score?:number;feature_sensitivity?:FeatureSensitivityEvidence};
 const pct=(n:number|undefined)=>n===undefined?'—':(n*100).toFixed(1)+'%';
 const num=(n:number|undefined)=>n===undefined?'—':n.toLocaleString(undefined,{maximumFractionDigits:3});
 function Card({name,value,description}:{name:string;value:string;description:string}){return <div className="eval-card"><small>{name}</small><strong>{value}</strong><span>{description}</span></div>}
@@ -33,6 +35,7 @@ export function EvaluationDetails({experiment}:{experiment:Experiment}){
       <div className="eval-metrics"><Card name="Mean absolute error" value={num(r.mae)} description="Typical absolute error in the target's units"/><Card name="Root mean squared error" value={num(r.rmse)} description="Penalises large errors more"/><Card name="R² score" value={num(r.r2)} description="Explained variance measure; NOT accuracy"/></div>
       {numeric.length>0&&<div className="actual-predicted"><h3>Actual vs predicted values</h3><p className="body-muted">Points closer to the diagonal indicate more accurate numeric predictions. Display limited to 120 test cases.</p><svg viewBox="0 0 400 400" aria-label="Actual versus predicted scatterplot" role="img"><line x1="35" y1="345" x2="345" y2="35" stroke="#b1c2c9" strokeDasharray="7 6"/><line x1="35" y1="345" x2="345" y2="345" stroke="#9fb2bb"/><line x1="35" y1="35" x2="35" y2="345" stroke="#9fb2bb"/>{numeric.map((v,i)=><circle key={i} cx={position(v.actual)} cy={380-position(v.predicted)} r="4" fill="#268975" opacity=".55"><title>{`Actual ${v.actual}, predicted ${v.predicted}`}</title></circle>)}<text x="200" y="383" textAnchor="middle" fontSize="12">Actual {experiment.results.target}</text><text x="14" y="200" textAnchor="middle" transform="rotate(-90 14 200)" fontSize="12">Predicted</text></svg></div>}
     </>}
+    <FeatureSensitivity data={r.feature_sensitivity}/>
     <div className="mini-info"><AlertTriangle size={16}/> Only {r.sample_count??experiment.results.test_rows} test observations; this evaluation is not a guarantee of future accuracy. Training, validation and test data were separated.</div>
   </section>;
 }
