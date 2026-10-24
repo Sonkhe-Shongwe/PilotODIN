@@ -81,7 +81,7 @@ export function ColumnInvestigation({projectId,versionToken}:{projectId:string;v
    <div className="po-col-toolbar">
     <label className="po-col-search"><Search size={15}/><input aria-label="Search columns by name or type" placeholder="Find a field or dtype…" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <label>Analytical role<select aria-label="Filter columns by analytical role" value={roleFilter} onChange={e=>setRoleFilter(e.target.value)}><option value="all">All roles</option>{Object.keys(dictionary.role_counts).map(role=><option key={role} value={role}>{role}</option>)}</select></label>
-    <label>Sort<select aria-label="Sort columns" value={sortBy} onChange={e=>setSortBy(e.target.value)}><option value="source">Dataset order</option><option value="name">Field name</option><option value="missing">Most missing</option><option value="unique">Most distinct</option></select></label>
+    <label>Sort<select aria-label="Sort columns" value={sortBy} onChange={e=>setSortBy(e.target.value as SortBy)}><option value="source">Dataset order</option><option value="name">Field name</option><option value="missing">Most missing</option><option value="unique">Most distinct</option></select></label>
    </div>
    <div className="po-col-layout">
     <div className="po-col-list">
