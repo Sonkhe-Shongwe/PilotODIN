@@ -264,3 +264,29 @@
 /* Show a real reduced-motion diagnosis instead of silently appearing broken. */
 .po-motion-reduced{flex:0 0 auto;font-size:10px;font-weight:750;color:#804b64;padding:6px 9px;background:#fff4f4;border:1px solid #edcedc;border-radius:999px;white-space:nowrap}
 @media(max-width:900px){.po-motion-reduced{font-size:9px;padding:5px 6px}}
+
+
+/* BE-033: creation is a separate, always-visible action, not a no-op select option. */
+.po-new-project-action{
+ flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ min-height:36px;padding:8px 12px;border:1px solid #c8bef4;border-radius:10px;
+ background:linear-gradient(120deg,#f4f0ff,#edfaff);color:var(--po-brand);
+ font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;
+}
+.po-new-project-action:hover{background:#e8e0ff;border-color:#8977de}
+.po-new-project-action:focus-visible{outline:3px solid var(--po-pilot-bright,#00b4d8);outline-offset:2px}
+.po-project-switcher{min-width:0}
+.po-project-switcher select{min-width:0;text-overflow:ellipsis}
+@media(max-width:980px){
+ .po-new-project-action{min-width:37px;width:37px;padding:8px}
+ .po-new-project-action span{display:none}
+ .po-shell-title{gap:9px;padding-inline:10px}
+}
+@media(max-width:560px){
+ .po-shell-mode,.po-motion-reduced{display:none}
+ .po-project-switcher{max-width:min(54vw,250px);padding:7px}
+ .po-shell-brand{font-size:17px}
+}
+@media(prefers-reduced-motion:reduce){
+ .po-new-project-action{transition:none!important}
+}
