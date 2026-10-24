@@ -587,6 +587,12 @@ def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int =
                 else: indexes=list(current.index)
             elif issue["kind"]=="missing" and col:
                 indexes=current.index[current[col].map(lambda v: pd.isna(v) or (isinstance(v,str) and not v.strip()))].tolist()
+            elif issue["kind"]=="outliers" and col:
+                numeric=pd.to_numeric(current[col],errors="coerce")
+                clean=numeric.replace([float("inf"),float("-inf")],float("nan")).dropna()
+                q1,q3=clean.quantile(.25),clean.quantile(.75)
+                iqr=q3-q1
+                indexes=current.index[(numeric<q1-1.5*iqr)|(numeric>q3+1.5*iqr)].tolist()
             else:
                 indexes=list(current.index)
         else:

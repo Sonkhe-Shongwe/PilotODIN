@@ -1,0 +1,4 @@
+const{test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const read=(n)=>fs.readFileSync(path.join(__dirname,'../src',n),'utf8');
+test('Model selection requires held-out evaluation first',()=>{const a=read('App.tsx');const s=a.slice(a.indexOf('async function chooseModel'),a.indexOf('async function runPrediction'));assert.match(s,/go\('evaluate'\)/);assert.doesNotMatch(s,/go\('predict'\)/)});
+test('Manually excluded features are retained when high-risk hints are accepted',()=>assert.match(read('App.tsx'),/new Set\(\[\.\.\.current,\.\.\.featureHints/));
+test('Verified ties and numeric chart axis',()=>{const s=read('InvestigationCanvas.tsx');assert.match(s,/tiedLeaders\.length>1/);assert.match(s,/Equal medians do not establish equal distributions/);assert.match(s,/on a numeric axis/);assert.doesNotMatch(s,/<span>100%<\/span><span>75%<\/span>/)});

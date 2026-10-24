@@ -207,8 +207,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
       const result=await get<Experiment>(`/experiments/${experimentId}`);
       if(!projectOperations.current.accepts(projectId,generation)||result.project_id!==projectId)return;
       setExperiment(current=>current?.id===experimentId?result:current);
-      setPredictVals({});setPrediction(null);go('predict');
-      setNotice('Model selected. Predictions use its saved preprocessing pipeline.');
+      setPredictVals({});setPrediction(null);go('evaluate');
+      setNotice('Model selected. Review held-out evaluation results before proceeding to Predict Studio.');
     }catch(e){if(projectOperations.current.accepts(projectId,generation))setError((e as Error).message)}
     finally{if(projectOperations.current.accepts(projectId,generation))setBusy('')}
   }
@@ -325,7 +325,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
           {page==='prepare'&&profile&&<><div className="panel"><div className="panel-title"><Target size={19}/><h2>Define your prediction target</h2></div><p className="body-muted">Which column contains the outcome you want to predict? Suggestions are based on names only and require your confirmation.</p><label className="field-label">TARGET VARIABLE</label><select className="input full" value={target} onChange={(e:any)=>{setTarget(e.target.value);setExperiment(null);setConfirmSplit(false);setError('')}}><option value="">Select a target column…</option>{profile.columns.map(c=><option value={c.name} key={c.name}>{c.name}{profile.target_candidates.includes(c.name)?' · suggested':''}</option>)}</select>{profile.target_candidates.length>0&&<div className="mini-info"><Sparkles size={16}/> Possible targets: {profile.target_candidates.join(', ')}</div>}</div>
             {prep&&<><div className="metrics three"><Metric label="TASK IDENTIFIED" value={prep.task==='classification'?'Classification':'Regression'} icon={<Target size={18}/>} small/><Metric label="PREDICTORS" value={String(prep.available_features.length-excluded.length)} icon={<Database size={18}/>}/><Metric label="MISSING TARGETS" value={String(prep.missing_targets)} icon={<Activity size={18}/>}/></div>
               <div className="panel"><div className="panel-title"><ClipboardCheck size={19}/><h2>Review feature exclusions</h2></div><p className="body-muted">The model will use all columns except the target and features you deliberately exclude. Suggested exclusions are not automatically enforced.</p>
-                <button className="btn small" onClick={()=>setExcluded(featureHints.filter(f=>f.risk==='high').map(f=>f.column))}><Sparkles size={14}/> Apply high-risk exclusion suggestions</button>
+                <button className="btn small" onClick={()=>setExcluded(current=>[...new Set([...current,...featureHints.filter(f=>f.risk==='high').map(f=>f.column)])])}><Sparkles size={14}/> Apply high-risk exclusion suggestions</button>
                 <p className="muted-caption">Only structural screening, not validated importance: verify timing and compare features with training-only cross-validation.</p>
                 {featureHints.filter(f=>f.risk!=='low').map(f=><div className="warning-line" key={f.column}><AlertCircle size={14}/><b>{f.column}</b>: {f.reasons.join('; ')}</div>)}
                 <div className="feature-grid">{prep.available_features.map(c=>{const hint=prepRisk.find(x=>x.column===c);const isOut=excluded.includes(c);return <label className={cls('feature-chip',isOut&&'excluded')} key={c}><input type="checkbox" checked={isOut} onChange={(e:any)=>setExcluded(a=>e.target.checked?[...a,c]:a.filter(x=>x!==c))}/><span>{c}</span>{hint&&<span title={hint.reason}><AlertCircle size={15}/></span>}</label>})}</div>

@@ -330,11 +330,32 @@ def input_schema(X: pd.DataFrame) -> list[dict]:
     for c in X:
         s = X[c]
         if inferred_kind(s)=="numeric":
-            fields.append({"name":c,"kind":"number","min":native(s.min()),"max":native(s.max()),"required":False})
+            fields.append({"name":c,"kind":"number","min":native(s.min()),"max":native(s.max()),"required":False,"domain": _prediction_domain(c)})
         else:
             categories = [str(x) for x in s.dropna().unique()[:40]]
             fields.append({"name":c,"kind":"select" if s.nunique(dropna=True)<=30 else "text","options":categories if len(categories)<=30 else [],"required":False})
     return fields
+
+
+def _prediction_domain(name: str) -> dict | None:
+    """Strict bounds only for explicitly recognized clock and count fields."""
+    normalized = ''.join(c for c in name.lower() if c.isalnum())
+    if normalized == "hourofday":
+        return {"min": 0, "max": 23, "integer": True}
+    if normalized == "transactionsinlasthour":
+        return {"min": 0, "integer": True}
+    return None
+
+
+def _validate_prediction_domain(name: str, value: float, domain: dict | None) -> None:
+    if not domain:
+        return
+    if domain.get("integer") and not value.is_integer():
+        raise ValueError(f"{name} must be a whole number")
+    if "min" in domain and value < domain["min"]:
+        raise ValueError(f"{name} must be at least {domain['min']}")
+    if "max" in domain and value > domain["max"]:
+        raise ValueError(f"{name} must not exceed {domain['max']}")
 
 
 def predict_one(pipe: Pipeline, schema: list[dict], values: dict) -> dict:
@@ -350,12 +371,17 @@ def predict_one(pipe: Pipeline, schema: list[dict], values: dict) -> dict:
             try:
                 num = float(val)
                 if not math.isfinite(num): raise ValueError()
+                _validate_prediction_domain(f["name"], num, f.get("domain") or _prediction_domain(f["name"]))
                 row[f["name"]] = num
                 if f.get('min') is not None and num < float(f['min']):
                     input_warnings.append(f"{f['name']} is below the observed training range ({f['min']}–{f.get('max')}).")
                 if f.get('max') is not None and num > float(f['max']):
                     input_warnings.append(f"{f['name']} is above the observed training range ({f.get('min')}–{f['max']}).")
-            except (ValueError,TypeError): raise ValueError(f"{f['name']} must be a finite number")
+            except (TypeError,OverflowError): raise ValueError(f"{f['name']} must be a finite number")
+            except ValueError as exc:
+                if str(exc).startswith(f["name"]):
+                    raise
+                raise ValueError(f"{f['name']} must be a finite number") from exc
         else:
             row[f["name"]] = str(val)
     pred = pipe.predict(pd.DataFrame([row]))[0]
