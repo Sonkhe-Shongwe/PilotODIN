@@ -1,6 +1,8 @@
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {Activity, BarChart3, ChevronDown, LoaderCircle, RefreshCw, Sparkles, Plus, X} from 'lucide-react';
 import {get,post} from './api';
+import {SavedExploreAnalyses} from './SavedExploreAnalyses';
+import type {ExploreState} from './SavedExploreAnalyses';
 import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
@@ -181,6 +183,15 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
   function changeFilter(index:number,next:FilterClause){
     setFilters(current=>current.map((item,i)=>i===index?next:item));
   }
+  function restoreSaved(config:ExploreState){
+    // Server has already verified ownership and current version. Recalculate
+    // live results; do not copy frozen evidence into the working chart.
+    setX(config.x);setY(config.y??'');setKind(config.kind);
+    setAggregation(config.aggregation);setBins(config.bins);
+    setCorrMethod(config.correlation_method);
+    setFilters(config.filters as FilterClause[]);
+    setSelection(null);setInspection(null);setInspectOffset(0);
+  }
   function changeKind(next:string){
     if(next==='scatter'){
       if(!scatterReady)return;
@@ -230,6 +241,10 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
         <p className="muted-caption">{inspection.note}{inspection.truncated_columns?' Only the first 16 fields, prioritising chart variables, are shown.':''}</p>
       </>}
     </section>}
+    <SavedExploreAnalyses projectId={projectId} version={overview?.version??null}
+      ready={!!filteredOverview&&!loading&&!error&&!!filterCatalog&&filterCatalog.version===overview?.version}
+      configuration={{x,y:y||null,kind,aggregation,bins,correlation_method:corrMethod,filters}}
+      onRestore={restoreSaved}/>
     <section className="panel po-correlation-panel"><div className="panel-title"><BarChart3 size={19}/><h2>Correlation heatmap</h2><span className="pill muted">VERIFIED LOCAL CALCULATION</span></div>
       <p className="body-muted">Compare numeric relationships. Click any off-diagonal cell to open its scatter plot. IDs and obvious identifiers are excluded.</p>
       <label className="po-correlation-method">Correlation method <select className="input" value={corrMethod} onChange={e=>setCorrMethod(e.target.value as 'pearson'|'spearman')}><option value="pearson">Pearson · linear association</option><option value="spearman">Spearman · rank association</option></select></label>
