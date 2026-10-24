@@ -29,6 +29,7 @@ jobs:
           tests/test_non_ai_correctness_gates.py
           tests/test_model_library_expansion.py
           tests/test_explore_chart_quality.py
+          tests/test_scatter_interactions.py
           tests/test_explore_linked_filters.py
           tests/test_explore_record_inspector.py
           tests/test_column_intelligence.py
