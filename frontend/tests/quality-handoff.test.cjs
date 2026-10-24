@@ -29,7 +29,7 @@ test('proactive evidence maps deterministically without labelling all insights a
 
 test('application routes only active-project and current-version evidence to Quality',()=>{
  const explore=load('ExploreWorkspace.tsx'),app=load('App.tsx'),quality=load('QualityWorkspace.tsx');
- assert.match(explore,/onReviewQuality\?\(focus:QualityFocus\)=>void/);
+ assert.match(explore,/onReviewQuality\?:\(focus:QualityFocus\)=>void/);
  assert.match(explore,/onReviewQuality\(\{projectId,version:overview\.version,kind,column\}\)/);
  assert.match(explore,/Inspect in Quality →/);
  assert.match(app,/focus\.projectId===project\.id&&focus\.version===qualityVersion/);
