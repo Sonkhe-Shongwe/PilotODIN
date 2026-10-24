@@ -274,6 +274,20 @@ def choose_model(experiment_id:str,body:SelectionRequest):
     metrics["evaluation_rows"]=[{"actual":engine.native(a),"predicted":engine.native(b)} for a,b in list(zip(y_test,predictions))[:120]]
     metrics["baseline_cv"]=e["results"]["baseline_cv"]
     metrics["cv_score"]=next((m.get("cv_metric") for m in e["results"]["models"] if m["key"]==body.model_key),None)
+    # Frozen training-only majority class / median. Final test is consulted
+    # only *after* the candidate has been selected via development CV.
+    if "baseline_reference" in e["results"]:
+        baseline_test=engine.heldout_baseline_metric(e["results"]["task"],y_test,e["results"]["baseline_reference"])
+        metric_key="f1_macro" if e["results"]["task"]=="classification" else "mae"
+        metrics["baseline_test_metric"]=baseline_test
+        metrics["baseline_test_label"]="Macro F1" if e["results"]["task"]=="classification" else "MAE"
+        metrics["beats_heldout_baseline"]=bool(
+            metrics[metric_key]>baseline_test if e["results"]["task"]=="classification"
+            else metrics[metric_key]<baseline_test
+        )
+        metrics["baseline_test_reference"]="Majority class from development training labels" if e["results"]["task"]=="classification" else "Median of development training labels"
+    else:
+        metrics["baseline_test_note"]="Legacy experiment: no training-derived baseline was persisted. Not comparable."
     metrics["reliability"]=engine.reliability_report(e["results"],metrics,body.model_key)
     if not storage.select_model(experiment_id,body.model_key,metrics):
         raise HTTPException(status_code=409,detail="Model was already selected")
