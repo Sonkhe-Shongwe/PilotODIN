@@ -1,11 +1,13 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPointerEvent,KeyboardEvent as ReactKeyboardEvent} from 'react';
-import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw} from 'lucide-react';
+import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,PanelLeftOpen} from 'lucide-react';
 import {App} from './App';
 import {InvestigationCanvas} from './InvestigationCanvas';
 import {get} from './api';
 import {clampFraction,dockStorageKey,isSecondaryView,isWorkspaceView,makeDockResize,nextDockLayout,parseDockLayout,shouldClearUnavailableProject,WORKSPACE_VIEWS} from './workspaceLayout';
 import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
+import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
+import type {SidebarMode} from './sidebarPreferences';
 import './unified-shell.css';
 
 type ProjectListItem={id:string;name:string;filename:string};
@@ -17,6 +19,12 @@ const ALL:{id:View;label:string;icon:typeof Home}[]=[
  {id:'model',label:'Model',icon:FlaskConical}, {id:'evaluate',label:'Evaluate',icon:Activity},
  {id:'predict',label:'Predict',icon:Target}, {id:'deliver',label:'Deliver',icon:FileText},
  {id:'assistant',label:'Ask ODIN',icon:BrainCircuit}, {id:'ai_settings',label:'Settings',icon:Settings2}
+];
+const NAV_SECTIONS:{title:string;ids:View[]}[]=[
+ {title:'WORKSPACE',ids:['overview','understand']},
+ {title:'ANALYSIS',ids:['investigate','quality','explore']},
+ {title:'MODELLING & DELIVERY',ids:['prepare','model','evaluate','predict','deliver']},
+ {title:'ASSISTANCE',ids:['assistant','ai_settings']}
 ];
 const keyFor=(id:string)=>`pilotodin-workspace-tabs-v1-${encodeURIComponent(id||'none')}`;
 const activeKey=(id:string)=>`pilotodin-workspace-active-v1-${encodeURIComponent(id||'none')}`;
@@ -42,6 +50,10 @@ const PANEL_MIN_WIDTH=300;
 /** One persistent desktop shell. Tabs and layouts are scoped to a project, not to its data. */
 export function UnifiedShell(){
  const [active,setActive]=useState<View>(routeView);
+ const [sidebarMode,setSidebarMode]=useState<SidebarMode>(()=>{
+  try{return resolveSidebarMode(localStorage.getItem(SIDEBAR_KEY),window.innerWidth)}
+  catch{return resolveSidebarMode(null,window.innerWidth)}
+ });
  const [projectId,setProjectId]=useState(localStorage.getItem('pilotodin-current')||'');
  const [projects,setProjects]=useState<ProjectListItem[]>([]);
  const [openTabs,setOpenTabs]=useState<View[]>(()=>readTabs(localStorage.getItem('pilotodin-current')||''));
@@ -142,6 +154,12 @@ export function UnifiedShell(){
   };
   window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
  },[active,shownTabs,dock.secondary]);
+ const toggleSidebar=()=>{
+  const next=sidebarMode==='expanded'?'compact':'expanded';
+  setSidebarMode(next);
+  try{localStorage.setItem(SIDEBAR_KEY,next)}
+  catch{setWarning('Sidebar preference could not be saved. It still works this session.')}
+ };
  const canSplit=!!projectId&&dock.secondary!==null;
  const separate=canSplit&&active!==dock.secondary;
  const paneStyle={'--po-secondary-fraction':`${Math.round(clampFraction(dock.fraction)*10000)/100}%`} as CSSProperties;
@@ -152,7 +170,19 @@ export function UnifiedShell(){
    <div className="po-project-switcher"><Database size={15}/><select aria-label="Active project" value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="">Choose a project</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
   </header>
   <div className="po-shell-row">
-   <nav className="po-global-rail" aria-label="Workspace navigation">{ALL.map(({id,label,icon:Icon})=><button key={id} type="button" className={active===id?'po-rail-active':''} aria-current={active===id?'page':undefined} title={label} aria-label={label} onClick={()=>navigate(id)}><Icon size={20}/><span>{label}</span></button>)}</nav>
+   {sidebarMode==='expanded'&&<button type="button" className="po-nav-backdrop" aria-label="Close sidebar" onClick={toggleSidebar}/>}
+   <nav className={`po-global-rail po-rail-${sidebarMode}`} aria-label="Workspace navigation">
+    <div className="po-rail-heading"><span>NAVIGATION</span>
+     <button type="button" className="po-rail-toggle" aria-label={sidebarMode==='expanded'?'Collapse navigation sidebar':'Expand navigation sidebar'} aria-expanded={sidebarMode==='expanded'} aria-controls="po-nav-items" title={sidebarMode==='expanded'?'Collapse sidebar':'Expand sidebar'} onClick={toggleSidebar}>{sidebarMode==='expanded'?<PanelLeftClose size={20}/>:<PanelLeftOpen size={20}/>}</button>
+    </div>
+    <div id="po-nav-items" className="po-nav-scroller">
+     {NAV_SECTIONS.map(section=><div className="po-nav-section" role="group" aria-label={section.title} key={section.title}>
+      <span className="po-nav-group-caption" aria-hidden="true">{section.title}</span>
+      {ALL.filter(item=>section.ids.includes(item.id)).map(({id,label,icon:Icon})=><button key={id} type="button" className={`po-nav-item ${active===id?'po-rail-active':''}`} aria-current={active===id?'page':undefined} title={sidebarMode==='compact'?label:undefined} aria-label={label} onClick={()=>navigate(id)}><Icon size={20}/><span className="po-nav-label">{label}</span></button>)}
+     </div>)}
+    </div>
+    <div className="po-rail-status"><span className="po-rail-status-dot"/> <span>LOCAL WORKSPACE</span></div>
+   </nav>
    <section className="po-shell-workspace">
     <div className="po-global-tabs" role="tablist" aria-label="Open analytical workspaces">
      {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''}`} key={view} draggable={!!projectId&&isSecondaryView(view)} onDragStart={e=>e.dataTransfer.setData('text/x-pilotodin-workspace',view)}>
