@@ -341,6 +341,7 @@ def bounded_feature_sensitivity(model: Pipeline, X_test: pd.DataFrame, y_test: p
         "sample_rows":int(len(sample)),"total_test_rows":int(len(X_test)),
         "features_evaluated":len(rows),"total_predictors":total,
         "repeats":repeats,"seed":SEED,"data_source":"Frozen held-out set, AFTER model choice",
+        "reference_metric":round(float(baseline),5),
         "sampled":bool(len(sample)<len(X_test) or count<total),
         "scores":rows,
         "limitations":[
