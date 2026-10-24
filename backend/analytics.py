@@ -93,7 +93,7 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
                 out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i),'group':str(g)} for i,a,b,g in zip(view.index,view[x],view[y],labels)]
                 out['note']='Categories and legend counts describe plotted valid pairs only; sampling may omit some groups. Colours do not imply causation.'
             else:
-                out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i)} for i,a,b in zip(view.index,view[x],view[y])]'
+                out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i)} for i,a,b in zip(view.index,view[x],view[y])]
         else:
             view[y]=pd.to_numeric(view[y],errors='coerce');view=view.dropna()
             if view.empty: raise ValueError('Line chart requires a numeric Y column')
