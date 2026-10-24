@@ -69,3 +69,14 @@
    arrival flash that begins before the panel reaches the viewport. */
 .po-record-inspector{scroll-margin-top:28px}
 .po-record-inspector:focus-visible{outline:2px solid #6e5de9;outline-offset:3px}
+
+
+/* A2: source-record inspection extends to quantitative outliers and line marks. */
+.po-box-outlier{padding:0;cursor:pointer;appearance:none}
+.po-box-outlier:hover,.po-box-outlier:focus-visible{background:#b94822;outline:3px solid #6b40a9;outline-offset:3px;z-index:4}
+.po-box-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.po-box-actions .btn{font-size:12px}
+.po-inspect-line-point{cursor:pointer;stroke:#ffffff;stroke-width:2;transition:r .15s,fill .15s}
+.po-inspect-line-point:hover,.po-inspect-line-point:focus-visible{r:8;fill:#106b5b;outline:none;stroke:#5538c6;stroke-width:3}
+.po-interactive-line .pilot-chart{min-width:480px}
+@media(prefers-reduced-motion:reduce){.po-inspect-line-point{transition:none}}
