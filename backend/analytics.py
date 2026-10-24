@@ -57,7 +57,10 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
         if numeric.empty: raise ValueError('Histogram requires numeric values')
         bins=max(4,min(int(bins),40))
         counts, edges=np.histogram(numeric.to_numpy(dtype=float),bins=bins)
-        out['data']=[{'label':f'{edges[i]:,.2f}–{edges[i+1]:,.2f}', 'x':float((edges[i]+edges[i+1])/2),'value':int(c)} for i,c in enumerate(counts)]
+        out['data']=[{'label':f'{edges[i]:,.2f}–{edges[i+1]:,.2f}', 'x':float((edges[i]+edges[i+1])/2),'start':float(edges[i]),'end':float(edges[i+1]),'value':int(c)} for i,c in enumerate(counts)]
+        out['valid_observations']=int(numeric.size)
+        out['excluded_observations']=int(len(xs)-numeric.size)
+        out['note']='Frequency per interval. Missing or non-finite observations are excluded.'
     elif kind in ('scatter','line'):
         if not y: raise ValueError('Scatter and line charts need an Y column')
         view=df[[x,y]].copy()
@@ -77,8 +80,15 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
     elif kind=='box':
         s=pd.to_numeric(xs,errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
         if s.empty: raise ValueError('Box summary needs numeric values')
-        out['data']=[{'label':x,'min':float(s.min()),'q1':float(s.quantile(.25)),
-                      'median':float(s.median()),'q3':float(s.quantile(.75)),'max':float(s.max())}]
+        q1=float(s.quantile(.25));q3=float(s.quantile(.75));iqr=q3-q1
+        low,high=q1-1.5*iqr,q3+1.5*iqr
+        inliers=s[(s>=low)&(s<=high)]
+        outliers=s[(s<low)|(s>high)].sort_values().to_numpy(dtype=float)
+        out['data']=[{'label':x,'min':float(s.min()),'q1':q1,'median':float(s.median()),'q3':q3,'max':float(s.max()),
+                      'whisker_low':float(inliers.min()) if not inliers.empty else float(s.min()),
+                      'whisker_high':float(inliers.max()) if not inliers.empty else float(s.max()),
+                      'outliers':[float(v) for v in outliers[:40]],'outliers_total':int(len(outliers))}]
+        out['note']='Whiskers end at observed inliers within 1.5×IQR fences; marked outliers may still be valid.'
     else:
         if y:
             v=pd.to_numeric(df[y],errors='coerce')
