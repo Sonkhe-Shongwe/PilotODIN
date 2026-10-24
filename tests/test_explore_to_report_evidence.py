@@ -108,3 +108,19 @@ def test_historical_explore_snapshot_remains_frozen_in_report():
     with storage.connect() as con:
         stored=con.execute("SELECT snapshot_json FROM report_revisions_v1 WHERE report_id=?",(saved["id"],)).fetchone()
     assert stored and "explore_snapshot" in stored["snapshot_json"]
+
+
+def test_reporting_refuses_snapshot_whose_chart_settings_were_changed():
+    import json
+    pid,_=make_project("tampered_filters.csv")
+    snapshot=save_explore(pid)
+    with storage.connect() as con:
+        original=con.execute("SELECT configuration_json FROM explore_snapshots_v1 WHERE id=?",(snapshot["id"],)).fetchone()[0]
+        config=json.loads(original)
+        config["filters"]=[]
+        con.execute("UPDATE explore_snapshots_v1 SET configuration_json=? WHERE id=?",
+                    (json.dumps(config,sort_keys=True,separators=(',',':')),snapshot["id"]))
+    response=save_report(pid,[snapshot["id"]])
+    assert response.status_code==409,response.text
+    assert "configuration" in response.text.lower()
+    assert client.get(f"/api/projects/{pid}/reports").json()==[]
