@@ -249,10 +249,103 @@ def validate_config(df: pd.DataFrame, target: str, excluded: list[str], models: 
     if len(y) < 30: raise ValueError("At least 30 labelled rows are required for the local MVP")
     if task == "classification" and int(y.value_counts().min()) < 6:
         raise ValueError("Classification requires at least 6 cases in every class for stable splitting and cross-validation")
+    budget=training_resource_plan(X,len(y))
+    if not budget["within_local_budget"]:
+        raise ValueError(
+            "Local training resource guardrail exceeded: "
+            +str(budget["labelled_rows"])+" labelled rows, approximately "
+            +str(budget["estimated_dense_training_mb"])+" MB of dense training features. "
+            +"This 8 GB-friendly build supports up to "
+            +str(MAX_ML_LABELLED_ROWS)+" labelled rows and "
+            +str(MAX_DENSE_TRAIN_BYTES//(1024*1024))+" MB estimated dense features. "
+            +"Reduce rows/columns in a separate reviewed dataset; the source project remains unchanged."
+        )
     if task == "regression":
         y = pd.to_numeric(y, errors="coerce")
         if y.isna().any() or not np.isfinite(y).all(): raise ValueError("Regression target must contain finite numeric values")
     return X, y, actual_task
+
+
+# Local-first, 8 GB-friendly safeguards. A source dataset may contain more rows;
+# this budget applies ONLY to fitting a model, not to opening or exploring it.
+MAX_ML_LABELLED_ROWS = 30_000
+MAX_DENSE_TRAIN_BYTES = 256 * 1024 * 1024
+
+
+def training_resource_plan(X: pd.DataFrame, labelled_rows: int) -> dict:
+    """Conservative dense-matrix estimate before starting expensive CV.
+
+    Capped one-hot encoding uses no more than 25 output columns per category
+    source. These are estimates, not measurements of process peak RSS.
+    """
+    numerical=sum(inferred_kind(X[col])=="numeric" for col in X)
+    categories=[col for col in X if inferred_kind(X[col])!="numeric"]
+    encoded_width=numerical + sum(min(25,max(1,int(X[col].nunique(dropna=True)))) for col in categories)
+    estimated=int(math.ceil(labelled_rows*.8)*encoded_width*8)
+    return {
+        "labelled_rows":int(labelled_rows),
+        "source_features":int(X.shape[1]),
+        "estimated_encoded_columns":int(encoded_width),
+        "estimated_dense_training_mb":round(estimated/(1024*1024),2),
+        "row_limit":MAX_ML_LABELLED_ROWS,
+        "estimated_dense_mb_limit":MAX_DENSE_TRAIN_BYTES//(1024*1024),
+        "within_local_budget":bool(labelled_rows<=MAX_ML_LABELLED_ROWS and estimated<=MAX_DENSE_TRAIN_BYTES),
+        "note":"Approximate one dense 80% training feature matrix; model, CV, pandas and OS overhead are additional. Not a peak RAM measurement."
+    }
+
+
+def bounded_feature_sensitivity(model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series, task: str) -> dict:
+    """Bounded post-selection permutation sensitivity on frozen held-out data.
+
+    Analytic diagnostic, never used for model selection, hyperparameter tuning
+    or causal inference. The source test set and fitted model are unchanged.
+    """
+    max_rows,max_features,repeats=64,8,2
+    total=int(X_test.shape[1])
+    count=min(total,max_features)
+    if total==0 or len(X_test)<12 or len(y_test)!=len(X_test):
+        return {"status":"unavailable","reason":"Too few held-out observations or no predictors for bounded sensitivity."}
+    chosen=np.linspace(0,total-1,count,dtype=int).tolist()
+    indices=np.linspace(0,len(X_test)-1,min(len(X_test),max_rows),dtype=int)
+    sample=X_test.iloc[indices].copy(deep=True)
+    truth=y_test.iloc[indices]
+    if task not in ("classification","regression"):
+        return {"status":"unavailable","reason":"Unknown modelling task."}
+    def evaluate(frame:pd.DataFrame)->float:
+        predicted=model.predict(frame)
+        if task=="classification":
+            return float(f1_score(truth,predicted,average="macro",zero_division=0))
+        return float(mean_absolute_error(truth,predicted))
+    baseline=evaluate(sample)
+    rng=np.random.default_rng(SEED)
+    rows=[]
+    for index in chosen:
+        feature=str(X_test.columns[index])
+        changes=[]
+        for _ in range(repeats):
+            mutated=sample.copy(deep=True)
+            mutated.iloc[:,index]=sample.iloc[rng.permutation(len(sample)),index].to_numpy()
+            permuted=evaluate(mutated)
+            # Positive delta means the unpermuted model score was better.
+            changes.append(baseline-permuted if task=="classification" else permuted-baseline)
+        rows.append({"feature":feature,"mean_importance":round(float(np.mean(changes)),5),
+                     "repeat_std":round(float(np.std(changes)),5)})
+    rows.sort(key=lambda row:(-row["mean_importance"],row["feature"]))
+    return {
+        "status":"computed","method":"Bounded post-selection permutation sensitivity",
+        "metric":"Macro F1 loss" if task=="classification" else "MAE increase",
+        "sample_rows":int(len(sample)),"total_test_rows":int(len(X_test)),
+        "features_evaluated":len(rows),"total_predictors":total,
+        "repeats":repeats,"seed":SEED,"data_source":"Frozen held-out set, AFTER model choice",
+        "sampled":bool(len(sample)<len(X_test) or count<total),
+        "scores":rows,
+        "limitations":[
+            "A sampled diagnostic on a selected model, not a validated causal or local explanation.",
+            "Correlated predictors, small samples and shuffled time/group values can distort the ranking.",
+            "Untested predictors are not ranked; negative values reflect sampling variation or instability.",
+            "Use this result to investigate behaviour, never to choose or retune the model on held-out data."
+        ]
+    }
 
 
 def model_report(task: str, true: pd.Series, pred: np.ndarray, prob: np.ndarray | None = None) -> dict:
