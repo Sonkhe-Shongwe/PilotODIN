@@ -64,3 +64,6 @@ export function revealRecordInspector(panel: HTMLElement): () => void {
   handle=window.requestAnimationFrame(tick);
   return cleanup;
 }
+
+/** Same workspace-safe motion for any newly revealed detail section. */
+export const revealWorkspaceSection = revealRecordInspector;
