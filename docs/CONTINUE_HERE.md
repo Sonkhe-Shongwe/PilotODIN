@@ -3,7 +3,8 @@
 **Active repository:** [Sonkhe-Shongwe/PilotODIN](https://github.com/Sonkhe-Shongwe/PilotODIN)  
 **Active branch:** `feature/live-dev-workspace-20261023`  
 **Master QA and ongoing decisions:** [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)  
-**Strategic research proposal:** [Master modes and target discovery](./MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md)
+**Strategic research proposal:** [Master modes and target discovery](./MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md)  
+**Latest target-intelligence research:** [Business semantics, opportunity ranking & leakage-free budget](./TARGET_INTELLIGENCE_SEMANTICS_AND_RANKING_RESEARCH.md)
 
 ## Read this first when switching conversations/tabs
 
