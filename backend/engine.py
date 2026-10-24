@@ -11,9 +11,13 @@ from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import (ExtraTreesClassifier, ExtraTreesRegressor,
                               GradientBoostingClassifier, GradientBoostingRegressor,
+                              HistGradientBoostingClassifier, HistGradientBoostingRegressor,
                               RandomForestClassifier, RandomForestRegressor)
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
+from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, ElasticNet
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC, SVR
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
                              mean_absolute_error, mean_squared_error, precision_score,
                              r2_score, recall_score, roc_auc_score)
@@ -23,13 +27,16 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 SEED = 42
-CLASS_MODELS = ["logistic_regression", "decision_tree", "random_forest", "extra_trees", "gradient_boosting"]
-REG_MODELS = ["linear_regression", "ridge", "decision_tree", "random_forest", "gradient_boosting"]
+CLASS_MODELS = ["logistic_regression", "decision_tree", "random_forest", "extra_trees", "gradient_boosting", "hist_gradient_boosting", "knn", "svm", "naive_bayes"]
+REG_MODELS = ["linear_regression", "ridge", "elastic_net", "decision_tree", "random_forest", "gradient_boosting", "hist_gradient_boosting", "knn", "svr"]
 LABELS = {
     "logistic_regression": "Logistic Regression", "linear_regression": "Linear Regression",
     "ridge": "Ridge Regression", "decision_tree": "Decision Tree",
     "random_forest": "Random Forest", "extra_trees": "Extra Trees",
     "gradient_boosting": "Gradient Boosting",
+    "hist_gradient_boosting": "Histogram Gradient Boosting", "knn": "K-Nearest Neighbours",
+    "svm": "Support Vector Classifier", "svr": "Support Vector Regression",
+    "naive_bayes": "Gaussian Naive Bayes", "elastic_net": "Elastic Net",
 }
 LEAK_TERMS = ("diagnosis", "final_result", "outcome_after", "post_outcome", "target_encoded", "approved_after")
 
@@ -153,6 +160,10 @@ def make_estimator(task: str, key: str):
             "random_forest": RandomForestClassifier(n_estimators=70, max_depth=14, n_jobs=1, random_state=SEED),
             "extra_trees": ExtraTreesClassifier(n_estimators=70, max_depth=14, n_jobs=1, random_state=SEED),
             "gradient_boosting": GradientBoostingClassifier(random_state=SEED),
+            "hist_gradient_boosting": HistGradientBoostingClassifier(max_iter=80,max_leaf_nodes=15,early_stopping=False,random_state=SEED),
+            "knn": KNeighborsClassifier(n_neighbors=3,n_jobs=1),
+            "svm": SVC(kernel="rbf",C=1.0,cache_size=100,random_state=SEED),
+            "naive_bayes": GaussianNB(),
         }
     else:
         mapping = {
@@ -161,6 +172,10 @@ def make_estimator(task: str, key: str):
             "decision_tree": DecisionTreeRegressor(max_depth=9, random_state=SEED),
             "random_forest": RandomForestRegressor(n_estimators=70, max_depth=14, n_jobs=1, random_state=SEED),
             "gradient_boosting": GradientBoostingRegressor(random_state=SEED),
+            "hist_gradient_boosting": HistGradientBoostingRegressor(max_iter=80,max_leaf_nodes=15,early_stopping=False,random_state=SEED),
+            "knn": KNeighborsRegressor(n_neighbors=3,n_jobs=1),
+            "svr": SVR(kernel="rbf",C=1.0,cache_size=100),
+            "elastic_net": ElasticNet(alpha=0.1,l1_ratio=0.5,max_iter=1500,random_state=SEED),
         }
     if key not in mapping: raise ValueError(f"Invalid {task} model: {key}")
     return mapping[key]
@@ -171,7 +186,7 @@ def make_pipeline(X: pd.DataFrame, task: str, model: str) -> Pipeline:
     categorical = [c for c in X if c not in numeric]
     # Keep missing-only columns stable across folds; let imputers use safe constants.
     num_pipe = Pipeline([("imputer", SimpleImputer(strategy="median", keep_empty_features=True))])
-    if model in ("logistic_regression", "linear_regression", "ridge"):
+    if model in ("logistic_regression", "linear_regression", "ridge", "elastic_net", "knn", "svm", "svr"):
         num_pipe.steps.append(("scaler", StandardScaler()))
     cat_pipe = Pipeline([("imputer", SimpleImputer(strategy="most_frequent", keep_empty_features=True)),
                          ("encoder", OneHotEncoder(handle_unknown="infrequent_if_exist", max_categories=25))])

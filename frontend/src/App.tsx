@@ -29,8 +29,25 @@ const NAV: {id:Stage;name:string;sub:string;icon:typeof Database}[] = [
   {id:'assistant',name:'Ask ODIN',sub:'Hybrid AI dataset copilot',icon:BrainCircuit},
   {id:'ai_settings',name:'AI Settings',sub:'Gemini · Groq · OpenRouter',icon:LockKeyhole}
 ];
-const C_MODELS=[['logistic_regression','Logistic Regression'],['decision_tree','Decision Tree'],['random_forest','Random Forest'],['extra_trees','Extra Trees'],['gradient_boosting','Gradient Boosting']];
-const R_MODELS=[['linear_regression','Linear Regression'],['ridge','Ridge Regression'],['decision_tree','Decision Tree'],['random_forest','Random Forest'],['gradient_boosting','Gradient Boosting']];
+const C_MODELS=[['logistic_regression','Logistic Regression'],['decision_tree','Decision Tree'],['random_forest','Random Forest'],['extra_trees','Extra Trees'],['gradient_boosting','Gradient Boosting'],['hist_gradient_boosting','Histogram Gradient Boosting'],['knn','K-Nearest Neighbours'],['svm','Support Vector Classifier'],['naive_bayes','Gaussian Naive Bayes']];
+const R_MODELS=[['linear_regression','Linear Regression'],['ridge','Ridge Regression'],['elastic_net','Elastic Net'],['decision_tree','Decision Tree'],['random_forest','Random Forest'],['gradient_boosting','Gradient Boosting'],['hist_gradient_boosting','Histogram Gradient Boosting'],['knn','K-Nearest Neighbours'],['svr','Support Vector Regression']];
+type ModelCategory='Baseline & Linear'|'Trees & Ensembles'|'Distance & Margin'|'Probabilistic';
+const MODEL_CATEGORIES:ModelCategory[]=['Baseline & Linear','Trees & Ensembles','Distance & Margin','Probabilistic'];
+const MODEL_INFO:Record<string,{category:ModelCategory;summary:string;cost:string}>={
+ logistic_regression:{category:'Baseline & Linear',summary:'Interpretable classification baseline',cost:'Light'},
+ linear_regression:{category:'Baseline & Linear',summary:'Interpretable regression baseline',cost:'Light'},
+ ridge:{category:'Baseline & Linear',summary:'Regularised linear regression',cost:'Light'},
+ elastic_net:{category:'Baseline & Linear',summary:'Sparse and regularised linear estimator',cost:'Light'},
+ decision_tree:{category:'Trees & Ensembles',summary:'Single, inspectable decision tree',cost:'Light'},
+ random_forest:{category:'Trees & Ensembles',summary:'Bagged trees; robust tabular baseline',cost:'Moderate'},
+ extra_trees:{category:'Trees & Ensembles',summary:'Randomised tree ensemble',cost:'Moderate'},
+ gradient_boosting:{category:'Trees & Ensembles',summary:'Sequential boosted trees',cost:'Moderate'},
+ hist_gradient_boosting:{category:'Trees & Ensembles',summary:'Histogram-based boosted trees',cost:'Moderate'},
+ knn:{category:'Distance & Margin',summary:'Nearest neighbours, scaled numeric features',cost:'Moderate'},
+ svm:{category:'Distance & Margin',summary:'Kernel margin classifier; can be slow for large datasets',cost:'Heavy'},
+ svr:{category:'Distance & Margin',summary:'Kernel-based numeric prediction; may be slow',cost:'Heavy'},
+ naive_bayes:{category:'Probabilistic',summary:'Fast Gaussian probabilistic classifier',cost:'Light'}
+};
 function fmt(n:number|null|undefined){return typeof n==='number'?n.toLocaleString(undefined,{maximumFractionDigits:4}):'—'}
 function fmtPrediction(value:string|number,task:string|undefined){return typeof value==='number'?value.toLocaleString(undefined,{minimumFractionDigits:task==='regression'?2:0,maximumFractionDigits:task==='regression'?2:4}):String(value)}
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
@@ -337,7 +354,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
           </>}
           {page==='model'&&!prep&&<MissingRequirement icon={<FlaskConical size={30}/>} title="Choose a prediction target first" body="Model Lab needs a confirmed target and preprocessing plan. You can return here at any time." action="Review preparation" onAction={()=>go('prepare')}/>}
           {page==='model'&&prep&&<><div className="panel"><div className="panel-title"><FlaskConical size={19}/><h2>Choose up to five models</h2><span className="pill">{models.length} / 5 selected</span></div><p className="body-muted">PilotODIN will compare models using cross-validation on the development split. Higher macro F1 is better for classification; lower MAE is better for regression.</p><div className="mini-info"><Sparkles size={16}/> Suggested comparison: {prep.task==='regression'?'Linear Regression as a transparent baseline alongside Random Forest / Gradient Boosting':'Logistic Regression as an interpretable baseline alongside Random Forest / Extra Trees'}. The winner is decided by cross-validation, not the suggestion.</div>
-            <div className="model-grid">{available.map(([key,label])=><button key={key} className={cls('model-choice',models.includes(key)&&'chosen')} onClick={()=>setModels(a=>a.includes(key)?a.filter(x=>x!==key):a.length<5?[...a,key]:a)}><div className="model-icon">{models.includes(key)?<Check size={18}/>:<FlaskConical size={18}/>}</div><span>{label}</span></button>)}</div></div>
+            <div className="model-family-list">{MODEL_CATEGORIES.map(category=>{const options=available.filter(([key])=>MODEL_INFO[key]?.category===category);if(!options.length)return null;return <section className="model-family" key={category}><div className="model-family-heading"><strong>{category}</strong><small>{options.length} supported algorithms</small></div><div className="model-grid">{options.map(([key,label])=><button key={key} type="button" aria-pressed={models.includes(key)} className={cls('model-choice',models.includes(key)&&'chosen')} onClick={()=>setModels(a=>a.includes(key)?a.filter(x=>x!==key):a.length<5?[...a,key]:a)}><div className="model-icon">{models.includes(key)?<Check size={18}/>:<FlaskConical size={18}/>}</div><span className="model-choice-copy"><strong>{label}</strong><small>{MODEL_INFO[key]?.summary}</small><small className="model-cost">Resource level: {MODEL_INFO[key]?.cost}</small></span></button>)}</div></section>})}</div></div>
             <div className="panel"><div className="panel-title"><ShieldCheck size={19}/><h2>Validation safeguards</h2></div><div className="validation-row"><span>Hold-out test set</span><strong>20% (untouched until model selection)</strong></div><div className="validation-row"><span>Development split</span><strong>80% (5-fold CV when possible)</strong></div><div className="validation-row"><span>Primary metric</span><strong>{prep.task==='classification'?'Macro F1':'Mean Absolute Error'}</strong></div>
               <label className="field-label">VALIDATION STRATEGY</label>
               <select className="input" value={splitStrategy} onChange={e=>{setSplitStrategy(e.target.value as 'random'|'time'|'group');setConfirmSplit(false);setSplitColumn('')}}><option value="random">Random: independent observations</option><option value="time">Time: train on earlier records, test on later records</option><option value="group">Group: keep repeated entities in separate folds</option></select>
