@@ -45,9 +45,9 @@ It creates a new isolated temp data directory and retains it to support debuggin
 | Null category collision | A literal text category named `(Missing)` remains different from a **null** cell; its chart counts and drill-down rows must not merge. |
 | Correlation | Pearson/Spearman matrix is current-version and filter-linked. Pairwise counts and empty/ineligible cases are explained without causal claims. |
 | Motion | Selecting a chart mark scrolls to the inspector at the deliberately slower speed. Manual scroll interrupts; pagination does not trigger another jump; reduced-motion makes navigation immediate. |
-| Saved Explore analysis | Save, close, reopen and restore matching-version config without changing approved data. Results and settings each have integrity protection. |
+| Saved Explore analysis | Save, close, reopen and restore matching-version config without changing approved data. Results and settings each have integrity protection. Library clearly distinguishes verified, legacy settings, and corrupt items. |
 | Historical/legacy saved evidence | Historical verified results are frozen. Legacy result-only snapshots remain readable but cannot auto-restore unverified settings or be passed to Deliver as verified evidence. |
-| Deliver handoff | One verified Explore snapshot opens as a selected new report exhibit. Save revision, export PDF and HTML; check numerical values, source hashes and dataset versions. |
+| Deliver handoff | One verified Explore snapshot opens as a selected new report exhibit. Legacy or corrupt snapshots are **absent** from report evidence options (while valid legacy results remain inspectable in Explore). Save revision, export PDF and HTML; check numerical values, source hashes and dataset versions. |
 | Mixed report evidence | A report containing an Investigate artifact and Explore snapshot remains project-scoped, immutable and reproducible after reopening. |
 | Export safety | Confirm correct file extension and filename; Save As destination is user-controlled on the intended Windows target. Note remaining defects in QA Issue #2. |
 
