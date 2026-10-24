@@ -289,6 +289,16 @@ def choose_model(experiment_id:str,body:SelectionRequest):
     else:
         metrics["baseline_test_note"]="Legacy experiment: no training-derived baseline was persisted. Not comparable."
     metrics["reliability"]=engine.reliability_report(e["results"],metrics,body.model_key)
+    # A bounded post-selection analysis of frozen holdout rows. Failure of an
+    # optional diagnostic must not erase a valid selected-model evaluation.
+    try:
+        metrics["feature_sensitivity"]=engine.bounded_feature_sensitivity(
+            model,x_test,y_test,e["results"]["task"])
+    except (ValueError,TypeError,RuntimeError,MemoryError):
+        metrics["feature_sensitivity"]={
+            "status":"unavailable",
+            "reason":"Bounded sensitivity could not be calculated for this trained model."
+        }
     if not storage.select_model(experiment_id,body.model_key,metrics):
         raise HTTPException(status_code=409,detail="Model was already selected")
     return {"selected_model":body.model_key,"final_results":metrics}
