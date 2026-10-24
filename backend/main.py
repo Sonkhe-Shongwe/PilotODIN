@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, data_exports, quality_approvals, reports
+    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, data_exports, quality_approvals, reports
+    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -516,6 +516,42 @@ def explore_inspect(project_id: str, body: ExploreInspectRequest):
         return {**response, "total_filtered_rows": int(len(subset))}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class SaveExploreAnalysisRequest(ExploreWorkbenchRequest):
+    title: str = Field(min_length=4, max_length=120)
+
+
+def _saved_analysis_call(fn):
+    try:
+        return fn()
+    except saved_analyses.SavedAnalysisError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/projects/{project_id}/explore/saved")
+def list_saved_explore_analyses(project_id: str):
+    project_or_404(project_id)
+    return _saved_analysis_call(lambda: saved_analyses.listing(project_id))
+
+
+@app.get("/api/projects/{project_id}/explore/saved/{snapshot_id}")
+def read_saved_explore_analysis(project_id: str, snapshot_id: str):
+    project_or_404(project_id)
+    return _saved_analysis_call(lambda: saved_analyses.load(project_id, snapshot_id))
+
+
+@app.post("/api/projects/{project_id}/explore/saved", status_code=201)
+def save_explore_analysis(project_id: str, body: SaveExploreAnalysisRequest):
+    project_or_404(project_id)
+    return _saved_analysis_call(lambda: saved_analyses.save(
+        project_id, title=body.title, expected_version=body.expected_version,
+        x=body.x, y=body.y, kind=body.kind, aggregation=body.aggregation,
+        bins=body.bins, correlation_method=body.correlation_method,
+        filters=[item.model_dump(exclude_none=True) for item in body.filters]
+    ))
 
 
 @app.get("/api/projects/{project_id}/explore/insights")
