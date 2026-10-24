@@ -57,7 +57,7 @@ def inspect(
         valid = {item["label"] for item in plot["data"]}
         if not isinstance(label, str) or label not in valid:
             raise ValueError("Select a visible chart category")
-        column = frame[x].fillna("(Missing)").astype(str)
+        column = analytics.category_labels(frame[x])
         positions = np.flatnonzero(column.eq(label).to_numpy())
         detail = f"Category {label} in {x}"
     elif chosen == "bin" and plot["type"] == "histogram":
@@ -75,7 +75,7 @@ def inspect(
         if not isinstance(label, str) or label not in shown:
             raise ValueError("Select a visible line-chart group")
         # The same finite-Y and missing-X treatment is used by analytics.chart.
-        group = frame[x].fillna("(Missing)").astype(str).eq(label)
+        group = analytics.category_labels(frame[x]).eq(label)
         numeric = pd.to_numeric(frame[y], errors="coerce").replace([np.inf, -np.inf], np.nan)
         positions = np.flatnonzero((group & numeric.notna()).to_numpy())
         detail = f"Line chart group {label} in {x} (finite {y} measurements)"
