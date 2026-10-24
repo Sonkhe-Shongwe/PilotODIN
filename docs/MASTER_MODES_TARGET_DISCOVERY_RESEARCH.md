@@ -2,7 +2,7 @@
 **Status:** Product research and architecture proposal — **NOT IMPLEMENTED**  
 **Discussed:** 24 October 2026  
 **Project:** PilotODIN 1.0 / local-first Windows analytical workspace  
-**Related:** [Current handoff](./CONTINUE_HERE.md) · [Design history](./DESIGN.md) · [Master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)
+**Related:** [Current handoff](./CONTINUE_HERE.md) · [Deep research: semantic inference & candidate ranking](./TARGET_INTELLIGENCE_SEMANTICS_AND_RANKING_RESEARCH.md) · [Design history](./DESIGN.md) · [Master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)
 
 > IMPORTANT: This document records the user's product direction and the research discussion, not proof that new autonomous features exist. Keep the existing manual Expert workflows working. Don't start implementation until an execution design, test conditions and placement in the release roadmap have been reviewed.
 
