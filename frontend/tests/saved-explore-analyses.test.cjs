@@ -27,11 +27,14 @@ test('save persists title/version/config, then reopens a server-scoped frozen sn
 });
 
 test('historical snapshots are preview only, not silently applied to current working data',()=>{
- assert.match(views,/if\(!saved\.stale&&saved\.dataset_version===version\)/);
+ assert.match(views,/if\(saved\.configuration_verified&&!saved\.stale&&saved\.dataset_version===version\)/);
  assert.match(views,/onRestore\(saved\.configuration\)/);
  assert.match(views,/Historical snapshot opened read-only/);
  assert.match(views,/Live filters and charts have not changed/);
  assert.match(views,/HISTORICAL SNAPSHOT/);
+ assert.match(views,/LEGACY · UNVERIFIED SETTINGS/);
+ assert.match(views,/disabled=\{busy!==''\|\|!selected\.configuration_verified\}/);
+ assert.match(views,/cannot be restored or attached as verified report evidence/);
  assert.match(views,/not recalculated on the current data/);
 });
 
