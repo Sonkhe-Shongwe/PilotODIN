@@ -55,6 +55,8 @@ def test_save_is_server_recomputed_immutable_with_integrity_proof(saved_store):
         saved=con.execute("SELECT * FROM explore_snapshots_v1 WHERE id=?",(result["id"],)).fetchone()
     assert result["sha256"]==hashlib.sha256(saved["snapshot_json"].encode()).hexdigest()
     assert saved["dataset_version"]==2
+    assert result["configuration_verified"] is True
+    assert result["snapshot"]["configuration_sha256"]==hashlib.sha256(saved["configuration_json"].encode()).hexdigest()
     assert df.equals(before)
     assert len(saved_analyses.listing("a"))==1
 
@@ -121,3 +123,31 @@ def test_http_api_roundtrip_keeps_project_scope_and_version(saved_store,monkeypa
     with pytest.raises(HTTPException) as exc:
         main.read_saved_explore_analysis("b",saved["id"])
     assert exc.value.status_code==404
+
+
+def test_configuration_corruption_detected_even_when_numeric_snapshot_sha_still_matches(saved_store):
+    _,_,conn=saved_store
+    result=save_example()
+    with conn() as con:
+        original=con.execute("SELECT configuration_json FROM explore_snapshots_v1 WHERE id=?",(result["id"],)).fetchone()[0]
+        altered=json.loads(original);altered["filters"]=[]
+        con.execute("UPDATE explore_snapshots_v1 SET configuration_json=? WHERE id=?",
+                    (json.dumps(altered,sort_keys=True,separators=(',',':')),result["id"]))
+    with pytest.raises(saved_analyses.SavedAnalysisError,match="configuration integrity") as err:
+        saved_analyses.load("a",result["id"])
+    assert err.value.status==409
+
+
+def test_legacy_snapshot_checksum_still_readable_but_settings_unverified(saved_store):
+    _,_,conn=saved_store
+    result=save_example()
+    with conn() as con:
+        row=con.execute("SELECT snapshot_json FROM explore_snapshots_v1 WHERE id=?",(result["id"],)).fetchone()
+        snapshot=json.loads(row["snapshot_json"])
+        del snapshot["configuration_sha256"]
+        canonical=json.dumps(snapshot,sort_keys=True,ensure_ascii=False,allow_nan=False,separators=(',',':'))
+        con.execute("UPDATE explore_snapshots_v1 SET snapshot_json=?,sha256=? WHERE id=?",
+                    (canonical,hashlib.sha256(canonical.encode()).hexdigest(),result["id"]))
+    legacy=saved_analyses.load("a",result["id"])
+    assert legacy["configuration_verified"] is False
+    assert legacy["snapshot"]["filtered_rows"]==3
