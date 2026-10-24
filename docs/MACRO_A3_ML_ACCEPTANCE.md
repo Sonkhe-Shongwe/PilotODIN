@@ -1,7 +1,7 @@
 # PilotODIN Macro A3 — Machine Learning reliability checkpoint
 
 **Branch:** `feature/live-dev-workspace-20261023`  
-**Checkpoint:** A3-1 and A3-2, per-feature preparation, leakage-aware validation, held-out baseline and prediction transparency  
+**Checkpoint:** A3-1/A3-2/A3-3: feature risk review, leak-aware splits, held-out diagnostics, bounded post-selection feature sensitivity and 8 GB-local training preflight  
 **Acceptance state:** Code committed; new regression tests not yet executed on Windows. A2's prior 190 passing checks cover an earlier source revision only.
 
 ## What changed
@@ -10,9 +10,12 @@
 2. The analyst still controls manual feature exclusions. Applying suggested high-risk exclusions **merges** them with prior selections and must never remove a manually excluded field.
 3. For predictors resembling identifiers or post-outcome leakage, Model Lab shows a named review gate. The **backend** checks the same risk list and rejects training without an explicit `acknowledge_feature_risks` or exclusion. Accepted experiments persist `reviewed_high_risk_features` and the acknowledgement flag for audit.
 4. Time-ordered holdout refuses to divide observations with an identical timestamp between development and final test. Chronological cross-validation now splits distinct timestamp groups, preventing one instant from appearing in both development-training and validation folds.
-5. Existing leakage barriers remain: transformations fitted inside training CV folds, held-out test evaluated only after a user selects a model, one-time selected model, quality version pinning, group-aware split support and server-side prediction domain validation.
+5. A3-2 adds a training-derived simple baseline scored alongside the selected model on identical held-out rows, conservative reliability warnings, unseen-category/missingness explanations, explicit uncalibrated probability labels, and Evaluate-first reopening of experiments.
+6. A3-3 adds a visible conservative resource plan before training (up to 30,000 labelled rows and 256 MB estimated dense training-matrix allocation; these are not measured peak RAM usage). The backend rechecks limits after actual exclusions and refuses oversized experiments without modifying the source data.
+7. A3-3 adds bounded post-selection permutation sensitivity: up to 64 deterministic held-out observations, up to 8 evenly distributed original input fields, two shuffles each, one process. It stores sample counts, covered feature counts, seed, metric, directional scores and limitations with the immutable final evaluation, **never** using them for model selection. Unavailable or older analyses show an explicit no-diagnostic explanation.
+8. Existing leakage barriers remain: transformations fitted inside training CV folds, held-out test evaluated only after a user selects a model, one-time selected model, quality version pinning, group-aware split support and server-side prediction domain validation.
 
-**Limitations:** Name- and cardinality-based risk checks are *heuristics*, not proof of leakage or feature relevance. No automated feature importance, causal conclusion, calibrated confidence or universal domain inference is claimed. Duplicated entities, time-dependent labels and target timing require business review. A3 remains open until full preparation, training, evaluation and prediction acceptance.
+**Limitations:** Name- and cardinality-based risk checks are *heuristics*, not proof of leakage or feature relevance. No exhaustive, causal, individual-prediction or globally validated feature importance, calibrated confidence or universal domain inference is claimed. Bounded permutation analysis is sampling-limited and post-selection only. Duplicated entities, time-dependent labels and target timing require business review. A3 remains open until full preparation, training, evaluation and prediction acceptance.
 
 ## How to run the focused local tests
 
@@ -33,6 +36,8 @@ If pytest is missing in the development venv, explicitly install from `backend/r
 ## Manual Windows acceptance (at the A3 checkpoint)
 
 - [ ] Choose an output column and compare Prepare's candidate vs included predictor counts with excluded and unusable fields.
+- [ ] Check Prepare's resource preflight before excluding columns, then exclude a high-cardinality field. The server rechecks the actual trainable features on submission; there must be no silent auto-downsampling, peak-RAM guarantee or production-data mutation.
+- [ ] Confirm that training with more than 30,000 labelled rows or a projected dense matrix greater than 256 MB fails with an actionable guardrail message rather than trying to fit a large model.
 - [ ] Inspect feature audit for a numeric field with missing values, a categorical field, a constant field and a likely identifier.
 - [ ] Manually exclude one predictor, apply suggested exclusions, and confirm the manual exclusion remains.
 - [ ] Leave a high-risk predictor included: the review acknowledgement should be visible; without it the Train action must be disabled and a forged API request rejected.
@@ -41,6 +46,8 @@ If pytest is missing in the development venv, explicitly install from `backend/r
 - [ ] Run time/group stratified experiments on adequate real or synthetic datasets; inspect CV folds and baseline vs candidate scores.
 - [ ] Select a model: land in Evaluate, inspect actual held-out metrics and reliability warnings, then proceed explicitly to Predict.
 - [ ] Check the held-out score against the **training-derived constant baseline** on the same held-out rows. This must be a diagnostic after selection, never an input to choosing the winning model; for older experiments with no saved training baseline, display unavailable instead of inventing a comparison.
+- [ ] After selecting a model, examine the post-selection sensitivity table. It must disclose at most eight tested predictors, at most 64 held-out rows and two shuffles per feature, with explicit incomplete-coverage/non-causal warnings. No untested predictor may appear ranked. Reopening an old experiment without sensitivity shows unavailable, not fabricated values.
+- [ ] Check source test records and the saved selected-model metrics remain immutable and no diagnostic is allowed to retune or reselect the model.
 - [ ] Reopen an already selected experiment from the project and confirm it navigates to **Evaluate** rather than bypassing the held-out report.
 - [ ] Prediction input with a missing feature explicitly warns that training-fitted imputation is used; an unfamiliar category warns only if the training category list is complete.
 - [ ] Class probabilities are clearly identified as **uncalibrated model estimates**, not externally validated likelihoods.
