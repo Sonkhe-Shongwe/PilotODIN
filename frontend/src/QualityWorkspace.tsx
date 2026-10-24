@@ -10,6 +10,12 @@ type Preview={version:number;total_matching_rows:number;offset:number;limit:numb
 type QualityProposal={proposal_id:string;proposal_hash:string;operation:string;expected_version:number;changed_cells:number;
  steps:{issue_id?:string;action_id?:string;target_version?:number;proposal?:{kind:string;column:string;from?:string;to?:string;value?:number};affected_rows?:number}[];
  preview:{row_number:number;column:string;before:unknown;after:unknown}[];expires_at:string;warning:string};
+type QualityInvestigation={
+ project_id:string;version:number;issue_id:string;kind:string;column:string;stored_dtype:string;
+ dataset_rows:number;affected_rows:number;affected_row_numbers:number[];shown_row_numbers:number;
+ statistical_method:string;statistics:Record<string,unknown>;warning:string;
+ recommended_action:string;suggested_reviews:string[];
+};
 type HistoryData={current_version:number;versions:{version:number;event:string;created_at:string;details:Record<string,unknown>}[];actions:{id:string;kind:string;column:string;affected_rows:number;active:boolean;source:string}[]};
 
 const val=(v:unknown)=>v===null||v===undefined?'—':String(v);
@@ -20,6 +26,9 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const findingsRef=useRef<HTMLDivElement|null>(null);
   const consumedFocus=useRef<QualityFocus|null>(null);
   const [handoffNote,setHandoffNote]=useState('');
+  const inspectorRef=useRef<HTMLDivElement|null>(null);
+  const [investigation,setInvestigation]=useState<QualityInvestigation|null>(null);
+  const [investigating,setInvestigating]=useState(false);
   const [history,setHistory]=useState<HistoryData|null>(null);
   const [preview,setPreview]=useState<Preview|null>(null);
   const [selected,setSelected]=useState<string>('');
@@ -46,7 +55,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     setQuality(q);setHistory(h);setExportVersion(v=>h.versions.some(x=>x.version===v)?v:q.version);return q;
   },[projectId]);
   useEffect(()=>{let live=true;load().catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[load]);
-  useEffect(()=>{let live=true;const query=`/projects/${projectId}/quality/preview?offset=${offset}&limit=12${selected?`&issue_id=${encodeURIComponent(selected)}`:''}`;
+  useEffect(()=>{let live=true;const query=`/projects/${projectId}/quality/preview?offset=${offset}&limit=12${quality?`&expected_version=${quality.version}`:''}${selected?`&issue_id=${encodeURIComponent(selected)}`:''}`;
     get<Preview>(query).then(p=>{if(live)setPreview(p)}).catch(e=>{if(live){setPreview(null);setError(e.message)}});
     return()=>{live=false};
   },[projectId,selected,offset,quality?.version]);
@@ -64,7 +73,23 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     findingsRef.current?.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start',inline:'nearest'});
   },[initialFocus,projectId,quality]);
+  useEffect(()=>{setInvestigation(null)},[projectId,selected,quality?.version]);
   const issue=quality?.issues.find(x=>x.id===selected);
+  async function investigateFinding(selectedIssue:QualityIssue){
+    if(!quality||!selectedIssue.column)return;
+    setInvestigating(true);setInvestigation(null);setError('');
+    try{
+      const result=await get<QualityInvestigation>(`/projects/${projectId}/quality/investigate?issue_id=${encodeURIComponent(selectedIssue.id)}&expected_version=${quality.version}`);
+      if(result.issue_id===selectedIssue.id&&result.version===quality.version)setInvestigation(result);
+    }catch(e){setError((e as Error).message)}finally{setInvestigating(false)}
+  }
+  function showAffectedRecords(){
+    setOffset(0);setView('working');
+    const target=inspectorRef.current;
+    if(!target)return;
+    const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start',inline:'nearest'});
+  }
   async function finishVersionChange(version:number,message:string){
     const current=await load();
     if(selected&&!current.issues.some(x=>x.id===selected))setSelected('');
@@ -188,7 +213,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
       </section>
     </div>}
     <div className="quality-split">
-      <div className="panel quality-table-panel">
+      <div className="panel quality-table-panel" ref={inspectorRef}>
         <div className="panel-title"><ClipboardCheck size={18}/><h2>Dataset inspector</h2><span className="pill muted">{preview?.total_matching_rows??0} rows</span></div>
         <div className="quality-toolbar"><div className="workspace-tabs" style={{margin:0}}>{(['original','working','proposed'] as const).map(t=><button className={'workspace-tab '+(view===t?'selected':'')} onClick={()=>setView(t)} key={t}>{t==='original'?'Original':t==='working'?'Current':'Proposed'}</button>)}</div><button className="btn small" onClick={()=>{setOffset(0);void load()}}><RefreshCw size={14}/> Refresh</button></div>
         <p className="muted-caption">{issue?`Showing records related to: ${issue.title}`:'Showing a paginated sample of the working dataset.'} Changed cells are highlighted.</p>
@@ -214,7 +239,23 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
              {diagnostics.suggested_treatments.map(t=><div key={t.id} className="treatment-option"><strong>{t.label}</strong><p>{t.tradeoff}</p>{t.id==='median'&&<button className="btn primary small" disabled={busy} onClick={()=>void approveMedian()}>Review and approve median fill</button>}</div>)}
              <small>{diagnostics.caution}</small></div>}
           </div>}
-          {issue.severity==='information'&&<p className="muted-caption">Informational finding. No data transformation is proposed.</p>}{issue.decision==='undone'&&<p className="muted-caption">You undid this correction. Smart Autopilot will not silently reapply it.</p>}</div>}</>}
+          {(issue.kind==='outliers'||issue.kind==='identifier')&&issue.column&&<div className="po-quality-investigation">
+             <div className="quality-action-row">
+               <button className="btn" type="button" disabled={investigating||busy} onClick={()=>void investigateFinding(issue)}>{investigating?<LoaderCircle size={15} className="spin"/>:<Sparkles size={15}/>} Investigate {issue.kind==='outliers'?'unusual values':'identifier characteristics'}</button>
+               <button className="btn" type="button" onClick={showAffectedRecords}><FileSpreadsheet size={15}/> Show matching source rows</button>
+             </div>
+             {investigation?.issue_id===issue.id&&investigation.version===quality.version&&<div className="po-quality-investigation-result" role="region" aria-label="Read-only finding investigation">
+               <div className="po-quality-investigation-heading"><strong>{investigation.statistical_method}</strong><span className="pill muted">VERIFIED · v{investigation.version}</span></div>
+               <p><b>{investigation.affected_rows.toLocaleString()}</b> affected of {investigation.dataset_rows.toLocaleString()} records · field <b>{investigation.column}</b> · stored dtype <code>{investigation.stored_dtype}</code>.</p>
+               <div className="po-quality-investigation-stats">{Object.entries(investigation.statistics).filter(([,value])=>typeof value==='number'||typeof value==='string').map(([name,value])=><div key={name}><small>{name.replaceAll('_',' ')}</small><strong>{typeof value==='number'?value.toLocaleString(undefined,{maximumFractionDigits:4}):String(value)}</strong></div>)}</div>
+               <p className="po-quality-warning">{investigation.warning}</p>
+               <h4>Review before taking action</h4>
+               <ul>{investigation.suggested_reviews.map((review,i)=><li key={i}>{review}</li>)}</ul>
+               <p className="muted-caption">Matching source row numbers (up to 40): {investigation.affected_row_numbers.join(', ')||'None'}. {investigation.recommended_action}</p>
+               <button type="button" className="btn" onClick={showAffectedRecords}><ArrowLeft size={14}/> Inspect these records in Dataset inspector</button>
+             </div>}
+           </div>}
+           {issue.severity==='information'&&<p className="muted-caption">Informational finding. No data transformation is proposed.</p>}{issue.decision==='undone'&&<p className="muted-caption">You undid this correction. Smart Autopilot will not silently reapply it.</p>}</div>}</>}
         {busy&&<div className="quality-loading"><LoaderCircle size={15} className="spin"/> Processing validated change…</div>}
       </div>
     </div>
