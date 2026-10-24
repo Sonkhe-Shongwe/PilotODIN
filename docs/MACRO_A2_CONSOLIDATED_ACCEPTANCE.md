@@ -1,7 +1,7 @@
 # PilotODIN Macro A2 — Consolidated Windows Acceptance
 
 **Development branch:** `feature/live-dev-workspace-20261023`
-**Status:** Source implemented; automated test execution and user Windows acceptance pending.
+**Status (owner Windows checkpoint, 24 October 2026):** Focused local automated checks passed: **83 frontend and 107 backend tests**, TypeScript/Vite build and Python syntax compilation. Manual end-to-end visual acceptance remains incomplete; these tests do not validate the final installer/offline operation. See [living handoff](./CONTINUE_HERE.md) and QA Issue #2.
 **Safety:** Do not merge to a release branch or build an installer solely because source-level checks pass.
 
 ## Validation policy
