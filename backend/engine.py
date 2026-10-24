@@ -341,7 +341,23 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
         X_train,X_test=X.iloc[order[:cut]],X.iloc[order[cut:]]
         y_train,y_test=y.iloc[order[:cut]],y.iloc[order[cut:]]
         folds=3 if len(y_train)>=36 else 2
-        cv=TimeSeriesSplit(n_splits=folds)
+        # Split by DISTINCT timestamp, not row position: a repeated instant
+        # must not leak between the development-train and validation folds.
+        train_times=times.iloc[order[:cut]].reset_index(drop=True)
+        instants=train_times.drop_duplicates().reset_index(drop=True)
+        if len(instants)<folds+1:
+            raise ValueError('Chronological cross-validation needs at least '+str(folds+1)+
+                             ' distinct training timestamps; use a finer time grain or more data.')
+        cv=[]
+        for earlier,later in TimeSeriesSplit(n_splits=folds).split(instants):
+            train_end=instants.iloc[earlier[-1]]
+            test_start=instants.iloc[later[0]]
+            test_end=instants.iloc[later[-1]]
+            development=np.flatnonzero(train_times.le(train_end).to_numpy())
+            validation=np.flatnonzero((train_times.ge(test_start)&train_times.le(test_end)).to_numpy())
+            if not len(development) or not len(validation):
+                raise ValueError('Chronological cross-validation produced an empty fold')
+            cv.append((development,validation))
         if task=='classification' and y_train.nunique()!=y.nunique():
             raise ValueError('Time split has a target class absent from training')
     else:
