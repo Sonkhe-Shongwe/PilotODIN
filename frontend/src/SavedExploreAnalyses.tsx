@@ -5,7 +5,7 @@ import './saved-explore-analyses.css';
 
 export type ExploreState={
  x:string;y:string|null;kind:string;aggregation:string;bins:number;
- correlation_method:'pearson'|'spearman';
+ correlation_method:'pearson'|'spearman';color_by?:string|null;
  filters:{column:string;op:string;value?:string;min?:number;max?:number}[];
 };
 type SavedSummary={id:string;title:string;dataset_version:number;created_at:string;stale:boolean;sha256:string};
