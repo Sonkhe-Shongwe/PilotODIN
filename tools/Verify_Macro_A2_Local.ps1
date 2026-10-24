@@ -44,6 +44,7 @@ try {
         'tests/test_scatter_interactions.py',
         'tests/test_explore_linked_filters.py',
         'tests/test_explore_record_inspector.py',
+        'tests/test_explore_line_box_inspection.py',
         'tests/test_column_intelligence.py',
         'tests/test_saved_explore_analyses.py',
         'tests/test_explore_to_report_evidence.py',
