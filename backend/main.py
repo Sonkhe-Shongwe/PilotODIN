@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
+    from . import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
+    import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -306,10 +306,17 @@ def get_quality(project_id: str):
     return quality_response(quality.snapshot, project_id)
 
 
+@app.get("/api/projects/{project_id}/quality/investigate")
+def investigate_quality_finding(project_id: str,issue_id: str = Query(min_length=1,max_length=128),
+                                expected_version: int = Query(ge=0)):
+    """Version-pinned read-only investigation with source-bound issue identity."""
+    return quality_response(quality_investigations.inspect,project_id,issue_id,expected_version)
+
+
 @app.get("/api/projects/{project_id}/quality/preview")
 def get_quality_preview(project_id: str, issue_id: str | None = None,
-                        offset: int = 0, limit: int = 20):
-    return quality_response(quality.preview, project_id, issue_id, offset, limit)
+                        offset: int = 0, limit: int = 20, expected_version: int | None = None):
+    return quality_response(quality.preview, project_id, issue_id, offset, limit, expected_version)
 
 
 @app.post("/api/projects/{project_id}/quality/export")
