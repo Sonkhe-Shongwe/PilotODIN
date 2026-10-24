@@ -41,6 +41,24 @@ def _column(df:pd.DataFrame,name:str):
     return df[name]
 
 
+def category_labels(series:pd.Series)->pd.Series:
+    """Consistent display labels for categorical grouping without null collisions.
+
+    Real categorical values can literally contain '(Missing)'. Assign null
+    observations a distinct display label in that situation. All chart and
+    chart-to-record group operations must call this same helper.
+    """
+    observed=series.dropna().astype(str)
+    missing='(Missing)'
+    if (observed=='(Missing)').any():
+        missing='(Missing values)'
+        while (observed==missing).any():
+            missing+=' [null]'
+    return pd.Series(
+        [missing if pd.isna(value) else str(value) for value in series],
+        index=series.index,dtype='object'
+    )
+
 def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', aggregation:str='mean', bins:int=16, color_by:str|None=None)->dict:
     xs=_column(df,x)
     if y: _column(df,y)
@@ -87,7 +105,7 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
             out['excluded_observations']=int(len(df)-len(view))
             if len(view)>500: view=view.sample(n=500,random_state=42);out['sampled']=True
             if color_by:
-                labels=view[color_by].fillna('(Missing)').astype(str)
+                labels=category_labels(view[color_by])
                 out['color_by']=color_by
                 out['color_groups']=[{'label':str(k),'count':int(v)} for k,v in labels.value_counts().items()]
                 out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i),'group':str(g)} for i,a,b,g in zip(view.index,view[x],view[y],labels)]
@@ -102,7 +120,7 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
             if view.empty: raise ValueError('Line chart requires a finite numeric Y column')
             out['valid_observations']=int(len(view))
             out['excluded_observations']=int(len(df)-len(view))
-            view[x]=view[x].fillna('(Missing)').astype(str)
+            view[x]=category_labels(view[x])
             groups=view.groupby(x,dropna=False)[y].agg(aggregation if aggregation!='count' else 'count').reset_index()
             if len(groups)>80: groups=groups.iloc[np.linspace(0,len(groups)-1,80,dtype=int)];out['sampled']=True
             out['data']=[{'label':str(a),'value':float(b)} for a,b in zip(groups[x],groups[y])]
@@ -125,11 +143,11 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
         if y:
             v=pd.to_numeric(df[y],errors='coerce')
             if aggregation!='count' and v.notna().sum()==0:raise ValueError('Y must be numeric for the chosen aggregation')
-            grouped=pd.DataFrame({'category':xs.fillna('(Missing)').astype(str),'value':v}).groupby('category',dropna=False)['value'].agg(aggregation).sort_values(ascending=False)
+            grouped=pd.DataFrame({'category':category_labels(xs),'value':v}).groupby('category',dropna=False)['value'].agg(aggregation).sort_values(ascending=False)
             if aggregation=='count':
                 out['note']=f'Count of non-missing {y} observations by {x}. Missing values in the selected measure are excluded.'
         else:
-            grouped=xs.fillna('(Missing)').astype(str).value_counts()
+            grouped=category_labels(xs).value_counts()
             out['note']=f'Record count by {x}; no numeric measure is required.'
         out['truncated']=len(grouped)>30
         out['data']=[{'label':str(k),'value':float(v)} for k,v in grouped.head(30).items() if pd.notna(v)]
