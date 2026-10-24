@@ -1,6 +1,8 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, History, LoaderCircle, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Download, FileSpreadsheet, X} from 'lucide-react';
 import {downloadCleanedData,get,post} from './api';
+import {resolveQualityFocus} from './qualityHandoff';
+import type {QualityFocus} from './qualityHandoff';
 
 export type QualityIssue={id:string;kind:string;column:string|null;affected_rows:number;title:string;explanation:string;severity:'automatic'|'review'|'information';automatic:boolean;proposal:null|{kind:string;column:string;from?:string;to?:string};evidence:Record<string,unknown>;decision:string};
 type Quality={project_id:string;version:number;rows:number;columns:number;summary:{issues:number;automatic_available:number;review_required:number;information:number;applied_actions:number};issues:QualityIssue[]};
@@ -13,8 +15,11 @@ type HistoryData={current_version:number;versions:{version:number;event:string;c
 const val=(v:unknown)=>v===null||v===undefined?'—':String(v);
 const badge=(s:string)=>s==='automatic'?'Safe correction':s==='information'?'Information':'Needs review';
 
-export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChanged:()=>void}){
+export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:string;onChanged:()=>void;initialFocus?:QualityFocus|null}){
   const [quality,setQuality]=useState<Quality|null>(null);
+  const findingsRef=useRef<HTMLDivElement|null>(null);
+  const consumedFocus=useRef<QualityFocus|null>(null);
+  const [handoffNote,setHandoffNote]=useState('');
   const [history,setHistory]=useState<HistoryData|null>(null);
   const [preview,setPreview]=useState<Preview|null>(null);
   const [selected,setSelected]=useState<string>('');
@@ -45,6 +50,20 @@ export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChang
     get<Preview>(query).then(p=>{if(live)setPreview(p)}).catch(e=>{if(live){setPreview(null);setError(e.message)}});
     return()=>{live=false};
   },[projectId,selected,offset,quality?.version]);
+  useEffect(()=>{
+    if(!quality||!initialFocus||consumedFocus.current===initialFocus)return;
+    consumedFocus.current=initialFocus;
+    const result=resolveQualityFocus(initialFocus,projectId,quality.version,quality.issues);
+    if(result.status==='matched'){
+      setSelected(result.issueId);setFilter('all');setOffset(0);setView('working');
+      setDiagnostics(null);
+      setHandoffNote('Opened the matching current-version Quality finding from Explore. Review evidence before approving any correction.');
+    }else{
+      setSelected('');setHandoffNote(result.message);
+    }
+    const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    findingsRef.current?.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start',inline:'nearest'});
+  },[initialFocus,projectId,quality]);
   const issue=quality?.issues.find(x=>x.id===selected);
   async function finishVersionChange(version:number,message:string){
     const current=await load();
@@ -114,6 +133,7 @@ export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChang
     <section className="quality-banner"><div><div className="eyebrow">EVIDENCE-BASED SMART AUTOPILOT</div><h2>Make your dataset trustworthy</h2><p>Inspect findings, preview proposed changes and approve only what makes sense. Your original upload stays untouched.</p></div><div className="quality-banner-cta"><span className="pill">WORKING VERSION {quality?.version??'—'}</span><button className="btn primary" disabled={busy||!quality||quality.summary.automatic_available===0} onClick={()=>quality&&void mutate('autopilot',{expected_version:quality.version},'Safe corrections completed')}><Sparkles size={16}/> Review {quality?.summary.automatic_available??0} safe fixes</button></div></section>
     {error&&<div className="alert-error"><AlertCircle size={16}/>{error}</div>}
     {notice&&<div className="quality-notice"><CheckCircle2 size={16}/>{notice}</div>}
+    {handoffNote&&<div className="quality-notice" role="status"><ClipboardCheck size={16}/>{handoffNote}</div>}
     <div className="quality-stats">
       <div><small>ISSUES FOUND</small><strong>{quality?.summary.issues??'—'}</strong></div>
       <div><small>NEED REVIEW</small><strong>{quality?.summary.review_required??'—'}</strong></div>
@@ -176,7 +196,7 @@ export function QualityWorkspace({projectId,onChanged}:{projectId:string;onChang
         {!preview?.rows.length&&<p className="body-muted">No matching records on this page.</p>}
         <div className="quality-pagination"><button className="btn small" disabled={offset===0} onClick={()=>setOffset(Math.max(0,offset-12))}><ArrowLeft size={14}/> Previous</button><span>{preview?.total_matching_rows?`${offset+1}–${Math.min(offset+12,preview.total_matching_rows)} of ${preview.total_matching_rows}`:'No rows'}</span><button className="btn small" disabled={!preview||offset+12>=preview.total_matching_rows} onClick={()=>setOffset(offset+12)}>Next <ArrowRight size={14}/></button></div>
       </div>
-      <div className="panel quality-findings-panel">
+      <div ref={findingsRef} className="panel quality-findings-panel">
         <div className="panel-title"><Sparkles size={18}/><h2>Intelligent findings</h2><span className="pill muted">LOCAL RULES</span></div>
         <div className="quality-filters">{(['all','pending','history'] as const).map(t=><button className={filter===t?'selected':''} key={t} onClick={()=>setFilter(t)}>{t==='all'?'All findings':t==='pending'?'Pending':'History'}</button>)}</div>
         {filter==='history'?<div className="history-list">
