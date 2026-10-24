@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, data_exports, quality_approvals, reports
+    from . import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, data_exports, quality_approvals, reports
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, data_exports, quality_approvals, reports
+    import ai_provider, ai_context, engine, storage, quality, analytics, explore_filters, explore_inspector, data_exports, quality_approvals, reports
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -453,6 +453,40 @@ def explore_workbench(project_id: str, body: ExploreWorkbenchRequest):
                 "overview": summary, "chart": graph, "chart_message": chart_message,
                 "correlation": matrix,
                 "note": "All displayed results use the same approved dataset version and active filters."}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+
+class ExploreInspectSelection(BaseModel):
+    kind: str
+    label: str | None = Field(default=None, max_length=2048)
+    bin_index: int | None = Field(default=None, ge=0)
+    row_ref: int | None = Field(default=None, ge=0)
+
+
+class ExploreInspectRequest(ExploreWorkbenchRequest):
+    selection: ExploreInspectSelection
+    offset: int = Field(default=0, ge=0, le=1_000_000)
+    limit: int = Field(default=12, ge=1, le=25)
+
+
+@app.post("/api/projects/{project_id}/explore/inspect")
+def explore_inspect(project_id: str, body: ExploreInspectRequest):
+    """Inspect only a visible chart selection under the same filters and version."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(status_code=409, detail="Working dataset changed. Refresh Explore before inspecting records.")
+    try:
+        subset = explore_filters.apply(frame, [item.model_dump() for item in body.filters])
+        response = explore_inspector.inspect(
+            subset, version, x=body.x, y=body.y, kind=body.kind,
+            aggregation=body.aggregation, bins=body.bins,
+            selection=body.selection.model_dump(exclude_none=True),
+            offset=body.offset, limit=body.limit
+        )
+        return {**response, "total_filtered_rows": int(len(subset))}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
