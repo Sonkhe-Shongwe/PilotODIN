@@ -285,8 +285,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
   },[project?.id]);
   const profile=project?.profile;
   const unresolvedFeatureRisks=(prep?.high_risk_features??[]).filter(name=>!excluded.includes(name)&&!(splitStrategy!=='random'&&splitColumn===name));
-  const modelRowLimit=prep?.resource_plan?Math.min(prep.resource_plan.row_limit,...models.map(key=>prep.resource_plan?.model_family_row_limits?.[key]??prep.resource_plan!.row_limit)):null;
-  const modelBudgetExceeded=!!prep?.resource_plan&&modelRowLimit!==null&&prep.resource_plan.labelled_rows>modelRowLimit;
+  const selectedResourcePlan=prep?.resource_plan;
+  const modelRowLimit=selectedResourcePlan?Math.min(selectedResourcePlan.row_limit,...models.map(key=>selectedResourcePlan.model_family_row_limits[key]??selectedResourcePlan.row_limit)):null;
+  const modelBudgetExceeded=!!selectedResourcePlan&&modelRowLimit!==null&&selectedResourcePlan.labelled_rows>modelRowLimit;
   useEffect(()=>{setAcknowledgeFeatureRisks(false)},[project?.id,target,qualityVersion,excluded,splitStrategy,splitColumn]);
   const prepRisk=prep?.recommend_exclude??[];
   const available=prep?.task==='regression'?R_MODELS:C_MODELS;
