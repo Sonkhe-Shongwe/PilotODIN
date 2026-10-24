@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {FileDown,FileText,History,Save,ShieldCheck,AlertCircle,Plus} from 'lucide-react';
 import {get,post,downloadReportFile} from './api';
 import './report-workspace.css';
@@ -15,31 +15,45 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [activeId,setActiveId]=useState<string|null>(null);
  const [opened,setOpened]=useState<SavedReport|null>(null);
  const [title,setTitle]=useState(defaultTitle);
- const [narrative,setNarrative]=useState('Describe what the verified results show and what remains uncertain.');
+ const [narrative,setNarrative]=useState('');
  const [selected,setSelected]=useState<string[]>([]);
  const [busy,setBusy]=useState('');
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
  const [revision,setRevision]=useState<number|null>(null);
+ const userStartedDraft=useRef(false);
  useEffect(()=>{
-   let mounted=true;setReports([]);setProjectEvidence([]);setActiveId(null);setOpened(null);
+   let mounted=true;userStartedDraft.current=false;setReports([]);setProjectEvidence([]);setActiveId(null);setOpened(null);setNarrative('');
    setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);
    if(!projectId)return;
-   void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(data=>{if(mounted)setReports(data)}).catch(e=>{if(mounted)setError((e as Error).message)});
+   void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(async data=>{
+     if(!mounted)return;
+     setReports(data);
+     if(data[0]&&!userStartedDraft.current){
+       try{
+         const recent=await get<SavedReport>(`/reports/${encodeURIComponent(data[0].id)}`);
+         if(mounted&&!userStartedDraft.current){
+           setActiveId(recent.id);setOpened(recent);setRevision(recent.revision);
+           setTitle(recent.title);setNarrative(recent.narrative);setSelected(recent.evidence.map(e=>e.id));
+         }
+       }catch(err){if(mounted)setError(`Saved reports were found, but the latest revision could not be restored: ${(err as Error).message}`)}
+     }
+   }).catch(e=>{if(mounted)setError((e as Error).message)});
    void get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`).then(data=>{if(mounted)setProjectEvidence(data)}).catch(e=>{if(mounted)setError((e as Error).message)});
    return()=>{mounted=false};
  },[projectId]);
  async function refresh(){setReports(await get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`));}
  async function openReport(id:string,number?:number){
-   setBusy('open');setError('');
+   userStartedDraft.current=true;setBusy('open');setError('');
    try{
      const data=await get<SavedReport>(`/reports/${encodeURIComponent(id)}${number?`?revision=${number}`:''}`);
      if(!data){throw new Error('Report not found')}
      setActiveId(id);setOpened(data);setRevision(data.revision);setTitle(data.title);setNarrative(data.narrative);setSelected(data.evidence.map(e=>e.id));
    }catch(e){setError((e as Error).message)}finally{setBusy('')}
  }
- function newReport(){setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('Describe what the verified results show and what remains uncertain.');setNotice('');setError('');}
+ function newReport(){userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setNotice('');setError('');}
  async function save(){
+   userStartedDraft.current=true;
    if(!selected.length){setError('Choose verified evidence before saving.');return;}
    setBusy('save');setError('');setNotice('');
    try{
@@ -59,22 +73,30 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      const {blob,filename}=await downloadReportFile(`/reports/${encodeURIComponent(activeId)}/export/${format}?revision=${rev}`);
      const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;
      document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);
+     setNotice(`Prepared revision ${rev} as ${filename}. Check your browser's Downloads, or the desktop Save As dialog.`);
    }catch(e){setError((e as Error).message)}finally{setBusy('')}
  }
  const availableMap=new Map<string,EvidenceOption>([...projectEvidence,...availableEvidence].map(e=>[e.id,e] as const));
  const options=[...availableMap.values()].slice(0,150);
+ const savedIds=opened?.evidence.map(e=>e.id)??[];
+ const hasDraftChanges=!!opened&&(title!==opened.title||narrative!==opened.narrative||selected.length!==savedIds.length||selected.some(id=>!savedIds.includes(id)));
+ const saveReady=title.trim().length>=5&&selected.length>0;
+ const reportStep=opened&&!hasDraftChanges?3:saveReady?2:1;
  return <div className="pd-report-workspace">
    <div className="pd-report-header"><div><span className="pd-report-eyebrow">DELIVER / LOCAL REPORTING</span><h2>Saved, evidence-backed reports</h2><p>Save revisions and export the exact same evidence to HTML or PDF. Source datasets remain unchanged.</p></div><button className="ud-btn ud-btn-quiet" onClick={newReport}><Plus size={15}/> New report</button></div>
+   <nav aria-label="Report creation steps" className="pd-report-flow">{[['1','Compose'],['2','Save revision'],['3','Export']].map(([step,label],i)=><span key={step} className={Number(step)===reportStep?'pd-report-step-current':Number(step)<reportStep?'pd-report-step-done':''}><b>{step}</b>{label}</span>)}</nav>
+   {hasDraftChanges&&<p role="status" className="pd-report-warning">Unsaved changes. Exports remain linked to the saved revision until you save again.</p>}
    {error&&<p role="alert" className="pd-report-error"><AlertCircle size={16}/>{error}</p>}
    {notice&&<p role="status" className="pd-report-notice"><ShieldCheck size={16}/>{notice}</p>}
    <div className="pd-report-columns"><section className="pd-report-editor">
-     <label className="pd-report-field">Report title<input value={title} maxLength={180} onChange={e=>setTitle(e.target.value)}/></label>
-     <label className="pd-report-field">Interpretation and limitations<textarea value={narrative} rows={5} maxLength={6000} onChange={e=>setNarrative(e.target.value)}/></label>
+     <label className="pd-report-field">Report title<input value={title} maxLength={180} onChange={e=>{userStartedDraft.current=true;setTitle(e.target.value)}}/></label>
+     <label className="pd-report-field">Interpretation and limitations<textarea value={narrative} placeholder="Describe what the verified evidence establishes, what remains uncertain, and any important limitations. This text is authored by you." rows={5} maxLength={6000} onChange={e=>{userStartedDraft.current=true;setNarrative(e.target.value)}}/></label>
      <h3>Select verified evidence</h3>
-     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}/><span><strong>{e.operation.replaceAll('_',' ')} · v{e.version}</strong><small>{e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Open an investigation and compute evidence to create a new report.</p>}
+     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>{userStartedDraft.current=true;setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}}/><span><strong>{e.operation.replaceAll('_',' ')} · v{e.version}</strong><small>{Object.entries(e.params||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ')||'Dataset profile'} · Evidence {e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Open an investigation and compute evidence to create a new report.</p>}
      {selected.filter(id=>!availableMap.has(id)).length>0&&<p className="pd-report-muted">{selected.filter(id=>!availableMap.has(id)).length} additional saved evidence references retained from the loaded report.</p>}
-     <button className="ud-btn ud-btn-primary" disabled={!!busy||title.trim().length<5||!selected.length} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button>
-     {opened&&<div className="pd-report-export"><div><strong>Saved revision {opened.revision}</strong><small>SHA-256 {opened.content_sha256.slice(0,18)}…</small></div><button disabled={!!busy} onClick={()=>void download('html')}><FileDown size={15}/> HTML</button><button disabled={!!busy} onClick={()=>void download('pdf')}><FileDown size={15}/> PDF</button></div>}
+     <div className="pd-report-actions"><div><strong>{selected.length} verified evidence artifacts selected</strong><small>{!saveReady?'Enter a report title and select evidence to continue.':hasDraftChanges?'Save your changes before exporting an updated revision.':opened?'Current saved revision is ready for export.':'Save a frozen report revision to enable HTML/PDF exports.'}</small></div><button className="ud-btn ud-btn-primary" disabled={!!busy||!saveReady||!hasDraftChanges&&!!opened} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button></div>
+     <details className="pd-report-preview"><summary>Preview report contents</summary><h4>{title}</h4><p>{narrative||'No narrative supplied. Verified evidence will be presented below.'}</p><ul>{selected.map(id=><li key={id}>{availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,12)}</li>)}</ul></details>
+     {opened&&<div className="pd-report-export"><div><strong>Saved revision {opened.revision}</strong><small>SHA-256 {opened.content_sha256.slice(0,18)}…</small></div><button disabled={!!busy} title="Export the last saved revision as HTML" onClick={()=>void download('html')}><FileDown size={15}/> Export HTML</button><button disabled={!!busy} title="Export the last saved revision as PDF" onClick={()=>void download('pdf')}><FileDown size={15}/> Export PDF</button></div>}
      {opened?.has_historical_evidence&&<p className="pd-report-warning">Historical evidence: at least one included dataset version differs from the current active version. Existing calculations are preserved, not silently recomputed.</p>}
      {opened&&opened.dataset_versions.length>1&&<p className="pd-report-warning">This saved report intentionally includes evidence from dataset versions {opened.dataset_versions.join(', ')}.</p>}
    </section><aside className="pd-report-library"><h3><History size={17}/> Saved reports</h3>

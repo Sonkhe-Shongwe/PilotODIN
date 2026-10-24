@@ -98,6 +98,7 @@ export async function downloadReportFile(path:string):Promise<{blob:Blob;filenam
  const response=await fetchLocal(path,{method:'GET',headers:authHeaders()});
  if(!response.ok){await check(response);throw new Error('Report export failed')}
  const contentDisposition=response.headers.get('content-disposition')??'';
- const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]??'pilotodin_report.pdf';
+ const format=path.match(/\/export\/(html|pdf)(?:\?|$)/)?.[1]??'pdf';
+  const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]??`pilotodin_report.${format}`;
  return {blob:await response.blob(),filename:filename.replace(/[\\/]/g,'_')};
 }
