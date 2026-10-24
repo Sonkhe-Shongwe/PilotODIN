@@ -3,6 +3,8 @@ import {Activity, BarChart3, ChevronDown, LoaderCircle, RefreshCw, Sparkles, Plu
 import {get,post} from './api';
 import {SavedExploreAnalyses} from './SavedExploreAnalyses';
 import type {ExploreState} from './SavedExploreAnalyses';
+import {insightQualityKind} from './qualityHandoff';
+import type {QualityFocus} from './qualityHandoff';
 import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
@@ -72,7 +74,7 @@ function Viz({plot,onSelect}:{plot:Plot;onSelect:(choice:ChartSelection)=>void})
   return <div className="chart-bars">{data.map((d,i)=><button type="button" className="chart-bar-item po-inspect-bar" key={`${d.label}-${i}`} onClick={()=>onSelect({kind:'category',label:d.label??''})} title={`Inspect records in ${d.label}`}><span title={d.label} className="bar-label">{d.label}</span><div className="chart-track"><div style={{width:`${Math.max(0,Math.abs(d.value??0)/max*100)}%`}} className="chart-fill"/></div><strong>{format(d.value??0)}</strong></button>)}</div>;
 }
 
-export function ExploreWorkspace({projectId,versionToken}:{projectId:string;versionToken:number}){
+export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{projectId:string;versionToken:number;onReviewQuality?:(focus:QualityFocus)=>void}){
   const [overview,setOverview]=useState<Overview|null>(null);
   const [findings,setFindings]=useState<Finding[]>([]);
   const [suggestions,setSuggestions]=useState<ChartSuggestion[]>([]);
@@ -192,6 +194,10 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
     setFilters(config.filters as FilterClause[]);
     setSelection(null);setInspection(null);setInspectOffset(0);
   }
+  function reviewQuality(kind:string,column:string|null){
+    if(!onReviewQuality||!overview||loading||filterCatalog?.version!==overview.version)return;
+    onReviewQuality({projectId,version:overview.version,kind,column});
+  }
   function changeKind(next:string){
     if(next==='scatter'){
       if(!scatterReady)return;
@@ -239,6 +245,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
         {inspection.rows.length?<div className="table-scroll po-inspect-scroll"><table><thead><tr><th>FILTERED ROW</th>{inspection.columns.map((column,i)=><th key={i}>{column}</th>)}</tr></thead><tbody>{inspection.rows.map(row=><tr key={row.filtered_row_number}><td>{row.filtered_row_number}</td>{row.cells.map((cell,i)=><td key={i} title={cell===null?'Missing':String(cell)}>{cell===null?'—':String(cell)}</td>)}</tr>)}</tbody></table></div>:<p>No records on this page.</p>}
         <div className="po-inspect-pagination"><span>{inspection.matched_rows?inspectOffset+1:0}–{Math.min(inspectOffset+inspection.limit,inspection.matched_rows)} of {format(inspection.matched_rows)}</span><button type="button" className="btn" disabled={inspectLoading||inspectOffset===0} onClick={()=>setInspectOffset(v=>Math.max(0,v-12))}>Previous</button><button type="button" className="btn" disabled={inspectLoading||inspectOffset+12>=inspection.matched_rows} onClick={()=>setInspectOffset(v=>v+12)}>Next</button></div>
         <p className="muted-caption">{inspection.note}{inspection.truncated_columns?' Only the first 16 fields, prioritising chart variables, are shown.':''}</p>
+        {onReviewQuality&&<button type="button" className="btn po-quality-link" onClick={()=>reviewQuality('any',plot?.x??x)}>Review this field in Data Quality →</button>}
       </>}
     </section>}
     <SavedExploreAnalyses projectId={projectId} version={overview?.version??null}
@@ -256,7 +263,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
       </div></div>}
       <p className="muted-caption">{correlation?.note??(loading?'Calculating filtered correlations…':'Correlation unavailable for this selection.')} Correlations are descriptive, not causal.</p>
     </section>
-    <div className="explore-columns"><section className="panel"><div className="panel-title"><Sparkles size={18}/><h2>Proactive insights</h2></div>{findings.length?findings.map((f,i)=><button className="insight-item" key={i} onClick={()=>{if(f.column){setX(f.column);setY('');setKind('auto')}}}><span className="insight-bullet"/><span><b>{f.title}</b><small>{f.detail}</small></span><ChevronDown size={15}/></button>):<p className="body-muted">No structural or distribution warnings detected. Explore combinations to investigate further.</p>}</section>
+    <div className="explore-columns"><section className="panel"><div className="panel-title"><Sparkles size={18}/><h2>Proactive insights</h2></div>{findings.length?findings.map((f,i)=><div className="po-insight-handoff" key={i}><button className="insight-item" onClick={()=>{if(f.column){setX(f.column);setY('');setKind('auto')}}}><span className="insight-bullet"/><span><b>{f.title}</b><small>{f.detail}</small></span><ChevronDown size={15}/></button>{onReviewQuality&&insightQualityKind(f)&&<button type="button" className="btn po-quality-link" onClick={()=>reviewQuality(insightQualityKind(f)!,f.column)}>Inspect in Quality →</button>}</div>):<p className="body-muted">No structural or distribution warnings detected. Explore combinations to investigate further.</p>}</section>
       <section className="panel"><div className="panel-title"><Activity size={18}/><h2>Column statistics</h2></div><div className="table-scroll"><table><thead><tr><th>FIELD</th><th>TYPE</th><th>UNIQUE</th><th>MISSING</th></tr></thead><tbody>{cols.map(c=><tr key={c.name} onClick={()=>{setX(c.name);setY('');setKind('auto')}} className="clickable-row"><td className="cell-strong">{c.name}</td><td>{c.kind}</td><td>{format(c.unique)}</td><td>{c.missing_pct}%</td></tr>)}</tbody></table></div><p className="muted-caption">Click a column to explore it. Descriptive statistics do not establish causation.</p></section></div>
   </div>;
 }
