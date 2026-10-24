@@ -95,11 +95,18 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
             else:
                 out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i)} for i,a,b in zip(view.index,view[x],view[y])]
         else:
-            view[y]=pd.to_numeric(view[y],errors='coerce');view=view.dropna()
-            if view.empty: raise ValueError('Line chart requires a numeric Y column')
+            # Only the Y measure must be finite. Missing X represents a
+            # legitimate chart group, rather than losing complete Y records.
+            view[y]=pd.to_numeric(view[y],errors='coerce').replace([np.inf,-np.inf],np.nan)
+            view=view.dropna(subset=[y])
+            if view.empty: raise ValueError('Line chart requires a finite numeric Y column')
+            out['valid_observations']=int(len(view))
+            out['excluded_observations']=int(len(df)-len(view))
+            view[x]=view[x].fillna('(Missing)').astype(str)
             groups=view.groupby(x,dropna=False)[y].agg(aggregation if aggregation!='count' else 'count').reset_index()
             if len(groups)>80: groups=groups.iloc[np.linspace(0,len(groups)-1,80,dtype=int)];out['sampled']=True
             out['data']=[{'label':str(a),'value':float(b)} for a,b in zip(groups[x],groups[y])]
+            out['note']='Aggregated finite Y observations by X. Missing X labels are grouped as (Missing). At most 80 chart groups are shown.'
     elif kind=='box':
         s=pd.to_numeric(xs,errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
         if s.empty: raise ValueError('Box summary needs numeric values')
