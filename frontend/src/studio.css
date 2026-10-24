@@ -344,3 +344,16 @@ body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .model-choice-copy small{font-size:11px!important;font-weight:400;line-height:1.35;color:#71809b}
 .model-choice-copy .model-cost{color:#6653bd;font-size:10px!important}
 @media(max-width:680px){.model-family .model-grid{grid-template-columns:1fr}}
+
+/* Macro A3 · bounded, auditable predictor review (no automatic exclusions). */
+.po-feature-audit-title{font-size:14px;margin:20px 0 10px;color:#334066}
+.po-ml-feature-audit{max-height:390px;overflow:auto;border:1px solid #e2e6f1;border-radius:10px}
+.po-ml-feature-audit table{min-width:720px}
+.po-ml-feature-audit td,.po-ml-feature-audit th{font-size:12px;padding:10px;vertical-align:top}
+.po-ml-feature-audit td:first-child strong,.po-ml-feature-audit td:first-child small,.po-ml-feature-audit td:last-child small{display:block;overflow-wrap:anywhere}
+.po-ml-feature-audit small{font-size:11px;color:#65728d;margin-top:3px}
+.po-ml-risk-high{color:#955021}
+.po-ml-feature-risk-gate{margin-top:14px;padding:16px;border:1px solid #e7cfaa;border-radius:11px;background:#fffaf0}
+.po-ml-feature-risk-gate>strong{display:flex;align-items:center;gap:7px;color:#804d1b}
+.po-ml-feature-risk-gate p{font-size:12px;line-height:1.65;color:#68543e}
+.po-ml-feature-risk-gate .acknowledge{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.5}
