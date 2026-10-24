@@ -75,6 +75,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
   const [excluded,setExcluded]=useState<string[]>([]);
   const [models,setModels]=useState<string[]>(['logistic_regression','random_forest','extra_trees']);
   const [confirmSplit,setConfirmSplit]=useState(false);
+  const [acknowledgeFeatureRisks,setAcknowledgeFeatureRisks]=useState(false);
   const [splitStrategy,setSplitStrategy]=useState<'random'|'group'|'time'>('random');
   const [splitColumn,setSplitColumn]=useState('');
   const [sidebarCollapsed,setSidebarCollapsed]=useState(false);
@@ -209,6 +210,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
   }catch(e){setError((e as Error).message)}finally{setLoading(false)}}
   async function startTrain(){
     if(!project||!prep)return;
+    if(unresolvedFeatureRisks.length&&!acknowledgeFeatureRisks){setError('Review or exclude high-risk predictors before training.');return;}
     const projectId=project.id, generation=projectOperations.current.snapshot(projectId);
     setError('');setBusy('train');
     try{
@@ -216,7 +218,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
         target,task:prep.task,excluded_features:excluded,models,
         acknowledge_random_split:splitStrategy==='random'?confirmSplit:false,
         split_strategy:splitStrategy,split_column:splitStrategy==='random'?null:splitColumn,
-        expected_quality_version:qualityVersion
+        expected_quality_version:qualityVersion,
+        acknowledge_feature_risks:acknowledgeFeatureRisks
       });
       if(!projectOperations.current.accepts(projectId,generation))return;
       setExperiment({id:d.id,project_id:projectId,status:d.status,config:{target,task:prep.task,excluded,models,quality_version:qualityVersion,split_strategy:splitStrategy,split_column:splitColumn},results:null,error:null,selected_model:null,final_results:null});
@@ -280,6 +283,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
    return()=>window.removeEventListener('pilotodin:dataset-changed',onDataset);
   },[project?.id]);
   const profile=project?.profile;
+  const unresolvedFeatureRisks=(prep?.high_risk_features??[]).filter(name=>!excluded.includes(name)&&!(splitStrategy!=='random'&&splitColumn===name));
+  useEffect(()=>{setAcknowledgeFeatureRisks(false)},[project?.id,target,qualityVersion,excluded,splitStrategy,splitColumn]);
   const prepRisk=prep?.recommend_exclude??[];
   const available=prep?.task==='regression'?R_MODELS:C_MODELS;
   const ordered=useMemo(()=>[...((experiment?.results?.models??[]).filter(x=>x.status==='ready'))].sort((a,b)=> experiment?.results?.task==='regression'?(a.cv_metric??0)-(b.cv_metric??0):(b.cv_metric??0)-(a.cv_metric??0)),[experiment?.results]);
@@ -350,13 +355,18 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
             <div className="panel action-panel"><div><h3>Ready to define your objective?</h3><p>Choose the column you want to predict and review the preparation plan.</p></div><button className="btn primary" onClick={()=>go('prepare')}>Prepare data <ArrowRight size={17}/></button></div>
           </>}
           {page==='prepare'&&profile&&<><div className="panel"><div className="panel-title"><Target size={19}/><h2>Define your prediction target</h2></div><p className="body-muted">Which column contains the outcome you want to predict? Suggestions are based on names only and require your confirmation.</p><label className="field-label">TARGET VARIABLE</label><select className="input full" value={target} onChange={(e:any)=>{setTarget(e.target.value);setExperiment(null);setConfirmSplit(false);setError('')}}><option value="">Select a target column…</option>{profile.columns.map(c=><option value={c.name} key={c.name}>{c.name}{profile.target_candidates.includes(c.name)?' · suggested':''}</option>)}</select>{profile.target_candidates.length>0&&<div className="mini-info"><Sparkles size={16}/> Possible targets: {profile.target_candidates.join(', ')}</div>}</div>
-            {prep&&<><div className="metrics three"><Metric label="TASK IDENTIFIED" value={prep.task==='classification'?'Classification':'Regression'} icon={<Target size={18}/>} small/><Metric label="PREDICTORS" value={String(prep.available_features.length-excluded.length)} icon={<Database size={18}/>}/><Metric label="MISSING TARGETS" value={String(prep.missing_targets)} icon={<Activity size={18}/>}/></div>
+            {prep&&<><div className="metrics three"><Metric label="TASK IDENTIFIED" value={prep.task==='classification'?'Classification':'Regression'} icon={<Target size={18}/>} small/><Metric label="INCLUDED PREDICTORS" value={String(prep.feature_audit.filter(f=>f.default_included&&!excluded.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length)} icon={<Database size={18}/>}/><Metric label="MISSING TARGETS" value={String(prep.missing_targets)} icon={<Activity size={18}/>}/></div>
               <div className="panel"><div className="panel-title"><ClipboardCheck size={19}/><h2>Review feature exclusions</h2></div><p className="body-muted">The model will use all columns except the target and features you deliberately exclude. Suggested exclusions are not automatically enforced.</p>
                 <button className="btn small" onClick={()=>setExcluded(current=>[...new Set([...current,...featureHints.filter(f=>f.risk==='high').map(f=>f.column)])])}><Sparkles size={14}/> Apply high-risk exclusion suggestions</button>
                 <p className="muted-caption">Only structural screening, not validated importance: verify timing and compare features with training-only cross-validation.</p>
                 {featureHints.filter(f=>f.risk!=='low').map(f=><div className="warning-line" key={f.column}><AlertCircle size={14}/><b>{f.column}</b>: {f.reasons.join('; ')}</div>)}
                 <div className="feature-grid">{prep.available_features.map(c=>{const hint=prepRisk.find(x=>x.column===c);const isOut=excluded.includes(c);return <label className={cls('feature-chip',isOut&&'excluded')} key={c}><input type="checkbox" checked={isOut} onChange={(e:any)=>setExcluded(a=>e.target.checked?[...a,c]:a.filter(x=>x!==c))}/><span>{c}</span>{hint&&<span title={hint.reason}><AlertCircle size={15}/></span>}</label>})}</div>
                 <p className="muted-caption">Checked features will be excluded. Columns with warning icons need contextual review.</p>
+                 <div className="mini-info">{prep.available_features.length} candidate predictors · {prep.feature_audit.filter(f=>f.default_included&&!excluded.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length} currently included · {unresolvedFeatureRisks.length} included high-risk predictors. Split columns and all-empty fields are excluded by the backend.</div>
+                 <h3 className="po-feature-audit-title">Feature-by-feature preparation audit</h3>
+                 <div className="table-scroll po-ml-feature-audit"><table><thead><tr><th>FIELD / ROLE</th><th>OBSERVATIONS</th><th>PREPROCESSING</th><th>RISK REVIEW</th></tr></thead><tbody>
+                   {prep.feature_audit.map(f=>{const excludedByChoice=excluded.includes(f.column),isSplit=splitStrategy!=='random'&&splitColumn===f.column;return <tr key={f.column}><td><strong>{f.column}</strong><small>{excludedByChoice?'Excluded by user':isSplit?'Excluded as split key':!f.default_included?'Unusable / excluded':'Included predictor'}</small></td><td>{f.kind} · {f.missing} missing ({f.missing_pct}%) · {f.distinct} distinct</td><td>{excludedByChoice||isSplit||!f.default_included?'No training transform':f.treatment}</td><td>{f.risk==='high'?<strong className="po-ml-risk-high">High — review required</strong>:f.risk==='review'?'Review suggested':'No structural warning'}{f.reasons.length>0&&<small>{f.reasons.join('; ')}</small>}</td></tr>})}
+                 </tbody></table></div>
               </div>
               <div className="panel insight"><div className="panel-title"><WandSparkles size={19}/><h2>Automatic preprocessing plan</h2></div>{prep.transformations.map((p,i)=><div className="checkline" key={i}><CheckCircle2 size={17}/>{p}</div>)}<p className="muted-caption">Preprocessing is learned independently within cross-validation folds to avoid test leakage.</p></div>
               <div className="panel action-panel"><div><h3>Preparation configuration ready</h3><p>Your source file is preserved; this configuration determines the modelling inputs.</p></div><button className="btn primary" onClick={()=>go('model')}>Open Model Lab <ArrowRight size={17}/></button></div>
@@ -370,8 +380,13 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
               <select className="input" value={splitStrategy} onChange={e=>{setSplitStrategy(e.target.value as 'random'|'time'|'group');setConfirmSplit(false);setSplitColumn('')}}><option value="random">Random: independent observations</option><option value="time">Time: train on earlier records, test on later records</option><option value="group">Group: keep repeated entities in separate folds</option></select>
               {splitStrategy!=='random'&&<><label className="field-label">{splitStrategy==='time'?'DATE / TIME COLUMN':'GROUP / ENTITY COLUMN'}</label><select className="input" value={splitColumn} onChange={e=>setSplitColumn(e.target.value)}><option value="">Choose column…</option>{(profile?.columns??[]).filter(c=>c.name!==target).map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select><p className="muted-caption">The split column is excluded from predictors to reduce leakage.</p></>}
               {splitStrategy==='random'&&<label className="acknowledge"><input type="checkbox" checked={confirmSplit} onChange={(e:any)=>setConfirmSplit(e.target.checked)}/><span>I confirm that a random split is appropriate. Records are not time-ordered or repeated measurements of the same entity requiring grouped validation.</span></label>}
-              <div className="mini-info warn-icon"><AlertCircle size={17}/> Choose the split strategy that matches your data. Random splitting can leak information when records are ordered or repeated; group and time strategies are available above.</div>
-            </div><div className="panel action-panel"><div><h3>Start your experiment</h3><p>{models.length} algorithms selected. Model training runs locally in Python.</p></div><button className="btn primary" disabled={!models.length||(splitStrategy==='random'?!confirmSplit:!splitColumn)||busy==='train'} onClick={()=>void startTrain()}>{busy==='train'?<LoaderCircle size={16} className="spin"/>:<Play size={17}/>} Train models</button></div>
+              <div className="mini-info warn-icon"><AlertCircle size={17}/> Choose the split strategy that matches your data. Random splitting can leak information when records are ordered or repeated; group and time strategies are available above. Identical timestamps at a train/test boundary are rejected rather than split between sets.</div>
+               {unresolvedFeatureRisks.length>0&&<div className="po-ml-feature-risk-gate" role="group" aria-label="High-risk predictor review">
+                 <strong><ShieldCheck size={17}/> Review required: {unresolvedFeatureRisks.length} included high-risk predictors</strong>
+                 <p>{unresolvedFeatureRisks.join(', ')}. These may identify individual records or contain information unavailable at prediction time. Excluding them is usually safer; including them does not establish predictive validity.</p>
+                 <label className="acknowledge"><input type="checkbox" checked={acknowledgeFeatureRisks} onChange={e=>setAcknowledgeFeatureRisks(e.target.checked)}/><span>I have reviewed these columns, their availability at prediction time, and the possibility of leakage. I deliberately accept their inclusion in this experiment.</span></label>
+               </div>
+            </div><div className="panel action-panel"><div><h3>Start your experiment</h3><p>{models.length} algorithms selected. Model training runs locally in Python.</p></div><button className="btn primary" disabled={!models.length||(splitStrategy==='random'?!confirmSplit:!splitColumn)||(unresolvedFeatureRisks.length>0&&!acknowledgeFeatureRisks)||busy==='train'} onClick={()=>void startTrain()}>{busy==='train'?<LoaderCircle size={16} className="spin"/>:<Play size={17}/>} Train models</button></div>
           </>}
           {page==='evaluate'&&<>{!experiment?<div className="empty-panel"><FlaskConical size={30}/><h3>No experiment selected</h3><button className="btn primary" onClick={()=>go('model')}>Open Model Lab</button>{project.experiments.map(x=><button className="mini-experiment" key={x.id} onClick={()=>void reopenExperiment(x.id)}>{x.created_at.slice(0,16)} · {x.status} <ArrowRight size={14}/></button>)}</div>:
             <>{['queued','running'].includes(experiment.status)?<div className="empty-panel"><LoaderCircle size={35} className="spin"/><h3>Training in progress</h3><p>Cross-validating models, fitting preprocessing and saving pipelines.</p><div className="pulse-bar"/></div>:
