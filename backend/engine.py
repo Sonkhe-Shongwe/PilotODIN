@@ -278,6 +278,22 @@ def model_report(task: str, true: pd.Series, pred: np.ndarray, prob: np.ndarray 
     return out
 
 
+def heldout_baseline_metric(task: str, y_test: pd.Series, training_reference: Any) -> float:
+    """Score the frozen development-only baseline after model choice.
+
+    It must never be used for candidate selection: the untouched test data
+    is accessed only once, alongside the selected model's final evaluation.
+    """
+    if len(y_test)==0:
+        raise ValueError("Cannot score a baseline with an empty test set")
+    prediction=np.repeat(training_reference,len(y_test))
+    if task=='classification':
+        return round(float(f1_score(y_test,prediction,average='macro',zero_division=0)),5)
+    if task=='regression':
+        return round(float(mean_absolute_error(y_test,prediction)),5)
+    raise ValueError("Unknown baseline task")
+
+
 def reliability_report(development:dict, final:dict, selected_model:str)->dict:
     """Conservative assessment: no false accuracy claims for regression."""
     issues=[]
@@ -292,6 +308,12 @@ def reliability_report(development:dict, final:dict, selected_model:str)->dict:
         issues.append('Negative R²: worse than a constant-mean predictor on the held-out test set.')
     if task=='classification' and final.get('f1_macro',0)<.5:
         issues.append('Macro F1 is below 50%; investigate per-class performance.')
+    if final.get('baseline_test_metric') is not None:
+        metric='mae' if task=='regression' else 'f1_macro'
+        candidate=final.get(metric)
+        baseline_test=final['baseline_test_metric']
+        if candidate is not None and ((candidate>=baseline_test) if task=='regression' else (candidate<=baseline_test)):
+            issues.append('The model did not outperform its training-derived simple baseline on the held-out test set.')
     score_sd=next((m.get('cv_std') for m in development['models'] if m['key']==selected_model),0) or 0
     if score is not None and score_sd > .5*max(abs(score),.01):
         issues.append('Performance varied sharply across validation folds.')
@@ -393,6 +415,9 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
             'labelled_rows':len(y),'train_rows':len(X_train),'test_rows':len(X_test),'folds':folds,
             'primary_metric':'F1 macro (higher is better)' if task=='classification' else 'MAE (lower is better)',
             'baseline_cv':baseline_cv,'beats_baseline':bool(wins),
+            # Baseline prediction is fitted from the TRAINING target only.
+            # It can be scored on the untouched holdout after model selection.
+            'baseline_reference':native(y_train.value_counts().idxmax()) if task=='classification' else native(float(y_train.median())),
             'models':reports,'input_schema':input_schema(X_train),
             'warning':'Development folds determine selection; held-out test is used once after model selection. '+
                       ('No candidate beat the baseline: predictions may be unreliable.' if not wins else '')},pipelines,X_test,y_test
@@ -406,7 +431,11 @@ def input_schema(X: pd.DataFrame) -> list[dict]:
             fields.append({"name":c,"kind":"number","min":native(s.min()),"max":native(s.max()),"required":False,"domain": _prediction_domain(c)})
         else:
             categories = [str(x) for x in s.dropna().unique()[:40]]
-            fields.append({"name":c,"kind":"select" if s.nunique(dropna=True)<=30 else "text","options":categories if len(categories)<=30 else [],"required":False})
+            is_bounded=s.nunique(dropna=True)<=30
+            fields.append({"name":c,"kind":"select" if is_bounded else "text",
+                           "options":categories if is_bounded else [],"required":False,
+                           "observed_categories":int(s.nunique(dropna=True)),
+                           "category_check_complete":bool(is_bounded)})
     return fields
 
 
@@ -440,6 +469,7 @@ def predict_one(pipe: Pipeline, schema: list[dict], values: dict) -> dict:
         val = values.get(f["name"])
         if val in (None, ""):
             row[f["name"]] = np.nan
+            input_warnings.append(f"{f['name']} is missing; the model will use its training-fitted imputation.")
         elif f["kind"]=="number":
             try:
                 num = float(val)
@@ -457,10 +487,19 @@ def predict_one(pipe: Pipeline, schema: list[dict], values: dict) -> dict:
                 raise ValueError(f"{f['name']} must be a finite number") from exc
         else:
             row[f["name"]] = str(val)
+            # Only a COMPLETE observed vocabulary can prove unfamiliarity.
+            # For high-cardinality text, sending only sampled categories must
+            # never lead to a false out-of-distribution claim.
+            if f.get('category_check_complete') and str(val) not in f.get('options',[]):
+                input_warnings.append(
+                    f"{f['name']} has a category not observed during training. "
+                    "The encoder may map it to an unknown/infrequent group."
+                )
     pred = pipe.predict(pd.DataFrame([row]))[0]
     result = {"prediction":native(pred),"model":pipe.named_steps["model"].__class__.__name__,"input_warnings":input_warnings}
     if hasattr(pipe,"predict_proba"):
         proba=pipe.predict_proba(pd.DataFrame([row]))[0]
         labels=pipe.named_steps["model"].classes_
         result["probabilities"] = [{"class":native(label),"probability":round(float(v),5)} for label,v in zip(labels,proba)]
+        result["probability_estimates_calibrated"] = False
     return result
