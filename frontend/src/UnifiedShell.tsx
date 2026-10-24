@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPointerEvent,KeyboardEvent as ReactKeyboardEvent} from 'react';
-import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose} from 'lucide-react';
+import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,Plus} from 'lucide-react';
 import {App} from './App';
 import {navigateHashSmoothly} from './navigationMotion';
 import {InvestigationCanvas} from './InvestigationCanvas';
@@ -72,6 +72,8 @@ export function UnifiedShell(){
  const [dock,setDock]=useState<DockLayout>(()=>readDock(localStorage.getItem('pilotodin-current')||''));
  const [restoredFor,setRestoredFor]=useState<string|null>(null);
  const [warning,setWarning]=useState('');
+ // Creation uses the existing Studio import form rather than a second uploader.
+ const [newProjectOpen,setNewProjectOpen]=useState(false);
  const splitRef=useRef<HTMLDivElement|null>(null);
  const dragCleanup=useRef<(()=>void)|null>(null);
  const refreshProjects=useCallback(async()=>{
@@ -126,7 +128,7 @@ export function UnifiedShell(){
  },[dock,projectId,restoredFor]);
  useEffect(()=>()=>dragCleanup.current?.(),[]);
  const shownTabs=useMemo(()=>openTabs.filter(isWorkspaceView),[openTabs]);
- const chooseProject=(id:string)=>{if(!id||id===projectId)return;localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
+ const chooseProject=(id:string)=>{if(!id||id===projectId)return;setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
  const close=(view:View)=>{
   const next=shownTabs.filter(t=>t!==view);setOpenTabs(next);
   if(view===active)navigate(next[next.length-1]||'overview');
@@ -178,6 +180,8 @@ export function UnifiedShell(){
   try{localStorage.setItem(SIDEBAR_KEY,next)}
   catch{setWarning('Sidebar preference could not be saved. It still works this session.')}
  };
+ // Leaving Home closes the import flow without changing the selected project.
+ useEffect(()=>{if(active!=='overview')setNewProjectOpen(false)},[active]);
  const canSplit=!!projectId&&catalogState==='ready'&&dock.secondary!==null;
  const separate=canSplit&&active!==dock.secondary;
  const paneStyle={'--po-secondary-fraction':`${Math.round(clampFraction(dock.fraction)*10000)/100}%`} as CSSProperties;
@@ -186,7 +190,8 @@ export function UnifiedShell(){
    <div className="po-shell-brand"><img className="po-brand-symbol" src="/pilotodin-symbol.svg" alt="" aria-hidden="true"/><span className="po-brand-wordmark"><span className="po-pilot">pilot</span><b>ODIN</b></span></div>
    <span className="po-shell-mode">LOCAL INTELLIGENCE WORKSPACE</span>
    {motionReduced&&<span className="po-motion-reduced" role="status" title="Windows or your browser requests reduced motion. PilotODIN honours this accessibility setting.">Animations reduced by system</span>}
-   <div className="po-project-switcher"><Database size={15}/><select aria-label="Active project" value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
+   <div className="po-project-switcher"><Database size={15}/><select aria-label="Switch project" title={projects.length<2?'Import another dataset to switch between projects':'Switch between imported projects'} value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
+   <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>{setNewProjectOpen(true);navigate('overview')}}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
   </header>
   <div className="po-shell-row">
    <button type="button" className={`po-nav-backdrop ${sidebarMode==='expanded'?'po-nav-backdrop-open':''}`} aria-label="Close sidebar" aria-hidden={sidebarMode!=='expanded'} tabIndex={sidebarMode==='expanded'?0:-1} disabled={sidebarMode!=='expanded'} onClick={toggleSidebar}/>
@@ -216,7 +221,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" aria-label={`${labelFor(active)} workspace`}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {catalogState==='ready'?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':'Project catalogue unavailable'}</strong><p>{catalogState==='failed'?warning:'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
+       {catalogState==='ready'?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':'Project catalogue unavailable'}</strong><p>{catalogState==='failed'?warning:'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {canSplit&&<>
