@@ -384,6 +384,16 @@ def explore_chart(project_id: str, x: str, y: str | None = None,
         raise HTTPException(status_code=422,detail=str(e)) from e
 
 
+@app.get("/api/projects/{project_id}/explore/correlation")
+def explore_correlation(project_id: str, method: str = "pearson"):
+    project_or_404(project_id)
+    try:
+        df, version=quality.current_data(project_id)
+        return analytics.correlation(df,version,method)
+    except ValueError as exc:
+        raise HTTPException(status_code=422,detail=str(exc)) from exc
+
+
 @app.get("/api/projects/{project_id}/explore/insights")
 def explore_insights(project_id: str):
     project_or_404(project_id)

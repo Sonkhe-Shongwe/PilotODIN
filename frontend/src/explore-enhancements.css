@@ -15,3 +15,14 @@
 .po-box-facts strong{font-size:12px;color:#272c5d;overflow-wrap:anywhere}
 @media(max-width:700px){.po-box-facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.po-hist-rectangle{transition:none}}
+
+.po-correlation-panel{overflow:hidden}
+.po-correlation-method{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;font-weight:700;color:#52617b;margin:10px 0 15px}
+.po-correlation-method .input{max-width:310px}
+.po-correlation-scroll{overflow-x:auto;border:1px solid #e0e4f0;border-radius:12px}
+.po-correlation-grid{display:grid;gap:3px;padding:10px;min-width:max-content;background:#fcfdff}
+.po-correlation-axis{display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 5px;font-size:11px;font-weight:700;color:#5c6d89;overflow-wrap:anywhere;min-width:0}
+.po-correlation-cell{border:1px solid #ffffff9f;border-radius:5px;min-height:47px;font-size:12px;font-weight:750;cursor:pointer;transition:transform .12s ease,filter .12s ease}
+.po-correlation-cell:hover:not(:disabled){filter:brightness(1.07);transform:scale(1.035);z-index:1}
+.po-correlation-cell:disabled{cursor:default}
+@media(prefers-reduced-motion:reduce){.po-correlation-cell{transition:none}.po-correlation-cell:hover{transform:none}}

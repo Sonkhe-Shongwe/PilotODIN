@@ -5,6 +5,8 @@ import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
 type Plot={version:number;type:string;x:string;y:string|null;aggregation?:string;data:{label?:string;value?:number;x?:number;y?:number;min?:number;q1?:number;median?:number;q3?:number;max?:number;start?:number;end?:number;whisker_low?:number;whisker_high?:number;outliers?:number[];outliers_total?:number}[];sampled:boolean;truncated?:boolean;valid_observations?:number;excluded_observations?:number;note:string};
+type CorrelationCell={x:string;y:string;r:number|null;n:number};
+type Correlation={version:number;method:string;columns:string[];cells:CorrelationCell[];note:string};
 type Finding={category:string;column:string|null;title:string;detail:string};
 type ChartSuggestion={title:string;x:string;y:string|null;kind:string;aggregation:string;reason:string};
 type ExplorePreferences={x:string;y:string;kind:string;aggregation:string};
@@ -19,6 +21,13 @@ function readPreferences(projectId:string):ExplorePreferences{
  }catch{return defaults}
 }
 function format(n:number){return n.toLocaleString(undefined,{maximumFractionDigits:2})}
+function correlationTone(v:number|null){
+ if(v===null)return {background:'#f0f2f6',color:'#6c7893'};
+ const power=Math.abs(v);
+ return v>=0
+  ?{background:`rgba(14,140,144,${(.12+power*.75).toFixed(3)})`,color:power>.58?'#ffffff':'#183b43'}
+  :{background:`rgba(181,85,116,${(.12+power*.71).toFixed(3)})`,color:power>.58?'#ffffff':'#522f3f'};
+}
 function Viz({plot}:{plot:Plot}){
   const data=plot.data;
   if(!data.length)return <p className="body-muted">No chartable observations for this selection.</p>;
@@ -58,6 +67,9 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
   const [kind,setKind]=useState(()=>readPreferences(projectId).kind);
   const [aggregation,setAggregation]=useState(()=>readPreferences(projectId).aggregation);
   const [bins,setBins]=useState(16);
+  const [corrMethod,setCorrMethod]=useState<'pearson'|'spearman'>('pearson');
+  const [correlation,setCorrelation]=useState<Correlation|null>(null);
+  const [corrError,setCorrError]=useState('');
   useEffect(()=>{if(!overview)return;try{localStorage.setItem(preferencesKey(projectId),JSON.stringify({x,y,kind,aggregation}))}catch{/* Project evidence is stored in the backend, not here. */}},[projectId,x,y,kind,aggregation,overview]);
   const [plot,setPlot]=useState<Plot|null>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(false);
   useEffect(()=>{let active=true;Promise.all([get<Overview>(`/projects/${projectId}/explore/overview`),get<{findings:Finding[]}>(`/projects/${projectId}/explore/insights`),get<{recommendations:ChartSuggestion[]}>(`/projects/${projectId}/explore/recommended`)]).then(([d,f,recommended])=>{if(!active)return;setOverview(d);setFindings(f.findings);setSuggestions(recommended.recommendations);const goodCategory=d.columns.find(c=>c.kind==='categorical'&&!/(?:id|key|code|number)$/i.test(c.name)&&c.unique<=Math.min(100,Math.max(2,d.rows*.5)));
@@ -75,6 +87,13 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
     get<Plot>(`/projects/${projectId}/explore/chart?${params}`).then(p=>{if(live)setPlot(p)}).catch(e=>{if(live){setError(e.message);setPlot(null)}}).finally(()=>{if(live)setLoading(false)});
     return()=>{live=false};
   },[projectId,x,y,kind,aggregation,bins,versionToken,overview]);
+  useEffect(()=>{
+    let active=true;setCorrelation(null);setCorrError('');
+    get<Correlation>(`/projects/${projectId}/explore/correlation?method=${corrMethod}`)
+      .then(value=>{if(active)setCorrelation(value)})
+      .catch(e=>{if(active)setCorrError((e as Error).message)});
+    return()=>{active=false};
+  },[projectId,versionToken,corrMethod]);
   const cols=overview?.columns??[];const numerical=cols.filter(c=>c.kind==='numeric');
   const selectedX=cols.find(c=>c.name===x);
   const selectedY=cols.find(c=>c.name===y);
@@ -103,6 +122,17 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
       {chartWarning&&<div className="mini-info warn-icon" role="status">{chartWarning}</div>}
       {error&&<div className="alert-error"><Activity size={16}/>{error}</div>}
       {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating chart…</div>:plot&&<><h3 className="chart-title">{plot.type==='bar'&&plot.aggregation==='count'?(plot.y?`Count of non-missing ${plot.y} by ${plot.x}`:`Record count by ${plot.x}`):`${plot.x}${plot.y?` vs ${plot.y}`:''} · ${plot.type}`}</h3><Viz plot={plot}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
+    </section>
+    <section className="panel po-correlation-panel"><div className="panel-title"><BarChart3 size={19}/><h2>Correlation heatmap</h2><span className="pill muted">VERIFIED LOCAL CALCULATION</span></div>
+      <p className="body-muted">Compare numeric relationships. Click any off-diagonal cell to open its scatter plot. IDs and obvious identifiers are excluded.</p>
+      <label className="po-correlation-method">Correlation method <select className="input" value={corrMethod} onChange={e=>setCorrMethod(e.target.value as 'pearson'|'spearman')}><option value="pearson">Pearson · linear association</option><option value="spearman">Spearman · rank association</option></select></label>
+      {corrError&&<p role="alert" className="alert-error">{corrError}</p>}
+      {correlation&&correlation.columns.length<2&&<p className="body-muted">At least two eligible numeric columns are required to compute a correlation matrix.</p>}
+      {correlation&&correlation.columns.length>=2&&<div className="po-correlation-scroll"><div className="po-correlation-grid" style={{gridTemplateColumns:`minmax(115px,1.3fr) repeat(${correlation.columns.length},minmax(76px,1fr))`}}>
+        <div className="po-correlation-axis">Variable ↓ / →</div>{correlation.columns.map(name=><div className="po-correlation-axis" key={`head-${name}`} title={name}>{name}</div>)}
+        {correlation.columns.map(row=><div className="po-correlation-row" key={row} style={{display:'contents'}}><div className="po-correlation-axis" title={row}>{row}</div>{correlation.columns.map(column=>{const c=correlation.cells.find(item=>item.x===column&&item.y===row);const r=c?.r??null;const allowed=row!==column&&r!==null;return <button type="button" key={column} className="po-correlation-cell" disabled={!allowed} style={correlationTone(r)} title={`${row} vs ${column}: ${r===null?'Unavailable':r.toFixed(3)} (n=${c?.n??0})`} aria-label={`${row} versus ${column}: correlation ${r===null?'unavailable':r.toFixed(3)}, ${c?.n??0} valid pairs`} onClick={()=>{setX(column);setY(row);setKind('scatter')}}>{r===null?'—':r.toFixed(2)}</button>})}</div>)}
+      </div></div>}
+      <p className="muted-caption">{correlation?.note??'Calculating eligible pairwise relationships…'} Correlations are descriptive, not causal.</p>
     </section>
     <div className="explore-columns"><section className="panel"><div className="panel-title"><Sparkles size={18}/><h2>Proactive insights</h2></div>{findings.length?findings.map((f,i)=><button className="insight-item" key={i} onClick={()=>{if(f.column){setX(f.column);setY('');setKind('auto')}}}><span className="insight-bullet"/><span><b>{f.title}</b><small>{f.detail}</small></span><ChevronDown size={15}/></button>):<p className="body-muted">No structural or distribution warnings detected. Explore combinations to investigate further.</p>}</section>
       <section className="panel"><div className="panel-title"><Activity size={18}/><h2>Column statistics</h2></div><div className="table-scroll"><table><thead><tr><th>FIELD</th><th>TYPE</th><th>UNIQUE</th><th>MISSING</th></tr></thead><tbody>{cols.map(c=><tr key={c.name} onClick={()=>{setX(c.name);setY('');setKind('auto')}} className="clickable-row"><td className="cell-strong">{c.name}</td><td>{c.kind}</td><td>{format(c.unique)}</td><td>{c.missing_pct}%</td></tr>)}</tbody></table></div><p className="muted-caption">Click a column to explore it. Descriptive statistics do not establish causation.</p></section></div>
