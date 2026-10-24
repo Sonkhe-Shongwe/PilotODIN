@@ -585,13 +585,16 @@ def restore(pid: str, target_version: int, expected_version: int) -> dict:
         return {"version":nxt,"restored_from":target_version,"active_actions":len(restored_ops)}
 
 
-def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int = 20) -> dict:
+def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int = 20,
+            expected_version: int | None = None) -> dict:
     if offset < 0 or limit < 1 or limit > 200:
         raise QualityError("Offset must be nonnegative; limit must be 1–200")
     p=_project(pid)
     with storage.connect() as con:
         _ensure(con,p)
         version,ops=_state(con,pid)
+        if expected_version is not None and expected_version!=version:
+            raise QualityError('Working dataset changed. Refresh Quality before inspecting rows.',409)
         original=_source_df(p)
         current=_materialize(con,p,ops)
         issue=None
