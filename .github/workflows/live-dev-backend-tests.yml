@@ -30,6 +30,7 @@ jobs:
           tests/test_model_library_expansion.py
           tests/test_explore_chart_quality.py
           tests/test_explore_linked_filters.py
+          tests/test_explore_record_inspector.py
           tests/test_correlation_matrix.py
           tests/test_chart_counts_semantics.py
           tests/test_report_exhibit_render.py
