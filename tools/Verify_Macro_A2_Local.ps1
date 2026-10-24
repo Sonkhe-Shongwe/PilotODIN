@@ -37,7 +37,17 @@ try {
   if (-not $FrontendOnly) {
     Push-Location $root
     try {
-      if (-not (Get-Command python -ErrorAction SilentlyContinue)){throw 'Python is missing from PATH. Use your existing PilotODIN Python environment.'}
+      # Live development runs from this repository's isolated Python venv.
+      # Do not silently test with a different system-wide Python installation.
+      $testPython=Join-Path $root '.venv-live\Scripts\python.exe'
+      if (-not (Test-Path $testPython)){
+        throw 'PilotODIN .venv-live environment is missing. Start PilotODIN Live Dev once to create it before validating A2.'
+      }
+      Write-Host ("Backend test interpreter: "+$testPython)
+      & $testPython -m pytest --version
+      if ($LASTEXITCODE -ne 0){
+        throw ('Python test dependencies are missing from .venv-live. From the repository root run: & ".\.venv-live\Scripts\python.exe" -m pip install -r backend\requirements-test.txt')
+      }
       $cases=@(
         'tests/test_non_ai_correctness_gates.py',
         'tests/test_explore_chart_quality.py',
@@ -56,8 +66,8 @@ try {
         'tests/test_report_exhibit_render.py',
         'tests/test_build_e_persistent_reports.py'
       )
-      Invoke-Checked 'Backend syntax compilation' {python -m compileall -q backend}
-      Invoke-Checked 'Backend analytics/quality/reporting regressions' {python -m pytest -q @cases}
+      Invoke-Checked 'Backend syntax compilation' {& $testPython -m compileall -q backend}
+      Invoke-Checked 'Backend analytics/quality/reporting regressions' {& $testPython -m pytest -q @cases}
     } finally {Pop-Location}
   }
   $isSuccessful=$true
