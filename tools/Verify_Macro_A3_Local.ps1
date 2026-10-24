@@ -38,6 +38,7 @@ try {
       Checked 'A3 backend syntax checks' {& $python -m compileall -q backend}
       $cases=@(
         'tests/test_ml_a3_preparation_and_split_safety.py',
+        'tests/test_ml_a3_baseline_and_prediction_warnings.py',
         'tests/test_model_library_expansion.py',
         'tests/test_non_ai_correctness_gates.py',
         'tests/test_build_d_unified_journey.py'
