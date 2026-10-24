@@ -4,11 +4,13 @@ const fs=require('node:fs');
 const path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../src/ExploreWorkspace.tsx'),'utf8');
 const styles=fs.readFileSync(path.join(__dirname,'../src/explore-enhancements.css'),'utf8');
+const scatter=fs.readFileSync(path.join(__dirname,'../src/ScatterExplorer.tsx'),'utf8');
 
 test('all three supported plot marks open a chart-specific local inspector',()=>{
  assert.match(source,/onSelect\(\{kind:'category',label:d\.label/);
  assert.match(source,/onSelect\(\{kind:'bin',bin_index:i\}\)/);
- assert.match(source,/onSelect\(\{kind:'point',row_ref:d\.row_ref\}\)/);
+ assert.match(source,/onSelect=\{row_ref=>onSelect\(\{kind:'point',row_ref\}\)\}/);
+ assert.match(scatter,/onSelect\(point\.row_ref\)/);
  assert.match(source,/aria-label="Selected chart records"/);
 });
 
@@ -25,8 +27,8 @@ test('inspector is read-only, paginated and keyboard accessible',()=>{
  assert.match(source,/limit:12/);
  assert.match(source,/Previous/);
  assert.match(source,/Next/);
- assert.match(source,/onKeyDown=\{e=>\{if\(d\.row_ref!==undefined/);
- assert.match(source,/role=\{d\.row_ref===undefined\?undefined:'button'\}/);
+ assert.match(scatter,/onKeyDown=\{event=>\{if\(point\.row_ref!==undefined/);
+ assert.match(scatter,/role=\{point\.row_ref===undefined\?undefined:'button'\}/);
  assert.match(styles,/\.po-inspect-point:focus-visible/);
  assert.match(styles,/\.po-inspect-bar:focus-visible/);
 });
