@@ -439,15 +439,17 @@ def reliability_report(development:dict, final:dict, selected_model:str)->dict:
 
 def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: list[str], task: str,
                  split_strategy:str='random', split_column:str|None=None):
-    X, y, task = validate_config(df, target, excluded, models, task)
     if split_strategy not in ('random','time','group'):
         raise ValueError('Invalid split strategy')
     if split_strategy != 'random' and (not split_column or split_column not in df):
         raise ValueError('Group or time column is required for this split')
     if split_strategy != 'random' and split_column == target:
         raise ValueError('Target cannot also be a split column')
-    if split_strategy != 'random' and split_column in X:
-        X=X.drop(columns=[split_column])
+    # The validation/preflight must see the exact predictors that will be
+    # fitted. Group IDs and timestamps are split metadata, never features.
+    # Preserve the original user exclusions in the persisted experiment.
+    fit_excluded = list(dict.fromkeys([*excluded, *([split_column] if split_strategy != 'random' else [])]))
+    X, y, task = validate_config(df, target, fit_excluded, models, task)
     if X.empty or not X.shape[1]:raise ValueError('No predictor fields after split-column exclusion')
     cv_groups=None
     if split_strategy=='group':
