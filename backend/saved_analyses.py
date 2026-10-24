@@ -112,16 +112,47 @@ def save(project_id: str, *, title: str, expected_version: int,
     return load(project_id,identity)
 
 
+def verify_stored_snapshot(row: sqlite3.Row) -> tuple[bool, bool]:
+    """Verify result integrity and result-to-configuration binding.
+
+    Returns (results_valid, configuration_verified). Legacy captures have
+    valid result hashes but lack the configuration binding, and must not be
+    passed to reporting as verified analytical evidence.
+    """
+    raw=row['snapshot_json']
+    results_valid=hashlib.sha256(raw.encode('utf-8')).hexdigest()==row['sha256']
+    if not results_valid:
+        return False, False
+    try:
+        snapshot=json.loads(raw)
+    except (ValueError,TypeError):
+        return False,False
+    checksum=snapshot.get('configuration_sha256')
+    valid_config=(isinstance(checksum,str) and
+                  checksum==hashlib.sha256(row['configuration_json'].encode('utf-8')).hexdigest())
+    return True,bool(valid_config)
+
+
 def listing(project_id: str) -> list[dict]:
     if storage.get_project(project_id) is None:
         raise SavedAnalysisError('Project does not exist',404)
     with storage.connect() as conn:
         _init(conn)
-        rows=conn.execute("""SELECT id,title,dataset_version,sha256,created_at
+        rows=conn.execute("""SELECT id,title,dataset_version,sha256,created_at,
+                   snapshot_json,configuration_json
           FROM explore_snapshots_v1 WHERE project_id=?
           ORDER BY created_at DESC,rowid DESC LIMIT ?""",(project_id,MAX_SAVED)).fetchall()
     current=quality.current_version(project_id)
-    return [{**dict(row),'stale':row['dataset_version']!=current} for row in rows]
+    items=[]
+    for row in rows:
+        result_valid,config_valid=verify_stored_snapshot(row)
+        items.append({'id':row['id'],'title':row['title'],
+                      'dataset_version':row['dataset_version'],
+                      'created_at':row['created_at'],'sha256':row['sha256'],
+                      'stale':row['dataset_version']!=current,
+                      'results_valid':result_valid,
+                      'configuration_verified':config_valid})
+    return items
 
 
 def load(project_id: str, snapshot_id: str) -> dict:
@@ -134,15 +165,13 @@ def load(project_id: str, snapshot_id: str) -> dict:
     if row is None:
         raise SavedAnalysisError('Saved analysis not found in this project',404)
     canonical=row['snapshot_json']
-    checksum=hashlib.sha256(canonical.encode('utf-8')).hexdigest()
-    if checksum!=row['sha256']:
+    results_valid,configuration_verified=verify_stored_snapshot(row)
+    if not results_valid:
         raise SavedAnalysisError('Saved analysis integrity check failed',409)
     snapshot=json.loads(canonical)
-    configuration_hash=snapshot.get('configuration_sha256')
-    observed_hash=hashlib.sha256(row['configuration_json'].encode('utf-8')).hexdigest()
-    configuration_verified=configuration_hash is not None and configuration_hash==observed_hash
-    if configuration_hash is not None and not configuration_verified:
+    if snapshot.get('configuration_sha256') is not None and not configuration_verified:
         raise SavedAnalysisError('Saved analysis configuration integrity check failed',409)
+    checksum=row['sha256']
     current=quality.current_version(project_id)
     return {'id':row['id'],'project_id':project_id,'title':row['title'],
             'dataset_version':row['dataset_version'],'created_at':row['created_at'],
