@@ -5,10 +5,11 @@ import {SavedExploreAnalyses} from './SavedExploreAnalyses';
 import type {ExploreState} from './SavedExploreAnalyses';
 import {insightQualityKind} from './qualityHandoff';
 import type {QualityFocus} from './qualityHandoff';
+import {ScatterExplorer} from './ScatterExplorer';
 import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
-type Plot={version:number;type:string;x:string;y:string|null;aggregation?:string;data:{label?:string;value?:number;x?:number;y?:number;min?:number;q1?:number;median?:number;q3?:number;max?:number;start?:number;end?:number;whisker_low?:number;whisker_high?:number;outliers?:number[];outliers_total?:number;row_ref?:number}[];sampled:boolean;truncated?:boolean;valid_observations?:number;excluded_observations?:number;note:string};
+type Plot={version:number;type:string;x:string;y:string|null;aggregation?:string;data:{label?:string;value?:number;x?:number;y?:number;min?:number;q1?:number;median?:number;q3?:number;max?:number;start?:number;end?:number;whisker_low?:number;whisker_high?:number;outliers?:number[];outliers_total?:number;row_ref?:number;group?:string}[];sampled:boolean;color_by?:string;color_groups?:{label:string;count:number}[];truncated?:boolean;valid_observations?:number;excluded_observations?:number;note:string};
 type CorrelationCell={x:string;y:string;r:number|null;n:number};
 type Correlation={version:number;method:string;columns:string[];cells:CorrelationCell[];note:string};
 type Finding={category:string;column:string|null;title:string;detail:string};
@@ -47,14 +48,7 @@ function correlationTone(v:number|null){
 function Viz({plot,onSelect}:{plot:Plot;onSelect:(choice:ChartSelection)=>void}){
   const data=plot.data;
   if(!data.length)return <p className="body-muted">No chartable observations for this selection.</p>;
-  if(plot.type==='scatter'){
-    const w=740,h=320,pad=42;
-    const xs=data.map(d=>d.x??0),ys=data.map(d=>d.y??0);
-    const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
-    const toX=(v:number)=>pad+(v-x0)/(x1-x0||1)*(w-pad*2);
-    const toY=(v:number)=>h-pad-(v-y0)/(y1-y0||1)*(h-pad*2);
-    return <div className="chart-scroll"><svg viewBox={`0 0 ${w} ${h}`} className="pilot-chart" aria-label={`${plot.x} versus ${plot.y} scatter plot`} role="img"><line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#aac6bb"/><line x1={pad} y1={pad} x2={pad} y2={h-pad} stroke="#aac6bb"/>{data.map((d,i)=><circle key={i} cx={toX(d.x??0)} cy={toY(d.y??0)} r="5" fill="#168769" opacity="0.68" className="po-inspect-point" tabIndex={d.row_ref===undefined?-1:0} role={d.row_ref===undefined?undefined:'button'} aria-label={d.row_ref===undefined?undefined:`Inspect plotted record ${d.row_ref+1}: ${plot.x} ${d.x}, ${plot.y} ${d.y}`} onClick={()=>{if(d.row_ref!==undefined)onSelect({kind:'point',row_ref:d.row_ref})}} onKeyDown={e=>{if(d.row_ref!==undefined&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onSelect({kind:'point',row_ref:d.row_ref})}}}><title>{`${plot.x}: ${d.x}; ${plot.y}: ${d.y}`}</title></circle>)}<text x={w/2} y={h-6} textAnchor="middle" fontSize="12" fill="#617f7a">{plot.x}</text><text transform={`translate(15 ${h/2}) rotate(-90)`} textAnchor="middle" fontSize="12" fill="#617f7a">{plot.y}</text><text x={pad} y={h-pad+15} fontSize="10" fill="#70868c">{format(x0)}</text><text x={w-pad} y={h-pad+15} textAnchor="end" fontSize="10" fill="#70868c">{format(x1)}</text><text x={pad-6} y={pad} textAnchor="end" fontSize="10" fill="#70868c">{format(y1)}</text></svg></div>;
-  }
+  if(plot.type==='scatter')return <ScatterExplorer key={`${plot.x}-${plot.y}-${plot.version}-${plot.color_by??'none'}`} plot={plot} onSelect={row_ref=>onSelect({kind:'point',row_ref})}/>;
   if(plot.type==='box'){
     const d=data[0],scale=(v:number)=>Math.max(3,Math.min(97,((v-(d.min??0))/((d.max??0)-(d.min??0)||1))*94+3));
     return <div className="boxplot"><div className="boxplot-track"><div className="boxplot-whisker" style={{left:`${scale(d.whisker_low??d.min??0)}%`,width:`${scale(d.whisker_high??d.max??0)-scale(d.whisker_low??d.min??0)}%`}}/><div className="boxplot-iqr" style={{left:`${scale(d.q1??0)}%`,width:`${scale(d.q3??0)-scale(d.q1??0)}%`}}/><div className="boxplot-median" style={{left:`${scale(d.median??0)}%`}}/>{d.outliers?.map((v,i)=><span className="po-box-outlier" style={{left:`${scale(v)}%`}} key={i} title={`Outlying observation: ${format(v)}`}/>)}</div><div className="po-box-scale"><span>{format(d.min??0)}</span><span>{format(d.max??0)}</span></div><div className="po-box-facts">{[['Lower whisker',d.whisker_low??d.min],['Q1',d.q1],['Median',d.median],['Q3',d.q3],['Upper whisker',d.whisker_high??d.max]].map(([label,value])=><span key={String(label)}><small>{label}</small><strong>{format(Number(value??0))}</strong></span>)}</div><p className="muted-caption">{d.outliers_total??0} outlying observations beyond 1.5×IQR; {Math.min(40,d.outliers?.length??0)} rendered as dots.</p></div>;
@@ -83,6 +77,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
   const [kind,setKind]=useState(()=>readPreferences(projectId).kind);
   const [aggregation,setAggregation]=useState(()=>readPreferences(projectId).aggregation);
   const [bins,setBins]=useState(16);
+  const [colorBy,setColorBy]=useState('');
   const [corrMethod,setCorrMethod]=useState<'pearson'|'spearman'>('pearson');
   const [correlation,setCorrelation]=useState<Correlation|null>(null);
   const [filterCatalog,setFilterCatalog]=useState<FilterCatalog|null>(null);
@@ -130,7 +125,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     setPlot(null);setCorrelation(null);setFilteredOverview(null);setFilteredRows(null);
     post<Workbench>(`/projects/${projectId}/explore/workbench`,{
       expected_version:overview.version,filters,x,y:y&&kind!=='histogram'&&kind!=='box'?y:null,
-      kind,aggregation,bins,correlation_method:corrMethod
+      kind,aggregation,bins,correlation_method:corrMethod,color_by:kind==='scatter'&&colorBy?colorBy:null
     }).then(value=>{
       if(!live)return;
       if(value.version!==overview.version){setError('Dataset changed. Refresh Explore.');return;}
@@ -140,7 +135,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     }).catch(e=>{if(live){setError((e as Error).message);setCorrError('Filtered correlation unavailable');setPlot(null)}})
       .finally(()=>{if(live)setLoading(false)});
     return()=>{live=false};
-  },[projectId,x,y,kind,aggregation,bins,versionToken,overview,filterCatalog,filters,corrMethod]);
+  },[projectId,x,y,kind,aggregation,bins,versionToken,overview,filterCatalog,filters,corrMethod,colorBy]);
   // Bring the newly opened inspector into view immediately, even while rows load.
   // Honour OS reduced-motion settings and never scroll again during pagination.
   useLayoutEffect(()=>{
@@ -174,6 +169,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
   const selectedX=cols.find(c=>c.name===x);
   const selectedY=cols.find(c=>c.name===y);
   const scatterReady=numerical.length>=2;
+  const colourCandidates=cols.filter(c=>c.kind==='categorical'&&c.unique<=8&&!/(?:id|key|code|number)$/i.test(c.name)&&c.name!==x&&c.name!==y);
   const canScatter=selectedX?.kind==='numeric'&&selectedY?.kind==='numeric'&&x!==y;
   const chartWarning=kind==='scatter'&&!canScatter?'Scatter charts require two different numeric columns. Choose numeric X and Y fields.':'';
   const statOverview=filteredOverview??(filters.length?null:overview);
@@ -190,7 +186,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     // live results; do not copy frozen evidence into the working chart.
     setX(config.x);setY(config.y??'');setKind(config.kind);
     setAggregation(config.aggregation);setBins(config.bins);
-    setCorrMethod(config.correlation_method);
+    setCorrMethod(config.correlation_method);setColorBy(config.color_by??'');
     setFilters(config.filters as FilterClause[]);
     setSelection(null);setInspection(null);setInspectOffset(0);
   }
@@ -230,7 +226,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     </section>
     {suggestions.length>0&&<section className="panel"><div className="panel-title"><Sparkles size={18}/><h2>Recommended investigations</h2><span className="pill muted">LOCAL EVIDENCE</span></div><div className="recommend-grid">{suggestions.slice(0,6).map((r,i)=><button key={i} className="recommend-card" onClick={()=>{setX(r.x);setY(r.y??'');setKind(r.kind);setAggregation(r.aggregation)}}><strong>{r.title}</strong><small>{r.reason}</small><span>Open chart →</span></button>)}</div></section>}
     <section className="panel"><div className="panel-title"><BarChart3 size={19}/><h2>Interactive chart builder</h2><span className="pill muted">COMPUTED LOCALLY</span></div>
-      <div className="chart-controls"><label>Chart type<select className="input" value={kind} onChange={(e:any)=>changeKind(e.target.value)}><option value="auto">Automatic</option><option value="bar">Bar / categories</option><option value="histogram">Histogram</option><option value="scatter" disabled={!scatterReady}>Scatter · two numeric columns</option><option value="line">Line / trend</option><option value="box">Box summary</option></select></label><label>X variable<select className="input" value={x} onChange={(e:any)=>changeX(e.target.value)}>{cols.map(c=><option key={c.name}>{c.name}</option>)}</select></label>{kind!=='histogram'&&kind!=='box'&&<label>Y variable<select className="input" value={y} onChange={(e:any)=>setY(e.target.value)}><option value="">None · record frequency</option>{numerical.filter(c=>c.name!==x).map(c=><option key={c.name}>{c.name}</option>)}</select></label>}{!['histogram','box','scatter'].includes(kind)&&<label>Aggregation<select className="input" value={aggregation} onChange={(e:any)=>setAggregation(e.target.value)}>{['mean','sum','median','count'].map(a=><option key={a} value={a}>{a}</option>)}</select></label>}{kind==='histogram'&&<label>Histogram bins<select className="input" value={bins} onChange={e=>setBins(Number(e.target.value))}>{[8,12,16,24,32].map(n=><option key={n} value={n}>{n} bins</option>)}</select></label>}</div>
+      <div className="chart-controls"><label>Chart type<select className="input" value={kind} onChange={(e:any)=>changeKind(e.target.value)}><option value="auto">Automatic</option><option value="bar">Bar / categories</option><option value="histogram">Histogram</option><option value="scatter" disabled={!scatterReady}>Scatter · two numeric columns</option><option value="line">Line / trend</option><option value="box">Box summary</option></select></label><label>X variable<select className="input" value={x} onChange={(e:any)=>changeX(e.target.value)}>{cols.map(c=><option key={c.name}>{c.name}</option>)}</select></label>{kind!=='histogram'&&kind!=='box'&&<label>Y variable<select className="input" value={y} onChange={(e:any)=>setY(e.target.value)}><option value="">None · record frequency</option>{numerical.filter(c=>c.name!==x).map(c=><option key={c.name}>{c.name}</option>)}</select></label>}{!['histogram','box','scatter'].includes(kind)&&<label>Aggregation<select className="input" value={aggregation} onChange={(e:any)=>setAggregation(e.target.value)}>{['mean','sum','median','count'].map(a=><option key={a} value={a}>{a}</option>)}</select></label>}{kind==='histogram'&&<label>Histogram bins<select className="input" value={bins} onChange={e=>setBins(Number(e.target.value))}>{[8,12,16,24,32].map(n=><option key={n} value={n}>{n} bins</option>)}</select></label>}{kind==='scatter'&&<label>Colour by category<select className="input" value={colourCandidates.some(c=>c.name===colorBy)?colorBy:''} onChange={e=>setColorBy(e.target.value)}><option value="">One colour</option>{colourCandidates.map(c=><option key={c.name} value={c.name}>{c.name} ({c.unique} groups)</option>)}</select></label>}</div>
       {chartWarning&&<div className="mini-info warn-icon" role="status">{chartWarning}</div>}
       {error&&<div className="alert-error"><Activity size={16}/>{error}</div>}
       {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating linked results…</div>:chartMessage?<p className="body-muted" role="status">{chartMessage}</p>:plot&&<><h3 className="chart-title">{plot.type==='bar'&&plot.aggregation==='count'?(plot.y?`Count of non-missing ${plot.y} by ${plot.x}`:`Record count by ${plot.x}`):`${plot.x}${plot.y?` vs ${plot.y}`:''} · ${plot.type}`}</h3><Viz plot={plot} onSelect={choice=>{setSelection(choice);setInspectOffset(0)}}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
@@ -250,7 +246,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     </section>}
     <SavedExploreAnalyses projectId={projectId} version={overview?.version??null}
       ready={!!filteredOverview&&!loading&&!error&&!!filterCatalog&&filterCatalog.version===overview?.version}
-      configuration={{x,y:y||null,kind,aggregation,bins,correlation_method:corrMethod,filters}}
+      configuration={{x,y:y||null,kind,aggregation,bins,correlation_method:corrMethod,filters,color_by:kind==='scatter'&&colorBy?colorBy:null}}
       onRestore={restoreSaved}/>
     <section className="panel po-correlation-panel"><div className="panel-title"><BarChart3 size={19}/><h2>Correlation heatmap</h2><span className="pill muted">VERIFIED LOCAL CALCULATION</span></div>
       <p className="body-muted">Compare numeric relationships. Click any off-diagonal cell to open its scatter plot. IDs and obvious identifiers are excluded.</p>
