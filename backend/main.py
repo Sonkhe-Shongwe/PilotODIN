@@ -220,8 +220,14 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
         df, version = quality.current_data(project_id)
         if body.expected_quality_version is not None and body.expected_quality_version != version:
             raise HTTPException(status_code=409, detail=f"Dataset version changed from {body.expected_quality_version} to {version}. Refresh before training.")
-        engine.validate_config(df,body.target,body.excluded_features,body.models,body.task)
         if body.split_column and body.split_column not in df.columns:raise ValueError('Split column not found')
+        if body.split_strategy!='random' and body.split_column==body.target:
+            raise ValueError('Target cannot also be a split column')
+        # Match the worker's effective predictor set before capacity checks.
+        # The split key remains available in the original frame for group/time CV.
+        fit_excluded=list(dict.fromkeys([*body.excluded_features,
+            *([body.split_column] if body.split_strategy!='random' else [])]))
+        engine.validate_config(df,body.target,fit_excluded,body.models,body.task)
         preparation_audit=engine.preparation(df,body.target)
         included_risks=sorted(set(preparation_audit["high_risk_features"])-set(body.excluded_features)
                               -({body.split_column} if body.split_strategy!="random" else set()))
