@@ -10,7 +10,7 @@ const css=load('saved-explore-analyses.css');
 test('Explore includes project/version-scoped saved analysis with the live chart configuration',()=>{
  assert.match(explore,/import \{SavedExploreAnalyses\}/);
  assert.match(explore,/<SavedExploreAnalyses projectId=\{projectId\} version=\{overview\?\.version\?\?null\}/);
- assert.match(explore,/configuration=\{\{x,y:y\|\|null,kind,aggregation,bins,correlation_method:corrMethod,filters\}\}/);
+ assert.match(explore,/configuration=\{\{x,y:y\|\|null,kind,aggregation,bins,correlation_method:corrMethod,filters,color_by:/);
  assert.match(explore,/onRestore=\{restoreSaved\}/);
  assert.match(explore,/function restoreSaved\(config:ExploreState\)/);
  assert.match(explore,/setFilters\(config\.filters as FilterClause\[\]\)/);
