@@ -38,3 +38,4 @@ jobs:
           tests/test_report_exhibit_render.py
           tests/test_build_e_persistent_reports.py
           tests/test_quality_increment1.py
+          tests/test_quality_deep_investigations.py
