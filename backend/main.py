@@ -438,6 +438,7 @@ class ExploreWorkbenchRequest(BaseModel):
     aggregation: str = "mean"
     bins: int = Field(default=16, ge=4, le=40)
     correlation_method: str = "pearson"
+    color_by: str | None = Field(default=None,max_length=256)
 
 
 @app.get("/api/projects/{project_id}/explore/filter-options")
@@ -462,7 +463,7 @@ def explore_workbench(project_id: str, body: ExploreWorkbenchRequest):
         if len(subset):
             try:
                 graph = analytics.chart(subset, version, body.x, body.y, body.kind,
-                                        body.aggregation, body.bins)
+                                        body.aggregation, body.bins, body.color_by)
             except ValueError as exc:
                 # An otherwise valid selection may have no eligible numeric values.
                 if "requires numeric" not in str(exc).lower() and not any(
@@ -550,7 +551,7 @@ def save_explore_analysis(project_id: str, body: SaveExploreAnalysisRequest):
         project_id, title=body.title, expected_version=body.expected_version,
         x=body.x, y=body.y, kind=body.kind, aggregation=body.aggregation,
         bins=body.bins, correlation_method=body.correlation_method,
-        filters=[item.model_dump(exclude_none=True) for item in body.filters]
+        color_by=body.color_by, filters=[item.model_dump(exclude_none=True) for item in body.filters]
     ))
 
 
