@@ -15,7 +15,8 @@ function authHeaders(): Record<string,string> {
 }
 export type Col = {name:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;unique:number;identifier_risk:boolean;leakage_risk:boolean;sample_values:(string|number|null)[]};
 export type Profile = {filename:string;rows:number;columns_count:number;missing_cells:number;duplicate_rows:number;columns:Col[];preview:Record<string,unknown>[];target_candidates:string[];warnings:string[];summary:string;summary_source:string;guidance:string[]};
-export type Prep = {task:'classification'|'regression';target:string;available_features:string[];recommend_exclude:{column:string;reason:string;requires_review:boolean}[];missing_targets:number;transformations:string[];warnings:string[]};
+export type FeatureAudit = {column:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;distinct:number;risk:'high'|'review'|'low';reasons:string[];treatment:string;default_included:boolean};
+export type Prep = {task:'classification'|'regression';target:string;available_features:string[];recommend_exclude:{column:string;reason:string;requires_review:boolean}[];feature_audit:FeatureAudit[];high_risk_features:string[];missing_targets:number;transformations:string[];warnings:string[]};
 export type ModelReport = {key:string;name:string;cv_metric?:number;cv_std?:number;status:'ready'|'failed';error?:string};
 export type Field = {name:string;kind:'number'|'select'|'text';min?:number;max?:number;options?:string[];required:boolean;domain?:{min?:number;max?:number;integer?:boolean}|null};
 export type Results = {task:string;target:string;features:string[];excluded_features:string[];labelled_rows:number;train_rows:number;test_rows:number;folds:number;primary_metric:string;baseline_cv:number;models:ModelReport[];input_schema:Field[];warning:string;beats_baseline?:boolean;split_strategy?:string;split_column?:string|null};
