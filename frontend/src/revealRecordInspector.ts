@@ -41,6 +41,7 @@ export function revealRecordInspector(panel: HTMLElement): () => void {
     window.cancelAnimationFrame(handle);
     scrollContainer.removeEventListener('wheel',cleanup);
     scrollContainer.removeEventListener('touchstart',cleanup);
+    scrollContainer.removeEventListener('pointerdown',cleanup);
     window.removeEventListener('keydown',onKeyboard);
   }
   function onKeyboard(event:KeyboardEvent) {
@@ -58,6 +59,7 @@ export function revealRecordInspector(panel: HTMLElement): () => void {
   }
   scrollContainer.addEventListener('wheel',cleanup,{passive:true});
   scrollContainer.addEventListener('touchstart',cleanup,{passive:true});
+  scrollContainer.addEventListener('pointerdown',cleanup,{passive:true});
   window.addEventListener('keydown',onKeyboard);
   handle=window.requestAnimationFrame(tick);
   return cleanup;
