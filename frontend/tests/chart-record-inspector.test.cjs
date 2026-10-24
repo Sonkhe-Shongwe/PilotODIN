@@ -6,11 +6,15 @@ const source=fs.readFileSync(path.join(__dirname,'../src/ExploreWorkspace.tsx'),
 const styles=fs.readFileSync(path.join(__dirname,'../src/explore-enhancements.css'),'utf8');
 const scatter=fs.readFileSync(path.join(__dirname,'../src/ScatterExplorer.tsx'),'utf8');
 
-test('all three supported plot marks open a chart-specific local inspector',()=>{
+test('bar, histogram, scatter, line, and box marks open source-matched local inspection',()=>{
  assert.match(source,/onSelect\(\{kind:'category',label:d\.label/);
  assert.match(source,/onSelect\(\{kind:'bin',bin_index:i\}\)/);
  assert.match(source,/onSelect=\{row_ref=>onSelect\(\{kind:'point',row_ref\}\)\}/);
  assert.match(scatter,/onSelect\(point\.row_ref\)/);
+ assert.match(source,/onSelect\(\{kind:'line_category',label:d\.label\?\?''\}\)/);
+ assert.match(source,/onSelect\(\{kind:'box_outlier',value:v\}\)/);
+ assert.match(source,/onSelect\(\{kind:'box_inliers'\}\)/);
+ assert.match(source,/onSelect\(\{kind:'box_outliers'\}\)/);
  assert.match(source,/aria-label="Selected chart records"/);
 });
 
