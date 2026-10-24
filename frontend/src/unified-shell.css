@@ -243,3 +243,20 @@
  .po-global-rail button.po-nav-item::after{transition:none!important}
  .po-global-rail button.po-nav-item{transform:none!important}
 }
+
+/* Motion v3: one stable primary-pane exit -> synchronous React route -> entrance.
+   Disable conflicting nested entry animations; the animation engine owns the pane. */
+.po-pane-content,
+.po-pane-content .studio-app .content.po-motion-stage,
+.po-pane-content .studio-app .overview-layout,
+.po-pane-content .studio-app .ai-settings-page,
+.po-pane-content .studio-app .quality-page,
+.po-pane-content .studio-app .explore-page,
+.po-pane-content .studio-app .studio-home {animation:none!important}
+.po-primary-pane{view-transition-name:none!important}
+.po-global-rail{transition:width var(--po-motion-sidebar) var(--po-motion-ease),flex-basis var(--po-motion-sidebar) var(--po-motion-ease),box-shadow 250ms ease}
+.po-global-rail .po-nav-label{transition:opacity 280ms ease 115ms,max-width var(--po-motion-sidebar) var(--po-motion-ease)}
+.po-global-rail.po-rail-compact .po-nav-label{transition:opacity 200ms ease,max-width var(--po-motion-sidebar) var(--po-motion-ease)}
+.po-global-rail .po-nav-group-caption{transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),opacity 280ms ease}
+.po-global-rail.po-rail-compact .po-nav-group-caption{transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),opacity 180ms ease}
+@media(prefers-reduced-motion:reduce){.po-unified-shell .po-global-rail{transition:none!important}}

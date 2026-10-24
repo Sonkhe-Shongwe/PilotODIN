@@ -82,11 +82,12 @@ export function UnifiedShell(){
  useEffect(()=>{void refreshProjects()},[refreshProjects]);
  useEffect(()=>{
   const update=()=>{const next=localStorage.getItem('pilotodin-current')||'';setProjectId(id=>id===next?id:next);void refreshProjects()};
-  const onRoute=()=>{setActive(routeView());update()};
+  const onRoute=()=>setActive(routeView());
   window.addEventListener('hashchange',onRoute);
+  window.addEventListener('pilotodin:route-commit',onRoute);
   window.addEventListener('pilotodin:project-changed',update);
   window.addEventListener('storage',update);
-  return()=>{window.removeEventListener('hashchange',onRoute);window.removeEventListener('pilotodin:project-changed',update);window.removeEventListener('storage',update)};
+  return()=>{window.removeEventListener('hashchange',onRoute);window.removeEventListener('pilotodin:route-commit',onRoute);window.removeEventListener('pilotodin:project-changed',update);window.removeEventListener('storage',update)};
  },[refreshProjects]);
  useEffect(()=>{
   // Restore this project's state as one operation. Previous project's panes are discarded.

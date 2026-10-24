@@ -97,7 +97,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
 
   useEffect(()=>{if(embeddedStage!==undefined){setPage(embeddedStage);return;}
   const sync=()=>setPage(requestedStudioStage());
-  window.addEventListener('hashchange',sync);return()=>window.removeEventListener('hashchange',sync)
+  window.addEventListener('hashchange',sync);window.addEventListener('pilotodin:route-commit',sync);return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync)}
  },[embeddedStage]);
   function go(next:Stage){
     scrollRef.current[page]=mainRef.current?.scrollTop??0;
