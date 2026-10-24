@@ -1,7 +1,8 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPointerEvent,KeyboardEvent as ReactKeyboardEvent} from 'react';
-import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,PanelLeftOpen} from 'lucide-react';
+import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose} from 'lucide-react';
 import {App} from './App';
+import {navigateHashSmoothly} from './navigationMotion';
 import {InvestigationCanvas} from './InvestigationCanvas';
 import {get} from './api';
 import {clampFraction,dockStorageKey,isSecondaryView,isWorkspaceView,makeDockResize,nextDockLayout,parseDockLayout,shouldClearUnavailableProject,WORKSPACE_VIEWS} from './workspaceLayout';
@@ -43,7 +44,7 @@ function routeView():View {
  const m=location.hash.match(/^#\/studio\/([a-z_]+)$/);
  return isWorkspaceView(m?.[1])?m![1] as View:'overview';
 }
-function navigate(v:View){location.hash=v==='investigate'?'#/canvas':`#/studio/${v}`}
+function navigate(v:View){navigateHashSmoothly(v==='investigate'?'#/canvas':`#/studio/${v}`)}
 const labelFor=(view:View)=>ALL.find(i=>i.id===view)?.label??view;
 const PANEL_MIN_WIDTH=300;
 
@@ -173,7 +174,7 @@ export function UnifiedShell(){
    <button type="button" className={`po-nav-backdrop ${sidebarMode==='expanded'?'po-nav-backdrop-open':''}`} aria-label="Close sidebar" aria-hidden={sidebarMode!=='expanded'} tabIndex={sidebarMode==='expanded'?0:-1} disabled={sidebarMode!=='expanded'} onClick={toggleSidebar}/>
    <nav className={`po-global-rail po-rail-${sidebarMode}`} aria-label="Workspace navigation">
     <div className="po-rail-heading"><span>NAVIGATION</span>
-     <button type="button" className="po-rail-toggle" aria-label={sidebarMode==='expanded'?'Collapse navigation sidebar':'Expand navigation sidebar'} aria-expanded={sidebarMode==='expanded'} aria-controls="po-nav-items" title={sidebarMode==='expanded'?'Collapse sidebar':'Expand sidebar'} onClick={toggleSidebar}>{sidebarMode==='expanded'?<PanelLeftClose size={20}/>:<PanelLeftOpen size={20}/>}</button>
+     <button type="button" className="po-rail-toggle" aria-label={sidebarMode==='expanded'?'Collapse navigation sidebar':'Expand navigation sidebar'} aria-expanded={sidebarMode==='expanded'} aria-controls="po-nav-items" title={sidebarMode==='expanded'?'Collapse sidebar':'Expand sidebar'} onClick={toggleSidebar}><PanelLeftClose className="po-toggle-glyph" size={20} aria-hidden="true"/></button>
     </div>
     <div id="po-nav-items" className="po-nav-scroller">
      {NAV_SECTIONS.map(section=><div className="po-nav-section" role="group" aria-label={section.title} key={section.title}>

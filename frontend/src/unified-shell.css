@@ -119,3 +119,127 @@
  .po-unified-shell .po-global-rail *,.po-unified-shell .studio-app .btn,.po-unified-shell .studio-app .model-choice,.po-nav-backdrop{transition:none!important}
  .po-unified-shell .studio-app .btn:hover,.po-unified-shell .studio-app .model-choice:hover,.po-global-rail button.po-nav-item:hover{transform:none!important}
 }
+
+/* Motion v2: fluid screen handoff, stable sidebar geometry and responsive touch. */
+@keyframes po-stage-arrive-soft{
+ from{opacity:.14;transform:translate3d(0,17px,0) scale(.992);filter:blur(1.5px)}
+ to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}
+}
+@keyframes po-stage-exit-soft{
+ from{opacity:1;transform:translate3d(0,0,0) scale(1)}
+ to{opacity:0;transform:translate3d(0,-5px,0) scale(.994)}
+}
+@media(prefers-reduced-motion:no-preference){
+ /* Native same-document view transitions give outgoing AND incoming frames.
+    Only the primary pane moves: persistent header, navigation and dock stay put. */
+ .po-primary-pane{view-transition-name:po-active-workspace}
+ html.po-navigation-in-flight::view-transition-old(root),
+ html.po-navigation-in-flight::view-transition-new(root){animation-duration:0s}
+ html.po-navigation-in-flight::view-transition-old(po-active-workspace){
+  animation:po-stage-exit-soft var(--po-motion-exit) var(--po-motion-ease-out) both;
+ }
+ html.po-navigation-in-flight::view-transition-new(po-active-workspace){
+  animation:po-stage-arrive-soft var(--po-motion-stage) var(--po-motion-ease) both;
+ }
+ /* Avoid two independent enter animations fighting the native crossfade. */
+ html.po-navigation-in-flight .po-pane-content .studio-app .content.po-motion-stage,
+ html.po-navigation-in-flight .po-pane-content .studio-app .overview-layout,
+ html.po-navigation-in-flight .po-pane-content .studio-app .ai-settings-page,
+ html.po-navigation-in-flight .po-pane-content .studio-app .quality-page,
+ html.po-navigation-in-flight .po-pane-content .studio-app .explore-page{
+  animation:none!important;
+ }
+}
+.po-pane-content .studio-app .content.po-motion-stage{
+ animation:po-stage-arrive-soft var(--po-motion-stage) var(--po-motion-ease) both;
+}
+/* Don't double-animate nested children independently of the route stage. */
+.po-pane-content .studio-app .overview-layout,
+.po-pane-content .studio-app .ai-settings-page,
+.po-pane-content .studio-app .quality-page,
+.po-pane-content .studio-app .explore-page,
+.po-pane-content .studio-app .studio-home{animation:none}
+.po-global-rail{
+ transition:width var(--po-motion-sidebar) var(--po-motion-ease),
+  flex-basis var(--po-motion-sidebar) var(--po-motion-ease),
+  box-shadow var(--po-motion-sidebar) ease;
+}
+.po-global-rail .po-nav-label{
+ transition:opacity 260ms ease 105ms,
+  max-width var(--po-motion-sidebar) var(--po-motion-ease);
+}
+.po-global-rail.po-rail-compact .po-nav-label{
+ transition:opacity 200ms ease,
+  max-width var(--po-motion-sidebar) var(--po-motion-ease);
+}
+.po-global-rail .po-nav-group-caption{
+ transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),
+  opacity 260ms ease;
+}
+.po-global-rail.po-rail-compact .po-nav-group-caption{
+ transition:max-height var(--po-motion-sidebar) var(--po-motion-ease),
+  opacity 180ms ease;
+}
+.po-global-rail button.po-nav-item{
+ transition:background-color var(--po-motion-fast) ease,
+  border-color var(--po-motion-fast) ease,
+  color var(--po-motion-fast) ease,
+  transform 270ms var(--po-motion-ease),
+  width var(--po-motion-sidebar) var(--po-motion-ease),
+  padding var(--po-motion-sidebar) var(--po-motion-ease);
+}
+.po-global-rail .po-toggle-glyph{
+ transform:rotate(0);
+ transition:transform var(--po-motion-sidebar) var(--po-motion-ease);
+}
+.po-global-rail.po-rail-compact .po-toggle-glyph{transform:rotate(180deg)}
+.po-global-rail button.po-rail-toggle{
+ transition:background-color var(--po-motion-fast) ease,
+  border-color var(--po-motion-fast) ease,
+  color var(--po-motion-fast) ease,
+  transform 280ms var(--po-motion-ease);
+}
+.po-global-rail button.po-nav-item{isolation:isolate}
+.po-global-rail button.po-nav-item.po-rail-active{background:transparent}
+.po-global-rail button.po-nav-item::after{
+ content:'';position:absolute;inset:0;border-radius:inherit;
+ background:linear-gradient(95deg,#e1dbff,#f1edff 70%,#e6f5ff);
+ opacity:0;pointer-events:none;
+ transition:opacity var(--po-motion-fast) ease;z-index:0;
+}
+.po-global-rail button.po-nav-item.po-rail-active::after{opacity:1}
+.po-global-rail button.po-nav-item>*{position:relative;z-index:1}
+.po-global-rail button.po-nav-item.po-rail-active::before{z-index:2}
+.po-unified-shell .studio-app .btn:not(:disabled){
+ transition:background-color var(--po-motion-fast) ease,
+  border-color var(--po-motion-fast) ease,
+  color var(--po-motion-fast) ease,
+  box-shadow 350ms var(--po-motion-ease),
+  transform 290ms var(--po-motion-ease),
+  filter var(--po-motion-fast) ease;
+}
+.po-unified-shell .studio-app .action-panel .btn svg{
+ transition:transform 340ms var(--po-motion-ease);
+}
+.po-unified-shell .studio-app .model-choice{
+ transition:background-color 230ms ease,
+  border-color 230ms ease,
+  transform 300ms var(--po-motion-ease),
+  box-shadow 350ms var(--po-motion-ease);
+}
+.po-tab{transition:background-color 230ms ease,border-color 230ms ease,box-shadow 350ms var(--po-motion-ease)}
+.po-global-tabs .po-tab>button{transition:color 230ms ease,transform 230ms var(--po-motion-ease)}
+/* On small viewports the menu glides in, instead of popping into view. */
+@media(max-width:760px){
+ .po-global-rail.po-rail-expanded{transform:translateX(0)}
+ .po-global-rail.po-rail-compact{transform:translateX(0)}
+ .po-nav-backdrop{transition:opacity var(--po-motion-sidebar) ease}
+}
+/* Respect Windows / browser reduced-motion settings including native transitions. */
+@media(prefers-reduced-motion:reduce){
+ .po-primary-pane{view-transition-name:none}
+ .po-pane-content .studio-app .content.po-motion-stage{animation:none!important;filter:none!important}
+ .po-global-rail .po-toggle-glyph{transition:none!important}
+ .po-global-rail button.po-nav-item::after{transition:none!important}
+ .po-global-rail button.po-nav-item{transform:none!important}
+}

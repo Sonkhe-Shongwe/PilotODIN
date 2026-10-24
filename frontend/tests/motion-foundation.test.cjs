@@ -4,4 +4,21 @@ const app=read('App.tsx'),shell=read('UnifiedShell.tsx'),css=read('unified-shell
 test('Stage changes animate a keyed visual container, not the full App',()=>{assert.match(app,/className="content po-motion-stage" id="workspace-content" key=\{/);assert.match(css,/\.po-pane-content \.studio-app \.content\.po-motion-stage/);});
 test('Sidebar labels stay in the DOM during compact transition',()=>{assert.match(css,/\.po-global-rail\.po-rail-compact \.po-nav-label\{display:block;/);assert.match(css,/flex-basis var\(--po-motion-sidebar\)/);});
 test('Mobile backdrop supports exit fade and disables closed control',()=>{assert.match(shell,/aria-hidden=\{sidebarMode!=='expanded'\}/);assert.match(shell,/disabled=\{sidebarMode!=='expanded'\}/);assert.match(css,/\.po-nav-backdrop\.po-nav-backdrop-open/);});
-test('Controls have press response, motion respects accessibility',()=>{assert.match(css,/\.studio-app \.btn:active:not\(:disabled\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(tokens,/--po-motion-stage: 220ms/);});
+test('Controls have press response, motion respects accessibility',()=>{assert.match(css,/\.studio-app \.btn:active:not\(:disabled\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(tokens,/--po-motion-stage: 470ms/);});
+
+test('Real view transitions hold outgoing pane while React switches routes',()=>{
+ const motion=read('navigationMotion.ts');
+ assert.match(motion,/startViewTransition/);
+ assert.match(motion,/requestAnimationFrame\(\(\)=>requestAnimationFrame/);
+ assert.match(motion,/prefers-reduced-motion: reduce/);
+ assert.match(shell,/navigateHashSmoothly\(v==='investigate'/);
+ assert.match(app,/navigateHashSmoothly\(`#\/studio\/\$\{next\}`/);
+ assert.match(css,/::view-transition-old\(po-active-workspace\)/);
+ assert.match(css,/::view-transition-new\(po-active-workspace\)/);
+});
+test('Sidebar icon remains mounted and rotates, and active highlight fades',()=>{
+ assert.match(shell,/<PanelLeftClose className="po-toggle-glyph"/);
+ assert.doesNotMatch(shell,/sidebarMode==='expanded'\?<PanelLeftClose/);
+ assert.match(css,/\.po-rail-compact \.po-toggle-glyph\{transform:rotate\(180deg\)\}/);
+ assert.match(css,/\.po-rail-active::after\{opacity:1\}/);
+});

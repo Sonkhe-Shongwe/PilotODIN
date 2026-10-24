@@ -13,6 +13,7 @@ import {StudioAssistant} from './StudioAssistant';
 import {ReportWorkspace} from './ReportWorkspace';
 import {isSecondaryView} from './workspaceLayout';
 import {createProjectOperationGuard} from './projectOperationGuard';
+import {navigateHashSmoothly} from './navigationMotion';
 
 type Stage = 'overview'|'understand'|'quality'|'explore'|'prepare'|'model'|'evaluate'|'predict'|'deliver'|'assistant'|'ai_settings';
 function requestedStudioStage(): Stage {const match=location.hash.match(/^#\/studio\/(overview|understand|quality|explore|prepare|model|evaluate|predict|deliver|assistant|ai_settings)$/);return (match?.[1] as Stage)||'overview';}
@@ -110,8 +111,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
       onEmbeddedNavigate?.(next);
       // Prop is authoritative: do not render an unapproved page while it updates.
     }else{
-      if(location.hash!==`#/studio/${next}`)location.hash=`#/studio/${next}`;
-      setPage(next);
+      if(location.hash!==`#/studio/${next}`)navigateHashSmoothly(`#/studio/${next}`,()=>setPage(next));
+      else setPage(next);
     }
     setError('');setUploadOpen(false);setMobileOpen(false);setPaletteOpen(false);
     setPaletteQuery('');
