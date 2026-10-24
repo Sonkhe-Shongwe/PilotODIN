@@ -4,10 +4,13 @@ import {get,post} from './api';
 import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
-type Plot={version:number;type:string;x:string;y:string|null;aggregation?:string;data:{label?:string;value?:number;x?:number;y?:number;min?:number;q1?:number;median?:number;q3?:number;max?:number;start?:number;end?:number;whisker_low?:number;whisker_high?:number;outliers?:number[];outliers_total?:number}[];sampled:boolean;truncated?:boolean;valid_observations?:number;excluded_observations?:number;note:string};
+type Plot={version:number;type:string;x:string;y:string|null;aggregation?:string;data:{label?:string;value?:number;x?:number;y?:number;min?:number;q1?:number;median?:number;q3?:number;max?:number;start?:number;end?:number;whisker_low?:number;whisker_high?:number;outliers?:number[];outliers_total?:number;row_ref?:number}[];sampled:boolean;truncated?:boolean;valid_observations?:number;excluded_observations?:number;note:string};
 type CorrelationCell={x:string;y:string;r:number|null;n:number};
 type Correlation={version:number;method:string;columns:string[];cells:CorrelationCell[];note:string};
 type Finding={category:string;column:string|null;title:string;detail:string};
+type ChartSelection={kind:'category';label:string}|{kind:'bin';bin_index:number}|{kind:'point';row_ref:number};
+type InspectedRow={filtered_row_number:number;cells:(string|number|boolean|null)[]};
+type InspectorResponse={version:number;selection_kind:string;description:string;matched_rows:number;measure_rows:number;offset:number;limit:number;columns:string[];rows:InspectedRow[];truncated_columns:boolean;note:string;total_filtered_rows:number};
 type FilterColumn={name:string;kind:'numeric'|'categorical';options?:string[];min?:number;max?:number;missing:number};
 type FilterCatalog={version:number;columns:FilterColumn[];max_filters:number;note:string};
 type FilterClause={column:string;op:'eq'|'range';value?:string;min?:number;max?:number};
@@ -37,7 +40,7 @@ function correlationTone(v:number|null){
   ?{background:`rgba(14,140,144,${(.12+power*.75).toFixed(3)})`,color:power>.58?'#ffffff':'#183b43'}
   :{background:`rgba(181,85,116,${(.12+power*.71).toFixed(3)})`,color:power>.58?'#ffffff':'#522f3f'};
 }
-function Viz({plot}:{plot:Plot}){
+function Viz({plot,onSelect}:{plot:Plot;onSelect:(choice:ChartSelection)=>void}){
   const data=plot.data;
   if(!data.length)return <p className="body-muted">No chartable observations for this selection.</p>;
   if(plot.type==='scatter'){
@@ -46,7 +49,7 @@ function Viz({plot}:{plot:Plot}){
     const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
     const toX=(v:number)=>pad+(v-x0)/(x1-x0||1)*(w-pad*2);
     const toY=(v:number)=>h-pad-(v-y0)/(y1-y0||1)*(h-pad*2);
-    return <div className="chart-scroll"><svg viewBox={`0 0 ${w} ${h}`} className="pilot-chart" aria-label={`${plot.x} versus ${plot.y} scatter plot`} role="img"><line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#aac6bb"/><line x1={pad} y1={pad} x2={pad} y2={h-pad} stroke="#aac6bb"/>{data.map((d,i)=><circle key={i} cx={toX(d.x??0)} cy={toY(d.y??0)} r="3.5" fill="#168769" opacity="0.6"><title>{`${plot.x}: ${d.x}; ${plot.y}: ${d.y}`}</title></circle>)}<text x={w/2} y={h-6} textAnchor="middle" fontSize="12" fill="#617f7a">{plot.x}</text><text transform={`translate(15 ${h/2}) rotate(-90)`} textAnchor="middle" fontSize="12" fill="#617f7a">{plot.y}</text><text x={pad} y={h-pad+15} fontSize="10" fill="#70868c">{format(x0)}</text><text x={w-pad} y={h-pad+15} textAnchor="end" fontSize="10" fill="#70868c">{format(x1)}</text><text x={pad-6} y={pad} textAnchor="end" fontSize="10" fill="#70868c">{format(y1)}</text></svg></div>;
+    return <div className="chart-scroll"><svg viewBox={`0 0 ${w} ${h}`} className="pilot-chart" aria-label={`${plot.x} versus ${plot.y} scatter plot`} role="img"><line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#aac6bb"/><line x1={pad} y1={pad} x2={pad} y2={h-pad} stroke="#aac6bb"/>{data.map((d,i)=><circle key={i} cx={toX(d.x??0)} cy={toY(d.y??0)} r="5" fill="#168769" opacity="0.68" className="po-inspect-point" tabIndex={d.row_ref===undefined?-1:0} role={d.row_ref===undefined?undefined:'button'} aria-label={d.row_ref===undefined?undefined:`Inspect plotted record ${d.row_ref+1}: ${plot.x} ${d.x}, ${plot.y} ${d.y}`} onClick={()=>{if(d.row_ref!==undefined)onSelect({kind:'point',row_ref:d.row_ref})}} onKeyDown={e=>{if(d.row_ref!==undefined&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onSelect({kind:'point',row_ref:d.row_ref})}}}><title>{`${plot.x}: ${d.x}; ${plot.y}: ${d.y}`}</title></circle>)}<text x={w/2} y={h-6} textAnchor="middle" fontSize="12" fill="#617f7a">{plot.x}</text><text transform={`translate(15 ${h/2}) rotate(-90)`} textAnchor="middle" fontSize="12" fill="#617f7a">{plot.y}</text><text x={pad} y={h-pad+15} fontSize="10" fill="#70868c">{format(x0)}</text><text x={w-pad} y={h-pad+15} textAnchor="end" fontSize="10" fill="#70868c">{format(x1)}</text><text x={pad-6} y={pad} textAnchor="end" fontSize="10" fill="#70868c">{format(y1)}</text></svg></div>;
   }
   if(plot.type==='box'){
     const d=data[0],scale=(v:number)=>Math.max(3,Math.min(97,((v-(d.min??0))/((d.max??0)-(d.min??0)||1))*94+3));
@@ -54,7 +57,7 @@ function Viz({plot}:{plot:Plot}){
   }
   if(plot.type==='histogram'){
     const top=Math.max(1,...data.map(d=>d.value??0));
-    return <div className="po-histogram" role="group" aria-label={`Histogram of ${plot.x} with ${data.length} equal-width numeric intervals`}><div className="po-hist-meta"><span>Frequency ↑</span><span>{plot.valid_observations??data.reduce((n,d)=>n+(d.value??0),0)} valid · {plot.excluded_observations??0} excluded</span></div><div className="po-hist-bars" style={{gridTemplateColumns:`repeat(${data.length},minmax(0,1fr))`}}>{data.map((d,i)=><div className="po-hist-bin" key={i} title={`${d.label}: ${d.value} observations`} tabIndex={0} aria-label={`${d.label}: ${d.value} observations`}><div className="po-hist-rectangle" style={{height:`${Math.max(1,((d.value??0)/top)*100)}%`}}/><span className="po-hist-tick">{i%Math.max(1,Math.ceil(data.length/6))===0?format(d.start??0):''}</span></div>)}</div><div className="po-hist-foot">{plot.x} → · Hover or focus a bin for its interval and count.</div></div>;
+    return <div className="po-histogram" role="group" aria-label={`Histogram of ${plot.x} with ${data.length} equal-width numeric intervals`}><div className="po-hist-meta"><span>Frequency ↑</span><span>{plot.valid_observations??data.reduce((n,d)=>n+(d.value??0),0)} valid · {plot.excluded_observations??0} excluded</span></div><div className="po-hist-bars" style={{gridTemplateColumns:`repeat(${data.length},minmax(0,1fr))`}}>{data.map((d,i)=><button type="button" className="po-hist-bin" key={i} title={`${d.label}: ${d.value} observations. Inspect records.`} aria-label={`${d.label}: ${d.value} observations. Inspect records.`} onClick={()=>onSelect({kind:'bin',bin_index:i})}><div className="po-hist-rectangle" style={{height:`${Math.max(1,((d.value??0)/top)*100)}%`}}/><span className="po-hist-tick">{i%Math.max(1,Math.ceil(data.length/6))===0?format(d.start??0):''}</span></button>)}</div><div className="po-hist-foot">{plot.x} → · Hover or focus a bin for its interval and count.</div></div>;
   }
   const numeric=data.map(d=>d.value??0);const max=Math.max(1,...numeric.map(Math.abs));
   if(plot.type==='line'){
@@ -64,7 +67,7 @@ function Viz({plot}:{plot:Plot}){
     const pts=data.map((d,i)=>`${pad+(i/(data.length-1||1))*(w-pad*2)},${scaleY(d.value??0)}`).join(' ');
     return <div className="chart-scroll"><svg viewBox={`0 0 ${w} ${h}`} className="pilot-chart" role="img" aria-label="Aggregated line chart"><line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#aac6bb"/><polyline points={pts} stroke="#168769" strokeWidth="3" fill="none" strokeLinejoin="round"/>{data.map((d,i)=><circle key={i} r="4" fill="#168769" cx={pad+i/(data.length-1||1)*(w-pad*2)} cy={scaleY(d.value??0)}><title>{`${d.label}: ${format(d.value??0)}`}</title></circle>)}</svg><div className="axis-hint">{data[0].label} → {data[data.length-1].label}</div></div>;
   }
-  return <div className="chart-bars">{data.map((d,i)=><div className="chart-bar-item" key={`${d.label}-${i}`}><span title={d.label} className="bar-label">{d.label}</span><div className="chart-track"><div style={{width:`${Math.max(0,Math.abs(d.value??0)/max*100)}%`}} className="chart-fill"/></div><strong>{format(d.value??0)}</strong></div>)}</div>;
+  return <div className="chart-bars">{data.map((d,i)=><button type="button" className="chart-bar-item po-inspect-bar" key={`${d.label}-${i}`} onClick={()=>onSelect({kind:'category',label:d.label??''})} title={`Inspect records in ${d.label}`}><span title={d.label} className="bar-label">{d.label}</span><div className="chart-track"><div style={{width:`${Math.max(0,Math.abs(d.value??0)/max*100)}%`}} className="chart-fill"/></div><strong>{format(d.value??0)}</strong></button>)}</div>;
 }
 
 export function ExploreWorkspace({projectId,versionToken}:{projectId:string;versionToken:number}){
@@ -84,6 +87,11 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
   const [filteredOverview,setFilteredOverview]=useState<Overview|null>(null);
   const [chartMessage,setChartMessage]=useState('');
   const [filteredRows,setFilteredRows]=useState<number|null>(null);
+  const [selection,setSelection]=useState<ChartSelection|null>(null);
+  const [inspection,setInspection]=useState<InspectorResponse|null>(null);
+  const [inspectOffset,setInspectOffset]=useState(0);
+  const [inspectError,setInspectError]=useState('');
+  const [inspectLoading,setInspectLoading]=useState(false);
   const [corrError,setCorrError]=useState('');
   useEffect(()=>{if(!overview)return;try{localStorage.setItem(preferencesKey(projectId),JSON.stringify({x,y,kind,aggregation}))}catch{/* Project evidence is stored in the backend, not here. */}},[projectId,x,y,kind,aggregation,overview]);
   const [plot,setPlot]=useState<Plot|null>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(false);
@@ -128,6 +136,25 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
       .finally(()=>{if(live)setLoading(false)});
     return()=>{live=false};
   },[projectId,x,y,kind,aggregation,bins,versionToken,overview,filterCatalog,filters,corrMethod]);
+  // Chart selections and their row references never survive filters, version
+  // changes or a new chart configuration. No selection is persisted as an ID.
+  useEffect(()=>{
+    setSelection(null);setInspection(null);setInspectOffset(0);setInspectError('');
+  },[projectId,versionToken,x,y,kind,aggregation,bins,filters]);
+  useEffect(()=>{
+    if(!selection||!overview||!filterCatalog||overview.version!==filterCatalog.version)return;
+    let live=true;setInspectLoading(true);setInspectError('');setInspection(null);
+    post<InspectorResponse>(`/projects/${projectId}/explore/inspect`,{
+      expected_version:overview.version,filters,x,y:y&&kind!=='histogram'&&kind!=='box'?y:null,
+      kind,aggregation,bins,selection,offset:inspectOffset,limit:12
+    }).then(value=>{
+      if(!live)return;
+      if(value.version!==overview.version){setInspectError('Working data changed. Refresh Explore.');return;}
+      setInspection(value);
+    }).catch(e=>{if(live)setInspectError((e as Error).message)})
+      .finally(()=>{if(live)setInspectLoading(false)});
+    return()=>{live=false};
+  },[selection,inspectOffset,overview,filterCatalog,projectId,filters,x,y,kind,aggregation,bins,versionToken]);
   const cols=overview?.columns??[];const numerical=cols.filter(c=>c.kind==='numeric');
   const selectedX=cols.find(c=>c.name===x);
   const selectedY=cols.find(c=>c.name===y);
@@ -178,8 +205,20 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
       <div className="chart-controls"><label>Chart type<select className="input" value={kind} onChange={(e:any)=>changeKind(e.target.value)}><option value="auto">Automatic</option><option value="bar">Bar / categories</option><option value="histogram">Histogram</option><option value="scatter" disabled={!scatterReady}>Scatter · two numeric columns</option><option value="line">Line / trend</option><option value="box">Box summary</option></select></label><label>X variable<select className="input" value={x} onChange={(e:any)=>changeX(e.target.value)}>{cols.map(c=><option key={c.name}>{c.name}</option>)}</select></label>{kind!=='histogram'&&kind!=='box'&&<label>Y variable<select className="input" value={y} onChange={(e:any)=>setY(e.target.value)}><option value="">None · record frequency</option>{numerical.filter(c=>c.name!==x).map(c=><option key={c.name}>{c.name}</option>)}</select></label>}{!['histogram','box','scatter'].includes(kind)&&<label>Aggregation<select className="input" value={aggregation} onChange={(e:any)=>setAggregation(e.target.value)}>{['mean','sum','median','count'].map(a=><option key={a} value={a}>{a}</option>)}</select></label>}{kind==='histogram'&&<label>Histogram bins<select className="input" value={bins} onChange={e=>setBins(Number(e.target.value))}>{[8,12,16,24,32].map(n=><option key={n} value={n}>{n} bins</option>)}</select></label>}</div>
       {chartWarning&&<div className="mini-info warn-icon" role="status">{chartWarning}</div>}
       {error&&<div className="alert-error"><Activity size={16}/>{error}</div>}
-      {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating linked results…</div>:chartMessage?<p className="body-muted" role="status">{chartMessage}</p>:plot&&<><h3 className="chart-title">{plot.type==='bar'&&plot.aggregation==='count'?(plot.y?`Count of non-missing ${plot.y} by ${plot.x}`:`Record count by ${plot.x}`):`${plot.x}${plot.y?` vs ${plot.y}`:''} · ${plot.type}`}</h3><Viz plot={plot}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
+      {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating linked results…</div>:chartMessage?<p className="body-muted" role="status">{chartMessage}</p>:plot&&<><h3 className="chart-title">{plot.type==='bar'&&plot.aggregation==='count'?(plot.y?`Count of non-missing ${plot.y} by ${plot.x}`:`Record count by ${plot.x}`):`${plot.x}${plot.y?` vs ${plot.y}`:''} · ${plot.type}`}</h3><Viz plot={plot} onSelect={choice=>{setSelection(choice);setInspectOffset(0)}}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
     </section>
+    {selection&&<section className="panel po-record-inspector" aria-label="Selected chart records">
+      <div className="panel-title"><BarChart3 size={18}/><h2>Underlying records</h2><span className="pill muted">READ-ONLY LOCAL PREVIEW</span><button type="button" className="po-inspect-dismiss" onClick={()=>{setSelection(null);setInspection(null)}} aria-label="Close chart record inspector"><X size={17}/></button></div>
+      <p className="body-muted">Only rows matching your clicked chart element and current filters are displayed. No changes are made to the source.</p>
+      {inspectLoading&&<p role="status">Retrieving selected records…</p>}
+      {inspectError&&<p className="alert-error" role="alert">{inspectError}</p>}
+      {inspection&&<><div className="po-inspect-summary"><strong>{inspection.description}</strong><span>{format(inspection.matched_rows)} matching records · Version {inspection.version}</span></div>
+        {inspection.measure_rows!==inspection.matched_rows&&<p className="muted-caption">{format(inspection.measure_rows)} of the matching rows have a numeric value for the selected Y measure. This may differ from record frequency.</p>}
+        {inspection.rows.length?<div className="table-scroll po-inspect-scroll"><table><thead><tr><th>FILTERED ROW</th>{inspection.columns.map((column,i)=><th key={i}>{column}</th>)}</tr></thead><tbody>{inspection.rows.map(row=><tr key={row.filtered_row_number}><td>{row.filtered_row_number}</td>{row.cells.map((cell,i)=><td key={i} title={cell===null?'Missing':String(cell)}>{cell===null?'—':String(cell)}</td>)}</tr>)}</tbody></table></div>:<p>No records on this page.</p>}
+        <div className="po-inspect-pagination"><span>{inspection.matched_rows?inspectOffset+1:0}–{Math.min(inspectOffset+inspection.limit,inspection.matched_rows)} of {format(inspection.matched_rows)}</span><button type="button" className="btn" disabled={inspectLoading||inspectOffset===0} onClick={()=>setInspectOffset(v=>Math.max(0,v-12))}>Previous</button><button type="button" className="btn" disabled={inspectLoading||inspectOffset+12>=inspection.matched_rows} onClick={()=>setInspectOffset(v=>v+12)}>Next</button></div>
+        <p className="muted-caption">{inspection.note}{inspection.truncated_columns?' Only the first 16 fields, prioritising chart variables, are shown.':''}</p>
+      </>}
+    </section>}
     <section className="panel po-correlation-panel"><div className="panel-title"><BarChart3 size={19}/><h2>Correlation heatmap</h2><span className="pill muted">VERIFIED LOCAL CALCULATION</span></div>
       <p className="body-muted">Compare numeric relationships. Click any off-diagonal cell to open its scatter plot. IDs and obvious identifiers are excluded.</p>
       <label className="po-correlation-method">Correlation method <select className="input" value={corrMethod} onChange={e=>setCorrMethod(e.target.value as 'pearson'|'spearman')}><option value="pearson">Pearson · linear association</option><option value="spearman">Spearman · rank association</option></select></label>
