@@ -34,6 +34,7 @@ jobs:
           tests/test_explore_record_inspector.py
           tests/test_column_intelligence.py
           tests/test_saved_explore_analyses.py
+          tests/test_explore_to_report_evidence.py
           tests/test_correlation_matrix.py
           tests/test_chart_counts_semantics.py
           tests/test_report_exhibit_render.py
