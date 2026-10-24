@@ -65,12 +65,15 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
         if not y: raise ValueError('Scatter and line charts need an Y column')
         view=df[[x,y]].copy()
         if kind=='scatter':
+            # The sampled point carries its position in the filtered snapshot.
+            # Never use arbitrary dataframe index labels as a persisted row ID.
+            view.index=pd.RangeIndex(len(view))
             view[x]=pd.to_numeric(view[x],errors='coerce')
             view[y]=pd.to_numeric(view[y],errors='coerce')
             view=view.replace([np.inf,-np.inf],np.nan).dropna()
             if view.empty: raise ValueError('Scatter requires two numeric columns')
             if len(view)>500: view=view.sample(n=500,random_state=42);out['sampled']=True
-            out['data']=[{'x':float(a),'y':float(b)} for a,b in zip(view[x],view[y])]
+            out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i)} for i,a,b in zip(view.index,view[x],view[y])]
         else:
             view[y]=pd.to_numeric(view[y],errors='coerce');view=view.dropna()
             if view.empty: raise ValueError('Line chart requires a numeric Y column')
