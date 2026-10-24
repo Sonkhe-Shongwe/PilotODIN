@@ -357,3 +357,14 @@ body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .po-ml-feature-risk-gate>strong{display:flex;align-items:center;gap:7px;color:#804d1b}
 .po-ml-feature-risk-gate p{font-size:12px;line-height:1.65;color:#68543e}
 .po-ml-feature-risk-gate .acknowledge{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.5}
+
+/* A3: clear model-vs-baseline evidence and probability caveats. */
+.po-ml-heldout-baseline{margin:16px 0;padding:16px;border:1px solid #d8dfec;border-radius:12px;background:#f8fbff}
+.po-ml-heldout-baseline h3{font-size:14px;color:#263e62;margin:0 0 11px}
+.po-ml-baseline-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.po-ml-baseline-row>div{display:flex;flex-direction:column;gap:7px;background:#fff;border:1px solid #e1e6ee;border-radius:9px;padding:11px}
+.po-ml-baseline-row small{color:#63718b;font-size:11px;line-height:1.45}
+.po-ml-baseline-row strong{color:#283b61;font-size:14px;overflow-wrap:anywhere}
+.po-ml-heldout-baseline .muted-caption{font-size:11px;line-height:1.6}
+.po-ml-uncalibrated{margin:11px 0;padding:11px 13px;border-left:3px solid #bd8a33;border-radius:6px;background:#fff7e9;color:#785328;font-size:12px;line-height:1.6}
+@media(max-width:760px){.po-ml-baseline-row{grid-template-columns:1fr}}
