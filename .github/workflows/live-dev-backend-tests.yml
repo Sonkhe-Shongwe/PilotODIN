@@ -28,6 +28,7 @@ jobs:
           tests/test_model_library_expansion.py
           tests/test_ml_a3_preparation_and_split_safety.py
           tests/test_ml_a3_baseline_and_prediction_warnings.py
+          tests/test_ml_a3_memory_and_explainability.py
           tests/test_explore_chart_quality.py
           tests/test_scatter_interactions.py
           tests/test_explore_linked_filters.py
