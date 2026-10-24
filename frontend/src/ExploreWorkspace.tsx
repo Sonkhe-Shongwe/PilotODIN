@@ -68,7 +68,7 @@ function Viz({plot,onSelect}:{plot:Plot;onSelect:(choice:ChartSelection)=>void})
   return <div className="chart-bars">{data.map((d,i)=><button type="button" className="chart-bar-item po-inspect-bar" key={`${d.label}-${i}`} onClick={()=>onSelect({kind:'category',label:d.label??''})} title={`Inspect records in ${d.label}`}><span title={d.label} className="bar-label">{d.label}</span><div className="chart-track"><div style={{width:`${Math.max(0,Math.abs(d.value??0)/max*100)}%`}} className="chart-fill"/></div><strong>{format(d.value??0)}</strong></button>)}</div>;
 }
 
-export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{projectId:string;versionToken:number;onReviewQuality?:(focus:QualityFocus)=>void}){
+export function ExploreWorkspace({projectId,versionToken,onReviewQuality,onSendToDeliver}:{projectId:string;versionToken:number;onReviewQuality?:(focus:QualityFocus)=>void;onSendToDeliver?:(id:string)=>void}){
   const [overview,setOverview]=useState<Overview|null>(null);
   const [findings,setFindings]=useState<Finding[]>([]);
   const [suggestions,setSuggestions]=useState<ChartSuggestion[]>([]);
@@ -247,7 +247,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     <SavedExploreAnalyses projectId={projectId} version={overview?.version??null}
       ready={!!filteredOverview&&!loading&&!error&&!!filterCatalog&&filterCatalog.version===overview?.version}
       configuration={{x,y:y||null,kind,aggregation,bins,correlation_method:corrMethod,filters,color_by:kind==='scatter'&&colorBy&&colorBy!==x&&colorBy!==y&&overview?.columns.some(c=>c.name===colorBy&&c.kind==='categorical'&&c.unique<=8&&!/(?:id|key|code|number)$/i.test(c.name))?colorBy:null}}
-      onRestore={restoreSaved}/>
+      onRestore={restoreSaved} onSendToDeliver={onSendToDeliver}/>
     <section className="panel po-correlation-panel"><div className="panel-title"><BarChart3 size={19}/><h2>Correlation heatmap</h2><span className="pill muted">VERIFIED LOCAL CALCULATION</span></div>
       <p className="body-muted">Compare numeric relationships. Click any off-diagonal cell to open its scatter plot. IDs and obvious identifiers are excluded.</p>
       <label className="po-correlation-method">Correlation method <select className="input" value={corrMethod} onChange={e=>setCorrMethod(e.target.value as 'pearson'|'spearman')}><option value="pearson">Pearson · linear association</option><option value="spearman">Spearman · rank association</option></select></label>
