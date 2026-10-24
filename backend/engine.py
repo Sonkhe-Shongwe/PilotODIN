@@ -280,15 +280,16 @@ MAX_NEIGHBOUR_MODEL_ROWS = 12_000  # preserve practical CPU predict responsivene
 
 
 def training_resource_plan(X: pd.DataFrame, labelled_rows: int, models: list[str] | None = None) -> dict:
-    """Conservative dense-matrix estimate before starting expensive CV.
+    """Conservative dense-matrix upper bound before starting expensive CV.
 
-    Capped one-hot encoding uses no more than 25 output columns per category
-    source. These are estimates, not measurements of process peak RSS.
+    Capped one-hot encoding uses at most 25 columns per categorical source.
+    Assume *all* labelled rows could be training data because group splits
+    need not retain a strict 80/20 row ratio. This is not a peak RSS bound.
     """
     numerical=sum(inferred_kind(X[col])=="numeric" for col in X)
     categories=[col for col in X if inferred_kind(X[col])!="numeric"]
     encoded_width=numerical + sum(min(25,max(1,int(X[col].nunique(dropna=True)))) for col in categories)
-    estimated=int(math.ceil(labelled_rows*.8)*encoded_width*8)
+    estimated=int(labelled_rows*encoded_width*8)
     selected=set(models or [])
     if selected.intersection(("svm","svr")):
         model_row_limit=MAX_KERNEL_MODEL_ROWS
@@ -311,7 +312,7 @@ def training_resource_plan(X: pd.DataFrame, labelled_rows: int, models: list[str
                                    "knn":MAX_NEIGHBOUR_MODEL_ROWS},
         "estimated_dense_mb_limit":MAX_DENSE_TRAIN_BYTES//(1024*1024),
         "within_local_budget":bool(labelled_rows<=model_row_limit and estimated<=MAX_DENSE_TRAIN_BYTES),
-        "note":"Approximate one dense 80% training feature matrix; model, CV, pandas and OS overhead are additional. Not a peak RAM measurement."
+        "note":"Conservative upper-bound dense matrix for all labelled rows, including uneven group splits; model, CV, pandas and OS overhead are additional. Not a peak RAM measurement."
     }
 
 
