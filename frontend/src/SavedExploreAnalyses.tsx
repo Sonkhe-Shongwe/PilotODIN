@@ -8,7 +8,7 @@ export type ExploreState={
  correlation_method:'pearson'|'spearman';color_by?:string|null;
  filters:{column:string;op:string;value?:string;min?:number;max?:number}[];
 };
-type SavedSummary={id:string;title:string;dataset_version:number;created_at:string;stale:boolean;sha256:string};
+type SavedSummary={id:string;title:string;dataset_version:number;created_at:string;stale:boolean;sha256:string;results_valid?:boolean;configuration_verified?:boolean};
 type FrozenEvidence={
  version:number;total_rows:number;filtered_rows:number;
  chart:{type:string;x:string;y:string|null;sampled:boolean;truncated?:boolean;data:{label?:string;value?:number}[];note:string}|null;
@@ -75,8 +75,8 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
   <div className="po-saved-library">
    <div><h3><History size={17}/> Saved investigation library</h3><p className="muted-caption">{list.length} recent saved analyses for this project.</p></div>
    {list.length?<div className="po-saved-items">{list.map(item=><div className="po-saved-item" key={item.id}>
-      <div><strong>{item.title}</strong><small>Dataset v{item.dataset_version} · {new Date(item.created_at).toLocaleString()}</small><span className={item.stale?'po-saved-stale':'po-saved-current'}>{item.stale?'Historical version':'Current version'}</span></div>
-      <button type="button" className="btn" disabled={busy!==''} onClick={()=>void openSaved(item.id)}>{busy==='open'?<LoaderCircle size={14} className="spin"/>:'Open'}</button>
+      <div><strong>{item.title}</strong><small>Dataset v{item.dataset_version} · {new Date(item.created_at).toLocaleString()}</small><span className={item.stale||!item.results_valid||!item.configuration_verified?'po-saved-stale':'po-saved-current'}>{item.results_valid===false?'Integrity error · unavailable':item.configuration_verified===false?'Legacy · settings unverified':item.stale?'Historical verified version':'Current verified version'}</span></div>
+      <button type="button" className="btn" disabled={busy!==''||item.results_valid===false} onClick={()=>void openSaved(item.id)}>{busy==='open'?<LoaderCircle size={14} className="spin"/>:'Open'}</button>
    </div>)}</div>:<p className="body-muted">No saved analyses yet. Name your current investigation and save it to this project.</p>}
   </div>
   {selected&&<div className="po-saved-frozen" aria-label="Saved analytical evidence">
