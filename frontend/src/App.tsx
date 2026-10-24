@@ -86,6 +86,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
   const [busy,setBusy]=useState('');
   const [qualityVersion,setQualityVersion]=useState(0);
   const [qualityFocus,setQualityFocus]=useState<QualityFocus|null>(null);
+  const [deliverEvidenceId,setDeliverEvidenceId]=useState<string|null>(null);
   const [featureHints,setFeatureHints]=useState<{column:string;risk:string;reasons:string[]}[]>([]);
   const latestProjectRequest=useRef(0);
   const projectOperations=useRef(createProjectOperationGuard());
@@ -107,6 +108,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
  },[embeddedStage]);
   function go(next:Stage){
     if(next!=='quality')setQualityFocus(null);
+    if(next!=='deliver')setDeliverEvidenceId(null);
     scrollRef.current[page]=mainRef.current?.scrollTop??0;
     if(embedded){
       // Embedded views cannot navigate the main window or escape the dock registry.
@@ -172,7 +174,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
     const request=++latestProjectRequest.current;
     const generation=projectOperations.current.begin(pid);
     // Clear previous-project data immediately, including stale experiments and predictions.
-    setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);
+    setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
     try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return;setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');}catch(e){
       if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return;
       setProject(null);
@@ -335,10 +337,10 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
         {project&&!showUpload&&page!=='ai_settings'&&<>
           {page!=='overview'&&<div className="heading"><div><div className="eyebrow">PROJECT / {project.name.toUpperCase()}</div><h1>{NAV.find(x=>x.id===page)?.name}</h1><p>{page==='understand'?'Explore the shape, quality and meaning of your uploaded data.':page==='quality'?'Review issues, make safe corrections and restore versions.':page==='explore'?'Investigate distributions, variables and relationships.':page==='assistant'?'Ask questions about verified facts in your dataset.':page==='prepare'?'Review what the model should learn and which features it may use.':page==='model'?'Choose algorithms and run an evidence-based comparison.':page==='evaluate'?'Understand model performance before selecting a prediction pipeline.':page==='deliver'?'Create evidence-backed reports, review saved revisions and export professional PDF or HTML documents.':'Apply your selected model to new observations.'}</p></div><div className="head-label"><FileSpreadsheet size={16}/>{project.filename}</div></div>}
           
-          {page==='deliver'&&<ReportWorkspace key={project.id} projectId={project.id} />}
+          {page==='deliver'&&<ReportWorkspace key={project.id} projectId={project.id} preselectEvidenceId={deliverEvidenceId}/>}
           {page==='overview'&&<StudioHome project={project} projects={projects} onGo={go} onNew={()=>setUploadOpen(true)} onOpenProject={id=>void loadProject(id)} onResume={reopenExperiment} onAI={()=>setOdinOpen(true)}/>}
           {page==='quality'&&<section className="persisted-workspace"><QualityWorkspace key={project.id} projectId={project.id} initialFocus={qualityFocus} onChanged={()=>{setQualityFocus(null);void qualityChanged()}}/></section>}
-          {page==='explore'&&<section className="persisted-workspace"><ExploreWorkspace key={project.id} projectId={project.id} versionToken={qualityVersion} onReviewQuality={focus=>{if(focus.projectId===project.id&&focus.version===qualityVersion){setQualityFocus(focus);go('quality')}}}/></section>}
+          {page==='explore'&&<section className="persisted-workspace"><ExploreWorkspace key={project.id} projectId={project.id} versionToken={qualityVersion} onReviewQuality={focus=>{if(focus.projectId===project.id&&focus.version===qualityVersion){setQualityFocus(focus);go('quality')}}} onSendToDeliver={snapshotId=>{if(/^[a-f0-9]{32}$/.test(snapshotId)){setDeliverEvidenceId(snapshotId);go('deliver')}}}/></section>}
           {page==='assistant'&&<section className="persisted-workspace"><AssistantWorkspace key={project.id} projectId={project.id} onSettings={()=>go('ai_settings')}/></section>}
           {page==='understand'&&profile&&<><div className="metrics"><Metric label="DATASET RECORDS" value={fmt(profile.rows)} icon={<Database size={18}/>}/><Metric label="TOTAL COLUMNS" value={fmt(profile.columns_count)} icon={<Layers size={18}/>}/><Metric label="MISSING CELLS" value={fmt(profile.missing_cells)} icon={<CircleHelp size={18}/>}/><Metric label="EXACT DUPLICATES" value={fmt(profile.duplicate_rows)} icon={<Activity size={18}/>}/></div>
             <div className="panel insight"><div className="panel-title"><Sparkles size={19}/><h2>Dataset interpretation</h2><span className="pill muted">RULE-BASED ANALYSIS</span></div><p>{profile.summary}</p><p className="muted-caption">Local dataset statistics are calculated in Python. ODIN Intelligence above provides optional cloud-assisted interpretation from approved summaries.</p></div>
