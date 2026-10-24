@@ -294,7 +294,10 @@ def choose_model(experiment_id:str,body:SelectionRequest):
     try:
         metrics["feature_sensitivity"]=engine.bounded_feature_sensitivity(
             model,x_test,y_test,e["results"]["task"])
-    except (ValueError,TypeError,RuntimeError,MemoryError):
+    except Exception:
+        # Optional diagnostic failure is logged locally and must not discard a
+        # successful one-time held-out evaluation or reveal private row values.
+        logging.getLogger(__name__).exception("Optional feature sensitivity calculation failed")
         metrics["feature_sensitivity"]={
             "status":"unavailable",
             "reason":"Bounded sensitivity could not be calculated for this trained model."
