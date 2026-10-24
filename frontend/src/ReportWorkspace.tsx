@@ -3,13 +3,13 @@ import {FileDown,FileText,History,Save,ShieldCheck,AlertCircle,Plus} from 'lucid
 import {get,post,downloadReportFile} from './api';
 import './report-workspace.css';
 
-type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>};
+type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
 type Evidence={id:string;operation:string;dataset_version:number;tool_version:string;params:Record<string,unknown>;result:Record<string,unknown>};
 type SavedReport={id:string;title:string;narrative:string;revision:number;revisions:number[];dataset_versions:number[];current_dataset_version:number;has_historical_evidence:boolean;content_sha256:string;evidence:Evidence[]};
 
 /** Persisted report composer; component-local draft, backend-owned saved revisions. */
-export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='Investigation report'}:{projectId:string;availableEvidence?:EvidenceOption[];defaultTitle?:string}) {
+export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='Investigation report',preselectEvidenceId=null}:{projectId:string;availableEvidence?:EvidenceOption[];defaultTitle?:string;preselectEvidenceId?:string|null}) {
  const [reports,setReports]=useState<ReportSummary[]>([]);
  const [projectEvidence,setProjectEvidence]=useState<EvidenceOption[]>([]);
  const [activeId,setActiveId]=useState<string|null>(null);
@@ -22,8 +22,10 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [notice,setNotice]=useState('');
  const [revision,setRevision]=useState<number|null>(null);
  const userStartedDraft=useRef(false);
+ const appliedHandoff=useRef<string|null>(null);
+ const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
-   let mounted=true;userStartedDraft.current=false;setReports([]);setProjectEvidence([]);setActiveId(null);setOpened(null);setNarrative('');
+   let mounted=true;userStartedDraft.current=false;appliedHandoff.current=null;setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
    setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);
    if(!projectId)return;
    void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(async data=>{
@@ -39,9 +41,20 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
        }catch(err){if(mounted)setError(`Saved reports were found, but the latest revision could not be restored: ${(err as Error).message}`)}
      }
    }).catch(e=>{if(mounted)setError((e as Error).message)});
-   void get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`).then(data=>{if(mounted)setProjectEvidence(data)}).catch(e=>{if(mounted)setError((e as Error).message)});
+   void get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`).then(data=>{if(mounted){setProjectEvidence(data);setEvidenceLoaded(true)}}).catch(e=>{if(mounted){setEvidenceLoaded(true);setError((e as Error).message)}});
    return()=>{mounted=false};
  },[projectId]);
+ useEffect(()=>{
+   if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
+   appliedHandoff.current=preselectEvidenceId;
+   const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
+   if(!option){setError('This saved analysis is not available as verified evidence in the active project.');return;}
+   userStartedDraft.current=true;
+   setActiveId(null);setOpened(null);setRevision(null);
+   setTitle(option.objective?`${option.objective} report`:'Explore investigation report');
+   setNarrative('');setSelected([preselectEvidenceId]);setError('');
+   setNotice(`Verified ${option.stale?'historical ':' '}Explore evidence selected. Review its dataset version and add your interpretation before saving.`);
+ },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
  async function refresh(){setReports(await get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`));}
  async function openReport(id:string,number?:number){
    userStartedDraft.current=true;setBusy('open');setError('');
@@ -92,7 +105,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      <label className="pd-report-field">Report title<input value={title} maxLength={180} onChange={e=>{userStartedDraft.current=true;setTitle(e.target.value)}}/></label>
      <label className="pd-report-field">Interpretation and limitations<textarea value={narrative} placeholder="Describe what the verified evidence establishes, what remains uncertain, and any important limitations. This text is authored by you." rows={5} maxLength={6000} onChange={e=>{userStartedDraft.current=true;setNarrative(e.target.value)}}/></label>
      <h3>Select verified evidence</h3>
-     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>{userStartedDraft.current=true;setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}}/><span><strong>{e.operation.replaceAll('_',' ')} · v{e.version}</strong><small>{Object.entries(e.params||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ')||'Dataset profile'} · Evidence {e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Open an investigation and compute evidence to create a new report.</p>}
+     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>{userStartedDraft.current=true;setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}}/><span><strong>{e.operation==='explore_snapshot'?'Saved Explore investigation':e.operation.replaceAll('_',' ')} · v{e.version}{e.stale?' · HISTORICAL':''}</strong><small>{e.operation==='explore_snapshot'?(e.objective??'Saved analysis'):`${Object.entries(e.params||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ')||'Dataset profile'}`} · Evidence {e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Open an investigation and compute evidence to create a new report.</p>}
      {selected.filter(id=>!availableMap.has(id)).length>0&&<p className="pd-report-muted">{selected.filter(id=>!availableMap.has(id)).length} additional saved evidence references retained from the loaded report.</p>}
      <div className="pd-report-actions"><div><strong>{selected.length} verified evidence artifacts selected</strong><small>{!saveReady?'Enter a report title and select evidence to continue.':hasDraftChanges?'Save your changes before exporting an updated revision.':opened?'Current saved revision is ready for export.':'Save a frozen report revision to enable HTML/PDF exports.'}</small></div><button className="ud-btn ud-btn-primary" disabled={!!busy||!saveReady||!hasDraftChanges&&!!opened} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button></div>
      <details className="pd-report-preview"><summary>Preview report contents</summary><h4>{title}</h4><p>{narrative||'No narrative supplied. Verified evidence will be presented below.'}</p><ul>{selected.map(id=><li key={id}>{availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,12)}</li>)}</ul></details>
