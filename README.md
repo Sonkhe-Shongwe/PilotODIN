@@ -2,6 +2,8 @@
 
 **Resume PilotODIN in a new ChatGPT tab:** Start with [docs/CONTINUE_HERE.md](docs/CONTINUE_HERE.md), then review [Master Analyst / Master Scientist and target-discovery research](docs/MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md), the [semantic-inference and low-cost target-ranking deep dive](docs/TARGET_INTELLIGENCE_SEMANTICS_AND_RANKING_RESEARCH.md), and [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2). These are current development notes; earlier release readmes below remain historical.
 
+**Product implementation order:** [Consolidated feature inventory and complexity-last roadmap](docs/PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md). This is the current sequencing recommendation, not evidence of delivered code.
+
 # PilotODIN Build D — Unified Studio (October 2026)
 
 **Start here:** [BUILD_D_START_HERE.md](BUILD_D_START_HERE.md). This release contains the unified Canvas interface; the previous Studio and Build C Hybrid AI backend are retained. The Windows installer is not yet validated.
