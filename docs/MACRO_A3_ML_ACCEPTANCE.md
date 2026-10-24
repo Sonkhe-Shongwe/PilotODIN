@@ -1,7 +1,7 @@
 # PilotODIN Macro A3 — Machine Learning reliability checkpoint
 
 **Branch:** `feature/live-dev-workspace-20261023`  
-**Checkpoint:** A3-1/A3-2/A3-3: feature risk review, leak-aware splits, held-out diagnostics, bounded post-selection feature sensitivity and 8 GB-local training preflight  
+**Checkpoint:** A3-1 through A3-4: audited features, leak-aware splits, held-out evaluation, bounded post-selection sensitivity, conservative 8 GB-local resource controls and group-identity integrity  
 **Acceptance state:** Code committed; new regression tests not yet executed on Windows. A2's prior 190 passing checks cover an earlier source revision only.
 
 ## What changed
@@ -9,9 +9,10 @@
 1. Prepare returns one backend-authored, version-dependent audit row per candidate feature: numeric/categorical role, null and distinct counts, treatment used by the existing scikit-learn pipeline, and review reasons. Empty-only features are excluded by the existing backend `validate_config`; target and split keys are never predictors.
 2. The analyst still controls manual feature exclusions. Applying suggested high-risk exclusions **merges** them with prior selections and must never remove a manually excluded field.
 3. For predictors resembling identifiers or post-outcome leakage, Model Lab shows a named review gate. The **backend** checks the same risk list and rejects training without an explicit `acknowledge_feature_risks` or exclusion. Accepted experiments persist `reviewed_high_risk_features` and the acknowledgement flag for audit.
-4. Time-ordered holdout refuses to divide observations with an identical timestamp between development and final test. Chronological cross-validation now splits distinct timestamp groups, preventing one instant from appearing in both development-training and validation folds.
+4. Time-ordered holdout refuses to divide observations with an identical timestamp between development and final test. Chronological cross-validation now splits distinct timestamp groups, preventing one instant from appearing in both development-training and validation folds. A3-4 additionally encodes grouped validation IDs without stringifying missing labels, preventing null IDs from collapsing into a legitimate literal `(Missing group)` value.
 5. A3-2 adds a training-derived simple baseline scored alongside the selected model on identical held-out rows, conservative reliability warnings, unseen-category/missingness explanations, explicit uncalibrated probability labels, and Evaluate-first reopening of experiments.
 6. A3-3 adds a visible conservative resource plan before training (up to 30,000 labelled rows and 256 MB estimated dense training-matrix allocation; these are not measured peak RAM usage). The backend rechecks limits after actual exclusions and refuses oversized experiments without modifying the source data.
+   A3-4 tightens this to a full-labelled-row upper bound for uneven group splits, plus stricter selected model-family limits for SVM/SVR (5,000 rows) and KNN (12,000). The backend owns the limits; Model Lab discloses them in context.
 7. A3-3 adds bounded post-selection permutation sensitivity: up to 64 deterministic held-out observations, up to 8 evenly distributed original input fields, two shuffles each, one process. It stores sample counts, covered feature counts, seed, metric, directional scores and limitations with the immutable final evaluation, **never** using them for model selection. Unavailable or older analyses show an explicit no-diagnostic explanation.
 8. Existing leakage barriers remain: transformations fitted inside training CV folds, held-out test evaluated only after a user selects a model, one-time selected model, quality version pinning, group-aware split support and server-side prediction domain validation.
 
@@ -38,6 +39,9 @@ If pytest is missing in the development venv, explicitly install from `backend/r
 - [ ] Choose an output column and compare Prepare's candidate vs included predictor counts with excluded and unusable fields.
 - [ ] Check Prepare's resource preflight before excluding columns, then exclude a high-cardinality field. The server rechecks the actual trainable features on submission; there must be no silent auto-downsampling, peak-RAM guarantee or production-data mutation.
 - [ ] Confirm that training with more than 30,000 labelled rows or a projected dense matrix greater than 256 MB fails with an actionable guardrail message rather than trying to fit a large model.
+- [ ] For expensive kernel SVM/SVR, confirm that more than **5,000 labelled rows** are rejected before training. KNN is capped at **12,000** labelled rows. When comparing multiple algorithms, the *strictest* selected model cap applies and Model Lab explains which option prevents training.
+- [ ] Check that the conservative dense feature estimate uses **all labelled rows** as a protective upper bound, not an assumed 80% train fraction; grouped holdout sizes can be uneven. It must not be described as measured peak memory.
+- [ ] For group-based CV, include a literal source value `(Missing group)` and genuine missing group IDs. They must be treated as two distinct groups, never accidentally merged; holdout and CV train/validation fold groups must be disjoint.
 - [ ] Inspect feature audit for a numeric field with missing values, a categorical field, a constant field and a likely identifier.
 - [ ] Manually exclude one predictor, apply suggested exclusions, and confirm the manual exclusion remains.
 - [ ] Leave a high-risk predictor included: the review acknowledgement should be visible; without it the Train action must be disabled and a forged API request rejected.
