@@ -1,9 +1,7 @@
 name: Live Development Backend Regression
 on:
-  push:
-    branches:
-      - feature/live-dev-workspace-20261023
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:
