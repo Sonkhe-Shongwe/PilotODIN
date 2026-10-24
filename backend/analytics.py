@@ -94,8 +94,11 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
             v=pd.to_numeric(df[y],errors='coerce')
             if aggregation!='count' and v.notna().sum()==0:raise ValueError('Y must be numeric for the chosen aggregation')
             grouped=pd.DataFrame({'category':xs.fillna('(Missing)').astype(str),'value':v}).groupby('category',dropna=False)['value'].agg(aggregation).sort_values(ascending=False)
+            if aggregation=='count':
+                out['note']=f'Count of non-missing {y} observations by {x}. Missing values in the selected measure are excluded.'
         else:
             grouped=xs.fillna('(Missing)').astype(str).value_counts()
+            out['note']=f'Record count by {x}; no numeric measure is required.'
         out['truncated']=len(grouped)>30
         out['data']=[{'label':str(k),'value':float(v)} for k,v in grouped.head(30).items() if pd.notna(v)]
     return out
