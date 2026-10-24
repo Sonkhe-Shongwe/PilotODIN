@@ -26,3 +26,19 @@
 .po-correlation-cell:hover:not(:disabled){filter:brightness(1.07);transform:scale(1.035);z-index:1}
 .po-correlation-cell:disabled{cursor:default}
 @media(prefers-reduced-motion:reduce){.po-correlation-cell{transition:none}.po-correlation-cell:hover{transform:none}}
+
+
+/* Macro A2: bounded, linked, read-only analytical filtering. */
+.po-filter-panel{border:1px solid #dcd8f1;background:linear-gradient(130deg,#fff,#f8faff)}
+.po-filter-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}
+.po-filter-toolbar>span{font-size:12px;font-weight:750;color:#40577e;margin-left:auto}
+.po-filter-toolbar .btn{display:inline-flex;align-items:center;gap:6px}
+.po-filter-rows{display:flex;flex-direction:column;gap:9px}
+.po-filter-row{display:grid;grid-template-columns:minmax(170px,1.3fr) repeat(2,minmax(130px,1fr)) 40px;align-items:end;gap:12px;padding:12px;border:1px solid #e4e8f5;border-radius:12px;background:#fff}
+.po-filter-row label{min-width:0;display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:800;color:#5a6683}
+.po-filter-row .input{width:100%;min-width:0;max-width:100%;min-height:35px}
+.po-filter-remove{height:35px;width:35px;display:grid;place-items:center;background:#fff;border:1px solid #e0dced;border-radius:9px;color:#6f547f;cursor:pointer}
+.po-filter-remove:hover{background:#fff0f5;color:#972a5e}
+.po-filter-remove:focus-visible{outline:2px solid #5538c6;outline-offset:2px}
+@media(max-width:760px){.po-filter-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px}.po-filter-row label:first-child{grid-column:1/-1}.po-filter-toolbar>span{width:100%;margin-left:0}}
+@media(max-width:470px){.po-filter-row{grid-template-columns:minmax(0,1fr) 40px}.po-filter-row label{grid-column:1}.po-filter-row .po-filter-remove{grid-column:2;grid-row:1}}
