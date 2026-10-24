@@ -36,6 +36,14 @@ class ReportError(Exception):
 def init():
     with storage.connect() as con:
         con.executescript('''
+        CREATE TABLE IF NOT EXISTS explore_snapshots_v1 (
+            id TEXT PRIMARY KEY, project_id TEXT NOT NULL, title TEXT NOT NULL,
+            dataset_version INTEGER NOT NULL, configuration_json TEXT NOT NULL,
+            snapshot_json TEXT NOT NULL, sha256 TEXT NOT NULL, created_at TEXT NOT NULL,
+            FOREIGN KEY(project_id) REFERENCES projects(id)
+        );
+        CREATE INDEX IF NOT EXISTS ix_explore_snapshots_project
+        ON explore_snapshots_v1(project_id,created_at DESC);
         CREATE TABLE IF NOT EXISTS reports_v1 (
             id TEXT PRIMARY KEY, project_id TEXT NOT NULL, created_at TEXT NOT NULL,
             FOREIGN KEY(project_id) REFERENCES projects(id)
@@ -65,33 +73,103 @@ def _validate(title: str, narrative: str, evidence_ids: list[str]):
         raise ReportError('Duplicate evidence identifiers are not allowed')
 
 
+def _explore_evidence(row: sqlite3.Row) -> dict:
+    """Project-scoped, checksum-verified saved Explore analysis for report exhibit."""
+    raw = row['snapshot_json']
+    digest = hashlib.sha256(raw.encode('utf-8')).hexdigest()
+    if digest != row['sha256']:
+        raise ReportError('Saved Explore analysis failed integrity verification',409)
+    snapshot = json.loads(raw)
+    config = json.loads(row['configuration_json'])
+    if snapshot.get('version') != row['dataset_version']:
+        raise ReportError('Saved Explore analysis dataset version disagrees with its evidence',409)
+    plot = snapshot.get('chart')
+    sample_rows = []
+    if isinstance(plot,dict) and isinstance(plot.get('data'),list):
+        # Report previews are bounded and may not represent all plotted points.
+        # The entire approved source snapshot remains audited by its SHA-256.
+        if plot.get('type') == 'box':
+            sample_rows = [{k:v for k,v in point.items() if k in
+                           ('label','min','q1','median','q3','max','outliers_total')}
+                           for point in plot['data'][:1]]
+        elif plot.get('type') == 'histogram':
+            sample_rows = [{k:v for k,v in point.items() if k in
+                           ('label','start','end','value')}
+                           for point in plot['data'][:24]]
+        elif plot.get('type') == 'scatter':
+            sample_rows = [{k:v for k,v in point.items() if k in
+                           ('x','y','group')} for point in plot['data'][:16]]
+        else:
+            sample_rows = [{k:v for k,v in point.items() if k in
+                           ('label','value')} for point in plot['data'][:30]]
+    result = {
+        'summary': {
+            'Total dataset rows': snapshot['total_rows'],
+            'Rows matching saved filters': snapshot['filtered_rows'],
+            'Matching missing cells': snapshot['overview']['missing_cells'],
+            'Matching exact duplicates': snapshot['overview']['exact_duplicates'],
+            'Chart type': plot.get('type') if plot else 'No chartable observations',
+            'Displayed chart rows': len(plot.get('data',[])) if plot else 0,
+            'Plotted sample': bool(plot.get('sampled',False)) if plot else False,
+            'Chart groups truncated': bool(plot.get('truncated',False)) if plot else False,
+            'Source snapshot SHA-256': digest,
+        },
+        'data': sample_rows,
+        'note': 'Saved Explore calculations are descriptive, not causal. '
+                'Report exhibit rows are bounded; the original immutable local '
+                'snapshot is available in Explore.',
+        'limitations': snapshot.get('limitations', []),
+    }
+    return {
+        'id':row['id'], 'investigation_id':None, 'objective':row['title'],
+        'dataset_version':row['dataset_version'],
+        'operation':'explore_snapshot',
+        'params': {
+            'x':config.get('x'), 'y':config.get('y'), 'kind':config.get('kind'),
+            'aggregation':config.get('aggregation'),
+            'filter_count':len(config.get('filters',[])),
+            'filters':config.get('filters',[]),
+            'color_by':config.get('color_by'),
+            'source_snapshot_sha256':digest
+        },
+        'result':result, 'tool_version':'explore-snapshot-v1',
+        'computed_at':row['created_at'], 'source_snapshot_sha256':digest
+    }
+
+
 def _collect(con: sqlite3.Connection, pid: str, title: str, narrative: str, evidence_ids: list[str]):
-    # The JOIN is the security boundary. Never trust the project's identity from
-    # the frontend or an evidence ID without checking its actual owner.
+    # Every source type is scoped to the CURRENT report project on the backend.
+    # Never trust the browser's implied project or an arbitrary artifact ID.
     placeholders = ','.join('?' for _ in evidence_ids)
     rows = con.execute(f'''SELECT e.*, i.project_id, i.objective
         FROM evidence_v1 e JOIN investigations_v1 i ON e.investigation_id=i.id
         WHERE e.id IN ({placeholders}) AND i.project_id=? AND e.status='completed' ''',
         (*evidence_ids, pid)).fetchall()
-    lookup = {r['id']:r for r in rows}
-    if len(lookup) != len(evidence_ids):
-        raise ReportError('Evidence is missing, unverified or belongs to another project', 403)
-    evidence = []
-    for ident in evidence_ids:
-        row = lookup[ident]
-        evidence.append({
+    lookup = {}
+    for row in rows:
+        lookup[row['id']] = {
             'id':row['id'], 'investigation_id':row['investigation_id'],
             'objective':row['objective'], 'dataset_version':row['dataset_version'],
             'operation':row['operation'], 'params':json.loads(row['params']),
             'result':json.loads(row['result']), 'tool_version':row['tool_version'],
-            'computed_at':row['created_at'],
-        })
+            'computed_at':row['created_at']
+        }
+    saved_rows = con.execute(f'''SELECT * FROM explore_snapshots_v1
+        WHERE id IN ({placeholders}) AND project_id=?''',(*evidence_ids,pid)).fetchall()
+    for row in saved_rows:
+        if row['id'] in lookup:
+            raise ReportError('Conflicting evidence identifiers from separate sources',409)
+        lookup[row['id']] = _explore_evidence(row)
+    if len(lookup) != len(evidence_ids):
+        raise ReportError('Evidence is missing, unverified or belongs to another project', 403)
+    evidence = [lookup[ident] for ident in evidence_ids]
     content = {
         'title':title.strip(), 'narrative':narrative,
         'project_id':pid, 'evidence':evidence,
         'dataset_versions':sorted({r['dataset_version'] for r in evidence}),
         'limitations':['Computed evidence is descriptive unless an independently validated inferential method is recorded.',
-                       'Interpretations in the narrative are user-authored and have not been computationally verified.'],
+                       'Interpretations in the narrative are user-authored and have not been computationally verified.',
+                       'Saved Explore chart excerpts are bounded and may be sampled or truncated; provenance is retained.'],
     }
     canonical = json.dumps(content,sort_keys=True,ensure_ascii=False,allow_nan=False,separators=(',',':'))
     if len(canonical.encode('utf-8')) > MAX_SNAPSHOT:
@@ -137,18 +215,28 @@ def listing(project_id: str):
 
 
 def evidence_options(project_id: str):
-    """Bounded project-local evidence metadata for Deliver."""
+    """Bounded options include both verified investigation and saved Explore evidence."""
     if storage.get_project(project_id) is None:
         raise ReportError('Project does not exist',404)
     current=quality.current_version(project_id)
     with storage.connect() as con:
         rows=con.execute("""SELECT e.id, e.operation, e.params, e.dataset_version,
-           e.created_at, i.objective FROM evidence_v1 e JOIN investigations_v1 i
-           ON i.id=e.investigation_id WHERE i.project_id=? AND e.status='completed'
-           ORDER BY e.created_at DESC,e.rowid DESC LIMIT 150""",(project_id,)).fetchall()
-    return [{'id':r['id'],'operation':r['operation'],'params':json.loads(r['params']),
-             'version':r['dataset_version'],'stale':r['dataset_version']!=current,
-             'objective':r['objective'],'created_at':r['created_at']} for r in rows]
+            e.created_at, i.objective FROM evidence_v1 e JOIN investigations_v1 i
+            ON i.id=e.investigation_id WHERE i.project_id=? AND e.status='completed'
+            ORDER BY e.created_at DESC,e.rowid DESC LIMIT 100""",(project_id,)).fetchall()
+        snapshots=con.execute("""SELECT id,title,dataset_version,created_at,sha256
+            FROM explore_snapshots_v1 WHERE project_id=?
+            ORDER BY created_at DESC,rowid DESC LIMIT 50""",(project_id,)).fetchall()
+    options=[{'id':r['id'],'operation':r['operation'],'params':json.loads(r['params']),
+              'version':r['dataset_version'],'stale':r['dataset_version']!=current,
+              'objective':r['objective'],'created_at':r['created_at'],'source':'investigation'} for r in rows]
+    options.extend({
+        'id':r['id'], 'operation':'explore_snapshot',
+        'params':{'title':r['title'],'source_snapshot_sha256':r['sha256']},
+        'version':r['dataset_version'], 'stale':r['dataset_version']!=current,
+        'objective':r['title'],'created_at':r['created_at'],'source':'saved_explore'
+    } for r in snapshots)
+    return sorted(options,key=lambda entry:(entry['created_at'],entry['id']),reverse=True)[:150]
 
 
 def load(report_id: str, revision: int | None = None):
