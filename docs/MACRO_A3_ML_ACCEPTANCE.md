@@ -2,7 +2,7 @@
 
 **Branch:** `feature/live-dev-workspace-20261023`  
 **Checkpoint:** A3-1 through A3-4: audited features, leak-aware splits, held-out evaluation, bounded post-selection sensitivity, conservative 8 GB-local resource controls and group-identity integrity  
-**Acceptance state:** Code committed; new regression tests not yet executed on Windows. A2's prior 190 passing checks cover an earlier source revision only.
+**Acceptance state (owner Windows checkpoint, 24 October 2026):** Focused local checks **passed: 99 frontend tests, 27 backend tests**, TypeScript/Vite build and Python syntax compilation (~23.2 seconds). **Interactive Prepare → Model Lab → Evaluate → Predict, realistic 8 GB stress and installed/offline desktop acceptance remain pending.** This is not an exhaustive backend suite. See [living handoff](./CONTINUE_HERE.md).
 
 ## What changed
 
