@@ -43,3 +43,11 @@ test('save is disabled during incomplete or invalid live calculations and UI rem
  assert.match(explore,/ready=\{!!filteredOverview&&!loading&&!error&&!!filterCatalog&&filterCatalog\.version===overview\?\.version\}/);
  assert.match(css,/@media\(max-width:710px\)/);
 });
+
+test('saved library shows integrity status before an item is opened',()=>{
+ assert.match(views,/item\.results_valid===false\?'Integrity error · unavailable'/);
+ assert.match(views,/item\.configuration_verified===false\?'Legacy · settings unverified'/);
+ assert.match(views,/disabled=\{busy!==''\|\|item\.results_valid===false\}/);
+ assert.match(views,/Current verified version/);
+ assert.match(views,/Historical verified version/);
+});
