@@ -41,15 +41,25 @@ def _column(df:pd.DataFrame,name:str):
     return df[name]
 
 
-def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', aggregation:str='mean', bins:int=16)->dict:
+def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', aggregation:str='mean', bins:int=16, color_by:str|None=None)->dict:
     xs=_column(df,x)
     if y: _column(df,y)
+    if color_by:
+        _column(df,color_by)
+        if color_by in (x,y) or color_by.lower().endswith(('id','key','code','number')):
+            raise ValueError('Choose a separate, non-identifier category field for scatter colouring')
+        if pd.api.types.is_numeric_dtype(df[color_by]):
+            raise ValueError('Scatter colouring requires a categorical field')
+        if df[color_by].dropna().nunique() > 8:
+            raise ValueError('Scatter colouring supports at most eight observed categories')
     if kind=='auto':
         kind='scatter' if y and pd.api.types.is_numeric_dtype(xs) and pd.api.types.is_numeric_dtype(df[y]) else ('bar' if y or not pd.api.types.is_numeric_dtype(xs) else 'histogram')
     if kind not in ('bar','histogram','scatter','line','box'):
         raise ValueError('Supported charts: bar, histogram, scatter, line, box')
     if aggregation not in ('mean','sum','count','median'):
         raise ValueError('Unsupported aggregation')
+    if color_by and kind!='scatter':
+        raise ValueError('Category colouring is only available for scatter charts')
     out={"version":version,"type":kind,"x":x,"y":y,"aggregation":aggregation,
          "sampled":False,"data":[],"note":"Descriptive relationships do not establish causation."}
     if kind=='histogram':
@@ -63,17 +73,27 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
         out['note']='Frequency per interval. Missing or non-finite observations are excluded.'
     elif kind in ('scatter','line'):
         if not y: raise ValueError('Scatter and line charts need an Y column')
-        view=df[[x,y]].copy()
+        view=df[list(dict.fromkeys([x,y]+([color_by] if color_by and kind=='scatter' else [])))].copy()
         if kind=='scatter':
             # The sampled point carries its position in the filtered snapshot.
             # Never use arbitrary dataframe index labels as a persisted row ID.
             view.index=pd.RangeIndex(len(view))
             view[x]=pd.to_numeric(view[x],errors='coerce')
             view[y]=pd.to_numeric(view[y],errors='coerce')
-            view=view.replace([np.inf,-np.inf],np.nan).dropna()
+            view[[x,y]]=view[[x,y]].replace([np.inf,-np.inf],np.nan)
+            view=view.dropna(subset=[x,y])
             if view.empty: raise ValueError('Scatter requires two numeric columns')
+            out['valid_observations']=int(len(view))
+            out['excluded_observations']=int(len(df)-len(view))
             if len(view)>500: view=view.sample(n=500,random_state=42);out['sampled']=True
-            out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i)} for i,a,b in zip(view.index,view[x],view[y])]
+            if color_by:
+                labels=view[color_by].fillna('(Missing)').astype(str)
+                out['color_by']=color_by
+                out['color_groups']=[{'label':str(k),'count':int(v)} for k,v in labels.value_counts().items()]
+                out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i),'group':str(g)} for i,a,b,g in zip(view.index,view[x],view[y],labels)]
+                out['note']='Categories and legend counts describe plotted valid pairs only; sampling may omit some groups. Colours do not imply causation.'
+            else:
+                out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i)} for i,a,b in zip(view.index,view[x],view[y])]'
         else:
             view[y]=pd.to_numeric(view[y],errors='coerce');view=view.dropna()
             if view.empty: raise ValueError('Line chart requires a numeric Y column')
