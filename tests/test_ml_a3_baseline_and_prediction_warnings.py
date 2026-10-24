@@ -71,6 +71,12 @@ def test_selection_records_comparable_heldout_baseline_and_warns_on_a_tie(monkey
     assert final["beats_heldout_baseline"] is False
     assert final["baseline_test_label"]=="Macro F1"
     assert any("held-out test set" in item for item in final["reliability"]["issues"])
+    sensitivity=final["feature_sensitivity"]
+    assert sensitivity["status"]=="computed"
+    assert sensitivity["sample_rows"]==40 and sensitivity["total_predictors"]==1
+    assert sensitivity["features_evaluated"]==1 and sensitivity["repeats"]==2
+    assert sensitivity["scores"][0]["feature"]=="Signal"
+    assert sensitivity["scores"][0]["mean_importance"]==0
     assert len(store)==1 and store[0] is final
 
 
