@@ -41,7 +41,7 @@ def _init(con: sqlite3.Connection):
 
 
 def _config(x: str, y: str | None, kind: str, aggregation: str,
-            bins: int, correlation_method: str, filters: list[dict]) -> dict:
+            bins: int, correlation_method: str, filters: list[dict], color_by: str | None = None) -> dict:
     if kind not in ('auto','bar','histogram','scatter','line','box'):
         raise SavedAnalysisError('Unsupported chart type')
     if aggregation not in ('mean','sum','median','count'):
@@ -52,7 +52,7 @@ def _config(x: str, y: str | None, kind: str, aggregation: str,
         raise SavedAnalysisError('Histogram bins must be between 4 and 40')
     return {'x':x, 'y':y, 'kind':kind, 'aggregation':aggregation,
             'bins':bins, 'correlation_method':correlation_method,
-            'filters':filters}
+            'filters':filters, 'color_by':color_by}
 
 
 def capture(frame, version: int, config: dict) -> dict:
@@ -65,7 +65,7 @@ def capture(frame, version: int, config: dict) -> dict:
     if len(subset):
         try:
             chart=analytics.chart(subset, version, x, y, kind,
-                                  config['aggregation'], config['bins'])
+                                  config['aggregation'], config['bins'],config.get('color_by'))
         except ValueError as exc:
             # No unsupported or invalid chart can become verified evidence.
             raise SavedAnalysisError(f'Cannot save this chart: {exc}') from exc
@@ -86,7 +86,7 @@ def capture(frame, version: int, config: dict) -> dict:
 
 def save(project_id: str, *, title: str, expected_version: int,
          x: str, y: str | None, kind: str, aggregation: str, bins: int,
-         correlation_method: str, filters: list[dict]) -> dict:
+         correlation_method: str, filters: list[dict], color_by: str | None = None) -> dict:
     if not isinstance(title,str) or not 4 <= len(title.strip()) <= 120:
         raise SavedAnalysisError('Give this analysis a title between 4 and 120 characters')
     if storage.get_project(project_id) is None:
@@ -94,7 +94,7 @@ def save(project_id: str, *, title: str, expected_version: int,
     frame,version=quality.current_data(project_id)
     if version!=expected_version:
         raise SavedAnalysisError('Dataset version changed. Refresh Explore before saving.',409)
-    config=_config(x,y,kind,aggregation,bins,correlation_method,filters)
+    config=_config(x,y,kind,aggregation,bins,correlation_method,filters,color_by)
     snapshot=capture(frame,version,config)
     canonical=json.dumps(snapshot,sort_keys=True,ensure_ascii=False,allow_nan=False,separators=(',',':'))
     if len(canonical.encode('utf-8'))>MAX_SNAPSHOT_BYTES:
