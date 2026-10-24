@@ -1,7 +1,7 @@
 # PilotODIN Macro A3 — Machine Learning reliability checkpoint
 
 **Branch:** `feature/live-dev-workspace-20261023`  
-**Checkpoint:** A3-1, per-feature preparation audit and leakage-aware validation  
+**Checkpoint:** A3-1 and A3-2, per-feature preparation, leakage-aware validation, held-out baseline and prediction transparency  
 **Acceptance state:** Code committed; new regression tests not yet executed on Windows. A2's prior 190 passing checks cover an earlier source revision only.
 
 ## What changed
@@ -40,6 +40,10 @@ If pytest is missing in the development venv, explicitly install from `backend/r
 - [ ] Try chronological data containing two rows with the exact same boundary timestamp. The holdout must refuse a split of those rows rather than leak.
 - [ ] Run time/group stratified experiments on adequate real or synthetic datasets; inspect CV folds and baseline vs candidate scores.
 - [ ] Select a model: land in Evaluate, inspect actual held-out metrics and reliability warnings, then proceed explicitly to Predict.
+- [ ] Check the held-out score against the **training-derived constant baseline** on the same held-out rows. This must be a diagnostic after selection, never an input to choosing the winning model; for older experiments with no saved training baseline, display unavailable instead of inventing a comparison.
+- [ ] Reopen an already selected experiment from the project and confirm it navigates to **Evaluate** rather than bypassing the held-out report.
+- [ ] Prediction input with a missing feature explicitly warns that training-fitted imputation is used; an unfamiliar category warns only if the training category list is complete.
+- [ ] Class probabilities are clearly identified as **uncalibrated model estimates**, not externally validated likelihoods.
 - [ ] Predict valid and invalid inputs (e.g. HourOfDay 9 vs 25); invalid values must not produce a successful inference.
 - [ ] Switch projects or approve a new Quality version and check that stale experiment predictions are refused.
 
