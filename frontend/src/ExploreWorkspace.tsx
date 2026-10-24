@@ -125,7 +125,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     setPlot(null);setCorrelation(null);setFilteredOverview(null);setFilteredRows(null);
     post<Workbench>(`/projects/${projectId}/explore/workbench`,{
       expected_version:overview.version,filters,x,y:y&&kind!=='histogram'&&kind!=='box'?y:null,
-      kind,aggregation,bins,correlation_method:corrMethod,color_by:kind==='scatter'&&colorBy?colorBy:null
+      kind,aggregation,bins,correlation_method:corrMethod,color_by:kind==='scatter'&&colorBy&&colorBy!==x&&colorBy!==y&&overview?.columns.some(c=>c.name===colorBy&&c.kind==='categorical'&&c.unique<=8&&!/(?:id|key|code|number)$/i.test(c.name))?colorBy:null
     }).then(value=>{
       if(!live)return;
       if(value.version!==overview.version){setError('Dataset changed. Refresh Explore.');return;}
@@ -246,7 +246,7 @@ export function ExploreWorkspace({projectId,versionToken,onReviewQuality}:{proje
     </section>}
     <SavedExploreAnalyses projectId={projectId} version={overview?.version??null}
       ready={!!filteredOverview&&!loading&&!error&&!!filterCatalog&&filterCatalog.version===overview?.version}
-      configuration={{x,y:y||null,kind,aggregation,bins,correlation_method:corrMethod,filters,color_by:kind==='scatter'&&colorBy?colorBy:null}}
+      configuration={{x,y:y||null,kind,aggregation,bins,correlation_method:corrMethod,filters,color_by:kind==='scatter'&&colorBy&&colorBy!==x&&colorBy!==y&&overview?.columns.some(c=>c.name===colorBy&&c.kind==='categorical'&&c.unique<=8&&!/(?:id|key|code|number)$/i.test(c.name))?colorBy:null}}
       onRestore={restoreSaved}/>
     <section className="panel po-correlation-panel"><div className="panel-title"><BarChart3 size={19}/><h2>Correlation heatmap</h2><span className="pill muted">VERIFIED LOCAL CALCULATION</span></div>
       <p className="body-muted">Compare numeric relationships. Click any off-diagonal cell to open its scatter plot. IDs and obvious identifiers are excluded.</p>
