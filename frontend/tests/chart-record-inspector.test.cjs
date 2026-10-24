@@ -34,13 +34,12 @@ test('inspector is read-only, paginated and keyboard accessible',()=>{
 });
 
 
-test('clicking a mark scrolls to the newly mounted inspector without scrolling again for pagination',()=>{
+test('new chart selection reveals inspector with interruptible eased motion, not pagination scrolling',()=>{
  assert.match(source,/useLayoutEffect\(\(\)=>\{\s*if\(!selection\)return/);
  assert.match(source,/const panel=inspectorRef\.current/);
- assert.match(source,/panel\.focus\(\{preventScroll:true\}\)/);
- assert.match(source,/panel\.scrollIntoView\(\{behavior:reducedMotion\?'auto':'smooth',block:'start',inline:'nearest'\}\)/);
+ assert.match(source,/return revealRecordInspector\(panel\)/);
  assert.match(source,/\},\[selection\]\)/);
  assert.match(source,/ref=\{inspectorRef\} tabIndex=\{-1\}/);
- assert.match(styles,/\.po-record-inspector\{scroll-margin-top:24px;animation:po-inspector-arrival/);
- assert.match(styles,/@media\(prefers-reduced-motion:reduce\)\{\s*\.po-record-inspector\{animation:none\}/);
+ assert.match(styles,/\.po-record-inspector\{scroll-margin-top:28px\}/);
+ assert.doesNotMatch(styles,/po-inspector-arrival/);
 });
