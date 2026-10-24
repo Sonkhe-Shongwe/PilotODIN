@@ -89,6 +89,7 @@ class ExperimentRequest(BaseModel):
     excluded_features: list[str] = Field(default_factory=list)
     models: list[str] = Field(min_length=1,max_length=5)
     acknowledge_random_split: bool = False
+    acknowledge_feature_risks: bool = False
     split_strategy: str = 'random'
     split_column: str | None = None
     expected_quality_version: int | None = Field(default=None, ge=0)
@@ -221,10 +222,19 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
             raise HTTPException(status_code=409, detail=f"Dataset version changed from {body.expected_quality_version} to {version}. Refresh before training.")
         engine.validate_config(df,body.target,body.excluded_features,body.models,body.task)
         if body.split_column and body.split_column not in df.columns:raise ValueError('Split column not found')
+        preparation_audit=engine.preparation(df,body.target)
+        included_risks=sorted(set(preparation_audit["high_risk_features"])-set(body.excluded_features)
+                              -({body.split_column} if body.split_strategy!="random" else set()))
+        if included_risks and not body.acknowledge_feature_risks:
+            raise ValueError("Review high-risk predictors ("+", ".join(included_risks[:8])+
+                             "). Exclude them or explicitly acknowledge potential leakage before training.")
     except quality.QualityError as e:
         raise HTTPException(status_code=e.status,detail=str(e)) from e
     except ValueError as e: raise HTTPException(status_code=422,detail=str(e))
-    config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,"quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column}
+    config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,
+            "quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column,
+            "acknowledge_feature_risks":bool(body.acknowledge_feature_risks),
+            "reviewed_high_risk_features":included_risks}
     eid=storage.new_experiment(project_id,config)
     background_tasks.add_task(train_background,eid,project_id,config)
     return {"id":eid,"status":"queued"}
