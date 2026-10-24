@@ -1,0 +1,56 @@
+/* PilotODIN 1.0 surface coherence. Bright, navigable, high-contrast analytical UI. */
+.po-shell-title{
+ background:linear-gradient(110deg,#fff 0%,#fcfaff 50%,#effaff 100%);
+ border-bottom:1px solid #dbdef2;box-shadow:0 2px 14px #301a7810;z-index:2;
+}
+.po-shell-brand{gap:9px;align-items:center;letter-spacing:-.04em}
+.po-brand-symbol{width:35px;height:35px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 3px #34218c24)}
+.po-brand-wordmark{display:inline-flex;align-items:baseline;letter-spacing:-.04em;font-size:20px}
+.po-shell-brand .po-pilot{color:#038fae;font-size:20px;font-weight:600;margin:0}
+.po-shell-brand b{color:#5027bf;font-size:20px;font-weight:850}
+.po-shell-mode{color:#66759a;letter-spacing:1.5px}
+.po-project-switcher{background:#ffffffdd;border-color:#d9e1ef;box-shadow:0 3px 12px #272a6110}
+.po-global-rail{background:linear-gradient(170deg,#faf9ff 0%,#f5f2ff 45%,#effbfc 100%);border-right:1px solid #deddf3}
+.po-global-rail button.po-nav-item:hover:not(.po-rail-active){background:#edeaff;color:#4329b8}
+.po-global-rail button.po-rail-active{background:linear-gradient(106deg,#e7e2ff,#e7f6ff);border-color:#cec7fa;color:#4026ba;box-shadow:inset 3px 0 #6555eb}
+.po-global-tabs{background:linear-gradient(90deg,#f0effb,#f0f5ff 70%,#f0fafe);border-bottom-color:#dfe1f1}
+.po-tab-selected{background:#fff;border-top:3px solid #6653df;border-color:#d9dcf2}
+.po-tab-selected>button:first-child{color:#3824a0}
+.po-shell-content,.po-pane-layout{background:#f4f6fd}
+.po-unified-shell .studio-app .main.studio-main,.po-unified-shell .ud-workspace{
+ background:radial-gradient(ellipse at 92% 5%,#ebf4ff 0%,transparent 38%),
+ radial-gradient(ellipse at 8% 18%,#f4eeff 0%,transparent 35%),#f6f8fd;
+}
+.po-unified-shell .studio-app .panel,
+.po-unified-shell .ud-app .ud-panel,
+.po-unified-shell .studio-app .metric,
+.po-unified-shell .studio-app .quality-banner{
+ border-color:#e0e2f1;
+ box-shadow:0 7px 24px #2838670c;
+}
+.po-unified-shell .studio-app .panel-title h2,.po-unified-shell .ud-panel h2{color:#202b4f}
+.po-unified-shell .studio-app .quality-banner{
+ background:linear-gradient(115deg,#f4f0ff,#f6f9ff 46%,#eafafb);
+}
+.po-unified-shell .studio-app .btn.primary,.po-unified-shell .ud-btn-primary{
+ background:linear-gradient(115deg,#5a3bdf,#7868f1)!important;
+ box-shadow:0 6px 15px #5136c524;
+ color:#fff!important;
+}
+.po-unified-shell .studio-app .btn.primary:hover:not(:disabled),.po-unified-shell .ud-btn-primary:hover:not(:disabled){
+ filter:brightness(1.065);box-shadow:0 9px 24px #4637d63a;
+}
+.po-unified-shell :where(button,a,input,select,textarea):focus-visible{outline:2px solid #6c56e5;outline-offset:3px}
+.po-unified-shell .po-secondary-pane{border-left:1px solid #e0e3f1}
+@media(max-width:1080px){
+ .po-shell-mode{font-size:9px;letter-spacing:.8px}
+ .po-project-switcher{max-width:min(39vw,270px)}
+}
+@media(max-width:640px){
+ .po-shell-brand .po-pilot,.po-shell-brand b{font-size:16px}
+ .po-brand-symbol{width:29px;height:29px}
+ .po-shell-title{padding-inline:12px;gap:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .po-brand-symbol{filter:none}
+}
