@@ -617,7 +617,9 @@ def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int =
             elif issue["kind"]=="exact_duplicates":
                 indexes=current.index[current.duplicated(keep="first")].tolist()
             elif issue["kind"]=="identifier" and col:
-                indexes=current.index[current[col].notna()].tolist()
+                # Include missing identifier cells in the same review population
+                # represented by the finding's affected row count.
+                indexes=list(current.index)
             else:
                 indexes=list(current.index)
         else:
