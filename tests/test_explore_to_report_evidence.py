@@ -120,7 +120,33 @@ def test_reporting_refuses_snapshot_whose_chart_settings_were_changed():
         config["filters"]=[]
         con.execute("UPDATE explore_snapshots_v1 SET configuration_json=? WHERE id=?",
                     (json.dumps(config,sort_keys=True,separators=(',',':')),snapshot["id"]))
+    options=client.get(f"/api/projects/{pid}/report-evidence")
+    assert options.status_code==200,options.text
+    assert snapshot["id"] not in {entry["id"] for entry in options.json()}
     response=save_report(pid,[snapshot["id"]])
     assert response.status_code==409,response.text
     assert "configuration" in response.text.lower()
     assert client.get(f"/api/projects/{pid}/reports").json()==[]
+
+
+def test_legacy_saved_results_are_readable_in_explore_but_absent_from_deliver():
+    import hashlib,json
+    pid,_=make_project("legacy-report-options.csv")
+    saved=save_explore(pid)
+    with storage.connect() as con:
+        original=con.execute("SELECT snapshot_json FROM explore_snapshots_v1 WHERE id=?",(saved["id"],)).fetchone()[0]
+        result=json.loads(original)
+        del result["configuration_sha256"]
+        canonical=json.dumps(result,sort_keys=True,ensure_ascii=False,allow_nan=False,separators=(',',':'))
+        con.execute("UPDATE explore_snapshots_v1 SET snapshot_json=?,sha256=? WHERE id=?",
+                    (canonical,hashlib.sha256(canonical.encode()).hexdigest(),saved["id"]))
+    visible=client.get(f"/api/projects/{pid}/explore/saved/{saved['id']}")
+    assert visible.status_code==200,visible.text
+    assert visible.json()["configuration_verified"] is False
+    library=client.get(f"/api/projects/{pid}/explore/saved")
+    assert library.status_code==200 and library.json()[0]["configuration_verified"] is False
+    choices=client.get(f"/api/projects/{pid}/report-evidence")
+    assert choices.status_code==200
+    assert saved["id"] not in {entry["id"] for entry in choices.json()}
+    rejected=save_report(pid,[saved["id"]])
+    assert rejected.status_code==409
