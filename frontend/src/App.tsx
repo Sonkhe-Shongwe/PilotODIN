@@ -54,10 +54,12 @@ function fmtPrediction(value:string|number,task:string|undefined){return typeof 
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNewProject=false,onNewProjectClose}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
+  forceNewProject?:boolean;
+  onNewProjectClose?:()=>void;
 }={}){
  const embedded=embeddedStage!==undefined;
   const [project,setProject]=useState<Project|null>(null);
@@ -78,6 +80,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
   const [predictVals,setPredictVals]=useState<Record<string,string>>({});
   const [prediction,setPrediction]=useState<{prediction:string|number;probabilities?:{class:string|number;probability:number}[];warning:string;input_warnings?:string[]}|null>(null);
   const [uploadOpen,setUploadOpen]=useState(false);
+  const showUpload=uploadOpen||(!embedded&&forceNewProject);
   const [busy,setBusy]=useState('');
   const [qualityVersion,setQualityVersion]=useState(0);
   const [featureHints,setFeatureHints]=useState<{column:string;risk:string;reasons:string[]}[]>([]);
@@ -196,7 +199,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
   async function startUpload(){
     if(embedded){setError('Import a new dataset from the primary workspace.');return;}
     if(!file)return;setLoading(true);setError('');try{
-    const data=await upload(file);await refreshProjects();await loadProject(data.id);setUploadOpen(false);setFile(null);setNotice("Dataset imported and profiled successfully");
+    const data=await upload(file);await refreshProjects();await loadProject(data.id);setUploadOpen(false);setFile(null);onNewProjectClose?.();setNotice("Dataset imported and profiled successfully");
   }catch(e){setError((e as Error).message)}finally{setLoading(false)}}
   async function startTrain(){
     if(!project||!prep)return;
@@ -320,12 +323,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
       <div className="content po-motion-stage" id="workspace-content" key={`${project?.id??'none'}-${page}`}>
         {busy&&<div className="operation-status" role="status" aria-live="polite"><LoaderCircle size={16} className="spin"/><span>{busy==='train'?'Submitting training experiment…':busy==='select'?'Selecting and validating model…':busy==='predict'?'Computing prediction…':'Working…'}</span></div>}
         {error&&<div className="alert-error"><AlertCircle size={18}/><span>{error}</span><button onClick={()=>setError('')}>Dismiss</button></div>}
-        {((!project&&page!=='ai_settings')||uploadOpen)&&<section className="landing">{project&&<button className="studio-cancel-upload" onClick={()=>setUploadOpen(false)} aria-label="Cancel new dataset">Cancel upload <X size={16}/></button>}<div className="hero-flag"><Sparkles size={16}/> INTELLIGENT DATA SCIENCE</div><h1>Turn raw data into<br/><em>predictive intelligence.</em></h1><p>Upload a dataset, explore its structure, compare machine learning models and build a working prediction tool. All on your own machine.</p>
+        {((!project&&page!=='ai_settings')||showUpload)&&<section className="landing">{project&&<button className="studio-cancel-upload" onClick={()=>{setUploadOpen(false);setFile(null);onNewProjectClose?.()}} aria-label="Cancel new dataset">Cancel upload <X size={16}/></button>}<div className="hero-flag"><Sparkles size={16}/> INTELLIGENT DATA SCIENCE</div><h1>Turn raw data into<br/><em>predictive intelligence.</em></h1><p>Upload a dataset, explore its structure, compare machine learning models and build a working prediction tool. All on your own machine.</p>
           <div className="upload-card"><div className="upload-visual"><UploadCloud size={30}/></div><h3>Start with your dataset</h3><p>CSV or Excel • Up to 40 MB • First worksheet used</p><label className="file-choose"><input type="file" accept=".csv,.xlsx" onChange={(e:any)=>setFile(e.target.files?.[0]??null)}/>{file?file.name:'Choose a file'}</label><button className="btn primary" disabled={!file||loading} onClick={()=>void startUpload()}>{loading?<LoaderCircle className="spin" size={16}/>:<ArrowRight size={16}/>} {loading?'Analysing dataset…':'Analyse dataset'}</button></div>
           <div className="landing-notes"><span><ShieldCheck size={16}/> Files stay on your machine</span><span><Database size={16}/> Real Python ML pipelines</span><span><LockKeyhole size={16}/> Cloud AI requires explicit opt-in</span></div>
         </section>}
-        {page==='ai_settings'&&!uploadOpen&&<AISettings/>}
-        {project&&!uploadOpen&&page!=='ai_settings'&&<>
+        {page==='ai_settings'&&!showUpload&&<AISettings/>}
+        {project&&!showUpload&&page!=='ai_settings'&&<>
           {page!=='overview'&&<div className="heading"><div><div className="eyebrow">PROJECT / {project.name.toUpperCase()}</div><h1>{NAV.find(x=>x.id===page)?.name}</h1><p>{page==='understand'?'Explore the shape, quality and meaning of your uploaded data.':page==='quality'?'Review issues, make safe corrections and restore versions.':page==='explore'?'Investigate distributions, variables and relationships.':page==='assistant'?'Ask questions about verified facts in your dataset.':page==='prepare'?'Review what the model should learn and which features it may use.':page==='model'?'Choose algorithms and run an evidence-based comparison.':page==='evaluate'?'Understand model performance before selecting a prediction pipeline.':page==='deliver'?'Create evidence-backed reports, review saved revisions and export professional PDF or HTML documents.':'Apply your selected model to new observations.'}</p></div><div className="head-label"><FileSpreadsheet size={16}/>{project.filename}</div></div>}
           
           {page==='deliver'&&<ReportWorkspace key={project.id} projectId={project.id} />}
@@ -381,7 +384,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate}:{
         </>}
       </div>
     </main>
-    {project&&!embedded&&!uploadOpen&&page!=='ai_settings'&&<StudioAssistant open={odinOpen} onClose={()=>setOdinOpen(false)} onChat={()=>{setOdinOpen(false);go('assistant')}} scope={page==='overview'?'Home':NAV.find(n=>n.id===page)?.name??'Workspace'}><AIInsight key={project.id+':'+page} projectId={project.id} scope={page==='assistant'?'overview':page} version={qualityVersion} target={target} experimentId={experiment?.id} prediction={prediction} onOpenSettings={()=>{setOdinOpen(false);go('ai_settings')}}/></StudioAssistant>}
+    {project&&!embedded&&!showUpload&&page!=='ai_settings'&&<StudioAssistant open={odinOpen} onClose={()=>setOdinOpen(false)} onChat={()=>{setOdinOpen(false);go('assistant')}} scope={page==='overview'?'Home':NAV.find(n=>n.id===page)?.name??'Workspace'}><AIInsight key={project.id+':'+page} projectId={project.id} scope={page==='assistant'?'overview':page} version={qualityVersion} target={target} experimentId={experiment?.id} prediction={prediction} onOpenSettings={()=>{setOdinOpen(false);go('ai_settings')}}/></StudioAssistant>}
     {notice&&<div className="toast" role="status"><CheckCircle2 size={18}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={()=>setNotice('')}><X size={15}/></button></div>}
     {paletteOpen&&<div className="command-backdrop" onMouseDown={()=>setPaletteOpen(false)}><section className="command-modal" role="dialog" aria-modal="true" aria-label="Search PilotODIN workspaces" onMouseDown={e=>e.stopPropagation()}>
       <div className="command-input-row"><Search size={21}/><input autoFocus aria-label="Search workspaces" placeholder="Where would you like to go?" value={paletteQuery} onChange={e=>setPaletteQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&availableCommands[0])go(availableCommands[0].id)}}/><button className="icon-btn" aria-label="Close command palette" onClick={()=>setPaletteOpen(false)}><X size={17}/></button></div>
