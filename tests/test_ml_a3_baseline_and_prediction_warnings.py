@@ -116,6 +116,43 @@ def test_predictions_warn_for_missing_inputs_unseen_categories_and_uncalibrated_
         engine.predict_one(model,schema,{"HourOfDay":25,"Device":"mobile"})
 
 
+
+def test_real_insurance_hour_and_vehicle_count_rules_apply_to_new_and_legacy_schemas():
+    # The old demo used HourOfDay; actual claims have incident_hour_of_the_day.
+    X = pd.DataFrame({
+        "incident_hour_of_the_day": [2, 12, 22],
+        "number_of_vehicles_involved": [0, 1, 3],
+        "capital-loss": [-11100, -1200, 0],
+    })
+    schema = engine.input_schema(X)
+    by_name = {field["name"]: field for field in schema}
+    assert by_name["incident_hour_of_the_day"]["domain"] == {
+        "min": 0, "max": 23, "integer": True
+    }
+    assert by_name["number_of_vehicles_involved"]["domain"] == {
+        "min": 0, "integer": True
+    }
+    # Signed financial values must not be arbitrarily reclassified as counts.
+    assert by_name["capital-loss"]["domain"] is None
+    model = ProbabilityDummy()
+    valid = {"incident_hour_of_the_day": 12,
+             "number_of_vehicles_involved": 1, "capital-loss": -1200}
+    assert engine.predict_one(model, schema, valid)["prediction"] == "Yes"
+    for hour in (-1, 24, 25, 12.5):
+        with pytest.raises(ValueError, match="incident_hour_of_the_day"):
+            engine.predict_one(model, schema, {**valid, "incident_hour_of_the_day": hour})
+    for count in (-1, 1.5):
+        with pytest.raises(ValueError, match="number_of_vehicles_involved"):
+            engine.predict_one(model, schema, {**valid, "number_of_vehicles_involved": count})
+    # Persisted A3 experiments created before this change may have null
+    # domain metadata: server guards still apply during actual inference.
+    old_schema = [{**field, "domain": None} for field in schema]
+    with pytest.raises(ValueError, match="incident_hour_of_the_day"):
+        engine.predict_one(model, old_schema, {**valid, "incident_hour_of_the_day": 25})
+    with pytest.raises(ValueError, match="number_of_vehicles_involved"):
+        engine.predict_one(model, old_schema, {**valid, "number_of_vehicles_involved": -1})
+
+
 def test_truncated_high_cardinality_vocabulary_never_falsely_claims_unseen_input():
     schema=[{"name":"ZipCode","kind":"text","options":[],
              "observed_categories":400,"category_check_complete":False}]
