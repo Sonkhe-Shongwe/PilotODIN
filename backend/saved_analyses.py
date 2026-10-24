@@ -95,11 +95,12 @@ def save(project_id: str, *, title: str, expected_version: int,
     if version!=expected_version:
         raise SavedAnalysisError('Dataset version changed. Refresh Explore before saving.',409)
     config=_config(x,y,kind,aggregation,bins,correlation_method,filters,color_by)
+    config_json=json.dumps(config,sort_keys=True,allow_nan=False,separators=(',',':'))
     snapshot=capture(frame,version,config)
+    snapshot['configuration_sha256']=hashlib.sha256(config_json.encode('utf-8')).hexdigest()
     canonical=json.dumps(snapshot,sort_keys=True,ensure_ascii=False,allow_nan=False,separators=(',',':'))
     if len(canonical.encode('utf-8'))>MAX_SNAPSHOT_BYTES:
         raise SavedAnalysisError('This analysis is too large to save. Choose a smaller chart or fewer fields.')
-    config_json=json.dumps(config,sort_keys=True,allow_nan=False,separators=(',',':'))
     digest=hashlib.sha256(canonical.encode('utf-8')).hexdigest()
     identity=storage.uid();created_at=storage.now()
     with storage.connect() as conn:
@@ -136,10 +137,17 @@ def load(project_id: str, snapshot_id: str) -> dict:
     checksum=hashlib.sha256(canonical.encode('utf-8')).hexdigest()
     if checksum!=row['sha256']:
         raise SavedAnalysisError('Saved analysis integrity check failed',409)
+    snapshot=json.loads(canonical)
+    configuration_hash=snapshot.get('configuration_sha256')
+    observed_hash=hashlib.sha256(row['configuration_json'].encode('utf-8')).hexdigest()
+    configuration_verified=configuration_hash is not None and configuration_hash==observed_hash
+    if configuration_hash is not None and not configuration_verified:
+        raise SavedAnalysisError('Saved analysis configuration integrity check failed',409)
     current=quality.current_version(project_id)
     return {'id':row['id'],'project_id':project_id,'title':row['title'],
             'dataset_version':row['dataset_version'],'created_at':row['created_at'],
-            'sha256':checksum,'current_dataset_version':current,
+            'sha256':checksum,'configuration_verified':configuration_verified,
+            'current_dataset_version':current,
             'stale':row['dataset_version']!=current,
             'configuration':json.loads(row['configuration_json']),
-            'snapshot':json.loads(canonical)}
+            'snapshot':snapshot}
