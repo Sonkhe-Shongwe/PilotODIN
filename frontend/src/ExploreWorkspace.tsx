@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
-import {Activity, BarChart3, ChevronDown, LoaderCircle, RefreshCw, Sparkles} from 'lucide-react';
-import {get} from './api';
+import {Activity, BarChart3, ChevronDown, LoaderCircle, RefreshCw, Sparkles, Plus, X} from 'lucide-react';
+import {get,post} from './api';
 import './explore-enhancements.css';
 type Column={name:string;kind:'numeric'|'categorical';unique:number;missing:number;missing_pct:number;min?:number;max?:number;mean?:number;median?:number};
 type Overview={version:number;rows:number;missing_cells:number;exact_duplicates:number;columns:Column[]};
@@ -8,6 +8,15 @@ type Plot={version:number;type:string;x:string;y:string|null;aggregation?:string
 type CorrelationCell={x:string;y:string;r:number|null;n:number};
 type Correlation={version:number;method:string;columns:string[];cells:CorrelationCell[];note:string};
 type Finding={category:string;column:string|null;title:string;detail:string};
+type FilterColumn={name:string;kind:'numeric'|'categorical';options?:string[];min?:number;max?:number;missing:number};
+type FilterCatalog={version:number;columns:FilterColumn[];max_filters:number;note:string};
+type FilterClause={column:string;op:'eq'|'range';value?:string;min?:number;max?:number};
+type Workbench={version:number;total_rows:number;filtered_rows:number;overview:Overview;chart:Plot|null;chart_message:string;correlation:Correlation;note:string};
+function filterFor(column:FilterColumn):FilterClause{
+ return column.kind==='numeric'
+  ?{column:column.name,op:'range',min:column.min??0,max:column.max??0}
+  :{column:column.name,op:'eq',value:column.options?.[0]??''};
+}
 type ChartSuggestion={title:string;x:string;y:string|null;kind:string;aggregation:string;reason:string};
 type ExplorePreferences={x:string;y:string;kind:string;aggregation:string};
 const allowedKinds=new Set(['auto','bar','histogram','scatter','line','box']);
@@ -69,6 +78,12 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
   const [bins,setBins]=useState(16);
   const [corrMethod,setCorrMethod]=useState<'pearson'|'spearman'>('pearson');
   const [correlation,setCorrelation]=useState<Correlation|null>(null);
+  const [filterCatalog,setFilterCatalog]=useState<FilterCatalog|null>(null);
+  const [filters,setFilters]=useState<FilterClause[]>([]);
+  const [filterError,setFilterError]=useState('');
+  const [filteredOverview,setFilteredOverview]=useState<Overview|null>(null);
+  const [chartMessage,setChartMessage]=useState('');
+  const [filteredRows,setFilteredRows]=useState<number|null>(null);
   const [corrError,setCorrError]=useState('');
   useEffect(()=>{if(!overview)return;try{localStorage.setItem(preferencesKey(projectId),JSON.stringify({x,y,kind,aggregation}))}catch{/* Project evidence is stored in the backend, not here. */}},[projectId,x,y,kind,aggregation,overview]);
   const [plot,setPlot]=useState<Plot|null>(null);const [error,setError]=useState('');const [loading,setLoading]=useState(false);
@@ -82,24 +97,52 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
           if(goodCategory&&measure)setY(measure.name);
           if(measure&&measure.mean!==undefined&&measure.median!==undefined&&Math.abs(measure.mean-measure.median)>Math.max(Math.abs(measure.median)*.4,1))setAggregation('median');
         }}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[projectId,versionToken]);
-  useEffect(()=>{if(!x)return;let live=true;setLoading(true);setError('');if(kind==='scatter'&&(overview?.columns.find(c=>c.name===x)?.kind!=='numeric'||overview?.columns.find(c=>c.name===y)?.kind!=='numeric'||x===y)){setLoading(false);setPlot(null);return;}
-    const params=new URLSearchParams({x,kind,aggregation});if(y&&kind!=='histogram'&&kind!=='box')params.set('y',y);if(kind==='histogram')params.set('bins',String(bins));
-    get<Plot>(`/projects/${projectId}/explore/chart?${params}`).then(p=>{if(live)setPlot(p)}).catch(e=>{if(live){setError(e.message);setPlot(null)}}).finally(()=>{if(live)setLoading(false)});
-    return()=>{live=false};
-  },[projectId,x,y,kind,aggregation,bins,versionToken,overview]);
   useEffect(()=>{
-    let active=true;setCorrelation(null);setCorrError('');
-    get<Correlation>(`/projects/${projectId}/explore/correlation?method=${corrMethod}`)
-      .then(value=>{if(active)setCorrelation(value)})
-      .catch(e=>{if(active)setCorrError((e as Error).message)});
+    let active=true;setFilterCatalog(null);setFilters([]);setFilterError('');
+    get<FilterCatalog>(`/projects/${projectId}/explore/filter-options`)
+      .then(value=>{if(active)setFilterCatalog(value)})
+      .catch(e=>{if(active)setFilterError((e as Error).message)});
     return()=>{active=false};
-  },[projectId,versionToken,corrMethod]);
+  },[projectId,versionToken]);
+  useEffect(()=>{
+    if(!x||!overview||!filterCatalog)return;
+    if(overview.version!==filterCatalog.version){
+      setError('Dataset version changed while loading filters. Refresh Explore.');
+      return;
+    }
+    if(kind==='scatter'&&(overview.columns.find(c=>c.name===x)?.kind!=='numeric'||overview.columns.find(c=>c.name===y)?.kind!=='numeric'||x===y)){
+      setPlot(null);setCorrelation(null);setLoading(false);return;
+    }
+    let live=true;setLoading(true);setError('');setCorrError('');setChartMessage('');
+    setPlot(null);setCorrelation(null);setFilteredOverview(null);setFilteredRows(null);
+    post<Workbench>(`/projects/${projectId}/explore/workbench`,{
+      expected_version:overview.version,filters,x,y:y&&kind!=='histogram'&&kind!=='box'?y:null,
+      kind,aggregation,bins,correlation_method:corrMethod
+    }).then(value=>{
+      if(!live)return;
+      if(value.version!==overview.version){setError('Dataset changed. Refresh Explore.');return;}
+      setPlot(value.chart);setChartMessage(value.chart_message);
+      setCorrelation(value.correlation);setFilteredOverview(value.overview);
+      setFilteredRows(value.filtered_rows);
+    }).catch(e=>{if(live){setError((e as Error).message);setCorrError('Filtered correlation unavailable');setPlot(null)}})
+      .finally(()=>{if(live)setLoading(false)});
+    return()=>{live=false};
+  },[projectId,x,y,kind,aggregation,bins,versionToken,overview,filterCatalog,filters,corrMethod]);
   const cols=overview?.columns??[];const numerical=cols.filter(c=>c.kind==='numeric');
   const selectedX=cols.find(c=>c.name===x);
   const selectedY=cols.find(c=>c.name===y);
   const scatterReady=numerical.length>=2;
   const canScatter=selectedX?.kind==='numeric'&&selectedY?.kind==='numeric'&&x!==y;
   const chartWarning=kind==='scatter'&&!canScatter?'Scatter charts require two different numeric columns. Choose numeric X and Y fields.':'';
+  const statOverview=filteredOverview??(filters.length?null:overview);
+  const filterColumns=filterCatalog?.columns??[];
+  function addFilter(){
+    const available=filterColumns.find(c=>!filters.some(f=>f.column===c.name));
+    if(available)setFilters(current=>[...current,filterFor(available)]);
+  }
+  function changeFilter(index:number,next:FilterClause){
+    setFilters(current=>current.map((item,i)=>i===index?next:item));
+  }
   function changeKind(next:string){
     if(next==='scatter'){
       if(!scatterReady)return;
@@ -115,13 +158,27 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
 
   return <div className="explore-page">
     <section className="quality-banner"><div><div className="eyebrow">EXPLORATION STUDIO</div><h2>Find the story in your data</h2><p>Explore distributions and relationships directly from the current, approved working dataset. No model training needed.</p></div><span className="pill">VERSION {overview?.version??'—'}</span></section>
-    <div className="quality-stats"><div><small>RECORDS</small><strong>{overview?format(overview.rows):'—'}</strong></div><div><small>FIELDS</small><strong>{cols.length||'—'}</strong></div><div><small>MISSING CELLS</small><strong>{overview?format(overview.missing_cells):'—'}</strong></div><div><small>EXACT DUPLICATES</small><strong>{overview?format(overview.exact_duplicates):'—'}</strong></div></div>
+    <div className="quality-stats"><div><small>{filters.length?'FILTERED RECORDS':'RECORDS'}</small><strong>{statOverview?format(statOverview.rows):'—'}</strong></div><div><small>FIELDS</small><strong>{statOverview?format(statOverview.columns.length):'—'}</strong></div><div><small>MISSING CELLS</small><strong>{statOverview?format(statOverview.missing_cells):'—'}</strong></div><div><small>EXACT DUPLICATES</small><strong>{statOverview?format(statOverview.exact_duplicates):'—'}</strong></div></div>
+    <section className="panel po-filter-panel" aria-label="Linked Explore filters">
+      <div className="panel-title"><BarChart3 size={18}/><h2>Linked analytical filters</h2><span className="pill muted">DATASET v{filterCatalog?.version??'—'}</span></div>
+      <p className="body-muted">Combine up to four filters. Chart, statistics and correlation recalculate together from one approved data snapshot. No corrections are applied.</p>
+      <div className="po-filter-toolbar"><button type="button" className="btn" onClick={addFilter} disabled={!filterColumns.some(c=>!filters.some(f=>f.column===c.name))||filters.length>=4}><Plus size={15}/> Add filter</button><button type="button" className="btn" disabled={!filters.length} onClick={()=>setFilters([])}>Clear filters</button><span role="status">{filteredRows===null&&loading?'Calculating linked results…':filteredRows===null?'':`${format(filteredRows)} of ${format(overview?.rows??0)} records`}</span></div>
+      {filterError&&<p className="alert-error" role="alert">{filterError}</p>}
+      <div className="po-filter-rows">{filters.map((clause,i)=>{const column=filterColumns.find(c=>c.name===clause.column);return <div className="po-filter-row" key={clause.column}>
+        <label>Filter field<select className="input" value={clause.column} onChange={e=>{const next=filterColumns.find(c=>c.name===e.target.value);if(next)changeFilter(i,filterFor(next))}}>{filterColumns.filter(c=>c.name===clause.column||!filters.some(f=>f.column===c.name)).map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select></label>
+        {column?.kind==='categorical'?<label>Equals<select className="input" value={clause.value??''} onChange={e=>changeFilter(i,{...clause,value:e.target.value})}>{column.options?.map(value=><option key={value} value={value}>{value}</option>)}</select></label>
+        :<><label>Minimum<input className="input" type="number" aria-label={`Minimum ${clause.column}`} value={clause.min??''} onChange={e=>changeFilter(i,{...clause,min:e.target.value===''?undefined:Number(e.target.value)})}/></label><label>Maximum<input className="input" type="number" aria-label={`Maximum ${clause.column}`} value={clause.max??''} onChange={e=>changeFilter(i,{...clause,max:e.target.value===''?undefined:Number(e.target.value)})}/></label></>}
+        <button type="button" className="po-filter-remove" aria-label={`Remove filter for ${clause.column}`} title="Remove filter" onClick={()=>setFilters(current=>current.filter((_,j)=>j!==i))}><X size={16}/></button>
+      </div>})}</div>
+      {filters.length===0&&<p className="muted-caption">All records are currently included. Add a filter to focus this analysis.</p>}
+      <p className="muted-caption">Recommendations and proactive insights below describe the full working dataset; filtered calculations are identified above.</p>
+    </section>
     {suggestions.length>0&&<section className="panel"><div className="panel-title"><Sparkles size={18}/><h2>Recommended investigations</h2><span className="pill muted">LOCAL EVIDENCE</span></div><div className="recommend-grid">{suggestions.slice(0,6).map((r,i)=><button key={i} className="recommend-card" onClick={()=>{setX(r.x);setY(r.y??'');setKind(r.kind);setAggregation(r.aggregation)}}><strong>{r.title}</strong><small>{r.reason}</small><span>Open chart →</span></button>)}</div></section>}
     <section className="panel"><div className="panel-title"><BarChart3 size={19}/><h2>Interactive chart builder</h2><span className="pill muted">COMPUTED LOCALLY</span></div>
       <div className="chart-controls"><label>Chart type<select className="input" value={kind} onChange={(e:any)=>changeKind(e.target.value)}><option value="auto">Automatic</option><option value="bar">Bar / categories</option><option value="histogram">Histogram</option><option value="scatter" disabled={!scatterReady}>Scatter · two numeric columns</option><option value="line">Line / trend</option><option value="box">Box summary</option></select></label><label>X variable<select className="input" value={x} onChange={(e:any)=>changeX(e.target.value)}>{cols.map(c=><option key={c.name}>{c.name}</option>)}</select></label>{kind!=='histogram'&&kind!=='box'&&<label>Y variable<select className="input" value={y} onChange={(e:any)=>setY(e.target.value)}><option value="">None · record frequency</option>{numerical.filter(c=>c.name!==x).map(c=><option key={c.name}>{c.name}</option>)}</select></label>}{!['histogram','box','scatter'].includes(kind)&&<label>Aggregation<select className="input" value={aggregation} onChange={(e:any)=>setAggregation(e.target.value)}>{['mean','sum','median','count'].map(a=><option key={a} value={a}>{a}</option>)}</select></label>}{kind==='histogram'&&<label>Histogram bins<select className="input" value={bins} onChange={e=>setBins(Number(e.target.value))}>{[8,12,16,24,32].map(n=><option key={n} value={n}>{n} bins</option>)}</select></label>}</div>
       {chartWarning&&<div className="mini-info warn-icon" role="status">{chartWarning}</div>}
       {error&&<div className="alert-error"><Activity size={16}/>{error}</div>}
-      {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating chart…</div>:plot&&<><h3 className="chart-title">{plot.type==='bar'&&plot.aggregation==='count'?(plot.y?`Count of non-missing ${plot.y} by ${plot.x}`:`Record count by ${plot.x}`):`${plot.x}${plot.y?` vs ${plot.y}`:''} · ${plot.type}`}</h3><Viz plot={plot}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
+      {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating linked results…</div>:chartMessage?<p className="body-muted" role="status">{chartMessage}</p>:plot&&<><h3 className="chart-title">{plot.type==='bar'&&plot.aggregation==='count'?(plot.y?`Count of non-missing ${plot.y} by ${plot.x}`:`Record count by ${plot.x}`):`${plot.x}${plot.y?` vs ${plot.y}`:''} · ${plot.type}`}</h3><Viz plot={plot}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
     </section>
     <section className="panel po-correlation-panel"><div className="panel-title"><BarChart3 size={19}/><h2>Correlation heatmap</h2><span className="pill muted">VERIFIED LOCAL CALCULATION</span></div>
       <p className="body-muted">Compare numeric relationships. Click any off-diagonal cell to open its scatter plot. IDs and obvious identifiers are excluded.</p>
@@ -132,7 +189,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
         <div className="po-correlation-axis">Variable ↓ / →</div>{correlation.columns.map(name=><div className="po-correlation-axis" key={`head-${name}`} title={name}>{name}</div>)}
         {correlation.columns.map(row=><div className="po-correlation-row" key={row} style={{display:'contents'}}><div className="po-correlation-axis" title={row}>{row}</div>{correlation.columns.map(column=>{const c=correlation.cells.find(item=>item.x===column&&item.y===row);const r=c?.r??null;const allowed=row!==column&&r!==null;return <button type="button" key={column} className="po-correlation-cell" disabled={!allowed} style={correlationTone(r)} title={`${row} vs ${column}: ${r===null?'Unavailable':r.toFixed(3)} (n=${c?.n??0})`} aria-label={`${row} versus ${column}: correlation ${r===null?'unavailable':r.toFixed(3)}, ${c?.n??0} valid pairs`} onClick={()=>{setX(column);setY(row);setKind('scatter')}}>{r===null?'—':r.toFixed(2)}</button>})}</div>)}
       </div></div>}
-      <p className="muted-caption">{correlation?.note??'Calculating eligible pairwise relationships…'} Correlations are descriptive, not causal.</p>
+      <p className="muted-caption">{correlation?.note??(loading?'Calculating filtered correlations…':'Correlation unavailable for this selection.')} Correlations are descriptive, not causal.</p>
     </section>
     <div className="explore-columns"><section className="panel"><div className="panel-title"><Sparkles size={18}/><h2>Proactive insights</h2></div>{findings.length?findings.map((f,i)=><button className="insight-item" key={i} onClick={()=>{if(f.column){setX(f.column);setY('');setKind('auto')}}}><span className="insight-bullet"/><span><b>{f.title}</b><small>{f.detail}</small></span><ChevronDown size={15}/></button>):<p className="body-muted">No structural or distribution warnings detected. Explore combinations to investigate further.</p>}</section>
       <section className="panel"><div className="panel-title"><Activity size={18}/><h2>Column statistics</h2></div><div className="table-scroll"><table><thead><tr><th>FIELD</th><th>TYPE</th><th>UNIQUE</th><th>MISSING</th></tr></thead><tbody>{cols.map(c=><tr key={c.name} onClick={()=>{setX(c.name);setY('');setKind('auto')}} className="clickable-row"><td className="cell-strong">{c.name}</td><td>{c.kind}</td><td>{format(c.unique)}</td><td>{c.missing_pct}%</td></tr>)}</tbody></table></div><p className="muted-caption">Click a column to explore it. Descriptive statistics do not establish causation.</p></section></div>
