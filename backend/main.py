@@ -498,6 +498,7 @@ class ExploreInspectSelection(BaseModel):
     label: str | None = Field(default=None, max_length=2048)
     bin_index: int | None = Field(default=None, ge=0)
     row_ref: int | None = Field(default=None, ge=0)
+    value: float | None = Field(default=None, allow_inf_nan=False)
 
 
 class ExploreInspectRequest(ExploreWorkbenchRequest):
