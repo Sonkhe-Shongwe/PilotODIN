@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {Activity, BarChart3, ChevronDown, LoaderCircle, RefreshCw, Sparkles, Plus, X} from 'lucide-react';
 import {get,post} from './api';
 import './explore-enhancements.css';
@@ -88,6 +88,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
   const [chartMessage,setChartMessage]=useState('');
   const [filteredRows,setFilteredRows]=useState<number|null>(null);
   const [selection,setSelection]=useState<ChartSelection|null>(null);
+  const inspectorRef=useRef<HTMLElement|null>(null);
   const [inspection,setInspection]=useState<InspectorResponse|null>(null);
   const [inspectOffset,setInspectOffset]=useState(0);
   const [inspectError,setInspectError]=useState('');
@@ -136,6 +137,16 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
       .finally(()=>{if(live)setLoading(false)});
     return()=>{live=false};
   },[projectId,x,y,kind,aggregation,bins,versionToken,overview,filterCatalog,filters,corrMethod]);
+  // Bring the newly opened inspector into view immediately, even while rows load.
+  // Honour OS reduced-motion settings and never scroll again during pagination.
+  useLayoutEffect(()=>{
+    if(!selection)return;
+    const panel=inspectorRef.current;
+    if(!panel)return;
+    const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    panel.focus({preventScroll:true});
+    panel.scrollIntoView({behavior:reducedMotion?'auto':'smooth',block:'start',inline:'nearest'});
+  },[selection]);
   // Chart selections and their row references never survive filters, version
   // changes or a new chart configuration. No selection is persisted as an ID.
   useEffect(()=>{
@@ -207,7 +218,7 @@ export function ExploreWorkspace({projectId,versionToken}:{projectId:string;vers
       {error&&<div className="alert-error"><Activity size={16}/>{error}</div>}
       {loading?<div className="chart-loading"><LoaderCircle size={20} className="spin"/> Calculating linked results…</div>:chartMessage?<p className="body-muted" role="status">{chartMessage}</p>:plot&&<><h3 className="chart-title">{plot.type==='bar'&&plot.aggregation==='count'?(plot.y?`Count of non-missing ${plot.y} by ${plot.x}`:`Record count by ${plot.x}`):`${plot.x}${plot.y?` vs ${plot.y}`:''} · ${plot.type}`}</h3><Viz plot={plot} onSelect={choice=>{setSelection(choice);setInspectOffset(0)}}/><p className="muted-caption">{plot.note}{plot.sampled?' Points or groups have been sampled for responsiveness.':''}{plot.truncated?' Showing the 30 most frequent groups.':''}</p></>}
     </section>
-    {selection&&<section className="panel po-record-inspector" aria-label="Selected chart records">
+    {selection&&<section key={JSON.stringify(selection)} ref={inspectorRef} tabIndex={-1} className="panel po-record-inspector" aria-label="Selected chart records">
       <div className="panel-title"><BarChart3 size={18}/><h2>Underlying records</h2><span className="pill muted">READ-ONLY LOCAL PREVIEW</span><button type="button" className="po-inspect-dismiss" onClick={()=>{setSelection(null);setInspection(null)}} aria-label="Close chart record inspector"><X size={17}/></button></div>
       <p className="body-muted">Only rows matching your clicked chart element and current filters are displayed. No changes are made to the source.</p>
       {inspectLoading&&<p role="status">Retrieving selected records…</p>}
