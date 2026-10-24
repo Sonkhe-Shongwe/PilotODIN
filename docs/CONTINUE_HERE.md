@@ -23,6 +23,10 @@ They are **product proposals, not implemented phases**. The second initiative is
 
 Read both linked research documents for the precise distinction between selecting the output (human) and selecting input features (usually automated).
 
+## New Predict Studio functional evidence & targeted validation patch (24 October 2026)
+
+Owner's insurance claims Predict Studio screenshots visibly displayed **missing-input training-fitted imputation warnings**, **out-of-training-range warnings** for deliberately extreme values, and an **82.0% held-out performance reference**. The exact prediction class/probabilities were not visible in the submitted crop. Source audit found that `HourOfDay` strict numeric checks did not recognise the real input `incident_hour_of_the_day`. The backend now recognises exactly that alias and `number_of_vehicles_involved` as a nonnegative integral count; a focused regression test also covers pre-change saved schemas. **This source patch is not Windows-tested yet**, so A3's final invalid-value and reopen/persistence acceptance remain open. No automatic blanket bounds were added to unusual financial amounts.
+
 ## Current engineering status — do not overclaim
 
 | Scope | What exists | Actual validation |
