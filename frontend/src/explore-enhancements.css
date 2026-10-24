@@ -65,14 +65,7 @@
 @media(prefers-reduced-motion:reduce){.po-inspect-point{transition:none}}
 
 
-/* Bring a selected chart's records into view and briefly confirm arrival.
-   Prefer reduced motion on systems that request it. */
-.po-record-inspector{scroll-margin-top:24px;animation:po-inspector-arrival .85s ease-out both}
+/* Navigation easing belongs to revealRecordInspector.ts. Avoid a competing
+   arrival flash that begins before the panel reaches the viewport. */
+.po-record-inspector{scroll-margin-top:28px}
 .po-record-inspector:focus-visible{outline:2px solid #6e5de9;outline-offset:3px}
-@keyframes po-inspector-arrival{
-  from{box-shadow:0 0 0 5px rgba(111,92,232,.22)}
-  to{box-shadow:0 0 0 0 rgba(111,92,232,0)}
-}
-@media(prefers-reduced-motion:reduce){
-  .po-record-inspector{animation:none}
-}
