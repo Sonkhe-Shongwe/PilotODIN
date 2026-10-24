@@ -16,6 +16,12 @@
 
 They are **product proposals, not implemented phases**. The second initiative is a distinct subsystem enabling Master Data Scientist, sharing data understanding/quality infrastructure with Master Analyst. Read the [full research blueprint](./MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md), including agreed direction vs unresolved design choices. No new autonomy code was authored in this discussion.
 
+## Confirmed design decision — preferred target belongs to the user
+
+**Decision recorded 24 October 2026:** PilotODIN should automatically discover, evaluate, rank and explain meaningful target suggestions, but **the user must explicitly select the preferred target/output variable before any supervised training begins**. The user can choose a lower-ranked eligible option; critical validity/leakage risks still require resolution. After selection, Master Data Scientist automates predictor/input-feature preparation, split and model selection, evaluation and reporting, subject to review gates. This research decision is **documented, not coded or tested**.
+
+Read both linked research documents for the precise distinction between selecting the output (human) and selecting input features (usually automated).
+
 ## Current engineering status — do not overclaim
 
 | Scope | What exists | Actual validation |
