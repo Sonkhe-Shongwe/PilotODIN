@@ -65,6 +65,9 @@ export function UnifiedShell(){
  });
  const [projectId,setProjectId]=useState(localStorage.getItem('pilotodin-current')||'');
  const [projects,setProjects]=useState<ProjectListItem[]>([]);
+ // Do not mount data-fetching workspaces until the saved project ID is checked
+ // against this environment's catalogue. Live dev intentionally has isolated data.
+ const [catalogState,setCatalogState]=useState<'loading'|'ready'|'failed'>('loading');
  const [openTabs,setOpenTabs]=useState<View[]>(()=>readTabs(localStorage.getItem('pilotodin-current')||''));
  const [dock,setDock]=useState<DockLayout>(()=>readDock(localStorage.getItem('pilotodin-current')||''));
  const [restoredFor,setRestoredFor]=useState<string|null>(null);
@@ -76,6 +79,7 @@ export function UnifiedShell(){
   try{
    const rows=await get<ProjectListItem[]>('/projects');
    setProjects(rows);
+   setCatalogState('ready');
    const latest=localStorage.getItem('pilotodin-current')||'';
    if(shouldClearUnavailableProject(selectedAtRequestStart,latest,rows)){
     localStorage.removeItem('pilotodin-current');
@@ -85,7 +89,11 @@ export function UnifiedShell(){
    }else{
     setWarning('');
    }
-  }catch(e){setWarning('Project list unavailable: '+(e as Error).message)}
+  }catch(e){
+   // A later transient catalogue failure must not destroy an already open view.
+   setCatalogState(previous=>previous==='ready'?'ready':'failed');
+   setWarning('Project list unavailable: '+(e as Error).message);
+  }
  },[]);
  useEffect(()=>{void refreshProjects()},[refreshProjects]);
  useEffect(()=>{
@@ -170,7 +178,7 @@ export function UnifiedShell(){
   try{localStorage.setItem(SIDEBAR_KEY,next)}
   catch{setWarning('Sidebar preference could not be saved. It still works this session.')}
  };
- const canSplit=!!projectId&&dock.secondary!==null;
+ const canSplit=!!projectId&&catalogState==='ready'&&dock.secondary!==null;
  const separate=canSplit&&active!==dock.secondary;
  const paneStyle={'--po-secondary-fraction':`${Math.round(clampFraction(dock.fraction)*10000)/100}%`} as CSSProperties;
  return <div className="po-unified-shell">
@@ -208,7 +216,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" aria-label={`${labelFor(active)} workspace`}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {active==='investigate'?<InvestigationCanvas/>:<App/>}
+       {catalogState==='ready'?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':'Project catalogue unavailable'}</strong><p>{catalogState==='failed'?warning:'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {canSplit&&<>
