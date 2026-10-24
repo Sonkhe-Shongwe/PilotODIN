@@ -1,6 +1,7 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {BookOpen,Check,History,LoaderCircle,Save,ShieldCheck,ArrowRight} from 'lucide-react';
 import {get,post} from './api';
+import {revealWorkspaceSection} from './revealRecordInspector';
 import './saved-explore-analyses.css';
 
 export type ExploreState={
@@ -28,13 +29,27 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
  const [busy,setBusy]=useState<'save'|'open'|''>('');
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
+ const frozenRef=useRef<HTMLDivElement|null>(null);
+ const [openRevealSequence,setOpenRevealSequence]=useState(0);
 
  useEffect(()=>{
-  let active=true;setList([]);setSelected(null);setTitle('');setError('');setNotice('');
+  let active=true;setList([]);setSelected(null);setOpenRevealSequence(0);setTitle('');setError('');setNotice('');
   get<SavedSummary[]>(`/projects/${projectId}/explore/saved`).then(result=>{if(active)setList(result)})
    .catch(e=>{if(active)setError((e as Error).message)});
   return()=>{active=false};
  },[projectId,version]);
+
+ // Navigation belongs to an explicit Open action, not a Save or initial render.
+ // React commits the frozen detail first; a frame then measures the correct
+ // scrollable pane (full workspace or docked), with user interruption support.
+ useLayoutEffect(()=>{
+  if(!openRevealSequence||!selected)return;
+  let cancel:()=>void=()=>{};
+  const frame=window.requestAnimationFrame(()=>{
+   if(frozenRef.current)cancel=revealWorkspaceSection(frozenRef.current);
+  });
+  return()=>{window.cancelAnimationFrame(frame);cancel()};
+ },[openRevealSequence,selected?.id]);
 
  async function saveCurrent(){
   if(!ready||version===null||!title.trim())return;
@@ -54,6 +69,7 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
    const saved=await get<SavedAnalysis>(`/projects/${projectId}/explore/saved/${encodeURIComponent(id)}`);
    if(saved.project_id!==projectId)throw new Error('Saved analysis belongs to another project');
    setSelected(saved);
+   setOpenRevealSequence(n=>n+1);
    if(saved.configuration_verified&&!saved.stale&&saved.dataset_version===version){
      onRestore(saved.configuration);
      setNotice('Saved configuration restored to the current Explore workbench.');
@@ -76,10 +92,10 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
    <div><h3><History size={17}/> Saved investigation library</h3><p className="muted-caption">{list.length} recent saved analyses for this project.</p></div>
    {list.length?<div className="po-saved-items">{list.map(item=><div className="po-saved-item" key={item.id}>
       <div><strong>{item.title}</strong><small>Dataset v{item.dataset_version} · {new Date(item.created_at).toLocaleString()}</small><span className={item.stale||!item.results_valid||!item.configuration_verified?'po-saved-stale':'po-saved-current'}>{item.results_valid===false?'Integrity error · unavailable':item.configuration_verified===false?'Legacy · settings unverified':item.stale?'Historical verified version':'Current verified version'}</span></div>
-      <button type="button" className="btn" disabled={busy!==''||item.results_valid===false} onClick={()=>void openSaved(item.id)}>{busy==='open'?<LoaderCircle size={14} className="spin"/>:'Open'}</button>
+      <button type="button" className="btn" disabled={busy!==''||item.results_valid===false} aria-label={`Open ${item.title} and jump to saved history`} onClick={()=>void openSaved(item.id)}>{busy==='open'?<LoaderCircle size={14} className="spin"/>:'Open'}</button>
    </div>)}</div>:<p className="body-muted">No saved analyses yet. Name your current investigation and save it to this project.</p>}
   </div>
-  {selected&&<div className="po-saved-frozen" aria-label="Saved analytical evidence">
+  {selected&&<div className="po-saved-frozen" ref={frozenRef} tabIndex={-1} aria-label={`Saved history: ${selected.title}`}>
     <div className="po-saved-frozen-title"><ShieldCheck size={18}/><strong>{selected.title}</strong><span className={selected.stale?'po-saved-stale':'po-saved-current'}>{!selected.configuration_verified?'LEGACY · UNVERIFIED SETTINGS':selected.stale?'HISTORICAL SNAPSHOT':'VERIFIED SNAPSHOT'}</span></div>
     {onSendToDeliver&&<button type="button" className="btn po-saved-deliver" disabled={busy!==''||!selected.configuration_verified} onClick={()=>onSendToDeliver(selected.id)}><ArrowRight size={15}/> Use verified evidence in Deliver</button>}
     <p className="body-muted">{!selected.configuration_verified?'Saved numerical results have an integrity checksum, but their associated settings have no cryptographic binding. This legacy snapshot can only be read here.':selected.stale?'This evidence belongs to an older approved dataset version. Its results are frozen and were not recalculated on the current data.':'The saved configuration is available in Explore. Its evidence below is the original verified, frozen result.'}</p>
