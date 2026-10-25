@@ -13,6 +13,7 @@ import traceback
 import hmac
 from fastapi.responses import JSONResponse, FileResponse, Response
 from pathlib import Path
+from typing import Literal
 
 import joblib
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Query, Request
@@ -21,9 +22,9 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
+    from . import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports
+    import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -700,6 +701,30 @@ def _local_request(request:Request):
     host=request.url.hostname
     if host not in ('localhost','127.0.0.1','testserver'):
         raise HTTPException(status_code=403,detail='Local access only')
+
+
+class ResourcePolicyRequest(BaseModel):
+    mode: Literal["adaptive", "low_memory", "performance"]
+
+
+@app.get('/api/resource/status')
+def resource_status(request: Request):
+    # Protect preference metadata with the same local-only trust boundary
+    # as the existing settings controls, including session-auth desktop.
+    _local_request(request)
+    return resource_policy.status()
+
+
+@app.put('/api/resource/policy')
+def update_resource_policy(body: ResourcePolicyRequest, request: Request):
+    _local_request(request)
+    try:
+        resource_policy.save_policy(body.mode)
+    except OSError as exc:
+        logging.exception("Could not persist local resource policy")
+        raise HTTPException(status_code=500,
+                            detail="Could not save resource settings. Existing settings were not replaced.") from exc
+    return resource_policy.status()
 
 
 @app.get('/api/ai/settings')
