@@ -53,6 +53,7 @@ A3 = (
     "test_build_d_unified_journey.py",
 )
 A4_READINESS = (
+    "test_a4_model_evidence_reports.py",
     "test_build_e_cleaned_exports.py",
     "test_build_e_approval_receipts.py",
 )
