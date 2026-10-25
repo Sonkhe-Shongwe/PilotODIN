@@ -1,5 +1,7 @@
 # PilotODIN P1 entry and early E2 bounded feasibility
 
+> **Historical progression note:** P1 failed-import recovery has since **passed 4/4 owner Windows tests**; E2 remains UNDETERMINED; current Resource-Aware Mode code and next verification are in [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md). Older "awaiting run" and "next action" paragraphs below describe prior checkpoints, not present blockers.
+
 **Scope:** The owner confirmed the one-session P0 A2/A3 interface flow "everything works fine" after an owner-uploaded **117/117 frontend + 174/174 backend** consolidated PASS. P0 is accepted for the observed **development** analysis journeys; the working-tree had uncommitted files and this is not clean-install/offline/release certification. Existing native DEV ONLY PDF Save As/HTML/Cancel is separately accepted.
 
 ## P1-1 import recovery — implemented in source, awaiting one local regression run
