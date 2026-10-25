@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
+from itertools import islice
 
 MAX_SCANNED_HEADERS = 100
 MAX_HEADER_FLAGS = 5
@@ -18,7 +19,7 @@ _AFTER_CUE = re.compile(
     r"at (?:case )?closure)\b", re.IGNORECASE
 )
 _LABEL_CUE = re.compile(
-    r"\b(?:suspected?|alleged|unverified|reported|self[- ]reported|"
+    r"\b(?:suspect(?:ed)?|alleged|unverified|reported|self[- ]reported|"
     r"estimated|proxy|flagged)\b", re.IGNORECASE
 )
 _UNCLEAR_SOURCE = re.compile(
@@ -54,7 +55,9 @@ def review_prediction_context(
     columns: Iterable[str], target_column: str, user_context: dict | None
 ) -> dict:
     """Return conservative review cues only; no change to target eligibility."""
-    headers = [str(name) for name in columns][:MAX_SCANNED_HEADERS]
+    sample = [str(name) for name in islice(columns, MAX_SCANNED_HEADERS + 1)]
+    truncated_scan = len(sample) > MAX_SCANNED_HEADERS
+    headers = sample[:MAX_SCANNED_HEADERS]
     header_flags = []
     seen = 0
     for name in headers:
@@ -90,7 +93,7 @@ def review_prediction_context(
         "timing_cue": timing_cue,
         "label_cue": label_cue,
         "header_flags": header_flags,
-        "header_review_incomplete": seen > MAX_HEADER_FLAGS or len(headers) >= MAX_SCANNED_HEADERS,
+        "header_review_incomplete": seen > MAX_HEADER_FLAGS or truncated_scan,
         "questions": list(_CHECKPOINT_QUESTIONS),
         "note": (
             "Text and field names are not evidence that a predictor existed at decision time "

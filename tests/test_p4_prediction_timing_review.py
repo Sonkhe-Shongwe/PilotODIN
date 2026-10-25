@@ -58,6 +58,14 @@ def test_header_only_flags_are_bounded_and_exclude_the_target():
     assert all(flag["column"]!="fraud_reported" for flag in out["header_flags"])
 
 
+def test_headers_beyond_bounded_scan_are_not_implicitly_cleared():
+    headers = ["churn"] + [f"feature_{i}" for i in range(99)] + ["final_outcome_beyond_limit"]
+    review = target_timing_review.review_prediction_context(headers, "churn", _context())
+    assert review["header_review_incomplete"] is True
+    assert review["header_flags"] == []
+    assert review["safe_to_train_automatically"] is False
+
+
 def test_existing_target_screening_not_changed_by_new_review():
     frame=pd.DataFrame({
         "fraud_reported":["Y","N"]*40,
