@@ -72,6 +72,73 @@ def new_experiment(pid, config):
     return eid
 
 
+
+class TrainingSlotBusy(RuntimeError):
+    """A queued or running experiment already owns the constrained ML slot."""
+
+
+def new_experiment_with_capacity(pid, config):
+    """Atomically reserve the one NEW heavy-training slot in Low-memory mode.
+
+    Uses SQLite BEGIN IMMEDIATE across connections so competing FastAPI
+    requests cannot both observe the same empty queue and insert a job.
+    The busy path writes no new experiment; existing work is left intact.
+    All projects share a single constrained slot on this local workstation.
+    """
+    eid = uid()
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        busy = con.execute(
+            "SELECT id FROM experiments WHERE status IN ('queued','running') LIMIT 1"
+        ).fetchone()
+        if busy is not None:
+            raise TrainingSlotBusy("Another ML training operation is queued or running.")
+        con.execute(
+            "INSERT INTO experiments (id,project_id,status,config,created_at) VALUES (?,?,?,?,?)",
+            (eid,pid,"queued",json.dumps(config),now()),
+        )
+    return eid
+
+
+def claim_queued_experiment(eid):
+    """Only a genuinely queued worker can become running (compare-and-set)."""
+    with connect() as con:
+        changed=con.execute(
+            "UPDATE experiments SET status='running' WHERE id=? AND status='queued'",
+            (eid,),
+        )
+        return changed.rowcount == 1
+
+
+def finish_running_experiment(eid, status, *, results=None, error=None):
+    """Never overwrite a completed, interrupted or otherwise terminal run."""
+    if status not in ("completed", "failed"):
+        raise ValueError("Only terminal ML statuses are accepted")
+    with connect() as con:
+        changed=con.execute(
+            "UPDATE experiments SET status=?, results=?, error=? "
+            "WHERE id=? AND status='running'",
+            (status,json.dumps(results) if results is not None else None,error,eid),
+        )
+        return changed.rowcount == 1
+
+
+def recover_interrupted_experiments():
+    """At a fresh backend startup, abandoned queued/running work cannot resume.
+
+    No unfinished run is reported as complete. New experiments require a
+    user action and fresh validation; no model artifact is automatically used.
+    This is a single-process lifecycle recovery step, not a distributed lock.
+    """
+    with connect() as con:
+        changed=con.execute(
+            "UPDATE experiments SET status='failed', results=NULL, "
+            "error='Training interrupted by application restart. Review and start a new experiment.' "
+            "WHERE status IN ('queued','running')"
+        )
+        return changed.rowcount
+
+
 def get_experiment(eid):
     with connect() as con:
         r=con.execute("SELECT * FROM experiments WHERE id=?",(eid,)).fetchone()
