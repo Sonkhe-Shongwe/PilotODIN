@@ -103,6 +103,19 @@ def test_text_identifiers_empty_and_constant_labels_never_get_reviewable_shortli
     assert blocked["status"]["technical_status"]=="blocked"
 
 
+def test_derived_scores_and_probabilities_are_not_treated_as_true_outcomes():
+    data=pd.DataFrame({
+        "fraud_score":[0.01*i for i in range(70)],
+        "churn_probability":[0.02*i for i in range(70)],
+        "predicted_outcome":["Y","N"]*35,
+        "feature":[i%5 for i in range(70)],
+    })
+    out=target_opportunities.recommend(data,0)
+    assert out["abstained"]
+    blocked={x["column"]:x for x in out["blocked_examples"]}
+    assert all("ground-truth" in " ".join(x["blockers"]) for x in blocked.values())
+
+
 def test_missing_labels_are_aggregated_without_personal_values():
     data=pd.DataFrame({
         "churn":["Y","N"]*22+[None]*16,
