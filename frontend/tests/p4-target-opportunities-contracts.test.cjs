@@ -42,6 +42,8 @@ test('P4 recommendations require a separate explicit button press before the exi
  assert.match(app,/import \{TargetOpportunities\} from '\.\/TargetOpportunities'/);
  assert.match(app,/<TargetOpportunities key=\{project\.id\+'\-'\+qualityVersion\}/);
  assert.match(app,/onChooseTarget=\{column=>\{if\(!profile\.columns\.some\(c=>c\.name===column\)\)return;setTarget\(column\)/);
+ assert.match(app,/setTarget\(column\);setPrep\(null\)/);
+ assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
  assert.doesNotMatch(src,/setTarget\(|startTrain\(|post<|onChooseTarget\(item\.column\);\s*\}/);
 });
 
