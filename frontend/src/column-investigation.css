@@ -52,3 +52,15 @@
 .po-col-status{display:flex;gap:9px;align-items:center;color:#5b6483;font-size:13px}
 @media(max-width:1050px){.po-col-layout{grid-template-columns:1fr}.po-col-detail{max-height:none}.po-col-table-scroll{max-height:330px}}
 @media(max-width:520px){.po-col-numeric{grid-template-columns:repeat(2,minmax(0,1fr))}.po-col-frequency{grid-template-columns:95px 1fr 75px}.po-col-detail{padding:10px}}
+
+/* P3 read-only semantic hypotheses; deliberately subordinate to observed field data. */
+.po-semantic-overview{border:1px solid #e4e0f8;background:#fafaff;border-radius:13px;padding:15px;margin:15px 0}
+.po-semantic-overview .panel-title{margin-bottom:8px}
+.po-semantic-overview .panel-title h3{font-size:15px;color:#2d3658;margin:0}
+.po-semantic-overview .po-col-metadata{margin:12px 0}
+.po-semantic-overview .muted-caption{line-height:1.55;overflow-wrap:anywhere}
+.po-semantic-overview details{margin:12px 0;border-top:1px solid #e9e7f6;padding-top:12px}
+.po-semantic-overview details summary{font-size:12px;font-weight:800;color:#5141b0;cursor:pointer}
+.po-semantic-overview details summary:focus-visible{outline:2px solid #7061e5;outline-offset:3px}
+.po-semantic-overview details .po-col-table-scroll{margin-top:10px;max-height:240px}
+.po-semantic-overview .muted-caption svg{display:inline-block;vertical-align:middle;margin-right:5px}
