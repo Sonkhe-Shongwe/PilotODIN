@@ -36,11 +36,70 @@ def init():
             final_results TEXT, created_at TEXT NOT NULL,
             FOREIGN KEY(project_id) REFERENCES projects(id)
         );
+        CREATE TABLE IF NOT EXISTS experiment_progress_events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            experiment_id TEXT NOT NULL,
+            stage TEXT NOT NULL,
+            detail TEXT NOT NULL,
+            occurred_at TEXT NOT NULL,
+            FOREIGN KEY(experiment_id) REFERENCES experiments(id)
+        );
+        CREATE INDEX IF NOT EXISTS experiment_progress_by_run
+            ON experiment_progress_events(experiment_id,event_id);
         """)
 
 
 def now(): return datetime.now(timezone.utc).isoformat()
 def uid(): return uuid.uuid4().hex
+
+
+# These are factual checkpoints, not duration estimates or percentages.
+STAGE_LABELS = {
+    "queued": "Waiting to start",
+    "loading_data": "Loading saved dataset version",
+    "training_models": "Cross-validation and model fitting",
+    "saving_artifacts": "Saving fitted models",
+    "completed": "Completed",
+    "failed": "Failed",
+    "running_legacy": "Running — individual stages not recorded",
+}
+ACTIVE_STAGE_ORDER = ("loading_data", "training_models", "saving_artifacts")
+
+
+def _append_progress(con, eid, stage, detail):
+    if stage not in STAGE_LABELS or stage == "running_legacy":
+        raise ValueError("Invalid persisted training stage")
+    con.execute(
+        "INSERT INTO experiment_progress_events "
+        "(experiment_id,stage,detail,occurred_at) VALUES (?,?,?,?)",
+        (eid, stage, detail, now()),
+    )
+
+
+def _progress_for(con, eid, status):
+    rows = con.execute(
+        "SELECT stage,detail,occurred_at FROM experiment_progress_events "
+        "WHERE experiment_id=? ORDER BY event_id ASC", (eid,),
+    ).fetchall()
+    if not rows:
+        # Existing experiments are NOT retroactively assigned fictional stages.
+        stage = status if status in ("queued", "completed", "failed") else "running_legacy"
+        return {
+            "stage": stage, "label": STAGE_LABELS[stage],
+            "detail": "Historical experiment; intermediate milestones were not recorded.",
+            "updated_at": None, "history": [], "history_available": False,
+        }
+    history = [
+        {"stage": r["stage"], "label": STAGE_LABELS[r["stage"]],
+         "detail": r["detail"], "at": r["occurred_at"]}
+        for r in rows
+    ]
+    current = history[-1]
+    return {
+        "stage": current["stage"], "label": current["label"],
+        "detail": current["detail"], "updated_at": current["at"],
+        "history": history, "history_available": True,
+    }
 
 
 def save_project(name, filename, ext, path, profile):
@@ -69,6 +128,7 @@ def new_experiment(pid, config):
     with connect() as con:
         con.execute("INSERT INTO experiments (id,project_id,status,config,created_at) VALUES (?,?,?,?,?)",
                     (eid,pid,"queued",json.dumps(config),now()))
+        _append_progress(con,eid,"queued","Experiment accepted and waiting for a worker.")
     return eid
 
 
@@ -97,6 +157,7 @@ def new_experiment_with_capacity(pid, config):
             "INSERT INTO experiments (id,project_id,status,config,created_at) VALUES (?,?,?,?,?)",
             (eid,pid,"queued",json.dumps(config),now()),
         )
+        _append_progress(con,eid,"queued","Experiment accepted and waiting for a worker.")
     return eid
 
 
@@ -107,7 +168,38 @@ def claim_queued_experiment(eid):
             "UPDATE experiments SET status='running' WHERE id=? AND status='queued'",
             (eid,),
         )
+        if changed.rowcount == 1:
+            _append_progress(con,eid,"loading_data","Worker started; loading the saved dataset version.")
         return changed.rowcount == 1
+
+
+def advance_running_experiment(eid, stage, detail):
+    """Record only forward, observed work milestones while a run is active.
+
+    Compare and append in one SQLite write transaction. A stale worker cannot
+    add events after interruption or move from saving backwards to training.
+    """
+    if stage not in ACTIVE_STAGE_ORDER:
+        raise ValueError("Unknown active training stage")
+    if not isinstance(detail, str) or not detail.strip() or len(detail) > 240:
+        raise ValueError("Training milestone detail must be 1–240 characters")
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        row = con.execute(
+            "SELECT status FROM experiments WHERE id=?", (eid,),
+        ).fetchone()
+        if row is None or row["status"] != "running":
+            return False
+        last = con.execute(
+            "SELECT stage FROM experiment_progress_events WHERE experiment_id=? "
+            "ORDER BY event_id DESC LIMIT 1", (eid,),
+        ).fetchone()
+        if last is None or last["stage"] not in ACTIVE_STAGE_ORDER:
+            return False
+        if ACTIVE_STAGE_ORDER.index(stage) <= ACTIVE_STAGE_ORDER.index(last["stage"]):
+            return False
+        _append_progress(con, eid, stage, detail)
+        return True
 
 
 def finish_running_experiment(eid, status, *, results=None, error=None):
@@ -120,6 +212,12 @@ def finish_running_experiment(eid, status, *, results=None, error=None):
             "WHERE id=? AND status='running'",
             (status,json.dumps(results) if results is not None else None,error,eid),
         )
+        if changed.rowcount == 1:
+            _append_progress(
+                con,eid,status,
+                "Training and model artifacts saved." if status == "completed"
+                else "Training stopped with an error; review experiment details.",
+            )
         return changed.rowcount == 1
 
 
@@ -131,21 +229,33 @@ def recover_interrupted_experiments():
     This is a single-process lifecycle recovery step, not a distributed lock.
     """
     with connect() as con:
-        changed=con.execute(
-            "UPDATE experiments SET status='failed', results=NULL, "
-            "error='Training interrupted by application restart. Review and start a new experiment.' "
-            "WHERE status IN ('queued','running')"
-        )
-        return changed.rowcount
+        con.execute("BEGIN IMMEDIATE")
+        abandoned = con.execute(
+            "SELECT id FROM experiments WHERE status IN ('queued','running')"
+        ).fetchall()
+        for row in abandoned:
+            con.execute(
+                "UPDATE experiments SET status='failed', results=NULL, "
+                "error='Training interrupted by application restart. Review and start a new experiment.' "
+                "WHERE id=? AND status IN ('queued','running')", (row["id"],),
+            )
+            _append_progress(
+                con,row["id"],"failed",
+                "Backend restarted while training was unfinished; no automatic retry.",
+            )
+        return len(abandoned)
 
 
 def get_experiment(eid):
     with connect() as con:
         r=con.execute("SELECT * FROM experiments WHERE id=?",(eid,)).fetchone()
-    if r is None: return None
+        if r is None:
+            return None
+        progress=_progress_for(con,eid,r["status"])
     return {**dict(r),"config":json.loads(r["config"]),
             "results":json.loads(r["results"]) if r["results"] else None,
-            "final_results":json.loads(r["final_results"]) if r["final_results"] else None}
+            "final_results":json.loads(r["final_results"]) if r["final_results"] else None,
+            "progress":progress}
 
 
 def recent_experiments(pid):
