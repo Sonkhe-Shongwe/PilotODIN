@@ -12,7 +12,7 @@ test('P4 is read-only deterministic screening, not an AutoML run or automatic ta
  assert.match(src,/business_relevance": "unverified"/);
  assert.match(src,/safe_to_train_automatically": False/);
  assert.match(src,/technical_status": "reviewable" if not blockers else "blocked"/);
- assert.match(src,/No model trained or business value scored/);
+ assert.match(src,/User text is unverified and not a business-value score/);
  assert.match(src,/abstained": not bool\(top\)/);
  assert.doesNotMatch(src,/run_training\(|cross_val_score\(|\.fit\(|joblib\.dump|new_experiment\(/);
 });
@@ -37,7 +37,8 @@ test('P4 recommendations require a separate explicit button press before the exi
  assert.match(src,/expected_version=\$\{version\}/);
  assert.match(src,/if\(result\.version!==version\)/);
  assert.match(src,/onClick=\{\(\)=>onChooseTarget\(item\.column\)\}/);
- assert.match(src,/Business relevance: unknown until you confirm/i);
+ assert.match(src,/Business relevance:/);
+ assert.match(src,/user-described, not independently verified/i);
  assert.match(src,/You decide the target/);
  assert.match(app,/import \{TargetOpportunities\} from '\.\/TargetOpportunities'/);
  assert.match(app,/<TargetOpportunities key=\{project\.id\+'\-'\+qualityVersion\}/);
