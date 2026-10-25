@@ -798,13 +798,21 @@ def render_pdf(report: dict) -> bytes:
                         for n,art in enumerate(report['evidence'], 1)]))
     for art in report['evidence']:
         facts,columns,records=_exhibit(art)
-        story.extend([Spacer(1,8),HRFlowable(width='100%',color=colors.HexColor('#dce0ef')),
+        exhibit_header=[Spacer(1,8),HRFlowable(width='100%',color=colors.HexColor('#dce0ef')),
                       p(art['operation'].replace('_',' ').title(),'ODINHeading'),
                       p(f"Evidence {art['id']} · Dataset v{art['dataset_version']} · Tool {art['tool_version']} · "
                         + ('Experiment created' if art['operation']=='model_evaluation' else 'Computed')
                         + f" {art['computed_at']}",'ODINMeta'),
-                      p('Investigation: '+art['objective'])])
-        story.extend(table(['Measure','Verified value'],facts))
+                      p('Investigation: '+art['objective'])]
+        fact_table=table(['Measure','Verified value'],facts)
+        # Keep standard-sized metric tables with the source heading, instead
+        # of orphaning "Model Evaluation" on one page and values on the next.
+        # Oversized fact tables can still flow across pages.
+        if fact_table and len(facts)<=18:
+            story.append(KeepTogether([*exhibit_header,*fact_table]))
+        else:
+            story.append(CondPageBreak(190))
+            story.extend([*exhibit_header,*fact_table])
         visual = art.get('result', {}).get('visual') if isinstance(art.get('result'), dict) else None
         if isinstance(visual, dict):
             spec = report_charts.visual_spec(visual)
@@ -814,13 +822,15 @@ def render_pdf(report: dict) -> bytes:
                 if spec.get('note'):
                     story.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
         if records:
-            # Prevent an orphaned heading and a single table row at the foot
-            # of a page. Keep enough space for a heading, table header and
-            # multiple verified observations; larger tables may still split
-            # naturally with their column headings repeated.
-            story.append(CondPageBreak(160))
-            story.append(p('Verified observations','ODINHeading'))
-            story.extend(table(columns,records))
+            table_section=[p('Verified observations','ODINHeading'),*table(columns,records)]
+            if len(records)<=12:
+                # Short finding/class/Explore tables belong together on one
+                # page. The previous CondPageBreak(160) could still leave
+                # the section heading orphaned above a page break.
+                story.append(KeepTogether(table_section))
+            else:
+                story.append(CondPageBreak(190))
+                story.extend(table_section)
         if isinstance(art.get('result'), dict):
             caveat = art['result'].get('note')
             if isinstance(caveat, str) and caveat:
