@@ -6,7 +6,7 @@ const src=fs.readFileSync(path.join(__dirname,'../src/ReportWorkspace.tsx'),'utf
 
 test('Report open responses are tagged with a monotonically newer request ticket',()=>{
  assert.match(src,/const latestOpenRequest=useRef\(0\)/);
- assert.match(src,/async function openReport\(id:string,number\?:number\)\{\s*const ticket=\+\+latestOpenRequest\.current/);
+ assert.match(src,/async function openReport\(id:string,number\?:number\)\{[\s\S]*?composerGuard\.current\.navigate\(\);\s*const ticket=\+\+latestOpenRequest\.current/);
  assert.match(src,/if\(ticket!==latestOpenRequest\.current\)return;/);
 });
 
