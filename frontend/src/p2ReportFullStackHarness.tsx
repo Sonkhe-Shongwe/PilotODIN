@@ -47,6 +47,7 @@ function setInput(el:HTMLInputElement|HTMLTextAreaElement,value:string){
  expect(setter,'native input setter missing');
  setter.call(el,value);
  el.dispatchEvent(new Event('input',{bubbles:true}));
+ el.dispatchEvent(new Event('change',{bubbles:true}));
 }
 async function readJSON(path:string){
  const r=await fetch('http://127.0.0.1:8000/api'+path);
@@ -87,17 +88,11 @@ await trial('Mounted React writes a revision; old PDF/HTML evidence remains froz
   const pdf=await fetch('http://127.0.0.1:8000/api/reports/'+reportId+'/export/pdf?revision='+revision);
   expect(html.status===200&&pdf.status===200,'report export failed');
   expect((await html.text()).includes(revision===1?'Synthetic Baseline Report':'Synthetic Revision Two'),'HTML wrong revision');
-  expect((await pdf.blob()).slice(0,5).text() instanceof Promise,'PDF response blob unavailable');
-  const pdfBytes=new Uint8Array(await (await readPdf(revision)).arrayBuffer());
+  const pdfBytes=new Uint8Array(await (await pdf.blob()).arrayBuffer());
   expect(new TextDecoder().decode(pdfBytes.slice(0,5))==='%PDF-','PDF signature invalid');
   expect(pdf.headers.get('content-disposition')?.includes('_rev'+revision+'.pdf'),'PDF export filename revision wrong');
  }
 });
-async function readPdf(revision:number):Promise<Blob>{
- const r=await fetch('http://127.0.0.1:8000/api/reports/'+reportId+'/export/pdf?revision='+revision);
- expect(r.ok,'PDF fetch failed');
- return r.blob();
-}
 await trial('Project switching excludes foreign report evidence and permits isolated audit',async()=>{
  root.render(<ReportWorkspace projectId={projectB} defaultTitle="Synthetic other project"/>);
  await until(()=>title()?.value==='Synthetic other project','project B mounted');
