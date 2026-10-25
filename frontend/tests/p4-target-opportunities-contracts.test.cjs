@@ -8,7 +8,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 test('P4 is read-only deterministic screening, not an AutoML run or automatic target selection',()=>{
  const src=read('backend/target_opportunities.py');
  assert.match(src,/MAX_SUGGESTIONS = 3/);
- assert.match(src,/def recommend\(frame: pd\.DataFrame, version: int\)/);
+ assert.match(src,/def recommend\(frame: pd\.DataFrame, version: int, user_contexts: dict \| None = None\)/);
  assert.match(src,/business_relevance": "unverified"/);
  assert.match(src,/safe_to_train_automatically": False/);
  assert.match(src,/technical_status": "reviewable" if not blockers else "blocked"/);
@@ -27,7 +27,7 @@ test('P4 GET endpoint is version-bound, guarded against foreign origin, and cann
  assert.match(route,/quality\.current_data\(project_id\)/);
  assert.match(route,/version != expected_version/);
  assert.match(route,/status_code=409/);
- assert.match(route,/target_opportunities\.recommend\(frame, version\)/);
+ assert.match(route,/target_opportunities\.recommend\(\s*frame, version, storage\.target_contexts\(project_id, version\)\s*\)/);
  assert.doesNotMatch(route,/new_experiment|train_background|select_model|storage\.mark\(/);
 });
 
