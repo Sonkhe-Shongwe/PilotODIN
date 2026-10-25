@@ -2,6 +2,17 @@
 
 **Status (25 October 2026):** TWO independent owner Windows automated runs PASSED against commit `5bf174e328bebf9cfabbbb17cd46ffae687f7785`. This is automated A4 development-entry readiness, NOT full A3/A4 interactive sign-off or a release build.
 
+## Post-fix full A4 consolidated Windows automated verification: PASS (25 October 2026, approximately 11:06 SAST)
+
+The owner supplied the second, post-fix single diagnostic ZIP (`pilotodin-p0-a4-readiness-mrmk7kls.zip`) and its `result.json`, all four phase logs and Pytest JUnit XML were examined.
+
+- **Exact tested code:** clean `feature/live-dev-workspace-20261023` checkout at `4b555d934ba7f6d3012141e1e3b53138590fb863`; `uncommitted_changes=false`; no missing prerequisites.
+- **All four phases PASS:** 106 of 106 frontend Node behavioural tests, TypeScript/Vite production build, Python syntax compilation, 167 of 167 combined A2/A3/A4 backend regression tests (0 failed, 0 errored, 0 skipped).
+- Pytest reports `167 passed` on the post-fix run. The earlier Quality audit privacy wording false-positive has been corrected and now passes as part of the suite.
+- `automated_status=PASS`, `preflight_blockers=[]`, with isolated `PILOTODIN_HOME`. This closes the **automated A4-1/A4-2/A4-3 integration gate** at this specific commit, superseding the earlier 166/167 result.
+- **Scope boundary:** These runs are not independent visual QA, real user Prepare→Train→Predict, on-screen PDF pagination inspection, Tauri native Save As, bundled Qwen/offline operation, real 8 GB stress test, installer or the original E-01 through E-24 release acceptance. Those remain open and must be evaluated separately.
+- **Decision:** Do not ask the owner to rerun unchanged tests. Proceed to one short combined A2/A3/A4 functional/visual acceptance session, prioritizing report composition, model/Quality/Explore evidence, saved revisions and readable HTML/PDF. Native Save As is still a separate known implementation/verification gap.
+
 ## Owner's first complete A4 consolidated Windows run (25 October 2026)
 
 **Executed against clean checkout `f9c122448e01af61f4aacf31c4229c27bb54ea6e`.** Owner supplied the generated single diagnostics ZIP `pilotodin-p0-a4-readiness-s_9yn_ur.zip`, including `result.json`, phase logs and pytest JUnit XML.
