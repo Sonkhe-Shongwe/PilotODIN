@@ -21,7 +21,6 @@ $freeBytes = [double]$os.FreePhysicalMemory * 1024
 if($totalBytes -le 0){
     throw 'Could not read installed physical memory. No hardware result was inferred.'
 }
-$root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $probe = [ordered]@{
     probe = 'PilotODIN early E2 feasibility inventory'
     generated_utc = [datetime]::UtcNow.ToString('o')
@@ -48,10 +47,10 @@ $probe = [ordered]@{
 $families = @('python','pythonw','node','pilotodin-desktop','ollama','llama-server','llama-cli')
 $processes = @(Get-Process -ErrorAction SilentlyContinue)
 foreach($family in $families){
-    $matches = @($processes | Where-Object { $_.ProcessName -ieq $family })
-    $bytes = ($matches | Measure-Object -Property WorkingSet64 -Sum).Sum
+    $familyProcesses = @($processes | Where-Object { $_.ProcessName -ieq $family })
+    $bytes = ($familyProcesses | Measure-Object -Property WorkingSet64 -Sum).Sum
     $probe.process_memory_gib_at_probe[$family] = [ordered]@{
-        count = $matches.Count
+        count = $familyProcesses.Count
         working_set_gib = Round-GiB ([double]$bytes)
     }
 }
