@@ -80,3 +80,19 @@ test('A4 checks Microsoft MSVC linker before expensive regression and Tauri buil
  assert.ok(linkerCheck>=0&&linkerCheck<regressions&&regressions<cargoStart,
            'MSVC checks must happen before all expensive test and Cargo work');
 });
+
+
+test('A4 Vite HMR never watches Cargo DLLs while native Rust compiles',()=>{
+ const vite=read('vite.config.ts');
+ assert.match(vite,/defineConfig/);
+ assert.match(vite,/server:\s*\{/);
+ assert.match(vite,/watch:\s*\{/);
+ assert.match(vite,/ignored:\s*\[/);
+ assert.match(vite,/\*\*\/src-tauri\/target\/\*\*/);
+ assert.match(vite,/\*\*\/src-tauri\/target/);
+ assert.doesNotMatch(vite,/usePolling:\s*true/);
+ assert.doesNotMatch(vite,/watch:\s*null/);
+ // Ignore Rust output without suppressing HMR for frontend src/.
+ const ignoreSection=vite.slice(vite.indexOf('ignored:'));
+ assert.doesNotMatch(ignoreSection,/\*\*\/src\/\*\*/);
+});
