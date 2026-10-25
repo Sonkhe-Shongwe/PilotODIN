@@ -577,12 +577,26 @@ def load(report_id: str, revision: int | None = None):
         content=json.loads(stored)
     except (TypeError,ValueError) as exc:
         raise ReportError('Saved report revision is unreadable',409) from exc
+    # The checksum authenticates a frozen blob; independently bind it to this
+    # report's project and expected schema before serving it to Deliver.
+    # A transplanted, validly hashed revision from another project is not valid.
+    if not isinstance(content, dict) or content.get('project_id') != report['project_id']:
+        raise ReportError('Saved report revision has invalid project provenance', 409)
+    evidence=content.get('evidence')
+    versions=content.get('dataset_versions')
+    if (not isinstance(evidence,list) or not 1 <= len(evidence) <= MAX_EVIDENCE or
+            not all(isinstance(art,dict) and isinstance(art.get('dataset_version'),int)
+                    and art['dataset_version'] >= 0 for art in evidence) or
+            not isinstance(versions,list) or versions != sorted({art['dataset_version'] for art in evidence}) or
+            not isinstance(content.get('title'),str) or not isinstance(content.get('narrative'),str)):
+        raise ReportError('Saved report revision has invalid evidence structure', 409)
     current=quality.current_version(report['project_id'])
-    return {'id':report_id, 'project_id':report['project_id'], 'created_at':report['created_at'],
+    return {**content,
+            'id':report_id, 'project_id':report['project_id'], 'created_at':report['created_at'],
             'revision_id':row['id'], 'revision':row['number'], 'revisions':numbers,
             'created_revision_at':row['created_at'], 'content_sha256':row['content_sha256'],
-            'current_dataset_version':current, 'has_historical_evidence':any(v!=current for v in content['dataset_versions']),
-            **content}
+            'current_dataset_version':current,
+            'has_historical_evidence':any(v!=current for v in versions)}
 
 
 def _display_value(value) -> str:
