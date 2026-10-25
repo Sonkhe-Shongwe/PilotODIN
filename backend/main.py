@@ -889,6 +889,12 @@ def _report_call(operation):
 def list_available_report_evidence(project_id: str):
     return _report_call(lambda: reports.evidence_options(project_id))
 
+
+@app.post('/api/projects/{project_id}/report-quality',status_code=201)
+def capture_quality_report_evidence(project_id: str,body: QualityVersionRequest):
+    """Explicit, read-only capture; does not approve or apply any correction."""
+    return _report_call(lambda: reports.capture_quality(project_id,body.expected_version))
+
 @app.get('/api/projects/{project_id}/reports')
 def list_saved_reports(project_id: str):
     return _report_call(lambda: reports.listing(project_id))
