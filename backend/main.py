@@ -147,6 +147,26 @@ def health():
 def projects(): return storage.list_projects()
 
 
+def _rollback_failed_project_import(pid: str | None, path: Path) -> None:
+    """Undo import metadata transactionally before deleting staged source bytes.
+
+    The Quality tables may not exist if a workspace upgrade/init failed.
+    Never let a second 'no such table' error mask the original import failure,
+    and never delete the source while a failed metadata rollback would still
+    leave a database project pointing to it.
+    """
+    if pid is not None:
+        with storage.connect() as con:
+            tables = {row["name"] for row in con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()}
+            for table in ("quality_versions", "quality_state"):
+                if table in tables:
+                    con.execute(f"DELETE FROM {table} WHERE project_id=?", (pid,))
+            con.execute("DELETE FROM projects WHERE id=?", (pid,))
+    path.unlink(missing_ok=True)
+
+
 @app.post("/api/projects",status_code=201)
 async def create_project(file: UploadFile = File(...)):
     filename=Path(file.filename or "dataset").name
@@ -167,13 +187,15 @@ async def create_project(file: UploadFile = File(...)):
         pid=storage.save_project(Path(filename).stem,filename,ext,path,prof)
         quality.register(pid)  # Anchor the immutable source hash at upload.
     except Exception as e:
-        if pid is not None:
-            with storage.connect() as con:
-                con.execute("DELETE FROM quality_versions WHERE project_id=?", (pid,))
-                con.execute("DELETE FROM quality_state WHERE project_id=?", (pid,))
-                con.execute("DELETE FROM projects WHERE id=?", (pid,))
-        path.unlink(missing_ok=True)
-        raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}")
+        try:
+            _rollback_failed_project_import(pid, path)
+        except Exception:
+            # Retain staged bytes if metadata could not be rolled back, so a
+            # dangling database reference is not silently made unrecoverable.
+            logging.exception("Import rollback incomplete; manual workspace recovery is required")
+            raise HTTPException(status_code=500,
+                                detail="Import failed and could not be rolled back safely. Check local logs before retrying.") from e
+        raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}") from e
     return {"id":pid,"name":Path(filename).stem,"profile":prof}
 
 
