@@ -64,6 +64,7 @@ A4_READINESS = (
     "test_p1_import_recovery.py",
     "test_p1_resource_policy.py",
     "test_p1_resource_admission.py",
+    "test_p5_ml_training_slot.py",
 )
 TEST_FILES = list(dict.fromkeys((*A2, *A3, *A4_READINESS)))
 
