@@ -85,6 +85,8 @@ def test_api_mode_roundtrip_and_validation(isolated_home, monkeypatch):
     assert saved.json()["policy"]["mode"] == "low_memory"
     assert client.get("/api/resource/status").json()["policy"]["mode"] == "low_memory"
     assert client.put("/api/resource/policy", json={"mode": "invalid_mode"}).status_code == 422
+    assert client.put("/api/resource/policy",
+                      json={"mode": "performance", "unknown": True}).status_code == 422
     assert client.get("/api/resource/status").json()["policy"]["mode"] == "low_memory"
 
 
