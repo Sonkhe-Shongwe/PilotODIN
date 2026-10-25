@@ -20,9 +20,9 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether
 
 try:
-    from . import quality, storage
+    from . import quality, storage, report_charts
 except ImportError:
-    import quality, storage
+    import quality, storage, report_charts
 
 MAX_EVIDENCE = 15
 MAX_SNAPSHOT = 130_000
@@ -126,6 +126,9 @@ def _explore_evidence(row: sqlite3.Row) -> dict:
                 'snapshot is available in Explore.',
         'limitations': snapshot.get('limitations', []),
     }
+    visual = report_charts.visual_spec(plot)
+    if visual is not None:
+        result['visual'] = visual
     return {
         'id':row['id'], 'investigation_id':None, 'objective':row['title'],
         'dataset_version':row['dataset_version'],
@@ -487,6 +490,9 @@ def render_html(report: dict) -> bytes:
     th,td{padding:9px 10px;border-bottom:1px solid #e5e9f2;text-align:left;vertical-align:top;overflow-wrap:anywhere}
     th{background:#f2f2ff;color:#312390;font-weight:700}
     .warning{padding:12px;background:#fff7e6;color:#76510e;border-radius:8px}
+    .verified-chart{margin:14px 0;padding:12px;border:1px solid #e0e5f0;border-radius:12px;background:#fafbfe}
+    .verified-chart svg{width:100%;height:auto;max-height:340px}
+    .verified-chart figcaption{color:#536482;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
     footer{border-top:1px solid #e0e5f0;padding-top:15px;margin-top:22px}
     @media print{body{background:white}.page{border:0;box-shadow:none;max-width:none;margin:0;padding:0}
     .evidence{break-inside:avoid-page}thead{display:table-header-group}}
@@ -523,6 +529,11 @@ def render_html(report: dict) -> bytes:
             for name,value in facts:
                 pieces+=['<tr><td>',e(name),'</td><td>',e(value),'</td></tr>']
             pieces+=['</tbody></table>']
+        visual = art.get('result', {}).get('visual') if isinstance(art.get('result'), dict) else None
+        if isinstance(visual, dict):
+            spec = report_charts.visual_spec(visual)
+            if spec is not None:
+                pieces+=['<h3>Saved chart visualization</h3>', report_charts.html_chart(spec)]
         if records:
             pieces+=['<h3>Verified observations</h3><table><thead><tr>']
             for h in columns:pieces+=['<th>',e(h),'</th>']
@@ -605,6 +616,14 @@ def render_pdf(report: dict) -> bytes:
                         + f" {art['computed_at']}",'ODINMeta'),
                       p('Investigation: '+art['objective'])])
         story.extend(table(['Measure','Verified value'],facts))
+        visual = art.get('result', {}).get('visual') if isinstance(art.get('result'), dict) else None
+        if isinstance(visual, dict):
+            spec = report_charts.visual_spec(visual)
+            if spec is not None:
+                story.append(p('Saved chart visualization','ODINHeading'))
+                story.append(report_charts.pdf_chart(spec, width=doc.width))
+                if spec.get('note'):
+                    story.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
         if records:
             story.append(p('Verified observations','ODINHeading'))
             story.extend(table(columns,records))
