@@ -322,6 +322,18 @@ Owner latest screenshot in the normal Chrome development app `127.0.0.1:5173/#/s
 
 **Recommended one owner action:** Pull the active feature branch once, run the *same* `Run_PilotODIN_P1_Resource_Settings.bat` a single time; if failed, upload its fresh ZIP rather than another screenshot/debug loop. If green, normal Settings should still show Low-memory saved and threshold labels. Do not rerun P0 117/174, A4 native Save As or E2 memory scans, reimport insurance, download Qwen, or run Github Actions. Real combined offline Qwen + analytics on 8 GB remains **UNDETERMINED**; P5 durable scheduling still separate.
 
+## Latest owner P1 Resource-Aware focused ZIP — 27/27 Python PASS, Node 4/5, build PASS (25 October 2026)
+
+Owner uploaded **`pilotodin-p1-resource-inm4loku.zip`**, independently inspected its four files: `result.json`, `backend-resource-policy.log`, `frontend-resource-controls.log` and `frontend-typescript-vite.log`. The run at 2026-10-25T17:07:57Z (~19:08 South Africa time) reports:
+- **Backend:** 27 Pytest cases **passed** (4.15 seconds in log; backend phase exit 0).
+- **Frontend:** 5 Node tests, **4 passed, 1 failed**. The failing *source-only* test `resource status uses system physical RAM...` asserted `/(?:subprocess|requests\\.|urllib\\.request|psutil\\.process_iter|os\\.system)/` must not match `backend/resource_policy.py`. It matched the English docstring phrase **“new requests.”**, not a network call. No runtime/backend memory-gating or security failure is established.
+- **Vite/TypeScript:** `tsc --noEmit && vite build` PASS (1618 transformed modules, 4.79 seconds build log; phase exit 0).
+- **Overall focused BAT:** FAIL because one Node source assertion failed, appropriately not marked full PASS. No real projects or models were accessed.
+
+**Committed narrow correction:** `frontend/tests/p1-resource-settings.test.cjs` now checks executable network/process imports and call patterns, avoiding ordinary `requests.` documentation. Re-fetched and evaluated the new patterns against the actual Python source; its false-positive no longer occurs, but **the corrected Node test has not been executed by the owner**. Also corrected `tools/Verify_P1_Resource_Local.py` result metadata to distinguish **implemented** Low-memory new-work admission from the **not implemented** durable task scheduler. No application runtime behavior changed in response to this test-only failure.
+
+**Next owner step is ONLY** `cd frontend` and `node --test tests/p1-resource-settings.test.cjs` after one GitHub Desktop pull. Prior **27 backend tests and Vite build need no replay** for this correction. After Node 5/5, proceed to bounded P1/P5 resource coordination, avoiding automatic Qwen download or 8 GB claims. The short authoritative handoff is [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md).
+
 ## Read this first when switching conversations/tabs (HISTORICAL — superseded by current checkpoint)
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
