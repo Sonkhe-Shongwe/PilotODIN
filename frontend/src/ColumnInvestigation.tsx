@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {AlertTriangle,BarChart3,Database,Hash,LoaderCircle,Search,Table2} from 'lucide-react';
 import {get} from './api';
+import {SemanticOverview} from './SemanticOverview';
 import './column-investigation.css';
 
 type ColumnEntry={
@@ -78,6 +79,7 @@ export function ColumnInvestigation({projectId,versionToken}:{projectId:string;v
     <span><strong>{pretty(dictionary.rows)}</strong> records</span>
     {Object.entries(dictionary.role_counts).map(([role,count])=><span key={role}><strong>{count}</strong> {role}</span>)}
    </div>
+   <SemanticOverview key={projectId+'-'+dictionary.version} projectId={projectId} version={dictionary.version}/>
    <div className="po-col-toolbar">
     <label className="po-col-search"><Search size={15}/><input aria-label="Search columns by name or type" placeholder="Find a field or dtype…" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <label>Analytical role<select aria-label="Filter columns by analytical role" value={roleFilter} onChange={e=>setRoleFilter(e.target.value)}><option value="all">All roles</option>{Object.keys(dictionary.role_counts).map(role=><option key={role} value={role}>{role}</option>)}</select></label>
