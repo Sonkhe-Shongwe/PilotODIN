@@ -1,6 +1,6 @@
 # P1 upload staging and recoverable disk-write failures
 
-**25 October 2026: SOURCE COMMITTED, owner Windows testing PENDING.**
+**25 October 2026: owner-observed focused Windows gate PASS (screenshot); diagnostic ZIP not independently inspected.**
 
 ## Why
 The previous `backend/main.py::create_project` wrote upload source bytes via `path.write_bytes(b)` before its error-handling `try`. A recoverable partial disk-write/flush failure therefore could leave an orphaned partial source under `data/datasets`, even when no project was saved. This is a concrete P1 failure-path gap, not a defect claim about a past successful import.
@@ -18,3 +18,7 @@ The previous `backend/main.py::create_project` wrote upload source bytes via `pa
 
 ## After green
 Continue the complexity-last reliability/reporting work by reviewing the next evidenced P1/P2 gap. Do not create speculative P4 sub-increments or prematurely implement P6 Master workflows.
+
+## Owner focused acceptance
+
+Owner screenshot shows `P1 isolated import staging: PASS`, `P1 import staging checks passed`, one local diagnostic ZIP `pilotodin-p1-import-stage-li2_fvh_.zip`. The ZIP was not uploaded; source-only and screenshot evidence support scoped developer acceptance, not verified exact Pytest counts or real OS power-loss resilience. Latest next P2 report navigation work is documented in `docs/P2_REPORT_OPEN_ACCEPTANCE.md`.

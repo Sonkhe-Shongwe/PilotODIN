@@ -27,10 +27,12 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [notice,setNotice]=useState('');
  const [revision,setRevision]=useState<number|null>(null);
  const userStartedDraft=useRef(false);
+ // Invalidate pending report-open results when the user changes selection.
+ const latestOpenRequest=useRef(0);
  const appliedHandoff=useRef<string|null>(null);
  const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
-   let mounted=true;userStartedDraft.current=false;appliedHandoff.current=null;setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
+   let mounted=true;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
    setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);
    if(!projectId)return;
    void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(async data=>{
@@ -47,11 +49,12 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      }
    }).catch(e=>{if(mounted)setError((e as Error).message)});
    void get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`).then(data=>{if(mounted){setProjectEvidence(data);setEvidenceLoaded(true)}}).catch(e=>{if(mounted){setEvidenceLoaded(true);setError((e as Error).message)}});
-   return()=>{mounted=false};
+   return()=>{mounted=false;latestOpenRequest.current++};
  },[projectId]);
  useEffect(()=>{
    if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
    appliedHandoff.current=preselectEvidenceId;
+   latestOpenRequest.current++;setBusy('');
    const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
    if(!option){setError('This saved analysis is not available as verified evidence in the active project.');return;}
    userStartedDraft.current=true;
@@ -62,14 +65,17 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
  async function refresh(){setReports(await get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`));}
  async function openReport(id:string,number?:number){
+   const ticket=++latestOpenRequest.current;
    userStartedDraft.current=true;setBusy('open');setError('');
    try{
      const data=await get<SavedReport>(`/reports/${encodeURIComponent(id)}${number?`?revision=${number}`:''}`);
+     if(ticket!==latestOpenRequest.current)return;
      if(!data){throw new Error('Report not found')}
      setActiveId(id);setOpened(data);setRevision(data.revision);setTitle(data.title);setNarrative(data.narrative);setSelected(data.evidence.map(e=>e.id));
-   }catch(e){setError((e as Error).message)}finally{setBusy('')}
+   }catch(e){if(ticket===latestOpenRequest.current)setError((e as Error).message)}
+   finally{if(ticket===latestOpenRequest.current)setBusy('')}
  }
- function newReport(){userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setNotice('');setError('');}
+ function newReport(){latestOpenRequest.current++;setBusy('');userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setNotice('');setError('');}
  async function save(){
    userStartedDraft.current=true;
    if(!selected.length){setError('Choose verified evidence before saving.');return;}
