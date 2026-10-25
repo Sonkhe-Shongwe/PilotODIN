@@ -492,6 +492,15 @@ def render_html(report: dict) -> bytes:
             '<p class="meta">Narrative is user-authored and is not independently verified.</p></section>']
     if len(report['dataset_versions'])>1:
         pieces+=['<p class="warning">Cross-version report: evidence comes from more than one dataset version.</p>']
+    pieces+=['<section aria-label="Evidence register"><h2>Evidence register</h2>',
+             '<p class="meta">The following saved artifacts are frozen in the order selected for this revision. '
+             'Dataset versions are not automatically updated.</p>',
+             '<table><thead><tr><th>Exhibit</th><th>Evidence source</th><th>Dataset version</th></tr></thead><tbody>']
+    for number, art in enumerate(report['evidence'], 1):
+        pieces+=['<tr><td>', e(number), '</td><td>',
+                 e(art['operation'].replace('_',' ').title()), '</td><td>v',
+                 e(art['dataset_version']), '</td></tr>']
+    pieces+=['</tbody></table></section>']
     for art in report['evidence']:
         facts,columns,records=_exhibit(art)
         pieces+=['<section class="evidence"><span class="pill">VERIFIED LOCAL</span><h2>',
@@ -512,6 +521,15 @@ def render_html(report: dict) -> bytes:
                 for cell in row:pieces+=['<td>',e(cell),'</td>']
                 pieces+=['</tr>']
             pieces+=['</tbody></table>']
+        if isinstance(art.get('result'), dict):
+            caveat = art['result'].get('note')
+            if isinstance(caveat, str) and caveat:
+                pieces+=['<p class="meta"><strong>Interpretation note:</strong> ',e(caveat),'</p>']
+            warnings = art['result'].get('limitations', [])
+            if isinstance(warnings, list) and warnings:
+                pieces+=['<div class="warning"><strong>Evidence limitations</strong><ul>']
+                pieces.extend('<li>'+e(x)+'</li>' for x in warnings[:12] if isinstance(x,str))
+                pieces+=['</ul></div>']
         pieces+=['<p class="meta">Evidence ID ',e(art['id']),' · Parameters ',
                  e('; '.join(f'{k}={_display_value(v)}' for k,v in art['params'].items()) or 'None'),'</p></section>']
     pieces+=['<footer><h2>Methodology and limitations</h2><ul>']
@@ -560,6 +578,13 @@ def render_pdf(report: dict) -> bytes:
            p('Narrative is user-authored and is not independently verified.','ODINMeta')]
     if len(report['dataset_versions'])>1:
         story.append(p('Cross-version report: evidence comes from multiple dataset versions.'))
+    story.extend([p('Evidence register','ODINHeading'),
+                  p('Frozen saved artifacts, in the order selected for this revision. '
+                    'Dataset versions are not automatically updated.','ODINMeta')])
+    story.extend(table(['Exhibit','Evidence source','Dataset version'],
+                       [[str(n),art['operation'].replace('_',' ').title(),
+                         'v'+str(art['dataset_version'])]
+                        for n,art in enumerate(report['evidence'], 1)]))
     for art in report['evidence']:
         facts,columns,records=_exhibit(art)
         story.extend([Spacer(1,8),HRFlowable(width='100%',color=colors.HexColor('#dce0ef')),
@@ -570,6 +595,14 @@ def render_pdf(report: dict) -> bytes:
         if records:
             story.append(p('Verified observations','ODINHeading'))
             story.extend(table(columns,records))
+        if isinstance(art.get('result'), dict):
+            caveat = art['result'].get('note')
+            if isinstance(caveat, str) and caveat:
+                story.append(p('Interpretation note: '+caveat,'ODINMeta'))
+            warnings = art['result'].get('limitations', [])
+            if isinstance(warnings,list) and warnings:
+                story.append(p('Evidence limitations','ODINHeading'))
+                story.extend(p('- '+item) for item in warnings[:12] if isinstance(item,str))
         story.append(p('Parameters: '+'; '.join(f'{k}={_display_value(v)}' for k,v in art['params'].items()),'ODINMeta'))
     story.extend([p('Methodology and limitations','ODINHeading')])
     story.extend(p('• '+str(t)) for t in report['limitations'])
