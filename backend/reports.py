@@ -190,6 +190,17 @@ def capture_quality(project_id: str, expected_version: int) -> dict:
             ).fetchone()
             captured = storage.now()
             # Proposals, detailed raw evidence and record previews are excluded.
+            safe_explanations = {
+                'exact_duplicates':'Repeated records may be legitimate; assess business grain before any removal.',
+                'missing':'Missing or blank values require domain review before imputation.',
+                'identifier':'Possible identifier; preserve for traceability where needed.',
+                'outliers':'Values outside IQR fences may be legitimate extreme observations.',
+                'whitespace':'Review surrounding whitespace before normalization.',
+                'ambiguous_dates':'Review ambiguous day/month ordering before conversion.',
+                'numeric_text':'Review numerical text formatting and measurement units.',
+                'case_variant':'Possible capitalization mismatch; examine in Quality before merging.',
+                'spelling':'Possible spelling mismatch; examine in Quality before merging.',
+            }
             findings = [{
                 'kind': item['kind'],
                 'column': item['column'],
@@ -197,7 +208,7 @@ def capture_quality(project_id: str, expected_version: int) -> dict:
                 'severity': item['severity'],
                 'decision': decisions.get(item['id'], 'pending'),
                 'title': item['title'],
-                'detail': item['explanation'][:240],
+                'detail': safe_explanations.get(item['kind'], 'Review this finding in Quality before treatment.'),
             } for item in issues[:MAX_QUALITY_FINDINGS]]
             raw = {
                 'dataset_version': version,
