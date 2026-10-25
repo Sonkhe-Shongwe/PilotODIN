@@ -5,6 +5,15 @@ const path=require('node:path');
 const base=path.join(__dirname,'..');
 const read=(p)=>fs.readFileSync(path.join(base,p),'utf8');
 
+test('Vite ImportMetaEnv is explicitly available to the strict frontend TS build',()=>{
+ const declarations=read('src/vite-env.d.ts');
+ const tsconfig=JSON.parse(read('tsconfig.json'));
+ assert.match(declarations,/\/\/\/ <reference types="vite\/client" \/>/);
+ assert.match(declarations,/interface ImportMetaEnv/);
+ assert.match(declarations,/VITE_PILOTODIN_NATIVE_SMOKE\?: string/);
+ assert.ok(tsconfig.include.includes('src'));
+});
+
 test('A4 native smoke mode is enabled only for Vite DEV and exact opt-in variable',()=>{
  const bootstrap=read('src/desktopBootstrap.ts');
  assert.match(bootstrap,/import\.meta\.env\.DEV && import\.meta\.env\.VITE_PILOTODIN_NATIVE_SMOKE === '1'/);
