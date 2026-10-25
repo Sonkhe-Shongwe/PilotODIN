@@ -1,4 +1,6 @@
 # PilotODIN — CONTINUE HERE (living cross-chat handoff)
+> **START HERE FOR ANY NEW CHAT:** [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) is the authoritative, short **current state** and includes the ready-to-paste new-chat instruction. This long document is a **chronological historical evidence log**, not the current next-action list. Some older passages (including "Pause coding", "A2/A3 pending", the older research-only handoff below) describe past stages and are **superseded** by the latest checkpoint and newer QA comments. Always verify the live feature-branch HEAD before making code changes.
+
 **Updated:** 25 October 2026  
 **Active repository:** [Sonkhe-Shongwe/PilotODIN](https://github.com/Sonkhe-Shongwe/PilotODIN)  
 **Active branch:** `feature/live-dev-workspace-20261023`  
@@ -320,7 +322,7 @@ Owner latest screenshot in the normal Chrome development app `127.0.0.1:5173/#/s
 
 **Recommended one owner action:** Pull the active feature branch once, run the *same* `Run_PilotODIN_P1_Resource_Settings.bat` a single time; if failed, upload its fresh ZIP rather than another screenshot/debug loop. If green, normal Settings should still show Low-memory saved and threshold labels. Do not rerun P0 117/174, A4 native Save As or E2 memory scans, reimport insurance, download Qwen, or run Github Actions. Real combined offline Qwen + analytics on 8 GB remains **UNDETERMINED**; P5 durable scheduling still separate.
 
-## Read this first when switching conversations/tabs
+## Read this first when switching conversations/tabs (HISTORICAL — superseded by current checkpoint)
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
 
@@ -395,11 +397,11 @@ A focused code audit identified that the group/date split key was counted toward
 
 ## How to continue in a new ChatGPT tab
 
-Open this document or give ChatGPT this exact instruction:
-
-> Continue our PilotODIN project using GitHub repository `Sonkhe-Shongwe/PilotODIN`, branch `feature/live-dev-workspace-20261023`. First read `docs/CONTINUE_HERE.md`, `docs/MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md`, `docs/MACRO_A3_ML_ACCEPTANCE.md`, and GitHub Issue #2. We have **two research-stage initiatives**: autonomous Master Analyst/Scientist workflows and intelligent prediction-target discovery. A2 and A3 focused local automated checks have passed on Windows, but full UI/offline acceptance has not. Continue the strategic discussion without coding yet; respect manual-only Actions, isolated dev data, and no installer until final integration.
+**CURRENT entry point (supersedes the old research-only prompt):** Open [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) and copy its final **COPY THIS INTO A NEW CHAT** paragraph. This is the single canonical transition prompt, including **current P1 Resource-Aware Mode work**, exact verified test boundaries, the next focused Windows action and project restrictions. Read the rest of this document only for prior investigations/history. If any older section disagrees with that short checkpoint, inspect newer Issue #2 comments and the current GitHub implementation before deciding.
 
 ## Documentation update protocol
+
+The primary latest-state entry point is `docs/SESSION_HANDOFF_CURRENT.md`. Always update it after a verified milestone or a change of the next action; append chronological specifics here and in QA Issue #2.
 
 Whenever work meaningfully changes:
 1. Commit implementation and regression coverage to the active branch (if coding).
