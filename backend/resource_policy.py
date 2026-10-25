@@ -1,8 +1,9 @@
 """P1 read-only Windows resource observations and per-device UI policy.
 
-Resource modes are display/persistence only in this increment. Heavy-task
-preflight/scheduling is a separate P5 gate; do not claim enforcement or E2.
-No model downloads, network calls or process enumeration occur here.
+Low-memory mode adds bounded headroom admission checks before NEW
+local training and local inference requests. This is not a peak-RAM bound,
+durable task scheduler, AI model loader or E2 offline certificate.
+No network calls or unrelated process enumeration occur here.
 """
 from __future__ import annotations
 
@@ -119,10 +120,65 @@ def memory_status() -> dict:
         }
 
 
+# Screening floors, NOT estimated application peaks or hardware guarantees.
+# Low-memory applies only to new requests, never to an in-progress task.
+# Existing per-model/row/matrix caps remain the authoritative ML limits.
+LOW_MEMORY_MIN_FREE_GIB = {
+    "training": 0.75,
+    "local_inference": 2.0,
+}
+
+
+def admit_new_work(operation: str) -> dict:
+    """Bounded policy-based admission; side-effect-free and deterministic.
+
+    Other policy modes retain the pre-existing behavior until task scheduling
+    and measured model budgets are implemented. Missing RAM readings are
+    treated conservatively only when the user selected Low-memory.
+    """
+    if operation not in LOW_MEMORY_MIN_FREE_GIB:
+        raise ValueError("Unknown resource admission operation")
+    policy = read_policy()["mode"]
+    if policy != "low_memory":
+        return {
+            "decision": "allow", "code": "not_enforced_for_selected_mode",
+            "mode": policy, "operation": operation, "available_gib": None,
+            "required_free_gib": LOW_MEMORY_MIN_FREE_GIB[operation],
+            "note": "Existing operation-specific hard resource and integrity limits still apply.",
+        }
+    observed = memory_status()
+    minimum = LOW_MEMORY_MIN_FREE_GIB[operation]
+    available = observed["available_gib"]
+    if observed["status"] != "observed" or available is None:
+        return {
+            "decision": "defer", "code": "memory_unavailable",
+            "mode": policy, "operation": operation, "available_gib": None,
+            "required_free_gib": minimum,
+            "note": "Cannot measure available RAM in Low-memory mode. Close unnecessary apps or retry later.",
+        }
+    if available < minimum:
+        return {
+            "decision": "defer", "code": "low_memory_headroom",
+            "mode": policy, "operation": operation, "available_gib": available,
+            "required_free_gib": minimum,
+            "note": ("Low-memory mode deferred new " + operation.replace("_", " ")
+                     + " because available RAM is below a conservative screening floor. "
+                     "This is not a measured peak task requirement; retry when more RAM is available."),
+        }
+    return {
+        "decision": "allow", "code": "screening_floor_met",
+        "mode": policy, "operation": operation, "available_gib": available,
+        "required_free_gib": minimum,
+        "note": "Admission screening passed; this does not guarantee peak RAM fit or offline AI feasibility.",
+    }
+
+
 def status() -> dict:
     return {
         "policy": read_policy(),
         "memory": memory_status(),
-        "policy_effect": "display_only_p1_not_enforced",
+        "policy_effect": "low_memory_new_work_preflight_only_no_scheduler",
         "offline_8gb_ai_feasibility": "NOT_TESTED",
+        "low_memory_training_min_free_gib": LOW_MEMORY_MIN_FREE_GIB["training"],
+        "low_memory_local_inference_min_free_gib": LOW_MEMORY_MIN_FREE_GIB["local_inference"],
     }
