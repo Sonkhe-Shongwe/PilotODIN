@@ -136,3 +136,27 @@ def test_corrupt_saved_report_revision_refuses_reload_and_download():
     assert client.get(f"/api/reports/{rid}").status_code==409
     assert client.get(f"/api/reports/{rid}/export/html").status_code==409
     assert client.get(f"/api/reports/{rid}/export/pdf").status_code==409
+
+
+def test_valid_sha256_cannot_transplant_another_projects_revision():
+    first,_=project("quality-revision-owner.csv")
+    second,_=project("quality-revision-foreign.csv")
+    owner_audit=capture(first).json()
+    foreign_audit=capture(second).json()
+    source=make_report(first,owner_audit["id"]).json()
+    target=make_report(second,foreign_audit["id"]).json()
+    assert source["project_id"] != target["project_id"]
+    with storage.connect() as con:
+        original=con.execute(
+            "SELECT snapshot_json,content_sha256 FROM report_revisions_v1 WHERE report_id=?",
+            (source["id"],)
+        ).fetchone()
+        con.execute(
+            "UPDATE report_revisions_v1 SET snapshot_json=?,content_sha256=? WHERE report_id=?",
+            (original["snapshot_json"],original["content_sha256"],target["id"])
+        )
+    # Matching SHA only authenticates the blob: it must also belong to this
+    # specific project/report's provenance. Never emit foreign-project facts.
+    for suffix in ("", "/export/html", "/export/pdf"):
+        assert client.get(f"/api/reports/{target['id']}{suffix}").status_code==409
+    assert client.get(f"/api/reports/{source['id']}").status_code==200
