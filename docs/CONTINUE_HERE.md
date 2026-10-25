@@ -43,6 +43,19 @@ Following A4-1 selected-model report evidence, a new bounded presentation layer 
 - Added `tests/test_a4_quality_audit_reporting.py`, `frontend/tests/a4-quality-export-gates.test.cjs` to the consolidated verification inventory. **All post-baseline A4-1/A4-2/A4-3 tests remain UNEXECUTED on owner's Windows clone.** Historic 99 frontend /149 backend passes covered the prior P0 commit only; don't describe these A4 features as tested or release-accepted.
 - Next planned milestone: finish any narrow A4 UX/test corrections, then **one consolidated local automated test followed by one manual Windows acceptance session**, not repeated owner pulls after each commit. Detail: [A4 acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md), [QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
 
+## A4 source consolidation checkpoint — awaiting one Windows regression run (25 October 2026)
+
+After implementing A4-1 ML reports, A4-2 saved vector chart illustrations, and A4-3 read-only Quality audits and report integrity, the source was consolidated for **one** owner Windows automated verification pass.
+
+- The report load path now rejects a correctly hashed revision transplanted from another project or one with an invalid evidence/version schema. An API regression case covers project substitution, preserving privacy and report provenance.
+- `tools/Verify_P0_A4_Readiness.py` now packages `result.json`, test-phase logs and Pytest JUnit evidence into one `%TEMP%\\pilotodin-p0-a4-readiness-*.zip` **without including synthetic project data or model files**; the exact path is printed.
+- The Windows launcher `Run_PilotODIN_P0_A4_Verification.bat` now **pauses at the end** rather than silently closing. This replaces the previous manual ZIP-making and missing-output difficulty.
+- The new A4 tests **have not run yet**. Previous two Windows 99/149 all-pass runs remain true evidence for the earlier P0 commit `5bf174e3`, not this A4 source checkpoint. Do not infer pass counts for the updated suite.
+- **Owner next action:** ONE GitHub Desktop fetch/pull on `feature/live-dev-workspace-20261023`, ONE double-click of the verification BAT, share the ZIP. Resolve actual failures in small code patches first; defer full manual UI testing until automated green.
+- **Unresolved:** native Tauri Save As, manually inspected paginated PDF and A2/A3/A4 browser journeys, offline native bundled model, physical 8 GB, final E-01 to E-24. A4 does not have full acceptance or a release build.
+
+See [single-pass verification](./P0_A4_SINGLE_PASS_VERIFICATION.md), [A4 Deliver acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md) and QA Issue #2.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
