@@ -426,6 +426,15 @@ def _display_value(value) -> str:
     return str(value)
 
 
+
+def _display_label(key) -> str:
+    """Keep authored metric capitalization (ROC AUC, R², macro F1)."""
+    original = str(key)
+    normalized = original.replace('_', ' ')
+    return normalized.title() if '_' in original else normalized[:1].upper() + normalized[1:]
+
+
+
 def _exhibit(artifact: dict):
     """Shared typed display model for both HTML and PDF (snapshot is immutable)."""
     operation=artifact.get("operation","verified analysis")
@@ -433,12 +442,12 @@ def _exhibit(artifact: dict):
     params=artifact.get("params") or {}
     facts=[]
     if isinstance(result.get("summary"),dict):
-        facts.extend((str(k).replace("_"," ").title(),_display_value(v)) for k,v in result["summary"].items())
+        facts.extend((_display_label(k),_display_value(v)) for k,v in result["summary"].items())
     for key,val in result.items():
         if key in ("summary","data","findings","method","operation","warning","note"):
             continue
         if isinstance(val,(int,float,str,bool)) or val is None:
-            facts.append((key.replace("_"," ").title(),_display_value(val)))
+            facts.append((_display_label(key),_display_value(val)))
     table_head=[]
     table_rows=[]
     group_data=result.get("data")
@@ -448,7 +457,7 @@ def _exhibit(artifact: dict):
             table_rows=[[_display_value(row.get("label")),_display_value(row.get("value"))] for row in group_data[:50]]
         else:
             keys=list(group_data[0])[:5]
-            table_head=[str(k).replace("_"," ").title() for k in keys]
+            table_head=[_display_label(k) for k in keys]
             table_rows=[[_display_value(row.get(k)) for k in keys] for row in group_data[:40] if isinstance(row,dict)]
     elif isinstance(result.get("findings"),list):
         table_head=["Finding","Detail"]
@@ -457,7 +466,7 @@ def _exhibit(artifact: dict):
     # report_revisions_v1 and can always be audited using the saved evidence ID.
     if not facts and not table_rows:
         for k,v in list(result.items())[:20]:
-            facts.append((str(k).replace("_"," ").title(),_display_value(v)))
+            facts.append((_display_label(k),_display_value(v)))
     return facts[:24],table_head,table_rows
 
 
