@@ -110,9 +110,11 @@ def test_combined_three_exhibit_pdf_has_no_orphaned_evidence_headings():
     assert "Median of synthetic_amount by synthetic_group" in " ".join(texts)
 
     for txt in texts:
-        if "Model Evaluation" in txt:
+        # The evidence register names all exhibit types on page 1; check
+        # the actual section marker rather than the register's category label.
+        if "Investigation: Evaluate synthetic_target" in txt:
             assert "Held-out accuracy (fraction)" in txt
-        if "Explore Snapshot" in txt:
+        if "Investigation: Saved synthetic chart" in txt:
             assert "Chart type" in txt
         if "Verified observations" in txt:
             assert ("Ambiguous date formats" in txt or
