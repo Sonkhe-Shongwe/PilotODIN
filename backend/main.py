@@ -728,6 +728,15 @@ def resource_status(request: Request):
     return resource_policy.status()
 
 
+@app.get('/api/resource/preflight')
+def resource_preflight(request: Request,
+                       operation: Literal["training", "local_inference"] = "local_inference"):
+    _local_request(request)
+    # Read-only status. The decision is re-checked server-side before new
+    # training/model generation; a client report is never authorization.
+    return resource_policy.admit_new_work(operation)
+
+
 @app.put('/api/resource/policy')
 def update_resource_policy(body: ResourcePolicyRequest, request: Request):
     _local_request(request)
