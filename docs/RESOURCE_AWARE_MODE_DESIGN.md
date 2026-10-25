@@ -2,6 +2,19 @@
 
 **Decision recorded 25 October 2026.** The owner agreed to pursue PilotODIN-managed resource constraints instead of treating an 8 GB Windows machine as requiring unsafe removal of system limits. This document is the scoped implementation proposal; **no runtime Resource-Aware Mode is currently shipped**.
 
+## P1 first slice — SOURCE IMPLEMENTED, NOT YET OWNER-TESTED (25 October 2026)
+
+The first *read-only* UI/API implementation is now committed, but **not accepted** until its focused Windows tests pass:
+
+- `backend/resource_policy.py`: three allowed modes, Adaptive default, atomic JSON save under the current `PILOTODIN_HOME`, invalid/corrupt disk preference reporting without rewriting, physical RAM reading through Windows `GlobalMemoryStatusEx` (and Linux development fallback), unavailable readings reported as `null`. Neither OS processes nor model runtimes are enumerated or launched.
+- `backend/main.py`: `GET /api/resource/status` and `PUT /api/resource/policy` with the existing local-only/desktop-session trust boundary; strict Pydantic mode validation and forbidden extraneous preference fields. Read-only status shows `policy_effect=display_only_p1_not_enforced` and `offline_8gb_ai_feasibility=NOT_TESTED`.
+- `frontend/src/ResourceSettings.tsx`, placed inside existing `AISettings`: mode dropdown, explicit Save, instant available/total RAM, manual refresh, honest persistence warnings and not-yet-enforced messaging. The first slice does not modify any ML, bundled AI or quality approval workflow.
+- `tests/test_p1_resource_policy.py`: isolated JSON persistence, recovery from invalid settings, fault-injected atomic write preservation, deterministic fake-memory readings, API roundtrip/local origin restrictions and input validation.
+- `frontend/tests/p1-resource-settings.test.cjs`: front-end/API wiring source gates. New backend suite also added once to the consolidated runner for later regression.
+- One owner check only: `Run_PilotODIN_P1_Resource_Settings.bat` calls `tools/Verify_P1_Resource_Local.py` for **only** the focused backend tests, frontend Node source gates and TypeScript/Vite build, with a single ZIP diagnostic in Temp. No P0/A4 suite, E2 scan, AI download, installer or native Save As repeat.
+
+**Acceptance remains pending a real owner Windows run** of the new single BAT and a short glance at Settings for correct values/persistence. Do not claim RAM budgets or task scheduling work simply because a preference exists. The later P5/P7 heavy-task orchestration and actual offline E2 feasibility remain unchanged.
+
 ## Problem and measured baseline
 
 The owner's Windows machine has 7.804 GiB visible physical RAM. E2 read-only measurements observed **0.572 GiB free** with RAID/Steam/Chrome/ChatGPT etc active, then **1.019 GiB free** after closing RAID. This does **not** measure simultaneous local-Qwen generation + analytics or prove model viability. Memory pressure varies with other applications. Do not attribute all used RAM to PilotODIN or assume a GGUF file's disk size equals peak RAM use.
