@@ -128,6 +128,12 @@ def test_semantic_api_is_project_scoped_and_version_pinned(tmp_path, monkeypatch
     assert ok.status_code==200,ok.text
     assert ok.json()["version"]==3
     assert ok.json()["domain"]["label"]=="Insurance"
+    # The approved local development browser remains allowed.
+    local=client.get(
+        f"/api/projects/{pid}/semantics?expected_version=3",
+        headers={"Origin":"http://127.0.0.1:5173"}
+    )
+    assert local.status_code==200,local.text
     assert client.get(f"/api/projects/{pid}/semantics?expected_version=2").status_code==409
     assert client.get(f"/api/projects/{pid}/semantics").status_code==422
     assert client.get("/api/projects/unknown/semantics?expected_version=3").status_code==404
