@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {BrainCircuit,CheckCircle2,Cloud,KeyRound,LoaderCircle,LockKeyhole,RefreshCw,ShieldCheck,Sparkles,WifiOff} from 'lucide-react';
 import {get,post,put} from './api';
 import {RichText} from './RichText';
+import {ResourceSettings} from './ResourceSettings';
 
 type ProviderId='gemini'|'groq'|'openrouter';
 type ProviderState={id:ProviderId;connected:boolean;verified?:boolean;health?:{status:string;latency_ms?:number;tested_at_utc?:string;message?:string;http_status?:number};routine_model:string;deep_model:string};
@@ -24,6 +25,7 @@ export function AISettings(){
   return <section className="ai-settings-page">
     <section className="quality-banner"><div><div className="eyebrow">ODIN INTELLIGENCE · SETTINGS</div><h2>Local-first ODIN intelligence</h2><p>Use bundled local intelligence on Windows desktop, or Ollama during development. Cloud AI is an optional, consent-based backup. Calculations stay in the verified local engine.</p></div><BrainCircuit size={42}/></section>
     {error&&<div className="alert-error">{error}</div>}{busy&&<div role="status" className="ai-working"><LoaderCircle size={18} className="spin"/><span><strong>{busy==='test:ollama'?'Checking local model server status (no generation)…':busy.startsWith('test:')?'Contacting provider and verifying connection…':busy==='settings'?'Saving preferences securely…':'Saving credential and checking connectivity…'}</strong><small>{elapsed}s elapsed · real API response required before success is shown</small></span></div>}{notice&&<div className="ai-notice"><CheckCircle2 size={16}/>{notice}</div>}
+    <ResourceSettings/>
     {!settings?<div className="panel">Loading AI settings…</div>:<>
     <section className="panel ai-settings-panel"><div className="panel-title"><BrainCircuit size={19}/><h2>ODIN intelligence routing</h2></div>
       <p className="body-muted">Hybrid first tries the bundled offline model on desktop (or development Ollama), then checks consented cloud providers if local inference is unavailable. No autonomous execution or dataset changes are performed.</p>
