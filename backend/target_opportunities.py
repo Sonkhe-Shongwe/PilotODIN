@@ -41,7 +41,8 @@ IDENTIFIER_TOKENS = {
     "postal", "zip", "account_number", "claim_number", "policy_number",
 }
 IDENTIFIER_ENDINGS = ("_id", "_uuid", "_key", "_code", "_number")
-TIME_TOKENS = {"date", "datetime", "timestamp", "time", "created_at", "updated_at"}
+# A duration such as time_to_resolution is not necessarily a timestamp.
+TIME_TOKENS = {"date", "datetime", "timestamp", "created_at", "updated_at"}
 SENSITIVE_TERMS = {
     "gender", "sex", "race", "ethnicity", "religion", "disability",
     "nationality", "pregnancy", "age", "postcode", "postal", "salary_id",
