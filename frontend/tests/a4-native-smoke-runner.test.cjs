@@ -64,3 +64,19 @@ test('A4 native runner does not abort PowerShell 5.1 on normal Tauri STDERR stat
  assert.match(script,/\$ErrorActionPreference=\$previousErrorActionPreference/);
  assert.match(script,/Launcher exception:/);
 });
+
+
+test('A4 checks Microsoft MSVC linker before expensive regression and Tauri build',()=>{
+ const script=fs.readFileSync(path.join(base,'..','tools','Verify_A4_Native_Windows.ps1'),'utf8');
+ assert.match(script,/function Find-MsvcLinker/);
+ assert.match(script,/VC\\Tools\\MSVC/);
+ assert.match(script,/bin\\Hostx64\\x64\\link\.exe/);
+ assert.match(script,/vswhere\.exe/);
+ assert.match(script,/msvc_linker_found/);
+ assert.match(script,/Desktop development with C\+\+/);
+ const linkerCheck=script.indexOf('$msvcLinker=Find-MsvcLinker');
+ const regressions=script.indexOf("Running the ONE consolidated A2/A3/A4 regression gate");
+ const cargoStart=script.indexOf('& $npm run desktop:dev');
+ assert.ok(linkerCheck>=0&&linkerCheck<regressions&&regressions<cargoStart,
+           'MSVC checks must happen before all expensive test and Cargo work');
+});
