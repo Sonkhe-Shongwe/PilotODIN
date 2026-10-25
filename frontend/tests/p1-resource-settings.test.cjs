@@ -11,7 +11,9 @@ test('resource status uses system physical RAM and explicitly reports no E2 cert
  assert.match(source,/"available_gib"/);
  assert.match(source,/"status": "unavailable"/);
  assert.match(source,/offline_8gb_ai_feasibility": "NOT_TESTED"/);
- assert.match(source,/policy_effect": "display_only_p1_not_enforced"/);
+ assert.match(source,/policy_effect": "low_memory_new_work_preflight_only_no_scheduler"/);
+ assert.match(source,/LOW_MEMORY_MIN_FREE_GIB/);
+ assert.match(source,/def admit_new_work\(operation: str\)/);
  assert.doesNotMatch(source,/(?:subprocess|requests\.|urllib\.request|psutil\.process_iter|os\.system)/);
 });
 
@@ -45,7 +47,33 @@ test('Resource-Aware Settings UI is advisory, explicit-save and does not run a m
  assert.match(ui,/status\.policy\.mode===draft/);
  assert.match(ui,/\/resource\/status/);
  assert.match(ui,/\/resource\/policy/);
- assert.match(ui,/Heavy-work scheduling is not enabled/);
+ assert.match(ui,/Low-memory mode screens new ML\/local-AI starts/);
+ assert.match(ui,/low_memory_training_min_free_gib/);
+ assert.match(ui,/low_memory_local_inference_min_free_gib/);
  assert.match(ui,/No processes are inspected or stopped/);
  assert.doesNotMatch(ui,/launch_bundled_ai|ollama (?:pull|run)|\/ai\/local\/status/);
+});
+
+
+test('Low-memory gate sits before any new ML experiment is persisted and leaves baseline guards intact',()=>{
+ const main=read('backend/main.py');
+ const handler=main.split('def new_experiment(')[1]?.split('\n\n@app.get("/api/experiments/')[0];
+ assert.ok(handler,'ML experiment route must exist');
+ assert.match(handler,/engine\.validate_config\(/);
+ assert.match(handler,/engine\.preparation\(/);
+ assert.match(handler,/resource_policy\.admit_new_work\("training"\)/);
+ assert.match(handler,/HTTPException\(status_code=503/);
+ assert.match(handler,/storage\.new_experiment\(project_id,config\)/);
+ assert.ok(handler.indexOf('resource_policy.admit_new_work("training")') <
+           handler.indexOf('storage.new_experiment(project_id,config)'),
+           'No experiment artifacts may be created before admission');
+ const provider=read('backend/ai_provider.py');
+ const local=provider.split('def local_try()->dict|None:')[1]?.split('\n    if prefer_local:')[0];
+ assert.ok(local,'Local generation request function must exist');
+ assert.match(local,/resource_policy\.admit_new_work\('local_inference'\)/);
+ assert.ok(local.indexOf("admit_new_work('local_inference')")<
+           local.indexOf('bundled_inference.generate('));
+ assert.ok(local.indexOf("admit_new_work('local_inference')")<
+           local.indexOf('_call_ollama('));
+ assert.match(local,/local_failed='resource_limited'/);
 });
