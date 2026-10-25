@@ -125,6 +125,49 @@ def create_fixture(home:Path):
         "report_id":saved.json()["id"],"audit_id":aid,
     },items
 
+def verify_pdf_responses(backend_port: int, vite_port: int, report_id: str) -> list[str]:
+    """Real HTTP, binary and CORS checks for actual PDF attachment responses.
+
+    Headless Chromium's fetch/download handling is deliberately not part of this
+    PDF check. The real FastAPI endpoint and existing attachment headers are.
+    """
+    findings=[]
+    origin=f"http://127.0.0.1:{vite_port}"
+    for revision in (1,2):
+        uri=(f"http://127.0.0.1:{backend_port}/api/reports/{report_id}"
+             f"/export/pdf?revision={revision}")
+        request=urllib.request.Request(
+            uri,headers={"Origin":origin,"Accept":"application/pdf"},method="GET"
+        )
+        with urllib.request.urlopen(request,timeout=15) as response:
+            status=response.status
+            content_type=response.headers.get("Content-Type","")
+            disposition=response.headers.get("Content-Disposition","")
+            cors=response.headers.get("Access-Control-Allow-Origin","")
+            no_sniff=response.headers.get("X-Content-Type-Options","")
+            cache=response.headers.get("Cache-Control","")
+            length=response.headers.get("Content-Length")
+            body=response.read()
+        if status!=200:
+            raise AssertionError(f"PDF revision {revision}: HTTP {status}, expected 200")
+        if not content_type.lower().startswith("application/pdf"):
+            raise AssertionError(f"PDF revision {revision}: unexpected MIME {content_type}")
+        if f"_rev{revision}.pdf" not in disposition or "attachment" not in disposition.lower():
+            raise AssertionError(f"PDF revision {revision}: missing revision-specific attachment filename")
+        if cors!=origin:
+            raise AssertionError(f"PDF revision {revision}: unexpected CORS origin {cors!r}")
+        if no_sniff.lower()!="nosniff" or "no-store" not in cache.lower():
+            raise AssertionError(f"PDF revision {revision}: missing secure response headers")
+        if not body.startswith(b"%PDF-") or b"%%EOF" not in body[-1024:]:
+            raise AssertionError(f"PDF revision {revision}: PDF signature/trailer invalid")
+        if len(body)<300 or (length is not None and len(body)!=int(length)):
+            raise AssertionError(f"PDF revision {revision}: truncated or inconsistent body")
+        findings.append(f"revision={revision} status={status} bytes={len(body)} "
+                        f"mime={content_type} filename_ok=true cors_ok=true "
+                        f"pdf_signature=true pdf_eof=true length_ok=true")
+    return findings
+
+
 def stop(proc):
     if proc is None:
         return
@@ -174,6 +217,7 @@ def main()->int:
     browserlog=output/"full-stack-browser.log"
     dom=output/"full-stack-browser-dom.txt"
     integritylog=output/"source-integrity.log"
+    pdflog=output/"real-pdf-http.log"
     backend=None
     vite=None
     backend_stream=None
@@ -182,6 +226,7 @@ def main()->int:
     originals=[]
     browser_ok=False
     backend_ok=False
+    pdf_ok=False
     try:
         if buildrc!=0:
             raise RuntimeError("Frontend build failed; browser and backend tests not started.")
@@ -241,6 +286,18 @@ def main()->int:
             f.write("\nFAILED: "+str(exc)+"\n")
         phase("p2-real-fastapi-mounted-react",False,browserlog,str(exc))
     finally:
+        # Keep this test-owned backend alive until PDF response bytes and headers
+        # have been verified through real HTTP, independently of headless Chrome.
+        if backend_ok and fixture is not None and backend is not None and backend.poll() is None:
+            try:
+                findings=verify_pdf_responses(backend_port,vite_port,fixture["report_id"])
+                pdflog.write_text("\\n".join(findings)+"\\n",encoding="utf-8")
+                pdf_ok=True
+            except Exception as exc:
+                pdflog.write_text("PDF HTTP verification FAILED: "+str(exc)+"\\n",encoding="utf-8")
+        else:
+            pdflog.write_text("PDF HTTP verification unavailable: fixture or server not running.\\n",encoding="utf-8")
+        phase("p2-real-pdf-binary-http",pdf_ok,pdflog)
         stop(vite)
         stop(backend)
         if vite_stream:vite_stream.close()
@@ -264,8 +321,11 @@ def main()->int:
     report={
       "scope":"P2 real FastAPI/SQLite plus mounted React on synthetic isolated projects",
       "utc":datetime.now(timezone.utc).isoformat(),
-      "overall":"PASS" if len(results)==3 and all(p["status"]=="PASS" for p in results) else "FAIL",
+      "overall":"PASS" if len(results)==4 and all(p["status"]=="PASS" for p in results) else "FAIL",
       "phases":results,"expected_real_browser_scenarios":3,
+      "expected_real_pdf_http_revisions":2,
+      "headless_chrome_pdf_attachment_fetch":"NOT_VALIDATED",
+      "native_browser_or_tauri_save_as":"NOT_TESTED",
       "user_projects_or_datasets":"NOT_ACCESSED",
       "backend_isolation":"PILOTODIN_HOME temporary, random loopback port, no desktop session",
       "native_tauri_save_as":"NOT_TESTED",
