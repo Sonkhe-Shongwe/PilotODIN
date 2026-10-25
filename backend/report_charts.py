@@ -54,6 +54,24 @@ def visual_spec(chart: dict | None) -> dict | None:
     }
 
 
+
+def measure_caption(spec: dict) -> str:
+    """Human-readable label from saved settings; do not change plot values."""
+    kind = spec["type"]
+    x = spec.get("x", "").strip()
+    y = spec.get("y", "").strip()
+    if kind == "histogram":
+        return "Frequency distribution of " + (x or "saved observations")
+    agg = (spec.get("aggregation") or "").lower().strip()
+    supported = {
+        "median": "Median", "mean": "Mean", "avg": "Mean", "average": "Mean",
+        "sum": "Sum", "count": "Count", "min": "Minimum", "max": "Maximum"
+    }
+    op = supported.get(agg, "Saved aggregate")
+    measure = (op + " of " + y) if y else (op + " of records")
+    return measure + (" by " + x if x else "")
+
+
 def _domain(spec: dict) -> tuple[float, float]:
     vals = [point["value"] for point in spec["data"]]
     low, high = min(0.0, min(vals)), max(0.0, max(vals))
@@ -85,7 +103,7 @@ def html_chart(spec: dict) -> str:
     baseline = y(0.0)
     n = len(spec["data"])
     step = plot_w / n
-    axis = escape(spec["y"] or ("Frequency" if spec["type"] == "histogram" else spec["aggregation"] or "Value"))
+    axis = escape(measure_caption(spec)[:84])
     group = escape(spec["x"] or "Group")
     result = [f'<figure class="verified-chart"><svg viewBox="0 0 {width} {height}" role="img" '
               f'aria-label="Saved {escape(spec["type"])} chart. {n} plotted aggregate values, '
@@ -121,7 +139,8 @@ def html_chart(spec: dict) -> str:
     result.append(f'<text x="{(left+right)/2:.2f}" y="{height-5}" text-anchor="middle" '
                   f'font-size="11" fill="#28364e">{group}</text>')
     result.append(f'<text x="8" y="12" font-size="11" fill="#28364e">{axis}</text></svg>')
-    result.append('<figcaption>Static visualization of saved aggregate values. '
+    result.append('<figcaption><strong>'+escape(measure_caption(spec))+'</strong>. '
+                  'Static visualization of saved aggregate values. '
                   'The accompanying evidence table contains the recorded numbers.')
     if spec["note"]:
         result.append(' '+escape(spec["note"]))
@@ -168,7 +187,6 @@ def pdf_chart(spec: dict, width: float = 500.0) -> Drawing:
                          fillColor=colors.HexColor("#485673")))
     d.add(String((left+right)/2, 7, spec["x"][:65] or "Group",
                  textAnchor="middle", fontSize=8, fillColor=colors.HexColor("#28364e")))
-    d.add(String(5, height-12, (spec["y"] or ("Frequency" if spec["type"] == "histogram"
-                                            else spec["aggregation"] or "Value"))[:50],
+    d.add(String(5, height-12, measure_caption(spec)[:74],
                  fontSize=8, fillColor=colors.HexColor("#28364e")))
     return d
