@@ -20,6 +20,8 @@ test('P3 route requires approved project and exact version, with no target train
  const main=read('backend/main.py');
  const route=main.split('@app.get("/api/projects/{project_id}/semantics")')[1]?.split('@app.get("/api/projects/{project_id}/columns/detail")')[0];
  assert.ok(route,'Expected version-pinned semantics GET route');
+ assert.match(route,/request: Request/);
+ assert.match(route,/_local_request\(request\)/);
  assert.match(route,/project_or_404\(project_id\)/);
  assert.match(route,/quality\.current_data\(project_id\)/);
  assert.match(route,/version != expected_version/);
