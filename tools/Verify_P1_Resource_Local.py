@@ -27,7 +27,8 @@ def main() -> int:
     node = shutil.which("node.exe") or shutil.which("node")
     phases = [
         ("backend-resource-policy", [sys.executable, "-m", "pytest", "-q",
-                                     "tests/test_p1_resource_policy.py"], ROOT),
+                                     "tests/test_p1_resource_policy.py",
+                                     "tests/test_p1_resource_admission.py"], ROOT),
         ("frontend-resource-controls", [node, "--test",
                                         "tests/p1-resource-settings.test.cjs"], ROOT / "frontend"),
         ("frontend-typescript-vite", [npm, "run", "build"], ROOT / "frontend"),
