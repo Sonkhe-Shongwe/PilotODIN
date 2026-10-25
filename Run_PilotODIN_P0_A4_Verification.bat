@@ -5,6 +5,8 @@ set "PILOTODIN_PYTHON=%CD%\.venv-live\Scripts\python.exe"
 if not exist "%PILOTODIN_PYTHON%" (
   echo ERROR: Isolated development Python not found.
   echo Launch Start_PilotODIN_Live_Dev.bat once to configure the development environment.
+  echo.
+  pause
   exit /b 1
 )
 "%PILOTODIN_PYTHON%" tools\Verify_P0_A4_Readiness.py
@@ -15,4 +17,7 @@ if "%RESULT%"=="0" (
 ) else (
   echo Automated P0/A4 readiness checks FAILED. Review the isolated summary and logs.
 )
+echo.
+echo The diagnostics ZIP is printed above. The automated result is not a release signoff.
+pause
 exit /b %RESULT%
