@@ -1,0 +1,45 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const base=path.join(__dirname,'..');
+const read=(p)=>fs.readFileSync(path.join(base,p),'utf8');
+
+test('A4 native smoke mode is enabled only for Vite DEV and exact opt-in variable',()=>{
+ const bootstrap=read('src/desktopBootstrap.ts');
+ assert.match(bootstrap,/import\.meta\.env\.DEV && import\.meta\.env\.VITE_PILOTODIN_NATIVE_SMOKE === '1'/);
+ assert.match(bootstrap,/if \(isNativeA4SmokeMode\(\)\)/);
+ assert.match(bootstrap,/if \(!isDesktop\(\)\) return;/);
+ assert.match(bootstrap,/const connection = await invoke<DesktopConnection>\('launch_backend'\)/);
+});
+
+test('A4 native debug overlay never modifies bundling or release resources',()=>{
+ const overlay=JSON.parse(read('src-tauri/tauri.native-a4-smoke.conf.json'));
+ const release=JSON.parse(read('src-tauri/tauri.conf.json'));
+ assert.equal(overlay.build.devUrl,'http://127.0.0.1:5174');
+ assert.match(overlay.build.beforeDevCommand,/--port 5174/);
+ assert.equal(overlay.bundle.active,false);
+ assert.deepEqual(overlay.bundle.externalBin,[]);
+ assert.deepEqual(overlay.bundle.resources,[]);
+ assert.notEqual(overlay.identifier,release.identifier);
+ assert.equal(release.bundle.active,true);
+ assert.ok(release.bundle.externalBin.length>0);
+ assert.ok(Object.keys(release.bundle.resources).length>0);
+});
+
+test('A4 Windows runner checks native prerequisites and includes regression diagnostics',()=>{
+ const script=fs.readFileSync(path.join(base,'..','tools','Verify_A4_Native_Windows.ps1'),'utf8');
+ const launcher=fs.readFileSync(path.join(base,'..','Run_PilotODIN_A4_Native_Smoke.bat'),'utf8');
+ assert.match(script,/rustc\.exe/);
+ assert.match(script,/cargo\.exe/);
+ assert.match(script,/http:\/\/127\.0\.0\.1:8000\/api\/health/);
+ assert.match(script,/Port-Open 5174/);
+ assert.match(script,/Verify_P0_A4_Readiness\.py/);
+ assert.match(script,/VITE_PILOTODIN_NATIVE_SMOKE='1'/);
+ assert.match(script,/npm\.cmd/);
+ assert.match(script,/src-tauri\/tauri\.native-a4-smoke\.conf\.json/);
+ assert.match(script,/Compress-Archive/);
+ assert.match(script,/Ask-Result/);
+ assert.match(launcher,/Verify_A4_Native_Windows\.ps1/);
+ assert.doesNotMatch(script,/Build_Windows_Installer|Stage_Bundled_Inference|Stage_Pinned_Offline_AI/);
+});
