@@ -114,6 +114,16 @@ Owner supplied `pilotodin_report (1)(1).html` and `pilotodin_report_e598f981d064
 
 See [A4 acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md), [single pass verifier](./P0_A4_SINGLE_PASS_VERIFICATION.md) and QA Issue #2.
 
+## A4 native Windows — one-pass DEVELOPMENT smoke runner prepared (25 October 2026)
+
+**New source checkpoint (NOT yet executed on the owner's Windows machine):** `Run_PilotODIN_A4_Native_Smoke.bat` launches `tools/Verify_A4_Native_Windows.ps1`. It preflights Windows/Rust MSVC ≥1.90/npm/branch/localhost backend port 8000, checks localhost 5174 is free, runs the **single deduplicated A2/A3/A4 regression verifier**, and only if that passes invokes the Tauri **development** build/window with an isolated config overlay. After the user closes the window, a short yes/no/skip prompt records native window, PDF Save As, HTML Save As and cancellation observations. The runner assembles ONE shareable diagnostics ZIP; test project/AI files are excluded.
+
+The special config `frontend/src-tauri/tauri.native-a4-smoke.conf.json` uses identifier `com.pilotodin.a4smoke`, binds its frontend to localhost 5174 (without interfering with the current Chrome localhost 5173), and disables dev-only bundling/sidecars/AI assets **in the overlay**. The normal `tauri.conf.json` and installer requirements are unchanged. `frontend/src/desktopBootstrap.ts` opts out of launching the unavailable desktop Python sidecar only when Vite DEV **and** `VITE_PILOTODIN_NATIVE_SMOKE=1`; the already-running local dev backend at 8000 supplies saved reports. Production builds still use session-bound backend launch.
+
+Tested source is **not** yet Rust-compiled or Tauri-rendered; `frontend/tests/a4-native-smoke-runner.test.cjs` contains source-level guard tests. No hosted CI and no installer build. Initial native Cargo development build may need Microsoft C++ Build Tools/WebView2 and downloads of Rust crates; preflight explains blockers. **Do not claim Save As accepted before the owner's actual native dialog observations.**
+
+Next owner action, when ready: keep PilotODIN Live Dev backend up, pull latest feature branch once, double-click `Run_PilotODIN_A4_Native_Smoke.bat`, complete native window steps, attach `pilotodin-a4-native-*.zip`. If prerequisites fail, send that same ZIP rather than guessing or reinstalling anything. Workflow: [A4 Native Windows One Pass](./A4_NATIVE_WINDOWS_ONE_PASS.md), [A4 acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md), [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
