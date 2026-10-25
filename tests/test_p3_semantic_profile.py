@@ -56,6 +56,13 @@ def test_no_semantic_signal_abstains_without_inventing_domain_or_target():
     assert out["version"] == 2
 
 
+def test_single_composite_header_is_not_independent_domain_evidence():
+    data=pd.DataFrame({"product_sku":["A","B","C"], "value":[1,2,3]})
+    out=semantic_profile.overview(data,0)
+    assert out["domain"]["state"]=="unknown"
+    assert out["domain"]["label"] is None
+
+
 def test_conflicting_domain_clues_abstain_instead_of_ranking_by_guesswork():
     data=pd.DataFrame({
         "order_id":range(8), "product_sku":["A","B"]*4,
