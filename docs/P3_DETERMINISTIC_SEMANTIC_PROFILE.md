@@ -1,6 +1,6 @@
 # P3 — Shared deterministic semantic hypothesis profile (first increment)
 
-**25 October 2026 — source implemented, focused owner Windows verification PENDING.**
+**25 October 2026 — first owner Windows test failed 2 backend assertions (13 passed), 4/4 Node PASS and Vite PASS; two targeted fixes committed, repair owner verification PENDING.**
 
 ## Why P3 follows the accepted P5 minimum
 
@@ -27,6 +27,19 @@ The goal is to provide **read-only, evidence-bounded business context** as an en
 - **Exactly one Windows check:** `Run_PilotODIN_P3_Semantic_Profile.bat` calls `tools/Verify_P3_Semantic_Profile_Local.py`, running only new P3 + existing column-intelligence Pytests, four P3 Node source contracts, and TypeScript/Vite build because the new screen was integrated. Synthetic isolated PILOTODIN_HOME. Output one `pilotodin-p3-semantics-*.zip` with JSON and phase logs; upload only if failed. No real insurance dataset import, long-running ML, native Save As, old P5 tests, Qwen downloads or E2 RAM scans.
 
 **Truth:** This new P3 batch's source has been committed and reviewed, but **NO P3 owner Windows tests have yet been executed**. Do not mark P3 accepted merely because older P5 is green.
+
+## Owner failure evidence and targeted source repair — 25 October 2026
+
+The owner ran the original `Run_PilotODIN_P3_Semantic_Profile.bat` and uploaded `pilotodin-p3-semantics-ocmar9cg.zip`. We **directly inspected all four files** (`result.json`, `p3-semantics-and-column-backend.log`, `p3-semantic-ui-contracts.log`, `frontend-typescript-vite.log`).
+
+- `result.json` UTC **2026-10-25T19:01:09.511586Z**: overall **FAIL** because of the backend phase; isolated data only; no user projects modified.
+- Backend **13 passed / 2 failed in 3.67s**, failures in `test_retail_is_tentative_and_does_not_claim_order_grain` and `test_semantic_api_is_project_scoped_and_version_pinned`.
+- Node frontend source-contracts **4/4 PASS**, 0 failed. TypeScript/Vite **PASS**, 1,619 modules transformed, 3.65s build; non-blocking bundle-size warning.
+- **Failure 1 was a brittle assertion**, not a modelling issue: test expected exact substring "record grain", while truthful runtime explanation says "row grain". The regression now tests the substantive meaning: the word "grain" and need for "business" confirmation must both appear, while state/identifier remain unknown.
+- **Failure 2 was a real endpoint hardening gap**: cross-origin `Origin: https://external.example` was returned 200 by the GET endpoint in dev mode. CORS alone does not reject the HTTP request. The route now calls existing `_local_request(request)` **before** project/data access; existing local development origin remains accepted in an additional test, external origin must produce 403. This intentionally tightens only the new semantic GET endpoint, not the unrelated existing GET routes.
+- Existing P3 Node source contract was tightened to require a `Request` and server-side local guard in the new route. Old P3 BAT failure-message typo "P5 check did not pass" corrected.
+
+**Minimal rerun:** `Run_PilotODIN_P3_Semantic_Repair.bat` (new), invoking `tools/Verify_P3_Semantic_Repair_Local.py`. Runs ONLY the new P3 Python tests and updated four Node contracts, in isolated synthetic test environment. **Does not repeat TypeScript/Vite**, which already passed and no frontend application component changed in the fixes; does not re-run the unchanged column-intelligence tests, old P5/P1/P0/A4 or native installer. Reports one fresh `pilotodin-p3-repair-*.zip` with both phase logs and JSON. Source has been re-fetched and static guard/check ordering inspected, but **no repaired P3 owner Python/Node execution is yet recorded**. Do not mark the fix verified until its Windows result is received.
 
 ## Next after one green P3 gate
 
