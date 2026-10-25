@@ -8,6 +8,10 @@ type ReportSummary={id:string;title:string;revision:number;updated_at:string};
 type Evidence={id:string;operation:string;dataset_version:number;tool_version:string;params:Record<string,unknown>;result:Record<string,unknown>};
 type SavedReport={id:string;title:string;narrative:string;revision:number;revisions:number[];dataset_versions:number[];current_dataset_version:number;has_historical_evidence:boolean;content_sha256:string;evidence:Evidence[]};
 
+function idsafeMessage(saved:{dataset_version:number;findings_total:number},selectionFull:boolean):string {
+ return `Captured read-only Quality audit v${saved.dataset_version} with ${saved.findings_total} findings. ${selectionFull?'Evidence selection is full (15); deselect an item to include this audit.':'Audit selected for the next saved revision.'}`;
+}
+
 /** Persisted report composer; component-local draft, backend-owned saved revisions. */
 export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='Investigation report',preselectEvidenceId=null}:{projectId:string;availableEvidence?:EvidenceOption[];defaultTitle?:string;preselectEvidenceId?:string|null}) {
  const [reports,setReports]=useState<ReportSummary[]>([]);
@@ -78,6 +82,17 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      await refresh();
    }catch(e){setError((e as Error).message)}finally{setBusy('')}
  }
+ async function captureQualityAudit(){
+   userStartedDraft.current=true;setBusy('quality');setError('');setNotice('');
+   try{
+     const state=await get<{version:number}>(`/projects/${encodeURIComponent(projectId)}/quality`);
+     const saved=await post<{id:string;dataset_version:number;findings_total:number}>(`/projects/${encodeURIComponent(projectId)}/report-quality`,{expected_version:state.version});
+     const options=await get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`);
+     setProjectEvidence(options);
+     setSelected(ids=>ids.length>=15||ids.includes(saved.id)?ids:[...ids,saved.id]);
+     setNotice(idsafeMessage(saved,selected.length>=15));
+   }catch(e){setError((e as Error).message)}finally{setBusy('')}
+ }
  async function download(format:'html'|'pdf'){
    if(!activeId||!opened)return;
    setBusy('export');setError('');
@@ -110,7 +125,8 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      <label className="pd-report-field">Report title<input value={title} maxLength={180} onChange={e=>{userStartedDraft.current=true;setTitle(e.target.value)}}/></label>
      <label className="pd-report-field">Interpretation and limitations<textarea value={narrative} placeholder="Describe what the verified evidence establishes, what remains uncertain, and any important limitations. This text is authored by you." rows={5} maxLength={6000} onChange={e=>{userStartedDraft.current=true;setNarrative(e.target.value)}}/></label>
      <h3>Select verified evidence</h3>
-     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>{userStartedDraft.current=true;setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}}/><span><strong>{e.operation==='explore_snapshot'?'Saved Explore investigation':e.operation==='model_evaluation'?'Selected model evaluation':e.operation.replaceAll('_',' ')} · v{e.version}{e.stale?' · HISTORICAL':''}</strong><small>{e.operation==='explore_snapshot'?(e.objective??'Saved analysis'):`${Object.entries(e.params||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ')||'Dataset profile'}`} · Evidence {e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Open an investigation and compute evidence to create a new report.</p>}
+     <div className="pd-report-quality-capture"><div><strong>Capture Quality findings</strong><small>Create a read-only, version-bound audit with issue counts and reviewed correction history. No source records or automatic corrections.</small></div><button type="button" className="ud-btn ud-btn-quiet" disabled={!!busy} onClick={()=>void captureQualityAudit()}>{busy==='quality'?'Capturing…':'Capture current Quality audit'}</button></div>
+     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>{userStartedDraft.current=true;setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}}/><span><strong>{e.operation==='explore_snapshot'?'Saved Explore investigation':e.operation==='model_evaluation'?'Selected model evaluation':e.operation==='quality_audit'?'Saved Quality audit':e.operation.replaceAll('_',' ')} · v{e.version}{e.stale?' · HISTORICAL':''}</strong><small>{e.operation==='explore_snapshot'?(e.objective??'Saved analysis'):`${Object.entries(e.params||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ')||'Dataset profile'}`} · Evidence {e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Capture a Quality audit, save an Explore analysis, evaluate a model, or create investigation evidence to start a report.</p>}
      {selected.filter(id=>!availableMap.has(id)).length>0&&<p className="pd-report-muted">{selected.filter(id=>!availableMap.has(id)).length} additional saved evidence references retained from the loaded report.</p>}
      {selected.length>1&&<section className="pd-report-order" aria-label="Order of report exhibits"><h4>Report exhibit order</h4><p className="pd-report-muted">Exhibits appear in this order in both saved HTML and PDF revisions.</p><ol>{selected.map((id,index)=><li key={id}><span><b>{index+1}.</b> {availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,8)} · v{availableMap.get(id)?.version??opened?.evidence.find(item=>item.id===id)?.dataset_version??'?'}</span><div><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} earlier`} title="Move earlier" disabled={!!busy||index===0} onClick={()=>shiftEvidence(id,-1)}><ArrowUp size={15}/></button><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} later`} title="Move later" disabled={!!busy||index===selected.length-1} onClick={()=>shiftEvidence(id,1)}><ArrowDown size={15}/></button></div></li>)}</ol></section>}
      <div className="pd-report-actions"><div><strong>{selected.length} verified evidence artifacts selected</strong><small>{!saveReady?'Enter a report title and select evidence to continue.':hasDraftChanges?'Save your changes before exporting an updated revision.':opened?'Current saved revision is ready for export.':'Save a frozen report revision to enable HTML/PDF exports.'}</small></div><button className="ud-btn ud-btn-primary" disabled={!!busy||!saveReady||!hasDraftChanges&&!!opened} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button></div>
