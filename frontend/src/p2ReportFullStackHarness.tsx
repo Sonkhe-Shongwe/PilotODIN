@@ -16,12 +16,22 @@ if(!result||!Number.isInteger(backendPort)||backendPort<1024||backendPort>65535|
  throw new Error('Invalid isolated full-stack fixture parameters');
 
 const directFetch=window.fetch.bind(window);
+const networkTrace:string[]=[];
 window.fetch=((resource:RequestInfo|URL,init?:RequestInit)=>{
  const target=new URL(String(resource),location.href);
  if(target.hostname!=='127.0.0.1'||target.port!=='8000'||!target.pathname.startsWith('/api/'))
   return Promise.reject(new Error('Unexpected API destination blocked by P2 integration harness'));
  target.port=String(backendPort);
- return directFetch(target.toString(),init);
+ const method=init?.method??'GET';
+ const label=method+' '+target.pathname.replace(/\/[a-f0-9]{32}(?=\/|$)/g,'/{synthetic-id}')+target.search;
+ return directFetch(target.toString(),init).then(response=>{
+   networkTrace.push(label+' => HTTP '+response.status+' / '+(response.headers.get('content-type')??'no-content-type'));
+   return response;
+ },error=>{
+   const reason=error instanceof Error?error.message:String(error);
+   networkTrace.push(label+' => NETWORK ERROR '+reason);
+   throw new Error(label+' failed: '+reason);
+ });
 }) as typeof fetch;
 
 function expect(value:unknown,message:string):asserts value {if(!value)throw new Error(message)}
@@ -69,28 +79,42 @@ await trial('Real FastAPI report revision hydrates in mounted React',async()=>{
  expect(!!findButton('Export PDF'),'real report export control absent');
 });
 await trial('Mounted React writes a revision; old PDF/HTML evidence remains frozen',async()=>{
+ let stage='waiting for baseline';
+ try {
  await until(()=>title()?.value==='Synthetic Baseline Report','baseline before revision');
  const input=title(),note=narrative();
  expect(input&&note,'editor elements missing');
  setInput(input,'Synthetic Revision Two');
  setInput(note,'Updated interpretation based only on a synthetic quality audit.');
  await until(()=>{const b=findButton('Save new revision');return b&&!b.disabled?b:null},'Save revision enabled');
+ stage='save revision 2 through mounted UI';
  findButton('Save new revision')!.click();
  await until(()=>document.querySelector('#mount .pd-report-notice')?.textContent?.includes('Saved revision 2'),'UI save completion');
+ stage='GET persisted revision 1';
  const old=await readJSON('/reports/'+reportId+'?revision=1');
+ stage='GET persisted revision 2';
  const revised=await readJSON('/reports/'+reportId+'?revision=2');
  expect(old.title==='Synthetic Baseline Report','revision 1 overwritten');
  expect(revised.title==='Synthetic Revision Two','revision 2 title incorrect');
  expect(old.content_sha256!==revised.content_sha256,'saved digest did not change');
  expect(revised.evidence[0].id===auditId,'frozen evidence ID changed');
  for(const revision of [1,2]){
+  stage='GET HTML export revision '+revision;
   const html=await fetch('http://127.0.0.1:8000/api/reports/'+reportId+'/export/html?revision='+revision);
+  stage='GET PDF export revision '+revision;
   const pdf=await fetch('http://127.0.0.1:8000/api/reports/'+reportId+'/export/pdf?revision='+revision);
+  stage='validate export HTTP response for revision '+revision;
   expect(html.status===200&&pdf.status===200,'report export failed');
+  stage='read HTML export body for revision '+revision;
   expect((await html.text()).includes(revision===1?'Synthetic Baseline Report':'Synthetic Revision Two'),'HTML wrong revision');
+  stage='read PDF export body for revision '+revision;
   const pdfBytes=new Uint8Array(await (await pdf.blob()).arrayBuffer());
+  stage='validate PDF signature and filename for revision '+revision;
   expect(new TextDecoder().decode(pdfBytes.slice(0,5))==='%PDF-','PDF signature invalid');
   expect(pdf.headers.get('content-disposition')?.includes('_rev'+revision+'.pdf'),'PDF export filename revision wrong');
+ }
+ }catch(error){
+  throw new Error('Revision/export stage ['+stage+']: '+(error instanceof Error?error.message:String(error)));
  }
 });
 await trial('Project switching excludes foreign report evidence and permits isolated audit',async()=>{
@@ -112,6 +136,7 @@ await trial('Project switching excludes foreign report evidence and permits isol
  expect(stillA.title==='Synthetic Baseline Report','switch changed project A revision');
 });
 const passed=cases.filter(c=>c.status==='PASS').length;
-const resultData={overall:passed===cases.length?'PASS':'FAIL',passed,total:cases.length,results:cases};
+const resultData={overall:passed===cases.length?'PASS':'FAIL',passed,total:cases.length,results:cases,
+ network_trace:networkTrace.slice(-65)};
 result!.setAttribute('data-status',resultData.overall);
 result!.textContent=JSON.stringify(resultData,null,2);
