@@ -54,7 +54,7 @@ export function TargetOpportunities({
         <strong>{item.column}</strong><small>Possible {item.task_hypothesis} · {item.labelled_rows.toLocaleString()} observed labels · {item.missing_labels.toLocaleString()} missing</small>
         <p className="muted-caption">{item.possible_decision_question}</p>
         <p className="muted-caption">Technical status: reviewable, not approved. Business relevance: {item.user_context?'user-described, not independently verified':'unknown until you describe the intended decision'}.</p>
-        {item.user_context&&<p className="muted-caption"><strong>Recorded user context:</strong> {item.user_context.outcome_definition.slice(0,160)}. Decision: {item.user_context.decision_action.slice(0,160)}.</p>
+        {item.user_context&&<p className="muted-caption"><strong>Recorded user context:</strong> {item.user_context.outcome_definition.slice(0,160)}. Decision: {item.user_context.decision_action.slice(0,160)}.</p>}
         <TargetContextEditor projectId={projectId} version={version} column={item.column} existing={item.user_context??null} onSaved={()=>setRefresh(n=>n+1)}/>
         {item.review_warnings.slice(0,3).map((warning,i)=><p className="muted-caption" key={i}><AlertCircle size={13}/> {warning}</p>)}
         <button type="button" className="btn small" aria-pressed={selectedTarget===item.column} onClick={()=>onChooseTarget(item.column)}>
