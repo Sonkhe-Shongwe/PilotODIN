@@ -16,7 +16,6 @@ function Round-GiB([double]$bytes){
     return [math]::Round($bytes / 1GB, 3)
 }
 $os = Get-CimInstance -ClassName Win32_OperatingSystem
-$machine = Get-CimInstance -ClassName Win32_ComputerSystem
 $totalBytes = [double]$os.TotalVisibleMemorySize * 1024
 $freeBytes = [double]$os.FreePhysicalMemory * 1024
 if($totalBytes -le 0){
@@ -31,7 +30,7 @@ $probe = [ordered]@{
     physical_memory_gib = Round-GiB $totalBytes
     free_memory_gib_at_probe = Round-GiB $freeBytes
     available_fraction_at_probe = [math]::Round($freeBytes / $totalBytes,3)
-    computer_is_8gb_class = ($totalBytes -ge 7.0GB -and $totalBytes -le 9.5GB)
+    computer_is_8gb_class = ($totalBytes -ge (7 * 1GB) -and $totalBytes -le (9.5 * 1GB))
     process_memory_gib_at_probe = [ordered]@{}
     model_file = [ordered]@{specified = $false; found = $false; size_gib = $null}
     inference_runtime = [ordered]@{specified = $false; found = $false}
