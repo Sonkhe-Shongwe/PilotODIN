@@ -10,7 +10,16 @@ type Opportunity={
  user_context?:UserTargetContext|null;
  possible_decision_question:string;labelled_rows:number;missing_labels:number;
  distinct_labels:number;smallest_class:number|null;observed_evidence:string[];
- blockers:string[];review_warnings:string[];safe_to_train_automatically:false
+ blockers:string[];review_warnings:string[];safe_to_train_automatically:false;
+ risk_review?:{
+  status:'needs_human_review'|'context_missing';
+  verification:'unverified_user_text_and_header_clues';
+  timing_cue:'not_determined'|'possible_after_event_wording';
+  label_cue:'not_determined'|'possibly_unconfirmed_or_proxy'|'source_unclear';
+  header_flags:{column:string;reason:string;basis:'header_name_only'}[];
+  header_review_incomplete:boolean;questions:string[];note:string;
+  safe_to_train_automatically:false
+ }
 };
 type OpportunityResponse={
  version:number;ranking_basis:string;suggestions:Opportunity[];
@@ -56,6 +65,20 @@ export function TargetOpportunities({
         <p className="muted-caption">Technical status: reviewable, not approved. Business relevance: {item.user_context?'user-described, not independently verified':'unknown until you describe the intended decision'}.</p>
         {item.user_context&&<p className="muted-caption"><strong>Recorded user context:</strong> {item.user_context.outcome_definition.slice(0,160)}. Decision: {item.user_context.decision_action.slice(0,160)}.</p>}
         <TargetContextEditor projectId={projectId} version={version} column={item.column} existing={item.user_context??null} onSaved={()=>setRefresh(n=>n+1)}/>
+        {item.risk_review&&<details className="po-risk-review">
+         <summary>Prediction timing and label provenance: review required</summary>
+         <p className="muted-caption">Status: {item.risk_review.status==='context_missing'?'Add user context before evaluating the proposed decision':'User description present, but not independently verified'}.</p>
+         {item.risk_review.timing_cue==='possible_after_event_wording'&&<p className="muted-caption">Timing wording may refer to a post-event moment. Confirm when the target is already known.</p>}
+         {item.risk_review.label_cue==='possibly_unconfirmed_or_proxy'&&<p className="muted-caption">Label-source wording mentions a report, suspicion or proxy. Confirm actual label provenance.</p>}
+         {item.risk_review.label_cue==='source_unclear'&&<p className="muted-caption">Label source is described as uncertain. Obtain a documented source before relying on it.</p>}
+         {item.risk_review.header_flags.length>0&&<>
+          <p className="muted-caption">Header-only timing/derived-field questions, not confirmed leakage:</p>
+          <ul>{item.risk_review.header_flags.map(flag=><li key={flag.column} className="muted-caption"><strong>{flag.column}</strong>: {flag.reason}</li>)}</ul>
+         </>}
+         {item.risk_review.header_review_incomplete&&<p className="muted-caption">Header review is bounded and may omit other risks.</p>}
+         <ul>{item.risk_review.questions.map(question=><li className="muted-caption" key={question}>{question}</li>)}</ul>
+         <p className="muted-caption">{item.risk_review.note}</p>
+        </details>}
         {item.review_warnings.slice(0,3).map((warning,i)=><p className="muted-caption" key={i}><AlertCircle size={13}/> {warning}</p>)}
         <button type="button" className="btn small" aria-pressed={selectedTarget===item.column} onClick={()=>onChooseTarget(item.column)}>
          {selectedTarget===item.column?<><CheckCircle2 size={14}/> Chosen for preparation review</>:'Review this target'}

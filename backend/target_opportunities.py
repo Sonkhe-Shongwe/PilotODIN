@@ -12,9 +12,10 @@ import numpy as np
 import pandas as pd
 
 try:
-    from . import engine
+    from . import engine, target_timing_review
 except ImportError:  # Support direct-backend development launches.
     import engine
+    import target_timing_review
 
 MAX_SUGGESTIONS = 3
 MAX_BLOCKED_EXAMPLES = 5
@@ -186,6 +187,10 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
             candidate["business_relevance"] = "user_described_unverified"
         else:
             candidate["user_context"] = None
+        # Read-only review cues, not a technical eligibility override or approval.
+        candidate["risk_review"] = target_timing_review.review_prediction_context(
+            frame.columns, name, candidate["user_context"]
+        )
         (suggestions if candidate["technical_status"] == "reviewable" else blocked).append(candidate)
     # Observed labelled support is a deterministic ordering aid, not a
     # validation score or a claim of decision value/predictive performance.
