@@ -38,3 +38,17 @@ test('P1 import regression is included in next deduplicated local gate',()=>{
  const appearances=runner.match(/test_p1_import_recovery\.py/g)||[];
  assert.equal(appearances.length,1);
 });
+
+
+test('P1/E2 one-click launcher only runs new import tests and non-invasive inventory',()=>{
+ const script=read('tools/Verify_P1_E2_Local.ps1');
+ const launcher=read('Run_PilotODIN_P1_E2_Preflight.bat');
+ assert.match(launcher,/Verify_P1_E2_Local\.ps1/);
+ assert.match(script,/tests\/test_p1_import_recovery\.py/);
+ assert.match(script,/Probe_E2_8GB_Offline_Inventory\.ps1/);
+ assert.match(script,/PILOTODIN_HOME/);
+ assert.match(script,/Compress-Archive/);
+ assert.match(script,/offline_ai_and_8gb_certification = 'NOT_TESTED'/);
+ assert.doesNotMatch(script,/(?:Verify_P0_A4_Readiness|desktop:build|tauri build|Run_PilotODIN_A4_Native_Smoke|Start-Process|Invoke-WebRequest|Invoke-RestMethod)/);
+ assert.doesNotMatch(launcher,/Install|winget/);
+});
