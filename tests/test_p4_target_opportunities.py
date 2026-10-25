@@ -87,6 +87,19 @@ def test_value_regression_cannot_be_mistaken_for_predictive_accuracy():
     assert candidate["business_relevance"]=="unverified"
 
 
+def test_time_to_resolution_can_be_a_duration_outcome_not_a_timestamp():
+    data=pd.DataFrame({
+        "time_to_resolution":[float(i+1) for i in range(70)],
+        "case_type":["Complaint","Inquiry"]*35,
+        "feature":[i%7 for i in range(70)],
+    })
+    out=target_opportunities.recommend(data,1)
+    matches=[x for x in out["suggestions"] if x["column"]=="time_to_resolution"]
+    assert len(matches)==1
+    assert matches[0]["task_hypothesis"]=="regression"
+    assert matches[0]["business_relevance"]=="unverified"
+
+
 def test_text_identifiers_empty_and_constant_labels_never_get_reviewable_shortlist():
     data=pd.DataFrame({
         "target_id":[f"ID{i}" for i in range(40)],
