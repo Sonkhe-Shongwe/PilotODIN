@@ -1,6 +1,6 @@
 # PilotODIN Macro A4 — Deliver evidence composition and professional exports
 
-**Development milestone:** A4-1 selected-model evidence plus A4-2 saved aggregate chart illustrations.  
+**Development milestone:** A4-1 selected-model evidence, A4-2 aggregate illustrations, A4-3 Quality audit and export-integrity safeguards.  
 **Current status:** SOURCE IMPLEMENTED, LOCAL TEST EXECUTION PENDING. Do not call A4 complete or the Windows installed application release-ready.
 
 ## Baseline preserved
@@ -27,6 +27,17 @@
 - New `tests/test_a4_frozen_chart_visuals.py` validates bar, histogram and line source parity, unsupported plots, nonfinite rejection, markup escaping, bounded-data notices, and old report immutability after a source snapshot is altered. Included in unified local verification.
 - **QA status:** GitHub source committed and re-fetch review pending/ongoing. No A4-2 Python/PDF renderer tests or end-user Windows visual validation has yet been executed.
 
+## A4-3: Explicit Quality audit, revision integrity and export safety (source implemented, runtime pending)
+
+- `POST /api/projects/{project_id}/report-quality` accepts `expected_version` and **only reads** the pinned approved working dataset. A button in Deliver explicitly captures the audit; viewing reports never silently creates one. The backend returns 409 if the working version changed.
+- Each capture freezes a bounded SHA-256 verified snapshot in `report_quality_audits_v1` containing dataset/issue counts, currently active approved corrections, short approved-version event, and up to 35 finding summaries. Fields are limited to issue kind, column name, severity, affected-row count, review status, and **fixed explanatory phrasing**.
+- No source rows, preview rows, individual identifier values, user category examples, proposed replacement values, or raw approval receipts enter the snapshot. Capturing the audit **never approves, changes, undoes, or restores working data**. Existing Quality approval receipts and explicit human review rules are untouched.
+- Only audits belonging to the active project and passing stored SHA-256+version binding can become report evidence. Historical captures stay attached to their original dataset version and are flagged when the project advances.
+- Saved **report revisions themselves** now have SHA-256 integrity validation before any reload or HTML/PDF export. Tampered saved data returns 409 rather than being presented as verified.
+- Report download helper checks HTTP Content-Type, PDF/HTML file signatures and safe extension before triggering browser download; it reports download **started**, not confirmed written. A native Windows Save As dialog is **still untested and not claimed implemented**.
+- Added `tests/test_a4_quality_audit_reporting.py`: explicit capture, unchanged source bytes/version, category-example privacy, cross-project rejection, altered audit exclusion, historical-v0 retention and altered-report rejection. Added `frontend/tests/a4-quality-export-gates.test.cjs`. The unified local verification runner includes the new backend module.
+- **Status:** source committed to development branch; no new A4-3 or earlier A4-1/A4-2 executable tests have yet run on the owner's Windows system.
+
 ## Test inventory and gate
 
 - **New:** `tests/test_a4_model_evidence_reports.py`: incomplete model exclusion, project access control, safe aggregate metrics, HTML/PDF parity, frozen revisions after experiment mutation, correct regression metric labelling, ordered evidence and reliability notes.
@@ -50,9 +61,9 @@ Use disposable test data, and one pull/checkpoint **after a coherent A4 developm
 ## Deferred A4 improvements before final macro signoff
 
 - Beyond the initial saved aggregate graphics: scatter/box visuals, accessible long-category layouts, additional advanced analytical and model figures, and print-pagination refinements.
-- Full Quality decision/affected-row artifact coverage where an immutable verified source record is not yet exposed.
+- Optional deeper Quality decision timelines and affected-row investigations as separate, explicitly approved, privacy-reviewed report evidence. The new Quality audit deliberately contains only aggregate findings.
 - More advanced report narrative structure/layout design beyond the current title, interpretation, limitations and ordered evidence.
-- Explicit native Windows Save As usability and install/restart recovery tests.
+- True native Windows Save As implementation/verification, cancel and disk-write errors, and install/restart recovery tests. Browser download validation is not equivalent to a native Save As dialog.
 - 8 GB + offline bundled AI and original E-01..E-24 release gates are separate, mandatory milestones.
 
 ## Product integrity
