@@ -1,6 +1,28 @@
 # PilotODIN P0 closeout -> A4 readiness: consolidated local checkpoint
 
-**Status:** Verification tooling committed; not yet executed on owner's Windows checkout. This is NOT A3/A4 sign-off or a release build.
+**Status (25 October 2026):** TWO independent owner Windows automated runs PASSED against commit `5bf174e328bebf9cfabbbb17cd46ffae687f7785`. This is automated A4 development-entry readiness, NOT full A3/A4 interactive sign-off or a release build.
+
+## Actual owner Windows verification evidence (25 October 2026)
+
+The owner supplied two generated verification output folders with complete `result.json`, phase logs and backend JUnit XML. Both were inspected independently.
+
+| Verification | Run 1 | Run 2 |
+| --- | --- | --- |
+| Checkout commit | `5bf174e3` (clean) | `5bf174e3` (clean) |
+| Frontend behavioural tests | 99 passed, 0 failed | 99 passed, 0 failed |
+| TypeScript + Vite frontend build | PASS | PASS |
+| Python backend compile | PASS | PASS |
+| Combined deduplicated Pytest | 149 passed, 0 failed, 0 skipped | 149 passed, 0 failed, 0 skipped |
+| Preflight blockers | None | None |
+| `automated_status` | PASS | PASS |
+
+**Conclusion:** The previously unexecuted A3 split-key regression suite now passed in the consolidated Windows test run. The automated A2/A3 and existing A4 regression entry gate is green. Do not add the two runs together as if they were different test cases.
+
+**Not tested by these outputs:** browser end-to-end UI, full functional experiment reopening, native Save As, professional PDF page review, Windows installer, bundled Qwen model generation, live physical 8 GB combined workload or full Build E acceptance.
+
+**Low-interruption execution decision:** Begin coherent A4 Deliver feature development now, preserve this automated baseline and add regression tests in the same batch. Consolidate remaining manual A3/A2 and new A4 visual/desktop checks into one owner Windows smoke session at the end, not a repeated checkpoint per commit.
+
+QA evidence register: [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
 
 ## Why this exists
 
