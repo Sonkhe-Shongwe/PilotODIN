@@ -92,6 +92,7 @@ test('native bundled model request is screened before Tauri worker launch',()=>{
  assert.match(startup,/return 'resource_limited'/);
  assert.match(startup,/return 'resource_preflight_unavailable'/);
  assert.match(startup,/headers:authHeaders\(\)/);
+ assert.match(api,/typeof d\.message==='string'\?d\.message/);
  const main=read('backend/main.py');
  const preflight=main.split("def resource_preflight(")[1]?.split("@app.put('/api/resource/policy')")[0];
  assert.ok(preflight&&preflight.includes('_local_request(request)'));
