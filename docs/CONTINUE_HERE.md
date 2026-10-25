@@ -102,6 +102,18 @@ Owner supplied `pilotodin_report (1)(1).html` and `pilotodin_report_e598f981d064
 
 **QA boundary:** The provided real rev3 HTML/PDF predates the last targeted code refinements, and there has been **no new executable local 106/167 suite run or post-change PDF render**. Thus mixed evidence presence/value parity is a **functional PASS**, but final A4 visual/pagination acceptance and native Tauri Save As remain OPEN. No changes to uploaded data or pre-existing saved revisions. User-authored generic report title and empty narrative should be improved for a professional final report.
 
+## A4-4 native Save As desktop source checkpoint (25 October 2026)
+
+**Source implementation** added a guarded Tauri 2 Rust-side native Save As dialog for PDF and HTML exports. `frontend/src-tauri/Cargo.toml` now declares `tauri-plugin-dialog = "2"`; `frontend/src-tauri/src/lib.rs` registers the plugin and `save_report_as` custom command. An explicit OS dialog selects the destination on a worker thread, Cancel creates no file, payload signatures/extensions/filename/12 MiB bounds are checked, and a completed write must pass byte-count **and SHA-256 re-read comparison** before the UI says Saved. JavaScript never sends a destination path. No new frontend filesystem/dialog permissions were granted.
+
+`frontend/src/api.ts::saveReportNative` and `frontend/src/ReportWorkspace.tsx` use that command only under `isDesktop()`; ordinary Chrome `http://127.0.0.1:5173` continues using browser downloads. Source-contract Node tests are in `frontend/tests/a4-native-report-save-contract.test.cjs`, with existing A4 export tests updated; Rust unit tests cover allowed file types and blocked unsafe names/oversized content.
+
+**Verification precision:** Source and official Tauri dialog APIs reviewed, but neither Rust/Cargo code nor latest new frontend tests has been run against a native Windows Tauri app. Earlier **106 frontend/167 backend green evidence predates A4-4 and the A4 chart/pagination corrections**; do not claim they pass the latest source. No installed native Windows shell, actual Save As/cancel, filesystem failure, first Cargo dependency resolution or installer validation was observed. The original real mixed report rev3 and its values remain valid evidence for the older export path.
+
+**Next safest milestone:** A **single Windows Tauri-native compilation + command test**, then in the running desktop WebView a short PDF/HTML Save As, cancellation, and error check, combined with PDF pagination/median label and saved revision test. If Rust prerequisites are missing, report that blocker rather than silently substituting a Chrome download or an installer. Do not ask for repeated manual browser screenshots per commit.
+
+See [A4 acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md), [single pass verifier](./P0_A4_SINGLE_PASS_VERIFICATION.md) and QA Issue #2.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
