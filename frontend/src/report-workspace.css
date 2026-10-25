@@ -18,3 +18,17 @@
 .pd-report-preview li{margin:5px 0;color:#5e6e89;font-size:12px}
 .pd-report-export>button:hover{background:#e8e6ff;border-color:#9487e4}
 @media(max-width:850px){.pd-report-actions{position:static}}
+
+/* A4: report evidence composition is ordered and accessible, not just a set. */
+.pd-report-order{border:1px solid #E1E5EF;background:#FAFBFE;border-radius:12px;padding:12px 14px;margin-top:16px}
+.pd-report-order h4{margin:0 0 6px;color:#273451;font-size:13px}
+.pd-report-order p{margin:0 0 8px}
+.pd-report-order ol{list-style:none;margin:0;padding:0}
+.pd-report-order li{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid #E9EDF5;padding:7px 0;font-size:12px;color:#33425b;min-width:0}
+.pd-report-order li span{min-width:0;overflow-wrap:anywhere}
+.pd-report-order li div{display:flex;flex-shrink:0;gap:5px}
+.pd-report-order-button{width:30px;height:30px;border-radius:7px;border:1px solid #D6DAEA;background:white;color:#4330AD;cursor:pointer;display:grid;place-items:center}
+.pd-report-order-button:hover:not(:disabled){background:#F0EDFF}
+.pd-report-order-button:disabled{opacity:.36;cursor:not-allowed}
+.pd-report-order-button:focus-visible{outline:3px solid #148F9B;outline-offset:2px}
+.pd-report-export>button:disabled{opacity:.48;cursor:not-allowed}
