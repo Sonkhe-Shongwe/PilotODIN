@@ -3,7 +3,7 @@ import {FileDown,FileText,History,Save,ShieldCheck,AlertCircle,Plus,ArrowUp,Arro
 import {get,post,downloadReportFile,saveReportNative} from './api';
 import {isDesktop} from './desktopBootstrap';
 import './report-workspace.css';
-import {ReportComposerGate} from './reportComposerGate';
+import {ReportComposerGate,ReportReadGate} from './reportComposerGate';
 
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
@@ -31,11 +31,12 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  // Invalidate pending report-open results when the user changes selection.
  const latestOpenRequest=useRef(0);
  const composerGuard=useRef(new ReportComposerGate());
+ const readGuard=useRef(new ReportReadGate());
  const latestReportList=useRef(0);
  const appliedHandoff=useRef<string|null>(null);
  const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
-   let mounted=true;composerGuard.current.resetProject();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
+   let mounted=true;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
    setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);
    if(!projectId)return;
    const listTicket=++latestReportList.current;
@@ -52,8 +53,17 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
        }catch(err){if(mounted&&listTicket===latestReportList.current&&!userStartedDraft.current)setError(`Saved reports were found, but the latest revision could not be restored: ${(err as Error).message}`)}
      }
    }).catch(e=>{if(mounted&&listTicket===latestReportList.current)setError((e as Error).message)});
-   void get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`).then(data=>{if(mounted){setProjectEvidence(data);setEvidenceLoaded(true)}}).catch(e=>{if(mounted){setEvidenceLoaded(true);setError((e as Error).message)}});
-   return()=>{mounted=false;composerGuard.current.resetProject();latestReportList.current++;latestOpenRequest.current++};
+   const initialEvidenceTicket=readGuard.current.beginEvidence();
+   void get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`).then(data=>{
+     if(mounted&&readGuard.current.isCurrentEvidence(initialEvidenceTicket)){
+       setProjectEvidence(data);setEvidenceLoaded(true);
+     }
+   }).catch(e=>{
+     if(mounted&&readGuard.current.isCurrentEvidence(initialEvidenceTicket)){
+       setEvidenceLoaded(true);setError((e as Error).message);
+     }
+   });
+   return()=>{mounted=false;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++};
  },[projectId]);
  useEffect(()=>{
    if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
@@ -132,9 +142,10 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      if(!gate.sameView(ticket))return;
      captured=await post<{id:string;dataset_version:number;findings_total:number}>(`/projects/${encodeURIComponent(projectId)}/report-quality`,{expected_version:state.version});
      if(!gate.sameView(ticket))return;
+     const evidenceTicket=readGuard.current.beginEvidence();
      const options=await get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`);
-     if(!gate.sameView(ticket))return;
-     setProjectEvidence(options);
+     if(!gate.sameView(ticket)||!readGuard.current.isCurrentEvidence(evidenceTicket))return;
+     setProjectEvidence(options);setEvidenceLoaded(true);
      if(gate.sameDraft(ticket)){
        setSelected(ids=>ids.length>=15||ids.includes(captured!.id)?ids:[...ids,captured!.id]);
        setNotice(idsafeMessage(captured,selected.length>=15));
@@ -144,6 +155,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    }catch(e){
      if(gate.sameView(ticket)){
        const detail=(e as Error).message;
+       if(captured)setEvidenceLoaded(true);
        setError(captured
          ?`Quality audit v${captured.dataset_version} was captured, but its evidence list could not refresh: ${detail}`
          :detail);
@@ -152,12 +164,18 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  }
  async function download(format:'html'|'pdf'){
    if(!activeId||!opened)return;
+   const viewTicket=composerGuard.current.currentView();
+   const exportTicket=readGuard.current.beginExport();
+   const isCurrent=()=>composerGuard.current.isCurrentView(viewTicket)&&readGuard.current.isCurrentExport(exportTicket);
+   const reportId=activeId;
+   const rev=revision??opened.revision;
    setBusy('export');setError('');
    try{
-     const rev=revision??opened.revision;
-     const {blob,filename}=await downloadReportFile(`/reports/${encodeURIComponent(activeId)}/export/${format}?revision=${rev}`);
+     const {blob,filename}=await downloadReportFile(`/reports/${encodeURIComponent(reportId)}/export/${format}?revision=${rev}`);
+     if(!isCurrent())return; // Never launch Save As or a browser download for a superseded view.
      if(isDesktop()){
        const outcome=await saveReportNative(blob,filename,format);
+       if(!isCurrent())return; // An already-open native dialog/write cannot be undone.
        if(outcome.status==='cancelled'){
          setNotice('Save As cancelled. No report file was written.');
        }else{
@@ -168,10 +186,17 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
        document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);
        setNotice(`Started browser download for saved revision ${rev}: ${filename}. Confirm the file in Downloads.`);
      }
-   }catch(e){setError((e as Error).message)}finally{setBusy('')}
+   }catch(e){if(isCurrent())setError((e as Error).message)}
+   finally{if(isCurrent())setBusy('')}
+ }
+ function onDraftEdit(){
+   userStartedDraft.current=true;composerGuard.current.editDraft();
+   // An in-flight report Open must not replace a draft the user edited after clicking.
+   latestOpenRequest.current++;
+   if(busy==='open')setBusy('');
  }
  function shiftEvidence(id:string,by:number){
-   userStartedDraft.current=true;composerGuard.current.editDraft();
+   onDraftEdit();
    setSelected(ids=>{const from=ids.indexOf(id);const to=from+by;if(from<0||to<0||to>=ids.length)return ids;
      const ordered=[...ids];[ordered[from],ordered[to]]=[ordered[to],ordered[from]];return ordered;});
  }
@@ -188,11 +213,11 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    {error&&<p role="alert" className="pd-report-error"><AlertCircle size={16}/>{error}</p>}
    {notice&&<p role="status" className="pd-report-notice"><ShieldCheck size={16}/>{notice}</p>}
    <div className="pd-report-columns"><section className="pd-report-editor">
-     <label className="pd-report-field">Report title<input value={title} maxLength={180} onChange={e=>{userStartedDraft.current=true;composerGuard.current.editDraft();setTitle(e.target.value)}}/></label>
-     <label className="pd-report-field">Interpretation and limitations<textarea value={narrative} placeholder="Describe what the verified evidence establishes, what remains uncertain, and any important limitations. This text is authored by you." rows={5} maxLength={6000} onChange={e=>{userStartedDraft.current=true;composerGuard.current.editDraft();setNarrative(e.target.value)}}/></label>
+     <label className="pd-report-field">Report title<input value={title} maxLength={180} onChange={e=>{onDraftEdit();setTitle(e.target.value)}}/></label>
+     <label className="pd-report-field">Interpretation and limitations<textarea value={narrative} placeholder="Describe what the verified evidence establishes, what remains uncertain, and any important limitations. This text is authored by you." rows={5} maxLength={6000} onChange={e=>{onDraftEdit();setNarrative(e.target.value)}}/></label>
      <h3>Select verified evidence</h3>
      <div className="pd-report-quality-capture"><div><strong>Capture Quality findings</strong><small>Create a read-only, version-bound audit with issue counts and reviewed correction history. No source records or automatic corrections.</small></div><button type="button" className="ud-btn ud-btn-quiet" disabled={!!busy} onClick={()=>void captureQualityAudit()}>{busy==='quality'?'Capturing…':'Capture current Quality audit'}</button></div>
-     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>{userStartedDraft.current=true;composerGuard.current.editDraft();setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}}/><span><strong>{e.operation==='explore_snapshot'?'Saved Explore investigation':e.operation==='model_evaluation'?'Selected model evaluation':e.operation==='quality_audit'?'Saved Quality audit':e.operation.replaceAll('_',' ')} · v{e.version}{e.stale?' · HISTORICAL':''}</strong><small>{e.operation==='explore_snapshot'?(e.objective??'Saved analysis'):`${Object.entries(e.params||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ')||'Dataset profile'}`} · Evidence {e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Capture a Quality audit, save an Explore analysis, evaluate a model, or create investigation evidence to start a report.</p>}
+     {options.length?options.map(e=><label className="pd-report-evidence" key={e.id}><input type="checkbox" checked={selected.includes(e.id)} onChange={ev=>{onDraftEdit();setSelected(ids=>ev.target.checked?ids.length>=15?ids:[...ids,e.id]:ids.filter(id=>id!==e.id))}}/><span><strong>{e.operation==='explore_snapshot'?'Saved Explore investigation':e.operation==='model_evaluation'?'Selected model evaluation':e.operation==='quality_audit'?'Saved Quality audit':e.operation.replaceAll('_',' ')} · v{e.version}{e.stale?' · HISTORICAL':''}</strong><small>{e.operation==='explore_snapshot'?(e.objective??'Saved analysis'):`${Object.entries(e.params||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ')||'Dataset profile'}`} · Evidence {e.id.slice(0,12)}</small></span></label>):<p className="pd-report-muted">Capture a Quality audit, save an Explore analysis, evaluate a model, or create investigation evidence to start a report.</p>}
      {selected.filter(id=>!availableMap.has(id)).length>0&&<p className="pd-report-muted">{selected.filter(id=>!availableMap.has(id)).length} additional saved evidence references retained from the loaded report.</p>}
      {selected.length>1&&<section className="pd-report-order" aria-label="Order of report exhibits"><h4>Report exhibit order</h4><p className="pd-report-muted">Exhibits appear in this order in both saved HTML and PDF revisions.</p><ol>{selected.map((id,index)=><li key={id}><span><b>{index+1}.</b> {availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,8)} · v{availableMap.get(id)?.version??opened?.evidence.find(item=>item.id===id)?.dataset_version??'?'}</span><div><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} earlier`} title="Move earlier" disabled={!!busy||index===0} onClick={()=>shiftEvidence(id,-1)}><ArrowUp size={15}/></button><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} later`} title="Move later" disabled={!!busy||index===selected.length-1} onClick={()=>shiftEvidence(id,1)}><ArrowDown size={15}/></button></div></li>)}</ol></section>}
      <div className="pd-report-actions"><div><strong>{selected.length} verified evidence artifacts selected</strong><small>{!saveReady?'Enter a report title and select evidence to continue.':hasDraftChanges?'Save your changes before exporting an updated revision.':opened?'Current saved revision is ready for export.':'Save a frozen report revision to enable HTML/PDF exports.'}</small></div><button className="ud-btn ud-btn-primary" disabled={!!busy||!saveReady||!hasDraftChanges&&!!opened} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button></div>

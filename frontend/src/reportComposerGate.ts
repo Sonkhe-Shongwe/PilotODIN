@@ -12,6 +12,8 @@ export class ReportComposerGate {
  navigate():void {this.view++;this.draft++}
  editDraft():void {this.draft++}
  hasPending():boolean {return this.pending!==null}
+ currentView():number {return this.view}
+ isCurrentView(token:number):boolean {return this.view===token}
  begin(kind:ComposerWriteKind):ComposerWriteTicket|null {
   if(this.pending!==null)return null;
   const ticket={id:++this.next,view:this.view,draft:this.draft,kind};
@@ -30,4 +32,15 @@ export class ReportComposerGate {
   this.pending=null;
   return true;
  }
+}
+
+/** Independent latest-response channels. A token is not permission to mutate data. */
+export class ReportReadGate {
+ private evidence=0;
+ private exporting=0;
+ beginEvidence():number {return ++this.evidence}
+ isCurrentEvidence(ticket:number):boolean {return ticket===this.evidence}
+ beginExport():number {return ++this.exporting}
+ isCurrentExport(ticket:number):boolean {return ticket===this.exporting}
+ invalidateAll():void {this.evidence++;this.exporting++}
 }
