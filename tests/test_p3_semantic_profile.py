@@ -42,7 +42,11 @@ def test_retail_is_tentative_and_does_not_claim_order_grain():
     assert out["domain"]["state"] == "hypothesis"
     assert out["grain"]["state"] == "unknown"
     assert out["grain"]["identifier_column"] is None
-    assert "record grain" in out["grain"]["reason"].lower()
+    # UI copy may say "row grain" or "record grain"; what matters is explicit
+    # abstention and acknowledgement that the business row meaning is unknown.
+    grain_explanation=out["grain"]["reason"].lower()
+    assert "grain" in grain_explanation
+    assert "business" in grain_explanation
 
 
 def test_no_semantic_signal_abstains_without_inventing_domain_or_target():
