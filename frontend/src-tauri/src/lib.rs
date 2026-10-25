@@ -3,12 +3,14 @@
 //! AI has no arbitrary process- or filesystem-execution capability.
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 use std::net::TcpListener;
 use std::sync::Mutex;
 use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, RunEvent, State};
 use tauri_plugin_shell::{process::{CommandChild, CommandEvent}, ShellExt};
+use tauri_plugin_dialog::DialogExt;
 
 #[derive(Clone, Serialize)]
 struct BackendConnection {
@@ -197,11 +199,106 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
     Ok(())
 }
 
+
+const MAX_REPORT_EXPORT_BYTES: usize = 12 * 1024 * 1024;
+
+#[derive(Serialize)]
+struct NativeReportSave {
+    status: &'static str,
+    filename: Option<String>,
+}
+
+fn check_report_payload(format: &str, filename: &str, bytes: &[u8]) -> Result<(), String> {
+    // This command is deliberately NOT a general-purpose filesystem writer.
+    // It handles only previously fetched, bounded HTML/PDF report payloads.
+    let extension = match format {
+        "html" => ".html",
+        "pdf" => ".pdf",
+        _ => return Err("Choose a PDF or HTML report format".into()),
+    };
+    if filename.is_empty() || filename.len() > 180 ||
+       filename.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|')) ||
+       !filename.to_ascii_lowercase().ends_with(extension) {
+        return Err("Invalid report filename or extension".into());
+    }
+    if bytes.is_empty() || bytes.len() > MAX_REPORT_EXPORT_BYTES {
+        return Err("The report export is empty or exceeds the safe desktop size limit".into());
+    }
+    let valid_signature = if format == "pdf" {
+        bytes.starts_with(b"%PDF-")
+    } else {
+        bytes.get(..15).map(|x| x.eq_ignore_ascii_case(b"<!doctype html>"))
+            .unwrap_or(false)
+    };
+    if !valid_signature {
+        return Err("Report file content does not match its declared format".into());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_report_as(app: AppHandle, format: String, filename: String, bytes: Vec<u8>)
+    -> Result<NativeReportSave, String> {
+    check_report_payload(&format, &filename, &bytes)?;
+    // Blocking native dialogs must not run on the application's UI thread.
+    // Spawn one blocking worker, then report the exact outcome to Deliver.
+    tauri::async_runtime::spawn_blocking(move || -> Result<NativeReportSave, String> {
+        let dialog = app.dialog().file()
+            .set_title("Save PilotODIN report")
+            .set_file_name(filename);
+        let chosen = if format == "pdf" {
+            dialog.add_filter("PDF document", &["pdf"]).blocking_save_file()
+        } else {
+            dialog.add_filter("HTML document", &["html"]).blocking_save_file()
+        };
+        let path = match chosen {
+            Some(path) => path.into_path()
+                .map_err(|_| "The selected Save As location is not a local file".to_string())?,
+            None => return Ok(NativeReportSave { status: "cancelled", filename: None }),
+        };
+        // Even if a user manually edits the extension in the dialog, never
+        // write PDF bytes to an .html file, or vice versa.
+        if !path.extension().and_then(|ext| ext.to_str())
+            .map(|ext| ext.eq_ignore_ascii_case(&format)).unwrap_or(false) {
+            return Err("Save As extension differs from the report format".into());
+        }
+        // Only the OS dialog may choose the destination. Never accept a path
+        // from JavaScript. Standard Save As handles overwrite confirmation.
+        std::fs::write(&path, &bytes)
+            .map_err(|e| format!("Could not save report to the selected location: {e}"))?;
+        let stored_size = std::fs::metadata(&path)
+            .map_err(|e| format!("Could not verify the saved report: {e}"))?.len();
+        if stored_size != bytes.len() as u64 {
+            return Err("Saved report size verification failed".into());
+        }
+        let saved_filename = Path::new(&path).file_name()
+            .and_then(|name| name.to_str()).map(str::to_owned);
+        Ok(NativeReportSave { status: "saved", filename: saved_filename })
+    }).await.map_err(|_| "The native Save As task could not finish".to_string())?
+}
+
+#[cfg(test)]
+mod report_save_tests {
+    use super::check_report_payload;
+
+    #[test]
+    fn native_report_writer_accepts_only_matching_report_types() {
+        assert!(check_report_payload("pdf", "pilotodin_report.pdf", b"%PDF-1.7\n%%EOF").is_ok());
+        assert!(check_report_payload("html", "pilotodin_report.html", b"<!doctype html><html></html>").is_ok());
+        assert!(check_report_payload("pdf", "pilotodin_report.html", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("html", "pilotodin_report.html", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("txt", "report.txt", b"hello").is_err());
+        assert!(check_report_payload("pdf", "..\\elsewhere.pdf", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("pdf", "report.pdf", b"").is_err());
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(DesktopState::default())
-        .invoke_handler(tauri::generate_handler![launch_backend, launch_bundled_ai])
+        .invoke_handler(tauri::generate_handler![launch_backend, launch_bundled_ai, save_report_as])
         .build(tauri::generate_context!())
         .expect("Could not initialise PilotODIN desktop")
         .run(|app, event| {
