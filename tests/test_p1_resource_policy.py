@@ -79,7 +79,9 @@ def test_api_mode_roundtrip_and_validation(isolated_home, monkeypatch):
     assert status.status_code == 200, status.text
     assert status.json()["memory"]["available_gib"] == 1.0
     assert status.json()["policy"]["mode"] == "adaptive"
-    assert status.json()["policy_effect"] == "display_only_p1_not_enforced"
+    assert status.json()["policy_effect"] == "low_memory_new_work_preflight_only_no_scheduler"
+    assert status.json()["low_memory_training_min_free_gib"] == 0.75
+    assert status.json()["low_memory_local_inference_min_free_gib"] == 2.0
     saved = client.put("/api/resource/policy", json={"mode": "low_memory"})
     assert saved.status_code == 200, saved.text
     assert saved.json()["policy"]["mode"] == "low_memory"
