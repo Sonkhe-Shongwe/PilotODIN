@@ -24,7 +24,7 @@ export type Experiment = {id:string;project_id:string;status:string;config:{targ
 export type Project = {id:string;name:string;filename:string;profile:Profile;experiments:{id:string;status:string;selected_model:string|null;created_at:string}[]};
 
 async function check(res:Response){
-  if(!res.ok){let detail = `Request failed (${res.status})`;try{const o=await res.json();detail=typeof o.detail==='string'?o.detail:JSON.stringify(o.detail)}catch{}throw new Error(detail)}
+  if(!res.ok){let detail = `Request failed (${res.status})`;try{const o=await res.json();const d=o?.detail;detail=typeof d==='string'?d:(d&&typeof d==='object'&&!Array.isArray(d)&&typeof d.message==='string'?d.message:JSON.stringify(d))}catch{}throw new Error(detail)}
   return res.json();
 }
 async function fetchLocal(path:string,options:RequestInit):Promise<Response>{
