@@ -51,6 +51,33 @@ function Find-Exe([string]$name) {
     if($null -eq $cmd){return $null}
     return $cmd.Source
 }
+function Find-MsvcLinker {
+    # Rust's x86_64-pc-windows-msvc target needs Microsoft's actual linker.
+    # Rust/rustup alone do not include it. Detect this before the repeated
+    # frontend/backend regression run or hundreds of Cargo dependency jobs.
+    $existing=Get-Command 'link.exe' -ErrorAction SilentlyContinue
+    if($null -ne $existing -and $existing.Source -and (Test-Path $existing.Source)){
+        return $existing.Source
+    }
+    $programFilesX86=[Environment]::GetFolderPath('ProgramFilesX86')
+    if(-not $programFilesX86){return $null}
+    $vswhere=Join-Path $programFilesX86 'Microsoft Visual Studio\Installer\vswhere.exe'
+    if(-not (Test-Path $vswhere)){return $null}
+    $installations=@(& $vswhere -all -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
+    foreach($install in $installations){
+        if([string]::IsNullOrWhiteSpace($install)){continue}
+        $toolRoot=Join-Path $install 'VC\Tools\MSVC'
+        if(-not (Test-Path $toolRoot)){continue}
+        $versions=Get-ChildItem -LiteralPath $toolRoot -Directory -ErrorAction SilentlyContinue |
+                  Sort-Object Name -Descending
+        foreach($version in $versions){
+            $candidate=Join-Path $version.FullName 'bin\Hostx64\x64\link.exe'
+            if(Test-Path $candidate){return $candidate}
+        }
+    }
+    return $null
+}
+
 function Port-Open([int]$port) {
     $tcp = New-Object System.Net.Sockets.TcpClient
     try {
@@ -112,6 +139,11 @@ $hostLine=(& $rustc -vV | Select-String '^host:' | Select-Object -First 1)
 $results.checks['rust_host']=("$hostLine").Trim()
 if(-not $results.checks['rust_host'].Contains('pc-windows-msvc')) {
     Stop-With 'The active Rust toolchain is not a Windows MSVC target.'
+}
+$msvcLinker=Find-MsvcLinker
+$results.checks['msvc_linker_found']=[bool]$msvcLinker
+if(-not $msvcLinker){
+    Stop-With 'Microsoft MSVC link.exe is missing. Open Visual Studio Installer, select Build Tools > Modify > Desktop development with C++ (MSVC x64/x86 compiler and Windows SDK). Rust alone or VS Code is not enough. Restart Windows terminal after setup.'
 }
 $results.checks['backend_8000_running']=Port-Open 8000
 $results.checks['vite_5174_free']=-not (Port-Open 5174)
