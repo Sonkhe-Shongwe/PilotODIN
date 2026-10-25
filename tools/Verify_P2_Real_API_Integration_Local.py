@@ -291,12 +291,12 @@ def main()->int:
         if backend_ok and fixture is not None and backend is not None and backend.poll() is None:
             try:
                 findings=verify_pdf_responses(backend_port,vite_port,fixture["report_id"])
-                pdflog.write_text("\\n".join(findings)+"\\n",encoding="utf-8")
+                pdflog.write_text("\n".join(findings)+"\n",encoding="utf-8")
                 pdf_ok=True
             except Exception as exc:
-                pdflog.write_text("PDF HTTP verification FAILED: "+str(exc)+"\\n",encoding="utf-8")
+                pdflog.write_text("PDF HTTP verification FAILED: "+str(exc)+"\n",encoding="utf-8")
         else:
-            pdflog.write_text("PDF HTTP verification unavailable: fixture or server not running.\\n",encoding="utf-8")
+            pdflog.write_text("PDF HTTP verification unavailable: fixture or server not running.\n",encoding="utf-8")
         phase("p2-real-pdf-binary-http",pdf_ok,pdflog)
         stop(vite)
         stop(backend)
