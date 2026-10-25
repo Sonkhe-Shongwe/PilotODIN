@@ -25,9 +25,17 @@ test('A4 invalid report payload cannot be advertised as a successful download',(
  assert.match(api,/content-type/);
 });
 
-test('A4 download status does not claim browser save actually succeeded',()=>{
+test('A4 browser remains a download; desktop invokes native Save As with explicit cancel',()=>{
  const ui=read('ReportWorkspace.tsx');
+ const api=read('api.ts');
  assert.match(ui,/Started browser download/);
  assert.match(ui,/Confirm the file in Downloads/);
- assert.match(ui,/Native desktop Save As remains subject to Windows acceptance/);
+ assert.match(ui,/if\(isDesktop\(\)\)/);
+ assert.match(ui,/saveReportNative\(blob,filename,format\)/);
+ assert.match(ui,/outcome\.status==='cancelled'/);
+ assert.match(ui,/No report file was written/);
+ assert.match(ui,/Saved report revision/);
+ assert.match(api,/invoke<NativeReportSaveStatus>\('save_report_as'/);
+ assert.match(api,/blob\.arrayBuffer\(\)/);
+ assert.match(api,/12\*1024\*1024/);
 });
