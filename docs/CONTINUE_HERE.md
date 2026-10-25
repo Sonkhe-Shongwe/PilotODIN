@@ -85,6 +85,23 @@ Two presentation issues emerged: the PDF placed its findings section heading and
 
 **Remaining acceptance:** one mixed model + Explore chart + Quality audit exported report; ordering/immutable revisions; visual PDF chart and layout; native Tauri Save As. Owner can save a more meaningful title and authored interpretation. See QA [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2#issuecomment-6395848645). Avoid requesting several individual repeated tests.
 
+## Combined report revision 3 — real HTML/PDF review (25 October 2026)
+
+Owner supplied `pilotodin_report (1)(1).html` and `pilotodin_report_e598f981d064_rev3.pdf` from insurance project `insurance_claims_CLEANED`. Report ID `e598f981d06446968e98df1db8a2fe40`, **revision 3**, content SHA-256 `9fc5f6ab39c65ec21a7e1ac791af4020fb2505ac8ac40b39b5aecbbd17cdb97c`.
+
+**Verified against the actual artifacts:** Both formats include the three distinct ordered v0 exhibits Quality Audit → Model Evaluation (`logistic_regression`, target `fraud_reported`) → saved Explore Snapshot. Quality evidence records 1,000 rows/39 columns/9 findings/0 active corrections. Selected-model held-out metrics match across formats: accuracy 0.82, macro F1 0.73776, ROC AUC 0.81619, 200 observations. Class `Y` recall **0.53061** is a material qualification, not a production guarantee. The chart's seven values (MD 60540, PhD 60145, Masters 58200, JD 57505, High School 57300, College 56080, Associate 54200) and figure render in HTML SVG and PDF vector output; no obvious clipping was observed. PDF is **5 pages** with awkward heading/table splits.
+
+**Semantics issue discovered:** saved Explore objective/title is `Claims by region` but recorded chart parameters are `aggregation=median`, `x=insured_education_level`, `y=total_claim_amount`. This is NOT claims by geographic region and NOT a sum. The exported chart is numerically sourced correctly but must explicitly state its aggregation and true grouping field.
+
+**Immutability:** The old captured Quality audit includes the legacy 'first 35 findings' disclaimer despite having only 9 findings; it was already frozen before the later conditional wording fix. Do not mutate the original saved audit or revision to hide historical wording. A fresh explicit audit capture is needed if current wording is desired.
+
+**Source fixes committed after inspecting rev3:**
+- `backend/report_charts.py` derives `measure_caption` from the existing immutable chart settings, so the HTML SVG figure caption/y heading and PDF chart heading show **Median of total_claim_amount by insured_education_level** (and histogram always states Frequency).
+- `backend/reports.py` now uses `KeepTogether` on compact exhibit headings+metric tables and compact verified observation tables, avoiding orphaned Model/Explore section headings and one-row fragments.
+- New regression `tests/test_a4_mixed_report_pagination.py` exercises a synthetic three-exhibit PDF/HTML; `tests/test_a4_frozen_chart_visuals.py` asserts median/grouping and histogram labelling. New test included in `tools/Verify_P0_A4_Readiness.py`.
+
+**QA boundary:** The provided real rev3 HTML/PDF predates the last targeted code refinements, and there has been **no new executable local 106/167 suite run or post-change PDF render**. Thus mixed evidence presence/value parity is a **functional PASS**, but final A4 visual/pagination acceptance and native Tauri Save As remain OPEN. No changes to uploaded data or pre-existing saved revisions. User-authored generic report title and empty narrative should be improved for a professional final report.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
