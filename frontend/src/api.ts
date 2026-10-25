@@ -60,6 +60,14 @@ function bundledStartIssue(error:unknown):string {
 }
 async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Promise<string|null>{
  if(!desktopEndpoint || !shouldLaunchBundledAI(path,method,body))return null;
+ // The Rust command can start a memory-hungry model BEFORE Python receives
+ // the AI request. Consult the same local-session policy first, fail closed
+ // on unavailable preflight, and let Python still return deterministic rules.
+ try {
+  const preflight=await check(await fetchLocal('/resource/preflight?operation=local_inference',
+   {headers:authHeaders()})) as {decision:string;code?:string};
+  if(preflight.decision!=='allow')return 'resource_limited';
+ } catch {return 'resource_preflight_unavailable';}
  try {await invoke('launch_bundled_ai');return null;}
  catch (error) {return bundledStartIssue(error);}
 }
