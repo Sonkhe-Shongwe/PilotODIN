@@ -94,34 +94,17 @@ def test_import_rollback_failure_keeps_source_for_recovery(monkeypatch, tmp_path
     home = _temporary_store(monkeypatch, tmp_path)
     quality._init_tables()
 
-    def interrupted_registration(_pid):
-        raise RuntimeError("Synthetic registration interrupted")
-
-    monkeypatch.setattr(quality, "register", interrupted_registration)
-    # Simulate an unavailable rollback connection only AFTER saving project
-    # metadata, so the cleanup path itself fails.
-    original_connect = storage.connect
-    connections = {"count": 0}
-
-    def fail_cleanup_connection():
-        connections["count"] += 1
-        # Fail only when the cleanup helper uses the database schema lookup:
-        # called after import read/profile and save_project have succeeded.
-        if connections["count"] >= 4:
-            raise OSError("Synthetic rollback storage failure")
-        return original_connect()
-
-    # Leave failure injection for a separate focused test of helper below;
-    # a direct helper invocation is deterministic and does not assume an
-    # internal number of storage connections in future import refactors.
+    # Inject failure in the rollback helper itself: a DB error must never
+    # remove source bytes while a metadata row could still reference them.
     from backend.main import _rollback_failed_project_import
-    missing_path = home / "datasets" / "recoverable.csv"
-    missing_path.write_bytes(_csv())
-    monkeypatch.setattr(storage, "connect", lambda: (_ for _ in ()).throw(
-        OSError("Synthetic rollback storage failure")))
+    staged_path = home / "datasets" / "recoverable.csv"
+    staged_path.write_bytes(_csv())
+    def unavailable_database():
+        raise OSError("Synthetic rollback storage failure")
+    monkeypatch.setattr(storage, "connect", unavailable_database)
     try:
-        _rollback_failed_project_import("synthetic-uncommitted-id", missing_path)
+        _rollback_failed_project_import("synthetic-uncommitted-id", staged_path)
         assert False, "Expected forced rollback error"
-    except OSError:
-        pass
-    assert missing_path.read_bytes() == _csv()
+    except OSError as exc:
+        assert "Synthetic rollback storage failure" in str(exc)
+    assert staged_path.read_bytes() == _csv()
