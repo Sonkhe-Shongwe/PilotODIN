@@ -28,7 +28,7 @@ test('P5 queued, worker, terminal and interrupted transitions append honest stag
   'claim_queued_experiment(eid)',
   'df=df_for(p,config["quality_version"])',
   '"training_models"',
-  'engine.run_training(df',
+  'engine.run_training(',
   '"saving_artifacts"',
   'joblib.dump(pipe',
   'finish_running_experiment(eid,"completed"',
