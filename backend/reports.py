@@ -18,7 +18,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether, CondPageBreak
 
 try:
     from . import quality, storage, report_charts
@@ -812,6 +812,11 @@ def render_pdf(report: dict) -> bytes:
                 if spec.get('note'):
                     story.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
         if records:
+            # Prevent an orphaned heading and a single table row at the foot
+            # of a page. Keep enough space for a heading, table header and
+            # multiple verified observations; larger tables may still split
+            # naturally with their column headings repeated.
+            story.append(CondPageBreak(160))
             story.append(p('Verified observations','ODINHeading'))
             story.extend(table(columns,records))
         if isinstance(art.get('result'), dict):
