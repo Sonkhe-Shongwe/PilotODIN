@@ -5,7 +5,6 @@ No real insurance data, user project files, hosted CI, or installed app paths.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pandas as pd
