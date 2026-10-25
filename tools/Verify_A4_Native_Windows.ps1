@@ -182,15 +182,23 @@ Write-Host ''
 $priorSmoke=$env:VITE_PILOTODIN_NATIVE_SMOKE
 $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
 $exitCode=1
+$previousErrorActionPreference=$ErrorActionPreference
 Push-Location $frontend
 try {
-    # This is a DEV window, not an installed EXE/NSIS bundle. The CLI
-    # compiles the Rust command using the sidecar-free config overlay.
+    # Tauri prints routine status messages such as "Running BeforeDevCommand"
+    # to STDERR. In Windows PowerShell 5.1, redirecting native STDERR with
+    # 2>&1 while ErrorActionPreference=Stop converts the very first status
+    # line to a terminating NativeCommandError. That falsely aborted startup
+    # BEFORE Cargo could compile and discarded the useful remaining log.
+    # Treat native STDERR as diagnostic output only during the npm/Tauri
+    # process; decide success by its real exit code, not its output stream.
+    $ErrorActionPreference='Continue'
     & $npm run desktop:dev -- --config src-tauri/tauri.native-a4-smoke.conf.json 2>&1 | Tee-Object -FilePath $log
-    $exitCode=$LASTEXITCODE
+    $exitCode=if($null -eq $LASTEXITCODE){1}else{[int]$LASTEXITCODE}
 } catch {
-    Add-Content -Path $log -Value ("Launcher exception: " + $_.Exception.Message)
+    Add-Content -Path $log -Value ("Launcher exception: " + $_.Exception.ToString())
 } finally {
+    $ErrorActionPreference=$previousErrorActionPreference
     Pop-Location
     if($null -eq $priorSmoke){Remove-Item Env:\VITE_PILOTODIN_NATIVE_SMOKE -ErrorAction SilentlyContinue}
     else {$env:VITE_PILOTODIN_NATIVE_SMOKE=$priorSmoke}
