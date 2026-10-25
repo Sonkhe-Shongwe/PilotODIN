@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from html import escape
 from io import BytesIO
 import hashlib
+import hmac
 import json
 import re
 import sqlite3
@@ -57,6 +58,13 @@ def init():
             FOREIGN KEY(report_id) REFERENCES reports_v1(id)
         );
         CREATE INDEX IF NOT EXISTS ix_report_revisions_v1 ON report_revisions_v1(report_id,number DESC);
+        CREATE TABLE IF NOT EXISTS report_quality_audits_v1 (
+            id TEXT PRIMARY KEY, project_id TEXT NOT NULL, dataset_version INTEGER NOT NULL,
+            snapshot_json TEXT NOT NULL, sha256 TEXT NOT NULL, captured_at TEXT NOT NULL,
+            FOREIGN KEY(project_id) REFERENCES projects(id)
+        );
+        CREATE INDEX IF NOT EXISTS ix_report_quality_audits_project
+            ON report_quality_audits_v1(project_id,captured_at DESC);
         ''')
 
 
@@ -145,6 +153,131 @@ def _explore_evidence(row: sqlite3.Row) -> dict:
         'computed_at':row['created_at'], 'source_snapshot_sha256':digest
     }
 
+
+
+MAX_QUALITY_FINDINGS = 35
+
+
+def capture_quality(project_id: str, expected_version: int) -> dict:
+    """Explicitly freeze a read-only, aggregate Quality audit from one approved version.
+
+    No browser-supplied findings or per-record previews enter this snapshot.
+    Holding the single SQLite write transaction while reading the source and
+    its version prevents a concurrent approval from mixing audit states.
+    """
+    p = storage.get_project(project_id)
+    if p is None:
+        raise ReportError('Project does not exist', 404)
+    if isinstance(expected_version, bool) or not isinstance(expected_version, int) or expected_version < 0:
+        raise ReportError('Expected dataset version must be nonnegative', 422)
+    with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        try:
+            quality._ensure(con, p)
+            version, active = quality._state(con, project_id)
+            if version != expected_version:
+                raise ReportError('Dataset version changed. Refresh Quality before capturing an audit.', 409)
+            frame = quality._materialize(con, p, active)
+            issues = quality._issues(frame)
+            decisions = quality._decisions(con, project_id)
+            original_digest = con.execute(
+                'SELECT original_sha256 FROM quality_state WHERE project_id=?',
+                (project_id,)
+            ).fetchone()['original_sha256']
+            current_event = con.execute(
+                'SELECT event,created_at FROM quality_versions WHERE project_id=? AND version=?',
+                (project_id,version)
+            ).fetchone()
+            captured = storage.now()
+            # Proposals, detailed raw evidence and record previews are excluded.
+            findings = [{
+                'kind': item['kind'],
+                'column': item['column'],
+                'affected_rows': int(item['affected_rows']),
+                'severity': item['severity'],
+                'decision': decisions.get(item['id'], 'pending'),
+                'title': item['title'],
+                'detail': item['explanation'][:240],
+            } for item in issues[:MAX_QUALITY_FINDINGS]]
+            raw = {
+                'dataset_version': version,
+                'source_original_sha256': original_digest,
+                'captured_at': captured,
+                'summary': {
+                    'Rows in approved dataset': int(len(frame)),
+                    'Columns in approved dataset': int(len(frame.columns)),
+                    'Quality findings detected': int(len(issues)),
+                    'Findings shown': len(findings),
+                    'Approved working corrections active': int(len(active)),
+                    'Version event': current_event['event'],
+                    'Source original SHA-256': original_digest,
+                },
+                'findings': findings,
+                'note': ('Read-only audit of the selected approved dataset version. '
+                         'Findings are screening observations, not confirmed errors; '
+                         'no corrections were applied by this capture.'),
+                'limitations': [
+                    'Only the first 35 findings are displayed; counts cover all detected findings.',
+                    'No record-level values, row identifiers, source previews or proposed replacement values are exported.',
+                    'Working corrections shown are version-scoped, and the uploaded source remains immutable.',
+                ],
+            }
+            canonical = json.dumps(raw, sort_keys=True, ensure_ascii=False,
+                                   allow_nan=False, separators=(',',':'))
+            if len(canonical.encode('utf-8')) > MAX_SNAPSHOT:
+                raise ReportError('Quality audit is too large to capture safely', 422)
+            digest = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+            ident = storage.uid()
+            con.execute(
+                '''INSERT INTO report_quality_audits_v1
+                   (id,project_id,dataset_version,snapshot_json,sha256,captured_at)
+                   VALUES(?,?,?,?,?,?)''',
+                (ident, project_id, version, canonical, digest, captured)
+            )
+        except quality.QualityError as exc:
+            raise ReportError(str(exc), exc.status) from exc
+    return {'id':ident,'project_id':project_id,'dataset_version':version,
+            'source_snapshot_sha256':digest,'captured_at':captured,
+            'findings_total':len(issues),'findings_shown':len(findings)}
+
+
+def _quality_evidence(row: sqlite3.Row) -> dict:
+    """Read an immutable audit, verify its stored digest and version binding."""
+    raw = row['snapshot_json']
+    digest = hashlib.sha256(raw.encode('utf-8')).hexdigest()
+    if not hmac.compare_digest(digest, row['sha256']):
+        raise ReportError('Saved Quality audit failed integrity verification',409)
+    try:
+        snapshot = json.loads(raw)
+    except (ValueError,TypeError) as exc:
+        raise ReportError('Saved Quality audit is unreadable',409) from exc
+    if snapshot.get('dataset_version') != row['dataset_version']:
+        raise ReportError('Saved Quality audit does not match dataset version',409)
+    summary = snapshot.get('summary')
+    findings = snapshot.get('findings')
+    if not isinstance(summary,dict) or not isinstance(findings,list):
+        raise ReportError('Saved Quality audit is incomplete',409)
+    return {
+        'id':row['id'], 'investigation_id':None,
+        'objective':'Quality audit of dataset v'+str(row['dataset_version']),
+        'dataset_version':row['dataset_version'],
+        'operation':'quality_audit',
+        'params':{'source_snapshot_sha256':digest,
+                  'source_original_sha256':snapshot['source_original_sha256']},
+        'result':{
+            'summary':summary,
+            'findings':[{'title':x.get('title','Finding'),
+                         'detail':str(x.get('detail',''))+
+                            (' | Column: '+str(x['column']) if x.get('column') else '')+
+                            ' | Affected rows: '+str(x.get('affected_rows'))+
+                            ' | Decision: '+str(x.get('decision','pending'))
+                         } for x in findings],
+            'note':snapshot.get('note',''),
+            'limitations':snapshot.get('limitations',[]),
+        },
+        'tool_version':'quality-audit-snapshot-v1',
+        'computed_at':row['captured_at'],
+    }
 
 
 def _model_evidence(row: sqlite3.Row) -> dict:
@@ -283,6 +416,13 @@ def _collect(con: sqlite3.Connection, pid: str, title: str, narrative: str, evid
         if row['id'] in lookup:
             raise ReportError('Conflicting evidence identifiers from separate sources', 409)
         lookup[row['id']] = _model_evidence(row)
+    quality_rows = con.execute(f'''SELECT * FROM report_quality_audits_v1
+        WHERE id IN ({placeholders}) AND project_id=?''',
+        (*evidence_ids, pid)).fetchall()
+    for row in quality_rows:
+        if row['id'] in lookup:
+            raise ReportError('Conflicting evidence identifiers from separate sources',409)
+        lookup[row['id']] = _quality_evidence(row)
     if len(lookup) != len(evidence_ids):
         raise ReportError('Evidence is missing, unverified or belongs to another project', 403)
     evidence = [lookup[ident] for ident in evidence_ids]
@@ -355,6 +495,9 @@ def evidence_options(project_id: str):
             WHERE project_id=? AND status='completed' AND selected_model IS NOT NULL
               AND final_results IS NOT NULL
             ORDER BY created_at DESC,rowid DESC LIMIT 50""",(project_id,)).fetchall()
+        audit_rows=con.execute("""SELECT * FROM report_quality_audits_v1
+            WHERE project_id=? ORDER BY captured_at DESC,rowid DESC LIMIT 50""",
+            (project_id,)).fetchall()
     options=[{'id':r['id'],'operation':r['operation'],'params':json.loads(r['params']),
               'version':r['dataset_version'],'stale':r['dataset_version']!=current,
               'objective':r['objective'],'created_at':r['created_at'],'source':'investigation'} for r in rows]
@@ -387,6 +530,18 @@ def evidence_options(project_id: str):
             'stale': art['dataset_version'] != current,
             'objective': art['objective'], 'created_at': row['created_at'],
             'source': 'saved_model_evaluation',
+        })
+    for row in audit_rows:
+        try:
+            art = _quality_evidence(row)
+        except (ReportError,KeyError,TypeError,ValueError):
+            continue
+        options.append({
+            'id':row['id'], 'operation':'quality_audit',
+            'params':{'findings':art['result']['summary'].get('Quality findings detected',0)},
+            'version':row['dataset_version'], 'stale':row['dataset_version']!=current,
+            'objective':art['objective'],'created_at':row['captured_at'],
+            'source':'saved_quality_audit'
         })
     return sorted(options,key=lambda entry:(entry['created_at'],entry['id']),reverse=True)[:150]
 
