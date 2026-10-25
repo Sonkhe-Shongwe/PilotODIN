@@ -89,6 +89,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    const gate=composerGuard.current;
    const ticket=gate.begin('save');
    if(!ticket){setError('Another report write is still completing.');return;}
+   latestOpenRequest.current++; // A pending read cannot replace a committed write's UI.
    setBusy('save');setError('');setNotice('');
    const payload={title:title.trim(),narrative,evidence_ids:[...selected]};
    let saved:SavedReport;
@@ -123,6 +124,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    const gate=composerGuard.current;
    const ticket=gate.begin('quality');
    if(!ticket){setError('Another report write is still completing.');return;}
+   latestOpenRequest.current++;
    setBusy('quality');setError('');setNotice('');
    let captured:{id:string;dataset_version:number;findings_total:number}|null=null;
    try{
