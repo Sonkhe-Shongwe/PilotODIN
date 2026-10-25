@@ -55,6 +55,7 @@ A3 = (
 A4_READINESS = (
     "test_a4_model_evidence_reports.py",
     "test_a4_frozen_chart_visuals.py",
+    "test_a4_quality_audit_reporting.py",
     "test_build_e_cleaned_exports.py",
     "test_build_e_approval_receipts.py",
 )
