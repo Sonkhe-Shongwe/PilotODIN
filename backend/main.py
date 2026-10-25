@@ -18,7 +18,7 @@ from typing import Literal
 import joblib
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
@@ -704,6 +704,7 @@ def _local_request(request:Request):
 
 
 class ResourcePolicyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     mode: Literal["adaptive", "low_memory", "performance"]
 
 
