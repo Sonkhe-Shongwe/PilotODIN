@@ -104,7 +104,9 @@ async function testEditingWhileOpen(){
   throw new Error('Unexpected mock API: '+method+' '+path);
  });
  try{
-  await until(()=>titleInput().value==='Original report','initial saved report hydrated');
+  // React mounts asynchronously: poll for existence before reading the title.
+  // Do not throw on a transient empty DOM before the component has committed.
+  await until(()=>document.querySelector<HTMLInputElement>('#mount .pd-report-editor input:not([type=checkbox])')?.value==='Original report','initial saved report hydrated');
   const button=await until(()=>findButton('Original report'),'saved report button visible');
   button.click();
   await until(()=>reportRequests===2,'second Open GET initiated');
