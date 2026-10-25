@@ -438,7 +438,13 @@ def reliability_report(development:dict, final:dict, selected_model:str)->dict:
 
 
 def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: list[str], task: str,
-                 split_strategy:str='random', split_column:str|None=None):
+                 split_strategy:str='random', split_column:str|None=None, stop_check=None):
+    # Optional cooperative checkpoint. sklearn's individual fit/CV call is
+    # blocking; interruption is checked between expensive operations only.
+    def checkpoint():
+        if stop_check is not None:
+            stop_check()
+    checkpoint()
     if split_strategy not in ('random','time','group'):
         raise ValueError('Invalid split strategy')
     if split_strategy != 'random' and (not split_column or split_column not in df):
@@ -515,19 +521,27 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     base_pipe=Pipeline([('preprocessor',make_pipeline(X_train,task,models[0]).named_steps['preprocessor']),('model',baseline)])
     cv_kwargs={'groups':cv_groups} if cv_groups is not None else {}
     # Group-aware CV is only valid when no group appears in both development folds.
+    checkpoint()
     base_scores=cross_val_score(base_pipe,X_train,y_train,cv=cv,scoring=score,n_jobs=1,error_score='raise',**cv_kwargs)
+    checkpoint()
     reports,pipelines=[],{}
     for key in models:
+        checkpoint()
         pipe=make_pipeline(X_train,task,key)
         try:
             scores=cross_val_score(pipe,X_train,y_train,cv=cv,scoring=score,n_jobs=1,error_score='raise',**cv_kwargs)
+            checkpoint()
             pipe.fit(X_train,y_train)
+            checkpoint()
             value=float(scores.mean())*(1 if task=='classification' else -1)
             reports.append({'key':key,'name':LABELS[key],'cv_metric':round(value,5),
                             'cv_std':round(float(scores.std()),5),'status':'ready'})
             pipelines[key]=pipe
+        except InterruptedError:
+            raise  # Never disguise a user stop/timeout as one failed model.
         except Exception as ex:
             reports.append({'key':key,'name':LABELS[key],'status':'failed','error':str(ex)[:230]})
+    checkpoint()
     if not pipelines:raise ValueError('Every model failed; review data type, validation strategy and feature configuration')
     baseline_cv=round(float(base_scores.mean())*(1 if task=='classification' else -1),5)
     wins=[m for m in reports if m['status']=='ready' and
