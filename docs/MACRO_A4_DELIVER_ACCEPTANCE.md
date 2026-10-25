@@ -38,6 +38,15 @@
 - Added `tests/test_a4_quality_audit_reporting.py`: explicit capture, unchanged source bytes/version, category-example privacy, cross-project rejection, altered audit exclusion, historical-v0 retention and altered-report rejection. Added `frontend/tests/a4-quality-export-gates.test.cjs`. The unified local verification runner includes the new backend module.
 - **Status:** source committed to development branch; no new A4-3 or earlier A4-1/A4-2 executable tests have yet run on the owner's Windows system.
 
+## Consolidation source audit and single-owner-run gate (25 October 2026)
+
+- Strengthened `reports.load`: a correct SHA-256 is **necessary but insufficient**; the frozen snapshot must also belong to the owning project and preserve the expected bounded evidence/version structure before it can reopen or export. Added a regression proving even a validly hashed foreign-project revision is refused (409).
+- Upgraded `Run_PilotODIN_P0_A4_Verification.bat` to keep its terminal open after a double-click. `tools/Verify_P0_A4_Readiness.py` now emits one shareable ZIP with JSON/JUnit/phase logs only, intentionally omitting the isolated data and model directories. The ZIP path is printed at both PASS and FAIL.
+- **A4-1/2/3 source is frozen for the initial consolidated automated Windows check.** Every A4 regression module is in the single-pass runner; existing A2/A3 regression checks and TypeScript/Vite compilation remain in the same run.
+- **Unverified:** Neither the new code, PDF figures nor native browser/desktop export behaviour has passed the owner's local executable suite. First run is required before final A4 feature claims.
+- **Still a blocker to full A4 acceptance:** Native Windows Save As remains unimplemented/unverified in this source checkpoint. Browser download checks do not solve native shell integration; keep that explicit instead of calling A4 released. PDF pagination and final functional UI validation also remain open.
+- One owner action: pull the latest development branch once, run the one-click BAT, send the generated **single diagnostics ZIP**, inspect failures and fix code before considering any repeated manual clicking. Windows manual QA should follow only after the automated regression set passes.
+
 ## Test inventory and gate
 
 - **New:** `tests/test_a4_model_evidence_reports.py`: incomplete model exclusion, project access control, safe aggregate metrics, HTML/PDF parity, frozen revisions after experiment mutation, correct regression metric labelling, ordered evidence and reliability notes.
