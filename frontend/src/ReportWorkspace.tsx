@@ -86,26 +86,67 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  async function save(){
    userStartedDraft.current=true;
    if(!selected.length){setError('Choose verified evidence before saving.');return;}
+   const gate=composerGuard.current;
+   const ticket=gate.begin('save');
+   if(!ticket){setError('Another report write is still completing.');return;}
    setBusy('save');setError('');setNotice('');
+   const payload={title:title.trim(),narrative,evidence_ids:[...selected]};
+   let saved:SavedReport;
    try{
-     const payload={title:title.trim(),narrative,evidence_ids:selected};
-     const response=activeId?await post<SavedReport>(`/reports/${encodeURIComponent(activeId)}/revisions`,payload)
+     saved=activeId?await post<SavedReport>(`/reports/${encodeURIComponent(activeId)}/revisions`,payload)
        :await post<SavedReport>(`/projects/${encodeURIComponent(projectId)}/reports`,payload);
-     setActiveId(response.id);setOpened(response);setRevision(response.revision);
-     setNotice(`Saved revision ${response.revision} with ${response.evidence.length} verified evidence artifacts.`);
-     await refresh();
-   }catch(e){setError((e as Error).message)}finally{setBusy('')}
+   }catch(e){
+     if(gate.sameView(ticket))setError((e as Error).message);
+     if(gate.finish(ticket))setBusy('');
+     return;
+   }
+   if(gate.sameView(ticket)){
+     const untouched=gate.sameDraft(ticket);
+     setActiveId(saved.id);setOpened(saved);setRevision(saved.revision);
+     setNotice(untouched
+       ?`Saved revision ${saved.revision} with ${saved.evidence.length} verified evidence artifacts.`
+       :`Saved submitted revision ${saved.revision}. Newer draft edits were NOT included; save them separately.`);
+     // Never replace title/narrative/selected: they may have changed since POST.
+   }
+   const listTicket=++latestReportList.current;
+   try{
+     const items=await get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`);
+     if(gate.sameView(ticket)&&listTicket===latestReportList.current)setReports(items);
+   }catch(e){
+     if(gate.sameView(ticket))setError(`Report revision was saved, but the report library could not refresh: ${(e as Error).message}`);
+   }finally{
+     if(gate.finish(ticket))setBusy('');
+   }
  }
  async function captureQualityAudit(){
-   userStartedDraft.current=true;setBusy('quality');setError('');setNotice('');
+   userStartedDraft.current=true;
+   const gate=composerGuard.current;
+   const ticket=gate.begin('quality');
+   if(!ticket){setError('Another report write is still completing.');return;}
+   setBusy('quality');setError('');setNotice('');
+   let captured:{id:string;dataset_version:number;findings_total:number}|null=null;
    try{
      const state=await get<{version:number}>(`/projects/${encodeURIComponent(projectId)}/quality`);
-     const saved=await post<{id:string;dataset_version:number;findings_total:number}>(`/projects/${encodeURIComponent(projectId)}/report-quality`,{expected_version:state.version});
+     if(!gate.sameView(ticket))return;
+     captured=await post<{id:string;dataset_version:number;findings_total:number}>(`/projects/${encodeURIComponent(projectId)}/report-quality`,{expected_version:state.version});
+     if(!gate.sameView(ticket))return;
      const options=await get<EvidenceOption[]>(`/projects/${encodeURIComponent(projectId)}/report-evidence`);
+     if(!gate.sameView(ticket))return;
      setProjectEvidence(options);
-     setSelected(ids=>ids.length>=15||ids.includes(saved.id)?ids:[...ids,saved.id]);
-     setNotice(idsafeMessage(saved,selected.length>=15));
-   }catch(e){setError((e as Error).message)}finally{setBusy('')}
+     if(gate.sameDraft(ticket)){
+       setSelected(ids=>ids.length>=15||ids.includes(captured!.id)?ids:[...ids,captured!.id]);
+       setNotice(idsafeMessage(captured,selected.length>=15));
+     }else{
+       setNotice(`Quality audit v${captured.dataset_version} captured, but your newer draft selection was not changed. Select its evidence explicitly if needed.`);
+     }
+   }catch(e){
+     if(gate.sameView(ticket)){
+       const detail=(e as Error).message;
+       setError(captured
+         ?`Quality audit v${captured.dataset_version} was captured, but its evidence list could not refresh: ${detail}`
+         :detail);
+     }
+   }finally{if(gate.finish(ticket))setBusy('')}
  }
  async function download(format:'html'|'pdf'){
    if(!activeId||!opened)return;
