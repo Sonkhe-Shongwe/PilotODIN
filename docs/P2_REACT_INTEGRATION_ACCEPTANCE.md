@@ -1,6 +1,6 @@
 # P2 mounted React report composer integration, browser-only and isolated
 
-**25 October 2026 — test implementation COMMITTED; no owner Chrome/Edge run yet.**
+**25 October 2026 — initial real browser test FAIL (4/5, harness polling error); test-only repair committed, owner rerun pending.**
 
 ## Why this is the correct next gate
 Earlier P2 controlled Save/Quality and Read Safety batches passed scoped TypeScript guard behavioral + Node source-contract + TypeScript/Vite tests. The latest read-safety repair BAT owner screenshot reports `P2 navigation contract repair: PASS`; its local ZIP is not uploaded, while the earlier initial ZIP has 24/25 Node PASS (the one stale regex repaired) and TypeScript/Vite PASS. **P2 read safety is scoped ACCEPTED**, not React DOM, full backend API/native Tauri, or offline release certification.
@@ -26,3 +26,9 @@ Accumulating more regex source assertions is not a substitute for testing actual
 **Caveats and constraints:** Source/code inspection is NOT evidence this browser gate passes. Actual headless browser behavior and interaction reliability are currently PENDING Windows execution. An ordinary headless browser does not verify Rust/Tauri native Save As dialogs, real customer dataset import, real FastAPI error paths, offline licensed Qwen generation, combined 8 GB RAM or the final E-01–E-24 installer release. If Chrome/Edge automation fails due environment or test-harness timing, diagnose the ZIP before changing production code. Source changes in this increment are **test-only**, so do not modify production application to satisfy a faulty test.
 
 **Next owner action:** Safely fetch/pull the feature branch, run `Run_PilotODIN_P2_React_Integration.bat` once; on red upload the one diagnostic ZIP, on green provide screenshot/ZIP for reliable observed acceptance. No downloads, hosted Actions, installer or high-RAM AI.
+
+## First owner browser run and narrow harness correction (25 October 2026)
+
+Owner supplied `pilotodin-p2-mounted-react-k_566u6b.zip` and a console screenshot. Actual ZIP `result.json` and four logs/DOM were inspected. Initial **TypeScript/Vite PASS**, isolated Vite up, browser exit 0, **mounted React 4/5 PASS**, overall **FAIL**. Four pass: Save/edit/refresh messaging; Quality capture after manual selection change; old evidence GET not replacing new audit; export after project change no browser download. The only failing test “Editing while older Open is pending” raised `report title input not mounted` immediately: its `until` callback called strict `titleInput()` *before* React's first mount, so the readiness condition threw rather than polling. **No evidence of a production Open race failure can be derived from that thrown test helper.**
+
+**Committed test-only change** to `frontend/src/p2ReportUITestHarness.tsx`: first initial hydrated-title wait now uses optional `document.querySelector(...)? .value` lookup inside the existing poller (actual source uses `?.value` without whitespace). This allows React's asynchronous mount and initial report load to complete, while still failing on timeout if they never complete. No product source changed. **Corrected gate NOT RUN yet**. Owner must pull and rerun the existing `Run_PilotODIN_P2_React_Integration.bat` once; it builds TypeScript/Vite and runs five actual mounted browser scenarios. 5/5 plus build PASS would support the bounded synthetic-browser acceptance, not native Tauri/export or final release QA.
