@@ -164,9 +164,10 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     }
 
 
-def recommend(frame: pd.DataFrame, version: int) -> dict:
+def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = None) -> dict:
     if not frame.columns.is_unique:
         raise ValueError("Target recommendations require unique column names")
+    user_contexts = user_contexts or {}
     suggestions = []
     blocked = []
     for col in frame.columns:
@@ -175,15 +176,29 @@ def recommend(frame: pd.DataFrame, version: int) -> dict:
         if question is None:
             continue
         candidate = _candidate(frame, name, question, version)
+        if name in user_contexts:
+            # User statements provide described decision context; never
+            # assert their truth, legal basis, leakage safety or readiness.
+            candidate["user_context"] = {
+                **user_contexts[name],
+                "verification_state": "user_described_not_independently_verified",
+            }
+            candidate["business_relevance"] = "user_described_unverified"
+        else:
+            candidate["user_context"] = None
         (suggestions if candidate["technical_status"] == "reviewable" else blocked).append(candidate)
     # Observed labelled support is a deterministic ordering aid, not a
     # validation score or a claim of decision value/predictive performance.
-    suggestions.sort(key=lambda item: (-item["labelled_rows"], item["column"].casefold()))
+    suggestions.sort(key=lambda item: (
+        0 if item["user_context"] is not None else 1,
+        -item["labelled_rows"],
+        item["column"].casefold(),
+    ))
     blocked.sort(key=lambda item: item["column"].casefold())
     top = suggestions[:MAX_SUGGESTIONS]
     return {
         "version": version,
-        "ranking_basis": "Structural eligibility first, then more observed labels. No model trained or business value scored.",
+        "ranking_basis": "Structural eligibility first; user-described contexts appear first, then observed label support. User text is unverified and not a business-value score. No model trained.",
         "suggestions": top,
         "blocked_examples": blocked[:MAX_BLOCKED_EXAMPLES],
         "eligible_count": len(suggestions),
@@ -194,8 +209,9 @@ def recommend(frame: pd.DataFrame, version: int) -> dict:
             "Use descriptive analysis or define and verify a real business target yourself."
             if not top else None
         ),
-        "business_context_state": "unverified",
+        "business_context_state": "user_described_unverified" if any(item["user_context"] for item in top) else "unverified",
         "note": (
+            "A saved user description is not independently verified and cannot override technical blockers. "
             "Suggestions are unverified hypotheses, not approved labels or training recommendations. "
             "Explicit user target selection and all existing backend training/validation gates remain required."
         ),
