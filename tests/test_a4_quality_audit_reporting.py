@@ -73,7 +73,9 @@ def test_explicit_quality_capture_is_read_only_and_reportable():
     assert fact["dataset_version"]==version_before
     assert fact["result"]["summary"]["Rows in approved dataset"]==24
     assert fact["result"]["summary"]["Approved working corrections active"]==0
-    assert "preview" not in str(fact["result"])
+    # Check the JSON structure, not the word "preview" in a safety warning.
+    assert "preview" not in fact["result"]
+    assert "row_values" not in fact["result"]
     assert PRIVATE_CATEGORY not in str(fact)
     html=client.get(f"/api/reports/{saved['id']}/export/html")
     pdf=client.get(f"/api/reports/{saved['id']}/export/pdf")
