@@ -97,7 +97,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const availableMap=new Map<string,EvidenceOption>([...projectEvidence,...availableEvidence].map(e=>[e.id,e] as const));
  const options=[...availableMap.values()].slice(0,150);
  const savedIds=opened?.evidence.map(e=>e.id)??[];
- const hasDraftChanges=!!opened&&(title!==opened.title||narrative!==opened.narrative||selected.length!==savedIds.length||selected.some(id=>!savedIds.includes(id)));
+ const hasDraftChanges=!!opened&&(title!==opened.title||narrative!==opened.narrative||selected.length!==savedIds.length||selected.some((id,index)=>id!==savedIds[index]));
  const saveReady=title.trim().length>=5&&selected.length>0;
  const reportStep=opened&&!hasDraftChanges?3:saveReady?2:1;
  return <div className="pd-report-workspace">
