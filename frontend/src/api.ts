@@ -111,3 +111,17 @@ export async function downloadReportFile(path:string):Promise<{blob:Blob;filenam
  const safe=filename.replace(/[\\/\r\n]/g,'_');
  return {blob,filename:safe.toLowerCase().endsWith(`.${format}`)?safe:`pilotodin_report.${format}`};
 }
+
+
+/** Native Tauri-only Save As. Browser downloads remain a separate path. */
+export type NativeReportSaveStatus = {status:'saved'|'cancelled';filename:string|null};
+export async function saveReportNative(blob:Blob, filename:string, format:'html'|'pdf'):Promise<NativeReportSaveStatus> {
+ if(!('__TAURI_INTERNALS__' in window))throw new Error('Native Save As is only available inside the PilotODIN desktop application.');
+ if(!filename.toLowerCase().endsWith('.'+format))throw new Error('Report filename does not match its file type.');
+ const maxBytes=12*1024*1024;
+ if(blob.size<=0||blob.size>maxBytes)throw new Error('Report is empty or exceeds the native Save As limit.');
+ const bytes=Array.from(new Uint8Array(await blob.arrayBuffer()));
+ const result=await invoke<NativeReportSaveStatus>('save_report_as',{format,filename,bytes});
+ if(result.status!=='saved'&&result.status!=='cancelled')throw new Error('Unexpected result from native Save As.');
+ return result;
+}
