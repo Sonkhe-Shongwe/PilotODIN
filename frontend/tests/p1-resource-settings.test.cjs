@@ -14,7 +14,12 @@ test('resource status uses system physical RAM and explicitly reports no E2 cert
  assert.match(source,/policy_effect": "low_memory_new_work_preflight_only_no_scheduler"/);
  assert.match(source,/LOW_MEMORY_MIN_FREE_GIB/);
  assert.match(source,/def admit_new_work\(operation: str\)/);
- assert.doesNotMatch(source,/(?:subprocess|requests\.|urllib\.request|psutil\.process_iter|os\.system)/);
+ // Match executable imports/calls, not English documentation such as
+ // "new requests." A broad text substring test produced a false FAIL.
+ assert.doesNotMatch(source,/^\s*(?:import\s+(?:subprocess|requests|urllib\.request|psutil)\b|from\s+(?:subprocess|requests|urllib\.request|psutil)\s+import\b)/m,
+   'Resource module must not import network/process clients');
+ assert.doesNotMatch(source,/\b(?:subprocess\.(?:run|Popen|call)|requests\.(?:get|post|put|delete|request)|urllib\.request\.urlopen|psutil\.process_iter|os\.system)\s*\(/,
+   'Resource module must not invoke network/process control operations');
 });
 
 test('resource mode API reuses local-only controls and saves only validated values',()=>{
@@ -37,7 +42,7 @@ test('resource mode API reuses local-only controls and saves only validated valu
  assert.ok(writeRoute.indexOf('_local_request(request)')<writeRoute.indexOf('resource_policy.save_policy(body.mode)'),'Authorize before writing policy');
 });
 
-test('Resource-Aware Settings UI is advisory, explicit-save and does not run a model',()=>{
+test('Resource-Aware Settings UI shows active low-memory screening with explicit-save and no model start',()=>{
  const ui=read('frontend/src/ResourceSettings.tsx');
  const settings=read('frontend/src/AIWorkspace.tsx');
  assert.match(settings,/import \{ResourceSettings\} from '\.\/ResourceSettings'/);
