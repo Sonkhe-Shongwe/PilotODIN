@@ -299,7 +299,7 @@ async fn save_report_as(app: AppHandle, format: String, filename: String, bytes:
 
 #[cfg(test)]
 mod report_save_tests {
-    use super::check_report_payload;
+    use super::{check_report_payload, MAX_REPORT_EXPORT_BYTES};
 
     #[test]
     fn native_report_writer_accepts_only_matching_report_types() {
@@ -310,6 +310,10 @@ mod report_save_tests {
         assert!(check_report_payload("txt", "report.txt", b"hello").is_err());
         assert!(check_report_payload("pdf", "..\\elsewhere.pdf", b"%PDF-1.7").is_err());
         assert!(check_report_payload("pdf", "report.pdf", b"").is_err());
+        assert!(check_report_payload("pdf", "report.html", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("pdf", "bad:name.pdf", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("html", "bad<name>.html", b"<!doctype html>").is_err());
+        assert!(check_report_payload("pdf", "report.pdf", &vec![0u8; MAX_REPORT_EXPORT_BYTES + 1]).is_err());
     }
 }
 
