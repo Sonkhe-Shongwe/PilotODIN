@@ -101,7 +101,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      const {blob,filename}=await downloadReportFile(`/reports/${encodeURIComponent(activeId)}/export/${format}?revision=${rev}`);
      const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;
      document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);
-     setNotice(`Prepared saved revision ${rev} as ${filename}. Check your browser's Downloads or desktop Save As dialog.`);
+     setNotice(`Started browser download for saved revision ${rev}: ${filename}. Confirm the file in Downloads. Native desktop Save As remains subject to Windows acceptance.`);
    }catch(e){setError((e as Error).message)}finally{setBusy('')}
  }
  function shiftEvidence(id:string,by:number){
