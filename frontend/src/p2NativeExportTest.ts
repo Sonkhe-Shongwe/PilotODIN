@@ -61,14 +61,16 @@ wire('badcontent',async()=>{
  try{
   await invoke('save_report_as',{format:'pdf',filename:'P2_Invalid_Content.pdf',
     bytes:Array.from(new TextEncoder().encode('not a PDF document'))});
- }catch{rejected=true}
- status('badcontent',rejected,'Malformed payload rejected before Save As');
+ }catch(error){
+  rejected=String(error).includes('Report file content does not match its declared format');
+ }
+ status('badcontent',rejected,rejected?'Malformed payload correctly rejected by Rust':'Unexpected result or non-validation error');
 });
 wire('badextension',async()=>{
  const bytes=await fixture('pdf');
  let rejected=false;
  try{await invoke('save_report_as',{format:'pdf',filename:'P2_Invalid_Extension.html',bytes})}
- catch{rejected=true}
- status('badextension',rejected,'Mismatched extension rejected before Save As');
+ catch(error){rejected=String(error).includes('Invalid report filename or extension')}
+ status('badextension',rejected,rejected?'Mismatched extension rejected by Rust':'Unexpected result or non-validation error');
 });
 log('Ready. Test-only native command surface; no real data, backend or model loads.');

@@ -73,15 +73,19 @@ Write-Host 'Save BOTH files in that exact EMPTY folder with the proposed names.'
 Write-Host 'No backend connection, user project, Qwen or installer is required.'
 if($env:OS -ne 'Windows_NT'){Stop-With 'Run this on the owner Windows computer.'}
 $git=Get-Command git.exe -ErrorAction SilentlyContinue
-if($null -eq $git){Stop-With 'Git is required to verify the active branch.'}
-$report.branch=(& git -C $root branch --show-current).Trim()
-$report.head=(& git -C $root rev-parse HEAD).Trim()
-if($report.branch -ne 'feature/live-dev-workspace-20261023'){
-    Stop-With ('Wrong active branch: ' + $report.branch)
-}
-$dirty=@(& git -C $root status --porcelain)
-if($dirty.Count -gt 0){
-    Write-Warning 'Local uncommitted changes detected. This test will not discard them.'
+if($null -eq $git){
+    $report.branch='OWNER_VERIFY_IN_GITHUB_DESKTOP'
+    Write-Warning 'git.exe not in PATH. Confirm feature/live-dev-workspace-20261023 is checked out in GitHub Desktop.'
+}else{
+    $report.branch=(& $git.Source -C $root branch --show-current).Trim()
+    $report.head=(& $git.Source -C $root rev-parse HEAD).Trim()
+    if($report.branch -ne 'feature/live-dev-workspace-20261023'){
+        Stop-With ('Wrong active branch: ' + $report.branch)
+    }
+    $dirty=@(& $git.Source -C $root status --porcelain)
+    if($dirty.Count -gt 0){
+        Write-Warning 'Local uncommitted changes detected. This test will not discard them.'
+    }
 }
 $npm=Get-Command npm.cmd -ErrorAction SilentlyContinue
 $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
