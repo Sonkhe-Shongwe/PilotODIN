@@ -23,7 +23,8 @@ test('save persists title/version/config, then reopens a server-scoped frozen sn
  assert.match(views,/SHA-256/);
  assert.match(views,/result\.sha256|selected\.sha256/);
  assert.match(views,/Saved investigation library/);
- assert.match(views,/setList\(await get<SavedSummary\[\]>/);
+ assert.match(views,/const refreshed=await get<SavedSummary\[\]>/);
+ assert.match(views,/setList\(refreshed\)/);
 });
 
 test('historical snapshots are preview only, not silently applied to current working data',()=>{
@@ -50,4 +51,27 @@ test('saved library shows integrity status before an item is opened',()=>{
  assert.match(views,/disabled=\{busy!==''\|\|item\.results_valid===false\}/);
  assert.match(views,/Current verified version/);
  assert.match(views,/Historical verified version/);
+});
+
+
+test('delayed saved analysis HTTP replies cannot cross a project or dataset-version transition',()=>{
+ const reset=views.slice(views.indexOf('useEffect(()=>{'),views.indexOf('// Navigation belongs'));
+ assert.match(reset,/const request=\+\+generation\.current/);
+ assert.match(reset,/return\(\)=>\{generation\.current\+\+\}/);
+ assert.match(reset,/if\(generation\.current===request\)setList\(result\)/);
+ const save=views.slice(views.indexOf('async function saveCurrent('),views.indexOf('async function openSaved('));
+ const open=views.slice(views.indexOf('async function openSaved('),views.indexOf('\n return <section'));
+ for(const block of [save,open]){
+  assert.match(block,/const request=generation\.current/);
+  assert.match(block,/if\(generation\.current!==request\)return/);
+  assert.match(block,/catch\(e\)\{if\(generation\.current===request\)setError/);
+  assert.match(block,/finally\{if\(generation\.current===request\)setBusy\(''\)\}/);
+ }
+ assert.match(save,/result\.project_id!==projectId\|\|result\.dataset_version!==version/);
+ assert.match(save,/const refreshed=await get<SavedSummary\[\]>/);
+ assert.match(save,/if\(generation\.current!==request\)return;\s*setList\(refreshed\)/);
+ assert.match(open,/if\(saved\.project_id!==projectId\)throw new Error/);
+ assert.match(open,/if\(generation\.current!==request\)return;\s*if\(saved\.project_id!==projectId\)/);
+ assert.match(open,/if\(saved\.configuration_verified&&!saved\.stale&&saved\.dataset_version===version\)/);
+ assert.match(open,/onRestore\(saved\.configuration\)/);
 });
