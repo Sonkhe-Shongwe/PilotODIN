@@ -9,6 +9,7 @@ import json
 import math
 import os
 import re
+import shutil
 import traceback
 import hmac
 from fastapi.responses import JSONResponse, FileResponse, Response
@@ -99,6 +100,9 @@ class ExperimentRequest(BaseModel):
     split_strategy: str = 'random'
     split_column: str | None = None
     expected_quality_version: int | None = Field(default=None, ge=0)
+    # An explicit cooperative soft timeout. No implicit deadline; sklearn fit
+    # and cross_val_score are not forcibly interrupted mid-call.
+    max_duration_seconds: int | None = Field(default=None, ge=60, le=14400)
 
 class SelectionRequest(BaseModel):
     model_key: str
@@ -223,26 +227,46 @@ def train_background(eid:str,pid:str,config:dict):
     # Compare-and-set: never resurrect a job marked terminal or interrupted.
     if not storage.claim_queued_experiment(eid):
         return
+    artifact_path = None
+    finished = False
     try:
+        storage.check_training_interruption(eid)
         p=storage.get_project(pid)
         df=df_for(p,config["quality_version"])
         if not storage.advance_running_experiment(
             eid,"training_models","Data loaded; cross-validating and fitting the selected model candidates."
         ):
             return  # A recovery/terminal transition superseded this worker.
-        result, pipes, x_test, y_test = engine.run_training(df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")})
+        result, pipes, x_test, y_test = engine.run_training(
+            df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")},
+            stop_check=lambda: storage.check_training_interruption(eid),
+        )
         if not storage.advance_running_experiment(
             eid,"saving_artifacts","Model comparisons finished; saving fitted pipelines and held-out evaluation data."
         ):
             return
-        # Only locally produced artifacts are loaded; untrusted model uploads are prohibited.
+        # Only locally produced artifacts are loaded; untrusted model uploads
+        # are prohibited. This directory belongs exclusively to the new ID.
         path=storage.HOME / "models" / eid
-        path.mkdir(parents=True,exist_ok=True)
-        for name,pipe in pipes.items(): joblib.dump(pipe,path/f"{name}.joblib")
+        storage.check_training_interruption(eid)
+        path.mkdir(parents=True,exist_ok=False)
+        artifact_path = path
+        for name,pipe in pipes.items():
+            storage.check_training_interruption(eid)
+            joblib.dump(pipe,path/f"{name}.joblib")
+        storage.check_training_interruption(eid)
         joblib.dump((x_test,y_test),path/"test_set.joblib")
-        storage.finish_running_experiment(eid,"completed",results=result)
+        storage.check_training_interruption(eid)
+        finished = storage.finish_running_experiment(eid,"completed",results=result)
+    except storage.TrainingInterrupted as e:
+        storage.finish_interrupted_experiment(eid,e.status)
     except Exception as e:
         storage.finish_running_experiment(eid,"failed",error=f"{type(e).__name__}: {str(e)[:600]}")
+    finally:
+        # A failed/cancelled run never exposes partial fitted pipelines to
+        # the model-library paths used by completed experiments.
+        if artifact_path is not None and not finished:
+            shutil.rmtree(artifact_path,ignore_errors=True)
 
 
 @app.post("/api/projects/{project_id}/experiments",status_code=202)
@@ -290,7 +314,8 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
     config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,
             "quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column,
             "acknowledge_feature_risks":bool(body.acknowledge_feature_risks),
-            "reviewed_high_risk_features":included_risks}
+            "reviewed_high_risk_features":included_risks,
+            "max_duration_seconds":body.max_duration_seconds}
     try:
         if admission["mode"] == "low_memory":
             # Atomic across request threads/process connections: one heavy
@@ -314,7 +339,27 @@ def get_experiment(experiment_id:str):
     current_version=quality.current_version(e["project_id"])
     return {"dataset_version":e["config"].get("quality_version",0),"current_version":current_version,"is_stale":e["config"].get("quality_version",0)!=current_version,"id":e["id"],"project_id":e["project_id"],"status":e["status"],"config":e["config"],
             "results":e["results"],"error":e["error"],"selected_model":e["selected_model"],"final_results":e["final_results"],
-            "progress":e["progress"]}
+            "progress":e["progress"],"control":e["control"]}
+
+
+@app.post("/api/experiments/{experiment_id}/cancel")
+def cancel_training(experiment_id:str, request:Request):
+    _local_request(request)
+    experiment_or_404(experiment_id)
+    state=storage.request_training_cancel(experiment_id)
+    if state is None:
+        raise HTTPException(status_code=404,detail="Experiment not found")
+    # A running request is NOT yet cancelled; it must reach a worker checkpoint.
+    return {
+        "status":state,
+        "message":(
+            "Queued experiment cancelled before execution." if state=="cancelled"
+            else "Cancellation requested. A running sklearn CV/fit cannot be forcibly stopped; "
+                 "the worker will stop at its next safe checkpoint."
+            if state=="cancellation_requested"
+            else "This experiment already finished and was not modified."
+        ),
+    }
 
 
 @app.post("/api/experiments/{experiment_id}/select")
