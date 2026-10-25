@@ -156,6 +156,16 @@ Owner attached `pilotodin-a4-native-780e83bfe1a1.zip` and the screenshot of a re
 
 **Next milestone:** Once MSVC C++ tools are installed/verified, pull the latest feature branch, keep Live Dev backend available and run `Run_PilotODIN_A4_Native_Smoke.bat` once. If Cargo then fails later, share the new one-ZIP diagnostics; don't ask for repeat 172-backend tests separately. A4 native Save As and final macro acceptance remain open.
 
+## A4 native Tauri/Cargo advanced to 98/373; Vite EBUSY watcher crash (25 October 2026)
+
+Owner screenshot of a **new native Windows attempt after installing Microsoft C++ Build Tools** shows Cargo dependency compilation progressing through roughly **98/373** crates. This demonstrates the earlier missing `link.exe` prerequisite has been resolved sufficiently for Rust compilation to advance. The blocker is now Vite's file-system watcher: `EBUSY: resource busy or locked, watch` on `frontend/src-tauri/target/debug/deps/displaydoc-...dll`; Node.js 24.22.0 reports an unhandled `FSWatcher` error, and Tauri then reports its `beforeDevCommand` exited nonzero. **The native desktop window, PDF/HTML Save As and Cancel are NOT yet verified.** The accompanying complete ZIP for this run has not been provided; this diagnosis is grounded in the screenshot and failure path, not an examined native log.
+
+**Source fix committed:** create `frontend/vite.config.ts` with `server.watch.ignored` globs `**/src-tauri/target` and `**/src-tauri/target/**`, keeping React HMR active but preventing Vite/Chokidar from traversing Cargo's transient Windows DLLs. Add a Node source-contract regression in `frontend/tests/a4-native-smoke-runner.test.cjs` to guard the exclusion. This is Vite's supported way to exclude generated compilation directories. Do not set `usePolling`, delete target/Cargo.lock, reinstall MSVC or turn off all frontend file watching.
+
+**Verification precision:** These NEW configuration and regression changes are committed/re-fetched but have NOT been run on the user's native Windows session. Cargo compilation success and native Save As remain unproved. Prior green A2/A3/A4 tests apply to an earlier version, not this patch.
+
+**Next user action:** Pull the feature branch; keep normal Live Dev backend at 127.0.0.1:8000 available; rerun `Run_PilotODIN_A4_Native_Smoke.bat` once to resume Cargo via its cached artifacts. If the native window opens, test PDF Save As, HTML Save As and Cancel. If still blocked, attach the newly generated single diagnostic ZIP for exact Vite/Cargo failure identification.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
