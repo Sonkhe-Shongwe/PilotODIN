@@ -1,6 +1,6 @@
 # Current development handoff — October 2026
 
-**Resume PilotODIN in a new ChatGPT tab:** Start with [docs/CONTINUE_HERE.md](docs/CONTINUE_HERE.md), then review [Master Analyst / Master Scientist and target-discovery research](docs/MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md), the [semantic-inference and low-cost target-ranking deep dive](docs/TARGET_INTELLIGENCE_SEMANTICS_AND_RANKING_RESEARCH.md), and [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2). These are current development notes; earlier release readmes below remain historical.
+**Resume PilotODIN in a new ChatGPT tab:** Start with the **[canonical current checkpoint + copyable handoff prompt](docs/SESSION_HANDOFF_CURRENT.md)**, then use [docs/CONTINUE_HERE.md](docs/CONTINUE_HERE.md) for historical work and review [Master Analyst / Master Scientist and target-discovery research](docs/MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md), the [semantic-inference and low-cost target-ranking deep dive](docs/TARGET_INTELLIGENCE_SEMANTICS_AND_RANKING_RESEARCH.md), and [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2). These are current development notes; earlier release readmes below remain historical.
 
 **Product implementation order:** [Consolidated feature inventory and complexity-last roadmap](docs/PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md). This is the current sequencing recommendation, not evidence of delivered code.
 
