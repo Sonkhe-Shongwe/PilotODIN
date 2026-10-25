@@ -21,9 +21,18 @@ test('resource mode API reuses local-only controls and saves only validated valu
  assert.match(main,/Literal\["adaptive", "low_memory", "performance"\]/);
  assert.match(main,/@app\.get\('\/api\/resource\/status'\)/);
  assert.match(main,/@app\.put\('\/api\/resource\/policy'\)/);
- assert.match(main,/def resource_status\(request: Request\):\s*#.*\n.*\n\s*_local_request\(request\)/);
- assert.match(main,/def update_resource_policy\([\s\S]*?_local_request\(request\)/);
- assert.match(main,/resource_policy\.save_policy\(body\.mode\)/);
+ // Check the actual route bodies rather than relying on comment count,
+ // exact whitespace or Windows CRLF line endings.
+ const readRoute=main.split('def resource_status(request: Request):')[1]?.split("@app.put('/api/resource/policy')")[0];
+ const writeRoute=main.split('def update_resource_policy(body: ResourcePolicyRequest, request: Request):')[1]?.split("@app.get('/api/ai/settings')")[0];
+ assert.ok(readRoute,'Resource status handler must exist');
+ assert.ok(writeRoute,'Resource policy handler must exist');
+ assert.match(readRoute,/_local_request\(request\)/);
+ assert.match(readRoute,/return resource_policy\.status\(\)/);
+ assert.ok(readRoute.indexOf('_local_request(request)')<readRoute.indexOf('return resource_policy.status()'),'Authorize before reading status');
+ assert.match(writeRoute,/_local_request\(request\)/);
+ assert.match(writeRoute,/resource_policy\.save_policy\(body\.mode\)/);
+ assert.ok(writeRoute.indexOf('_local_request(request)')<writeRoute.indexOf('resource_policy.save_policy(body.mode)'),'Authorize before writing policy');
 });
 
 test('Resource-Aware Settings UI is advisory, explicit-save and does not run a model',()=>{
