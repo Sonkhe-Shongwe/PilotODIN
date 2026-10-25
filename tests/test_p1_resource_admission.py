@@ -78,8 +78,11 @@ def _new_training(monkeypatch):
     monkeypatch.setattr(main,"project_or_404",lambda _:{"id":"synthetic"})
     monkeypatch.setattr(main.quality,"current_data",lambda _: (frame,0))
     created=[]
-    monkeypatch.setattr(main.storage,"new_experiment",
-                        lambda pid,conf: (created.append((pid,conf)) or "fake-experiment"))
+    def create_synthetic(pid, conf):
+        created.append((pid, conf))
+        return "fake-experiment"
+    monkeypatch.setattr(main.storage,"new_experiment",create_synthetic)
+    monkeypatch.setattr(main.storage,"new_experiment_with_capacity",create_synthetic)
     body=main.ExperimentRequest(
         target="Outcome",task="classification",excluded_features=[],
         models=["logistic_regression"],split_strategy="random",
