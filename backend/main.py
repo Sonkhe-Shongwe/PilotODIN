@@ -23,9 +23,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy
+    from . import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy
+    import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -532,6 +532,24 @@ def column_investigation_overview(project_id: str):
     frame, version = quality.current_data(project_id)
     try:
         return column_intelligence.overview(frame, version)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/projects/{project_id}/semantics")
+def semantic_overview(
+    project_id: str, expected_version: int = Query(ge=0)
+):
+    """Read-only semantic hypotheses for a caller-pinned approved working version."""
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset changed. Refresh the data dictionary before reviewing semantics."
+        )
+    try:
+        return semantic_profile.overview(frame, version)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
