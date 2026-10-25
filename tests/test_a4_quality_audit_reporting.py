@@ -162,3 +162,51 @@ def test_valid_sha256_cannot_transplant_another_projects_revision():
     for suffix in ("", "/export/html", "/export/pdf"):
         assert client.get(f"/api/reports/{target['id']}{suffix}").status_code==409
     assert client.get(f"/api/reports/{source['id']}").status_code==200
+
+
+
+def test_quality_pdf_does_not_orphan_findings_heading_with_one_row():
+    """Regression for exported 2-page audit: a section needs multiple rows."""
+    from backend import reports
+    artifact = {
+        "id": "a" * 32, "operation": "quality_audit",
+        "objective": "Quality audit of dataset v0",
+        "dataset_version": 0, "tool_version": "quality-audit-snapshot-v1",
+        "computed_at": "2026-10-25T09:11:32+00:00",
+        "params": {"source_original_sha256": "a" * 64,
+                   "source_snapshot_sha256": "b" * 64},
+        "result": {
+            "summary": {
+                "Approved working corrections active": 0,
+                "Columns in approved dataset": 39,
+                "Findings shown": 9,
+                "Quality findings detected": 9,
+                "Rows in approved dataset": 1000,
+                "Source original SHA-256": "a" * 64,
+                "Version event": "original",
+            },
+            "findings": [
+                {"title": "Ambiguous date formats",
+                 "detail": (f"Review ambiguous day/month ordering before conversion. | "
+                            f"Column: incident_date_{i} | Affected rows: 413 | Decision: pending")}
+                for i in range(9)
+            ],
+            "note": "Read-only audit, no corrections applied.",
+            "limitations": ["Only aggregate findings are exported."]
+        }
+    }
+    payload = {
+        "id": "c" * 32, "revision": 2,
+        "title": "Investigation report", "narrative": "",
+        "content_sha256": "d" * 64, "dataset_versions": [0],
+        "evidence": [artifact],
+        "limitations": ["Statistical findings require human review."]
+    }
+    pages = fitz.open(stream=reports.render_pdf(payload), filetype="pdf")
+    assert len(pages) >= 2
+    page_text = [page.get_text() for page in pages]
+    assert sum(text.count("Ambiguous date formats") for text in page_text) == 9
+    for text in page_text:
+        if "Verified observations" in text:
+            # Do not leave a table heading with just one body row.
+            assert text.count("Ambiguous date formats") >= 2
