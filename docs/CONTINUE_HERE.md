@@ -295,6 +295,18 @@ The owner agreed to the Resource-Aware Mode plan, and Phase 1 **source is now im
 
 **Scope boundary:** E2 still UNDETERMINED on actual 8 GB hardware (prior free RAM 0.572 then 1.019 GiB). A per-device preference is NOT an operating scheduler or proof of offline inference. Contract: [Resource-Aware Mode design](./RESOURCE_AWARE_MODE_DESIGN.md).
 
+## P1 Resource-Aware owner ZIP: backend 10/10 PASS, Vite PASS, Node source assertion false-negative fixed (25 October 2026)
+
+Owner uploaded and we inspected the exact `pilotodin-p1-resource-00_jxflg.zip` (four files: `result.json`, backend-resource-policy.log, frontend-resource-controls.log and frontend-typescript-vite.log). Real focused Windows run generated 2026-10-25T16:39:04Z:
+- **Backend** `tests/test_p1_resource_policy.py`: **10 passed in 3.60s**, runner phase exit 0.
+- **Frontend TypeScript + Vite**: successful `tsc --noEmit && vite build`, 1618 transformed modules, runner phase exit 0.
+- **Frontend dedicated Node source gates**: **2 passed / 1 failed**. The sole failed `resource mode API reuses local-only controls...` test incorrectly required one exact sequence of comments/line breaks before `_local_request(request)` inside `backend/main.py::resource_status`. The actual handler has **two** explanatory comment lines (plus Windows CRLF); API local-access protection is present before the status call. The Python API tests, including cross-origin rejection, already passed. This is a **brittle test assertion** rather than a reported runtime/security failure. Node assertion printed ~46 KB backend source into log; do not relay giant dump to owner.
+- The old runner marked **overall FAIL**, accurately, because 1/3 Node tests failed. Do not claim all 3 tests passed on the old commit.
+
+**Targeted fix committed:** `frontend/tests/p1-resource-settings.test.cjs` no longer matches comment count/CRLF. It slices the `resource_status` and `update_resource_policy` function bodies and asserts `_local_request(request)` occurs before returning status or persisting settings. We re-fetched the new source and checked those invariants against backend handler text normalized to Windows CRLF. **This is source verification, NOT actual Node test execution.** Commit `496ba01a67e42636d53ce749a858f45c3ee17f4e`.
+
+**Next minimal owner check:** pull feature branch, run only `node --test tests/p1-resource-settings.test.cjs` from `frontend` directory. Don't rerun 10 green backend tests or Vite build solely for this test edit. After Node 3/3 PASS, verify Settings's saved mode and RAM status once in the actual application. No extra E2 scans, Qwen download, installer or native Save As repeat. Existing user datasets never touched by this focused runner.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
