@@ -54,6 +54,16 @@ Owner supplied `pilotodin_report (1)(1).html` and `pilotodin_report_e598f981d064
 - **Native acceptance:** In an actual running Windows Tauri development build (not Chrome), choose an existing saved report, click Export PDF and Export HTML, confirm native Save As opens, save under chosen names/locations and compare file bytes/figures; repeat Cancel and observe no file creation; verify failed permissions or incorrect extension give an error. Then separately inspect the latest page-break/chart fixes and reopen/reorder saved revisions.
 - Installer creation, bundled AI, real 8 GB hardware testing and release certification remain out of scope of this A4-4 source implementation.
 
+## A4-5: One-pass native Windows feasibility/acceptance launcher — SOURCE READY (25 October 2026)
+
+- **One-click entry:** `Run_PilotODIN_A4_Native_Smoke.bat`, launching `tools/Verify_A4_Native_Windows.ps1`. A transparent preflight stops early on missing Windows Rust MSVC 1.90+/Cargo/npm, unavailable local `/api/health`, wrong feature branch or occupied development port 5174. Official Tauri Windows development also needs C++ Build Tools/SDK and WebView2. The runner does not auto-install tools.
+- **Development shell only:** `frontend/src-tauri/tauri.native-a4-smoke.conf.json` overrides normal bundling, sidecars, bundled GGUF/resources and app identifier for a **non-release** Tauri window. Native frontend runs at localhost 5174; current live backend is localhost 8000; Chrome localhost 5173 remains usable.
+- **Explicit debug switch:** `frontend/src/desktopBootstrap.ts::isNativeA4SmokeMode` requires both Vite DEV and `VITE_PILOTODIN_NATIVE_SMOKE=1`, allowing only this test window to use the already-running dev backend instead of an unavailable packaged sidecar. Normal production session-authenticated backend behavior is unmodified.
+- **Automation:** run the entire existing A2/A3/A4 local regression suite on a clean isolated test home before Tauri compilation. If green, run `npm run desktop:dev -- --config src-tauri/tauri.native-a4-smoke.conf.json`; the user actually exercises native PDF, HTML and cancel behavior and records observed results after closing the window. Collect logs, test JUnit/results and manual notes in one `pilotodin-a4-native-*.zip`, excluding all datasets and model files.
+- **Node static gates:** `frontend/tests/a4-native-smoke-runner.test.cjs` checks that the bypass is DEV-only, bundle override cannot silently replace release config, and runner does not invoke installer or AI staging.
+- **Status boundary:** New runner, overlay and debug switch were committed and read back from the repository, but **have NOT been executed** in Windows, nor has a Rust build/UI/dialog been observed. Even if native dev compilation passes, this does not validate production packaging, offline AI or integrated 8 GB runtime.
+- **Instructions:** [Native one-pass validation](./A4_NATIVE_WINDOWS_ONE_PASS.md). The owner should run this **once**; if blocked on prerequisites or compilation, share the same diagnostic ZIP, allowing code or environment triage without repeat manual report generation.
+
 ## Baseline preserved
 
 - Existing reports, reports_v1/report_revisions_v1, version-scoped Explore and investigation evidence, and immutable HTML/PDF exports remain in place.
