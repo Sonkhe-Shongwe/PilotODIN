@@ -408,6 +408,18 @@ After owner accepted P5 factual progress (**18/18 Python, 7/7 Node, TypeScript/V
 
 **Exactly one next owner action:** Pull `feature/live-dev-workspace-20261023`, run `Run_PilotODIN_P3_Semantic_Profile.bat` once; share diagnostic ZIP if RED. No reimport insurance, repeat earlier P5/P1/P0/A4/native Save As, download Qwen, or rerun E2 memory scans. After green, build P4 narrow target opportunity/recommendations with explicit user-selected target and refusal for unsupported cases. Canonical `docs/SESSION_HANDOFF_CURRENT.md`; P5 `docs/P5_COOPERATIVE_TRAINING_CANCELLATION.md`, P3 `docs/P3_DETERMINISTIC_SEMANTIC_PROFILE.md`.
 
+## P3 owner test 13 passed / 2 failed; origin guard and brittle grain test fixed, targeted retest pending (25 October 2026)
+
+**Owner original P3 evidence:** Screenshot plus extracted `pilotodin-p3-semantics-ocmar9cg.zip`; runner `result.json` timestamp **2026-10-25T19:01:09.511586Z**: overall FAIL because backend Pytest **13 passed / 2 failed** in 3.67s; P3 Node **4/4 PASS**; frontend `tsc --noEmit` and Vite production build **PASS** (1,619 modules, 3.65s; non-blocking bundle chunk warning). Original project datasets/models untouched.
+
+**Real failure causes:**
+1. `test_retail_is_tentative_and_does_not_claim_order_grain` asserted literal "record grain", but the engine returned "No unambiguous complete unique identifier was observed; **row grain needs business confirmation**." State `unknown`/identifier null were correct. Test fixed to assert substantive grain/business uncertainty instead of cosmetic text.
+2. `test_semantic_api_is_project_scoped_and_version_pinned` sent `Origin: https://external.example` and got 200 rather than 403. Global dev CORS does not force an HTTP 403, so the semantic GET now calls the existing `_local_request(request)` **before project lookup/data read**, to block untrusted external origins/hosts; a new positive test confirms `Origin: http://127.0.0.1:5173` remains accepted. P3 Node route contract tightened accordingly. Prior P3 BAT failure label falsely said "P5 check did not pass"; corrected.
+
+**Only next action:** Pull active feature branch and double-click NEW `Run_PilotODIN_P3_Semantic_Repair.bat`. It runs ONLY `tests/test_p3_semantic_profile.py` and `frontend/tests/p3-semantic-profile-contracts.test.cjs` under isolated synthetic data, with two logs+JSON in one `pilotodin-p3-repair-*.zip` under Temp. Upload diagnostic ZIP only if RED; no repeat Vite (already PASS and App unchanged), prior column suite (already PASS), P5/P1/P0/A4/native Save As, E2 RAM scan or model download. Code re-fetched, local guard order and revised tests source-reviewed, but **repaired Python/Node Windows execution NOT YET OBSERVED**. P3 is not accepted until targeted green evidence arrives. After green move toward bounded P4 user-selected prediction-target opportunities with honest abstention.
+
+**Canonical:** `docs/SESSION_HANDOFF_CURRENT.md` first; `docs/P3_DETERMINISTIC_SEMANTIC_PROFILE.md` failure and fix details; QA Issue #2 master dated comment.
+
 ## Read this first when switching conversations/tabs (HISTORICAL — superseded by current checkpoint)
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
