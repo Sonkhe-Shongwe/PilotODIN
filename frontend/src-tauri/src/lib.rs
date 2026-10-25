@@ -266,10 +266,30 @@ async fn save_report_as(app: AppHandle, format: String, filename: String, bytes:
         // from JavaScript. Standard Save As handles overwrite confirmation.
         std::fs::write(&path, &bytes)
             .map_err(|e| format!("Could not save report to the selected location: {e}"))?;
+        // Confirm the entire saved content, not only its length. A partial
+        // write or a concurrent destination change must never be reported as
+        // successfully saved to the user.
         let stored_size = std::fs::metadata(&path)
             .map_err(|e| format!("Could not verify the saved report: {e}"))?.len();
         if stored_size != bytes.len() as u64 {
             return Err("Saved report size verification failed".into());
+        }
+        let saved_hash = {
+            let mut file = File::open(&path)
+                .map_err(|e| format!("Could not read the saved report for verification: {e}"))?;
+            let mut hasher = Sha256::new();
+            let mut buffer = [0u8; 65_536];
+            loop {
+                let read = file.read(&mut buffer)
+                    .map_err(|e| format!("Could not verify saved report contents: {e}"))?;
+                if read == 0 { break; }
+                hasher.update(&buffer[..read]);
+            }
+            hasher.finalize()
+        };
+        let expected_hash = Sha256::digest(&bytes);
+        if saved_hash[..] != expected_hash[..] {
+            return Err("The saved report failed content verification".into());
         }
         let saved_filename = Path::new(&path).file_name()
             .and_then(|name| name.to_str()).map(str::to_owned);
