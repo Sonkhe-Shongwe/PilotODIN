@@ -52,6 +52,7 @@ A3 = (
     "test_model_library_expansion.py",
     "test_non_ai_correctness_gates.py",
     "test_build_d_unified_journey.py",
+    "test_p0_ml_persistence_version_journey.py",
 )
 A4_READINESS = (
     "test_a4_model_evidence_reports.py",
