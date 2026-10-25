@@ -7,12 +7,13 @@ type ResourceStatus={
  policy:{mode:ResourceMode;source:'default'|'saved'|'fallback';warning:string|null};
  memory:{status:'observed'|'unavailable';total_gib:number|null;available_gib:number|null;source:string;measured_at_utc:string;note:string};
  policy_effect:string;offline_8gb_ai_feasibility:string;
+ low_memory_training_min_free_gib:number;low_memory_local_inference_min_free_gib:number;
 };
 
 const DESCRIPTIONS:Record<ResourceMode,string>={
- adaptive:'Use measured memory as input to future workload decisions (recommended).',
- low_memory:'Prioritize responsiveness and serial heavy jobs when scheduling is enabled.',
- performance:'Favor throughput when hardware permits. Hard safety limits always remain.',
+ adaptive:'Shows RAM status and retains existing safety limits. Adaptive task scheduling is planned.',
+ low_memory:'Screens NEW ML training and local AI starts against available RAM; existing work is not interrupted.',
+ performance:'Retains existing resource and data-integrity limits. Advanced task scheduling is not enabled.',
 };
 
 export function ResourceSettings(){
@@ -44,14 +45,14 @@ export function ResourceSettings(){
   try{
    const current=await put<ResourceStatus>('/resource/policy',{mode:draft});
    setStatus(current);setDraft(current.policy.mode);
-   setNotice('Resource preference saved on this device. Heavy-work scheduling is not enabled in this P1 release.');
+   setNotice('Resource preference saved. Low-memory mode screens new ML/local-AI starts; no task scheduler is enabled.');
   }catch(e){setError((e as Error).message)}
   finally{setBusy('')}
  }
  const memory=status?.memory;
  return <section className="panel ai-settings-panel" aria-labelledby="resource-settings-heading">
   <div className="panel-title"><Gauge size={19}/><h2 id="resource-settings-heading">Resource-Aware Mode</h2></div>
-  <p className="body-muted">Read-only memory status and a saved preference for this device. Modes are advisory in P1: they do not yet throttle training, load Qwen, or change resource limits.</p>
+  <p className="body-muted">Read-only memory status and a saved preference for this device. Low-memory screens new training and local AI requests against current free RAM. It never starts Qwen, alters saved work, or replaces existing ML safeguards. Other modes retain existing operation limits; durable scheduling is not implemented.</p>
   {error&&<div className="alert-error" role="alert">{error}</div>}
   {notice&&<div className="ai-notice" role="status"><ShieldCheck size={16}/>{notice}</div>}
   {status?.policy.warning&&<div className="alert-error" role="alert">{status.policy.warning} Select a mode and save to replace invalid settings.</div>}
@@ -68,6 +69,7 @@ export function ResourceSettings(){
     onClick={()=>void save()}><Save size={14}/> {busy==='save'?'Saving…':'Save resource preference'}</button>
   </div>
   <p className="muted-caption">{DESCRIPTIONS[draft]} {status&&<span>Saved mode: {status.policy.mode.replace('_',' ')} ({status.policy.source}).</span>}</p>
+  {status&&<p className="muted-caption">Low-memory starting headroom screens: new training ≥ {status.low_memory_training_min_free_gib.toFixed(2)} GiB; new local AI ≥ {status.low_memory_local_inference_min_free_gib.toFixed(2)} GiB. These are screening floors, not measured peak usage, and do not certify offline AI.</p>}
   <div className="ai-settings-actions">
    <div role="status" aria-live="polite" className="body-muted">
     {busy==='load'?'Measuring local memory…':memory?.status==='observed'&&memory.total_gib!==null&&memory.available_gib!==null
