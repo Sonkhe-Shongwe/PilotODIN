@@ -334,6 +334,14 @@ Owner uploaded **`pilotodin-p1-resource-inm4loku.zip`**, independently inspected
 
 **Next owner step is ONLY** `cd frontend` and `node --test tests/p1-resource-settings.test.cjs` after one GitHub Desktop pull. Prior **27 backend tests and Vite build need no replay** for this correction. After Node 5/5, proceed to bounded P1/P5 resource coordination, avoiding automatic Qwen download or 8 GB claims. The short authoritative handoff is [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md).
 
+## Owner completed P1 resource Node retest — 5/5 PASS, resource gate accepted (25 October 2026)
+
+After the earlier `pilotodin-p1-resource-inm4loku.zip` confirmed **27/27 backend resource Pytests PASS**, **TypeScript/Vite PASS** and a single **Node 4/5 FAIL** caused by an overbroad textual `requests.` assertion, the assertion was corrected in GitHub. The owner then ran `cd frontend` followed by `node --test tests/p1-resource-settings.test.cjs` from their Windows PowerShell clone and uploaded a screenshot clearly showing **5 tests, 5 PASS, 0 FAIL, 0 skipped, 0 cancelled (~111.2 ms)**, including local API controls, Low-memory ML admission ordering, and native Tauri prelaunch source-order gate.
+
+**Evidence interpretation:** The source-contract 5/5 retest resolves the sole failure from the prior focused BAT. The original BAT's FAIL remains historically true; the focused admission package is now accepted as the combination of two owner runs, NOT a single newly rerun full BAT. The tests guard code paths, but do not by themselves prove actual Rust model launch/no-launch, real 8 GB peak memory or offline Qwen. Resource Settings earlier showed Low-memory saved and physical/available RAM observed. Full restart policy persistence not explicitly checked. No user dataset was modified or Qwen loaded for acceptance.
+
+**Current next engineering work:** bounded P5 resource-aware heavy-task coordination after reading current FastAPI training and task status contracts; implement deterministic serialization/concurrency checks and avoid disrupting completed experiments/verified reports. No extra run of unchanged 27 backend or 5 Node source checks is needed. Canonical latest entry point [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) updated accordingly.
+
 ## Read this first when switching conversations/tabs (HISTORICAL — superseded by current checkpoint)
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
