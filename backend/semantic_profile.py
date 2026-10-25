@@ -67,8 +67,10 @@ def _domain_hypothesis(names: list[str]) -> dict:
                     concepts.add(concept)
                     if name not in sources:
                         sources.append(name)
-        if len(concepts) >= 2:
-            matches.append((domain, len(concepts), sources))
+        # Independent headers matter: one composite header (product_sku)
+        # must not count as two independent sources of domain evidence.
+        if len(concepts) >= 2 and len(sources) >= 2:
+            matches.append((domain, len(sources), sources))
     if not matches:
         return {
             "state": "unknown", "label": None, "evidence_columns": [],
