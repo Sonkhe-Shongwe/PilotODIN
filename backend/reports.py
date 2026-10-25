@@ -505,7 +505,9 @@ def render_html(report: dict) -> bytes:
         facts,columns,records=_exhibit(art)
         pieces+=['<section class="evidence"><span class="pill">VERIFIED LOCAL</span><h2>',
                  e(art['operation'].replace('_',' ').title()),'</h2><p class="meta">Dataset v',e(art['dataset_version']),
-                 ' · Tool ',e(art['tool_version']),' · Computed ',e(art['computed_at']),'</p>',
+                 ' · Tool ',e(art['tool_version']),' · ',
+                 e('Experiment created' if art['operation']=='model_evaluation' else 'Computed'),
+                 ' ',e(art['computed_at']),'</p>',
                  '<p><strong>Investigation:</strong> ',e(art['objective']),'</p>']
         if facts:
             pieces+=['<table><thead><tr><th>Measure</th><th>Verified value</th></tr></thead><tbody>']
@@ -589,7 +591,9 @@ def render_pdf(report: dict) -> bytes:
         facts,columns,records=_exhibit(art)
         story.extend([Spacer(1,8),HRFlowable(width='100%',color=colors.HexColor('#dce0ef')),
                       p(art['operation'].replace('_',' ').title(),'ODINHeading'),
-                      p(f"Evidence {art['id']} · Dataset v{art['dataset_version']} · Tool {art['tool_version']} · Computed {art['computed_at']}",'ODINMeta'),
+                      p(f"Evidence {art['id']} · Dataset v{art['dataset_version']} · Tool {art['tool_version']} · "
+                        + ('Experiment created' if art['operation']=='model_evaluation' else 'Computed')
+                        + f" {art['computed_at']}",'ODINMeta'),
                       p('Investigation: '+art['objective'])])
         story.extend(table(['Measure','Verified value'],facts))
         if records:
