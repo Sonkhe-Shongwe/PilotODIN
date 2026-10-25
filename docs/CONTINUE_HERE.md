@@ -17,6 +17,17 @@ The owner uploaded two generated output folders from the new single-run `Run_Pil
 - No installed native/offline Windows app, bundled Qwen inference, actual physical 8 GB concurrent load, or all 24 Build E release scenarios were exercised by these local source suites.
 - Detailed new evidence: [P0->A4 single-pass verification](./P0_A4_SINGLE_PASS_VERIFICATION.md) and [QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2). No raw synthetic test artifacts or machine identifiers were uploaded to GitHub.
 
+## Latest A4-1 development — SOURCE IMPLEMENTED, NOT YET RUNTIME-TESTED (25 October 2026)
+
+Source state through commit `5a739433618e7253232567e350199140cf40f7c3` on `feature/live-dev-workspace-20261023`. **Do not interpret the prior owner's two 99/149 Windows passes as validation of these later changes.**
+
+- `backend/reports.py` now offers a completed, selected A3 model's held-out evaluation as a version-scoped report evidence artifact. Only aggregate metrics and bounded per-class summaries are copied; individual held-out row predictions, feature rows and model binaries are excluded. The artifact is frozen into the report revision and cannot be imported across projects.
+- HTML and PDF show an ordered evidence register and artifact-specific limitations/notes. Scientific metric labels keep correct capitalization (e.g., R²); regression metrics are not described as classification accuracy.
+- `frontend/src/ReportWorkspace.tsx` now supports explicit exhibit ordering and refuses to export an out-of-date saved revision while the draft has unsaved title, narrative, evidence selection or ordering changes.
+- Automated A4 tests were added: `tests/test_a4_model_evidence_reports.py` plus `frontend/tests/a4-model-report-composer.test.cjs`. The single-pass `Run_PilotODIN_P0_A4_Verification.bat` runner now includes the new backend tests, and Node's existing suite will discover the new frontend tests.
+- **New A4 tests have not been executed** on owner Windows; the source was inspected and re-fetched from GitHub. Exact acceptance details, remaining reporting/visual work and the one-owner-validation strategy are in [A4 Deliver acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md).
+- No hosted GitHub Actions, installer/release, actual 8 GB load validation, local Qwen generation or modification of existing end-user project data. Advance A4 in coherent tested batches, with one final owner Windows pull and smoke session rather than constant pull/test loops.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
