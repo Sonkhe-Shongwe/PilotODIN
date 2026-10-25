@@ -50,7 +50,7 @@ The owner approved **Resource-Aware Mode**: Adaptive (default), Low-memory and P
 
 **Next design milestone AFTER this gate:** bounded memory-aware serialization/cancellation for heavy operations (P5), reusing existing task contracts. **Do not jump ahead to full Qwen model startup or Master modes** before true E2 offline/8 GB feasibility.
 
-## CURRENT ENGINEERING WORK — P5 first ML coordination slice FOCUSED OWNER TESTS PASS (25 October 2026)
+## PRIOR ACCEPTED ENGINEERING MILESTONE — P5 first ML coordination slice OWNER TESTS PASS (25 October 2026)
 
 The immediately previous P1 feature is accepted from combined owner evidence: **27/27 backend Pytests + Vite/TypeScript build PASS**, then **5/5 Node source tests PASS** after correcting a source assertion. Do not ask the owner to rerun unchanged P1 tests.
 
