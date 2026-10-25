@@ -1,6 +1,6 @@
 # PilotODIN Macro A4 — Deliver evidence composition and professional exports
 
-**Development milestone:** A4-1 selected-model evidence, A4-2 aggregate illustrations, A4-3 Quality audit and export-integrity safeguards.  
+**Development milestone:** A4-1 selected-model evidence, A4-2 aggregate illustrations, A4-3 Quality audit/export integrity, A4-4 native Save As source implementation.  
 **Current status:** FULL A2/A3/A4 AUTOMATED INTEGRATION PASS on clean commit `4b555d93`: 106/106 frontend, 167/167 backend, frontend build and syntax checks. A4 INTERACTIVE/DESKTOP ACCEPTANCE REMAINS OPEN.
 
 ## Post-fix full A4 consolidated Windows automated verification: PASS (25 October 2026, approximately 11:06 SAST)
@@ -40,6 +40,19 @@ Owner supplied `pilotodin_report (1)(1).html` and `pilotodin_report_e598f981d064
 - New regression `tests/test_a4_mixed_report_pagination.py` exercises a synthetic three-exhibit PDF/HTML; `tests/test_a4_frozen_chart_visuals.py` asserts median/grouping and histogram labelling. New test included in `tools/Verify_P0_A4_Readiness.py`.
 
 **QA boundary:** The provided real rev3 HTML/PDF predates the last targeted code refinements, and there has been **no new executable local 106/167 suite run or post-change PDF render**. Thus mixed evidence presence/value parity is a **functional PASS**, but final A4 visual/pagination acceptance and native Tauri Save As remain OPEN. No changes to uploaded data or pre-existing saved revisions. User-authored generic report title and empty narrative should be improved for a professional final report.
+
+## A4-4: Tauri native Windows Save As — SOURCE IMPLEMENTED, COMPILATION AND WINDOW TEST PENDING (25 October 2026)
+
+**Environment distinction:** The owner has so far tested the browser dev workspace at `http://127.0.0.1:5173` using Chrome. A Chrome browser download is not the native desktop Save As workflow. The native path below is selected only when the React view is hosted inside a Tauri desktop WebView.
+
+- `frontend/src-tauri/Cargo.toml` adds official Tauri 2 `tauri-plugin-dialog` on the Rust side only. Registered plugin and custom `save_report_as` command in `frontend/src-tauri/src/lib.rs`. No JS dialog/fs plugin permission was added to `capabilities/default.json` (still `core:default`).
+- On the desktop path, the existing authenticated local API first returns a previously saved, validated report revision as HTML or PDF. The frontend passes the bounded blob to the native command. The command checks a maximum size of **12 MiB**, safe filename, declared format and HTML/PDF signature before opening an OS-native Save As dialog.
+- The native dialog runs in a blocking worker instead of the UI event loop. A user **Cancel** results in explicit `cancelled` state, with no file written. If a path is chosen, only that dialog-selected path may be written; no arbitrary path is accepted from JavaScript. Filename extensions must match the actual report format.
+- The Rust command verifies written file length **and SHA-256** against original bytes before returning `saved`. Filesystem/write/digest errors return an explicit error, not a success notice. Browser mode retains existing authenticated blob download behavior.
+- Rust unit tests cover accepted PDF/HTML signatures, rejected format/extension combinations, unsafe relative path and filename characters, blank/oversized contents. Node static integration gates added in `frontend/tests/a4-native-report-save-contract.test.cjs` and updated browser/native split checks in `frontend/tests/a4-quality-export-gates.test.cjs`.
+- **Verification limit:** The official Tauri dialog method has been checked against upstream documentation, but this session has **not compiled Rust on Windows**, launched a Tauri desktop WebView, opened the native dialog, cancelled it, written an actual PDF, or tested overwrite/disk-denied behavior. The repo has no tracked `Cargo.lock` in `frontend/src-tauri`; the first native Cargo run may require resolving packages. The existing browser-only Node/Pytest automated gate does NOT compile Tauri/Rust.
+- **Native acceptance:** In an actual running Windows Tauri development build (not Chrome), choose an existing saved report, click Export PDF and Export HTML, confirm native Save As opens, save under chosen names/locations and compare file bytes/figures; repeat Cancel and observe no file creation; verify failed permissions or incorrect extension give an error. Then separately inspect the latest page-break/chart fixes and reopen/reorder saved revisions.
+- Installer creation, bundled AI, real 8 GB hardware testing and release certification remain out of scope of this A4-4 source implementation.
 
 ## Baseline preserved
 
