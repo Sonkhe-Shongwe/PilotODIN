@@ -144,3 +144,44 @@ def test_regression_metrics_have_correct_meaning():
     html = client.get(f"/api/reports/{report.json()['id']}/export/html").text
     assert "Held-out R²" in html
     assert SECRET not in html
+
+
+def test_a4_export_preserves_exhibit_order_and_reliability_cautions():
+    pid = project("ordered-exhibits.csv")
+    eid = seeded_evaluation(pid)
+    investigation = client.post(f"/api/projects/{pid}/investigations", json={
+        "objective": "Profile local dataset"
+    })
+    assert investigation.status_code == 201, investigation.text
+    inv = investigation.json()
+    overview = client.post(f"/api/investigations/{inv['id']}/runs", json={
+        "operation": "overview", "params": {}, "expected_version": inv["version"]
+    })
+    assert overview.status_code == 200, overview.text
+    overview_id = overview.json()["artifacts"][0]["id"]
+
+    saved = save(pid, [eid, overview_id])
+    assert saved.status_code == 201, saved.text
+    rid = saved.json()["id"]
+    assert [e["id"] for e in saved.json()["evidence"]] == [eid, overview_id]
+
+    html = client.get(f"/api/reports/{rid}/export/html").text
+    pdf = client.get(f"/api/reports/{rid}/export/pdf")
+    pdf_text = " ".join(page.get_text() for page in fitz.open(
+        stream=pdf.content, filetype="pdf"))
+    assert 'Evidence register' in html and 'Evidence register' in pdf_text
+    assert html.index('Model Evaluation') < html.index('Overview')
+    assert pdf_text.index('Model Evaluation') < pdf_text.index('Overview')
+    assert 'Interpretation note:' in html and 'Interpretation note:' in pdf_text
+    assert 'Review validation and deployment setting.' in html
+    assert 'Review validation and deployment setting.' in pdf_text
+
+    revision = client.post(f"/api/reports/{rid}/revisions", json={
+        "title": "Selected Model Performance",
+        "narrative": "Reordered evidence for presentation",
+        "evidence_ids": [overview_id, eid],
+    })
+    assert revision.status_code == 201, revision.text
+    assert [e["id"] for e in revision.json()["evidence"]] == [overview_id, eid]
+    before = client.get(f"/api/reports/{rid}?revision=1").json()
+    assert [e["id"] for e in before["evidence"]] == [eid, overview_id]
