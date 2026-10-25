@@ -12,6 +12,17 @@
 
 **Non-goals:** No new multi-sheet XLSX selection, automatic locale conversion, background import task system, undo flow rewrite or UI redesign. Other P1 usability/import issues remain for later increments.
 
+## Single-click owner checkpoint (no repeated P0 or native Save As)
+
+Pull this feature branch once, then double-click **Run_PilotODIN_P1_E2_Preflight.bat** in the repository root.
+
+- It uses .venv-live Python to run ONLY tests/test_p1_import_recovery.py against a temporary PILOTODIN_HOME.
+- It runs the Windows system-memory inventory separately, without model inference or network access.
+- It prints ONE pilotodin-p1-e2-*.zip containing an exact test log, read-only inventory JSON and a results summary, with no uploaded datasets.
+- PASS means only that the new P1 tests passed AND the read-only E2 inventory was collected; actual offline inference and real 8 GB load remain NOT TESTED.
+
+The previous 117/117 frontend, 174/174 backend and native Save As tests do not need replaying for this bounded checkpoint. Do not commit Rust target artifacts or delete project data.
+
 ## Early E2 — bounded inventory first, actual 8 GB/offline feasibility still unproved
 
 **New read-only command:** in a Windows PowerShell terminal opened at the repository root, run:
