@@ -7,6 +7,16 @@
 **Latest target-intelligence research:** [Business semantics, opportunity ranking & leakage-free budget](./TARGET_INTELLIGENCE_SEMANTICS_AND_RANKING_RESEARCH.md)  
 **Implementation priorities (complexity-last):** [Consolidated feature inventory & P0–P8 roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md)
 
+## Owner's first complete A4 consolidated Windows run (25 October 2026)
+
+**Executed against clean checkout `f9c122448e01af61f4aacf31c4229c27bb54ea6e`.** Owner supplied the generated single diagnostics ZIP `pilotodin-p0-a4-readiness-s_9yn_ur.zip`, including `result.json`, phase logs and pytest JUnit XML.
+
+- **Frontend:** 106/106 Node tests passed; TypeScript typecheck and Vite production build passed.
+- **Backend:** Python compile passed; 167 collected Pytest cases: **166 passed, 1 failed, 0 errors, 0 skipped**.
+- **Only failure:** `tests/test_a4_quality_audit_reporting.py::test_explicit_quality_capture_is_read_only_and_reportable`, which asserted the substring `preview` was absent from the string representation of all report evidence. The correct privacy disclaimer literally says "No record-level values, row identifiers, source previews ... are exported," triggering a **false-positive assertion** even though the preceding checks verified absence of synthetic private category strings and actual `preview` fields in the persisted audit. PDF/HTML checks later in that same test did not execute because the assertion stopped the test.
+- **Fix committed:** `53db533921ac2b4c5b08bd8056cf6e9f6d851c93` changes the test to assert absence of an actual `preview` result field and `row_values` key, not the harmless word in an explanatory sentence. No product or source-data change was necessary.
+- **Status:** Previous A4 source has been executed, with 166 cases passing. Full green A4 automated verification remains **PENDING one post-fix execution**; do not claim the edited test or full suite passed on the new commit. Native Windows Save As, physical 8 GB, bundled inference and complete manual PDF/UI acceptance are still untested.
+
 ## Latest owner Windows verification — consolidated P0/A4 entry PASSED (25 October 2026)
 
 The owner uploaded two generated output folders from the new single-run `Run_PilotODIN_P0_A4_Verification.bat` launcher. Both were checked directly against `result.json`, four phase logs, and Pytest JUnit XML.
