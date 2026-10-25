@@ -124,6 +124,16 @@ Tested source is **not** yet Rust-compiled or Tauri-rendered; `frontend/tests/a4
 
 Next owner action, when ready: keep PilotODIN Live Dev backend up, pull latest feature branch once, double-click `Run_PilotODIN_A4_Native_Smoke.bat`, complete native window steps, attach `pilotodin-a4-native-*.zip`. If prerequisites fail, send that same ZIP rather than guessing or reinstalling anything. Workflow: [A4 Native Windows One Pass](./A4_NATIVE_WINDOWS_ONE_PASS.md), [A4 acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md), [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
 
+## Owner A4 native run — TypeScript ImportMeta.env blocker fixed in source (25 October 2026)
+
+The owner completed Windows Rust/MSVC setup sufficiently for the new native smoke runner to advance beyond its initial toolchain preflight. The runner's next stop was the **consolidated frontend TypeScript/Vite build**, before any Rust/Tauri compilation or native window launch.
+
+**Exact screenshot evidence:** Frontend behavioural tests PASS; TypeScript build FAILS on `frontend/src/desktopBootstrap.ts:14` with TS2339 `Property 'env' does not exist on type 'ImportMeta'` (two occurrences); Python syntax PASS; A2/A3/A4 backend **172/172 Pytest PASS**, zero errors or skips. `AUTOMATED P0/A4 READINESS: FAIL` is the correct overall state for this run. The native launcher stopped intentionally. Diagnostic ZIP on owner's Windows was `pilotodin-a4-native-5176e482e25d.zip` (not uploaded yet), containing nested P0/A4 results. **No Rust compiler execution or Save As is demonstrated by this screenshot.**
+
+**Source fix:** Add `frontend/src/vite-env.d.ts` with `/// <reference types="vite/client" />` plus an opt-in `VITE_PILOTODIN_NATIVE_SMOKE` declaration; `frontend/tsconfig.json` already includes `src`. Add an ambient typing regression guard in `frontend/tests/a4-native-smoke-runner.test.cjs`. This adds compile-time types only, not a runtime bypass or new release setting.
+
+**Next owner action:** Fetch/Pull the same feature branch, keep the local Live Dev backend running and rerun **one** `Run_PilotODIN_A4_Native_Smoke.bat`. Share its one diagnostic ZIP only if another gate fails or after recording native Save As outcomes. The new frontend build and native compilation remain **UNVERIFIED** until this new run. Do not mistake the 172/172 backend pass for whole A4 release signoff.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
