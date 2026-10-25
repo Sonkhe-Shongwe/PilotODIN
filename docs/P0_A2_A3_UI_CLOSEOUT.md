@@ -1,5 +1,7 @@
 # P0 A2/A3 — one-session interface closeout (Windows development)
 
+> **Historical acceptance procedure:** The owner subsequently confirmed that the actual A2/A3 interface walkthrough worked, and the earlier consolidated suite was **117 frontend / 174 backend PASS**. For current state/next action, read [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) rather than treating the checklist's earlier PENDING language as current.
+
 Status: acceptance procedure prepared. Latest UI request-guard source and its regression checks have NOT been executed on the owner's Windows machine. This is not an installer, offline-inference, physical 8 GB, or browser end-to-end certification.
 
 ## Preconditions
