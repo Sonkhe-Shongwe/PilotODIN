@@ -92,4 +92,4 @@ Maintain:
 - GitHub Issue #2 — dated QA/acceptance log. Never silently mark a planned feature as built.
 - Original master reconstruction blueprint — product obligations/24 clean Windows acceptance scenarios.
 
-**Next action proposed:** Keep code paused on the new Master modes; complete the real A3 Windows journey first, then start P1/P2 or explicitly approve the revised roadmap. This document is a sequencing recommendation, not evidence that remaining features are complete.
+**Latest next action is intentionally NOT defined in this historical roadmap.** Read [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) for verified latest implementation, acceptance and one immediate next step. Master modes and target discovery remain planned/research-only; resource admission is newer P1 source and must be validated before scheduling or AI expansion. This roadmap records sequencing, not test certification.
