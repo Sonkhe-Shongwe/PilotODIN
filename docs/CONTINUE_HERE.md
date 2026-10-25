@@ -372,6 +372,18 @@ After the accepted previous P5 coordination package (owner ZIP `pilotodin-p5-slo
 
 **Exactly one next action:** Owner pulls active branch once, runs `Run_PilotODIN_P5_Training_Progress.bat`, shares ZIP only if red. No repeated older P0/A4 native exports, P1/old P5 passes, Qwen download or memory scanning. After green, research/implement bounded user cancellation/timeout or a wider status ledger, not invented ML percentages. E2 offline real licensed Qwen/8GB concurrency remains UNDETERMINED. Canonical authoritative handoff is [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md); detailed acceptance guide [P5_DURABLE_TRAINING_PROGRESS.md](./P5_DURABLE_TRAINING_PROGRESS.md).
 
+## Owner P5 factual stage-progress ZIP inspected — 18/18 Python, 7/7 Node, Vite PASS (25 October 2026)
+
+The owner ran `Run_PilotODIN_P5_Training_Progress.bat` successfully and uploaded **`pilotodin-p5-progress-uyxx667g.zip`**. We inspected the **exact** uploaded ZIP containing `result.json`, `p5-training-progress-backend.log`, `p5-training-progress-node.log`, `frontend-typescript-vite.log`. Runner UTC timestamp **2026-10-25T18:08:23.311954Z** (20:08 SAST), overall **PASS**, all subprocess return codes 0:
+- Python `tests/test_p5_training_progress.py` + affected `tests/test_p5_ml_training_slot.py`: **18 passed in 4.70s**.
+- Node `frontend/tests/p5-training-progress-contracts.test.cjs` and prior P5 slot contracts: **7 tests / 7 passed, 0 failed, 0 skipped** (~135ms).
+- TypeScript `tsc --noEmit` and production Vite build: **PASS**, **1,618 transformed modules**, Vite 3.76s.
+- The focused gate used synthetic isolated data; `result.json` explicitly reports `original_datasets_accessed=false`, no artificial percent/ETA, no P0/A4 rerun, no real Tauri/native model test, no general durable scheduler or cancellation, no offline Qwen/8GB certification.
+
+**Accepted within the focused test boundary:** append-only SQLite real-stage history, migration/old-experiment fallback, atomic state+event transitions and backend restart handling, existing experiment API and Evaluate frontend polling contract. No user dataset or model modified by the focused tests. Do **not** ask the owner to repeat this same launcher, previous P5 25/3, P1 27/5, P0/A4/native Save As, RAM inventories or Qwen load for this checkpoint.
+
+**Next code increment:** evaluate safe cooperative cancellation/timeout and worker-artifact cleanup without corruption or overwritten terminal statuses. Must review existing training subprocess structure first; no unsupported promises about interrupting scikit-learn mid-fit. Broader scheduler, offline-model certification and P8 installer remain future milestones. Canonical short handoff `docs/SESSION_HANDOFF_CURRENT.md` and full acceptance `docs/P5_DURABLE_TRAINING_PROGRESS.md` synchronized.
+
 ## Read this first when switching conversations/tabs (HISTORICAL — superseded by current checkpoint)
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
