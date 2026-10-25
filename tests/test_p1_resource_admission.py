@@ -151,3 +151,24 @@ def test_invalid_admission_operation_never_changes_preferences(
     with pytest.raises(ValueError):
         resource_policy.admit_new_work("delete_source")
     assert resource_policy.read_policy()["mode"]=="low_memory"
+
+
+
+def test_readonly_api_preflight_uses_same_policy_as_training(isolated_policy,monkeypatch):
+    from fastapi.testclient import TestClient
+    resource_policy.save_policy("low_memory")
+    memory(monkeypatch,0.45)
+    client=TestClient(main.app)
+    before=resource_policy.read_policy()
+    blocked=client.get("/api/resource/preflight?operation=training")
+    assert blocked.status_code==200, blocked.text
+    assert blocked.json()["decision"]=="defer"
+    assert blocked.json()["code"]=="low_memory_headroom"
+    assert blocked.json()["required_free_gib"]==0.75
+    local=client.get("/api/resource/preflight?operation=local_inference")
+    assert local.status_code==200 and local.json()["decision"]=="defer"
+    assert local.json()["required_free_gib"]==2.0
+    assert client.get("/api/resource/preflight?operation=arbitrary").status_code==422
+    assert client.get("/api/resource/preflight?operation=local_inference",
+                      headers={"Origin":"https://example.org"}).status_code==403
+    assert resource_policy.read_policy()==before
