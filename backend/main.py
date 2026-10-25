@@ -538,9 +538,12 @@ def column_investigation_overview(project_id: str):
 
 @app.get("/api/projects/{project_id}/semantics")
 def semantic_overview(
-    project_id: str, expected_version: int = Query(ge=0)
+    project_id: str, request: Request, expected_version: int = Query(ge=0)
 ):
     """Read-only semantic hypotheses for a caller-pinned approved working version."""
+    # CORS alone does not reject an external-origin API request. Reuse the
+    # existing local-origin/host guard before reading project metadata.
+    _local_request(request)
     project_or_404(project_id)
     frame, version = quality.current_data(project_id)
     if version != expected_version:
