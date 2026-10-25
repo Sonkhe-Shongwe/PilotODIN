@@ -1,6 +1,6 @@
 # P2 controlled batch 2 — report read and navigation safety
 
-**25 October 2026. Source committed; focused owner Windows QA PENDING.**
+**25 October 2026. First owner Windows run FAIL (one obsolete source contract); repair-only test committed and pending owner execution.**
 
 ## Accepted prior P2 batch
 Owner executed `Run_PilotODIN_P2_Composer_Batch.bat` and supplied a Windows screenshot explicitly showing `p2-composer-behavior-and-regressions: PASS`, `frontend-typescript-vite: PASS`, `P2 composer controlled batch: PASS`, and `P2 composer focused batch passed`. Local ZIP printed `pilotodin-p2-composer-batch-quomf182.zip`, but ZIP/logs were not uploaded or independently inspected. **Focused controller behavior/source contracts/build accepted**, not mounted React UI or desktop export acceptance. No replay required.
@@ -24,3 +24,11 @@ Owner executed `Run_PilotODIN_P2_Composer_Batch.bat` and supplied a Windows scre
 
 ## One next owner action
 GitHub Desktop pull `feature/live-dev-workspace-20261023` safely, then run `Run_PilotODIN_P2_Report_Read_Safety.bat` ONCE. If red share ZIP, if green share console result. No old standalone suites, hosted Actions, Qwen download/launch, installer or real user project data changes.
+
+## Inspected owner diagnostics and minimal repair (25 October 2026)
+
+The owner uploaded two ZIPs, both of which were extracted and reviewed directly. Previous composer batch `pilotodin-p2-composer-batch-quomf182.zip` shows **18/18 Node PASS**, **TypeScript/Vite PASS**, overall **PASS**. First read-safety batch `pilotodin-p2-report-read-4wk1z4a1.zip` shows **24/25 Node PASS**, **TypeScript/Vite PASS**, overall **FAIL**. All **seven new read-safety tests PASS**. The only failure occurred in an existing P2 report-navigation source contract expecting mount and unmount cleanup to omit the newly implemented `readGuard.current.invalidateAll()`. This was a stale regex, not a runtime exception, and the newer implementation's requirement to invalidate evidence and export readers is preserved.
+
+**Committed repair:** exactly two matching assertions in `frontend/tests/p2-report-navigation-contracts.test.cjs` updated to require the new read invalidation alongside project and report Open invalidations. Both expressions manually checked against the current GitHub source. Added `Run_PilotODIN_P2_Report_Read_Repair.bat` and `tools/Verify_P2_Report_Read_Repair_Local.py`: **ONLY four tests in the existing affected Node navigation-contract file**, isolated working home, one `pilotodin-p2-read-repair-*.zip`. No production code or frontend build changes and no rerun of 24 previously passing checks requested.
+
+**Verification boundary:** New repair source reviewed and static regex matched, but owner has NOT executed repair BAT. Overall read-safety acceptance remains **pending focused repair PASS**. An eventual green repair test combines with earlier uploaded 24 green Node results and successful TypeScript/Vite to close the scoped gate only; it does not demonstrate mounted React DOM, native Save As behavior, real user data safety end-to-end, E2/Qwen or installer.
