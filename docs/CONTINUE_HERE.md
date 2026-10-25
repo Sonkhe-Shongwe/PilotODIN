@@ -77,6 +77,14 @@ After implementing A4-1 ML reports, A4-2 saved vector chart illustrations, and A
 
 See [single-pass verification](./P0_A4_SINGLE_PASS_VERIFICATION.md), [A4 Deliver acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md) and QA Issue #2.
 
+## First owner Deliver report artifact review (25 October 2026) — partial functional PASS
+
+The owner provided a real Deliver screenshot plus HTML and 2-page PDF for report revision 2 on `insurance_claims_CLEANED` (v0). The only selected/exported exhibit is **Quality audit**; saved ML model evaluations and Explore analyses are listed but unchecked. Rendered pages were inspected: **legible, no obvious clipping**. PDF and HTML show matching 1,000 records, 39 columns, 9 findings, 0 active Quality corrections, source/version IDs and finding counts, with no claim-level preview rows.
+
+Two presentation issues emerged: the PDF placed its findings section heading and only one row at the bottom of page 1; and a generic "first 35 findings" caveat was displayed although this audit has only nine. **After this user export**, source fixes added `CondPageBreak(160)` for PDF observations, made the truncation caveat conditional, and added regression coverage in `tests/test_a4_quality_audit_reporting.py` (fix checkpoint `f2b07731`). These newest changes **have not yet been executed on owner Windows**; earlier 106 frontend / 167 backend green suites predate them.
+
+**Remaining acceptance:** one mixed model + Explore chart + Quality audit exported report; ordering/immutable revisions; visual PDF chart and layout; native Tauri Save As. Owner can save a more meaningful title and authored interpretation. See QA [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2#issuecomment-6395848645). Avoid requesting several individual repeated tests.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
