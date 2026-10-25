@@ -150,3 +150,40 @@ def test_a_saved_report_does_not_recalculate_visual_after_source_change():
     historical = client.get(f"/api/reports/{r['id']}?revision=1").json()
     assert historical["evidence"][0]["result"]["visual"] == original
     assert client.get(f"/api/reports/{r['id']}/export/html?revision=1").content == original_html
+
+
+
+def test_median_report_chart_names_aggregation_and_actual_dimension_in_both_exports():
+    """A user may call a chart 'by region' while saved X is education level.
+
+    The visualization must display verified analytical settings rather than
+    suggesting its numeric values are unspecified or sum-based.
+    """
+    spec=report_charts.visual_spec({
+        "type":"bar",
+        "x":"insured_education_level", "y":"total_claim_amount",
+        "aggregation":"median", "data":[
+            {"label":"MD", "value":60540},
+            {"label":"PhD", "value":60145},
+            {"label":"Masters", "value":58200},
+        ]
+    })
+    exact="Median of total_claim_amount by insured_education_level"
+    assert report_charts.measure_caption(spec)==exact
+    html=report_charts.html_chart(spec)
+    assert exact in html
+    assert "<strong>"+exact+"</strong>" in html
+    drawing=report_charts.pdf_chart(spec,width=480)
+    assert any(getattr(item,"text",None)==exact for item in drawing.contents)
+    assert [point["value"] for point in spec["data"]] == [60540.,60145.,58200.]
+
+
+def test_frequency_label_on_histogram_does_not_relabel_counts_as_sums():
+    spec=report_charts.visual_spec({
+        "type":"histogram","x":"Revenue","y":"Revenue",
+        "aggregation":"count",
+        "data":[{"label":"0-10","value":5},{"label":"10-20","value":7}],
+    })
+    assert report_charts.measure_caption(spec)=="Frequency distribution of Revenue"
+    assert "Frequency distribution of Revenue" in report_charts.html_chart(spec)
+    assert "Sum of Revenue" not in report_charts.html_chart(spec)
