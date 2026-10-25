@@ -226,7 +226,15 @@ def train_background(eid:str,pid:str,config:dict):
     try:
         p=storage.get_project(pid)
         df=df_for(p,config["quality_version"])
+        if not storage.advance_running_experiment(
+            eid,"training_models","Data loaded; cross-validating and fitting the selected model candidates."
+        ):
+            return  # A recovery/terminal transition superseded this worker.
         result, pipes, x_test, y_test = engine.run_training(df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")})
+        if not storage.advance_running_experiment(
+            eid,"saving_artifacts","Model comparisons finished; saving fitted pipelines and held-out evaluation data."
+        ):
+            return
         # Only locally produced artifacts are loaded; untrusted model uploads are prohibited.
         path=storage.HOME / "models" / eid
         path.mkdir(parents=True,exist_ok=True)
@@ -305,7 +313,8 @@ def get_experiment(experiment_id:str):
     e=experiment_or_404(experiment_id)
     current_version=quality.current_version(e["project_id"])
     return {"dataset_version":e["config"].get("quality_version",0),"current_version":current_version,"is_stale":e["config"].get("quality_version",0)!=current_version,"id":e["id"],"project_id":e["project_id"],"status":e["status"],"config":e["config"],
-            "results":e["results"],"error":e["error"],"selected_model":e["selected_model"],"final_results":e["final_results"]}
+            "results":e["results"],"error":e["error"],"selected_model":e["selected_model"],"final_results":e["final_results"],
+            "progress":e["progress"]}
 
 
 @app.post("/api/experiments/{experiment_id}/select")
