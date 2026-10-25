@@ -1,6 +1,6 @@
-# Resource-Aware Mode — approved design direction, not yet implemented
+# Resource-Aware Mode — approved design and staged implementation
 
-**Decision recorded 25 October 2026.** The owner agreed to pursue PilotODIN-managed resource constraints instead of treating an 8 GB Windows machine as requiring unsafe removal of system limits. This document is the scoped implementation proposal; **no runtime Resource-Aware Mode is currently shipped**.
+**Decision recorded 25 October 2026.** The owner approved PilotODIN-managed resource constraints. **Source implementation of Settings/RAM readings and newer Low-memory admission gates exists on the active development branch, but the newest admission increment is NOT YET Windows-verified, and no standalone release is shipped.** For the exact latest owner/test state, use [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md). Older sections below preserve the decisions and state at each increment.
 
 ## P1 first slice — SOURCE IMPLEMENTED, NOT YET OWNER-TESTED (25 October 2026)
 
