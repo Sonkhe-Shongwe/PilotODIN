@@ -23,6 +23,7 @@ $results = [ordered]@{
     native_pdf_save = 'NOT_VERIFIED'
     native_html_save = 'NOT_VERIFIED'
     native_cancel = 'NOT_VERIFIED'
+    consolidated_regressions = 'NOT_RUN'
     browser_mode = 'NOT_TESTED'
     installer = 'NOT_BUILT'
     native_ai_8gb = 'NOT_TESTED'
@@ -32,6 +33,10 @@ function Save-Result {
     $results | ConvertTo-Json -Depth 8 | Set-Content -Path $resultPath -Encoding UTF8
     $includes = @($resultPath)
     if(Test-Path $log){ $includes += $log }
+    $regressionLog = Join-Path $report 'p0-a4-regression.log'
+    if(Test-Path $regressionLog){ $includes += $regressionLog }
+    $otherZip = Join-Path $report 'p0-a4-regression-diagnostics.zip'
+    if(Test-Path $otherZip){ $includes += $otherZip }
     Compress-Archive -LiteralPath $includes -DestinationPath $zip -Force
     Write-Host ("Diagnostics ZIP (no project files): " + $zip)
 }
@@ -81,7 +86,7 @@ if($git){
         Stop-With ('Select the development branch first. Current branch: ' + $results.branch)
     }
     $dirty = & $git -C $root status --porcelain
-    $results.checks['clean_checkout'] = (@($dirty).Count -eq 0)
+    $results.checks['clean_checkout'] = [string]::IsNullOrWhiteSpace(($dirty -join ''))
     if($dirty){Write-Host 'WARNING: Your checkout has local edits. Do not discard these edits.' -ForegroundColor Yellow}
 }else{
     $results.checks['git'] = 'unavailable'
@@ -129,10 +134,42 @@ $results.checks['dev_overlay_found']=Test-Path $manifest
 $results.checks['no_release_assets_required']=$true
 Write-Host 'Preflight checks passed. Current source branch and local backend are ready.' -ForegroundColor Green
 if($PreflightOnly){
-    $results.message='Preflight only; native compilation/window not run.'
+    $results.message='Preflight only; regressions and native compilation/window not run.'
     Save-Result
     exit 0
 }
+$regressionPython = Join-Path $root '.venv-live\Scripts\python.exe'
+if(-not (Test-Path $regressionPython)){
+    Stop-With 'The existing .venv-live Python for A2/A3/A4 regression tests is missing.'
+}
+Write-Host ''
+Write-Host 'Running the ONE consolidated A2/A3/A4 regression gate first...'
+$regLog=Join-Path $report 'p0-a4-regression.log'
+Push-Location $root
+try {
+    & $regressionPython 'tools\Verify_P0_A4_Readiness.py' 2>&1 | Tee-Object -FilePath $regLog
+    $regressionCode=$LASTEXITCODE
+} catch {
+    $regressionCode=1
+    Add-Content -Path $regLog -Value ('Regression runner exception: ' + $_.Exception.Message)
+} finally {Pop-Location}
+$results.checks['p0_a4_regression_exit_code']=$regressionCode
+if($regressionCode -ne 0){
+    $results.consolidated_regressions='FAIL'
+    Stop-With 'The consolidated frontend/backend regression gate failed. Fix that first; no native window was launched.'
+}
+$results.consolidated_regressions='PASS'
+# The Python gate writes its own isolated ZIP; nest those diagnostics once in
+# this native ZIP so there is still only ONE owner attachment to share.
+$regText = Get-Content -Path $regLog -Raw -ErrorAction SilentlyContinue
+$pattern='Shareable diagnostics ZIP:\s*(.+?\.zip)'
+if($regText -match $pattern){
+    $nested=$Matches[1].Trim()
+    if(Test-Path $nested){
+        Copy-Item -LiteralPath $nested -Destination (Join-Path $report 'p0-a4-regression-diagnostics.zip') -Force
+    }
+}
+Write-Host 'All source regressions passed. Proceeding to actual Tauri development compilation.' -ForegroundColor Green
 Write-Host ''
 Write-Host 'WHEN THE SEPARATE NATIVE WINDOW OPENS:'
 Write-Host '  1. Open the saved Deliver report in the Tauri window (not in Chrome).'
