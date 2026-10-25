@@ -57,7 +57,7 @@ test('Resource-Aware Settings UI is advisory, explicit-save and does not run a m
 
 test('Low-memory gate sits before any new ML experiment is persisted and leaves baseline guards intact',()=>{
  const main=read('backend/main.py');
- const handler=main.split('def new_experiment(')[1]?.split('\n\n@app.get("/api/experiments/')[0];
+ const handler=main.split('def new_experiment(')[1]?.split('@app.get("/api/experiments/')[0];
  assert.ok(handler,'ML experiment route must exist');
  assert.match(handler,/engine\.validate_config\(/);
  assert.match(handler,/engine\.preparation\(/);
@@ -68,7 +68,7 @@ test('Low-memory gate sits before any new ML experiment is persisted and leaves 
            handler.indexOf('storage.new_experiment(project_id,config)'),
            'No experiment artifacts may be created before admission');
  const provider=read('backend/ai_provider.py');
- const local=provider.split('def local_try()->dict|None:')[1]?.split('\n    if prefer_local:')[0];
+ const local=provider.split('def local_try()->dict|None:')[1]?.split('    if prefer_local:')[0];
  assert.ok(local,'Local generation request function must exist');
  assert.match(local,/resource_policy\.admit_new_work\('local_inference'\)/);
  assert.ok(local.indexOf("admit_new_work('local_inference')")<
