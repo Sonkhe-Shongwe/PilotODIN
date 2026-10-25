@@ -1,11 +1,21 @@
 # PilotODIN — CONTINUE HERE (living cross-chat handoff)
-**Updated:** 24 October 2026  
+**Updated:** 25 October 2026  
 **Active repository:** [Sonkhe-Shongwe/PilotODIN](https://github.com/Sonkhe-Shongwe/PilotODIN)  
 **Active branch:** `feature/live-dev-workspace-20261023`  
 **Master QA and ongoing decisions:** [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)  
 **Strategic research proposal:** [Master modes and target discovery](./MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md)  
 **Latest target-intelligence research:** [Business semantics, opportunity ranking & leakage-free budget](./TARGET_INTELLIGENCE_SEMANTICS_AND_RANKING_RESEARCH.md)  
 **Implementation priorities (complexity-last):** [Consolidated feature inventory & P0–P8 roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md)
+
+## Latest owner Windows verification — consolidated P0/A4 entry PASSED (25 October 2026)
+
+The owner uploaded two generated output folders from the new single-run `Run_PilotODIN_P0_A4_Verification.bat` launcher. Both were checked directly against `result.json`, four phase logs, and Pytest JUnit XML.
+
+- **Both runs PASSED all four phases** against clean branch commit `5bf174e328bebf9cfabbbb17cd46ffae687f7785`: 99/99 frontend behavioural tests, TypeScript/Vite build, Python compile, and **149/149 deduplicated backend regression cases** (A2/A3 plus existing A4/approval/export foundations); zero failures, errors, skips or preflight blockers.
+- The 25 October group/time split-key API/worker fixes therefore have **executed local regressions**, superseding the older "not yet rerun" test-status warning elsewhere in this document. Earlier owner UI evidence for invalid insurance incident-hour rejection remains separate.
+- **Decision for minimum owner back-and-forth:** The *automated development-entry gate* is green. Proceed with one coherent A4 Deliver implementation batch and automated tests; arrange ONE combined owner Windows A3/A2/A4 functional, visual and native Save As acceptance session after the batch. Do not claim full A3/A4 manual signoff.
+- No installed native/offline Windows app, bundled Qwen inference, actual physical 8 GB concurrent load, or all 24 Build E release scenarios were exercised by these local source suites.
+- Detailed new evidence: [P0->A4 single-pass verification](./P0_A4_SINGLE_PASS_VERIFICATION.md) and [QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2). No raw synthetic test artifacts or machine identifiers were uploaded to GitHub.
 
 ## Read this first when switching conversations/tabs
 
