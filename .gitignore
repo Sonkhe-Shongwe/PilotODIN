@@ -23,7 +23,7 @@ ai_secrets.dpapi
 ai_settings.json
 
 # Rust and desktop build artifacts
-src-tauri/target/
+frontend/src-tauri/target/
 src-tauri/binaries/*.exe
 src-tauri/binaries/*.pdb
 frontend/package-lock.json.old
