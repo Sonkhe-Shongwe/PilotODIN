@@ -36,6 +36,7 @@ A2 = (
     "test_explore_line_box_inspection.py",
     "test_column_intelligence.py",
     "test_p3_semantic_profile.py",
+    "test_p4_target_opportunities.py",
     "test_saved_explore_analyses.py",
     "test_explore_to_report_evidence.py",
     "test_correlation_matrix.py",
