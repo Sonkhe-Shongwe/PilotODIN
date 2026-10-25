@@ -558,7 +558,14 @@ def load(report_id: str, revision: int | None = None):
         if row is None:
             raise ReportError('Report revision not found',404)
         numbers=[r['number'] for r in con.execute('SELECT number FROM report_revisions_v1 WHERE report_id=? ORDER BY number',(report_id,)).fetchall()]
-    content=json.loads(row['snapshot_json'])
+    stored=row['snapshot_json']
+    actual_digest=hashlib.sha256(stored.encode('utf-8')).hexdigest()
+    if not hmac.compare_digest(actual_digest,row['content_sha256']):
+        raise ReportError('Saved report revision failed integrity verification',409)
+    try:
+        content=json.loads(stored)
+    except (TypeError,ValueError) as exc:
+        raise ReportError('Saved report revision is unreadable',409) from exc
     current=quality.current_version(report['project_id'])
     return {'id':report_id, 'project_id':report['project_id'], 'created_at':report['created_at'],
             'revision_id':row['id'], 'revision':row['number'], 'revisions':numbers,
