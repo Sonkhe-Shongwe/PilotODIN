@@ -39,7 +39,19 @@ def test_p0_import_train_select_reopen_predict_version_and_project_isolation(
     (home / "models").mkdir()
     monkeypatch.setattr(storage, "HOME", home)
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
+    # Switching SQLite databases AFTER backend imports bypasses the normal
+    # quality schema initialization that ran at module import time. Recreate
+    # both schemas in this synthetic-only temporary database before importing
+    # any test projects; production startup and user data are unchanged.
     storage.init()
+    quality._init_tables()
+    with storage.connect() as con:
+        required = {"projects", "experiments", "quality_state",
+                    "quality_versions", "quality_actions", "quality_decisions"}
+        existing = {row[0] for row in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+    assert required <= existing, required - existing
     client = TestClient(app)
     original = _dataset()
 
