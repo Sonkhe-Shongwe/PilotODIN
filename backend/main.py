@@ -29,6 +29,11 @@ except ImportError:
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
     """Start responsive: verify configured cloud providers in background only after consent."""
+    # FastAPI BackgroundTasks do not survive a backend restart. Explicitly
+    # fail orphaned ML records before admitting new work; never auto-retrain.
+    recovered=storage.recover_interrupted_experiments()
+    if recovered:
+        logging.warning("Marked %s unfinished ML experiment(s) failed after backend restart",recovered)
     checks=[]
     try:
         cfg=ai_provider.config_status()
@@ -215,7 +220,9 @@ def prepare(project_id:str,target:str):
 
 
 def train_background(eid:str,pid:str,config:dict):
-    storage.mark(eid,"running")
+    # Compare-and-set: never resurrect a job marked terminal or interrupted.
+    if not storage.claim_queued_experiment(eid):
+        return
     try:
         p=storage.get_project(pid)
         df=df_for(p,config["quality_version"])
@@ -225,9 +232,9 @@ def train_background(eid:str,pid:str,config:dict):
         path.mkdir(parents=True,exist_ok=True)
         for name,pipe in pipes.items(): joblib.dump(pipe,path/f"{name}.joblib")
         joblib.dump((x_test,y_test),path/"test_set.joblib")
-        storage.mark(eid,"completed",results=result)
+        storage.finish_running_experiment(eid,"completed",results=result)
     except Exception as e:
-        storage.mark(eid,"failed",error=f"{type(e).__name__}: {str(e)[:600]}")
+        storage.finish_running_experiment(eid,"failed",error=f"{type(e).__name__}: {str(e)[:600]}")
 
 
 @app.post("/api/projects/{project_id}/experiments",status_code=202)
@@ -276,7 +283,19 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
             "quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column,
             "acknowledge_feature_risks":bool(body.acknowledge_feature_risks),
             "reviewed_high_risk_features":included_risks}
-    eid=storage.new_experiment(project_id,config)
+    try:
+        if admission["mode"] == "low_memory":
+            # Atomic across request threads/process connections: one heavy
+            # ML training job at a time while Low-memory is selected.
+            eid=storage.new_experiment_with_capacity(project_id,config)
+        else:
+            eid=storage.new_experiment(project_id,config)
+    except storage.TrainingSlotBusy as exc:
+        raise HTTPException(status_code=503,detail={
+            "code": "ml_training_slot_busy", "operation": "training",
+            "message": str(exc)+" Retry when that training finishes.",
+            "retryable": True,
+        }) from exc
     background_tasks.add_task(train_background,eid,project_id,config)
     return {"id":eid,"status":"queued"}
 
