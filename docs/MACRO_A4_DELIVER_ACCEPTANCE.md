@@ -1,6 +1,6 @@
 # PilotODIN Macro A4 — Deliver evidence composition and professional exports
 
-**Development milestone:** A4-1, saved ML evidence and report composition.  
+**Development milestone:** A4-1 selected-model evidence plus A4-2 saved aggregate chart illustrations.  
 **Current status:** SOURCE IMPLEMENTED, LOCAL TEST EXECUTION PENDING. Do not call A4 complete or the Windows installed application release-ready.
 
 ## Baseline preserved
@@ -16,6 +16,16 @@
 3. Existing reports can combine model evidence, saved Explore snapshots and investigation evidence from different dataset versions. Selected exhibit order is preserved in immutable revisions.
 4. Report editor adds up/down ordering controls, disabled export while the saved draft has unsaved changes and a warning about historical versions.
 5. HTML and PDF both provide an evidence register and per-artifact limitations/interpretation notes. Renderers use the same saved revision and `_exhibit` representation; actual numerical parity still requires executable regression evidence.
+
+## A4-2: Frozen Explore visuals in PDF and HTML (source implemented, not yet runtime-tested)
+
+- New `backend/report_charts.py` builds bounded, presentation-only **bar, histogram and line** vector illustrations from saved Explore `chart.data` aggregates. It does **not** query the dataset, rerun filtering/statistics, or infer a new finding. Scatter/box remain table-only pending a carefully scoped release design; row-level scatter pairs are **not visualised by this feature**.
+- `backend/reports.py::_explore_evidence` stores a compact chart visual projection **inside the immutable report revision** only after validating the saved Explore snapshot SHA-256 and its configuration binding. HTML and PDF both render from that same frozen projection.
+- Chart scales include zero with a visible negative/positive baseline where necessary. Histogram counts are read from the original saved bins, not re-binned, and no percentages or invented trendlines are added. Original numeric exhibit tables and SHA-256 provenance remain visible.
+- To keep PDF pages readable, charts are limited to 12 bars, 24 histogram bins or 18 line categories, with explicit 'bounded subset' disclosure where truncated or sampled. Visual labels are abbreviated for legibility; the saved evidence table remains the numeric reference. Source-label HTML is escaped and no scripts/networks are used.
+- The A4 HTML/CSS report adds print-friendly vector chart figures and per-chart captions. PDF drawings are vector objects rather than raster screenshots.
+- New `tests/test_a4_frozen_chart_visuals.py` validates bar, histogram and line source parity, unsupported plots, nonfinite rejection, markup escaping, bounded-data notices, and old report immutability after a source snapshot is altered. Included in unified local verification.
+- **QA status:** GitHub source committed and re-fetch review pending/ongoing. No A4-2 Python/PDF renderer tests or end-user Windows visual validation has yet been executed.
 
 ## Test inventory and gate
 
@@ -39,7 +49,7 @@ Use disposable test data, and one pull/checkpoint **after a coherent A4 developm
 
 ## Deferred A4 improvements before final macro signoff
 
-- High-quality chart illustrations and model graphics inside exported report pages (the existing release renders evidence tables and exhibits).
+- Beyond the initial saved aggregate graphics: scatter/box visuals, accessible long-category layouts, additional advanced analytical and model figures, and print-pagination refinements.
 - Full Quality decision/affected-row artifact coverage where an immutable verified source record is not yet exposed.
 - More advanced report narrative structure/layout design beyond the current title, interpretation, limitations and ordered evidence.
 - Explicit native Windows Save As usability and install/restart recovery tests.
