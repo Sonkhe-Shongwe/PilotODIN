@@ -5,7 +5,7 @@ import json
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 HOME = Path(os.environ.get("PILOTODIN_HOME", str(Path(__file__).resolve().parents[1] / "data"))).resolve()
@@ -46,6 +46,12 @@ def init():
         );
         CREATE INDEX IF NOT EXISTS experiment_progress_by_run
             ON experiment_progress_events(experiment_id,event_id);
+        CREATE TABLE IF NOT EXISTS experiment_run_controls (
+            experiment_id TEXT PRIMARY KEY,
+            cancel_requested INTEGER NOT NULL DEFAULT 0,
+            deadline_at TEXT,
+            FOREIGN KEY(experiment_id) REFERENCES experiments(id)
+        );
         """)
 
 
@@ -61,6 +67,8 @@ STAGE_LABELS = {
     "saving_artifacts": "Saving fitted models",
     "completed": "Completed",
     "failed": "Failed",
+    "cancelled": "Cancelled",
+    "timed_out": "Timed out",
     "running_legacy": "Running — individual stages not recorded",
 }
 ACTIVE_STAGE_ORDER = ("loading_data", "training_models", "saving_artifacts")
@@ -83,7 +91,7 @@ def _progress_for(con, eid, status):
     ).fetchall()
     if not rows:
         # Existing experiments are NOT retroactively assigned fictional stages.
-        stage = status if status in ("queued", "completed", "failed") else "running_legacy"
+        stage = status if status in ("queued", "completed", "failed", "cancelled", "timed_out") else "running_legacy"
         return {
             "stage": stage, "label": STAGE_LABELS[stage],
             "detail": "Historical experiment; intermediate milestones were not recorded.",
@@ -169,8 +177,123 @@ def claim_queued_experiment(eid):
             (eid,),
         )
         if changed.rowcount == 1:
+            # The deadline starts when real work begins, not when queued.
+            config_row = con.execute(
+                "SELECT config FROM experiments WHERE id=?", (eid,)
+            ).fetchone()
+            seconds = json.loads(config_row["config"]).get("max_duration_seconds")
+            deadline = (
+                (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat()
+                if seconds is not None else None
+            )
+            con.execute(
+                "INSERT INTO experiment_run_controls (experiment_id,deadline_at) VALUES (?,?) "
+                "ON CONFLICT(experiment_id) DO UPDATE SET deadline_at=excluded.deadline_at",
+                (eid,deadline),
+            )
             _append_progress(con,eid,"loading_data","Worker started; loading the saved dataset version.")
         return changed.rowcount == 1
+
+
+class TrainingInterrupted(InterruptedError):
+    """Cooperative checkpoint request; never implies preemptive model termination."""
+
+    def __init__(self, status):
+        if status not in ("cancelled", "timed_out"):
+            raise ValueError("Unknown cooperative interruption")
+        self.status = status
+        super().__init__(
+            "Training cancelled at a safe checkpoint." if status == "cancelled"
+            else "Training exceeded its requested limit; stopped at a safe checkpoint."
+        )
+
+
+def _requested_interruption(con, eid):
+    row = con.execute(
+        "SELECT cancel_requested,deadline_at FROM experiment_run_controls "
+        "WHERE experiment_id=?", (eid,),
+    ).fetchone()
+    if row:
+        if row["cancel_requested"]:
+            return "cancelled"
+        if row["deadline_at"] and datetime.now(timezone.utc) >= datetime.fromisoformat(row["deadline_at"]):
+            return "timed_out"
+    return None
+
+
+def check_training_interruption(eid):
+    """Check before/after work boundaries; never forcibly interrupt an estimator."""
+    with connect() as con:
+        row = con.execute("SELECT status FROM experiments WHERE id=?", (eid,)).fetchone()
+        if row is None or row["status"] not in ("queued", "running"):
+            raise TrainingInterrupted("cancelled")
+        reason = _requested_interruption(con, eid)
+    if reason:
+        raise TrainingInterrupted(reason)
+
+
+def request_training_cancel(eid):
+    """Queue cancellation is immediate; running cancellation is only REQUESTED.
+
+    Both operations are transactionally serialized with terminal completion.
+    """
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        row = con.execute("SELECT status FROM experiments WHERE id=?", (eid,)).fetchone()
+        if row is None:
+            return None
+        if row["status"] == "queued":
+            con.execute(
+                "UPDATE experiments SET status='cancelled',error=? "
+                "WHERE id=? AND status='queued'",
+                ("Cancelled before training started.",eid),
+            )
+            _append_progress(con,eid,"cancelled","Queued training cancelled before execution.")
+            return "cancelled"
+        if row["status"] == "running":
+            con.execute(
+                "INSERT INTO experiment_run_controls (experiment_id,cancel_requested) VALUES (?,1) "
+                "ON CONFLICT(experiment_id) DO UPDATE SET cancel_requested=1",
+                (eid,),
+            )
+            return "cancellation_requested"
+        return "already_finished"
+
+
+def finish_interrupted_experiment(eid, reason):
+    """Record a confirmed cancellation/timeout only once a worker has stopped."""
+    if reason not in ("cancelled", "timed_out"):
+        raise ValueError("Invalid interruption terminal state")
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        changed = con.execute(
+            "UPDATE experiments SET status=?,results=NULL,error=? "
+            "WHERE id=? AND status='running'",
+            (reason,
+             "Cancelled by user at a cooperative checkpoint." if reason=="cancelled"
+             else "Training time limit exceeded at a cooperative checkpoint.",
+             eid),
+        )
+        if changed.rowcount == 1:
+            _append_progress(
+                con,eid,reason,
+                "Running training stopped at a safe checkpoint."
+                if reason=="cancelled" else "Time limit reached; work ended at a safe checkpoint.",
+            )
+        return changed.rowcount == 1
+
+
+def training_control(eid):
+    with connect() as con:
+        row = con.execute(
+            "SELECT cancel_requested,deadline_at FROM experiment_run_controls "
+            "WHERE experiment_id=?", (eid,),
+        ).fetchone()
+        return {
+            "cancel_requested": bool(row["cancel_requested"]) if row else False,
+            "deadline_at": row["deadline_at"] if row else None,
+            "interruption_is_cooperative": True,
+        }
 
 
 def advance_running_experiment(eid, stage, detail):
@@ -190,6 +313,9 @@ def advance_running_experiment(eid, stage, detail):
         ).fetchone()
         if row is None or row["status"] != "running":
             return False
+        reason = _requested_interruption(con, eid)
+        if reason:
+            raise TrainingInterrupted(reason)
         last = con.execute(
             "SELECT stage FROM experiment_progress_events WHERE experiment_id=? "
             "ORDER BY event_id DESC LIMIT 1", (eid,),
@@ -207,6 +333,11 @@ def finish_running_experiment(eid, status, *, results=None, error=None):
     if status not in ("completed", "failed"):
         raise ValueError("Only terminal ML statuses are accepted")
     with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        if status == "completed":
+            reason = _requested_interruption(con,eid)
+            if reason:
+                raise TrainingInterrupted(reason)
         changed=con.execute(
             "UPDATE experiments SET status=?, results=?, error=? "
             "WHERE id=? AND status='running'",
@@ -252,10 +383,11 @@ def get_experiment(eid):
         if r is None:
             return None
         progress=_progress_for(con,eid,r["status"])
+    controls = training_control(eid)
     return {**dict(r),"config":json.loads(r["config"]),
             "results":json.loads(r["results"]) if r["results"] else None,
             "final_results":json.loads(r["final_results"]) if r["final_results"] else None,
-            "progress":progress}
+            "progress":progress,"control":controls}
 
 
 def recent_experiments(pid):
