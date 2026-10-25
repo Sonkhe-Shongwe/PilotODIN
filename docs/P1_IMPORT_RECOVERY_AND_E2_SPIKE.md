@@ -46,6 +46,31 @@ Only after choosing a real redistributable, licensed, memory-appropriate local Q
 3. **Combined load on a real 8 GB laptop:** Measure OS available memory and peak end-to-end PilotODIN + Tauri + backend + local AI inference, followed by a bounded dataset analysis/ML task. Watch memory pressure, disk paging, crashes, UI responsiveness and graceful degradation when AI is unavailable. A test on a machine with substantially more RAM is **not** an 8 GB certification.
 4. **Decision:** Label feasibility **PASS** only with recorded offline token generation, actual 8 GB combined-load measurements, licensing and reproducible invocation. Otherwise **BLOCKED**, **UNDETERMINED** or **FAIL** with a reason and design options (smaller quantization, AI disabled, loading only on demand, or revisiting hardware target).
 
-### Release boundary
+### Actual owner's first E2 result: archive inspected; memory-pressure investigation required
+
+**25 Oct 2026:** Inspect the already-uploaded 1.4 KB ZIP pilotodin-p1-e2-89afedab55d5.zip, not just the console screenshot. It contains result.json, p1-import-regressions.log (UTF-16 from Windows PowerShell Tee-Object), and e2-readonly-inventory.json.
+
+- P1 isolated import recovery: **4/4 passing, 4.40 seconds, real exit code 0**.
+- OS: Windows 11 Pro 64-bit, **7.804 GiB physical RAM; 0.670 GiB available** (8.6% at snapshot), 8 GB-class true. This is an early memory-pressure flag, not proof that PilotODIN cannot ever fit.
+- Counts and **reported** working sets only: 3 Python processes 0.006 GiB, 3 Node 0.004 GiB, 1 Ollama 0.001 GiB, 0 Tauri desktop, 0 llama-server/llama-cli. These family-level reported working sets sum to 0.011 GiB, which plainly **does not explain** approximately 7.134 GiB of non-available system RAM. The initial whitelist excluded browsers and other Windows processes, and per-process working-set readings are not a reliable additive explanation of the complete Windows RAM state.
+- The optional model/runtime paths were NOT supplied, so model_file.specified=false and inference_runtime.specified=false. Their found=false values do not establish global absence. A running Ollama process **does not prove** model files are installed or a model is currently resident. No inference was performed.
+- Inventory explicitly records offline generation NOT_TESTED, concurrent stress NOT_TESTED, model licensing NOT_VERIFIED, and final E2 decision UNDETERMINED.
+
+### Next bounded owner diagnostic: E2 memory triage only
+
+New one-click **Run_PilotODIN_E2_Memory_Triage.bat** uses tools/Probe_E2_Memory_Triage.ps1 to collect physical/available RAM and the twelve process-name families with the largest summed working sets and private committed pages. Uses Windows CIM read-only process counters and reports a self-contained ZIP in TEMP. This DOES NOT rerun the four P1 tests or 117/174 P0 tests, start Ollama inference, download a model or install anything.
+
+Privacy limit: ZIP contains **executable basenames** and aggregated counts/memory (not process IDs, full executable paths, command lines, usernames, files or project content). The user may inspect the ZIP before sharing. Summed working sets can double-count shared pages, while private committed pages can be paged out; **neither sum equals exact total physical RAM consumed**.
+
+### Candidate research only, do NOT pull yet
+
+For the first *future* bounded functionality probe, a plausible small baseline is **Qwen3:0.6b Q4_K_M**. Ollama's current published catalog lists a ~523 MB artifact, while **Qwen3:1.7b Q4_K_M** is ~1.4 GB. The upstream Qwen3-0.6B model is listed as Apache-2.0. **Disk artifact size is not peak RAM usage**: runtime, prompt context/KV cache, OS, Python, Chrome/WebView2 and other process allocations need room; the 0.6B model may be too limited for production-grade analytical planning. Licensing for a particular quantized artifact, inference engine and final distribution must still be verified. Do not invoke model runs until memory is better understood.
+
+Sources:
+- https://ollama.com/library/qwen3
+- https://huggingface.co/Qwen/Qwen3-0.6B
+- https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process
+
+## Release boundary
 
 P1 and E2 are not a production installer, autonomous Master Analyst/Scientist or final E-01..E-24 acceptance. P0 development evidence and native Save As are preserved. Avoid Hosted GitHub Actions while minutes are exhausted; do not run the final bundled installer prematurely. Next acceptance checkpoint: one isolated P1 import regression + E2 inventory, then decide whether hardware feasibility needs a separate short offline model spike before designing P3/P4 semantics.
