@@ -20,7 +20,7 @@ echo.
 if "%RESULT%"=="0" (
   echo P3 focused semantic-profile package passed.
 ) else (
-  echo P5 check did not pass. Share the diagnostic ZIP printed above.
+  echo P3 check did not pass. Share the diagnostic ZIP printed above.
 )
 echo.
 pause
