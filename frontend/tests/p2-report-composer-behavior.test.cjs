@@ -104,9 +104,9 @@ test('INTEGRATION: source wires guarded Save, Quality and accurate post-commit r
 test('INTEGRATION: draft changes and project/evidence navigation invalidate the right epoch',()=>{
  assert.match(ui,/composerGuard\.current\.resetProject\(\)/);
  assert.match(ui,/composerGuard\.current\.navigate\(\)/);
- assert.match(ui,/composerGuard\.current\.editDraft\(\);setTitle/);
- assert.match(ui,/composerGuard\.current\.editDraft\(\);setNarrative/);
- assert.match(ui,/composerGuard\.current\.editDraft\(\);setSelected/);
+ assert.match(ui,/onDraftEdit\(\);setTitle/);
+ assert.match(ui,/onDraftEdit\(\);setNarrative/);
+ assert.match(ui,/onDraftEdit\(\);setSelected/);
  assert.match(ui,/latestReportList\.current/);
  assert.match(ui,/saveReportNative\(blob,filename,format\)/);
 });
