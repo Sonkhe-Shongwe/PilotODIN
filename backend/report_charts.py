@@ -111,7 +111,7 @@ def html_chart(spec: dict) -> str:
         else:
             bar_w = step*(.96 if spec["type"] == "histogram" else .68)
             top_y = min(yp, height-baseline)
-            rect_h = max(1.0, abs(yp-(height-baseline)))
+            rect_h = max(0.0, abs(yp-(height-baseline)))
             result.append(f'<rect x="{px-bar_w/2:.2f}" y="{top_y:.2f}" width="{bar_w:.2f}" '
                           f'height="{rect_h:.2f}" fill="#087e8b"><title>{desc}</title></rect>')
         if i in _x_indices(spec):
@@ -158,7 +158,7 @@ def pdf_chart(spec: dict, width: float = 500.0) -> Drawing:
         else:
             bar_w = step*(.96 if spec["type"] == "histogram" else .68)
             d.add(Rect(x-bar_w/2, min(ordinate, baseline), bar_w,
-                       max(1, abs(ordinate-baseline)),
+                       max(0.0, abs(ordinate-baseline)),
                        fillColor=colors.HexColor("#087e8b"), strokeColor=None))
         if i in _x_indices(spec):
             label = point["label"]
