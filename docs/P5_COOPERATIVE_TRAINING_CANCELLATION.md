@@ -1,6 +1,6 @@
 # P5 — Cooperative ML cancellation and explicit soft training time limits
 
-**25 October 2026 — SOURCE IMPLEMENTED, owner Windows verification PENDING.**
+**25 October 2026 — focused owner Windows verification PASS (uploaded ZIP inspected).**
 
 PilotODIN ML uses Python `BackgroundTasks`, scikit-learn `cross_val_score` and blocking estimator `fit` operations. These cannot safely be force-killed mid-operation in the existing in-process architecture. This feature implements **safe cooperative stopping** at observable, finite code boundaries. It is not a hard execution deadline or general task scheduler.
 
@@ -25,6 +25,19 @@ PilotODIN ML uses Python `BackgroundTasks`, scikit-learn `cross_val_score` and b
 - **One owner verification only:** `Run_PilotODIN_P5_Training_Cancellation.bat` calling `tools/Verify_P5_Training_Cancellation_Local.py`, which runs **only changed** cancellation, P5 progress/slot and directly affected P1 admission Python suites; 3 P5 Node source-contract suites, and frontend `npm run build` because the App/API changed. Isolated `PILOTODIN_HOME` and synthetic data, one `pilotodin-p5-cancel-*.zip` diagnostic.
 
 **Verification truth:** Source was committed and inspected, but no new Pytest/Node/Vite build has yet been run on the owner's Windows machine. The preceding P5 progress package was owner-accepted **18/18 Python, 7/7 Node, TypeScript/Vite PASS**. Do not present these previous numbers as verification for new cancellation/timeout functionality.
+
+## Owner verification — 25 October 2026
+
+The owner ran `Run_PilotODIN_P5_Training_Cancellation.bat` and uploaded `pilotodin-p5-cancel-ayag0sci.zip`. We directly extracted **all four files**, not only the screenshot. `result.json` recorded **2026-10-25T18:38:46.030809Z**, overall **PASS** with all three phase exit codes 0.
+
+- `p5-training-cancellation-backend.log`: **45/45 Python tests PASS in 5.05s** across new cancellation and affected P5/P1 suites.
+- `p5-training-cancellation-node.log`: **12/12 Node contract tests PASS**, 0 fail/skip, ~143ms.
+- `frontend-typescript-vite.log`: `tsc --noEmit && vite build` **PASS**; 1,618 modules transformed, built in 3.47s. Vite displayed a **non-blocking 500 kB chunk-size warning**.
+- Runner used synthetic isolated data (`original_datasets_accessed=false`) and did not rerun P0/A4, native Tauri smoke, real Qwen or the installer.
+
+**Acceptance boundary:** P5 cooperative training cancellation/soft timeout and owned artifact cleanup have passed **focused automated Windows verification**, not native live-ML interruption stress, hard preemptive kill, general durable task orchestration, or offline 8 GB AI certification. The verifier `result.json` uses the inherited field `durable_general_scheduler_or_safe_cancellation: NOT_IMPLEMENTED`; this ambiguously combines two distinct capabilities. **Cooperative safe cancellation is implemented and tested; a general durable scheduler is not.** The verifier metadata should be corrected for subsequent runs (no need to rerun already-green checks for metadata).
+
+**Sequencing decision:** The user's original complexity-last roadmap calls for **P3 shared deterministic semantic profiles and P4 user-chosen target intelligence before investing in heavy P5/P7 generalized scheduling**. The P5 core ML slot, factual stage history and cooperative interruption are adequate for the next deterministic product-value increment. Defer a full task queue, high-risk process preemption and AI-wide orchestration until Master modes demand them.
 
 ## Next after acceptance
 
