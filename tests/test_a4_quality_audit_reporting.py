@@ -60,6 +60,7 @@ def test_explicit_quality_capture_is_read_only_and_reportable():
     assert PRIVATE_CATEGORY.lower() not in audit["snapshot_json"]
     assert '"preview"' not in audit["snapshot_json"]
     assert '"proposal"' not in audit["snapshot_json"]
+    assert "All detected findings are included for this version." in audit["snapshot_json"]
     listed=client.get(f"/api/projects/{pid}/report-evidence")
     assert listed.status_code==200,listed.text
     item=next(x for x in listed.json() if x["id"]==captured["id"])
