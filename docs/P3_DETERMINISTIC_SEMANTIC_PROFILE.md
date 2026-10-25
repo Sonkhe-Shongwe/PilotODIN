@@ -1,6 +1,6 @@
 # P3 — Shared deterministic semantic hypothesis profile (first increment)
 
-**25 October 2026 — first owner Windows test failed 2 backend assertions (13 passed), 4/4 Node PASS and Vite PASS; two targeted fixes committed, repair owner verification PENDING.**
+**25 October 2026 — P3 first deterministic semantic-profile increment FOCUSED WINDOWS ACCEPTANCE PASS (initial failure corrected by owner-tested targeted rerun).**
 
 ## Why P3 follows the accepted P5 minimum
 
@@ -39,7 +39,20 @@ The owner ran the original `Run_PilotODIN_P3_Semantic_Profile.bat` and uploaded 
 - **Failure 2 was a real endpoint hardening gap**: cross-origin `Origin: https://external.example` was returned 200 by the GET endpoint in dev mode. CORS alone does not reject the HTTP request. The route now calls existing `_local_request(request)` **before** project/data access; existing local development origin remains accepted in an additional test, external origin must produce 403. This intentionally tightens only the new semantic GET endpoint, not the unrelated existing GET routes.
 - Existing P3 Node source contract was tightened to require a `Request` and server-side local guard in the new route. Old P3 BAT failure-message typo "P5 check did not pass" corrected.
 
-**Minimal rerun:** `Run_PilotODIN_P3_Semantic_Repair.bat` (new), invoking `tools/Verify_P3_Semantic_Repair_Local.py`. Runs ONLY the new P3 Python tests and updated four Node contracts, in isolated synthetic test environment. **Does not repeat TypeScript/Vite**, which already passed and no frontend application component changed in the fixes; does not re-run the unchanged column-intelligence tests, old P5/P1/P0/A4 or native installer. Reports one fresh `pilotodin-p3-repair-*.zip` with both phase logs and JSON. Source has been re-fetched and static guard/check ordering inspected, but **no repaired P3 owner Python/Node execution is yet recorded**. Do not mark the fix verified until its Windows result is received.
+**Minimal rerun:** `Run_PilotODIN_P3_Semantic_Repair.bat` (new), invoking `tools/Verify_P3_Semantic_Repair_Local.py`. Runs ONLY the new P3 Python tests and updated four Node contracts, in isolated synthetic test environment. **Does not repeat TypeScript/Vite**, which already passed and no frontend application component changed in the fixes; does not re-run the unchanged column-intelligence tests, old P5/P1/P0/A4 or native installer. Reports one fresh `pilotodin-p3-repair-*.zip` with both phase logs and JSON. **Historical pre-rerun status only:** This sentence originally recorded the pending repaired owner test; it is superseded by the independently inspected green ZIP described in the Verified P3 repair acceptance section.
+
+## Verified P3 repair acceptance — 25 October 2026
+
+The owner completed `Run_PilotODIN_P3_Semantic_Repair.bat` and uploaded **`pilotodin-p3-repair-x8uxs9kq.zip`**. We directly opened the ZIP and read `result.json`, `p3-semantics-and-column-backend.log`, and `p3-semantic-ui-contracts.log`, rather than relying only on the screenshot.
+
+- **Runner UTC:** `2026-10-25T19:12:02.212135+00:00`, **overall PASS**; both phases returned **exit code 0**.
+- **Backend:** `tests/test_p3_semantic_profile.py` **9/9 PASS in 6.16s**, including the formerly brittle grain assertion and the HTTP local-vs-foreign `Origin` security regression.
+- **Node source contracts:** **4/4 PASS**, 0 failed/skipped/cancelled; approximately 144 ms.
+- The original three-phase P3 run had already produced **TypeScript/Vite PASS** and passed all unchanged column-intelligence tests (original total 13 pass, 2 fail; the two new semantic failures are now fixed). No frontend application file changed during the targeted repairs, so neither build nor the adjacent suite was repeated.
+- Both runs were isolated, synthetic and reported no access to original datasets. **No actual business semantics have been confirmed by a user**, and the UI remains explicitly hypothesis-only.
+- **Acceptance:** First P3 read-only deterministic semantic profiles, version-pinned project scope, local origin check and uncertainty/abstention contract have passed the focused Windows gates. This is not manual end-to-end native semantic UI review, a learned business ontology, or P4 target-selection capability. No additional P3 verification action is needed unless relevant source changes.
+
+**Next engineering target:** bounded P4 prediction-target **recommendations, not autonomous selection**. Evaluate defensible label eligibility and data availability, clearly separate possible business value from ML readiness, flag identifier/time leakage and require explicit user selection. Preserve P3 abstention where evidence cannot justify a hypothesis.
 
 ## Next after one green P3 gate
 
