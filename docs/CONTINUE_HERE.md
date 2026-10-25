@@ -420,6 +420,14 @@ After owner accepted P5 factual progress (**18/18 Python, 7/7 Node, TypeScript/V
 
 **Canonical:** `docs/SESSION_HANDOFF_CURRENT.md` first; `docs/P3_DETERMINISTIC_SEMANTIC_PROFILE.md` failure and fix details; QA Issue #2 master dated comment.
 
+## P3 first deterministic semantic profile owner-accepted after focused repair — 25 October 2026
+
+Owner uploaded `pilotodin-p3-repair-x8uxs9kq.zip` after running `Run_PilotODIN_P3_Semantic_Repair.bat`. ZIP **directly extracted and read**: `result.json` at **2026-10-25T19:12:02.212135Z** gives **overall PASS**, both phases exit 0; `p3-semantics-and-column-backend.log`: **9 passed in 6.16s**; `p3-semantic-ui-contracts.log`: **4 tests / 4 passed / 0 fail / 0 skip**, ~144ms. Isolated synthetic fixtures and `original_datasets_accessed=false`; no existing project/dataset/model edits. The original P3 run (earlier ZIP `pilotodin-p3-semantics-ocmar9cg.zip`) had two backend failures but **4/4 Node and Vite/TypeScript PASS**, with unchanged column-intelligence regressions green. The subsequent targeted repair verifies both fixes: brittle text `record grain` vs `row grain`, and genuine semantic API GET foreign-Origin rejection (previous 200, now test-verified 403 with localhost preserved). No UI application code changed during repair, so redundant Vite build was not requested.
+
+**Accepted:** first deterministic P3 read-only domain/possible-key/field-role hypotheses, abstention on weak and conflicting clues, project/version-scoped semantic API, local-origin enforcement and data-dictionary contracts **within focused automated Windows acceptance**. Business semantics remain unverified hypotheses; there has been **no native real-project semantics-panel visual acceptance**, no P4 target selection, no general task scheduler or offline Qwen/8 GB certification.
+
+**Next engineering increment:** bounded P4 technical target eligibility + conservative possible business-use explanation. Read current Model Lab target selection and P3 semantic metadata, require explicit user decision, keep version/leakage caps, clearly abstain on weak labels. **No current owner test outstanding**, do not rerun accepted P3/P5/P1/P0/A4. Continuity: `docs/SESSION_HANDOFF_CURRENT.md` (authoritative), `docs/P3_DETERMINISTIC_SEMANTIC_PROFILE.md` (acceptance), QA Issue #2.
+
 ## Read this first when switching conversations/tabs (HISTORICAL — superseded by current checkpoint)
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
@@ -495,7 +503,7 @@ A focused code audit identified that the group/date split key was counted toward
 
 ## How to continue in a new ChatGPT tab
 
-**CURRENT entry point (supersedes the old research-only prompt):** Open [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) and copy its final **COPY THIS INTO A NEW CHAT** paragraph. This is the single canonical transition prompt, including **current P1 Resource-Aware Mode work**, exact verified test boundaries, the next focused Windows action and project restrictions. Read the rest of this document only for prior investigations/history. If any older section disagrees with that short checkpoint, inspect newer Issue #2 comments and the current GitHub implementation before deciding.
+**CURRENT entry point (supersedes the old research-only prompt):** Open [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) and copy its final **COPY THIS INTO A NEW CHAT** paragraph. This is the single canonical transition prompt, including **current post-P3/P4-next engineering work**, exact verified test boundaries, the next focused Windows action and project restrictions. Read the rest of this document only for prior investigations/history. If any older section disagrees with that short checkpoint, inspect newer Issue #2 comments and the current GitHub implementation before deciding.
 
 ## Documentation update protocol
 
