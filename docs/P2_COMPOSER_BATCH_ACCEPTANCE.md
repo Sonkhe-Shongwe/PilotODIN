@@ -1,6 +1,6 @@
 # P2 controlled batch 1 — Save, Quality audit, and refresh integrity
 
-**25 October 2026. Implementation committed, owner Windows gate PENDING.**
+**25 October 2026. Owner-observed focused Windows PASS; the diagnostic ZIP was not uploaded for inspection.**
 
 ## Prior accepted scope
 P2 Report Open request ordering previously passed owner-observed Node source-contract and TypeScript/Vite checks. Its diagnostic ZIP was not independently inspected and no direct mounted React DOM race was demonstrated. P1 atomic upload staging and four P4 increments retain their accepted focused scopes.
@@ -29,3 +29,7 @@ One `pilotodin-p2-composer-batch-*.zip` preserves result JSON and both phase log
 
 ## Next owner action
 Pull `feature/live-dev-workspace-20261023` in GitHub Desktop, keeping local uncommitted work safe. Run `Run_PilotODIN_P2_Composer_Batch.bat` once. If red, provide `pilotodin-p2-composer-batch-*.zip`; if green, provide the PASS result. No installer, cloud Actions, Qwen/8 GB spike or real project edits during this gate.
+
+## Owner verification (25 October 2026)
+
+Owner screenshot from `Run_PilotODIN_P2_Composer_Batch.bat` shows `p2-composer-behavior-and-regressions: PASS`, `frontend-typescript-vite: PASS`, `P2 composer controlled batch: PASS` and the final success line. Printed local archive `pilotodin-p2-composer-batch-quomf182.zip` was not independently inspected. The combined pure-controller / affected-source-contract / Vite verification is ACCEPTED for this focused development scope, not real mounted React/Windows native reporting. Next controlled source batch is `docs/P2_REPORT_READ_SAFETY_ACCEPTANCE.md`.
