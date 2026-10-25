@@ -5,7 +5,8 @@
 [CmdletBinding()]
 param(
     [string]$ModelPath = '',
-    [string]$RuntimePath = ''
+    [string]$RuntimePath = '',
+    [string]$OutputPath = ''
 )
 $ErrorActionPreference = 'Stop'
 if($env:OS -ne 'Windows_NT'){
@@ -68,7 +69,13 @@ if(-not [string]::IsNullOrWhiteSpace($RuntimePath)){
 }
 # File locations, users, project names, models' filenames, local ports,
 # startup flags, and data records are intentionally absent from the JSON.
-$out = Join-Path $env:TEMP ('pilotodin-e2-inventory-' + [guid]::NewGuid().ToString('N').Substring(0,12) + '.json')
+$out = if([string]::IsNullOrWhiteSpace($OutputPath)){
+    Join-Path $env:TEMP ('pilotodin-e2-inventory-' + [guid]::NewGuid().ToString('N').Substring(0,12) + '.json')
+} else { $OutputPath }
+$parent = Split-Path -Parent $out
+if(-not (Test-Path -LiteralPath $parent -PathType Container)){
+    throw 'Requested inventory output directory does not exist.'
+}
 $probe | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $out -Encoding UTF8
 Write-Host ''
 Write-Host 'PilotODIN — Early E2 hardware inventory (NOT an offline or 8 GB pass)'
