@@ -198,7 +198,7 @@ def main()->int:
         backend_stream=backendlog.open("w",encoding="utf-8",errors="replace")
         backend=subprocess.Popen([sys.executable,"-m","uvicorn","backend.main:app",
              "--host","127.0.0.1","--port",str(backend_port),
-             "--lifespan","off","--no-access-log"],
+             "--lifespan","off"],
              cwd=ROOT,env=env,stdin=subprocess.DEVNULL,
              stdout=backend_stream,stderr=subprocess.STDOUT)
         ready(f"http://127.0.0.1:{backend_port}/api/projects/{fixture['project_a']}/reports")
