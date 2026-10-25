@@ -24,6 +24,14 @@ The owner supplied two generated verification output folders with complete `resu
 
 QA evidence register: [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
 
+## New A4-1/A4-2/A4-3 source verification checkpoint
+
+**Status:** These later A4 features and the consolidated runner update have NOT yet been run on the owner's Windows checkout. The two passing 99/149 suites above were on earlier commit `5bf174e3`, before A4-1/2/3.
+
+The next single run now covers: version-linked saved ML evaluations, frozen chart illustrations, explicit read-only Quality evidence, report source and revision integrity, original A2/A3 regressions, Node behavioural checks and a full frontend build. Do **not** quote 99/149 as the count for the new revision until the new JUnit and Node logs actually establish it.
+
+For double-click usability, the Windows launcher now pauses after execution so the output stays visible. Whether the run passes or fails, the runner also writes a **ZIP next to its uniquely named temporary result directory**, e.g. `%TEMP%\\pilotodin-p0-a4-readiness-xxxxxx.zip`. The exact location is printed on screen. The ZIP includes `result.json`, phase logs and backend JUnit diagnostics, and **excludes the isolated synthetic project data/models**. The script never uploads it to GitHub; review local paths within logs before sharing.
+
 ## Why this exists
 
 Replace multiple A2/A3 pull/run/screenshot cycles with a single local checkout and one reproducible command. The automation validates the existing deterministic A2/A3 and reporting/export foundations before A4 development; it deliberately does not claim full UI, installer, actual 8 GB or local-Qwen acceptance.
@@ -32,7 +40,7 @@ Replace multiple A2/A3 pull/run/screenshot cycles with a single local checkout a
 
 1. In GitHub Desktop select branch `feature/live-dev-workspace-20261023`, then **Fetch/Pull** the finished checkpoint once. Do not discard local modifications.
 2. Double-click `Run_PilotODIN_P0_A4_Verification.bat` from the repository root; alternatively run the isolated environment's `python.exe tools/Verify_P0_A4_Readiness.py`.
-3. Read the final `AUTOMATED P0/A4 READINESS: PASS/FAIL` result. The command prints a temporary results folder containing `result.json`, separate phase logs and Pytest JUnit XML. Share only the failure summary or redacted relevant logs if the run fails. Logs are local and are not uploaded automatically.
+3. Read the final `AUTOMATED P0/A4 READINESS: PASS/FAIL` result. The window remains open until you press a key. The command prints the **exact ZIP path**; share that single diagnostic ZIP after inspecting it for local path information. The underlying result directory retains JSON, logs and JUnit XML. None of the test data is bundled or uploaded automatically.
 
 ## Tool contract
 
@@ -41,7 +49,7 @@ Replace multiple A2/A3 pull/run/screenshot cycles with a single local checkout a
 - Creates unique temporary `PILOTODIN_HOME` and never accesses the existing production data directory through the test environment.
 - Runs frontend behavioural tests, one TypeScript/Vite production build, one backend syntax pass, then one deduplicated combined backend pytest pass.
 - Includes A2 Quality/Explore/report evidence, A3 ML and prediction, plus data-export and approval regressions already present in the repository.
-- Logs every phase (including failures), exits nonzero if any fail and records the commit being evaluated.
+- Logs every phase (including failures), exits nonzero if any fail, records the exact tested commit and creates a diagnostic ZIP **excluding synthetic project data**.
 - Does not use GitHub Actions, download models, build an installer, create a GitHub release, approve data changes or update QA automatically.
 - Some tests may touch synthetic local test fixtures or use TestClient; do not conflate with a UI/hardware result.
 
