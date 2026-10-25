@@ -550,9 +550,48 @@ def target_opportunity_overview(
             detail="Working dataset version changed. Refresh target recommendations before selecting a target.",
         )
     try:
-        return target_opportunities.recommend(frame, version)
+        return target_opportunities.recommend(
+            frame, version, storage.target_contexts(project_id, version)
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class TargetBusinessContextRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    target_column: str = Field(min_length=1, max_length=200)
+    outcome_definition: str = Field(min_length=10, max_length=600)
+    decision_action: str = Field(min_length=10, max_length=600)
+    prediction_moment: str = Field(min_length=10, max_length=500)
+    label_source: str = Field(min_length=10, max_length=500)
+
+
+@app.post("/api/projects/{project_id}/target-business-context")
+def save_target_business_context(
+    project_id: str, request: Request, body: TargetBusinessContextRequest
+):
+    """Persist only explicitly submitted user descriptions, NOT verified facts."""
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset version changed. Review current columns before saving context.",
+        )
+    if body.target_column not in frame.columns:
+        raise HTTPException(status_code=422,detail="Target column is not in the approved dataset version")
+    fields = (
+        body.outcome_definition, body.decision_action,
+        body.prediction_moment, body.label_source,
+    )
+    if any(not value.strip() or len(value.strip()) < 10 for value in fields):
+        raise HTTPException(status_code=422,detail="Each context description must contain at least 10 non-space characters")
+    if not body.target_column.strip():
+        raise HTTPException(status_code=422,detail="Target column cannot be blank")
+    return storage.save_target_context(
+        project_id, version, body.target_column, *(value.strip() for value in fields)
+    )
 
 
 @app.get("/api/projects/{project_id}/semantics")
