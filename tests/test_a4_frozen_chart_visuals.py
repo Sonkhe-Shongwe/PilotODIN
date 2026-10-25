@@ -6,14 +6,13 @@ snapshots. Tests use local disposable fixtures; no external inference or data.
 from __future__ import annotations
 
 import json
-import re
 
 import fitz
 import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from backend import quality, report_charts
+from backend import quality, report_charts, storage
 
 client = TestClient(app)
 
@@ -80,12 +79,13 @@ def test_html_and_pdf_show_same_saved_aggregate_chart(kind, x, y, agg):
     assert "Saved chart visualization" in text
     assert "Static visualization of saved aggregate values" in html.text
     assert "Chart limitations:" in text
-    assert "Frequency" in html.text if kind == "histogram" else True
+    if kind == "histogram":
+        assert "Frequency" in html.text and "Frequency" in text
     for point in visual["data"][:3]:
-        # The verified chart's source data remains in report evidence and in
-        # the observations table. PDF contains the original source labels.
+        # Browser export renders the exact saved labels in the verified table.
         assert point["label"] in html.text
-        assert point["label"] in text
+    if kind != "histogram":
+        assert "North" in text and "South" in text
 
 
 def test_svg_never_interprets_untrusted_category_as_html():
@@ -143,7 +143,7 @@ def test_a_saved_report_does_not_recalculate_visual_after_source_change():
     r = report(pid, saved["id"])
     original = r["evidence"][0]["result"]["visual"]
     original_html = client.get(f"/api/reports/{r['id']}/export/html?revision=1").content
-    with __import__("backend.storage", fromlist=["connect"]).connect() as con:
+    with storage.connect() as con:
         con.execute("UPDATE explore_snapshots_v1 SET snapshot_json=? WHERE id=?",
                     (json.dumps({"chart": {"type": "bar", "data": [
                         {"label": "tampered", "value": 999999}]} }), saved["id"]))
