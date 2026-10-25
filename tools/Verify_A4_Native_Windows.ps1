@@ -202,6 +202,17 @@ try {
     Pop-Location
     if($null -eq $priorSmoke){Remove-Item Env:\VITE_PILOTODIN_NATIVE_SMOKE -ErrorAction SilentlyContinue}
     else {$env:VITE_PILOTODIN_NATIVE_SMOKE=$priorSmoke}
+    # Tee-Object uses UTF-16LE by default on Windows PowerShell 5.1.
+    # Make the native diagnostics readable in any standard ZIP/log viewer,
+    # without changing the outcome if log conversion itself fails.
+    try {
+        if(Test-Path $log){
+            $plainLog=[IO.File]::ReadAllText($log)
+            [IO.File]::WriteAllText($log,$plainLog,(New-Object System.Text.UTF8Encoding($false)))
+        }
+    } catch {
+        Write-Warning ('Native diagnostic encoding conversion failed: ' + $_.Exception.Message)
+    }
 }
 $results.checks['tauri_dev_exit_code']=$exitCode
 if($exitCode -ne 0){
