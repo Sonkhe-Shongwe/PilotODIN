@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {FileDown,FileText,History,Save,ShieldCheck,AlertCircle,Plus,ArrowUp,ArrowDown} from 'lucide-react';
-import {get,post,downloadReportFile} from './api';
+import {get,post,downloadReportFile,saveReportNative} from './api';
+import {isDesktop} from './desktopBootstrap';
 import './report-workspace.css';
 
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
@@ -99,9 +100,18 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    try{
      const rev=revision??opened.revision;
      const {blob,filename}=await downloadReportFile(`/reports/${encodeURIComponent(activeId)}/export/${format}?revision=${rev}`);
-     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;
-     document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);
-     setNotice(`Started browser download for saved revision ${rev}: ${filename}. Confirm the file in Downloads. Native desktop Save As remains subject to Windows acceptance.`);
+     if(isDesktop()){
+       const outcome=await saveReportNative(blob,filename,format);
+       if(outcome.status==='cancelled'){
+         setNotice('Save As cancelled. No report file was written.');
+       }else{
+         setNotice(`Saved report revision ${rev} to ${outcome.filename??filename} using Windows Save As.`);
+       }
+     }else{
+       const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;
+       document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);
+       setNotice(`Started browser download for saved revision ${rev}: ${filename}. Confirm the file in Downloads.`);
+     }
    }catch(e){setError((e as Error).message)}finally{setBusy('')}
  }
  function shiftEvidence(id:string,by:number){
