@@ -143,6 +143,111 @@ def _explore_evidence(row: sqlite3.Row) -> dict:
     }
 
 
+
+def _model_evidence(row: sqlite3.Row) -> dict:
+    """Freeze a bounded, selected-model evaluation; never copy holdout row predictions.
+
+    An experiment is eligible only after the backend has completed training and
+    committed a one-time selected-model held-out evaluation. The report embeds
+    scalar metrics and aggregate class diagnostics, not evaluation_rows,
+    raw input values, pipelines, or joblib artifacts.
+    """
+    if row['status'] != 'completed' or not row['selected_model'] or not row['final_results']:
+        raise ReportError('Only completed, evaluated experiments can be reported', 403)
+    try:
+        config = json.loads(row['config'])
+        development = json.loads(row['results'])
+        final = json.loads(row['final_results'])
+    except (TypeError, ValueError) as exc:
+        raise ReportError('Stored experiment evaluation is not readable', 409) from exc
+    if not all(isinstance(item, dict) for item in (config, development, final)):
+        raise ReportError('Incomplete experiment evidence', 409)
+    task = config.get('task')
+    target = config.get('target')
+    if task not in ('classification', 'regression') or not isinstance(target, str) or not target:
+        raise ReportError('Experiment has no valid task or target', 409)
+    if development.get('task') != task or final.get('target') != target:
+        raise ReportError('Stored model evaluation does not match its experiment', 409)
+    models = development.get('models', [])
+    if not isinstance(models, list) or not any(isinstance(m, dict) and
+            m.get('key') == row['selected_model'] and m.get('status') == 'ready' for m in models):
+        raise ReportError('The selected model has no successful training record', 409)
+    version = config.get('quality_version', 0)
+    if isinstance(version, bool) or not isinstance(version, int) or version < 0:
+        raise ReportError('Experiment dataset version is invalid', 409)
+    primary = 'f1_macro' if task == 'classification' else 'mae'
+    if isinstance(final.get(primary), bool) or not isinstance(final.get(primary), (int, float)):
+        raise ReportError('Final held-out metric was not recorded', 409)
+
+    summary = {
+        'Prediction target': target,
+        'Task': task.title(),
+        'Selected model': row['selected_model'],
+        'Validation split': config.get('split_strategy', 'random'),
+        'Held-out observations': final.get('sample_count', development.get('test_rows')),
+    }
+    names = {
+        'accuracy': 'Held-out accuracy (fraction)',
+        'f1_macro': 'Held-out macro F1',
+        'precision_macro': 'Held-out macro precision',
+        'recall_macro': 'Held-out macro recall',
+        'roc_auc': 'Held-out ROC AUC',
+        'mae': 'Held-out MAE (target units)',
+        'rmse': 'Held-out RMSE (target units)',
+        'r2': 'Held-out R²',
+        'baseline_test_metric': 'Held-out simple baseline',
+        'baseline_test_label': 'Baseline metric',
+        'cv_score': 'Development CV score',
+        'baseline_cv': 'Development CV baseline',
+        'beats_heldout_baseline': 'Outperforms held-out baseline',
+    }
+    for key, label in names.items():
+        value = final.get(key)
+        if isinstance(value, (str, bool, int, float)) and value is not None:
+            summary[label] = value
+    diagnostics = []
+    if task == 'classification' and isinstance(final.get('class_report'), list):
+        for item in final['class_report'][:30]:
+            if not isinstance(item, dict):
+                continue
+            diagnostics.append({key: item.get(key) for key in
+                                ('label', 'precision', 'recall', 'f1', 'support')})
+    reliability = final.get('reliability', {})
+    if not isinstance(reliability, dict):
+        reliability = {}
+    cautions = reliability.get('issues', [])
+    if not isinstance(cautions, list):
+        cautions = []
+    cautions = [str(note)[:300] for note in cautions[:12] if isinstance(note, str)]
+    summary['Reliability assessment'] = str(reliability.get('message', 'Not independently validated'))[:300]
+    result = {
+        'summary': summary,
+        'data': diagnostics,
+        'note': ('Selected-model held-out evaluation, fixed after model selection. '
+                 'Probabilities may be uncalibrated; classification scores are not '
+                 'guarantees and regression R² is not accuracy.'),
+        'limitations': cautions,
+    }
+    # This digest is of the intentionally public-to-this-report projection,
+    # excluding holdout row-level predictions and model binary contents.
+    projection = json.dumps(result, sort_keys=True, ensure_ascii=False,
+                            allow_nan=False, separators=(',', ':'))
+    digest = hashlib.sha256(projection.encode('utf-8')).hexdigest()
+    return {
+        'id': row['id'], 'investigation_id': None,
+        'objective': 'Evaluate ' + target, 'dataset_version': version,
+        'operation': 'model_evaluation', 'params': {
+            'experiment_id': row['id'], 'target': target,
+            'selected_model': row['selected_model'],
+            'split_strategy': config.get('split_strategy', 'random'),
+            'split_column': config.get('split_column'),
+            'evaluation_projection_sha256': digest,
+        },
+        'result': result, 'tool_version': 'saved-ml-evaluation-v1',
+        'computed_at': row['created_at'],
+    }
+
+
 def _collect(con: sqlite3.Connection, pid: str, title: str, narrative: str, evidence_ids: list[str]):
     # Every source type is scoped to the CURRENT report project on the backend.
     # Never trust the browser's implied project or an arbitrary artifact ID.
@@ -166,6 +271,15 @@ def _collect(con: sqlite3.Connection, pid: str, title: str, narrative: str, evid
         if row['id'] in lookup:
             raise ReportError('Conflicting evidence identifiers from separate sources',409)
         lookup[row['id']] = _explore_evidence(row)
+    model_rows = con.execute(f'''SELECT id, project_id, config, results, final_results,
+        status, selected_model, created_at FROM experiments
+        WHERE id IN ({placeholders}) AND project_id=? AND status='completed'
+        AND selected_model IS NOT NULL AND final_results IS NOT NULL''',
+        (*evidence_ids, pid)).fetchall()
+    for row in model_rows:
+        if row['id'] in lookup:
+            raise ReportError('Conflicting evidence identifiers from separate sources', 409)
+        lookup[row['id']] = _model_evidence(row)
     if len(lookup) != len(evidence_ids):
         raise ReportError('Evidence is missing, unverified or belongs to another project', 403)
     evidence = [lookup[ident] for ident in evidence_ids]
@@ -233,6 +347,11 @@ def evidence_options(project_id: str):
         snapshots=con.execute("""SELECT * FROM explore_snapshots_v1
             WHERE project_id=?
             ORDER BY created_at DESC,rowid DESC LIMIT 50""",(project_id,)).fetchall()
+        model_rows=con.execute("""SELECT id, project_id, config, results,
+            final_results, status, selected_model, created_at FROM experiments
+            WHERE project_id=? AND status='completed' AND selected_model IS NOT NULL
+              AND final_results IS NOT NULL
+            ORDER BY created_at DESC,rowid DESC LIMIT 50""",(project_id,)).fetchall()
     options=[{'id':r['id'],'operation':r['operation'],'params':json.loads(r['params']),
               'version':r['dataset_version'],'stale':r['dataset_version']!=current,
               'objective':r['objective'],'created_at':r['created_at'],'source':'investigation'} for r in rows]
@@ -249,6 +368,22 @@ def evidence_options(project_id: str):
             'params':{'title':r['title'],'source_snapshot_sha256':r['sha256']},
             'version':r['dataset_version'], 'stale':r['dataset_version']!=current,
             'objective':r['title'],'created_at':r['created_at'],'source':'saved_explore'
+        })
+    # Evaluate each candidate through the same validator used when freezing
+    # report evidence. Never offer unfinished models or raw held-out rows.
+    for row in model_rows:
+        try:
+            art = _model_evidence(row)
+        except (ReportError, KeyError, ValueError, TypeError, OverflowError):
+            continue
+        options.append({
+            'id': row['id'], 'operation': 'model_evaluation',
+            'params': {'target': art['params']['target'],
+                       'selected_model': art['params']['selected_model']},
+            'version': art['dataset_version'],
+            'stale': art['dataset_version'] != current,
+            'objective': art['objective'], 'created_at': row['created_at'],
+            'source': 'saved_model_evaluation',
         })
     return sorted(options,key=lambda entry:(entry['created_at'],entry['id']),reverse=True)[:150]
 
