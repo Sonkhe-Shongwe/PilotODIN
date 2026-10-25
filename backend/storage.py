@@ -52,6 +52,18 @@ def init():
             deadline_at TEXT,
             FOREIGN KEY(experiment_id) REFERENCES experiments(id)
         );
+        CREATE TABLE IF NOT EXISTS target_business_context (
+            project_id TEXT NOT NULL,
+            quality_version INTEGER NOT NULL,
+            target_column TEXT NOT NULL,
+            outcome_definition TEXT NOT NULL,
+            decision_action TEXT NOT NULL,
+            prediction_moment TEXT NOT NULL,
+            label_source TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (project_id, quality_version, target_column),
+            FOREIGN KEY(project_id) REFERENCES projects(id)
+        );
         """)
 
 
@@ -129,6 +141,46 @@ def list_projects():
     with connect() as con:
         rows=con.execute("SELECT id,name,filename,created_at FROM projects ORDER BY created_at DESC").fetchall()
     return [dict(x) for x in rows]
+
+
+
+# Explicit USER-PROVIDED descriptions; storing them does not validate truth.
+def target_contexts(project_id: str, quality_version: int) -> dict[str, dict]:
+    with connect() as con:
+        rows=con.execute(
+            "SELECT target_column,outcome_definition,decision_action,"
+            "prediction_moment,label_source,updated_at FROM target_business_context "
+            "WHERE project_id=? AND quality_version=? ORDER BY target_column",
+            (project_id,quality_version),
+        ).fetchall()
+    return {row["target_column"]: dict(row) for row in rows}
+
+
+def save_target_context(project_id: str, quality_version: int, target_column: str,
+                        outcome_definition: str, decision_action: str,
+                        prediction_moment: str, label_source: str) -> dict:
+    timestamp=now()
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        con.execute(
+            "INSERT INTO target_business_context "
+            "(project_id,quality_version,target_column,outcome_definition,decision_action,"
+            "prediction_moment,label_source,updated_at) VALUES (?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(project_id,quality_version,target_column) DO UPDATE SET "
+            "outcome_definition=excluded.outcome_definition,"
+            "decision_action=excluded.decision_action,"
+            "prediction_moment=excluded.prediction_moment,"
+            "label_source=excluded.label_source,"
+            "updated_at=excluded.updated_at",
+            (project_id,quality_version,target_column,outcome_definition,decision_action,
+             prediction_moment,label_source,timestamp),
+        )
+    return {
+        "target_column":target_column,"outcome_definition":outcome_definition,
+        "decision_action":decision_action,"prediction_moment":prediction_moment,
+        "label_source":label_source,"updated_at":timestamp,
+        "verification_state":"user_described_not_independently_verified",
+    }
 
 
 def new_experiment(pid, config):
