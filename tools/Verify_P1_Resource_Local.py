@@ -58,13 +58,15 @@ def main() -> int:
         if code != 0:
             print("\n".join(log.read_text(encoding="utf-8", errors="replace").splitlines()[-18:]))
     result = {
-        "purpose": "P1 resource preference/physical RAM read-only settings",
+        "purpose": "P1 resource mode settings and bounded new-work admission preflight",
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "phases": checks,
         "status": "PASS" if all(c["result"] == "PASS" for c in checks) else "FAIL",
         "owner_dataset": "NOT_ACCESSED",
         "p0_a4_full_regressions": "NOT_RERUN",
-        "resource_preflight_and_heavy_task_scheduler": "NOT_IMPLEMENTED",
+        "resource_preflight": "IMPLEMENTED_IN_SOURCE_P1_LOW_MEMORY",
+        "durable_heavy_task_scheduler": "NOT_IMPLEMENTED",
+        "screening_floors_are_peak_ram_certification": False,
         "offline_qwen_and_real_8gb_combined_load": "NOT_TESTED",
     }
     (report / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
