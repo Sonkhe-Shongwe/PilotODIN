@@ -1,6 +1,6 @@
 """P3 bounded read-only semantic hypotheses from approved dataframe metadata.
 
-Evidence is limited to field names, stored dtypes and aggregate cardinality.
+Evidence is based on names, dtypes, counts and existing bounded role-shape checks.
 This never supplies confirmed business meanings, true event grain, or targets;
 all non-observed concepts are explicitly hypotheses and must be reviewed.
 """
@@ -175,5 +175,5 @@ def overview(frame: pd.DataFrame, version: int) -> dict:
         "observed": "Stored dtype, missing count and distinct count are measured on the approved working version.",
         "inferred": "Industry, record grain, timing, units and outcome meaning are unverified hypotheses.",
         "unknown": "Actual business purpose, row entity, unit conventions and label availability cannot be established without user context.",
-        "note": "Read-only local heuristics. No sample values, model training, data changes, inferred confidence scores or automatic target selection.",
+        "note": "Read-only local heuristics. No raw sample values returned, model training, data changes, inferred confidence scores or automatic target selection.",
     }
