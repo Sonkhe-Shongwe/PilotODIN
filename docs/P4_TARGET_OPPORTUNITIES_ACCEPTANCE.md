@@ -34,7 +34,7 @@ Earlier owner gates remain accepted: P3 `pilotodin-p3-repair-x8uxs9kq.zip` **9/9
 
 ## Regression package — owner gate not yet run
 
-- `tests/test_p4_target_opportunities.py`: **11 isolated synthetic tests** for insurance fraud-reported warning, rare class labels and too few records, completely unrelated numeric fields (abstention), plausible revenue regression without performance claims, identifiers/empty/constant labels, derived scores/probabilities/predictions, missing label aggregate privacy, over-cap labels, deterministic bounded suggestions, duplicate column refusal, project/version/local-origin safety and no new experiments.
+- `tests/test_p4_target_opportunities.py`: **12 isolated synthetic tests** for insurance fraud-reported warning, rare class labels and too few records, completely unrelated numeric fields (abstention), plausible revenue and time-to-resolution duration regression without performance claims, identifiers/empty/constant labels, derived scores/probabilities/predictions, missing label aggregate privacy, over-cap labels, deterministic bounded suggestions, duplicate column refusal, project/version/local-origin safety and no new experiments.
 - `frontend/tests/p4-target-opportunities-contracts.test.cjs`: **4 source-contract tests** for no AutoML calls, local/version GET guard, explicit user click + stale-preparation reset, and backend regression inventory.
 - Future `tools/Verify_P0_A4_Readiness.py` includes the new P4 Pytest file once. No hosted GitHub Action.
 
