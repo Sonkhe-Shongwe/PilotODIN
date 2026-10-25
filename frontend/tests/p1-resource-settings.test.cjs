@@ -77,3 +77,23 @@ test('Low-memory gate sits before any new ML experiment is persisted and leaves 
            local.indexOf('_call_ollama('));
  assert.match(local,/local_failed='resource_limited'/);
 });
+
+
+test('native bundled model request is screened before Tauri worker launch',()=>{
+ const api=read('frontend/src/api.ts');
+ assert.match(api,/\/resource\/preflight\?operation=local_inference/);
+ const startup=api.split('async function requestLocalAI(')[1]?.split('export async function get<T>')[0];
+ assert.ok(startup,'Native model startup helper must exist');
+ const readCheck=startup.indexOf("fetchLocal('/resource/preflight?operation=local_inference'");
+ const launch=startup.indexOf("invoke('launch_bundled_ai')");
+ assert.ok(readCheck>=0&&launch>=0&&readCheck<launch,
+           'Read-only resource preflight must precede any bundled model launch');
+ assert.match(startup,/preflight\.decision!=='allow'/);
+ assert.match(startup,/return 'resource_limited'/);
+ assert.match(startup,/return 'resource_preflight_unavailable'/);
+ assert.match(startup,/headers:authHeaders\(\)/);
+ const main=read('backend/main.py');
+ const preflight=main.split("def resource_preflight(")[1]?.split("@app.put('/api/resource/policy')")[0];
+ assert.ok(preflight&&preflight.includes('_local_request(request)'));
+ assert.match(preflight,/resource_policy\.admit_new_work\(operation\)/);
+});
