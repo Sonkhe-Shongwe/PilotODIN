@@ -2,6 +2,16 @@
 
 **Status (25 October 2026):** TWO independent owner Windows automated runs PASSED against commit `5bf174e328bebf9cfabbbb17cd46ffae687f7785`. This is automated A4 development-entry readiness, NOT full A3/A4 interactive sign-off or a release build.
 
+## Owner's first complete A4 consolidated Windows run (25 October 2026)
+
+**Executed against clean checkout `f9c122448e01af61f4aacf31c4229c27bb54ea6e`.** Owner supplied the generated single diagnostics ZIP `pilotodin-p0-a4-readiness-s_9yn_ur.zip`, including `result.json`, phase logs and pytest JUnit XML.
+
+- **Frontend:** 106/106 Node tests passed; TypeScript typecheck and Vite production build passed.
+- **Backend:** Python compile passed; 167 collected Pytest cases: **166 passed, 1 failed, 0 errors, 0 skipped**.
+- **Only failure:** `tests/test_a4_quality_audit_reporting.py::test_explicit_quality_capture_is_read_only_and_reportable`, which asserted the substring `preview` was absent from the string representation of all report evidence. The correct privacy disclaimer literally says "No record-level values, row identifiers, source previews ... are exported," triggering a **false-positive assertion** even though the preceding checks verified absence of synthetic private category strings and actual `preview` fields in the persisted audit. PDF/HTML checks later in that same test did not execute because the assertion stopped the test.
+- **Fix committed:** `53db533921ac2b4c5b08bd8056cf6e9f6d851c93` changes the test to assert absence of an actual `preview` result field and `row_values` key, not the harmless word in an explanatory sentence. No product or source-data change was necessary.
+- **Status:** Previous A4 source has been executed, with 166 cases passing. Full green A4 automated verification remains **PENDING one post-fix execution**; do not claim the edited test or full suite passed on the new commit. Native Windows Save As, physical 8 GB, bundled inference and complete manual PDF/UI acceptance are still untested.
+
 ## Actual owner Windows verification evidence (25 October 2026)
 
 The owner supplied two generated verification output folders with complete `result.json`, phase logs and backend JUnit XML. Both were inspected independently.
