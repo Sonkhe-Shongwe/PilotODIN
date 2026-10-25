@@ -18,6 +18,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 import xml.etree.ElementTree as ET
+from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 BRANCH = "feature/live-dev-workspace-20261023"
@@ -113,6 +114,29 @@ def run_phase(name: str, command: list[str], cwd: Path, home: Path, report: Path
             "seconds": elapsed, "log": log.name, "error": error}
 
 
+
+def package_results(report: Path, result: dict) -> Path:
+    """Bundle diagnostics only. Never include the isolated test projects or models."""
+    summary = report / "result.json"
+    summary.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+    archive = report.with_suffix(".zip")
+    files = sorted(report.glob("*.log"))
+    files += [file for file in (summary, report / "backend-junit.xml") if file.is_file()]
+    with ZipFile(archive, "w", compression=ZIP_DEFLATED) as bundle:
+        bundle.writestr(
+            "README.txt",
+            "PilotODIN automated A2/A3/A4 verification diagnostics.\n"
+            "The archive intentionally excludes isolated synthetic project data, model files "
+            "and raw datasets.\n"
+            "Review logs for local machine paths before sharing.\n"
+            "PASS here does not certify the desktop UI, native Save As or offline installer.\n"
+        )
+        for file in files:
+            bundle.write(file, arcname=file.name)
+    print(f"Shareable diagnostics ZIP: {archive}", flush=True)
+    return archive
+
+
 def main() -> int:
     report = Path(tempfile.mkdtemp(prefix="pilotodin-p0-a4-readiness-"))
     home = report / "isolated-app-data"
@@ -144,7 +168,7 @@ def main() -> int:
         blockers.append("Required test files missing: " + ", ".join(missing))
 
     result = {
-        "purpose": "P0 A2/A3 regression and A4 existing-foundation readiness",
+        "purpose": "P0 A2/A3 baseline regressions and A4-1/A4-2/A4-3 integration gate",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "branch": branch, "commit": commit, "uncommitted_changes": bool(dirty),
         "dataset_home": "isolated temporary folder (never production)",
@@ -158,7 +182,7 @@ def main() -> int:
         for reason in blockers:
             print(f"PRECHECK FAILED: {reason}")
         result["automated_status"] = "FAIL"
-        report_json.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        package_results(report, result)
         print(f"Summary: {report_json}")
         return 1
 
@@ -189,7 +213,7 @@ def main() -> int:
 
     passed = all(phase["status"] == "PASS" for phase in result["phases"])
     result["automated_status"] = "PASS" if passed else "FAIL"
-    report_json.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    package_results(report, result)
     print("\n" + "=" * 66)
     print(f"AUTOMATED P0/A4 READINESS: {result['automated_status']}")
     if "pytest_counts" in result:
