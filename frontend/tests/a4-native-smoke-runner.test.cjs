@@ -52,3 +52,15 @@ test('A4 Windows runner checks native prerequisites and includes regression diag
  assert.match(launcher,/Verify_A4_Native_Windows\.ps1/);
  assert.doesNotMatch(script,/Build_Windows_Installer|Stage_Bundled_Inference|Stage_Pinned_Offline_AI/);
 });
+
+
+test('A4 native runner does not abort PowerShell 5.1 on normal Tauri STDERR status',()=>{
+ const script=fs.readFileSync(path.join(base,'..','tools','Verify_A4_Native_Windows.ps1'),'utf8');
+ assert.match(script,/PowerShell 5\.1/);
+ assert.match(script,/\$previousErrorActionPreference=\$ErrorActionPreference/);
+ assert.match(script,/\$ErrorActionPreference='Continue'/);
+ assert.match(script,/2>&1 \| Tee-Object -FilePath \$log/);
+ assert.match(script,/\$exitCode=if\(\$null -eq \$LASTEXITCODE\)\{1\}else\{\[int\]\$LASTEXITCODE\}/);
+ assert.match(script,/\$ErrorActionPreference=\$previousErrorActionPreference/);
+ assert.match(script,/Launcher exception:/);
+});
