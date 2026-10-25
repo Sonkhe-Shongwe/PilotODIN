@@ -9,7 +9,10 @@ from __future__ import annotations
 import re
 import pandas as pd
 
-from . import column_intelligence
+try:
+    from . import column_intelligence
+except ImportError:  # Supports the documented direct-backend uvicorn development mode.
+    import column_intelligence
 
 MAX_FIELDS = 80
 DOMAIN_SIGNALS = {
