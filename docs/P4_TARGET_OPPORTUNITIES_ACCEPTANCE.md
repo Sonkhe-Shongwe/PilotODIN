@@ -1,6 +1,6 @@
 # P4 — Conservative prediction target opportunities (first increment)
 
-**25 October 2026: source implemented on active development branch; focused owner Windows verification PENDING.**
+**25 October 2026: first P4 screening increment OWNER-VERIFIED within focused synthetic Windows checks; further business-context increment is separate.**
 
 ## Product contract and reason for scope
 
@@ -40,7 +40,19 @@ Earlier owner gates remain accepted: P3 `pilotodin-p3-repair-x8uxs9kq.zip` **9/9
 
 **One focused Windows verification:** After pulling current `feature/live-dev-workspace-20261023`, run `Run_PilotODIN_P4_Target_Opportunities.bat`. It calls `tools/Verify_P4_Target_Opportunities_Local.py`, running **P4 new Pytests + adjacent accepted P3 semantic Pytests (affected API imports)**, P4 + P3 Node source contracts and **one TypeScript/Vite build** (new UI component and App changes). Isolated synthetic `PILOTODIN_HOME`, one `pilotodin-p4-targets-*.zip` in Windows Temp. If fails, upload that ZIP; if passes, send PASS and no repeated old P5/P0/A4 standalone tests are needed.
 
-**Verification honesty:** Source files were written to GitHub and re-fetched/source-inspected; **no NEW P4 Pytest/Node/Vite execution on owner's Windows machine has yet occurred**. Do not mark P4 green based on P3/P5 passes.
+**Historical pre-acceptance note (superseded):** Source was once pending Windows checks; the green owner ZIP above establishes first-increment focused acceptance only.
+
+## Owner P4 first-increment verification — PASS (25 October 2026)
+
+The owner ran `Run_PilotODIN_P4_Target_Opportunities.bat` and uploaded **`pilotodin-p4-targets-tunirk21.zip`**. Its **four actual files were inspected**: `result.json`, `p4-target-and-p3-backend.log`, `p4-target-ui-contracts.log`, `frontend-typescript-vite.log`.
+
+- Runner timestamp **2026-10-25T19:39:55.547843+00:00**, overall **PASS**, all three phase exit codes **0**.
+- Backend **21/21 Pytests PASS in 5.82s**, including 12 new P4 target-screening regressions + nine P3 semantic compatibility regressions.
+- Node contracts **8/8 PASS**, 0 failed/skipped, ~200ms, across P4 and P3 UI/API source contracts.
+- **TypeScript `tsc --noEmit` and Vite build PASS**; 1,620 transformed modules; build 3.90s. Non-blocking bundle >500 kB warning.
+- Isolated synthetic tests, `original_datasets_accessed=false`, no real project/user dataset modification. Native Tauri smoke, manual business-context verification and offline Qwen/8 GB were **NOT TESTED**.
+
+**Acceptance boundary:** first P4 structural screening, bounded unverified shortlist/abstention, explicit target review, origin + version guard and stale preparation protection passed focused automated Windows verification. This is NOT confirmed business decision-value ranking, user-reviewed label provenance or permission to auto-train. No repeat of these unchanged first-increment checks is required.
 
 ## Next after one green focused gate
 
