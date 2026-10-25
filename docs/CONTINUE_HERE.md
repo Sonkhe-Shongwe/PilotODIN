@@ -34,6 +34,15 @@ Following A4-1 selected-model report evidence, a new bounded presentation layer 
 
 **No execution of these new A4 tests or rendered output in owner Windows was demonstrated.** Continue with automated-test-first A4 improvements and one combined final owner test only when source is sufficiently frozen. The earlier A2/A3 99-frontend/149-backend pass evidence is the baseline for the earlier pre-A4 commit, not an A4 signoff. See [A4 Deliver acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md) and [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
 
+## A4-3 checkpoint: Quality audit reports and tamper-proof exports (25 October 2026)
+
+- Explicit Deliver action **Capture current Quality audit** calls `POST /api/projects/{project_id}/report-quality` with the current approved Quality version. It freezes only aggregate findings/counts, current active-approved-action count, exact dataset version, source digest and static cautions in `report_quality_audits_v1`. No approval or edit occurs, and no preview rows, user-specific category example strings, replacement values or raw receipt data enter the report evidence.
+- Project-scoped audited Quality snapshots appear in Deliver alongside Explore/investigation/selected ML exhibits. They are digest-verified before save, retained at the original dataset version, and marked historical on subsequent version changes.
+- All saved report revisions now reverify `content_sha256` on load/export, rejecting tampered or unreadable revision blobs with 409.
+- Frontend now checks report HTTP MIME type and HTML/PDF signature before initiating download, and reports **download started** rather than claiming a successful disk save. Native Save As remains unverified/unimplemented in the new A4-3 changes and stays a later Windows integration requirement.
+- Added `tests/test_a4_quality_audit_reporting.py`, `frontend/tests/a4-quality-export-gates.test.cjs` to the consolidated verification inventory. **All post-baseline A4-1/A4-2/A4-3 tests remain UNEXECUTED on owner's Windows clone.** Historic 99 frontend /149 backend passes covered the prior P0 commit only; don't describe these A4 features as tested or release-accepted.
+- Next planned milestone: finish any narrow A4 UX/test corrections, then **one consolidated local automated test followed by one manual Windows acceptance session**, not repeated owner pulls after each commit. Detail: [A4 acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md), [QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
