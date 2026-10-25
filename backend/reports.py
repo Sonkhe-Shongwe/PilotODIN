@@ -228,7 +228,9 @@ def capture_quality(project_id: str, expected_version: int) -> dict:
                          'Findings are screening observations, not confirmed errors; '
                          'no corrections were applied by this capture.'),
                 'limitations': [
-                    'Only the first 35 findings are displayed; counts cover all detected findings.',
+                    ('Only the first 35 findings are displayed; counts cover all detected findings.'
+                     if len(issues) > MAX_QUALITY_FINDINGS
+                     else 'All detected findings are included for this version.'),
                     'No record-level values, row identifiers, source previews or proposed replacement values are exported.',
                     'Working corrections shown are version-scoped, and the uploaded source remains immutable.',
                 ],
