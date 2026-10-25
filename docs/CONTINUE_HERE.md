@@ -209,6 +209,20 @@ Owner executed `tools/Verify_P0_A4_Readiness.py` on the Windows development bran
 
 Next engineering decision after these P0 gates: remaining P1 project/data reliability and bounded early E2 offline 8GB local inference feasibility before advanced P6/P7 autonomy. Do not mark full P0 complete from source contracts alone.
 
+## P0/A4 latest consolidated Windows automation — 117 FRONTEND + 174 BACKEND PASS (25 October 2026)
+
+**Owner-uploaded ZIP examined:** `pilotodin-p0-a4-readiness-y779zqgh.zip`. Independently read its `result.json`, the frontend Node log, Vite/TypeScript build log, backend syntax log, backend Pytest log, and backend JUnit XML. The run reports branch `feature/live-dev-workspace-20261023` at `c711c15a2d0ab8b188dae63e25f15ae9c7f627c5`, timestamp 2026-10-25 13:37:24 UTC (15:37 SAST).
+
+- **Four phases all PASS**, `preflight_blockers=[]`, `automated_status=PASS`.
+- **Frontend:** Node test runner explicitly reports **117 tests, 117 passed, 0 failures/skips**. This includes the newly added stale Save/Open response guards for saved Explore investigations.
+- **TypeScript/Vite:** `tsc --noEmit && vite build` PASS, Vite v6.4.5.
+- **Python syntax:** PASS.
+- **Backend:** Pytest explicitly reports **174 passed, 0 failed, 0 errors, 0 skipped**; the backend JUnit XML confirms those same 174 cases. This includes the newly corrected synthetic ML train/select/reopen/predict/version-isolation test and immutable A4 report revision tests.
+- **Evidence caveat:** `result.json` reports `uncommitted_changes=true`. This is an actual green run of the owner working tree at reported HEAD, **not proof of a clean exact-commit reproduction**. Determine whether the local changes are only generated `frontend/src-tauri/Cargo.lock` or something substantive before a release checkpoint; do not discard or silently commit user edits.
+- **Acceptance boundary:** `manual_acceptance=PENDING`; offline 8 GB and native **release** explicitly `NOT TESTED`. Native **development** PDF/HTML Save As and Cancel were separately owner-confirmed PASS earlier. No implication that full A2/A3 UI acceptance, installer, Qwen inference, recovery and Build E E-01–E-24 are closed.
+
+**Next step:** Follow `docs/P0_A2_A3_UI_CLOSEOUT.md` as a *single* existing-project UI session: switch projects if another project exists, reopen the saved Logistic Regression model Evaluate-first, verify invalid insurance incident hour rejection, and restore a current saved Explore investigation; historical read-only only if an existing snapshot already exists. Do not rerun the same automated suite or native Save As needlessly; do not reimport/retrain/approve data changes for acceptance. Address any real defects identified by the UI session before P1 and early bounded E2/offline 8 GB feasibility.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
