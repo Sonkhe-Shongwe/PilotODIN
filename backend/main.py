@@ -189,14 +189,27 @@ async def create_project(file: UploadFile = File(...)):
         raise HTTPException(status_code=413,detail="File exceeds local 40 MB limit")
     if not b: raise HTTPException(status_code=400,detail="Empty file")
     path=storage.HOME / "datasets" / f"{storage.uid()}{ext}"
-    path.write_bytes(b)
+    # Do not expose a partially written upload as an immutable source file.
+    # A unique staging name is deleted after catchable write/rename failures.
+    staging=path.with_name(path.name+".uploading")
     pid=None
     try:
+        with staging.open("xb") as output:
+            output.write(b)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(staging,path)
         df=engine.read_data(str(path),ext)
         prof=engine.profile(df,filename)
         pid=storage.save_project(Path(filename).stem,filename,ext,path,prof)
         quality.register(pid)  # Anchor the immutable source hash at upload.
     except Exception as e:
+        staging_cleanup_failed=False
+        try:
+            staging.unlink(missing_ok=True)
+        except OSError:
+            staging_cleanup_failed=True
+            logging.exception("Failed to remove interrupted upload staging file")
         try:
             _rollback_failed_project_import(pid, path)
         except Exception:
@@ -205,6 +218,11 @@ async def create_project(file: UploadFile = File(...)):
             logging.exception("Import rollback incomplete; manual workspace recovery is required")
             raise HTTPException(status_code=500,
                                 detail="Import failed and could not be rolled back safely. Check local logs before retrying.") from e
+        if staging_cleanup_failed:
+            raise HTTPException(
+                status_code=500,
+                detail="Import failed and temporary upload cleanup was incomplete. Check local logs before retrying.",
+            ) from e
         raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}") from e
     return {"id":pid,"name":Path(filename).stem,"profile":prof}
 
