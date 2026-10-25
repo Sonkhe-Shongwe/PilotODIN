@@ -32,3 +32,11 @@
 .pd-report-order-button:disabled{opacity:.36;cursor:not-allowed}
 .pd-report-order-button:focus-visible{outline:3px solid #148F9B;outline-offset:2px}
 .pd-report-export>button:disabled{opacity:.48;cursor:not-allowed}
+
+/* A4: a Quality audit must be explicitly captured without writing to the dataset. */
+.pd-report-quality-capture{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid #cee5e8;border-radius:11px;background:#f5fbfb;margin-bottom:16px;flex-wrap:wrap}
+.pd-report-quality-capture>div{display:flex;flex-direction:column;gap:5px;flex:1;min-width:180px}
+.pd-report-quality-capture strong{font-size:13px;color:#234357}
+.pd-report-quality-capture small{font-size:11px;line-height:1.5;color:#587184}
+.pd-report-quality-capture button{min-height:38px;white-space:normal;text-align:center}
+.pd-report-quality-capture button:focus-visible{outline:3px solid #148f9b;outline-offset:2px}
