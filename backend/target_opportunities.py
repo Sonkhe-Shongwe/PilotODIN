@@ -6,17 +6,15 @@ before training. Never fit a model or score target 'predictability' here.
 """
 from __future__ import annotations
 
-import math
 import re
 
 import numpy as np
 import pandas as pd
 
 try:
-    from . import engine, semantic_profile
+    from . import engine
 except ImportError:  # Support direct-backend development launches.
     import engine
-    import semantic_profile
 
 MAX_SUGGESTIONS = 3
 MAX_BLOCKED_EXAMPLES = 5
@@ -92,6 +90,13 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     risks: list[str] = []
     task: str | None = None
     min_class: int | None = None
+    normalized = _normalized(name)
+    if normalized.startswith(("predicted_", "prediction_")) or normalized.endswith(
+        ("_score", "_probability", "_prediction")
+    ) or "target_encoded" in normalized:
+        blockers.append(
+            "This looks like a prediction, score, probability or target-derived feature, not a verified ground-truth outcome."
+        )
     if _is_identifier(name):
         blockers.append("The header resembles a record identifier, not an outcome.")
     if _is_date(name, series):
@@ -128,7 +133,6 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
         blockers.append(
             f"{labelled:,} labelled rows exceed the current {engine.MAX_ML_LABELLED_ROWS:,}-row local ML cap."
         )
-    normalized = _normalized(name)
     if any(x in normalized for x in LEAKAGE_TERMS):
         risks.append("Header indicates possible post-outcome leakage or a derived label.")
     if any(x in normalized.split("_") for x in SENSITIVE_TERMS):
