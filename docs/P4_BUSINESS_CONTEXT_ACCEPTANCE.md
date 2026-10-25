@@ -1,12 +1,12 @@
 # P4 second increment — version-bound user-described target business context
 
-**25 October 2026 — source committed, owner Windows focused verification PENDING.**
+**25 October 2026 — focused development acceptance: PASS from combined owner Windows evidence (initial backend ZIP and subsequent repair PASS screenshot). Not a release or full native end-to-end claim.**
 
 ## Established accepted baseline
 
 The previous **first P4 target-opportunity screening** is owner-accepted within isolated synthetic Windows checks, from inspected `pilotodin-p4-targets-tunirk21.zip`: `result.json` timestamp **2026-10-25T19:39:55.547843+00:00**, all three phases PASS/exit 0. Backend **21/21 PASS in 5.82s** (12 P4 + nine P3); Node **8/8 PASS** (P4 + P3); TypeScript/Vite **PASS**, 1,620 modules and 3.90s build; only non-blocking >500 kB bundle warning. `original_datasets_accessed=false`; native Tauri and offline 8GB/Qwen not tested.
 
-This *new* second increment must be verified separately, without replaying the old full P4 first-stage suite, P3, P5 or P0/A4.
+This second increment was verified separately using the initial owner diagnostic plus a targeted frontend-only repair; no replay of previous P3, P5 or P0/A4 milestones was required.
 
 ## Boundaries and rationale
 
@@ -25,9 +25,9 @@ The original P4 screen could flag plausible target labels but **could not know**
 - New `frontend/tests/p4-business-context-contracts.test.cjs`: **four source-contract tests** for additive version-scoped SQLite schema, guarded POST, explicit editor click/no training, and no bypass of prior P4 abstention/technical blocks.
 - Existing `frontend/tests/p4-target-opportunities-contracts.test.cjs` updated to accurately reflect user-context status wording, tested alongside new Node checks. Affected front-end components are rebuilt with `tsc --noEmit && vite build`.
 - Future comprehensive backend suite registers new Python module once.
-- **ONE pending owner Windows check:** Pull active `feature/live-dev-workspace-20261023` and run `Run_PilotODIN_P4_Business_Context.bat` once. It invokes `tools/Verify_P4_Business_Context_Local.py`: focused new/affected P4 Python modules, four new plus four existing P4 Node source-contract tests and frontend TypeScript/Vite build. Isolated temporary `PILOTODIN_HOME`; one `pilotodin-p4-context-*.zip` diagnostics archive. On failure share that ZIP, not repeated broad old tests.
+- **Completed two-stage owner verification:** Initial `Run_PilotODIN_P4_Business_Context.bat` produced `pilotodin-p4-context-e0u_snsi.zip`, whose `result.json` and logs were inspected: 17/17 backend PASS, Node 6/8 with two obsolete source signature checks, TypeScript/Vite parse FAIL from one missing JSX `}`. Repairs to only `TargetOpportunities.tsx` and the two outdated Node assertions were committed with new `Run_PilotODIN_P4_Business_Context_Repair.bat`. Owner executed the repair BAT and supplied a screenshot clearly showing `p4-context-ui-contracts: PASS`, `frontend-typescript-vite: PASS`, and `P4 repair: PASS` plus successful exit text. The repair ZIP path `pilotodin-p4-context-repair-s25enjdi.zip` was shown, but the ZIP/logs were **not** uploaded or independently inspected. The repair runs only affected frontend tests/build; the earlier inspected 17/17 backend result remains accepted.
 
-**Verification honesty:** All new source was committed and reviewed but **no owner Windows run for the second increment is yet recorded**. The earlier P4 21/8/Vite result applies ONLY to the first increment.
+**Verification honesty:** Second P4 increment is **accepted for focused development** from the inspected first backend ZIP and owner screenshot of the subsequent frontend repair PASS. No measured timings or independently reviewed phase logs for the repair are asserted; the screenshot is the evidence for those PASS labels. No real project Windows UX, packaged Tauri, disconnected Qwen, total 8 GB peak or all E-01–E-24 scenarios were proven. The earlier first P4 21/8/Vite result remains separate acceptance for that previous increment.
 
 ## Next after acceptance
 
