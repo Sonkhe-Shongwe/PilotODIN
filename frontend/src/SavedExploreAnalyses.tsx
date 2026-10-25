@@ -31,12 +31,18 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
  const [notice,setNotice]=useState('');
  const frozenRef=useRef<HTMLDivElement|null>(null);
  const [openRevealSequence,setOpenRevealSequence]=useState(0);
+ // Every project/version transition invalidates in-flight save, open and
+ // library refreshes. Backend project scoping is still authoritative, but
+ // old HTTP responses must never replace the new workspace's UI.
+ const generation=useRef(0);
 
  useEffect(()=>{
-  let active=true;setList([]);setSelected(null);setOpenRevealSequence(0);setTitle('');setError('');setNotice('');
-  get<SavedSummary[]>(`/projects/${projectId}/explore/saved`).then(result=>{if(active)setList(result)})
-   .catch(e=>{if(active)setError((e as Error).message)});
-  return()=>{active=false};
+  const request=++generation.current;
+  setList([]);setSelected(null);setOpenRevealSequence(0);setTitle('');setError('');setNotice('');setBusy('');
+  get<SavedSummary[]>(`/projects/${projectId}/explore/saved`)
+   .then(result=>{if(generation.current===request)setList(result)})
+   .catch(e=>{if(generation.current===request)setError((e as Error).message)});
+  return()=>{generation.current++};
  },[projectId,version]);
 
  // Navigation belongs to an explicit Open action, not a Save or initial render.
@@ -52,21 +58,32 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
  },[openRevealSequence,selected?.id]);
 
  async function saveCurrent(){
-  if(!ready||version===null||!title.trim())return;
+  if(!ready||version===null||!title.trim()||busy!=='')return;
+  const request=generation.current;
   setBusy('save');setError('');setNotice('');
   try{
    const result=await post<SavedAnalysis>(`/projects/${projectId}/explore/saved`,{
      title:title.trim(),expected_version:version,...configuration
    });
+   if(generation.current!==request)return;
+   if(result.project_id!==projectId||result.dataset_version!==version){
+     throw new Error('Saved analysis does not match the active project and dataset version.');
+   }
    setSelected(result);setTitle('');
-   setList(await get<SavedSummary[]>(`/projects/${projectId}/explore/saved`));
+   const refreshed=await get<SavedSummary[]>(`/projects/${projectId}/explore/saved`);
+   if(generation.current!==request)return;
+   setList(refreshed);
    setNotice(`Saved verified analysis "${result.title}" for dataset version ${result.dataset_version}.`);
-  }catch(e){setError((e as Error).message)}finally{setBusy('')}
+  }catch(e){if(generation.current===request)setError((e as Error).message)}
+   finally{if(generation.current===request)setBusy('')}
  }
  async function openSaved(id:string){
+  if(busy!=='')return;
+  const request=generation.current;
   setBusy('open');setError('');setNotice('');
   try{
    const saved=await get<SavedAnalysis>(`/projects/${projectId}/explore/saved/${encodeURIComponent(id)}`);
+   if(generation.current!==request)return;
    if(saved.project_id!==projectId)throw new Error('Saved analysis belongs to another project');
    setSelected(saved);
    setOpenRevealSequence(n=>n+1);
@@ -76,7 +93,8 @@ export function SavedExploreAnalyses({projectId,version,configuration,onRestore,
    }else{
      setNotice(saved.configuration_verified?'Historical snapshot opened read-only. Live filters and charts have not changed.':'Legacy saved results opened read-only. Settings are not integrity-verified and cannot be restored or attached as verified report evidence.');
    }
-  }catch(e){setError((e as Error).message)}finally{setBusy('')}
+  }catch(e){if(generation.current===request)setError((e as Error).message)}
+   finally{if(generation.current===request)setBusy('')}
  }
 
  return <section className="panel po-saved-analyses" aria-label="Saved analytical investigations">
