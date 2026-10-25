@@ -165,6 +165,38 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     }
 
 
+def _assessment_axes(candidate: dict) -> dict:
+    """Two independent evidence states, never numeric success or business-value scores."""
+    has_description = candidate.get("user_context") is not None
+    technical_state = (
+        "structurally_reviewable" if candidate["technical_status"] == "reviewable"
+        else "structurally_blocked"
+    )
+    return {
+        "technical": {
+            "state": technical_state,
+            "basis": "observed_aggregates_and_structural_screening",
+            "labelled_rows": candidate["labelled_rows"],
+            "distinct_labels": candidate["distinct_labels"],
+            "smallest_class": candidate["smallest_class"],
+            "limitations": (
+                "Structural screening does not verify when predictors existed, "
+                "leakage-free validation, or achievable model performance."
+            ),
+        },
+        "decision": {
+            "state": "user_described_unverified" if has_description else "undocumented",
+            "basis": "user_description_only" if has_description else "no_user_description",
+            "limitations": (
+                "Decision usefulness, ethical or legal suitability, and label truth "
+                "have not been independently verified."
+            ),
+        },
+        "review_required": True,
+        "safe_to_train_automatically": False,
+    }
+
+
 def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = None) -> dict:
     if not frame.columns.is_unique:
         raise ValueError("Target recommendations require unique column names")
@@ -191,6 +223,7 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
         candidate["risk_review"] = target_timing_review.review_prediction_context(
             frame.columns, name, candidate["user_context"]
         )
+        candidate["assessment_axes"] = _assessment_axes(candidate)
         (suggestions if candidate["technical_status"] == "reviewable" else blocked).append(candidate)
     # Observed labelled support is a deterministic ordering aid, not a
     # validation score or a claim of decision value/predictive performance.

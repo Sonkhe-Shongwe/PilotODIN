@@ -11,6 +11,14 @@ type Opportunity={
  possible_decision_question:string;labelled_rows:number;missing_labels:number;
  distinct_labels:number;smallest_class:number|null;observed_evidence:string[];
  blockers:string[];review_warnings:string[];safe_to_train_automatically:false;
+ assessment_axes?:{
+  technical:{state:'structurally_reviewable'|'structurally_blocked';
+   basis:'observed_aggregates_and_structural_screening';
+   labelled_rows:number;distinct_labels:number;smallest_class:number|null;limitations:string};
+  decision:{state:'user_described_unverified'|'undocumented';
+   basis:'user_description_only'|'no_user_description';limitations:string};
+  review_required:true;safe_to_train_automatically:false
+ };
  risk_review?:{
   status:'needs_human_review'|'context_missing';
   verification:'unverified_user_text_and_header_clues';
@@ -64,6 +72,11 @@ export function TargetOpportunities({
         <p className="muted-caption">{item.possible_decision_question}</p>
         <p className="muted-caption">Technical status: reviewable, not approved. Business relevance: {item.user_context?'user-described, not independently verified':'unknown until you describe the intended decision'}.</p>
         {item.user_context&&<p className="muted-caption"><strong>Recorded user context:</strong> {item.user_context.outcome_definition.slice(0,160)}. Decision: {item.user_context.decision_action.slice(0,160)}.</p>}
+        {item.assessment_axes&&<div className="mini-info" aria-label="Two-axis prediction opportunity assessment">
+         <p className="muted-caption"><strong>Technical readiness:</strong> {item.assessment_axes.technical.state==='structurally_reviewable'?'Structurally reviewable, not validated':'Structurally blocked'}; {item.assessment_axes.technical.labelled_rows.toLocaleString()} observed labels across {item.assessment_axes.technical.distinct_labels.toLocaleString()} distinct values.</p>
+         <p className="muted-caption"><strong>Decision relevance:</strong> {item.assessment_axes.decision.state==='user_described_unverified'?'User-described, not independently verified':'Undocumented; business decision still unknown'}.</p>
+         <p className="muted-caption">Two separate evidence states, not model accuracy or a business-value score. Human review is always required.</p>
+        </div>}
         <TargetContextEditor projectId={projectId} version={version} column={item.column} existing={item.user_context??null} onSaved={()=>setRefresh(n=>n+1)}/>
         {item.risk_review&&<details className="po-risk-review">
          <summary>Prediction timing and label provenance: review required</summary>

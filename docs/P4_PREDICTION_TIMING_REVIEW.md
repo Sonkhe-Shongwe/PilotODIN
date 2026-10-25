@@ -1,6 +1,6 @@
 # P4 increment 3 — conservative prediction timing and label provenance review
 
-**25 October 2026: code/source batch prepared; owner Windows execution PENDING.**
+**25 October 2026: owner-observed Windows focused gate PASS.**
 
 ## Why this increment exists
 P4's first owner-accepted increment screens structurally plausible target labels. Its second accepted increment captures four user-provided descriptions (outcome meaning, decision, prediction moment and historical label source) scoped to project, approved Quality version and target. Those descriptions are NOT independent business or temporal evidence.
@@ -14,8 +14,12 @@ This third increment adds a read-only **review aid**, not a gate that establishe
 - Input source remains the existing local/version-scoped `GET /api/projects/{id}/target-opportunities`, guarded by local-origin/version/project checks. No other project or dataset version context is fetched.
 - Explicit non-goals: claiming that text verifies label provenance, training permission, suitable split, timing correctness, fairness or causation; returning derived predictive accuracy; sending context to cloud.
 
-## One focused Windows acceptance gate, NOT YET RUN
+## Focused Windows acceptance, owner-observed PASS
 `Run_PilotODIN_P4_Prediction_Timing.bat` calls `tools/Verify_P4_Prediction_Timing_Local.py` using `.venv-live\Scripts\python.exe` and isolated synthetic `PILOTODIN_HOME`. Three phases: new P4 review Python + directly affected two old P4 Python modules; new P4 Node source contracts + directly affected two old P4 Node contracts; `npm run build` (TypeScript and Vite). One `pilotodin-p4-timing-*.zip` with result.json and phase logs. If FAIL upload ZIP for targeted repair; if PASS report PASS. Do not repeat P0/A4/P1/P3/P5, run hosted GitHub Actions or fetch Qwen.
 
 ## Acceptance limits
-Source-only implementation and test definitions are not execution evidence. Owner Windows gate remains **PENDING** until actual test output arrives. Even successful focused tests would not prove a real Windows installed app, 8 GB combined AI/ML feasibility, full native UX or any of E-01–E-24. Preserve original immutability, exact Quality approval, explicit target choice and scientifically sound ML preparation.
+Source-only implementation and test definitions are not execution evidence. Owner screenshot confirms backend, Node and frontend TypeScript/Vite phase PASS and overall PASS; repair ZIP itself was not uploaded or independently reviewed, so granular timing and counts remain unclaimed. Even successful focused tests would not prove a real Windows installed app, 8 GB combined AI/ML feasibility, full native UX or any of E-01–E-24. Preserve original immutability, exact Quality approval, explicit target choice and scientifically sound ML preparation.
+
+## Accepted owner screenshot, 25 October 2026
+
+Owner provided Windows console screenshot for this exact launcher: backend PASS, Node PASS, TypeScript/Vite PASS, overall P4 timing review gate PASS. Diagnostic ZIP path `pilotodin-p4-timing-75gawth0.zip` appeared locally, but its contents were not uploaded or inspected. **Focused development acceptance PASS**, not a statement of native real-user workflows or offline E2 / final release certification. Next source increment is the two-axis evidence display in `docs/P4_TWO_AXIS_EVIDENCE_ACCEPTANCE.md`.
