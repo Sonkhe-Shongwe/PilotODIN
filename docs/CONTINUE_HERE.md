@@ -174,6 +174,19 @@ Owner screenshot of a **new native Windows attempt after installing Microsoft C+
 
 **Recommended order before advanced work:** identify compact remaining P0 A2/A3/manual persistence/project-isolation blockers, close P1 dataset/project reliability, finish only essential residual A4 report polish at P2. Run a **bounded early E2 local 8GB/offline inference feasibility spike** before committing to complex ODIN/Master dependencies. P3 deterministic shared semantics; P4 value-aware target rankings requiring **explicit user target selection**; P5 minimal durable tasks; P6 Master Analyst + Scientist built from existing engines; P7 advanced orchestration/real local ODIN; P8 integrated standalone offline installer and 24 original E scenarios. See [QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2#issuecomment-6397955479) and [consolidated roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md).
 
+## P0 closeout batch started after native A4 Save As PASS (25 October 2026)
+
+User explicitly confirmed native Tauri DEV ONLY PDF/HTML Save As + no-file cancellation; this remains a **PASSED development export milestone**. The next development priority is **P0 correctness and persistence acceptance**, not another installer or repetitive manual browser check.
+
+Two NEW backend regression scenarios committed on `feature/live-dev-workspace-20261023`:
+
+1. `tests/test_p0_ml_persistence_version_journey.py`: real FastAPI `TestClient` CSV imports for TWO synthetic projects; real background ML train, persisted pipeline and fixed held-out selection, reopen from another API client, valid and invalid insurance-domain prediction cases, **explicit reviewed Quality approval receipt** advancing working data v0→v1, historical metric/selection immutability, stale prediction/model reuse refusal, stale training preflight rejection, cross-project experiment listing isolation and uploaded-source byte preservation. Test uses a per-case `tmp_path`, monkeypatches `storage.HOME` and `storage.DB_PATH` and does not touch the owner's dev/installed project data.
+2. `tests/test_build_e_persistent_reports.py::test_report_reorder_creates_new_revision_without_rewriting_prior_exports`: real project and two evidence sources, reversal in rev2, previous rev1 hash/content preserved, matching HTML/PDF ordering in both revisions, no unintended Quality mutation.
+
+The new ML test is included exactly once in `tools/Verify_P0_A4_Readiness.py`; the updated reporting test module was already in the runner. **Source files were re-fetched and audited, but these NEW tests have not yet been executed locally on Windows.** Do NOT count them in the previous `114 frontend / 172 backend` PASS suite, whose last execution predates these additions.
+
+**Next high-value gate:** obtain one coherent owner-side isolated regression run for these newly added tests (ideally one concise focused invocation before broad UI QA). If red, fix code/test defect first without asking the owner for repeated project screenshots; if green, conduct one concise integrated Windows manual session for actual Evaluate-first reopening, project selector/quality version UI, linked Explore interactions, and revision 1/2 UX (including native export only if changed). After that, proceed with P1 hardening and the early bounded E2 8 GB/offline feasibility spike. Build E/F full installer, B1/P7 bundled AI, P6 Master modes remain unimplemented/unaccepted.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
