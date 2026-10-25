@@ -275,6 +275,12 @@ The owner reran the **same E2 read-only memory-triage tool** after stopping the 
 
 **Most efficient next step:** Document a **clean-running baseline procedure** (exit idle Plarium/Steam/second browser and ChatGPT desktop voluntarily, do not kill OS or Windows compression) and reserve the next memory reading for the future **bounded, user-authorized actual offline 0.6B quantized-model trial** with safety criteria and peak RAM measurement. Meanwhile continue the separate P1 reliability roadmap instead of stalling all development on more screenshots. P1 import rollback 4/4 owner PASS and P0 dev-suite 117/174 owner PASS still stand.
 
+## Owner-approved Resource-Aware Mode — DESIGN CONFIRMED, NOT IMPLEMENTED (25 October 2026)
+
+Owner responded **"your proposal sound good"** to resource-aware PilotODIN operation after two 8 GB-class Windows memory diagnostics (7.804 GiB installed, free RAM improved from 0.572 to 1.019 GiB after reducing background load). This approves **design direction**, not a request to download AI models, disable safeguards or certify E2. Implement progressively: **P1** read-only available-RAM status and persisted Adaptive (default)/Low-memory/Performance settings; **P5** truthful preflight and one-heavy-task-at-a-time scheduling when constrained; **P7** lazy-loaded local AI with unload controls only after a separately approved, licensed and measured real offline E2 8 GB test. Hard existing data, privacy, integrity, split/leakage and resource ceilings always apply. Never terminate unrelated user processes or disable Windows protection features.
+
+Full implementation contract: `docs/RESOURCE_AWARE_MODE_DESIGN.md`; consolidated P1/P5 roadmap entries updated accordingly. **No Resource-Aware Mode runtime functionality has been built/tested by this documentation-only decision.** The next code phase should implement a narrow P1 resource-status/policy slice with fake-memory deterministic tests and one owner Windows acceptance batch, not jump into autonomous scheduling/AI loading or more repeated memory screenshots. P1 import recovery 4/4 owner passed; E2 actual Qwen/offline/combined-memory viability remains **UNDETERMINED**.
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
