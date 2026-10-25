@@ -28,6 +28,12 @@ Source state through commit `5a739433618e7253232567e350199140cf40f7c3` on `featu
 - **New A4 tests have not been executed** on owner Windows; the source was inspected and re-fetched from GitHub. Exact acceptance details, remaining reporting/visual work and the one-owner-validation strategy are in [A4 Deliver acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md).
 - No hosted GitHub Actions, installer/release, actual 8 GB load validation, local Qwen generation or modification of existing end-user project data. Advance A4 in coherent tested batches, with one final owner Windows pull and smoke session rather than constant pull/test loops.
 
+## A4-2 snapshot graphics in reports — SOURCE IMPLEMENTED, UNTESTED (25 October 2026)
+
+Following A4-1 selected-model report evidence, a new bounded presentation layer `backend/report_charts.py` now renders **bar, histogram and line** saved Explore aggregates as self-contained HTML SVG and ReportLab PDF vector figures, with identical frozen source points, visible dataset version, evidence table, and bounded/sampled caveat. `backend/reports.py` verifies saved chart + configuration hashes before embedding the visual projection in the immutable revision. Scatter/box graphics, native Windows Save As and model plots are not claimed. `tests/test_a4_frozen_chart_visuals.py` adds render parity, clipping, escaping, invalid point and immutable revision checks and is included in the one-pass runner.
+
+**No execution of these new A4 tests or rendered output in owner Windows was demonstrated.** Continue with automated-test-first A4 improvements and one combined final owner test only when source is sufficiently frozen. The earlier A2/A3 99-frontend/149-backend pass evidence is the baseline for the earlier pre-A4 commit, not an A4 signoff. See [A4 Deliver acceptance](./MACRO_A4_DELIVER_ACCEPTANCE.md) and [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
+
 ## Read this first when switching conversations/tabs
 
 **This document is a continuity snapshot, not code.** GitHub branch history and the QA issue preserve implementation work; local Windows user screenshots/test outputs preserve acceptance observations. A new chat must verify current GitHub HEAD before editing and must not mistake an old QA issue-body status for the newer dated issue comments.
