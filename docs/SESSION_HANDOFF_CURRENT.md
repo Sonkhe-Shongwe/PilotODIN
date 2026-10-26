@@ -1,6 +1,21 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## LATEST P2-U1 OWNER RESULTS — 7/7 FONT BUILD PREFLIGHT PASS; CONSENT-BASED BUILD-ONLY STAGING NEXT (26 October 2026)
+
+**Working branch:** `feature/live-dev-workspace-20261023`. GitHub branch HEAD immediately before this handoff update `48dc46af21b8d9dfc87d5154d809c38d783f80d2`. Always verify live HEAD before future edits. This supersedes the earlier instruction below to run `Run_PilotODIN_P2_Font_Build_Preflight.bat` because that accepted test has now been completed.
+
+**Verified actual owner Windows screenshot:** `Run_PilotODIN_P2_Font_Build_Preflight.bat` ran seven synthetic contract methods, summary `Ran 7 tests in 0.146s` and `OK`. Then the staged-source identity and licence audit printed `SOURCE_PREFLIGHT_PASS_NOT_STAGED`, `asset_count=6`, `font_bytes=21054524`, `source_verified=true`, `product_acceptance=NOT_TESTED` and `sidecar_packaging=NOT_TESTED`. This establishes **owner Windows PASS for P2-U1 read-only source preflight**, NOT a copy or bundled-font build. Preserve this acceptance without rerunning those seven tests on unchanged source.
+
+**Prior accepted gates remain intact:** P2 12/12 synthetic mixed, 5/5 disclosure, chart pagination visually PASS, synthetic native Save As exact SHA proof, verified 6 pinned Noto font/OFL identities plus five Unicode text groups extracted exactly, and 9/9 scoped document-specific emoji CMap tests under ReportLab 4.5.1. Do not repeat these suites while staging. Product production PDF Unicode remains VISUAL_FAIL and P2 overall REVIEW_REQUIRED.
+
+**New developer-only action source, not yet Windows run:** `Run_PilotODIN_P2_Font_Build_Stage_DevQA.bat`, commit `38fcc200e7450d36b456065dcda36c9a8e025472`. Asks explicit Y/N authorization before invoking the already-source-reviewed `tools/p2_pdf_font_build_preflight.py --stage`. It verifies and then copies the six local pinned public font/OFL files (~21.05 MB font data) into a new uniquely named, Git-ignored `build/p2-pdf-font-preflight/review-<id>` for REVIEW ONLY. Each copy is measured against its verified source and Git identity; `receipt.json` states `BUILD_PREFLIGHT_ONLY_NOT_FOR_RELEASE`, `packaged_sidecar_verified=false` and `product_acceptance=NOT_TESTED`. This cannot mean shipped Unicode acceptance. No actual production `backend/reports.py`, `backend/report_charts.py`, PyInstaller, Tauri or dataset/model changes. The old seven-case BAT is not invoked.
+
+**Engineering risk/next:** Resource path for frozen Python engine has not been proved, independent release SHA-256/font licence review remains open, and font registry alias/concurrent reports, CJK chart label runs, emoji copy fidelity in real PDFs and visual output still require actual integration. No runtime access to `LOCALAPPDATA\PilotODIN\DevQA` may be introduced. `docs/P2_PDF_UNICODE_PRODUCTION_INTEGRATION_GATE.md` (commit `48dc46af21b8d9dfc87d5154d809c38d783f80d2`) details the boundary.
+
+**ONE next owner action:** Preserve local GitHub Desktop changes, pull the latest feature branch, run ONLY `Run_PilotODIN_P2_Font_Build_Stage_DevQA.bat` once and press Y only if approving this isolated ignored build-review copy; share the console output, not binary fonts. If blocked, diagnose the reason instead of repeating prior gates. After the six-file receipt is accepted, design/test the *frozen sidecar* resource path without introducing runtime downloads or modifying production reports prematurely.
+
+
 ## CURRENT P2-U1 IMPLEMENTATION — FONT BUILD PREFLIGHT SOURCE READY; OWNER CHECK PENDING (26 October 2026)
 
 **Working branch:** `feature/live-dev-workspace-20261023`. Live HEAD immediately prior to this edit `235ec321580e24d22a6a5c52c59ae4021f9b2029`. Always fetch current branch HEAD before next changes. This section supersedes older requests below to run any CMap/glyph/download experiment: all those scoped owner checks have already been accepted.
