@@ -15,7 +15,8 @@
       "license_filename": "NotoSans-OFL.txt",
       "license_path": "ofl/notosans/OFL.txt",
       "license_git_blob_sha1": "6843f31878c9945e1e71e1baa275546b4eefead8",
-      "status": "CANDIDATE_VARIABLE_NOT_PRODUCTION_APPROVED"
+      "status": "CANDIDATE_VARIABLE_NOT_PRODUCTION_APPROVED",
+      "license_bytes": 4396
     },
     {
       "role": "cjk",
@@ -26,7 +27,8 @@
       "license_filename": "NotoSansSC-OFL.txt",
       "license_path": "ofl/notosanssc/OFL.txt",
       "license_git_blob_sha1": "1c9f43281b8f216c5461fe9ac729afbade7724e4",
-      "status": "CANDIDATE_VARIABLE_NOT_PRODUCTION_APPROVED"
+      "status": "CANDIDATE_VARIABLE_NOT_PRODUCTION_APPROVED",
+      "license_bytes": 4388
     },
     {
       "role": "symbol",
@@ -37,7 +39,8 @@
       "license_filename": "NotoSansSymbols2-OFL.txt",
       "license_path": "ofl/notosanssymbols2/OFL.txt",
       "license_git_blob_sha1": "7c95767f5c669c448148e7e6c8fc4ee2c85128b1",
-      "status": "CANDIDATE_NEEDS_EMOJI_TOUNICODE_CHECK"
+      "status": "CANDIDATE_NEEDS_EMOJI_TOUNICODE_CHECK",
+      "license_bytes": 4383
     }
   ],
   "limits": [
