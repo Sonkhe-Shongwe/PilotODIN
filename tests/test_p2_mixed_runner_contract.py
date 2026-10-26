@@ -1,8 +1,12 @@
 """Fast checks on P2 DevQA status conversion; cannot touch product app/data."""
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 # tools path inserted explicitly by discovery runner's PYTHONPATH
-from tools.p2_mixed_report_devqa import simple_status
+from tools.p2_mixed_report_devqa import simple_status, finalize_diagnostics
 
 
 def payload(n=3):
@@ -26,6 +30,29 @@ class RunnerContract(unittest.TestCase):
         bad["errors"] = []
         bad["skipped"] = ["incomplete"]
         self.assertEqual(simple_status(bad, 3), "BLOCKED")
+
+        # Failure-within-failure regression: archive I/O must not preserve
+        # a stale REVIEW_REQUIRED in on-disk status or the run manifest.
+        with TemporaryDirectory(prefix="p2-contract-") as temp:
+            base = Path(temp)
+            run = base / "runs" / "synthetic-run"
+            (run / "diagnostics").mkdir(parents=True)
+            (base / "archive").mkdir()
+            (run / "manifest.json").write_text(
+                json.dumps({"state": "READY_NOT_TESTED", "product_acceptance": "NOT_TESTED"}),
+                encoding="utf-8")
+            outcome = {"state": "REVIEW_REQUIRED", "stages": {}}
+            with patch("tools.p2_mixed_report_devqa.zipfile.ZipFile",
+                       side_effect=OSError("synthetic_archive_io_failure")):
+                finalize_diagnostics(run, outcome)
+            self.assertEqual(outcome["state"], "BLOCKED")
+            self.assertEqual(outcome["archive_failure"], "OSError")
+            self.assertEqual(json.loads((run / "manifest.json").read_text(
+                encoding="utf-8"))["state"], "BLOCKED")
+            self.assertEqual(json.loads((run / "diagnostics" / "result.json").read_text(
+                encoding="utf-8"))["state"], "BLOCKED")
+            self.assertFalse((base / "archive" / "synthetic-run.zip").exists())
+            self.assertFalse((base / "archive" / "synthetic-run.partial").exists())
 
     def test_test_assertion_failure_cannot_pass(self):
         bad = payload()
