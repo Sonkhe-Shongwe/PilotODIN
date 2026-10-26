@@ -1,5 +1,17 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+
+## AUTHORITATIVE LATEST — P2 MIXED EVIDENCE DEVQA 3+9 OWNER WINDOWS PASS; REPORT QUALITY REVIEW STILL OPEN (26 October 2026)
+
+**Owner Windows rerun independently verified via uploaded ZIP and screenshot:** `P2-MIXED-REPORT-20261026T122532Z-75c5ba0a4c.zip` has `result.json` and `manifest.json` only. Both say `REVIEW_REQUIRED` and `product_acceptance=NOT_TESTED`. **3/3 contract cases PASS** and **9/9 synthetic mixed-report cases PASS**, all completed, no errors/failures/skips, worker return code 0. Static preflight zero blockers/findings. This **supersedes all older P2 mixed-gate BLOCKED / rerun-PENDING next-action headings below**. Those earlier runs document test-runner/fixture defects corrected before the final successful owner run. Previous P2 real FastAPI→React→Tauri development-only Windows native HTML/PDF exact saved SHA proof also remains accepted, and is separate; do not rerun any unchanged accepted gates.
+
+**Exactly what is accepted:** New scoped development QA confirms the six-row North=400, South=540, total=940 independent oracle; four evidence types (Quality Audit, saved Explore, Investigation, seeded selected-model projection); order and revision freeze; essential HTML/PDF semantic checks; seeded metric and private canary boundaries; cross-project and corrupt evidence negatives; table/chart limits and PDF multipage text/page smoke. The synthetic ML evaluation metrics were **seeded, not trained**. The ZIP does not include the rendered reports or geometry screenshots. Do not exaggerate tests as full numerical parity, arbitrary data privacy, true visual clipping-free PDF, successful native installer, or complete P2 product/release acceptance. The manifest generic risk-register items remain `NOT_TESTED`, as designed.
+
+**Current GitHub continuity:** feature branch `feature/live-dev-workspace-20261023`; latest source state at start of this documentation increment `83f451698080d577b4925e3acbe07d118ff8a53b`. Final scoped acceptance documentation committed at `00f0e6c655ff3bb907f0f7bc76f1afd6635655f6`. Re-fetch live HEAD for every subsequent change. Preserve historical QA records; no production renderer/backend/UI code or real datasets were altered by these diagnostic commits.
+
+**Current P2 boundary:** `REVIEW_REQUIRED` is the **correct success outcome for the 12-case focused suite** while P2 still has unresolved reader-visible omission/truncation disclosure and truly visual PDF glyph/clipping checks, plus arbitrary real project/installed release limitations. **Do not ask owner to rerun this BAT**. Next bounded engineering action: read-only inspection/targeted fixture review of 40-row, 30-finding and chart-limit disclosure in final HTML/PDF; then assess long/odd glyph and dense PDF geometry with a meaningful isolated check. Only change reporting code if a concrete defect is reproducible and a narrow repair is agreed. Keep P3/new milestones on hold pending this acceptance decision. No installer, Qwen, full retrain, 8 GB peak load or GitHub Actions.
+
+
 ## NEWEST WINDOWS EVIDENCE — P2 contract fixture setup repaired, owner rerun pending (26 October 2026)
 
 **Live working branch:** `feature/live-dev-workspace-20261023`; most recent commit before this handoff update: `7f998930b7f3ea88c4e1563ca942c91f2f588a18`. Always verify the live GitHub HEAD before another mutation. This NEW section overrides the older instruction to upload the first failed ZIP or to diagnose the initial 0/9 worker response. Those steps have been completed.
