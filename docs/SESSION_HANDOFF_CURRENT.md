@@ -1,5 +1,16 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+## P2 Unicode product source increment: gated renderer seam committed (26 October 2026)
+
+Latest owner evidence: P2-U2g read-only six-candidate dossier passed its Windows launcher success branch. This closes its developer-only audit scope; the screenshot did not show the ten individual test lines or full hash register. P2-U2f 10/10 real ReportLab Unicode Paragraph/vector in-memory extraction and P2-U2d frozen scientific sidecar remain Windows-accepted. **Do not rerun those gates.**
+
+New source checkpoint: docs/P2_PDF_FONT_CONSOLIDATED_RELEASE_DECISION.md records direct upstream OFL review. Unmodified Noto Sans, Noto Sans SC and Noto Sans Symbols2 are the conditional technical choice. The Noto Sans SC original copyright header expressly reserves the name 'Source'; alterations/static conversion need independent name/licence review. OFL broadly permits original-font software bundling with full copyright/license conditions; no final release sign-off has occurred.
+
+New dormant implementation: backend/pdf_unicode_seam.py defines a registered actual-face Unicode context; backend/reports.py accepts keyword-only unicode_context for paragraphs, evidence tables, headings and ASCII footer; backend/report_charts.py accepts it for measured vector text. Normal FastAPI/report rendering passes no context and stays on the prior code path. No font assets, developer receipt, loader, installer or production release pin was added. New tests/test_p2_unicode_renderer_seam.py contains ten focused synthetic contracts; **not yet Windows executed**. Do not claim product Unicode PDF PASS, unchanged PDF byte hashes, concurrency acceptance or distribution approval from these source changes.
+
+**Next action:** Review/run ONLY the new seam tests and one affected synthetic actual report PDF extraction/layout/immutable report regression in isolated DevQA, after addressing any new defects. Final six font/notice SHA-256 identities, owner's explicit license/face/distribution approval and immutable production font loader are still prerequisites to activating this path for users. No new font-only U2d/U2f/U2g runs. P2 REVIEW_REQUIRED; production Unicode VISUAL_FAIL; font release NOT_GRANTED; P8 NOT_CERTIFIED.
+
+
 ## LATEST P2-U2g SOURCE CHECKPOINT: SIX-FILE FONT PROVENANCE AND OFL RELEASE-READINESS DOSSIER COMMITTED, OWNER WINDOWS PENDING (26 OCTOBER 2026)
 
 **Authority:** `Sonkhe-Shongwe/PilotODIN` / `feature/live-dev-workspace-20261023`; verify live HEAD before further changes. This top section supersedes the immediately following instruction to create the P2-U2g dossier. Previous P2-U2f is **Windows-ACCEPTED**: 10/10 new safety tests, real ReportLab 4.5.1 `SCOPED_FONT_CONTEXT_IN_MEMORY_PASS`, six verified DevQA font/OFL files, three face roles, exact mixed-script Paragraph and vector-text extraction, one-page geometry. Earlier P2-U2d true PyInstaller scientific engine resource/SQLite/security proof also accepted. **Do not repeat those or other accepted gates.**
