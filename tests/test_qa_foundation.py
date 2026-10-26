@@ -68,5 +68,34 @@ class QAFoundationTests(unittest.TestCase):
             self.assertEqual((run / "exports" / "report.pdf").read_bytes(), content)
             with self.assertRaises(ValueError): verify_existing(run, {"../bad.pdf": "0" * 64})
 
+    def test_refuse_linked_export_directory(self):
+        with TemporaryDirectory() as temp:
+            run, _ = create_run(Path(temp) / "qa", "P2", Path(temp) / "repo")
+            outside = Path(temp) / "outside"
+            outside.mkdir()
+            (run / "exports").rmdir()
+            try:
+                (run / "exports").symlink_to(outside, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("Creating directory symlinks is not permitted on this OS")
+            with self.assertRaisesRegex(ValueError, "linked QA"):
+                verify_existing(run, {"report.pdf": "0" * 64})
+
+    def test_discovery_failure_produces_blocked_diagnostic(self):
+        import json
+        from qa_foundation import check_setup
+        with TemporaryDirectory() as temp:
+            repo = Path(temp) / "repo"
+            repo.mkdir()
+            run, outcome = check_setup("FAULT", Path(temp) / "qa", repo=repo, scan=["missing.py"])
+            self.assertEqual(outcome["state"], "BLOCKED")
+            self.assertEqual(outcome["product_acceptance"], "NOT_TESTED")
+            stored = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(stored["state"], "BLOCKED")
+            self.assertEqual(stored["product_acceptance"], "NOT_TESTED")
+            self.assertTrue((run / "diagnostics" / "result.json").is_file())
+            self.assertTrue(Path(outcome["diagnostic_zip"]).is_file())
+
+
 if __name__ == "__main__":
     unittest.main()

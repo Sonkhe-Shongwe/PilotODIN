@@ -120,25 +120,42 @@ def verify_existing(run, expectations):
     """Check only exact synthetic basenames in a known run's exports folder."""
     if not run.is_dir() or not (run / "manifest.json").is_file():
         raise ValueError("Valid existing QA run required")
-    base = (run / "exports").resolve()
+    exports_path = run / "exports"
+    is_link = lambda p: p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+    if is_link(run) or is_link(run / "manifest.json") or is_link(exports_path):
+        raise ValueError("Refuse linked QA run, manifest or exports directory")
+    base = exports_path.resolve()
+    if not base.is_dir() or base.parent != run.resolve():
+        raise ValueError("QA exports must be directly inside this run")
     results = []
     for name, expected in expectations.items():
         if Path(name).name != name or name in (".", "..") or not re.fullmatch(r"[a-fA-F0-9]{64}", expected):
             raise ValueError("Expected exact basename and SHA-256")
         target = base / name
-        if target.is_symlink() or not target.is_file():
+        if is_link(target) or not target.is_file():
             results.append({"filename": name, "status": "MISSING"})
         else:
-            digest = hashlib.sha256(target.read_bytes()).hexdigest()
-            results.append({"filename": name, "status": "PASS" if digest == expected.lower() else "SHA_MISMATCH"})
+            hasher = hashlib.sha256()
+            with target.open("rb") as stream:
+                for block in iter(lambda: stream.read(1024 * 1024), b""):
+                    hasher.update(block)
+            results.append({"filename": name, "status": "PASS" if hasher.hexdigest() == expected.lower() else "SHA_MISMATCH"})
     return results
 
 def check_setup(phase, root, repo=ROOT, scan=None):
     run, manifest = create_run(root, phase, repo)
     output = io.StringIO()
-    suite = unittest.defaultTestLoader.discover(str(repo / "tests"), pattern="test_qa_foundation.py")
-    count = suite.countTestCases()
-    test_ok = unittest.TextTestRunner(stream=output, verbosity=2).run(suite).wasSuccessful() if count else False
+    count, test_ok = 0, False
+    try:
+        suite = unittest.defaultTestLoader.discover(str(repo / "tests"), pattern="test_qa_foundation.py")
+        count = suite.countTestCases()
+        if count:
+            test_ok = unittest.TextTestRunner(stream=output, verbosity=2).run(suite).wasSuccessful()
+        else:
+            output.write("BLOCK: No foundation tests were found.\n")
+    except Exception as exc:
+        # A broken test loader is itself a failed test, not a missing diagnosis.
+        output.write("BLOCK: Foundation test discovery/execution failed: " + repr(exc) + "\n")
     log = run / "logs" / "foundation-tests.txt"
     log.write_text(output.getvalue(), encoding="utf-8")
     selected = scan if scan is not None else ["tools/qa_foundation.py", "tools/Verify_P2_Native_Live_Report_Local.ps1"]
@@ -152,6 +169,9 @@ def check_setup(phase, root, repo=ROOT, scan=None):
               "self_tests": {"count": count, "status": "PASS" if test_ok else "FAIL"},
               "preflight_files": selected, "findings": issues, "blockers": blockers,
               "note": "Static checks are risk prompts, not product or Windows native acceptance."}
+    # Record test readiness while retaining explicit NOT_TESTED product acceptance.
+    manifest["state"] = state
+    (run / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     status = run / "diagnostics" / "result.json"
     status.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     archive = run.parent.parent / "archive" / (run.name + ".zip")
