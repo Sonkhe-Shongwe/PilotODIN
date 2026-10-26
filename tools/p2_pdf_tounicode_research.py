@@ -35,6 +35,10 @@ def corrected_tounicode_cmap(cmap: str) -> str:
     """
     def correct(match):
         source_code, destination = match.groups()
+        # Already encoded 8-digit destination values can represent a valid
+        # surrogate pair or multiple BMP codepoints. Leave those untouched.
+        if len(destination) == 8:
+            return match.group(0)
         number = int(destination, 16)
         if number > 0x10FFFF or 0xD800 <= number <= 0xDFFF:
             raise ValueError("Invalid Unicode scalar in ReportLab CMap")
