@@ -5,7 +5,7 @@ title PilotODIN P2 - Actual Isolated Scientific Sidecar and Font Runtime DevQA
 echo P2-U2d: Build and test the REAL FastAPI/SQLite scientific engine, DevQA ONLY.
 echo Existing full scientific builder, six-source font review and earlier PASS gates
 echo are reused. Previously accepted U2c 7/7 and standalone font 9-case suites
-echo are NOT rerun. Eight new synthetic safety contracts run first.
+echo are NOT rerun. Nine new synthetic safety contracts run first.
 echo.
 echo Actual operation MAY require significant disk, RAM and Windows build time.
 echo Needs at least 4 GiB currently free for the new isolated engine build.
@@ -21,7 +21,7 @@ if not exist "%~dp0.venv-live\Scripts\python.exe" (
  pause
  exit /b 2
 )
-echo Running eight NEW focused real-sidecar DevQA safety tests...
+echo Running nine NEW focused real-sidecar DevQA safety tests...
 "%~dp0.venv-live\Scripts\python.exe" -B -m unittest discover -s "%~dp0tests" -p "test_p2_pdf_real_sidecar_font_devqa.py" -v
 if errorlevel 1 (
  echo BLOCKED: New safety tests failed. No frozen build permitted.
