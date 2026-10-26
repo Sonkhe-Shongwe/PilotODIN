@@ -1,6 +1,19 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## CURRENT OWNER EVIDENCE — PDF CHART PAGINATION VISUALLY PASSED; UNICODE STILL FAILS (26 October 2026)
+
+**Live feature branch:** `feature/live-dev-workspace-20261023`. Current source checkpoint before this handoff edit `f2009265583f1a06876e5c6ce3ca9eb6b2f064f3`. Verify GitHub HEAD again before edits. This newest section supersedes the older instructions below to rerun the affected PDF visual BAT or upload its first preview; **those actions are completed**.
+
+**Actual owner rerun independently verified:** `P2-PDF-VISUAL-20261026T135824Z-c71f56fbf0.zip` status-only archive reports `REVIEW_REQUIRED`, no preflight blockers/findings, worker return 0; 3/3 scenarios `STRUCTURAL_PASS` standard 8, dense 22, unicode 7 pages. The uploaded `-visual-preview.zip` matches expected SHA-256 `042143349dc00eae6dd179b73ceff48e72abf4e6743729516b6579d0c737979d55a21f57a61f3e2dbdca34a6037e0f6102233`, ZIP integrity/12 file hashes correct. All PDFs were rendered and inspected across 37 pages via contact sheets and detailed problem pages.
+
+**Chart pagination confirmed resolved for synthetic gate:** After `backend/reports.py` grouped heading, vector drawing and limitation text under `KeepTogether`, title/chart/limitation appear together on `standard.pdf` page 3, `dense.pdf` pages 3, 10, 17 and `unicode.pdf` page 3. Previous orphaned chart heading on standard/unicode p2 is no longer visible. Mark **SCOPED VISUAL PASS: chart pagination**, no need to repeat the just-passed affected visual BAT. Old 12/12 mixed, 5/5 display and native Save As accepted evidence retained. No further product code was changed in this review.
+
+**Unicode font rendering STILL VISUAL_FAIL:** `unicode.pdf` p1 visibly substitutes `Δ Ω`, `Москва`, `漢字`, `₹` and `📈` with incorrect symbols/boxes; extraction misses exact originals. `café`, `São Paulo`, `R²` survive. This is a genuine pre-existing ReportLab default Type1 font coverage issue, not fixed by pagination. **Overall P2 remains REVIEW_REQUIRED**. The visual sample is **PARTIAL: chart PASS, Unicode FAIL**; never promote overall P2 visual PASS because structural generation was green.
+
+**Next engineering work, no new owner action now:** `docs/P2_PDF_UNICODE_FONT_REMEDIATION_PLAN.md` records the scoped prevention-first plan: select exact licensed/verified bundled fonts, test ReportLab Unicode TTF and CJK capability, cover PDF paragraphs AND chart labels, define honest unsupported emoji handling and license distribution, then implement only the smallest verified seam with new isolated visual confirmation. Candidate OFL Noto fonts require exact license/asset/size testing before adding binaries. Do not assume Windows system fonts or quietly replace glyphs. No P3, installer, real projects, model training or replay of accepted BATs. See `docs/P2_PDF_VISUAL_ACCEPTANCE.md` and Master QA Issue #2 for evidence.
+
+
 ## LATEST VALIDATED P2 VISUAL FINDING — 37 PAGES REVIEWED; UNICODE FAIL; PDF CHART PAGE-BREAK PATCH AWAITS WINDOWS (26 October 2026)
 
 **Working branch:** `feature/live-dev-workspace-20261023`. Source HEAD before this handoff commit `9cbe270019c0f44ee6aadb490d9b3958f67605fd`; re-fetch live HEAD on next work. This section supersedes the previous request to upload the `-visual-preview.zip`. It has now been uploaded and fully analyzed.
