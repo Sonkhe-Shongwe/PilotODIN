@@ -193,6 +193,10 @@ def run_onefile_proof(run_dir: Path, assets: list[dict], reviewed: Path,
     except (ValueError, AttributeError):
         return _outcome("BLOCKED", stage="worker_invalid_output",
                         worker_exit_code=child.returncode)
+    if isinstance(reported, dict) and reported.get("state") == "BLOCKED":
+        return _outcome("BLOCKED", stage="frozen_worker_prerequisite",
+                        worker_exit_code=child.returncode,
+                        failure_class=reported.get("failure_class", "WorkerBlocked"))
     if (not isinstance(reported, dict) or
             child.returncode != 0 or
             reported.get("schema") != 1 or
