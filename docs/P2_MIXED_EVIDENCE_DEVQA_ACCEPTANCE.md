@@ -83,3 +83,19 @@ If a real MR failure occurs, distinguish a malformed fixture from a product defe
 **Validation boundary:** A standalone local temporary-path reproduction demonstrated the pre-fix `FileNotFoundError` and post-fix missing → invalid → valid file sequence. The **actual new Windows 3+9 suite has not been rerun**, so no PASS is claimed. Archive creation and source checks do not establish report acceptance.
 
 **Next owner action:** Preserve GitHub Desktop uncommitted changes, pull the same feature branch, run `Run_PilotODIN_P2_Mixed_Report_DevQA.bat` **once**. If `BLOCKED`/`FAIL`, provide its fresh status-only ZIP for targeted correction. If both stages pass, expected overall state remains `REVIEW_REQUIRED` pending disclosure and PDF visual acceptance. Do not rerun previously accepted native Save As or expand scope.
+
+## 26 October 2026: OWNER WINDOWS SCOPED P2 MIXED DEVQA PASS
+
+**Evidence independently inspected:** `P2-MIXED-REPORT-20261026T122532Z-75c5ba0a4c.zip`, matching owner console screenshot, is a valid ZIP with **only `result.json` (1408 bytes) and `manifest.json` (1623 bytes)**; no source rows, PDF/HTML output or model files archived. Both report `state=REVIEW_REQUIRED`, `product_acceptance=NOT_TESTED`. Source preflight `blockers=0`, `findings=[]`. The two worker results are:
+
+- `contract`: `PASS`, count 3, **3 executed**, zero failures/errors/skips, return code 0.
+- `mixed`: `PASS`, count 9, **9 executed**, zero failures/errors/skips, return code 0.
+
+**This is a genuine owner-executed, ZIP-verified focused development gate PASS for the nine synthetic four-source integration cases plus three runner cases.** Earlier `BLOCKED` runs remain historical diagnostics and were not production regressions. The final owner run ID is `P2-MIXED-REPORT-20261026T122532Z-75c5ba0a4c` (manifest `created_utc=2026-10-26T12:25:32.842242+00:00`). The SHA-256 checks recorded by the preflight are:
+`tools/p2_mixed_report_devqa.py`: `0d0bb65198999df049fd954b6c1a19994a1b57ea2f6e6036dac0511f4add8fb0`;
+`tests/test_p2_mixed_runner_contract.py`: `b473886dc08b003924a49494222d7d7cd2843defcd13e97af61473676bf0d3e5`;
+`tests/test_p2_mixed_report_devqa.py`: `c3ccabf8ccd6258b214861178acadaac34430fd658edbfbfe1f621bb341d6bc3`.
+
+**Careful scope:** The pass provides execution evidence for the synthetic 6-row North=400, South=540, total=940 oracle; four evidence-source integration; ordering/revisions; HTML/PDF required text; private canary checks; foreign/invalid/corrupt evidence refusal; bounded data/chart mechanics and multipage PDF smoke. It **does not** claim real ML fit (evaluation seeded synthetically), full report parity for arbitrary inputs, automatic data disclosure of truncated rows/findings, visually measured no-glyph-clipping PDF, native installed app, full E-01–E-24 acceptance, or general real-dataset privacy certification. The manifest's generic `risk_register` items still say `NOT_TESTED`; those are not overridden by this scoped PASS. Previously accepted synthetic Windows native HTML/PDF Save As SHA remains separate evidence, not repeated.
+
+**NEXT ENGINEERING ACTION, not a request to rerun accepted tests:** Keep P2 open at `REVIEW_REQUIRED`. First perform a bounded, preferably isolated **read-only** review of report truncation disclosure and potential dense-PDF clipping using existing frozen synthetic revisions / renderer paths. Specify explicit assertions and decide if any concrete defect is demonstrated. Only then implement a narrowly scoped reporting fix, followed by affected targeted verification. Do not modify production reporting based solely on source speculation. Leave P3 and broader milestones until the current P2 acceptance boundary is resolved or deliberately deferred with owner approval.
