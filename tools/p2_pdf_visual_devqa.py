@@ -213,9 +213,10 @@ def preview_zip(run, child, destination):
         scenario = entry["scenario"]
         expected.update(scenario + "-p" + format(index + 1, "02d") + ".png"
                         for index in sorted({0, pages // 2, pages - 1}))
-    if (not isinstance(names, list) or set(names) != expected or
-            len(names) != len(expected) or
+    if (not isinstance(names, list) or
             any(not isinstance(n, str) or not PREVIEW_PATTERN.fullmatch(n) for n in names)):
+        raise ValueError("Invalid synthetic preview filename list")
+    if len(names) != len(expected) or set(names) != expected:
         raise ValueError("Incomplete or unrecognized synthetic preview manifest")
     exports = run / "exports"
     if is_link(exports):
