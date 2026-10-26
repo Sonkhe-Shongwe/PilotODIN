@@ -54,7 +54,7 @@ def _expected(manifest: dict) -> list[tuple[str, str, int, str, str]]:
             name, size, oid = item[name_key], item[size_key], item[oid_key]
             if (not isinstance(name, str) or
                     Path(name).name != name or name in ("", ".", "..") or
-                    "/" in name or "\" in name or
+                    "/" in name or "\\" in name or
                     not isinstance(size, int) or isinstance(size, bool) or
                     not 0 < size <= MAX_TOTAL or
                     not isinstance(oid, str) or len(oid) != 40 or
