@@ -45,3 +45,6 @@ frontend-check-results/
 .pilotodin-dev-data/
 .pilotodin-dev-cache/
 .venv-live/
+
+# Verified-but-not-approved font binaries are build-review-only and must never be committed.
+/build/p2-pdf-font-preflight/
