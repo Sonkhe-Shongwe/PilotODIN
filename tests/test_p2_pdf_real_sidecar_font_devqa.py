@@ -42,6 +42,31 @@ class RealSidecarFontDevQAContracts(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 qa.write_hook(template, entries, hook)
 
+    def test_hook_refuses_launch_outside_explicit_disposable_smoke(self):
+        with TemporaryDirectory(prefix="p2-real-engine-contract-") as td:
+            folder = Path(td)
+            entries = six_assets(folder / "source")
+            generated = qa.HOOK_TEMPLATE.read_text(encoding="utf-8").replace(
+                qa.HOOK_REPLACE, "PINNED_ASSETS = " + repr(entries))
+            # Unit test only: remove unconditional PyInstaller runtime-hook call,
+            # then exercise the fail-closed guard against non-smoke processes.
+            self.assertTrue(generated.rstrip().endswith(
+                "verify_p2_devqa_frozen_resources()"))
+            code = generated.rsplit("verify_p2_devqa_frozen_resources()", 1)[0]
+            namespace = {"__name__": "__p2_devqa_contract__"}
+            exec(compile(code, "<synthetic-hook>", "exec"), namespace)
+            guard = namespace["verify_p2_devqa_frozen_resources"]
+            with patch.dict(qa.os.environ, {
+                    "PILOTODIN_P2_REAL_SIDECAR_DEVQA": "",
+                    "PILOTODIN_HOME": str(folder)}):
+                with self.assertRaisesRegex(RuntimeError, "consent marker"):
+                    guard()
+            with patch.dict(qa.os.environ, {
+                    "PILOTODIN_P2_REAL_SIDECAR_DEVQA": "1",
+                    "PILOTODIN_HOME": str(folder)}):
+                with self.assertRaisesRegex(RuntimeError, "disposable smoke"):
+                    guard()
+
     def test_incomplete_hook_or_bad_asset_set_rejected(self):
         with TemporaryDirectory(prefix="p2-real-engine-contract-") as td:
             path = Path(td) / "hook.py"
