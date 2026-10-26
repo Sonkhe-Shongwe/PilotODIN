@@ -34,14 +34,22 @@ def review(root, manifest):
         } for entry in gate["font_assets"]
     ]
     # Only run PDF extraction after verification of ALL six pinned assets.
-    samples = audit({"regular": assets["regular"], "cjk": assets["cjk"],
-                     "emoji": assets["symbol"]})
-    states = {k: v["state"] for k, v in samples["samples"].items()}
+    # A font-parser failure must never conceal the valid cmap/identity report.
+    extraction_error = None
+    try:
+        samples = audit({"regular": assets["regular"], "cjk": assets["cjk"],
+                         "emoji": assets["symbol"]})
+        states = {k: v["state"] for k, v in samples["samples"].items()}
+    except Exception as exc:
+        extraction_error = type(exc).__name__
+        states = {"probe": "BLOCKED_FONT_PARSE_OR_RENDER"}
     return {
         "state": ("CANDIDATE_REVIEW_REQUIRED" if
                   gate["state"] != "CANDIDATE_FILE_AND_CMAP_PROBE_PASS" or
+                  extraction_error is not None or
                   any(x != "EXTRACTED_EXACT" for x in states.values())
                   else "CANDIDATE_EXTRACTION_PASS_VISUAL_PENDING"),
+        "extraction_error_class": extraction_error,
         "asset_integrity": "VERIFIED_PINNED_FONT_AND_LICENSE_BYTES",
         "cmap_gate": gate["state"],
         "fonts": summaries,
