@@ -1,5 +1,20 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+## OWNER PDF VISUAL REVIEW: GLYPHS DISPLAY, SPARSE PAGE AND SYNTHETIC CAPTION BLOCK ACCEPTANCE (27 OCTOBER 2026)
+
+**New direct source evidence:** The owner uploaded the actual two-page, 38,055-byte **development-only synthetic** PDF from the already accepted renderer source test. Independent local PyMuPDF checked its exact SHA-256 `76db4785f20ec3706107b7976c2f39ca0fe1b77ae0c158222b7dd98f7c5cab4f`, 2 A4 pages, complete expected Unicode extraction, correct 20.0 and 10.0 values and no text outside page bounds. Inspected render images of BOTH pages. Page 1 shows Latin diacritics, Cyrillic, Hanzi, rupee and monochrome line-chart glyph without missing-glyph boxes. CJK face is visibly light/thin and actual embedded font name identifies `NotoSansSC-Thin`, which needs a separate final-face decision; do not silently convert the pinned variable font or declare a missing glyph. All original source/extraction results remain ACCEPTED for their scope.
+
+**Visual finding: NOT ACCEPTED yet.** Page 2 contains ONLY `Parameters`, `Methodology and limitations` and two bullets, ending near y=128 of an A4 page height of ~842; the remainder is unused. This is an unwanted, sparse continuation page. Separately the synthetic chart originally says `Count of records by Region 漢字` while the verified table says `Verified median: Revenue`, an inconsistent **test-fixture** measure/caption (do not claim altered real analytics). User did NOT explicitly affirm visual acceptance. Thus `visual_acceptance=CORRECTION_REQUIRED` for this example even while the exact prior `SCOPED_ACTUAL_REPORT_UNICODE_SOURCE_PASS` remains historically true. Product Unicode still NOT_ACCEPTED; normal route still VISUAL_FAIL; release fonts NOT_GRANTED; P2 REVIEW_REQUIRED; P8 NOT_CERTIFIED.
+
+**Focused source changes committed AFTER original owner's PDF (NOT reverified on Windows):**
+- `backend/reports.py`: reduces only opt-in Unicode spacing and keeps closing methodology/limitations together. Legacy default page design and API activation remain unchanged.
+- `backend/report_charts.py`: conditional Unicode chart height 175 pt, legacy chart remains 220 pt, plot metrics and ordering untouched; still no release-loader activation.
+- `tests/test_p2_unicode_renderer_seam.py`: changes scoped chart geometry expectation to ensure opt-in/legacy separation.
+- `tools/p2_actual_unicode_report_devqa.py`: aligns test chart aggregation with the existing verified median Revenue table (not a product calculation change), and blocks future similarly sparse last pages. The old ignored PDF remains untouched for comparison.
+
+**ONE next owner action AFTER safely pulling this latest branch:** Run ONLY `Run_PilotODIN_P2_Actual_Unicode_Report_DevQA.bat` once again **for this NEW layout/caption patch**, with the same Y consent for a NEW ignored synthetic proof. Do not repeat U2d, U2f, U2g, CMap, builder or previous unrelated suites; do not delete previous run. Inspect the NEW output PDF for one-page or otherwise appropriately filled layout, coherent `Median of Revenue` caption, legible Hanzi/chart glyphs, correct 20/10 values, tables, footer and unclipped bounds. Share screenshot(s) of the NEW pages and final safe console JSON, not embedded-font PDF/font sources. If blocked, diagnose only the changed renderer. Release/font/installer acceptance remain separately gated.
+
+
 ## OWNER WINDOWS ACTUAL-RENDERER SOURCE PASS, VISUAL REVIEW NEXT (27 OCTOBER 2026)
 
 **Authority:** `Sonkhe-Shongwe/PilotODIN`, `feature/live-dev-workspace-20261023`. User-supplied Windows terminal screenshot from `Run_PilotODIN_P2_Actual_Unicode_Report_DevQA.bat`. Read this newest entry first. Earlier instructions below to run the new ten-case launcher are now historical; **DO NOT REPEAT** any accepted P2 U2d/U2f/U2g or this renderer execution.
