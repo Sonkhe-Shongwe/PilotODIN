@@ -103,10 +103,12 @@ def build_arguments(source: Path, assets: list[dict], output: Path) -> list[str]
         "--workpath", str(output / "work"),
         "--specpath", str(output / "spec"),
     ]
-    for asset in assets:
-        # PyInstaller >= 6 uses SOURCE:DEST even for Windows drive paths.
-        command.extend(["--add-data",
-                        str(source / asset["name"]) + ":" + EXTRACTED_DEST])
+    # One freshly created six-file directory avoids PyInstaller treating the
+    # Noto variable-font [brackets] in individual source paths as glob syntax.
+    # The source directory must contain exactly the six verified filenames.
+    if not source.is_dir() or {p.name for p in source.iterdir()} != set(names):
+        raise ValueError("Isolated PyInstaller input is incomplete")
+    command.extend(["--add-data", str(source) + ":" + EXTRACTED_DEST])
     command.append(str(PROBE_ENTRY))
     return command
 
@@ -134,7 +136,8 @@ def run_onefile_proof(run_dir: Path, assets: list[dict], reviewed: Path,
     cwd = run_dir / "unrelated-working-directory"
     cache = run_dir / "pyinstaller-cache"
     temp = run_dir / "onefile-extract-temp"
-    for path in (spec, work, dist, cwd, cache, temp):
+    inputs = run_dir / "six-verified-build-inputs"
+    for path in (spec, work, dist, cwd, cache, temp, inputs):
         path.mkdir(exist_ok=False)
     if shutil.disk_usage(run_dir).free < 750 * 1024 * 1024:
         raise RuntimeError("InsufficientIsolatedBuildDiskSpace")
@@ -142,7 +145,16 @@ def run_onefile_proof(run_dir: Path, assets: list[dict], reviewed: Path,
     before = [(row["name"], hash_file(reviewed / row["name"])[1]) for row in assets]
     if any(before[i][1] != assets[i]["sha256"] for i in range(6)):
         raise ValueError("Reviewed source changed before build")
-    command = build_arguments(reviewed, assets, run_dir)
+    # No receipt or sidecar binaries are copied. Preserve original glyph/font
+    # names inside the bundle, but never pass bracketed filenames to globbing.
+    for asset in assets:
+        dest = inputs / asset["name"]
+        with (reviewed / asset["name"]).open("rb") as original, dest.open("xb") as target:
+            shutil.copyfileobj(original, target, length=1024 * 1024)
+        count, copied_sha, _ = hash_file(dest)
+        if count != asset["bytes"] or copied_sha != asset["sha256"]:
+            raise ValueError("Isolated PyInstaller input hash mismatch")
+    command = build_arguments(inputs, assets, run_dir)
     isolated_environment = dict(os.environ)
     isolated_environment["PYINSTALLER_CONFIG_DIR"] = str(cache)
     isolated_environment["TMP"] = str(temp)
@@ -166,7 +178,8 @@ def run_onefile_proof(run_dir: Path, assets: list[dict], reviewed: Path,
     # Source before/after + frozen-child digest must agree; bundle contents
     # cannot be accepted on the strength of a mutable adjacent receipt alone.
     after = [(row["name"], hash_file(reviewed / row["name"])[1]) for row in assets]
-    if before != after:
+    staged_after = [(row["name"], hash_file(inputs / row["name"])[1]) for row in assets]
+    if before != after or before != staged_after:
         return _outcome("FAIL", stage="source_changed_during_packaging")
     payload = json.dumps({"schema": 1, "assets": assets}, separators=(",", ":"))
     print("Executing frozen worker from a different empty working directory.", flush=True)
