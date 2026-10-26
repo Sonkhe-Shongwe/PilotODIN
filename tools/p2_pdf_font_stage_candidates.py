@@ -47,11 +47,11 @@ def describe_candidate_failure(error, commit):
               and not isinstance(cause, urllib.error.HTTPError) else cause)
     summary = str(reason).replace("\r", " ").replace("\n", " ")
     # Network errors can contain proxy URLs, tokens or machine-local paths.
-    summary = re.sub(r"(?i)https?://\\S+", "[URL REDACTED]", summary)
+    summary = re.sub(r"(?i)https?://\S+", "[URL REDACTED]", summary)
     summary = re.sub(
-        r"(?i)\\b(?:password|token|authorization|secret)\\s*[:=]\\s*\\S+",
+        r"(?i)\b(?:password|token|authorization|secret)\s*[:=]\s*\S+",
         "[CREDENTIAL REDACTED]", summary)
-    summary = re.sub(r"[A-Za-z]:\\\\[^\\s]+", "[LOCAL PATH REDACTED]", summary)
+    summary = re.sub(r"[A-Za-z]:\\[^\s]+", "[LOCAL PATH REDACTED]", summary)
     summary = summary[:180]
     lower = summary.lower()
     status = getattr(cause, "code", None) if isinstance(
@@ -87,7 +87,7 @@ def describe_candidate_failure(error, commit):
     # The public source contains no private data; never emit a redirect/proxy URL.
     source_url = ("https://" + HOST + "/google/fonts/" + commit + "/" +
                   urllib.parse.quote(path, safe="/")
-                  if re.fullmatch(r"ofl/[a-z0-9]+/[A-Za-z0-9_.\\[\\],-]+", path)
+                  if re.fullmatch(r"ofl/[a-z0-9]+/[A-Za-z0-9_.\[\],-]+", path)
                   else "PINNED_SOURCE_PATH_INVALID")
     return {
         "state": "BLOCKED",
