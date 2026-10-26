@@ -4,7 +4,7 @@ cd /d "%~dp0"
 title PilotODIN P2 Unicode Font Resource Preflight
 echo PilotODIN P2-U1: test font resource staging contracts and inspect pinned candidates.
 echo Uses existing .venv-live, six already staged local DevQA files, no downloads.
-echo This launcher is READ ONLY. It creates no build staging directory.
+echo Read-only for staged fonts and projects; unit tests use disposable temp files.
 echo Does NOT install fonts, launch PilotODIN, train models or build an installer.
 echo A PASS here is NOT frozen sidecar or product Unicode acceptance.
 echo.
