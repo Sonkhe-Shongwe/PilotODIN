@@ -1,6 +1,23 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## NEWEST P2 CHECKPOINT — Unicode font compatibility PROTOTYPED; bundled-font production fix not yet implemented (26 October 2026)
+
+**Live GitHub branch** `feature/live-dev-workspace-20261023`, HEAD before this handoff commit `ebf1be77e153342f969b47b9626bdf83b66944ac`. Fetch live HEAD before any next modification. This section supersedes the prior generic instruction to start Unicode-font research; Stage 0 research and a bounded developer test utility are now committed.
+
+**Accepted evidence unchanged:** Owner Windows P2 four-source mixed 3+9 PASS; disclosure 5/5 PASS; actual scoped chart pagination visual PASS after the KeepTogether fix, original 37-page Unicode sample still VISUAL_FAIL; separately accepted native synthetic HTML/PDF Save As SHA proof. None of those gates were repeated, no reports/user data/model was altered.
+
+**Niche research confirmed:** Official Noto Sans and Noto Sans SC distribution licenses are SIL OFL 1.1 (the SC OFL explicitly names Adobe's Reserved Font Name `Source`). Noto Sans SC variable TTF distribution is ~16.9MB and cannot be assumed compatible with our pinned ReportLab regular-weight/static API. Official ReportLab documents `TTFont` + `pdfmetrics.registerFont` for embedded Unicode. Noto Emoji mono has partial emoji coverage; a CJK/emoji fallback and transparent unsupported-character policy is required. Font license terms require including copyright/license notices with redistributed binaries and avoiding prohibited reserved names on derivatives.
+
+**Local compatibility proof, not Windows acceptance:** In an isolated non-user environment, registering an available Noto Sans Regular TTF with ReportLab yielded a PDF with embedded TrueType subset; PyMuPDF exact-text extraction preserved `café`, `São Paulo`, `R²`, `Δ Ω`, `Москва` and `₹`. Font cmap contains these but lacks `漢`, `字` and `📈`. Therefore a single sans font will not solve the CJK/emoji defects. No source font binary was copied or committed.
+
+**NEW developer-only utility:** `tools/p2_pdf_font_coverage_probe.py` (commit `3eca7e2c7ba32c12217c06e08e930cb599ce2e18`) accepts explicit local regular/CJK/emoji font candidate paths, checks ReportLab char-to-glyph coverage, creates a transient synthetic PDF in memory and verifies exact extracted sample text. Reports basename/bytes/SHA-256 and supported/unsupported statuses, with clear disclaimers: not visual quality, license approval, owner Windows or release acceptance. This is NOT a new owner BAT and should not be requested of the user until exact approved assets are selected. Updated authoritative research/plan `docs/P2_PDF_UNICODE_FONT_REMEDIATION_PLAN.md` (commit `ebf1be77e153342f969b47b9626bdf83b66944ac`) records official references, measured first-font PoC, SC size, missing CJK/emoji and remaining gates.
+
+**What remains OPEN:** Exact pinned OFL font assets with SHA-256 and license copies, independent static TrueType compatibility for Noto SC, CJK/emoji policies, robust multi-font splitting across all PDF paragraph/table and vector-chart drawing text, deterministic offline sidecar asset packaging, negative unsupported-glyph handling, Windows 8GB constraints, targeted renderer tests and actual visual acceptance. **Do not claim Unicode fixed.** No font binaries have been committed; production `backend/reports.py`, `backend/report_charts.py`, existing launcher/tests and Tauri resources are unchanged in this increment.
+
+**ONE NEXT engineering action, no owner BAT yet:** Continue Stage 0 controlled font-asset verification, pin binary versions/hashes/licenses and probe regular+CJK+emoji candidates outside production, including Windows packaging design; only then make the smallest production font/formatting change and request a focused PDF visual rerun. Avoid arbitrary installed Windows font paths, online downloads at app runtime, font binaries without redistributable licenses, and silently replacing unsupported source glyphs. Do not start P3 or installer work.
+
+
 ## CURRENT OWNER EVIDENCE — PDF CHART PAGINATION VISUALLY PASSED; UNICODE STILL FAILS (26 October 2026)
 
 **Live feature branch:** `feature/live-dev-workspace-20261023`. Current source checkpoint before this handoff edit `f2009265583f1a06876e5c6ce3ca9eb6b2f064f3`. Verify GitHub HEAD again before edits. This newest section supersedes the older instructions below to rerun the affected PDF visual BAT or upload its first preview; **those actions are completed**.
