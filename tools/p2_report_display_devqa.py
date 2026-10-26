@@ -98,6 +98,9 @@ def execute():
         if os.name != "nt" or not os.environ.get("LOCALAPPDATA"):
             raise RuntimeError("Windows LOCALAPPDATA required")
         root = default_root()
+        for directory in (root, root / "runs", root / "archive"):
+            if directory.exists() and (directory.is_symlink() or getattr(directory, "is_junction", lambda: False)()):
+                raise RuntimeError("Redirected DevQA directory is prohibited")
         run, _ = create_run(root, PHASE, ROOT)
         result["run_id"] = run.name
         selected = ["backend/reports.py", "tests/test_p2_report_display_disclosure.py",
