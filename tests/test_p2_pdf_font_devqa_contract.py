@@ -64,7 +64,7 @@ class FontDevQAContract(unittest.TestCase):
             root = Path(temp)
             payload = b"synthetic-not-a-real-font"
             blob = hashlib.sha1(b"blob " + str(len(payload)).encode() +
-                                b"\\0" + payload).hexdigest()
+                                b"\0" + payload).hexdigest()
             class Response(BytesIO):
                 def geturl(self):
                     return ("https://raw.githubusercontent.com/google/fonts/" +
