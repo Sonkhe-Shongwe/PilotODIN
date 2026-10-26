@@ -755,7 +755,7 @@ def render_html(report: dict) -> bytes:
         if notices:
             pieces+=['<div class="warning" role="note"><strong>Display limits</strong><ul>']
             pieces.extend('<li>'+e(item)+'</li>' for item in notices)
-            pieces+=['</ul><p class="meta">The complete frozen evidence remains in the saved PilotODIN report revision.</p></div>']
+            pieces+=['</ul><p class="meta">The saved report retains its source evidence projection; upstream snapshots may have additional limits.</p></div>']
         if isinstance(art.get('result'), dict):
             caveat = art['result'].get('note')
             if isinstance(caveat, str) and caveat:
@@ -859,7 +859,7 @@ def render_pdf(report: dict) -> bytes:
             story.append(KeepTogether([
                 p('Display limits','ODINHeading'),
                 *(p(item,'ODINMeta') for item in notices),
-                p('The complete frozen evidence remains in the saved PilotODIN report revision.','ODINMeta')
+                p('The saved report retains its source evidence projection; upstream snapshots may have additional limits.','ODINMeta')
             ]))
         if isinstance(art.get('result'), dict):
             caveat = art['result'].get('note')
