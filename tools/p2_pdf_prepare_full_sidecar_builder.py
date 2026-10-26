@@ -159,6 +159,7 @@ def prepare(*, runner=_run) -> dict:
     if created.returncode:
         return {"state": "BLOCKED", "stage": "isolated_venv_creation",
                 "exit_code": created.returncode}
+    _safe(ENV_DIR)
     exe = python_for(ENV_DIR)
     if not exe.is_file() or exe.is_symlink():
         return {"state": "BLOCKED", "stage": "new_python_missing"}
@@ -170,8 +171,21 @@ def prepare(*, runner=_run) -> dict:
            "-r", str(REQUIREMENTS), *pins]
     installed = runner(cmd, 1200)
     if installed.returncode:
+        # Classify common pip failures without disclosing paths, URLs with
+        # credentials, package logs or internal user data to the console.
+        diagnostic = (str(installed.stderr or "") + " " + str(installed.stdout or "")).lower()[-12000:]
+        if "resolutionimpossible" in diagnostic or "conflicting dependencies" in diagnostic:
+            category = "dependency_resolution_conflict"
+        elif "no matching distribution" in diagnostic or "could not find a version" in diagnostic:
+            category = "required_binary_wheel_unavailable"
+        elif "no space left on device" in diagnostic:
+            category = "disk_space_exhausted"
+        elif "timed out" in diagnostic or "connection" in diagnostic or "ssl" in diagnostic:
+            category = "network_or_certificate_issue"
+        else:
+            category = "pip_install_failure_unclassified"
         return {"state": "BLOCKED", "stage": "full_runtime_wheel_resolution_or_install",
-                "exit_code": installed.returncode}
+                "failure_category": category, "exit_code": installed.returncode}
     health = runner([str(exe), "-I", "-B", "-c",
                      "import fastapi,uvicorn,multipart,pandas,numpy,scipy,sklearn,openpyxl,joblib,pydantic,reportlab,PyInstaller;"
                      "import importlib.metadata as m;"
