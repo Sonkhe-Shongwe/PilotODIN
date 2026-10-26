@@ -162,7 +162,10 @@ def pdf_chart(spec: dict, width: float = 500.0, *, unicode_context=None) -> Draw
         if not isinstance(unicode_context, UnicodePDFContext):
             raise ValueError("Expected registered Unicode PDF chart context")
         unicode_context.assert_ready()
-    height = 220.0
+    # The existing 220 pt charts stay unchanged. Only the explicit,
+    # currently DevQA-only Unicode path uses a compact chart so one
+    # short synthetic report need not spill a handful of lines to page 2.
+    height = 175.0 if unicode_context is not None else 220.0
     d = Drawing(width, height)
     def put_text(x, y, text, *, anchor="start", size=8, color=None, room=300):
         if unicode_context is None:
