@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from importlib import metadata
 import json
 import os
 from pathlib import Path
@@ -31,10 +30,12 @@ sys.path.insert(0, str(ROOT / "tools"))
 from p2_pdf_font_resource_path_devqa import REVIEW_PARENT, MANIFEST_PATH, review_staged_copy
 from p2_pdf_font_build_preflight import _expected, _not_redirected
 from p2_pdf_font_asset_gate import hash_file
+from p2_pdf_pyinstaller_tooling_devqa import inspect_tooling, tooling_python
 
 BUILD_ROOT = ROOT / "build" / "p2-pdf-frozen-resource-probe"
 EXTRACTED_DEST = "backend/assets/pdf_fonts"
 PROBE_ENTRY = ROOT / "tools" / "p2_pdf_frozen_font_worker.py"
+BUILDER_PYTHON = tooling_python()
 TIMEOUT_BUILD_SECONDS = 900
 TIMEOUT_RUN_SECONDS = 120
 
@@ -66,22 +67,20 @@ def verified_review_files(parent: Path, manifest: dict) -> tuple[Path, list[dict
 
 
 def detect_existing_pyinstaller() -> str:
-    """Use only installed PyInstaller 6; never install from this DevQA gate."""
-    try:
-        version = metadata.version("pyinstaller")
-    except metadata.PackageNotFoundError as exc:
-        raise RuntimeError("PyInstallerMissing") from exc
-    try:
-        major = int(version.split(".", 1)[0])
-    except ValueError as exc:
-        raise RuntimeError("PyInstallerVersionUnreadable") from exc
-    if major != 6:
-        raise RuntimeError("PyInstaller6Required")
-    return version
+    """Inspect PRIVATE packaging venv; ReportLab preflight stays in .venv-live.
+
+    Never install, modify or import build tools into the controller process.
+    """
+    decision = inspect_tooling()
+    if decision.get("state") != "ISOLATED_PYINSTALLER_READY":
+        raise RuntimeError("IsolatedPyInstallerNotReady")
+    if not BUILDER_PYTHON.is_file() or BUILDER_PYTHON.is_symlink():
+        raise RuntimeError("IsolatedBuilderMissing")
+    return decision["pyinstaller"]
 
 
 def build_arguments(source: Path, assets: list[dict], output: Path) -> list[str]:
-    """Single frozen worker, six file-specific --add-data, isolated dirs only."""
+    """Single frozen worker, one exact directory --add-data, isolated dirs only."""
     if sys.platform != "win32":
         raise ValueError("Windows-only PyInstaller resource proof")
     if not PROBE_ENTRY.is_file():
@@ -94,7 +93,7 @@ def build_arguments(source: Path, assets: list[dict], output: Path) -> list[str]
         raise ValueError("Six safe named inputs required")
     name = "pilotodin-p2-frozen-font-probe"
     command = [
-        sys.executable, "-m", "PyInstaller",
+        str(BUILDER_PYTHON), "-m", "PyInstaller",
         "--noconfirm", "--onefile", "--console", "--noupx",
         "--log-level", "ERROR",
         "--name", name,
@@ -233,11 +232,18 @@ def main() -> int:
     if not args.build:
         result = _outcome("BLOCKED", stage="consent_required")
     else:
+        phase = "windows_prerequisite"
         try:
             if os.name != "nt":
                 raise ValueError("Windows-only gate")
+            phase = "manifest"
             manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+            phase = "verified_source_review"
+            # Executed in .venv-live, where ReportLab is installed. Running this
+            # in the minimal PyInstaller-only venv masks missing ReportLab as
+            # a false font-compatibility rejection.
             reviewed, assets = verified_review_files(REVIEW_PARENT, manifest)
+            phase = "isolated_build_location"
             _not_redirected(BUILD_ROOT)
             BUILD_ROOT.mkdir(parents=True, exist_ok=True)
             _not_redirected(BUILD_ROOT)
@@ -252,10 +258,13 @@ def main() -> int:
                                   failure_class=type(exc).__name__,
                                   reason=str(exc) if str(exc) in {
                                       "PyInstallerMissing", "PyInstaller6Required",
-                                      "PyInstallerVersionUnreadable"} else "inspect_setup")
+                                      "PyInstallerVersionUnreadable",
+                                      "IsolatedPyInstallerNotReady",
+                                      "IsolatedBuilderMissing"} else "inspect_setup")
             result["run_id"] = run_dir.name
         except Exception as exc:
             result = _outcome("BLOCKED", stage="source_or_build_preflight",
+                              prerequisite_phase=phase,
                               failure_class=type(exc).__name__)
     print("P2 ACTUAL ONEFILE RESOURCE DEVQA: " + result["state"])
     print(json.dumps(result, ensure_ascii=False, indent=2))
