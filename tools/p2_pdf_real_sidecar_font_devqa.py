@@ -55,6 +55,15 @@ def _state(state: str, stage: str, **extra) -> dict:
     }
 
 
+def expected_attestation(entries: list[dict]) -> dict:
+    identities = sorted((item["name"], item["bytes"], item["sha256"])
+                        for item in entries)
+    digest = hashlib.sha256(json.dumps(identities, separators=(",", ":")).encode()).hexdigest()
+    return {"schema": 1, "state": "FROZEN_REAL_SIDECAR_FONT_FILES_VERIFIED",
+            "embedded_file_count": 6, "font_identity_digest": digest,
+            "from_frozen_hook": True}
+
+
 def write_hook(template: str, entries: list[dict], output: Path) -> None:
     if template.count(HOOK_REPLACE) != 1:
         raise ValueError("Hook substitution marker missing or duplicated")
@@ -166,7 +175,12 @@ def run_real_sidecar(
     # A working HTTP API proves that the fail-closed PyInstaller runtime hook
     # executed before the real app, otherwise the frozen interpreter exits.
     previous = os.environ.get("PILOTODIN_P2_REAL_SIDECAR_DEVQA")
+    previous_proof = os.environ.get("PILOTODIN_P2_DEVQA_ATTESTATION")
+    proof = run / "font-attestation.json"
+    if proof.exists() or proof.is_symlink():
+        return _state("BLOCKED", "attestation_path_already_exists")
     os.environ["PILOTODIN_P2_REAL_SIDECAR_DEVQA"] = "1"
+    os.environ["PILOTODIN_P2_DEVQA_ATTESTATION"] = str(proof.resolve())
     print("Executing REAL frozen engine with disposable token, home and SQLite.", flush=True)
     started = time.monotonic()
     try:
@@ -175,16 +189,28 @@ def run_real_sidecar(
         return _state("FAIL", "real_sidecar_isolated_smoke",
                       failure_class=type(exc).__name__)
     finally:
-        if previous is None:
-            os.environ.pop("PILOTODIN_P2_REAL_SIDECAR_DEVQA", None)
-        else:
-            os.environ["PILOTODIN_P2_REAL_SIDECAR_DEVQA"] = previous
+        for key, prior in (("PILOTODIN_P2_REAL_SIDECAR_DEVQA", previous),
+                           ("PILOTODIN_P2_DEVQA_ATTESTATION", previous_proof)):
+            if prior is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = prior
     smoke_seconds = round(time.monotonic() - started, 2)
     if (not isinstance(observed, dict) or
             any(observed.get(x) is not True for x in
                 ("passed", "auth_required", "wrong_origin_rejected", "user_storage_isolated")) or
             observed.get("model_started") is not False):
         return _state("FAIL", "real_sidecar_smoke_contract")
+    # Smoke success alone cannot certify the hook: require a separate exact
+    # attestation written from the real extracted frozen process before API.
+    if not proof.is_file() or proof.is_symlink() or proof.stat().st_size > 4096:
+        return _state("FAIL", "frozen_font_hook_attestation_missing")
+    try:
+        receipt = json.loads(proof.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError):
+        return _state("FAIL", "frozen_font_hook_attestation_invalid")
+    if receipt != expected_attestation(entries):
+        return _state("FAIL", "frozen_font_hook_attestation_mismatch")
     exe_size, exe_sha, _ = hash_file(exe)
     return _state("SCOPED_REAL_SIDECAR_FONT_RUNTIME_PASS", "completed",
                   actual_scientific_engine=True,
