@@ -14,11 +14,17 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
-from .pdf_unicode_runs import (
-    PDFUnicodePlanError, plan_font_runs, paragraph_markup,
-    position_chart_runs, validate_coverage, validate_font_names,
-    ROLES,
-)
+try:
+    from .pdf_unicode_runs import (
+        PDFUnicodePlanError, plan_font_runs, paragraph_markup,
+        position_chart_runs, validate_coverage, validate_font_names, ROLES,
+    )
+except ImportError:
+    # Support the existing backend's legacy direct-import execution route.
+    from pdf_unicode_runs import (
+        PDFUnicodePlanError, plan_font_runs, paragraph_markup,
+        position_chart_runs, validate_coverage, validate_font_names, ROLES,
+    )
 
 
 @dataclass(frozen=True)
