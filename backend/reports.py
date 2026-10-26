@@ -804,6 +804,13 @@ def render_pdf(report: dict, *, unicode_context=None) -> bytes:
     if unicode_context is not None:
         for name in ('ODIN', 'ODINBody', 'ODINMeta', 'ODINHeading'):
             styles[name].fontName = unicode_context.base_face
+        # Scoped density adjustment only for opt-in multilingual reports.
+        # Preserve all typography/pagination on the legacy default route.
+        styles['ODIN'].spaceAfter = 9
+        styles['ODINBody'].spaceAfter = 5
+        styles['ODINMeta'].spaceAfter = 5
+        styles['ODINHeading'].spaceBefore = 8
+        styles['ODINHeading'].spaceAfter = 6
     def p(value,style='ODINBody'):
         text = str(value)
         safe = (unicode_context.markup(text) if unicode_context is not None else
@@ -893,8 +900,14 @@ def render_pdf(report: dict, *, unicode_context=None) -> bytes:
                 story.append(p('Evidence limitations','ODINHeading'))
                 story.extend(p('- '+item) for item in warnings[:12] if isinstance(item,str))
         story.append(p('Parameters: '+'; '.join(f'{k}={_display_value(v)}' for k,v in art['params'].items()),'ODINMeta'))
-    story.extend([p('Methodology and limitations','ODINHeading')])
-    story.extend(p('• '+str(t)) for t in report['limitations'])
+    # Keep the final heading with its own disclosure bullets, especially
+    # if a dense Unicode page would otherwise put a heading at page bottom.
+    closing = [p('Methodology and limitations','ODINHeading')]
+    closing.extend(p('• '+str(t)) for t in report['limitations'])
+    if unicode_context is not None:
+        story.append(KeepTogether(closing))
+    else:
+        story.extend(closing)
     def footer(canvas,document):
         canvas.saveState()
         canvas.setFont(unicode_context.base_face if unicode_context is not None else 'Helvetica',7)
