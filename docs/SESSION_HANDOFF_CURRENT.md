@@ -1,6 +1,22 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## LATEST OWNER EVIDENCE — P2 mixed report 0/9 BLOCKED diagnosed; focused protocol repair committed (26 October 2026)
+
+**Feature branch:** `feature/live-dev-workspace-20261023`; latest verified source commit before this handoff edit: `81c44ec5f906b001971870c50fd523a6bdac4c81`. **Verify live HEAD again on next change; never rely on the hash in a dated handoff.** This section supersedes the prior instruction to run the initial unmodified P2 mixed DevQA package or request the first ZIP again.
+
+**Owner's uploaded Windows result independently inspected:** `P2-MIXED-REPORT-20261026T115010Z-1b54e4ad95.zip` contains exactly `result.json` and `manifest.json`. Both state overall `BLOCKED`, `product_acceptance=NOT_TESTED`. Source preflight 0 blockers/0 findings; runner contract **3 executed PASS**, mixed reporting **0 executed BLOCKED**, stage count 0, no error cases recorded. The previous accepted synthetic Windows native PDF/HTML Save As SHA matching is **unchanged**. No actual new report assertions ran; P2 mixed milestone is NOT accepted.
+
+**Known causal diagnostic flaw, not yet known original child cause:** Parent attempted one `json.loads(completed.stdout.strip())` on child stdout. If the child printed extra stdout, did not print JSON or died before response, the parent substituted the exact observed count-0/empty-error fallback and discarded stdout/stderr, losing the real cause. The uploaded ZIP proves this outer fallback signature, not whether the child import, test discovery, environment, or native process caused it. Do not infer a production reporting defect or blindly install dependencies.
+
+**Targeted repair already committed, test/docs only:** `tools/p2_mixed_report_devqa.py` now uses one status-only per-worker JSON file inside the verified DevQA run's `diagnostics`, not stdout as parent protocol. It classifies workspace/import/discovery/fixture/worker exit, fails closed if file or exit is invalid and prints safe stage reason, test IDs and numeric return code. Original final ZIP still archives ONLY `result.json` and `manifest.json` without stdout/stderr/raw data. The existing `tests/test_p2_mixed_runner_contract.py` three methods now include missing/invalid/valid file protocol checks, retain simulated diagnostic archive-failure checks and confine temporary test fixtures to current DevQA `fixtures` when launched by BAT. The 9 mixed-report test methods, fixture, existing launcher, and all production code remain unchanged. Commits `1667444c737dbd25989cc2d5a9db7eb6156b0f3e`, `def77b11f4a9c7b4d2a0713644cd2a505b774906`, `8bc149b984b3a352ace7caa67b92b1176eff0095`, `8d2ff700844e6af9f715e5b278455eb8dc5ada5b`. Acceptance explanation appended to `docs/P2_MIXED_EVIDENCE_DEVQA_ACCEPTANCE.md`.
+
+**Verification limits:** Uploaded ZIP was inspected and GitHub source was reviewed, but **NO Windows run of the repaired gate has occurred**. This is a diagnostic/test harness correction, not a report-engine fix or 9/9 PASS. Later `REVIEW_REQUIRED` even with 12/12 pass remains open for reader-facing truncated data/finding disclosure, PDF visual clipping, full app/release/8GB evidence. P3/P6/P7/P8 remain gated.
+
+**ONE NEXT OWNER ACTION:** In GitHub Desktop preserve any local untracked/modified files, pull the current `feature/live-dev-workspace-20261023` branch; double-click ONLY `Run_PilotODIN_P2_Mixed_Report_DevQA.bat` once in the existing clone. No installer/Qwen, no pip/npm packages, no real datasets. If `BLOCKED` or `FAIL`, share the NEW status-only ZIP or screenshot if archive fails, now with `MIXED REASON` and failure case IDs. If `REVIEW_REQUIRED`, report the 3 + 9 successful scopes, then proceed to targeted disclosure/visual QA only; do not call native/full P2 accepted automatically.
+
+
+
 ## LATEST CHECKPOINT — P2 mixed-evidence runner audit and fail-closed repair (26 October 2026)
 
 **Latest feature-branch source checkpoint before this handoff update:** `7dfec6d2cf957feede1b132c9f0c171e58238da4`; **fetch live HEAD again before further changes**. The previous handoff's `ac4fa238...` source was followed by a documentation-only `4de8da83...` commit and a focused pre-Windows runner correction. This section supersedes older "one owner action" statements elsewhere in this long chronological record.
