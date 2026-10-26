@@ -9,6 +9,8 @@ const projectId=String(import.meta.env.VITE_P2_CHAIN_PROJECT_ID??'');
 const reportId=String(import.meta.env.VITE_P2_CHAIN_REPORT_ID??'');
 const expectedHtml=String(import.meta.env.VITE_P2_CHAIN_HTML_NAME??'');
 const expectedPdf=String(import.meta.env.VITE_P2_CHAIN_PDF_NAME??'');
+const qaSaveFolder=String(import.meta.env.VITE_P2_CHAIN_SAVE_FOLDER??'');
+const saveFolderLabel=document.getElementById('qa-save-folder');
 const status=document.getElementById('qa-status');
 const htmlResult=document.getElementById('qa-html');
 const pdfResult=document.getElementById('qa-pdf');
@@ -19,7 +21,8 @@ const valid=import.meta.env.DEV&&
   /^[a-f0-9]{32}$/.test(projectId)&&/^[a-f0-9]{32}$/.test(reportId)&&
   expectedHtml===`pilotodin_report_${reportId.slice(0,12)}_rev2.html`&&
   expectedPdf===`pilotodin_report_${reportId.slice(0,12)}_rev2.pdf`&&
-  !!status&&!!mount&&!!htmlResult&&!!pdfResult&&!!ready&&isDesktop();
+  !!status&&!!mount&&!!htmlResult&&!!pdfResult&&!!ready&&isDesktop()&&
+  (!qaSaveFolder || !!saveFolderLabel);
 if(!valid)throw new Error('Test-only Tauri environment or synthetic fixture identity is invalid.');
 
 const original=window.fetch.bind(window);
@@ -32,6 +35,7 @@ window.fetch=((resource:RequestInfo|URL,init?:RequestInit)=>{
   return original(url.toString(),init);
 }) as typeof fetch;
 
+if(qaSaveFolder&&saveFolderLabel)saveFolderLabel.textContent=qaSaveFolder;
 status!.textContent='Synthetic report is loading from isolated FastAPI. No real user data is accessed.';
 createRoot(mount!).render(<ReportWorkspace projectId={projectId} defaultTitle="Synthetic Native Chain QA"/>);
 
@@ -41,7 +45,10 @@ const observer=new MutationObserver(()=>{
     .filter(x=>x.textContent?.includes('Export HTML')||x.textContent?.includes('Export PDF'));
   const savedRevision=mount!.textContent?.includes('Saved revision 2')??false;
   const enabled=exportButtons.length===2&&exportButtons.every(x=>!x.disabled);
-  if(savedRevision&&enabled)ready!.textContent='PASS: Actual persisted revision 2 loaded; both Export buttons ready.';
+  if(savedRevision&&enabled){
+    ready!.textContent='PASS: Actual persisted revision 2 loaded; both Export buttons ready.';
+    if(!observed.html||!observed.pdf)status!.textContent='Ready: use real Export buttons, keep revision-2 filenames.';
+  }
   const notice=mount!.querySelector<HTMLElement>('.pd-report-notice')?.textContent??'';
   if(notice.includes('Saved report revision 2 to '+expectedHtml+' using Windows Save As')){
      observed.html=true;htmlResult!.textContent='PASS: ReportWorkspace HTML export invoked native Save As.';

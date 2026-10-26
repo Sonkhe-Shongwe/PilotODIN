@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PilotODIN P2 Live Report to Native Save As QA (DEV ONLY)</title>
-<style>body{font-family:system-ui,sans-serif;background:#101c2b;color:#edf3fa;margin:0;padding:22px}
+<style>body{font-family:system-ui,sans-serif;background:#f6f8fc;color:#1f2937;margin:0;padding:22px}
 h1{font-size:24px}.note{border:1px solid #56718b;border-radius:9px;padding:15px;line-height:1.55;margin-bottom:12px}
 mark{background:#163b2a;color:#9ff7bd;padding:2px 6px}#qa-status,#qa-ready,#qa-html,#qa-pdf{margin:6px 0}
-#report-mount{color:#eaf3ff}</style></head><body>
+#report-mount{color:#1f2937}#qa-save-folder{font-family:monospace;overflow-wrap:anywhere;padding:4px;background:#e9f2ff;color:#162f50}</style></head><body>
 <h1>PilotODIN P2: Actual Report → Windows Save As (Synthetic QA)</h1>
 <div class="note"><strong>Development test only.</strong> This mounts the unchanged real report composer and connects
 to a separate temporary FastAPI/SQLite project. It does not use your saved projects, Qwen or an installer.
@@ -13,6 +13,7 @@ Keep the terminal open. Confirm it shows the temporary test folder. When this pa
 <li>Click <strong>Export PDF</strong> and use the same folder.</li>
 <li>Keep both proposed revision-2 filenames. Wait for both PASS messages below, close the window, and answer the terminal prompts.
 Do not move or edit the files before verification.</li></ol>
+<p><strong>Use this exact DevQA exports directory in BOTH native Save As dialogs:</strong> <code id="qa-save-folder">Check PowerShell for the absolute directory</code></p>
 <p id="qa-ready">Waiting for real saved report revision 2...</p>
 <p id="qa-html">HTML: NOT TESTED</p><p id="qa-pdf">PDF: NOT TESTED</p>
 <p id="qa-status">Checking isolated native environment...</p></div>
