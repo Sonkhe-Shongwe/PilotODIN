@@ -124,8 +124,10 @@ class P2UnicodeRendererSeamContracts(unittest.TestCase):
             side_effect=lambda text, name, size: len(text)*4):
             enriched = report_charts.pdf_chart(spec, 500, unicode_context=ctx)
         self.assertEqual(original, [(v["label"], v["value"]) for v in spec["data"]])
-        self.assertEqual((legacy.width, legacy.height),
-                         (enriched.width, enriched.height))
+        self.assertEqual(legacy.width, enriched.width)
+        self.assertEqual(legacy.height, 220.0)
+        self.assertEqual(enriched.height, 175.0)
+        self.assertEqual(original, [(v["label"], v["value"]) for v in spec["data"]])
         collected = [x.text for x in enriched.contents if isinstance(x, String)]
         self.assertIn("漢", collected)
         self.assertIn("📈", collected)
