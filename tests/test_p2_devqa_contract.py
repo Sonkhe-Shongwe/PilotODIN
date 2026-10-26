@@ -48,6 +48,7 @@ class P2DevQAContract(unittest.TestCase):
         self.assertIn("init --phase P2-NATIVE-CHAIN --json",s)
         self.assertIn("test_qa_foundation.py",s)
         self.assertIn("test_p2_devqa_contract.py",s)
+        self.assertIn("Language.Parser]::ParseFile",s)
         self.assertIn("DevQA workspace allocator",s)
         self.assertIn("product_acceptance='NOT_TESTED'",s)
         self.assertIn("Failure-Diagnostic",s)

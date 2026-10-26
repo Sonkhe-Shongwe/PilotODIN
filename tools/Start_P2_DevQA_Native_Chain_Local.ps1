@@ -48,6 +48,15 @@ try{
         throw 'DevQA allocator returned an invalid or non-fresh run.'
     }
     $runDir=[string]$payload.run_dir
+    # Parse the Windows PowerShell runner before loading data or opening Tauri.
+    $parseTokens=$null
+    $parseErrors=$null
+    [System.Management.Automation.Language.Parser]::ParseFile($runner,[ref]$parseTokens,[ref]$parseErrors) | Out-Null
+    if(@($parseErrors).Count -gt 0){
+        $details=(@($parseErrors) | ForEach-Object {$_.Message}) -join ' | '
+        throw ('Windows PowerShell source parse BLOCK: '+$details)
+    }
+    Write-Host 'P2 native runner PowerShell syntax: PASS' -ForegroundColor Green
     $logs=Join-Path $runDir 'logs'
     Write-Host ('NEW DEVQA RUN: '+$runDir) -ForegroundColor Cyan
     Write-Host ('REQUIRED WINDOWS SAVE AS FOLDER: '+$payload.exports_dir) -ForegroundColor Cyan
