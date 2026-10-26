@@ -103,7 +103,7 @@ class P2DisplayQuality(unittest.TestCase):
                        "Showing 40 of 45 saved observation entries",
                        "Showing 30 of 35 saved finding entries",
                        "Showing 50 of 53 saved observation entries",
-                       "The complete frozen evidence remains"):
+                       "The saved report retains its source evidence projection"):
             self.assertIn(marker, html)
             self.assertIn(marker, text)
         self.assertIn("Visual shows a bounded subset", html)
