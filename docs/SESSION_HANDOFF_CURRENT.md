@@ -1,6 +1,24 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## LATEST CHECKPOINT — P2 SYNTHETIC PDF VISUAL PREVIEW GATE SOURCE COMMITTED; HUMAN REVIEW STILL PENDING (26 October 2026)
+
+**Working GitHub branch:** `feature/live-dev-workspace-20261023`, source HEAD before this documentation commit `58093ba53715255dd295fe084712c27ccad7c002`. **Fetch actual branch HEAD before future changes**. This new section supersedes the older 'plan isolated PDF visual review' next-action paragraphs below; the preview generator has now been implemented but not yet executed on Windows.
+
+**Preserved accepted gates:** Owner Windows synthetic P2 mixed-evidence suite **3 contract + 9 reporting PASS** with status `REVIEW_REQUIRED`; then owner Windows P2 disclosure/page geometry **5/5 PASS** with status `REVIEW_REQUIRED`; earlier native development-only FastAPI→React→Tauri HTML/PDF exact saved SHA acceptance. DO NOT rerun these unchanged suites. No production `backend/reports.py` or `backend/report_charts.py`, no front end, database, data source, trained model or installer changed in this batch.
+
+**What is new:** `tools/p2_pdf_visual_devqa.py` and `Run_PilotODIN_P2_PDF_Visual_DevQA.bat`, plus authoritative plan `docs/P2_PDF_VISUAL_ACCEPTANCE.md`. Parent launches the existing `.venv-live` Python in an **isolated worker home** allocated inside fresh `%LOCALAPPDATA%\PilotODIN\DevQA\runs\P2-PDF-VISUAL-...`. Worker imports the already-accepted synthetic display fixture, calls **real `backend.reports.render_pdf`** on three in-memory synthetic reports (standard chart/disclosure; dense 12-exhibit multipage; long labels/Unicode/font stress). It verifies PDF/A4 text bounds and PDF completeness, renders first/middle/last page PNGs (max nine) using installed PyMuPDF and never touches real projects or opens Tauri/ML/Qwen/cloud. PDFs and PNGs remain only in the synthetic run's `exports`.
+
+**Distinct outputs:** (1) one **status-only ZIP** with exactly `result.json` + `manifest.json`, preserving earlier DevQA privacy discipline; (2) one explicitly marked **SYNTHETIC visual preview ZIP** containing three complete PDFs, up to nine PNG page previews, `preview-manifest.json` with SHA-256 values and `REVIEW_INSTRUCTIONS.txt`. The preview is for user-voluntary upload and inspection, never customer data. Text-block bounds cannot assess glyph substitution/collisions or actual printed readability. The Unicode sample explicitly includes accented Latin, Greek, Cyrillic, CJK, rupee and emoji and may reveal absent fonts; per-case success label is **STRUCTURAL_PASS, not VISUAL_PASS**.
+
+**Risk safeguards:** Rejected link/junction DevQA root/workspace/exports, new run manifest phase and state verified, `PILOTODIN_HOME` set only for child before backend import, explicit source SHA preflight and BAT, three required scenario counts, no stdout parsing, bounded 64-page PDFs / 8 MB each / 30 MB preview package, verified ZIP structure, status-only failure diagnostics, failure class without raw report text, no package installs/deletions. Preview publication/diagnostic failure remains BLOCKED. Worker exceptions within a rendering scenario yield FAIL; setup or provenance failure BLOCKED.
+
+**Verification truth:** GitHub created/updated sources, then re-fetched files, HEAD and structural invariants; **the new PDF preview generator has NOT been executed on the owner's Windows `.venv-live`**. No visual sample or measured PDF glyph results yet, and no visual acceptance. The earlier 12+5 tests are not evidence of this new source passing. The product renderer was intentionally left alone until a real PDF is examined.
+
+**ONE NEXT OWNER ACTION:** GitHub Desktop pull `feature/live-dev-workspace-20261023` preserving uncommitted/untracked files; run **`Run_PilotODIN_P2_PDF_Visual_DevQA.bat` once**. If it returns `REVIEW_REQUIRED`, upload the file ending **`-visual-preview.zip`** (not the ordinary status-only ZIP) here so every PDF can be rendered/inspected. If `FAIL` or `BLOCKED`, provide the status-only ZIP and screenshot to isolate a fixture/renderer problem. Do not run accepted older BATs or P3/installer/Qwen/ML. Human visual evidence and issue resolution are still needed before declaring P2 report print-quality acceptance.
+
+
+
 ## MOST RECENT ACCEPTANCE — P2 report display DevQA 5/5 Windows PASS, visual PDF review open (26 October 2026)
 
 **Current branch:** `feature/live-dev-workspace-20261023`. Branch HEAD before this handoff update was `1a78083e33c92ed2f3d49519efab569912c4cbd6` (acceptance doc update). Always fetch live HEAD before any further changes. This section supersedes the previous `LATEST NEW P2 WORK` instruction to run the display BAT; it has now been executed and accepted for its five-case scope.
