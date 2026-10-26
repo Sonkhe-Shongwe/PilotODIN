@@ -1,6 +1,17 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## NEWEST P2 OWNER EVIDENCE — 37 synthetic PDF pages generated; actual visual ZIP awaited (26 October 2026)
+
+**Working branch** `feature/live-dev-workspace-20261023`; most recent live HEAD before this handoff write `b1c1217f099fbf753a311137e246e3631a5031bb`. Fetch HEAD before any future changes. This section supersedes the former request to RUN the P2 visual DevQA BAT: owner has already executed it successfully.
+
+**Actual owner screenshot + uploaded status-only ZIP:** `P2-PDF-VISUAL-20261026T133301Z-1585d963d1.zip` independently read, valid ZIP, exactly `result.json` and `manifest.json`. Overall `REVIEW_REQUIRED`, `product_acceptance=NOT_TESTED`, `visual_acceptance=NOT_REVIEWED`. Preflight 0 blockers/0 findings; worker exit code 0. Scenarios `standard` **STRUCTURAL_PASS 8 pages**, `dense` **STRUCTURAL_PASS 22 pages**, `unicode` **STRUCTURAL_PASS 7 pages** (37 synthetic PDF pages). This verifies structural generation only, not visual appearance. Source accepted older 12/12 mixed and 5/5 disclosure gates remain valid. No production code changed in response.
+
+**New watch item:** Unicode exact-text checks extracted `café`, `São Paulo`, `R²`, but failed to extract `Δ`, `Москва`, `漢字`, `₹`, `📈` from the PDF. Possible default ReportLab font/encoding gap, **not yet independently viewed or proved as visible missing glyphs**. No renderer repair authorized until PDF is inspected and fault isolated.
+
+**ONE next action, NO re-execution:** Owner should upload the already created **`P2-PDF-VISUAL-20261026T133301Z-1585d963d1-visual-preview.zip`** from `C:\Users\Lenovo\AppData\Local\pilotODIN\DevQA\archive`. The status JSON records expected preview ZIP SHA-256 `383f5a73c283604bd4de2cd3c705317fbd2abe44644bc17b395ec0f97b76a3b4`. The owner uploaded the other ZIP without `-visual-preview`, so none of the PDFs/PNGs is available yet. Upon correct upload validate digest and inspect all synthetic pages, especially Unicode, before recording VISUAL_PASS/VISUAL_FAIL. Do not ask owner to run old 12-case/5-case/native or this generator again. Keep P2 at REVIEW_REQUIRED, P3 and release gates open.
+
+
 ## LATEST CHECKPOINT — P2 SYNTHETIC PDF VISUAL PREVIEW GATE SOURCE COMMITTED; HUMAN REVIEW STILL PENDING (26 October 2026)
 
 **Working GitHub branch:** `feature/live-dev-workspace-20261023`, source HEAD before this documentation commit `58093ba53715255dd295fe084712c27ccad7c002`. **Fetch actual branch HEAD before future changes**. This new section supersedes the older 'plan isolated PDF visual review' next-action paragraphs below; the preview generator has now been implemented but not yet executed on Windows.
