@@ -298,11 +298,18 @@ def execute():
             child = json.loads(status_file(run).read_text(encoding="utf-8"))
         except (OSError, UnicodeError, ValueError):
             child = {}
-        result["cases"] = child.get("cases", [])
-        result["worker_phase"] = child.get("phase", "no_status")
+        if not isinstance(child, dict):
+            child = {}
+        cases = child.get("cases")
+        if not isinstance(cases, list) or any(not isinstance(c, dict) for c in cases):
+            cases = []
+        # Keep the status archive bounded and exclude unexpected worker fields.
+        result["cases"] = cases[:len(SCENARIOS)]
+        result["worker_phase"] = str(child.get("phase", "no_status"))[:50]
         if (child.get("state") == "READY_FOR_VISUAL_REVIEW" and proc.returncode == 0 and
-                [c.get("scenario") for c in child.get("cases", [])] == list(SCENARIOS) and
-                all(c.get("state") == "STRUCTURAL_PASS" for c in child["cases"])):
+                len(cases) == len(SCENARIOS) and
+                [c.get("scenario") for c in cases] == list(SCENARIOS) and
+                all(c.get("state") == "STRUCTURAL_PASS" for c in cases)):
             preview = run.parent.parent / "archive" / (run.name + "-visual-preview.zip")
             info = preview_zip(run, child, preview)
             result["preview_zip"] = str(preview)
@@ -339,6 +346,9 @@ def execute():
                 with zipfile.ZipFile(partial, "x", zipfile.ZIP_DEFLATED) as zipout:
                     zipout.write(status, "result.json")
                     zipout.write(manifest, "manifest.json")
+                with zipfile.ZipFile(partial) as zipped:
+                    if zipped.testzip() is not None:
+                        raise ValueError("Status archive integrity failed")
                 partial.replace(archive)
                 result["diagnostic_zip"] = str(archive)
             except (OSError, ValueError, RuntimeError, zipfile.BadZipFile) as exc:
