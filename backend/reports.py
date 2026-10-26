@@ -841,14 +841,15 @@ def render_pdf(report: dict) -> bytes:
         if isinstance(visual, dict):
             spec = report_charts.visual_spec(visual)
             if spec is not None:
-                # A vector chart has a fixed, modest height; keep its heading
-                # with the chart rather than orphaning it at a page bottom.
-                story.append(KeepTogether([
+                # Keep the heading, bounded vector chart and limitations
+                # together rather than orphaning the heading at page bottom.
+                chart_section = [
                     p('Saved chart visualization','ODINHeading'),
                     report_charts.pdf_chart(spec, width=doc.width),
-                ]))
+                ]
                 if spec.get('note'):
-                    story.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
+                    chart_section.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
+                story.append(KeepTogether(chart_section))
         if records:
             table_section=[p('Verified observations','ODINHeading'),*table(columns,records)]
             if len(records)<=12:
