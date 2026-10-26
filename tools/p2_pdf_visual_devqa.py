@@ -165,6 +165,16 @@ def child_worker():
                     for marker in ("Display limits", "Evidence register"):
                         if marker not in full_text:
                             raise AssertionError("Expected evidence or disclosure absent")
+                    # Regression from the actual owner PDF visual review:
+                    # standard/unicode used to orphan this heading one page
+                    # before the chart. Require each title and caption together.
+                    chart_count = {"standard": 1, "dense": 3, "unicode": 1}[name]
+                    headings = [i for i, txt in enumerate(extracted)
+                                if "Saved chart visualization" in txt]
+                    if len(headings) != chart_count or any(
+                            "Sum of Revenue by Region" not in extracted[i]
+                            for i in headings):
+                        raise AssertionError("Orphaned or missing saved PDF chart heading")
                     glyph_checks = {}
                     if name == "unicode":
                         # An absence is a REVIEW signal, not a reason to claim
