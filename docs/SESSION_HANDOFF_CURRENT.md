@@ -1,6 +1,23 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## NEWEST P2 UNICODE GATE — EXPLICIT OFFLINE FONT STAGING IMPLEMENTED, EXACT BINARIES STILL UNVERIFIED (26 October 2026)
+
+**Live feature branch** `feature/live-dev-workspace-20261023`, HEAD immediately before this handoff update `125e3a16018ab0043e0d488a7a1299191915d390`. Fetch current branch HEAD before any subsequent change. This section supersedes the older generic direction to implement pinned-font staging; the candidate-only staging tool and synthetic regression contract are now committed.
+
+**Already accepted product gates preserved:** P2 four-source 3+9 Windows tests PASS, display disclosure 5/5 PASS, chart pagination corrected and visually PASSED with owner-produced preview PDFs, and separate synthetic native Save As exact SHA verification accepted. Unicode PDF still fails visually due unsupported script/emoji default ReportLab fonts. Do not rerun accepted suites without a real production renderer change.
+
+**Source commit progress:** In `tools/p2_pdf_font_candidates.json` the three Noto candidate font identities and per-family OFL license blob IDs now also specify pinned 4,396 / 4,388 / 4,383 byte license sizes (commit `a84d6301ff554714cdc4f1d328da55d6d0a0d685`). New `tools/p2_pdf_font_stage_candidates.py` (commit `9b51fe3c6cb668916e17cc52b48d2f424b4e92e1`) downloads *only with explicit developer `--download` opt-in*, only the six exact public files from immutable `google/fonts` commit `e7db6ca603fd4862010383ff17ffd6cc4ffac1c0` into isolated `%LOCALAPPDATA%\PilotODIN\DevQA\font-candidates`. It validates pinned size and Git blob SHA-1, records SHA-256, rejects off-host redirects/symlink/junction paths, uses bounded temporary writes, refuses mismatched existing files and invokes the OFL/ReportLab cmap gate after staging. It does not install system fonts or operate within the application/backend/installer. Result `STAGED_FOR_REVIEW` does not authorize release.
+
+**Developer tests:** `tests/test_p2_pdf_font_devqa_contract.py` has expanded from 3 to **5 pure synthetic test methods** with new mocked download-reuse and corrupted-pin/partial cleanup contracts (commits `d206a23e9009ef8216f748dccb1f925d65e93fa5` and `82e82a2e4a3ef508664d2cfc4d376b7d6dfb5fd7`). **These methods are SOURCE REVIEWED, NOT EXECUTED in owner's Windows `.venv-live`.** All previous accepted tests remain untouched.
+
+**Hard current blocker:** Exact official font binaries could not be fetched in this engineering container (external DNS/network and the binary GitHub connector path unavailable). This is an access limitation, not proof the files fail. No candidate binaries, OFL texts or production Unicode code were committed. Thus true ReportLab variable-font compatibility, SC CJK output, text/emoji ToUnicode correctness, offline packaging/memory still remain OPEN. Earlier local proof: mixed Latin/Greek/Cyrillic/CJK/₹ characters rendered/extracted with non-production installed fonts, but monochrome `📈` rendered with an incorrect extracted codepoint. An accessible PDF-only text label (`CHART INCREASING [U+1F4C8]`) is one transparent interim idea, not implemented. Preserve frozen report and HTML contents.
+
+**Current status:** P2 overall `REVIEW_REQUIRED`, Unicode visual `FAIL`. The new staging utility is intentionally **not a production network dependency**. Detailed exact safeguards, candidate IDs and stop conditions are documented in `docs/P2_PDF_UNICODE_FONT_REMEDIATION_PLAN.md`.
+
+**Next action:** Execute candidate staging only in a controlled networked developer environment with existing Python prerequisites, capture actual SHA-256 + ReportLab asset-gate results, check license notices, and resolve static CJK/emoji text fidelity. Then plan a minimal production PDF font integration and affected synthetic Windows visual acceptance. The owner should NOT run old 12/12, 5/5, native Save As or unchanged PDF visual BATs yet; no P3/installer/Qwen/model-training tasks are authorized by this stage.
+
+
 ## CURRENT P2 UNICODE CHECKPOINT — PINNED FONT CANDIDATES AND OFFLINE COMPATIBILITY GATE COMMITTED (26 October 2026)
 
 **Live branch:** `feature/live-dev-workspace-20261023`; most recent code/doc checkpoint before this handoff `d3f5054bd8cbc50cb92550701274ca35a1799f2c`. Always recheck live HEAD before the next mutation. This section supersedes the older generic "select fonts" next action below. The assets are now identified and pinned **as candidates only**, not approved or included in PilotODIN.
