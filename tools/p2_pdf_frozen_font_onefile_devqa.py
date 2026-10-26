@@ -19,6 +19,7 @@ from importlib import metadata
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -131,16 +132,28 @@ def run_onefile_proof(run_dir: Path, assets: list[dict], reviewed: Path,
     work = run_dir / "work"
     dist = run_dir / "dist"
     cwd = run_dir / "unrelated-working-directory"
-    for path in (spec, work, dist, cwd):
+    cache = run_dir / "pyinstaller-cache"
+    temp = run_dir / "onefile-extract-temp"
+    for path in (spec, work, dist, cwd, cache, temp):
         path.mkdir(exist_ok=False)
+    if shutil.disk_usage(run_dir).free < 750 * 1024 * 1024:
+        raise RuntimeError("InsufficientIsolatedBuildDiskSpace")
     pyinstaller_version = detect_existing_pyinstaller()
     before = [(row["name"], hash_file(reviewed / row["name"])[1]) for row in assets]
     if any(before[i][1] != assets[i]["sha256"] for i in range(6)):
         raise ValueError("Reviewed source changed before build")
     command = build_arguments(reviewed, assets, run_dir)
+    isolated_environment = dict(os.environ)
+    isolated_environment["PYINSTALLER_CONFIG_DIR"] = str(cache)
+    isolated_environment["TMP"] = str(temp)
+    isolated_environment["TEMP"] = str(temp)
+    for key in ("PILOTODIN_HOME", "PILOTODIN_DESKTOP_SESSION",
+                "PILOTODIN_DESKTOP_PORT", "PYTHONPATH"):
+        isolated_environment.pop(key, None)
     print("Running isolated PyInstaller 6 ONEFILE DevQA build (not the app).", flush=True)
     started = time.monotonic()
-    built = subprocess_run(command, cwd=ROOT, capture_output=True, text=True,
+    built = subprocess_run(command, cwd=ROOT, env=isolated_environment,
+                          capture_output=True, text=True,
                           timeout=TIMEOUT_BUILD_SECONDS, check=False)
     elapsed_build = round(time.monotonic() - started, 2)
     if built.returncode != 0:
@@ -156,13 +169,9 @@ def run_onefile_proof(run_dir: Path, assets: list[dict], reviewed: Path,
     if before != after:
         return _outcome("FAIL", stage="source_changed_during_packaging")
     payload = json.dumps({"schema": 1, "assets": assets}, separators=(",", ":"))
-    environment = dict(os.environ)
-    for key in ("PILOTODIN_HOME", "PILOTODIN_DESKTOP_SESSION",
-                "PILOTODIN_DESKTOP_PORT", "PYTHONPATH"):
-        environment.pop(key, None)
     print("Executing frozen worker from a different empty working directory.", flush=True)
     started = time.monotonic()
-    child = subprocess_run([str(exe)], input=payload, cwd=cwd, env=environment,
+    child = subprocess_run([str(exe)], input=payload, cwd=cwd, env=isolated_environment,
                            capture_output=True, text=True,
                            timeout=TIMEOUT_RUN_SECONDS, check=False)
     elapsed_run = round(time.monotonic() - started, 2)
