@@ -77,3 +77,11 @@ Other P2 accepted boundaries worth preserving: P2 mixed report **3 + 9**, displa
 6. `docs/CONTINUE_HERE.md` may contain old intermediate instructions. The newest section in `SESSION_HANDOFF_CURRENT.md` supersedes older "next action" paragraphs everywhere.
 
 **Non-negotiable:** no real dataset or frozen report revisions touched by this reflection; no build/installer/AI training or download run here. The development branch stays the authoritative working branch. At every subsequent milestone, update this summary **only if the phase assessment materially changes**, and always update the dated handoff and the directly affected acceptance plan.
+
+## Evening addendum: actual standalone frozen font-resource gate accepted (26 October 2026)
+
+Subsequent to the earlier daytime P0–P8 assessment, the owner executed the scoped PyInstaller 6.22.3 **real onefile** worker and reported `SCOPED_FROZEN_RESOURCE_PROBE_PASS`. It extracted and verified six already pinned build-review font/OFL files from `backend/assets/pdf_fonts` inside the standalone executable, from a different working directory. Observed executable 21,192,456 bytes, build 10.58 seconds, frozen startup 0.86 seconds, SHA-256 `f2de1fc0d29f6ff027ba42140b554280904867975b0e3f8382ae562b0cec7bc`. Peak memory not measured; release font approval not granted. **This improves P2 packaging evidence only.** It does not mark the actual `backend/desktop_runner.py` sidecar, the native installer or production Unicode PDF as passing.
+
+All previously accepted P2 mixed/report/disclosure, repaired chart pagination visual, CMap 9/9, six font/OFL provenance, build preflight 7/7 and future-path 8/8 checks remain preserved. The next work is real-sidecar build-environment planning and later, separately authorised, actual sidecar/package verification. `docs/P2_PDF_PRODUCTION_SIDECAR_FONT_GATE.md` is the detailed decision record. A six-case **read-only build-readiness inventory** is newly authored but not owner-executed; no existing Python environment or production build was changed.
+
+**Portfolio judgement unchanged:** P2 active `REVIEW_REQUIRED` and real production Unicode report `VISUAL_FAIL`; P3–P5 are partial focused successes, P6/P7 unaccepted as complete workflows, and P8 is not a certified offline Windows release. Do not confuse a standalone test executable with the real installed analytical engine.
