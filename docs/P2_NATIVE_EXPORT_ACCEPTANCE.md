@@ -38,3 +38,14 @@ Added `Run_PilotODIN_P2_Native_Verify_Existing_Files.bat` and `tools/Verify_P2_N
 If BOTH output file hashes match, Cancel remains absent in the same selected folder and original fixture hashes match, combine with five prior observed native UI passes to support **scoped native save content-integrity at that owner-selected destination**, with the caveat that the originally requested temp/save-target folder was not established. It does not certify full report composer → live API → Tauri integrated export, native installer or 8 GB AI. A failed recovery must remain FAILED and may require a new interactive native test with an unambiguous save path.
 
 **Exact next action:** Pull the active feature branch preserving uncommitted work and run `Run_PilotODIN_P2_Native_Verify_Existing_Files.bat` once. Locate the original two files in File Explorer, do not copy/rename/edit, enter their containing folder at the prompt. If red share generated recovery ZIP; if green share console screenshot. No need to recompile Tauri or rerun previously green checks.
+
+## Uploaded saved files independently verified (26 October 2026)
+
+After the recovery launcher prompted for file provenance, the user instead uploaded the two purported original saved outputs in chat. The assistant accessed their actual bytes and computed SHA-256 independently (not relying on filenames or screenshots):
+
+| Uploaded synthetic output | Bytes | SHA-256 | Expected first-run fixture hash |
+|---|---:|---|---|
+| `PilotODIN_P2_Synthetic.pdf` | 720 | `42db62afed2edc10aa27fb1db239da7dcbb5cf0e0b6c343306c8b5174a4d7fa8` | EXACT MATCH |
+| `PilotODIN_P2_Synthetic.html` | 245 | `13ff57225c51cad2d9887494d823483ef3d99d6598163a9ef9576a9e57c9d7ca` | EXACT MATCH |
+
+The PDF is recognized as PDF v1.4, one page. The HTML contains only the predefined synthetic QA markup. **Scoped decision: ACCEPT owner-presented native synthetic output content integrity and the previously photographed five native command/UI operations.** This is stronger content evidence than the original test ZIP, which lacked exported bytes. However, file uploads do **not** independently establish the original Windows Save As destination, that the files were never copied, or successful writing inside the first launcher's required Temp/save-target directory. Therefore the first launcher remains **overall FAIL** in history (both expected-folder checks FAIL), and `Run_PilotODIN_P2_Native_Verify_Existing_Files.bat` remains **optional and not owner-completed** for extra original-folder provenance. Do not require another native build or hash-only test just to establish content identity again. Neither this evidence nor the first-run UI screenshot certifies the full live report API → Tauri shell export journey, native release packaging, interrupted write recovery, AI or combined 8 GB runtime.
