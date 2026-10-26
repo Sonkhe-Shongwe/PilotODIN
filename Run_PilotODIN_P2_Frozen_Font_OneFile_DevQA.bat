@@ -23,7 +23,7 @@ if errorlevel 1 (
  exit /b 2
 )
 echo.
-echo Checking existing build environments for PyInstaller 6, WITHOUT installing it...
+echo Checking both app venvs plus isolated DevQA tooling for PyInstaller 6, WITHOUT installing...
 set "FREEZER="
 "%~dp0.venv-live\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller').split('.')[0] == '6'" >nul 2>&1
 if not errorlevel 1 set "FREEZER=%~dp0.venv-live\Scripts\python.exe"
@@ -31,9 +31,15 @@ if not defined FREEZER if exist "%~dp0.venv\Scripts\python.exe" (
  "%~dp0.venv\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller').split('.')[0] == '6'" >nul 2>&1
  if not errorlevel 1 set "FREEZER=%~dp0.venv\Scripts\python.exe"
 )
+if not defined FREEZER if exist "%~dp0build\p2-pdf-frozen-resource-probe\tooling-venv\Scripts\python.exe" (
+ "%~dp0build\p2-pdf-frozen-resource-probe\tooling-venv\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller') == '6.22.3' and version('pyinstaller-hooks-contrib') == '2026.9'" >nul 2>&1
+ if not errorlevel 1 set "FREEZER=%~dp0build\p2-pdf-frozen-resource-probe\tooling-venv\Scripts\python.exe"
+)
 if not defined FREEZER (
- echo BLOCKED: PyInstaller 6 not found in existing .venv-live or .venv.
+ echo BLOCKED: PyInstaller 6 is unavailable in both existing app venvs and the isolated DevQA tooling venv.
  echo No dependency installation or other environment modification attempted.
+ echo To create ONLY an isolated tooling venv by explicit consent, use the NEW
+ echo Run_PilotODIN_P2_Prepare_Freezer_Tooling_DevQA.bat launcher.
  pause
  exit /b 2
 )
