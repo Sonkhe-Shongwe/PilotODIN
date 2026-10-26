@@ -24,10 +24,14 @@ echo.
 if exist "%~dp0build\p2-sidecar-env\venv" (
  echo A separate build venv already exists. Read-only validation only.
  "%~dp0.venv-live\Scripts\python.exe" -B "%~dp0tools\p2_pdf_prepare_full_sidecar_builder.py"
- set "RC=%ERRORLEVEL%"
- echo No overwrite, repair or package install was attempted.
+ if errorlevel 1 (
+  echo BLOCKED: Existing private venv cannot be safely accepted or repaired.
+  pause
+  exit /b 2
+ )
+ echo Existing private venv inspected; no overwrite, repair or package install attempted.
  pause
- exit /b %RC%
+ exit /b 0
 )
 echo The verified build route REQUIRES a separate full scientific build venv.
 echo It will be created ONLY under ignored build\p2-sidecar-env\venv.
