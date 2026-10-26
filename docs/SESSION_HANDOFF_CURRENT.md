@@ -1,6 +1,24 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## LATEST VALIDATED P2 VISUAL FINDING — 37 PAGES REVIEWED; UNICODE FAIL; PDF CHART PAGE-BREAK PATCH AWAITS WINDOWS (26 October 2026)
+
+**Working branch:** `feature/live-dev-workspace-20261023`. Source HEAD before this handoff commit `9cbe270019c0f44ee6aadb490d9b3958f67605fd`; re-fetch live HEAD on next work. This section supersedes the previous request to upload the `-visual-preview.zip`. It has now been uploaded and fully analyzed.
+
+**Independently inspected owner synthetic visual preview:** `P2-PDF-VISUAL-20261026T133301Z-1585d963d1-visual-preview.zip` matches recorded SHA-256 `383f5a73c283604bd4de2cd3c705317fbd2abe44644bc17b395ec0f97b76a3b4`, ZIP integrity is valid, all 12 member hashes match the included manifest. The three original PDFs were rendered to images and all pages examined in contact sheets (standard 8, dense 22, unicode 7, total 37), plus full-size inspection of failing pages. Previously PASS 3/3 synthetic structural generator remains true; **actual visual acceptance is VISUAL_FAIL**, not PASS.
+
+**Confirmed product defect A, remains OPEN:** `unicode.pdf` page 1 visibly substitutes unsupported Greek source points `Δ Ω` with `∆ Ω` and Cyrillic `Москва`, Chinese `漢字`, rupee `₹` and emoji `📈` with black boxes or placeholders. Default ReportLab Helvetica/Symbol/ZapfDingbats Type1 set is insufficient for multi-script fonts. Exact-text extraction independently agrees with visual failure. No bundled fonts currently in GitHub tree and NO Unicode renderer fix yet. Do not simply rely on owner-installed Windows fonts or copy/license arbitrary font binaries. Review a legal, redistributable and deterministic font-embedding/fallback plan, separately validate rare characters/emoji; avoid fragile substitutions and false claims.
+
+**Confirmed product defect B, narrow repair CODE COMMITTED, NOT YET Windows checked:** `standard.pdf` page 2 and `unicode.pdf` page 2 have a `Saved chart visualization` heading orphaned above actual `Sum of Revenue by Region` chart on the next page 3, leaving oversized blank space. Dense case already keeps chart/heading together on pages 3, 10, 17. `backend/reports.py::render_pdf` now groups chart heading, drawing, and limitation note within ReportLab `KeepTogether`, leaving its values and existing HTML untouched (last production chart patch `736fcfbd9dcaaea1bd430fa401d6af8c715fd60a`). `tools/p2_pdf_visual_devqa.py` now explicitly requires the three elements to reside together for synthetic 1/3/1 charts (last focused regression patch `c2449d5e285984988f49fadfdcf5c3aaeaaeef18`). Source-only until Windows rerun.
+
+**Other observations:** No widespread clipping or collision in inspected page views, saved row/finding/comparison tables continue across pages, display-limit notices present, footer clear. This is synthetic-only visual review, not arbitrary real-world report assurance.
+
+**Preserved acceptance:** old owner Windows P2 four-source 3+9 PASS, display disclosure/A4 text bounds 5/5 PASS and separate native FastAPI/React/Tauri Save As exact file SHA proof remain established. Do not replay those unchanged gates. Current entire P2 milestone still `REVIEW_REQUIRED`; current synthetic PDF visual sample `VISUAL_FAIL` due Unicode, regardless of successful structural generator. No P3/installer/Qwen/real-dataset work.
+
+**ONE NEXT OWNER ACTION FOR TARGETED PATCH:** In GitHub Desktop preserve local changes and pull current feature branch; run only `Run_PilotODIN_P2_PDF_Visual_DevQA.bat` once to verify the affected chart pagination fix; share new console result and `-visual-preview.zip` if review-ready (or status-only ZIP on FAIL/BLOCKED). This is justified because this exact renderer seam and its focused acceptance assertion changed since the old 37-page structural proof. Do not claim Unicode is fixed by this rerun. Separately plan/open-license Unicode coverage remediation before final P2 visual acceptance. Full evidence at `docs/P2_PDF_VISUAL_ACCEPTANCE.md` and Master QA Issue #2.
+
+
+
 ## NEWEST P2 OWNER EVIDENCE — 37 synthetic PDF pages generated; actual visual ZIP awaited (26 October 2026)
 
 **Working branch** `feature/live-dev-workspace-20261023`; most recent live HEAD before this handoff write `b1c1217f099fbf753a311137e246e3631a5031bb`. Fetch HEAD before any future changes. This section supersedes the former request to RUN the P2 visual DevQA BAT: owner has already executed it successfully.
