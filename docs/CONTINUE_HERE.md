@@ -1,4 +1,7 @@
 # PilotODIN — CONTINUE HERE (living cross-chat handoff)
+
+> **26 October 2026 current-state correction:** [P0 to P8 verified phase reflection](./PILOTODIN_STATUS_REFLECTION_2026-10-26.md) now records the scoped work already accepted and remaining phase boundaries. The latest owner Windows gate is **8/8 font resource-path tests PASS** plus six staged font/OFL files verified, while `actual_frozen_sidecar=NOT_TESTED` and actual PyInstaller `--add-data=NOT_CONFIGURED`. Do not follow any historical “run the font-path BAT” instruction below. [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) owns the next engineering task, currently the real, isolated PyInstaller resource proof. P2 Unicode production rendering is still open and P8 is not release-certified.
+
 > **START HERE FOR ANY NEW CHAT:** [SESSION_HANDOFF_CURRENT.md](./SESSION_HANDOFF_CURRENT.md) is the authoritative, short **current state** and includes the ready-to-paste new-chat instruction. This long document is a **chronological historical evidence log**, not the current next-action list. Some older passages (including "Pause coding", "A2/A3 pending", the older research-only handoff below) describe past stages and are **superseded** by the latest checkpoint and newer QA comments. Always verify the live feature-branch HEAD before making code changes.
 
 **Updated:** 25 October 2026  
