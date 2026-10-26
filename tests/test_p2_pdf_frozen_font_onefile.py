@@ -33,18 +33,19 @@ class FrozenFontProbeContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "bootloader"):
                 inspect_frozen_resources({"schema": 1, "assets": []})
 
-    def test_six_separate_add_data_flags_and_no_product_engine(self):
+    def test_one_six_file_directory_add_data_avoids_globbed_font_names(self):
         with TemporaryDirectory(prefix="odin-p2-probe-") as folder:
             root = Path(folder)
             records = assets_for(root / "source")
             with patch("tools.p2_pdf_frozen_font_onefile_devqa.sys.platform", "win32"):
                 args = probe.build_arguments(root / "source", records, root / "output")
-            self.assertEqual(args.count("--add-data"), 6)
+            self.assertEqual(args.count("--add-data"), 1)
             self.assertIn("--onefile", args)
             self.assertNotIn("--clean", args)
             self.assertNotIn("desktop_runner.py", " ".join(args))
             self.assertTrue(all(":" + probe.EXTRACTED_DEST in args[i + 1]
                                 for i, v in enumerate(args) if v == "--add-data"))
+            self.assertNotIn("[", args[args.index("--add-data") + 1])
 
     def test_unsafe_or_duplicate_font_paths_are_rejected(self):
         with TemporaryDirectory(prefix="odin-p2-probe-") as folder:
