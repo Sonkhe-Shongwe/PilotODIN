@@ -1,5 +1,20 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+## NEWEST WINDOWS EVIDENCE — P2 contract fixture setup repaired, owner rerun pending (26 October 2026)
+
+**Live working branch:** `feature/live-dev-workspace-20261023`; most recent commit before this handoff update: `7f998930b7f3ea88c4e1563ca942c91f2f588a18`. Always verify the live GitHub HEAD before another mutation. This NEW section overrides the older instruction to upload the first failed ZIP or to diagnose the initial 0/9 worker response. Those steps have been completed.
+
+**Owner's second P2 DevQA ZIP independently inspected:** `P2-MIXED-REPORT-20261026T120633Z-3e6996cd0d.zip` contains only `result.json` and `manifest.json`; overall `BLOCKED`, `product_acceptance=NOT_TESTED`, preflight 0 findings/0 blockers. Now contract test discovery/execution reports **3 run, 1 ERROR**, case `test_p2_mixed_runner_contract.RunnerContract.test_bad_counts_and_empty_are_blocked`. Mixed reporting stage was not entered, so **0/9 mixed tests have been executed in this second run**. Improved per-worker status protocol correctly identified the specific error. Previously accepted synthetic native P2 HTML/PDF exact SHA Windows results still stand; no product regression established.
+
+**Root cause in TEST-ONLY fixture, not product:** The new protocol contract test creates a `TemporaryDirectory` but writes `tmp/diagnostics/worker-mixed.json` before making the `diagnostics` subdirectory. A standalone disposable Python reproduction confirmed the resulting `FileNotFoundError` and the corrected missing/invalid/valid fixture lifecycle. The uploaded ZIP does not include traceback bytes, so exception type derives from reproducible source analysis, not a claimed archived traceback.
+
+**Single minimal correction committed:** `tests/test_p2_mixed_runner_contract.py` now creates the synthetic `status.parent` directory after the intended missing-file assertion and before the malformed/valid file writes. Commit `051848075ef471974f7bc15af3b53fb3e411a0a5`. Dedicated acceptance doc updated in commit `7f998930b7f3ea88c4e1563ca942c91f2f588a18`. NO changes to DevQA runner, BAT, backend, frontend, Tauri, models, user projects or original datasets. Suite still contains 3 runner contract tests plus 9 mixed reports.
+
+**Honest current status:** Uploaded Windows run is BLOCKED; tiny standalone test fixture lifecycle locally reproduced; full amended Windows contract gate and 9 mixed tests **NOT YET RERUN OR ACCEPTED**. Even 12 green scoped tests require `REVIEW_REQUIRED` because reader-visible result truncation disclosure, full PDF glyph/clipping inspection and final integrated Windows/offline release acceptance remain open.
+
+**Exactly ONE owner action now:** In GitHub Desktop preserve uncommitted/untracked files, pull the active feature branch. Double-click the same `Run_PilotODIN_P2_Mixed_Report_DevQA.bat` once. If BLOCKED/FAIL, share only the NEW status-only ZIP and screenshot; if `REVIEW_REQUIRED`, confirm the exact 3+9 test counts and proceed to bounded P2 disclosure/visual acceptance. No new installer, Qwen, model training, package installations, user dataset imports, older native verification reruns or P3 advancement.
+
+
 
 ## LATEST OWNER EVIDENCE — P2 mixed report 0/9 BLOCKED diagnosed; focused protocol repair committed (26 October 2026)
 
