@@ -63,3 +63,31 @@ New `tools/p2_pdf_pyinstaller_tooling_devqa.py` has a guarded `--prepare` operat
 **Focused regression:** `tests/test_p2_pdf_frozen_font_onefile.py` now contains **nine** methods, including a new static launcher-to-controller environment boundary test. The earlier eight cases were observed passing before the fix; the revised **nine-case suite and corrected actual frozen build have not yet run on the owner's Windows**. The consent-based frozen launcher has no automatic download or package installation and asks for Y again before attempting a new uniquely named run; old partial runs are retained for diagnosis.
 
 **One next owner action:** Preserve local changes, pull latest feature branch, run ONLY `Run_PilotODIN_P2_Frozen_Font_OneFile_DevQA.bat` once (no need to repeat tooling preparation). Share console output only. A green `SCOPED_FROZEN_RESOURCE_PROBE_PASS` would establish only standalone onefile bundled-resource verification, not the actual PilotODIN production sidecar, installed app, Unicode PDF, release-approved hashes or P8 completion. On another `BLOCKED`, use `stage`, `prerequisite_phase` or worker failure class to make a specific correction instead of rerunning unrelated accepted suites.
+
+## Actual owner Windows acceptance: isolated ONEFILE resource worker PASSED (26 October 2026)
+
+**New owner console screenshot reviewed.** The corrected `Run_PilotODIN_P2_Frozen_Font_OneFile_DevQA.bat` proceeded through the separately verified PyInstaller tooling, owner answered `Y`, and the console printed both `Running isolated PyInstaller 6 ONEFILE DevQA build (not the app)` and `Executing frozen worker from a different empty working directory`. Final result:
+
+| Console field | Actual result |
+| --- | --- |
+| `state` | `SCOPED_FROZEN_RESOURCE_PROBE_PASS` |
+| `stage` | `completed` |
+| `actual_frozen_probe` | `PASS` |
+| `bundled_six_files_verified` | `true` |
+| `mapped_location` | `backend/assets/pdf_fonts` |
+| `pyinstaller` | `6.22.3` |
+| `exe_bytes` | `21192456` |
+| `exe_sha256` | `f2de1fc0d29f6ff027ba42140b554280904867975b0e3f8382ae562b0cec7bc` |
+| `build_seconds` / `frozen_start_seconds` | `10.58` / `0.86` |
+| `run_id` | `probe-21a035f3a0a34e95830b7a5b2d999de4` |
+| `peak_memory` | `NOT_MEASURED` |
+| `actual_pilotodin_sidecar` / `actual_installer` | `NOT_TESTED` / `NOT_TESTED` |
+| `release_font_approval` | `NOT_GRANTED` |
+| `product_unicode_acceptance` | `NOT_TESTED` |
+| `release_policy` | `BUILD_REVIEW_ONLY_NOT_DISTRIBUTABLE` |
+
+**Accept ONLY:** An actual PyInstaller 6.22.3 frozen standalone DevQA worker ran successfully from a different CWD and verified all six correctly packaged font/OFL files from its module-relative extraction path, agreeing with the recorded source identity constraints. The latest screenshot is scrolled past the preceding nine-case test summary; the launcher reaches the Y/N and build steps only when that test command exits zero, but the individual updated unit counts are not directly shown in this screenshot. Never present the onefile worker as a frozen copy of PilotODIN's main `backend/desktop_runner.py`.
+
+**Do NOT repeat** the already accepted standalone build, the previous nine-case corrected contracts, the historical mixed-report 3+9/disclosure 5, chart visual, CMap 9, source preflight 7, path 8 or six-file staging solely for documentation. No fonts or binaries may be checked into GitHub or redistributed from this temporary run.
+
+**Next engineering scope:** This ends the *standalone* PyInstaller resource research milestone. The standard `desktop/Build_Python_Sidecar.ps1` still builds `backend/desktop_runner.py` using `.venv`, invokes pip and copies its output to Tauri after smoke. It was **not** used here. Do not silently add `--add-data` to that established release script or run it: it would alter active build environments/outputs. A separately authorized **real-sidecar opt-in build strategy** must address complete backend/scientific dependencies, frozen resource integrity, licence/source trust, SQLite/session isolation, release packaging and no user-data side effects. The design/acceptance record lives in `docs/P2_PDF_PRODUCTION_SIDECAR_FONT_GATE.md`. PDF paragraphs/tables/charts and end-user Unicode visual acceptance remain subsequent steps. P2 overall `REVIEW_REQUIRED`, existing production Unicode PDFs remain `VISUAL_FAIL`.
