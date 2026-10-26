@@ -9,12 +9,12 @@ $pythonExe=Join-Path $root '.venv-live\Scripts\python.exe'
 $seed=Join-Path $root 'tools\Seed_P2_Native_Live_Chain_Local.py'
 $cfg=Join-Path $frontend 'src-tauri\tauri.native-p2-chain.conf.json'
 $session=Join-Path ([IO.Path]::GetTempPath()) ('pilotodin-p2-native-chain-'+[guid]::NewGuid().ToString('N').Substring(0,12))
-$home=Join-Path $session 'workspace'
+$isolatedWorkspaceHome=Join-Path $session 'workspace'
 $logDir=Join-Path $session 'logs'
 $saveTarget=Join-Path $session 'save-target'
-$manifestPath=Join-Path $home 'synthetic-manifest.json'
+$manifestPath=Join-Path $isolatedWorkspaceHome 'synthetic-manifest.json'
 $archive=$session+'.zip'
-New-Item -ItemType Directory -Force -Path $home,$logDir,$saveTarget | Out-Null
+New-Item -ItemType Directory -Force -Path $isolatedWorkspaceHome,$logDir,$saveTarget | Out-Null
 $seedLog=Join-Path $logDir 'synthetic-fixture.log'
 $backendOut=Join-Path $logDir 'isolated-fastapi.log'
 $backendErr=Join-Path $logDir 'isolated-fastapi-stderr.log'
@@ -105,7 +105,7 @@ try{
             Write-Warning 'Uncommitted files exist; they will not be discarded or reset.'
         }
     }else{Write-Warning 'Verify feature/live-dev-workspace-20261023 is checked out in GitHub Desktop.'}
-    $env:PILOTODIN_HOME=$home
+    $env:PILOTODIN_HOME=$isolatedWorkspaceHome
     Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
     $env:CARGO_NET_OFFLINE='true'
     $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
@@ -185,7 +185,7 @@ try{
     $report.report_outputs=$(if($htmlOk -and $pdfOk){'BOTH_SHA256_MATCH_REAL_API'}else{'FAIL_OR_MISSING'})
     Mark 'p2-real-report-native-saved-byte-integrity' ($htmlOk -and $pdfOk)
     if(-not($htmlOk -and $pdfOk)){throw 'Actual Save As files absent or differ from the live backend export bytes.'}
-    $source=Join-Path $home $manifest.source_relative
+    $source=Join-Path $isolatedWorkspaceHome $manifest.source_relative
     $sourceOk=(Test-Path -LiteralPath $source -PathType Leaf) -and
         ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -eq $manifest.source_sha256)
     Mark 'p2-synthetic-source-unchanged' $sourceOk
