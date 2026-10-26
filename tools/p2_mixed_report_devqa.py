@@ -242,9 +242,16 @@ def execute():
             elif (completed.returncode == 0) != (assessed == "PASS"):
                 assessed, reason = "BLOCKED", "worker_exit_status_disagreement"
             elif assessed == "BLOCKED" and reason is None:
-                reason = reply.get("bootstrap_stage") or (
-                    "worker_setup_or_discovery" if reply.get("tests_run", 0) == 0
-                    else "worker_test_error_or_skip")
+                if reply.get("bootstrap_stage"):
+                    reason = reply["bootstrap_stage"]
+                elif any("setUpClass" in str(case) for case in reply.get("errors", [])):
+                    reason = "synthetic_fixture_setup"
+                elif reply.get("errors"):
+                    reason = "test_import_or_runtime_error"
+                elif reply.get("skipped"):
+                    reason = "incomplete_or_skipped_test"
+                else:
+                    reason = "worker_incomplete"
             result["stages"][kind] = {
                 "state": assessed, "reason": reason,
                 "worker_returncode": completed.returncode,
@@ -277,6 +284,14 @@ def execute():
             for name, stage in result["stages"].items():
                 print(name.upper() + " TESTS: " + stage["state"] + " (" +
                       str(stage.get("tests_run", 0)) + " executed)")
+                if stage["state"] != "PASS":
+                    print(name.upper() + " REASON: " + str(stage.get("reason") or "unclassified"))
+                    if stage.get("error_cases"):
+                        print(name.upper() + " ERROR CASES: " +
+                              ", ".join(str(s) for s in stage["error_cases"][:5]))
+                    if stage.get("worker_returncode") not in (None, 0, 2):
+                        print(name.upper() + " WORKER EXIT CODE: " +
+                              str(stage["worker_returncode"]))
             if result["state"] == "REVIEW_REQUIRED":
                 print("Focused test cases passed; disclosure and visual-layout risks STILL require review.")
         else:
