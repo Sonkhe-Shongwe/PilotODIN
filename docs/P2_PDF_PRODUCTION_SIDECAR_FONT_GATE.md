@@ -78,3 +78,31 @@ After the accepted read-only Gate A, the owner-provided screenshot did not show 
 **No new execution required to resolve the missing evidence:** While the original Windows terminal remains open at `Press any key to continue`, scroll upward to the initial JSON and share just the section containing `state`, `route`, `primary_self_contained_candidate`, `live_has_complete_runtime_metadata`, `private_builder_has_pinned_pyinstaller`, `free_disk_ge_2gib`, and the `live` and `existing_build` compact entries. No tests should be repeated, and no binaries, passwords, font files or full project paths are needed. If the console was closed, do not improvise a build; use a separate minimal read-only metadata capture only if genuinely necessary.
 
 **Decision branches once exact evidence is visible:** (1) If `EXISTING_SELF_CONTAINED_INTERPRETER_CANDIDATE`, review that interpreter's exact package version constraints, native DLL imports and change-isolation before any build; (2) if `DEDICATED_FULL_BUILD_ENVIRONMENT_DESIGN_REQUIRED`, design one new ignored full-dependency builder, lock/review versions and ask explicit consent before any download or creation; (3) if blocked/incomplete, target the named prerequisite. All branches require a later opt-in **real sidecar** proof and P2 Unicode PDF visual acceptance. The accepted standalone six-font PyInstaller ONEFILE experiment remains valid and should not be rerun.
+
+## 9. Full owner build-route evidence ACCEPTED: dedicated full scientific builder required (26 October 2026)
+
+Three actual Windows screenshots resolve all missing fields from the prior cropped capture. `Run_PilotODIN_P2_Sidecar_Build_Route_DevQA.bat` completed **six of six** synthetic route tests (summary `Ran 6 tests in 0.003s` and `OK`) and reported `BUILD_ROUTE_DESIGN_ONLY` with:
+
+| Field | Verified owner value |
+| --- | --- |
+| `route` | `DEDICATED_FULL_BUILD_ENVIRONMENT_DESIGN_REQUIRED` |
+| `primary_self_contained_candidate` | `null` |
+| `private_builder_has_pinned_pyinstaller` | `true` |
+| `live_has_complete_runtime_metadata` | `true` |
+| `private_and_live_python_major_minor_match` | `true` |
+| `free_disk_ge_2gib` | `true` |
+| `environment_summary.live` | `INSPECTED`, Python `3.12.3`, 64-bit, `runtime_missing=[]`, `pyinstaller=null` |
+| `environment_summary.existing_build` | `ABSENT` |
+| `environment_summary.private_freezer` | `INSPECTED`, Python `3.12.3`, 64-bit, PyInstaller `6.22.3`, hooks `2026.9`, missing FastAPI/Pandas/NumPy/SciPy/sklearn/ReportLab and other scientific runtime distributions, `candidate=false` |
+| `dependencies_installed` / `sidecar_built` / `installer_built` | `false` / `false` / `false` |
+| `production_acceptance` | `NOT_TESTED` |
+
+**Decision:** Accept this build-route **DESIGN** gate and its six executed tests. A new separate, complete, 64-bit scientific development builder is warranted. Do **not** install PyInstaller into existing `.venv-live`, copy `site-packages` between venvs, recreate absent `.venv` by running the main PowerShell builder, or repeat past test gates. Disk `>=2 GiB` only establishes the old design threshold; a new full builder requires a stricter **3 GiB** disk check.
+
+**New P2-U2c controlled source (NOT YET Windows run):** `tools/p2_pdf_prepare_full_sidecar_builder.py` creates *only when `--prepare` is explicitly authorised* `build/p2-sidecar-env/venv` from the existing validated Python 3.12.3 base interpreter. The tool refuses changed `backend/requirements.txt`, missing/runtime-invalid live package metadata, wrong architecture, symlink/junction paths, low disk, and pre-existing incomplete private envs. It pins each of the **eleven** direct scientific/backend distribution versions present in `.venv-live` (including SciPy), preserving `uvicorn[standard]`, plus PyInstaller `6.22.3`/hooks `2026.9`. It uses isolated, noninteractive, no-cache, binary-only pip with official `https://pypi.org/simple` after approval, bounded timeouts, then import checks for the heavy numerical and web modules and `pip check`. The new private builder is Git-ignored and never touches user projects, models, original font files, `.venv-live`, `.venv`, production build outputs or installed PilotODIN.
+
+**Supply-chain limitation:** Packages directly selected from `.venv-live` are exact-version development pins, but **their transitive dependencies are pip-resolved** at install time; this is not a fully hashed, independently approved release lockfile. Failure to find compatible wheels must remain `BLOCKED` without improvising editable/source builds or broad package upgrades. A successful `DEVQA_FULL_BUILDER_PREPARED` means a locally inspected *development environment*, **not a frozen backend build** or release approval.
+
+`tests/test_p2_pdf_prepare_full_sidecar_builder.py` contains **seven new synthetic contracts** covering ignored-only scope, unchanged expected requirements, direct version pin safety, no-write default, refusal to overwrite existing partial envs, controlled opt-in creation and fail-closed dependency installation. `Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat` runs only those seven new tests, then offers an explicit Y/N choice BEFORE any new venv or PyPI network access. Actual build of `backend/desktop_runner.py` is **not part of this launcher**. The seven new tests and builder preparation remain **unverified on owner Windows**.
+
+**One owner action:** Pull the existing feature branch preserving local changes and run `Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat` once, preferably non-admin. Review the stated ~3 GiB disk requirement, network downloads and *separate* private venv path before answering Y. On `BLOCKED`, preserve its partial isolated folder, share only safe console status, and do not attempt a global install or deletion. On `DEVQA_FULL_BUILDER_PREPARED`, plan the first separate, consented real `backend/desktop_runner.py` DevQA freeze including six pinned font/OFL assets **without staging the exe into Tauri or approving Unicode release**.
