@@ -1,6 +1,23 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## CURRENT P2-U1 IMPLEMENTATION — FONT BUILD PREFLIGHT SOURCE READY; OWNER CHECK PENDING (26 October 2026)
+
+**Working branch:** `feature/live-dev-workspace-20261023`. Live HEAD immediately prior to this edit `235ec321580e24d22a6a5c52c59ae4021f9b2029`. Always fetch current branch HEAD before next changes. This section supersedes older requests below to run any CMap/glyph/download experiment: all those scoped owner checks have already been accepted.
+
+**Most recent owner Windows evidence preserved:** `Run_PilotODIN_P2_PDF_CMap_Scoped_DevQA.bat` returned `SCOPED_EXPERIMENT_PASS` under ReportLab 4.5.1 with **9/9 unit PASS**, baseline extracted wrong U+1F4C, corrected PDF extracted U+1F4C8 (📈), and identical rendered-pixel SHA-256 `6847ca939fd36889a48634ec959d26b10dd46f02b73b31766278d5fe70e12c11`. This safely establishes the document-specific CMap helper's scoped Windows acceptance, **not production report Unicode or frozen-app visual acceptance**. Previously accepted P2 3+9 mixed, 5/5 disclosure, chart pagination visual, native synthetic Save As SHA, all six pinned Noto font/OFL byte identities, and five exact Latin/Greek/Cyrillic/CJK/rupee extraction cases remain accepted without rerun.
+
+**This increment's actual changes, developer/build-review ONLY:** 
+- `tools/p2_pdf_font_build_preflight.py` verifies the original isolated six font/OFL files and optionally `--stage` copies only six pinned files under `build/p2-pdf-font-preflight/review-<uuid>`; it checks source, copied byte sizes, Git blob SHA-1 and SHA-256, link/junction/traversal hazards, existing output collisions, partial cleanup and publishes a conspicuous `NOT_FOR_RELEASE` receipt only after complete verification. Default invocation is **source audit only**, no staging. The SHA-256 receipt is measurement, **NOT independent upstream release approval**. No binary is shipped or copied by default.
+- `.gitignore` explicitly excludes `/build/p2-pdf-font-preflight/` to prevent source-control inclusion of build-review candidates.
+- `tests/test_p2_pdf_font_build_preflight.py` contains **seven new synthetic methods** checking no-write source audit, six-file receipt, pre-copy corruption, post-copy failure cleanup without disturbing a prior review, collision refusal, bad filenames/oversize and redirected target failure.
+- `Run_PilotODIN_P2_Font_Build_Preflight.bat` runs **only** those seven methods and the read-only six-candidate audit under existing `.venv-live`. Tests generate temporary synthetic fixtures but read actual staged candidate assets without changing them; the launcher never calls `--stage`, downloader, PyInstaller, Tauri, models or the app.
+
+**Source review truth:** The new source/test/launcher files are committed on the feature branch and structurally inspected; these **seven new test methods and the new read-only Windows preflight launcher are NOT yet owner executed**, and no sidecar resource has been tested. Production `backend/reports.py`, `backend/report_charts.py`, `backend/pdf_unicode_cmap.py`, `desktop/Build_Python_Sidecar.ps1` and Tauri configuration are unchanged. P2 overall `REVIEW_REQUIRED`; the default production PDF Unicode visual problem remains unresolved.
+
+**NEXT SINGLE OWNER ACTION:** Preserve local GitHub Desktop changes, pull the feature branch, and run `Run_PilotODIN_P2_Font_Build_Preflight.bat` ONCE. Share complete final console result, not font files. Expected evidence is 7/7 synthetic PASS followed by `SOURCE_PREFLIGHT_PASS_NOT_STAGED`. If blocked, diagnose the new specific contract failure before staging. Do not run `--stage` yet; only after verified preflight decide whether to explicitly stage build-review assets and validate PyInstaller frozen-sidecar resource paths. Never repeat accepted 12/12, 5/5, chart, native, CMap or candidate download gates without an affected dependency.
+
+
 ## MOST RECENT OWNER ACCEPTANCE — WINDOWS PDF UNICODE CMAP 9/9 PASS; PRODUCTION FONT INTEGRATION NEXT (26 October 2026)
 
 **Working GitHub branch:** `feature/live-dev-workspace-20261023`. HEAD before this handoff write `c9ee76594c8bbf6c7c5e550f41a0bab292e0d12b`. Check live HEAD again before future mutation. **This section supersedes older calls below to run the document-scoped CMap BAT. Owner already ran it and passed.**
