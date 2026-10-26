@@ -1,6 +1,19 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## NEWEST P2 ACTION — ONE OPT-IN WINDOWS DEVQA FONT-CANDIDATE STAGING CHECK READY (26 October 2026)
+
+**Authoritative branch** `feature/live-dev-workspace-20261023`, HEAD before this handoff update `a3d6d1426b985e53080555abb359835d2840f2ff`. Re-fetch current HEAD before future work. This newest section supersedes prior statements of "no owner action yet": a narrowly scoped opt-in Windows staging launcher is now ready for the blocked exact-binary gate, **not** the production renderer or a repeated accepted test.
+
+**Existing milestones unchanged:** 12/12 P2 mixed, 5/5 display, chart pagination visual PASS and separate synthetic native Save As byte-exact SHA acceptance remain valid. Unicode paragraph characters `Δ Ω Москва 漢字 ₹ 📈` still need deterministic font support. An earlier local test had visible emoji yet incorrect PDF extracted Unicode; this remains an accessibility/copy fidelity risk. Overall P2 still REVIEW_REQUIRED; Unicode visual still FAIL.
+
+**What source code now does:** `tools/p2_pdf_font_candidates.json` pins immutable `google/fonts` source commit and exact binary + three OFL sizes/Git identities; `tools/p2_pdf_font_stage_candidates.py` streams only those six files into isolated `%LOCALAPPDATA%\PilotODIN\DevQA\font-candidates` with explicit `--download`, pinned size/Git checks, SHA-256 receipts, host/path/symlink guards, and incomplete download cleanup; then runs `tools/p2_pdf_font_asset_gate.py`. The new `Run_PilotODIN_P2_Font_Candidates_DevQA.bat` prompts for **Y/N consent**, uses only the existing `.venv-live` Python, installs nothing and invokes this one candidate-only gate. No font assets have entered the repo, Windows system fonts, production renderer, native bundle, trained models, or user projects. New 5-method `tests/test_p2_pdf_font_devqa_contract.py` source exists with mocked staging failure/reuse but is not owner-executed. Latest launcher commit `3a554cd5ab6d82308635b3382feb761eef5638d5`; latest spec `docs/P2_PDF_UNICODE_FONT_REMEDIATION_PLAN.md` commit `a3d6d1426b985e53080555abb359835d2840f2ff`.
+
+**Exact verification limits:** This model session could inspect upstream metadata and license identities but could NOT retrieve/parse original official font binaries due external container DNS limits and binary connector restrictions. Staging/ReportLab checks are **SOURCE REVIEWED, NOT EXECUTED**. Asset rejection may legitimately result if the candidate variable TTFonts aren't supported or CJK/emoji glyphs/ToUnicode are incomplete. Nothing is production-approved and no Unicode visual pass is claimed. Do not share downloaded font files with the assistant; share only screenshots/status.
+
+**One next owner action:** Preserve local files, pull `feature/live-dev-workspace-20261023` in GitHub Desktop, then run `Run_PilotODIN_P2_Font_Candidates_DevQA.bat` **once** and choose Y only if explicitly authorizing downloading the six pinned public candidate files/license notices (~21 MB) into the DevQA directory. Share the console output. If canceled or blocked, no accepted milestone is affected. The next engineering decision is based on actual SHA-256/ReportLab static + CJK/emoji results, not on presumptions. Do NOT run the old mixed/display/chart/native tests, download unrelated AI models or advance to P3.
+
+
 ## NEWEST P2 UNICODE GATE — EXPLICIT OFFLINE FONT STAGING IMPLEMENTED, EXACT BINARIES STILL UNVERIFIED (26 October 2026)
 
 **Live feature branch** `feature/live-dev-workspace-20261023`, HEAD immediately before this handoff update `125e3a16018ab0043e0d488a7a1299191915d390`. Fetch current branch HEAD before any subsequent change. This section supersedes the older generic direction to implement pinned-font staging; the candidate-only staging tool and synthetic regression contract are now committed.
