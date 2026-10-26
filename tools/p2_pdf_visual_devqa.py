@@ -172,9 +172,10 @@ def child_worker():
                     headings = [i for i, txt in enumerate(extracted)
                                 if "Saved chart visualization" in txt]
                     if len(headings) != chart_count or any(
-                            "Sum of Revenue by Region" not in extracted[i]
+                            "Sum of Revenue by Region" not in extracted[i] or
+                            "Chart limitations:" not in extracted[i]
                             for i in headings):
-                        raise AssertionError("Orphaned or missing saved PDF chart heading")
+                        raise AssertionError("Separated PDF chart heading, chart or limitations")
                     glyph_checks = {}
                     if name == "unicode":
                         # An absence is a REVIEW signal, not a reason to claim
