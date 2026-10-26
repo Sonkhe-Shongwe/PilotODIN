@@ -106,20 +106,27 @@ export async function downloadCleanedData(path:string,body:unknown):Promise<{blo
 
 /** Authenticated binary download. Never put desktop session credentials in URLs. */
 export async function downloadReportFile(path:string):Promise<{blob:Blob;filename:string}> {
+ // A report export filename is a cross-layer integrity contract, never a cosmetic fallback.
+ const identity=path.match(/^\/reports\/([a-f0-9]{32})\/export\/(html|pdf)\?revision=([1-9][0-9]*)$/i);
+ if(!identity)throw new Error('Report export URL must identify an exact saved report and revision.');
+ const [,reportId,format,revision]=identity;
+ const expectedFilename=`pilotodin_report_${reportId.slice(0,12).toLowerCase()}_rev${revision}.${format.toLowerCase()}`;
  const response=await fetchLocal(path,{method:'GET',headers:authHeaders()});
  if(!response.ok){await check(response);throw new Error('Report export failed')}
- const contentDisposition=response.headers.get('content-disposition')??'';
- const format=path.match(/\/export\/(html|pdf)(?:\?|$)/)?.[1]??'pdf';
+ // Cross-origin WebView2 cannot read this non-safelisted header unless FastAPI
+ // explicitly provides Access-Control-Expose-Headers: Content-Disposition.
+ const contentDisposition=response.headers.get('content-disposition');
+ if(!contentDisposition)throw new Error('Report filename header is unavailable to the desktop webview. Check CORS exposed headers; Save As was not opened.');
+ const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1];
+ if(filename!==expectedFilename)throw new Error('Report export filename does not match the saved report revision. Save As was not opened.');
  const contentType=response.headers.get('content-type')??'';
  const validMime=format==='pdf'?/^application\/pdf(?:;|$)/i.test(contentType):/^text\/html(?:;|$)/i.test(contentType);
- if(!validMime)throw new Error('Report export returned an unexpected file type. No download was started.');
+ if(!validMime)throw new Error('Report export returned an unexpected file type. No Save As dialog was opened.');
  const blob=await response.blob();
  const signature=await blob.slice(0,24).text();
  const validSignature=format==='pdf'?signature.startsWith('%PDF-'):signature.toLowerCase().startsWith('<!doctype html>');
- if(!validSignature)throw new Error('Report export is incomplete or invalid. No download was started.');
- const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]??`pilotodin_report.${format}`;
- const safe=filename.replace(/[\\/\r\n]/g,'_');
- return {blob,filename:safe.toLowerCase().endsWith(`.${format}`)?safe:`pilotodin_report.${format}`};
+ if(!validSignature)throw new Error('Report export is incomplete or invalid. No Save As dialog was opened.');
+ return {blob,filename:expectedFilename};
 }
 
 

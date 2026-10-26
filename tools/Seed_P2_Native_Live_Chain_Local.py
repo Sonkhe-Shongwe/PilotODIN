@@ -69,8 +69,18 @@ def main()->int:
     if first.status_code!=200 or second.status_code!=200 or first.json()["title"]==second.json()["title"]:
         raise RuntimeError("Frozen report revisions were not independently retrievable.")
     exports={}
+    # A Python HTTP client can read any response header, but a cross-origin
+    # browser cannot. Model the actual Vite WebView2 origin in this preflight.
+    browser_origin="http://127.0.0.1:5176"
     for fmt in ("pdf","html"):
-        response=client.get(f"/api/reports/{report_id}/export/{fmt}?revision=2")
+        response=client.get(f"/api/reports/{report_id}/export/{fmt}?revision=2",
+                            headers={"Origin":browser_origin})
+        if response.headers.get("access-control-allow-origin") != browser_origin:
+            raise RuntimeError("Synthetic browser origin was not accepted by API CORS.")
+        exposed={item.strip().lower() for item in
+                 response.headers.get("access-control-expose-headers","").split(",")}
+        if "content-disposition" not in exposed:
+            raise RuntimeError(f"Browser cannot read {fmt} filename: Content-Disposition is not exposed by CORS.")
         if response.status_code!=200:raise RuntimeError(f"{fmt} export HTTP {response.status_code}")
         if fmt=="pdf" and not response.content.startswith(b"%PDF-"):
             raise RuntimeError("Synthetic PDF export signature incorrect")
@@ -81,7 +91,8 @@ def main()->int:
             raise RuntimeError(f"Expected {fmt} filename not returned by backend")
         # Strict proof that the same immutable revision renders identically at
         # two different calls before crossing the TestClient/Uvicorn boundary.
-        repeated=client.get(f"/api/reports/{report_id}/export/{fmt}?revision=2")
+        repeated=client.get(f"/api/reports/{report_id}/export/{fmt}?revision=2",
+                            headers={"Origin":browser_origin})
         if repeated.status_code!=200 or repeated.content!=response.content:
             raise RuntimeError(f"Synthetic {fmt} export changed between repeated requests; refuse digest baseline.")
         exports[fmt]={

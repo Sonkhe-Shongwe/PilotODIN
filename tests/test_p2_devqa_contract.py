@@ -43,6 +43,20 @@ class P2DevQAContract(unittest.TestCase):
         html=source("frontend/p2_native_live_report_test.html")
         self.assertIn('id="qa-save-folder"',html)
 
+    def test_export_filename_cors_end_to_end_contract(self):
+        backend=source("backend/main.py")
+        front=source("frontend/src/api.ts")
+        seeded=source("tools/Seed_P2_Native_Live_Chain_Local.py")
+        rust=source("frontend/src-tauri/src/lib.rs")
+        # The transport exposes the filename, and the caller refuses guesses.
+        self.assertIn('expose_headers=["Content-Disposition"]', backend)
+        self.assertIn("access-control-expose-headers", seeded)
+        self.assertIn("headers={\"Origin\":browser_origin}", seeded)
+        self.assertIn("Report filename header is unavailable", front)
+        self.assertIn("filename!==expectedFilename", front)
+        self.assertNotIn("??`pilotodin_report.${format}`", front)
+        self.assertIn(".set_file_name(filename)", rust)
+
     def test_bootstrap_no_early_product_pass(self):
         s=source("tools/Start_P2_DevQA_Native_Chain_Local.ps1")
         self.assertIn("init --phase P2-NATIVE-CHAIN --json",s)
