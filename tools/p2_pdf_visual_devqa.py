@@ -52,6 +52,7 @@ def verified_home(run, home):
         raise RuntimeError("Linked run paths are prohibited")
     info = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
     if (info.get("phase") != PHASE or info.get("state") != "READY_NOT_TESTED" or
+            info.get("run_id") != run.name or
             info.get("product_acceptance") != "NOT_TESTED"):
         raise RuntimeError("Unverified or reused DevQA manifest")
 
@@ -204,11 +205,18 @@ def child_worker():
 
 def preview_zip(run, child, destination):
     names = child.get("files", [])
-    if (not isinstance(names, list) or len(names) < 6 or len(names) > 12 or
-            len(set(names)) != len(names) or
-            any(not isinstance(n, str) or not PREVIEW_PATTERN.fullmatch(n) for n in names) or
-            any(pdf not in names for pdf in PDF_NAMES.values())):
-        raise ValueError("Unrecognized synthetic preview file manifest")
+    expected = set(PDF_NAMES.values())
+    for entry in child["cases"]:
+        pages = entry.get("pages")
+        if isinstance(pages, bool) or not isinstance(pages, int) or not 1 <= pages <= MAX_PAGES:
+            raise ValueError("Missing bounded PDF page count")
+        scenario = entry["scenario"]
+        expected.update(scenario + "-p" + format(index + 1, "02d") + ".png"
+                        for index in sorted({0, pages // 2, pages - 1}))
+    if (not isinstance(names, list) or set(names) != expected or
+            len(names) != len(expected) or
+            any(not isinstance(n, str) or not PREVIEW_PATTERN.fullmatch(n) for n in names)):
+        raise ValueError("Incomplete or unrecognized synthetic preview manifest")
     exports = run / "exports"
     if is_link(exports):
         raise ValueError("Refusing linked preview exports directory")
