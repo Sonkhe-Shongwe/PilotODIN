@@ -263,7 +263,8 @@ try{
     $qaManifest.state=$(if($report.overall -eq 'PASS'){'P2_SYNTHETIC_DEV_PASS'}else{'P2_SYNTHETIC_DEV_FAIL'})
     $qaManifest | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath $qaManifestPath -Encoding UTF8
     $report | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath $reportFile -Encoding UTF8
-    $files=@($reportFile,$seedLog,$backendOut,$backendErr,$buildLog,$nativeLog) | Where-Object {Test-Path $_}
+    $files=@($reportFile,$seedLog,$backendOut,$backendErr,$buildLog,$nativeLog,
+        (Join-Path $logDir 'devqa-preflight.json'),(Join-Path $logDir 'devqa-selftests.log')) | Where-Object {Test-Path $_}
     Compress-Archive -LiteralPath $files -DestinationPath $archive -Force
     Write-Host ('P2 live API-to-native export gate: '+$report.overall) -ForegroundColor $(if($report.overall -eq 'PASS'){'Green'}else{'Red'})
     Write-Host ('One diagnostic ZIP (logs may contain test-local paths): '+$archive)
