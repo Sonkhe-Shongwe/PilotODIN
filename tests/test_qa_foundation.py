@@ -57,6 +57,33 @@ class QAFoundationTests(unittest.TestCase):
             self.assertEqual((findings[0]["id"], blocked), ("PY-SYNTAX", 1))
             with self.assertRaises(ValueError): scan_files(repo, ["../outside.py"])
 
+    def test_init_json_for_windows_launcher(self):
+        import io
+        import json
+        from contextlib import redirect_stdout
+        from qa_foundation import main
+        with TemporaryDirectory() as temp:
+            out = io.StringIO()
+            with redirect_stdout(out):
+                code = main(["init", "--phase", "P2-NATIVE-CHAIN",
+                             "--qa-root", str(Path(temp) / "qa"), "--json"])
+            payload = json.loads(out.getvalue())
+            self.assertEqual(code, 0)
+            self.assertEqual(payload["status"], "READY_NOT_TESTED")
+            self.assertEqual(payload["product_acceptance"], "NOT_TESTED")
+            self.assertTrue((Path(payload["run_dir"]) / "manifest.json").is_file())
+            self.assertTrue(Path(payload["exports_dir"]).is_dir())
+            self.assertEqual(Path(payload["exports_dir"]).parent, Path(payload["run_dir"]))
+
+    def test_output_verifier_requires_original_basename(self):
+        with TemporaryDirectory() as temp:
+            run, _ = create_run(Path(temp) / "qa", "P2", Path(temp) / "repo")
+            expected = hashlib.sha256(b"native").hexdigest()
+            (run / "exports" / "report(3).pdf").write_bytes(b"native")
+            self.assertEqual(verify_existing(run, {"report_rev2.pdf": expected})[0]["status"], "MISSING")
+            (run / "exports" / "report_rev2.pdf").write_bytes(b"wrong")
+            self.assertEqual(verify_existing(run, {"report_rev2.pdf": expected})[0]["status"], "SHA_MISMATCH")
+
     def test_strict_saved_file_identity(self):
         with TemporaryDirectory() as temp:
             run, _ = create_run(Path(temp) / "qa", "P2", Path(temp) / "repo")

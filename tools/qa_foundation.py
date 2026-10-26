@@ -187,6 +187,7 @@ def main(argv=None):
     p_init = sub.add_parser("init")
     p_init.add_argument("--phase", required=True)
     p_init.add_argument("--qa-root", type=Path)
+    p_init.add_argument("--json", action="store_true", help="Print one machine-readable run-path JSON object")
     p_check = sub.add_parser("check")
     p_check.add_argument("--phase", default="FRAMEWORK-V1")
     p_check.add_argument("--qa-root", type=Path)
@@ -197,8 +198,19 @@ def main(argv=None):
     try:
         if args.action == "init":
             run, _ = create_run(args.qa_root or default_root(), args.phase)
-            print("READY_NOT_TESTED: " + str(run))
-            print("EXPORTS: " + str(run / "exports"))
+            if args.json:
+                print(json.dumps({
+                    "status": "READY_NOT_TESTED",
+                    "run_dir": str(run),
+                    "exports_dir": str(run / "exports"),
+                    "workspace_dir": str(run / "workspace"),
+                    "logs_dir": str(run / "logs"),
+                    "archive_dir": str(run.parent.parent / "archive"),
+                    "product_acceptance": "NOT_TESTED"
+                }))
+            else:
+                print("READY_NOT_TESTED: " + str(run))
+                print("EXPORTS: " + str(run / "exports"))
             return 0
         if args.action == "check":
             run, result = check_setup(args.phase, args.qa_root or default_root(), scan=args.scan)
