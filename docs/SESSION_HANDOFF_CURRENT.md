@@ -1,5 +1,19 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+
+## MOST RECENT ACCEPTANCE — P2 report display DevQA 5/5 Windows PASS, visual PDF review open (26 October 2026)
+
+**Current branch:** `feature/live-dev-workspace-20261023`. Branch HEAD before this handoff update was `1a78083e33c92ed2f3d49519efab569912c4cbd6` (acceptance doc update). Always fetch live HEAD before any further changes. This section supersedes the previous `LATEST NEW P2 WORK` instruction to run the display BAT; it has now been executed and accepted for its five-case scope.
+
+**Actual owner Windows evidence:** screenshot and uploaded `P2-REPORT-DISPLAY-20261026T130557Z-71ae4c1550.zip` independently inspected. The ZIP passes integrity verification and contains only `result.json` and `manifest.json`. Both record the expected run and `REVIEW_REQUIRED` with `product_acceptance=NOT_TESTED`. The test worker returned 0, `count=5`, `executed=5`, no failures/errors/skips. Preflight zero source findings and blockers. **Focused P2 report display and PDF page-bounds DevQA is OWNER WINDOWS PASS 5/5.** There is no need to run it again for unchanged source.
+
+**Previously accepted evidence remains intact:** 3/3 runner + 9/9 four-source mixed report Windows gate PASS, and earlier native development-only FastAPI to React to Tauri Save As exact HTML/PDF SHA proof. Do not replay accepted suites. The 5/5 gate exercised synthetic omitted-entry notices for 24/40/30/50 limits, HTML/PDF essential notice text, no invented notice under the cap, legacy `_exhibit` compatibility and multipage A4 text block bounds. No new real source data or models were used.
+
+**What remains unverified:** Actual human-viewed PDF glyph clipping, dense table aesthetics, very long/odd Unicode text, graph captions, collision/overlap, fonts and print legibility. PDF text extraction and A4 bounding boxes alone cannot certify these. The status archive includes no rendered PDF bytes or screenshots. Generic QA manifest `risk_register` states and `product_acceptance=NOT_TESTED` remain expected; P2 final product and installed-release assurance remain open.
+
+**Current correct decision and ONE next engineering step:** Keep P2 overall at `REVIEW_REQUIRED` while accepting 5/5 display DevQA. Design a **bounded, isolated, synthetic-only PDF visual acceptance gate** that can produce safe preview artifacts and permit meaningful visual inspection without using real projects or disclosing data. Plan guardrails for approved preview paths, page/glyph geometry, long labels, fonts and collision detection. Only implement a narrow renderer repair on a demonstrated failure; do not start P3, hosted GitHub Actions, installer, Qwen downloads or training. No new owner action is required until a coherent focused visual gate is ready. Full details: `docs/P2_REPORT_DISCLOSURE_AND_PDF_GATE.md`, Master QA Issue #2.
+
+
 ## LATEST NEW P2 WORK — Report display omission disclosure and PDF geometry gate committed, Windows run PENDING (26 October 2026)
 
 **Live branch source HEAD just before this handoff commit:** `e9548a7b55eb8a8bf5b00c6e99d732b298d771c8` on `feature/live-dev-workspace-20261023`. Always re-fetch HEAD before a future write. This new heading supersedes the older 'next: plan disclosure' headings below.
