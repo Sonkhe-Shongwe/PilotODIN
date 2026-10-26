@@ -75,3 +75,7 @@ Separate *rendering-only* stress fixture may include all 15 permitted artifacts,
 5. Record acceptance limits, source SHA, pass/fail evidence and next priority in QA Issue #2 and authoritative handoff.
 
 **The scope review and plan are complete. The fixture, executable test and any rendering repair are NOT YET IMPLEMENTED; no new Windows operation has been requested.**
+
+## Test-only implementation increment committed (26 October 2026)
+
+The proposed fixture and one DevQA launcher are now SOURCE COMMITTED, not yet owner-executed. Files: `tests/test_p2_mixed_report_devqa.py` (9 focused cases), `tests/test_p2_mixed_runner_contract.py` (3 pure status contract cases), `tools/p2_mixed_report_devqa.py` (isolated child, status-only diagnostics) and `Run_PilotODIN_P2_Mixed_Report_DevQA.bat`. A dedicated current acceptance specification is at `docs/P2_MIXED_EVIDENCE_DEVQA_ACCEPTANCE.md`. All changes so far are test/document tooling only, with no product renderer, backend API or native export changes. The runner deliberately reports **REVIEW_REQUIRED even if 12 test cases pass** because MR-06 omitted-record disclosure and PDF visual clipping require separate meaningful acceptance; they are not silently counted as verified. This replaces the earlier 'NOT YET IMPLEMENTED' description as a historical planning baseline, not a fresh successful runtime result. The next step is one owner Windows BAT execution and screenshot/one diagnostic ZIP if red.
