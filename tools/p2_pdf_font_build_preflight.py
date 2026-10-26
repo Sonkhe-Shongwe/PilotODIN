@@ -27,8 +27,8 @@ MAX_TOTAL = 25 * 1024 * 1024
 
 def _not_redirected(path: Path) -> None:
     for part in (path, *path.parents):
-        if part.exists() and (part.is_symlink() or
-                              getattr(os.path, "isjunction", lambda _: False)(part)):
+        if part.is_symlink() or (part.exists() and
+                                 getattr(os.path, "isjunction", lambda _: False)(part)):
             raise ValueError("Redirected staging path")
 
 
@@ -36,7 +36,10 @@ def _expected(manifest: dict) -> list[tuple[str, str, int, str, str]]:
     """Return role, basename, pinned size, Git blob ID and asset kind."""
     if (manifest.get("schema") != 1 or
             manifest.get("status") != "CANDIDATES_UNVERIFIED_DO_NOT_SHIP" or
-            manifest.get("source_repo") != "google/fonts"):
+            manifest.get("source_repo") != "google/fonts" or
+            not isinstance(manifest.get("source_commit"), str) or
+            len(manifest["source_commit"]) != 40 or
+            any(c not in "0123456789abcdef" for c in manifest["source_commit"])):
         raise ValueError("Invalid candidate identity manifest")
     entries = manifest.get("assets")
     if not isinstance(entries, list) or len(entries) != 3 or \
@@ -51,6 +54,7 @@ def _expected(manifest: dict) -> list[tuple[str, str, int, str, str]]:
             name, size, oid = item[name_key], item[size_key], item[oid_key]
             if (not isinstance(name, str) or
                     Path(name).name != name or name in ("", ".", "..") or
+                    "/" in name or "\" in name or
                     not isinstance(size, int) or isinstance(size, bool) or
                     not 0 < size <= MAX_TOTAL or
                     not isinstance(oid, str) or len(oid) != 40 or
@@ -141,9 +145,12 @@ def stage_for_review(source: Path, destination_parent: Path, manifest: dict,
         return {"state": receipt["state"], "asset_count": 6,
                 "source_verified": True, "product_acceptance": "NOT_TESTED",
                 "destination": str(final), "receipt": "receipt.json"}
-    except BaseException:
-        # Only the just-created pending directory is in scope for cleanup.
-        shutil.rmtree(temporary)
+    except BaseException as original_error:
+        # Never mask a cleanup failure: retain a visible reviewable blocker.
+        try:
+            shutil.rmtree(temporary)
+        except OSError as cleanup_error:
+            raise RuntimeError("Review staging cleanup failed") from cleanup_error
         raise
 
 
