@@ -19,7 +19,7 @@ class QAFoundationTests(unittest.TestCase):
             run, manifest = create_run(Path(temp) / "qa", "P2-TEST", Path(temp) / "repo")
             self.assertEqual(manifest["product_acceptance"], "NOT_TESTED")
             self.assertEqual(manifest["state"], "READY_NOT_TESTED")
-            self.assertEqual(len(manifest["risk_register"]), 6)
+            self.assertEqual(len(manifest["risk_register"]), 7)
             for name in ("workspace", "fixtures", "exports", "logs", "diagnostics"):
                 self.assertTrue((run / name).is_dir())
 

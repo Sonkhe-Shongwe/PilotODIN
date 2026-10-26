@@ -22,6 +22,7 @@ PS_RESERVED = re.compile(r"(?im)^\s*\$(home|host|pid|profile|input|matches|error
 RISKS = [
     ("PATH-01", "Verify the actual native Save As folder and exact output filenames"),
     ("PDF-01", "Control changing PDF metadata if hashing independently generated PDF renders"),
+    ("HTTP-01", "Check browser-visible response headers across CORS boundaries, not just raw API headers"),
     ("ENV-01", "Check protected PowerShell variables and process environment cleanup"),
     ("EVID-01", "Collect diagnostics on early failure; never promote partial PASS"),
     ("DATA-01", "Isolate synthetic inputs, database and model directories from user projects"),
