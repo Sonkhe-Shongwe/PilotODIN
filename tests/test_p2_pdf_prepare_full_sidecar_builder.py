@@ -20,6 +20,10 @@ class FullSidecarBuilderSafetyContracts(unittest.TestCase):
         self.assertNotEqual(prep.ENV_DIR, prep.ROOT / ".venv-live")
         self.assertNotEqual(prep.ENV_DIR, prep.ROOT / ".venv")
         self.assertEqual(prep.OFFICIAL_INDEX, "https://pypi.org/simple")
+        launcher = (prep.ROOT / "Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat").read_text(encoding="utf-8")
+        self.assertIn("choice /C YN", launcher)
+        self.assertLess(launcher.index("choice /C YN"), launcher.index(" --prepare"))
+        self.assertIn("if errorlevel 1", launcher)
         # The embedded isolated metadata probe is itself valid Python.
         compile(prep._PROBE, "<isolated-python-metadata>", "exec")
         self.assertEqual((prep.PINNED_PYINSTALLER, prep.PINNED_HOOKS),
