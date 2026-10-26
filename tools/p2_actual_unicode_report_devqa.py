@@ -76,6 +76,20 @@ def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
         json.dumps(report, ensure_ascii=False, sort_keys=True).encode("utf-8")
     ).hexdigest()
     html_before = reports.render_html(report)
+
+    # Regression on the normal default renderer: no Unicode context supplied,
+    # no dependency on the new font files or an approved-release manifest.
+    legacy = {
+        "id": "b" * 32, "revision": 1, "title": "Synthetic ASCII baseline",
+        "narrative": "Ordinary safe reporting remains available.",
+        "dataset_versions": [1], "content_sha256": "e" * 64,
+        "evidence": [], "limitations": ["No actual project records."],
+    }
+    ascii_pdf = reports.render_pdf(legacy)
+    with fitz.open(stream=ascii_pdf, filetype="pdf") as baseline:
+        if len(baseline) != 1 or "Synthetic ASCII baseline" not in baseline[0].get_text():
+            raise ValueError("Legacy default report rendering regression")
+
     raw = reports.render_pdf(report, unicode_context=context)
     html_after = reports.render_html(report)
     if report != original or html_before != html_after or (
@@ -107,6 +121,7 @@ def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
         pages_count = len(doc)
     return raw, {
         "real_backend_report_pdf": True,
+        "legacy_default_report_preserved": True,
         "unicode_title_narrative_table_chart": True,
         "chart_metric_values_unchanged": True,
         "immutable_revision_and_html": True,
