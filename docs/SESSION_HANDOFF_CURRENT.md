@@ -1,6 +1,23 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## CURRENT P2 UNICODE CHECKPOINT — PINNED FONT CANDIDATES AND OFFLINE COMPATIBILITY GATE COMMITTED (26 October 2026)
+
+**Live branch:** `feature/live-dev-workspace-20261023`; most recent code/doc checkpoint before this handoff `d3f5054bd8cbc50cb92550701274ca35a1799f2c`. Always recheck live HEAD before the next mutation. This section supersedes the older generic "select fonts" next action below. The assets are now identified and pinned **as candidates only**, not approved or included in PilotODIN.
+
+**Accepted legacy gates remain intact:** P2 3/3 runner and 9/9 synthetic four-source mixed tests PASS; display disclosure 5/5 PASS; corrected PDF chart pagination visually PASS; synthetic native Save As exact HTML/PDF SHA accepted separately. The user repeated a 14:12 preview of unchanged source and Unicode still visibly FAILS. Do not repeat accepted suites or previously redone visual examples until actual font code changes.
+
+**This increment's verified research and local proof:** Queried `google/fonts` public GitHub source commit `e7db6ca603fd4862010383ff17ffd6cc4ffac1c0` and documented immutable Git blob SHA-1 + byte sizes/license identities for three candidate fonts: Noto Sans variable (2,049,096 bytes), Noto Sans SC variable (17,772,300 bytes), Noto Sans Symbols2 Regular (1,233,128 bytes). Total approx 20.1 MiB of font candidates, still unverified *as actual downloaded binaries*. All three directories contain official SIL OFL 1.1 license files. CJK may need actual static TrueType instantiation, and all downstream license/Reserved Font Name constraints remain. ReportLab TTFont does not accept the previously tested PostScript-outline Noto CJK TTC.
+
+**Critical mixed-font behavior PROVEN LOCALLY:** Explicit font spans in ReportLab successfully rendered/extracted mixed Latin-accent, Greek, Cyrillic, CJK and rupee text with independently available desktop test fonts (NOT the pinned asset files). Noto Sans Symbols2 painted a recognizable U+1F4C8 chart symbol but PyMuPDF extracted **`Ὄ` rather than `📈`**, despite cmap glyph presence. This is a real emoji ToUnicode/search/copy mismatch. **Do not call Unicode complete merely from visual glyph rendering or charToGlyph checks.** Need explicit supplementary-plane support strategy or truthful alternative labeling.
+
+**Source committed, all developer-only, no product mutation:** `tools/p2_pdf_font_candidates.json` pins upstream commit + font/license Git OIDs/sizes and status `CANDIDATES_UNVERIFIED_DO_NOT_SHIP`; `tools/p2_pdf_font_asset_gate.py` provides an offline, explicitly local candidate size/Git blob/SHA-256/OFL/ReportLab font-cmap verifier; `tools/p2_pdf_font_coverage_probe.py` now checks mixed-script inline fallback and exact extracted Unicode; `tests/test_p2_pdf_font_devqa_contract.py` has three synthetic pure-unit method contracts. Full details in `docs/P2_PDF_UNICODE_FONT_REMEDIATION_PLAN.md`. These new tests/gates are not yet owner Windows-executed and no runtime assets, code fonts, Tauri bundle paths, model data, installer or production reporting were touched.
+
+**Unresolved acceptance blockers:** acquire exact pinned static-compatible font binaries and OFL notices in a controlled developer environment; verify bitwise identities plus independent SHA-256 and real ReportLab support; establish licensing, CJK memory/installer impact and deterministic chart/paragraph/table font-run fallback; specifically solve PDF U+1F4C8 ToUnicode fidelity or make fallback content faithfully accessible; produce a narrow offline packaged Windows font integration + synthetic visual gate before declaring P2 Unicode PASS. The Git SHA of a candidate is not equivalent to runtime verified asset deployment. P2 status remains **REVIEW_REQUIRED, Unicode VISUAL_FAIL**.
+
+**Next engineering action, no owner BAT yet:** Controlled acquisition and exact validation of the pinned candidate files outside production, then evaluate ReportLab fallback/emoji policy and only afterwards implement production fonts with clear rollback + a focused owner Windows visual check. Do not ask owner to re-run prior accepted suites, do not start P3, Qwen, models or installer changes.
+
+
 ## NEWEST P2 CHECKPOINT — Unicode font compatibility PROTOTYPED; bundled-font production fix not yet implemented (26 October 2026)
 
 **Live GitHub branch** `feature/live-dev-workspace-20261023`, HEAD before this handoff commit `ebf1be77e153342f969b47b9626bdf83b66944ac`. Fetch live HEAD before any next modification. This section supersedes the prior generic instruction to start Unicode-font research; Stage 0 research and a bounded developer test utility are now committed.
