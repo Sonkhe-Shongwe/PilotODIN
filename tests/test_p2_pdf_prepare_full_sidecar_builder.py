@@ -20,6 +20,8 @@ class FullSidecarBuilderSafetyContracts(unittest.TestCase):
         self.assertNotEqual(prep.ENV_DIR, prep.ROOT / ".venv-live")
         self.assertNotEqual(prep.ENV_DIR, prep.ROOT / ".venv")
         self.assertEqual(prep.OFFICIAL_INDEX, "https://pypi.org/simple")
+        # The embedded isolated metadata probe is itself valid Python.
+        compile(prep._PROBE, "<isolated-python-metadata>", "exec")
         self.assertEqual((prep.PINNED_PYINSTALLER, prep.PINNED_HOOKS),
                          ("6.22.3", "2026.9"))
 
