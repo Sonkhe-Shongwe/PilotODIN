@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "status": "CANDIDATES_UNVERIFIED_DO_NOT_SHIP",
+  "source_repo": "google/fonts",
+  "source_commit": "e7db6ca603fd4862010383ff17ffd6cc4ffac1c0",
+  "download_policy": "DEVELOPER_ONLY_NEVER_AT_RUNTIME",
+  "license": "SIL Open Font License 1.1; include full per-family OFL.txt before redistribution; review reserved font names for derived fonts",
+  "assets": [
+    {
+      "role": "regular",
+      "filename": "NotoSans[wdth,wght].ttf",
+      "relative_path": "ofl/notosans/NotoSans[wdth,wght].ttf",
+      "bytes": 2049096,
+      "git_blob_sha1": "75575046c015ff623a848096a15779867ba71453",
+      "license_filename": "NotoSans-OFL.txt",
+      "license_path": "ofl/notosans/OFL.txt",
+      "license_git_blob_sha1": "6843f31878c9945e1e71e1baa275546b4eefead8",
+      "status": "CANDIDATE_VARIABLE_NOT_PRODUCTION_APPROVED"
+    },
+    {
+      "role": "cjk",
+      "filename": "NotoSansSC[wght].ttf",
+      "relative_path": "ofl/notosanssc/NotoSansSC[wght].ttf",
+      "bytes": 17772300,
+      "git_blob_sha1": "fb0637bafbcd804fe32152370a1225990745b4bc",
+      "license_filename": "NotoSansSC-OFL.txt",
+      "license_path": "ofl/notosanssc/OFL.txt",
+      "license_git_blob_sha1": "1c9f43281b8f216c5461fe9ac729afbade7724e4",
+      "status": "CANDIDATE_VARIABLE_NOT_PRODUCTION_APPROVED"
+    },
+    {
+      "role": "symbol",
+      "filename": "NotoSansSymbols2-Regular.ttf",
+      "relative_path": "ofl/notosanssymbols2/NotoSansSymbols2-Regular.ttf",
+      "bytes": 1233128,
+      "git_blob_sha1": "caf89dd0e60e23ac39ce18da823095959d409437",
+      "license_filename": "NotoSansSymbols2-OFL.txt",
+      "license_path": "ofl/notosanssymbols2/OFL.txt",
+      "license_git_blob_sha1": "7c95767f5c669c448148e7e6c8fc4ee2c85128b1",
+      "status": "CANDIDATE_NEEDS_EMOJI_TOUNICODE_CHECK"
+    }
+  ],
+  "limits": [
+    "Only developer-provided offline local files",
+    "No assumed color emoji support",
+    "Requires ReportLab font registration and exact Unicode extraction proof",
+    "No production font bundle or installer modification authorized"
+  ]
+}
