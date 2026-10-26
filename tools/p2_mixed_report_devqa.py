@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from qa_foundation import create_run, default_root, scan_files
 
-EXPECTED = {"contract": 3, "mixed": 7}
+EXPECTED = {"contract": 3, "mixed": 9}
 PATTERNS = {"contract": "test_p2_mixed_runner_contract.py",
             "mixed": "test_p2_mixed_report_devqa.py"}
 
@@ -170,7 +170,7 @@ def execute():
         stages = result["stages"]
         if all(stages.get(k, {}).get("state") == "PASS" for k in ("contract", "mixed")):
             result["state"] = "REVIEW_REQUIRED"  # Product boundaries intentionally unverified.
-            result["scoped_tests"] = "7 PASS; 3 runner contract tests PASS"
+            result["scoped_tests"] = "9 PASS; 3 runner contract tests PASS"
         elif any(entry.get("state") == "FAIL" for entry in stages.values()):
             result["state"] = "FAIL"
         else:

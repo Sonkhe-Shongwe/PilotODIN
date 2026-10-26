@@ -226,6 +226,27 @@ class MixedReportContract(unittest.TestCase):
         self.assertEqual(before, after)
         self.assertEqual(expect(client.get(f"/api/reports/{self.report_id}"), 200)["revision"], 2)
 
+    def test_mr05b_corrupt_explore_settings_cannot_be_reported(self):
+        pid = self.project_id
+        extra = expect(client.post(f"/api/projects/{pid}/explore/saved", json={
+            "title": "Intentionally corrupted test snapshot",
+            "expected_version": quality.current_version(pid),
+            "x": "Region", "y": "Revenue", "kind": "bar",
+            "aggregation": "sum", "bins": 12,
+            "correlation_method": "pearson", "filters": []}), 201)
+        before = expect(client.get(f"/api/projects/{pid}/reports"), 200)
+        with storage.connect() as con:
+            current = con.execute(
+                "SELECT configuration_json FROM explore_snapshots_v1 WHERE id=?",
+                (extra["id"],)).fetchone()[0]
+            changed = json.loads(current)
+            changed["filters"] = [{"column": "Region", "op": "eq", "value": "South"}]
+            con.execute("UPDATE explore_snapshots_v1 SET configuration_json=? WHERE id=?",
+                        (json.dumps(changed, sort_keys=True, separators=(",", ":")),
+                         extra["id"]))
+        self.assertEqual(save(pid, [extra["id"]]).status_code, 409)
+        self.assertEqual(expect(client.get(f"/api/projects/{pid}/reports"), 200), before)
+
     def test_mr06_bounded_visual_not_invented(self):
         self.assertIsNone(report_charts.visual_spec({
             "type": "scatter", "data": [{"x": 1, "y": 2}]}))
@@ -257,6 +278,36 @@ class MixedReportContract(unittest.TestCase):
             self.assertIn(term, joined)
         self.assertEqual(hashlib.sha256(self.source_path.read_bytes()).hexdigest(),
                          self.original_sha)
+
+    def test_mr07b_dense_multi_page_renderer_smoke(self):
+        # Renderer-only stress projection: this is NOT another persisted report.
+        import copy
+        dense = dict(self.revision1)
+        dense["title"] = "Synthetic dense four-source layout review"
+        dense["narrative"] = "Synthetic narrative for layout only. " * 30
+        dense["evidence"] = []
+        for round_index in range(3):
+            for original in self.revision1["evidence"]:
+                art = copy.deepcopy(original)
+                art["id"] = format(len(dense["evidence"]) + 1, "032x")
+                art["objective"] = original["objective"] + " with bounded long test wording."
+                if art["operation"] == "quality_audit":
+                    sample = art["result"]["findings"]
+                    if sample:
+                        art["result"]["findings"] = (sample * 10)[:30]
+                dense["evidence"].append(art)
+        self.assertEqual(len(dense["evidence"]), 12)
+        with fitz.open(stream=reports.render_pdf(dense), filetype="pdf") as pages:
+            self.assertGreaterEqual(len(pages), 3)
+            joined = "\n".join(page.get_text() for page in pages)
+            for label in ("Quality Audit", "Explore Snapshot", "Overview",
+                          "Model Evaluation", "Synthetic dense four-source"):
+                self.assertIn(label, joined)
+            for page in pages:
+                self.assertLess(abs(page.rect.width - 595.276), 1)
+                self.assertLess(abs(page.rect.height - 841.89), 1)
+        # Text presence and page dimensions do NOT establish no glyph clipping.
+
 
 if __name__ == "__main__":
     unittest.main()
