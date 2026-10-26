@@ -12,12 +12,14 @@ from io import BytesIO
 import socket
 import ssl
 import unittest
+from unittest.mock import patch
 import urllib.error
 
 from tools.p2_pdf_font_asset_gate import hash_file, strict_member, verify
 from tools.p2_pdf_font_coverage_probe import font_runs
 from tools.p2_pdf_font_stage_candidates import (
     stage_one, CandidateStageError, describe_candidate_failure)
+from tools.p2_pdf_font_local_review import review
 
 
 class FontDevQAContract(unittest.TestCase):
@@ -160,6 +162,53 @@ class FontDevQAContract(unittest.TestCase):
         self.assertNotIn("private-secret", result["reason_excerpt"])
         self.assertNotIn("user:password", result["reason_excerpt"])
         self.assertIn("[URL REDACTED]", result["reason_excerpt"])
+
+
+    def test_offline_candidate_review_preserves_visual_acceptance_boundary(self):
+        with TemporaryDirectory(prefix="odin-font-offline-") as folder:
+            root = Path(folder)
+            manifest = {"assets": [
+                {"role": "regular", "filename": "regular.ttf"},
+                {"role": "cjk", "filename": "cjk.ttf"},
+                {"role": "symbol", "filename": "symbol.ttf"},
+            ]}
+            cmap = {"state": "CANDIDATE_FILE_AND_CMAP_PROBE_PASS",
+                    "font_assets": [
+                        {"role": role, "format_gate": "GLYPHS_PRESENT",
+                         "missing_or_error": []}
+                        for role in ("regular", "cjk", "symbol")
+                    ]}
+            sample = {"samples": {"latin": {"state": "EXTRACTED_EXACT"},
+                                   "mixed": {"state": "MISMATCH"}}}
+            with patch("tools.p2_pdf_font_local_review.verify", return_value=cmap), \
+                 patch("tools.p2_pdf_font_local_review.audit", return_value=sample):
+                result = review(root, manifest)
+            self.assertEqual(result["state"], "CANDIDATE_REVIEW_REQUIRED")
+            self.assertEqual(result["asset_integrity"],
+                             "VERIFIED_PINNED_FONT_AND_LICENSE_BYTES")
+            self.assertEqual(result["exact_pdf_extraction"]["mixed"], "MISMATCH")
+            self.assertEqual(result["visual_acceptance"], "NOT_TESTED")
+
+    def test_offline_candidate_review_never_calls_network(self):
+        with TemporaryDirectory(prefix="odin-font-offline-pass-") as folder:
+            root = Path(folder)
+            manifest = {"assets": [
+                {"role": "regular", "filename": "regular.ttf"},
+                {"role": "cjk", "filename": "cjk.ttf"},
+                {"role": "symbol", "filename": "symbol.ttf"},
+            ]}
+            cmap = {"state": "CANDIDATE_FILE_AND_CMAP_PROBE_PASS",
+                    "font_assets": [
+                        {"role": role, "format_gate": "GLYPHS_PRESENT",
+                         "missing_or_error": []}
+                        for role in ("regular", "cjk", "symbol")
+                    ]}
+            exact = {"samples": {"mixed": {"state": "EXTRACTED_EXACT"}}}
+            with patch("tools.p2_pdf_font_local_review.verify", return_value=cmap), \
+                 patch("tools.p2_pdf_font_local_review.audit", return_value=exact):
+                result = review(root, manifest)
+            self.assertEqual(result["state"], "CANDIDATE_EXTRACTION_PASS_VISUAL_PENDING")
+            self.assertEqual(result["visual_acceptance"], "NOT_TESTED")
 
 
 if __name__ == "__main__":
