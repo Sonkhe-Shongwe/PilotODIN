@@ -9,11 +9,15 @@ import hashlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from io import BytesIO
+import socket
+import ssl
 import unittest
+import urllib.error
 
 from tools.p2_pdf_font_asset_gate import hash_file, strict_member, verify
 from tools.p2_pdf_font_coverage_probe import font_runs
-from tools.p2_pdf_font_stage_candidates import stage_one
+from tools.p2_pdf_font_stage_candidates import (
+    stage_one, CandidateStageError, describe_candidate_failure)
 
 
 class FontDevQAContract(unittest.TestCase):
@@ -91,15 +95,71 @@ class FontDevQAContract(unittest.TestCase):
                     return ("https://raw.githubusercontent.com/google/fonts/" +
                             "a" * 40 + "/ofl/notosans/sample.ttf")
             bad_blob = "a" * 40
-            with self.assertRaises(ValueError):
+            with self.assertRaises(CandidateStageError) as failure:
                 stage_one(root, "a" * 40, "ofl/notosans/sample.ttf",
                           "sample.ttf", 5, bad_blob, lambda *_args, **_kw: Response(b"hello"))
+            self.assertEqual(failure.exception.stage, "identity_verification")
             self.assertEqual(list(root.iterdir()), [])
-            with self.assertRaises(ValueError):
+            with self.assertRaises(CandidateStageError) as bad_path:
                 stage_one(root, "a" * 40, "ofl/notosans/sample.ttf",
                           "../traversal", 5, bad_blob,
                           lambda *_args, **_kw: Response(b"hello"))
+            self.assertEqual(bad_path.exception.stage, "metadata_validation")
             self.assertEqual(list(root.iterdir()), [])
+
+    def test_dns_failure_identifies_asset_and_public_source(self):
+        with TemporaryDirectory(prefix="odin-font-dns-") as temp:
+            root = Path(temp)
+            def offline(_url, timeout):
+                self.assertEqual(timeout, 45)
+                raise urllib.error.URLError(socket.gaierror(11001, "getaddrinfo failed"))
+            with self.assertRaises(CandidateStageError) as captured:
+                stage_one(root, "a" * 40, "ofl/notosans/sample.ttf",
+                          "sample.ttf", 6, "a" * 40, offline)
+            result = describe_candidate_failure(captured.exception, "a" * 40)
+            self.assertEqual(result["asset"], "sample.ttf")
+            self.assertEqual(result["stage"], "connection")
+            self.assertEqual(result["reason_category"], "DNS_RESOLUTION")
+            self.assertEqual(result["reason_class"], "gaierror")
+            self.assertTrue(result["source_url"].startswith(
+                "https://raw.githubusercontent.com/google/fonts/"))
+            self.assertFalse(list(root.iterdir()))
+
+    def test_http_tls_and_proxy_network_diagnostics_are_classified(self):
+        cases = [
+            (urllib.error.HTTPError("https://raw.githubusercontent.com/",
+                                    503, "Service Unavailable", {}, None),
+             "HTTP_STATUS", 503),
+            (urllib.error.URLError(
+                ssl.SSLCertVerificationError(1, "certificate verify failed")),
+             "TLS_CERTIFICATE", None),
+            (urllib.error.URLError(
+                "Tunnel connection failed: 407 Proxy Authentication Required"),
+             "PROXY_OR_GATEWAY", None),
+            (urllib.error.URLError(TimeoutError("timed out")),
+             "TIMEOUT", None),
+        ]
+        for cause, expected, status in cases:
+            with self.subTest(expected=expected):
+                item = CandidateStageError("sample.ttf",
+                                           "ofl/notosans/sample.ttf",
+                                           "connection", cause)
+                result = describe_candidate_failure(item, "a" * 40)
+                self.assertEqual(result["reason_category"], expected)
+                self.assertEqual(result["http_status"], status)
+                self.assertEqual(result["product_acceptance"], "NOT_TESTED")
+
+    def test_network_diagnostics_redact_proxy_credentials(self):
+        cause = urllib.error.URLError(
+            "Tunnel connection failed: https://user:password@proxy.invalid/"
+            "?token=private-secret")
+        error = CandidateStageError("sample.ttf", "ofl/notosans/sample.ttf",
+                                    "connection", cause)
+        result = describe_candidate_failure(error, "a" * 40)
+        self.assertEqual(result["reason_category"], "PROXY_OR_GATEWAY")
+        self.assertNotIn("private-secret", result["reason_excerpt"])
+        self.assertNotIn("user:password", result["reason_excerpt"])
+        self.assertIn("[URL REDACTED]", result["reason_excerpt"])
 
 
 if __name__ == "__main__":
