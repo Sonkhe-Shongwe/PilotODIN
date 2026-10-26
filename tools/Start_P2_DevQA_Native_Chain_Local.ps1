@@ -52,7 +52,7 @@ try{
     $parseTokens=$null
     $parseErrors=$null
     [System.Management.Automation.Language.Parser]::ParseFile($runner,[ref]$parseTokens,[ref]$parseErrors) | Out-Null
-    if(@($parseErrors).Count -gt 0){
+    if($null -ne $parseErrors -and $parseErrors.Count -gt 0){
         $details=(@($parseErrors) | ForEach-Object {$_.Message}) -join ' | '
         throw ('Windows PowerShell source parse BLOCK: '+$details)
     }
