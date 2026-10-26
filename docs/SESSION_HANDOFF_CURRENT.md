@@ -1,6 +1,19 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## LATEST P2: FONT ASSETS STAGED; OFFLINE PRIMARY-FONT / TEXT FIDELITY REVIEW READY (26 October 2026)
+
+**Working feature branch** `feature/live-dev-workspace-20261023`; live source checkpoint before this handoff update `1f949776f9774721aa0acab9371d88532ace0238`. Re-fetch HEAD before further changes. This supersedes earlier instructions to repeat the network-download staging BAT; the owner has now advanced to the candidate asset compatibility report.
+
+**Owner's latest screenshot:** The lower portion of the font staging output confirms `cjk` NotoSansSC 17,772,300 bytes and `symbol` NotoSansSymbols2 Regular 1,233,128 bytes returned `GLYPHS_PRESENT` with empty missing lists. Their displayed SHA-256 values match the research record in `docs/P2_PDF_UNICODE_FONT_REMEDIATION_PLAN.md`. Because the asset gate checks all six candidate font/license byte IDs and SIL OFL notices before returning its per-font results, all six staged identities reached successful verification. The screenshot is scrolled below `regular` and `asset_probe.state`, so the combined nonzero BAT footer **cannot be classified as a continued network failure**. It may signal primary font missing glyph/format or candidate review. Do not invent the missing primary outcome. Glyph presence of CJK/emoji does not prove correct PDF extraction or visual correctness; prior emoji exact Unicode extraction mismatch is still open.
+
+**Next focused code, developer-only and NO NETWORK:** `tools/p2_pdf_font_local_review.py` validates only the existing cached `%LOCALAPPDATA%\\PilotODIN\\DevQA\\font-candidates` bytes/licenses, then runs synthetic mixed-font PDF extraction in memory with the existing `tools/p2_pdf_font_coverage_probe.py` for regular/CJK/symbol samples. It prints short `REGULAR`/`CJK`/`SYMBOL` format results and `TEXT` exact extraction statuses so the owner need not scroll through a giant staging JSON. New `Run_PilotODIN_P2_Font_Candidates_Local_Review.bat` uses only existing `.venv-live` and makes no HTTP request, download, font install, user-project access or product renderer change. Previously 8-method pure synthetic font DevQA contract expanded to **10 methods**, including two mocked fidelity-boundary cases; source reviewed, not owner Windows executed. Details in `docs/P2_PDF_UNICODE_FONT_REMEDIATION_PLAN.md`.
+
+**Previously accepted suites unchanged:** 12/12 four-source mixed-report, 5/5 display disclosure, visually verified chart pagination, native Save As exact on-disk SHA proof. Do not repeat them. Full P2 remains REVIEW_REQUIRED, existing production Unicode PDF VISUAL_FAIL. No binaries added to GitHub or release assets, no production `backend/reports.py` font changes, no model/data/installer changes.
+
+**One next owner action:** Preserve local changes, pull current feature branch in GitHub Desktop, run **`Run_PilotODIN_P2_Font_Candidates_Local_Review.bat` once**. Share complete output/screenshot only, NOT font binaries. Use its primary cmap and six synthetic text cases to decide which pinned font(s) need static conversion, glyph fallback or emoji ToUnicode policy before changing production code. Do NOT rerun the download BAT or earlier accepted suites.
+
+
 ## LATEST P2 STAGING FINDING — OWNER URLError BLOCKED; PINNED-ASSET NETWORK DIAGNOSTICS FIX COMMITTED (26 October 2026)
 
 **Working branch:** `feature/live-dev-workspace-20261023`, source HEAD before this handoff commit `a633f9e3f486d1e6b3713edf1a949be4fe2a51ef`. Always fetch live branch HEAD before any further modification. This heading supersedes the older instruction simply to launch the original uninstrumented font-candidate BAT.
