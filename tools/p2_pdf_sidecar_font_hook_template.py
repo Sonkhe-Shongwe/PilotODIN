@@ -7,6 +7,7 @@ Never package this unchanged template or copy it into the release builder.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -39,6 +40,26 @@ def verify_p2_devqa_frozen_resources() -> None:
         raise RuntimeError("Unexpected or missing bundled font files")
     if len(pdf_font_resources.verify_pdf_font_files(PINNED_ASSETS)) != 6:
         raise RuntimeError("Incomplete bundled font verification")
+    # A concrete DevQA-only receipt proves this hook actually executed INSIDE
+    # the real frozen engine, rather than relying on smoke success by inference.
+    proof = Path(os.environ.get("PILOTODIN_P2_DEVQA_ATTESTATION", ""))
+    if (not proof.is_absolute() or proof.name != "font-attestation.json" or
+            not proof.parent.name.startswith("run-") or
+            proof.parent.parent.name != "real-sidecar-proofs" or
+            proof.parent.parent.parent.name != "p2-sidecar-env"):
+        raise RuntimeError("Missing or invalid DevQA attestation destination")
+    for part in (proof.parent, *proof.parent.parents):
+        if part.is_symlink() or (part.exists() and
+                                 getattr(os.path, "isjunction", lambda _: False)(part)):
+            raise RuntimeError("Redirected DevQA attestation directory")
+    identities = sorted((item["name"], item["bytes"], item["sha256"])
+                        for item in PINNED_ASSETS)
+    digest = hashlib.sha256(json.dumps(identities, separators=(",", ":")).encode()).hexdigest()
+    receipt = {"schema": 1, "state": "FROZEN_REAL_SIDECAR_FONT_FILES_VERIFIED",
+               "embedded_file_count": 6, "font_identity_digest": digest,
+               "from_frozen_hook": True}
+    with proof.open("x", encoding="utf-8") as sink:
+        json.dump(receipt, sink, sort_keys=True)
 
 
 verify_p2_devqa_frozen_resources()
