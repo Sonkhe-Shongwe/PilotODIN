@@ -1,6 +1,22 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## MOST RECENT P2-U2b OWNER RESULT — BUILD-ROUTE DESIGN COMPLETED; ROUTE FIELD NEEDS UPPER CONSOLE CROP (26 OCT 2026)
+
+**Active branch:** `Sonkhe-Shongwe/PilotODIN` / `feature/live-dev-workspace-20261023`. Verify live GitHub branch HEAD again before any future engineering mutations. This newest entry supersedes the earlier “run build-route BAT” instruction immediately below. No new production, installer, Python environment or test code change was needed for this result.
+
+**Owner's latest actual Windows screenshot:** `Run_PilotODIN_P2_Sidecar_Build_Route_DevQA.bat` reached `P2 BUILD-ROUTE DESIGN COMPLETED. Actual sidecar and Unicode PDF remain NOT TESTED.` The displayed JSON confirms `dependencies_installed=false`, `sidecar_built=false`, `installer_built=false`, `production_acceptance=NOT_TESTED`, `next=REVIEW_ROUTE_AND_REQUEST_EXPLICIT_BUILD_PERMISSION`. The bottom of `environment_summary.private_freezer` shows `pyinstaller=6.22.3`, `hooks=2026.9`, `candidate=false`; private packaging environment has no full scientific/backend runtime, as expected. Given the BAT fails closed on unsuccessful six focused regression cases or incomplete route execution, the final completed line supports their successful subprocess exit, **not independent observation of all six unit case lines**.
+
+**MISSING DECISIVE EVIDENCE, DO NOT ASSUME:** The screenshot begins within `private_freezer.runtime_missing` and does not show the actual `route`, `primary_self_contained_candidate`, `live`, `existing_build`, `live_has_complete_runtime_metadata` or `free_disk_ge_2gib`. Do **not** infer whether an existing complete build interpreter is available or a new isolated full-dependency venv is necessary. The program itself appears complete; no failure is shown, just a cropped console. Preserve the successful scoped design-only gate, do not repeat six tests or previous accepted P2 7/8/9/12-case, stand-alone PyInstaller or native QA suites.
+
+**ONE NEXT OWNER ACTION, NO RERUN OR INSTALL:** In the **same terminal, still at “Press any key to continue”**, scroll upward to show the beginning of the JSON and share a screenshot of `route`, `primary_self_contained_candidate`, `live_has_complete_runtime_metadata`, `private_builder_has_pinned_pyinstaller`, `free_disk_ge_2gib` and the abbreviated `environment_summary.live` / `environment_summary.existing_build` entries. Do not send binaries, font files or personal project paths. If terminal was closed, first assess whether existing copied console output is available; do not authorize a full sidecar build merely to recover route metadata.
+
+**Next engineering decision conditioned on that evidence:** If a complete same-interpreter candidate exists, review pinned package versions and real native scientific DLL imports without changing envs; if split, design a fresh ignored, consent-gated full dependency builder with supply-chain/ABI and disk protections; if route BLOCKED, resolve the named prerequisite. Only later, with independent authorization, build the actual frozen `backend/desktop_runner.py` in a new isolated run and verify six packaged fonts with transient home/auth/SQLite smoke. The accepted **standalone** real PyInstaller six-font PASS does not equal real PilotODIN sidecar proof. Production Unicode `VISUAL_FAIL` and P2 `REVIEW_REQUIRED`; P8 not release-certified.
+
+**Current docs:** `docs/P2_PDF_PRODUCTION_SIDECAR_FONT_GATE.md` `8 records observed evidence, missing fields and decision branches; master QA Issue #2 tracks the result. Do not expand P3–P8 or confuse design completion with real product acceptance.
+
+
+
 ## NEWEST 26 OCTOBER P2-U2b: SIDECAR READINESS AUDIT COMPLETED; SAFE BUILD ROUTE DECISION NEXT
 
 **Authoritative:** `Sonkhe-Shongwe/PilotODIN` working branch `feature/live-dev-workspace-20261023`, always recheck live GitHub HEAD. This is the newest entry and supersedes earlier “run sidecar readiness” instructions below. The dated cross-phase baseline is `docs/PILOTODIN_STATUS_REFLECTION_2026-10-26.md`.
