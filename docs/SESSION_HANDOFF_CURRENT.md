@@ -1,5 +1,24 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+## LATEST NEW P2 WORK — Report display omission disclosure and PDF geometry gate committed, Windows run PENDING (26 October 2026)
+
+**Live branch source HEAD just before this handoff commit:** `e9548a7b55eb8a8bf5b00c6e99d732b298d771c8` on `feature/live-dev-workspace-20261023`. Always re-fetch HEAD before a future write. This new heading supersedes the older 'next: plan disclosure' headings below.
+
+**Accepted and preserved:** Owner Windows uploaded ZIP `P2-MIXED-REPORT-20261026T122532Z-75c5ba0a4c.zip` verified 3/3 runner contract and 9/9 synthetic four-source mixed-report PASS (correct overall `REVIEW_REQUIRED`); separate synthetic native HTML/PDF Save As SHA exact matching remains accepted. DO NOT request old suite replay.
+
+**Next source issue found:** `backend/reports.py::_exhibit` limits rendered facts to 24, ordinary rows 40, comparisons 50 and quality findings 30, but previously did not disclose the exact saved-evidence omitted counts consistently in exported HTML/PDF. The underlying frozen artifact was not changed or deleted by display truncation. This is a reader-facing completeness risk, independent of the already passed arithmetic and provenance tests.
+
+**Focused implementation COMMITTED:** `backend/reports.py` now uses `_exhibit_with_disclosure` internally to calculate count-only display limit notices from frozen saved exhibit entries, then displays them in matching HTML/PDF. The legacy `_exhibit` remains a three-tuple wrapper so original tests/callers keep their contract. The note accurately distinguishes bounded saved report projections from potentially larger upstream Explore/Quality snapshots. No report API, revision persistence/migration, model training, Quality approvals or native Tauri changes. No changes to `report_charts.py`.
+
+**New five-test synthetic package:** `tests/test_p2_report_display_disclosure.py` contains exactly 5 cases: 30->24 fact notices, 45->40 ordinary rows, 35->30 findings, 53->50 comparisons, HTML/PDF notice parity and no report mutation, no fabricated notice when under cap, 12-exhibit multipage A4 text block geometry smoke. The geometry check is NOT certification for fonts, glyph clipping, text collisions or human print quality.
+
+**One isolated runner:** `tools/p2_report_display_devqa.py` and `Run_PilotODIN_P2_Report_Display_DevQA.bat` use existing `.venv-live\Scripts\python.exe` without installation. A new `%LOCALAPPDATA%\PilotODIN\DevQA\runs\P2-REPORT-DISPLAY-...` uses disposable `PILOTODIN_HOME` set before backend import; refuses redirected existing runs/archive paths, saves only final status and manifest JSON in one archive, rejects partial/incomplete execution. No native app, model job, Qwen or real project datasets. All green -> `REVIEW_REQUIRED` because actual visual PDF acceptance remains untested. Full exact scope and remaining limitations: `docs/P2_REPORT_DISCLOSURE_AND_PDF_GATE.md`.
+
+**Verification truth:** GitHub commits/files and source structure re-fetched; **new product correction and new five cases have NOT been run on owner Windows**. Prior accepted 12 test results do not validate this new code. Review if a real error appears; do not assume fixed until targeted execution evidence.
+
+**Exactly ONE next owner action:** GitHub Desktop pull active feature branch, preserving uncommitted/untracked files, and run **`Run_PilotODIN_P2_Report_Display_DevQA.bat` once**. Share screenshot; on FAIL/BLOCKED upload the printed status-only ZIP. Do NOT run old P2 mixed or Tauri native BAT, broad tests, installer, Qwen, model fit or hosted Actions. If 5/5 pass, keep P2 open only for meaningful human PDF visual/glyph/print acceptance and later full P8 release requirements; do not conflate them or start P3 unilaterally.
+
+
 
 ## AUTHORITATIVE LATEST — P2 MIXED EVIDENCE DEVQA 3+9 OWNER WINDOWS PASS; REPORT QUALITY REVIEW STILL OPEN (26 October 2026)
 
