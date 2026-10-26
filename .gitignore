@@ -48,3 +48,5 @@ frontend-check-results/
 
 # Verified-but-not-approved font binaries are build-review-only and must never be committed.
 /build/p2-pdf-font-preflight/
+# P2-U2a PyInstaller-only font test; never commit build outputs or third-party binaries.
+/build/p2-pdf-frozen-resource-probe/
