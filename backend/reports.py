@@ -775,8 +775,20 @@ def render_html(report: dict) -> bytes:
     return ''.join(pieces).encode('utf-8')
 
 
-def render_pdf(report: dict) -> bytes:
-    """Print the same exhibit summaries as HTML, with provenance and page numbers."""
+def render_pdf(report: dict, *, unicode_context=None) -> bytes:
+    """Render the existing PDF unchanged unless an explicit verified context is supplied.
+
+    No API route currently supplies a Unicode context. The dormant branch
+    must not be enabled before independent six-file release font approval.
+    """
+    if unicode_context is not None:
+        try:
+            from .pdf_unicode_seam import UnicodePDFContext
+        except ImportError:
+            from pdf_unicode_seam import UnicodePDFContext
+        if not isinstance(unicode_context, UnicodePDFContext):
+            raise ValueError("Expected explicit verified Unicode PDF context")
+        unicode_context.assert_ready()
     from reportlab.platypus import Table, TableStyle
     output=BytesIO()
     doc=SimpleDocTemplate(output,pagesize=A4,rightMargin=43,leftMargin=43,topMargin=40,bottomMargin=46,
@@ -789,8 +801,14 @@ def render_pdf(report: dict) -> bytes:
                               textColor=colors.HexColor('#596781'),spaceAfter=7,wordWrap='CJK'))
     styles.add(ParagraphStyle(name='ODINHeading',parent=styles['Heading2'],fontSize=13,leading=16,
                               textColor=colors.HexColor('#35259C'),spaceBefore=12,spaceAfter=8))
+    if unicode_context is not None:
+        for name in ('ODIN', 'ODINBody', 'ODINMeta', 'ODINHeading'):
+            styles[name].fontName = unicode_context.base_face
     def p(value,style='ODINBody'):
-        return Paragraph(escape(str(value)).replace('\n','<br/>'),styles[style])
+        text = str(value)
+        safe = (unicode_context.markup(text) if unicode_context is not None else
+                escape(text).replace('\n','<br/>'))
+        return Paragraph(safe, styles[style])
     def table(headers,records):
         if not headers or not records:return []
         width=doc.width/max(len(headers),1)
@@ -845,7 +863,7 @@ def render_pdf(report: dict) -> bytes:
                 # together rather than orphaning the heading at page bottom.
                 chart_section = [
                     p('Saved chart visualization','ODINHeading'),
-                    report_charts.pdf_chart(spec, width=doc.width),
+                    report_charts.pdf_chart(spec, width=doc.width, unicode_context=unicode_context),
                 ]
                 if spec.get('note'):
                     chart_section.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
@@ -879,7 +897,7 @@ def render_pdf(report: dict) -> bytes:
     story.extend(p('• '+str(t)) for t in report['limitations'])
     def footer(canvas,document):
         canvas.saveState()
-        canvas.setFont('Helvetica',7)
+        canvas.setFont(unicode_context.base_face if unicode_context is not None else 'Helvetica',7)
         canvas.setFillColor(colors.HexColor('#6b7690'))
         canvas.drawString(43,27,'PilotODIN · Verified, version-linked analytical evidence')
         canvas.drawRightString(A4[0]-43,27,f"Page {document.page}")
