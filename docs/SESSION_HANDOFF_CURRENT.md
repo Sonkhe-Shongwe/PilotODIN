@@ -1,6 +1,22 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
 
+## NEWEST P2-U2c | FIRST FULL BUILDER SAFETY RUN BLOCKED BY TWO MOCKED DISK OBJECT ERRORS, FIX COMMITTED (26 OCTOBER 2026)
+
+**Repository/branch:** `Sonkhe-Shongwe/PilotODIN` / `feature/live-dev-workspace-20261023`. Recheck the live branch HEAD before future modifications. This top entry supersedes the immediately following instruction that the builder's seven tests were still unexecuted.
+
+**Owner's NEW actual Windows screenshot:** `Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat` ran **seven** new synthetic builder preparation tests in `0.032s`, ending `FAILED (errors=2)`. The two error cases were `test_opt_in_prepare_targets_only_new_env_and_official_wheels` and `test_package_resolution_failure_blocks_without_attempted_build`, both raising `AttributeError: 'tuple' object has no attribute 'free'` at the real controller line `shutil.disk_usage(ROOT).free`. The launcher correctly emitted `BLOCKED: Synthetic safety contracts failed. No install permitted.` **No user approval was requested and no new environment or PyPI installation was attempted by this run.** Five other case results had no errors in this run. Previously accepted six-case build-route decision still holds: `DEDICATED_FULL_BUILD_ENVIRONMENT_DESIGN_REQUIRED`, .venv-live 3.12.3 64-bit full runtime/no PyInstaller, .venv ABSENT, private builder 3.12.3 PyInstaller 6.22.3/hooks 2026.9/no runtime.
+
+**Precisely diagnosed error:** The two tests incorrectly patched `shutil.disk_usage` to return a raw 3-tuple, while standard-library `shutil.disk_usage` returns a namedtuple with `total`, `used`, `free` attributes. This is **not** evidence of a bug in PilotODIN, free-space computation or the packaging environment.
+
+**Focused test-only code correction committed:** `tests/test_p2_pdf_prepare_full_sidecar_builder.py` now defines `DiskUsage = namedtuple("DiskUsage", ("total","used","free"))` and both affected fixtures return `DiskUsage(10**10,0,10**10)`. The existing seven-test suite also asserts the mocked `free` attribute. The matching schema was checked against real Python `shutil.disk_usage`. No production code, installer, dependencies, build directory, user data or build script changed. **The corrected seven tests have not yet executed on Windows**: do not claim the entire U2c gate passed.
+
+**ONE NEXT OWNER ACTION:** Safely pull the same feature branch, preserving local changes. Run `Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat` ONCE AGAIN **only because the two failing safety test fixtures changed**. The launcher first reruns its seven U2c tests; if they are all green, it will offer explicit Y/N before a separate, development-only `build/p2-sidecar-env/venv` creation and sizeable official PyPI wheel downloads. Operator must decide whether to approve. If blocked, stop and share final console status, not binaries/fonts/pip logs. There is no reason to rerun accepted six-case build-route, actual standalone frozen six-font ONEFILE PASS or earlier P2 source/CMap/mixed/report tests.
+
+**Broader acceptance unchanged:** Real `backend/desktop_runner.py` scientific sidecar with fonts NOT BUILT/NOT TESTED; production Unicode PDF still VISUAL_FAIL, P2 REVIEW_REQUIRED, full offline P8 NOT CERTIFIED. Full evidence and test-only fix recorded in `docs/P2_PDF_PRODUCTION_SIDECAR_FONT_GATE.md` `10 and QA issue #2.
+
+
+
 ## LATEST P2-U2c — BUILD ROUTE 6/6 PASS, SEPARATE SCIENTIFIC DEVQA BUILDER PREPARATION READY (26 OCTOBER 2026)
 
 **Repository:** `Sonkhe-Shongwe/PilotODIN`. **Working branch:** `feature/live-dev-workspace-20261023`. Always fetch current GitHub branch HEAD before new changes. This topmost section supersedes the immediately following request to scroll up for the route: the owner has now supplied ALL missing screenshots. Maintain the current P0–P8 reflection at `docs/PILOTODIN_STATUS_REFLECTION_2026-10-26.md`.
