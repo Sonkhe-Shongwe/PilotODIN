@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from html import escape
 import io
 import json
 from pathlib import Path
@@ -28,6 +29,7 @@ SAMPLES = {
     "rupee": "₹",
     "cjk": "漢字",
     "emoji": "📈",
+    "mixed": "café São Paulo R² Δ Ω Москва 漢字 ₹ 📈",
 }
 # Do not infer that one Unicode-font family supports every writing system.
 FAMILIES = ("regular", "cjk", "emoji")
@@ -51,6 +53,21 @@ def _font(name, path):
     return font, {cp for cp, glyph in mapping.items() if glyph}
 
 
+def font_runs(text, coverage):
+    """Choose explicit glyph-bearing faces, preserving original code points."""
+    runs, missing = [], set()
+    for char in text:
+        match = next((family for family in FAMILIES if
+                      ord(char) in coverage.get(family, set())), None)
+        if match is None:
+            missing.add(ord(char))
+        elif runs and runs[-1][0] == match:
+            runs[-1] = (match, runs[-1][1] + char)
+        else:
+            runs.append((match, char))
+    return runs, sorted(missing)
+
+
 def audit(paths):
     """Run a pure synthetic probe; never create a persistent PDF or read user data."""
     coverage = {}
@@ -69,34 +86,39 @@ def audit(paths):
         }
     results = {}
     for label, text in SAMPLES.items():
-        # Select a single font only when it actually contains every codepoint.
-        match = next((family for family in FAMILIES if
-                      family in coverage and all(ord(c) in coverage[family] for c in text)), None)
-        if match is None:
-            results[label] = {"state": "UNSUPPORTED", "codepoints": [
-                "U+%04X" % ord(c) for c in text if
-                not any(ord(c) in x for x in coverage.values())]}
+        runs, missing = font_runs(text, coverage)
+        if missing:
+            results[label] = {"state": "UNSUPPORTED",
+                              "codepoints": ["U+%04X" % cp for cp in missing]}
             continue
         output = io.BytesIO()
-        style = ParagraphStyle("ODIN_FONT_PROBE", fontName=fonts[match].fontName,
+        style = ParagraphStyle("ODIN_FONT_PROBE",
+                               fontName=fonts["regular"].fontName,
                                fontSize=13, leading=19)
         doc = SimpleDocTemplate(output, pagesize=A4)
+        markup = "".join(
+            '<font name="' + escape(fonts[family].fontName, quote=True) + '">' +
+            escape(segment) + '</font>'
+            for family, segment in runs)
         try:
-            doc.build([Paragraph(text, style)])
+            doc.build([Paragraph(markup, style)])
             with fitz.open(stream=output.getvalue(), filetype="pdf") as pdf:
-                extracted = " ".join(page.get_text() for page in pdf).strip()
+                extracted = " ".join(" ".join(page.get_text().split()) for page in pdf)
         except Exception as exc:
-            results[label] = {"state": "RENDER_ERROR", "class": type(exc).__name__,
-                              "font_family": match}
+            results[label] = {"state": "RENDER_ERROR",
+                              "class": type(exc).__name__}
             continue
-        results[label] = {"state": "EXTRACTED_EXACT" if text in extracted else "MISMATCH",
-                          "font_family": match}
+        results[label] = {
+            "state": "EXTRACTED_EXACT" if " ".join(text.split()) in extracted else "MISMATCH",
+            "font_families_used": list(dict.fromkeys(family for family, _ in runs)),
+        }
     return {"scope": "DEVELOPER_PROBE_NOT_ACCEPTANCE",
             "font_assets": identities, "samples": results,
             "limitations": ["No visual glyph/line collision proof",
                             "No OFL license or release bundling approval",
                             "No Windows .venv-live execution",
-                            "Complex script shaping/emoji sequences untested"]}
+                            "Complex script shaping/emoji sequences untested",
+                            "Emoji may render visibly yet fail exact ToUnicode extraction"]}
 
 
 def main():
