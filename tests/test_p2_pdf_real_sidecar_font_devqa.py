@@ -114,7 +114,7 @@ class RealSidecarFontDevQAContracts(unittest.TestCase):
                     "Disk", (), {"free": 10**10})()), \
                  patch.object(qa, "inspect_environment",
                               return_value={"state": "EXISTING_BUILDER_REVIEW_REQUIRED"}), \
-                 patch.object(qa, "python_for", return_value=qa.sys.executable), \
+                 patch.object(qa, "python_for", return_value=Path(qa.sys.executable)), \
                  patch.object(qa, "ENV_DIR", root):
                 outcome = qa.run_real_sidecar(run, source, assets,
                                               subprocess_run=pretend_build, smoke=smoke)
@@ -135,7 +135,7 @@ class RealSidecarFontDevQAContracts(unittest.TestCase):
                     "Disk", (), {"free": 10**10})()), \
                  patch.object(qa, "inspect_environment",
                               return_value={"state": "EXISTING_BUILDER_REVIEW_REQUIRED"}), \
-                 patch.object(qa, "python_for", return_value=qa.sys.executable), \
+                 patch.object(qa, "python_for", return_value=Path(qa.sys.executable)), \
                  patch.object(qa, "ENV_DIR", root):
                 result = qa.run_real_sidecar(
                     run, source, assets,
@@ -159,7 +159,7 @@ class RealSidecarFontDevQAContracts(unittest.TestCase):
                     "Disk", (), {"free": 10**10})()), \
                  patch.object(qa, "inspect_environment",
                               return_value={"state": "EXISTING_BUILDER_REVIEW_REQUIRED"}), \
-                 patch.object(qa, "python_for", return_value=qa.sys.executable), \
+                 patch.object(qa, "python_for", return_value=Path(qa.sys.executable)), \
                  patch.object(qa, "ENV_DIR", root):
                 outcome = qa.run_real_sidecar(
                     run, source, assets, subprocess_run=pretend_build,
