@@ -100,6 +100,47 @@ def checksum(path):
     return h.hexdigest()
 
 
+
+def _write_final_status(run, result):
+    """Persist the definitive outcome, including a later diagnostic failure."""
+    manifest_path = run / "manifest.json"
+    status_path = run / "diagnostics" / "result.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["state"] = result["state"]
+    manifest["product_acceptance"] = "NOT_TESTED"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    status_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    return manifest_path, status_path
+
+
+def finalize_diagnostics(run, result):
+    """A partial/missing archive can never leave on-disk status claiming success."""
+    archive = run.parent.parent / "archive" / (run.name + ".zip")
+    pending = archive.with_suffix(".partial")
+    try:
+        manifest_path, status = _write_final_status(run, result)
+        if archive.exists():
+            raise FileExistsError("A diagnostic archive already exists for this run")
+        with zipfile.ZipFile(pending, "x", zipfile.ZIP_DEFLATED) as bundle:
+            bundle.write(status, "result.json")
+            bundle.write(manifest_path, "manifest.json")
+        pending.replace(archive)
+        result["archive"] = str(archive)
+    except (OSError, ValueError, RuntimeError, zipfile.BadZipFile) as exc:
+        result["state"] = "BLOCKED"
+        result["archive_failure"] = type(exc).__name__
+        try:
+            pending.unlink(missing_ok=True)
+        except OSError as cleanup_exc:
+            result["archive_cleanup_failure"] = type(cleanup_exc).__name__
+        try:
+            _write_final_status(run, result)
+        except (OSError, ValueError, RuntimeError) as status_exc:
+            # Console still reports BLOCKED even if disk-full prevents repair.
+            result["status_persist_failure"] = type(status_exc).__name__
+
+
+
 def execute():
     run = None
     root = ROOT
@@ -180,23 +221,8 @@ def execute():
         result["bootstrap_failure"] = True
     finally:
         if run is not None:
-            # Write one status-only diagnostic even if worker discovery or fixtures fail.
-            status = run / "diagnostics" / "result.json"
-            manifest_path = run / "manifest.json"
-            try:
-                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-                manifest["state"] = result["state"]
-                manifest["product_acceptance"] = "NOT_TESTED"
-                manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-                status.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-                archive = run.parent.parent / "archive" / (run.name + ".zip")
-                with zipfile.ZipFile(archive, "x", zipfile.ZIP_DEFLATED) as bundle:
-                    bundle.write(status, "result.json")
-                    bundle.write(manifest_path, "manifest.json")
-                result["archive"] = str(archive)
-            except (OSError, ValueError, RuntimeError) as exc:
-                result["state"] = "BLOCKED"
-                result["archive_failure"] = type(exc).__name__
+            # A failed archive also downgrades the persisted JSON and manifest.
+            finalize_diagnostics(run, result)
             print("P2 MIXED-REPORT DEVQA: " + result["state"])
             print("RUN: " + str(run))
             if result.get("archive"):
