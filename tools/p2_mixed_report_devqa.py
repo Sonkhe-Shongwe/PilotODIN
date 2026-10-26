@@ -56,22 +56,48 @@ def discover(pattern):
     return suite, list(names(suite))
 
 
+def worker_status_path(run, kind):
+    """Dedicated status-only channel; stdout from imports is not a protocol."""
+    if kind not in PATTERNS:
+        raise ValueError("Unknown focused stage")
+    return run / "diagnostics" / ("worker-" + kind + ".json")
+
+
+def read_worker_status(path):
+    """No raw worker stdout, stderr, stack or dataset bytes enter the archive."""
+    try:
+        result = json.loads(path.read_text(encoding="utf-8"))
+        return result if isinstance(result, dict) else None
+    except (OSError, ValueError, UnicodeError):
+        return None
+
+
 def worker(kind):
     """Child process environment is isolated BEFORE importing the app."""
+    phase = "workspace_check"
+    run = None
     try:
         if kind not in PATTERNS:
             raise RuntimeError("Invalid focused worker type")
+        home = Path(os.environ["PILOTODIN_HOME"]).resolve()
+        run = Path(os.environ["PILOTODIN_DEVQA_RUN"]).resolve()
+        manifest_path = run / "manifest.json"
+        if home != run / "workspace" or not manifest_path.is_file():
+            raise RuntimeError("Refusing unexpected test workspace")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if (manifest.get("phase") != "P2-MIXED-REPORT" or
+                manifest.get("state") != "READY_NOT_TESTED"):
+            raise RuntimeError("Unexpected worker manifest")
         if kind == "mixed":
-            home = Path(os.environ["PILOTODIN_HOME"]).resolve()
-            run = Path(os.environ["PILOTODIN_DEVQA_RUN"]).resolve()
-            if home != run / "workspace" or not (run / "manifest.json").is_file():
-                raise RuntimeError("Refusing unexpected test workspace")
+            phase = "dependency_import"
             # Imports of backend modules only occur when unittest loads tests.
             import fitz
             import fastapi
+        phase = "test_discovery"
         suite, names = discover(PATTERNS[kind])
         if len(names) != EXPECTED[kind]:
             raise RuntimeError("Focused test count has changed; review before running")
+        phase = "test_execution_or_fixture_setup"
         result = unittest.TestResult()
         suite.run(result)
         failed = sorted({item.id() for item, _ in result.failures})
@@ -84,10 +110,19 @@ def worker(kind):
                   "cases": names, "failures": failed,
                   "errors": errors, "skipped": skipped}
     except Exception:
-        # Details are deliberately not serialized to avoid leaking test-row content.
+        # Phase name only: no traceback, file path, imported data or row text.
         output = {"state": "BLOCKED", "count": EXPECTED.get(kind, 0),
                   "tests_run": 0, "cases": [], "failures": [],
-                  "errors": ["worker_bootstrap"], "skipped": []}
+                  "errors": ["worker_bootstrap"], "skipped": [],
+                  "bootstrap_stage": phase}
+    try:
+        if run is None:
+            return 2
+        worker_status_path(run, kind).write_text(
+            json.dumps(output, sort_keys=True) + "\n", encoding="utf-8")
+    except (OSError, ValueError):
+        return 2
+    # Human-readable worker stdout is deliberately NOT the parent protocol.
     print(json.dumps(output, sort_keys=True))
     return 0 if output["state"] == "PASS" else 2
 
@@ -194,15 +229,25 @@ def execute():
             except subprocess.TimeoutExpired:
                 result["stages"][kind] = {"state": "BLOCKED", "reason": "worker_timeout"}
                 break
-            try:
-                reply = json.loads(completed.stdout.strip())
-            except (ValueError, TypeError):
+            # Worker writes an explicit status file. Import-time prints or
+            # native-library messages on stdout cannot invalidate our protocol.
+            reply = read_worker_status(worker_status_path(run, kind))
+            reason = None
+            if reply is None:
+                reason = "worker_status_missing_or_invalid"
                 reply = {"state": "BLOCKED", "count": 0, "tests_run": 0}
             assessed = simple_status(reply, EXPECTED[kind])
-            if completed.returncode not in (0, 2) or (completed.returncode == 0) != (assessed == "PASS"):
-                assessed = "BLOCKED"
+            if completed.returncode not in (0, 2):
+                assessed, reason = "BLOCKED", "worker_process_exit"
+            elif (completed.returncode == 0) != (assessed == "PASS"):
+                assessed, reason = "BLOCKED", "worker_exit_status_disagreement"
+            elif assessed == "BLOCKED" and reason is None:
+                reason = reply.get("bootstrap_stage") or (
+                    "worker_setup_or_discovery" if reply.get("tests_run", 0) == 0
+                    else "worker_test_error_or_skip")
             result["stages"][kind] = {
-                "state": assessed,
+                "state": assessed, "reason": reason,
+                "worker_returncode": completed.returncode,
                 "count": reply.get("count", 0), "tests_run": reply.get("tests_run", 0),
                 "failed_cases": reply.get("failures", []), "error_cases": reply.get("errors", []),
                 "skipped_cases": reply.get("skipped", [])}
