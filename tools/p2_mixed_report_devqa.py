@@ -240,7 +240,8 @@ def execute():
             if completed.returncode not in (0, 2):
                 assessed, reason = "BLOCKED", "worker_process_exit"
             elif (completed.returncode == 0) != (assessed == "PASS"):
-                assessed, reason = "BLOCKED", "worker_exit_status_disagreement"
+                assessed = "BLOCKED"
+                reason = reason or "worker_exit_status_disagreement"
             elif assessed == "BLOCKED" and reason is None:
                 if reply.get("bootstrap_stage"):
                     reason = reply["bootstrap_stage"]
