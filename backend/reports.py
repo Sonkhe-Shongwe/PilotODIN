@@ -627,8 +627,8 @@ def _display_label(key) -> str:
 
 
 
-def _exhibit(artifact: dict):
-    """Shared typed display model for both HTML and PDF (snapshot is immutable)."""
+def _exhibit_with_disclosure(artifact: dict):
+    """Shared typed display model and factual export omission counts."""
     operation=artifact.get("operation","verified analysis")
     result=artifact.get("result") or {}
     params=artifact.get("params") or {}
@@ -659,7 +659,27 @@ def _exhibit(artifact: dict):
     if not facts and not table_rows:
         for k,v in list(result.items())[:20]:
             facts.append((_display_label(k),_display_value(v)))
-    return facts[:24],table_head,table_rows
+    # The numeric limits concern this display, not the full underlying dataset.
+    notices=[]
+    if len(facts)>24:
+        notices.append(
+            f"Showing 24 of {len(facts)} saved summary facts; "
+            f"{len(facts)-24} not shown in this export.")
+    if isinstance(group_data,list) and group_data and isinstance(group_data[0],dict):
+        if len(group_data)>len(table_rows):
+            notices.append(
+                f"Showing {len(table_rows)} of {len(group_data)} saved observation entries; "
+                f"{len(group_data)-len(table_rows)} not shown in this export.")
+    elif isinstance(result.get("findings"),list) and len(result["findings"])>len(table_rows):
+        notices.append(
+            f"Showing {len(table_rows)} of {len(result['findings'])} saved finding entries; "
+            f"{len(result['findings'])-len(table_rows)} not shown in this export.")
+    return facts[:24],table_head,table_rows,notices
+
+
+def _exhibit(artifact: dict):
+    """Existing three-value display contract retained for other consumers."""
+    return _exhibit_with_disclosure(artifact)[:3]
 
 
 def render_html(report: dict) -> bytes:
@@ -706,7 +726,7 @@ def render_html(report: dict) -> bytes:
                  e(art['dataset_version']), '</td></tr>']
     pieces+=['</tbody></table></section>']
     for art in report['evidence']:
-        facts,columns,records=_exhibit(art)
+        facts,columns,records,notices=_exhibit_with_disclosure(art)
         pieces+=['<section class="evidence"><span class="pill">VERIFIED LOCAL</span><h2>',
                  e(art['operation'].replace('_',' ').title()),'</h2><p class="meta">Dataset v',e(art['dataset_version']),
                  ' · Tool ',e(art['tool_version']),' · ',
@@ -732,6 +752,10 @@ def render_html(report: dict) -> bytes:
                 for cell in row:pieces+=['<td>',e(cell),'</td>']
                 pieces+=['</tr>']
             pieces+=['</tbody></table>']
+        if notices:
+            pieces+=['<div class="warning" role="note"><strong>Display limits</strong><ul>']
+            pieces.extend('<li>'+e(item)+'</li>' for item in notices)
+            pieces+=['</ul><p class="meta">The complete frozen evidence remains in the saved PilotODIN report revision.</p></div>']
         if isinstance(art.get('result'), dict):
             caveat = art['result'].get('note')
             if isinstance(caveat, str) and caveat:
@@ -797,7 +821,7 @@ def render_pdf(report: dict) -> bytes:
                          'v'+str(art['dataset_version'])]
                         for n,art in enumerate(report['evidence'], 1)]))
     for art in report['evidence']:
-        facts,columns,records=_exhibit(art)
+        facts,columns,records,notices=_exhibit_with_disclosure(art)
         exhibit_header=[Spacer(1,8),HRFlowable(width='100%',color=colors.HexColor('#dce0ef')),
                       p(art['operation'].replace('_',' ').title(),'ODINHeading'),
                       p(f"Evidence {art['id']} · Dataset v{art['dataset_version']} · Tool {art['tool_version']} · "
@@ -831,6 +855,12 @@ def render_pdf(report: dict) -> bytes:
             else:
                 story.append(CondPageBreak(190))
                 story.extend(table_section)
+        if notices:
+            story.append(KeepTogether([
+                p('Display limits','ODINHeading'),
+                *(p(item,'ODINMeta') for item in notices),
+                p('The complete frozen evidence remains in the saved PilotODIN report revision.','ODINMeta')
+            ]))
         if isinstance(art.get('result'), dict):
             caveat = art['result'].get('note')
             if isinstance(caveat, str) and caveat:
