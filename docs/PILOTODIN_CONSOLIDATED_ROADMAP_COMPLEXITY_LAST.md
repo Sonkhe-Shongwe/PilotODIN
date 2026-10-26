@@ -1,5 +1,8 @@
 # PilotODIN — Consolidated Feature Inventory & Complexity-Last Roadmap
 
+
+> **STATUS REFRESH, 26 October 2026:** This file remains the binding **complexity-last sequencing roadmap**, not a live release acceptance ledger. The verified cross-phase position now appears in [P0–P8 Status Reflection](./PILOTODIN_STATUS_REFLECTION_2026-10-26.md), and the exact next action in [Current Session Handoff](./SESSION_HANDOFF_CURRENT.md). After this roadmap was written on 24 October, the owner accepted focused P3 semantic, P4 target-screening/context, P5 task-control and multiple P2 Deliver gates; those slices do **not** imply those entire phases or P8 are complete. **Active priority remains P2**, especially frozen Python font resource packaging and actual Unicode PDF integration. On 26 October the owner passed **8/8 future font-path synthetic tests** and a **6-file build-review identity/receipt check**, both explicitly **NOT** an actual PyInstaller bundle test. Previous accepted P2 3+9 mixed, 5/5 disclosure, chart visual and 9/9 isolated CMap tests stand. Actual offline model+ML 8 GB feasibility, universal task scheduler, Master modes and E-01–E-24 clean Windows release remain unaccepted. Do not replay accepted tests or launch installers merely to satisfy this historical roadmap.
+
 **Date:** 24 October 2026  
 **Status:** Architecture/implementation-sequencing recommendation; no code changed as part of this decision.  
 **Current branch:** `feature/live-dev-workspace-20261023`  
