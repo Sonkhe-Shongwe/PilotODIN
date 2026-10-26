@@ -122,6 +122,8 @@ class MixedReportContract(unittest.TestCase):
                                           b"OrderID,Region,Revenue\n7777,Outside,3\n")
         source = Path(storage.get_project(cls.project_id)["dataset_path"])
         cls.source_path = source
+        if not source.resolve().is_relative_to(Path(home).resolve() / "datasets"):
+            raise RuntimeError("Fixture imported outside the disposable DevQA datasets folder")
         if hashlib.sha256(source.read_bytes()).hexdigest() != cls.original_sha:
             raise RuntimeError("Imported synthetic fixture differs from independent source oracle")
         version = quality.current_version(cls.project_id)

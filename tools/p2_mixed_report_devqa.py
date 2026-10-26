@@ -116,7 +116,17 @@ def execute():
             # Respect a legitimate existing user home; subprocess uses ONLY run/workspace.
             result["preexisting_home_overridden_only_in_test_child"] = True
         qa_root = default_root()
+        # qa_foundation validates the root and its ancestors; also refuse linked
+        # preexisting *children* before allocating inside runs or archiving.
+        is_link = lambda p: p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+        for directory in (qa_root, qa_root / "runs", qa_root / "archive"):
+            if directory.exists() and is_link(directory):
+                raise RuntimeError("DevQA contains linked run/archive directory")
         run, manifest = create_run(qa_root, "P2-MIXED-REPORT", root)
+        if (run.parent.resolve() != (qa_root / "runs").resolve()
+                or (run / "workspace").is_symlink()
+                or (run / "manifest.json").is_symlink()):
+            raise RuntimeError("DevQA run provenance or workspace link invalid")
         result["run_id"] = run.name
         manifest_path = run / "manifest.json"
         selected = ["tools/p2_mixed_report_devqa.py",
