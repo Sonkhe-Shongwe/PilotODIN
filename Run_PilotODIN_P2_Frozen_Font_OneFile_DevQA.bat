@@ -23,27 +23,17 @@ if errorlevel 1 (
  exit /b 2
 )
 echo.
-echo Checking both app venvs plus isolated DevQA tooling for PyInstaller 6, WITHOUT installing...
-set "FREEZER="
-"%~dp0.venv-live\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller').split('.')[0] == '6'" >nul 2>&1
-if not errorlevel 1 set "FREEZER=%~dp0.venv-live\Scripts\python.exe"
-if not defined FREEZER if exist "%~dp0.venv\Scripts\python.exe" (
- "%~dp0.venv\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller').split('.')[0] == '6'" >nul 2>&1
- if not errorlevel 1 set "FREEZER=%~dp0.venv\Scripts\python.exe"
-)
-if not defined FREEZER if exist "%~dp0build\p2-pdf-frozen-resource-probe\tooling-venv\Scripts\python.exe" (
- "%~dp0build\p2-pdf-frozen-resource-probe\tooling-venv\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller') == '6.22.3' and version('pyinstaller-hooks-contrib') == '2026.9'" >nul 2>&1
- if not errorlevel 1 set "FREEZER=%~dp0build\p2-pdf-frozen-resource-probe\tooling-venv\Scripts\python.exe"
-)
-if not defined FREEZER (
- echo BLOCKED: PyInstaller 6 is unavailable in both existing app venvs and the isolated DevQA tooling venv.
- echo No dependency installation or other environment modification attempted.
- echo To create ONLY an isolated tooling venv by explicit consent, use the NEW
- echo Run_PilotODIN_P2_Prepare_Freezer_Tooling_DevQA.bat launcher.
+echo Verifying the already prepared PRIVATE PyInstaller 6 environment without installing...
+"%~dp0.venv-live\Scripts\python.exe" -B "%~dp0tools\p2_pdf_pyinstaller_tooling_devqa.py"
+if errorlevel 1 (
+ echo BLOCKED: Private PyInstaller tooling is not ready.
+ echo No download or modification attempted by this launcher.
+ echo Use the separate preparation launcher ONLY if tooling setup is truly missing.
  pause
  exit /b 2
 )
-echo Existing PyInstaller 6 found. Only the selected local build Python is used.
+echo Isolated builder verified; .venv-live will perform ReportLab source checks.
+echo Private PyInstaller tooling Python will ONLY build the standalone probe.
 echo Consent: build one isolated frozen proof with the existing PyInstaller?
 echo It will use around 21 MB of verified font data in a new ignored build folder.
 choice /C YN /N /M "Create and execute the isolated ONEFILE font probe? [Y/N] "
@@ -58,7 +48,7 @@ if not errorlevel 1 (
 )
 echo.
 echo Building and verifying only the DEVQA font probe; no installer or sidecar.
-"%FREEZER%" -B "%~dp0tools\p2_pdf_frozen_font_onefile_devqa.py" --build
+"%~dp0.venv-live\Scripts\python.exe" -B "%~dp0tools\p2_pdf_frozen_font_onefile_devqa.py" --build
 set "RC=%ERRORLEVEL%"
 echo.
 if "%RC%"=="0" (
