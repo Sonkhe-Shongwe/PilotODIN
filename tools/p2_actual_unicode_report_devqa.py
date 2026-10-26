@@ -102,6 +102,17 @@ def proof_bytes(report: dict, context: UnicodePDFContext) -> tuple[bytes, dict]:
     with fitz.open(stream=raw, filetype="pdf") as doc:
         if not 1 <= len(doc) <= 4:
             raise ValueError("Unexpected real renderer PDF page count")
+        # The previous real owner PDF put only parameters and two limitations
+        # on a nearly empty page 2. Text extraction passed but visual QA did
+        # not. Reject that exact sparse-continuation failure in future runs.
+        if len(doc) > 1:
+            last = doc[-1]
+            bounds = [block[:4] for block in last.get_text("blocks")
+                      if len(block) >= 5 and isinstance(block[4], str)
+                      and block[4].strip() and
+                      not block[4].strip().startswith("PilotODIN · Verified")]
+            if bounds and max(box[3] for box in bounds) < last.rect.height * 0.34:
+                raise ValueError("Sparse continuation page in synthetic Unicode PDF")
         pages = [page.get_text() for page in doc]
         text = " ".join(" ".join(pages).split())
         for label in EXPECTED_LABELS:
