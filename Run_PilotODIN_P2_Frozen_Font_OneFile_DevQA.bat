@@ -23,7 +23,22 @@ if errorlevel 1 (
  exit /b 2
 )
 echo.
-echo Consent: run PyInstaller 6 if ALREADY installed and build one local frozen proof?
+echo Checking existing build environments for PyInstaller 6, WITHOUT installing it...
+set "FREEZER="
+"%~dp0.venv-live\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller').split('.')[0] == '6'" >nul 2>&1
+if not errorlevel 1 set "FREEZER=%~dp0.venv-live\Scripts\python.exe"
+if not defined FREEZER if exist "%~dp0.venv\Scripts\python.exe" (
+ "%~dp0.venv\Scripts\python.exe" -c "from importlib.metadata import version; assert version('pyinstaller').split('.')[0] == '6'" >nul 2>&1
+ if not errorlevel 1 set "FREEZER=%~dp0.venv\Scripts\python.exe"
+)
+if not defined FREEZER (
+ echo BLOCKED: PyInstaller 6 not found in existing .venv-live or .venv.
+ echo No dependency installation or other environment modification attempted.
+ pause
+ exit /b 2
+)
+echo Existing PyInstaller 6 found. Only the selected local build Python is used.
+echo Consent: build one isolated frozen proof with the existing PyInstaller?
 echo It will use around 21 MB of verified font data in a new ignored build folder.
 choice /C YN /N /M "Create and execute the isolated ONEFILE font probe? [Y/N] "
 if errorlevel 2 (
@@ -37,7 +52,7 @@ if not errorlevel 1 (
 )
 echo.
 echo Building and verifying only the DEVQA font probe; no installer or sidecar.
-"%~dp0.venv-live\Scripts\python.exe" -B "%~dp0tools\p2_pdf_frozen_font_onefile_devqa.py" --build
+"%FREEZER%" -B "%~dp0tools\p2_pdf_frozen_font_onefile_devqa.py" --build
 set "RC=%ERRORLEVEL%"
 echo.
 if "%RC%"=="0" (
