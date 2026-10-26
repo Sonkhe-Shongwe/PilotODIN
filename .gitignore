@@ -50,3 +50,6 @@ frontend-check-results/
 /build/p2-pdf-font-preflight/
 # P2-U2a PyInstaller-only font test; never commit build outputs or third-party binaries.
 /build/p2-pdf-frozen-resource-probe/
+
+# P2-U2c: independently consented full scientific sidecar DevQA tooling only.
+/build/p2-sidecar-env/
