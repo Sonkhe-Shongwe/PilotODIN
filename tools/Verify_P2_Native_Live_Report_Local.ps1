@@ -48,7 +48,7 @@ function Mark([string]$name,[bool]$passed){
     Write-Host ($name+': '+$report.phases[$name]) -ForegroundColor $(if($passed){'Green'}else{'Red'})
 }
 function Free-Port {
-    $listener=New-Object Net.Sockets.TcpListener ([Net.IPAddress]::Parse('127.0.0.1')),0
+    $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Parse('127.0.0.1'),0)
     $listener.Start()
     $port=$listener.LocalEndpoint.Port
     $listener.Stop()
@@ -100,7 +100,8 @@ try{
     if($git){
         $current=(& $git.Source -C $root branch --show-current).Trim()
         if($current -ne 'feature/live-dev-workspace-20261023'){throw ('Wrong GitHub branch: '+$current)}
-        if(@(& $git.Source -C $root status --porcelain).Count -gt 0){
+        $uncommitted=@(& $git.Source -C $root status --porcelain)
+        if($uncommitted.Count -gt 0){
             Write-Warning 'Uncommitted files exist; they will not be discarded or reset.'
         }
     }else{Write-Warning 'Verify feature/live-dev-workspace-20261023 is checked out in GitHub Desktop.'}
