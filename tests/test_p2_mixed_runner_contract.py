@@ -6,7 +6,8 @@ from unittest.mock import patch
 import unittest
 
 # tools path inserted explicitly by discovery runner's PYTHONPATH
-from tools.p2_mixed_report_devqa import simple_status, finalize_diagnostics
+from tools.p2_mixed_report_devqa import (simple_status, finalize_diagnostics,
+                                           read_worker_status, worker_status_path)
 
 
 def payload(n=3):
@@ -22,6 +23,17 @@ class RunnerContract(unittest.TestCase):
         self.assertEqual(simple_status({}, 3), "BLOCKED")
         good["tests_run"] = 2
         self.assertEqual(simple_status(good, 3), "BLOCKED")
+
+        # The supplied Windows ZIP showed zero cases because the parent could
+        # not parse the worker's stdout. Status travels in a dedicated file.
+        with TemporaryDirectory(prefix="p2-protocol-") as tmp:
+            status = worker_status_path(Path(tmp), "mixed")
+            self.assertEqual(status.name, "worker-mixed.json")
+            self.assertIsNone(read_worker_status(status))
+            status.write_text("imported module printed a banner", encoding="utf-8")
+            self.assertIsNone(read_worker_status(status))
+            status.write_text(json.dumps(payload()), encoding="utf-8")
+            self.assertEqual(simple_status(read_worker_status(status), 3), "PASS")
 
     def test_worker_error_and_skip_are_blocked(self):
         bad = payload()
