@@ -31,7 +31,7 @@ from backend.pdf_unicode_seam import UnicodePDFContext
 
 PROOF_ROOT = ROOT / "build" / "p2-unicode-real-report-devqa"
 EXPECTED_LABELS = ("café São Paulo R² Δ Ω Москва 漢字 ₹ 📈",
-                   "Count of records by Region 漢字", "📈", "漢字")
+                   "Median of Revenue by Region 漢字", "📈", "漢字")
 MAX_PDF_BYTES = 8 * 1024 * 1024
 
 
@@ -45,8 +45,8 @@ def synthetic_revision() -> dict:
         "result": {
             "data": [{"label": "漢字", "value": 20.0},
                      {"label": "📈", "value": 10.0}],
-            "visual": {"type": "bar", "x": "Region 漢字", "y": "",
-                       "aggregation": "count",
+            "visual": {"type": "bar", "x": "Region 漢字", "y": "Revenue",
+                       "aggregation": "median",
                        "data": [{"label": "漢字", "value": 20.0},
                                 {"label": "📈", "value": 10.0}]},
         },
