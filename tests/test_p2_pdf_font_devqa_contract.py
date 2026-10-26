@@ -211,5 +211,33 @@ class FontDevQAContract(unittest.TestCase):
             self.assertEqual(result["visual_acceptance"], "NOT_TESTED")
 
 
+    def test_offline_review_preserves_font_evidence_if_extraction_crashes(self):
+        with TemporaryDirectory(prefix="odin-font-offline-error-") as folder:
+            root = Path(folder)
+            manifest = {"assets": [
+                {"role": "regular", "filename": "regular.ttf"},
+                {"role": "cjk", "filename": "cjk.ttf"},
+                {"role": "symbol", "filename": "symbol.ttf"},
+            ]}
+            cmap = {"state": "CANDIDATE_REVIEW_REQUIRED",
+                    "font_assets": [
+                        {"role": "regular", "format_gate": "REPORTLAB_FONT_REJECTED",
+                         "missing_or_error": ["TTFError"]},
+                        {"role": "cjk", "format_gate": "GLYPHS_PRESENT",
+                         "missing_or_error": []},
+                        {"role": "symbol", "format_gate": "GLYPHS_PRESENT",
+                         "missing_or_error": []},
+                    ]}
+            with patch("tools.p2_pdf_font_local_review.verify", return_value=cmap), \
+                 patch("tools.p2_pdf_font_local_review.audit",
+                       side_effect=ValueError("synthetic blocked extraction")):
+                result = review(root, manifest)
+            self.assertEqual(result["state"], "CANDIDATE_REVIEW_REQUIRED")
+            self.assertEqual(result["fonts"][0]["format"], "REPORTLAB_FONT_REJECTED")
+            self.assertEqual(result["extraction_error_class"], "ValueError")
+            self.assertEqual(result["exact_pdf_extraction"]["probe"],
+                             "BLOCKED_FONT_PARSE_OR_RENDER")
+
+
 if __name__ == "__main__":
     unittest.main()
