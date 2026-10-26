@@ -20,6 +20,7 @@ from tools.p2_pdf_font_coverage_probe import font_runs
 from tools.p2_pdf_font_stage_candidates import (
     stage_one, CandidateStageError, describe_candidate_failure)
 from tools.p2_pdf_font_local_review import review
+from tools.p2_pdf_tounicode_research import corrected_tounicode_cmap
 
 
 class FontDevQAContract(unittest.TestCase):
@@ -237,6 +238,20 @@ class FontDevQAContract(unittest.TestCase):
             self.assertEqual(result["extraction_error_class"], "ValueError")
             self.assertEqual(result["exact_pdf_extraction"]["probe"],
                              "BLOCKED_FONT_PARSE_OR_RENDER")
+
+
+    def test_astral_tounicode_uses_utf16be_surrogate_pair(self):
+        baseline = "<00> <0041>\n<01> <1F4C8>\n<02> <6F22>\n"
+        corrected = corrected_tounicode_cmap(baseline)
+        self.assertEqual(corrected,
+                         "<00> <0041>\n<01> <D83DDCC8>\n<02> <6F22>\n")
+        self.assertEqual(corrected_tounicode_cmap(corrected), corrected)
+
+    def test_unsafe_or_invalid_scalars_cannot_be_falsely_fixed(self):
+        for destination in ("<110000>", "<D800>", "<DFFF>"):
+            with self.subTest(destination=destination):
+                with self.assertRaises(ValueError):
+                    corrected_tounicode_cmap("<01> " + destination + "\n")
 
 
 if __name__ == "__main__":
