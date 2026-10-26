@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
@@ -132,6 +133,10 @@ class RealSidecarFontDevQAContracts(unittest.TestCase):
             def smoke(command, root, timeout):
                 self.assertEqual(command[0], str(run / "dist" / (qa.NAME + ".exe")))
                 self.assertEqual(qa.os.environ.get("PILOTODIN_P2_REAL_SIDECAR_DEVQA"), "1")
+                self.assertEqual(qa.os.environ.get("PILOTODIN_P2_DEVQA_ATTESTATION"),
+                                 str((run / "font-attestation.json").resolve()))
+                (run / "font-attestation.json").write_text(
+                    json.dumps(qa.expected_attestation(assets)), encoding="utf-8")
                 return {"passed": True, "auth_required": True,
                         "wrong_origin_rejected": True,
                         "user_storage_isolated": True, "model_started": False}
@@ -148,6 +153,31 @@ class RealSidecarFontDevQAContracts(unittest.TestCase):
             self.assertEqual(outcome["product_unicode_pdf"], "NOT_TESTED")
             self.assertEqual(outcome["release_font_approval"], "NOT_GRANTED")
             self.assertEqual(outcome["runtime_hook_release_status"], "DEVQA_ONLY_NOT_FOR_RELEASE")
+
+    def test_good_smoke_without_hook_attestation_is_fail_not_pass(self):
+        with TemporaryDirectory(prefix="p2-real-engine-contract-") as td:
+            root = Path(td)
+            source = root / "source"
+            assets = six_assets(source)
+            run = root / "run"
+            run.mkdir()
+            def built(cmd, **kwargs):
+                (run / "dist" / (qa.NAME + ".exe")).write_bytes(b"fake")
+                return subprocess.CompletedProcess(cmd, 0)
+            smoke_response = {"passed": True, "auth_required": True,
+                              "wrong_origin_rejected": True,
+                              "user_storage_isolated": True, "model_started": False}
+            with patch.object(qa.shutil, "disk_usage", return_value=type(
+                    "Disk", (), {"free": 10**10})()), \
+                 patch.object(qa, "inspect_environment",
+                              return_value={"state": "EXISTING_BUILDER_REVIEW_REQUIRED"}), \
+                 patch.object(qa, "python_for", return_value=Path(qa.sys.executable)), \
+                 patch.object(qa, "ENV_DIR", root):
+                result = qa.run_real_sidecar(
+                    run, source, assets, subprocess_run=built,
+                    smoke=lambda *a, **kw: smoke_response)
+            self.assertEqual(result["state"], "FAIL")
+            self.assertEqual(result["stage"], "frozen_font_hook_attestation_missing")
 
     def test_nonzero_freeze_never_smokes_or_passes(self):
         with TemporaryDirectory(prefix="p2-real-engine-contract-") as td:
