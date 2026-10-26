@@ -1,6 +1,7 @@
 """P2-U2c full builder preparation contracts; no real pip/download/venv invoked."""
 from __future__ import annotations
 
+from collections import namedtuple
 from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
@@ -8,6 +9,11 @@ import unittest
 from unittest.mock import patch
 
 from tools import p2_pdf_prepare_full_sidecar_builder as prep
+
+
+# Mirrors shutil.disk_usage() namedtuple schema: .total, .used, .free.
+# A plain tuple here previously caused a false failure before any download.
+DiskUsage = namedtuple("DiskUsage", ("total", "used", "free"))
 
 
 def versions():
@@ -20,6 +26,7 @@ class FullSidecarBuilderSafetyContracts(unittest.TestCase):
         self.assertNotEqual(prep.ENV_DIR, prep.ROOT / ".venv-live")
         self.assertNotEqual(prep.ENV_DIR, prep.ROOT / ".venv")
         self.assertEqual(prep.OFFICIAL_INDEX, "https://pypi.org/simple")
+        self.assertEqual(DiskUsage(100, 20, 80).free, 80)
         launcher = (prep.ROOT / "Run_PilotODIN_P2_Prepare_Full_Sidecar_Builder_DevQA.bat").read_text(encoding="utf-8")
         self.assertIn("choice /C YN", launcher)
         self.assertLess(launcher.index("choice /C YN"), launcher.index(" --prepare"))
@@ -90,7 +97,7 @@ class FullSidecarBuilderSafetyContracts(unittest.TestCase):
                  patch.object(prep, "check_requirements"), \
                  patch.object(prep, "live_versions", return_value=versions()), \
                  patch.object(prep, "_run", side_effect=AssertionError("default run should not occur")), \
-                 patch.object(prep.shutil, "disk_usage", return_value=(10**10, 10**10, 10**10)):
+                 patch.object(prep.shutil, "disk_usage", return_value=DiskUsage(10**10, 0, 10**10)):
                 outcome = prep.prepare(runner=fake)
             self.assertEqual(outcome["state"], "DEVQA_FULL_BUILDER_PREPARED")
             self.assertEqual(len(commands), 4)
@@ -121,7 +128,7 @@ class FullSidecarBuilderSafetyContracts(unittest.TestCase):
                  patch.object(prep, "ENV_DIR", env), \
                  patch.object(prep, "check_requirements"), \
                  patch.object(prep, "live_versions", return_value=versions()), \
-                 patch.object(prep.shutil, "disk_usage", return_value=(10**10, 10**10, 10**10)):
+                 patch.object(prep.shutil, "disk_usage", return_value=DiskUsage(10**10, 0, 10**10)):
                 outcome = prep.prepare(runner=fake)
             self.assertEqual(outcome["state"], "BLOCKED")
             self.assertEqual(outcome["stage"], "full_runtime_wheel_resolution_or_install")
