@@ -42,10 +42,12 @@ class PreviouslyFrozenSidecarRecheckContracts(unittest.TestCase):
     def test_unreasonable_executable_size_is_rejected_without_reading(self):
         with TemporaryDirectory(prefix="p2-recheck-hash-") as td:
             exe = Path(td) / "too-large.exe"
-            with exe.open("wb") as sink:
-                sink.truncate(old.MAX_FROZEN_EXE_BYTES + 1)
-            with self.assertRaisesRegex(ValueError, "bounded size"):
-                old.fingerprint_frozen_executable(exe)
+            exe.write_bytes(b"too-long-for-synthetic-limit")
+            # Test the cap with a temporary small threshold. Never allocate
+            # an actual >1 GiB test file on the owner's Windows laptop.
+            with patch.object(old, "MAX_FROZEN_EXE_BYTES", 4):
+                with self.assertRaisesRegex(ValueError, "bounded size"):
+                    old.fingerprint_frozen_executable(exe)
 
     def test_reject_non_run_id_without_accessing_files(self):
         for bad in ("../user-home", "run-other", "run-" + "g" * 32,
