@@ -180,14 +180,14 @@ def child_worker():
                 if report != original:
                     raise AssertionError("Report renderer mutated the synthetic fixture")
                 outputs.append(filename)
-                cases.append({"scenario": name, "state": "PASS", "pages": n,
+                cases.append({"scenario": name, "state": "STRUCTURAL_PASS", "pages": n,
                               "pdf_sha256": digest(target), "unicode_preserved": glyph_checks})
             except Exception as exc:
                 cases.append({"scenario": name, "state": "FAIL",
                               "failure_class": type(exc).__name__})
                 break
         success = (len(cases) == len(SCENARIOS) and
-                   all(case["state"] == "PASS" for case in cases))
+                   all(case["state"] == "STRUCTURAL_PASS" for case in cases))
         output = {"state": "READY_FOR_VISUAL_REVIEW" if success else "FAIL",
                   "phase": stage, "cases": cases, "files": outputs if success else []}
     except Exception as exc:
@@ -277,7 +277,8 @@ def execute():
         result["run_id"] = run.name
         source = ["backend/reports.py", "backend/report_charts.py",
                   "tests/test_p2_report_display_disclosure.py",
-                  "tools/p2_pdf_visual_devqa.py"]
+                  "tools/p2_pdf_visual_devqa.py",
+                  "Run_PilotODIN_P2_PDF_Visual_DevQA.bat"]
         findings, blockers = scan_files(ROOT, source)
         result["preflight"] = {"blockers": blockers, "findings": findings,
                                "source_sha256": {p: digest(ROOT / p) for p in source}}
@@ -301,7 +302,7 @@ def execute():
         result["worker_phase"] = child.get("phase", "no_status")
         if (child.get("state") == "READY_FOR_VISUAL_REVIEW" and proc.returncode == 0 and
                 [c.get("scenario") for c in child.get("cases", [])] == list(SCENARIOS) and
-                all(c.get("state") == "PASS" for c in child["cases"])):
+                all(c.get("state") == "STRUCTURAL_PASS" for c in child["cases"])):
             preview = run.parent.parent / "archive" / (run.name + "-visual-preview.zip")
             info = preview_zip(run, child, preview)
             result["preview_zip"] = str(preview)
