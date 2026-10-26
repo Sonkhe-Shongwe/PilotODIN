@@ -16,6 +16,11 @@ ROOT=Path(__file__).resolve().parents[1]
 def main()->int:
     if len(sys.argv)!=2:
         raise RuntimeError("Expected one synthetic manifest output path.")
+    if os.environ.get("RL_invariant")!="1":
+        raise RuntimeError("Native full-chain synthetic test must request reproducible ReportLab PDF metadata.")
+    from reportlab import rl_config
+    if rl_config.invariant != 1:
+        raise RuntimeError("ReportLab did not activate invariant PDF output in synthetic QA.")
     home_value=os.environ.get("PILOTODIN_HOME","")
     if not home_value:
         raise RuntimeError("PILOTODIN_HOME must be an isolated temporary directory.")
@@ -74,6 +79,11 @@ def main()->int:
         expected_name=f"pilotodin_report_{report_id[:12]}_rev2.{fmt}"
         if expected_name not in response.headers.get("content-disposition",""):
             raise RuntimeError(f"Expected {fmt} filename not returned by backend")
+        # Strict proof that the same immutable revision renders identically at
+        # two different calls before crossing the TestClient/Uvicorn boundary.
+        repeated=client.get(f"/api/reports/{report_id}/export/{fmt}?revision=2")
+        if repeated.status_code!=200 or repeated.content!=response.content:
+            raise RuntimeError(f"Synthetic {fmt} export changed between repeated requests; refuse digest baseline.")
         exports[fmt]={
             "filename":expected_name,
             "sha256":hashlib.sha256(response.content).hexdigest(),
@@ -87,7 +97,7 @@ def main()->int:
         "exports":exports
     }
     manifest.write_text(json.dumps(record,indent=2),encoding="utf-8")
-    print("Synthetic project/report v1 and v2 created; PDF/HTML expected hashes recorded.")
+    print("Synthetic project/report v1 and v2 created; PDF/HTML twice-rendered digest checks PASS.")
     return 0
 
 if __name__=="__main__":

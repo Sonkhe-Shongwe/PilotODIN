@@ -32,13 +32,14 @@ $report=[ordered]@{
     qwen_ai='NOT_RUN'
     installed_release='NOT_BUILT'
     report_outputs='NOT_VERIFIED'
+    synthetic_pdf_reproducibility='REPORTLAB_INVARIANT_TEST_SCOPE_ONLY'
     message=''
 }
 $backend=$null
 $nativeCompleted=$false
 $manifest=$null
 $oldEnv=@{}
-foreach($name in @('PILOTODIN_HOME','PILOTODIN_DESKTOP_SESSION','CARGO_NET_OFFLINE','VITE_PILOTODIN_NATIVE_SMOKE',
+foreach($name in @('RL_invariant','PILOTODIN_HOME','PILOTODIN_DESKTOP_SESSION','CARGO_NET_OFFLINE','VITE_PILOTODIN_NATIVE_SMOKE',
  'VITE_P2_CHAIN_API_PORT','VITE_P2_CHAIN_PROJECT_ID','VITE_P2_CHAIN_REPORT_ID',
  'VITE_P2_CHAIN_HTML_NAME','VITE_P2_CHAIN_PDF_NAME')){
     $oldEnv[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
@@ -105,6 +106,10 @@ try{
             Write-Warning 'Uncommitted files exist; they will not be discarded or reset.'
         }
     }else{Write-Warning 'Verify feature/live-dev-workspace-20261023 is checked out in GitHub Desktop.'}
+    # ReportLab normally embeds render-time PDF timestamps and document IDs.
+    # Limit reproducible PDF metadata to this synthetic QA process tree only.
+    # This affects both the fixture seed and its child live Uvicorn process.
+    $env:RL_invariant='1'
     $env:PILOTODIN_HOME=$isolatedWorkspaceHome
     Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
     $env:CARGO_NET_OFFLINE='true'
@@ -130,6 +135,7 @@ try{
     # revision-2 bytes used as the expected reference by the synthetic seeder.
     $web=New-Object System.Net.WebClient
     $web.Headers.Add('Origin','http://127.0.0.1:5176')
+    Write-Host 'Comparing live exports with synthetic fixture under test-only invariant PDF metadata.'
     foreach($kind in @('html','pdf')){
         $reference=Join-Path $session ('reference-'+$kind+'.bin')
         $url="http://127.0.0.1:$backendPort/api/reports/$($manifest.report_id)/export/$kind"+'?revision=2'
