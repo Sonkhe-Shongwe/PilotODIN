@@ -1,5 +1,6 @@
 """Fast checks on P2 DevQA status conversion; cannot touch product app/data."""
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -16,6 +17,27 @@ def payload(n=3):
             "failures": [], "errors": [], "skipped": []}
 
 
+def isolated_temp_parent():
+    """Use the current disposable DevQA fixtures folder when run by the launcher."""
+    raw_run = os.environ.get("PILOTODIN_DEVQA_RUN")
+    raw_home = os.environ.get("PILOTODIN_HOME")
+    if not raw_run and not raw_home:
+        return None  # Standalone pure unit-contract execution.
+    if not raw_run or not raw_home:
+        raise RuntimeError("Partial DevQA environment is not permitted")
+    run = Path(raw_run).resolve()
+    if (Path(raw_home).resolve() != run / "workspace" or
+            not (run / "manifest.json").is_file() or
+            not (run / "fixtures").is_dir()):
+        raise RuntimeError("Refusing unverified contract fixture workspace")
+    manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("phase") != "P2-MIXED-REPORT":
+        raise RuntimeError("Refusing a foreign DevQA run")
+    return str(run / "fixtures")
+
+
+
+
 class RunnerContract(unittest.TestCase):
     def test_bad_counts_and_empty_are_blocked(self):
         good = payload()
@@ -26,7 +48,7 @@ class RunnerContract(unittest.TestCase):
 
         # The supplied Windows ZIP showed zero cases because the parent could
         # not parse the worker's stdout. Status travels in a dedicated file.
-        with TemporaryDirectory(prefix="p2-protocol-") as tmp:
+        with TemporaryDirectory(prefix="p2-protocol-", dir=isolated_temp_parent()) as tmp:
             status = worker_status_path(Path(tmp), "mixed")
             self.assertEqual(status.name, "worker-mixed.json")
             self.assertIsNone(read_worker_status(status))
@@ -45,7 +67,7 @@ class RunnerContract(unittest.TestCase):
 
         # Failure-within-failure regression: archive I/O must not preserve
         # a stale REVIEW_REQUIRED in on-disk status or the run manifest.
-        with TemporaryDirectory(prefix="p2-contract-") as temp:
+        with TemporaryDirectory(prefix="p2-contract-", dir=isolated_temp_parent()) as temp:
             base = Path(temp)
             run = base / "runs" / "synthetic-run"
             (run / "diagnostics").mkdir(parents=True)
