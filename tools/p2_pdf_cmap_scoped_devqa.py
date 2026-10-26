@@ -105,14 +105,15 @@ def invoke(mode):
         [sys.executable, "-B", str(Path(__file__).resolve()), "--mode", mode],
         cwd=ROOT, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         capture_output=True, text=True, timeout=100, check=False)
-    if p.returncode != 0:
-        return {"state": "BLOCKED", "worker": mode, "exit_code": p.returncode}
     try:
         data = json.loads(p.stdout)
     except ValueError:
         return {"state": "BLOCKED", "worker": mode, "reason": "malformed_worker_json"}
-    if not isinstance(data, dict) or data.get("mode", mode) != mode:
+    if not isinstance(data, dict) or data.get("mode") != mode:
         return {"state": "BLOCKED", "worker": mode, "reason": "unexpected_worker_response"}
+    if p.returncode != 0 and not (mode == "unit" and data.get("state") == "FAIL"):
+        return {"state": "BLOCKED", "worker": mode, "exit_code": p.returncode,
+                "failure_class": data.get("failure_class", "worker_nonzero")}
     return data
 
 
@@ -156,6 +157,8 @@ def main():
         )
         if ready:
             report["state"] = "SCOPED_EXPERIMENT_PASS"
+        elif unit.get("state") == "FAIL":
+            report["state"] = "FAIL"
         elif any(x.get("state") == "BLOCKED" for x in (unit, base, safe)):
             report["state"] = "BLOCKED"
         else:
