@@ -61,3 +61,7 @@ A structurally completed run returns `P2 PDF VISUAL DEVQA: REVIEW_REQUIRED`, not
 ## F. Exactly one next owner action
 
 Preserve any GitHub Desktop local changes, pull `feature/live-dev-workspace-20261023` and run **`Run_PilotODIN_P2_PDF_Visual_DevQA.bat` once**. If the run is `REVIEW_REQUIRED`, upload the **`-visual-preview.zip`** here so the PDFs can be inspected visually. If it reports `FAIL` or `BLOCKED`, provide the **status-only ZIP** and console screenshot; do not rerun blindly. Do NOT repeat the earlier 12-case, five-case or native Save As BATs.
+
+## G. Final pre-execution source review (26 October 2026)
+
+The test-only generator source was re-fetched following the initial commits. Two narrow, preventative checks were added before any owner execution: require the manifest run ID to match its fresh run directory, and require exactly the three PDF files plus the first/middle/last PNG filenames calculated from each PDF's recorded page count. The package refuses a missing, duplicate, unexpected or non-string filename before archiving; it cannot return a nominal review-ready result with an incomplete visual sample set. Malformed worker status is treated as incomplete/BLOCKED and both archive types have integrity checks. Worker phases and visual generation were reviewed statically, **not executed** in the owner's Windows environment. Final code refinements: `85e4a50c9bd5401443c3dafd5b82e0ba966fbec5` and `a7af5a60ce36baaf053a4286e9e1012cb6ed7ff4`. Those code changes do not touch the product renderer, previously accepted test packages or user data.
