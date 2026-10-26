@@ -55,6 +55,28 @@ def _state(state: str, stage: str, **extra) -> dict:
     }
 
 
+MAX_FROZEN_EXE_BYTES = 1024 ** 3  # Separate from the 32 MiB FONT asset gate.
+
+
+def fingerprint_frozen_executable(path: Path) -> tuple[int, str]:
+    """Stream and fingerprint one bounded frozen engine; never use the font-size gate."""
+    _not_redirected(path)
+    if not path.is_file() or path.is_symlink():
+        raise ValueError("Frozen executable is missing or redirected")
+    before = path.stat()
+    size = before.st_size
+    if size <= 0 or size > MAX_FROZEN_EXE_BYTES:
+        raise ValueError("Frozen executable outside bounded size envelope")
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    after = path.stat()
+    if before.st_size != after.st_size or before.st_mtime_ns != after.st_mtime_ns:
+        raise ValueError("Frozen executable changed while fingerprinting")
+    return size, digest.hexdigest()
+
+
 def expected_attestation(entries: list[dict]) -> dict:
     identities = sorted((item["name"], item["bytes"], item["sha256"])
                         for item in entries)
@@ -211,7 +233,7 @@ def run_real_sidecar(
         return _state("FAIL", "frozen_font_hook_attestation_invalid")
     if receipt != expected_attestation(entries):
         return _state("FAIL", "frozen_font_hook_attestation_mismatch")
-    exe_size, exe_sha, _ = hash_file(exe)
+    exe_size, exe_sha = fingerprint_frozen_executable(exe)
     return _state("SCOPED_REAL_SIDECAR_FONT_RUNTIME_PASS", "completed",
                   actual_scientific_engine=True,
                   disposable_session_and_storage=True,
