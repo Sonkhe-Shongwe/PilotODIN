@@ -148,10 +148,30 @@ def html_chart(spec: dict) -> str:
     return "".join(result)
 
 
-def pdf_chart(spec: dict, width: float = 500.0) -> Drawing:
-    """ReportLab vector plot; same projection and scaling as the HTML exhibit."""
+def pdf_chart(spec: dict, width: float = 500.0, *, unicode_context=None) -> Drawing:
+    """Preserve existing vector plotting; only text may use explicit new faces.
+
+    Ordinary saved reports still take the original chart code path. The
+    Unicode context is dormant until release fonts receive independent approval.
+    """
+    if unicode_context is not None:
+        try:
+            from .pdf_unicode_seam import UnicodePDFContext
+        except ImportError:
+            from pdf_unicode_seam import UnicodePDFContext
+        if not isinstance(unicode_context, UnicodePDFContext):
+            raise ValueError("Expected registered Unicode PDF chart context")
+        unicode_context.assert_ready()
     height = 220.0
     d = Drawing(width, height)
+    def put_text(x, y, text, *, anchor="start", size=8, color=None, room=300):
+        if unicode_context is None:
+            d.add(String(x, y, text, textAnchor=anchor, fontSize=size,
+                         fillColor=color))
+        else:
+            unicode_context.draw_vector_text(
+                d, text, x=x, y=y, font_size=size, max_width=room,
+                anchor=anchor, fill_color=color)
     left, right, bottom, top = 54.0, width-13.0, 45.0, 17.0
     plot_w, plot_h = right-left, height-bottom-top
     low, high = _domain(spec)
@@ -161,8 +181,8 @@ def pdf_chart(spec: dict, width: float = 500.0) -> Drawing:
     for tick in sorted(set([low, 0.0, high])):
         yy = y(tick)
         d.add(Line(left, yy, right, yy, strokeColor=colors.HexColor("#dbe1ee"), strokeWidth=.65))
-        d.add(String(left-6, yy-3, _number(tick), textAnchor="end", fontSize=7.5,
-                     fillColor=colors.HexColor("#566581")))
+        put_text(left-6, yy-3, _number(tick), anchor="end", size=7.5,
+                 color=colors.HexColor("#566581"), room=left-8)
     n = len(spec["data"])
     step = plot_w/n
     for i, point in enumerate(spec["data"]):
@@ -183,10 +203,11 @@ def pdf_chart(spec: dict, width: float = 500.0) -> Drawing:
             label = point["label"]
             if len(label)>12:
                 label = label[:10]+"..."
-            d.add(String(x, 25, label, fontSize=7, textAnchor="middle",
-                         fillColor=colors.HexColor("#485673")))
-    d.add(String((left+right)/2, 7, spec["x"][:65] or "Group",
-                 textAnchor="middle", fontSize=8, fillColor=colors.HexColor("#28364e")))
-    d.add(String(5, height-12, measure_caption(spec)[:74],
-                 fontSize=8, fillColor=colors.HexColor("#28364e")))
+            put_text(x, 25, label, size=7, anchor="middle",
+                     color=colors.HexColor("#485673"), room=max(10, step*.90))
+    put_text((left+right)/2, 7, spec["x"][:65] or "Group",
+             anchor="middle", size=8, color=colors.HexColor("#28364e"),
+             room=plot_w)
+    put_text(5, height-12, measure_caption(spec)[:74],
+             size=8, color=colors.HexColor("#28364e"), room=width-10)
     return d
