@@ -79,7 +79,7 @@ def describe_candidate_failure(error, commit):
         category = "CONNECTION_RESET"
     elif isinstance(cause, urllib.error.URLError):
         category = "NETWORK_OTHER"
-    elif error.stage == "identity_verification":
+    elif error.stage in ("identity_verification", "existing_identity"):
         category = "ASSET_INTEGRITY"
     else:
         category = "LOCAL_STAGING_OR_VALIDATION"
