@@ -52,6 +52,9 @@ class RunnerContract(unittest.TestCase):
             status = worker_status_path(Path(tmp), "mixed")
             self.assertEqual(status.name, "worker-mixed.json")
             self.assertIsNone(read_worker_status(status))
+            # Unlike an allocated DevQA run, TemporaryDirectory has no
+            # diagnostics folder. Create the synthetic target directory.
+            status.parent.mkdir(parents=True, exist_ok=False)
             status.write_text("imported module printed a banner", encoding="utf-8")
             self.assertIsNone(read_worker_status(status))
             status.write_text(json.dumps(payload()), encoding="utf-8")
