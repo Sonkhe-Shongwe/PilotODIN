@@ -28,6 +28,19 @@ def assets_for(path):
 
 
 class FrozenFontProbeContracts(unittest.TestCase):
+    def test_launcher_keeps_reportlab_preflight_in_live_python(self):
+        # Prevent reintroducing the exact Windows dependency-boundary failure:
+        # the private PyInstaller-only venv has no ReportLab.
+        launcher = (Path(__file__).resolve().parents[1] /
+                    "Run_PilotODIN_P2_Frozen_Font_OneFile_DevQA.bat")
+        command_text = launcher.read_text(encoding="utf-8")
+        self.assertIn(
+            r'"%~dp0.venv-live\Scripts\python.exe" -B "%~dp0tools\p2_pdf_frozen_font_onefile_devqa.py" --build',
+            command_text)
+        self.assertNotIn('"%FREEZER%"', command_text)
+        self.assertEqual(str(probe.BUILDER_PYTHON),
+                         str(probe.BUILD_ROOT / "tooling-venv" / "Scripts" / "python.exe"))
+
     def test_unfrozen_worker_refuses_false_pass(self):
         with patch("tools.p2_pdf_frozen_font_worker.sys.frozen", False, create=True):
             with self.assertRaisesRegex(ValueError, "bootloader"):
