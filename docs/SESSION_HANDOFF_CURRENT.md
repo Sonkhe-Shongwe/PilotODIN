@@ -1,5 +1,21 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+
+## LATEST CHECKPOINT — P2 mixed-evidence runner audit and fail-closed repair (26 October 2026)
+
+**Latest feature-branch source checkpoint before this handoff update:** `7dfec6d2cf957feede1b132c9f0c171e58238da4`; **fetch live HEAD again before further changes**. The previous handoff's `ac4fa238...` source was followed by a documentation-only `4de8da83...` commit and a focused pre-Windows runner correction. This section supersedes older "one owner action" statements elsewhere in this long chronological record.
+
+**Current milestone:** P2 four-source mixed-evidence reporting DevQA. Existing earlier synthetic Windows FastAPI → React → Tauri Save As exact HTML/PDF SHA acceptance remains OWNER-PASSED; do not repeat it. This NEW package still has **nine synthetic mixed-report cases and three runner-contract cases, NOT YET owner-executed**. No product report API, renderer, Tauri shell, frontend or real data has been changed in this audit.
+
+**Source audit performed:** Read `docs/P2_MIXED_EVIDENCE_RISK_FIRST_PLAN.md`, current acceptance contract, nine-case fixture, all three runner cases, launcher, `tools/qa_foundation.py`, relevant `backend/main.py`, `backend/reports.py`, `backend/report_charts.py` and `backend/storage.py`, plus latest dated Master QA #2 comments. Four evidence source API routes, Quality version, Explore config digest, selected synthetic experiment projection, report revisions and export routes match fixture assumptions in source. Six-row oracle North=400, South=540, sum=940. Seeded held-out metrics with sample_count 30 are TEST-ONLY, not real training on six rows. Static compatibility does **not** constitute a passing Windows run.
+
+**Confirmed error-within-error fixed in test tooling:** Previously ZIP archiving could fail after `result.json` and `manifest.json` were already written as `REVIEW_REQUIRED`, leading to console `BLOCKED` and contradictory persisted status, potentially with a partial ZIP. `tools/p2_mixed_report_devqa.py` now stages the archive and publishes it after successful writing; archive failure downgrades the disk status/manifest to `BLOCKED`, cleans incomplete stages where possible and clearly reports further status-persistence errors. The existing 3-case runner suite now includes simulated archive-failure assertions, without adding a fourth method. Code commits: `0475d548a77da9f7513c8d9f3a02a06b2a9b978b` (runner) and `b8c36166f6c5d03b0bb42c8a59e06afffaaf91b8` (regression). Details and acceptance limits: [P2 mixed DevQA acceptance](./P2_MIXED_EVIDENCE_DEVQA_ACCEPTANCE.md).
+
+**Exact verification status:** GitHub commits/files and API/test contracts reviewed. **No new executable Python/Windows results** from this patch have been observed; full new suite is still PENDING. Windows `.venv-live` must already contain the dependencies; no installs are attempted. Even 9+3 PASS means **REVIEW_REQUIRED**, not accepted native Windows/release P2. Reader-facing 40-row/30-finding truncation disclosure, visual PDF text clipping, more exhaustive numerical parity and full offline native P8 acceptance remain open. Source-only watch item: double projection of `report_charts.visual_spec` can clear internal `limited` while keeping the warning note; do not change production renderer without a focused failing scenario and review.
+
+**ONE next owner action:** In GitHub Desktop, stay on `feature/live-dev-workspace-20261023`; preserve local untracked/modified files and pull the new commits. Double-click ONLY `Run_PilotODIN_P2_Mixed_Report_DevQA.bat` once. If console says `REVIEW_REQUIRED`, report the 3 contract and 9 mixed PASS counts; if `FAIL`/`BLOCKED`, send the printed status-only ZIP (or screenshot + run folder if archive failed) for fault classification. It creates its own `%LOCALAPPDATA%\\PilotODIN\\DevQA\\runs\\P2-MIXED-REPORT-...` and uses the existing `.venv-live\\Scripts\\python.exe`. No Tauri, cloud AI, new ML fit, installer or real user project is needed. Do not begin P3/new milestone until this gate and residual P2 report-quality risks are explicitly reviewed.
+
+
 **Snapshot date:** 25 October 2026 (South Africa, UTC+02:00)  
 **Status:** authoritative short continuity summary; keep this up to date, never delete historical QA evidence.  
 **Repository:** private `Sonkhe-Shongwe/PilotODIN`  
