@@ -4,7 +4,7 @@ cd /d "%~dp0"
 title PilotODIN P2 Actual Onefile Font Resources - Isolated DevQA
 echo PilotODIN P2-U2a: REAL isolated PyInstaller ONEFILE font resource proof.
 echo Uses ONLY the previously staged six verified font/OFL review files.
-echo Runs eight disposable synthetic contracts first.
+echo Runs nine focused synthetic regression contracts first.
 echo This creates a separate ignored probe executable, NOT the PilotODIN sidecar.
 echo No downloads, pip installs, Tauri app, model training or customer projects.
 echo The font license and hash receipt remain build-review-only, NOT for release.
@@ -15,7 +15,7 @@ if not exist "%~dp0.venv-live\Scripts\python.exe" (
  pause
  exit /b 2
 )
-echo Running eight synthetic isolation, integrity and failure-contract tests...
+echo Running nine focused synthetic isolation and environment-boundary tests...
 "%~dp0.venv-live\Scripts\python.exe" -B -m unittest discover -s "%~dp0tests" -p "test_p2_pdf_frozen_font_onefile.py" -v
 if errorlevel 1 (
  echo BLOCKED OR FAIL: Synthetic safety contracts were not all green.
