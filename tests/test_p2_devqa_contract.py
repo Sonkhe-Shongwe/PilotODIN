@@ -23,6 +23,9 @@ class P2DevQAContract(unittest.TestCase):
         self.assertIn("Test-Path -LiteralPath $htmlFile -PathType Leaf",s)
         self.assertIn("Test-Path -LiteralPath $pdfFile -PathType Leaf",s)
         self.assertIn("IsPathRooted($inputFolder)",s)
+        self.assertIn("$driveAbsolute",s)
+        self.assertIn("$uncAbsolute",s)
+        self.assertIn("fully qualified Windows path",s)
         self.assertIn("MISSING exact required file",s)
 
     def test_strict_hash_and_original_source(self):
@@ -31,6 +34,7 @@ class P2DevQAContract(unittest.TestCase):
         self.assertIn("Get-FileHash -LiteralPath $path -Algorithm SHA256",s)
         self.assertIn("Mark 'p2-real-report-native-saved-byte-integrity'",s)
         self.assertIn("Mark 'p2-synthetic-source-unchanged'",s)
+        self.assertIn("$files=@($reportFile,$manifestPath,$qaManifestPath",s)
 
     def test_no_prod_command_change(self):
         s=source("frontend/src/p2NativeLiveReport.tsx")
@@ -43,6 +47,7 @@ class P2DevQAContract(unittest.TestCase):
         s=source("tools/Start_P2_DevQA_Native_Chain_Local.ps1")
         self.assertIn("init --phase P2-NATIVE-CHAIN --json",s)
         self.assertIn("test_qa_foundation.py",s)
+        self.assertIn("test_p2_devqa_contract.py",s)
         self.assertIn("DevQA workspace allocator",s)
         self.assertIn("product_acceptance='NOT_TESTED'",s)
         self.assertIn("Failure-Diagnostic",s)

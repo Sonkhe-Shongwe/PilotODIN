@@ -17,8 +17,12 @@ function Failure-Diagnostic([string]$message){
         $archive=Join-Path $archiveDir ((Split-Path $runDir -Leaf)+'-bootstrap-fail.zip')
         @{state='BLOCKED';product_acceptance='NOT_TESTED';source='DevQA preflight';message=$message} |
             ConvertTo-Json | Set-Content -LiteralPath $diag -Encoding UTF8
-        try{Compress-Archive -LiteralPath $diag -DestinationPath $archive -Force
-            Write-Host ('Diagnostic ZIP (only status JSON): '+$archive)
+        try{
+            $safeLogs=@($diag,
+                (Join-Path $runDir 'logs\devqa-selftests.log'),
+                (Join-Path $runDir 'logs\devqa-preflight.json')) | Where-Object {Test-Path -LiteralPath $_ -PathType Leaf}
+            Compress-Archive -LiteralPath $safeLogs -DestinationPath $archive -Force
+            Write-Host ('Diagnostic ZIP (status and source preflight logs only): '+$archive)
         }catch{Write-Warning ('Could not archive bootstrap status: '+$_.Exception.Message)}
     }
 }
@@ -57,7 +61,16 @@ try{
         $testExit=$LASTEXITCODE
     }finally{$ErrorActionPreference=$prior;Pop-Location}
     if($testExit -ne 0){throw 'DevQA foundation regression tests failed; no native test started.'}
-    Write-Host 'P2 DevQA foundation regressions: PASS' -ForegroundColor Green
+    Push-Location $root
+    try{
+        $prior=$ErrorActionPreference
+        $ErrorActionPreference='Continue'
+        & $pythonExe -B -m unittest discover -s tests -p test_p2_devqa_contract.py -v 2>&1 |
+            Tee-Object -FilePath $testLog -Append
+        $contractExit=$LASTEXITCODE
+    }finally{$ErrorActionPreference=$prior;Pop-Location}
+    if($contractExit -ne 0){throw 'P2 DevQA source-contract tests failed; no native test started.'}
+    Write-Host 'P2 DevQA foundation AND native runner contract regressions: PASS' -ForegroundColor Green
     $preflightLog=Join-Path $logs 'devqa-preflight.json'
     Push-Location $root
     try{

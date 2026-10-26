@@ -222,7 +222,12 @@ try{
         $alternate=(Read-Host 'Did you deliberately choose a DIFFERENT folder in both Windows Save As dialogs? [yes/no]').Trim().ToLowerInvariant()
         if($alternate -in @('yes','y')){
             $inputFolder=(Read-Host 'Paste the FULL ABSOLUTE path to that original folder (NOT Downloads)').Trim().Trim('"')
-            if(-not [IO.Path]::IsPathRooted($inputFolder)){throw 'Alternate Save As folder must be a full absolute path; relative entries are rejected.'}
+            # IsPathRooted alone accepts drive-relative forms such as '\folder' on Windows.
+            $driveAbsolute=($inputFolder -match '^[A-Za-z]:[\\/]')
+            $uncAbsolute=($inputFolder -match '^\\\\[^\\]+\\[^\\]+(?:\\|$)')
+            if((-not [IO.Path]::IsPathRooted($inputFolder)) -or (-not($driveAbsolute -or $uncAbsolute))){
+                throw 'Alternate Save As folder must be a fully qualified Windows path, not Downloads or a drive-relative path.'
+            }
             if(-not (Test-Path -LiteralPath $inputFolder -PathType Container)){throw 'Owner-supplied absolute Save As folder does not exist.'}
             $chosen=(Resolve-Path -LiteralPath $inputFolder).Path
             $chosenItem=Get-Item -LiteralPath $chosen -Force
@@ -263,7 +268,9 @@ try{
     $qaManifest.state=$(if($report.overall -eq 'PASS'){'P2_SYNTHETIC_DEV_PASS'}else{'P2_SYNTHETIC_DEV_FAIL'})
     $qaManifest | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath $qaManifestPath -Encoding UTF8
     $report | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath $reportFile -Encoding UTF8
-    $files=@($reportFile,$seedLog,$backendOut,$backendErr,$buildLog,$nativeLog,
+    # The synthetic-only reference manifest allows independent SHA verification of a red gate.
+    # Never bundle the source CSV, actual saved exports or user datasets.
+    $files=@($reportFile,$manifestPath,$qaManifestPath,$seedLog,$backendOut,$backendErr,$buildLog,$nativeLog,
         (Join-Path $logDir 'devqa-preflight.json'),(Join-Path $logDir 'devqa-selftests.log')) | Where-Object {Test-Path $_}
     Compress-Archive -LiteralPath $files -DestinationPath $archive -Force
     Write-Host ('P2 live API-to-native export gate: '+$report.overall) -ForegroundColor $(if($report.overall -eq 'PASS'){'Green'}else{'Red'})
