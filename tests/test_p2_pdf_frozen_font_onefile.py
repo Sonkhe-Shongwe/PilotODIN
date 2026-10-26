@@ -41,6 +41,10 @@ class FrozenFontProbeContracts(unittest.TestCase):
                 args = probe.build_arguments(root / "source", records, root / "output")
             self.assertEqual(args.count("--add-data"), 1)
             self.assertIn("--onefile", args)
+            self.assertEqual(args[0], str(probe.BUILDER_PYTHON))
+            # Controller is .venv-live for real ReportLab glyph checks, but
+            # frozen build must use pinned PyInstaller-only private Python.
+            self.assertNotEqual(args[0], str(probe.sys.executable))
             self.assertNotIn("--clean", args)
             self.assertNotIn("desktop_runner.py", " ".join(args))
             self.assertTrue(all(":" + probe.EXTRACTED_DEST in args[i + 1]
@@ -63,15 +67,18 @@ class FrozenFontProbeContracts(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     probe.build_arguments(root, tampered, root)
 
-    def test_pyinstaller_missing_or_old_fails_without_install(self):
-        from importlib import metadata
-        with patch.object(probe.metadata, "version",
-                          side_effect=metadata.PackageNotFoundError("pyinstaller")):
-            with self.assertRaisesRegex(RuntimeError, "PyInstallerMissing"):
+    def test_isolated_builder_must_be_verified_but_never_installed(self):
+        with patch.object(probe, "inspect_tooling", return_value={"state": "BLOCKED"}):
+            with self.assertRaisesRegex(RuntimeError, "IsolatedPyInstallerNotReady"):
                 probe.detect_existing_pyinstaller()
-        with patch.object(probe.metadata, "version", return_value="5.12.0"):
-            with self.assertRaisesRegex(RuntimeError, "PyInstaller6Required"):
-                probe.detect_existing_pyinstaller()
+        with TemporaryDirectory(prefix="odin-p2-build-venv-") as folder:
+            candidate = Path(folder) / "python.exe"
+            candidate.write_bytes(b"fake-private-builder")
+            with patch.object(probe, "BUILDER_PYTHON", candidate), \
+                 patch.object(probe, "inspect_tooling", return_value={
+                     "state": "ISOLATED_PYINSTALLER_READY", "pyinstaller": "6.22.3",
+                     "hooks": "2026.9"}):
+                self.assertEqual(probe.detect_existing_pyinstaller(), "6.22.3")
 
     def test_correct_strict_frozen_worker_produces_scoped_only_pass(self):
         with TemporaryDirectory(prefix="odin-p2-probe-") as folder:
