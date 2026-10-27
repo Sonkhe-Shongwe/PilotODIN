@@ -60,7 +60,7 @@ function fmtPrediction(value:string|number,task:string|undefined){return typeof 
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,forceNewProject=false,onNewProjectClose}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
@@ -70,6 +70,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   onBeforePrimaryProjectLoad?:(projectId:string)=>boolean;
   // Consent must happen before upload creates a new local dataset project.
   onBeforePrimaryProjectUpload?:()=>boolean;
+  // Complete an authorised upload switch only after its project fetch succeeds.
+  onPrimaryUploadedProjectCommitted?:()=>void;
   forceNewProject?:boolean;
   onNewProjectClose?:()=>void;
 }={}){
@@ -100,6 +102,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const [qualityFocus,setQualityFocus]=useState<QualityFocus|null>(null);
   const [deliverEvidenceId,setDeliverEvidenceId]=useState<string|null>(null);
   const [featureHints,setFeatureHints]=useState<{column:string;risk:string;reasons:string[]}[]>([]);
+  const liveProjectId=useRef(project?.id??'');
+  liveProjectId.current=project?.id??'';
   const latestProjectRequest=useRef(0);
   const projectOperations=useRef(createProjectOperationGuard());
   useEffect(()=>()=>projectOperations.current.invalidate(),[]);
@@ -195,11 +199,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     if(!embedded&&pid!==project?.id&&!approvedBeforeUpload&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;
     const request=++latestProjectRequest.current;
     const generation=projectOperations.current.begin(pid);
-    // Clear previous-project data immediately, including stale experiments and predictions.
+    // Fetch first: failed project reads must not discard the current unsaved work.
+    try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
+    if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
-    try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
+    setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
       if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
-      setProject(null);
       setError(`Could not open project: ${(e as Error).message}`);
       // Never remove the user's selected project on a transient API failure.
       return false;
@@ -237,7 +242,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     const data=await upload(file);await refreshProjects();
     // This upload was authorised before its network request. If the mounted
     // primary project changed during the upload, do not reuse stale consent.
-    const opened=await loadProject(data.id,(project?.id??'')===initialProjectId);
+    const opened=await loadProject(data.id,liveProjectId.current===initialProjectId);
     if(!opened){
       // Upload already succeeded; clear its selected file so retry cannot upload
       // the same data again. Hide the import overlay without switching projects.
