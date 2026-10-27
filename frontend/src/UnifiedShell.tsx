@@ -175,8 +175,10 @@ export function UnifiedShell(){
   // in the current history entry before any workspace listener sees the destination.
   const reviewRoute=()=>{
    const requestedHash=window.location.hash;
+   // Both internal route-commit and later hashchange may report the same URL.
+   // Ignore repeat delivery even if React has not yet rendered its new active view.
+   if(requestedHash===acceptedRouteHash.current)return;
    const requested=routeView();
-   if(requestedHash===acceptedRouteHash.current&&requested===active)return;
    const decision=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
    if(decision==='confirm-promote'&&!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
