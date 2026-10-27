@@ -290,3 +290,24 @@
 @media(prefers-reduced-motion:reduce){
  .po-new-project-action{transition:none!important}
 }
+
+/* P1 narrow workspace: retain saved split state but give the primary view breathing room. */
+.po-dock-narrow-notice{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:31px;
+  padding:7px 13px;
+  background:#f1effc;
+  border-top:1px solid #dbd5f3;
+  color:#46347e;
+  font-size:11px;
+  line-height:1.4;
+  text-align:center;
+}
+.po-dock-narrow-notice svg{flex:none}
+@media(max-width:650px){
+  .po-dock-narrow-notice{font-size:10px;padding:7px 9px}
+}
