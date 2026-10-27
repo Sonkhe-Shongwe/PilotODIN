@@ -68,6 +68,24 @@ def test_p0_import_train_select_reopen_predict_version_and_project_isolation(
     assert own != other
     assert len(client.get("/api/projects").json()) == 2
 
+    # Full Prepare is read-only and returns the same target/feature audit the
+    # real UI displays before it permits the training request.
+    preparation = client.get(
+        f"/api/projects/{own}/preparation",
+        params={"target": "fraud_reported"},
+    )
+    assert preparation.status_code == 200, preparation.text
+    prepare_data = preparation.json()
+    assert prepare_data["target"] == "fraud_reported"
+    assert prepare_data["task"] == "classification"
+    assert set(prepare_data["available_features"]) == {
+        "incident_hour_of_the_day", "number_of_vehicles_involved",
+        "premium", "Region"
+    }
+    assert len(prepare_data["feature_audit"]) == 4
+    assert len(client.get("/api/projects").json()) == 2
+    assert quality.current_version(own) == quality.current_version(other) == 0
+
     body = {
         "target": "fraud_reported",
         "task": "classification",
@@ -102,6 +120,12 @@ def test_p0_import_train_select_reopen_predict_version_and_project_isolation(
     }
     assert (home / "models" / eid / "logistic_regression.joblib").is_file()
     assert (home / "models" / eid / "test_set.joblib").is_file()
+
+    # Model selection and heldout Evaluate are mandatory before Predict.
+    unselected = client.post(f"/api/experiments/{eid}/predict",
+                             json={"values": {}})
+    assert unselected.status_code == 409
+    assert "Select and evaluate" in unselected.json()["detail"]
 
     chosen = client.post(f"/api/experiments/{eid}/select",
                          json={"model_key": "logistic_regression"})
@@ -183,4 +207,42 @@ def test_p0_import_train_select_reopen_predict_version_and_project_isolation(
                        json=body).status_code == 409
     assert len(client.get(f"/api/projects/{own}").json()["experiments"]) == 1
     assert client.get(f"/api/projects/{other}").json()["experiments"] == []
+    assert Path(storage.get_project(other)["dataset_path"]).read_bytes() == original
+
+    # A version-1 experiment is a NEW explicit train/selection/predict action,
+    # not an automatic replacement of the immutable version-0 assessment.
+    fresh_body = {**body, "expected_quality_version": 1}
+    new_training = client.post(f"/api/projects/{own}/experiments",
+                               json=fresh_body)
+    assert new_training.status_code == 202, new_training.text
+    replacement_id = new_training.json()["id"]
+    assert replacement_id != eid
+    replacement = client.get(f"/api/experiments/{replacement_id}")
+    assert replacement.status_code == 200
+    new_result = replacement.json()
+    assert new_result["status"] == "completed", new_result.get("error")
+    assert new_result["dataset_version"] == 1
+    assert new_result["is_stale"] is False
+    assert new_result["selected_model"] is None
+    assert len(client.get(f"/api/projects/{own}").json()["experiments"]) == 2
+    assert client.get(f"/api/projects/{other}").json()["experiments"] == []
+
+    fresh_selected = client.post(
+        f"/api/experiments/{replacement_id}/select",
+        json={"model_key": "logistic_regression"})
+    assert fresh_selected.status_code == 200, fresh_selected.text
+    latest_metrics = fresh_selected.json()["final_results"]
+    assert latest_metrics["sample_count"] == new_result["results"]["test_rows"]
+    assert "baseline_test_metric" in latest_metrics
+    current_prediction = client.post(
+        f"/api/experiments/{replacement_id}/predict",
+        json={"values": valid})
+    assert current_prediction.status_code == 200, current_prediction.text
+    assert current_prediction.json()["dataset_version"] == 1
+    assert current_prediction.json()["prediction"] in ("N", "Y")
+    # Nothing rewrites the previous held-out evaluation or source CSV.
+    old_again = client.get(f"/api/experiments/{eid}").json()
+    assert old_again["final_results"] == first_metrics
+    assert old_again["is_stale"] is True
+    assert Path(storage.get_project(own)["dataset_path"]).read_bytes() == original
     assert Path(storage.get_project(other)["dataset_path"]).read_bytes() == original
