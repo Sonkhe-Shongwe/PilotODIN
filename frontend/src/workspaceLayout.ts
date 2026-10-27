@@ -54,6 +54,15 @@ export function nextDockLayout(layout:DockLayout, action:
   return layout;
 }
 
+/** Suppress cross-project workspace mounting until this project's persisted shell state is restored. */
+export function isProjectWorkspaceRestored(
+  selectedProjectId:string,
+  restoredProjectId:string|null,
+  catalogueState:'loading'|'ready'|'failed'
+):boolean {
+  return catalogueState==='ready'&&restoredProjectId===selectedProjectId;
+}
+
 /** Measured content width decides when a dock can be shown without crushing either pane.
  * The saved DockLayout is never mutated by a temporary responsive collapse.
  */
