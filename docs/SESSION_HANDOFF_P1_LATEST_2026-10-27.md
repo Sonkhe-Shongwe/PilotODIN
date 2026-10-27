@@ -1,5 +1,27 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## 27 OCT 2026 — NEW P1 SOURCE MILESTONE: TOP TAB REORDER + EDITED NARROW-DOCK RETENTION (WINDOWS GATE OPEN)
+
+**Previous scoped gate CLOSED and not to be repeated:** Owner Windows 19/19 edited dock discard-guard tests, successful production Vite build and owner-confirmed top Prepare tab -> changed-input warning -> Cancel browser behaviour. This is historical verified QA. New source below has NOT yet passed a full owner Windows checkout build or browser acceptance.
+
+**Current source on `feature/live-dev-workspace-20261023`:**
+- `frontend/src/workspaceTabReorder.ts`: pure ordered-tab move planner (`reorderWorkspaceTabs`), one-step keyboard shift (`shiftWorkspaceTab`) and project/readiness/drag-origin guard (`canReorderWorkspaceTab`). It changes only the list of already-open tab IDs, never dataset, project, route or dock.
+- `frontend/src/UnifiedShell.tsx`: all ready-project OPEN top tabs, including Home, can be dragged. Dropping on another tab inserts before/after its midpoint with a visible insertion marker and persists through existing `openTabs` project-scoped storage. Alt+Shift+Left/Right offers one-step keyboard movement without activation. Dragging to the existing pane drop-zone still docks secondary-eligible tabs, independently of reordering; no drag of an unrelated project is accepted. Selection and saved dock remain unchanged by reordering.
+- **Narrow edited dock:** previously `canSplit=false` unmounted the secondary `App` and cleared its edited marker. Now a currently edited, same-project/same-view dock stays React-mounted behind a `hidden` secondary pane when temporarily too narrow, with a note that entries remain **memory-only, not saved**. The splitter and hidden pane are display:none and not keyboard focusable; resizing wide remount is avoided. An **unedited** dock can still be unmounted on narrow screens to conserve memory. Real explicit close/replace/navigation confirmation remains mandatory; approval can still discard unsaved data. Reload, project loss, external events, primary/direct App routes and full draft durability are NOT solved.
+- `frontend/src/unified-shell.css`: before/after drop-edge feedback plus explicit hidden pane styles.
+- New tests: `frontend/tests/p1-workspace-tab-reorder.test.cjs` **15 authored cases** and `frontend/tests/p1-responsive-edited-dock-retention.test.cjs` **9 authored cases**. Their actual callback bodies were evaluated in an isolated JS harness against live GitHub file strings with **24/24 PASS**; this skips the native Node/TypeScript module/test runner and is **NOT** a full Windows Node or production build pass. An 8-check isolated planner behavioural probe also passed. No GitHub Actions workflow was dispatched and no installer was built.
+
+**NEXT OWNER WINDOWS GATE, ONE NEW COHERENT BATCH (after safe fetch/pull, preserve uncommitted changes):** In the *existing* frontend folder, execute:
+
+```powershell
+node --test tests/p1-workspace-tab-reorder.test.cjs tests/p1-responsive-edited-dock-retention.test.cjs
+npm run build
+```
+
+Expect **24 newly authored cases** and a successful `tsc --noEmit && vite build`. If red, report the **first** exact failure; do not claim a build pass from source checks. Browser smoke with existing test project only, no dataset/Quality/model mutation: open **Home + Quality** as top tabs, drag Quality before Home, observe snap/insertion feedback, refresh and confirm project-local order remains; optionally Alt+Shift+arrow on a focused top tab. Then dock Prepare beside Quality, select a harmless target (e.g. existing `fraud_reported`), make the window too narrow for split (can use sidebar expansion/resize), confirm paused message, widen and verify changed target selection retained. Drag-to-dock still works in a separate optional check with unedited form; do not click destructive confirmations, import, train, approve Quality or rebuild installer for QA. Close only individually evidenced browser cases.
+
+**Unchanged open gates:** broader Issue #7 screen-reader/a11y/theme, direct App/primary draft management and external project changes; P2 Unicode font redistribution/mixed PDF; real combined 8 GB AI+ML measurement; P8 offline clean Windows installation. All original security/approval controls remain binding.
+
 ## 27 OCT 2026 — OWNER ACCEPTANCE: GUARDED TOP-TAB ACTIVATION / NEXT REQUEST
 
 **SCOPED OWNER WINDOWS QA PASS:** `node --test tests/p1-dock-input-discard-guard.test.cjs` **19/19 PASS**, zero failures, skips or cancellations (359.3564ms). `npm run build` **PASS** (`tsc --noEmit && vite build`, Vite 6.4.5, 1,633 modules, 2.68s, 528.48 kB main JS advisory only). Owner Chrome shows `insurance_claims_CLEANED`, Quality primary, Prepare secondary, `fraud_reported` selected, and clicking the top Prepare tab triggers the appropriate changed-fields warning. Owner reports the requested main test **successful**, which is accepted as owner attestation of Cancel retaining the view and selection; image captures the dialog rather than a post-Cancel frame. Scoped acceptance CLOSES this increment, but **not** automatic narrow-width unmount protection, direct embedded-App routing, primary drafts, screen readers or general persistence. Do not request repeats. No source/Quality/ML/dataset changes evidenced by QA.
