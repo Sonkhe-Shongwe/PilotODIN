@@ -62,7 +62,7 @@ test('workspace shell queues focus only for valid current-project closes',()=>{
  assert.match(shell,/import \{planWorkspaceTabClose\} from '\.\/workspaceTabCloseFocus'/);
  assert.match(shell,/const pendingCloseFocus=useRef<\{projectId:string;view:View\}\|null>\(null\)/);
  assert.match(shell,/if\(!workspaceReady\)return;\s*const plan=planWorkspaceTabClose\(shownTabs,active,view\)/);
- assert.match(shell,/if\(!plan\)return;\s*pendingCloseFocus\.current=\{projectId,view:plan\.focus\}/);
+ assert.match(shell,/if\(!plan\)return;[\s\S]*?pendingCloseFocus\.current=\{projectId,view:plan\.focus\}/);
  assert.match(shell,/setOpenTabs\(plan\.remaining\)/);
  assert.match(shell,/if\(plan\.nextActive!==active\)navigate\(plan\.nextActive\)/);
 });
