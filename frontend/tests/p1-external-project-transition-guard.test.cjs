@@ -109,11 +109,14 @@ test('Approve passes a single accepted project to normal Studio and clears edit 
  assert.equal(h.log.prompts,1);
  assert.equal(h.editedDock.current,null);
 });
-test('a cross-tab storage switch prompts then restores on Cancel',()=>{
+test('Cancel in one browser tab does not rewrite another tab\'s project selection',()=>{
  const h=harness({eventType:'storage'});h.run();
- assert.equal(h.getStored(),'A');
- assert.equal(h.log.restores,1);
- assert.equal(h.log.events.length,1);
+ assert.equal(h.getStored(),'B','shared selection is owned by the other tab');
+ assert.equal(h.log.restores,0,'no repeated cross-tab storage rollback loop');
+ assert.equal(h.log.stopped,1);
+ assert.equal(h.log.warnings.length,1,'warn that a reload may use the other selection');
+ assert.deepEqual(h.log.accepted,[],'current edited A workspace remains mounted');
+ assert.deepEqual(h.editedDock.current,edited);
  assert.equal(h.getAppLoads(),0);
 });
 test('approved cross-tab storage change notifies Studio through existing event once',()=>{
