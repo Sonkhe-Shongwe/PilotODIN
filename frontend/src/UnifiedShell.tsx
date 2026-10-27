@@ -5,7 +5,7 @@ import {App} from './App';
 import {navigateHashSmoothly} from './navigationMotion';
 import {InvestigationCanvas} from './InvestigationCanvas';
 import {get} from './api';
-import {clampFraction,dockStorageKey,isSecondaryView,isWorkspaceView,makeDockResize,nextDockLayout,parseDockLayout,shouldClearUnavailableProject,WORKSPACE_VIEWS} from './workspaceLayout';
+import {clampFraction,dockStorageKey,hasRoomForDock,isSecondaryView,isWorkspaceView,makeDockResize,nextDockLayout,parseDockLayout,shouldClearUnavailableProject,WORKSPACE_VIEWS} from './workspaceLayout';
 import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
 import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
 import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
@@ -76,6 +76,7 @@ export function UnifiedShell(){
  // Creation uses the existing Studio import form rather than a second uploader.
  const [newProjectOpen,setNewProjectOpen]=useState(false);
  const splitRef=useRef<HTMLDivElement|null>(null);
+ const [paneWidth,setPaneWidth]=useState(0);
  const dragCleanup=useRef<(()=>void)|null>(null);
  const catalogRequests=useRef(createProjectCatalogRequestGuard());
  useEffect(()=>()=>catalogRequests.current.invalidate(),[]);
@@ -133,6 +134,19 @@ export function UnifiedShell(){
   try{localStorage.setItem(dockStorageKey(projectId),JSON.stringify(dock))}catch{setWarning('Pane layout could not be saved; project data is unaffected.')}
  },[dock,projectId,restoredFor]);
  useEffect(()=>()=>dragCleanup.current?.(),[]);
+ useEffect(()=>{
+  const node=splitRef.current;
+  if(!node)return;
+  const read=()=>setPaneWidth(node.getBoundingClientRect().width);
+  read();
+  if(typeof ResizeObserver==='undefined'){
+   window.addEventListener('resize',read);
+   return()=>window.removeEventListener('resize',read);
+  }
+  const observer=new ResizeObserver(read);
+  observer.observe(node);
+  return()=>observer.disconnect();
+ },[]);
  const shownTabs=useMemo(()=>openTabs.filter(isWorkspaceView),[openTabs]);
  const chooseProject=(id:string)=>{if(!id||id===projectId)return;setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
  const close=(view:View)=>{
@@ -188,7 +202,9 @@ export function UnifiedShell(){
  };
  // Leaving Home closes the import flow without changing the selected project.
  useEffect(()=>{if(active!=='overview')setNewProjectOpen(false)},[active]);
- const canSplit=!!projectId&&catalogState==='ready'&&dock.secondary!==null;
+ const dockConfigured=!!projectId&&catalogState==='ready'&&dock.secondary!==null;
+ const canSplit=dockConfigured&&hasRoomForDock(dock,paneWidth);
+ const dockPaused=dockConfigured&&!canSplit;
  const separate=canSplit&&active!==dock.secondary;
  const paneStyle={'--po-secondary-fraction':`${Math.round(clampFraction(dock.fraction)*10000)/100}%`} as CSSProperties;
  return <div className="po-unified-shell">
@@ -245,7 +261,8 @@ export function UnifiedShell(){
       </section>
      </>}
     </div>
-    {!canSplit&&projectId&&<div className="po-dock-drop-target" onDragOver={e=>e.preventDefault()} onDrop={onDrop}><Columns2 size={14}/> Open a workspace tab beside this view using <strong>Dock beside</strong>, or drag a tab here.</div>}
+    {dockPaused&&<div className="po-dock-narrow-notice" role="status"><Columns2 size={14} aria-hidden="true"/> Docked view paused while this workspace is narrow. Widen the window or collapse the sidebar to restore your saved split.</div>}
+    {!dockConfigured&&projectId&&<div className="po-dock-drop-target" onDragOver={e=>e.preventDefault()} onDrop={onDrop}><Columns2 size={14}/> Open a workspace tab beside this view using <strong>Dock beside</strong>, or drag a tab here.</div>}
    </section>
   </div>
  </div>;
