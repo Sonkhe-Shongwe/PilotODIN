@@ -1,5 +1,14 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## Owner Windows project A→B screenshot evidence — partial restoration acceptance
+
+**New actual Chrome Live Dev evidence (six screenshots; 27 Oct 2026):** The synthetic `P0_SYNTHETIC_UI_ML_80` was selected with `Home`, `Your data`, `Quality`, then `Prepare` tab and synthetic Quality `Region` whitespace finding. Subsequently `insurance_claims_CLEANED` was selected and showed a **different saved tab set** (`Settings`, `Model`, `Evaluate`, `Predict`, `Deliver`, `Investigate`, `Home`, `Quality`, then `Prepare`), an insurance-specific **1,000-row dataset inspector** (`months_as_customer`, `age`, `policy_number`, `policy_bind_date`) and its own Quality issues including ambiguous date formats and missing authorities contacted. No `project unavailable` warning or visibly interchanged fields appear in the submitted screenshots. **Scoped owner browser A→B correct-content/tab-isolation evidence PASS**. The sequence ends on `insurance_claims_CLEANED`; **B→A return was not shown**, and momentary in-flight stale flashes are not fully disproven by still screenshots. The new project-restoration eight-case Windows suite and completed Vite production build also were **not supplied**, so do **not** close the full new P1 mount-guard gate.
+
+**Quality v2 now clarified:** The synthetic Quality screenshot explicitly lists **`Surrounding whitespace` / `Region` / 5 affected / `undone`**. This supports that the previous Region trim is no longer active in the current working state, consistent with observed Version 2 and zero active corrections. **Do not treat old v1 trim as currently applied**. The image does not establish exactly when or by whom an undo was approved; do not automatically redo, revert, mutate Quality data or retrain.
+
+**Remaining bounded checkpoint:** Show the restored synthetic project after switching back from insurance (no re-import, no training), and confirm the current new eight-case test result plus final successful `npm run build` output if performed. No previously accepted P0/P1/P2 tests need repeating. Keep the wider Issue #7 responsiveness/accessibility and all installer/font/8GB gates open.
+
+
 ## 27 October latest P1 project restoration mount boundary — source verified, Windows build pending
 
 **Authoritative branch:** `feature/live-dev-workspace-20261023` in `Sonkhe-Shongwe/PilotODIN`. Check live HEAD and Issue #2/#7 again before the next implementation. Previous **responsive dock browser pause/restore** (Quality + Prepare) passed the scoped Windows screenshot inspection, with **8/8 targeted Node cases passed**. The screenshot did not conclusively show the final production build completion or prove exact saved fraction, draft retention or all sidebar/theme gates. Earlier project-catalogue and Quality-preview **14/14 Windows tests + Vite build passed** and remain closed. Do not repeat accepted checks simply for evidence.
