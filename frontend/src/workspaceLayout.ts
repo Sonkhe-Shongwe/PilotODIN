@@ -54,6 +54,19 @@ export function nextDockLayout(layout:DockLayout, action:
   return layout;
 }
 
+/** Measured content width decides when a dock can be shown without crushing either pane.
+ * The saved DockLayout is never mutated by a temporary responsive collapse.
+ */
+export const DOCK_MIN_PANE_PX=300;
+export const DOCK_DIVIDER_PX=9;
+export function hasRoomForDock(layout:DockLayout,workspaceWidth:number):boolean {
+  if(!layout.secondary||!Number.isFinite(workspaceWidth)||workspaceWidth<=0)return false;
+  const contentWidth=workspaceWidth-DOCK_DIVIDER_PX;
+  if(contentWidth<2*DOCK_MIN_PANE_PX)return false;
+  const secondary=workspaceWidth*clampFraction(layout.fraction);
+  return secondary>=DOCK_MIN_PANE_PX&&contentWidth-secondary>=DOCK_MIN_PANE_PX;
+}
+
 /**
  * A saved project may have been deleted or archived since the last session.
  * A slow project-list response must not clear a newer selection made meanwhile.
