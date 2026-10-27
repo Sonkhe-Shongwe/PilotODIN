@@ -95,20 +95,31 @@ def _x_indices(spec: dict) -> set[int]:
 
 def html_chart(spec: dict) -> str:
     """Accessible self-contained SVG: inline, without browser/network scripts."""
-    width, height = 620, 238
-    left, right, bottom, top = 68.0, 605.0, 50.0, 18.0
+    # Reserve a true title band ABOVE the top axis tick. The previous
+    # baseline y=12 sat only 10 px above the top tick label baseline and
+    # was visibly cramped in the actual saved Deliver HTML preview.
+    # Plot height stays 170 px: this is a presentation-only translation.
+    width, height = 620, 268
+    left, right, bottom, top = 68.0, 605.0, 50.0, 48.0
     plot_w, plot_h = right-left, height-bottom-top
     low, high = _domain(spec)
     y = lambda val: bottom + (val-low)/(high-low)*plot_h
     baseline = y(0.0)
     n = len(spec["data"])
     step = plot_w / n
-    axis = escape(measure_caption(spec)[:84])
+    full_measure = measure_caption(spec)
+    # Full measure remains visible in figcaption, accessible SVG title and
+    # verified table. Abbreviate the inline heading only if exceptionally long.
+    axis = escape(full_measure if len(full_measure) <= 78
+                  else full_measure[:75] + "…")
     group = escape(spec["x"] or "Group")
     result = [f'<figure class="verified-chart"><svg viewBox="0 0 {width} {height}" role="img" '
               f'aria-label="Saved {escape(spec["type"])} chart. {n} plotted aggregate values, '
               f'version-linked values listed in the evidence table.">',
-              '<rect x="0" y="0" width="620" height="238" rx="10" fill="#fafbfe"/>']
+              '<title>' + escape(full_measure) + '</title>',
+              '<desc>Read-only chart of saved aggregate evidence; exact values and '
+              'group labels are preserved in the report evidence table.</desc>',
+              f'<rect x="0" y="0" width="{width}" height="{height}" rx="10" fill="#fafbfe"/>']
     for tick in sorted(set([low, 0.0, high])):
         ordinate = height - y(tick)
         result.append(f'<line x1="{left}" y1="{ordinate:.2f}" x2="{right}" y2="{ordinate:.2f}" '
@@ -138,7 +149,7 @@ def html_chart(spec: dict) -> str:
                           f'font-size="10" fill="#485673">{escape(label)}</text>')
     result.append(f'<text x="{(left+right)/2:.2f}" y="{height-5}" text-anchor="middle" '
                   f'font-size="11" fill="#28364e">{group}</text>')
-    result.append(f'<text x="8" y="12" font-size="11" fill="#28364e">{axis}</text></svg>')
+    result.append(f'<text x="8" y="23" font-size="11" fill="#28364e">{axis}</text></svg>')
     result.append('<figcaption><strong>'+escape(measure_caption(spec))+'</strong>. '
                   'Static visualization of saved aggregate values. '
                   'The accompanying evidence table contains the recorded numbers.')
