@@ -48,6 +48,12 @@ test('source data, exact raw labels, and issue objects are not mutated',()=>{
 });
 test('read-only component fetches current version and links to existing Quality approval without writes',()=>{
  const s=fs.readFileSync(path.resolve(__dirname,'../src/CategoryQualityReviewPrompt.tsx'),'utf8');
+ assert.notEqual(
+  path.parse('categoryQualityAdvice.ts').name.toLowerCase(),
+  path.parse('CategoryQualityReviewPrompt.tsx').name.toLowerCase(),
+  'Keep the TS helper and TSX component distinct under Windows case-insensitive module resolution'
+ );
+ assert.equal(fs.existsSync(path.resolve(__dirname,'../src/CategoryQualityAdvice.tsx')),false);
  assert.match(s,/get<CategoryQualitySnapshot>\(/);
  assert.match(s,/reviewableWhitespaceFinding\(snapshot,projectId,version,columns\)/);
  assert.match(s,/AbortController/);
