@@ -1,5 +1,8 @@
 # PilotODIN — CURRENT CHECKPOINT / NEW-CHAT ENTRY POINT
 
+**CURRENT P1 HANDOFF (27 OCTOBER):** The newest authoritative P1 scope and test boundaries are in [SESSION_HANDOFF_P1_LATEST_2026-10-27.md](./SESSION_HANDOFF_P1_LATEST_2026-10-27.md). Owner Windows accepted scoped responsive Quality/Prepare dock narrow→wide restoration (8/8 targeted Node PASS); the final post-change production build was not visibly completed in the screenshots. Current branch has a **new project-restoration mount guard source-committed**, with 8 authored tests and 9 isolated scenario assertions PASS + standalone strict TypeScript PASS; **full checkout 8-case suite and current Vite build remain PENDING**, as does existing-project A→B→A browser QA. Latest synthetic Quality state was v2/0 active corrections; do not assume the earlier v1 Region trim is still active without viewing history. Previously closed P0 API/browser and P1 14/14 Windows tests/build must not be repeated. Keep P2 font/PDF, 8 GB and P8 offline installer release blockers open.
+
+
 ## P1 PROJECT CATALOGUE CONCURRENT FETCH GUARD — SOURCE VERIFIED, WINDOWS ACCEPTANCE PENDING (27 OCTOBER 2026)
 
 **GitHub authority:** `Sonkhe-Shongwe/PilotODIN`, branch `feature/live-dev-workspace-20261023`, verify current HEAD again on entry. The **synthetic Region trim at Quality working v1 is already approved** (5 Region cells, v0 original preserved); no repeated approval, training, source cleaning, export, fonts or installer is requested. The prior Windows **9/9 P1 Quality handoff tests + Vite build**, old 7/7 category label tests, scoped P0 API/browser and P2 accepted report micro-gates remain CLOSED.
