@@ -198,7 +198,9 @@ export function UnifiedShell(){
   if(!workspaceReady)return false;
   if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
    if(!confirmEditedDockDiscard('activate',view))return false;
+   // Promotion clears the old secondary slot only after approval.
    editedDock.current=null;
+   setDock(current=>nextDockLayout(current,{kind:'close'}));
   }
   return true;
  };
@@ -208,6 +210,7 @@ export function UnifiedShell(){
   if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
    if(!confirmEditedDockDiscard('activate',view))return false;
    editedDock.current=null;
+   setDock(current=>nextDockLayout(current,{kind:'close'}));
   }
   navigate(view);
   return true;
@@ -251,7 +254,7 @@ export function UnifiedShell(){
   pendingCloseFocus.current={projectId,view:plan.focus};
   setOpenTabs(plan.remaining);
   if(plan.nextActive!==active)navigate(plan.nextActive);
-  if(dock.secondary===view)setDock(current=>nextDockLayout(current,{kind:'close'}));
+  if(dock.secondary===view||(plan.nextActive!==active&&dock.secondary===plan.nextActive))setDock(current=>nextDockLayout(current,{kind:'close'}));
  };
  const closeDock=()=>{
   const focus=planDockDismissFocus(projectId,active,shownTabs,dock,workspaceReady);
