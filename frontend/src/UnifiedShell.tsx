@@ -282,6 +282,10 @@ export function UnifiedShell(){
  const canSplit=dockConfigured&&hasRoomForDock(dock,paneWidth);
  const dockPaused=dockConfigured&&!canSplit;
  const separate=canSplit&&active!==dock.secondary;
+ useEffect(()=>{
+  // A paused or replaced embedded pane has already unmounted. Its edit flag is stale.
+  if(!separate)editedDock.current=null;
+ },[separate,projectId,dock.secondary]);
  const paneStyle={'--po-secondary-fraction':`${Math.round(clampFraction(dock.fraction)*10000)/100}%`} as CSSProperties;
  return <div className="po-unified-shell">
   <header className="po-shell-title">
