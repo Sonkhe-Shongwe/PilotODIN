@@ -53,6 +53,14 @@ test('failed newest request does not allow an older success to replace its resul
  assert.deepEqual(rows,['known']);
 });
 
+test('invalidation before any request never accepts an unissued token',()=>{
+ const guard=createProjectCatalogRequestGuard();
+ guard.invalidate();
+ assert.equal(guard.accepts(1),false);
+ const actual=guard.begin();
+ assert.equal(guard.accepts(actual),true);
+});
+
 test('unmount invalidation excludes all in-flight completions',()=>{
  const guard=createProjectCatalogRequestGuard();
  const id=guard.begin();guard.invalidate();
