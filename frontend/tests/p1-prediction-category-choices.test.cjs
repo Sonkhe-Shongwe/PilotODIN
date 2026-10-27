@@ -35,7 +35,7 @@ test('no whitespace collision preserves original category labels and order', () 
   ]);
 });
 
-test('blank and whitespace-only values remain exact and do not create a false missing-value alias', () => {
+test('blank and whitespace-only option values remain unchanged by the display-label helper', () => {
   const input = ['', ' ', '  ', 'Other'];
   const result = predictionCategoryChoices(input);
   assert.deepEqual(result.map(x => x.value), input);
