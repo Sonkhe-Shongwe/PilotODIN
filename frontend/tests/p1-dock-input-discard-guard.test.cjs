@@ -81,3 +81,46 @@ test('accepted keyboard and project readiness guards remain in the source',()=>{
   assert.match(shell,/const closeDock=\(\)=>/);
   assert.match(shell,/pendingDockDismissFocus\.current=focus/);
 });
+
+
+test('activating the currently edited dock as a primary workspace needs approval',()=>{
+  assert.equal(needsDockInputDiscardApproval(edited,'project A','prepare','activate','prepare'),true);
+  assert.equal(needsDockInputDiscardApproval(edited,'project A','prepare','activate','quality'),false);
+  assert.equal(needsDockInputDiscardApproval(null,'project A','prepare','activate','prepare'),false);
+});
+
+test('guarded activation refuses cancellation before route or edit-marker change',()=>{
+  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+  assert.match(shell,/const navigateWithDockGuard=\(view:View\):boolean=>\{/);
+  assert.match(shell,/if\(view!==active&&dock\.secondary===view&&isSecondaryView\(view\)\)/);
+  assert.match(shell,/if\(!confirmEditedDockDiscard\('activate',view\)\)return false;\s*editedDock\.current=null;/);
+  assert.match(shell,/editedDock\.current=null;\s*\}\s*navigate\(view\);\s*return true;/);
+});
+
+test('mouse sidebar and top workspace tabs use the same guarded activation',()=>{
+  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+  assert.match(shell,/aria-label=\{label\} onKeyDown=\{event=>onSidebarKeyDown\(event,id\)\} onClick=\{\(\)=>navigateWithDockGuard\(id\)\}/);
+  assert.match(shell,/onKeyDown=\{event=>onWorkspaceTabKeyDown\(event,view\)\} onClick=\{\(\)=>navigateWithDockGuard\(view\)\}/);
+});
+
+test('keyboard navigation does not move focus after cancelling destructive activation',()=>{
+  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+  assert.match(shell,/if\(next!==active&&!navigateWithDockGuard\(next\)\)return;\s*const buttons=/);
+  assert.match(shell,/if\(next!==active&&!navigateWithDockGuard\(next\)\)return;\s*const tabButtons=/);
+  assert.match(shell,/navigateWithDockGuard\(shownTabs\[\(ix\+\(e\.shiftKey\?-1:1\)\+shownTabs\.length\)%shownTabs\.length\]\)/);
+});
+
+test('closing another tab checks whether the newly selected fallback would unmount edited dock',()=>{
+  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+  assert.match(shell,/if\(plan\.nextActive!==active&&dock\.secondary===plan\.nextActive&&isSecondaryView\(plan\.nextActive\)&&!confirmEditedDockDiscard\('activate',plan\.nextActive\)\)return/);
+  assert.match(shell,/setOpenTabs\(plan\.remaining\)/);
+  assert.ok(shell.indexOf("!confirmEditedDockDiscard('activate',plan.nextActive)")<shell.indexOf('setOpenTabs(plan.remaining)'));
+});
+
+test('no arbitrary input values are copied into navigation or durable storage',()=>{
+  const helper=fs.readFileSync(file,'utf8');
+  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+  assert.doesNotMatch(helper,/localStorage|sessionStorage|fetch\(/);
+  assert.match(shell,/if\(!needsDockInputDiscardApproval\(editedDock\.current,projectId,dock\.secondary,action,proposed\)\)return true/);
+  assert.match(shell,/const editedDock=useRef<EditedDock\|null>\(null\)/);
+});
