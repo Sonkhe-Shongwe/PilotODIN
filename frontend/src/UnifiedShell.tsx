@@ -9,6 +9,7 @@ import {clampFraction,dockStorageKey,hasRoomForDock,isProjectWorkspaceRestored,i
 import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
 import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
 import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
+import {nextWorkspaceTabByKey} from './workspaceTabKeyboard';
 import type {SidebarMode} from './sidebarPreferences';
 import './unified-shell.css';
 
@@ -150,6 +151,15 @@ export function UnifiedShell(){
  const workspaceReady=isProjectWorkspaceRestored(projectId,restoredFor,catalogState);
  const shownTabs=useMemo(()=>restoredFor===projectId?openTabs.filter(isWorkspaceView):[],[openTabs,restoredFor,projectId]);
  const chooseProject=(id:string)=>{if(!id||id===projectId)return;setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
+ const onWorkspaceTabKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
+  if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+  const next=nextWorkspaceTabByKey(shownTabs,view,event.key);
+  if(!next)return;
+  event.preventDefault();
+  const tabButtons=event.currentTarget.closest('[role="tablist"]')?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+  tabButtons?.item(shownTabs.indexOf(next))?.focus();
+  if(next!==active)navigate(next);
+ };
  const close=(view:View)=>{
   const next=shownTabs.filter(t=>t!==view);setOpenTabs(next);
   if(view===active)navigate(next[next.length-1]||'overview');
@@ -233,7 +243,7 @@ export function UnifiedShell(){
    <section className="po-shell-workspace">
     <div className="po-global-tabs" role="tablist" aria-label="Open analytical workspaces">
      {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''}`} key={view} draggable={!!projectId&&isSecondaryView(view)} onDragStart={e=>e.dataTransfer.setData('text/x-pilotodin-workspace',view)}>
-      <button role="tab" aria-selected={active===view} onClick={()=>navigate(view)}>{labelFor(view)}</button>
+      <button type="button" role="tab" id={`po-workspace-tab-${view}`} aria-controls="po-current-workspace" aria-selected={active===view} tabIndex={active===view?0:-1} onKeyDown={event=>onWorkspaceTabKeyDown(event,view)} onClick={()=>navigate(view)}>{labelFor(view)}</button>
       {projectId&&isSecondaryView(view)&&<button type="button" title={`Dock ${labelFor(view)} beside current view`} aria-label={`Dock ${labelFor(view)} beside current view`} onClick={()=>dockView(view)}><Columns2 size={13}/></button>}
       {shownTabs.length>1&&<button type="button" aria-label={`Close ${labelFor(view)} tab`} onClick={()=>close(view)}><X size={12}/></button>}
      </div>)}
@@ -242,7 +252,7 @@ export function UnifiedShell(){
     </div>
     {warning&&<p className="po-shell-warning" role="status">{warning}</p>}
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
-     <section className="po-primary-pane" aria-label={`${labelFor(active)} workspace`}>
+     <section className="po-primary-pane" id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
        {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
