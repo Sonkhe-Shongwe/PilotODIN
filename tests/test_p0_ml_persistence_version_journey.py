@@ -5,7 +5,23 @@ No real insurance data, user project files, hosted CI, or installed app paths.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import tempfile
+
+import pytest
+
+# Importing the backend normally initializes SQLite and local model folders.
+# NEVER allow the full real-training P0 acceptance to run in a user's home
+# through accidental test discovery or an unguarded direct pytest command.
+_home = Path(os.environ.get("PILOTODIN_HOME", ".")).resolve()
+_temp = Path(tempfile.gettempdir()).resolve()
+_safe = (os.environ.get("PILOTODIN_P0_REAL_JOURNEY_DEVQA") == "1"
+         and _home.is_relative_to(_temp)
+         and (_home / ".pilotodin-p0-real-devqa").is_file())
+if not _safe:
+    pytest.skip("P0 full training requires a disposable marked project home",
+                allow_module_level=True)
 
 import pandas as pd
 from fastapi.testclient import TestClient
