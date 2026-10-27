@@ -15,6 +15,7 @@ import type {TabDropSide} from './workspaceTabReorder';
 import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {canRestoreDockDismissFocus,planDockDismissFocus} from './dockDismissFocus';
 import {isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
+import {planExternalRouteActivation} from './externalRouteActivationGuard';
 import type {EditedDock} from './dockInputDiscardGuard';
 import {nextSidebarViewByKey} from './sidebarKeyboardNavigation';
 import type {SidebarMode} from './sidebarPreferences';
@@ -89,6 +90,8 @@ export function UnifiedShell(){
  const pendingDockDismissFocus=useRef<{projectId:string;view:View}|null>(null);
  // Memory-only flag, never store the contents of a form or dataset.
  const editedDock=useRef<EditedDock|null>(null);
+ // Last accepted URL is memory-only; never store form values or push synthetic history entries.
+ const acceptedRouteHash=useRef(window.location.hash);
  const draggedTab=useRef<{projectId:string;view:View}|null>(null);
  const [tabDropTarget,setTabDropTarget]=useState<{view:View;side:TabDropSide}|null>(null);
  const [paneWidth,setPaneWidth]=useState(0);
@@ -164,6 +167,35 @@ export function UnifiedShell(){
   return()=>observer.disconnect();
  },[]);
  const workspaceReady=isProjectWorkspaceRestored(projectId,restoredFor,catalogState);
+ useEffect(()=>{
+  // Capture runs before Studio's ordinary hash listeners even if they were registered first.
+  // URL/history actions are already committed by the browser, so Cancel replaces the hash
+  // in the current history entry before any workspace listener sees the destination.
+  const reviewRoute=()=>{
+   const requestedHash=window.location.hash;
+   if(requestedHash===acceptedRouteHash.current)return;
+   const requested=routeView();
+   const decision=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
+   if(decision==='confirm-promote'&&!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
+    const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
+    window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+restore);
+    return;
+   }
+   if(decision!=='unchanged'){
+    editedDock.current=null;
+    setDock(current=>nextDockLayout(current,{kind:'close'}));
+   }
+   acceptedRouteHash.current=requestedHash;
+  };
+  // Both direct user hash changes and custom route commits must be checked; the
+  // approved hash is remembered so the delayed hashchange doesn't prompt twice.
+  window.addEventListener('hashchange',reviewRoute,true);
+  window.addEventListener('pilotodin:route-commit',reviewRoute,true);
+  return()=>{
+   window.removeEventListener('hashchange',reviewRoute,true);
+   window.removeEventListener('pilotodin:route-commit',reviewRoute,true);
+  };
+ },[active,dock.secondary,projectId,workspaceReady]);
  const shownTabs=useMemo(()=>restoredFor===projectId?openTabs.filter(isWorkspaceView):[],[openTabs,restoredFor,projectId]);
  useEffect(()=>{
   const pending=pendingCloseFocus.current;
