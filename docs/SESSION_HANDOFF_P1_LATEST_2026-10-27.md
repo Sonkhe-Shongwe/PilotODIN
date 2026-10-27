@@ -1,5 +1,16 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## P1 TAB CLOSE KEYBOARD FOCUS — OWNER WINDOWS SCOPED PASS (27 OCTOBER 2026)
+
+**Owner PowerShell and browser acceptance evidence:** Actual Windows `node --test tests/p1-workspace-close-focus.test.cjs` returned **10 tests, 10 PASS, 0 FAIL, 0 SKIPPED, 0 CANCELLED**. `npm run build` ran `tsc --noEmit && vite build` successfully (Vite **6.4.5**, **1,631 modules transformed**, output assets emitted, **built in 2.60 seconds**, returned to PowerShell prompt). JS main chunk **526.75 kB** produced only the **non-blocking Vite size advisory**. Direct response to the requested existing-workspace keyboard tab-close/focus browser check: **owner confirms “YES IT WORKS.”** Treat this as real owner-confirmed scoped close-focus behaviour, but do not invent a keyboard screen recording or independent evidence for both active/inactive close branches, project races, unsaved drafts or assistive-technology output.
+
+**Acceptance:** **P1_TAB_CLOSE_FOCUS_WINDOWS_10_OF_10_BUILD_AND_OWNER_BROWSER=PASS**, bounded to this focus recovery increment. Do not repeat these ten tests, build or same browser close demonstration solely for QA. Earlier top-tab Left/Right, sidebar Up/Down, project A→B→A, responsive dock and P0/Quality scoped evidence remain accepted.
+
+**Next actual P1 engineering scope:** Focus recovery when a **docked secondary pane is closed or changed**; unsaved form/draft persistence on route/tab/dock switching; remaining sidebar/theme/screen-reader and broader Issue #7 accessibility. Inspect live source and safety/approval boundaries first. Do not silently assume that the close-focus result proves draft persistence, dock-close focus or the whole P1 milestone.
+
+**Unchanged release/data boundaries:** `P0_SYNTHETIC_UI_ML_80` Region trim remains `undone` in observed Quality working v2. No data/model/retraining/Quality operation was performed for the keyboard test. P2 production mixed Unicode PDF still `NOT_ACCEPTED`, bundled font permission `NOT_GRANTED`, P2 overall `REVIEW_REQUIRED`, joint actual 8 GB RAM load `NOT_MEASURED`, and P8 offline native installer `NOT_CERTIFIED`.
+
+
 ## P1 WORKSPACE TAB CLOSE FOCUS RESTORATION — SOURCE COMMITTED, WINDOWS QA PENDING (27 OCTOBER 2026)
 
 **GitHub authority:** `Sonkhe-Shongwe/PilotODIN`, `feature/live-dev-workspace-20261023`. Verify live HEAD and Issues #2/#7 on resumption. Owner's latest Windows `12/12` sidebar keyboard tests, successful `tsc --noEmit && vite build` (1,630 modules, 2.82s), and actual Home→Down to Your data owner confirmation are **scoped ACCEPTED**. Prior top-tab Left/Right 10/10, project A→B→A restoration, responsive dock and targeted Quality/ML P0 gates remain closed; DO NOT repeat them just for the new close-focus increment.
