@@ -36,21 +36,42 @@ test('Saved preview retains exact escaped evidence and inserts restrictive CSP',
 });
 
 test('Preview refuses non-report and incomplete or excessively large HTML',()=>{
- for(const input of ('','<html><head></head><body></body></html>',
-   '<!doctype html><body>no head</body></html>',
-   '<!doctype html><html><head></head>', 'x'.repeat(MAX_SAVED_HTML_PREVIEW_CHARS+1))){
-  assert.throws(()=>savedReportPreviewDocument(input),/preview|report/i);
+ const samples=[
+  '',
+  '<html><head></head><body></body></html>',
+  '<!doctype html><body>no head</body></html>',
+  '<!doctype html><html><head></head>',
+  'x'.repeat(MAX_SAVED_HTML_PREVIEW_CHARS+1)
+ ];
+ assert.equal(samples.length,5);
+ let tested=0;
+ for(const input of samples){
+  assert.throws(()=>savedReportPreviewDocument(input),/preview|report/i,
+   'Must reject malformed input '+tested);
+  tested++;
  }
+ assert.equal(tested,samples.length);
 });
 
 test('Preview refuses active HTML content even though frame is sandboxed',()=>{
- for(const part of ('<script>alert(1)</script>','<iframe src="https://example.com"></iframe>',
-   '<object data="file:///secret"></object>', '<link rel="stylesheet" href="https://example.com/x.css">',
-   '<base href="https://example.com/">', '<meta http-equiv="refresh" content="0;url=https://x.invalid">',
-   '<form action="https://x.invalid"></form>')){
+ const samples=[
+  '<script>alert(1)</script>',
+  '<iframe src="https://example.com"></iframe>',
+  '<object data="file:///secret"></object>',
+  '<link rel="stylesheet" href="https://example.com/x.css">',
+  '<base href="https://example.com/">',
+  '<meta http-equiv="refresh" content="0;url=https://x.invalid">',
+  '<form action="https://x.invalid"></form>'
+ ];
+ assert.equal(samples.length,7);
+ let tested=0;
+ for(const part of samples){
   const content=doc.replace('</body>',part+'</body>');
-  assert.throws(()=>savedReportPreviewDocument(content),/unsupported active HTML/);
+  assert.throws(()=>savedReportPreviewDocument(content),/unsupported active HTML/,
+   'Must reject '+part);
+  tested++;
  }
+ assert.equal(tested,samples.length);
 });
 
 test('Two saved preview requests cannot swap displayed revision when resolved backwards',()=>{
