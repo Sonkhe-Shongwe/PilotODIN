@@ -77,10 +77,10 @@ function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockVi
  const nextDockLayout=(current,action)=>{assert.equal(action.kind,'close');return {...current,secondary:null}};
  const routeView=()=>win.location.hash.startsWith('#/studio/')?win.location.hash.slice(9):'overview';
  const run=new Function('window','acceptedRouteHash','routeView','planExternalRouteActivation',
-  'active','dock','editedDock','projectId','workspaceReady','setDock','nextDockLayout','setActive',
+  'active','dock','editedDock','projectId','workspaceReady','setDock','nextDockLayout','setActive','Event',
   handlerSource+'\n return reviewRoute;')(
    win,acceptedRouteHash,routeView,planExternalRouteActivation,current,dock,editedDock,projectId,ready,
-   setDock,nextDockLayout,setActive);
+   setDock,nextDockLayout,setActive,Event);
  return {run,win,journal,editedDock,acceptedRouteHash,activeUpdates,dispatched};
 }
 test('Cancel rolls browser URL back without unmounting edited dock or clearing its marker',()=>{
