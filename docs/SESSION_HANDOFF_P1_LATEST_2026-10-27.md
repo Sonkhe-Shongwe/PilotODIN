@@ -1,5 +1,18 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## P1 DOCK DISMISS WINDOWS TESTS + BUILD PASS; SINGLE-TAB ARROW EXPECTED (27 OCT 2026)
+
+**Latest owner direct Windows PowerShell screenshot:** `node --test tests/p1-dock-dismiss-focus.test.cjs` returned **10 tests / 10 PASS / 0 FAIL / 0 SKIPPED / 0 CANCELLED**. Complete cumulative `npm run build` (`tsc --noEmit && vite build`) **PASS**, Vite **6.4.5**, **1,632 modules transformed**, emitted assets and **built in 2.60 seconds**, PowerShell prompt returned. Main chunk **527.42 kB** generated only familiar non-blocking >500 kB Vite advisory. **Accept scoped dock-close source/test/full build gate.**
+
+**Latest actual Chrome QA and report:** Owner screenshot shows **only the Quality tab** remaining in `insurance_claims_CLEANED` after closing dock, with correct current insurance dataset and data-quality UI. Owner says **“the dock works but once only quality is left nothing happens left and right does not work.”** This is **NOT** a tab-navigation regression: tab-strip Left/Right deliberately moves among *currently open* tabs only; when sole `Quality` tab exists, `nextWorkspaceTabByKey(['quality'],'quality','ArrowRight'/'ArrowLeft')` returns `quality`, so no page change is expected. Sidebar Up/Down instead moves across navigation items. No code modification or additional regression test is justified for the single-tab edge case. Previously accepted multi-tab top Arrow navigation remains CLOSED. Explain this rather than requesting another dock-close or arbitrary imports.
+
+**Accept vs still unproven:** Explicit dock closure and surviving Quality primary view are **VISUALLY CONFIRMED**; automated focus restore contract is **10/10 PASS**. Browser screenshot does **not independently prove actual keyboard focus location immediately following Enter on the removed toolbar button**, so do not represent this screenshot as a complete screen-reader/focus traversal acceptance. Owner reports dock working; focused keyboard after close is at most provisionally owner-accepted, not accessibility-certified. No unnecessary manual retest needed for this observation. Keep wider P1 focus/accessibility scope open if later evidence requires it.
+
+**Next implementation priority:** Review actual in-progress form state and unmount paths for project switches, tab changes, explicit dock close and responsive dock pause. Design narrow per-project/stage safe draft behaviour without silent sensitive data persistence, approvals, training, Quality writes or data loss. No known new source state change, imports, cleaning or retraining required now.
+
+**Everything else remains unchanged:** Accepted tab-close focus (10/10 + owner), sidebar keyboard (12/12 + owner), multi-tab top tabs (10/10 + owner), A→B→A project restore, responsive dock and P0/Quality checks remain closed. Synthetic Region v2 whitespace finding remains undone. P2 fonts/Unicode PDF, real combined 8 GB measurement, P8 native offline installer remain unaccepted.
+
+
 ## P1 EXPLICIT DOCK CLOSE FOCUS — SOURCE COMMITTED, WINDOWS QA PENDING (27 OCT 2026)
 
 **Authoritative checkpoint:** GitHub repository `Sonkhe-Shongwe/PilotODIN`, branch `feature/live-dev-workspace-20261023`; verify new HEAD and Issue #2/#7 on resumption. Previous **tab Close keyboard focus (owner Windows 10/10 Node + full Vite build + “YES IT WORKS” Chrome confirmation)**, sidebar Up/Down (12/12), top tab Left/Right (10/10), project A→B→A restoration, responsive dock pause/restore and accepted scoped ML/Quality checks remain **CLOSED**. Do not repeat those tests or require another historical manual demonstration.
