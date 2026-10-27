@@ -6,7 +6,7 @@ const ts=require('typescript');
 
 const app=fs.readFileSync(path.resolve(__dirname,'../src/App.tsx'),'utf8');
 const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
-const begin=app.indexOf('  async function loadProject(pid:string):Promise<boolean>{');
+const begin=app.indexOf('  async function loadProject(pid:string,approvedBeforeUpload=false):Promise<boolean>{');
 const end=app.indexOf('\n  useEffect(()=>{if(!project||!target)',begin);
 assert.ok(begin>=0&&end>begin,'The actual loadProject body must be present');
 const body=app.slice(begin,end);
@@ -16,8 +16,8 @@ const compiled=ts.transpileModule(body+'\nexport {loadProject};',{
 });
 assert.equal((compiled.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0);
 
-function harness({approved=false,embedded=false,pid='B',current='A',shellCallback=true,fail=false}={}){
- const operations={approved:[],generation:[],mutations:[],reads:[],storage:[],notice:[]};
+function harness({approved=false,embedded=false,pid='B',current='A',shellCallback=true,fail=false,preapproved=false}={}){
+ const operations={approved:[],generation:[],mutations:[],reads:[],storage:[],notice:[],uploadCommits:[]};
  const currentProject={id:current};
  const setters=['setProject','setPrep','setExperiment','setPrediction','setTarget',
   'setQualityFocus','setDeliverEvidenceId','setQualityVersion','setFeatureHints',
@@ -26,6 +26,7 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
  const ctx={
   embedded,embeddedProjectId:current,project:currentProject,
   onBeforePrimaryProjectLoad:shellCallback?(id=>{operations.approved.push(id);return approved}):undefined,
+  onPrimaryUploadedProjectCommitted:()=>operations.uploadCommits.push(pid),
   setNotice:value=>operations.notice.push(value),
   latestProjectRequest:{current:0},
   projectOperations:{current:{begin:id=>{operations.generation.push(id);return 1},
@@ -46,7 +47,7 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
  const exports={};
  const fn=new Function(...names,'exports',compiled.outputText+'\nreturn exports.loadProject;')(
   ...Object.values(ctx),exports);
- return {load:()=>fn(pid),operations,ctx};
+ return {load:()=>fn(pid,preapproved),operations,ctx};
 }
 
 test('denied direct Studio project switch does not clear state or start any request',async()=>{
@@ -97,9 +98,10 @@ test('an authorised API failure does not claim that another project opened',asyn
  assert.equal(await h.load(),false);
  assert.deepEqual(h.operations.storage,[]);
  assert.ok(h.operations.mutations.includes('setError'));
+ assert.ok(!h.operations.mutations.includes('setProject'),'failed loads must retain the old project');
 });
 test('preflight is positioned before project generation, reset, and API work',()=>{
- const preflight=body.indexOf('if(!embedded&&pid!==project?.id&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;');
+ const preflight=body.indexOf('if(!embedded&&pid!==project?.id&&!approvedBeforeUpload&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;');
  assert.ok(preflight>0);
  for(const token of ['++latestProjectRequest.current','projectOperations.current.begin(pid)','setProject(null)','Promise.all([get<Project>']){
   assert.ok(body.indexOf(token)>preflight,token+' happened before approval');
@@ -135,7 +137,7 @@ test('import never reports project opened when the subsequent guarded load is ca
  const end=app.indexOf('  async function startTrain(){',start);
  assert.ok(start>0&&end>start);
  const source=app.slice(start,end);
- assert.match(source,/const opened=await loadProject\(data\.id\)/);
+ assert.match(source,/const opened=await loadProject\(data\.id,liveProjectId\.current===initialProjectId\)/);
  assert.match(source,/if\(!opened\)\{/);
  assert.match(source,/Dataset was imported but was not opened/);
  const cancelled=source.slice(source.indexOf('if(!opened)'),source.indexOf('Dataset imported and profiled successfully'));
@@ -147,4 +149,24 @@ test('project preflight introduces no form-value persistence or ML actions',()=>
  const end=shell.indexOf('const chooseProject=',start);
  const section=shell.slice(start,end);
  assert.doesNotMatch(section,/localStorage|sessionStorage|fetch\(|post\(|upload\(|predictVals|train\(|setProjectId/);
+});
+
+test('pre-approved upload opens its project without a second project-switch warning',async()=>{
+ const h=harness({preapproved:true});
+ assert.equal(await h.load(),true);
+ assert.deepEqual(h.operations.approved,[]);
+ assert.deepEqual(h.operations.uploadCommits,['B']);
+ assert.deepEqual(h.operations.storage,[['pilotodin-current','B']]);
+});
+test('failed project load after upload does not consume approval or discard old project',async()=>{
+ const h=harness({preapproved:true,fail:true});
+ assert.equal(await h.load(),false);
+ assert.deepEqual(h.operations.uploadCommits,[]);
+ assert.ok(!h.operations.mutations.includes('setProject'));
+ assert.deepEqual(h.operations.storage,[]);
+});
+test('project reads must succeed before old primary state is reset',()=>{
+ const fetch=body.indexOf('await Promise.all([get<Project>');
+ const reset=body.indexOf('setProject(null)');
+ assert.ok(fetch>=0&&reset>fetch,'old project must survive a failed API request');
 });
