@@ -8,6 +8,7 @@ import {get} from './api';
 import {clampFraction,dockStorageKey,isSecondaryView,isWorkspaceView,makeDockResize,nextDockLayout,parseDockLayout,shouldClearUnavailableProject,WORKSPACE_VIEWS} from './workspaceLayout';
 import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
 import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
+import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
 import type {SidebarMode} from './sidebarPreferences';
 import './unified-shell.css';
 
@@ -76,10 +77,14 @@ export function UnifiedShell(){
  const [newProjectOpen,setNewProjectOpen]=useState(false);
  const splitRef=useRef<HTMLDivElement|null>(null);
  const dragCleanup=useRef<(()=>void)|null>(null);
+ const catalogRequests=useRef(createProjectCatalogRequestGuard());
+ useEffect(()=>()=>catalogRequests.current.invalidate(),[]);
  const refreshProjects=useCallback(async()=>{
+  const requestId=catalogRequests.current.begin();
   const selectedAtRequestStart=localStorage.getItem('pilotodin-current')||'';
   try{
    const rows=await get<ProjectListItem[]>('/projects');
+   if(!catalogRequests.current.accepts(requestId))return;
    setProjects(rows);
    setCatalogState('ready');
    const latest=localStorage.getItem('pilotodin-current')||'';
@@ -92,6 +97,7 @@ export function UnifiedShell(){
     setWarning('');
    }
   }catch(e){
+   if(!catalogRequests.current.accepts(requestId))return;
    // A later transient catalogue failure must not destroy an already open view.
    setCatalogState(previous=>previous==='ready'?'ready':'failed');
    setWarning('Project list unavailable: '+(e as Error).message);
