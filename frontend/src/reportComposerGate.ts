@@ -38,9 +38,13 @@ export class ReportComposerGate {
 export class ReportReadGate {
  private evidence=0;
  private exporting=0;
+ private previewing=0;
  beginEvidence():number {return ++this.evidence}
  isCurrentEvidence(ticket:number):boolean {return ticket===this.evidence}
  beginExport():number {return ++this.exporting}
  isCurrentExport(ticket:number):boolean {return ticket===this.exporting}
- invalidateAll():void {this.evidence++;this.exporting++}
+ beginPreview():number {return ++this.previewing}
+ isCurrentPreview(ticket:number):boolean {return ticket===this.previewing}
+ invalidatePreview():void {this.previewing++}
+ invalidateAll():void {this.evidence++;this.exporting++;this.previewing++}
 }
