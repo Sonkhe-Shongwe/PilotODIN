@@ -40,3 +40,26 @@
 .pd-report-quality-capture small{font-size:11px;line-height:1.5;color:#587184}
 .pd-report-quality-capture button{min-height:38px;white-space:normal;text-align:center}
 .pd-report-quality-capture button:focus-visible{outline:3px solid #148f9b;outline-offset:2px}
+
+
+/* Read-only rendered HTML preview of an immutable saved revision.
+   It is separate from the draft outline and does not create a PDF/Save As. */
+.pd-report-saved-preview{
+ margin-top:20px;padding:15px;border-radius:15px;
+ border:1px solid #d6ddf0;background:linear-gradient(160deg,#f8f7ff,#f1fafb);
+ box-shadow:0 8px 24px #24276b0d;min-width:0;
+}
+.pd-report-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.pd-report-preview-heading strong{color:#34258d;font-size:15px}
+.pd-report-preview-heading p{font-size:12px;line-height:1.5;color:#586782;margin:5px 0 0}
+.pd-report-preview-heading button{display:inline-flex;align-items:center;gap:6px}
+.pd-report-saved-preview-frame{
+ display:block;width:100%;min-width:0;height:min(75vh,760px);min-height:360px;
+ border:1px solid #dce2f0;border-radius:10px;background:white;
+}
+.pd-report-export>button:focus-visible,
+.pd-report-preview-heading button:focus-visible{outline:3px solid #087b87;outline-offset:2px}
+@media(max-width:600px){
+ .pd-report-saved-preview{padding:10px}
+ .pd-report-saved-preview-frame{height:62vh;min-height:300px}
+}
