@@ -81,7 +81,7 @@ test('focus restoration does not alter existing keyboard, dock, or project guard
  assert.match(shell,/onKeyDown=\{event=>onWorkspaceTabKeyDown\(event,view\)\}/);
  assert.match(shell,/onKeyDown=\{event=>onSidebarKeyDown\(event,id\)\}/);
  assert.match(shell,/onClick=\{\(\)=>close\(view\)\}/);
- assert.match(shell,/if\(dock\.secondary===view\)setDock\(current=>nextDockLayout\(current,\{kind:'close'\}\)\)/);
+ assert.match(shell,/if\(dock\.secondary===view\|\|\(plan\.nextActive!==active&&dock\.secondary===plan\.nextActive\)\)setDock\(current=>nextDockLayout\(current,\{kind:'close'\}\)\)/);
  assert.match(shell,/const workspaceReady=isProjectWorkspaceRestored\(projectId,restoredFor,catalogState\)/);
  assert.match(shell,/setDock\(readDock\(projectId\)\)/);
 });
