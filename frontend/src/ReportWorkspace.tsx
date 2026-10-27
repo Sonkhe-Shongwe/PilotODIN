@@ -1,9 +1,10 @@
 import {useEffect,useRef,useState} from 'react';
-import {FileDown,FileText,History,Save,ShieldCheck,AlertCircle,Plus,ArrowUp,ArrowDown} from 'lucide-react';
+import {FileDown,FileText,History,Save,ShieldCheck,AlertCircle,Plus,ArrowUp,ArrowDown,Eye,X} from 'lucide-react';
 import {get,post,downloadReportFile,saveReportNative} from './api';
 import {isDesktop} from './desktopBootstrap';
 import './report-workspace.css';
 import {ReportComposerGate,ReportReadGate} from './reportComposerGate';
+import {savedReportPreviewDocument} from './reportSavedPreview';
 
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
@@ -27,6 +28,9 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
  const [revision,setRevision]=useState<number|null>(null);
+ const [savedPreview,setSavedPreview]=useState<{id:string;revision:number;html:string}|null>(null);
+ const [previewBusy,setPreviewBusy]=useState(false);
+ const [previewError,setPreviewError]=useState('');
  const userStartedDraft=useRef(false);
  // Invalidate pending report-open results when the user changes selection.
  const latestOpenRequest=useRef(0);
@@ -37,7 +41,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
    let mounted=true;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
-   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);
+   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    if(!projectId)return;
    const listTicket=++latestReportList.current;
    void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(async data=>{
@@ -68,6 +72,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  useEffect(()=>{
    if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
    appliedHandoff.current=preselectEvidenceId;
+   readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    latestOpenRequest.current++;composerGuard.current.navigate();setBusy('');
    const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
    if(!option){setError('This saved analysis is not available as verified evidence in the active project.');return;}
@@ -79,6 +84,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
  async function openReport(id:string,number?:number){
    if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before switching reports.');return;}
+   readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();
    const ticket=++latestOpenRequest.current;
    userStartedDraft.current=true;setBusy('open');setError('');
@@ -92,8 +98,10 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  }
  function newReport(){
    if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before creating another draft.');return;}
+   readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();latestOpenRequest.current++;setBusy('');userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setNotice('');setError('');}
  async function save(){
+   readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    userStartedDraft.current=true;
    if(!selected.length){setError('Choose verified evidence before saving.');return;}
    const gate=composerGuard.current;
@@ -162,6 +170,27 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      }
    }finally{if(gate.finish(ticket))setBusy('')}
  }
+ function closeSavedPreview(){
+   readGuard.current.invalidatePreview();
+   setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
+ }
+ async function previewSavedRevision(){
+   if(!activeId||!opened)return;
+   const viewTicket=composerGuard.current.currentView();
+   const ticket=readGuard.current.beginPreview();
+   const current=()=>composerGuard.current.isCurrentView(viewTicket)&&readGuard.current.isCurrentPreview(ticket);
+   const id=activeId,rev=revision??opened.revision;
+   setPreviewBusy(true);setPreviewError('');setSavedPreview(null);
+   try{
+     // Same authenticated immutable-revision endpoint and filename/HTML
+     // checks as Save As; obtaining a Blob does NOT download or write it.
+     const {blob}=await downloadReportFile(`/reports/${encodeURIComponent(id)}/export/html?revision=${rev}`);
+     const raw=await blob.text();
+     if(!current())return;
+     setSavedPreview({id,revision:rev,html:savedReportPreviewDocument(raw)});
+   }catch(e){if(current())setPreviewError((e as Error).message)}
+   finally{if(current())setPreviewBusy(false)}
+ }
  async function download(format:'html'|'pdf'){
    if(!activeId||!opened)return;
    const viewTicket=composerGuard.current.currentView();
@@ -222,7 +251,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      {selected.length>1&&<section className="pd-report-order" aria-label="Order of report exhibits"><h4>Report exhibit order</h4><p className="pd-report-muted">Exhibits appear in this order in both saved HTML and PDF revisions.</p><ol>{selected.map((id,index)=><li key={id}><span><b>{index+1}.</b> {availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,8)} · v{availableMap.get(id)?.version??opened?.evidence.find(item=>item.id===id)?.dataset_version??'?'}</span><div><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} earlier`} title="Move earlier" disabled={!!busy||index===0} onClick={()=>shiftEvidence(id,-1)}><ArrowUp size={15}/></button><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} later`} title="Move later" disabled={!!busy||index===selected.length-1} onClick={()=>shiftEvidence(id,1)}><ArrowDown size={15}/></button></div></li>)}</ol></section>}
      <div className="pd-report-actions"><div><strong>{selected.length} verified evidence artifacts selected</strong><small>{!saveReady?'Enter a report title and select evidence to continue.':hasDraftChanges?'Save your changes before exporting an updated revision.':opened?'Current saved revision is ready for export.':'Save a frozen report revision to enable HTML/PDF exports.'}</small></div><button className="ud-btn ud-btn-primary" disabled={!!busy||!saveReady||!hasDraftChanges&&!!opened} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button></div>
      <details className="pd-report-preview"><summary>Preview report contents</summary><h4>{title}</h4><p>{narrative||'No narrative supplied. Verified evidence will be presented below.'}</p><ul>{selected.map(id=><li key={id}>{availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,12)}</li>)}</ul></details>
-     {opened&&<div className="pd-report-export"><div><strong>Saved revision {opened.revision}</strong><small>SHA-256 {opened.content_sha256.slice(0,18)}…</small></div><button disabled={!!busy||hasDraftChanges} title={hasDraftChanges?'Save draft changes before exporting':'Export the last saved revision as HTML'} onClick={()=>void download('html')}><FileDown size={15}/> Export HTML</button><button disabled={!!busy||hasDraftChanges} title={hasDraftChanges?'Save draft changes before exporting':'Export the last saved revision as PDF'} onClick={()=>void download('pdf')}><FileDown size={15}/> Export PDF</button></div>}
+     {opened&&<div className="pd-report-export"><div><strong>Saved revision {opened.revision}</strong><small>SHA-256 {opened.content_sha256.slice(0,18)}…</small></div><button type="button" disabled={!!busy||previewBusy} title="Preview the exact saved HTML revision locally without downloading" onClick={()=>void previewSavedRevision()}><Eye size={15}/>{previewBusy?'Loading preview…':'Preview saved HTML'}</button><button disabled={!!busy||hasDraftChanges} title={hasDraftChanges?'Save draft changes before exporting':'Export the last saved revision as HTML'} onClick={()=>void download('html')}><FileDown size={15}/> Export HTML</button><button disabled={!!busy||hasDraftChanges} title={hasDraftChanges?'Save draft changes before exporting':'Export the last saved revision as PDF'} onClick={()=>void download('pdf')}><FileDown size={15}/> Export PDF</button></div>}
      {opened?.has_historical_evidence&&<p className="pd-report-warning">Historical evidence: at least one included dataset version differs from the current active version. Existing calculations are preserved, not silently recomputed.</p>}
      {opened&&opened.dataset_versions.length>1&&<p className="pd-report-warning">This saved report intentionally includes evidence from dataset versions {opened.dataset_versions.join(', ')}.</p>}
    </section><aside className="pd-report-library"><h3><History size={17}/> Saved reports</h3>
@@ -231,5 +260,18 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      {opened&&<label className="pd-report-field">Open saved revision<select value={revision??opened.revision} disabled={busy==='save'||busy==='quality'||busy==='export'} onChange={e=>void openReport(opened.id,Number(e.target.value))}>{opened.revisions.map(n=><option key={n} value={n}>Revision {n}</option>)}</select></label>}
      {opened&&<p className="pd-report-muted">Exports are generated locally from a saved revision. Editing above does not change the exported report until you save a new revision.</p>}
    </aside></div>
+   {previewError&&<p role="alert" className="pd-report-error">{previewError}</p>}
+   {savedPreview&&<section className="pd-report-saved-preview" aria-label="Saved HTML report preview">
+     <div className="pd-report-preview-heading">
+       <div><strong>Preview: saved revision {savedPreview.revision}</strong>
+         <p>This is the stored HTML report, not your unsaved edits or the PDF layout. No download was created.</p>
+       </div>
+       <button type="button" className="ud-btn ud-btn-quiet" onClick={closeSavedPreview} aria-label="Close saved report preview"><X size={16}/> Close preview</button>
+     </div>
+     {hasDraftChanges&&<p role="status" className="pd-report-warning">Unsaved draft changes are not included in this saved revision preview.</p>}
+     <iframe title={`Saved HTML report revision ${savedPreview.revision}, read-only`}
+       sandbox="" referrerPolicy="no-referrer" loading="lazy"
+       srcDoc={savedPreview.html} className="pd-report-saved-preview-frame"/>
+   </section>}
  </div>;
 }
