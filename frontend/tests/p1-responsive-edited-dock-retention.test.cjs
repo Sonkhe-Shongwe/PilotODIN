@@ -9,7 +9,7 @@ test('responsive pause is independent of saved dock layout',()=>{
  assert.match(src,/const dockConfigured=!!projectId&&workspaceReady&&dock\.secondary!==null/);
  assert.match(src,/const canSplit=dockConfigured&&hasRoomForDock\(dock,paneWidth\)/);
  assert.match(src,/const dockPaused=dockConfigured&&!canSplit/);
- assert.match(src,/setDock\(readDock\(projectId\)\)/);
+ assert.match(src,/setDock\(savedDock\.secondary===preferred\?nextDockLayout\(savedDock,\{kind:'close'\}\):savedDock\)/);
 });
 test('an already edited same-project/same-view dock remains mounted when narrow',()=>{
  assert.match(src,/const preservePausedEditedDock=dockPaused&&active!==dock\.secondary&&\s*editedDock\.current\?\.projectId===projectId&&editedDock\.current\?\.view===dock\.secondary/);
