@@ -60,7 +60,7 @@ function fmtPrediction(value:string|number,task:string|undefined){return typeof 
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,forceNewProject=false,onNewProjectClose}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,forceNewProject=false,onNewProjectClose}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
@@ -68,6 +68,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   onPrimaryNavigate?:(view:Stage)=>boolean;
   // Shell approval must precede any primary project state reset.
   onBeforePrimaryProjectLoad?:(projectId:string)=>boolean;
+  // Consent must happen before upload creates a new local dataset project.
+  onBeforePrimaryProjectUpload?:()=>boolean;
   forceNewProject?:boolean;
   onNewProjectClose?:()=>void;
 }={}){
@@ -182,7 +184,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   useEffect(()=>{if(embedded)return;const handler=()=>{const id=localStorage.getItem('pilotodin-current');if(id&&id!==project?.id)void loadProject(id)};window.addEventListener('pilotodin:project-changed',handler);return()=>window.removeEventListener('pilotodin:project-changed',handler)},[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&project?.id)window.dispatchEvent(new Event('pilotodin:project-changed'))},[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&!location.hash.startsWith('#/canvas')&&location.hash!==`#/studio/${page}`)location.hash=`#/studio/${page}`},[page,embedded]);
-  async function loadProject(pid:string):Promise<boolean>{
+  async function loadProject(pid:string,approvedBeforeUpload=false):Promise<boolean>{
     // The global shell owns the project identity. Embedded panes cannot switch it.
     if(embedded && pid!==embeddedProjectId){
       setNotice('Change projects using the global project selector.');
@@ -190,7 +192,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }
     // Direct Studio project selector, Home cards and the final post-upload load
     // must not clear a mounted primary project or edited dock before approval.
-    if(!embedded&&pid!==project?.id&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;
+    if(!embedded&&pid!==project?.id&&!approvedBeforeUpload&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;
     const request=++latestProjectRequest.current;
     const generation=projectOperations.current.begin(pid);
     // Clear previous-project data immediately, including stale experiments and predictions.
@@ -226,9 +228,16 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   },[experiment?.id,experiment?.status,project?.id]);
   async function startUpload(){
     if(embedded){setError('Import a new dataset from the primary workspace.');return;}
-    if(!file)return;setLoading(true);setError('');try{
+    if(!file)return;
+    // The user may still be editing the current dock. Do not create the
+    // new project or mutate the current import UI until they approve.
+    if(onBeforePrimaryProjectUpload&&!onBeforePrimaryProjectUpload())return;
+    const initialProjectId=project?.id??'';
+    setLoading(true);setError('');try{
     const data=await upload(file);await refreshProjects();
-    const opened=await loadProject(data.id);
+    // This upload was authorised before its network request. If the mounted
+    // primary project changed during the upload, do not reuse stale consent.
+    const opened=await loadProject(data.id,(project?.id??'')===initialProjectId);
     if(!opened){
       // Upload already succeeded; clear its selected file so retry cannot upload
       // the same data again. Hide the import overlay without switching projects.
