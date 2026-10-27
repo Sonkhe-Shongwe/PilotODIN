@@ -918,4 +918,18 @@ def render_pdf(report: dict, *, unicode_context=None) -> bytes:
     doc.build(story,onFirstPage=footer,onLaterPages=footer)
     return output.getvalue()
 
+
+def render_pdf_for_export(report: dict) -> bytes:
+    """The only release-gated entry point for saved PDF downloads.
+
+    Source approval is absent at this checkpoint, so the original renderer
+    remains in place. A future reviewed source commit must pin all six font
+    and OFL files before this can construct UnicodePDFContext.
+    """
+    try:
+        from . import pdf_release_font_loader
+    except ImportError:
+        import pdf_release_font_loader
+    return pdf_release_font_loader.render_export_pdf(report, render_pdf)
+
 init()
