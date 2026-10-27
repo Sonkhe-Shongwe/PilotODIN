@@ -67,6 +67,7 @@ test('project-specific tabs and secondary dock are gated until the same project 
  assert.match(source,/const dockConfigured=!!projectId&&workspaceReady&&dock\.secondary!==null/);
  assert.match(source,/const canSplit=dockConfigured&&hasRoomForDock\(dock,paneWidth\)/);
  assert.match(source,/setRestoredFor\(projectId\)/);
- assert.match(source,/setDock\(readDock\(projectId\)\)/);
+ assert.match(source,/const savedDock=readDock\(projectId\)/);
+ assert.match(source,/setDock\(savedDock\.secondary===preferred\?nextDockLayout\(savedDock,\{kind:'close'\}\):savedDock\)/);
  assert.match(source,/if\(restoredFor!==projectId\)return/);
 });
