@@ -125,19 +125,21 @@ export function UnifiedShell(){
  useEffect(()=>{void refreshProjects()},[refreshProjects]);
  useEffect(()=>{
   const update=()=>{const next=localStorage.getItem('pilotodin-current')||'';setProjectId(id=>id===next?id:next);void refreshProjects()};
-  const onRoute=()=>setActive(routeView());
-  window.addEventListener('hashchange',onRoute);
-  window.addEventListener('pilotodin:route-commit',onRoute);
+  // Project catalogue changes are separate. The guarded capture handler
+  // below owns every external URL-to-active workspace transition.
   window.addEventListener('pilotodin:project-changed',update);
   window.addEventListener('storage',update);
-  return()=>{window.removeEventListener('hashchange',onRoute);window.removeEventListener('pilotodin:route-commit',onRoute);window.removeEventListener('pilotodin:project-changed',update);window.removeEventListener('storage',update)};
+  return()=>{window.removeEventListener('pilotodin:project-changed',update);window.removeEventListener('storage',update)};
  },[refreshProjects]);
  useEffect(()=>{
   // Restore this project's state as one operation. Previous project's panes are discarded.
   const tabs=readTabs(projectId);
   const preferred=readActive(projectId)??(isWorkspaceView(routeView())?routeView():'overview');
   setOpenTabs(tabs.includes(preferred)?tabs:[...tabs,preferred].slice(-8));
-  setDock(readDock(projectId));
+  // A restored project must not start with its primary view duplicated in a dock.
+  // No in-memory edited form survives a new project workspace restoration.
+  const savedDock=readDock(projectId);
+  setDock(savedDock.secondary===preferred?nextDockLayout(savedDock,{kind:'close'}):savedDock);
   setActive(preferred);
   setRestoredFor(projectId);
   navigate(preferred);
@@ -173,8 +175,8 @@ export function UnifiedShell(){
   // in the current history entry before any workspace listener sees the destination.
   const reviewRoute=()=>{
    const requestedHash=window.location.hash;
-   if(requestedHash===acceptedRouteHash.current)return;
    const requested=routeView();
+   if(requestedHash===acceptedRouteHash.current&&requested===active)return;
    const decision=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
    if(decision==='confirm-promote'&&!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
@@ -186,9 +188,12 @@ export function UnifiedShell(){
     setDock(current=>nextDockLayout(current,{kind:'close'}));
    }
    acceptedRouteHash.current=requestedHash;
+   // This is the sole URL -> active workspace commit. No unguarded listener
+   // can activate an edited dock after a cancelled navigation.
+   if(requested!==active)setActive(requested);
   };
-  // Both direct user hash changes and custom route commits must be checked; the
-  // approved hash is remembered so the delayed hashchange doesn't prompt twice.
+  // Direct hash changes and internal route commits share one guarded handler.
+  // The accepted hash prevents duplicate confirmation on delayed hashchange.
   window.addEventListener('hashchange',reviewRoute,true);
   window.addEventListener('pilotodin:route-commit',reviewRoute,true);
   return()=>{
