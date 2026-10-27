@@ -83,10 +83,13 @@ test('Preview lifecycle uses authenticated immutable HTML, never native Save As'
  assert.match(ui,/readGuard\.current\.isCurrentPreview\(ticket\)/);
  assert.match(ui,/downloadReportFile/);
  assert.match(ui,/export\/html\?revision=/);
- assert.match(ui,/setSavedPreview\(\{id,revision:rev,html:savedReportPreviewDocument\(raw\)\}\)/);
+ assert.match(ui,/setSavedPreview\(\{projectId,id,revision:rev,html:savedReportPreviewDocument\(raw\)\}\)/);
  assert.match(ui,/onClick=\{\(\)=>void previewSavedRevision\(\)\}/);
  assert.match(ui,/readGuard\.current\.invalidatePreview\(\)/);
  assert.match(ui,/srcDoc=\{savedPreview\.html\}/);
+ assert.match(ui,/savedPreview\.projectId===projectId/);
+ assert.match(ui,/savedPreview\.id===activeId/);
+ assert.match(ui,/activeProjectRef\.current===projectId/);
  assert.match(ui,/sandbox=""/);
  assert.match(ui,/referrerPolicy="no-referrer"/);
  assert.match(ui,/No download was created/);
