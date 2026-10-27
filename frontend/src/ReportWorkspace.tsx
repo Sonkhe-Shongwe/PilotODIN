@@ -28,9 +28,11 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
  const [revision,setRevision]=useState<number|null>(null);
- const [savedPreview,setSavedPreview]=useState<{id:string;revision:number;html:string}|null>(null);
+ const [savedPreview,setSavedPreview]=useState<{projectId:string;id:string;revision:number;html:string}|null>(null);
  const [previewBusy,setPreviewBusy]=useState(false);
  const [previewError,setPreviewError]=useState('');
+ const activeProjectRef=useRef(projectId);
+ activeProjectRef.current=projectId; // Check project changes before effect cleanup runs.
  const userStartedDraft=useRef(false);
  // Invalidate pending report-open results when the user changes selection.
  const latestOpenRequest=useRef(0);
@@ -178,7 +180,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    if(!activeId||!opened)return;
    const viewTicket=composerGuard.current.currentView();
    const ticket=readGuard.current.beginPreview();
-   const current=()=>composerGuard.current.isCurrentView(viewTicket)&&readGuard.current.isCurrentPreview(ticket);
+   const current=()=>activeProjectRef.current===projectId&&composerGuard.current.isCurrentView(viewTicket)&&readGuard.current.isCurrentPreview(ticket);
    const id=activeId,rev=revision??opened.revision;
    setPreviewBusy(true);setPreviewError('');setSavedPreview(null);
    try{
@@ -187,7 +189,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      const {blob}=await downloadReportFile(`/reports/${encodeURIComponent(id)}/export/html?revision=${rev}`);
      const raw=await blob.text();
      if(!current())return;
-     setSavedPreview({id,revision:rev,html:savedReportPreviewDocument(raw)});
+     setSavedPreview({projectId,id,revision:rev,html:savedReportPreviewDocument(raw)});
    }catch(e){if(current())setPreviewError((e as Error).message)}
    finally{if(current())setPreviewBusy(false)}
  }
@@ -261,7 +263,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      {opened&&<p className="pd-report-muted">Exports are generated locally from a saved revision. Editing above does not change the exported report until you save a new revision.</p>}
    </aside></div>
    {previewError&&<p role="alert" className="pd-report-error">{previewError}</p>}
-   {savedPreview&&<section className="pd-report-saved-preview" aria-label="Saved HTML report preview">
+   {savedPreview&&savedPreview.projectId===projectId&&savedPreview.id===activeId&&savedPreview.revision===(revision??opened?.revision)&&<section className="pd-report-saved-preview" aria-label="Saved HTML report preview">
      <div className="pd-report-preview-heading">
        <div><strong>Preview: saved revision {savedPreview.revision}</strong>
          <p>This is the stored HTML report, not your unsaved edits or the PDF layout. No download was created.</p>
