@@ -174,8 +174,14 @@ export function UnifiedShell(){
     return;
    }
    if(decision==='confirm'&&!window.confirm('You changed fields in the docked workspace. Switching projects may discard those entries. Continue?')){
-    try{localStorage.setItem('pilotodin-current',projectId)}
-    catch{setWarning('Project selection could not be restored. Unsaved entries remain in this window; avoid reloading until you resolve the selection.')}
+    if(event.type==='storage'){
+     // Do not write an earlier project ID back into shared storage: multiple edited
+     // browser tabs could otherwise repeatedly veto and revert each other's choice.
+     setWarning('Another tab selected a different project. This window keeps its unsaved workspace; reloading may use the other tab’s selection.');
+    }else{
+     try{localStorage.setItem('pilotodin-current',projectId)}
+     catch{setWarning('Project selection could not be restored. Unsaved entries remain in this window; avoid reloading until you resolve the selection.')}
+    }
     // A cancelled external selection must not reach Studio's project load listener.
     event.stopImmediatePropagation();
     return;
