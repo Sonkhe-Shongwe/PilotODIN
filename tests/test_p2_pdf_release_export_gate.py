@@ -124,6 +124,59 @@ class OfflineApprovedReleaseContracts(unittest.TestCase):
         self.assertEqual(loader.RELEASE_APPROVAL_STATUS, "NOT_GRANTED")
         self.assertEqual(loader.RELEASE_PINNED_FILES, ())
 
+    def test_pyinstaller_preflight_default_omits_unapproved_font_data(self):
+        from tools import p2_pdf_release_bundle_preflight as build
+        with patch.object(build, "verify_pdf_font_files") as verifier:
+            outcome = build.packaging_decision()
+        self.assertEqual(outcome["state"], build.DENIED)
+        self.assertFalse(outcome["include_font_resources"])
+        verifier.assert_not_called()
+
+    def test_pyinstaller_preflight_rejects_partial_policy_and_unrecognized_state(self):
+        from tools import p2_pdf_release_bundle_preflight as build
+        with patch.object(loader, "RELEASE_PINNED_FILES", fake_pins()):
+            with self.assertRaises(ValueError):
+                build.packaging_decision()
+        with patch.object(loader, "RELEASE_APPROVAL_STATUS", "UNKNOWN"):
+            with self.assertRaises(ValueError):
+                build.packaging_decision()
+
+    def test_pyinstaller_preflight_rejects_granted_state_without_review_reference(self):
+        from tools import p2_pdf_release_bundle_preflight as build
+        with patch.object(loader, "RELEASE_APPROVAL_STATUS",
+                          "GRANTED_BY_INDEPENDENT_OWNER_REVIEW"), \
+             patch.object(loader, "RELEASE_PINNED_FILES", fake_pins()):
+            with self.assertRaises(loader.PDFReleaseFontError):
+                build.packaging_decision()
+
+    def test_pyinstaller_preflight_requires_exact_six_verified_release_resources(self):
+        from tools import p2_pdf_release_bundle_preflight as build
+        a, b, c = self.approved()
+        valid = {role + "_" + kind: object()
+                 for role in ROLES for kind in ("font", "license")}
+        with a, b, c:
+            result = build.packaging_decision(verified=lambda records: valid)
+            self.assertEqual(result["state"], build.PASS)
+            self.assertTrue(result["include_font_resources"])
+            self.assertEqual(result["verified_release_files"], 6)
+            with self.assertRaises(ValueError):
+                build.packaging_decision(verified=lambda records: {})
+            with self.assertRaises(PDFResourceError):
+                build.packaging_decision(verified=lambda records:
+                                        (_ for _ in ()).throw(PDFResourceError("absent")))
+
+    def test_standard_sidecar_build_is_gated_before_pyinstaller(self):
+        root = Path(__file__).resolve().parents[1]
+        source = (root / "desktop" / "Build_Python_Sidecar.ps1").read_text(
+            encoding="utf-8")
+        self.assertIn("tools\\p2_pdf_release_bundle_preflight.py", source)
+        self.assertIn("NOT_APPROVED_LEGACY_ENGINE_ONLY", source)
+        self.assertIn("APPROVED_PACKAGING_SOURCE_READY", source)
+        self.assertIn("@fontDataArgs", source)
+        self.assertIn("backend/assets/pdf_fonts", source)
+        self.assertLess(source.index("p2_pdf_release_bundle_preflight.py"),
+                        source.index(" -m PyInstaller"))
+
     def test_mutated_approved_resource_refuses_export(self):
         """Verify existing secure SHA/notice reader, not any new source font."""
         with tempfile.TemporaryDirectory(prefix="p2-release-check-") as td:
