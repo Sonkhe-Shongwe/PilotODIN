@@ -47,7 +47,7 @@ test('source data, exact raw labels, and issue objects are not mutated',()=>{
  assert.deepEqual(options,[' Gauteng ','Gauteng']);
 });
 test('read-only component fetches current version and links to existing Quality approval without writes',()=>{
- const s=fs.readFileSync(path.resolve(__dirname,'../src/CategoryQualityAdvice.tsx'),'utf8');
+ const s=fs.readFileSync(path.resolve(__dirname,'../src/CategoryQualityReviewPrompt.tsx'),'utf8');
  assert.match(s,/get<CategoryQualitySnapshot>\(/);
  assert.match(s,/reviewableWhitespaceFinding\(snapshot,projectId,version,columns\)/);
  assert.match(s,/AbortController/);
@@ -57,11 +57,12 @@ test('read-only component fetches current version and links to existing Quality 
 });
 test('Prepare and Predict offer only version-scoped read-only Quality navigation',()=>{
  const s=fs.readFileSync(path.resolve(__dirname,'../src/App.tsx'),'utf8');
- assert.match(s,/import \{CategoryQualityAdvice\} from '\.\/CategoryQualityAdvice'/);
+ assert.match(s,/import \{CategoryQualityAdvice\} from '\.\/CategoryQualityReviewPrompt'/);
  assert.match(s,/import \{hasWhitespaceCategoryCollision\} from '\.\/categoryQualityAdvice'/);
  assert.match(s,/hasWhitespaceCategoryCollision\(f\.options\?\?\[\]\)/);
  assert.match(s,/setQualityFocus\(focus\);go\('quality'\)/);
  assert.match(s,/!embedded/);
+ assert.match(s,/onReview=\{\(focus:QualityFocus\)=>/);
 });
 
 test('Quality offers a focused review for an automatic pending finding before any commit',()=>{
