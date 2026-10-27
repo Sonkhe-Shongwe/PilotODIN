@@ -17,11 +17,12 @@ const output=ts.transpileModule(uploadBody+'\nexport {startUpload};',{
 assert.equal((output.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0);
 
 function harness({consent=true,file={name:'new.csv'},embedded=false,uploadFails=false,
- loadSucceeds=true,projectId='A',switchDuringUpload=false,withoutCallback=false}={}){
+ loadSucceeds=true,projectId='A',switchDuringUpload=false,withoutCallback=false,unmountDuringUpload=false}={}){
  const operations={events:[],alerts:[],loads:[],uploadCalls:0,closeCalls:0,refresh:0};
  const liveProjectId={current:projectId};
+ const uploadViewMounted={current:true};
  const ctx={
-  embedded,file,project:{id:projectId},liveProjectId,
+  embedded,file,project:{id:projectId},liveProjectId,uploadViewMounted,
   onBeforePrimaryProjectUpload:withoutCallback?undefined:()=>{
    operations.events.push('preflight');return consent;
   },
@@ -31,6 +32,7 @@ function harness({consent=true,file={name:'new.csv'},embedded=false,uploadFails=
    assert.equal(selected,file);
    if(uploadFails)throw Error('import service unavailable');
    if(switchDuringUpload)liveProjectId.current='another-project';
+   if(unmountDuringUpload)uploadViewMounted.current=false;
    return {id:'uploaded-B'};
   },
   refreshProjects:async()=>{operations.events.push('refresh');operations.refresh++},
@@ -92,6 +94,14 @@ test('stale pre-upload consent is not reused if the current project changes mid-
  await h.run();
  assert.deepEqual(h.operations.loads,[{id:'uploaded-B',preapproved:false}]);
  assert.match(h.operations.alerts.at(-1).text,/imported but was not opened/);
+});
+test('unmounted original Studio does not activate a late upload result',async()=>{
+ const h=harness({unmountDuringUpload:true});
+ await h.run();
+ assert.equal(h.operations.uploadCalls,1);
+ assert.deepEqual(h.operations.loads,[]);
+ assert.equal(h.operations.refresh,0);
+ assert.equal(h.operations.events.includes('loading:false'),false);
 });
 test('without a current uploaded file neither prompt nor backend call occurs',async()=>{
  const h=harness({file:null});
