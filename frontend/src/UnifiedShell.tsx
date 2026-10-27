@@ -10,6 +10,7 @@ import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
 import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
 import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
 import {nextWorkspaceTabByKey} from './workspaceTabKeyboard';
+import {nextSidebarViewByKey} from './sidebarKeyboardNavigation';
 import type {SidebarMode} from './sidebarPreferences';
 import './unified-shell.css';
 
@@ -151,6 +152,16 @@ export function UnifiedShell(){
  const workspaceReady=isProjectWorkspaceRestored(projectId,restoredFor,catalogState);
  const shownTabs=useMemo(()=>restoredFor===projectId?openTabs.filter(isWorkspaceView):[],[openTabs,restoredFor,projectId]);
  const chooseProject=(id:string)=>{if(!id||id===projectId)return;setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
+ const sidebarViews=useMemo(()=>NAV_SECTIONS.flatMap(section=>section.ids),[]);
+ const onSidebarKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
+  if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+  const next=nextSidebarViewByKey(sidebarViews,view,event.key);
+  if(!next)return;
+  event.preventDefault();
+  const buttons=event.currentTarget.closest('#po-nav-items')?.querySelectorAll<HTMLButtonElement>('.po-nav-item');
+  buttons?.item(sidebarViews.indexOf(next))?.focus();
+  if(next!==active)navigate(next);
+ };
  const onWorkspaceTabKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
   if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
   const next=nextWorkspaceTabByKey(shownTabs,view,event.key);
@@ -235,7 +246,7 @@ export function UnifiedShell(){
     <div id="po-nav-items" className="po-nav-scroller">
      {NAV_SECTIONS.map(section=><div className="po-nav-section" role="group" aria-label={section.title} key={section.title}>
       <span className="po-nav-group-caption" aria-hidden="true">{section.title}</span>
-      {ALL.filter(item=>section.ids.includes(item.id)).map(({id,label,icon:Icon})=><button key={id} type="button" className={`po-nav-item ${active===id?'po-rail-active':''}`} aria-current={active===id?'page':undefined} title={sidebarMode==='compact'?label:undefined} aria-label={label} onClick={()=>navigate(id)}><Icon size={20}/><span className="po-nav-label">{label}</span></button>)}
+      {ALL.filter(item=>section.ids.includes(item.id)).map(({id,label,icon:Icon})=><button key={id} type="button" className={`po-nav-item ${active===id?'po-rail-active':''}`} aria-current={active===id?'page':undefined} title={sidebarMode==='compact'?label:undefined} aria-label={label} onKeyDown={event=>onSidebarKeyDown(event,id)} onClick={()=>navigate(id)}><Icon size={20}/><span className="po-nav-label">{label}</span></button>)}
      </div>)}
     </div>
     <div className="po-rail-status"><span className="po-rail-status-dot"/> <span>LOCAL WORKSPACE</span></div>
