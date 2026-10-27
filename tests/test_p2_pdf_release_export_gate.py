@@ -97,6 +97,33 @@ class OfflineApprovedReleaseContracts(unittest.TestCase):
                 with self.assertRaises(loader.PDFReleaseFontError):
                     loader._approved_records()
 
+    def test_unsafe_release_asset_basename_rejected_before_file_access(self):
+        a, b, c = self.approved()
+        with a, b, c:
+            for unsafe in ("../escaped.ttf", "subfolder/font.ttf",
+                           "unreviewed\\\\font.ttf", ".",
+                           "Noto.ttf?download=1"):
+                with self.subTest(unsafe=unsafe):
+                    invalid = list(fake_pins())
+                    invalid[0] = (invalid[0][0], invalid[0][1],
+                                  unsafe, invalid[0][3], invalid[0][4])
+                    with patch.object(loader, "RELEASE_PINNED_FILES",
+                                      tuple(invalid)):
+                        with self.assertRaises(loader.PDFReleaseFontError):
+                            loader._approved_records()
+
+    def test_ignored_build_proofs_and_unsigned_release_fonts(self):
+        root = Path(__file__).resolve().parents[1]
+        ignore_lines = {
+            ln.strip() for ln in (root / ".gitignore").read_text(
+                encoding="utf-8").splitlines()
+            if ln.strip() and not ln.lstrip().startswith("#")
+        }
+        self.assertIn("/build/", ignore_lines)
+        self.assertIn("/backend/assets/pdf_fonts/", ignore_lines)
+        self.assertEqual(loader.RELEASE_APPROVAL_STATUS, "NOT_GRANTED")
+        self.assertEqual(loader.RELEASE_PINNED_FILES, ())
+
     def test_mutated_approved_resource_refuses_export(self):
         """Verify existing secure SHA/notice reader, not any new source font."""
         with tempfile.TemporaryDirectory(prefix="p2-release-check-") as td:
