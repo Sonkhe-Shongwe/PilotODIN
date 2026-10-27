@@ -30,7 +30,10 @@ test('top tab, sidebar and keyboard promotion clear the old dock after approval'
 });
 test('when primary and dock differ, unrelated routes do not automatically close dock',()=>{
  const s=section('const navigateWithDockGuard=','const chooseProject=');
- assert.ok(s.indexOf("setDock(current=>nextDockLayout(current,{kind:'close'}))")<s.indexOf('}\n  navigate(view);'));
+ // Guard the structure, not a platform-specific LF/CRLF line ending.
+ const closeInsidePromotion=/setDock\(current=>nextDockLayout\(current,\{kind:'close'\}\)\);\s*\}\s*navigate\(view\);/;
+ assert.match(s,closeInsidePromotion);
+ assert.match(s.replace(/\r?\n/g,'\r\n'),closeInsidePromotion);
 });
 test('selecting current already-active primary workspace is a no-op for promotion',()=>{
  const s=section('const approvePrimaryStudioNavigation=','const navigateWithDockGuard=');
