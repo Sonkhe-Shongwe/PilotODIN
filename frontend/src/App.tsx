@@ -60,12 +60,14 @@ function fmtPrediction(value:string|number,task:string|undefined){return typeof 
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,forceNewProject=false,onNewProjectClose}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,forceNewProject=false,onNewProjectClose}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
   // Primary Studio changes need shell approval before they can discard an edited dock.
   onPrimaryNavigate?:(view:Stage)=>boolean;
+  // Shell approval must precede any primary project state reset.
+  onBeforePrimaryProjectLoad?:(projectId:string)=>boolean;
   forceNewProject?:boolean;
   onNewProjectClose?:()=>void;
 }={}){
@@ -186,6 +188,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       setNotice('Change projects using the global project selector.');
       return;
     }
+    // Direct Studio project selector, Home cards and the final post-upload load
+    // must not clear a mounted primary project or edited dock before approval.
+    if(!embedded&&pid!==project?.id&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return;
     const request=++latestProjectRequest.current;
     const generation=projectOperations.current.begin(pid);
     // Clear previous-project data immediately, including stale experiments and predictions.
