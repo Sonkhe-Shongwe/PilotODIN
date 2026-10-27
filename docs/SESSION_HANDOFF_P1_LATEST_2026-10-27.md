@@ -1,5 +1,17 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## 27 OCT 2026 — WINDOWS 19/20 PROMOTION + FOCUS TESTS: SINGLE CRLF-SENSITIVE ASSERTION FIXED; BROWSER GATE OPEN
+
+**Owner screenshot:** Combined `node --test tests/p1-docked-workspace-promotion.test.cjs tests/p1-workspace-close-focus.test.cjs` returned **20 tests, 19 pass, 1 fail**, 0 skipped/cancelled, 391.313ms. Failure was `tests/p1-docked-workspace-promotion.test.cjs:33:9`, labelled `when primary and dock differ, unrelated routes do not automatically close dock`. Assertion used `s.indexOf('}\\n  navigate(view);')` against source file text loaded by Node `fs.readFileSync`; Git Windows `core.autocrlf` can produce **CRLF `\\r\\n`**, so `indexOf` returns -1 even though an approved dock close is correctly inside the conditional. The live GitHub source `UnifiedShell.tsx` was inspected: `if(view!==active&&dock.secondary===view&&isSecondaryView(view)){ ... confirm ... setDock(close); } navigate(view);` is present, so there is no independently confirmed implementation failure in the screenshot.
+
+**GitHub test-only correction committed:** `frontend/tests/p1-docked-workspace-promotion.test.cjs` now asserts guarded promotion-close ordering using a whitespace-tolerant expression `/setDock\\(current=>nextDockLayout\\(current,\\{kind:'close'\\}\\)\\);\\s*\\}\\s*navigate\\(view\\);/` and also asserts that a synthetic CRLF copy matches. **Isolated execution of all 10 exact authored test bodies: 10/10 PASS on LF source AND 10/10 PASS on CRLF-converted source**. This does **not** substitute for the next owner Windows Node run. `UnifiedShell.tsx`, `App.tsx` and all production files unchanged. Retain previous accepted 10-case close-focus result and earlier 19/19 and 24/24 milestones.
+
+**ONLY NEXT owner Windows test after safe pull** from `frontend`:
+```powershell
+node --test tests/p1-docked-workspace-promotion.test.cjs
+```
+Expected **10/10 PASS**. Do not rerun close-focus 10 cases or another production build just for this .cjs assertion fix. Separate pending owner browser verification, only once new code is actually loaded: (A) unedited Quality primary+Prepare dock -> primary Ctrl+K->Prepare yields one full-width primary Prepare, old duplicate dock closes, no warning; (B) edited dock target explicitly changed to `fraud_reported` -> Ctrl+K->Prepare -> warning -> **Cancel**, keeps Quality primary, docked Prepare and selected target. Preserve all datasets and other accepted P0/P1 gates; do not approve Quality, train, import or build installer. External route/project events, true narrow auto-pause, primary drafts, Issue #7 accessibility/theme, P2 Unicode/fonts, real 8GB and P8 offline release remain unresolved.
+
 ## 27 OCT 2026 — OWNER WINDOWS PRIMARY STUDIO 10/10 + BUILD PASS; BROWSER EXPOSES DUPLICATE DOCK UX; PROMOTION REPAIR SOURCE COMMITTED
 
 **Owner Windows evidence for immediately preceding increment:** Screenshot demonstrates `node --test tests/p1-primary-studio-dock-navigation.test.cjs` **10/10 PASS**, 0 fail/cancel/skip, 324.5882ms. `npm run build` (`tsc --noEmit && vite build`) **PASS** Vite 6.4.5, 1,634 transformed modules, 3.22s, 530.67 kB main JS nonfatal warning. Mark prior new 10-case Node + build GATE CLOSED. User's browser flow **DID NOT demonstrate edit-warning Cancel**, so do not claim the whole original browser gate passed or that it failed.
