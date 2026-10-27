@@ -17,7 +17,7 @@ test('identical-looking categories have distinct accessible labels while raw inp
   const input = Object.freeze([' Gauteng ', 'Gauteng', 'Mpumalanga']);
   const result = predictionCategoryChoices(input);
   assert.deepEqual(result.map(x => x.value), input);
-  assert.equal(result[0].label, 'Gauteng (1 leading whitespace character, 1 trailing whitespace character)');
+  assert.equal(result[0].label, 'Gauteng (leading: SPACE; trailing: SPACE)');
   assert.equal(result[1].label, 'Gauteng (exact value)');
   assert.equal(result[2].label, 'Mpumalanga');
   assert.notEqual(result[0].label, result[1].label);
@@ -35,12 +35,30 @@ test('no whitespace collision preserves original category labels and order', () 
   ]);
 });
 
-test('blank and whitespace-only option values remain unchanged by the display-label helper', () => {
+test('blank and whitespace-only option values retain distinct original strings', () => {
   const input = ['', ' ', '  ', 'Other'];
   const result = predictionCategoryChoices(input);
   assert.deepEqual(result.map(x => x.value), input);
   assert.equal(new Set(result.slice(0, 3).map(x => x.label)).size, 3);
   assert.equal(result[3].label, 'Other');
+});
+
+test('space, tab, and mixed whitespace never produce the same visible option label', () => {
+  const original = ['Gauteng', ' Gauteng', '\tGauteng', ' \tGauteng', 'Gauteng ', 'Gauteng\t'];
+  const choices = predictionCategoryChoices(original);
+  assert.equal(new Set(choices.map(c => c.label)).size, original.length);
+  assert.deepEqual(choices.map(c => c.value), original);
+  assert.match(choices[1].label, /SPACE/);
+  assert.match(choices[2].label, /TAB/);
+});
+
+test('whitespace-only variants retain a unique visible label', () => {
+  const original = ['', ' ', '\t', '\u00a0', ' \t'];
+  const choices = predictionCategoryChoices(original);
+  assert.equal(new Set(choices.map(c => c.label)).size, original.length);
+  assert.deepEqual(choices.map(c => c.value), original);
+  assert.match(choices[0].label, /empty raw value/);
+  assert.match(choices[3].label, /NO-BREAK SPACE/);
 });
 
 test('Predict React UI renders option labels but submits original values', () => {
