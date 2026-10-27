@@ -1157,7 +1157,8 @@ def export_saved_report(report_id: str,format: str,revision: int | None = Query(
     if format not in ('html','pdf'):
         raise HTTPException(status_code=404,detail='Choose html or pdf')
     current=_report_call(lambda: reports.load(report_id,revision))
-    content=reports.render_html(current) if format=='html' else reports.render_pdf(current)
+    content=(reports.render_html(current) if format=='html' else
+             _report_call(lambda: reports.render_pdf_for_export(current)))
     mime='text/html; charset=utf-8' if format=='html' else 'application/pdf'
     fname=f"pilotodin_report_{report_id[:12]}_rev{current['revision']}.{format}"
     return Response(content=content,media_type=mime,headers={
