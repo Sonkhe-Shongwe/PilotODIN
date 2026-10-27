@@ -55,6 +55,7 @@ const handlerSource=shell.slice(begin,end+5);
 function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockView='prepare',
  current='quality',edit=edited,approval=false,ready=true,projectId='A'}={}){
  const journal={prompts:0,dockCloses:0,rollbacks:0};
+ const activeUpdates=[];
  const win={
   location:{hash:after,pathname:'/',search:''},
   history:{state:{session:'existing'},replaceState(state,title,url){
@@ -67,14 +68,15 @@ function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockVi
  const acceptedRouteHash={current:before};
  const dock={secondary:dockView};
  const setDock=(callback)=>{const next=callback({secondary:dockView});if(next.secondary===null)journal.dockCloses++};
+ const setActive=(view)=>{activeUpdates.push(view)};
  const nextDockLayout=(current,action)=>{assert.equal(action.kind,'close');return {...current,secondary:null}};
  const routeView=()=>win.location.hash.startsWith('#/studio/')?win.location.hash.slice(9):'overview';
  const run=new Function('window','acceptedRouteHash','routeView','planExternalRouteActivation',
-  'active','dock','editedDock','projectId','workspaceReady','setDock','nextDockLayout',
+  'active','dock','editedDock','projectId','workspaceReady','setDock','nextDockLayout','setActive',
   handlerSource+'\n return reviewRoute;')(
    win,acceptedRouteHash,routeView,planExternalRouteActivation,current,dock,editedDock,projectId,ready,
-   setDock,nextDockLayout);
- return {run,win,journal,editedDock,acceptedRouteHash};
+   setDock,nextDockLayout,setActive);
+ return {run,win,journal,editedDock,acceptedRouteHash,activeUpdates};
 }
 test('Cancel rolls browser URL back without unmounting edited dock or clearing its marker',()=>{
  const a=routeHarness();a.run();
@@ -82,30 +84,36 @@ test('Cancel rolls browser URL back without unmounting edited dock or clearing i
  assert.equal(a.win.location.hash,'#/studio/quality');
  assert.deepEqual(a.editedDock.current,edited);
  assert.equal(a.acceptedRouteHash.current,'#/studio/quality');
+ assert.deepEqual(a.activeUpdates,[],'Cancel must not activate another workspace');
 });
 test('approved edited route closes the dock and records the new accepted URL',()=>{
  const a=routeHarness({approval:true});a.run();
  assert.deepEqual(a.journal,{prompts:1,dockCloses:1,rollbacks:0});
  assert.equal(a.editedDock.current,null);
  assert.equal(a.acceptedRouteHash.current,'#/studio/prepare');
+ assert.deepEqual(a.activeUpdates,['prepare']);
 });
 test('unedited direct route promotes secondary with no confirm and no duplicate dock',()=>{
  const a=routeHarness({edit:null});a.run();
  assert.deepEqual(a.journal,{prompts:0,dockCloses:1,rollbacks:0});
+ assert.deepEqual(a.activeUpdates,['prepare']);
 });
 test('unrelated external navigation does not close or clear edited secondary',()=>{
  const a=routeHarness({after:'#/studio/explore'});a.run();
  assert.deepEqual(a.journal,{prompts:0,dockCloses:0,rollbacks:0});
  assert.deepEqual(a.editedDock.current,edited);
  assert.equal(a.acceptedRouteHash.current,'#/studio/explore');
+ assert.deepEqual(a.activeUpdates,['explore']);
 });
 test('duplicate hashchange after approved route commit does not prompt twice',()=>{
  const a=routeHarness({approval:true});a.run();a.run();
  assert.equal(a.journal.prompts,1);assert.equal(a.journal.dockCloses,1);
+ assert.deepEqual(a.activeUpdates,['prepare']);
 });
 test('cancelled route does not trigger a second prompt on delayed event',()=>{
  const a=routeHarness();a.run();a.run();
  assert.equal(a.journal.prompts,1);assert.equal(a.journal.rollbacks,1);
+ assert.deepEqual(a.activeUpdates,[]);
 });
 test('unready project does not alter the dock on external route',()=>{
  const a=routeHarness({ready:false});a.run();
@@ -125,4 +133,16 @@ test('the shell retains existing project, tab, and keyboard navigation without e
  assert.match(shell,/const onWorkspaceTabKeyDown=/);
  assert.match(shell,/const onSidebarKeyDown=/);
  assert.doesNotMatch(handlerSource,/localStorage|sessionStorage|\bpost\(|\bfetch\(|\bupload\(|\btrain\(/);
+});
+
+test('a single guarded handler owns hash, history and route-commit workspace updates',()=>{
+ assert.match(shell,/if\(requested!==active\)setActive\(requested\)/);
+ assert.doesNotMatch(shell,/const onRoute=\(\)=>setActive\(routeView\(\)\)/);
+ assert.doesNotMatch(shell,/window\.addEventListener\('hashchange',onRoute\)/);
+ assert.doesNotMatch(shell,/window\.addEventListener\('pilotodin:route-commit',onRoute\)/);
+});
+test('project restoration closes a saved dock matching the restored primary view',()=>{
+ assert.match(shell,/const savedDock=readDock\(projectId\)/);
+ assert.match(shell,/setDock\(savedDock\.secondary===preferred\?nextDockLayout\(savedDock,\{kind:'close'\}\):savedDock\)/);
+ assert.match(shell,/setActive\(preferred\)/);
 });
