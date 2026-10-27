@@ -1,4 +1,3 @@
-import {isWorkspaceView} from './workspaceLayout';
 import type {WorkspaceView} from './workspaceLayout';
 
 export type TabDropSide='before'|'after';
@@ -9,9 +8,9 @@ export function reorderWorkspaceTabs(
 ):WorkspaceView[]{
  const original=[...tabs];
  if(side!=='before'&&side!=='after')return original;
- if(source===target||!isWorkspaceView(source)||!isWorkspaceView(target))return original;
+ if(source===target)return original;
  if(!original.includes(source)||!original.includes(target))return original;
- if(original.some(v=>!isWorkspaceView(v))||new Set(original).size!==original.length)return original;
+ if(new Set(original).size!==original.length)return original;
  const reordered=original.filter(view=>view!==source);
  const index=reordered.indexOf(target);
  reordered.splice(index+(side==='after'?1:0),0,source);
