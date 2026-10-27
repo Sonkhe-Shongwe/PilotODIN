@@ -112,7 +112,11 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
 
   useEffect(()=>{if(embeddedStage!==undefined){setPage(embeddedStage);return;}
   const sync=()=>setPage(requestedStudioStage());
-  window.addEventListener('hashchange',sync);window.addEventListener('pilotodin:route-commit',sync);return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync)}
+  window.addEventListener('hashchange',sync);window.addEventListener('pilotodin:route-commit',sync);
+  // replaceState on a rejected route emits no hashchange, so use the shell's
+  // explicit rollback signal to align the displayed primary Studio page.
+  window.addEventListener('pilotodin:route-reverted',sync);
+  return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync);window.removeEventListener('pilotodin:route-reverted',sync)}
  },[embeddedStage]);
   function go(next:Stage){
     // Refuse destructive primary navigation BEFORE touching route or page state.
