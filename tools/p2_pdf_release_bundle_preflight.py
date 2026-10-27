@@ -23,17 +23,11 @@ DENIED = "NOT_APPROVED_LEGACY_ENGINE_ONLY"
 BLOCKED = "BLOCKED"
 
 
-def packaging_decision(*, approval_status=None, approval_reference=None,
-                       pinned_files=None, verified=None) -> dict:
-    """Fail closed on inconsistent policy; ignore no partial signoff.
-
-    Injected arguments are ONLY for synthetic tests. Real CLI always reads
-    the immutable module constants and actual module-relative assets.
-    """
-    status = release.RELEASE_APPROVAL_STATUS if approval_status is None else approval_status
-    reference = (release.RELEASE_APPROVAL_REFERENCE if approval_reference is None
-                 else approval_reference)
-    pins = release.RELEASE_PINNED_FILES if pinned_files is None else pinned_files
+def packaging_decision(*, verified=None) -> dict:
+    """Read current code-pinned release policy, never mutable DevQA receipts."""
+    status = release.RELEASE_APPROVAL_STATUS
+    reference = release.RELEASE_APPROVAL_REFERENCE
+    pins = release.RELEASE_PINNED_FILES
 
     if status == "NOT_GRANTED":
         if reference or pins:
@@ -47,18 +41,9 @@ def packaging_decision(*, approval_status=None, approval_reference=None,
     if status != "GRANTED_BY_INDEPENDENT_OWNER_REVIEW":
         raise ValueError("Unrecognized release approval policy")
 
-    # Enforce the identical reviewed six-file policy that the real export
-    # endpoint uses. No local editable manifest/receipt or environment flag.
-    original = (release.RELEASE_APPROVAL_STATUS,
-                release.RELEASE_APPROVAL_REFERENCE,
-                release.RELEASE_PINNED_FILES)
-    # For tests, avoid mutating source state or process globals: exact inputs
-    # are validated using the loader's shape contract via a local patch.
-    from unittest.mock import patch
-    with patch.object(release, "RELEASE_APPROVAL_STATUS", status), \
-         patch.object(release, "RELEASE_APPROVAL_REFERENCE", reference), \
-         patch.object(release, "RELEASE_PINNED_FILES", pins):
-        records = release._approved_records()
+    # Enforce the SAME release contract used by authenticated PDF exports.
+    # Synthetic callers may inject a verifier but never override source state.
+    records = release._approved_records()
     verifier = verify_pdf_font_files if verified is None else verified
     resolved = verifier(records)
     if (not isinstance(resolved, dict) or
@@ -72,7 +57,6 @@ def packaging_decision(*, approval_status=None, approval_reference=None,
         "release_approval": "GRANTED_BY_INDEPENDENT_OWNER_REVIEW",
         "resource_destination": "backend/assets/pdf_fonts",
     }
-
 
 def main() -> int:
     try:
