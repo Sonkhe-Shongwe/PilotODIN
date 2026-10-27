@@ -104,6 +104,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const [featureHints,setFeatureHints]=useState<{column:string;risk:string;reasons:string[]}[]>([]);
   const liveProjectId=useRef(project?.id??'');
   liveProjectId.current=project?.id??'';
+  const uploadViewMounted=useRef(true);
+  useEffect(()=>{uploadViewMounted.current=true;return()=>{uploadViewMounted.current=false}},[]);
   const latestProjectRequest=useRef(0);
   const projectOperations=useRef(createProjectOperationGuard());
   useEffect(()=>()=>projectOperations.current.invalidate(),[]);
@@ -239,7 +241,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     if(onBeforePrimaryProjectUpload&&!onBeforePrimaryProjectUpload())return;
     const initialProjectId=project?.id??'';
     setLoading(true);setError('');try{
-    const data=await upload(file);await refreshProjects();
+    const data=await upload(file);
+    // Upload cannot be rolled back, but an unmounted old Studio must not adopt
+    // its result and override a newly selected project.
+    if(!uploadViewMounted.current)return;
+    await refreshProjects();
+    if(!uploadViewMounted.current)return;
     // This upload was authorised before its network request. If the mounted
     // primary project changed during the upload, do not reuse stale consent.
     const opened=await loadProject(data.id,liveProjectId.current===initialProjectId);
@@ -251,7 +258,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       return;
     }
     setUploadOpen(false);setFile(null);onNewProjectClose?.();setNotice("Dataset imported and profiled successfully");
-  }catch(e){setError((e as Error).message)}finally{setLoading(false)}}
+  }catch(e){if(uploadViewMounted.current)setError((e as Error).message)}finally{if(uploadViewMounted.current)setLoading(false)}}
   async function startTrain(){
     if(!project||!prep||prep.target!==target)return;
     if(unresolvedFeatureRisks.length&&!acknowledgeFeatureRisks){setError('Review or exclude high-risk predictors before training.');return;}
