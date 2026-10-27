@@ -170,7 +170,7 @@ export function UnifiedShell(){
  useEffect(()=>{
   const pending=pendingDockDismissFocus.current;
   if(!pending)return;
-  if(pending.projectId!==projectId|| (workspaceReady&&active!==pending.view)){
+  if(pending.projectId!==projectId||(workspaceReady&&(active!==pending.view||dock.secondary!==null))){
    pendingDockDismissFocus.current=null;
    return;
   }
