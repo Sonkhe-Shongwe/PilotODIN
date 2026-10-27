@@ -59,7 +59,7 @@ test('shell keyboard event handles only unmodified keys, prevents only handled d
   assert.match(source,/const next=nextWorkspaceTabByKey\(shownTabs,view,event\.key\)/);
   assert.match(source,/if\(!next\)return;\s*event\.preventDefault\(\)/);
   assert.match(source,/tabButtons\?\.item\(shownTabs\.indexOf\(next\)\)\?\.focus\(\)/);
-  assert.match(source,/if\(next!==active\)navigate\(next\)/);
+  assert.match(source,/if\(next!==active&&!navigateWithDockGuard\(next\)\)return/);
 });
 
 test('tablist uses one roving tab stop with explicit selected state and labelled panel',()=>{
