@@ -60,10 +60,12 @@ function fmtPrediction(value:string|number,task:string|undefined){return typeof 
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNewProject=false,onNewProjectClose}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,forceNewProject=false,onNewProjectClose}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
+  // Primary Studio changes need shell approval before they can discard an edited dock.
+  onPrimaryNavigate?:(view:Stage)=>boolean;
   forceNewProject?:boolean;
   onNewProjectClose?:()=>void;
 }={}){
@@ -113,6 +115,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,forceNew
   window.addEventListener('hashchange',sync);window.addEventListener('pilotodin:route-commit',sync);return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync)}
  },[embeddedStage]);
   function go(next:Stage){
+    // Refuse destructive primary navigation BEFORE touching route or page state.
+    // Embedded navigation continues to use its existing dock-only authority.
+    if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next))return;
     if(next!=='quality')setQualityFocus(null);
     if(next!=='deliver')setDeliverEvidenceId(null);
     scrollRef.current[page]=mainRef.current?.scrollTop??0;
