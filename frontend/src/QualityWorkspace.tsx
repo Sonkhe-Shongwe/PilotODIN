@@ -2,6 +2,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, History, LoaderCircle, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Download, FileSpreadsheet, X} from 'lucide-react';
 import {downloadCleanedData,get,post} from './api';
 import {resolveQualityFocus} from './qualityHandoff';
+import {qualityPreviewLabel} from './qualityPreviewLabel';
 import type {QualityFocus} from './qualityHandoff';
 import './quality-investigation.css';
 
@@ -203,9 +204,9 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
           {step.proposal?.from!==undefined?` · ${step.proposal.from} → ${step.proposal.to}`:''}
           {step.proposal?.value!==undefined?` · value ${step.proposal.value}`:''}
         </p>)}</div>
-        <p className="muted-caption">Example changes (up to 12). You can inspect the full affected data in the dataset inspector.</p>
+        <p className="muted-caption">Example changes (up to 12). Values are shown exactly for review: [SPACE], [TAB] and other markers reveal otherwise invisible whitespace. You can inspect the full affected data in the dataset inspector.</p>
         <div className="table-scroll" style={{maxHeight:230,overflowY:'auto'}}><table><thead><tr><th>Row</th><th>Column</th><th>Before</th><th>After</th></tr></thead><tbody>
-          {pendingApproval.proposal.preview.map((r,i)=><tr key={i}><td>{r.row_number}</td><td>{r.column}</td><td>{val(r.before)}</td><td>{val(r.after)}</td></tr>)}
+          {pendingApproval.proposal.preview.map((r,i)=><tr key={i}><td>{r.row_number}</td><td>{r.column}</td><td>{qualityPreviewLabel(r.before)}</td><td>{qualityPreviewLabel(r.after)}</td></tr>)}
         </tbody></table></div>
         <div className="quality-action-row" style={{justifyContent:'flex-end',marginTop:16}}>
           <button className="btn" disabled={busy} onClick={()=>setPendingApproval(null)}>Cancel</button>
