@@ -77,12 +77,12 @@ test('sidebar handles only unmodified navigation keys and focuses the destinatio
   assert.match(shell,/if\(!next\)return;\s*event\.preventDefault\(\)/);
   assert.match(shell,/closest\('#po-nav-items'\)\?\.querySelectorAll<HTMLButtonElement>\('\.po-nav-item'\)/);
   assert.match(shell,/buttons\?\.item\(sidebarViews\.indexOf\(next\)\)\?\.focus\(\)/);
-  assert.match(shell,/if\(next!==active\)navigate\(next\)/);
+  assert.match(shell,/if\(next!==active&&!navigateWithDockGuard\(next\)\)return/);
 });
 
 test('sidebar label buttons get key handlers without changing existing click or tab controls',()=>{
   const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
-  assert.match(shell,/aria-label=\{label\} onKeyDown=\{event=>onSidebarKeyDown\(event,id\)\} onClick=\{\(\)=>navigate\(id\)\}/);
+  assert.match(shell,/aria-label=\{label\} onKeyDown=\{event=>onSidebarKeyDown\(event,id\)\} onClick=\{\(\)=>navigateWithDockGuard\(id\)\}/);
   assert.match(shell,/aria-current=\{active===id\?'page':undefined\}/);
   assert.match(shell,/import \{nextWorkspaceTabByKey\} from '\.\/workspaceTabKeyboard'/);
   assert.match(shell,/onKeyDown=\{event=>onWorkspaceTabKeyDown\(event,view\)\}/);
