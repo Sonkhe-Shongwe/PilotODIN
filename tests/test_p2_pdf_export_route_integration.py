@@ -108,8 +108,8 @@ class P2ActualReportExportRoute(unittest.TestCase):
             "limitations": ["Synthetic fixture, no user information."],
         }
         original = copy.deepcopy(snapshot)
-        with patch.object(self.reports, "load", return_value=snapshot), \\
-             patch.object(self.loader, "_verified_context") as candidate_font, \\
+        with patch.object(self.reports, "load", return_value=snapshot), \
+             patch.object(self.loader, "_verified_context") as candidate_font, \
              patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
             pdf = self.client.get(self.path_pdf)
             html = self.client.get(self.path_html)
