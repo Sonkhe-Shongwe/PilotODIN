@@ -230,8 +230,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     const data=await upload(file);await refreshProjects();
     const opened=await loadProject(data.id);
     if(!opened){
-      // Upload succeeded but opening/switching did not; do not misreport it as
-      // opened. Keep the old project and its unsaved dock in memory on Cancel.
+      // Upload already succeeded; clear its selected file so retry cannot upload
+      // the same data again. Hide the import overlay without switching projects.
+      setUploadOpen(false);setFile(null);onNewProjectClose?.();
       setNotice('Dataset was imported but was not opened. Select it later to switch projects.');
       return;
     }
