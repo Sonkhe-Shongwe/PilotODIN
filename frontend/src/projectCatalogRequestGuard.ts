@@ -2,10 +2,11 @@
  * No dataset, project selection, or preferences are stored here.
  */
 export function createProjectCatalogRequestGuard(){
-  let latestRequest=0;
+  let nextRequest=0;
+  let activeRequest=0;
   return {
-    begin():number{return ++latestRequest;},
-    accepts(requestId:number):boolean{return requestId>0&&requestId===latestRequest;},
-    invalidate():void{latestRequest++;}
+    begin():number {activeRequest=++nextRequest;return activeRequest;},
+    accepts(requestId:number):boolean {return requestId>0&&requestId===activeRequest;},
+    invalidate():void {activeRequest=0;}
   };
 }
