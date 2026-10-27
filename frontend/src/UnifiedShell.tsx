@@ -10,6 +10,8 @@ import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
 import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
 import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
 import {nextWorkspaceTabByKey} from './workspaceTabKeyboard';
+import {canReorderWorkspaceTab,reorderWorkspaceTabs,shiftWorkspaceTab} from './workspaceTabReorder';
+import type {TabDropSide} from './workspaceTabReorder';
 import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {canRestoreDockDismissFocus,planDockDismissFocus} from './dockDismissFocus';
 import {isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
@@ -87,6 +89,8 @@ export function UnifiedShell(){
  const pendingDockDismissFocus=useRef<{projectId:string;view:View}|null>(null);
  // Memory-only flag, never store the contents of a form or dataset.
  const editedDock=useRef<EditedDock|null>(null);
+ const draggedTab=useRef<{projectId:string;view:View}|null>(null);
+ const [tabDropTarget,setTabDropTarget]=useState<{view:View;side:TabDropSide}|null>(null);
  const [paneWidth,setPaneWidth]=useState(0);
  const dragCleanup=useRef<(()=>void)|null>(null);
  const catalogRequests=useRef(createProjectCatalogRequestGuard());
@@ -145,6 +149,7 @@ export function UnifiedShell(){
   try{localStorage.setItem(dockStorageKey(projectId),JSON.stringify(dock))}catch{setWarning('Pane layout could not be saved; project data is unaffected.')}
  },[dock,projectId,restoredFor]);
  useEffect(()=>()=>dragCleanup.current?.(),[]);
+ useEffect(()=>{draggedTab.current=null;setTabDropTarget(null)},[projectId]);
  useEffect(()=>{
   const node=splitRef.current;
   if(!node)return;
@@ -212,6 +217,12 @@ export function UnifiedShell(){
   buttons?.item(sidebarViews.indexOf(next))?.focus();
  };
  const onWorkspaceTabKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
+  // Keyboard reorder does not activate a workspace, dock it or discard its inputs.
+  if(event.altKey&&event.shiftKey&&!event.ctrlKey&&!event.metaKey&&(event.key==='ArrowLeft'||event.key==='ArrowRight')){
+   event.preventDefault();
+   if(projectId&&workspaceReady)setOpenTabs(tabs=>shiftWorkspaceTab(tabs,view,event.key==='ArrowLeft'?-1:1));
+   return;
+  }
   if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
   const next=nextWorkspaceTabByKey(shownTabs,view,event.key);
   if(!next)return;
@@ -245,10 +256,33 @@ export function UnifiedShell(){
   if(dock.secondary!==view)editedDock.current=null;
   setDock(current=>nextDockLayout(current,{kind:'open',view}));
  };
+ // Drop-on-tab reorders; drop-on-pane keeps the existing independent docking contract.
+ const onTabDragOver=(event:ReactDragEvent<HTMLDivElement>,target:View)=>{
+  if(!canReorderWorkspaceTab(projectId,workspaceReady,draggedTab.current,target,shownTabs))return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.dataTransfer.dropEffect='move';
+  const bounds=event.currentTarget.getBoundingClientRect();
+  const side:TabDropSide=event.clientX<bounds.left+bounds.width/2?'before':'after';
+  setTabDropTarget(previous=>previous?.view===target&&previous.side===side?previous:{view:target,side});
+ };
+ const onTabDrop=(event:ReactDragEvent<HTMLDivElement>,target:View)=>{
+  const dragged=draggedTab.current;
+  if(!canReorderWorkspaceTab(projectId,workspaceReady,dragged,target,shownTabs))return;
+  event.preventDefault();
+  event.stopPropagation();
+  const bounds=event.currentTarget.getBoundingClientRect();
+  const side:TabDropSide=event.clientX<bounds.left+bounds.width/2?'before':'after';
+  setOpenTabs(tabs=>reorderWorkspaceTabs(tabs,dragged!.view,target,side));
+  draggedTab.current=null;
+  setTabDropTarget(null);
+ };
  const onDrop=(event:ReactDragEvent)=>{
   event.preventDefault();
   const proposed=event.dataTransfer.getData('text/x-pilotodin-workspace');
   if(isSecondaryView(proposed))dockView(proposed);
+  draggedTab.current=null;
+  setTabDropTarget(null);
  };
  const resize=(event:ReactPointerEvent<HTMLDivElement>)=>{
   if(!splitRef.current)return;
@@ -292,9 +326,14 @@ export function UnifiedShell(){
  const dockConfigured=!!projectId&&workspaceReady&&dock.secondary!==null;
  const canSplit=dockConfigured&&hasRoomForDock(dock,paneWidth);
  const dockPaused=dockConfigured&&!canSplit;
- const separate=canSplit&&active!==dock.secondary;
+ // Keep only a previously edited secondary form mounted during a temporary narrow pause.
+ // CSS/hidden removes it from view and keyboard focus; no input values are persisted.
+ const preservePausedEditedDock=dockPaused&&active!==dock.secondary&&
+  editedDock.current?.projectId===projectId&&editedDock.current?.view===dock.secondary;
+ const mountDock=canSplit||preservePausedEditedDock;
+ const separate=mountDock&&active!==dock.secondary;
  useEffect(()=>{
-  // A paused or replaced embedded pane has already unmounted. Its edit flag is stale.
+  // Clear only when the embedded form really unmounts (not during a hidden pause).
   if(!separate)editedDock.current=null;
  },[separate,projectId,dock.secondary]);
  const paneStyle={'--po-secondary-fraction':`${Math.round(clampFraction(dock.fraction)*10000)/100}%`} as CSSProperties;
@@ -322,8 +361,8 @@ export function UnifiedShell(){
    </nav>
    <section className="po-shell-workspace">
     <div className="po-global-tabs" role="tablist" aria-label="Open analytical workspaces" ref={tablistRef}>
-     {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''}`} key={view} draggable={!!projectId&&isSecondaryView(view)} onDragStart={e=>e.dataTransfer.setData('text/x-pilotodin-workspace',view)}>
-      <button type="button" role="tab" id={`po-workspace-tab-${view}`} aria-controls="po-current-workspace" aria-selected={active===view} tabIndex={active===view?0:-1} onKeyDown={event=>onWorkspaceTabKeyDown(event,view)} onClick={()=>navigateWithDockGuard(view)}>{labelFor(view)}</button>
+     {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''} ${tabDropTarget?.view===view?`po-tab-drop-${tabDropTarget.side}`:''}`} key={view} draggable={!!projectId&&workspaceReady} onDragStart={event=>{draggedTab.current={projectId,view};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/x-pilotodin-tab',view);if(isSecondaryView(view))event.dataTransfer.setData('text/x-pilotodin-workspace',view)}} onDragOver={event=>onTabDragOver(event,view)} onDrop={event=>onTabDrop(event,view)} onDragEnd={()=>{draggedTab.current=null;setTabDropTarget(null)}}>
+      <button type="button" role="tab" id={`po-workspace-tab-${view}`} aria-controls="po-current-workspace" aria-selected={active===view} tabIndex={active===view?0:-1} onKeyDown={event=>onWorkspaceTabKeyDown(event,view)} onClick={()=>navigateWithDockGuard(view)} title="Drag to reorder; Alt+Shift+Left/Right moves this tab">{labelFor(view)}</button>
       {projectId&&isSecondaryView(view)&&<button type="button" title={`Dock ${labelFor(view)} beside current view`} aria-label={`Dock ${labelFor(view)} beside current view`} onClick={()=>dockView(view)}><Columns2 size={13}/></button>}
       {shownTabs.length>1&&<button type="button" aria-label={`Close ${labelFor(view)} tab`} onClick={()=>close(view)}><X size={12}/></button>}
      </div>)}
@@ -337,9 +376,9 @@ export function UnifiedShell(){
        {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
-     {canSplit&&<>
-      <div className="po-pane-resizer" role="separator" tabIndex={0} aria-label="Resize secondary analytical pane" aria-orientation="vertical" aria-valuemin={28} aria-valuemax={58} aria-valuenow={Math.round(dock.fraction*100)} onPointerDown={resize} onKeyDown={resizeByKey} title="Drag or use arrow keys to resize"><GripVertical size={16}/></div>
-      <section className="po-secondary-pane" aria-label={`Docked ${labelFor(dock.secondary!)} workspace`} onDragOver={e=>e.preventDefault()} onDrop={onDrop}>
+     {mountDock&&<>
+      <div className="po-pane-resizer" hidden={!canSplit} role="separator" tabIndex={canSplit?0:-1} aria-label="Resize secondary analytical pane" aria-orientation="vertical" aria-valuemin={28} aria-valuemax={58} aria-valuenow={Math.round(dock.fraction*100)} onPointerDown={resize} onKeyDown={resizeByKey} title="Drag or use arrow keys to resize"><GripVertical size={16}/></div>
+      <section className="po-secondary-pane" hidden={!canSplit} aria-label={`Docked ${labelFor(dock.secondary!)} workspace`} onDragOver={e=>e.preventDefault()} onDrop={onDrop}>
        <div className="po-pane-toolbar"><Columns2 size={14}/><strong>Docked workspace</strong>
         <select aria-label="Docked analytical component" value={dock.secondary??''} onChange={e=>{if(isSecondaryView(e.target.value))dockView(e.target.value)}}>
          {WORKSPACE_VIEWS.filter(isSecondaryView).map(view=><option key={view} value={view}>{labelFor(view)}</option>)}
@@ -352,7 +391,7 @@ export function UnifiedShell(){
       </section>
      </>}
     </div>
-    {dockPaused&&<div className="po-dock-narrow-notice" role="status"><Columns2 size={14} aria-hidden="true"/> Docked view paused while this workspace is narrow. Widen the window or collapse the sidebar to restore your saved split.</div>}
+    {dockPaused&&<div className="po-dock-narrow-notice" role="status"><Columns2 size={14} aria-hidden="true"/> {preservePausedEditedDock?'Edited docked fields are kept in memory while this view is narrow (not saved). Widen the window or collapse the sidebar to continue.':'Docked view paused while this workspace is narrow. Widen the window or collapse the sidebar to restore your saved split.'}</div>}
     {!dockConfigured&&projectId&&<div className="po-dock-drop-target" onDragOver={e=>e.preventDefault()} onDrop={onDrop}><Columns2 size={14}/> Open a workspace tab beside this view using <strong>Dock beside</strong>, or drag a tab here.</div>}
    </section>
   </div>
