@@ -60,7 +60,7 @@ test('shell routes only explicit dock close through project-scoped focus and lay
 });
 test('focus effect waits for finished dock close and safely clears an obsolete project',()=>{
  const s=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
- assert.match(s,/if\(pending\.projectId!==projectId\|\| \(workspaceReady&&active!==pending\.view\)\)/);
+ assert.match(s,/if\(pending\.projectId!==projectId\|\|\(workspaceReady&&\(active!==pending\.view\|\|dock\.secondary!==null\)\)\)/);
  assert.match(s,/if\(!canRestoreDockDismissFocus\(pending,projectId,active,shownTabs,dock,workspaceReady\)\)return/);
  assert.match(s,/tablistRef\.current\?\.querySelectorAll<HTMLButtonElement>\('\[role="tab"\]'\)/);
  assert.match(s,/pendingDockDismissFocus\.current=null;\s*target\?\.focus\(\)/);
