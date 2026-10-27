@@ -18,8 +18,8 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
-    ("offline_source", "test_p2_pdf_release_export_gate.py", 12),
-    ("actual_http_route", "test_p2_pdf_export_route_integration.py", 8),
+    ("offline_source", "test_p2_pdf_release_export_gate.py", 14),
+    ("actual_http_route", "test_p2_pdf_export_route_integration.py", 9),
 )
 TEST_TIMEOUT_SECONDS = 90
 _COUNT = re.compile(r"\bRan\s+(\d+)\s+tests?\s+in\b")
@@ -47,13 +47,15 @@ def run() -> dict:
         env["PILOTODIN_HOME"] = str(home)
         env["PILOTODIN_P2_EXPORT_ROUTE_DEVQA"] = "1"
         env["PYTHONDONTWRITEBYTECODE"] = "1"
+        env["PYTHONIOENCODING"] = "utf-8"
         for name, pattern, expected in SUITES:
             try:
                 result = subprocess.run(
                     [sys.executable, "-B", "-m", "unittest", "discover",
                      "-s", "tests", "-p", pattern, "-v"],
                     cwd=str(ROOT), env=env, capture_output=True,
-                    text=True, timeout=TEST_TIMEOUT_SECONDS, check=False,
+                    text=True, encoding="utf-8", errors="replace",
+                    timeout=TEST_TIMEOUT_SECONDS, check=False,
                 )
             except subprocess.TimeoutExpired as exc:
                 raise ValueError("Focused suite timed out: " + name) from exc
