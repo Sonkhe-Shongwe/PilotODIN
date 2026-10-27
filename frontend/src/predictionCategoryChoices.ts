@@ -1,29 +1,43 @@
-/** Distinguish visually identical categorical choices without altering fitted-model inputs. */
+/**
+ * Give visually colliding fitted categories distinct labels without rewriting values.
+ * The exact original string must stay in <option value> and the Predict payload.
+ */
 export function predictionCategoryChoices(options: readonly string[]): {value: string; label: string}[] {
-  const rawValuesByVisibleLabel = new Map<string, Set<string>>();
+  const valuesByVisibleLabel = new Map<string, Set<string>>();
   for (const value of options) {
     const visible = value.trim();
-    const raw = rawValuesByVisibleLabel.get(visible) ?? new Set<string>();
-    raw.add(value);
-    rawValuesByVisibleLabel.set(visible, raw);
+    const values = valuesByVisibleLabel.get(visible) ?? new Set<string>();
+    values.add(value);
+    valuesByVisibleLabel.set(visible, values);
   }
+
+  // Names for frequent invisible boundary characters; a Unicode code point
+  // is shown for every other whitespace to avoid merging distinct raw inputs.
+  const whitespaceName = (char: string): string => {
+    const names: Record<string, string> = {
+      ' ': 'SPACE', '\t': 'TAB', '\n': 'LINE FEED', '\r': 'CARRIAGE RETURN',
+      '\u00a0': 'NO-BREAK SPACE'
+    };
+    return names[char] ?? `U+${char.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`;
+  };
+  const codepoints = (value: string): string => Array.from(value, whitespaceName).join(' + ');
 
   return options.map(value => {
     const visible = value.trim();
-    if ((rawValuesByVisibleLabel.get(visible)?.size ?? 0) < 2) {
+    if ((valuesByVisibleLabel.get(visible)?.size ?? 0) < 2) {
       return {value, label: value};
     }
-
-    const leading = value.length - value.trimStart().length;
-    const trailing = value.length - value.trimEnd().length;
-    const details: string[] = [];
+    if (value.length === 0) return {value, label: '(blank category) (empty raw value)'};
     if (visible.length === 0) {
-      details.push(`${value.length} whitespace character${value.length === 1 ? '' : 's'}`);
-    } else {
-      if (leading > 0) details.push(`${leading} leading whitespace character${leading === 1 ? '' : 's'}`);
-      if (trailing > 0) details.push(`${trailing} trailing whitespace character${trailing === 1 ? '' : 's'}`);
-      if (!details.length) details.push('exact value');
+      return {value, label: `(blank category) (whitespace: ${codepoints(value)})`};
     }
-    return {value, label: `${visible || '(blank category)'} (${details.join(', ')})`};
+
+    const leading = value.slice(0, value.length - value.trimStart().length);
+    const trailing = value.slice(value.trimEnd().length);
+    const details: string[] = [];
+    if (leading) details.push(`leading: ${codepoints(leading)}`);
+    if (trailing) details.push(`trailing: ${codepoints(trailing)}`);
+    if (!details.length) details.push('exact value');
+    return {value, label: `${visible} (${details.join('; ')})`};
   });
 }
