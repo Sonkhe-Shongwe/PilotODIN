@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 title PilotODIN P2 - Consolidated Offline PDF Export Source QA
 echo This is ONE future integrated API/source acceptance, not another font audit.
-echo It executes 12 new release-gate and 8 new in-process authenticated HTTP
+echo It executes 14 new release-gate and 9 in-process authenticated HTTP
 echo export contracts, with a brand NEW temporary disposable SQLite home.
 echo Already accepted frozen sidecar, font, CMap and visual PDF milestones
 echo are NOT repeated. No real user projects, fonts, PDFs or model assets.
