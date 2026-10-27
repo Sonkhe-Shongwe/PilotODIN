@@ -96,3 +96,12 @@ These have NOT been owner Windows-executed. They do not authorize release.
 **Until the explicit decision and final immutable package are approved:**
 P2 `REVIEW_REQUIRED`; normal mixed-script PDF `VISUAL_FAIL`;
 Unicode release `NOT_ACCEPTED`; P8 `NOT_CERTIFIED`.
+
+
+## Source staging and integrated Windows route QA (27 October 2026)
+
+A new `.gitignore` guard now protects the entire root `/build/` directory, including previous and future synthetic PDFs which may embed subsets of development fonts, plus unapproved `/backend/assets/pdf_fonts/`. The repository previously failed to ignore newer proof subdirectories, so these files could have appeared in GitHub Desktop staging. Do not upload font binaries, individual original OFL files, proof PDFs or private review receipts. Any later explicitly approved asset delivery must be a separate reviewed release-source/package change, never an incidental `git add` of ignored DevQA assets.
+
+The pending release loader now rejects unsafe proposed font basenames before opening resources. The single consolidated `Run_PilotODIN_P2_Offline_Export_Source_DevQA.bat` suite contains **23 focused tests (14 source integrity + 9 real in-process authenticated HTTP)**, including unchanged synthetic *actual* PDF and HTML export through the normal default route, no data mutation, incorrect release/unsafe path refusal and safe partial-approval 503 responses. The existing **manual** Windows backend GitHub Actions workflow references the same isolated runner; no workflow was dispatched or Windows run accepted in this checkpoint. Test results remain **PENDING**, not green by assumption.
+
+No release approval reference, independent final six SHA-256 identities or final copyright/notice face decision is present. `RELEASE_APPROVAL_STATUS="NOT_GRANTED"` remains mandatory; no source-only test can grant font redistribution. The previously accepted one-page DevQA Unicode PDF visual/copy/extraction proof remains accepted without rerun. User-facing Unicode PDFs, concurrent packaged exports and P8 native installer remain unapproved.
