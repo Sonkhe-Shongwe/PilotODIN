@@ -18,7 +18,7 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
-    ("offline_source", "test_p2_pdf_release_export_gate.py", 14),
+    ("offline_source", "test_p2_pdf_release_export_gate.py", 19),
     ("actual_http_route", "test_p2_pdf_export_route_integration.py", 9),
 )
 TEST_TIMEOUT_SECONDS = 90
