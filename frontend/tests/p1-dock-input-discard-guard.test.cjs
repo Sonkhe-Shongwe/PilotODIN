@@ -68,6 +68,11 @@ test('confirmation is explicit and does not persist any field values',()=>{
   assert.match(shell,/if\(!needsDockInputDiscardApproval\(editedDock\.current,projectId,dock\.secondary,action,proposed\)\)return true;/);
   assert.doesNotMatch(guard,/localStorage|sessionStorage|fetch\(|post\(/);
 });
+test('responsive unmount clears stale edited flag instead of claiming inputs survive',()=>{
+  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+  assert.match(shell,/if\(!separate\)editedDock\.current=null/);
+  assert.match(shell, /\},\[separate,projectId,dock\.secondary\]\)/);
+});
 test('accepted keyboard and project readiness guards remain in the source',()=>{
   const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
   assert.match(shell,/onKeyDown=\{event=>onSidebarKeyDown\(event,id\)\}/);
