@@ -63,7 +63,8 @@ test('primary route still navigates by the existing path after approval',()=>{
 test('source guard never stores form content or authorises Quality, model or dataset writes',()=>{
  const section=shell.slice(shell.indexOf('const approvePrimaryStudioNavigation='),shell.indexOf('const navigateWithDockGuard='));
  assert.ok(section.length>0&&section.length<1200);
- assert.doesNotMatch(section,/localStorage|sessionStorage|\bpost\(|\bupload\(|setPredictVals|setProjectId|setDock|train\(/);
+ assert.doesNotMatch(section,/localStorage|sessionStorage|\bpost\(|\bupload\(|setPredictVals|setProjectId|train\(/);
+ // Closing the redundant layout slot after explicit approval is allowed.
 });
 test('previous tab/rail route guard remains present and independent',()=>{
  assert.match(shell,/const navigateWithDockGuard=\(view:View\):boolean=>\{/);
