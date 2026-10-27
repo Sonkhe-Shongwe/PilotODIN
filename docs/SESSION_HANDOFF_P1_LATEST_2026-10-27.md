@@ -1,5 +1,25 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## 27 OCT 2026 — P1 PRIMARY STUDIO DIRECT GO() DOCK GUARD SOURCE COMMITTED, WINDOWS QA PENDING
+
+**Prior accepted work remains CLOSED:** Owner's earlier 24/24 top-tab reorder + responsive source tests and TypeScript/Vite Windows build passed, and user reports drag snap/selected input retention. Distinct below-threshold automatic dock pause (visible explicit pause banner) remains unobserved despite code checks. Earlier 19/19 top-tab-activation edited-dock Cancel also accepted. Do not rerun these older milestones without a reproducible regression.
+
+**New bypass identified from live branch:** `frontend/src/App.tsx` includes primary Studio `go(next)` for command palette and internal workspace actions; it routes with `navigateHashSmoothly` directly. Before this patch, the unified shell's `navigateWithDockGuard` was bypassed, so while an edited `Prepare` was docked beside primary `Quality`, using **Ctrl+K -> Prepare** from primary Studio could activate Prepare as the primary route, unmounting its embedded `App` and discarding unsaved input without warning. This is a source-supported exposure, not proof an owner already lost real input.
+
+**Bounded implementation on `feature/live-dev-workspace-20261023`:**
+- `frontend/src/App.tsx`: optional typed `onPrimaryNavigate?: (view:Stage)=>boolean` callback; `go(next)` runs it only for non-embedded, changed destinations, **before** focus, scroll, error/palette state or hash changes. `false` returns immediately, leaving destination and edited dock unchanged. Existing embedded `onEmbeddedNavigate` continues to govern dock changes, and approved primary go() retains its original route handling.
+- `frontend/src/UnifiedShell.tsx`: passes `onPrimaryNavigate={approvePrimaryStudioNavigation}` into the project-scoped primary Studio App only. Callback validates workspace readiness, then uses existing `confirmEditedDockDiscard('activate',view)` only when the requested primary destination is the current secondary view. Cancel leaves the edited flag; approval clears the flag and permits previous route. No independent approval engine, autosave, backend write, dataset change or model action.
+- New `frontend/tests/p1-primary-studio-dock-navigation.test.cjs`: **10 authored cases**, including before-mutation Cancel placement, project readiness, exact destination, existing pure dock guard, embedded exclusion, active navigation preservation, and no storage/writes. **10/10 isolated authored callback assertions PASS against exact live source**, not an actual Windows Node run or full TypeScript/Vite build.
+
+**Only next new owner Windows gate:** Safely fetch/pull feature branch (preserve uncommitted local changes). From existing `frontend` directory:
+```powershell
+node --test tests/p1-primary-studio-dock-navigation.test.cjs
+npm run build
+```
+In already-existing `insurance_claims_CLEANED`, open Quality primary, dock Prepare, change a harmless target selector to `fraud_reported`. Focus primary Studio (not the dock). Press **Ctrl+K**, choose **Prepare** from the command palette: expect the existing unsaved-input confirmation. Choose **Cancel**, confirm Quality remains primary, Prepare remains docked and selected target unchanged. Press Escape if the palette remains open. **Do not use the top Prepare tab** for this check, as that previously accepted different path and is not the new feature. No imports, training, automatic repair, explicit destructive OK, AI inference, fonts or installer required. Report only first failure or concise success. Owner full Windows tests/build and actual browser Cancel **PENDING** until observed.
+
+**Limits not solved:** Direct manual hash edits/browser Back, external project/storage notifications, primary component-local input draft preservation, reload/exit and real below-width paused screenshot; broader Issue #7 accessibility/theme; P2 Unicode/font redistribution, measured combined 8 GB memory and P8 Windows clean offline release. Retain original blueprint approval/safety constraints.
+
 ## 27 OCTOBER 2026 — REAL OWNER WINDOWS ACCEPTANCE: TOP TAB REORDER; RESPONSIVE QA SCOPED
 
 **Latest owner test evidence:** Screenshot of Windows PowerShell shows **24 tests / 24 passed / 0 failed / 0 cancelled / 0 skipped** from `node --test tests/p1-workspace-tab-reorder.test.cjs tests/p1-responsive-edited-dock-retention.test.cjs` (405.5594ms). The subsequent `npm run build` (`tsc --noEmit && vite build`) completed **successfully** in **4.05s**, with Vite **6.4.5**, **1,634 modules transformed**, emitted production assets and returned prompt. Main JS **530.44 kB** invokes only familiar advisory chunk-size warning. This closes the NEW source increment's complete owner Windows 24-case Node and cumulative production-build checks. Earlier accepted P1 19-case dock activation, tab/sidebar/focus/project tests remain CLOSED and should not be repeated.
