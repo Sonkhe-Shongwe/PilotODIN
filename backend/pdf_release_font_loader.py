@@ -93,7 +93,8 @@ def _verified_context() -> UnicodePDFContext:
         # With no explicit root override this checks ONLY backend/assets/pdf_fonts
         # resolved beside backend/pdf_font_resources.py (including in PyInstaller).
         sources = verify_pdf_font_files(entries)
-    except PDFResourceError as exc:
+    except (PDFResourceError, OSError, ValueError) as exc:
+        # The release endpoint must never leak extracted local asset paths.
         raise PDFReleaseFontError("Missing or altered approved PDF font resources") from exc
 
     policy = (RELEASE_APPROVAL_REFERENCE, RELEASE_PINNED_FILES)
