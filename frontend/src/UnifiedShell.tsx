@@ -5,7 +5,7 @@ import {App} from './App';
 import {navigateHashSmoothly} from './navigationMotion';
 import {InvestigationCanvas} from './InvestigationCanvas';
 import {get} from './api';
-import {clampFraction,dockStorageKey,hasRoomForDock,isSecondaryView,isWorkspaceView,makeDockResize,nextDockLayout,parseDockLayout,shouldClearUnavailableProject,WORKSPACE_VIEWS} from './workspaceLayout';
+import {clampFraction,dockStorageKey,hasRoomForDock,isProjectWorkspaceRestored,isSecondaryView,isWorkspaceView,makeDockResize,nextDockLayout,parseDockLayout,shouldClearUnavailableProject,WORKSPACE_VIEWS} from './workspaceLayout';
 import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
 import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
 import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
@@ -147,7 +147,8 @@ export function UnifiedShell(){
   observer.observe(node);
   return()=>observer.disconnect();
  },[]);
- const shownTabs=useMemo(()=>openTabs.filter(isWorkspaceView),[openTabs]);
+ const workspaceReady=isProjectWorkspaceRestored(projectId,restoredFor,catalogState);
+ const shownTabs=useMemo(()=>restoredFor===projectId?openTabs.filter(isWorkspaceView):[],[openTabs,restoredFor,projectId]);
  const chooseProject=(id:string)=>{if(!id||id===projectId)return;setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
  const close=(view:View)=>{
   const next=shownTabs.filter(t=>t!==view);setOpenTabs(next);
@@ -202,7 +203,7 @@ export function UnifiedShell(){
  };
  // Leaving Home closes the import flow without changing the selected project.
  useEffect(()=>{if(active!=='overview')setNewProjectOpen(false)},[active]);
- const dockConfigured=!!projectId&&catalogState==='ready'&&dock.secondary!==null;
+ const dockConfigured=!!projectId&&workspaceReady&&dock.secondary!==null;
  const canSplit=dockConfigured&&hasRoomForDock(dock,paneWidth);
  const dockPaused=dockConfigured&&!canSplit;
  const separate=canSplit&&active!==dock.secondary;
@@ -243,7 +244,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" aria-label={`${labelFor(active)} workspace`}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {catalogState==='ready'?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':'Project catalogue unavailable'}</strong><p>{catalogState==='failed'?warning:'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
+       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {canSplit&&<>
