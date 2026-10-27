@@ -11,10 +11,11 @@ export function needsDockInputDiscardApproval(
   edited:EditedDock|null,
   projectId:string,
   current:SecondaryView|null,
-  action:'close'|'replace'|'switch-project'|'reset'|'close-tab',
+  action:'close'|'replace'|'switch-project'|'reset'|'close-tab'|'activate',
   proposed:SecondaryView|null=null
 ):boolean {
   if(!edited||!projectId||edited.projectId!==projectId||!current||edited.view!==current)return false;
   if(action==='replace')return proposed!==null&&proposed!==current;
+  if(action==='activate')return proposed===current;
   return true;
 }
