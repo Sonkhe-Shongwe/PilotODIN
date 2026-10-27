@@ -38,6 +38,7 @@ _FONT_NAMES = {
 }
 _ROLES = ("regular", "cjk", "symbol")
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
+_SAFE_RELEASE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\[\],-]{1,127}\Z")
 _APPROVAL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{7,127}\Z")
 _LOCK = RLock()
 _CONTEXT: UnicodePDFContext | None = None
@@ -66,7 +67,8 @@ def _approved_records() -> list[dict]:
         role, kind, name, size, digest = item
         if (role not in _ROLES or kind not in ("font", "license") or
                 (role, kind) in pairs or
-                not isinstance(name, str) or name in filenames or
+                not isinstance(name, str) or not _SAFE_RELEASE_NAME.fullmatch(name) or
+                name in filenames or
                 not isinstance(size, int) or isinstance(size, bool) or size <= 0 or
                 not isinstance(digest, str) or not _HEX64.fullmatch(digest)):
             raise PDFReleaseFontError("Invalid or duplicate approved font identity")
