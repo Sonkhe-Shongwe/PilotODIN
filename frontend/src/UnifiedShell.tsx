@@ -12,6 +12,8 @@ import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
 import {nextWorkspaceTabByKey} from './workspaceTabKeyboard';
 import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {canRestoreDockDismissFocus,planDockDismissFocus} from './dockDismissFocus';
+import {isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
+import type {EditedDock} from './dockInputDiscardGuard';
 import {nextSidebarViewByKey} from './sidebarKeyboardNavigation';
 import type {SidebarMode} from './sidebarPreferences';
 import './unified-shell.css';
@@ -83,6 +85,8 @@ export function UnifiedShell(){
  const tablistRef=useRef<HTMLDivElement|null>(null);
  const pendingCloseFocus=useRef<{projectId:string;view:View}|null>(null);
  const pendingDockDismissFocus=useRef<{projectId:string;view:View}|null>(null);
+ // Memory-only flag, never store the contents of a form or dataset.
+ const editedDock=useRef<EditedDock|null>(null);
  const [paneWidth,setPaneWidth]=useState(0);
  const dragCleanup=useRef<(()=>void)|null>(null);
  const catalogRequests=useRef(createProjectCatalogRequestGuard());
@@ -179,7 +183,14 @@ export function UnifiedShell(){
   pendingDockDismissFocus.current=null;
   target?.focus();
  },[projectId,active,shownTabs,dock.secondary,workspaceReady]);
- const chooseProject=(id:string)=>{if(!id||id===projectId)return;setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
+ const confirmEditedDockDiscard=(action:'close'|'replace'|'switch-project'|'reset'|'close-tab',proposed:SecondaryView|null=null)=>{
+  if(!needsDockInputDiscardApproval(editedDock.current,projectId,dock.secondary,action,proposed))return true;
+  return window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?');
+ };
+ const chooseProject=(id:string)=>{if(!id||id===projectId)return;
+  if(!confirmEditedDockDiscard('switch-project'))return;
+  editedDock.current=null;
+  setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
  const sidebarViews=useMemo(()=>NAV_SECTIONS.flatMap(section=>section.ids),[]);
  const onSidebarKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
   if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
@@ -203,6 +214,8 @@ export function UnifiedShell(){
   if(!workspaceReady)return;
   const plan=planWorkspaceTabClose(shownTabs,active,view);
   if(!plan)return;
+  if(dock.secondary===view&&!confirmEditedDockDiscard('close-tab'))return;
+  if(dock.secondary===view)editedDock.current=null;
   pendingCloseFocus.current={projectId,view:plan.focus};
   setOpenTabs(plan.remaining);
   if(plan.nextActive!==active)navigate(plan.nextActive);
@@ -210,12 +223,15 @@ export function UnifiedShell(){
  };
  const closeDock=()=>{
   const focus=planDockDismissFocus(projectId,active,shownTabs,dock,workspaceReady);
-  if(!focus)return;
+  if(!focus||!confirmEditedDockDiscard('close'))return;
+  editedDock.current=null;
   pendingDockDismissFocus.current=focus;
   setDock(current=>nextDockLayout(current,{kind:'close'}));
  };
  const dockView=(view:View)=>{
   if(!projectId||!isSecondaryView(view))return;
+  if(dock.secondary!==view&&!confirmEditedDockDiscard('replace',view))return;
+  if(dock.secondary!==view)editedDock.current=null;
   setDock(current=>nextDockLayout(current,{kind:'open',view}));
  };
  const onDrop=(event:ReactDragEvent)=>{
@@ -297,7 +313,7 @@ export function UnifiedShell(){
       {shownTabs.length>1&&<button type="button" aria-label={`Close ${labelFor(view)} tab`} onClick={()=>close(view)}><X size={12}/></button>}
      </div>)}
      <div className="po-tab-spacer"/>
-     <button type="button" className="po-reset-layout" title="Reset workspace layout" aria-label="Reset workspace layout" onClick={()=>setDock(nextDockLayout(dock,{kind:'reset'}))}><RotateCcw size={14}/></button>
+     <button type="button" className="po-reset-layout" title="Reset workspace layout" aria-label="Reset workspace layout" onClick={()=>{if(!confirmEditedDockDiscard('reset'))return;editedDock.current=null;setDock(nextDockLayout(dock,{kind:'reset'}))}}><RotateCcw size={14}/></button>
     </div>
     {warning&&<p className="po-shell-warning" role="status">{warning}</p>}
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
@@ -316,7 +332,7 @@ export function UnifiedShell(){
         <button type="button" onClick={()=>setDock(current=>nextDockLayout(current,{kind:'flip'}))} aria-label="Move docked pane to opposite side" title="Move pane left or right"><ArrowLeftRight size={15}/></button>
         <button type="button" onClick={closeDock} aria-label="Close docked pane" title="Close docked pane"><PanelRightClose size={16}/></button>
        </div>
-       {separate?<div className="po-pane-content" key={`secondary-${projectId}`}><App embeddedStage={dock.secondary!} embeddedProjectId={projectId} onEmbeddedNavigate={view=>dockView(view)}/></div>
+       {separate?<div className="po-pane-content" key={`secondary-${projectId}`} onChangeCapture={event=>{if(dock.secondary&&isEditableDockInput((event.target as HTMLElement).tagName))editedDock.current={projectId,view:dock.secondary}}}><App embeddedStage={dock.secondary!} embeddedProjectId={projectId} onEmbeddedNavigate={view=>dockView(view)}/></div>
          :<div className="po-pane-placeholder" role="status"><Columns2 size={28}/><strong>This workspace is already in the primary pane</strong><p>Choose another view from the dock selector. Your other tabs remain available.</p></div>}
       </section>
      </>}
