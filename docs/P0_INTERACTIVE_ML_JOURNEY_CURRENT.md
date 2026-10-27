@@ -1,6 +1,8 @@
 # PilotODIN P0 | One complete interactive ML journey on synthetic data
 
-**Status (27 October 2026):** Source fixture and walkthrough committed. **Owner Windows interactive UI acceptance NOT YET TESTED.**
+**Status update (27 October 2026):** Scoped synthetic Windows browser ML Evaluate/Predict journey **OWNER-OBSERVED / CLOSED** across sequential screenshots: selected Logistic Regression, CV/held-out results, valid synthetic prediction with caution, rejected invalid hour and return to Evaluate showing consistent selected model and retained 56.3% held-out accuracy. Exact Recent work click and cold-restart persistence were not screen-recorded; Prepare risk-review screen specifics were not independently imaged. This does **not** certify all A3 paths, other data, 8 GB hardware or native/offline installation.
+
+**Original pre-execution status for historical context:** Source fixture and walkthrough were committed before the owner browser checks.
 
 **Authoritative branch:** `feature/live-dev-workspace-20261023`.
 
