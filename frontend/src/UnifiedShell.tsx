@@ -16,6 +16,7 @@ import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {canRestoreDockDismissFocus,planDockDismissFocus} from './dockDismissFocus';
 import {isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
 import {planExternalRouteActivation} from './externalRouteActivationGuard';
+import {planExternalProjectTransition} from './externalProjectTransitionGuard';
 import type {EditedDock} from './dockInputDiscardGuard';
 import {nextSidebarViewByKey} from './sidebarKeyboardNavigation';
 import type {SidebarMode} from './sidebarPreferences';
@@ -111,7 +112,8 @@ export function UnifiedShell(){
     localStorage.removeItem('pilotodin-current');
     setProjectId('');
     setWarning('The previously selected project is no longer available. Choose another project to continue.');
-    window.dispatchEvent(new Event('pilotodin:project-changed'));
+    // Validated backend removal is not a cancellable project transition.
+    window.dispatchEvent(new CustomEvent('pilotodin:project-changed',{detail:{reason:'unavailable'}}));
    }else{
     setWarning('');
    }
@@ -123,14 +125,6 @@ export function UnifiedShell(){
   }
  },[]);
  useEffect(()=>{void refreshProjects()},[refreshProjects]);
- useEffect(()=>{
-  const update=()=>{const next=localStorage.getItem('pilotodin-current')||'';setProjectId(id=>id===next?id:next);void refreshProjects()};
-  // Project catalogue changes are separate. The guarded capture handler
-  // below owns every external URL-to-active workspace transition.
-  window.addEventListener('pilotodin:project-changed',update);
-  window.addEventListener('storage',update);
-  return()=>{window.removeEventListener('pilotodin:project-changed',update);window.removeEventListener('storage',update)};
- },[refreshProjects]);
  useEffect(()=>{
   // Restore this project's state as one operation. Previous project's panes are discarded.
   const tabs=readTabs(projectId);
@@ -169,6 +163,39 @@ export function UnifiedShell(){
   return()=>observer.disconnect();
  },[]);
  const workspaceReady=isProjectWorkspaceRestored(projectId,restoredFor,catalogState);
+ useEffect(()=>{
+  const reviewProject=(event:Event)=>{
+   if(event.type==='storage'&&(event as StorageEvent).key!==null&&(event as StorageEvent).key!=='pilotodin-current')return;
+   const requested=localStorage.getItem('pilotodin-current')||'';
+   const unavailable=event.type==='pilotodin:project-changed'&&(event as CustomEvent<{reason?:string}>).detail?.reason==='unavailable';
+   const decision=planExternalProjectTransition(projectId,requested,dock.secondary,editedDock.current,workspaceReady,unavailable);
+   if(decision==='unchanged'){
+    if(event.type==='pilotodin:project-changed')void refreshProjects();
+    return;
+   }
+   if(decision==='confirm'&&!window.confirm('You changed fields in the docked workspace. Switching projects may discard those entries. Continue?')){
+    try{localStorage.setItem('pilotodin-current',projectId)}
+    catch{setWarning('Project selection could not be restored. Unsaved entries remain in this window; avoid reloading until you resolve the selection.')}
+    // A cancelled external selection must not reach Studio's project load listener.
+    event.stopImmediatePropagation();
+    return;
+   }
+   editedDock.current=null;
+   if(event.type==='storage'){
+    // Primary Studio does not listen directly to cross-tab storage events.
+    window.dispatchEvent(new Event('pilotodin:project-changed'));
+    return;
+   }
+   setProjectId(requested);
+   void refreshProjects();
+  };
+  window.addEventListener('pilotodin:project-changed',reviewProject,true);
+  window.addEventListener('storage',reviewProject,true);
+  return()=>{
+   window.removeEventListener('pilotodin:project-changed',reviewProject,true);
+   window.removeEventListener('storage',reviewProject,true);
+  };
+ },[projectId,dock.secondary,workspaceReady,refreshProjects]);
  useEffect(()=>{
   // Capture runs before Studio's ordinary hash listeners even if they were registered first.
   // URL/history actions are already committed by the browser, so Cancel replaces the hash
