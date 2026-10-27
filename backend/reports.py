@@ -930,6 +930,10 @@ def render_pdf_for_export(report: dict) -> bytes:
         from . import pdf_release_font_loader
     except ImportError:
         import pdf_release_font_loader
-    return pdf_release_font_loader.render_export_pdf(report, render_pdf)
+    try:
+        return pdf_release_font_loader.render_export_pdf(report, render_pdf)
+    except pdf_release_font_loader.PDFReleaseFontError as exc:
+        # No local paths, raw font errors or partial PDF bytes in API responses.
+        raise ReportError("Verified Unicode PDF resources unavailable", 503) from exc
 
 init()
