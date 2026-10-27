@@ -63,3 +63,12 @@ test('Prepare and Predict offer only version-scoped read-only Quality navigation
  assert.match(s,/setQualityFocus\(focus\);go\('quality'\)/);
  assert.match(s,/!embedded/);
 });
+
+test('Quality offers a focused review for an automatic pending finding before any commit',()=>{
+ const s=fs.readFileSync(path.resolve(__dirname,'../src/QualityWorkspace.tsx'),'utf8');
+ assert.match(s,/\(issue\.decision==='pending'\|\|issue\.decision==='undone'\|\|issue\.decision==='rejected'\)&&issue\.proposal/);
+ assert.match(s,/issue\.automatic\?'Review this correction':'Approve'/);
+ assert.match(s,/onClick=\{\(\)=>void applyDecision\('approve'\)\}/);
+ assert.match(s,/setPendingApproval\(\{proposal,message\}\)/);
+ assert.match(s,/No correction has been applied/);
+});
