@@ -311,3 +311,15 @@
 @media(max-width:650px){
   .po-dock-narrow-notice{font-size:10px;padding:7px 9px}
 }
+
+/* P1 top-tab reorder: target edges are visible without changing which view is active. */
+.po-global-tabs .po-tab{position:relative}
+.po-global-tabs .po-tab-drop-before::before,.po-global-tabs .po-tab-drop-after::after{
+ content:"";position:absolute;top:4px;bottom:3px;width:3px;border-radius:3px;
+ background:var(--po-primary);pointer-events:none;z-index:2
+}
+.po-global-tabs .po-tab-drop-before::before{left:-4px}
+.po-global-tabs .po-tab-drop-after::after{right:-4px}
+/* A temporarily narrow workspace must not expose or focus a hidden edited dock. */
+.po-pane-layout:not(.po-pane-split)>.po-secondary-pane[hidden],
+.po-pane-layout:not(.po-pane-split)>.po-pane-resizer[hidden]{display:none!important}
