@@ -1,5 +1,16 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## P1 SIDEBAR KEYBOARD NAVIGATION — OWNER WINDOWS QA ACCEPTED (27 OCTOBER 2026)
+
+**New direct owner Windows terminal screenshots:** `node --test tests/p1-sidebar-keyboard-navigation.test.cjs` executed all **12 committed tests: 12 passed, 0 failed, 0 cancelled, 0 skipped**. `npm run build` executed `tsc --noEmit && vite build` successfully on current Windows checkout: Vite **6.4.5**, **1,630 modules transformed**, emitted assets, **built in 2.82 seconds**, returned to PowerShell prompt. Main JS **526.19 kB** generated the known non-blocking >500 kB advisory only.
+
+**Browser evidence:** Owner explicitly confirmed **"amazing it works"** in direct response to the requested left-sidebar Home→ArrowDown to Your data / ArrowUp to Home behavioural check. This is **owner-confirmed functional sidebar arrow navigation**, not independently captured video of every key, mode, screen-reader or wrap-around case. Along with completed twelve-case Windows suite and final Vite build, mark **P1_LEFT_SIDEBAR_KEYBOARD_SCOPED_ACCEPTANCE=PASS**. Do not request repeating the 12 tests, production build or same sidebar arrow interaction merely to gather duplicate evidence. Separate top-tab Left/Right owner-verified behaviour and its 10/10 Windows tests/build remain CLOSED.
+
+**Change boundary:** Pure `sidebarKeyboardNavigation.ts`, only actual sidebar button key handlers in `UnifiedShell.tsx`, unchanged project/data/model, quality, upload and global top-tab controls. Nothing in this verification changes synthetic `Region` working v2 `undone` finding. No claim about full Issue #7, complete assistive-technology audit or all navigation/focus flows.
+
+**Next P1 engineering slice, only after inspecting current branch and priorities:** Focus recovery and accessible state when a selected workspace **tab is closed**, when docked views move or when project-specific tabs restore; preserve keyboard operation and no unexpected loss of unsaved work. Assess and implement a bounded change with its own tests. Remaining broader Issue #7 focus/ARIA/sidebar overlay/theme/draft retention OPEN. Other release constraints unchanged: real concurrent 8 GB RAM NOT_MEASURED, P2 mixed Unicode PDF NOT_ACCEPTED, font redistribution NOT_GRANTED, P2 overall REVIEW_REQUIRED, P8 native offline installer NOT_CERTIFIED.
+
+
 ## P1 LEFT SIDEBAR ARROW NAVIGATION — OWNER-REPORTED UX GAP, SOURCE PATCH COMMITTED (27 OCT 2026)
 
 **Direct owner feedback following keyboard tab-strip Windows testing:** Owner screenshots prove **`node --test tests/p1-workspace-keyboard-tabs.test.cjs`: 10/10 passed (0 failed)** and `npm run build` completed `tsc --noEmit && vite build` successfully, Vite **6.4.5**, **1,629 modules transformed**, **built in 3.27s**. JS **525.60 kB** advisory >500kB is non-blocking. In real Chrome owner reports **Left/Right Arrow on top tab labels DOES navigate**: e.g. focused Predict → ArrowLeft selects Evaluate. Treat scoped **top-tab ArrowLeft/Right real-browser interaction PASS**; **Home/End, tabstrip screen-reader behaviour were not separately witnessed**. Do not request a rerun of this accepted ten-case suite/build just for old tabstrip scope.
