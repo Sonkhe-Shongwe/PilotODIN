@@ -19,7 +19,7 @@ const {needsDockInputDiscardApproval}=mod.exports;
 
 test('primary App exposes a typed veto callback and shell passes it only to primary Studio',()=>{
  assert.match(app,/onPrimaryNavigate\?:\(view:Stage\)=>boolean/);
- assert.match(app,/App\(\{embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,forceNewProject=false/);
+ assert.match(app,/App\(\{embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false/);
  assert.match(shell,/<App key=\{`studio-\$\{projectId\}\`} onPrimaryNavigate=\{approvePrimaryStudioNavigation\}/);
  assert.match(shell,/<App embeddedStage=\{dock\.secondary!\} embeddedProjectId=\{projectId\} onEmbeddedNavigate=\{view=>dockView\(view\)\}/);
 });
