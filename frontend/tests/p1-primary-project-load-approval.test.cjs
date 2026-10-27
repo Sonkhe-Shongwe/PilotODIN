@@ -1,0 +1,148 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const ts=require('typescript');
+
+const app=fs.readFileSync(path.resolve(__dirname,'../src/App.tsx'),'utf8');
+const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+const begin=app.indexOf('  async function loadProject(pid:string):Promise<boolean>{');
+const end=app.indexOf('\n  useEffect(()=>{if(!project||!target)',begin);
+assert.ok(begin>=0&&end>begin,'The actual loadProject body must be present');
+const body=app.slice(begin,end);
+const compiled=ts.transpileModule(body+'\nexport {loadProject};',{
+ compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},
+ reportDiagnostics:true
+});
+assert.equal((compiled.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0);
+
+function harness({approved=false,embedded=false,pid='B',current='A',shellCallback=true,fail=false}={}){
+ const operations={approved:[],generation:[],mutations:[],reads:[],storage:[],notice:[]};
+ const currentProject={id:current};
+ const setters=['setProject','setPrep','setExperiment','setPrediction','setTarget',
+  'setQualityFocus','setDeliverEvidenceId','setQualityVersion','setFeatureHints',
+  'setExcluded','setPredictVals','setConfirmSplit','setPage','setVisitedStages',
+  'setUploadOpen','setError'];
+ const ctx={
+  embedded,embeddedProjectId:current,project:currentProject,
+  onBeforePrimaryProjectLoad:shellCallback?(id=>{operations.approved.push(id);return approved}):undefined,
+  setNotice:value=>operations.notice.push(value),
+  latestProjectRequest:{current:0},
+  projectOperations:{current:{begin:id=>{operations.generation.push(id);return 1},
+   accepts:(id,generation)=>id===pid&&generation===1}},
+  get:async url=>{
+   operations.reads.push(url);
+   if(fail)throw Error('backend unavailable');
+   if(url.endsWith('/live-profile'))return {version:0};
+   return {id:pid,filename:'existing.csv'};
+  },
+  localStorage:{setItem:(name,value)=>operations.storage.push([name,value])},
+  embeddedStage:embedded?'prepare':undefined,
+  requestedStudioStage:()=> 'quality',
+  scrollRef:{current:{}}
+ };
+ for(const name of setters)ctx[name]=value=>{operations.mutations.push(name)};
+ const names=Object.keys(ctx);
+ const exports={};
+ const fn=new Function(...names,'exports',compiled.outputText+'\nreturn exports.loadProject;')(
+  ...Object.values(ctx),exports);
+ return {load:()=>fn(pid),operations,ctx};
+}
+
+test('denied direct Studio project switch does not clear state or start any request',async()=>{
+ const h=harness();
+ assert.equal(await h.load(),false);
+ assert.deepEqual(h.operations.approved,['B']);
+ assert.deepEqual(h.operations.generation,[]);
+ assert.deepEqual(h.operations.mutations,[]);
+ assert.deepEqual(h.operations.reads,[]);
+ assert.deepEqual(h.operations.storage,[]);
+ assert.equal(h.ctx.latestProjectRequest.current,0);
+});
+test('approved direct Studio switch proceeds through existing project loading',async()=>{
+ const h=harness({approved:true});
+ assert.equal(await h.load(),true);
+ assert.deepEqual(h.operations.approved,['B']);
+ assert.deepEqual(h.operations.generation,['B']);
+ assert.equal(h.operations.reads.length,2);
+ assert.deepEqual(h.operations.storage,[['pilotodin-current','B']]);
+ assert.ok(h.operations.mutations.includes('setProject'));
+});
+test('opening the current project does not request a destructive project transition',async()=>{
+ const h=harness({current:'A',pid:'A'});
+ assert.equal(await h.load(),true);
+ assert.deepEqual(h.operations.approved,[]);
+});
+test('embedded Studio refuses another project before it changes local data',async()=>{
+ const h=harness({embedded:true,pid:'B',current:'A'});
+ assert.equal(await h.load(),false);
+ assert.deepEqual(h.operations.approved,[]);
+ assert.deepEqual(h.operations.mutations,[]);
+ assert.deepEqual(h.operations.notice,['Change projects using the global project selector.']);
+});
+test('embedded same-project loading never calls primary project approval',async()=>{
+ const h=harness({embedded:true,pid:'A'});
+ assert.equal(await h.load(),true);
+ assert.deepEqual(h.operations.approved,[]);
+ assert.deepEqual(h.operations.storage,[]);
+});
+test('standalone primary Studio without a shell callback retains previous load path',async()=>{
+ const h=harness({shellCallback:false});
+ assert.equal(await h.load(),true);
+ assert.deepEqual(h.operations.approved,[]);
+ assert.equal(h.operations.reads.length,2);
+});
+test('an authorised API failure does not claim that another project opened',async()=>{
+ const h=harness({approved:true,fail:true});
+ assert.equal(await h.load(),false);
+ assert.deepEqual(h.operations.storage,[]);
+ assert.ok(h.operations.mutations.includes('setError'));
+});
+test('preflight is positioned before project generation, reset, and API work',()=>{
+ const preflight=body.indexOf('if(!embedded&&pid!==project?.id&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;');
+ assert.ok(preflight>0);
+ for(const token of ['++latestProjectRequest.current','projectOperations.current.begin(pid)','setProject(null)','Promise.all([get<Project>']){
+  assert.ok(body.indexOf(token)>preflight,token+' happened before approval');
+ }
+});
+test('shell guards a different requested project with the existing edit warning',()=>{
+ const start=shell.indexOf('const approvePrimaryProjectLoad=');
+ const end=shell.indexOf('const chooseProject=',start);
+ assert.ok(start>=0&&end>start);
+ const section=shell.slice(start,end);
+ assert.match(section,/if\(!id\|\|!workspaceReady\)return false/);
+ assert.match(section,/if\(id===projectId\)return true/);
+ const veto=section.indexOf("if(!confirmEditedDockDiscard('switch-project'))return false;");
+ assert.ok(veto>0);
+ assert.ok(section.indexOf('editedDock.current=null')>veto);
+});
+test('only the primary Studio receives the project preflight callback',()=>{
+ assert.match(app,/onBeforePrimaryProjectLoad\?:\(projectId:string\)=>boolean/);
+ assert.match(shell,/onBeforePrimaryProjectLoad=\{approvePrimaryProjectLoad\}/);
+ assert.doesNotMatch(shell,/<App embeddedStage=\{dock\.secondary!\}[^\n]*onBeforePrimaryProjectLoad/);
+});
+test('Studio selector and Home project cards use guarded loadProject function',()=>{
+ assert.match(app,/onChange=\{e=>void loadProject\(e\.target\.value\)\}/);
+ assert.match(app,/onOpenProject=\{id=>void loadProject\(id\)\}/);
+});
+test('project-change notifications and generation guard remain after successful load',()=>{
+ assert.match(app,/window\.addEventListener\('pilotodin:project-changed',handler\)/);
+ assert.match(body,/projectOperations\.current\.accepts\(pid,generation\)/);
+ assert.match(body,/if\(!embedded\)localStorage\.setItem\('pilotodin-current',pid\)/);
+});
+test('import never reports project opened when the subsequent guarded load is cancelled',()=>{
+ const start=app.indexOf('  async function startUpload(){');
+ const end=app.indexOf('  async function startTrain(){',start);
+ assert.ok(start>0&&end>start);
+ const source=app.slice(start,end);
+ assert.match(source,/const opened=await loadProject\(data\.id\)/);
+ assert.match(source,/if\(!opened\)\{/);
+ assert.match(source,/Dataset was imported but was not opened/);
+ assert.ok(source.indexOf('if(!opened)')<source.indexOf('Dataset imported and profiled successfully'));
+});
+test('project preflight introduces no form-value persistence or ML actions',()=>{
+ const start=shell.indexOf('const approvePrimaryProjectLoad=');
+ const end=shell.indexOf('const chooseProject=',start);
+ const section=shell.slice(start,end);
+ assert.doesNotMatch(section,/localStorage|sessionStorage|fetch\(|post\(|upload\(|predictVals|train\(|setProjectId/);
+});
