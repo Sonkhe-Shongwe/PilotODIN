@@ -182,24 +182,25 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   useEffect(()=>{if(embedded)return;const handler=()=>{const id=localStorage.getItem('pilotodin-current');if(id&&id!==project?.id)void loadProject(id)};window.addEventListener('pilotodin:project-changed',handler);return()=>window.removeEventListener('pilotodin:project-changed',handler)},[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&project?.id)window.dispatchEvent(new Event('pilotodin:project-changed'))},[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&!location.hash.startsWith('#/canvas')&&location.hash!==`#/studio/${page}`)location.hash=`#/studio/${page}`},[page,embedded]);
-  async function loadProject(pid:string){
+  async function loadProject(pid:string):Promise<boolean>{
     // The global shell owns the project identity. Embedded panes cannot switch it.
     if(embedded && pid!==embeddedProjectId){
       setNotice('Change projects using the global project selector.');
-      return;
+      return false;
     }
     // Direct Studio project selector, Home cards and the final post-upload load
     // must not clear a mounted primary project or edited dock before approval.
-    if(!embedded&&pid!==project?.id&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return;
+    if(!embedded&&pid!==project?.id&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;
     const request=++latestProjectRequest.current;
     const generation=projectOperations.current.begin(pid);
     // Clear previous-project data immediately, including stale experiments and predictions.
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
-    try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return;setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');}catch(e){
-      if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return;
+    try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
+      if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
       setProject(null);
       setError(`Could not open project: ${(e as Error).message}`);
       // Never remove the user's selected project on a transient API failure.
+      return false;
     }}
   useEffect(()=>{if(!project||!target){setPrep(null);return;}let active=true;
     setPrep(null); // A previous target/version's plan must not be reused while loading.
@@ -226,7 +227,15 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   async function startUpload(){
     if(embedded){setError('Import a new dataset from the primary workspace.');return;}
     if(!file)return;setLoading(true);setError('');try{
-    const data=await upload(file);await refreshProjects();await loadProject(data.id);setUploadOpen(false);setFile(null);onNewProjectClose?.();setNotice("Dataset imported and profiled successfully");
+    const data=await upload(file);await refreshProjects();
+    const opened=await loadProject(data.id);
+    if(!opened){
+      // Upload succeeded but opening/switching did not; do not misreport it as
+      // opened. Keep the old project and its unsaved dock in memory on Cancel.
+      setNotice('Dataset was imported but was not opened. Select it later to switch projects.');
+      return;
+    }
+    setUploadOpen(false);setFile(null);onNewProjectClose?.();setNotice("Dataset imported and profiled successfully");
   }catch(e){setError((e as Error).message)}finally{setLoading(false)}}
   async function startTrain(){
     if(!project||!prep||prep.target!==target)return;
