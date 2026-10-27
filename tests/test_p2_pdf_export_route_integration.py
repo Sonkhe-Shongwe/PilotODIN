@@ -82,6 +82,51 @@ class P2ActualReportExportRoute(unittest.TestCase):
         legacy.assert_called_once_with(self.saved)
         resource_probe.assert_not_called()
 
+    def test_real_ascii_pdf_and_html_use_same_immutable_synthetic_revision(self):
+        """One actual non-mocked legacy renderer through the real HTTP API."""
+        import copy
+        import fitz
+        snapshot = {
+            "id": self.report_id, "revision": 7,
+            "title": "Synthetic Regional Revenue",
+            "narrative": "Unmodified source-only analytical evidence.",
+            "dataset_versions": [1], "content_sha256": "f" * 64,
+            "evidence": [{
+                "id": "b" * 32, "operation": "compare", "dataset_version": 1,
+                "tool_version": "source-contract", "computed_at": "2026-10-27T00:00:00Z",
+                "objective": "Compare Revenue between two synthetic regions.",
+                "params": {"x": "Region", "y": "Revenue"},
+                "result": {
+                    "data": [{"label": "Region A", "value": 20.0},
+                             {"label": "Region B", "value": 10.0}],
+                    "visual": {"type": "bar", "x": "Region", "y": "Revenue",
+                               "aggregation": "median",
+                               "data": [{"label": "Region A", "value": 20.0},
+                                        {"label": "Region B", "value": 10.0}]}
+                },
+            }],
+            "limitations": ["Synthetic fixture, no user information."],
+        }
+        original = copy.deepcopy(snapshot)
+        with patch.object(self.reports, "load", return_value=snapshot), \\
+             patch.object(self.loader, "_verified_context") as candidate_font, \\
+             patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": ""}):
+            pdf = self.client.get(self.path_pdf)
+            html = self.client.get(self.path_html)
+        self.assertEqual(pdf.status_code, 200)
+        self.assertEqual(html.status_code, 200)
+        self.assertTrue(pdf.content.startswith(b"%PDF"))
+        with fitz.open(stream=pdf.content, filetype="pdf") as doc:
+            extracted = " ".join(p.get_text() for p in doc)
+            self.assertIn(snapshot["title"], extracted)
+            self.assertIn(snapshot["content_sha256"], extracted)
+            self.assertIn("20.0", extracted)
+            self.assertIn("10.0", extracted)
+        self.assertIn(snapshot["title"], html.text)
+        self.assertIn(snapshot["content_sha256"], html.text)
+        self.assertEqual(snapshot, original)
+        candidate_font.assert_not_called()
+
     def test_enabled_without_approved_pins_returns_safe_503_not_pdf(self):
         with patch.object(self.reports, "load", return_value=self.saved), \
              patch.object(self.loader, "RELEASE_APPROVAL_STATUS",
