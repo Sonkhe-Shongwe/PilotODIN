@@ -1,5 +1,25 @@
 # PilotODIN 1.0 — latest P1 continuity checkpoint (27 October 2026)
 
+## 27 October latest P1 project restoration mount boundary — source verified, Windows build pending
+
+**Authoritative branch:** `feature/live-dev-workspace-20261023` in `Sonkhe-Shongwe/PilotODIN`. Check live HEAD and Issue #2/#7 again before the next implementation. Previous **responsive dock browser pause/restore** (Quality + Prepare) passed the scoped Windows screenshot inspection, with **8/8 targeted Node cases passed**. The screenshot did not conclusively show the final production build completion or prove exact saved fraction, draft retention or all sidebar/theme gates. Earlier project-catalogue and Quality-preview **14/14 Windows tests + Vite build passed** and remain closed. Do not repeat accepted checks simply for evidence.
+
+**New source-level project-switching risk addressed:** `UnifiedShell.tsx` updates `projectId` during a project change before its `useEffect` reloads that project's persisted tabs, active view and dock. Previously the shell could briefly mount a **new-project App under old-project tabs/dock selection** while the restoration effect was pending. This is an identifiable code-ordering risk, not a reported instance of actual data leakage or corruption. Existing project catalogue request race protections remain unchanged.
+
+**Committed bounded fix:**
+- `frontend/src/workspaceLayout.ts::isProjectWorkspaceRestored` allows project-specific mount only when **catalogue is ready AND the last restored project ID equals the selected ID**. Pure function, no storage/data writes.
+- `frontend/src/UnifiedShell.tsx` computes `workspaceReady`, temporarily suppresses project-specific tabs and split panes until the current project's state is restored, and renders a neutral `Restoring project workspace` placeholder in the primary view instead of mounting `App` or `InvestigationCanvas` early. It then uses the existing project-specific saved tabs, active stage, dock and route as before. No import, quality, model, output or backend mutation.
+- New `frontend/tests/p1-project-restore-mount-gate.test.cjs` contains **8 cases**: A/B restoration mismatch, readiness states, empty import workspace, rapid A→B→A, pure project/dock isolation, and source integration across primary, tabs and secondary mount.
+
+**Verification actually completed:** Live GitHub source refetched; static contract checks passed for exact helper, import, project ID matching, tabs/dock gating, placeholder and existing persisted-state effect guards. The exact pure helper function was replicated byte-for-byte into an isolated Node/TypeScript check: **9/9 scenario assertions PASS**, `tsc --noEmit --strict --target ES2021 --module ESNext` PASS. This is **NOT** execution of the full committed 8-case test or the complete current shell production build. The new source commit is **not yet Windows UI accepted**.
+
+**Next targeted Windows verification when owner is available:** After safely pulling feature branch, from `frontend`, run only `node --test tests/p1-project-restore-mount-gate.test.cjs` and `npm run build` (also establishes a completed post-responsive-dock build). Then if practical switch between **two already existing** projects and back and verify each project shows its own tabs and selected workspace, with no false unavailable warning or previous-project content. Don't import new data or rerun accepted ML/Quality report cases for this.
+
+**Separate unresolved data-state observation:** Latest owner Quality UI screenshot for `P0_SYNTHETIC_UI_ML_80` shows **working v2 / active corrections 0**, whereas previous screenshot showed approved v1 Region trim. Cause is **UNKNOWN without transformation history**. Do not assert v1 is still active, automatically restore or undo, clean again, or retrain based only on this version number. Need history only when the next decision depends on it.
+
+**Still open:** broader Issue #7 navigation/sidebar/theme acceptance and draft preservation, real concurrent 8 GB load NOT_MEASURED, P2 font redistribution NOT_GRANTED, mixed end-user Unicode PDF NOT_ACCEPTED, P2 overall REVIEW_REQUIRED and P8 clean offline installer NOT_CERTIFIED.
+
+
 ## 27 October owner responsive dock screenshots — scoped browser PASS
 
 The owner provided three real Windows Chrome Live Development screenshots from the synthetic project `P0_SYNTHETIC_UI_ML_80`. First, **Quality primary + Prepare secondary** appear side by side; second, the narrower Chrome window shows a **single accessible Quality pane** (with compact navigation); third, the widened window again shows **Quality + the same Prepare dock**. **Scoped visual PASS:** active primary not obscured, second pane temporarily absent in narrow-window view, previous secondary selection visibly restored in wide view. The user did not capture a specific `Docked view paused` status notice, exact measured width threshold, original split fraction or draft form persistence; do not assert those separate checks. This observed success does not certify all responsive/sidebar/dock cases or Issue #7 as a whole.
