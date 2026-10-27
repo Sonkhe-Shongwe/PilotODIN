@@ -183,6 +183,9 @@ export function UnifiedShell(){
    if(decision==='confirm-promote'&&!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
     window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+restore);
+    // replaceState does not fire hashchange. Tell the primary Studio to resync its
+    // own displayed stage from the accepted URL after a rejected navigation.
+    window.dispatchEvent(new Event('pilotodin:route-reverted'));
     return;
    }
    if(decision!=='unchanged'){
