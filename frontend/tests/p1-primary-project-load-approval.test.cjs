@@ -138,6 +138,8 @@ test('import never reports project opened when the subsequent guarded load is ca
  assert.match(source,/const opened=await loadProject\(data\.id\)/);
  assert.match(source,/if\(!opened\)\{/);
  assert.match(source,/Dataset was imported but was not opened/);
+ const cancelled=source.slice(source.indexOf('if(!opened)'),source.indexOf('Dataset imported and profiled successfully'));
+ assert.match(cancelled,/setUploadOpen\(false\);setFile\(null\);onNewProjectClose\?\.\(\)/);
  assert.ok(source.indexOf('if(!opened)')<source.indexOf('Dataset imported and profiled successfully'));
 });
 test('project preflight introduces no form-value persistence or ML actions',()=>{
