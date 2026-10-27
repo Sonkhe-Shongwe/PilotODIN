@@ -331,3 +331,14 @@ The owner shared a new PowerShell screenshot showing **all six Node tests green*
 **Accepted only:** New saved HTML preview helper and source contract tests on the owner's Windows, 6/6. Runtime HTML preview, production Vite/TypeScript build and actual interactive Deliver saved-report visual behavior have **not yet been observed**. Do not turn this into a blanket frontend release PASS. No production source edit was needed for the correction.
 
 **Next:** `npm run build` from `frontend` (only if not already current) followed by one live local synthetic saved revision **Deliver → Preview saved HTML** visual and stale-navigation check. Do not replay accepted 6/6 tests, P2 28/28 authenticated export tests, font/sidecar/Unicode PDF proof or installer. The independent font distribution gate is `NOT_GRANTED`; mixed Unicode production PDF remains unapproved and P8 `NOT_CERTIFIED`.
+
+
+## 30. Owner Windows TypeScript and Vite production build PASS, preview UI visual still pending (27 October 2026)
+
+**Actual owner Windows evidence:** User supplied terminal screenshot showing the previous corrected six saved-preview security/lifecycle Node tests pass 6/6, followed by `npm run build` executing `tsc --noEmit && vite build`. Vite 6.4.5 transformed **1,623 modules**, emitted dist HTML/CSS/JS and printed `built in 2.49s`, then returned to PowerShell. **Accept** the affected full frontend compilation and production bundling gate. Vite's single JS output of **519.69 kB** (gzip **149.86 kB**) exceeds its optional 500 kB advisory warning: non-blocking, to revisit when performance/code-splitting work is prioritised, not a source build failure.
+
+**Limit:** These two green checks do not demonstrate that the actual authenticated Deliver **Preview saved HTML** renders correctly when clicked, that the chosen saved revision and charts display visually, or that delayed responses remain non-stale in the running UI. No screenshot of the actual product preview has yet been inspected.
+
+**Exactly one next owner action:** Open the existing isolated `Start_PilotODIN_Live_Dev.bat` session (without reinstalling or building anything if already running). It uses loopback `127.0.0.1:8000`/ `127.0.0.1:5173` and a separate `.pilotodin-dev-data` home. In **Deliver**, use only a synthetic/non-sensitive saved report and click **Preview saved HTML**. Visually inspect title/revision, inline charts, evidence, Close action and unsaved-draft notice; switch saved reports/projects to check stale-preview clearance. Share only safe UI screenshots and any errors, never real user data or fonts. Do not repeat 6/6, 28/28 or other accepted P2 gates. The preview is not a PDF preview or authority to ship Unicode fonts.
+
+P2 overall `REVIEW_REQUIRED`, normal product mixed Unicode PDF `NOT_ACCEPTED`, release font redistribution `NOT_GRANTED`, P8 `NOT_CERTIFIED`.
