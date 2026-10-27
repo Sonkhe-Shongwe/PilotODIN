@@ -56,13 +56,18 @@ function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockVi
  current='quality',edit=edited,approval=false,ready=true,projectId='A'}={}){
  const journal={prompts:0,dockCloses:0,rollbacks:0};
  const activeUpdates=[];
+ const dispatched=[];
+ const listeners=new Map();
  const win={
   location:{hash:after,pathname:'/',search:''},
   history:{state:{session:'existing'},replaceState(state,title,url){
    journal.rollbacks++;assert.deepEqual(state,{session:'existing'});
    win.location.hash=url.slice(url.indexOf('#'));
   }},
-  confirm(message){journal.prompts++;assert.match(message,/changed fields/);return approval;}
+  confirm(message){journal.prompts++;assert.match(message,/changed fields/);return approval;},
+  addEventListener(name,callback){const handlers=listeners.get(name)||new Set();handlers.add(callback);listeners.set(name,handlers);},
+  removeEventListener(name,callback){listeners.get(name)?.delete(callback);},
+  dispatchEvent(event){dispatched.push(event.type);for(const callback of listeners.get(event.type)||[])callback(event);return true;}
  };
  const editedDock={current:edit};
  const acceptedRouteHash={current:before};
@@ -76,7 +81,7 @@ function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockVi
   handlerSource+'\n return reviewRoute;')(
    win,acceptedRouteHash,routeView,planExternalRouteActivation,current,dock,editedDock,projectId,ready,
    setDock,nextDockLayout,setActive);
- return {run,win,journal,editedDock,acceptedRouteHash,activeUpdates};
+ return {run,win,journal,editedDock,acceptedRouteHash,activeUpdates,dispatched};
 }
 test('Cancel rolls browser URL back without unmounting edited dock or clearing its marker',()=>{
  const a=routeHarness();a.run();
@@ -85,6 +90,7 @@ test('Cancel rolls browser URL back without unmounting edited dock or clearing i
  assert.deepEqual(a.editedDock.current,edited);
  assert.equal(a.acceptedRouteHash.current,'#/studio/quality');
  assert.deepEqual(a.activeUpdates,[],'Cancel must not activate another workspace');
+ assert.deepEqual(a.dispatched,['pilotodin:route-reverted']);
 });
 test('approved edited route closes the dock and records the new accepted URL',()=>{
  const a=routeHarness({approval:true});a.run();
@@ -92,6 +98,7 @@ test('approved edited route closes the dock and records the new accepted URL',()
  assert.equal(a.editedDock.current,null);
  assert.equal(a.acceptedRouteHash.current,'#/studio/prepare');
  assert.deepEqual(a.activeUpdates,['prepare']);
+ assert.deepEqual(a.dispatched,[],'approved navigation does not broadcast a rollback');
 });
 test('unedited direct route promotes secondary with no confirm and no duplicate dock',()=>{
  const a=routeHarness({edit:null});a.run();
@@ -114,6 +121,7 @@ test('cancelled route does not trigger a second prompt on delayed event',()=>{
  const a=routeHarness();a.run();a.run();
  assert.equal(a.journal.prompts,1);assert.equal(a.journal.rollbacks,1);
  assert.deepEqual(a.activeUpdates,[]);
+ assert.deepEqual(a.dispatched,['pilotodin:route-reverted']);
 });
 test('unready project does not alter the dock on external route',()=>{
  const a=routeHarness({ready:false});a.run();
@@ -145,4 +153,60 @@ test('project restoration closes a saved dock matching the restored primary view
  assert.match(shell,/const savedDock=readDock\(projectId\)/);
  assert.match(shell,/setDock\(savedDock\.secondary===preferred\?nextDockLayout\(savedDock,\{kind:'close'\}\):savedDock\)/);
  assert.match(shell,/setActive\(preferred\)/);
+});
+
+test('Studio listens and unregisters its rollback synchronisation event',()=>{
+ assert.match(app,/window\.addEventListener\('pilotodin:route-reverted',sync\)/);
+ assert.match(app,/window\.removeEventListener\('pilotodin:route-reverted',sync\)/);
+ assert.match(shell,/window\.dispatchEvent\(new Event\('pilotodin:route-reverted'\)\)/);
+});
+
+test('rejected external route restores actual Studio displayed page, not just address and tab',()=>{
+ // Replay the actual primary Studio useEffect listener code against a fake browser
+ // so this catches the observed Quality tab / Prepare body desynchronisation.
+ const start=app.indexOf('  useEffect(()=>{if(embeddedStage!==undefined)');
+ const ending=' },[embeddedStage]);';
+ const stop=app.indexOf(ending,start);
+ assert.ok(start>=0&&stop>start);
+ const effectSource=app.slice(start,stop+ending.length);
+ const a=routeHarness();
+ const primary={page:'prepare'}; // the observed stale content after URL rollback
+ let cleanup=null;
+ new Function('useEffect','embeddedStage','setPage','requestedStudioStage','window',effectSource)(
+  callback=>{cleanup=callback()},
+  undefined,
+  next=>{primary.page=next},
+  ()=>a.win.location.hash.slice('#/studio/'.length),
+  a.win
+ );
+ assert.equal(primary.page,'prepare');
+ a.run();
+ assert.equal(a.win.location.hash,'#/studio/quality');
+ assert.equal(primary.page,'quality','primary Studio must show the accepted route');
+ assert.deepEqual(a.activeUpdates,[],'shell remains Quality without remounting the edited dock');
+ assert.equal(a.journal.dockCloses,0);
+ assert.deepEqual(a.editedDock.current,edited);
+ assert.equal(typeof cleanup,'function');
+ cleanup();
+ assert.equal(a.win.dispatchEvent(new Event('pilotodin:route-reverted')),true);
+ assert.equal(primary.page,'quality');
+});
+
+test('rollback sync belongs only to primary Studio, never the embedded secondary',()=>{
+ const start=app.indexOf('  useEffect(()=>{if(embeddedStage!==undefined)');
+ const ending=' },[embeddedStage]);';
+ const stop=app.indexOf(ending,start);
+ const effectSource=app.slice(start,stop+ending.length);
+ const a=routeHarness();
+ const embeddedPage={value:'quality'};
+ new Function('useEffect','embeddedStage','setPage','requestedStudioStage','window',effectSource)(
+  callback=>callback(),
+  'prepare',
+  next=>{embeddedPage.value=next},
+  ()=>a.win.location.hash.slice('#/studio/'.length),
+  a.win
+ );
+ assert.equal(embeddedPage.value,'prepare');
+ a.run();
+ assert.equal(embeddedPage.value,'prepare','dock is not redirected by primary rollback');
 });
