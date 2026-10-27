@@ -192,6 +192,16 @@ export function UnifiedShell(){
   if(!needsDockInputDiscardApproval(editedDock.current,projectId,dock.secondary,action,proposed))return true;
   return window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?');
  };
+ // The primary App has its own local go() path; it must consult the shell BEFORE
+ // committing a route which would activate (and therefore unmount) its edited dock.
+ const approvePrimaryStudioNavigation=(view:View):boolean=>{
+  if(!workspaceReady)return false;
+  if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
+   if(!confirmEditedDockDiscard('activate',view))return false;
+   editedDock.current=null;
+  }
+  return true;
+ };
  // When a docked view becomes the primary view, the embedded form unmounts.
  // Ask before leaving an edited dock, rather than navigating and warning too late.
  const navigateWithDockGuard=(view:View):boolean=>{
@@ -373,7 +383,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
+       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {mountDock&&<>
