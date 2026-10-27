@@ -10,6 +10,7 @@ import type {DockLayout,SecondaryView,WorkspaceView} from './workspaceLayout';
 import {SIDEBAR_KEY,resolveSidebarMode} from './sidebarPreferences';
 import {createProjectCatalogRequestGuard} from './projectCatalogRequestGuard';
 import {nextWorkspaceTabByKey} from './workspaceTabKeyboard';
+import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {nextSidebarViewByKey} from './sidebarKeyboardNavigation';
 import type {SidebarMode} from './sidebarPreferences';
 import './unified-shell.css';
@@ -78,6 +79,8 @@ export function UnifiedShell(){
  // Creation uses the existing Studio import form rather than a second uploader.
  const [newProjectOpen,setNewProjectOpen]=useState(false);
  const splitRef=useRef<HTMLDivElement|null>(null);
+ const tablistRef=useRef<HTMLDivElement|null>(null);
+ const pendingCloseFocus=useRef<{projectId:string;view:View}|null>(null);
  const [paneWidth,setPaneWidth]=useState(0);
  const dragCleanup=useRef<(()=>void)|null>(null);
  const catalogRequests=useRef(createProjectCatalogRequestGuard());
@@ -151,6 +154,17 @@ export function UnifiedShell(){
  },[]);
  const workspaceReady=isProjectWorkspaceRestored(projectId,restoredFor,catalogState);
  const shownTabs=useMemo(()=>restoredFor===projectId?openTabs.filter(isWorkspaceView):[],[openTabs,restoredFor,projectId]);
+ useEffect(()=>{
+  const pending=pendingCloseFocus.current;
+  if(!pending)return;
+  if(pending.projectId!==projectId){pendingCloseFocus.current=null;return;}
+  if(!workspaceReady||active!==pending.view||!shownTabs.includes(pending.view))return;
+  const index=shownTabs.indexOf(pending.view);
+  const target=tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')?.item(index);
+  if(!target)return;
+  pendingCloseFocus.current=null;
+  target.focus();
+ },[active,shownTabs,projectId,workspaceReady]);
  const chooseProject=(id:string)=>{if(!id||id===projectId)return;setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
  const sidebarViews=useMemo(()=>NAV_SECTIONS.flatMap(section=>section.ids),[]);
  const onSidebarKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
@@ -172,8 +186,12 @@ export function UnifiedShell(){
   if(next!==active)navigate(next);
  };
  const close=(view:View)=>{
-  const next=shownTabs.filter(t=>t!==view);setOpenTabs(next);
-  if(view===active)navigate(next[next.length-1]||'overview');
+  if(!workspaceReady)return;
+  const plan=planWorkspaceTabClose(shownTabs,active,view);
+  if(!plan)return;
+  pendingCloseFocus.current={projectId,view:plan.focus};
+  setOpenTabs(plan.remaining);
+  if(plan.nextActive!==active)navigate(plan.nextActive);
   if(dock.secondary===view)setDock(current=>nextDockLayout(current,{kind:'close'}));
  };
  const dockView=(view:View)=>{
@@ -252,7 +270,7 @@ export function UnifiedShell(){
     <div className="po-rail-status"><span className="po-rail-status-dot"/> <span>LOCAL WORKSPACE</span></div>
    </nav>
    <section className="po-shell-workspace">
-    <div className="po-global-tabs" role="tablist" aria-label="Open analytical workspaces">
+    <div className="po-global-tabs" role="tablist" aria-label="Open analytical workspaces" ref={tablistRef}>
      {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''}`} key={view} draggable={!!projectId&&isSecondaryView(view)} onDragStart={e=>e.dataTransfer.setData('text/x-pilotodin-workspace',view)}>
       <button type="button" role="tab" id={`po-workspace-tab-${view}`} aria-controls="po-current-workspace" aria-selected={active===view} tabIndex={active===view?0:-1} onKeyDown={event=>onWorkspaceTabKeyDown(event,view)} onClick={()=>navigate(view)}>{labelFor(view)}</button>
       {projectId&&isSecondaryView(view)&&<button type="button" title={`Dock ${labelFor(view)} beside current view`} aria-label={`Dock ${labelFor(view)} beside current view`} onClick={()=>dockView(view)}><Columns2 size={13}/></button>}
