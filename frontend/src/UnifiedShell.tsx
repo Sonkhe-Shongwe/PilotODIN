@@ -183,9 +183,19 @@ export function UnifiedShell(){
   pendingDockDismissFocus.current=null;
   target?.focus();
  },[projectId,active,shownTabs,dock.secondary,workspaceReady]);
- const confirmEditedDockDiscard=(action:'close'|'replace'|'switch-project'|'reset'|'close-tab',proposed:SecondaryView|null=null)=>{
+ const confirmEditedDockDiscard=(action:'close'|'replace'|'switch-project'|'reset'|'close-tab'|'activate',proposed:SecondaryView|null=null)=>{
   if(!needsDockInputDiscardApproval(editedDock.current,projectId,dock.secondary,action,proposed))return true;
   return window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?');
+ };
+ // When a docked view becomes the primary view, the embedded form unmounts.
+ // Ask before leaving an edited dock, rather than navigating and warning too late.
+ const navigateWithDockGuard=(view:View):boolean=>{
+  if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
+   if(!confirmEditedDockDiscard('activate',view))return false;
+   editedDock.current=null;
+  }
+  navigate(view);
+  return true;
  };
  const chooseProject=(id:string)=>{if(!id||id===projectId)return;
   if(!confirmEditedDockDiscard('switch-project'))return;
@@ -197,25 +207,26 @@ export function UnifiedShell(){
   const next=nextSidebarViewByKey(sidebarViews,view,event.key);
   if(!next)return;
   event.preventDefault();
+  if(next!==active&&!navigateWithDockGuard(next))return;
   const buttons=event.currentTarget.closest('#po-nav-items')?.querySelectorAll<HTMLButtonElement>('.po-nav-item');
   buttons?.item(sidebarViews.indexOf(next))?.focus();
-  if(next!==active)navigate(next);
  };
  const onWorkspaceTabKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
   if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
   const next=nextWorkspaceTabByKey(shownTabs,view,event.key);
   if(!next)return;
   event.preventDefault();
+  if(next!==active&&!navigateWithDockGuard(next))return;
   const tabButtons=event.currentTarget.closest('[role="tablist"]')?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
   tabButtons?.item(shownTabs.indexOf(next))?.focus();
-  if(next!==active)navigate(next);
  };
  const close=(view:View)=>{
   if(!workspaceReady)return;
   const plan=planWorkspaceTabClose(shownTabs,active,view);
   if(!plan)return;
   if(dock.secondary===view&&!confirmEditedDockDiscard('close-tab'))return;
-  if(dock.secondary===view)editedDock.current=null;
+  if(plan.nextActive!==active&&dock.secondary===plan.nextActive&&isSecondaryView(plan.nextActive)&&!confirmEditedDockDiscard('activate',plan.nextActive))return;
+  if(dock.secondary===view||dock.secondary===plan.nextActive&&plan.nextActive!==active)editedDock.current=null;
   pendingCloseFocus.current={projectId,view:plan.focus};
   setOpenTabs(plan.remaining);
   if(plan.nextActive!==active)navigate(plan.nextActive);
@@ -265,11 +276,11 @@ export function UnifiedShell(){
    const tag=target?.tagName;
    if((tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')&&e.key.toLowerCase()==='w')return;
    if(e.key==='Tab'&&shownTabs.length>1){
-    e.preventDefault();const ix=shownTabs.indexOf(active);navigate(shownTabs[(ix+(e.shiftKey?-1:1)+shownTabs.length)%shownTabs.length]);
+    e.preventDefault();const ix=shownTabs.indexOf(active);navigateWithDockGuard(shownTabs[(ix+(e.shiftKey?-1:1)+shownTabs.length)%shownTabs.length]);
    }else if(e.key.toLowerCase()==='w'&&shownTabs.length>1){e.preventDefault();close(active)}
   };
   window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
- },[active,shownTabs,dock.secondary]);
+ },[active,shownTabs,dock.secondary,projectId,workspaceReady]);
  const toggleSidebar=()=>{
   const next=sidebarMode==='expanded'?'compact':'expanded';
   setSidebarMode(next);
@@ -304,7 +315,7 @@ export function UnifiedShell(){
     <div id="po-nav-items" className="po-nav-scroller">
      {NAV_SECTIONS.map(section=><div className="po-nav-section" role="group" aria-label={section.title} key={section.title}>
       <span className="po-nav-group-caption" aria-hidden="true">{section.title}</span>
-      {ALL.filter(item=>section.ids.includes(item.id)).map(({id,label,icon:Icon})=><button key={id} type="button" className={`po-nav-item ${active===id?'po-rail-active':''}`} aria-current={active===id?'page':undefined} title={sidebarMode==='compact'?label:undefined} aria-label={label} onKeyDown={event=>onSidebarKeyDown(event,id)} onClick={()=>navigate(id)}><Icon size={20}/><span className="po-nav-label">{label}</span></button>)}
+      {ALL.filter(item=>section.ids.includes(item.id)).map(({id,label,icon:Icon})=><button key={id} type="button" className={`po-nav-item ${active===id?'po-rail-active':''}`} aria-current={active===id?'page':undefined} title={sidebarMode==='compact'?label:undefined} aria-label={label} onKeyDown={event=>onSidebarKeyDown(event,id)} onClick={()=>navigateWithDockGuard(id)}><Icon size={20}/><span className="po-nav-label">{label}</span></button>)}
      </div>)}
     </div>
     <div className="po-rail-status"><span className="po-rail-status-dot"/> <span>LOCAL WORKSPACE</span></div>
@@ -312,7 +323,7 @@ export function UnifiedShell(){
    <section className="po-shell-workspace">
     <div className="po-global-tabs" role="tablist" aria-label="Open analytical workspaces" ref={tablistRef}>
      {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''}`} key={view} draggable={!!projectId&&isSecondaryView(view)} onDragStart={e=>e.dataTransfer.setData('text/x-pilotodin-workspace',view)}>
-      <button type="button" role="tab" id={`po-workspace-tab-${view}`} aria-controls="po-current-workspace" aria-selected={active===view} tabIndex={active===view?0:-1} onKeyDown={event=>onWorkspaceTabKeyDown(event,view)} onClick={()=>navigate(view)}>{labelFor(view)}</button>
+      <button type="button" role="tab" id={`po-workspace-tab-${view}`} aria-controls="po-current-workspace" aria-selected={active===view} tabIndex={active===view?0:-1} onKeyDown={event=>onWorkspaceTabKeyDown(event,view)} onClick={()=>navigateWithDockGuard(view)}>{labelFor(view)}</button>
       {projectId&&isSecondaryView(view)&&<button type="button" title={`Dock ${labelFor(view)} beside current view`} aria-label={`Dock ${labelFor(view)} beside current view`} onClick={()=>dockView(view)}><Columns2 size={13}/></button>}
       {shownTabs.length>1&&<button type="button" aria-label={`Close ${labelFor(view)} tab`} onClick={()=>close(view)}><X size={12}/></button>}
      </div>)}
