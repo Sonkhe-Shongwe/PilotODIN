@@ -719,3 +719,57 @@ test('approved same-tab global project read failure preserves edited primary Pre
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+test('approved same-tab global project load commits B only after verified GETs',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const primary=page.locator('.po-primary-pane');
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  const target=primary.getByRole('combobox',{name:/target variable/i});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+
+  let bProfileReads=0;
+  await page.route('**/api/projects/playwright-synthetic-second-project/live-profile',async route=>{
+    if(route.request().method()!=='GET')throw new Error('Read-only synthetic B profile only');
+    bProfileReads++;
+    if(bProfileReads===1){await route.fallback();return;}
+    await route.fulfill({status:503,headers:{'access-control-allow-origin':UI_ORIGIN},
+      json:{detail:'Synthetic unexpected second B profile GET'}});
+  });
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.accept();
+  });
+  const bRead=page.waitForResponse(response=>
+    response.url().endsWith(`/api/projects/${TEST_PROJECT_B}/live-profile`)
+      &&response.status()===200);
+  const bOpportunities=page.waitForResponse(response=>{
+    const url=new URL(response.url());
+    return url.origin===API_ORIGIN&&
+      url.pathname===`/api/projects/${TEST_PROJECT_B}/target-opportunities`&&
+      url.search==='?expected_version=0';
+  });
+  await switcher.selectOption(TEST_PROJECT_B);
+  await bRead;
+  expect((await bOpportunities).status()).toBe(200);
+  await expect(switcher).toHaveValue(TEST_PROJECT_B);
+  await expect(primary.locator('.heading .eyebrow'))
+    .toHaveText('PROJECT / '+syntheticSecondProject.name.toUpperCase());
+  await expect(target).toHaveValue('');
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
+  expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
+  expect(prompts).toHaveLength(1);
+  expect(bProfileReads).toBe(1);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

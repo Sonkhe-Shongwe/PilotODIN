@@ -212,7 +212,25 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     // Never repeat it merely because the keyed component remounted.
     if(pid&&pid!==initialVerifiedProject?.id)void loadProject(pid);
   },[embeddedProjectId]);
-  useEffect(()=>{if(embedded)return;const handler=()=>{const id=localStorage.getItem('pilotodin-current');if(id&&id!==project?.id)void loadProject(id)};window.addEventListener('pilotodin:project-changed',handler);return()=>window.removeEventListener('pilotodin:project-changed',handler)},[project?.id,embedded]);
+  useEffect(()=>{
+    if(embedded)return;
+    const handler=()=>{
+      const id=localStorage.getItem('pilotodin-current');
+      if(id&&id!==project?.id)void loadProject(id);
+    };
+    const requestedByShell=(event:Event)=>{
+      // The global same-tab selector has approved a provisional, read-only
+      // attempt. Preserve shared A until its requested B profile succeeds.
+      const id=(event as CustomEvent<{projectId?:string}>).detail?.projectId;
+      if(typeof id==='string'&&id&&id!==project?.id)void loadProject(id);
+    };
+    window.addEventListener('pilotodin:project-changed',handler);
+    window.addEventListener('pilotodin:primary-project-load-requested',requestedByShell);
+    return()=>{
+      window.removeEventListener('pilotodin:project-changed',handler);
+      window.removeEventListener('pilotodin:primary-project-load-requested',requestedByShell);
+    };
+  },[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&project?.id)window.dispatchEvent(new Event('pilotodin:project-changed'))},[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&!location.hash.startsWith('#/canvas')&&location.hash!==`#/studio/${page}`)location.hash=`#/studio/${page}`},[page,embedded]);
   async function loadProject(pid:string,approvedBeforeUpload=false):Promise<boolean>{

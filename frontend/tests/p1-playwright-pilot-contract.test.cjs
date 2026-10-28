@@ -67,6 +67,7 @@ test('isolated browser does not reuse server or approve import',()=>{
     'approved cross-tab project read failure preserves primary Prepare without stealing storage',
     'approved cross-tab successful project load avoids duplicate failing profile request',
     'approved same-tab global project read failure preserves edited primary Prepare',
+    'approved same-tab global project load commits B only after verified GETs',
   ]);
   const approvedScenarios=spec.split(/^test\('/m).slice(1)
     .filter(section=>section.includes('await dialog.accept()'));

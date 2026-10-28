@@ -335,3 +335,62 @@ test('verified B handoff is one-use and never staged on Cancel or failed GET',()
  accepted.consume('B');
  assert.equal(accepted.primaryProjectHandoff.current,null);
 });
+
+test('global same-tab chooser stages approved B without changing shared project or unmounting A',()=>{
+ const start=shell.indexOf(' const chooseProject=(id:string)=>{');
+ const end=shell.indexOf(' const sidebarViews=',start);
+ assert.ok(start>=0&&end>start,'must capture the actual global chooser');
+ const source=shell.slice(start,end);
+ assert.doesNotMatch(source,/localStorage\.(setItem|removeItem)|setProjectId\s*\(/,
+   'global chooser must not commit any identity before GET success');
+ const js=compile(source+'\nexport {chooseProject};');
+ assert.equal((js.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
+ function run(approval){
+   const pendingExternalSwitch={current:null};
+   const editedPrimary={current:{projectId:'A',view:'prepare'}};
+   const editedDock={current:{projectId:'A',view:'quality'}};
+   let prompts=0,shared='A',commits=0;
+   const events=[];
+   const ctx={
+    projectId:'A',workspaceReady:true,pendingExternalSwitch,editedPrimary,editedDock,
+    confirmProjectDraftDiscard:()=>{prompts++;return approval},
+    localStorage:{getItem:()=>shared,setItem:()=>{commits++},removeItem:()=>{commits++}},
+    setProjectId:()=>{commits++},
+    window:{dispatchEvent:event=>{events.push(event)}},
+    CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}
+   };
+   const chooser=new Function(...Object.keys(ctx),'exports',
+      js.outputText+'\nreturn exports.chooseProject;')(...Object.values(ctx),{});
+   chooser('B');
+   assert.equal(prompts,1);
+   assert.equal(shared,'A');
+   assert.equal(commits,0,'A must remain selected while B GET is outstanding');
+   if(approval){
+     assert.equal(pendingExternalSwitch.current.requestedId,'B');
+     assert.equal(pendingExternalSwitch.current.previousId,'A');
+     assert.deepEqual(pendingExternalSwitch.current.primary,editedPrimary.current);
+     assert.deepEqual(pendingExternalSwitch.current.secondary,editedDock.current);
+     assert.equal(events.length,1);
+     assert.equal(events[0].type,'pilotodin:primary-project-load-requested');
+     assert.deepEqual(events[0].detail,{projectId:'B'});
+     chooser('B');
+     assert.equal(events.length,1,'do not double-submit an in-flight B load');
+   }else{
+     assert.equal(pendingExternalSwitch.current,null);
+     assert.deepEqual(events,[]);
+   }
+ }
+ run(false);
+ run(true);
+});
+test('only primary Studio accepts explicit same-tab project requests; actual load still preflights and verifies',()=>{
+ assert.match(app,/window\.addEventListener\('pilotodin:primary-project-load-requested',requestedByShell\)/);
+ assert.match(app,/window\.removeEventListener\('pilotodin:primary-project-load-requested',requestedByShell\)/);
+ assert.match(app,/if\(embedded\)return;[\s\S]*const requestedByShell=/);
+ assert.match(app,/if\(typeof id==='string'&&id&&id!==project\?\.id\)void loadProject\(id\)/);
+ const start=app.indexOf('async function loadProject(');
+ const read=app.indexOf('await Promise.all([get<Project>',start);
+ const consent=app.indexOf('onBeforePrimaryProjectLoad(pid)',start);
+ const commit=app.indexOf('onPrimaryProjectLoaded?.(pid,{id:pid,project:verifiedProject,version:q.version})',start);
+ assert.ok(start>=0&&consent>start&&read>consent&&commit>read);
+});

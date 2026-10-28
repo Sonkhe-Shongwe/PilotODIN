@@ -382,6 +382,7 @@ export function UnifiedShell(){
    primaryProjectHandoff.current=snapshot;
    pendingExternalSwitch.current=null;
    editedPrimary.current=null;editedDock.current=null;
+   setNewProjectOpen(false);
    // Only commit shell identity after App has successfully read both B GETs.
    setProjectId(id);
    void refreshProjects();
@@ -415,10 +416,20 @@ export function UnifiedShell(){
   editedDock.current=null;
   return true;
  };
- const chooseProject=(id:string)=>{if(!id||id===projectId)return;
+ const chooseProject=(id:string)=>{
+  if(!id||id===projectId||!workspaceReady)return;
+  // A previous approval for this exact in-flight read is not a second switch.
+  if(pendingExternalSwitch.current?.requestedId===id)return;
   if(!confirmProjectDraftDiscard())return;
-  editedDock.current=null;editedPrimary.current=null;
-  setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
+  // Do not write shared selection or unmount A before both B GETs succeed.
+  // Keep primary/dock edits and the import panel mounted if B fails.
+  pendingExternalSwitch.current={
+   requestedId:id,previousId:projectId,fromStorage:false,
+   primary:editedPrimary.current,secondary:editedDock.current,
+  };
+  window.dispatchEvent(new CustomEvent('pilotodin:primary-project-load-requested',
+   {detail:{projectId:id}}));
+ };
  const sidebarViews=useMemo(()=>NAV_SECTIONS.flatMap(section=>section.ids),[]);
  const onSidebarKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
   if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
