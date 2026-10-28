@@ -919,3 +919,81 @@ test('genuine paused dock Prepare reload Stay retains edited values and project'
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+
+test('genuine cross-tab reload Stay keeps A draft and Leave adopts shared B selection',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true,true);
+  // Seed invented A only on first navigation. A reload must NOT overwrite
+  // another tab's accepted B selection through test setup code.
+  await page.addInitScript((id:string)=>{
+    if(sessionStorage.getItem('pilotodin-p1-e2e-seeded')==='yes')return;
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+    sessionStorage.setItem('pilotodin-p1-e2e-seeded','yes');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const primary=page.locator('.po-primary-pane');
+  const target=primary.getByRole('combobox',{name:/target variable/i});
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(target).toBeVisible();
+  await target.click(); // Trusted activation for actual Chromium beforeunload.
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await page.evaluate(()=>document.documentElement.setAttribute('data-p1-document','edited-A'));
+
+  const other=await context.newPage();
+  await other.goto('/#/studio/prepare');
+  await expect(other.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  // A declines the external B selection, retaining its mounted draft.
+  // Reject only this one confirm, not the subsequent reload confirmation.
+  const externalPrompts:string[]=[];
+  page.once('dialog',async dialog=>{
+    expect(dialog.type()).toBe('confirm');
+    externalPrompts.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await other.evaluate(id=>localStorage.setItem('pilotodin-current',id),TEST_PROJECT_B);
+  await expect.poll(()=>externalPrompts.length).toBe(1);
+  expect(externalPrompts[0]).toMatch(/primary workspace.*Switching projects may discard/);
+  await expect(page.getByText(/Another tab selected a different project/)).toBeVisible();
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await expect(target).toHaveValue('fraud_reported');
+  expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
+
+  const requestReload=async()=>{
+    const pending=page.waitForEvent('dialog');
+    await page.evaluate(()=>{setTimeout(()=>window.location.reload(),0)});
+    const dialog=await pending;
+    expect(dialog.type()).toBe('beforeunload');
+    return dialog;
+  };
+  let dialog=await requestReload();
+  await dialog.dismiss(); // Stay: don't unmount the unsaved A draft.
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await expect(target).toHaveValue('fraud_reported');
+  expect(await page.evaluate(()=>
+    document.documentElement.getAttribute('data-p1-document'))).toBe('edited-A');
+  expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
+  expect(externalPrompts).toHaveLength(1);
+
+  dialog=await requestReload();
+  const navigated=page.waitForEvent('framenavigated',{
+    predicate:frame=>frame===page.mainFrame()&&frame.url().includes('#/studio/prepare'),
+  });
+  await dialog.accept(); // Leave: explicitly adopt shared B, no A rewrite.
+  await navigated;
+  await expect(switcher).toHaveValue(TEST_PROJECT_B);
+  await expect(primary.locator('.heading .eyebrow'))
+    .toHaveText('PROJECT / '+syntheticSecondProject.name.toUpperCase());
+  await expect(target).toHaveValue('');
+  expect(await page.evaluate(()=>
+    document.documentElement.getAttribute('data-p1-document'))).toBeNull();
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
+  expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
+  expect(externalPrompts).toHaveLength(1);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

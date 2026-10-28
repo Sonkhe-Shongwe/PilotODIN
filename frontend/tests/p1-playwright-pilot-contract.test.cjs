@@ -69,6 +69,7 @@ test('isolated browser does not reuse server or approve import',()=>{
     'approved same-tab global project read failure preserves edited primary Prepare',
     'approved same-tab global project load commits B only after verified GETs',
     'genuine primary Prepare reload Stay preserves draft and Leave discards only in-memory edit',
+    'genuine cross-tab reload Stay keeps A draft and Leave adopts shared B selection',
   ]);
   const approvedScenarios=spec.split(/^test\('/m).slice(1)
     .filter(section=>section.includes('await dialog.accept()'));
@@ -328,4 +329,28 @@ test('real reload Chromium regressions request genuine navigation and keep data 
   assert.match(primary,/await expect\(target\)\.toHaveValue\(''\)/);
   assert.match(dock,/await expect\(dock\)\.toBeHidden\(\)/);
   assert.match(dock,/await page\.setViewportSize\(\{width:1440,height:900\}\)/);
+});
+
+
+test('cross-tab real reload regression protects A until Leave without restoring stale shared storage',()=>{
+  const start=spec.indexOf("test('genuine cross-tab reload Stay keeps A draft and Leave adopts shared B selection'");
+  assert.ok(start>=0,'genuine cross-tab reload must have its own isolated browser scenario');
+  const scenario=spec.slice(start);
+  assert.match(scenario,/sessionStorage\.getItem\('pilotodin-p1-e2e-seeded'\)/);
+  assert.match(scenario,/sessionStorage\.setItem\('pilotodin-p1-e2e-seeded','yes'\)/);
+  assert.match(scenario,/await other\.evaluate\(id=>localStorage\.setItem\('pilotodin-current',id\),TEST_PROJECT_B\)/);
+  assert.match(scenario,/expect\(externalPrompts\[0\]\)\.toMatch\(\/primary workspace/);
+  assert.match(scenario,/await expect\(switcher\)\.toHaveValue\(TEST_PROJECT\)/);
+  assert.match(scenario,/await expect\(target\)\.toHaveValue\('fraud_reported'\)/);
+  assert.match(scenario,/window\.location\.reload\(\)/);
+  assert.match(scenario,/expect\(dialog\.type\(\)\)\.toBe\('beforeunload'\)/);
+  assert.match(scenario,/await dialog\.dismiss\(\)/);
+  assert.match(scenario,/await dialog\.accept\(\)/);
+  assert.match(scenario,/page\.waitForEvent\('framenavigated'/);
+  assert.match(scenario,/await expect\(switcher\)\.toHaveValue\(TEST_PROJECT_B\)/);
+  assert.match(scenario,/expect\(await page\.evaluate\(\(\)=>localStorage\.getItem\('pilotodin-current'\)\)\)\.toBe\(TEST_PROJECT_B\)/);
+  assert.match(scenario,/expect\(audit\.writes\)\.toEqual\(\[\]\)/);
+  assert.match(scenario,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
+  assert.match(scenario,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
+  assert.doesNotMatch(scenario,/new Event\('beforeunload'/);
 });
