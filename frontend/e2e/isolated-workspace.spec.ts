@@ -529,3 +529,53 @@ test('cross-tab project selection Cancel preserves an edited primary Prepare dra
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+test('approved cross-tab project read failure preserves primary Prepare without stealing storage',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const primary=page.locator('.po-primary-pane');
+  const target=primary.getByRole('combobox',{name:/target variable/i});
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+
+  // Only A's requested B profile read fails. The synthetic project catalogue
+  // and B's other-tab reads still work. There is no real HTTP backend.
+  await page.route('**/api/projects/playwright-synthetic-second-project/live-profile',async route=>{
+    if(route.request().method()!=='GET')throw new Error('Only synthetic profile GET failure is allowed');
+    await route.fulfill({status:503,
+      headers:{'access-control-allow-origin':UI_ORIGIN},
+      json:{detail:'Synthetic project profile temporarily unavailable'}});
+  });
+  const other=await context.newPage();
+  await other.goto('/#/studio/quality');
+  await expect(other.locator('.po-primary-pane').getByRole('heading',{name:'Data Quality',exact:true}))
+    .toBeVisible();
+
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.accept(); // Approved attempt, not an approval for any API write.
+  });
+  await other.evaluate((id:string)=>localStorage.setItem('pilotodin-current',id),TEST_PROJECT_B);
+  await expect.poll(()=>prompts.length).toBe(1);
+  expect(prompts[0]).toMatch(/primary workspace.*Switching projects may discard/i);
+  // Approval authorises a read; failure must NOT unmount the edited A workspace.
+  await expect(page.getByText(/The other tab selected a project that could not be opened here/))
+    .toBeVisible();
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
+  expect(await other.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
+  expect(prompts).toHaveLength(1);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
