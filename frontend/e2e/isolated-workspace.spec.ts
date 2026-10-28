@@ -633,7 +633,11 @@ test('approved cross-tab successful project load avoids duplicate failing profil
   await page.evaluate(()=>new Promise<void>(resolve=>
     requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   expect(profileReads).toBe(1);
-  await expect(primary.getByRole('combobox',{name:'Choose project'})).toHaveValue(TEST_PROJECT_B);
+  // UnifiedShell deliberately hides the legacy Studio sidebar and its
+  // 'Choose project' control. Verify project B in the VISIBLE primary content,
+  // rather than querying a hidden control excluded by accessibility roles.
+  await expect(primary.locator('.heading .eyebrow'))
+    .toHaveText('PROJECT / '+syntheticSecondProject.name.toUpperCase());
   await expect(primary.getByRole('combobox',{name:/target variable/i})).toHaveValue('');
   await expect(page).toHaveURL(/#\/studio\/prepare$/);
   expect(await other.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
