@@ -68,3 +68,17 @@ npx playwright test --config=playwright.config.ts -g "browser Back and Forward p
 
 **Expected: one authored test; outcome PENDING.** The accepted earlier 3 Chromium scenarios, 7 Node contracts and production build do not need repeating on unchanged source. If this test fails, review its test-owned trace and determine whether the issue is route rendering, browser history, or a fixture assumption before making any production change. **Important limitation:** this tests ordinary Back/Forward for unrelated routes only. History behavior specifically *after a rejected navigation rolled back with `history.replaceState`* remains a distinct OPEN regression to design and verify; no claim that it is solved.
 
+## 28 October 2026: Explore history fixture correction (pending owner rerun)
+
+**Observed first Windows run of the fourth browser-history scenario: FAILED 0/1**, specifically the final `audit.unexpectedReads` check. Owner screenshot lists missing GET fixtures for `/explore/overview`, `/explore/insights`, `/explore/recommended`, and `/explore/filter-options`. Earlier route/headings/target assertions were not shown failing, but the screenshot does not independently certify their behavior. The error is consistent with synthetic fixture incompleteness; it does **not** establish a product navigation defect.
+
+**Bounded corrective change:** The synthetic project now returns version-0, schema-compatible, invented responses for those four read-only Explore GETs and `/explore/saved`. The real Explore workbench uses HTTP **POST** for a read-only, immutable snapshot calculation; without a precise exception, the new GET fixtures would expose a second failure. The route handler therefore allows **only** `POST /projects/playwright-synthetic-project/explore/workbench` with an exact validated synthetic payload (version 0, no filters, two allowed columns, safe chart configuration). This request is fulfilled entirely by the browser fixture, recorded in `audit.readOnlyCalculations`, and **never forwarded to the real backend**. All other POSTs (including project uploads, saved analyses, modified/malformed workbench bodies and model/Quality operations) still return synthetic 403 and enter `audit.writes`; unknown GETs or external requests remain rejected and audited. Three newly authored Node tests cover GET response shapes, approved synthetic calculation and denied variants. The existing per-browser zero-write and zero-unknown-origin assertions remain in place. No product, backend, CI, dataset, local AI, training or installer changes.
+
+**Only next Windows acceptance gate**, after safely pulling, from the existing `frontend` folder:
+
+```powershell
+node --test tests/p1-playwright-pilot-contract.test.cjs
+npx playwright test --config=playwright.config.ts -g "browser Back and Forward preserve"
+```
+
+Expect **10 authored contract tests** (previously 7 accepted and 3 new or revised; this revision's full result PENDING) and **one corrected browser-history test PENDING**. Do not repeat historical Vite build, 41/24/49 suites or three already accepted browser scenarios on unchanged application source. The first history test failure remains recorded. This validates only ordinary Back/Forward on unrelated routes; a cancelled dock-promotion history rollback and primary unsaved drafts remain separate OPEN tasks.

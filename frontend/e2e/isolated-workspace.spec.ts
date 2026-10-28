@@ -34,14 +34,14 @@ const syntheticProject={
   experiments:[],
 };
 
-type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]; stubbedFontStylesheets:string[]};
+type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]; stubbedFontStylesheets:string[]; readOnlyCalculations:string[]};
 
 /** Fail closed: only the dedicated Vite origin is allowed onto the network.
  * Every API response comes from this handler, never the actual :8000 backend.
  * Unrecognised requests return a synthetic 404 and are recorded.
  */
 async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Promise<NetworkAudit>{
-  const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[],stubbedFontStylesheets:[]};
+  const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[],stubbedFontStylesheets:[],readOnlyCalculations:[]};
   await context.route('**/*',async(route:Route)=>{
     const req=route.request();
     const url=new URL(req.url());
@@ -80,9 +80,47 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Pr
       return;
     }
     const pathname=url.pathname.slice('/api'.length);
+    // Explore's workbench is a POST transport for read-only calculations.
+    // Whitelist one exact, synthetic, schema-validated request only. Nothing
+    // reaches the backend: even permitted calculations are locally fulfilled.
+    if(req.method()==='POST'&&withProject
+      &&pathname===`/projects/${TEST_PROJECT}/explore/workbench`
+      &&url.search===''){
+      let input:unknown=null;
+      try{input=req.postDataJSON()}catch{/* reject malformed JSON below */}
+      const body=input&&typeof input==='object'&&!Array.isArray(input)
+        ?input as Record<string,unknown>:null;
+      const keys=['expected_version','filters','x','y','kind',
+        'aggregation','bins','correlation_method','color_by'];
+      const valid=!!body&&Object.keys(body).length===keys.length
+        &&keys.every(key=>Object.hasOwn(body,key))
+        &&body.expected_version===0
+        &&Array.isArray(body.filters)&&body.filters.length===0
+        &&(body.x==='fraud_reported'||body.x==='amount')
+        &&(body.y===null||body.y==='amount')
+        &&body.kind==='auto'&&body.aggregation==='mean'
+        &&body.bins===16&&body.correlation_method==='pearson'
+        &&body.color_by===null;
+      if(valid){
+        audit.readOnlyCalculations.push('POST '+pathname);
+        await route.fulfill({status:200,headers:{'access-control-allow-origin':UI_ORIGIN},
+          json:{version:0,total_rows:2,filtered_rows:2,filter_count:0,
+            overview:{version:0,rows:2,missing_cells:0,exact_duplicates:0,
+              columns:[{name:'fraud_reported',kind:'categorical',unique:2,missing:0,missing_pct:0},
+                {name:'amount',kind:'numeric',unique:2,missing:0,missing_pct:0,min:10,max:20,mean:15,median:15}]},
+            chart:{version:0,type:'bar',x:body!.x,y:body!.y,aggregation:'mean',
+              data:[{label:'N',value:10},{label:'Y',value:20}],
+              sampled:false,note:'Synthetic chart: no real data analysed.'},
+            chart_message:'',
+            correlation:{version:0,method:'pearson',columns:[],cells:[],
+              note:'Synthetic dataset has fewer than three records.'},
+            note:'Synthetic read-only workbench response; no real backend contacted.'}});
+        return;
+      }
+    }
     if(req.method()!=='GET'){
       audit.writes.push(req.method()+' '+pathname);
-      await route.fulfill({status:403,json:{detail:'E2E fixture blocks all writes'}});
+      await route.fulfill({status:403,json:{detail:'E2E fixture blocks all unapproved writes'}});
       return;
     }
     let result:unknown;
@@ -115,6 +153,24 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Pr
       result={task:'classification',target:'fraud_reported',available_features:['amount'],
         recommend_exclude:[],feature_audit:[],high_risk_features:[],
         missing_targets:0,transformations:[],warnings:[]};
+    // The Explore UI mounts multiple read-only panels, even for history-only
+    // navigation. Match the local backend's response shapes and data version.
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/overview`){
+      result={version:0,rows:2,missing_cells:0,exact_duplicates:0,source:'synthetic_test_fixture',
+        columns:[{name:'fraud_reported',kind:'categorical',unique:2,missing:0,missing_pct:0},
+          {name:'amount',kind:'numeric',unique:2,missing:0,missing_pct:0,
+            min:10,max:20,mean:15,median:15}]};
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/insights`){
+      result={version:0,findings:[],method:'deterministic_descriptive_rules'};
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/recommended`){
+      result={version:0,recommendations:[]};
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/filter-options`){
+      result={version:0,max_filters:4,
+        columns:[{name:'fraud_reported',kind:'categorical',options:['N','Y'],missing:0},
+          {name:'amount',kind:'numeric',min:10,max:20,missing:0}],
+        note:'Test-owned filter catalogue; no data changes.'};
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/saved`){
+      result=[];
     }else{
       audit.unexpectedReads.push(pathname);
       await route.fulfill({status:404,headers:{'access-control-allow-origin':UI_ORIGIN},
@@ -263,6 +319,11 @@ test('browser Back and Forward preserve an edited dock across unrelated routes',
   await expect(primary.getByRole('heading',{name:'Explore',exact:true})).toBeVisible();
   await expect(target).toHaveValue('fraud_reported');
   await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  // Explore calculated from the same synthetic version via an explicit
+  // read-only endpoint. All other attempted POSTs remain blocked and audited.
+  expect(audit.readOnlyCalculations.length).toBeGreaterThan(0);
+  expect(audit.readOnlyCalculations.every(path=>path===
+    `POST /projects/${TEST_PROJECT}/explore/workbench`)).toBe(true);
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);

@@ -17,9 +17,9 @@ const install=new Function('exports',compiled.outputText+'\nreturn exports.insta
 async function setup(){
   let intercept;
   const audit=await install({route:async(pattern,fn)=>{assert.equal(pattern,'**/*');intercept=fn;}},true);
-  async function call(url,method='GET'){
+  async function call(url,method='GET',body=null){
     const calls=[];
-    await intercept({request:()=>({url:()=>url,method:()=>method}),
+    await intercept({request:()=>({url:()=>url,method:()=>method,postDataJSON:()=>body}),
       continue:async()=>calls.push({kind:'continue'}),
       abort:async reason=>calls.push({kind:'abort',reason}),
       fulfill:async response=>calls.push({kind:'fulfill',response})});
@@ -53,7 +53,8 @@ test('unexpected API GETs and cloud requests are recorded, never passed through'
   assert.equal((await call('https://example.com/ai?prompt=never')).kind,'abort');
   assert.deepEqual(audit.unexpectedReads,['/unknown']);
   assert.deepEqual(audit.blockedOrigins,['GET https://example.com/ai']);
-  assert.equal(spec.split('expect(audit.blockedOrigins).toEqual([]);').length,3);
+  assert.equal((spec.match(/expect\\(audit\\.blockedOrigins\\)\\.toEqual\\(\\[\\]\\);/g)||[]).length,
+    (spec.match(/^test\\('/gm)||[]).length,'each browser scenario checks blocked origins');
 });
 test('isolated browser does not reuse server or approve import',()=>{
   assert.match(config,/reuseExistingServer:false/);
@@ -91,4 +92,53 @@ test('font exception rejects changed families, wrong paths, methods and font bin
     'GET https://fonts.gstatic.com/s/test.woff2'
   ]);
   assert.deepEqual(audit.stubbedFontStylesheets,[]);
+});
+test('Explore synthetic GET endpoints match the read-only backend response shapes',async()=>{
+  const {call,audit}=await setup();
+  const root='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/';
+  const expected={
+    overview:response=>response.version===0&&response.rows===2&&response.columns.length===2,
+    insights:response=>response.version===0&&Array.isArray(response.findings),
+    recommended:response=>response.version===0&&Array.isArray(response.recommendations),
+    'filter-options':response=>response.version===0&&response.max_filters===4&&Array.isArray(response.columns),
+    saved:response=>Array.isArray(response)&&response.length===0,
+  };
+  for(const [endpoint,check] of Object.entries(expected)){
+    const response=await call(root+endpoint);
+    assert.equal(response.kind,'fulfill');
+    assert.equal(response.response.status,200,endpoint);
+    assert.equal(check(response.response.json),true,endpoint);
+  }
+  assert.deepEqual(audit.unexpectedReads,[]);
+  assert.deepEqual(audit.readOnlyCalculations,[]);
+});
+test('Explore workbench POST is read-only, exact synthetic input, and never continued',async()=>{
+  const {call,audit}=await setup();
+  const url='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/workbench';
+  const input={expected_version:0,filters:[],x:'fraud_reported',y:'amount',
+    kind:'auto',aggregation:'mean',bins:16,correlation_method:'pearson',color_by:null};
+  const response=await call(url,'POST',input);
+  assert.equal(response.kind,'fulfill');
+  assert.equal(response.response.status,200);
+  assert.equal(response.response.json.version,0);
+  assert.equal(response.response.json.filtered_rows,2);
+  assert.equal(response.response.json.chart.type,'bar');
+  assert.deepEqual(audit.readOnlyCalculations,['POST /projects/playwright-synthetic-project/explore/workbench']);
+  assert.deepEqual(audit.writes,[]);
+});
+test('malformed, wrong-version or unapproved Explore POST still blocks and audits',async()=>{
+  const {call,audit}=await setup();
+  const url='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/workbench';
+  const valid={expected_version:0,filters:[],x:'fraud_reported',y:'amount',
+    kind:'auto',aggregation:'mean',bins:16,correlation_method:'pearson',color_by:null};
+  for(const body of [{...valid,expected_version:1},{...valid,filters:[{column:'amount',op:'range'}]},
+    {...valid,prompt:'secret dataset'},null]){
+    const response=await call(url,'POST',body);
+    assert.equal(response.kind,'fulfill');
+    assert.equal(response.response.status,403);
+  }
+  const save=await call('http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/saved','POST',valid);
+  assert.equal(save.response.status,403);
+  assert.equal(audit.writes.length,5);
+  assert.deepEqual(audit.readOnlyCalculations,[]);
 });
