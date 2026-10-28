@@ -1,6 +1,6 @@
 # PilotODIN Playwright browser QA — isolated pilot
 
-**Status (28 Oct 2026):** The owner's Windows screenshot confirms **5/5 previous isolation Node tests PASS** and **TypeScript/Vite build PASS** (Vite 6.4.5, 1,636 modules, 2.60s; familiar nonfatal 533.61kB warning). The first two Playwright browser cases **both executed and FAILED** only on their final network audit: `GET https://fonts.googleapis.com/css2` was correctly blocked and recorded. This fixture-only patch is newly authored, with two additional Node cases; the corrected browser suite and new Node tests are **not yet executed**. No desktop, installer or hardware validation is implied.
+**Status (28 Oct 2026): OWNER WINDOWS ACCEPTED, scoped pilot CLOSED.** Direct Windows PowerShell screenshot confirms **7/7 targeted Node contracts PASS** (380.7562ms) and **2/2 Playwright Chromium tests PASS** (7.3s, one worker) with the exact isolated font CSS stub. Previous first browser run **0/2 FAIL** on blocked Google Fonts CSS is preserved as historical fixture evidence, now corrected and validated. The existing TypeScript/Vite build PASS (Vite 6.4.5, 1,636 modules, 2.60s and nonfatal 533.61kB advisory) remains accepted because only test-harness/docs changed afterward. This does not certify desktop, real imports, fonts for P8, offline AI or hardware performance.
 
 ## Safety contract
 
@@ -33,9 +33,9 @@ The dedicated port **5187 must be free**; if it is occupied, `reuseExistingServe
 
 ## Known limitations and next gate
 
-1. The owner executed both Playwright tests on Windows: **0/2 PASS** in their first run due to the blocked Google Fonts CSS import. The new synthetic stylesheet stub and added Node safety regressions have **not yet been executed**. Before calling this pilot accepted, confirm corrected **2/2 browser PASS**, and no unexpected requests or writes. Diagnose remaining failures from test-owned traces only, without modifying real data.
+1. The first browser run was **0/2 FAIL** on the blocked Google Fonts CSS import; after the isolated synthetic stylesheet stub, the owner ran the corrected suite **2/2 PASS** and the targeted contract tests **7/7 PASS** on Windows. Both cases assert an empty audit for attempted backend writes, unexpected API reads and unapproved external origins. These are two synthetic frontend flows only, not comprehensive P1 or native/offline testing.
 2. Do not automatically enable GitHub Actions for Playwright until its npm dependency and lockfile are committed, the test passes locally and workflow changes have been reviewed for cost/data isolation.
 3. Current tests intentionally avoid P2 PDF, ML training, quality approvals, AI calls and desktop packaging.
 4. A React `useId`-backed visible label now identifies the target control in primary and embedded Prepare views; the test selects it by accessible role/name scoped to the dock, not its CSS class. This does not constitute a full Issue #7 accessibility audit.
 5. `tests/p1-playwright-pilot-contract.test.cjs` now contains seven cases (five previously Windows-green; two newly authored for the precise font exception and denial of all other font requests). Its mocked request checks do not substitute for real Playwright browser execution.
-6. Exact next commands from `frontend` after safely pulling: `node --test tests/p1-playwright-pilot-contract.test.cjs` then `npx playwright test --config=playwright.config.ts`. The existing production build was already Windows-green for unchanged application code, so **do not repeat it for this test-fixture-only revision**.
+6. **Next dependency-custody task:** Owner reviews and commits together the actual Windows npm-generated `frontend/package.json` and `frontend/package-lock.json` containing `@playwright/test`, via GitHub Desktop. The remote repository versions still lack that dependency. Do not fabricate or replace the lockfile, do not enable CI yet, and do not repeat the now-accepted 7/7 and 2/2 gates on unchanged code.
