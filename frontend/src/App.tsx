@@ -19,6 +19,7 @@ import {StudioAssistant} from './StudioAssistant';
 import {ReportWorkspace} from './ReportWorkspace';
 import {isSecondaryView} from './workspaceLayout';
 import {createProjectOperationGuard} from './projectOperationGuard';
+import {mayCommitProjectSelection} from './projectSelectionCommitGuard';
 import {navigateHashSmoothly} from './navigationMotion';
 
 type Stage = 'overview'|'understand'|'quality'|'explore'|'prepare'|'model'|'evaluate'|'predict'|'deliver'|'assistant'|'ai_settings';
@@ -203,10 +204,18 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     // Direct Studio project selector, Home cards and the final post-upload load
     // must not clear a mounted primary project or edited dock before approval.
     if(!embedded&&pid!==project?.id&&!approvedBeforeUpload&&onBeforePrimaryProjectLoad&&!onBeforePrimaryProjectLoad(pid))return false;
+    // Snapshot shared selection before awaiting any network work. Another tab
+    // can choose a different project while this read is in progress.
+    const selectedWhenStarted=embedded?'':localStorage.getItem('pilotodin-current')||'';
     const request=++latestProjectRequest.current;
     const generation=projectOperations.current.begin(pid);
     // Fetch first: failed project reads must not discard the current unsaved work.
     try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
+    if(!embedded&&!mayCommitProjectSelection(
+      selectedWhenStarted,localStorage.getItem('pilotodin-current')||'',pid)){
+      setNotice('Another tab selected a different project while this one was loading. The older load was not applied.');
+      return false;
+    }
     if(!embedded&&pid!==project?.id)onPrimaryProjectLoaded?.();
     if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);

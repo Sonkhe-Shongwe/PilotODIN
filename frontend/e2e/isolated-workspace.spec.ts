@@ -485,7 +485,20 @@ test('cross-tab project selection Cancel preserves an edited primary Prepare dra
   // Same isolated browser context and origin: only B writes the shared key.
   // A should reject the storage event without writing B's choice back to A.
   const other=await context.newPage();
+  let reportRequestSeen:()=>void=()=>{};
+  const requestStarted=new Promise<void>(resolve=>{reportRequestSeen=resolve;});
+  let releaseOldProfile:()=>void=()=>{};
+  const oldProfileGate=new Promise<void>(resolve=>{releaseOldProfile=resolve;});
+  await other.route('**/api/projects/playwright-synthetic-project/live-profile',async route=>{
+    if(route.request().method()!=='GET')throw new Error('Only the test-owned profile GET may be delayed');
+    reportRequestSeen();
+    await oldProfileGate;
+    await route.fulfill({status:200,
+      headers:{'access-control-allow-origin':UI_ORIGIN},
+      json:{version:0,profile}});
+  });
   await other.goto('/#/studio/quality');
+  await requestStarted; // A's older project load is now deliberately in flight.
   const prompts:string[]=[];
   page.on('dialog',async dialog=>{
     prompts.push(dialog.message());
@@ -500,6 +513,13 @@ test('cross-tab project selection Cancel preserves an edited primary Prepare dra
   await expect(target).toHaveValue('fraud_reported');
   await expect(page).toHaveURL(/#\/studio\/prepare$/);
   await expect(page.getByText(/Another tab selected a different project/)).toBeVisible();
+  // Complete B-tab's stale A profile read only after the cross-tab B selection.
+  // Its delayed success must not steal the shared selection back from project B.
+  releaseOldProfile();
+  await expect.poll(async()=>other.evaluate(()=>localStorage.getItem('pilotodin-current')))
+    .toBe(TEST_PROJECT_B);
+  // Let the browser process the completed mock response and related state effects.
+  await other.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   expect(await other.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);

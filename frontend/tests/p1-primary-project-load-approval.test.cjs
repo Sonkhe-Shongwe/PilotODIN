@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const ts=require('typescript');
+const Module=require('node:module');
 
 const app=fs.readFileSync(path.resolve(__dirname,'../src/App.tsx'),'utf8');
 const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
@@ -16,9 +17,19 @@ const compiled=ts.transpileModule(body+'\nexport {loadProject};',{
 });
 assert.equal((compiled.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0);
 
-function harness({approved=false,embedded=false,pid='B',current='A',shellCallback=true,fail=false,preapproved=false}={}){
+const guardPath=path.resolve(__dirname,'../src/projectSelectionCommitGuard.ts');
+const guardJs=ts.transpileModule(fs.readFileSync(guardPath,'utf8'),{
+ compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}});
+const guardMod=new Module(guardPath,module);
+guardMod.filename=guardPath;guardMod.paths=module.paths;
+guardMod._compile(guardJs.outputText,guardPath);
+const {mayCommitProjectSelection}=guardMod.exports;
+
+function harness({approved=false,embedded=false,pid='B',current='A',shellCallback=true,
+ fail=false,preapproved=false,selectedWhenStarted='A',selectedAfterFetch=null}={}){
  const operations={approved:[],generation:[],mutations:[],reads:[],storage:[],notice:[],uploadCommits:[]};
  const currentProject={id:current};
+ let sharedSelection=selectedWhenStarted;
  const setters=['setProject','setPrep','setExperiment','setPrediction','setTarget',
   'setQualityFocus','setDeliverEvidenceId','setQualityVersion','setFeatureHints',
   'setExcluded','setPredictVals','setConfirmSplit','setPage','setVisitedStages',
@@ -35,10 +46,17 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
   get:async url=>{
    operations.reads.push(url);
    if(fail)throw Error('backend unavailable');
-   if(url.endsWith('/live-profile'))return {version:0};
+   if(url.endsWith('/live-profile')){
+    if(selectedAfterFetch!==null)sharedSelection=selectedAfterFetch;
+    return {version:0};
+   }
    return {id:pid,filename:'existing.csv'};
   },
-  localStorage:{setItem:(name,value)=>operations.storage.push([name,value])},
+  localStorage:{
+   getItem:name=>{assert.equal(name,'pilotodin-current');return sharedSelection},
+   setItem:(name,value)=>{sharedSelection=value;operations.storage.push([name,value])},
+  },
+  mayCommitProjectSelection,
   embeddedStage:embedded?'prepare':undefined,
   requestedStudioStage:()=> 'quality',
   scrollRef:{current:{}}
@@ -48,7 +66,7 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
  const exports={};
  const fn=new Function(...names,'exports',compiled.outputText+'\nreturn exports.loadProject;')(
   ...Object.values(ctx),exports);
- return {load:()=>fn(pid,preapproved),operations,ctx};
+ return {load:()=>fn(pid,preapproved),operations,ctx,getShared:()=>sharedSelection};
 }
 
 test('denied direct Studio project switch does not clear state or start any request',async()=>{
@@ -170,4 +188,39 @@ test('project reads must succeed before old primary state is reset',()=>{
  const fetch=body.indexOf('await Promise.all([get<Project>');
  const reset=body.indexOf('setProject(null)');
  assert.ok(fetch>=0&&reset>fetch,'old project must survive a failed API request');
+});
+
+test('stale startup read may not overwrite another tab latest selection',async()=>{
+ const h=harness({current:'A',pid:'A',selectedAfterFetch:'B'});
+ assert.equal(await h.load(),false);
+ assert.equal(h.getShared(),'B');
+ assert.deepEqual(h.operations.storage,[]);
+ assert.deepEqual(h.operations.uploadCommits,[]);
+ assert.ok(!h.operations.mutations.includes('setProject'));
+ assert.equal(h.operations.notice.length,1);
+});
+test('stale approved local read may not replace a third-project selection',async()=>{
+ const h=harness({approved:true,pid:'B',selectedAfterFetch:'C'});
+ assert.equal(await h.load(),false);
+ assert.equal(h.getShared(),'C');
+ assert.deepEqual(h.operations.storage,[]);
+ assert.deepEqual(h.operations.uploadCommits,[]);
+ assert.ok(!h.operations.mutations.includes('setProject'));
+});
+test('approved local switch remains allowed if shared selection is unchanged or already desired',async()=>{
+ const first=harness({approved:true,pid:'B'});
+ assert.equal(await first.load(),true);
+ assert.equal(first.getShared(),'B');
+ const chosen=harness({approved:true,pid:'B',selectedAfterFetch:'B'});
+ assert.equal(await chosen.load(),true);
+ assert.deepEqual(chosen.operations.storage,[['pilotodin-current','B']]);
+});
+test('stale selection guard never reads drafts or performs any backend operation',()=>{
+ const src=fs.readFileSync(guardPath,'utf8');
+ assert.doesNotMatch(src,/localStorage|sessionStorage|fetch\(|post\(|upload\(|train\(/);
+ assert.equal(mayCommitProjectSelection('A','B','A'),false);
+ assert.equal(mayCommitProjectSelection('A','A','B'),true);
+ assert.equal(mayCommitProjectSelection('A','B','B'),true);
+ assert.equal(mayCommitProjectSelection('A','C','B'),false);
+ assert.equal(mayCommitProjectSelection('A','A',''),false);
 });
