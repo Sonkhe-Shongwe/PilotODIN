@@ -285,18 +285,34 @@ test('failure of an unrelated project never consumes pending external approval',
  assert.deepEqual(h.log.accepted,[]);
 });
 test('consented external read must finish before project ID is committed to the shell',()=>{
- // Match the handler's full closing line: a substring search for '  };'
- // can incorrectly stop at an inner object closing brace and hide setProjectId.
- const begin=shell.indexOf('  const reviewProject=(event:Event)=>{');
- const end=shell.indexOf('\n  };',begin);
- assert.ok(begin>=0&&end>begin,'must locate the complete external transition handler');
- const src=shell.slice(begin,end);
- const consent=src.indexOf("if(decision==='confirm'){");
- const commit=src.indexOf('setProjectId(requested)');
- assert.ok(consent>=0,'approved external transition branch must remain');
- assert.ok(commit>consent,'shell project commit must follow the consent branch');
- const pendingRead=src.slice(consent,commit);
- assert.match(pendingRead,/pendingExternalSwitch\.current=\{/);
- assert.match(pendingRead,/\n\s*return;\n\s*\}/,'consented switch must return before an immediate shell project commit');
+ // Inspect the parsed consent block, not text boundaries or line endings.
+ // Windows Git checkouts may use CRLF even when GitHub stores LF.
+ for(const eol of ['\n','\r\n']){
+  const source=handlerSource.replace(/\r?\n/g,eol);
+  const parsed=ts.createSourceFile('external-project-handler.ts',source,
+    ts.ScriptTarget.ES2021,true,ts.ScriptKind.TS);
+  assert.equal(parsed.parseDiagnostics.length,0,'project handler must parse');
+  const declaration=parsed.statements.find(ts.isVariableStatement)?.declarationList.declarations[0];
+  const callback=declaration?.initializer;
+  assert.ok(callback&&ts.isArrowFunction(callback)&&ts.isBlock(callback.body),
+    'actual external handler must be an arrow function with a body');
+  const statements=callback.body.statements;
+  const approval=statements.find(node=>ts.isIfStatement(node)&&
+    node.expression.getText(parsed).replace(/\s/g,'')==="decision==='confirm'");
+  assert.ok(approval&&ts.isBlock(approval.thenStatement),
+    'must find the consented external project transition block');
+  const consentBody=approval.thenStatement;
+  assert.match(consentBody.getText(parsed),/pendingExternalSwitch\.current\s*=\s*\{/,
+    'consented change must remain provisional');
+  assert.ok(ts.isReturnStatement(consentBody.statements[consentBody.statements.length-1]),
+    'consented switch must return before any immediate shell project commit');
+  assert.doesNotMatch(consentBody.getText(parsed),/\bsetProjectId\s*\(/,
+    'consent branch must not commit shell identity before B GETs succeed');
+  const commitIndex=statements.findIndex(node=>ts.isExpressionStatement(node)&&
+    ts.isCallExpression(node.expression)&&node.expression.expression.getText(parsed)==='setProjectId'&&
+    node.expression.arguments[0]?.getText(parsed)==='requested');
+  assert.ok(commitIndex>statements.indexOf(approval),
+    'nonconsented shell commit must follow and remain outside the consent branch');
+ }
  assert.match(shell,/onPrimaryProjectLoadFailed=\{failPrimaryProjectLoad\}/);
 });
