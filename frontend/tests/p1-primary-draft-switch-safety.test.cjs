@@ -79,8 +79,18 @@ test('primary draft capture is restricted to main Studio form, not its project s
 });
 test('both project selectors and import preflight check drafts before any project change',()=>{
  const choose=shell.slice(shell.indexOf('const chooseProject='),shell.indexOf('const sidebarViews='));
- assert.ok(choose.indexOf('if(!confirmProjectDraftDiscard())return;')>=0);
- assert.ok(choose.indexOf('if(!confirmProjectDraftDiscard())return;')<choose.indexOf('setProjectId(id)'));
+ const consent=choose.indexOf('if(!confirmProjectDraftDiscard())return;');
+ const provisional=choose.indexOf('pendingExternalSwitch.current={');
+ const request=choose.indexOf("pilotodin:primary-project-load-requested");
+ assert.ok(consent>=0&&provisional>consent&&request>provisional,
+   'consent must precede a provisional B request, never an immediate identity commit');
+ assert.doesNotMatch(choose,/localStorage\.(?:setItem|removeItem)\s*\(|\bsetProjectId\s*\(/,
+   'choosing B must not change A storage or unmount A before successful GETs');
+ const loaded=shell.slice(shell.indexOf('const commitPrimaryLoadedProject='),shell.indexOf('const consumePrimaryProjectHandoff='));
+ assert.match(loaded,/pendingExternalSwitch\.current\?\.requestedId===id/);
+ assert.ok(loaded.indexOf('primaryProjectHandoff.current=snapshot')>=0);
+ assert.ok(loaded.indexOf('primaryProjectHandoff.current=snapshot')<loaded.indexOf('setProjectId(id)'),
+   'commit is allowed only after the verified project/profile snapshot is staged');
  const start=shell.slice(shell.indexOf('const approvePrimaryProjectUpload='),shell.indexOf('const chooseProject='));
  assert.match(start,/return confirmProjectDraftDiscard\(\)/);
  assert.match(start,/if\(!confirmProjectDraftDiscard\(\)\)return false/);

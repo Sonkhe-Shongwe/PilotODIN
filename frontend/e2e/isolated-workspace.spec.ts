@@ -567,9 +567,14 @@ test('approved cross-tab project read failure preserves primary Prepare without 
       json:{detail:'Synthetic project profile temporarily unavailable'}});
   });
   const other=await context.newPage();
-  await other.goto('/#/studio/quality');
-  await expect(other.locator('.po-primary-pane').getByRole('heading',{name:'Data Quality',exact:true}))
-    .toBeVisible();
+  // Both tabs share project A's persisted active Prepare stage. Matching the
+  // restored stage avoids requiring an unrelated Quality navigation before
+  // this test exercises the approved B read failure.
+  await other.goto('/#/studio/prepare');
+  await expect(other.getByRole('combobox',{name:'Switch project'}))
+    .toHaveValue(TEST_PROJECT);
+  await expect(other.locator('.po-primary-pane')
+    .getByRole('combobox',{name:/target variable/i})).toBeVisible();
 
   const prompts:string[]=[];
   page.on('dialog',async dialog=>{
