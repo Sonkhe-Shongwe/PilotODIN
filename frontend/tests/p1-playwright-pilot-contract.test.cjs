@@ -62,3 +62,33 @@ test('isolated browser does not reuse server or approve import',()=>{
   assert.match(spec,/await dialog\.dismiss\(\)/);
   assert.doesNotMatch(spec,/dialog\.accept\(/);
 });
+test('only the exact declared Google Fonts stylesheet is replaced with local CSS',async()=>{
+  const {call,audit}=await setup();
+  const url='https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&family=Manrope:wght@500;600;650;700;750;800&display=swap';
+  const response=await call(url);
+  assert.equal(response.kind,'fulfill');
+  assert.equal(response.response.status,200);
+  assert.match(response.response.contentType,/^text\/css/);
+  assert.doesNotMatch(response.response.body,/@import|@font-face|https?:\/\//);
+  assert.deepEqual(audit.stubbedFontStylesheets,['GET https://fonts.googleapis.com/css2']);
+  assert.deepEqual(audit.blockedOrigins,[]);
+  assert.deepEqual(audit.writes,[]);
+});
+test('font exception rejects changed families, wrong paths, methods and font binaries',async()=>{
+  const {call,audit}=await setup();
+  const expected='https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&family=Manrope:wght@500;600;650;700;750;800&display=swap';
+  const denied=[
+    {url:expected,method:'POST'},
+    {url:'https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap',method:'GET'},
+    {url:'https://fonts.googleapis.com/other',method:'GET'},
+    {url:'https://fonts.gstatic.com/s/test.woff2',method:'GET'},
+  ];
+  for(const item of denied)assert.equal((await call(item.url,item.method)).kind,'abort');
+  assert.deepEqual(audit.blockedOrigins,[
+    'POST https://fonts.googleapis.com/css2',
+    'GET https://fonts.googleapis.com/css2',
+    'GET https://fonts.googleapis.com/other',
+    'GET https://fonts.gstatic.com/s/test.woff2'
+  ]);
+  assert.deepEqual(audit.stubbedFontStylesheets,[]);
+});

@@ -34,14 +34,14 @@ const syntheticProject={
   experiments:[],
 };
 
-type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]};
+type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]; stubbedFontStylesheets:string[]};
 
 /** Fail closed: only the dedicated Vite origin is allowed onto the network.
  * Every API response comes from this handler, never the actual :8000 backend.
  * Unrecognised requests return a synthetic 404 and are recorded.
  */
 async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Promise<NetworkAudit>{
-  const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[]};
+  const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[],stubbedFontStylesheets:[]};
   await context.route('**/*',async(route:Route)=>{
     const req=route.request();
     const url=new URL(req.url());
@@ -53,6 +53,24 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Pr
         return;
       }
       await route.continue();
+      return;
+    }
+    // The production stylesheet currently imports Inter/Manrope from Google.
+    // Offline E2E never contacts that host: serve an empty, test-owned CSS
+    // response only for the exact known font request. Browser falls back to
+    // installed system fonts; other external requests remain blocked/audited.
+    const families=url.searchParams.getAll('family');
+    if(req.method()==='GET'
+      &&url.origin==='https://fonts.googleapis.com'
+      &&url.pathname==='/css2'
+      &&families.length===2
+      &&families[0]==='Inter:wght@400;450;500;550;600;650;700;750;800'
+      &&families[1]==='Manrope:wght@500;600;650;700;750;800'
+      &&url.searchParams.get('display')==='swap'
+      &&[...url.searchParams.keys()].length===3){
+      audit.stubbedFontStylesheets.push('GET '+url.origin+url.pathname);
+      await route.fulfill({status:200,contentType:'text/css; charset=utf-8',
+        body:'/* Isolated PilotODIN E2E: use system font fallback; no external request. */'});
       return;
     }
     if(url.origin!==API_ORIGIN||!url.pathname.startsWith('/api/')){
