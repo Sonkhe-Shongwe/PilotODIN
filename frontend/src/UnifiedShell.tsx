@@ -93,6 +93,12 @@ export function UnifiedShell(){
  // Memory-only flags: no form content or dataset values are stored.
  const editedDock=useRef<EditedDock|null>(null);
  const editedPrimary=useRef<{projectId:string;view:'prepare'|'model'|'predict'}|null>(null);
+ // A consented external switch is provisional until the existing Studio has
+ // read the requested project. A failed GET must never unmount this draft.
+ const pendingExternalSwitch=useRef<{
+  requestedId:string;previousId:string;fromStorage:boolean;
+  primary:typeof editedPrimary.current;secondary:EditedDock|null;
+ }|null>(null);
  // Last accepted URL is memory-only; never store form values or push synthetic history entries.
  const acceptedRouteHash=useRef(window.location.hash);
  // One-shot preapproved same-document push consent, never persisted.
@@ -172,6 +178,11 @@ export function UnifiedShell(){
    if(event.type==='storage'&&(event as StorageEvent).key!==null&&(event as StorageEvent).key!=='pilotodin-current')return;
    const requested=localStorage.getItem('pilotodin-current')||'';
    const unavailable=event.type==='pilotodin:project-changed'&&(event as CustomEvent<{reason?:string}>).detail?.reason==='unavailable';
+   // A storage notification is bridged to the ordinary App listener. Never
+   // ask twice or let the bridge change the shell's project before the GET.
+   if(pendingExternalSwitch.current?.requestedId===requested&&!unavailable)return;
+   if(pendingExternalSwitch.current&&pendingExternalSwitch.current.requestedId!==requested)
+    pendingExternalSwitch.current=null;
    const decision=planExternalProjectTransition(projectId,requested,dock.secondary,editedDock.current,workspaceReady,unavailable,editedPrimary.current?.projectId??null);
    if(decision==='unchanged'){
     if(event.type==='pilotodin:project-changed')void refreshProjects();
@@ -195,9 +206,21 @@ export function UnifiedShell(){
     event.stopImmediatePropagation();
     return;
    }
+   if(decision==='confirm'){
+    // Consent is not a successful project load. Keep the current App keyed to
+    // A and its edits mounted until the requested B project GETs both succeed.
+    pendingExternalSwitch.current={
+     requestedId:requested,previousId:projectId,fromStorage:event.type==='storage',
+     primary:editedPrimary.current,secondary:editedDock.current,
+    };
+    if(event.type==='storage'){
+     window.dispatchEvent(new Event('pilotodin:project-changed'));
+    }
+    // For a same-tab project-change, this event continues into App directly.
+    return;
+   }
+   // Backend-confirmed removal and unedited changes retain earlier handling.
    editedDock.current=null;
-   // Explicit approval retires the old primary marker for this external
-   // selection. A cancelled event retains it and never writes shared storage.
    editedPrimary.current=null;
    if(event.type==='storage'){
     // Primary Studio does not listen directly to cross-tab storage events.
@@ -348,10 +371,36 @@ export function UnifiedShell(){
   return confirmProjectDraftDiscard();
  };
  const commitPrimaryUploadedProject=()=>{editedDock.current=null;editedPrimary.current=null;};
- const commitPrimaryLoadedProject=()=>{editedPrimary.current=null;};
+ const commitPrimaryLoadedProject=(id:string)=>{
+  if(pendingExternalSwitch.current?.requestedId===id){
+   pendingExternalSwitch.current=null;
+   editedPrimary.current=null;editedDock.current=null;
+   // Only commit shell identity after App has successfully read both B GETs.
+   setProjectId(id);
+   void refreshProjects();
+  }else editedPrimary.current=null;
+ };
+ const failPrimaryProjectLoad=(id:string)=>{
+  const pending=pendingExternalSwitch.current;
+  if(!pending||pending.requestedId!==id)return;
+  pendingExternalSwitch.current=null;
+  // App never reset its mounted A form on a failed GET. Keep those markers.
+  editedPrimary.current=pending.primary;editedDock.current=pending.secondary;
+  if(!pending.fromStorage){
+   try{
+    if(localStorage.getItem('pilotodin-current')===id)
+     localStorage.setItem('pilotodin-current',pending.previousId);
+   }catch{setWarning('Could not restore project selection; this window retains its unsaved workspace.')}
+  }
+  setWarning(pending.fromStorage
+   ?'The other tab selected a project that could not be opened here. This window retains its unsaved workspace; reloading may use the other tab’s selection.'
+   :'The selected project could not be opened. This window retains its unsaved workspace.');
+ };
  const approvePrimaryProjectLoad=(id:string):boolean=>{
   if(!id||!workspaceReady)return false;
   if(id===projectId)return true;
+  // Approval was already granted for this exact external project event.
+  if(pendingExternalSwitch.current?.requestedId===id)return true;
   if(!confirmProjectDraftDiscard())return false;
   editedDock.current=null;
   return true;
@@ -527,7 +576,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryProjectLoaded={commitPrimaryLoadedProject} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
+       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryProjectLoaded={commitPrimaryLoadedProject} onPrimaryProjectLoadFailed={failPrimaryProjectLoad} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {mountDock&&<>

@@ -38,7 +38,8 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
   embedded,embeddedProjectId:current,project:currentProject,
   onBeforePrimaryProjectLoad:shellCallback?(id=>{operations.approved.push(id);return approved}):undefined,
   onPrimaryUploadedProjectCommitted:()=>operations.uploadCommits.push(pid),
-  onPrimaryProjectLoaded:()=>operations.uploadCommits.push('loaded:'+pid),
+  onPrimaryProjectLoaded:id=>operations.uploadCommits.push('loaded:'+id),
+  onPrimaryProjectLoadFailed:id=>operations.notice.push('failed:'+id),
   setNotice:value=>operations.notice.push(value),
   latestProjectRequest:{current:0},
   projectOperations:{current:{begin:id=>{operations.generation.push(id);return 1},
@@ -197,7 +198,7 @@ test('stale startup read may not overwrite another tab latest selection',async()
  assert.deepEqual(h.operations.storage,[]);
  assert.deepEqual(h.operations.uploadCommits,[]);
  assert.ok(!h.operations.mutations.includes('setProject'));
- assert.equal(h.operations.notice.length,1);
+ assert.equal(h.operations.notice.length,2);
 });
 test('stale approved local read may not replace a third-project selection',async()=>{
  const h=harness({approved:true,pid:'B',selectedAfterFetch:'C'});
@@ -214,6 +215,14 @@ test('approved local switch remains allowed if shared selection is unchanged or 
  const chosen=harness({approved:true,pid:'B',selectedAfterFetch:'B'});
  assert.equal(await chosen.load(),true);
  assert.deepEqual(chosen.operations.storage,[['pilotodin-current','B']]);
+});
+test('failed authorized project GET reports failure without clearing any old form',async()=>{
+ const h=harness({approved:true,fail:true});
+ assert.equal(await h.load(),false);
+ assert.deepEqual(h.operations.uploadCommits,[]);
+ assert.ok(h.operations.notice.includes('failed:B'));
+ assert.deepEqual(h.operations.storage,[]);
+ assert.ok(!h.operations.mutations.includes('setProject'));
 });
 test('stale selection guard never reads drafts or performs any backend operation',()=>{
  const src=fs.readFileSync(guardPath,'utf8');

@@ -61,7 +61,7 @@ function fmtPrediction(value:string|number,task:string|undefined){return typeof 
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose,onPrimaryDraftEdited,onPrimaryProjectLoaded}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose,onPrimaryDraftEdited,onPrimaryProjectLoaded,onPrimaryProjectLoadFailed}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
@@ -75,7 +75,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   onPrimaryUploadedProjectCommitted?:()=>void;
   // Report only a memory-only edit signal; never transmit field values.
   onPrimaryDraftEdited?:(view:Stage)=>void;
-  onPrimaryProjectLoaded?:()=>void;
+  onPrimaryProjectLoaded?:(projectId:string)=>void;
+  onPrimaryProjectLoadFailed?:(projectId:string)=>void;
   forceNewProject?:boolean;
   onNewProjectClose?:()=>void;
 }={}){
@@ -214,14 +215,16 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     if(!embedded&&!mayCommitProjectSelection(
       selectedWhenStarted,localStorage.getItem('pilotodin-current')||'',pid)){
       setNotice('Another tab selected a different project while this one was loading. The older load was not applied.');
+      onPrimaryProjectLoadFailed?.(pid);
       return false;
     }
-    if(!embedded&&pid!==project?.id)onPrimaryProjectLoaded?.();
+    if(!embedded&&pid!==project?.id)onPrimaryProjectLoaded?.(pid);
     if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
     setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
       if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
       setError(`Could not open project: ${(e as Error).message}`);
+      if(!embedded)onPrimaryProjectLoadFailed?.(pid);
       // Never remove the user's selected project on a transient API failure.
       return false;
     }}
