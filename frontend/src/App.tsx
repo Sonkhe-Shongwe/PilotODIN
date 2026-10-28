@@ -60,7 +60,7 @@ function fmtPrediction(value:string|number,task:string|undefined){return typeof 
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose,onPrimaryDraftEdited,onPrimaryProjectLoaded}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
@@ -72,6 +72,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   onBeforePrimaryProjectUpload?:()=>boolean;
   // Complete an authorised upload switch only after its project fetch succeeds.
   onPrimaryUploadedProjectCommitted?:()=>void;
+  // Report only a memory-only edit signal; never transmit field values.
+  onPrimaryDraftEdited?:(view:Stage)=>void;
+  onPrimaryProjectLoaded?:()=>void;
   forceNewProject?:boolean;
   onNewProjectClose?:()=>void;
 }={}){
@@ -204,6 +207,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     const generation=projectOperations.current.begin(pid);
     // Fetch first: failed project reads must not discard the current unsaved work.
     try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
+    if(!embedded&&pid!==project?.id)onPrimaryProjectLoaded?.();
     if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
     setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
@@ -402,7 +406,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
         <div className="topbar-leading"><button className="icon-btn mobile-menu-btn" aria-label="Open navigation" onClick={()=>setMobileOpen(true)}><Menu size={19}/></button><span className="studio-topcrumb">Workspace</span><ChevronRight size={14}/><span className="studio-top-location">{page==='overview'?'Home':NAV.find(n=>n.id===page)?.name}</span></div>
         <div className="top-right studio-top-right"><button className="studio-odin-trigger" title="Explore the new investigation canvas" onClick={()=>{if(!embedded)location.hash='#/canvas'}}>New Canvas <ArrowRight size={15}/></button><button className="global-search" onClick={()=>setPaletteOpen(true)} title="Search workspaces (Ctrl+K)"><Search size={17}/><span>Search or jump to…</span><kbd>Ctrl K</kbd></button><span className={cls('connection-pill',cloudStatus)}><span className="status-orb"/>{cloudStatus==='connected'?'AI ready':cloudStatus==='checking'?'Connecting…':'Local ready'}</span><button className="studio-icon-action" aria-label="AI settings" title="AI settings" onClick={()=>go('ai_settings')}><Settings2 size={18}/></button><button className={cls('studio-odin-trigger',odinOpen&&'engaged')} aria-label="Open ODIN companion" disabled={!project} onClick={()=>setOdinOpen(true)}><Sparkles size={17}/><span>Ask ODIN</span></button></div>
       </header>
-      <div className="content po-motion-stage" id="workspace-content" key={`${project?.id??'none'}-${page}`}>
+      <div className="content po-motion-stage" id="workspace-content" key={`${project?.id??'none'}-${page}`} onChangeCapture={event=>{
+        // Project chooser is outside this stage: it must never mark a draft.
+        if(embedded||!project||!['prepare','model','predict'].includes(page))return;
+        const tag=(event.target as HTMLElement).tagName;
+        if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')onPrimaryDraftEdited?.(page);
+      }}>
         {busy&&<div className="operation-status" role="status" aria-live="polite"><LoaderCircle size={16} className="spin"/><span>{busy==='train'?'Submitting training experiment…':busy==='select'?'Selecting and validating model…':busy==='predict'?'Computing prediction…':'Working…'}</span></div>}
         {error&&<div className="alert-error"><AlertCircle size={18}/><span>{error}</span><button onClick={()=>setError('')}>Dismiss</button></div>}
         {((!project&&page!=='ai_settings')||showUpload)&&<section className="landing">{project&&<button className="studio-cancel-upload" onClick={()=>{setUploadOpen(false);setFile(null);onNewProjectClose?.()}} aria-label="Cancel new dataset">Cancel upload <X size={16}/></button>}<div className="hero-flag"><Sparkles size={16}/> INTELLIGENT DATA SCIENCE</div><h1>Turn raw data into<br/><em>predictive intelligence.</em></h1><p>Upload a dataset, explore its structure, compare machine learning models and build a working prediction tool. All on your own machine.</p>
@@ -426,7 +435,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
             <div className="panel action-panel"><div><h3>Ready to define your objective?</h3><p>Choose the column you want to predict and review the preparation plan.</p></div><button className="btn primary" onClick={()=>go('prepare')}>Prepare data <ArrowRight size={17}/></button></div>
           </>}
           {page==='prepare'&&profile&&<><div className="panel"><div className="panel-title"><Target size={19}/><h2>Define your prediction target</h2></div><p className="body-muted">Which column contains the outcome you want to predict? Suggestions are based on names only and require your confirmation.</p><label className="field-label" htmlFor={targetFieldId}>TARGET VARIABLE</label><select id={targetFieldId} className="input full" value={target} onChange={(e:any)=>{setTarget(e.target.value);setPrep(null);setExperiment(null);setConfirmSplit(false);setError('')}}><option value="">Select a target column…</option>{profile.columns.map(c=><option value={c.name} key={c.name}>{c.name}</option>)}</select>{profile.target_candidates.length>0&&<p className="muted-caption">The imported-file name hints above are unverified. See the screened opportunities below for label support and structural warnings.</p>}</div>
-            <TargetOpportunities key={project.id+'-'+qualityVersion} projectId={project.id} version={qualityVersion} selectedTarget={target} onChooseTarget={column=>{if(!profile.columns.some(c=>c.name===column))return;setTarget(column);setPrep(null);setExperiment(null);setConfirmSplit(false);setError('')}}/>
+            <TargetOpportunities key={project.id+'-'+qualityVersion} projectId={project.id} version={qualityVersion} selectedTarget={target} onChooseTarget={column=>{if(!profile.columns.some(c=>c.name===column))return;if(!embedded)onPrimaryDraftEdited?.('prepare');setTarget(column);setPrep(null);setExperiment(null);setConfirmSplit(false);setError('')}}/>
             {prep&&<>{!embedded&&<CategoryQualityAdvice projectId={project.id} version={qualityVersion} columns={prep.feature_audit.filter(f=>f.kind==='categorical'&&f.default_included&&!excluded.includes(f.column)).map(f=>f.column)} location="prepare" onReview={(focus:QualityFocus)=>{if(focus.projectId===project.id&&focus.version===qualityVersion){setQualityFocus(focus);go('quality')}}}/>}<div className="metrics three"><Metric label="TASK IDENTIFIED" value={prep.task==='classification'?'Classification':'Regression'} icon={<Target size={18}/>} small/><Metric label="INCLUDED PREDICTORS" value={String(prep.feature_audit.filter(f=>f.default_included&&!excluded.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length)} icon={<Database size={18}/>}/><Metric label="MISSING TARGETS" value={String(prep.missing_targets)} icon={<Activity size={18}/>}/></div>
               <div className="panel"><div className="panel-title"><ClipboardCheck size={19}/><h2>Review feature exclusions</h2></div><p className="body-muted">The model will use all columns except the target and features you deliberately exclude. Suggested exclusions are not automatically enforced.</p>
                 <button className="btn small" onClick={()=>setExcluded(current=>[...new Set([...current,...prep.high_risk_features,...featureHints.filter(f=>f.risk==='high').map(f=>f.column).filter(column=>prep.available_features.includes(column))])])}><Sparkles size={14}/> Apply high-risk exclusion suggestions</button>

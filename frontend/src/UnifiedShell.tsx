@@ -90,8 +90,9 @@ export function UnifiedShell(){
  const tablistRef=useRef<HTMLDivElement|null>(null);
  const pendingCloseFocus=useRef<{projectId:string;view:View}|null>(null);
  const pendingDockDismissFocus=useRef<{projectId:string;view:View}|null>(null);
- // Memory-only flag, never store the contents of a form or dataset.
+ // Memory-only flags: no form content or dataset values are stored.
  const editedDock=useRef<EditedDock|null>(null);
+ const editedPrimary=useRef<{projectId:string;view:'prepare'|'model'|'predict'}|null>(null);
  // Last accepted URL is memory-only; never store form values or push synthetic history entries.
  const acceptedRouteHash=useRef(window.location.hash);
  // One-shot preapproved same-document push consent, never persisted.
@@ -296,6 +297,17 @@ export function UnifiedShell(){
   if(!needsDockInputDiscardApproval(editedDock.current,projectId,dock.secondary,action,proposed))return true;
   return window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?');
  };
+ const markPrimaryDraftEdited=(view:View)=>{
+  if(workspaceReady&&projectId&&(view==='prepare'||view==='model'||view==='predict'))editedPrimary.current={projectId,view};
+ };
+ const confirmProjectDraftDiscard=():boolean=>{
+  // A single prompt covers both forms when both are edited.
+  if(editedPrimary.current?.projectId!==projectId)return confirmEditedDockDiscard('switch-project');
+  const dockDirty=needsDockInputDiscardApproval(editedDock.current,projectId,dock.secondary,'switch-project');
+  return window.confirm(dockDirty
+   ?'You changed fields in the primary and docked workspaces. Switching projects may discard those entries. Continue?'
+   :'You changed fields in the primary workspace. Switching projects may discard those entries. Continue?');
+ };
  // The primary App has its own local go() path; it must consult the shell BEFORE
  // committing a route which would activate (and therefore unmount) its edited dock.
  const approvePrimaryStudioNavigation=(view:View):boolean=>{
@@ -325,19 +337,20 @@ export function UnifiedShell(){
  // does not discard the edited-dock marker: failed imports leave drafts guarded.
  const approvePrimaryProjectUpload=():boolean=>{
   if(!workspaceReady)return false;
-  return confirmEditedDockDiscard('switch-project');
+  return confirmProjectDraftDiscard();
  };
- const commitPrimaryUploadedProject=()=>{editedDock.current=null;};
+ const commitPrimaryUploadedProject=()=>{editedDock.current=null;editedPrimary.current=null;};
+ const commitPrimaryLoadedProject=()=>{editedPrimary.current=null;};
  const approvePrimaryProjectLoad=(id:string):boolean=>{
   if(!id||!workspaceReady)return false;
   if(id===projectId)return true;
-  if(!confirmEditedDockDiscard('switch-project'))return false;
+  if(!confirmProjectDraftDiscard())return false;
   editedDock.current=null;
   return true;
  };
  const chooseProject=(id:string)=>{if(!id||id===projectId)return;
-  if(!confirmEditedDockDiscard('switch-project'))return;
-  editedDock.current=null;
+  if(!confirmProjectDraftDiscard())return;
+  editedDock.current=null;editedPrimary.current=null;
   setNewProjectOpen(false);localStorage.setItem('pilotodin-current',id);setProjectId(id);window.dispatchEvent(new Event('pilotodin:project-changed'))};
  const sidebarViews=useMemo(()=>NAV_SECTIONS.flatMap(section=>section.ids),[]);
  const onSidebarKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
@@ -506,7 +519,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
+       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryProjectLoaded={commitPrimaryLoadedProject} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {mountDock&&<>

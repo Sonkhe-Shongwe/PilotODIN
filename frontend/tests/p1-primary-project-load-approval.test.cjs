@@ -27,6 +27,7 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
   embedded,embeddedProjectId:current,project:currentProject,
   onBeforePrimaryProjectLoad:shellCallback?(id=>{operations.approved.push(id);return approved}):undefined,
   onPrimaryUploadedProjectCommitted:()=>operations.uploadCommits.push(pid),
+  onPrimaryProjectLoaded:()=>operations.uploadCommits.push('loaded:'+pid),
   setNotice:value=>operations.notice.push(value),
   latestProjectRequest:{current:0},
   projectOperations:{current:{begin:id=>{operations.generation.push(id);return 1},
@@ -114,7 +115,7 @@ test('shell guards a different requested project with the existing edit warning'
  const section=shell.slice(start,end);
  assert.match(section,/if\(!id\|\|!workspaceReady\)return false/);
  assert.match(section,/if\(id===projectId\)return true/);
- const veto=section.indexOf("if(!confirmEditedDockDiscard('switch-project'))return false;");
+ const veto=section.indexOf('if(!confirmProjectDraftDiscard())return false;');
  assert.ok(veto>0);
  assert.ok(section.indexOf('editedDock.current=null')>veto);
 });
@@ -155,7 +156,7 @@ test('pre-approved upload opens its project without a second project-switch warn
  const h=harness({preapproved:true});
  assert.equal(await h.load(),true);
  assert.deepEqual(h.operations.approved,[]);
- assert.deepEqual(h.operations.uploadCommits,['B']);
+ assert.deepEqual(h.operations.uploadCommits,['loaded:B','B']);
  assert.deepEqual(h.operations.storage,[['pilotodin-current','B']]);
 });
 test('failed project load after upload does not consume approval or discard old project',async()=>{

@@ -162,7 +162,7 @@ test('source registers capture project handlers before ordinary App project list
 });
 test('ordinary user selector remains guarded and backend deletion is tagged separately',()=>{
  assert.match(shell,/const chooseProject=\(id:string\)=>/);
- assert.match(shell,/if\(!confirmEditedDockDiscard\('switch-project'\)\)return/);
+ assert.match(shell,/if\(!confirmProjectDraftDiscard\(\)\)return/);
  assert.match(shell,/new CustomEvent\('pilotodin:project-changed',\{detail:\{reason:'unavailable'\}\}\)/);
 });
 test('project notification handler does not copy form contents or authorise data/ML changes',()=>{
