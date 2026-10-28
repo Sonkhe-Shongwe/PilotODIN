@@ -183,6 +183,16 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
         suggestions:[],blocked_examples:[],eligible_count:0,blocked_count:0,
         abstained:true,abstention_reason:'No business objective verified for test-only data',
         business_context_state:'unverified',note:'Synthetic browser fixture',privacy:'No user data'};
+    // Prepare mounts TargetOpportunities as soon as verified B is displayed.
+    // Only this exact second-project read at the expected dataset version is
+    // part of the approved A-to-B switch. All other B routes stay fail-closed.
+    }else if(withProject&&withSecondProject
+      &&pathname===`/projects/${TEST_PROJECT_B}/target-opportunities`
+      &&url.search==='?expected_version=0'){
+      result={version:0,ranking_basis:'Synthetic second-project label screening, not target approval',
+        suggestions:[],blocked_examples:[],eligible_count:0,blocked_count:0,
+        abstained:true,abstention_reason:'No business objective verified for synthetic B',
+        business_context_state:'unverified',note:'Synthetic second-project fixture only',privacy:'No user data'};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/features`){
       result={features:[]};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/preparation`){
@@ -208,7 +218,9 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/explore/saved`){
       result=[];
     }else{
-      audit.unexpectedReads.push(pathname);
+      // Preserve the query string in diagnostics: a wrong version/target is
+      // not the same request as the explicitly accepted read-only endpoint.
+      audit.unexpectedReads.push(pathname+url.search);
       await route.fulfill({status:404,headers:{'access-control-allow-origin':UI_ORIGIN},
         json:{detail:'Unmocked read in isolated E2E fixture'}});
       return;
@@ -625,8 +637,17 @@ test('approved cross-tab successful project load avoids duplicate failing profil
   const firstBProfile=page.waitForResponse(response=>
     response.url().endsWith(`/api/projects/${TEST_PROJECT_B}/live-profile`)
       &&response.status()===200);
+  // A valid B Prepare mount also performs a scoped target-opportunities GET.
+  // Confirm the B fixture actually serves it with 200, not an audited 404.
+  const bOpportunities=page.waitForResponse(response=>{
+    const url=new URL(response.url());
+    return url.origin===API_ORIGIN
+      &&url.pathname===`/api/projects/${TEST_PROJECT_B}/target-opportunities`
+      &&url.search==='?expected_version=0';
+  });
   await other.evaluate((id:string)=>localStorage.setItem('pilotodin-current',id),TEST_PROJECT_B);
   await firstBProfile;
+  expect((await bOpportunities).status()).toBe(200);
   await expect.poll(()=>prompts.length).toBe(1);
   await expect(switcher).toHaveValue(TEST_PROJECT_B);
   // Allow App/shell state changes and mount effects to settle after first success.

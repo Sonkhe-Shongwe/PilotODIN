@@ -201,3 +201,88 @@ test('second synthetic project is opt-in and never exposes an unmocked real proj
   assert.deepEqual(second.audit.unexpectedReads,[]);
   assert.deepEqual(second.audit.blockedOrigins,[]);
 });
+
+test('approved A-to-B Prepare fixture serves the complete bounded read-only request set',async()=>{
+  const {call,audit}=await setup(true);
+  const base='http://127.0.0.1:8000/api';
+  const requests=[
+    {path:'/projects',check:value=>value.length===2},
+    {path:'/ai/settings',check:value=>value.cloud_enabled===false},
+    {path:'/projects/playwright-synthetic-project',check:value=>value.id==='playwright-synthetic-project'},
+    {path:'/projects/playwright-synthetic-project/live-profile',check:value=>value.version===0},
+    {path:'/projects/playwright-synthetic-project/target-opportunities?expected_version=0',
+      check:value=>value.version===0&&value.abstained===true},
+    {path:'/projects/playwright-synthetic-project/preparation?target=fraud_reported',
+      check:value=>value.target==='fraud_reported'},
+    {path:'/projects/playwright-synthetic-project/features?target=fraud_reported',
+      check:value=>Array.isArray(value.features)},
+    {path:'/projects/playwright-synthetic-second-project',
+      check:value=>value.id==='playwright-synthetic-second-project'},
+    {path:'/projects/playwright-synthetic-second-project/live-profile',
+      check:value=>value.version===0&&value.profile.filename==='synthetic_second_fixture.csv'},
+    {path:'/projects/playwright-synthetic-second-project/target-opportunities?expected_version=0',
+      check:value=>value.version===0&&value.abstained===true
+        &&value.business_context_state==='unverified'
+        &&value.note==='Synthetic second-project fixture only'},
+  ];
+  for(const {path,check} of requests){
+    const response=await call(base+path);
+    assert.equal(response.kind,'fulfill',path);
+    assert.equal(response.response.status,200,path);
+    assert.equal(check(response.response.json),true,path);
+  }
+  assert.deepEqual(audit.unexpectedReads,[]);
+  assert.deepEqual(audit.writes,[]);
+  assert.deepEqual(audit.blockedOrigins,[]);
+});
+
+test('second-project target opportunities require explicit opt-in and version; all other B API reads remain blocked',async()=>{
+  const base='http://127.0.0.1:8000/api/projects/playwright-synthetic-second-project';
+  const allowed=base+'/target-opportunities?expected_version=0';
+  const aOnly=await setup();
+  const deniedWithoutOptIn=await aOnly.call(allowed);
+  assert.equal(deniedWithoutOptIn.response.status,404);
+  assert.deepEqual(aOnly.audit.unexpectedReads,
+    ['/projects/playwright-synthetic-second-project/target-opportunities?expected_version=0']);
+  const {call,audit}=await setup(true);
+  for(const path of [
+    '/target-opportunities',
+    '/target-opportunities?expected_version=1',
+    '/target-opportunities?expected_version=0&extra=unapproved',
+    '/preparation?target=fraud_reported',
+    '/features?target=fraud_reported',
+    '/quality',
+    '/explore/overview',
+  ]){
+    const response=await call(base+path);
+    assert.equal(response.kind,'fulfill',path);
+    assert.equal(response.response.status,404,path);
+  }
+  assert.deepEqual(audit.unexpectedReads,[
+    '/projects/playwright-synthetic-second-project/target-opportunities',
+    '/projects/playwright-synthetic-second-project/target-opportunities?expected_version=1',
+    '/projects/playwright-synthetic-second-project/target-opportunities?expected_version=0&extra=unapproved',
+    '/projects/playwright-synthetic-second-project/preparation?target=fraud_reported',
+    '/projects/playwright-synthetic-second-project/features?target=fraud_reported',
+    '/projects/playwright-synthetic-second-project/quality',
+    '/projects/playwright-synthetic-second-project/explore/overview',
+  ]);
+  for(const method of ['POST','DELETE','PATCH']){
+    const denied=await call(allowed,method);
+    assert.equal(denied.response.status,403,method);
+  }
+  assert.equal(audit.writes.length,3);
+  assert.deepEqual(audit.blockedOrigins,[]);
+});
+
+test('successful B Prepare mounts target screening at verified version without launching B preparation or feature reads',()=>{
+  const src=fs.readFileSync(path.resolve(__dirname,'../src/TargetOpportunities.tsx'),'utf8');
+  assert.match(app,/\{page==='prepare'&&profile&&/);
+  assert.match(app,/<TargetOpportunities key=\{project\.id\+'-'\+qualityVersion\} projectId=\{project\.id\} version=\{qualityVersion\}/);
+  assert.match(src,/\/projects\/\$\{projectId\}\/target-opportunities\?expected_version=\$\{version\}/);
+  assert.match(app,/if\(!project\|\|!target\)\{setPrep\(null\);return;\}/);
+  assert.match(app,/if\(!project\|\|!target\)\{setFeatureHints\(\[\]\);return;\}/);
+  assert.match(spec,/expect\(\(await bOpportunities\)\.status\(\)\)\.toBe\(200\)/);
+  assert.match(spec,/expect\(profileReads\)\.toBe\(1\)/);
+  assert.match(spec,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
+});
