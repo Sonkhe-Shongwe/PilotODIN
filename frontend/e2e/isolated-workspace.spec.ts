@@ -667,3 +667,55 @@ test('approved cross-tab successful project load avoids duplicate failing profil
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+test('approved same-tab global project read failure preserves edited primary Prepare',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+
+  const primary=page.locator('.po-primary-pane');
+  const target=primary.getByRole('combobox',{name:/target variable/i});
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.accept(); // Explicitly approve the read attempt only.
+  });
+  // Never reach a real backend. Project B is in the synthetic catalogue, but
+  // opening B cannot succeed because the synthetic profile GET returns 503.
+  let failedBProfileReads=0;
+  await page.route('**/api/projects/playwright-synthetic-second-project/live-profile',async route=>{
+    if(route.request().method()!=='GET')throw new Error('Read-only B profile failure only');
+    failedBProfileReads++;
+    await route.fulfill({status:503,headers:{'access-control-allow-origin':UI_ORIGIN},
+      json:{detail:'Synthetic direct chooser B profile read failed'}});
+  });
+  const failedB=page.waitForResponse(response=>
+    response.url().endsWith(`/api/projects/${TEST_PROJECT_B}/live-profile`)
+      &&response.status()===503);
+  await switcher.selectOption(TEST_PROJECT_B);
+  await failedB;
+  await expect.poll(()=>prompts.length).toBe(1);
+  // Permission to attempt loading B is not consent to discard A if B fails.
+  // No provisional B identity may replace the still-edited A workspace.
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await expect(primary.locator('.heading .eyebrow'))
+    .toHaveText('PROJECT / '+syntheticProject.name.toUpperCase());
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
+  expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current')))
+    .toBe(TEST_PROJECT);
+  expect(failedBProfileReads).toBe(1);
+  expect(prompts).toHaveLength(1);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

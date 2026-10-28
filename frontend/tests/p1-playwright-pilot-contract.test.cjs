@@ -66,6 +66,7 @@ test('isolated browser does not reuse server or approve import',()=>{
   const approvedTitles=new Set([
     'approved cross-tab project read failure preserves primary Prepare without stealing storage',
     'approved cross-tab successful project load avoids duplicate failing profile request',
+    'approved same-tab global project read failure preserves edited primary Prepare',
   ]);
   const approvedScenarios=spec.split(/^test\('/m).slice(1)
     .filter(section=>section.includes('await dialog.accept()'));
@@ -285,4 +286,20 @@ test('successful B Prepare mounts target screening at verified version without l
   assert.match(spec,/expect\(\(await bOpportunities\)\.status\(\)\)\.toBe\(200\)/);
   assert.match(spec,/expect\(profileReads\)\.toBe\(1\)/);
   assert.match(spec,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
+});
+
+test('same-tab global chooser synthetic failed-B regression asserts draft and selection preservation',()=>{
+  const start=spec.indexOf("test('approved same-tab global project read failure preserves edited primary Prepare'");
+  const end=spec.indexOf('\n});',start);
+  assert.ok(start>=0&&end>start,'must retain the explicit same-tab failed-read browser scenario');
+  const scenario=spec.slice(start,end);
+  assert.match(scenario,/await dialog\.accept\(\)/);
+  assert.match(scenario,/status:503/);
+  assert.match(scenario,/await switcher\.selectOption\(TEST_PROJECT_B\)/);
+  assert.match(scenario,/await expect\(switcher\)\.toHaveValue\(TEST_PROJECT\)/);
+  assert.match(scenario,/await expect\(target\)\.toHaveValue\('fraud_reported'\)/);
+  assert.match(scenario,/expect\(failedBProfileReads\)\.toBe\(1\)/);
+  assert.match(scenario,/expect\(audit\.writes\)\.toEqual\(\[\]\)/);
+  assert.match(scenario,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
+  assert.match(scenario,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
 });
