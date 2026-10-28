@@ -327,6 +327,9 @@ test('browser Back and Forward preserve an edited dock across unrelated routes',
   await page.evaluate(()=>{window.location.hash='#/studio/explore';});
   await expect(page).toHaveURL(/#\/studio\/explore$/);
   await expect(primary.getByRole('heading',{name:'Explore',exact:true})).toBeVisible();
+  // Prove the Explore workbench finished its synthetic read-only calculation
+  // before changing the hash again. A heading alone can render before data.
+  await expect(primary.getByText('2 of 2 records',{exact:true})).toBeVisible();
   await expect(target).toHaveValue('fraud_reported');
 
   await page.goBack();
