@@ -60,8 +60,14 @@ function fmt(n:number|null|undefined){return typeof n==='number'?n.toLocaleStrin
 function fmtPrediction(value:string|number,task:string|undefined){return typeof value==='number'?value.toLocaleString(undefined,{minimumFractionDigits:task==='regression'?2:0,maximumFractionDigits:task==='regression'?2:4}):String(value)}
 function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')}
 
+/** A one-use, memory-only snapshot from two successful project/profile reads.
+ * The shell may hand it to the next project-keyed primary Studio instance.
+ * No snapshot is persisted, and failed/stale reads never create one.
+ */
+export type PrimaryProjectLoadSnapshot={id:string;project:Project;version:number};
+
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose,onPrimaryDraftEdited,onPrimaryProjectLoaded,onPrimaryProjectLoadFailed}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose,onPrimaryDraftEdited,onPrimaryProjectLoaded,onPrimaryProjectLoadFailed,primaryProjectHandoff,onPrimaryProjectHandoffConsumed}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
@@ -75,14 +81,19 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   onPrimaryUploadedProjectCommitted?:()=>void;
   // Report only a memory-only edit signal; never transmit field values.
   onPrimaryDraftEdited?:(view:Stage)=>void;
-  onPrimaryProjectLoaded?:(projectId:string)=>void;
+  onPrimaryProjectLoaded?:(projectId:string,snapshot:PrimaryProjectLoadSnapshot)=>void;
   onPrimaryProjectLoadFailed?:(projectId:string)=>void;
+  primaryProjectHandoff?:PrimaryProjectLoadSnapshot;
+  onPrimaryProjectHandoffConsumed?:(projectId:string)=>void;
   forceNewProject?:boolean;
   onNewProjectClose?:()=>void;
 }={}){
  const targetFieldId=useId();
  const embedded=embeddedStage!==undefined;
-  const [project,setProject]=useState<Project|null>(null);
+ // Never hydrate a stale cross-tab selection, and never use this in a dock.
+ const initialVerifiedProject=!embedded&&primaryProjectHandoff?.id===(localStorage.getItem('pilotodin-current')||'')
+   ?primaryProjectHandoff:null;
+  const [project,setProject]=useState<Project|null>(()=>initialVerifiedProject?.project??null);
   const [projects,setProjects]=useState<{id:string;name:string;filename:string}[]>([]);
   const [page,setPage]=useState<Stage>(()=>embeddedStage??requestedStudioStage());
   const [file,setFile]=useState<File|null>(null);
@@ -104,7 +115,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const [uploadOpen,setUploadOpen]=useState(false);
   const showUpload=uploadOpen||(!embedded&&forceNewProject);
   const [busy,setBusy]=useState('');
-  const [qualityVersion,setQualityVersion]=useState(0);
+  const [qualityVersion,setQualityVersion]=useState(initialVerifiedProject?.version??0);
   const [qualityFocus,setQualityFocus]=useState<QualityFocus|null>(null);
   const [deliverEvidenceId,setDeliverEvidenceId]=useState<string|null>(null);
   const [featureHints,setFeatureHints]=useState<{column:string;risk:string;reasons:string[]}[]>([]);
@@ -192,7 +203,15 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const availableCommands=NAV.filter(n=>!(!project&&n.id!=='ai_settings')&&`${n.name} ${n.sub}`.toLowerCase().includes(paletteQuery.toLowerCase()));
 
   async function refreshProjects(){try{setProjects(await get<{id:string;name:string;filename:string}[]>('/projects'))}catch{/* backend may not be running */}}
-  useEffect(()=>{void refreshProjects();const pid=embeddedProjectId??localStorage.getItem('pilotodin-current');if(pid)void loadProject(pid);},[embeddedProjectId]);
+  useEffect(()=>{
+    void refreshProjects();
+    const pid=embeddedProjectId??localStorage.getItem('pilotodin-current');
+    // Retire the handoff even when another tab has changed the shared choice.
+    if(primaryProjectHandoff)onPrimaryProjectHandoffConsumed?.(primaryProjectHandoff.id);
+    // The successful B pair was already read by the preceding Studio instance.
+    // Never repeat it merely because the keyed component remounted.
+    if(pid&&pid!==initialVerifiedProject?.id)void loadProject(pid);
+  },[embeddedProjectId]);
   useEffect(()=>{if(embedded)return;const handler=()=>{const id=localStorage.getItem('pilotodin-current');if(id&&id!==project?.id)void loadProject(id)};window.addEventListener('pilotodin:project-changed',handler);return()=>window.removeEventListener('pilotodin:project-changed',handler)},[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&project?.id)window.dispatchEvent(new Event('pilotodin:project-changed'))},[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&!location.hash.startsWith('#/canvas')&&location.hash!==`#/studio/${page}`)location.hash=`#/studio/${page}`},[page,embedded]);
@@ -218,10 +237,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       onPrimaryProjectLoadFailed?.(pid);
       return false;
     }
-    if(!embedded&&pid!==project?.id)onPrimaryProjectLoaded?.(pid);
+    const verifiedProject:Project=q.profile?{...p,profile:q.profile}:p;
+    if(!embedded&&pid!==project?.id)
+      onPrimaryProjectLoaded?.(pid,{id:pid,project:verifiedProject,version:q.version});
     if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
-    setQualityVersion(q.version);setFeatureHints([]);setProject(q.profile?{...p,profile:q.profile}:p);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
+    setQualityVersion(q.version);setFeatureHints([]);setProject(verifiedProject);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
       if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
       setError(`Could not open project: ${(e as Error).message}`);
       if(!embedded)onPrimaryProjectLoadFailed?.(pid);

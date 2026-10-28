@@ -233,3 +233,21 @@ test('stale selection guard never reads drafts or performs any backend operation
  assert.equal(mayCommitProjectSelection('A','C','B'),false);
  assert.equal(mayCommitProjectSelection('A','A',''),false);
 });
+
+test('only a successful approved external load stages a one-use verified project/profile for keyed Studio',()=>{
+ assert.match(app,/export type PrimaryProjectLoadSnapshot=\{id:string;project:Project;version:number\}/);
+ assert.match(app,/const initialVerifiedProject=!embedded&&primaryProjectHandoff\?\.id===\(localStorage\.getItem\('pilotodin-current'\)\|\|''\)/);
+ assert.match(app,/useState<Project\|null>\(\(\)=>initialVerifiedProject\?\.project\?\?null\)/);
+ assert.match(app,/useState\(initialVerifiedProject\?\.version\?\?0\)/);
+ assert.match(app,/if\(pid&&pid!==initialVerifiedProject\?\.id\)void loadProject\(pid\)/);
+ assert.match(app,/const verifiedProject:Project=q\.profile\?\{\.\.\.p,profile:q\.profile\}:p/);
+ assert.match(app,/onPrimaryProjectLoaded\?\.\(pid,\{id:pid,project:verifiedProject,version:q\.version\}\)/);
+ assert.match(shell,/primaryProjectHandoff\.current=snapshot/);
+ assert.match(shell,/primaryProjectHandoff=\{primaryProjectHandoff\.current\?\.id===projectId\?primaryProjectHandoff\.current:undefined\}/);
+ assert.match(shell,/onPrimaryProjectHandoffConsumed=\{consumePrimaryProjectHandoff\}/);
+ const refIndex=shell.indexOf('primaryProjectHandoff.current=snapshot');
+ const successIndex=shell.indexOf('setProjectId(id)',refIndex);
+ assert.ok(refIndex>=0&&successIndex>refIndex,'snapshot must be staged before keyed shell remount');
+ const catchBody=app.slice(app.indexOf('}catch(e){',app.indexOf('async function loadProject(')),app.indexOf('useEffect(()=>{if(!project||!target)'));
+ assert.doesNotMatch(catchBody,/onPrimaryProjectLoaded|primaryProjectHandoff/,'failed project GET must not create a verified handoff');
+});

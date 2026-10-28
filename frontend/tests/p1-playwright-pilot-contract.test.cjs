@@ -63,12 +63,18 @@ test('isolated browser does not reuse server or approve import',()=>{
   assert.match(spec,/await dialog\.dismiss\(\)/);
   // Only explicit, synthetic read-only approval scenarios may accept dialogs.
   // Reject silent approval added to any Cancel, import or unrelated browser test.
-  const approvedScenarios=spec.split(/^test\('/m).slice(1);
-  assert.ok(approvedScenarios.some(section=>section.includes('await dialog.accept()')));
+  const approvedTitles=new Set([
+    'approved cross-tab project read failure preserves primary Prepare without stealing storage',
+    'approved cross-tab successful project load avoids duplicate failing profile request',
+  ]);
+  const approvedScenarios=spec.split(/^test\('/m).slice(1)
+    .filter(section=>section.includes('await dialog.accept()'));
+  assert.equal(approvedScenarios.length,approvedTitles.size,
+    'every approved dialog scenario must have an explicit, reviewed title');
   for(const section of approvedScenarios){
-    if(section.includes('await dialog.accept()'))
-      assert.match(section,/^approved cross-tab project /,
-        'only explicitly approved synthetic cross-tab reads may accept a dialog');
+    const title=section.slice(0,section.indexOf("',async"));
+    assert.ok(approvedTitles.has(title),
+      'unapproved browser scenario must never silently accept a discard prompt: '+title);
   }
 });
 test('only the exact declared Google Fonts stylesheet is replaced with local CSS',async()=>{

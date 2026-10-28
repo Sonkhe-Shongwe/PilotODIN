@@ -2,6 +2,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPointerEvent,KeyboardEvent as ReactKeyboardEvent} from 'react';
 import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,Plus} from 'lucide-react';
 import {App} from './App';
+import type {PrimaryProjectLoadSnapshot} from './App';
 import {navigateHashSmoothly} from './navigationMotion';
 import {InvestigationCanvas} from './InvestigationCanvas';
 import {get} from './api';
@@ -99,6 +100,9 @@ export function UnifiedShell(){
   requestedId:string;previousId:string;fromStorage:boolean;
   primary:typeof editedPrimary.current;secondary:EditedDock|null;
  }|null>(null);
+ // One-use memory-only result of both successful primary B GETs. The keyed
+ // Studio mount consumes it instead of repeating reads after shell commit.
+ const primaryProjectHandoff=useRef<PrimaryProjectLoadSnapshot|null>(null);
  // Last accepted URL is memory-only; never store form values or push synthetic history entries.
  const acceptedRouteHash=useRef(window.location.hash);
  // One-shot preapproved same-document push consent, never persisted.
@@ -371,14 +375,20 @@ export function UnifiedShell(){
   return confirmProjectDraftDiscard();
  };
  const commitPrimaryUploadedProject=()=>{editedDock.current=null;editedPrimary.current=null;};
- const commitPrimaryLoadedProject=(id:string)=>{
+ const commitPrimaryLoadedProject=(id:string,snapshot:PrimaryProjectLoadSnapshot)=>{
   if(pendingExternalSwitch.current?.requestedId===id){
+   // The old A Studio remains mounted until BOTH B reads succeeded. This
+   // snapshot is consumed by the one new B instance; never store it on disk.
+   primaryProjectHandoff.current=snapshot;
    pendingExternalSwitch.current=null;
    editedPrimary.current=null;editedDock.current=null;
    // Only commit shell identity after App has successfully read both B GETs.
    setProjectId(id);
    void refreshProjects();
   }else editedPrimary.current=null;
+ };
+ const consumePrimaryProjectHandoff=(id:string)=>{
+  if(primaryProjectHandoff.current?.id===id)primaryProjectHandoff.current=null;
  };
  const failPrimaryProjectLoad=(id:string)=>{
   const pending=pendingExternalSwitch.current;
@@ -576,7 +586,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryProjectLoaded={commitPrimaryLoadedProject} onPrimaryProjectLoadFailed={failPrimaryProjectLoad} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
+       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryProjectLoaded={commitPrimaryLoadedProject} onPrimaryProjectLoadFailed={failPrimaryProjectLoad} primaryProjectHandoff={primaryProjectHandoff.current?.id===projectId?primaryProjectHandoff.current:undefined} onPrimaryProjectHandoffConsumed={consumePrimaryProjectHandoff} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {mountDock&&<>

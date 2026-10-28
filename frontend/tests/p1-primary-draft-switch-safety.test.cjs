@@ -87,10 +87,10 @@ test('both project selectors and import preflight check drafts before any projec
 });
 test('primary draft is cleared only after a successful direct Studio fetch',()=>{
  const read=app.indexOf('await Promise.all([get<Project>');
- const commit=app.indexOf('onPrimaryProjectLoaded?.(pid);',read);
+ const commit=app.indexOf('onPrimaryProjectLoaded?.(pid,{id:pid,project:verifiedProject,version:q.version});',read);
  const reset=app.indexOf('setProject(null)',read);
  assert.ok(read>=0&&commit>read&&reset>commit);
- assert.match(shell,/const commitPrimaryLoadedProject=\(id:string\)=>\{/);
+ assert.match(shell,/const commitPrimaryLoadedProject=\(id:string,snapshot:PrimaryProjectLoadSnapshot\)=>\{/);
  assert.match(shell,/pendingExternalSwitch\.current\?\.requestedId===id/);
  assert.match(shell,/const failPrimaryProjectLoad=\(id:string\)=>\{/);
  assert.match(shell,/onPrimaryProjectLoaded=\{commitPrimaryLoadedProject\}/);
