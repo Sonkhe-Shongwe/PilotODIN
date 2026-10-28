@@ -467,3 +467,41 @@ test('primary Prepare unsaved target requires Cancel protection before project s
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+test('cross-tab project selection Cancel preserves an edited primary Prepare draft',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const target=page.locator('.po-primary-pane').getByRole('combobox',{name:/target variable/i});
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+
+  // Same isolated browser context and origin: only B writes the shared key.
+  // A should reject the storage event without writing B's choice back to A.
+  const other=await context.newPage();
+  await other.goto('/#/studio/quality');
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await other.evaluate((id:string)=>localStorage.setItem('pilotodin-current',id),TEST_PROJECT_B);
+  await expect.poll(()=>prompts.length,{
+    message:'Cross-tab selection must warn before losing an edited primary draft',
+  }).toBe(1);
+  expect(prompts[0]).toMatch(/primary workspace.*Switching projects may discard/i);
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
+  await expect(page.getByText(/Another tab selected a different project/)).toBeVisible();
+  expect(await other.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

@@ -172,12 +172,17 @@ export function UnifiedShell(){
    if(event.type==='storage'&&(event as StorageEvent).key!==null&&(event as StorageEvent).key!=='pilotodin-current')return;
    const requested=localStorage.getItem('pilotodin-current')||'';
    const unavailable=event.type==='pilotodin:project-changed'&&(event as CustomEvent<{reason?:string}>).detail?.reason==='unavailable';
-   const decision=planExternalProjectTransition(projectId,requested,dock.secondary,editedDock.current,workspaceReady,unavailable);
+   const decision=planExternalProjectTransition(projectId,requested,dock.secondary,editedDock.current,workspaceReady,unavailable,editedPrimary.current?.projectId??null);
    if(decision==='unchanged'){
     if(event.type==='pilotodin:project-changed')void refreshProjects();
     return;
    }
-   if(decision==='confirm'&&!window.confirm('You changed fields in the docked workspace. Switching projects may discard those entries. Continue?')){
+   if(decision==='confirm'&&!window.confirm(
+    editedPrimary.current?.projectId===projectId
+      ?(needsDockInputDiscardApproval(editedDock.current,projectId,dock.secondary,'switch-project')
+        ?'You changed fields in the primary and docked workspaces. Switching projects may discard those entries. Continue?'
+        :'You changed fields in the primary workspace. Switching projects may discard those entries. Continue?')
+      :'You changed fields in the docked workspace. Switching projects may discard those entries. Continue?')){
     if(event.type==='storage'){
      // Do not write an earlier project ID back into shared storage: multiple edited
      // browser tabs could otherwise repeatedly veto and revert each other's choice.
@@ -191,6 +196,9 @@ export function UnifiedShell(){
     return;
    }
    editedDock.current=null;
+   // Explicit approval retires the old primary marker for this external
+   // selection. A cancelled event retains it and never writes shared storage.
+   editedPrimary.current=null;
    if(event.type==='storage'){
     // Primary Studio does not listen directly to cross-tab storage events.
     window.dispatchEvent(new Event('pilotodin:project-changed'));

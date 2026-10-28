@@ -51,7 +51,7 @@ const handlerJs=compile(handlerSource+'\nexport {reviewProject};');
 assert.equal((handlerJs.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
 function harness({requested='B',from='A',edit=edited,approval=false,
  eventType='pilotodin:project-changed',key='pilotodin-current',
- unavailable=false,restoreFails=false}={}){
+ unavailable=false,restoreFails=false,primaryEdit=null}={}){
  let stored=requested,appLoads=0;
  const log={prompts:0,restores:0,accepted:[],refresh:0,warnings:[],stopped:0,events:[]};
  const listeners=new Map();
@@ -76,21 +76,23 @@ function harness({requested='B',from='A',edit=edited,approval=false,
  };
  const dock={secondary:'prepare'};
  const editedDock={current:edit};
+ const editedPrimary={current:primaryEdit};
+ const needsDockInputDiscardApproval=(marker,id,secondary)=>!!marker&&marker.projectId===id&&marker.view===secondary;
  const setProjectId=id=>{log.accepted.push(id)};
  const refreshProjects=()=>{log.refresh++};
  const setWarning=message=>log.warnings.push(message);
  const exports={};
- const reviewProject=new Function('window','localStorage','projectId','dock','editedDock','workspaceReady',
+ const reviewProject=new Function('window','localStorage','projectId','dock','editedDock','editedPrimary','needsDockInputDiscardApproval','workspaceReady',
  'planExternalProjectTransition','refreshProjects','setProjectId','setWarning','Event','exports',
  handlerJs.outputText+'\nreturn exports.reviewProject;')(
- window,localStorage,from,dock,editedDock,true,planExternalProjectTransition,
+ window,localStorage,from,dock,editedDock,editedPrimary,needsDockInputDiscardApproval,true,planExternalProjectTransition,
  refreshProjects,setProjectId,setWarning,TestEvent,exports);
  window.addEventListener('pilotodin:project-changed',reviewProject,true);
  window.addEventListener('storage',reviewProject,true);
  window.addEventListener('pilotodin:project-changed',()=>{appLoads++},false);
  const event=new TestEvent(eventType,{key,detail:unavailable?{reason:'unavailable'}:undefined});
  return {run(){window.dispatchEvent(event)},log,getStored:()=>stored,
- getAppLoads:()=>appLoads,editedDock,event,window,TestEvent};
+ getAppLoads:()=>appLoads,editedDock,editedPrimary,event,window,TestEvent};
 }
 test('Cancel restores local project selection and blocks primary Studio notification',()=>{
  const h=harness();h.run();
@@ -167,4 +169,58 @@ test('ordinary user selector remains guarded and backend deletion is tagged sepa
 });
 test('project notification handler does not copy form contents or authorise data/ML changes',()=>{
  assert.doesNotMatch(handlerSource,/predictVals|sessionStorage|setTarget\(|train\(|upload\(|post\(|setProject\(/);
+});
+test('external project transition recognizes edited primary Prepare without an edited dock',()=>{
+ assert.equal(planExternalProjectTransition('A','B',null,null,true,false,'A'),'confirm');
+ assert.equal(planExternalProjectTransition('A','B','quality',null,true,false,'A'),'confirm');
+ assert.equal(planExternalProjectTransition('A','B',null,null,true,false,'B'),'accept');
+ assert.equal(planExternalProjectTransition('A','B',null,null,true,false,null),'accept');
+ assert.equal(planExternalProjectTransition('A','A',null,null,true,false,'A'),'unchanged');
+});
+test('confirmed backend removal cannot be vetoed by a primary draft marker',()=>{
+ assert.equal(planExternalProjectTransition('A','',null,null,true,true,'A'),'accept');
+});
+test('cross-tab Cancel of dirty primary prevents app load and preserves both tabs ownership',()=>{
+ const edit={projectId:'A',view:'prepare'};
+ const h=harness({edit:null,primaryEdit:edit,eventType:'storage'});
+ h.run();
+ assert.equal(h.log.prompts,1);
+ assert.equal(h.getStored(),'B','a separate tab owns the shared selection');
+ assert.equal(h.log.restores,0,'Cancel cannot rewrite shared storage');
+ assert.deepEqual(h.log.accepted,[]);
+ assert.equal(h.getAppLoads(),0);
+ assert.equal(h.log.stopped,1);
+ assert.equal(h.log.warnings.length,1);
+ assert.deepEqual(h.editedPrimary.current,edit);
+});
+test('local external selection Cancel restores local storage without losing primary edit',()=>{
+ const edit={projectId:'A',view:'model'};
+ const h=harness({edit:null,primaryEdit:edit,eventType:'pilotodin:project-changed'});
+ h.run();
+ assert.equal(h.getStored(),'A');
+ assert.equal(h.log.restores,1);
+ assert.deepEqual(h.log.accepted,[]);
+ assert.equal(h.log.prompts,1);
+ assert.equal(h.getAppLoads(),0);
+ assert.deepEqual(h.editedPrimary.current,edit);
+});
+test('approved cross-tab switch presents one combined prompt for primary and secondary edits',()=>{
+ const edit={projectId:'A',view:'prepare'};
+ const h=harness({edit,primaryEdit:edit,eventType:'storage',approval:true});
+ h.run();
+ assert.equal(h.log.prompts,1);
+ assert.deepEqual(h.log.accepted,['B']);
+ assert.equal(h.getAppLoads(),1);
+ assert.equal(h.log.restores,0);
+ assert.equal(h.editedPrimary.current,null);
+ assert.equal(h.editedDock.current,null);
+ assert.deepEqual(h.log.events,['storage','pilotodin:project-changed']);
+});
+test('unrelated storage key and unchanged project do not prompt for dirty primary',()=>{
+ const edit={projectId:'A',view:'prepare'};
+ const a=harness({edit:null,primaryEdit:edit,eventType:'storage',key:'pilotodin-sidebar-mode-v1'});a.run();
+ const b=harness({edit:null,primaryEdit:edit,requested:'A'});b.run();
+ assert.equal(a.log.prompts,0);assert.equal(b.log.prompts,0);
+ assert.deepEqual(a.editedPrimary.current,edit);
+ assert.deepEqual(b.editedPrimary.current,edit);
 });
