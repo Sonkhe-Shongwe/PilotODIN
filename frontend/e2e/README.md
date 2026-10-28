@@ -103,3 +103,17 @@ npx playwright test --config=playwright.config.ts -g "cancelled dock promotion l
 
 **Expected: one new browser case; result PENDING.** Do not repeat the four accepted Chromium cases, 11/11 Node contracts, production build or unrelated historical suites when source is otherwise unchanged. On failure, use the test-owned trace. Do not navigate or import the owner's actual projects, accept the dialog, create real training runs or enable CI.
 
+## First P1 phase-focus development increment: primary draft switch discovery
+
+One new **unexecuted** isolated Chromium case, `primary Prepare unsaved target requires Cancel protection before project switching`, now creates two fully synthetic project records in the mock-only `:5187` context. On the first primary Prepare form, it selects `fraud_reported`, then attempts to select the second project from the global selector. **Expected contract:** a native prompt is shown before discarding the primary form, the test always dismisses it, the original project and unsaved target survive, the URL stays on Prepare, and zero real API writes/unexpected requests occur. One additional Node case checks the *opt-in* second-project mock responses and the absence of any real project access.
+
+**QA status:** Existing five Chromium scenarios and the earlier 11/11 isolation contracts remain historically accepted; the new sixth browser test and revised **12-case** Node contract suite are **AUTHORED ONLY, not executed**. The current shell's edit marker is secondary-dock-specific, so this browser scenario may intentionally expose an actual missing **primary** draft safeguard. Do not mark any product defect confirmed until Windows execution; if it fails, fix the real primary draft handling and verify the new-source TypeScript/Vite build and focused browser gate, not the owner's projects. No real dataset, backend, release fonts, ML/AI, CI or installer touched.
+
+After safely pulling the feature branch while retaining local generated Tauri files, from `frontend` run only:
+
+```powershell
+node --test tests/p1-playwright-pilot-contract.test.cjs
+npx playwright test --config=playwright.config.ts -g "primary Prepare unsaved target"
+```
+
+Expect 12 Node contracts and one new browser test, **outcomes PENDING**. Because production application code did not change, the previously accepted Vite build need not be repeated for this discovery. If the browser test fails, inspect its synthetic trace and distinguish missing consent from fixture failure.

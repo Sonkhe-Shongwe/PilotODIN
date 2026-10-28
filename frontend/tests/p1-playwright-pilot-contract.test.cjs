@@ -14,9 +14,9 @@ const compiled=ts.transpileModule(spec.slice(start,end)+'\nexport {installIsolat
 assert.equal((compiled.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0);
 const exported={};
 const install=new Function('exports',compiled.outputText+'\nreturn exports.installIsolatedAPI;')(exported);
-async function setup(){
+async function setup(withSecondProject=false){
   let intercept;
-  const audit=await install({route:async(pattern,fn)=>{assert.equal(pattern,'**/*');intercept=fn;}},true);
+  const audit=await install({route:async(pattern,fn)=>{assert.equal(pattern,'**/*');intercept=fn;}},true,withSecondProject);
   async function call(url,method='GET',body=null,headers={}){
     const calls=[];
     await intercept({request:()=>({url:()=>url,method:()=>method,postDataJSON:()=>body,headers:()=>headers}),
@@ -167,4 +167,23 @@ test('only the synthetic Explore calculation receives a CORS preflight',async()=
   }
   assert.equal(audit.writes.length,3);
   assert.deepEqual(audit.readOnlyCalculations,[]);
+});
+test('second synthetic project is opt-in and never exposes an unmocked real project',async()=>{
+  const mainOnly=await setup();
+  const url='http://127.0.0.1:8000/api/projects';
+  assert.equal((await mainOnly.call(url)).response.json.length,1);
+  const second=await setup(true);
+  const result=await second.call(url);
+  assert.equal(result.kind,'fulfill');
+  assert.deepEqual(result.response.json.map(project=>project.id),[
+    'playwright-synthetic-project','playwright-synthetic-second-project']);
+  const id='playwright-synthetic-second-project';
+  const detail=await second.call('http://127.0.0.1:8000/api/projects/'+id);
+  const prof=await second.call('http://127.0.0.1:8000/api/projects/'+id+'/live-profile');
+  assert.equal(detail.response.json.id,id);
+  assert.equal(prof.response.json.version,0);
+  assert.equal(prof.response.json.profile.filename,'synthetic_second_fixture.csv');
+  assert.deepEqual(second.audit.writes,[]);
+  assert.deepEqual(second.audit.unexpectedReads,[]);
+  assert.deepEqual(second.audit.blockedOrigins,[]);
 });

@@ -4,6 +4,7 @@ import type {BrowserContext,Route} from '@playwright/test';
 const UI_ORIGIN='http://127.0.0.1:5187';
 const API_ORIGIN='http://127.0.0.1:8000';
 const TEST_PROJECT='playwright-synthetic-project';
+const TEST_PROJECT_B='playwright-synthetic-second-project';
 
 // All data in this test are invented. No CSV file or real PilotODIN project
 // is read. The browser is given an empty, temporary storage context.
@@ -33,6 +34,14 @@ const syntheticProject={
   profile,
   experiments:[],
 };
+const secondProfile={...profile,filename:'synthetic_second_fixture.csv'};
+const syntheticSecondProject={
+  id:TEST_PROJECT_B,
+  name:'synthetic_second_fixture',
+  filename:secondProfile.filename,
+  profile:secondProfile,
+  experiments:[],
+};
 
 type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]; stubbedFontStylesheets:string[]; readOnlyCalculations:string[]};
 
@@ -40,7 +49,7 @@ type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:str
  * Every API response comes from this handler, never the actual :8000 backend.
  * Unrecognised requests return a synthetic 404 and are recorded.
  */
-async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Promise<NetworkAudit>{
+async function installIsolatedAPI(context:BrowserContext,withProject:boolean,withSecondProject=false):Promise<NetworkAudit>{
   const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[],stubbedFontStylesheets:[],readOnlyCalculations:[]};
   await context.route('**/*',async(route:Route)=>{
     const req=route.request();
@@ -145,13 +154,20 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Pr
     }
     let result:unknown;
     if(pathname==='/projects'){
-      result=withProject?[{id:TEST_PROJECT,name:syntheticProject.name,filename:syntheticProject.filename}]:[];
+      result=withProject?[{id:TEST_PROJECT,name:syntheticProject.name,filename:syntheticProject.filename},
+        ...(withSecondProject?[{id:TEST_PROJECT_B,name:syntheticSecondProject.name,filename:syntheticSecondProject.filename}]:[])]:[];
     }else if(pathname==='/ai/settings'){
       result={cloud_enabled:false,share_aggregates:false,auto_insights:false,providers:[]};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}`){
       result=syntheticProject;
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/live-profile`){
       result={version:0,profile};
+    // The second fixture exists only when the new P1 project-switch test
+    // explicitly opts into it. It is never a real owner dataset.
+    }else if(withProject&&withSecondProject&&pathname===`/projects/${TEST_PROJECT_B}`){
+      result=syntheticSecondProject;
+    }else if(withProject&&withSecondProject&&pathname===`/projects/${TEST_PROJECT_B}/live-profile`){
+      result={version:0,profile:secondProfile};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/quality`){
       result={project_id:TEST_PROJECT,version:0,rows:2,columns:2,
         summary:{issues:0,automatic_available:0,review_required:0,information:0,applied_actions:0},
@@ -411,6 +427,42 @@ test('cancelled dock promotion leaves no duplicate browser Back Forward history'
   expect(audit.readOnlyCalculations.length).toBeGreaterThan(0);
   expect(audit.readOnlyCalculations.every(path=>path===
     `POST /projects/${TEST_PROJECT}/explore/workbench`)).toBe(true);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
+test('primary Prepare unsaved target requires Cancel protection before project switching',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true,true);
+  // Two invented projects, an empty browser storage context, and only mocked API.
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+
+  const primary=page.locator('.po-primary-pane');
+  const target=primary.getByRole('combobox',{name:/target variable/i});
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(target).toBeVisible();
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.dismiss(); // Always Cancel: no permission to discard primary edits.
+  });
+  await switcher.selectOption(TEST_PROJECT_B);
+  await expect.poll(()=>prompts.length,{
+    message:'An edited primary Prepare target needs consent BEFORE switching projects',
+  }).toBe(1);
+  expect(prompts[0]).toMatch(/changed|unsaved|discard/i);
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await expect(primary.getByRole('combobox',{name:/target variable/i}))
+    .toHaveValue('fraud_reported');
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);

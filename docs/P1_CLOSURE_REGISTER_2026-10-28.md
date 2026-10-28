@@ -29,7 +29,7 @@
 
 ## Immediate next engineering sequence
 
-1. **Primary unsaved draft switch gate:** Use two **synthetic projects** in isolated browser QA. Edit primary Prepare's target/feature choice. Attempt to switch project. Cancel must preserve both project and unsaved values, avoid backend writes; approval may proceed only with explicit consent. Validate in Node and Chromium separately.
+1. **Primary unsaved draft switch gate (DISCOVERY AUTHORED; WINDOWS PENDING):** One new two-project synthetic Playwright test edits primary Prepare target `fraud_reported` and attempts an unrelated project switch. Cancel must keep project, URL and target, with zero real API writes. A new Node test checks fake project response contracts. Current suite: 12 Node authored, 6 browser authored (prior 5 accepted). Do not claim acceptance until Windows evidence, then implement the smallest production correction required.
 2. Once implemented and accepted, address primary draft preservation/explicit warnings across ordinary route changes, tab close and new-project import.
 3. Cross-tab reload reconciliation for edited primary/secondary forms and failed project reads.
 4. Native WebView2 and Windows scaling/legacy traversal acceptance.
