@@ -68,6 +68,7 @@ test('isolated browser does not reuse server or approve import',()=>{
     'approved cross-tab successful project load avoids duplicate failing profile request',
     'approved same-tab global project read failure preserves edited primary Prepare',
     'approved same-tab global project load commits B only after verified GETs',
+    'genuine primary Prepare reload Stay preserves draft and Leave discards only in-memory edit',
   ]);
   const approvedScenarios=spec.split(/^test\('/m).slice(1)
     .filter(section=>section.includes('await dialog.accept()'));
@@ -303,4 +304,28 @@ test('same-tab global chooser synthetic failed-B regression asserts draft and se
   assert.match(scenario,/expect\(audit\.writes\)\.toEqual\(\[\]\)/);
   assert.match(scenario,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
   assert.match(scenario,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
+});
+
+
+test('real reload Chromium regressions request genuine navigation and keep data isolated',()=>{
+  const first=spec.indexOf("test('genuine primary Prepare reload Stay");
+  const second=spec.indexOf("test('genuine paused dock Prepare reload Stay");
+  assert.ok(first>0&&second>first,'both real-navigation scenarios must exist');
+  const primary=spec.slice(first,second),dock=spec.slice(second);
+  for(const caseSource of [primary,dock]){
+    assert.match(caseSource,/page\.waitForEvent\('dialog'\)/);
+    assert.match(caseSource,/window\.location\.reload\(\)/);
+    assert.match(caseSource,/expect\(dialog\.type\(\)\)\.toBe\('beforeunload'\)/);
+    assert.match(caseSource,/await dialog\.dismiss\(\)/);
+    assert.match(caseSource,/await target\.click\(\)/);
+    assert.match(caseSource,/expect\(audit\.writes\)\.toEqual\(\[\]\)/);
+    assert.match(caseSource,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
+    assert.match(caseSource,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
+    assert.doesNotMatch(caseSource,/new Event\('beforeunload'/);
+  }
+  assert.match(primary,/await dialog\.accept\(\)/);
+  assert.match(primary,/page\.waitForEvent\('framenavigated'/);
+  assert.match(primary,/await expect\(target\)\.toHaveValue\(''\)/);
+  assert.match(dock,/await expect\(dock\)\.toBeHidden\(\)/);
+  assert.match(dock,/await page\.setViewportSize\(\{width:1440,height:900\}\)/);
 });

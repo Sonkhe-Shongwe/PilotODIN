@@ -836,3 +836,86 @@ test('edited docked Prepare requests unload warning even while narrowed and paus
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+
+test('genuine primary Prepare reload Stay preserves draft and Leave discards only in-memory edit',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const target=page.locator('.po-primary-pane').getByRole('combobox',{name:/target variable/i});
+  await expect(target).toBeVisible();
+  await target.click(); // Trusted user activation for genuine Chromium beforeunload.
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await page.evaluate(()=>document.documentElement.setAttribute('data-p1-document','original'));
+  const trigger=async()=>{
+    const prompt=page.waitForEvent('dialog');
+    await page.evaluate(()=>{setTimeout(()=>window.location.reload(),0)});
+    const dialog=await prompt;
+    expect(dialog.type()).toBe('beforeunload');
+    return dialog;
+  };
+  let dialog=await trigger();
+  await dialog.dismiss(); // Stay: no navigation, no draft loss.
+  await expect(target).toHaveValue('fraud_reported');
+  expect(await page.evaluate(()=>
+    document.documentElement.getAttribute('data-p1-document'))).toBe('original');
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+
+  dialog=await trigger();
+  const navigated=page.waitForEvent('framenavigated',{
+    predicate:frame=>frame===page.mainFrame()&&frame.url().includes('#/studio/prepare'),
+  });
+  await dialog.accept(); // Explicit Leave authorises a genuine document reload.
+  await navigated;
+  await expect(target).toBeVisible();
+  await expect(target).toHaveValue('');
+  expect(await page.evaluate(()=>
+    document.documentElement.getAttribute('data-p1-document'))).toBeNull();
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
+
+test('genuine paused dock Prepare reload Stay retains edited values and project',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['quality','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'quality');
+    localStorage.setItem('pilotodin-dock-layout-v2-'+id,
+      JSON.stringify({schema:2,secondary:'prepare',side:'right',fraction:0.39}));
+  },TEST_PROJECT);
+  await page.goto('/#/studio/quality');
+  const dock=page.locator('.po-secondary-pane');
+  const target=dock.getByRole('combobox',{name:/target variable/i});
+  await expect(dock).toBeVisible();
+  await target.click();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await page.evaluate(()=>document.documentElement.setAttribute('data-p1-document','edited-dock'));
+  await page.setViewportSize({width:680,height:900});
+  await expect(dock).toBeHidden();
+  await expect(page.getByText(/Edited docked fields are kept in memory while this view is narrow/)).toBeVisible();
+  const pending=page.waitForEvent('dialog');
+  await page.evaluate(()=>{setTimeout(()=>window.location.reload(),0)});
+  const dialog=await pending;
+  expect(dialog.type()).toBe('beforeunload');
+  await dialog.dismiss();
+  expect(await page.evaluate(()=>
+    document.documentElement.getAttribute('data-p1-document'))).toBe('edited-dock');
+  await expect(dock).toBeHidden();
+  await page.setViewportSize({width:1440,height:900});
+  await expect(dock).toBeVisible();
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
