@@ -98,8 +98,6 @@ test('Rust intercepts before close, uses one-time ticket, no writes or broad per
  assert.match(rust,/MessageDialogButtons::OkCancelCustom\(/);
  assert.match(rust,/"Close PilotODIN"\.into\(\), "Stay"\.into\(\)/);
  assert.match(rust,/resolve_native_close_request, confirm_native_close/);
- assert.doesNotMatch(rust,/\bstd::fs::write\b/);
- assert.doesNotMatch(rust,/window\.close\(\)/);
  assert.match(rust,/#\[test\]\s*fn only_current_ticket_can_authorize_one_native_close_resolution/);
  // Match structural Rust declarations, never an exact LF/CRLF separator.
  // A missing end marker must fail explicitly, not silently scan the whole file.
@@ -110,10 +108,28 @@ test('Rust intercepts before close, uses one-time ticket, no writes or broad per
   return source.slice(start,end);
  }
  const handler=extractHandler(rust);
- assert.doesNotMatch(handler,/std::fs::write|localStorage|sessionStorage|launch_backend|launch_bundled_ai/);
+ function extractWindowCloseEvent(source){
+  const start=source.indexOf('.on_window_event(|window, event| {');
+  const end=source.indexOf('.build(tauri::generate_context!())',start);
+  assert.ok(start>=0&&end>start,'native window close event boundaries must be present');
+  return source.slice(start,end);
+ }
+ const closeEvent=extractWindowCloseEvent(rust);
+ assert.match(closeEvent,/CloseRequested \{ api, \.\. \} = event/);
+ assert.match(closeEvent,/api\.prevent_close\(\)/);
+ assert.match(handler,/consume_native_close_ticket\(&mut pending, &token\)/);
+ assert.match(handler,/window\.destroy\(\)/);
+ // Only the native close commands and window-event handler are forbidden
+ // from modifying files or starting workers. Report export writes elsewhere
+ // in lib.rs are legitimate and must not trip this safety contract.
+ for(const guardedSource of [handler,closeEvent]){
+  assert.doesNotMatch(guardedSource,/\bstd::fs::write\b|localStorage|sessionStorage|launch_backend|launch_bundled_ai/);
+  assert.doesNotMatch(guardedSource,/window\.close\(\)/);
+ }
  // Git may check Rust out with CRLF on Windows; simulate that even on Linux.
  const windowsSource=rust.replace(/\r?\n/g,'\r\n');
  assert.equal(extractHandler(windowsSource).replace(/\r\n/g,'\n'),handler.replace(/\r\n/g,'\n'));
+ assert.equal(extractWindowCloseEvent(windowsSource).replace(/\r\n/g,'\n'),closeEvent.replace(/\r\n/g,'\n'));
 
 });
 test('shell registers native listener separately and preserves browser unload guard',()=>{
