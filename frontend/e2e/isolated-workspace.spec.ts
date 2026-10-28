@@ -80,6 +80,26 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Pr
       return;
     }
     const pathname=url.pathname.slice('/api'.length);
+    // A cross-origin JSON POST can cause a browser CORS preflight.
+    // Approve ONLY the synthetic read-only workbench's content-type preflight.
+    // Never forward OPTIONS (or the subsequent POST) to a real backend.
+    if(req.method()==='OPTIONS'&&withProject
+      &&pathname===`/projects/${TEST_PROJECT}/explore/workbench`
+      &&url.search===''){
+      const headers=req.headers();
+      const asked=(headers['access-control-request-headers']??'').toLowerCase()
+        .split(',').map(value=>value.trim()).filter(Boolean);
+      if(headers.origin===UI_ORIGIN
+        &&headers['access-control-request-method']==='POST'
+        &&asked.length===1&&asked[0]==='content-type'){
+        await route.fulfill({status:204,headers:{
+          'access-control-allow-origin':UI_ORIGIN,
+          'access-control-allow-methods':'POST',
+          'access-control-allow-headers':'content-type',
+        }});
+        return;
+      }
+    }
     // Explore's workbench is a POST transport for read-only calculations.
     // Whitelist one exact, synthetic, schema-validated request only. Nothing
     // reaches the backend: even permitted calculations are locally fulfilled.

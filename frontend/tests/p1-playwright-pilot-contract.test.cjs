@@ -17,9 +17,9 @@ const install=new Function('exports',compiled.outputText+'\nreturn exports.insta
 async function setup(){
   let intercept;
   const audit=await install({route:async(pattern,fn)=>{assert.equal(pattern,'**/*');intercept=fn;}},true);
-  async function call(url,method='GET',body=null){
+  async function call(url,method='GET',body=null,headers={}){
     const calls=[];
-    await intercept({request:()=>({url:()=>url,method:()=>method,postDataJSON:()=>body}),
+    await intercept({request:()=>({url:()=>url,method:()=>method,postDataJSON:()=>body,headers:()=>headers}),
       continue:async()=>calls.push({kind:'continue'}),
       abort:async reason=>calls.push({kind:'abort',reason}),
       fulfill:async response=>calls.push({kind:'fulfill',response})});
@@ -53,8 +53,8 @@ test('unexpected API GETs and cloud requests are recorded, never passed through'
   assert.equal((await call('https://example.com/ai?prompt=never')).kind,'abort');
   assert.deepEqual(audit.unexpectedReads,['/unknown']);
   assert.deepEqual(audit.blockedOrigins,['GET https://example.com/ai']);
-  assert.equal((spec.match(/expect\\(audit\\.blockedOrigins\\)\\.toEqual\\(\\[\\]\\);/g)||[]).length,
-    (spec.match(/^test\\('/gm)||[]).length,'each browser scenario checks blocked origins');
+  assert.equal((spec.match(/^  expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\);$/gm)||[]).length,
+    (spec.match(/^test\('/gm)||[]).length,'each browser scenario checks blocked origins');
 });
 test('isolated browser does not reuse server or approve import',()=>{
   assert.match(config,/reuseExistingServer:false/);
@@ -140,5 +140,31 @@ test('malformed, wrong-version or unapproved Explore POST still blocks and audit
   const save=await call('http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/saved','POST',valid);
   assert.equal(save.response.status,403);
   assert.equal(audit.writes.length,5);
+  assert.deepEqual(audit.readOnlyCalculations,[]);
+});
+test('only the synthetic Explore calculation receives a CORS preflight',async()=>{
+  const {call,audit}=await setup();
+  const path='http://127.0.0.1:8000/api/projects/playwright-synthetic-project/explore/workbench';
+  const validHeaders={
+    origin:'http://127.0.0.1:5187',
+    'access-control-request-method':'POST',
+    'access-control-request-headers':'content-type',
+  };
+  const ok=await call(path,'OPTIONS',null,validHeaders);
+  assert.equal(ok.kind,'fulfill');
+  assert.equal(ok.response.status,204);
+  assert.equal(ok.response.headers['access-control-allow-origin'],'http://127.0.0.1:5187');
+  assert.deepEqual(audit.writes,[]);
+
+  for(const headers of [
+    {...validHeaders,'access-control-request-method':'DELETE'},
+    {...validHeaders,origin:'https://example.com'},
+    {...validHeaders,'access-control-request-headers':'content-type, x-private-secret'},
+  ]){
+    const blocked=await call(path,'OPTIONS',null,headers);
+    assert.equal(blocked.kind,'fulfill');
+    assert.equal(blocked.response.status,403);
+  }
+  assert.equal(audit.writes.length,3);
   assert.deepEqual(audit.readOnlyCalculations,[]);
 });
