@@ -62,3 +62,8 @@ frontend-check-results/
 # P2 final release font/OFL resources are not independently approved yet.
 # Future release requires deliberate reviewed asset inclusion, not incidental Git add.
 /backend/assets/pdf_fonts/
+
+# Browser integration QA artifacts: traces/screenshots may contain workspace UI content.
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
