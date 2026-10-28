@@ -515,7 +515,11 @@ test('cross-tab project selection Cancel preserves an edited primary Prepare dra
   await expect(page.getByText(/Another tab selected a different project/)).toBeVisible();
   // Complete B-tab's stale A profile read only after the cross-tab B selection.
   // Its delayed success must not steal the shared selection back from project B.
+  const delayedResponse=other.waitForResponse(response=>
+    response.url().endsWith(`/api/projects/${TEST_PROJECT}/live-profile`)
+      &&response.status()===200);
   releaseOldProfile();
+  await delayedResponse; // An actual stale GET response, not just a queued release.
   await expect.poll(async()=>other.evaluate(()=>localStorage.getItem('pilotodin-current')))
     .toBe(TEST_PROJECT_B);
   // Let the browser process the completed mock response and related state effects.
