@@ -6,7 +6,7 @@
 
 - `playwright.config.ts` starts **a new frontend-only Vite server** at **127.0.0.1:5187**, with `reuseExistingServer:false`. It does **not** attach to the owner's existing live `:5173` browser.
 - Each test uses a fresh Playwright browser context. The tests populate only invented in-memory profile data and temporary `localStorage` for the isolated `:5187` origin.
-- Every HTTP request to the normal `127.0.0.1:8000/api` backend is intercepted and fulfilled inside the test. Every unmocked API **write is blocked** with a synthetic 403 and recorded, and unexpected API reads return a test-owned synthetic 404. All other non-frontend network origins are blocked.
+- Every request to `127.0.0.1:8000/api` is intercepted. All attempted writes return a synthetic 403 and are recorded; unexpected GETs return 404 and are recorded. Unexpected origins/paths are blocked **and recorded**, as are non-GET/HEAD requests to the Vite UI origin. Both browser cases assert zero attempted writes, unknown reads and unexpected-origin traffic. Blocking alone is not counted as a pass.
 - The synthetic `synthetic_upload.csv` is generated in memory using `setInputFiles({buffer:...})`. Do not import existing owner CSVs or start the actual Python backend for these tests.
 - Never bypass the native unsaved-field confirmation by pressing **OK** during a test. The pilot checks **Cancel** only.
 - `test-results/` and `playwright-report/` must remain gitignored; traces can reveal screen contents, so never upload traces from a live project.
@@ -35,4 +35,5 @@ The dedicated port **5187 must be free**; if it is occupied, `reuseExistingServe
 1. The Playwright tests have been authored against the live GitHub source, but have **not yet been executed on the owner's Windows PC**. Before calling this pilot accepted, confirm 2/2 execution and no unexpected requests; diagnose any failure from the actual trace without modifying real data.
 2. Do not automatically enable GitHub Actions for Playwright until its npm dependency and lockfile are committed, the test passes locally and workflow changes have been reviewed for cost/data isolation.
 3. Current tests intentionally avoid P2 PDF, ML training, quality approvals, AI calls and desktop packaging.
-4. The tests use a CSS selector for the embedded target choice because the existing target `<label>` is not associated with a form control. Fix this as a separate accessibility increment if desired; then improve the locator to use the label.
+4. A React `useId`-backed visible label now identifies the target control in primary and embedded Prepare views; the test selects it by accessible role/name scoped to the dock, not its CSS class. This does not constitute a full Issue #7 accessibility audit.
+5. `tests/p1-playwright-pilot-contract.test.cjs` uses mocked requests to check network isolation, but does not substitute for real Playwright browser execution.

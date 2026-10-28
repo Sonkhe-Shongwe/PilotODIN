@@ -34,22 +34,30 @@ const syntheticProject={
   experiments:[],
 };
 
-type NetworkAudit={writes:string[]; unexpectedReads:string[]};
+type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]};
 
 /** Fail closed: only the dedicated Vite origin is allowed onto the network.
  * Every API response comes from this handler, never the actual :8000 backend.
  * Unrecognised requests return a synthetic 404 and are recorded.
  */
 async function installIsolatedAPI(context:BrowserContext,withProject:boolean):Promise<NetworkAudit>{
-  const audit:NetworkAudit={writes:[],unexpectedReads:[]};
+  const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[]};
   await context.route('**/*',async(route:Route)=>{
     const req=route.request();
     const url=new URL(req.url());
     if(url.origin===UI_ORIGIN){
+      // Vite only serves assets: refuse and audit accidental UI-origin writes.
+      if(req.method()!=='GET'&&req.method()!=='HEAD'){
+        audit.writes.push(req.method()+' '+url.pathname+' [frontend-origin]');
+        await route.fulfill({status:403,json:{detail:'E2E fixture blocks frontend-origin writes'}});
+        return;
+      }
       await route.continue();
       return;
     }
     if(url.origin!==API_ORIGIN||!url.pathname.startsWith('/api/')){
+      // Block AND record unexpected origins/paths, including cloud requests.
+      audit.blockedOrigins.push(req.method()+' '+url.origin+url.pathname);
       await route.abort('blockedbyclient');
       return;
     }
@@ -113,6 +121,7 @@ test('empty project catalogue displays safe onboarding and disables import witho
   await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue('');
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
 });
 
 test('edited Prepare dock rejects a new import before any backend POST',async({page,context})=>{
@@ -128,7 +137,7 @@ test('edited Prepare dock rejects a new import before any backend POST',async({p
 
   await expect(page.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
   await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
-  const target=page.locator('.po-secondary-pane select.input.full');
+  const target=page.locator('.po-secondary-pane').getByRole('combobox',{name:/target variable/i});
   await expect(target).toBeVisible();
   await target.selectOption('fraud_reported');
   await expect(target).toHaveValue('fraud_reported');
@@ -157,4 +166,5 @@ test('edited Prepare dock rejects a new import before any backend POST',async({p
   await expect(page.getByText('synthetic_upload.csv',{exact:true})).toBeVisible();
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
 });
