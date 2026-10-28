@@ -1,5 +1,7 @@
 # PilotODIN Playwright browser QA — isolated pilot
 
+**Owner Windows ordinary-history gate ACCEPTED (28 Oct 2026):** The corrected Explore fixture's 11 Node contracts passed **11/11 (543.7358ms)** and its fourth, focused Chromium ordinary Back/Forward test passed **1/1 (8.4s, one worker)**. This covers unrelated Quality/Explore hash history with an edited Prepare dock, not a cancelled dock-promotion or its history rollback. Historical first 0/1 fixture failure is retained below. Do not rerun these unchanged suites.
+
 **Status for browser-history extension (28 October 2026): OWNER FIRST RUN FAILED 0/1** at the final unexpected-API-read audit because the Explore synthetic fixture lacked four metadata GET responses (and source review identified a fifth `/saved` request plus a read-only POST workbench calculation). Three source commits add version-consistent, invented responses for these five GET endpoints, a strictly validated synthetic read-only workbench POST, a narrowly scoped content-type CORS preflight and a browser wait for the resulting `2 of 2 records` readout. All requests remain trapped locally, and other POSTs/OPTIONS are blocked and audited. **New execution pending:** 11 authored Node contracts and the single corrected history browser test; the original three browser cases remain accepted. This is not a verified browser fix yet.
 
 **Status (28 Oct 2026): OWNER WINDOWS ACCEPTED, scoped pilot CLOSED.**
