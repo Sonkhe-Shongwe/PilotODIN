@@ -608,9 +608,14 @@ test('approved cross-tab successful project load avoids duplicate failing profil
       json:{detail:'Synthetic duplicate profile GET refused'}});
   });
   const other=await context.newPage();
-  await other.goto('/#/studio/quality');
+  // Both tabs share the saved active stage for synthetic project A. The first
+  // tab persisted Prepare, so do not demand Quality before switching B.
+  // Confirm B's selecting tab is actually mounted on the same fake A project.
+  await other.goto('/#/studio/prepare');
+  await expect(other.getByRole('combobox',{name:'Switch project'}))
+    .toHaveValue(TEST_PROJECT);
   await expect(other.locator('.po-primary-pane')
-    .getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+    .getByRole('combobox',{name:/target variable/i})).toBeVisible();
 
   const prompts:string[]=[];
   page.on('dialog',async dialog=>{
