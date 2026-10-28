@@ -19,6 +19,8 @@ export default defineConfig({
     baseURL:browserOrigin,
     browserName:'chromium',
     headless:true,
+    // A service worker must not bypass the test's HTTP route isolation.
+    serviceWorkers:'block',
     viewport:{width:1440,height:900},
     trace:'retain-on-failure',
     screenshot:'only-on-failure',
