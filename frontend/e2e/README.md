@@ -56,3 +56,15 @@ npx playwright test --config=playwright.config.ts -g "edited Prepare dock pauses
 
 **CI status:** GitHub remote HEAD `632ae1f09c740e8dbd68861061ff9dc2e1f1949d` contains the owner-reviewed Playwright dependency `@playwright/test ^1.64.1` and npm lockfile. The existing `.github/workflows/frontend-compile.yml` is only on the active feature branch; `main` currently has only `live-dev-backend-tests.yml`. GitHub's usual `workflow_dispatch` UI requires a workflow on the default branch, so a new manual browser workflow added only to this feature branch would not yet be runnable through that UI. Do not modify `main`, enable CI triggers, run installers, or assert cloud CI acceptance without separate authorization and workflow review.
 
+## New P1 browser-history discovery gate (authored, not executed)
+
+A **fourth Playwright browser test**, `browser Back and Forward preserve an edited dock across unrelated routes`, now tests ordinary real Chromium hash history with an edited secondary Prepare target. It begins on Quality primary, selects synthetic `fraud_reported`, navigates to unrelated Explore through `window.location.hash`, performs actual browser **Back** to Quality then **Forward** to Explore, and checks the rendered primary heading, original dock field, same project, and strict no-write/no-unknown-network audits at each stage. Only synthetic `:5187` storage/projects are used, and all backend calls remain intercepted.
+
+**Exact new Windows gate** after safely pulling the feature branch, from the existing `frontend` directory:
+
+```powershell
+npx playwright test --config=playwright.config.ts -g "browser Back and Forward preserve"
+```
+
+**Expected: one authored test; outcome PENDING.** The accepted earlier 3 Chromium scenarios, 7 Node contracts and production build do not need repeating on unchanged source. If this test fails, review its test-owned trace and determine whether the issue is route rendering, browser history, or a fixture assumption before making any production change. **Important limitation:** this tests ordinary Back/Forward for unrelated routes only. History behavior specifically *after a rejected navigation rolled back with `history.replaceState`* remains a distinct OPEN regression to design and verify; no claim that it is solved.
+
