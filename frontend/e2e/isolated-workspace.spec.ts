@@ -778,3 +778,61 @@ test('approved same-tab global project load commits B only after verified GETs',
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+
+test('edited primary Prepare requests an unload warning but untouched workspace does not',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const target=page.locator('.po-primary-pane').getByRole('combobox',{name:/target variable/i});
+  await expect(target).toBeVisible();
+  const needsWarning=()=>page.evaluate(()=>{
+    const event=new Event('beforeunload',{cancelable:true});
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(await needsWarning()).toBe(false);
+  await target.selectOption('fraud_reported');
+  expect(await needsWarning()).toBe(true);
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
+
+test('edited docked Prepare requests unload warning even while narrowed and paused',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['quality','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'quality');
+    localStorage.setItem('pilotodin-dock-layout-v2-'+id,
+      JSON.stringify({schema:2,secondary:'prepare',side:'right',fraction:0.39}));
+  },TEST_PROJECT);
+  await page.goto('/#/studio/quality');
+  const dock=page.locator('.po-secondary-pane');
+  const target=dock.getByRole('combobox',{name:/target variable/i});
+  await expect(dock).toBeVisible();
+  const needsWarning=()=>page.evaluate(()=>{
+    const event=new Event('beforeunload',{cancelable:true});
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(await needsWarning()).toBe(false);
+  await target.selectOption('fraud_reported');
+  expect(await needsWarning()).toBe(true);
+  await page.setViewportSize({width:680,height:900});
+  await expect(dock).toBeHidden();
+  await expect(page.getByText(/Edited docked fields are kept in memory while this view is narrow/)).toBeVisible();
+  expect(await needsWarning()).toBe(true);
+  await page.setViewportSize({width:1440,height:900});
+  await expect(target).toHaveValue('fraud_reported');
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

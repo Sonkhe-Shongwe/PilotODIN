@@ -15,7 +15,7 @@ import {canReorderWorkspaceTab,reorderWorkspaceTabs,shiftWorkspaceTab} from './w
 import type {TabDropSide} from './workspaceTabReorder';
 import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {canRestoreDockDismissFocus,planDockDismissFocus} from './dockDismissFocus';
-import {isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
+import {hasUnsavedWorkspaceDraftForUnload,isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
 import {planExternalRouteActivation} from './externalRouteActivationGuard';
 import {planExternalProjectTransition} from './externalProjectTransitionGuard';
 import type {EditedDock} from './dockInputDiscardGuard';
@@ -335,6 +335,19 @@ export function UnifiedShell(){
  const markPrimaryDraftEdited=(view:View)=>{
   if(workspaceReady&&projectId&&(view==='prepare'||view==='model'||view==='predict'))editedPrimary.current={projectId,view};
  };
+ // Browser reload/navigation and WebView close (where supported) must ask before
+ // losing live form edits. The user can stay and keep the mounted in-memory draft;
+ // consenting to leave does not persist draft values or mutate the dataset.
+ useEffect(()=>{
+  const onBeforeUnload=(event:BeforeUnloadEvent)=>{
+   if(!hasUnsavedWorkspaceDraftForUnload(projectId,workspaceReady,active,
+    editedPrimary.current,editedDock.current,dock.secondary))return;
+   event.preventDefault();
+   event.returnValue=''; // Legacy confirmation requirement in Chromium/WebView.
+  };
+  window.addEventListener('beforeunload',onBeforeUnload);
+  return()=>window.removeEventListener('beforeunload',onBeforeUnload);
+ },[projectId,workspaceReady,active,dock.secondary]);
  const confirmProjectDraftDiscard=():boolean=>{
   // A single prompt covers both forms when both are edited.
   if(editedPrimary.current?.projectId!==projectId)return confirmEditedDockDiscard('switch-project');
