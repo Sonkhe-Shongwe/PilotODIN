@@ -66,8 +66,20 @@ test('Rust intercepts before close, uses one-time ticket, no writes or broad per
  assert.match(rust,/window\.destroy\(\)/);
  assert.doesNotMatch(rust,/window\.close\(\)/);
  assert.match(rust,/#\[test\]\s*fn only_current_ticket_can_authorize_one_native_close_resolution/);
- const handler=rust.slice(rust.indexOf('fn resolve_native_close_request('),rust.indexOf('#[derive(Deserialize)]\nstruct ModelManifest'));
+ // Match structural Rust declarations, never an exact LF/CRLF separator.
+ // A missing end marker must fail explicitly, not silently scan the whole file.
+ function extractHandler(source){
+  const start=source.indexOf('fn resolve_native_close_request(');
+  const end=source.indexOf('struct ModelManifest',start);
+  assert.ok(start>=0&&end>start,'native close handler boundaries must be present');
+  return source.slice(start,end);
+ }
+ const handler=extractHandler(rust);
  assert.doesNotMatch(handler,/std::fs::write|localStorage|sessionStorage|launch_backend|launch_bundled_ai/);
+ // Git may check Rust out with CRLF on Windows; simulate that even on Linux.
+ const windowsSource=rust.replace(/\r?\n/g,'\r\n');
+ assert.equal(extractHandler(windowsSource).replace(/\r\n/g,'\n'),handler.replace(/\r\n/g,'\n'));
+
 });
 test('shell registers native listener separately and preserves browser unload guard',()=>{
  assert.match(shell,/if\(!isDesktop\(\)\)return/);
