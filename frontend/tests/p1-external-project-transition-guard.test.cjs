@@ -53,7 +53,7 @@ function harness({requested='B',from='A',edit=edited,approval=false,
  eventType='pilotodin:project-changed',key='pilotodin-current',
  unavailable=false,restoreFails=false,primaryEdit=null}={}){
  let stored=requested,appLoads=0;
- const log={prompts:0,restores:0,accepted:[],refresh:0,warnings:[],stopped:0,events:[]};
+ const log={prompts:0,restores:0,accepted:[],refresh:0,warnings:[],stopped:0,events:[],newProjectOpen:[]};
  const listeners=new Map();
  const localStorage={
   getItem(name){assert.equal(name,'pilotodin-current');return stored},
@@ -83,6 +83,8 @@ function harness({requested='B',from='A',edit=edited,approval=false,
  const setProjectId=id=>{log.accepted.push(id)};
  const refreshProjects=()=>{log.refresh++};
  const setWarning=message=>log.warnings.push(message);
+ // Commit-only UI cleanup: never close the new-project form on Cancel or failed GET.
+ const setNewProjectOpen=open=>log.newProjectOpen.push(open);
  const exports={};
  const reviewProject=new Function('window','localStorage','projectId','dock','editedDock','editedPrimary','pendingExternalSwitch','needsDockInputDiscardApproval','workspaceReady',
  'planExternalProjectTransition','refreshProjects','setProjectId','setWarning','Event','exports',
@@ -98,10 +100,10 @@ function harness({requested='B',from='A',edit=edited,approval=false,
  const callbacksJs=compile(shell.slice(callbacksStart,callbacksEnd)
    +'\nexport {commitPrimaryLoadedProject,consumePrimaryProjectHandoff,failPrimaryProjectLoad};');
  const action=new Function('pendingExternalSwitch','primaryProjectHandoff','editedDock','editedPrimary',
-  'setProjectId','refreshProjects','localStorage','setWarning','exports',
+  'setProjectId','refreshProjects','localStorage','setWarning','setNewProjectOpen','exports',
   callbacksJs.outputText+'\nreturn exports;')(
   pendingExternalSwitch,primaryProjectHandoff,editedDock,editedPrimary,setProjectId,refreshProjects,
-  localStorage,setWarning,{});
+  localStorage,setWarning,setNewProjectOpen,{});
  const event=new TestEvent(eventType,{key,detail:unavailable?{reason:'unavailable'}:undefined});
  return {run(){window.dispatchEvent(event)},
   succeed:id=>action.commitPrimaryLoadedProject(id,{id,project:{id},version:0}),
@@ -128,6 +130,7 @@ test('Approve passes a single accepted project to normal Studio and clears edit 
  assert.equal(h.pendingExternalSwitch.current.requestedId,'B');
  h.succeed('B');
  assert.deepEqual(h.log.accepted,['B']);
+ assert.deepEqual(h.log.newProjectOpen,[false],'only verified B may close new-project form');
  assert.equal(h.editedDock.current,null);
  assert.equal(h.pendingExternalSwitch.current,null);
 });
@@ -263,6 +266,7 @@ test('approved cross-tab B read failure keeps primary A and edited dock mounted'
  assert.deepEqual(h.log.accepted,[]);
  assert.deepEqual(h.editedPrimary.current,edit);
  assert.deepEqual(h.editedDock.current,edit);
+ assert.deepEqual(h.log.newProjectOpen,[],'failed B may not close new-project form');
  assert.equal(h.pendingExternalSwitch.current,null);
  assert.equal(h.getStored(),'B','do not roll back another tab shared selection');
  assert.equal(h.log.restores,0);
@@ -324,9 +328,11 @@ test('verified B handoff is one-use and never staged on Cancel or failed GET',()
  const cancelled=harness({eventType:'storage',approval:false,primaryEdit:{projectId:'A',view:'prepare'}});
  cancelled.run();
  assert.equal(cancelled.primaryProjectHandoff.current,null);
+ assert.deepEqual(cancelled.log.newProjectOpen,[],'Cancel cannot close new-project form');
  const failing=harness({eventType:'storage',approval:true,primaryEdit:{projectId:'A',view:'prepare'}});
  failing.run();failing.fail('B');
  assert.equal(failing.primaryProjectHandoff.current,null);
+ assert.deepEqual(failing.log.newProjectOpen,[],'failed GET cannot close new-project form');
  const accepted=harness({eventType:'storage',approval:true,primaryEdit:{projectId:'A',view:'prepare'}});
  accepted.run();accepted.succeed('B');
  assert.deepEqual(accepted.primaryProjectHandoff.current,{id:'B',project:{id:'B'},version:0});
