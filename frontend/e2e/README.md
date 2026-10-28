@@ -39,3 +39,18 @@ The dedicated port **5187 must be free**; if it is occupied, `reuseExistingServe
 4. A React `useId`-backed visible label now identifies the target control in primary and embedded Prepare views; the test selects it by accessible role/name scoped to the dock, not its CSS class. This does not constitute a full Issue #7 accessibility audit.
 5. `tests/p1-playwright-pilot-contract.test.cjs` now contains seven cases (five previously Windows-green; two newly authored for the precise font exception and denial of all other font requests). Its mocked request checks do not substitute for real Playwright browser execution.
 6. **Next dependency-custody task:** Owner reviews and commits together the actual Windows npm-generated `frontend/package.json` and `frontend/package-lock.json` containing `@playwright/test`, via GitHub Desktop. The remote repository versions still lack that dependency. Do not fabricate or replace the lockfile, do not enable CI yet, and do not repeat the now-accepted 7/7 and 2/2 gates on unchanged code.
+
+## Next new browser acceptance: responsive edited dock
+
+The two original scenarios and seven isolation Node contracts are already **owner Windows PASS**, and must not be rerun on unchanged source. A **third synthetic Chromium scenario is newly authored and NOT yet run**. It begins with Quality primary and Prepare edited to `fraud_reported`, narrows the viewport to 680px, verifies the edited dock is hidden but still mounted and the preservation notice is visible, widens to 1440px, and requires the target/project/Quality primary to remain unchanged with zero attempted backend writes or unexpected network traffic. This is a targeted test of the already implemented `ResizeObserver`/responsive layout; it changes no product code and stores no draft field values.
+
+From the existing Windows `frontend` directory after a safe feature-branch pull, run **only**:
+
+```powershell
+npx playwright test --config=playwright.config.ts -g "edited Prepare dock pauses"
+```
+
+Expected **one authored scenario**; status **PENDING** until owner evidence. If it fails, diagnose its test-owned trace and exact narrow-width behavior, not real projects. The previously green 2/2 Playwright pilot, 7/7 Node and Vite build remain closed.
+
+**CI status:** GitHub remote HEAD `632ae1f09c740e8dbd68861061ff9dc2e1f1949d` contains the owner-reviewed Playwright dependency `@playwright/test ^1.64.1` and npm lockfile. The existing `.github/workflows/frontend-compile.yml` is only on the active feature branch; `main` currently has only `live-dev-backend-tests.yml`. GitHub's usual `workflow_dispatch` UI requires a workflow on the default branch, so a new manual browser workflow added only to this feature branch would not yet be runnable through that UI. Do not modify `main`, enable CI triggers, run installers, or assert cloud CI acceptance without separate authorization and workflow review.
+

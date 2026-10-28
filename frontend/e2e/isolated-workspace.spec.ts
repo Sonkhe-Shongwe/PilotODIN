@@ -186,3 +186,42 @@ test('edited Prepare dock rejects a new import before any backend POST',async({p
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+test('edited Prepare dock pauses when narrow and restores its unsaved target on widening',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  // Identical synthetic, project-scoped layout used by the accepted Cancel test.
+  // No owner profile, CSV or backend is accessed.
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['quality','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'quality');
+    localStorage.setItem('pilotodin-dock-layout-v2-'+id,
+      JSON.stringify({schema:2,secondary:'prepare',side:'right',fraction:0.39}));
+  },TEST_PROJECT);
+  await page.goto('/#/studio/quality');
+
+  const dock=page.locator('.po-secondary-pane');
+  const target=dock.getByRole('combobox',{name:/target variable/i});
+  await expect(page.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+  await expect(dock).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+
+  // At this width the split cannot fit two 300px analytical panes.
+  // Hidden is intentional: it must keep the edited React form mounted,
+  // exclude its inputs from focus, and not erase any draft content.
+  await page.setViewportSize({width:680,height:900});
+  await expect(page.getByText(/Edited docked fields are kept in memory while this view is narrow/)).toBeVisible();
+  await expect(dock).toHaveCount(1);
+  await expect(dock).toBeHidden();
+  await expect(page.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+
+  await page.setViewportSize({width:1440,height:900});
+  await expect(dock).toBeVisible();
+  await expect(dock.getByRole('combobox',{name:/target variable/i})).toHaveValue('fraud_reported');
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  await expect(page.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
