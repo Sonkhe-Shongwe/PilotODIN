@@ -51,6 +51,34 @@ test('dirty-check or confirmation errors fail closed',async()=>{
   assert.deepEqual(calls,[[token,false]]);
  }
 });
+test('asynchronous native confirmation cannot approve before explicit resolution',async()=>{
+ const calls=[];
+ let answer;
+ const controlled=new Promise(resolve=>{answer=resolve;});
+ const pending=resolveNativeCloseRequest({token},()=>true,async()=>controlled,
+  async(t,approve)=>calls.push([t,approve]));
+ await Promise.resolve();
+ assert.deepEqual(calls,[],'unresolved dialog cannot authorize native close');
+ answer(false);await pending;
+ assert.deepEqual(calls,[[token,false]]);
+});
+test('asynchronous native confirmation allows only resolved true, never a truthy object',async()=>{
+ const calls=[];
+ await resolveNativeCloseRequest({token},()=>true,async()=>Promise.resolve(true),
+  async(t,approve)=>calls.push([t,approve]));
+ assert.deepEqual(calls,[[token,true]]);
+ const reject=[];
+ await resolveNativeCloseRequest({token},()=>true,async()=>({accepted:true}),
+  async(t,approve)=>reject.push([t,approve]));
+ assert.deepEqual(reject,[[token,false]]);
+});
+test('native dialog rejection fails closed, with a denial sent to release the ticket',async()=>{
+ const calls=[];
+ await resolveNativeCloseRequest({token},()=>true,async()=>{throw Error('native dialog unavailable')},
+  async(t,approve)=>calls.push([t,approve]));
+ assert.deepEqual(calls,[[token,false]]);
+});
+
 test('missing, malformed, and unexpected tokens cannot issue native close',async()=>{
  const calls=[];
  for(const payload of [null,{},'x',{token:5},{token:'../../close'},{token:'0'.repeat(31)}])
@@ -64,6 +92,13 @@ test('Rust intercepts before close, uses one-time ticket, no writes or broad per
  assert.match(rust,/consume_native_close_ticket\(&mut pending, &token\)/);
  assert.match(rust,/window\.label\(\) != "main"/);
  assert.match(rust,/window\.destroy\(\)/);
+ assert.match(rust,/async fn confirm_native_close\(/);
+ assert.match(rust,/guard\.as_deref\(\) != Some\(token\.as_str\(\)\)/);
+ assert.match(rust,/tauri::async_runtime::spawn_blocking\(move \|\| prompt\.blocking_show\(\)\)/);
+ assert.match(rust,/MessageDialogButtons::OkCancelCustom\(/);
+ assert.match(rust,/"Close PilotODIN"\.into\(\), "Stay"\.into\(\)/);
+ assert.match(rust,/resolve_native_close_request, confirm_native_close/);
+ assert.doesNotMatch(rust,/\bstd::fs::write\b/);
  assert.doesNotMatch(rust,/window\.close\(\)/);
  assert.match(rust,/#\[test\]\s*fn only_current_ticket_can_authorize_one_native_close_resolution/);
  // Match structural Rust declarations, never an exact LF/CRLF separator.
@@ -85,7 +120,9 @@ test('shell registers native listener separately and preserves browser unload gu
  assert.match(shell,/if\(!isDesktop\(\)\)return/);
  assert.match(shell,/listen<NativeCloseRequest>\(NATIVE_CLOSE_EVENT/);
  assert.match(shell,/hasUnsavedWorkspaceDraftForUnload\(state\.projectId,state\.workspaceReady/);
+ assert.match(shell,/invoke<boolean>\('confirm_native_close',\{token\}\)/);
  assert.match(shell,/invoke<void>\('resolve_native_close_request',\{token,approve\}\)/);
+ assert.doesNotMatch(shell.slice(shell.indexOf('const nativeCloseContext=useRef('),shell.indexOf(' // Browser reload/navigation')),/window\.confirm\(/);
  assert.match(shell,/return\(\)=>\{disposed=true;unlisten\?\.\(\)\}/);
  assert.match(shell,/window\.addEventListener\('beforeunload',onBeforeUnload\)/);
  assert.match(shell,/window\.removeEventListener\('beforeunload',onBeforeUnload\)/);

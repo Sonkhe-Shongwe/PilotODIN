@@ -354,9 +354,12 @@ export function UnifiedShell(){
     const state=nativeCloseContext.current;
     return hasUnsavedWorkspaceDraftForUnload(state.projectId,state.workspaceReady,
      state.active,editedPrimary.current,editedDock.current,state.secondary);
-   },message=>window.confirm(message),
+   },(_message,token)=>invoke<boolean>('confirm_native_close',{token}),
    (token,approve)=>invoke<void>('resolve_native_close_request',{token,approve}))
-   .catch(()=>setWarning('Native close confirmation could not be completed. Your workspace remains open.'));
+   .catch(error=>{
+    console.error('[PilotODIN native close] confirmation or resolution failed',error);
+    setWarning('Native close confirmation could not be completed. Your workspace remains open.');
+   });
   }).then(stop=>{
    if(disposed)stop();else unlisten=stop;
   }).catch(()=>setWarning('Native close protection could not be registered. Closing is blocked for safety.'));

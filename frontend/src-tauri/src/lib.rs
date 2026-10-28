@@ -81,6 +81,38 @@ fn resolve_native_close_request(
     Ok(())
 }
 
+// This is intentionally a Rust-side dialog. The Tauri dialog plugin may
+// replace browser window.confirm with an asynchronous IPC function, so the
+// native close handshake must never assume a synchronous browser boolean.
+#[tauri::command]
+async fn confirm_native_close(
+    window: tauri::WebviewWindow,
+    state: State<'_, NativeCloseState>,
+    token: String,
+) -> Result<bool, String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    {
+        let guard = state.pending.lock()
+            .map_err(|_| "Native close state unavailable".to_string())?;
+        if guard.as_deref() != Some(token.as_str()) {
+            return Err("Native close request expired or was not issued".into());
+        }
+    }
+    // A blocking system dialog must NOT run on the WebView/UI thread.
+    // Only an explicit click on Close allows the existing ticket resolver
+    // to destroy the window. Cancellation leaves the form and window intact.
+    let prompt = window.dialog()
+        .message("You have unsaved changes in the workspace. Closing this window will discard those changes.")
+        .title("PilotODIN - Unsaved changes")
+        .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
+        .buttons(tauri_plugin_dialog::MessageDialogButtons::OkCancelCustom(
+            "Close PilotODIN".into(), "Stay".into(),
+        ))
+        .parent(&window);
+    tauri::async_runtime::spawn_blocking(move || prompt.blocking_show())
+        .await.map_err(|_| "Native confirmation could not finish".to_string())
+}
+
 #[derive(Deserialize)]
 struct ModelManifest {
     model_file: String,
@@ -382,7 +414,8 @@ pub fn run() {
         .manage(DesktopState::default())
         .manage(NativeCloseState::default())
         .invoke_handler(tauri::generate_handler![
-            launch_backend, launch_bundled_ai, save_report_as, resolve_native_close_request
+            launch_backend, launch_bundled_ai, save_report_as,
+            resolve_native_close_request, confirm_native_close
         ])
         .on_window_event(|window, event| {
             if window.label() != "main" { return; }

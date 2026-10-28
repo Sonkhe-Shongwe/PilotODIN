@@ -10,7 +10,7 @@ export const NATIVE_CLOSE_MESSAGE=
 export async function resolveNativeCloseRequest(
  payload:unknown,
  hasUnsavedForm:()=>boolean,
- ask:(message:string)=>boolean,
+ ask:(message:string,token:string)=>boolean|Promise<boolean>,
  resolve:(token:string,approve:boolean)=>Promise<void>
 ):Promise<void> {
  if(!payload||typeof payload!=='object'||!('token' in payload))return;
@@ -19,7 +19,9 @@ export async function resolveNativeCloseRequest(
  if(typeof token!=='string'||!(/^[a-f0-9]{32}$/i.test(token)))return;
  let approve=false;
  try {
-  approve=!hasUnsavedForm()||ask(NATIVE_CLOSE_MESSAGE);
+  // Await native dialog IPC: a Promise is never implicit consent.
+  // Only the literal boolean true can authorize a native discard.
+  approve=!hasUnsavedForm()||(await ask(NATIVE_CLOSE_MESSAGE,token))===true;
  }catch {
   // Faults in the dirty check or dialog must NEVER authorize discard.
   approve=false;
