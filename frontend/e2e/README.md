@@ -1,6 +1,8 @@
 # PilotODIN Playwright browser QA — isolated pilot
 
-**Status (28 Oct 2026): OWNER WINDOWS ACCEPTED, scoped pilot CLOSED.** Direct Windows PowerShell screenshot confirms **7/7 targeted Node contracts PASS** (380.7562ms) and **2/2 Playwright Chromium tests PASS** (7.3s, one worker) with the exact isolated font CSS stub. Previous first browser run **0/2 FAIL** on blocked Google Fonts CSS is preserved as historical fixture evidence, now corrected and validated. The existing TypeScript/Vite build PASS (Vite 6.4.5, 1,636 modules, 2.60s and nonfatal 533.61kB advisory) remains accepted because only test-harness/docs changed afterward. This does not certify desktop, real imports, fonts for P8, offline AI or hardware performance.
+**Status (28 Oct 2026): OWNER WINDOWS ACCEPTED, scoped pilot CLOSED.**
+
+**Responsive edited-dock pilot (28 Oct 2026): OWNER WINDOWS PASS, scoped gate CLOSED.** One new targeted Chromium scenario at `isolated-workspace.spec.ts:190` passed **1/1, 5.8s, one worker**. It verified edited Prepare target retention on narrowing to 680px and widening to 1440px with test-only API/network audit empty. This supplements the earlier accepted 2/2 Chromium scenarios and 7/7 Node contracts; it does not certify native desktop resizing or full P1. Direct Windows PowerShell screenshot confirms **7/7 targeted Node contracts PASS** (380.7562ms) and **2/2 Playwright Chromium tests PASS** (7.3s, one worker) with the exact isolated font CSS stub. Previous first browser run **0/2 FAIL** on blocked Google Fonts CSS is preserved as historical fixture evidence, now corrected and validated. The existing TypeScript/Vite build PASS (Vite 6.4.5, 1,636 modules, 2.60s and nonfatal 533.61kB advisory) remains accepted because only test-harness/docs changed afterward. This does not certify desktop, real imports, fonts for P8, offline AI or hardware performance.
 
 ## Safety contract
 
@@ -42,7 +44,7 @@ The dedicated port **5187 must be free**; if it is occupied, `reuseExistingServe
 
 ## Next new browser acceptance: responsive edited dock
 
-The two original scenarios and seven isolation Node contracts are already **owner Windows PASS**, and must not be rerun on unchanged source. A **third synthetic Chromium scenario is newly authored and NOT yet run**. It begins with Quality primary and Prepare edited to `fraud_reported`, narrows the viewport to 680px, verifies the edited dock is hidden but still mounted and the preservation notice is visible, widens to 1440px, and requires the target/project/Quality primary to remain unchanged with zero attempted backend writes or unexpected network traffic. This is a targeted test of the already implemented `ResizeObserver`/responsive layout; it changes no product code and stores no draft field values.
+The two original scenarios and seven isolation Node contracts are already **owner Windows PASS**, and must not be rerun on unchanged source. The **third synthetic Chromium scenario is owner-verified PASS (1/1, 5.8s)**. It begins with Quality primary and Prepare edited to `fraud_reported`, narrows the viewport to 680px, verifies the edited dock is hidden but still mounted and the preservation notice is visible, widens to 1440px, and requires the target/project/Quality primary to remain unchanged with zero attempted backend writes or unexpected network traffic. This is a targeted test of the already implemented `ResizeObserver`/responsive layout; it changes no product code and stores no draft field values.
 
 From the existing Windows `frontend` directory after a safe feature-branch pull, run **only**:
 
@@ -50,7 +52,7 @@ From the existing Windows `frontend` directory after a safe feature-branch pull,
 npx playwright test --config=playwright.config.ts -g "edited Prepare dock pauses"
 ```
 
-Expected **one authored scenario**; status **PENDING** until owner evidence. If it fails, diagnose its test-owned trace and exact narrow-width behavior, not real projects. The previously green 2/2 Playwright pilot, 7/7 Node and Vite build remain closed.
+**Historical acceptance command only.** This new scenario is **accepted** from owner Windows evidence; do not rerun on unchanged code. If it fails, diagnose its test-owned trace and exact narrow-width behavior, not real projects. The previously green 2/2 Playwright pilot, 7/7 Node and Vite build remain closed.
 
 **CI status:** GitHub remote HEAD `632ae1f09c740e8dbd68861061ff9dc2e1f1949d` contains the owner-reviewed Playwright dependency `@playwright/test ^1.64.1` and npm lockfile. The existing `.github/workflows/frontend-compile.yml` is only on the active feature branch; `main` currently has only `live-dev-backend-tests.yml`. GitHub's usual `workflow_dispatch` UI requires a workflow on the default branch, so a new manual browser workflow added only to this feature branch would not yet be runnable through that UI. Do not modify `main`, enable CI triggers, run installers, or assert cloud CI acceptance without separate authorization and workflow review.
 
