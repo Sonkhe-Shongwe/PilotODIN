@@ -50,11 +50,12 @@ function readActive(projectId:string):View|null {try{const raw=localStorage.getI
 function readDock(projectId:string):DockLayout{
  try{return parseDockLayout(JSON.parse(localStorage.getItem(dockStorageKey(projectId))||'null'))}catch{return parseDockLayout(null)}
 }
-function routeView():View {
- if(location.hash.startsWith('#/canvas'))return 'investigate';
- const m=location.hash.match(/^#\/studio\/([a-z_]+)$/);
+function routeViewFromHash(hash:string):View {
+ if(hash.startsWith('#/canvas'))return 'investigate';
+ const m=hash.match(/^#\/studio\/([a-z_]+)$/);
  return isWorkspaceView(m?.[1])?m![1] as View:'overview';
 }
+function routeView():View {return routeViewFromHash(location.hash);}
 function navigate(v:View){navigateHashSmoothly(v==='investigate'?'#/canvas':`#/studio/${v}`)}
 const labelFor=(view:View)=>ALL.find(i=>i.id===view)?.label??view;
 const PANEL_MIN_WIDTH=300;
@@ -93,6 +94,8 @@ export function UnifiedShell(){
  const editedDock=useRef<EditedDock|null>(null);
  // Last accepted URL is memory-only; never store form values or push synthetic history entries.
  const acceptedRouteHash=useRef(window.location.hash);
+ // One-shot preapproved same-document push consent, never persisted.
+ const preapprovedRoutePush=useRef<string|null>(null);
  const draggedTab=useRef<{projectId:string;view:View}|null>(null);
  const [tabDropTarget,setTabDropTarget]=useState<{view:View;side:TabDropSide}|null>(null);
  const [paneWidth,setPaneWidth]=useState(0);
@@ -203,6 +206,29 @@ export function UnifiedShell(){
   };
  },[projectId,dock.secondary,workspaceReady,refreshProjects]);
  useEffect(()=>{
+  // Cancel a same-document hash push BEFORE the browser inserts history.
+  // replaceState in hashchange can only rewrite a duplicate, not remove it.
+  // Keep the after-commit guard for unsupported APIs and history traversals.
+  const beforeRoutePush=(event:Event)=>{
+   preapprovedRoutePush.current=null;
+   const nav=event as Event&{navigationType?:string;destination?:{url:string}};
+   if(!event.cancelable||nav.navigationType!=='push'||!nav.destination)return;
+   let destination:URL;
+   try{destination=new URL(nav.destination.url,window.location.href)}catch{return}
+   const here=window.location;
+   if(destination.origin!==here.origin||destination.pathname!==here.pathname||destination.search!==here.search)return;
+   if(destination.hash===acceptedRouteHash.current)return;
+   const requested=routeViewFromHash(destination.hash);
+   if(planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady)!=='confirm-promote')return;
+   if(!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
+    event.preventDefault();
+    return;
+   }
+   // Only the next commit of this precise hash may reuse this consent.
+   preapprovedRoutePush.current=destination.hash;
+  };
+  const navigationAPI=(window as Window&{navigation?:EventTarget}).navigation;
+  navigationAPI?.addEventListener('navigate',beforeRoutePush);
   // Capture runs before Studio's ordinary hash listeners even if they were registered first.
   // URL/history actions are already committed by the browser, so Cancel replaces the hash
   // in the current history entry before any workspace listener sees the destination.
@@ -213,7 +239,9 @@ export function UnifiedShell(){
    if(requestedHash===acceptedRouteHash.current)return;
    const requested=routeView();
    const decision=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
-   if(decision==='confirm-promote'&&!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
+   const alreadyApproved=preapprovedRoutePush.current===requestedHash;
+   preapprovedRoutePush.current=null;
+   if(decision==='confirm-promote'&&!alreadyApproved&&!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
     window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+restore);
     // replaceState does not fire hashchange. Tell the primary Studio to resync its
@@ -235,6 +263,7 @@ export function UnifiedShell(){
   window.addEventListener('hashchange',reviewRoute,true);
   window.addEventListener('pilotodin:route-commit',reviewRoute,true);
   return()=>{
+   navigationAPI?.removeEventListener('navigate',beforeRoutePush);
    window.removeEventListener('hashchange',reviewRoute,true);
    window.removeEventListener('pilotodin:route-commit',reviewRoute,true);
   };

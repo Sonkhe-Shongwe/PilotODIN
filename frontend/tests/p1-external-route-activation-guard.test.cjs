@@ -71,17 +71,18 @@ function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockVi
  };
  const editedDock={current:edit};
  const acceptedRouteHash={current:before};
+ const preapprovedRoutePush={current:null};
  const dock={secondary:dockView};
  const setDock=(callback)=>{const next=callback({secondary:dockView});if(next.secondary===null)journal.dockCloses++};
  const setActive=(view)=>{activeUpdates.push(view)};
  const nextDockLayout=(current,action)=>{assert.equal(action.kind,'close');return {...current,secondary:null}};
  const routeView=()=>win.location.hash.startsWith('#/studio/')?win.location.hash.slice(9):'overview';
- const run=new Function('window','acceptedRouteHash','routeView','planExternalRouteActivation',
+ const run=new Function('window','acceptedRouteHash','preapprovedRoutePush','routeView','planExternalRouteActivation',
   'active','dock','editedDock','projectId','workspaceReady','setDock','nextDockLayout','setActive','Event',
   handlerSource+'\n return reviewRoute;')(
-   win,acceptedRouteHash,routeView,planExternalRouteActivation,current,dock,editedDock,projectId,ready,
+   win,acceptedRouteHash,preapprovedRoutePush,routeView,planExternalRouteActivation,current,dock,editedDock,projectId,ready,
    setDock,nextDockLayout,setActive,Event);
- return {run,win,journal,editedDock,acceptedRouteHash,activeUpdates,dispatched};
+ return {run,win,journal,editedDock,acceptedRouteHash,preapprovedRoutePush,activeUpdates,dispatched};
 }
 test('Cancel rolls browser URL back without unmounting edited dock or clearing its marker',()=>{
  const a=routeHarness();a.run();
@@ -209,4 +210,62 @@ test('rollback sync belongs only to primary Studio, never the embedded secondary
  assert.equal(embeddedPage.value,'prepare');
  a.run();
  assert.equal(embeddedPage.value,'prepare','dock is not redirected by primary rollback');
+});
+const precommitStart=shell.indexOf('  const beforeRoutePush=(event:Event)=>{');
+const precommitEnd=shell.indexOf('\n  };',precommitStart);
+assert.ok(precommitStart>0&&precommitEnd>precommitStart);
+const beforeSource=shell.slice(precommitStart,precommitEnd+5);
+const precommitJS=ts.transpileModule(beforeSource,{
+ compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},
+ reportDiagnostics:true
+});
+assert.equal((precommitJS.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
+function preNavigationHarness({from='#/studio/explore',to='#/studio/prepare',
+ kind='push',approval=false,ready=true}={}){
+ const journal={prompts:0,prevented:0};
+ const mockWindow={location:{href:'http://127.0.0.1:5187/'+from,
+  origin:'http://127.0.0.1:5187',pathname:'/',search:'',hash:from},
+  confirm(message){journal.prompts++;assert.match(message,/changed fields/);return approval}};
+ const event={cancelable:true,navigationType:kind,
+  destination:{url:'http://127.0.0.1:5187/'+to},
+  preventDefault(){journal.prevented++}};
+ const preapprovedRoutePush={current:null};
+ const callback=new Function('window','preapprovedRoutePush','acceptedRouteHash',
+   'routeViewFromHash','planExternalRouteActivation','active','dock',
+   'editedDock','projectId','workspaceReady',
+   precommitJS.outputText+'\nreturn beforeRoutePush;')(
+   mockWindow,preapprovedRoutePush,{current:from},
+   hash=>hash.slice('#/studio/'.length),planExternalRouteActivation,
+   'explore',{secondary:'prepare'},
+   {current:{projectId:'A',view:'prepare'}},'A',ready);
+ return {run:()=>callback(event),journal,preapprovedRoutePush};
+}
+test('precommit Cancel stops rejected hash push before history insertion',()=>{
+ const h=preNavigationHarness();h.run();
+ assert.deepEqual(h.journal,{prompts:1,prevented:1});
+ assert.equal(h.preapprovedRoutePush.current,null);
+});
+test('precommit approval is consumed exactly once, without a duplicate prompt',()=>{
+ const h=preNavigationHarness({approval:true});h.run();
+ assert.deepEqual(h.journal,{prompts:1,prevented:0});
+ assert.equal(h.preapprovedRoutePush.current,'#/studio/prepare');
+ const after=routeHarness({before:'#/studio/explore',current:'explore'});
+ after.preapprovedRoutePush.current=h.preapprovedRoutePush.current;
+ after.run();
+ assert.equal(after.journal.prompts,0);
+ assert.equal(after.preapprovedRoutePush.current,null);
+});
+test('precommit ignores unrelated routes, traversals and unready workspaces',()=>{
+ for(const params of [{to:'#/studio/quality'},{kind:'traverse'},{ready:false}]){
+  const h=preNavigationHarness(params);h.run();
+  assert.deepEqual(h.journal,{prompts:0,prevented:0});
+  assert.equal(h.preapprovedRoutePush.current,null);
+ }
+});
+test('Navigation API listener cleans up and leaves postcommit fallback in place',()=>{
+ assert.match(shell,/navigationAPI\?\.addEventListener\('navigate',beforeRoutePush\)/);
+ assert.match(shell,/navigationAPI\?\.removeEventListener\('navigate',beforeRoutePush\)/);
+ assert.match(shell,/event\.preventDefault\(\)/);
+ assert.match(shell,/window\.history\.replaceState\(window\.history\.state/);
+ assert.doesNotMatch(beforeSource,/localStorage|sessionStorage|fetch\(|post\(|upload\(|train\(/);
 });
