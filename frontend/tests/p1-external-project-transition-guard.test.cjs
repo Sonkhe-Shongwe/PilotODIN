@@ -78,6 +78,7 @@ function harness({requested='B',from='A',edit=edited,approval=false,
  const editedDock={current:edit};
  const editedPrimary={current:primaryEdit};
  const pendingExternalSwitch={current:null};
+ const primaryProjectHandoff={current:null};
  const needsDockInputDiscardApproval=(marker,id,secondary)=>!!marker&&marker.projectId===id&&marker.view===secondary;
  const setProjectId=id=>{log.accepted.push(id)};
  const refreshProjects=()=>{log.refresh++};
@@ -91,20 +92,22 @@ function harness({requested='B',from='A',edit=edited,approval=false,
  window.addEventListener('pilotodin:project-changed',reviewProject,true);
  window.addEventListener('storage',reviewProject,true);
  window.addEventListener('pilotodin:project-changed',()=>{appLoads++},false);
- const callbacksStart=shell.indexOf(' const commitPrimaryLoadedProject=(id:string)=>{');
+ const callbacksStart=shell.indexOf(' const commitPrimaryLoadedProject=(id:string,snapshot:PrimaryProjectLoadSnapshot)=>{');
  const callbacksEnd=shell.indexOf('\n const approvePrimaryProjectLoad=',callbacksStart);
  assert.ok(callbacksStart>0&&callbacksEnd>callbacksStart);
  const callbacksJs=compile(shell.slice(callbacksStart,callbacksEnd)
-   +'\nexport {commitPrimaryLoadedProject,failPrimaryProjectLoad};');
- const action=new Function('pendingExternalSwitch','editedDock','editedPrimary',
+   +'\nexport {commitPrimaryLoadedProject,consumePrimaryProjectHandoff,failPrimaryProjectLoad};');
+ const action=new Function('pendingExternalSwitch','primaryProjectHandoff','editedDock','editedPrimary',
   'setProjectId','refreshProjects','localStorage','setWarning','exports',
   callbacksJs.outputText+'\nreturn exports;')(
-  pendingExternalSwitch,editedDock,editedPrimary,setProjectId,refreshProjects,
+  pendingExternalSwitch,primaryProjectHandoff,editedDock,editedPrimary,setProjectId,refreshProjects,
   localStorage,setWarning,{});
  const event=new TestEvent(eventType,{key,detail:unavailable?{reason:'unavailable'}:undefined});
- return {run(){window.dispatchEvent(event)},succeed:id=>action.commitPrimaryLoadedProject(id),
+ return {run(){window.dispatchEvent(event)},
+  succeed:id=>action.commitPrimaryLoadedProject(id,{id,project:{id},version:0}),
+  consume:id=>action.consumePrimaryProjectHandoff(id),
   fail:id=>action.failPrimaryProjectLoad(id),log,getStored:()=>stored,
- getAppLoads:()=>appLoads,editedDock,editedPrimary,pendingExternalSwitch,event,window,TestEvent};
+ getAppLoads:()=>appLoads,editedDock,editedPrimary,pendingExternalSwitch,primaryProjectHandoff,event,window,TestEvent};
 }
 test('Cancel restores local project selection and blocks primary Studio notification',()=>{
  const h=harness();h.run();
@@ -315,4 +318,20 @@ test('consented external read must finish before project ID is committed to the 
     'nonconsented shell commit must follow and remain outside the consent branch');
  }
  assert.match(shell,/onPrimaryProjectLoadFailed=\{failPrimaryProjectLoad\}/);
+});
+
+test('verified B handoff is one-use and never staged on Cancel or failed GET',()=>{
+ const cancelled=harness({eventType:'storage',approval:false,primaryEdit:{projectId:'A',view:'prepare'}});
+ cancelled.run();
+ assert.equal(cancelled.primaryProjectHandoff.current,null);
+ const failing=harness({eventType:'storage',approval:true,primaryEdit:{projectId:'A',view:'prepare'}});
+ failing.run();failing.fail('B');
+ assert.equal(failing.primaryProjectHandoff.current,null);
+ const accepted=harness({eventType:'storage',approval:true,primaryEdit:{projectId:'A',view:'prepare'}});
+ accepted.run();accepted.succeed('B');
+ assert.deepEqual(accepted.primaryProjectHandoff.current,{id:'B',project:{id:'B'},version:0});
+ accepted.consume('C');
+ assert.equal(accepted.primaryProjectHandoff.current.id,'B','unrelated mount cannot consume pending B');
+ accepted.consume('B');
+ assert.equal(accepted.primaryProjectHandoff.current,null);
 });
