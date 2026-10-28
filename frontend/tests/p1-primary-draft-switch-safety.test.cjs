@@ -17,10 +17,17 @@ const helper=new Module(helperFile,module);
 helper.filename=helperFile;helper.paths=module.paths;
 helper._compile(compiledHelper.outputText,helperFile);
 const {needsDockInputDiscardApproval}=helper.exports;
+// Compile the exact two callbacks, not adjacent React lifecycle effects.
+// The unload guard is separately verified in p1-unsaved-reload-guard.test.cjs.
 const begin=shell.indexOf(' const markPrimaryDraftEdited=');
-const finish=shell.indexOf('\n // The primary App has',begin);
-assert.ok(begin>0&&finish>begin);
-const source=shell.slice(begin,finish);
+const markClose=shell.indexOf('\n };',begin);
+const confirmBegin=shell.indexOf(' const confirmProjectDraftDiscard=',markClose);
+const finish=shell.indexOf('\n // The primary App has',confirmBegin);
+assert.ok(begin>0&&markClose>begin&&confirmBegin>markClose&&finish>confirmBegin);
+const source=shell.slice(begin,markClose+4)+'\n'+shell.slice(confirmBegin,finish);
+assert.match(source,/const markPrimaryDraftEdited=\(view:View\)=>\{/);
+assert.match(source,/const confirmProjectDraftDiscard=\(\):boolean=>\{/);
+assert.doesNotMatch(source,/\buseEffect\s*\(/);
 const compiled=ts.transpileModule(source+'\nexports.create={markPrimaryDraftEdited,confirmProjectDraftDiscard};',{
  compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},
  reportDiagnostics:true
