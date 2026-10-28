@@ -61,7 +61,15 @@ test('isolated browser does not reuse server or approve import',()=>{
   assert.match(config,/serviceWorkers:'block'/);
   assert.match(config,/127\.0\.0\.1:5187/);
   assert.match(spec,/await dialog\.dismiss\(\)/);
-  assert.doesNotMatch(spec,/dialog\.accept\(/);
+  // Only explicit, synthetic read-only approval scenarios may accept dialogs.
+  // Reject silent approval added to any Cancel, import or unrelated browser test.
+  const approvedScenarios=spec.split(/^test\('/m).slice(1);
+  assert.ok(approvedScenarios.some(section=>section.includes('await dialog.accept()')));
+  for(const section of approvedScenarios){
+    if(section.includes('await dialog.accept()'))
+      assert.match(section,/^approved cross-tab project /,
+        'only explicitly approved synthetic cross-tab reads may accept a dialog');
+  }
 });
 test('only the exact declared Google Fonts stylesheet is replaced with local CSS',async()=>{
   const {call,audit}=await setup();

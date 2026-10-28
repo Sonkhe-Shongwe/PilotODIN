@@ -579,3 +579,61 @@ test('approved cross-tab project read failure preserves primary Prepare without 
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+test('approved cross-tab successful project load avoids duplicate failing profile request',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const primary=page.locator('.po-primary-pane');
+  const target=primary.getByRole('combobox',{name:/target variable/i});
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+
+  // The first B profile request succeeds using the isolated response contract.
+  // Any subsequent B profile GET gets a synthetic 503. No actual API is reached.
+  let profileReads=0;
+  await page.route('**/api/projects/playwright-synthetic-second-project/live-profile',async route=>{
+    if(route.request().method()!=='GET')
+      throw new Error('Only synthetic second-project profile reads are permitted');
+    profileReads++;
+    if(profileReads===1){await route.fallback();return;}
+    await route.fulfill({status:503,headers:{'access-control-allow-origin':UI_ORIGIN},
+      json:{detail:'Synthetic duplicate profile GET refused'}});
+  });
+  const other=await context.newPage();
+  await other.goto('/#/studio/quality');
+  await expect(other.locator('.po-primary-pane')
+    .getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.accept(); // Approve only the read-only project selection.
+  });
+  const firstBProfile=page.waitForResponse(response=>
+    response.url().endsWith(`/api/projects/${TEST_PROJECT_B}/live-profile`)
+      &&response.status()===200);
+  await other.evaluate((id:string)=>localStorage.setItem('pilotodin-current',id),TEST_PROJECT_B);
+  await firstBProfile;
+  await expect.poll(()=>prompts.length).toBe(1);
+  await expect(switcher).toHaveValue(TEST_PROJECT_B);
+  // Allow App/shell state changes and mount effects to settle after first success.
+  await page.evaluate(()=>new Promise<void>(resolve=>
+    requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  expect(profileReads).toBe(1);
+  await expect(primary.getByRole('combobox',{name:'Choose project'})).toHaveValue(TEST_PROJECT_B);
+  await expect(primary.getByRole('combobox',{name:/target variable/i})).toHaveValue('');
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
+  expect(await other.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(TEST_PROJECT_B);
+  expect(prompts).toHaveLength(1);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
