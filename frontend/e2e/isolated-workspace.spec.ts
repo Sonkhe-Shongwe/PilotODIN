@@ -351,3 +351,67 @@ test('browser Back and Forward preserve an edited dock across unrelated routes',
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+test('cancelled dock promotion leaves no duplicate browser Back Forward history',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  // Synthetic project and split only; this test never reads a user dataset.
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,
+      JSON.stringify(['quality','explore','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'quality');
+    localStorage.setItem('pilotodin-dock-layout-v2-'+id,
+      JSON.stringify({schema:2,secondary:'prepare',side:'right',fraction:0.39}));
+  },TEST_PROJECT);
+  await page.goto('/#/studio/quality');
+
+  const primary=page.locator('.po-primary-pane');
+  const dock=page.locator('.po-secondary-pane');
+  const target=dock.getByRole('combobox',{name:/target variable/i});
+  await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+
+  // Establish one earlier accepted history entry that Back must reach.
+  await page.evaluate(()=>{window.location.hash='#/studio/explore';});
+  await expect(page).toHaveURL(/#\/studio\/explore$/);
+  await expect(primary.getByRole('heading',{name:'Explore',exact:true})).toBeVisible();
+  await expect(primary.getByText('2 of 2 records',{exact:true})).toBeVisible();
+
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.dismiss(); // Always Cancel: never permit destructive promotion.
+  });
+  // Direct URL changes, including browser history actions, must consult the
+  // same memory-only edited-dock guard used by Studio and navigation tabs.
+  await page.evaluate(()=>{window.location.hash='#/studio/prepare';});
+  await expect.poll(()=>prompts.length).toBe(1);
+  expect(prompts[0]).toContain('You changed fields in the docked workspace');
+  await expect(page).toHaveURL(/#\/studio\/explore$/);
+  await expect(primary.getByRole('heading',{name:'Explore',exact:true})).toBeVisible();
+  await expect(dock).toBeVisible();
+  await expect(target).toHaveValue('fraud_reported');
+
+  // Cancel must not leave a phantom Prepare route OR an extra Explore history
+  // entry requiring the user to press Back twice to reach prior Quality.
+  await page.goBack();
+  await expect(page,'Back after Cancel must reach the prior accepted Quality entry')
+    .toHaveURL(/#\/studio\/quality$/);
+  await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+  await expect(target).toHaveValue('fraud_reported');
+
+  await page.goForward();
+  await expect(page).toHaveURL(/#\/studio\/explore$/);
+  await expect(primary.getByRole('heading',{name:'Explore',exact:true})).toBeVisible();
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  expect(prompts).toHaveLength(1);
+  expect(audit.readOnlyCalculations.length).toBeGreaterThan(0);
+  expect(audit.readOnlyCalculations.every(path=>path===
+    `POST /projects/${TEST_PROJECT}/explore/workbench`)).toBe(true);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

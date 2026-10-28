@@ -86,3 +86,16 @@ npx playwright test --config=playwright.config.ts -g "browser Back and Forward p
 ```
 
 Expect **11 authored contract tests** (previously 7 accepted and 3 new or revised; this revision's full result PENDING) and **one corrected browser-history test PENDING**. Do not repeat historical Vite build, 41/24/49 suites or three already accepted browser scenarios on unchanged application source. The first history test failure remains recorded. This validates only ordinary Back/Forward on unrelated routes; a cancelled dock-promotion history rollback and primary unsaved drafts remain separate OPEN tasks.
+
+## Next separate P1 E2E gate: cancelled dock promotion and real Back/Forward
+
+**Status: new test authored, NO Windows browser result yet.** The original four synthetic browser cases are owner-accepted (initial pilot 2/2, responsive 1/1, ordinary Back/Forward 1/1); the network isolation/Explore contracts have passed 11/11 on Windows. A fifth, distinct case `cancelled dock promotion leaves no duplicate browser Back Forward history` uses only the synthetic `:5187` project and mock API. Starting from Quality → Explore with an edited Prepare dock, it attempts to promote Prepare via the real browser hash, **dismisses** the native confirmation, then checks the URL and primary view reverted, edited secondary target survived, and browser Back goes directly to the previously accepted Quality entry (not a duplicate Explore entry) while Forward returns to Explore without another prompt. All unapproved writes, unknown reads and external origins must remain zero. This is a **regression/discovery test**, not a claim that current production history logic passes. It may expose an extra-history-entry defect in the current `history.replaceState` cancellation implementation; inspect the specific failing assertion before altering app behavior.
+
+Only the new test should be run on Windows, after safe GitHub Desktop pull, from `frontend`:
+
+```powershell
+npx playwright test --config=playwright.config.ts -g "cancelled dock promotion leaves"
+```
+
+**Expected: one new browser case; result PENDING.** Do not repeat the four accepted Chromium cases, 11/11 Node contracts, production build or unrelated historical suites when source is otherwise unchanged. On failure, use the test-owned trace. Do not navigate or import the owner's actual projects, accept the dialog, create real training runs or enable CI.
+
