@@ -8,7 +8,7 @@ use std::net::TcpListener;
 use std::sync::Mutex;
 use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, RunEvent, State};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, State};
 use tauri_plugin_shell::{process::{CommandChild, CommandEvent}, ShellExt};
 use tauri_plugin_dialog::DialogExt;
 
@@ -38,6 +38,47 @@ struct DesktopState {
     backend: Mutex<Option<ActiveBackend>>,
     inference: Mutex<Option<ActiveInference>>,
     inference_settings: Mutex<Option<InferenceSettings>>,
+}
+
+// A native CloseRequested event is not a browser beforeunload navigation.
+// Always block OS close until the live Studio explicitly approves this ticket.
+// Tickets hold no project identifiers or form values.
+#[derive(Default)]
+struct NativeCloseState {
+    pending: Mutex<Option<String>>,
+}
+
+#[derive(Clone, Serialize)]
+struct NativeCloseRequest {
+    token: String,
+}
+
+fn consume_native_close_ticket(pending: &mut Option<String>, provided: &str) -> bool {
+    if pending.as_deref() != Some(provided) { return false; }
+    *pending = None;
+    true
+}
+
+#[tauri::command]
+fn resolve_native_close_request(
+    window: tauri::WebviewWindow,
+    state: State<'_, NativeCloseState>,
+    token: String,
+    approve: bool,
+) -> Result<(), String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let mut pending = state.pending.lock()
+        .map_err(|_| "Native close state unavailable".to_string())?;
+    if !consume_native_close_ticket(&mut pending, &token) {
+        return Err("Native close request expired or was not issued".into());
+    }
+    drop(pending);
+    if approve {
+        // close() would re-enter CloseRequested and loop. destroy() is only
+        // reachable with a one-use ticket issued by an actual OS close event.
+        window.destroy().map_err(|e| format!("Could not close window: {e}"))?;
+    }
+    Ok(())
 }
 
 #[derive(Deserialize)]
@@ -317,12 +358,60 @@ mod report_save_tests {
     }
 }
 
+
+#[cfg(test)]
+mod native_close_ticket_tests {
+    use super::consume_native_close_ticket;
+
+    #[test]
+    fn only_current_ticket_can_authorize_one_native_close_resolution() {
+        let mut pending = Some("current".to_string());
+        assert!(!consume_native_close_ticket(&mut pending, "stale"));
+        assert_eq!(pending.as_deref(), Some("current"));
+        assert!(consume_native_close_ticket(&mut pending, "current"));
+        assert!(pending.is_none());
+        assert!(!consume_native_close_ticket(&mut pending, "current"));
+        assert!(!consume_native_close_ticket(&mut pending, ""));
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(DesktopState::default())
-        .invoke_handler(tauri::generate_handler![launch_backend, launch_bundled_ai, save_report_as])
+        .manage(NativeCloseState::default())
+        .invoke_handler(tauri::generate_handler![
+            launch_backend, launch_bundled_ai, save_report_as, resolve_native_close_request
+        ])
+        .on_window_event(|window, event| {
+            if window.label() != "main" { return; }
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                // Synchronous veto first. If the frontend has not registered
+                // or cannot reply, native close stays blocked, never silent.
+                api.prevent_close();
+                let state = window.state::<NativeCloseState>();
+                let token = {
+                    let Ok(mut guard) = state.pending.lock() else {
+                        eprintln!("Native close blocked: state unavailable");
+                        return;
+                    };
+                    if guard.is_some() { return; } // Prevent duplicate prompts.
+                    let token = uuid::Uuid::new_v4().simple().to_string();
+                    *guard = Some(token.clone());
+                    token
+                };
+                if let Err(error) = window.emit(
+                    "pilotodin:native-close-requested",
+                    NativeCloseRequest { token: token.clone() }
+                ) {
+                    if let Ok(mut guard) = state.pending.lock() {
+                        if guard.as_deref() == Some(token.as_str()) { *guard = None; }
+                    }
+                    eprintln!("Native close blocked: could not dispatch request: {error}");
+                }
+            }
+        })
         .build(tauri::generate_context!())
         .expect("Could not initialise PilotODIN desktop")
         .run(|app, event| {

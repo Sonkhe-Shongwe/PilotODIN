@@ -16,6 +16,11 @@ import type {TabDropSide} from './workspaceTabReorder';
 import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {canRestoreDockDismissFocus,planDockDismissFocus} from './dockDismissFocus';
 import {hasUnsavedWorkspaceDraftForUnload,isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
+import {isDesktop} from './desktopBootstrap';
+import {invoke} from '@tauri-apps/api/core';
+import {listen} from '@tauri-apps/api/event';
+import {NATIVE_CLOSE_EVENT,resolveNativeCloseRequest} from './nativeCloseConsent';
+import type {NativeCloseRequest} from './nativeCloseConsent';
 import {planExternalRouteActivation} from './externalRouteActivationGuard';
 import {planExternalProjectTransition} from './externalProjectTransitionGuard';
 import type {EditedDock} from './dockInputDiscardGuard';
@@ -335,6 +340,28 @@ export function UnifiedShell(){
  const markPrimaryDraftEdited=(view:View)=>{
   if(workspaceReady&&projectId&&(view==='prepare'||view==='model'||view==='predict'))editedPrimary.current={projectId,view};
  };
+ // Rust vetoes an OS CloseRequested before sending a one-use ticket here.
+ // Keep the latest project/form context without reinstalling the listener on
+ // each edit. A failed/missing JS listener cannot bypass Rust's native veto.
+ const nativeCloseContext=useRef({projectId,workspaceReady,active,secondary:dock.secondary});
+ nativeCloseContext.current={projectId,workspaceReady,active,secondary:dock.secondary};
+ useEffect(()=>{
+  if(!isDesktop())return;
+  let disposed=false;
+  let unlisten:(()=>void)|undefined;
+  void listen<NativeCloseRequest>(NATIVE_CLOSE_EVENT,({payload})=>{
+   void resolveNativeCloseRequest(payload,()=>{
+    const state=nativeCloseContext.current;
+    return hasUnsavedWorkspaceDraftForUnload(state.projectId,state.workspaceReady,
+     state.active,editedPrimary.current,editedDock.current,state.secondary);
+   },message=>window.confirm(message),
+   (token,approve)=>invoke<void>('resolve_native_close_request',{token,approve}))
+   .catch(()=>setWarning('Native close confirmation could not be completed. Your workspace remains open.'));
+  }).then(stop=>{
+   if(disposed)stop();else unlisten=stop;
+  }).catch(()=>setWarning('Native close protection could not be registered. Closing is blocked for safety.'));
+  return()=>{disposed=true;unlisten?.()};
+ },[]);
  // Browser reload/navigation and WebView close (where supported) must ask before
  // losing live form edits. The user can stay and keep the mounted in-memory draft;
  // consenting to leave does not persist draft values or mutate the dataset.
