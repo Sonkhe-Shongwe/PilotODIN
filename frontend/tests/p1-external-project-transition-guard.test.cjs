@@ -77,22 +77,34 @@ function harness({requested='B',from='A',edit=edited,approval=false,
  const dock={secondary:'prepare'};
  const editedDock={current:edit};
  const editedPrimary={current:primaryEdit};
+ const pendingExternalSwitch={current:null};
  const needsDockInputDiscardApproval=(marker,id,secondary)=>!!marker&&marker.projectId===id&&marker.view===secondary;
  const setProjectId=id=>{log.accepted.push(id)};
  const refreshProjects=()=>{log.refresh++};
  const setWarning=message=>log.warnings.push(message);
  const exports={};
- const reviewProject=new Function('window','localStorage','projectId','dock','editedDock','editedPrimary','needsDockInputDiscardApproval','workspaceReady',
+ const reviewProject=new Function('window','localStorage','projectId','dock','editedDock','editedPrimary','pendingExternalSwitch','needsDockInputDiscardApproval','workspaceReady',
  'planExternalProjectTransition','refreshProjects','setProjectId','setWarning','Event','exports',
  handlerJs.outputText+'\nreturn exports.reviewProject;')(
- window,localStorage,from,dock,editedDock,editedPrimary,needsDockInputDiscardApproval,true,planExternalProjectTransition,
+ window,localStorage,from,dock,editedDock,editedPrimary,pendingExternalSwitch,needsDockInputDiscardApproval,true,planExternalProjectTransition,
  refreshProjects,setProjectId,setWarning,TestEvent,exports);
  window.addEventListener('pilotodin:project-changed',reviewProject,true);
  window.addEventListener('storage',reviewProject,true);
  window.addEventListener('pilotodin:project-changed',()=>{appLoads++},false);
+ const callbacksStart=shell.indexOf(' const commitPrimaryLoadedProject=(id:string)=>{');
+ const callbacksEnd=shell.indexOf('\n const approvePrimaryProjectLoad=',callbacksStart);
+ assert.ok(callbacksStart>0&&callbacksEnd>callbacksStart);
+ const callbacksJs=compile(shell.slice(callbacksStart,callbacksEnd)
+   +'\nexport {commitPrimaryLoadedProject,failPrimaryProjectLoad};');
+ const action=new Function('pendingExternalSwitch','editedDock','editedPrimary',
+  'setProjectId','refreshProjects','localStorage','setWarning','exports',
+  callbacksJs.outputText+'\nreturn exports;')(
+  pendingExternalSwitch,editedDock,editedPrimary,setProjectId,refreshProjects,
+  localStorage,setWarning,{});
  const event=new TestEvent(eventType,{key,detail:unavailable?{reason:'unavailable'}:undefined});
- return {run(){window.dispatchEvent(event)},log,getStored:()=>stored,
- getAppLoads:()=>appLoads,editedDock,editedPrimary,event,window,TestEvent};
+ return {run(){window.dispatchEvent(event)},succeed:id=>action.commitPrimaryLoadedProject(id),
+  fail:id=>action.failPrimaryProjectLoad(id),log,getStored:()=>stored,
+ getAppLoads:()=>appLoads,editedDock,editedPrimary,pendingExternalSwitch,event,window,TestEvent};
 }
 test('Cancel restores local project selection and blocks primary Studio notification',()=>{
  const h=harness();h.run();
@@ -106,10 +118,15 @@ test('Cancel restores local project selection and blocks primary Studio notifica
 test('Approve passes a single accepted project to normal Studio and clears edit marker',()=>{
  const h=harness({approval:true});h.run();
  assert.equal(h.getStored(),'B');
- assert.deepEqual(h.log.accepted,['B']);
+ assert.deepEqual(h.log.accepted,[],'consent alone cannot unmount A');
  assert.equal(h.getAppLoads(),1);
  assert.equal(h.log.prompts,1);
+ assert.deepEqual(h.editedDock.current,edited);
+ assert.equal(h.pendingExternalSwitch.current.requestedId,'B');
+ h.succeed('B');
+ assert.deepEqual(h.log.accepted,['B']);
  assert.equal(h.editedDock.current,null);
+ assert.equal(h.pendingExternalSwitch.current,null);
 });
 test('Cancel in one browser tab does not rewrite another tab\'s project selection',()=>{
  const h=harness({eventType:'storage'});h.run();
@@ -123,8 +140,10 @@ test('Cancel in one browser tab does not rewrite another tab\'s project selectio
 });
 test('approved cross-tab storage change notifies Studio through existing event once',()=>{
  const h=harness({eventType:'storage',approval:true});h.run();
- assert.deepEqual(h.log.accepted,['B']);
+ assert.deepEqual(h.log.accepted,[]);
  assert.equal(h.getAppLoads(),1);
+ h.succeed('B');
+ assert.deepEqual(h.log.accepted,['B']);
  assert.equal(h.log.refresh,1);
  assert.deepEqual(h.log.events,['storage','pilotodin:project-changed']);
 });
@@ -209,9 +228,14 @@ test('approved cross-tab switch presents one combined prompt for primary and sec
  const h=harness({edit,primaryEdit:edit,eventType:'storage',approval:true});
  h.run();
  assert.equal(h.log.prompts,1);
- assert.deepEqual(h.log.accepted,['B']);
+ assert.deepEqual(h.log.accepted,[],'pending read must keep primary A mounted');
+ assert.deepEqual(h.editedPrimary.current,edit);
+ assert.deepEqual(h.editedDock.current,edit);
+ assert.equal(h.pendingExternalSwitch.current.requestedId,'B');
  assert.equal(h.getAppLoads(),1);
  assert.equal(h.log.restores,0);
+ h.succeed('B');
+ assert.deepEqual(h.log.accepted,['B']);
  assert.equal(h.editedPrimary.current,null);
  assert.equal(h.editedDock.current,null);
  assert.deepEqual(h.log.events,['storage','pilotodin:project-changed']);
@@ -223,4 +247,47 @@ test('unrelated storage key and unchanged project do not prompt for dirty primar
  assert.equal(a.log.prompts,0);assert.equal(b.log.prompts,0);
  assert.deepEqual(a.editedPrimary.current,edit);
  assert.deepEqual(b.editedPrimary.current,edit);
+});
+
+test('approved cross-tab B read failure keeps primary A and edited dock mounted',()=>{
+ const edit={projectId:'A',view:'prepare'};
+ const h=harness({eventType:'storage',primaryEdit:edit,edit,approval:true});
+ h.run();
+ assert.equal(h.log.prompts,1);
+ assert.equal(h.getAppLoads(),1);
+ assert.deepEqual(h.log.accepted,[]);
+ h.fail('B');
+ assert.deepEqual(h.log.accepted,[]);
+ assert.deepEqual(h.editedPrimary.current,edit);
+ assert.deepEqual(h.editedDock.current,edit);
+ assert.equal(h.pendingExternalSwitch.current,null);
+ assert.equal(h.getStored(),'B','do not roll back another tab shared selection');
+ assert.equal(h.log.restores,0);
+ assert.match(h.log.warnings.at(-1),/could not be opened here/);
+});
+test('approved same-tab external B read failure restores local choice without losing drafts',()=>{
+ const edit={projectId:'A',view:'prepare'};
+ const h=harness({eventType:'pilotodin:project-changed',primaryEdit:edit,edit:null,approval:true});
+ h.run();
+ assert.deepEqual(h.log.accepted,[]);
+ h.fail('B');
+ assert.equal(h.getStored(),'A');
+ assert.equal(h.log.restores,1);
+ assert.deepEqual(h.editedPrimary.current,edit);
+ assert.deepEqual(h.log.accepted,[]);
+});
+test('failure of an unrelated project never consumes pending external approval',()=>{
+ const edit={projectId:'A',view:'prepare'};
+ const h=harness({eventType:'storage',primaryEdit:edit,edit:null,approval:true});
+ h.run();h.fail('C');
+ assert.equal(h.pendingExternalSwitch.current.requestedId,'B');
+ assert.deepEqual(h.editedPrimary.current,edit);
+ assert.deepEqual(h.log.accepted,[]);
+});
+test('consented external read must finish before project ID is committed to the shell',()=>{
+ const src=shell.slice(shell.indexOf('  const reviewProject='),shell.indexOf('  };',shell.indexOf('  const reviewProject=')));
+ assert.match(src,/if\(decision==='confirm'\)\{/);
+ assert.match(src,/pendingExternalSwitch\.current=\{/);
+ assert.ok(src.indexOf("if(decision==='confirm'){")<src.indexOf('setProjectId(requested)'));
+ assert.match(shell,/onPrimaryProjectLoadFailed=\{failPrimaryProjectLoad\}/);
 });
