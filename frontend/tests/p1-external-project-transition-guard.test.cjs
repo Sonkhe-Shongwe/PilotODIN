@@ -285,9 +285,18 @@ test('failure of an unrelated project never consumes pending external approval',
  assert.deepEqual(h.log.accepted,[]);
 });
 test('consented external read must finish before project ID is committed to the shell',()=>{
- const src=shell.slice(shell.indexOf('  const reviewProject='),shell.indexOf('  };',shell.indexOf('  const reviewProject=')));
- assert.match(src,/if\(decision==='confirm'\)\{/);
- assert.match(src,/pendingExternalSwitch\.current=\{/);
- assert.ok(src.indexOf("if(decision==='confirm'){")<src.indexOf('setProjectId(requested)'));
+ // Match the handler's full closing line: a substring search for '  };'
+ // can incorrectly stop at an inner object closing brace and hide setProjectId.
+ const begin=shell.indexOf('  const reviewProject=(event:Event)=>{');
+ const end=shell.indexOf('\n  };',begin);
+ assert.ok(begin>=0&&end>begin,'must locate the complete external transition handler');
+ const src=shell.slice(begin,end);
+ const consent=src.indexOf("if(decision==='confirm'){");
+ const commit=src.indexOf('setProjectId(requested)');
+ assert.ok(consent>=0,'approved external transition branch must remain');
+ assert.ok(commit>consent,'shell project commit must follow the consent branch');
+ const pendingRead=src.slice(consent,commit);
+ assert.match(pendingRead,/pendingExternalSwitch\.current=\{/);
+ assert.match(pendingRead,/\n\s*return;\n\s*\}/,'consented switch must return before an immediate shell project commit');
  assert.match(shell,/onPrimaryProjectLoadFailed=\{failPrimaryProjectLoad\}/);
 });
