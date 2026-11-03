@@ -164,3 +164,80 @@ def test_mismatch_after_inspection_blocks_without_touching_anything(tmp_path, mo
         relocation.apply(home, plan, tmp_path / "backup", ID, repo)
     assert rows(db) == before
     assert not (tmp_path / "backup").exists()
+
+
+def test_closed_port_timeout_windows_only_accepts_confirmed_native_no_listener(monkeypatch):
+    """Win localhost can time out without a listener. Require native proof."""
+    from types import SimpleNamespace
+
+    def timeout(*_args, **_kwargs):
+        raise TimeoutError("Synthetic Windows TCP timeout")
+
+    monkeypatch.setattr(relocation.socket, "create_connection", timeout)
+    monkeypatch.setattr(relocation.sys, "platform", "win32")
+
+    commands = []
+    def run(args, **kwargs):
+        commands.append((args, kwargs))
+        return SimpleNamespace(returncode=0, stdout="P1_NO_LISTENER\n", stderr="")
+
+    monkeypatch.setattr(relocation.subprocess, "run", run)
+    relocation._check_backend_stopped()
+    assert len(commands) == 1
+    assert commands[0][0][:3] == ["powershell.exe", "-NoProfile", "-NonInteractive"]
+    assert "Get-NetTCPConnection -State Listen" in commands[0][0][-1]
+    assert commands[0][1]["timeout"] == 15
+
+
+@pytest.mark.parametrize(
+    "returncode,stdout,expected",
+    [
+        (0, "P1_LISTENER_PRESENT\n", "listener"),
+        (25, "", "check failed"),
+        (0, "", "Unexpected"),
+        (0, "P1_NO_LISTENER\nUNTRUSTED OUTPUT\n", "Unexpected"),
+        (0, "something else", "Unexpected"),
+    ],
+)
+def test_windows_listener_check_fails_closed_for_busy_or_ambiguous_state(
+    monkeypatch, returncode, stdout, expected
+):
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        relocation.subprocess, "run",
+        lambda *_a, **_k: SimpleNamespace(returncode=returncode, stdout=stdout),
+    )
+    with pytest.raises(relocation.RecoveryBlocked, match=expected):
+        relocation._check_windows_listening_port()
+
+
+def test_windows_listener_check_fails_closed_if_powershell_errors(monkeypatch):
+    def cannot_run(*_args, **_kwargs):
+        raise FileNotFoundError("Synthetic PowerShell unavailable")
+    monkeypatch.setattr(relocation.subprocess, "run", cannot_run)
+    with pytest.raises(relocation.RecoveryBlocked, match="independently verify"):
+        relocation._check_windows_listening_port()
+
+
+def test_non_windows_socket_timeout_stays_blocked(monkeypatch):
+    def timeout(*_args, **_kwargs):
+        raise TimeoutError("Synthetic socket timeout")
+    monkeypatch.setattr(relocation.socket, "create_connection", timeout)
+    monkeypatch.setattr(relocation.sys, "platform", "linux")
+    with pytest.raises(relocation.RecoveryBlocked, match="Cannot verify"):
+        relocation._check_backend_stopped()
+
+
+def test_any_established_tcp_connection_blocks_relink(monkeypatch):
+    class DummyConnection:
+        closed = False
+        def close(self):
+            self.closed = True
+    connection = DummyConnection()
+    monkeypatch.setattr(
+        relocation.socket, "create_connection", lambda *_a, **_k: connection
+    )
+    with pytest.raises(relocation.RecoveryBlocked, match="Port 8000 is in use"):
+        relocation._check_backend_stopped()
+    assert connection.closed

@@ -13,6 +13,7 @@ from pathlib import Path, PureWindowsPath
 import re
 import shutil
 import socket
+import subprocess
 import sqlite3
 import sys
 
@@ -87,12 +88,61 @@ def inspect(home: Path, project_name: str) -> Inspection:
     return Inspection(str(project_id), str(old_path), candidate.resolve(), expected.lower(), int(version))
 
 
+def _check_windows_listening_port() -> None:
+    """Windows-only secondary proof when loopback connect times out.
+
+    A Windows firewall can timeout a connection to a *closed* localhost port
+    instead of refusing it. Only a successful native TCP-table enumeration
+    showing ZERO listeners may allow backup/relink. Fail closed on all errors.
+    """
+    script = (
+        "$ErrorActionPreference='Stop';"
+        "try {"
+        " $listeners=@(Get-NetTCPConnection -State Listen -ErrorAction Stop"
+        " | Where-Object { $_.LocalPort -eq 8000 });"
+        " if ($listeners.Count -eq 0) { Write-Output 'P1_NO_LISTENER' }"
+        " else { Write-Output 'P1_LISTENER_PRESENT' }"
+        "} catch { exit 25 }"
+    )
+    try:
+        result = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RecoveryBlocked(
+            "Cannot independently verify Windows port 8000 listener state."
+        ) from exc
+    if result.returncode != 0:
+        raise RecoveryBlocked(
+            "Windows listener check failed. No database changes were applied."
+        )
+    result_line = result.stdout.strip()
+    if result_line == "P1_NO_LISTENER":
+        return
+    if result_line == "P1_LISTENER_PRESENT":
+        raise RecoveryBlocked(
+            "Windows reports a port 8000 listener. Stop the backend first."
+        )
+    raise RecoveryBlocked("Unexpected Windows listener-check output. No relink.")
+
+
 def _check_backend_stopped() -> None:
     # Fail closed if port 8000 is occupied, even by a service other than PilotODIN.
     try:
         connection = socket.create_connection(("127.0.0.1", 8000), timeout=0.4)
     except ConnectionRefusedError:
         return
+    except TimeoutError as exc:
+        # Some Windows configurations silently drop closed-port TCP probes.
+        # Only the operating system's own *successful* TCP listener listing
+        # can resolve that ambiguity; never treat a timeout as no listener.
+        if sys.platform == "win32":
+            _check_windows_listening_port()
+            return
+        raise RecoveryBlocked(
+            "Cannot verify that the local backend is stopped."
+        ) from exc
     except OSError as exc:
         raise RecoveryBlocked("Cannot verify that the local backend is stopped.") from exc
     else:
