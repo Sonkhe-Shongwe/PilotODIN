@@ -315,6 +315,29 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }
     setUploadOpen(false);setFile(null);onNewProjectClose?.();setNotice("Dataset imported and profiled successfully");
   }catch(e){if(uploadViewMounted.current)setError((e as Error).message)}finally{if(uploadViewMounted.current)setLoading(false)}}
+  // Button-only Model Lab edits do not emit input/change events. Report a
+  // dirty primary Studio form only when the selected model set changes.
+  function toggleModelChoice(key:string){
+    const next=models.includes(key)?models.filter(name=>name!==key):
+      models.length<5?[...models,key]:models;
+    if(next===models)return; // Six-model cap; no edit and no warning.
+    if(!embedded)onPrimaryDraftEdited?.('model');
+    setModels(next);
+  }
+  // Apply-suggestions is another button-only form edit. Never report an edit
+  // when every proposed feature was already excluded.
+  function applyHighRiskExclusionSuggestions(){
+    if(!prep)return;
+    const proposed=[
+      ...prep.high_risk_features,
+      ...featureHints.filter(f=>f.risk==='high').map(f=>f.column)
+        .filter(column=>prep.available_features.includes(column)),
+    ];
+    const next=[...new Set([...excluded,...proposed])];
+    if(next.length===excluded.length)return;
+    if(!embedded)onPrimaryDraftEdited?.('prepare');
+    setExcluded(next);
+  }
   async function startTrain(){
     if(!project||!prep||prep.target!==target)return;
     if(unresolvedFeatureRisks.length&&!acknowledgeFeatureRisks){setError('Review or exclude high-risk predictors before training.');return;}
@@ -489,7 +512,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
             <TargetOpportunities key={project.id+'-'+qualityVersion} projectId={project.id} version={qualityVersion} selectedTarget={target} onChooseTarget={column=>{if(!profile.columns.some(c=>c.name===column))return;if(!embedded)onPrimaryDraftEdited?.('prepare');setTarget(column);setPrep(null);setExperiment(null);setConfirmSplit(false);setError('')}}/>
             {prep&&<>{!embedded&&<CategoryQualityAdvice projectId={project.id} version={qualityVersion} columns={prep.feature_audit.filter(f=>f.kind==='categorical'&&f.default_included&&!excluded.includes(f.column)).map(f=>f.column)} location="prepare" onReview={(focus:QualityFocus)=>{if(focus.projectId===project.id&&focus.version===qualityVersion){setQualityFocus(focus);go('quality')}}}/>}<div className="metrics three"><Metric label="TASK IDENTIFIED" value={prep.task==='classification'?'Classification':'Regression'} icon={<Target size={18}/>} small/><Metric label="INCLUDED PREDICTORS" value={String(prep.feature_audit.filter(f=>f.default_included&&!excluded.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length)} icon={<Database size={18}/>}/><Metric label="MISSING TARGETS" value={String(prep.missing_targets)} icon={<Activity size={18}/>}/></div>
               <div className="panel"><div className="panel-title"><ClipboardCheck size={19}/><h2>Review feature exclusions</h2></div><p className="body-muted">The model will use all columns except the target and features you deliberately exclude. Suggested exclusions are not automatically enforced.</p>
-                <button className="btn small" onClick={()=>setExcluded(current=>[...new Set([...current,...prep.high_risk_features,...featureHints.filter(f=>f.risk==='high').map(f=>f.column).filter(column=>prep.available_features.includes(column))])])}><Sparkles size={14}/> Apply high-risk exclusion suggestions</button>
+                <button className="btn small" onClick={applyHighRiskExclusionSuggestions}><Sparkles size={14}/> Apply high-risk exclusion suggestions</button>
                 <p className="muted-caption">Only structural screening, not validated importance: verify timing and compare features with training-only cross-validation.</p>
                 {featureHints.filter(f=>f.risk!=='low').map(f=><div className="warning-line" key={f.column}><AlertCircle size={14}/><b>{f.column}</b>: {f.reasons.join('; ')}</div>)}
                 <div className="feature-grid">{prep.available_features.map(c=>{const hint=prepRisk.find(x=>x.column===c);const isOut=excluded.includes(c);return <label className={cls('feature-chip',isOut&&'excluded')} key={c}><input type="checkbox" checked={isOut} onChange={(e:any)=>setExcluded(a=>e.target.checked?[...a,c]:a.filter(x=>x!==c))}/><span>{c}</span>{hint&&<span title={hint.reason}><AlertCircle size={15}/></span>}</label>})}</div>
@@ -513,7 +536,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
           {page==='model'&&!prep&&<MissingRequirement icon={<FlaskConical size={30}/>} title="Choose a prediction target first" body="Model Lab needs a confirmed target and preprocessing plan. You can return here at any time." action="Review preparation" onAction={()=>go('prepare')}/>}
           {page==='model'&&prep&&<><div className="panel"><div className="panel-title"><FlaskConical size={19}/><h2>Choose up to five models</h2><span className="pill">{models.length} / 5 selected</span></div><p className="body-muted">PilotODIN will compare models using cross-validation on the development split. Higher macro F1 is better for classification; lower MAE is better for regression.</p><div className="mini-info"><Sparkles size={16}/> Suggested comparison: {prep.task==='regression'?'Linear Regression as a transparent baseline alongside Random Forest / Gradient Boosting':'Logistic Regression as an interpretable baseline alongside Random Forest / Extra Trees'}. The winner is decided by cross-validation, not the suggestion.</div>
             {models.length>0&&prep.resource_plan&&<div className={cls('mini-info',modelBudgetExceeded&&'warn-icon')} role="status"><Database size={16}/> Selected-model budget: at most {modelRowLimit?.toLocaleString()} labelled rows for this comparison. {models.some(m=>m==='svm'||m==='svr')?'Kernel SVM/SVR training has a stricter row limit.':models.includes('knn')?'K-nearest neighbours training has a stricter row limit.':'General resource limit applies.'} {modelBudgetExceeded?'This dataset exceeds the selected algorithm budget. Remove the expensive model or use a reviewed smaller dataset.':'All selected model-family row limits are satisfied; the server checks dense memory separately.'}</div>}
-            <div className="model-family-list">{MODEL_CATEGORIES.map(category=>{const options=available.filter(([key])=>MODEL_INFO[key]?.category===category);if(!options.length)return null;return <section className="model-family" key={category}><div className="model-family-heading"><strong>{category}</strong><small>{options.length} supported algorithms</small></div><div className="model-grid">{options.map(([key,label])=><button key={key} type="button" aria-pressed={models.includes(key)} className={cls('model-choice',models.includes(key)&&'chosen')} onClick={()=>setModels(a=>a.includes(key)?a.filter(x=>x!==key):a.length<5?[...a,key]:a)}><div className="model-icon">{models.includes(key)?<Check size={18}/>:<FlaskConical size={18}/>}</div><span className="model-choice-copy"><strong>{label}</strong><small>{MODEL_INFO[key]?.summary}</small><small className="model-cost">Resource level: {MODEL_INFO[key]?.cost}</small></span></button>)}</div></section>})}</div></div>
+            <div className="model-family-list">{MODEL_CATEGORIES.map(category=>{const options=available.filter(([key])=>MODEL_INFO[key]?.category===category);if(!options.length)return null;return <section className="model-family" key={category}><div className="model-family-heading"><strong>{category}</strong><small>{options.length} supported algorithms</small></div><div className="model-grid">{options.map(([key,label])=><button key={key} type="button" aria-pressed={models.includes(key)} className={cls('model-choice',models.includes(key)&&'chosen')} onClick={()=>toggleModelChoice(key)}><div className="model-icon">{models.includes(key)?<Check size={18}/>:<FlaskConical size={18}/>}</div><span className="model-choice-copy"><strong>{label}</strong><small>{MODEL_INFO[key]?.summary}</small><small className="model-cost">Resource level: {MODEL_INFO[key]?.cost}</small></span></button>)}</div></section>})}</div></div>
             <div className="panel"><div className="panel-title"><ShieldCheck size={19}/><h2>Validation safeguards</h2></div><div className="validation-row"><span>Hold-out test set</span><strong>20% (untouched until model selection)</strong></div><div className="validation-row"><span>Development split</span><strong>80% (5-fold CV when possible)</strong></div><div className="validation-row"><span>Primary metric</span><strong>{prep.task==='classification'?'Macro F1':'Mean Absolute Error'}</strong></div>
               <label className="field-label">VALIDATION STRATEGY</label>
               <select className="input" value={splitStrategy} onChange={e=>{setSplitStrategy(e.target.value as 'random'|'time'|'group');setConfirmSplit(false);setSplitColumn('')}}><option value="random">Random: independent observations</option><option value="time">Time: train on earlier records, test on later records</option><option value="group">Group: keep repeated entities in separate folds</option></select>
