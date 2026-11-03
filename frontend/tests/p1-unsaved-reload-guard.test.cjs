@@ -24,12 +24,14 @@ test('no warning for empty or unavailable project or an untouched workspace',()=
  assert.equal(guard('A',false,'prepare',primary(),dock(),'quality'),false);
  assert.equal(guard('A',true,'prepare',null,null,null),false);
 });
-test('only the live current-project primary form causes an unload warning',()=>{
+test('the mounted Studio warns across its subviews, but not once replaced by Investigation',()=>{
  assert.equal(guard('A',true,'prepare',primary(),null,null),true);
- assert.equal(guard('A',true,'model',primary(),null,null),false);
+ assert.equal(guard('A',true,'model',primary(),null,null),true);
  assert.equal(guard('A',true,'prepare',primary('B'),null,null),false);
  assert.equal(guard('A',true,'model',primary('A','model'),null,null),true);
  assert.equal(guard('A',true,'predict',primary('A','predict'),null,null),true);
+ assert.equal(guard('A',true,'quality',primary('A','model'),null,null),true);
+ assert.equal(guard('A',true,'investigate',primary('A','model'),null,null),false);
 });
 test('only a still docked edited form causes an unload warning',()=>{
  assert.equal(guard('A',true,'quality',null,dock(),'prepare'),true);

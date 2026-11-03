@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   synthetic-frontend:
-    name: Source contracts, TypeScript/Vite and 3 isolated Chromium cases
+    name: Source contracts, TypeScript/Vite and 4 isolated Chromium cases
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -50,11 +50,16 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install locked frontend dependencies
         run: npm ci --no-audit --no-fund
-      - name: Check isolated API and keyboard/DPR source contracts
-        run: node --test tests/p1-playwright-pilot-contract.test.cjs
+      - name: Check isolation, primary exit, route and unload contracts
+        run: >-
+          node --test
+          tests/p1-playwright-pilot-contract.test.cjs
+          tests/p1-primary-canvas-exit.test.cjs
+          tests/p1-external-route-activation-guard.test.cjs
+          tests/p1-unsaved-reload-guard.test.cjs
       - name: Typecheck and compile frontend
         run: npm run build
       - name: Install Chromium for synthetic browser tests
         run: npx --no-install playwright install --with-deps chromium
-      - name: Run 3 targeted P1 synthetic browser scenarios
-        run: npx --no-install playwright test --config=playwright.config.ts -g "keyboard Tab Shift-Tab|keyboard dock resize|simulated 150 percent"
+      - name: Run 4 targeted P1 synthetic browser scenarios
+        run: npx --no-install playwright test --config=playwright.config.ts -g "keyboard Tab Shift-Tab|keyboard dock resize|simulated 150 percent|primary Studio dirty Prepare cannot enter Investigation"

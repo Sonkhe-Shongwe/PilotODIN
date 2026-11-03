@@ -22,7 +22,7 @@ export function needsDockInputDiscardApproval(
 
 /** A reload or native window close must not silently discard a still-mounted
  * edited form. This checks markers only: no field values or auto-save.
- * A previously unmounted primary page is not a live unsaved form.
+ * Primary Studio retains form state across its subviews; Investigation unmounts it.
  */
 export function hasUnsavedWorkspaceDraftForUnload(
   projectId:string,workspaceReady:boolean,activeView:string,
@@ -30,7 +30,7 @@ export function hasUnsavedWorkspaceDraftForUnload(
   secondary:EditedDock|null,currentDock:SecondaryView|null
 ):boolean {
   if(!projectId||!workspaceReady)return false;
-  const primaryLive=primary?.projectId===projectId&&primary.view===activeView;
+  const primaryLive=primary?.projectId===projectId&&activeView!=='investigate';
   const dockLive=currentDock!==activeView&&needsDockInputDiscardApproval(
     secondary,projectId,currentDock,'switch-project');
   return primaryLive||dockLive;

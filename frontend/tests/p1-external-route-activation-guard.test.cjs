@@ -16,6 +16,17 @@ assert.equal((compiled.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCate
 const mod=new Module(guardFile,module);mod.filename=guardFile;mod.paths=module.paths;
 mod._compile(compiled.outputText,guardFile);
 const {planExternalRouteActivation}=mod.exports;
+const primaryFile=path.resolve(__dirname,'../src/primaryStudioExitGuard.ts');
+const primaryCompiled=ts.transpileModule(fs.readFileSync(primaryFile,'utf8'),{
+ compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},
+ reportDiagnostics:true
+});
+assert.equal((primaryCompiled.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
+const primaryModule=new Module(primaryFile,module);
+primaryModule.filename=primaryFile;primaryModule.paths=module.paths;
+primaryModule._compile(primaryCompiled.outputText,primaryFile);
+const {needsPrimaryStudioExitApproval}=primaryModule.exports;
+const PRIMARY_CANVAS_EXIT_MESSAGE='You changed fields in the primary workspace. Opening Investigate will discard those unsaved entries. Continue?';
 const edited={projectId:'A',view:'prepare'};
 
 test('edited current dock needs approval when URL promotes it into primary',()=>{
@@ -53,7 +64,7 @@ const end=shell.indexOf('\n  };',begin);
 assert.ok(begin>0&&end>begin,'the actual shell capture handler must exist');
 const handlerSource=shell.slice(begin,end+5);
 function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockView='prepare',
- current='quality',edit=edited,approval=false,ready=true,projectId='A'}={}){
+ current='quality',edit=edited,primaryEdit=null,approval=false,ready=true,projectId='A'}={}){
  const journal={prompts:0,dockCloses:0,rollbacks:0};
  const activeUpdates=[];
  const dispatched=[];
@@ -70,6 +81,7 @@ function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockVi
   dispatchEvent(event){dispatched.push(event.type);for(const callback of listeners.get(event.type)||[])callback(event);return true;}
  };
  const editedDock={current:edit};
+ const editedPrimary={current:primaryEdit};
  const acceptedRouteHash={current:before};
  const preapprovedRoutePush={current:null};
  const dock={secondary:dockView};
@@ -78,11 +90,12 @@ function routeHarness({before='#/studio/quality',after='#/studio/prepare',dockVi
  const nextDockLayout=(current,action)=>{assert.equal(action.kind,'close');return {...current,secondary:null}};
  const routeView=()=>win.location.hash.startsWith('#/studio/')?win.location.hash.slice(9):'overview';
  const run=new Function('window','acceptedRouteHash','preapprovedRoutePush','routeView','planExternalRouteActivation',
-  'active','dock','editedDock','projectId','workspaceReady','setDock','nextDockLayout','setActive','Event',
+  'active','dock','editedDock','editedPrimary','projectId','workspaceReady','setDock','nextDockLayout','setActive','Event',
+  'needsPrimaryStudioExitApproval','PRIMARY_CANVAS_EXIT_MESSAGE',
   handlerSource+'\n return reviewRoute;')(
-   win,acceptedRouteHash,preapprovedRoutePush,routeView,planExternalRouteActivation,current,dock,editedDock,projectId,ready,
-   setDock,nextDockLayout,setActive,Event);
- return {run,win,journal,editedDock,acceptedRouteHash,preapprovedRoutePush,activeUpdates,dispatched};
+   win,acceptedRouteHash,preapprovedRoutePush,routeView,planExternalRouteActivation,current,dock,editedDock,editedPrimary,projectId,ready,
+   setDock,nextDockLayout,setActive,Event,needsPrimaryStudioExitApproval,PRIMARY_CANVAS_EXIT_MESSAGE);
+ return {run,win,journal,editedDock,editedPrimary,acceptedRouteHash,preapprovedRoutePush,activeUpdates,dispatched};
 }
 test('Cancel rolls browser URL back without unmounting edited dock or clearing its marker',()=>{
  const a=routeHarness();a.run();
@@ -232,12 +245,14 @@ function preNavigationHarness({from='#/studio/explore',to='#/studio/prepare',
  const preapprovedRoutePush={current:null};
  const callback=new Function('window','preapprovedRoutePush','acceptedRouteHash',
    'routeViewFromHash','planExternalRouteActivation','active','dock',
-   'editedDock','projectId','workspaceReady',
+   'editedDock','editedPrimary','projectId','workspaceReady',
+   'needsPrimaryStudioExitApproval','PRIMARY_CANVAS_EXIT_MESSAGE',
    precommitJS.outputText+'\nreturn beforeRoutePush;')(
    mockWindow,preapprovedRoutePush,{current:from},
    hash=>hash.slice('#/studio/'.length),planExternalRouteActivation,
    'explore',{secondary:'prepare'},
-   {current:{projectId:'A',view:'prepare'}},'A',ready);
+   {current:{projectId:'A',view:'prepare'}},{current:null},'A',ready,
+   needsPrimaryStudioExitApproval,PRIMARY_CANVAS_EXIT_MESSAGE);
  return {run:()=>callback(event),journal,preapprovedRoutePush};
 }
 test('precommit Cancel stops rejected hash push before history insertion',()=>{

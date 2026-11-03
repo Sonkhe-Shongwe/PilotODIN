@@ -1138,3 +1138,33 @@ test('simulated 150 percent device scale and reduced motion keep dock controls a
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+
+test('primary Studio dirty Prepare cannot enter Investigation without consent',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare','investigate']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/prepare');
+  const target=page.locator('.po-primary-pane').getByRole('combobox',{name:/target variable/i});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  const prompts:string[]=[];
+  page.on('dialog',async dialog=>{
+    prompts.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await page.getByRole('navigation',{name:'Workspace navigation'})
+    .getByRole('button',{name:'Investigate'}).click();
+  await expect.poll(()=>prompts.length).toBe(1);
+  expect(prompts[0]).toMatch(/primary workspace.*discard/i);
+  await expect(page).toHaveURL(/#\/studio\/prepare$/);
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

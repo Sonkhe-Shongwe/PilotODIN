@@ -22,6 +22,7 @@ import {listen} from '@tauri-apps/api/event';
 import {NATIVE_CLOSE_EVENT,resolveNativeCloseRequest} from './nativeCloseConsent';
 import type {NativeCloseRequest} from './nativeCloseConsent';
 import {planExternalRouteActivation} from './externalRouteActivationGuard';
+import {needsPrimaryStudioExitApproval} from './primaryStudioExitGuard';
 import {planExternalProjectTransition} from './externalProjectTransitionGuard';
 import type {EditedDock} from './dockInputDiscardGuard';
 import {nextSidebarViewByKey} from './sidebarKeyboardNavigation';
@@ -65,6 +66,7 @@ function routeView():View {return routeViewFromHash(location.hash);}
 function navigate(v:View){navigateHashSmoothly(v==='investigate'?'#/canvas':`#/studio/${v}`)}
 const labelFor=(view:View)=>ALL.find(i=>i.id===view)?.label??view;
 const PANEL_MIN_WIDTH=300;
+const PRIMARY_CANVAS_EXIT_MESSAGE='You changed fields in the primary workspace. Opening Investigate will discard those unsaved entries. Continue?';
 
 /** One persistent desktop shell. Tabs and layouts are scoped to a project, not to its data. */
 export function UnifiedShell(){
@@ -251,7 +253,6 @@ export function UnifiedShell(){
   // replaceState in hashchange can only rewrite a duplicate, not remove it.
   // Keep the after-commit guard for unsupported APIs and history traversals.
   const beforeRoutePush=(event:Event)=>{
-   preapprovedRoutePush.current=null;
    const nav=event as Event&{navigationType?:string;destination?:{url:string}};
    if(!event.cancelable||nav.navigationType!=='push'||!nav.destination)return;
    let destination:URL;
@@ -259,9 +260,14 @@ export function UnifiedShell(){
    const here=window.location;
    if(destination.origin!==here.origin||destination.pathname!==here.pathname||destination.search!==here.search)return;
    if(destination.hash===acceptedRouteHash.current)return;
+   if(preapprovedRoutePush.current!==destination.hash)preapprovedRoutePush.current=null;
+   if(preapprovedRoutePush.current===destination.hash)return;
    const requested=routeViewFromHash(destination.hash);
-   if(planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady)!=='confirm-promote')return;
-   if(!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
+   const primaryExit=needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,requested,workspaceReady);
+   const dockPromotion=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
+   if(!primaryExit&&dockPromotion!=='confirm-promote')return;
+   if(!window.confirm(primaryExit?PRIMARY_CANVAS_EXIT_MESSAGE:
+    'You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     event.preventDefault();
     return;
    }
@@ -280,9 +286,12 @@ export function UnifiedShell(){
    if(requestedHash===acceptedRouteHash.current)return;
    const requested=routeView();
    const decision=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
+   const primaryExit=needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,requested,workspaceReady);
    const alreadyApproved=preapprovedRoutePush.current===requestedHash;
    preapprovedRoutePush.current=null;
-   if(decision==='confirm-promote'&&!alreadyApproved&&!window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?')){
+   if((primaryExit||decision==='confirm-promote')&&!alreadyApproved&&!window.confirm(
+     primaryExit?PRIMARY_CANVAS_EXIT_MESSAGE:
+      'You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
     window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+restore);
     // replaceState does not fire hashchange. Tell the primary Studio to resync its
@@ -290,6 +299,7 @@ export function UnifiedShell(){
     window.dispatchEvent(new Event('pilotodin:route-reverted'));
     return;
    }
+   if(primaryExit)editedPrimary.current=null;
    if(decision!=='unchanged'){
     editedDock.current=null;
     setDock(current=>nextDockLayout(current,{kind:'close'}));
@@ -401,6 +411,11 @@ export function UnifiedShell(){
  // When a docked view becomes the primary view, the embedded form unmounts.
  // Ask before leaving an edited dock, rather than navigating and warning too late.
  const navigateWithDockGuard=(view:View):boolean=>{
+  if(needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,view,workspaceReady)){
+   if(!window.confirm(PRIMARY_CANVAS_EXIT_MESSAGE))return false;
+   // The next successful route commit, not this attempt, clears the draft marker.
+   preapprovedRoutePush.current='#/canvas';
+  }
   if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
    if(!confirmEditedDockDiscard('activate',view))return false;
    editedDock.current=null;
@@ -504,6 +519,10 @@ export function UnifiedShell(){
   if(!plan)return;
   if(dock.secondary===view&&!confirmEditedDockDiscard('close-tab'))return;
   if(plan.nextActive!==active&&dock.secondary===plan.nextActive&&isSecondaryView(plan.nextActive)&&!confirmEditedDockDiscard('activate',plan.nextActive))return;
+  if(plan.nextActive!==active&&needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,plan.nextActive,workspaceReady)){
+   if(!window.confirm(PRIMARY_CANVAS_EXIT_MESSAGE))return;
+   preapprovedRoutePush.current='#/canvas';
+  }
   if(dock.secondary===view||dock.secondary===plan.nextActive&&plan.nextActive!==active)editedDock.current=null;
   pendingCloseFocus.current={projectId,view:plan.focus};
   setOpenTabs(plan.remaining);
