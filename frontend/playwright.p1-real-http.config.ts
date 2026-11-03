@@ -18,7 +18,7 @@ export default defineConfig({
   reporter:'list',
   outputDir:'./test-results-p1-real-http',
   use:{
-    baseURL:'http://127.0.0.1:5188',
+    baseURL:'http://127.0.0.1:5178',
     browserName:'chromium',
     headless:true,
     viewport:{width:1440,height:900},
@@ -29,7 +29,7 @@ export default defineConfig({
   webServer:[
     {command:'cd .. && python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --no-access-log',
      url:'http://127.0.0.1:8000/api/health',reuseExistingServer:false,timeout:90_000},
-    {command:'npx vite --host 127.0.0.1 --port 5188 --strictPort',
-     url:'http://127.0.0.1:5188',reuseExistingServer:false,timeout:60_000},
+    {command:'npx vite --host 127.0.0.1 --port 5178 --strictPort',
+     url:'http://127.0.0.1:5178',reuseExistingServer:false,timeout:60_000},
   ],
 });

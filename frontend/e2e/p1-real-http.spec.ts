@@ -3,7 +3,7 @@ import type {BrowserContext,Route} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 import {Buffer} from 'node:buffer';
 
-const UI='http://127.0.0.1:5188';
+const UI='http://127.0.0.1:5178';
 const API='http://127.0.0.1:8000';
 const A_FILENAME='pilotodin_p1_http_A.csv';
 const B_FILENAME='pilotodin_p1_http_B.csv';
