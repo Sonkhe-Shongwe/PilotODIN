@@ -1,8 +1,24 @@
 # P1 relocated original dataset: safe recovery protocol
 **3 November 2026. Evidence: owner native Windows FastAPI traceback. Product phase P1 only.**
 
+## 3 November: Owner-executed recovery command succeeded, endpoint retest outstanding
+
+The owner supplied screenshots proving that their local tracked branch fast-forwarded to `f6f9f0d`, and the new guarded utility ran successfully on Windows against the **isolated development workspace**. Its read-only stage verified the original fingerprint and Quality version. The owner then used the explicit confirmation ID and fresh backup destination, and the `--apply` stage printed:
+
+```text
+BACKUP VERIFIED AND SINGLE SOURCE-PATH RELINK COMMITTED.
+```
+
+This is evidence of a **completed local backup and original-reference database relink as reported by the script**; it is not an independent audit of the backup or an end-to-end confirmation that `/live-profile` now works. No source file replacement, Quality history reset, approved transformation or installed-user-app migration was requested. **Do not run `--apply` again.**
+
+**Next verification, backend and native only:**
+1. Keep the private backup outside the repository. Start exactly one isolated DEV backend with `tools/run_live_backend.ps1` from the current repository root.
+2. In a separate terminal, GET `/api/health`, `/api/projects/{id}` and `/api/projects/{id}/live-profile`, printing status codes only. Expect 200 for each; keep any new 500 and Uvicorn traceback for targeted diagnosis.
+3. Confirm the DEV ONLY Tauri app loads the project without "Could not open project", inspect the unchanged Quality history and begin WIN-K1..WIN-A1 with disposable data. No inference or cloud AI action required.
+4. Record separate PASS/FAIL/BLOCKED for post-repair API, user-interface project load, and all native acceptance checks. Neither source-relocation repair nor hosted 30/30 synthetic tests certifies native release.
+
 ## Observed cause
-A project labelled `day` appears in the current isolated project catalogue, and its metadata endpoint returns HTTP 200. Its `/api/projects/{id}/live-profile` request returned 500 because `backend.quality._ensure` attempted to SHA-256-hash an **original CSV referenced by an absolute path from an earlier checkout**, but that file no longer exists at the saved location. The owner moved the source tree to a different checkout folder. The original is missing at its *old referenced path*, but the owner has since confirmed a candidate exists in the current isolated workspace and its SHA-256 **matches the original Quality pin exactly**. A recovery relink has not yet been applied.
+A project labelled `day` appears in the current isolated project catalogue, and its metadata endpoint returns HTTP 200. Its `/api/projects/{id}/live-profile` request returned 500 because `backend.quality._ensure` attempted to SHA-256-hash an **original CSV referenced by an absolute path from an earlier checkout**, but that file no longer exists at the saved location. The owner moved the source tree to a different checkout folder. The original is missing at its *old referenced path*, but the owner has since confirmed a candidate exists in the current isolated workspace and its SHA-256 **matches the original Quality pin exactly**. **Owner has now executed the guarded backup-first relink successfully on Windows**, with the utility reporting the backup verified and one-row path update committed. Actual endpoint/native project retest remains pending.
 
 The versioned Quality engine fingerprints the *original uploaded bytes*, and the persistent SQLite record stores the original `dataset_path`. A file with the same filename is NOT automatically trustworthy. Do not delete or reimport the existing project, reset `quality_state` or `quality_versions`, rewrite the SQLite database, or silently search-and-bind a same-named replacement. Never print user dataset contents to public GitHub.
 
