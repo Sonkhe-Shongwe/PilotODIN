@@ -70,7 +70,7 @@ async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string):
 }
 
 function fixtureGuard(action:'hide'|'restore'|'audit',id:string):string{
-  const output=execFileSync('python',['../tools/p1_real_http_fixture_guard.py',
+  const output=execFileSync('python', ['../tools/p1_real_http_fixture_guard.py',
     action,'--project-id',id],{encoding:'utf8',timeout:10_000});
   return output.trim();
 }
