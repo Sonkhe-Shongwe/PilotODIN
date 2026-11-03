@@ -35,6 +35,13 @@ const syntheticProject={
   experiments:[],
 };
 const secondProfile={...profile,filename:'synthetic_second_fixture.csv'};
+const IMPORT_FILENAME='pilotodin_e2e_import.csv';
+const IMPORT_CONTENT='fraud_reported,amount\nN,10\nY,20\n';
+const importedProfile={...secondProfile,filename:IMPORT_FILENAME};
+const importedProject={
+  id:TEST_PROJECT_B,name:'pilotodin_e2e_import',
+  filename:IMPORT_FILENAME,profile:importedProfile,experiments:[],
+};
 const syntheticSecondProject={
   id:TEST_PROJECT_B,
   name:'synthetic_second_fixture',
@@ -43,14 +50,17 @@ const syntheticSecondProject={
   experiments:[],
 };
 
-type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]; stubbedFontStylesheets:string[]; readOnlyCalculations:string[]};
+type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:string[]; stubbedFontStylesheets:string[]; readOnlyCalculations:string[]; syntheticImports:string[]};
 
 /** Fail closed: only the dedicated Vite origin is allowed onto the network.
  * Every API response comes from this handler, never the actual :8000 backend.
  * Unrecognised requests return a synthetic 404 and are recorded.
  */
-async function installIsolatedAPI(context:BrowserContext,withProject:boolean,withSecondProject=false):Promise<NetworkAudit>{
-  const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[],stubbedFontStylesheets:[],readOnlyCalculations:[]};
+async function installIsolatedAPI(context:BrowserContext,withProject:boolean,withSecondProject=false,withImport=false):Promise<NetworkAudit>{
+  const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[],stubbedFontStylesheets:[],readOnlyCalculations:[],syntheticImports:[]};
+  // A real upload is impossible in this isolated browser. The opt-in import
+  // adds only an in-memory B fixture after a strict multipart payload check.
+  let imported=false;
   await context.route('**/*',async(route:Route)=>{
     const req=route.request();
     const url=new URL(req.url());
@@ -89,6 +99,26 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
       return;
     }
     const pathname=url.pathname.slice('/api'.length);
+    // This opt-in route simulates the frontend's actual multipart upload to a
+    // SECOND fake project. No request is ever forwarded to :8000. No local
+    // CSV is created, and even the test's synthetic import bytes are bounded.
+    if(req.method()==='POST'&&pathname==='/projects'&&withProject&&withImport){
+      const contentType=req.headers()['content-type']??'';
+      const boundary=contentType.match(/^multipart\/form-data; boundary=([A-Za-z0-9_-]{8,100})$/)?.[1];
+      const expected=boundary
+        ?'--'+boundary+'\r\nContent-Disposition: form-data; name="file"; filename="'+IMPORT_FILENAME
+          +'"\r\nContent-Type: text/csv\r\n\r\n'+IMPORT_CONTENT+'\r\n--'+boundary+'--\r\n'
+        :'';
+      if(!imported&&expected&&req.postData()===expected&&url.search===''){
+        imported=true;
+        audit.syntheticImports.push('POST /projects [exact synthetic multipart only]');
+        await route.fulfill({status:200,headers:{'access-control-allow-origin':UI_ORIGIN},
+          json:{id:TEST_PROJECT_B,name:importedProject.name,profile:importedProfile}});
+        return;
+      }
+      // Unexpected extra fields, repeated uploads and changed bytes fail
+      // closed through the existing POST rejection/audit below.
+    }
     // A cross-origin JSON POST can cause a browser CORS preflight.
     // Approve ONLY the synthetic read-only workbench's content-type preflight.
     // Never forward OPTIONS (or the subsequent POST) to a real backend.
@@ -155,7 +185,11 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
     let result:unknown;
     if(pathname==='/projects'){
       result=withProject?[{id:TEST_PROJECT,name:syntheticProject.name,filename:syntheticProject.filename},
-        ...(withSecondProject?[{id:TEST_PROJECT_B,name:syntheticSecondProject.name,filename:syntheticSecondProject.filename}]:[])]:[];
+        ...((withSecondProject||imported)?[{
+          id:TEST_PROJECT_B,
+          name:imported?importedProject.name:syntheticSecondProject.name,
+          filename:imported?importedProject.filename:syntheticSecondProject.filename,
+        }]:[])]:[];
     }else if(pathname==='/ai/settings'){
       result={cloud_enabled:false,share_aggregates:false,auto_insights:false,providers:[]};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}`){
@@ -164,10 +198,27 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
       result={version:0,profile};
     // The second fixture exists only when the new P1 project-switch test
     // explicitly opts into it. It is never a real owner dataset.
-    }else if(withProject&&withSecondProject&&pathname===`/projects/${TEST_PROJECT_B}`){
-      result=syntheticSecondProject;
-    }else if(withProject&&withSecondProject&&pathname===`/projects/${TEST_PROJECT_B}/live-profile`){
-      result={version:0,profile:secondProfile};
+    }else if(withProject&&(withSecondProject||imported)&&pathname===`/projects/${TEST_PROJECT_B}`){
+      result=imported?importedProject:syntheticSecondProject;
+    }else if(withProject&&(withSecondProject||imported)&&pathname===`/projects/${TEST_PROJECT_B}/live-profile`){
+      result={version:0,profile:imported?importedProfile:secondProfile};
+    }else if(withProject&&withImport&&imported&&pathname===`/projects/${TEST_PROJECT_B}/quality`){
+      result={project_id:TEST_PROJECT_B,version:0,rows:2,columns:2,
+        summary:{issues:0,automatic_available:0,review_required:0,information:0,applied_actions:0},issues:[]};
+    }else if(withProject&&withImport&&imported&&pathname===`/projects/${TEST_PROJECT_B}/quality/history`){
+      result={current_version:0,
+        versions:[{version:0,event:'initial',created_at:'2026-11-03T00:00:00',details:{}}],
+        actions:[]};
+    }else if(withProject&&withImport&&imported&&pathname===`/projects/${TEST_PROJECT_B}/quality/preview`){
+      result={version:0,total_matching_rows:2,offset:0,limit:12,rows:[]};
+    }else if(withProject&&withImport&&imported
+      &&pathname===`/projects/${TEST_PROJECT_B}/preparation`&&url.search==='?target=fraud_reported'){
+      result={task:'classification',target:'fraud_reported',available_features:['amount'],
+        recommend_exclude:[],feature_audit:[],high_risk_features:[],
+        missing_targets:0,transformations:[],warnings:[]};
+    }else if(withProject&&withImport&&imported
+      &&pathname===`/projects/${TEST_PROJECT_B}/features`&&url.search==='?target=fraud_reported'){
+      result={features:[]};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/quality`){
       result={project_id:TEST_PROJECT,version:0,rows:2,columns:2,
         summary:{issues:0,automatic_available:0,review_required:0,information:0,applied_actions:0},
@@ -186,7 +237,7 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
     // Prepare mounts TargetOpportunities as soon as verified B is displayed.
     // Only this exact second-project read at the expected dataset version is
     // part of the approved A-to-B switch. All other B routes stay fail-closed.
-    }else if(withProject&&withSecondProject
+    }else if(withProject&&(withSecondProject||imported)
       &&pathname===`/projects/${TEST_PROJECT_B}/target-opportunities`
       &&url.search==='?expected_version=0'){
       result={version:0,ranking_basis:'Synthetic second-project label screening, not target approval',
@@ -1164,6 +1215,73 @@ test('primary Studio dirty Prepare cannot enter Investigation without consent',a
   await expect(page).toHaveURL(/#\/studio\/prepare$/);
   await expect(target).toHaveValue('fraud_reported');
   await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
+
+
+test('isolated import Quality and failed project switch preserve the synthetic unsaved draft',async({page,context})=>{
+  // One synthetic A already exists; B is absent until the exact in-memory CSV
+  // multipart POST is intercepted. Never reach the owner's backend or files.
+  const audit=await installIsolatedAPI(context,true,false,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','quality']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'overview');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/overview');
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  const uploadedFile=page.locator('.po-primary-pane input[type="file"]');
+  await uploadedFile.setInputFiles({
+    name:IMPORT_FILENAME,mimeType:'text/csv',buffer:Buffer.from(IMPORT_CONTENT,'utf8'),
+  });
+  await expect(page.getByText(IMPORT_FILENAME,{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Analyse dataset'}).click();
+  await expect(switcher).toHaveValue(TEST_PROJECT_B);
+  expect(audit.syntheticImports).toEqual(['POST /projects [exact synthetic multipart only]']);
+  await page.getByRole('navigation',{name:'Workspace navigation'})
+    .getByRole('button',{name:'Quality'}).click();
+  const primary=page.locator('.po-primary-pane');
+  await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+  await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
+
+  // Visit Prepare and edit only the fake in-memory target. Selecting A attempts
+  // two GETs. A's live-profile is deliberately made to return HTTP 503.
+  await page.getByRole('navigation',{name:'Workspace navigation'})
+    .getByRole('button',{name:'Prepare'}).click();
+  const target=primary.getByRole('combobox',{name:/target variable/i});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  let failedReads=0;
+  await page.route('**/api/projects/playwright-synthetic-project/live-profile',async route=>{
+    if(route.request().method()!=='GET')throw new Error('Only synthetic profile GET failure expected');
+    failedReads++;
+    await route.fulfill({status:503,headers:{'access-control-allow-origin':UI_ORIGIN},
+      json:{detail:'Synthetic temporary project read failure'}});
+  });
+  const messages:string[]=[];
+  page.on('dialog',async dialog=>{
+    messages.push(dialog.message());
+    await dialog.accept(); // Explicitly approve this read attempt, not a data write.
+  });
+  await switcher.selectOption(TEST_PROJECT);
+  await expect(page.getByText(/selected project could not be opened|Could not open project/i).first())
+    .toBeVisible();
+  await expect(switcher).toHaveValue(TEST_PROJECT_B);
+  await expect(target).toHaveValue('fraud_reported');
+  expect(failedReads).toBe(1);
+  expect(messages).toHaveLength(1);
+  expect(messages[0]).toMatch(/primary workspace.*discard/i);
+  await page.getByRole('navigation',{name:'Workspace navigation'})
+    .getByRole('button',{name:'Quality'}).click();
+  await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+  await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
+  await expect(switcher).toHaveValue(TEST_PROJECT_B);
+  expect(audit.syntheticImports).toHaveLength(1);
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);

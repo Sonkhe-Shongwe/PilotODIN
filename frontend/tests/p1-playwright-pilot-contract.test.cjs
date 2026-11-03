@@ -70,6 +70,7 @@ test('isolated browser does not reuse server or approve import',()=>{
     'approved same-tab global project load commits B only after verified GETs',
     'genuine primary Prepare reload Stay preserves draft and Leave discards only in-memory edit',
     'genuine cross-tab reload Stay keeps A draft and Leave adopts shared B selection',
+    'isolated import Quality and failed project switch preserve the synthetic unsaved draft',
   ]);
   const approvedScenarios=spec.split(/^test\('/m).slice(1)
     .filter(section=>section.includes('await dialog.accept()'));
@@ -384,4 +385,23 @@ test('keyboard, focus and emulated-DPI browser QA is isolated and clearly non-na
   assert.match(scenarios[1],/await expect\(dock\)\.toBeHidden\(\)/);
   assert.match(scenarios[2],/deviceScaleFactor:1\.5,reducedMotion:'reduce'/);
   assert.match(scenarios[2],/Browser DPR emulation does not certify Windows scaling/);
+});
+
+test('import-to-Quality failure recovery scenario requires an opt-in bounded in-memory fixture',()=>{
+  const anchor=spec.indexOf("test('isolated import Quality and failed project switch preserve the synthetic unsaved draft'");
+  assert.ok(anchor>0);
+  const scenario=spec.slice(anchor);
+  assert.match(spec,/withSecondProject=false,withImport=false/);
+  assert.match(spec,/req\.postData\(\)===expected/);
+  assert.match(spec,/audit\.syntheticImports\.push\('POST \/projects \[exact synthetic multipart only\]'\)/);
+  assert.match(scenario,/installIsolatedAPI\(context,true,false,true\)/);
+  assert.match(scenario,/await uploadedFile\.setInputFiles\(/);
+  assert.match(scenario,/failedReads\+\+/);
+  assert.match(scenario,/status:503/);
+  assert.match(scenario,/await expect\(target\)\.toHaveValue\('fraud_reported'\)/);
+  assert.match(scenario,/expect\(audit\.syntheticImports\)\.toHaveLength\(1\)/);
+  assert.match(scenario,/expect\(audit\.writes\)\.toEqual\(\[\]\)/);
+  assert.match(scenario,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
+  assert.match(scenario,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
+  assert.doesNotMatch(scenario,/https:\/\/|window\.confirm|localStorage\.clear\(/);
 });

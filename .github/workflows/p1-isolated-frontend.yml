@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   synthetic-frontend:
-    name: Source contracts, TypeScript/Vite and 4 isolated Chromium cases
+    name: Source contracts, TypeScript/Vite and 5 isolated Chromium cases
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -61,5 +61,5 @@ jobs:
         run: npm run build
       - name: Install Chromium for synthetic browser tests
         run: npx --no-install playwright install --with-deps chromium
-      - name: Run 4 targeted P1 synthetic browser scenarios
-        run: npx --no-install playwright test --config=playwright.config.ts -g "keyboard Tab Shift-Tab|keyboard dock resize|simulated 150 percent|primary Studio dirty Prepare cannot enter Investigation"
+      - name: Run 5 targeted P1 synthetic browser scenarios
+        run: npx --no-install playwright test --config=playwright.config.ts -g "keyboard Tab Shift-Tab|keyboard dock resize|simulated 150 percent|primary Studio dirty Prepare cannot enter Investigation|isolated import Quality and failed project switch"
