@@ -12,6 +12,8 @@ on:
       - backend/requirements.txt
       - backend/requirements-test.txt
       - tests/test_p1_source_location_recovery.py
+      - tests/test_p1_relink_original_source.py
+      - tools/p1_relink_original_source.py
       - tests/test_p1_import_recovery.py
       - tests/test_p1_upload_atomic_staging.py
 
@@ -50,5 +52,6 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_p1_source_location_recovery.py
+          tests/test_p1_relink_original_source.py
           tests/test_p1_import_recovery.py
           tests/test_p1_upload_atomic_staging.py
