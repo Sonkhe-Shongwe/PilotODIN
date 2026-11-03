@@ -73,7 +73,7 @@ def _fixture(project_id: str):
     datasets = home / "datasets"
     source = Path(recorded)
     if (source.parent != datasets or source.is_symlink()
-        or not re.fullmatch(r"[0-9a-f]{32}\\.csv", source.name)):
+        or not re.fullmatch(r"[0-9a-f]{32}\.csv", source.name)):
         raise RuntimeError("Refuse source outside generated fixtures")
     hidden = datasets / (source.name + ".p1-real-http-hidden")
     if hidden.is_symlink():
