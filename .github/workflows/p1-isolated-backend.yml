@@ -16,6 +16,7 @@ on:
       - tools/p1_relink_original_source.py
       - tests/test_p1_import_recovery.py
       - tests/test_p1_upload_atomic_staging.py
+      - tests/test_p1_real_api_failed_switch.py
 
 permissions:
   contents: read
@@ -55,3 +56,4 @@ jobs:
           tests/test_p1_relink_original_source.py
           tests/test_p1_import_recovery.py
           tests/test_p1_upload_atomic_staging.py
+          tests/test_p1_real_api_failed_switch.py
