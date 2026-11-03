@@ -58,6 +58,7 @@ jobs:
           tests/p1-external-route-activation-guard.test.cjs
           tests/p1-unsaved-reload-guard.test.cjs
           tests/p1-primary-button-edit-markers.test.cjs
+          tests/p1-predict-request-staleness.test.cjs
       - name: Typecheck and compile frontend
         run: npm run build
       - name: Install Chromium for synthetic browser tests
