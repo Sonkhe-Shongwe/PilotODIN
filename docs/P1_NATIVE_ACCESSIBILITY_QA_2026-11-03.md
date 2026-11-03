@@ -1,6 +1,6 @@
 # P1 native Windows keyboard, focus and scaling QA
 
-**3 November 2026. Status: isolated Windows Chromium automation SCOPED PASS; actual native manual matrix NOT RUN. Phase P1 only.** The native window, not a packaged release, is the manual subject.
+**3 November 2026. Status: native WIN-K1..WIN-K4 OWNER-REPORTED PASS; actual display scaling/snap and reduced-motion validation DEFERRED/UNVERIFIED by owner. Hosted Linux Chromium automation PASS. Phase P1 still OPEN.** The native window, not a packaged release, is the manual subject.
 
 ## Setup and safety
 
@@ -25,16 +25,22 @@ With Quality primary and Prepare docked on the disposable project, start at the 
 
 | ID | Action | Acceptance criterion | Current result |
 | --- | --- | --- | --- |
-| WIN-K1 | Tab from project switcher to New project and sidebar control; Shift+Tab backwards | Visible focus, no trap or inaccessible control | NOT RUN |
-| WIN-K2 | Enter on expand/collapse sidebar; use arrow keys between Quality and Explore | Sidebar responds, current view and focus agree, no unexpected project change | NOT RUN |
-| WIN-K3 | Keyboard-focus dock separator; press ArrowLeft, ArrowRight, Home, End, then Tab into dock | Resize within limits, visible focus, current target retained | NOT RUN |
-| WIN-K4 | Temporarily narrow and widen native window with edited dock | Paused message or usable dock, hidden controls not tab-reachable, edit restored | NOT RUN |
-| WIN-S1 | At original Windows display scale, inspect header/project controls and Quality/Prepare split | No clipped commands, unreadable text or broken keyboard focus | NOT RUN |
-| WIN-S2 | Windows Settings > System > Display > Scale: try 125% if supported | Same controls usable, record actual resolution/scale | NOT RUN |
-| WIN-S3 | Try 150% if supported, then RESTORE ORIGINAL SCALE | Same controls usable, record actual resolution/scale | NOT RUN |
-| WIN-S4 | Try Win+Left or Win+Right snap | Content usable or explicitly report unsupported due to minimum window width | NOT RUN |
-| WIN-A1 | With Windows animations off/reduced motion (only if available), inspect navigation and focus | No unnecessary motion or lost focus; record if unavailable | NOT RUN |
+| WIN-K1 | Tab from project switcher to New project and sidebar control; Shift+Tab backwards | Visible focus, no trap or inaccessible control | OWNER-REPORTED PASS (3 Nov, native DEV ONLY) |
+| WIN-K2 | Enter on expand/collapse sidebar; use arrow keys between Quality and Explore | Sidebar responds, current view and focus agree, no unexpected project change | OWNER-REPORTED PASS (3 Nov, native DEV ONLY) |
+| WIN-K3 | Keyboard-focus dock separator; press ArrowLeft, ArrowRight, Home, End, then Tab into dock | Resize within limits, visible focus, current target retained | OWNER-REPORTED PASS (3 Nov, native DEV ONLY) |
+| WIN-K4 | Temporarily narrow and widen native window with edited dock | Paused message or usable dock, hidden controls not tab-reachable, edit restored | OWNER-REPORTED PASS (3 Nov, native DEV ONLY) |
+| WIN-S1 | At original Windows display scale, inspect header/project controls and Quality/Prepare split | No clipped commands, unreadable text or broken keyboard focus | DEFERRED BY OWNER / UNVERIFIED |
+| WIN-S2 | Windows Settings > System > Display > Scale: try 125% if supported | Same controls usable, record actual resolution/scale | DEFERRED BY OWNER / UNVERIFIED |
+| WIN-S3 | Try 150% if supported, then RESTORE ORIGINAL SCALE | Same controls usable, record actual resolution/scale | DEFERRED BY OWNER / UNVERIFIED |
+| WIN-S4 | Try Win+Left or Win+Right snap | Content usable or explicitly report unsupported due to minimum window width | DEFERRED BY OWNER / UNVERIFIED |
+| WIN-A1 | With Windows animations off/reduced motion (only if available), inspect navigation and focus | No unnecessary motion or lost focus; record if unavailable | DEFERRED BY OWNER / UNVERIFIED |
 
 A development window may enforce a minimum width of approximately 1010 px, making half-screen snap impossible on some monitors. Report as unsupported, not PASS or FAIL. Do not claim Narrator or installed-app accessibility validation without a separate screen-reader test.
 
 If automation fails, preserve exact failure summary and Playwright trace. Fix the underlying issue instead of weakening network, draft, or focus checks. Update the P1 closure register and Issue #2 only from observed evidence.
+
+## Development continuation and validation boundary (3 November 2026)
+
+The owner confirmed WIN-K1..K4 all working in the real DEV ONLY Tauri window on a disposable synthetic project and requested to stop extended manual checks. Thus the native scaling/half-screen/reduced-motion matrix is **deferred as an OPEN release-acceptance dependency**, NOT treated as PASS or silently waived. The visible `Animations reduced by system` badge alone never establishes WIN-A1. Standalone browser DPR tests are non-native. No Narrator/screen-reader result was observed.
+
+P1 source increment [`b7ea7fcd92ba`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b7ea7fcd92ba2b55ecef15590cf279c70af049f8) safeguards edited primary Prepare/Model/Predict Studio drafts before switching to Investigation canvas; both keyboard navigation and direct URL/history routes consult the guard. Cancel keeps the mounted form and previous route; consent only clears the marker on accepted route. Reload warnings cover all still-mounted Studio views, not only the one originally edited. GitHub [run #41724081933](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41724081933) passed **55 Node tests, frontend build and 4 isolated Chromium browser cases**, with an explicit Cancel scenario; this is not native acceptance of the new guard.
