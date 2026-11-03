@@ -136,3 +136,31 @@ def test_missing_quality_version_blocks(tmp_path):
         con.execute("DELETE FROM quality_versions")
     with pytest.raises(relocation.RecoveryBlocked, match="version"):
         relocation.inspect(home, "day")
+
+
+def test_windows_absolute_saved_reference_resolves_only_verified_candidate(tmp_path, monkeypatch):
+    repo, home, db, _, original = workspace(tmp_path)
+    legacy = r"C:\older\PilotODIN\.pilotodin-dev-data\datasets\synthetic.csv"
+    with sqlite3.connect(db) as con:
+        con.execute("UPDATE projects SET dataset_path=? WHERE id=?", (legacy, ID))
+    plan = relocation.inspect(home, "day")
+    assert plan.old_path == legacy
+    assert plan.candidate == original.resolve()
+    monkeypatch.setattr(relocation, "_check_backend_stopped", lambda: None)
+    backup = tmp_path / "complete-backup"
+    relocation.apply(home, plan, backup, ID, repo)
+    assert rows(db)["projects"] == [(ID, "day", str(original.resolve()))]
+    assert rows(backup / "pilotodin.sqlite3")["projects"] == [(ID, "day", legacy)]
+    assert original.read_bytes() == DATA
+
+
+def test_mismatch_after_inspection_blocks_without_touching_anything(tmp_path, monkeypatch):
+    repo, home, db, _, original = workspace(tmp_path)
+    plan = relocation.inspect(home, "day")
+    before = rows(db)
+    original.write_bytes(b"changed after owner inspected")
+    monkeypatch.setattr(relocation, "_check_backend_stopped", lambda: None)
+    with pytest.raises(relocation.RecoveryBlocked, match="fingerprint"):
+        relocation.apply(home, plan, tmp_path / "backup", ID, repo)
+    assert rows(db) == before
+    assert not (tmp_path / "backup").exists()
