@@ -1,6 +1,6 @@
 # P1 native Windows keyboard, focus and scaling QA
 
-**3 November 2026. Status: NOT RUN. Phase P1 only.** The native window, not a packaged release, is the manual subject.
+**3 November 2026. Status: isolated Windows Chromium automation SCOPED PASS; actual native manual matrix NOT RUN. Phase P1 only.** The native window, not a packaged release, is the manual subject.
 
 ## Setup and safety
 
@@ -17,7 +17,7 @@ In frontend, after a safe branch update, run:
   node --test tests/p1-playwright-pilot-contract.test.cjs
   npx playwright test --config=playwright.config.ts -g "keyboard Tab Shift-Tab|keyboard dock resize|simulated 150 percent"
 
-Expected scope: 19 authored Node contracts and three new Chromium scenarios. None has been executed after authoring. A simulated 1.5 device pixel ratio is not real Windows 150% scaling or WebView2 acceptance. No production code changed.
+Expected scope: 19 authored Node contracts and three new Chromium scenarios. **Owner-executed 3 November Windows acceptance at branch HEAD `819440d93b`:** `node --test tests/p1-playwright-pilot-contract.test.cjs` **19/19 PASS**, 0 failed/skipped/cancelled/todo, 403.3099 ms; the named `npx --no-install playwright test ... -g` **3/3 PASS**, ~10.2 s. Screenshot-observed results, not native WebView2 runs. Native matrix below is still NOT RUN. A simulated 1.5 device pixel ratio is not real Windows 150% scaling or WebView2 acceptance. No production code changed.
 
 ## Windows native manual matrix
 
