@@ -997,3 +997,144 @@ test('genuine cross-tab reload Stay keeps A draft and Leave adopts shared B sele
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+
+test('keyboard Tab Shift-Tab sidebar toggle and arrow navigation retain synthetic project',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['quality','explore']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'quality');
+  },TEST_PROJECT);
+  await page.goto('/#/studio/quality');
+  const nav=page.getByRole('navigation',{name:'Workspace navigation'});
+  const switcher=page.getByRole('combobox',{name:'Switch project'});
+  await expect(page.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  await switcher.focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button',{name:'New project: import dataset'})).toBeFocused();
+  await page.keyboard.press('Tab');
+  const collapse=nav.getByRole('button',{name:'Collapse navigation sidebar'});
+  await expect(collapse).toBeFocused();
+  await page.keyboard.press('Enter');
+  const expand=nav.getByRole('button',{name:'Expand navigation sidebar'});
+  await expect(expand).toBeFocused();
+  await expect(expand).toHaveAttribute('aria-expanded','false');
+  await expect(nav).toHaveClass(/po-rail-compact/);
+  await page.keyboard.press('Enter');
+  await expect(collapse).toHaveAttribute('aria-expanded','true');
+  await expect(nav).toHaveClass(/po-rail-expanded/);
+  await page.keyboard.press('Tab');
+  await expect(nav.getByRole('button',{name:'Home',exact:true})).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(collapse).toBeFocused();
+  const quality=nav.getByRole('button',{name:'Quality',exact:true});
+  const explore=nav.getByRole('button',{name:'Explore',exact:true});
+  await quality.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(explore).toBeFocused();
+  await expect(explore).toHaveAttribute('aria-current','page');
+  await expect(page).toHaveURL(/#\/studio\/explore$/);
+  await expect(page.locator('.po-primary-pane').getByRole('heading',{name:'Explore',exact:true})).toBeVisible();
+  await page.keyboard.press('ArrowUp');
+  await expect(quality).toBeFocused();
+  await expect(quality).toHaveAttribute('aria-current','page');
+  await expect(page).toHaveURL(/#\/studio\/quality$/);
+  await expect(switcher).toHaveValue(TEST_PROJECT);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
+
+test('keyboard dock resize preserves edited target and excludes paused controls from tab order',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,true);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['quality','prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'quality');
+    localStorage.setItem('pilotodin-dock-layout-v2-'+id,
+      JSON.stringify({schema:2,secondary:'prepare',side:'right',fraction:0.39}));
+  },TEST_PROJECT);
+  await page.goto('/#/studio/quality');
+  const dock=page.locator('.po-secondary-pane');
+  const target=dock.getByRole('combobox',{name:/target variable/i});
+  const separator=page.getByRole('separator',{name:'Resize secondary analytical pane'});
+  await expect(target).toBeVisible();
+  await target.selectOption('fraud_reported');
+  await expect(target).toHaveValue('fraud_reported');
+  await separator.focus();
+  await page.keyboard.press('End');
+  await expect(separator).toHaveAttribute('aria-valuenow','58');
+  await page.keyboard.press('Home');
+  await expect(separator).toHaveAttribute('aria-valuenow','28');
+  await page.keyboard.press('ArrowLeft');
+  await expect(separator).toHaveAttribute('aria-valuenow','31');
+  await expect(target).toHaveValue('fraud_reported');
+  await page.keyboard.press('Tab');
+  await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(separator).toBeFocused();
+  await page.setViewportSize({width:680,height:900});
+  await expect(dock).toBeHidden();
+  await expect(separator).toBeHidden();
+  await expect(page.getByText(/Edited docked fields are kept in memory while this view is narrow/)).toBeVisible();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(()=>{
+    const active=document.activeElement;
+    const hiddenPane=document.querySelector('.po-secondary-pane');
+    const resizer=document.querySelector('.po-pane-resizer');
+    return !!active&&!(hiddenPane?.contains(active))&&active!==resizer;
+  })).toBe(true);
+  await page.setViewportSize({width:1440,height:900});
+  await expect(target).toBeVisible();
+  await expect(target).toHaveValue('fraud_reported');
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
+
+test('simulated 150 percent device scale and reduced motion keep dock controls accessible',async({browser})=>{
+  // Browser DPR emulation does not certify Windows scaling, native WebView2,
+  // title-bar focus, actual screen reader output or physical half-screen snap.
+  const context=await browser.newContext({
+    baseURL:UI_ORIGIN,viewport:{width:1280,height:820},
+    deviceScaleFactor:1.5,reducedMotion:'reduce',serviceWorkers:'block',
+  });
+  const audit=await installIsolatedAPI(context,true);
+  try {
+    const page=await context.newPage();
+    await page.addInitScript((id:string)=>{
+      localStorage.setItem('pilotodin-current',id);
+      localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['quality','prepare']));
+      localStorage.setItem('pilotodin-workspace-active-v1-'+id,'quality');
+      localStorage.setItem('pilotodin-dock-layout-v2-'+id,
+        JSON.stringify({schema:2,secondary:'prepare',side:'right',fraction:0.39}));
+    },TEST_PROJECT);
+    await page.goto('/#/studio/quality');
+    const dock=page.locator('.po-secondary-pane');
+    const target=dock.getByRole('combobox',{name:/target variable/i});
+    await expect(page.locator('.po-motion-reduced')).toBeVisible();
+    await expect(dock).toBeVisible();
+    await expect(target).toBeVisible();
+    expect(await page.evaluate(()=>window.devicePixelRatio)).toBe(1.5);
+    const duration=await page.locator('.po-global-rail')
+      .evaluate(element=>getComputedStyle(element).transitionDuration);
+    expect(duration.split(',').every(value=>parseFloat(value)===0)).toBe(true);
+    await expect(page.getByRole('button',{name:'New project: import dataset'})).toBeInViewport();
+    await expect(page.getByRole('combobox',{name:'Switch project'})).toBeInViewport();
+    await target.selectOption('fraud_reported');
+    await page.setViewportSize({width:680,height:820});
+    await expect(dock).toBeHidden();
+    await expect(page.getByText(/Edited docked fields are kept in memory while this view is narrow/)).toBeVisible();
+    await page.setViewportSize({width:1280,height:820});
+    await expect(dock).toBeVisible();
+    await expect(target).toHaveValue('fraud_reported');
+  } finally {
+    await context.close();
+  }
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});

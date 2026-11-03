@@ -354,3 +354,34 @@ test('cross-tab real reload regression protects A until Leave without restoring 
   assert.match(scenario,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
   assert.doesNotMatch(scenario,/new Event\('beforeunload'/);
 });
+
+
+test('keyboard, focus and emulated-DPI browser QA is isolated and clearly non-native',()=>{
+  const titles=[
+    'keyboard Tab Shift-Tab sidebar toggle and arrow navigation retain synthetic project',
+    'keyboard dock resize preserves edited target and excludes paused controls from tab order',
+    'simulated 150 percent device scale and reduced motion keep dock controls accessible'
+  ];
+  const scenarios=titles.map(title=>{
+    const from=spec.indexOf("test('"+title+"'");
+    assert.ok(from>=0,'missing named keyboard QA browser test: '+title);
+    const to=spec.indexOf('\n});',from);
+    assert.ok(to>from,'missing scenario boundary: '+title);
+    return spec.slice(from,to);
+  });
+  for(const src of scenarios){
+    assert.match(src,/installIsolatedAPI\(context,true\)/);
+    assert.match(src,/expect\(audit\.writes\)\.toEqual\(\[\]\)/);
+    assert.match(src,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);
+    assert.match(src,/expect\(audit\.blockedOrigins\)\.toEqual\(\[\]\)/);
+    assert.doesNotMatch(src,/window\.confirm\(|dialog\.accept\(\)|new Event\('beforeunload'/);
+  }
+  assert.match(scenarios[0],/page\.keyboard\.press\('Tab'\)/);
+  assert.match(scenarios[0],/page\.keyboard\.press\('Shift\+Tab'\)/);
+  assert.match(scenarios[0],/page\.keyboard\.press\('ArrowDown'\)/);
+  assert.match(scenarios[1],/page\.keyboard\.press\('Home'\)/);
+  assert.match(scenarios[1],/page\.keyboard\.press\('End'\)/);
+  assert.match(scenarios[1],/await expect\(dock\)\.toBeHidden\(\)/);
+  assert.match(scenarios[2],/deviceScaleFactor:1\.5,reducedMotion:'reduce'/);
+  assert.match(scenarios[2],/Browser DPR emulation does not certify Windows scaling/);
+});
