@@ -149,7 +149,8 @@ test('Studio selector and Home project cards use guarded loadProject function',(
 });
 test('project-change notifications and generation guard remain after successful load',()=>{
  assert.match(app,/window\.addEventListener\('pilotodin:project-changed',handler\)/);
- assert.match(body,/projectOperations\.current\.accepts\(pid,generation\)/);
+ assert.match(body,/projectOperations\.current\.begin\(pid\)/);
+ assert.ok(body.indexOf('projectOperations.current.begin(pid)')>body.indexOf('await Promise.all([get<Project>'),'the generation must switch only after the destination project reads succeed');
  assert.match(body,/if\(!embedded\)localStorage\.setItem\('pilotodin-current',pid\)/);
 });
 test('import never reports project opened when the subsequent guarded load is cancelled',()=>{

@@ -126,7 +126,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const uploadViewMounted=useRef(true);
   useEffect(()=>{uploadViewMounted.current=true;return()=>{uploadViewMounted.current=false}},[]);
   const latestProjectRequest=useRef(0);
-  const projectOperations=useRef(createProjectOperationGuard());
+  // A verified cross-root project handoff must accept local operations on mount.
+  const projectOperations=useRef(createProjectOperationGuard(initialVerifiedProject?.id??''));
   useEffect(()=>()=>projectOperations.current.invalidate(),[]);
   const [paletteOpen,setPaletteOpen]=useState(false);
   const [paletteQuery,setPaletteQuery]=useState('');
@@ -248,9 +249,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     // can choose a different project while this read is in progress.
     const selectedWhenStarted=embedded?'':localStorage.getItem('pilotodin-current')||'';
     const request=++latestProjectRequest.current;
-    const generation=projectOperations.current.begin(pid);
+    // Do not invalidate the current project's in-flight work on a provisional read.
     // Fetch first: failed project reads must not discard the current unsaved work.
-    try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
+    try{const [p,q]=await Promise.all([get<Project>(`/projects/${pid}`),get<{version:number;profile?:Profile}>(`/projects/${pid}/live-profile`)]);if(request!==latestProjectRequest.current)return false;
     if(!embedded&&!mayCommitProjectSelection(
       selectedWhenStarted,localStorage.getItem('pilotodin-current')||'',pid)){
       setNotice('Another tab selected a different project while this one was loading. The older load was not applied.');
@@ -258,12 +259,14 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       return false;
     }
     const verifiedProject:Project=q.profile?{...p,profile:q.profile}:p;
+    // Invalidate old-project operations only after both GETs and selection checks passed.
+    projectOperations.current.begin(pid);
     if(!embedded&&pid!==project?.id)
       onPrimaryProjectLoaded?.(pid,{id:pid,project:verifiedProject,version:q.version});
     if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
     setQualityVersion(q.version);setFeatureHints([]);setProject(verifiedProject);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
-      if(request!==latestProjectRequest.current||!projectOperations.current.accepts(pid,generation))return false;
+      if(request!==latestProjectRequest.current)return false;
       setError(`Could not open project: ${(e as Error).message}`);
       if(!embedded)onPrimaryProjectLoadFailed?.(pid);
       // Never remove the user's selected project on a transient API failure.
