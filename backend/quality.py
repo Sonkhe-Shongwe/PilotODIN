@@ -80,7 +80,21 @@ def _project(pid: str) -> dict:
 
 def _ensure(con, p: dict) -> None:
     pid = p["id"]
-    sha = _digest(p["dataset_path"])
+    try:
+        sha = _digest(p["dataset_path"])
+    except FileNotFoundError as exc:
+        # An older workspace may hold absolute paths from before it was moved.
+        # Never silently bind a same-named replacement or reset Quality history.
+        raise QualityError(
+            "The original dataset is missing from its recorded location. "
+            "Restore or verify the exact original source before retrying. "
+            "No Quality changes were applied.", 409,
+        ) from exc
+    except PermissionError as exc:
+        raise QualityError(
+            "The original dataset cannot be read at its recorded location. "
+            "Check file access before retrying. No Quality changes were applied.", 409,
+        ) from exc
     state = con.execute("SELECT original_sha256 FROM quality_state WHERE project_id=?", (pid,)).fetchone()
     if state is None:
         con.execute("INSERT INTO quality_state VALUES(?,?,0)", (pid, sha))

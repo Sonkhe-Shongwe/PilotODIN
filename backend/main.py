@@ -991,7 +991,9 @@ def test_ai_provider(provider:str,request:Request):
 def live_profile(project_id:str):
     """Profile the CURRENT approved working version, not stale upload metadata."""
     p=project_or_404(project_id)
-    df,version=quality.current_data(project_id)
+    # Preserve the original source and versioned approvals on a broken path.
+    # QualityError carries a safe 409 message rather than an unhandled 500.
+    df,version=quality_response(quality.current_data,project_id)
     return {'version':version,'profile':engine.profile(df,p['filename'])}
 
 # Persistent investigation objects are a v1 design spike, separate from the
