@@ -2,6 +2,8 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPointerEvent,KeyboardEvent as ReactKeyboardEvent} from 'react';
 import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,Plus} from 'lucide-react';
 import {App} from './App';
+import {ProjectManager} from './ProjectManager';
+import type {ManagedProject} from './ProjectManager';
 import type {PrimaryProjectLoadSnapshot} from './App';
 import {navigateHashSmoothly} from './navigationMotion';
 import {InvestigationCanvas} from './InvestigationCanvas';
@@ -94,6 +96,7 @@ export function UnifiedShell(){
  const [warning,setWarning]=useState('');
  // Creation uses the existing Studio import form rather than a second uploader.
  const [newProjectOpen,setNewProjectOpen]=useState(false);
+ const [projectManagerOpen,setProjectManagerOpen]=useState(false);
  const splitRef=useRef<HTMLDivElement|null>(null);
  const tablistRef=useRef<HTMLDivElement|null>(null);
  const pendingCloseFocus=useRef<{projectId:string;view:View}|null>(null);
@@ -474,6 +477,11 @@ export function UnifiedShell(){
   editedDock.current=null;
   return true;
  };
+ const metadataChanged=(next:ManagedProject)=>{
+  void refreshProjects();
+  window.dispatchEvent(new CustomEvent('pilotodin:project-metadata-changed',
+   {detail:{id:next.id,name:next.name,filename:next.filename,archived:next.archived_at!==null}}));
+ };
  const chooseProject=(id:string)=>{
   if(!id||id===projectId||!workspaceReady)return;
   // A previous approval for this exact in-flight read is not a second switch.
@@ -630,7 +638,9 @@ export function UnifiedShell(){
    {motionReduced&&<span className="po-motion-reduced" role="status" title="Windows or your browser requests reduced motion. PilotODIN honours this accessibility setting.">Animations reduced by system</span>}
    <div className="po-project-switcher"><Database size={15}/><select aria-label="Switch project" title={projects.length<2?'Import another dataset to switch between projects':'Switch between imported projects'} value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
    <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>{setNewProjectOpen(true);navigate('overview')}}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
+   <button type="button" className="po-manage-project-action" title="Rename, archive or restore projects" aria-label="Manage projects" onClick={()=>setProjectManagerOpen(true)}><Settings2 size={16} aria-hidden="true"/><span>Manage</span></button>
   </header>
+  {projectManagerOpen&&<ProjectManager currentProjectId={projectId} onClose={()=>setProjectManagerOpen(false)} onChanged={metadataChanged}/>}
   <div className="po-shell-row">
    <button type="button" className={`po-nav-backdrop ${sidebarMode==='expanded'?'po-nav-backdrop-open':''}`} aria-label="Close sidebar" aria-hidden={sidebarMode!=='expanded'} tabIndex={sidebarMode==='expanded'?0:-1} disabled={sidebarMode!=='expanded'} onClick={toggleSidebar}/>
    <nav className={`po-global-rail po-rail-${sidebarMode}`} aria-label="Workspace navigation">

@@ -323,3 +323,9 @@
 /* A temporarily narrow workspace must not expose or focus a hidden edited dock. */
 .po-pane-layout:not(.po-pane-split)>.po-secondary-pane[hidden],
 .po-pane-layout:not(.po-pane-split)>.po-pane-resizer[hidden]{display:none!important}
+
+/* Project library is a separate, accessible header action. */
+.po-manage-project-action{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:8px 12px;border:1px solid #c9d8e6;border-radius:10px;background:#f2fafc;color:#15566c;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.po-manage-project-action:hover{background:#e5f4f8}
+.po-manage-project-action:focus-visible{outline:3px solid #0b9cbc;outline-offset:2px}
+@media(max-width:980px){.po-manage-project-action{min-width:37px;width:37px;padding:8px}.po-manage-project-action span{display:none}}

@@ -239,6 +239,20 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     };
   },[project?.id,embedded]);
   useEffect(()=>{if(!embedded&&project?.id)window.dispatchEvent(new Event('pilotodin:project-changed'))},[project?.id,embedded]);
+  // Name updates must not reload the Studio or discard in-memory Prepare inputs.
+  useEffect(()=>{
+   const metadata=(event:Event)=>{
+    const d=(event as CustomEvent<{id?:string;name?:string;filename?:string;archived?:boolean}>).detail;
+    if(!d||typeof d.id!=='string'||typeof d.name!=='string'||typeof d.filename!=='string')return;
+    setProject(old=>old?.id===d.id?{...old,name:d.name!}:old);
+    setProjects(old=>d.archived?old.filter(row=>row.id!==d.id):
+     old.some(row=>row.id===d.id)?old.map(row=>row.id===d.id?{...row,name:d.name!}:row):
+     [...old,{id:d.id,name:d.name,filename:d.filename!}]);
+   };
+   window.addEventListener('pilotodin:project-metadata-changed',metadata);
+   return()=>window.removeEventListener('pilotodin:project-metadata-changed',metadata);
+  },[]);
+
   useEffect(()=>{if(!embedded&&!location.hash.startsWith('#/canvas')&&location.hash!==`#/studio/${page}`)location.hash=`#/studio/${page}`},[page,embedded]);
   async function loadProject(pid:string,approvedBeforeUpload=false):Promise<boolean>{
     // The global shell owns the project identity. Embedded panes cannot switch it.
