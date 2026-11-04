@@ -46,6 +46,8 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const [exporting,setExporting]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  // Re-run only GET reads when the local Quality backend has restarted.
+  const [retryReads,setRetryReads]=useState(0);
   const [notice,setNotice]=useState('');
   const [diagnostics,setDiagnostics]=useState<{column:string;missing_rows:number;missing_pct:number;row_numbers:number[];
      numeric_comparisons:{column:string;missing_group_median:number;other_group_median:number}[];
@@ -56,11 +58,11 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     const [q,h]=await Promise.all([get<Quality>(`/projects/${projectId}/quality`),get<HistoryData>(`/projects/${projectId}/quality/history`)]);
     setQuality(q);setHistory(h);setExportVersion(v=>h.versions.some(x=>x.version===v)?v:q.version);return q;
   },[projectId]);
-  useEffect(()=>{let live=true;load().catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[load]);
+  useEffect(()=>{let live=true;load().catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[load,retryReads]);
   useEffect(()=>{let live=true;const query=`/projects/${projectId}/quality/preview?offset=${offset}&limit=12${quality?`&expected_version=${quality.version}`:''}${selected?`&issue_id=${encodeURIComponent(selected)}`:''}`;
     get<Preview>(query).then(p=>{if(live)setPreview(p)}).catch(e=>{if(live){setPreview(null);setError(e.message)}});
     return()=>{live=false};
-  },[projectId,selected,offset,quality?.version]);
+  },[projectId,selected,offset,quality?.version,retryReads]);
   useEffect(()=>{
     if(!quality||!initialFocus||consumedFocus.current===initialFocus)return;
     consumedFocus.current=initialFocus;
@@ -158,7 +160,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const display=quality?.issues.filter(x=>filter==='all'||(filter==='pending'&&x.decision==='pending'))??[];
   return <div className="quality-page">
     <section className="quality-banner"><div><div className="eyebrow">EVIDENCE-BASED SMART AUTOPILOT</div><h2>Make your dataset trustworthy</h2><p>Inspect findings, preview proposed changes and approve only what makes sense. Your original upload stays untouched.</p></div><div className="quality-banner-cta"><span className="pill">WORKING VERSION {quality?.version??'—'}</span><button className="btn primary" disabled={busy||!quality||quality.summary.automatic_available===0} onClick={()=>quality&&void mutate('autopilot',{expected_version:quality.version},'Safe corrections completed')}><Sparkles size={16}/> Review {quality?.summary.automatic_available??0} safe fixes</button></div></section>
-    {error&&<div className="alert-error"><AlertCircle size={16}/>{error}</div>}
+    {error&&<div className="alert-error" role="alert"><AlertCircle size={16}/><span>{error}</span><button type="button" className="btn small" onClick={()=>{setError('');setRetryReads(count=>count+1)}}>Retry loading Quality</button></div>}
     {notice&&<div className="quality-notice"><CheckCircle2 size={16}/>{notice}</div>}
     {handoffNote&&<div className="quality-notice" role="status"><ClipboardCheck size={16}/>{handoffNote}</div>}
     <div className="quality-stats">

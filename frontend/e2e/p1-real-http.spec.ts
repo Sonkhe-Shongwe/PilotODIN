@@ -277,6 +277,12 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
     await expect(switcher).toHaveValue(bid!);
     await nav.getByRole('button',{name:'Prepare'}).click();
     await expect(target).toHaveValue('Outcome');
+    // Keep the failed Quality component mounted during the backend restart.
+    await nav.getByRole('button',{name:'Quality'}).click();
+    const qualityRetry=primary.getByRole('button',{name:'Retry loading Quality'});
+    await expect(primary.locator('.quality-page .alert-error').first())
+      .toContainText('Could not connect to PilotODIN');
+    await expect(qualityRetry).toBeVisible();
 
     ownedBackend=await startDisposableBackend();
     expect(ownedBackend.pid).not.toBe(pidBefore);
@@ -293,11 +299,12 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
     expect(bHistoryAfter.status()).toBe(200);
     expect(await bHistoryAfter.json()).toEqual(originalBHistory);
     expect(fixtureGuard('audit',aid)).toBe(before);
-    // Quality on a fresh mount must recover after the backend restart,
-    // without resetting the user-selected but unsubmitted Prepare target.
-    await nav.getByRole('button',{name:'Quality'}).click();
+    // Retry on the SAME mounted Quality component; no route remount or POST.
+    await expect(qualityRetry).toBeVisible();
+    await qualityRetry.click();
     await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
     await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
+    await expect(primary.locator('.quality-page .alert-error')).toHaveCount(0);
     await nav.getByRole('button',{name:'Prepare'}).click();
     await expect(target).toHaveValue('Outcome');
     await expect(switcher).toHaveValue(bid!);
