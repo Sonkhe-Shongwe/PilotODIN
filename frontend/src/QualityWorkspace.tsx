@@ -73,7 +73,16 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     setPreview(current=>current?.version===q.version?current:null);
     setExportVersion(v=>h.versions.some(x=>x.version===v)?v:q.version);return q;
   },[projectId]);
-  useEffect(()=>{let live=true;load().catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[load,retryReads]);
+  useEffect(()=>{let live=true;
+    // A newer direct load can supersede this effect while the pane stays mounted.
+    // Ignore the old GET's error when its snapshot generation is no longer latest.
+    const pending=load();
+    const ticket=readGuard.current.currentSnapshotTicket();
+    pending.catch(e=>{
+      if(live&&readGuard.current.isLatestSnapshot(ticket))setError((e as Error).message);
+    });
+    return()=>{live=false};
+  },[load,retryReads]);
   useEffect(()=>{let live=true;
     const ticket=readGuard.current.beginPreview();
     const expectedVersion=quality?.version;
