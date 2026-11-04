@@ -37,3 +37,19 @@ test('read-only impact review is pinned to project revision with no destructive 
  assert.match(manager,/onClick=\{\(\)=>void review\(p\)\}/);
  assert.doesNotMatch(manager,/DELETE|method:'DELETE'|deleteProject|purgeProject/);
 });
+
+test('remote lifecycle signal has no personal data; backend verification precedes UI updates',()=>{
+ const code=file('projectLifecycleSignal.ts');
+ assert.match(code,/Object\.keys\(v\)\.sort\(\)/);
+ assert.match(code,/Number\.isSafeInteger/);
+ assert.match(code,/PROJECT_LIFECYCLE_SIGNAL_KEY/);
+ assert.match(code,/preserveMountedUnavailableProject/);
+ assert.match(shell,/get<ManagedProject\[]>\('\/projects\/manage'\)/);
+ assert.match(shell,/row\.revision<signal\.revision/);
+ assert.match(shell,/heldArchivedRef\.current=isArchived\?row\.id:''/);
+ assert.match(shell,/publishProjectLifecycleSignal/);
+ assert.match(shell,/preserveMountedUnavailableProject/);
+ assert.match(shell,/Archived in another window \(restore to continue\)/);
+ assert.match(shell,/Your unsaved fields remain visible here/);
+ assert.doesNotMatch(code,/dataset_path|profile|original_source|setItem\([^)]*filename/);
+});

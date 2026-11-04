@@ -3,6 +3,7 @@ import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPoin
 import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,Plus} from 'lucide-react';
 import {App} from './App';
 import {ProjectManager} from './ProjectManager';
+import {parseProjectLifecycleSignal,preserveMountedUnavailableProject,publishProjectLifecycleSignal,PROJECT_LIFECYCLE_SIGNAL_KEY} from './projectLifecycleSignal';
 import type {ManagedProject} from './ProjectManager';
 import type {PrimaryProjectLoadSnapshot} from './App';
 import {navigateHashSmoothly} from './navigationMotion';
@@ -90,6 +91,11 @@ export function UnifiedShell(){
  // Do not mount data-fetching workspaces until the saved project ID is checked
  // against this environment's catalogue. Live dev intentionally has isolated data.
  const [catalogState,setCatalogState]=useState<'loading'|'ready'|'failed'>('loading');
+ // A verified archive in another window is not permission to discard local drafts.
+ const [heldArchivedId,setHeldArchivedId]=useState('');
+ const heldArchivedRef=useRef('');
+ const currentProjectRef=useRef(projectId);
+ currentProjectRef.current=projectId;
  const [openTabs,setOpenTabs]=useState<View[]>(()=>readTabs(localStorage.getItem('pilotodin-current')||''));
  const [dock,setDock]=useState<DockLayout>(()=>readDock(localStorage.getItem('pilotodin-current')||''));
  const [restoredFor,setRestoredFor]=useState<string|null>(null);
@@ -132,14 +138,28 @@ export function UnifiedShell(){
    setProjects(rows);
    setCatalogState('ready');
    const latest=localStorage.getItem('pilotodin-current')||'';
+   if(heldArchivedRef.current&&rows.some(item=>item.id===heldArchivedRef.current)){
+    heldArchivedRef.current='';
+    setHeldArchivedId('');
+   }
+   const mountedId=currentProjectRef.current;
    if(shouldClearUnavailableProject(selectedAtRequestStart,latest,rows)){
+    if(preserveMountedUnavailableProject(mountedId,latest,selectedAtRequestStart,
+      heldArchivedRef.current===mountedId)){
+     // Another tab changed the shared selector, or archived our open project.
+     // Never clear shared storage or unmount our potentially edited workspace.
+     setWarning(heldArchivedRef.current===mountedId
+      ?'This project was archived in another window. Your unsaved fields remain visible here. Restore it using Manage projects before making changes.'
+      :'Another tab selected a project that is no longer available. Your current workspace remains mounted; choose a valid project before reloading.');
+     return;
+    }
     localStorage.removeItem('pilotodin-current');
     setProjectId('');
     setWarning('The previously selected project is no longer available. Choose another project to continue.');
-    // Validated backend removal is not a cancellable project transition.
     window.dispatchEvent(new CustomEvent('pilotodin:project-changed',{detail:{reason:'unavailable'}}));
    }else{
-    setWarning('');
+    setWarning(heldArchivedRef.current===mountedId
+     ?'This project was archived in another window. Your unsaved fields remain visible here. Restore it using Manage projects before making changes.':'');
    }
   }catch(e){
    if(!catalogRequests.current.accepts(requestId))return;
@@ -149,6 +169,38 @@ export function UnifiedShell(){
   }
  },[]);
  useEffect(()=>{void refreshProjects()},[refreshProjects]);
+ // Notifications are hints only. Verify the exact project revision/state
+ // against the local backend before surfacing an archive or rename.
+ useEffect(()=>{
+  let active=true;
+  let sequence=0;
+  const receive=(event:StorageEvent)=>{
+   if(event.key!==PROJECT_LIFECYCLE_SIGNAL_KEY)return;
+   const signal=parseProjectLifecycleSignal(event.newValue);
+   if(!signal)return;
+   const request=++sequence;
+   void get<ManagedProject[]>('/projects/manage').then(rows=>{
+    if(!active||request!==sequence)return;
+    const row=rows.find(item=>item.id===signal.id);
+    if(!row||row.revision<signal.revision)return;
+    const isArchived=row.archived_at!==null;
+    if(row.id===currentProjectRef.current){
+     heldArchivedRef.current=isArchived?row.id:'';
+     setHeldArchivedId(heldArchivedRef.current);
+    }
+    window.dispatchEvent(new CustomEvent('pilotodin:project-metadata-changed',{
+     detail:{id:row.id,name:row.name,filename:row.filename,archived:isArchived}
+    }));
+    void refreshProjects();
+   }).catch(()=>{
+    if(active&&request===sequence)
+     setWarning('Could not verify a change from another window. Your current workspace remains mounted. Retry when the local backend is available.');
+   });
+  };
+  window.addEventListener('storage',receive);
+  return()=>{active=false;sequence++;window.removeEventListener('storage',receive)};
+ },[refreshProjects]);
+
  useEffect(()=>{
   // Restore this project's state as one operation. Previous project's panes are discarded.
   const tabs=readTabs(projectId);
@@ -478,6 +530,8 @@ export function UnifiedShell(){
   return true;
  };
  const metadataChanged=(next:ManagedProject)=>{
+  // Only an identity/version hint crosses windows; consumers verify with HTTP.
+  publishProjectLifecycleSignal({id:next.id,revision:next.revision,archived:next.archived_at!==null});
   void refreshProjects();
   window.dispatchEvent(new CustomEvent('pilotodin:project-metadata-changed',
    {detail:{id:next.id,name:next.name,filename:next.filename,archived:next.archived_at!==null}}));
@@ -636,7 +690,7 @@ export function UnifiedShell(){
    <div className="po-shell-brand"><img className="po-brand-symbol" src="/pilotodin-symbol.svg" alt="" aria-hidden="true"/><span className="po-brand-wordmark"><span className="po-pilot">pilot</span><b>ODIN</b></span></div>
    <span className="po-shell-mode">LOCAL INTELLIGENCE WORKSPACE</span>
    {motionReduced&&<span className="po-motion-reduced" role="status" title="Windows or your browser requests reduced motion. PilotODIN honours this accessibility setting.">Animations reduced by system</span>}
-   <div className="po-project-switcher"><Database size={15}/><select aria-label="Switch project" title={projects.length<2?'Import another dataset to switch between projects':'Switch between imported projects'} value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
+   <div className="po-project-switcher"><Database size={15}/><select aria-label="Switch project" title={projects.length<2?'Import another dataset to switch between projects':'Switch between imported projects'} value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>{heldArchivedId===projectId&&!!projectId&&!projects.some(p=>p.id===projectId)&&<option value={projectId} disabled>Archived in another window (restore to continue)</option>}{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
    <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>{setNewProjectOpen(true);navigate('overview')}}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
    <button type="button" className="po-manage-project-action" title="Rename, archive or restore projects" aria-label="Manage projects" onClick={()=>setProjectManagerOpen(true)}><Settings2 size={16} aria-hidden="true"/><span>Manage</span></button>
   </header>
