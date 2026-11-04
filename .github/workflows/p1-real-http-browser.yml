@@ -10,6 +10,7 @@ on:
       - tools/p1_real_http_fixture_guard.py
       - frontend/playwright.p1-real-http.config.ts
       - frontend/e2e/p1-real-http.spec.ts
+      - frontend/e2e/p1-real-http-backend.ts
 
 permissions:
   contents: read

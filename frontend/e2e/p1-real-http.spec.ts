@@ -2,6 +2,8 @@ import {expect,test} from '@playwright/test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 import {Buffer} from 'node:buffer';
+import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
+import type {DisposableBackend} from './p1-real-http-backend';
 
 const UI='http://127.0.0.1:5178';
 const API='http://127.0.0.1:8000';
@@ -74,6 +76,18 @@ function fixtureGuard(action:'hide'|'restore'|'audit',id:string):string{
     action,'--project-id',id],{encoding:'utf8',timeout:10_000});
   return output.trim();
 }
+
+let ownedBackend:DisposableBackend|null=null;
+test.beforeEach(async()=>{
+  ownedBackend=await startDisposableBackend();
+});
+test.afterEach(async()=>{
+  if(ownedBackend){
+    const old=ownedBackend;
+    ownedBackend=null;
+    await stopDisposableBackend(old);
+  }
+});
 
 test('real HTTP import, Quality, rejected switch and restored source retain primary Prepare draft',async({page,context,request})=>{
   if(process.env.P1_REAL_HTTP_E2E!=='1'||process.env.CI!=='true')
@@ -227,6 +241,66 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
     const afterRecovery=await request.get(API+'/api/projects/'+aid+'/live-profile');
     expect(afterRecovery.status()).toBe(200);
     expect((await afterRecovery.json()).version).toBe(0);
+    expect(audit.imports).toBe(1);
+    expect(audit.blockedWrites).toEqual([]);
+    expect(audit.unexpectedReads).toEqual([]);
+    expect(audit.blockedOrigins).toEqual([]);
+  });
+
+  await test.step('stop and restart the owned Uvicorn process without losing B Quality or the edited Prepare target',async()=>{
+    if(!ownedBackend)throw new Error('Missing owned disposable backend');
+    // B remains mounted in this tab. The other tab's A selection is shared
+    // storage, but it never became a successful B-to-A load in this tab.
+    await nav.getByRole('button',{name:'Prepare'}).click();
+    await expect(switcher).toHaveValue(bid!);
+    await expect(target).toHaveValue('Amount');
+    await target.selectOption('Outcome');
+    await expect(target).toHaveValue('Outcome');
+    const historyBefore=await request.get(API+'/api/projects/'+bid+'/quality/history');
+    expect(historyBefore.status()).toBe(200);
+    const originalBHistory=await historyBefore.json();
+    expect(originalBHistory.current_version).toBe(0);
+    expect(originalBHistory.actions).toEqual([]);
+    expect(originalBHistory.decisions).toEqual([]);
+    const pidBefore=ownedBackend.pid;
+    const oldProcess=ownedBackend;
+    await stopDisposableBackend(oldProcess);
+    ownedBackend=null; // afterEach must never kill the already stopped process.
+
+    // The actual backend is offline; no mock response may mask this outage.
+    // The mounted primary project and edited values must remain on screen.
+    await expect(switcher).toHaveValue(bid!);
+    await expect(target).toHaveValue('Outcome');
+    await nav.getByRole('button',{name:'Quality'}).click();
+    await expect(primary.locator('.quality-page .alert-error').first())
+      .toContainText('Could not connect to PilotODIN');
+    await expect(switcher).toHaveValue(bid!);
+    await nav.getByRole('button',{name:'Prepare'}).click();
+    await expect(target).toHaveValue('Outcome');
+
+    ownedBackend=await startDisposableBackend();
+    expect(ownedBackend.pid).not.toBe(pidBefore);
+    const health=await request.get(API+'/api/health');
+    expect(health.status()).toBe(200);
+    expect((await health.json()).status).toBe('ok');
+    const aProfile=await request.get(API+'/api/projects/'+aid+'/live-profile');
+    const bProfile=await request.get(API+'/api/projects/'+bid+'/live-profile');
+    expect(aProfile.status()).toBe(200);
+    expect(bProfile.status()).toBe(200);
+    expect((await aProfile.json()).version).toBe(0);
+    expect((await bProfile.json()).version).toBe(0);
+    const bHistoryAfter=await request.get(API+'/api/projects/'+bid+'/quality/history');
+    expect(bHistoryAfter.status()).toBe(200);
+    expect(await bHistoryAfter.json()).toEqual(originalBHistory);
+    expect(fixtureGuard('audit',aid)).toBe(before);
+    // Quality on a fresh mount must recover after the backend restart,
+    // without resetting the user-selected but unsubmitted Prepare target.
+    await nav.getByRole('button',{name:'Quality'}).click();
+    await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+    await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
+    await nav.getByRole('button',{name:'Prepare'}).click();
+    await expect(target).toHaveValue('Outcome');
+    await expect(switcher).toHaveValue(bid!);
     expect(audit.imports).toBe(1);
     expect(audit.blockedWrites).toEqual([]);
     expect(audit.unexpectedReads).toEqual([]);

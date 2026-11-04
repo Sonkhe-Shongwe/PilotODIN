@@ -1,7 +1,7 @@
 import {defineConfig} from '@playwright/test';
 
-// The dedicated test may never attach to an owner's running dev backend.
-// Both servers are owned and stopped by Playwright on a fresh CI runner.
+// Dedicated test refuses local runs. Playwright owns Vite; the test owns the
+// Uvicorn child by its process handle so it can explicitly stop/restart it.
 if (process.env.CI !== 'true' || process.env.P1_REAL_HTTP_E2E !== '1'
   || !process.env.PILOTODIN_HOME || !process.env.GITHUB_RUN_ID
   || !process.env.RUNNER_TEMP) {
@@ -10,7 +10,7 @@ if (process.env.CI !== 'true' || process.env.P1_REAL_HTTP_E2E !== '1'
 export default defineConfig({
   testDir:'./e2e',
   testMatch:'p1-real-http.spec.ts',
-  timeout:60_000,
+  timeout:90_000,
   expect:{timeout:10_000},
   fullyParallel:false,
   workers:1,
@@ -26,10 +26,8 @@ export default defineConfig({
     trace:'retain-on-failure',
     screenshot:'only-on-failure',
   },
-  webServer:[
-    {command:'cd .. && python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --no-access-log',
-     url:'http://127.0.0.1:8000/api/health',reuseExistingServer:false,timeout:90_000},
-    {command:'npx vite --host 127.0.0.1 --port 5178 --strictPort',
-     url:'http://127.0.0.1:5178',reuseExistingServer:false,timeout:60_000},
-  ],
+  webServer:{
+    command:'npx vite --host 127.0.0.1 --port 5178 --strictPort',
+    url:'http://127.0.0.1:5178',reuseExistingServer:false,timeout:60_000,
+  },
 });
