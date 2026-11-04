@@ -266,7 +266,7 @@ test('real HTTP reversible project management preserves mounted work on cross-wi
  });
  expect(samePane).toBe(true);
  expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(pid);
- expect(await page.evaluate(()=>localStorage.getItem(signalKey))).toBe(
+ expect(await page.evaluate((key:string)=>localStorage.getItem(key),signalKey)).toBe(
   JSON.stringify({id:pid,revision:1,archived:true})
  );
 
