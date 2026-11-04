@@ -10,8 +10,8 @@ PilotODIN has substantial React/TypeScript, FastAPI/SQLite and Tauri source; sev
 ## Latest exact verified code and tests
 | Evidence track | Actual result | Source SHA and limitation |
 | --- | --- | --- |
-| Frontend Node + build + hosted isolated Chromium | **144/144 Node PASS, build PASS, 5/5 Chromium PASS** | [run #41833432539](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432539), tested SHA `ebd10e2db992ee6bc4ec8dc53a436d156d226458`. Retains source focus correction and adds Manager impact preview; no native Windows certification. |
-| Disposable loopback backend + Chromium | **3 separate integrated scenarios, each 1/1 PASS** | [run #41833432977](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432977), same tested SHA. A/B Quality/recovery, C consent/approval/undo/restore and D/E manager with read-only impact and project rename/archive/restore/restart all PASS. **Still not native WebView2/Narrator**. |
+| Frontend Node + build + hosted isolated Chromium | **145/145 Node PASS, build PASS, 5/5 Chromium PASS** | [run #41838999119](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41838999119), tested SHA `6556f3ef4fde630bbc3476572b203ae343e19654`. Adds cross-window archive signalling and mounted-draft protection; no native Windows certification. |
+| Disposable loopback backend + Chromium | **4 total integrated scenarios PASS** | [run #41838999113](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41838999113), same tested SHA. Original A/B Quality/recovery, C consent/approval/undo/restore and **2 D/E manager scenarios**, including real HTTP second-tab archive/restore notice, all PASS. **Still not native WebView2/Narrator**. |
 | Owner Windows P0 development | **117 frontend / 174 backend PASS** at dated checkpoint; observed A2/A3 walkthrough accepted | Earlier scoped Windows development checkpoint, not current whole-system or installed 1.0 certification. |
 | Owner Windows P1 native interaction | Edited Prepare title-bar X/Stay/Leave, docked Prepare and WIN-K1–K4 **owner-reported PASS** | DEV ONLY Tauri at dated evidence; untested S/A/screen reader gates remain. |
 
@@ -53,6 +53,11 @@ Tests: [9/9 isolated backend pytest](https://github.com/Sonkhe-Shongwe/PilotODIN
 Verified [12/12 backend pytest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41832930061) on unchanged backend source ancestor, [144/144 Node + build + 5/5 Chromium](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432539) and [3/3 real Uvicorn/Chromium](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432977) on final tested SHA, all using disposable projects. [Detailed no-delete and future recovery plan](./P1_PROJECT_DELETION_IMPACT_AND_SAFETY_DESIGN_2026-11-04.md).
 
 **P1 OPEN / native acceptance BLOCKED**. Reviewed impact is not an exhaustive file manifest or an authorisation to delete. Owner Windows/WebView2, screen reader, physical scaling/Snap, Q3/N1 and resource gates are unchanged.
+
+## Latest P1 cross-window archive protection (4 November 2026)
+[Source SHA `6556f3ef4fde`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6556f3ef4fde630bbc3476572b203ae343e19654): Versioned metadata-only cross-tab archive/restore notice, authoritative backend re-check, preserve a mounted workspace when a stale shared selection or remotely archived project disappears from active catalogue, and show an explicit restore warning. [Frontend #41838999119](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41838999119) **145/145 Node + TypeScript/Vite + 5/5 isolated Chromium PASS**; [real Uvicorn/Chromium #41838999113](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41838999113) **4/4 integrated scenarios PASS**, including a new synthetic two-browser-page archive→notice→restore check against the same local server.
+
+The two-page check proves retention of the mounted DOM pane and selected project in hosted Chromium only. Native WebView2 multi-window behaviour and physical scale/Narrator remain unverified. Earlier [failed new-test run #41838635839](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41838635839) was a test variable-context error, corrected before green acceptance. P1 **OPEN**, no new permanent Delete API or protected data access.
 
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
