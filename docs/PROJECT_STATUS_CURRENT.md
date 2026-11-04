@@ -37,6 +37,9 @@ PilotODIN has substantial React/TypeScript, FastAPI/SQLite and Tauri source; sev
 - A read-only RAM inventory is **not** a successful offline Qwen + ML concurrent benchmark. A prior ~8 GB Windows snapshot showed serious memory pressure, but did not prove infeasibility.
 - Historic P1 75–80% and overall ~40–45% figures were illustrative judgements, **not auditable earned-value KPIs**. This ledger therefore uses evidence statuses, not official percentage-complete claims.
 
+## P1 validation blocker, reconciled 4 November 2026
+GitHub source and green CI do not establish the remaining Windows-native accessibility, physical scaling/Snap, actual Quality correction/restart and integrated recovery gates. Owner-deferred S1..S4/A1 have **no owner waiver**. Current phase is **P1 OPEN / native acceptance BLOCKED**, not closed, irrespective of the successful hosted Q3 tests. Issue #2 `BE-033` was reconciled against existing source (disabled selector placeholder plus New project control), with native multi-project acceptance still unverified. **This is documentation/QA reconciliation only, no new code, Windows run or tests.**
+
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
 2. Do not create more speculative P1 tests when only missing native evidence blocks closure. Investigate a new code defect only if confirmed and in scope.
