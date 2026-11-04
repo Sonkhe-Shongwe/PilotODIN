@@ -49,6 +49,9 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const [exporting,setExporting]=useState(false);
   const [busy,setBusy]=useState(false);
   const approvalDialogRef=useRef<HTMLElement|null>(null);
+  // Capture the initiating button before setBusy disables it. Browsers may
+  // move focus to <body> when a focused button becomes disabled.
+  const approvalOpenerRef=useRef<HTMLElement|null>(null);
   const approvalBusy=useRef(false);
   approvalBusy.current=busy;
   const approvalId=pendingApproval?.proposal.proposal_id;
@@ -56,7 +59,8 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     if(!approvalId)return;
     const dialog=approvalDialogRef.current;
     if(!dialog)return;
-    const opener=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    const opener=approvalOpenerRef.current
+      ?? (document.activeElement instanceof HTMLElement?document.activeElement:null);
     const cancel=dialog.querySelector<HTMLButtonElement>('[aria-label="Cancel approval"]');
     (cancel?.disabled?dialog:(cancel??dialog)).focus();
     const onApprovalKeyDown=(event:KeyboardEvent)=>{
@@ -66,6 +70,8 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     return()=>{
       document.removeEventListener('keydown',onApprovalKeyDown,true);
       if(opener?.isConnected&&!opener.matches(':disabled'))opener.focus();
+      else findingsRef.current?.focus();
+      approvalOpenerRef.current=null;
     };
   },[approvalId]);
   const [error,setError]=useState('');
@@ -172,6 +178,10 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     setOffset(0);setExportVersion(version);setNotice(`${message} • Working version ${version}`);onChanged();
   }
   async function mutate(path:string,body:Record<string,unknown>,message:string){
+    if(path!=='decisions'||body.decision!=='reject'){
+      const active=document.activeElement;
+      approvalOpenerRef.current=active instanceof HTMLElement&&active!==document.body?active:null;
+    }
     setBusy(true);setError('');setNotice('');
     try{
       if(path==='decisions'&&body.decision==='reject'){
@@ -308,7 +318,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
         {!verifiedPreview?.rows.length&&<p className="body-muted">No matching records on this page.</p>}
         <div className="quality-pagination"><button className="btn small" disabled={offset===0} onClick={()=>setOffset(Math.max(0,offset-12))}><ArrowLeft size={14}/> Previous</button><span>{verifiedPreview?.total_matching_rows?`${offset+1}–${Math.min(offset+12,verifiedPreview.total_matching_rows)} of ${verifiedPreview.total_matching_rows}`:'No rows'}</span><button className="btn small" disabled={!verifiedPreview||offset+12>=verifiedPreview.total_matching_rows} onClick={()=>setOffset(offset+12)}>Next <ArrowRight size={14}/></button></div>
       </div>
-      <div ref={findingsRef} className="panel quality-findings-panel">
+      <div ref={findingsRef} tabIndex={-1} className="panel quality-findings-panel">
         <div className="panel-title"><Sparkles size={18}/><h2>Intelligent findings</h2><span className="pill muted">LOCAL RULES</span></div>
         <div className="quality-filters">{(['all','pending','history'] as const).map(t=><button className={filter===t?'selected':''} key={t} onClick={()=>setFilter(t)}>{t==='all'?'All findings':t==='pending'?'Pending':'History'}</button>)}</div>
         {filter==='history'?<div className="history-list">

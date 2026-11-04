@@ -61,7 +61,13 @@ test('production dialog installs capture, initial focus, and cleanup bound to re
   assert.match(s,/const approvalId=pendingApproval\?\.proposal\.proposal_id/);
   assert.match(s,/document\.addEventListener\('keydown',onApprovalKeyDown,true\)/);
   assert.match(s,/document\.removeEventListener\('keydown',onApprovalKeyDown,true\)/);
+  assert.match(s,/approvalOpenerRef=useRef<HTMLElement\|null>\(null\)/);
+  assert.match(s,/approvalOpenerRef\.current=active instanceof HTMLElement&&active!==document\.body\?active:null/);
+  assert.match(s,/const opener=approvalOpenerRef\.current/);
   assert.match(s,/if\(opener\?\.isConnected&&!opener\.matches\(':disabled'\)\)opener\.focus\(\)/);
+  assert.match(s,/else findingsRef\.current\?\.focus\(\)/);
+  assert.match(s,/approvalOpenerRef\.current=null/);
+  assert.match(s,/ref=\{findingsRef\} tabIndex=\{-1\}/);
   assert.match(s,/ref=\{approvalDialogRef\} tabIndex=\{-1\} role="dialog" aria-modal="true"/);
   assert.match(s,/aria-label="Cancel approval"/);
   assert.match(s,/disabled=\{busy\} onClick=\{\(\)=>void commitProposal\(\)\}/);
