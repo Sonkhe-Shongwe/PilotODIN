@@ -29,15 +29,15 @@
 | P1-S3 | Actual native 150% scale (if supported) | **DEFERRED BY OWNER / UNVERIFIED** | Observed native result, original scale restored |
 | P1-S4 | Windows Snap / minimum-width handling | **DEFERRED BY OWNER / UNVERIFIED** | Native observed window behaviour or legitimate unsupported resolution |
 | P1-A1 | Native reduced-motion / focus behaviour | **DEFERRED BY OWNER / UNVERIFIED** | Observed Windows behaviour; badge alone does not prove compliance |
-| P1-A2 | Narrator/screen-reader traversal of primary UI and consent | **OPEN / UNVERIFIED** | Explicit assistive-technology verification; no Narrator run on record |
+| P1-A2 | Narrator/screen-reader traversal of primary UI and consent | **OPEN / UNVERIFIED** | Source fix `6c400e02ed26` adds Quality consent dialog focus entry, Tab boundary and dismissal restoration; 9/9 related Node tests passed within frontend CI. **No native Narrator/WebView2 traversal was run**. |
 | P1-N1 | Latest integrated native DEV project + Quality + failed switch + restart journey | **PARTIAL** | Scenarios pass on hosted Uvicorn/Chromium; selected native fragments PASS but no equivalent complete current WebView2 chain |
 | P1-R1 | Resource policy/settings and truthful memory controls | **PARTIAL** | Scoped resource admission and read-only E2 inventory; real simultaneous AI + ML 8 GB feasibility **UNDETERMINED**; P5/P8 gates remain independent |
 | P1-C1 | Explicit closure acceptance and no open critical/high P1 data-loss, correctness, security defect | **OPEN** | Review Issue #2 + source defects; record scope approval, evidence and owner deferrals before sign-off |
 
 ## Current automated verification, with exact scope
-- [P1 Isolated Frontend run #41802760086](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41802760086), SHA `3211ff980e98ad3e019a579f07b32bea06110217`: **130/130 Node PASS, build PASS, 5/5 hosted Chromium PASS**.
-- [P1 Disposable Real HTTP run #41802476525](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41802476525), SHA `61665d2795a0f716c35085e9ef1b444edcd17db7`: **1/1 integrated real-Uvicorn/Chromium scenario PASS**. Its covered named diagnostic subchecks do not turn it into separate 3/3 end-to-end scenarios.
-- Since the real-HTTP run, production code remained unchanged; later commits only updated tests. Current docs changes likewise require **no source retest**.
+- [P1 Isolated Frontend run #41811231967](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41811231967), source SHA `6c400e02ed26f1757914913fdfffcb378b454eaf`: **139/139 Node PASS (including 9 new Quality modal keyboard tests), TypeScript/Vite build PASS and 5/5 hosted Chromium PASS**.
+- [P1 Disposable Real HTTP run #41811232333](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41811232333), **same source SHA**: **1/1 integrated real-Uvicorn/Chromium PASS**. This unchanged read-only fixture covers three Quality investigation types, project switching/failure, two tabs, backend process restart and retry. **It does not exercise the new approval modal's keyboard interaction or any actual Quality correction.**
+- Historical green tracks [#41802760086](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41802760086) (130 Node) and [#41802476525](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41802476525) (1/1 real HTTP) remain preserved. Current docs-only changes do **not** create fresh test evidence.
 - Earlier intermediate failed/cancelled runs exist; see [full archive](./archive/P1_CLOSURE_REGISTER_PRE_AUDIT_2026-11-04.md) and GitHub Actions rather than concealing them.
 
 ## Closure decision, not a percentage
