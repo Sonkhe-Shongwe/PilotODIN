@@ -4,6 +4,7 @@ import {downloadCleanedData,get,post} from './api';
 import {resolveQualityFocus} from './qualityHandoff';
 import {qualityPreviewLabel} from './qualityPreviewLabel';
 import {createQualityReadGuard} from './qualityReadGuard';
+import {handleQualityApprovalKeyDown} from './qualityApprovalFocus';
 import type {QualityFocus} from './qualityHandoff';
 import './quality-investigation.css';
 
@@ -47,6 +48,26 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const [exportFilterValue,setExportFilterValue]=useState('');
   const [exporting,setExporting]=useState(false);
   const [busy,setBusy]=useState(false);
+  const approvalDialogRef=useRef<HTMLElement|null>(null);
+  const approvalBusy=useRef(false);
+  approvalBusy.current=busy;
+  const approvalId=pendingApproval?.proposal.proposal_id;
+  useEffect(()=>{
+    if(!approvalId)return;
+    const dialog=approvalDialogRef.current;
+    if(!dialog)return;
+    const opener=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    const cancel=dialog.querySelector<HTMLButtonElement>('[aria-label="Cancel approval"]');
+    (cancel?.disabled?dialog:(cancel??dialog)).focus();
+    const onApprovalKeyDown=(event:KeyboardEvent)=>{
+      handleQualityApprovalKeyDown(event,dialog,document.activeElement,approvalBusy.current,()=>setPendingApproval(null));
+    };
+    document.addEventListener('keydown',onApprovalKeyDown,true);
+    return()=>{
+      document.removeEventListener('keydown',onApprovalKeyDown,true);
+      if(opener?.isConnected&&!opener.matches(':disabled'))opener.focus();
+    };
+  },[approvalId]);
   const [error,setError]=useState('');
   // Re-run only GET reads when the local Quality backend has restarted.
   const [retryReads,setRetryReads]=useState(0);
@@ -257,7 +278,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
       </details>
     </section>
     {pendingApproval&&<div className="quality-approval-backdrop" role="presentation">
-      <section className="panel quality-approval-dialog" role="dialog" aria-modal="true" aria-label="Review exact dataset change">
+      <section className="panel quality-approval-dialog" ref={approvalDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Review exact dataset change">
         <div className="panel-title"><ShieldCheck size={18}/><h2>Review before applying</h2>
           <button className="btn small" disabled={busy} onClick={()=>setPendingApproval(null)} aria-label="Cancel approval"><X size={16}/></button></div>
         <p>{pendingApproval.proposal.warning}</p>

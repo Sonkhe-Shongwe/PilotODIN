@@ -60,6 +60,7 @@ jobs:
           tests/p1-primary-button-edit-markers.test.cjs
           tests/p1-predict-request-staleness.test.cjs
           tests/p1-quality-retry-reconnect.test.cjs
+          tests/p1-quality-approval-focus.test.cjs
           tests/p1-quality-investigation-staleness.test.cjs
           tests/project-operation-guard.test.cjs
           tests/p1-primary-project-load-approval.test.cjs
