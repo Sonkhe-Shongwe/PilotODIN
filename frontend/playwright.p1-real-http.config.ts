@@ -9,7 +9,7 @@ if (process.env.CI !== 'true' || process.env.P1_REAL_HTTP_E2E !== '1'
 }
 export default defineConfig({
   testDir:'./e2e',
-  testMatch:'p1-real-http.spec.ts',
+  testMatch:['p1-real-http.spec.ts','p1-real-http-quality-approval.spec.ts'],
   timeout:90_000,
   expect:{timeout:10_000},
   fullyParallel:false,
