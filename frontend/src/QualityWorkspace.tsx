@@ -32,6 +32,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const inspectorRef=useRef<HTMLDivElement|null>(null);
   const [investigation,setInvestigation]=useState<QualityInvestigation|null>(null);
   const [investigating,setInvestigating]=useState(false);
+  const investigationRequest=useRef(0);
   const [history,setHistory]=useState<HistoryData|null>(null);
   const [preview,setPreview]=useState<Preview|null>(null);
   const [selected,setSelected]=useState<string>('');
@@ -57,6 +58,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
      categorical_comparisons:{column:string;groups:{label:string;missing_count:number;total_count:number}[]}[];
      suggested_treatments:{id:string;label:string;value?:number;tradeoff:string}[];caution:string}|null>(null);
   const [diagnosing,setDiagnosing]=useState(false);
+  const missingnessRequest=useRef(0);
   const load=useCallback(async()=>{
     const ticket=readGuard.current.beginSnapshot();
     const [q,h]=await Promise.all([get<Quality>(`/projects/${projectId}/quality`),get<HistoryData>(`/projects/${projectId}/quality/history`)]);
@@ -103,15 +105,29 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     findingsRef.current?.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start',inline:'nearest'});
   },[initialFocus,projectId,quality]);
-  useEffect(()=>{setInvestigation(null)},[projectId,selected,quality?.version]);
+  useEffect(()=>{
+    // A different finding or working Quality version invalidates the previous
+    // read-only investigation and missingness requests, including their errors.
+    investigationRequest.current+=1;
+    missingnessRequest.current+=1;
+    setInvestigation(null);setInvestigating(false);
+    setDiagnostics(null);setDiagnosing(false);
+  },[projectId,selected,quality?.version]);
   const issue=quality?.issues.find(x=>x.id===selected);
   async function investigateFinding(selectedIssue:QualityIssue){
     if(!quality||!selectedIssue.column)return;
+    const ticket=++investigationRequest.current, expectedVersion=quality.version;
     setInvestigating(true);setInvestigation(null);setError('');
     try{
-      const result=await get<QualityInvestigation>(`/projects/${projectId}/quality/investigate?issue_id=${encodeURIComponent(selectedIssue.id)}&expected_version=${quality.version}`);
-      if(result.issue_id===selectedIssue.id&&result.version===quality.version)setInvestigation(result);
-    }catch(e){setError((e as Error).message)}finally{setInvestigating(false)}
+      const result=await get<QualityInvestigation>(`/projects/${projectId}/quality/investigate?issue_id=${encodeURIComponent(selectedIssue.id)}&expected_version=${expectedVersion}`);
+      if(ticket!==investigationRequest.current)return;
+      if(result.project_id!==projectId||result.issue_id!==selectedIssue.id||result.version!==expectedVersion){
+        setError('Investigation did not match the selected Quality finding. Review the current working version.');
+        return;
+      }
+      setInvestigation(result);
+    }catch(e){if(ticket===investigationRequest.current)setError((e as Error).message)}
+    finally{if(ticket===investigationRequest.current)setInvestigating(false)}
   }
   function showAffectedRecords(){
     setOffset(0);setView('working');
@@ -171,9 +187,18 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     }catch(e){setError((e as Error).message)}finally{setExporting(false)}
   }
   async function diagnoseMissing(column:string){
+    const ticket=++missingnessRequest.current;
     setDiagnosing(true);setDiagnostics(null);setError('');
-    try{setDiagnostics(await get(`/projects/${projectId}/quality/missingness?column=${encodeURIComponent(column)}`));}
-    catch(e){setError((e as Error).message)}finally{setDiagnosing(false)}
+    try{
+      const result=await get<NonNullable<typeof diagnostics>>(`/projects/${projectId}/quality/missingness?column=${encodeURIComponent(column)}`);
+      if(ticket!==missingnessRequest.current)return;
+      if(result.column!==column){
+        setError('Missingness diagnosis did not match the selected column. Review the current Quality finding.');
+        return;
+      }
+      setDiagnostics(result);
+    }catch(e){if(ticket===missingnessRequest.current)setError((e as Error).message)}
+    finally{if(ticket===missingnessRequest.current)setDiagnosing(false)}
   }
   async function approveMedian(){if(!quality||!issue||!diagnostics)return;
     await mutate('impute',{expected_version:quality.version,issue_id:issue.id,column:issue.column,strategy:'median'},'Approved median imputation');
