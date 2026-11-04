@@ -163,4 +163,73 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
   expect(audit.backendReads).toContain('/projects/'+aid+'/live-profile');
+
+  await test.step('a second real browser tab commits A; B draft survives the cross-tab A profile failure',async()=>{
+    // After the same-tab failure above, B remains the selected, usable project.
+    // Explicitly edit another Prepare value to ensure a dirty primary form.
+    await nav.getByRole('button',{name:'Prepare'}).click();
+    await expect(target).toHaveValue('Outcome');
+    await target.selectOption('Amount');
+    await expect(target).toHaveValue('Amount');
+    await expect(switcher).toHaveValue(bid!);
+
+    // Both pages are in the SAME browser context. The other tab uses the real
+    // project selector; it does not directly spoof a storage event or API body.
+    const other=await context.newPage();
+    await other.goto('/#/studio/prepare');
+    const otherSwitcher=other.getByRole('combobox',{name:'Switch project'});
+    await expect(otherSwitcher).toHaveValue(bid!);
+    await expect(other.locator('.po-primary-pane')
+      .getByRole('combobox',{name:/target variable/i})).toBeVisible();
+
+    // The other tab can read A successfully first. Only when this edited B
+    // tab attempts to read A do we hide the test-owned original source.
+    // All ensuing status codes are from the REAL Uvicorn backend.
+    let hiddenCrossTab=false;
+    let crossTabProfileReads=0;
+    await page.route('**/api/projects/'+aid+'/live-profile',async route=>{
+      expect(route.request().method()).toBe('GET');
+      crossTabProfileReads++;
+      if(!hiddenCrossTab){
+        expect(fixtureGuard('hide',aid)).toBe('P1_SYNTHETIC_SOURCE_HIDDEN');
+        hiddenCrossTab=true;
+      }
+      await route.continue();
+    });
+    const attemptedRead=page.waitForResponse(response=>
+      response.url()===API+'/api/projects/'+aid+'/live-profile'
+        &&response.status()===409);
+    const originalPromptCount=approvals.length;
+    try{
+      await otherSwitcher.selectOption(aid);
+      await expect(otherSwitcher).toHaveValue(aid);
+      await attemptedRead;
+      await expect(page.getByText(/The other tab selected a project that could not be opened here/))
+        .toBeVisible();
+      await expect(switcher).toHaveValue(bid!);
+      await expect(target).toHaveValue('Amount');
+      await expect(page).toHaveURL(/#\\/studio\\/prepare$/);
+      expect(crossTabProfileReads).toBe(1);
+      expect(approvals.length).toBe(originalPromptCount+1);
+      expect(approvals.at(-1)).toMatch(/primary workspace.*discard/i);
+      // The other tab owns shared selection A, but it must not steal B's
+      // mounted unsaved form when A is temporarily unreadable in this tab.
+      expect(await other.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(aid);
+      expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(aid);
+      await nav.getByRole('button',{name:'Quality'}).click();
+      await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
+      await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
+    }finally{
+      if(hiddenCrossTab)
+        expect(fixtureGuard('restore',aid)).toBe('P1_SYNTHETIC_SOURCE_RESTORED');
+    }
+    expect(fixtureGuard('audit',aid)).toBe(before);
+    const afterRecovery=await request.get(API+'/api/projects/'+aid+'/live-profile');
+    expect(afterRecovery.status()).toBe(200);
+    expect((await afterRecovery.json()).version).toBe(0);
+    expect(audit.imports).toBe(1);
+    expect(audit.blockedWrites).toEqual([]);
+    expect(audit.unexpectedReads).toEqual([]);
+    expect(audit.blockedOrigins).toEqual([]);
+  });
 });
