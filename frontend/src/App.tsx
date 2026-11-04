@@ -244,10 +244,11 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
    const metadata=(event:Event)=>{
     const d=(event as CustomEvent<{id?:string;name?:string;filename?:string;archived?:boolean}>).detail;
     if(!d||typeof d.id!=='string'||typeof d.name!=='string'||typeof d.filename!=='string')return;
-    setProject(old=>old?.id===d.id?{...old,name:d.name!}:old);
-    setProjects(old=>d.archived?old.filter(row=>row.id!==d.id):
-     old.some(row=>row.id===d.id)?old.map(row=>row.id===d.id?{...row,name:d.name!}:row):
-     [...old,{id:d.id,name:d.name,filename:d.filename!}]);
+     const id=d.id,name=d.name,filename=d.filename,archived=d.archived;
+    setProject(old=>old?.id===id?{...old,name}:old);
+    setProjects(old=>archived?old.filter(row=>row.id!==id):
+     old.some(row=>row.id===id)?old.map(row=>row.id===id?{...row,name}:row):
+     [...old,{id,name,filename}]);
    };
    window.addEventListener('pilotodin:project-metadata-changed',metadata);
    return()=>window.removeEventListener('pilotodin:project-metadata-changed',metadata);
