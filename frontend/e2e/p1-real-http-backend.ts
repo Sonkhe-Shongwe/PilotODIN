@@ -43,7 +43,14 @@ async function portUnoccupied():Promise<void>{
 export async function startDisposableBackend():Promise<DisposableBackend>{
   guardRunner();
   await portUnoccupied(); // Never attach to or kill somebody else's service.
-  const repoRoot=resolve(__dirname,'../..');
+  // Playwright loads spec helpers as ES modules; __dirname is unavailable.
+  // The dedicated CI job runs the test from <repository>/frontend only.
+  const working=realpathSync(process.cwd());
+  const repoRoot=resolve(working,'..');
+  if(working!==resolve(repoRoot,'frontend')
+    ||!existsSync(resolve(repoRoot,'backend','main.py'))){
+    throw new Error('Refuse backend launch outside the test frontend directory.');
+  }
   const child=spawn('python',
     ['-m','uvicorn','backend.main:app','--host','127.0.0.1',
      '--port','8000','--no-access-log'],
