@@ -6,6 +6,19 @@ import './project-manager.css';
 
 export type ManagedProject={id:string;name:string;filename:string;created_at:string;revision:number;archived_at:string|null};
 type Action='rename'|'archive'|'restore';
+type DeletionImpact={
+ project_id:string;name:string;revision:number;archived:boolean;
+ preview_only:true;deletion_available:false;linked_sqlite_rows:number;
+ records:{key:string;label:string;count:number;schema_present:boolean}[];
+ unclassified_tables:string[];
+ artifacts:{
+  original_source_present:boolean;original_source_managed:boolean;
+  linked_model_directories_present:number;model_locations_requiring_review:number;
+  external_exports_and_backups:string;
+ };
+ active_work:{model_training:number;odin_runs:number};
+ blockers:string[];limitations:string;
+};
 type Props={currentProjectId:string;onClose:()=>void;onChanged:(project:ManagedProject)=>void};
 
 /** Reversible metadata management, deliberately no permanent-delete route. */
@@ -17,6 +30,10 @@ export function ProjectManager({currentProjectId,onClose,onChanged}:Props){
  const [draft,setDraft]=useState('');
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
+ const [reviewId,setReviewId]=useState<string|null>(null);
+ const [impact,setImpact]=useState<DeletionImpact|null>(null);
+ const [impactBusy,setImpactBusy]=useState(false);
+ const reviewEpoch=useRef(0);
  const root=useRef<HTMLDivElement|null>(null);
  const closeButton=useRef<HTMLButtonElement|null>(null);
  useEffect(()=>{
@@ -28,7 +45,7 @@ export function ProjectManager({currentProjectId,onClose,onChanged}:Props){
   }).catch(e=>{
    if(mounted)setError('Project library unavailable: '+String((e as Error).message));
   }).finally(()=>{if(mounted)setLoading(false)});
-  return()=>{mounted=false;if(opener?.isConnected)opener.focus()};
+  return()=>{mounted=false;reviewEpoch.current++;if(opener?.isConnected)opener.focus()};
  },[]);
  const onKey=(e:ReactKeyboardEvent<HTMLDivElement>)=>{
   if(e.key==='Escape'){
@@ -40,6 +57,29 @@ export function ProjectManager({currentProjectId,onClose,onChanged}:Props){
   if(!controls.length)return;
   if(e.shiftKey&&document.activeElement===controls[0]){e.preventDefault();controls[controls.length-1].focus()}
   if(!e.shiftKey&&document.activeElement===controls[controls.length-1]){e.preventDefault();controls[0].focus()}
+ };
+ const closeReview=()=>{
+  reviewEpoch.current++;
+  setReviewId(null);setImpact(null);setImpactBusy(false);
+ };
+ const review=async(project:ManagedProject)=>{
+  if(busy)return;
+  const epoch=++reviewEpoch.current;
+  setReviewId(project.id);setImpact(null);setImpactBusy(true);setError('');
+  try{
+   const result=await get<DeletionImpact>(
+    '/projects/'+encodeURIComponent(project.id)+'/deletion-impact?expected_revision='+project.revision
+   );
+   if(epoch!==reviewEpoch.current)return;
+   if(result.project_id!==project.id||result.revision!==project.revision||
+      result.preview_only!==true||result.deletion_available!==false){
+    setError('The impact review did not match this project. No action was taken.');
+    return;
+   }
+   setImpact(result);
+  }catch(e){
+   if(epoch===reviewEpoch.current)setError('Could not review project impact: '+String((e as Error).message));
+  }finally{if(epoch===reviewEpoch.current)setImpactBusy(false)}
  };
  const change=async(project:ManagedProject,action:Action)=>{
   if(busy)return;
@@ -53,7 +93,7 @@ export function ProjectManager({currentProjectId,onClose,onChanged}:Props){
    setError('Use a project name between 1 and 80 characters.');
    return;
   }
-  setBusy(true);setError('');setNotice('');
+  closeReview();setBusy(true);setError('');setNotice('');
   try{
    const next=await put<ManagedProject>('/projects/'+encodeURIComponent(project.id)+'/lifecycle',{
     action,expected_revision:project.revision,...(name===undefined?{}:{name})
@@ -78,6 +118,7 @@ export function ProjectManager({currentProjectId,onClose,onChanged}:Props){
     <small>{p.filename} · {p.id.slice(0,8)}…</small>
    </div>
    {editing!==p.id&&<div className="po-pm-controls">
+    <button type="button" disabled={busy} onClick={()=>void review(p)} aria-label={'Review deletion impact for '+p.name}>Review impact</button>
     <button type="button" disabled={busy} onClick={()=>{setEditing(p.id);setDraft(p.name);setError('')}} aria-label={'Rename '+p.name}><Pencil size={14}/> Rename</button>
     {p.archived_at===null?
      <button type="button" disabled={busy||current} title={current?'Switch to another project first':'Archive, preserving project data'} onClick={()=>void change(p,'archive')} aria-label={'Archive '+p.name}><Archive size={14}/> Archive</button>:
@@ -94,6 +135,28 @@ export function ProjectManager({currentProjectId,onClose,onChanged}:Props){
     <button ref={closeButton} type="button" aria-label="Close project management" disabled={busy} onClick={onClose}><X size={20}/></button></header>
    {error&&<p role="alert" className="po-pm-error">{error}</p>}
    {notice&&<p role="status" className="po-pm-notice">{notice}</p>}
+   {reviewId!==null&&<section className="po-pm-impact" role="region" aria-label="Deletion impact review">
+    <div className="po-pm-impact-heading">
+     <strong>Read-only deletion impact</strong>
+     <button type="button" onClick={closeReview} aria-label="Close impact review">Close review</button>
+    </div>
+    {impactBusy&&<p role="status">Counting project records without changing them…</p>}
+    {impact&&!impactBusy&&<>
+     <p><strong>{impact.name}</strong> · revision {impact.revision} · {impact.archived?'Archived':'Active'}</p>
+     <p>This review found <strong>{impact.linked_sqlite_rows}</strong> linked SQLite records. It is not permission to delete.</p>
+     <ul aria-label="Project-owned record counts">
+      {impact.records.filter(entry=>entry.count>0).map(entry=><li key={entry.key}>
+       <span>{entry.label}</span><strong>{entry.count}</strong></li>)}
+     </ul>
+     <p>Original dataset: {impact.artifacts.original_source_present?'Present':'Not found'}. Location: {impact.artifacts.original_source_managed?'Managed dataset folder':'Requires location review'}.</p>
+     <p>Linked model directories found: {impact.artifacts.linked_model_directories_present}. Other model locations needing review: {impact.artifacts.model_locations_requiring_review}.</p>
+     {impact.unclassified_tables.length>0&&<p role="alert">Unclassified SQLite tables: {impact.unclassified_tables.join(', ')}.</p>}
+     <p>Queued/running training: {impact.active_work.model_training}. Active ODIN runs: {impact.active_work.odin_runs}.</p>
+     <p>Exports and backups outside PilotODIN's managed project folder are excluded. They will not be affected by this review.</p>
+     <p className="po-pm-limitations">{impact.limitations}</p>
+     <p className="po-pm-impact-blocked"><strong>Permanent deletion is unavailable.</strong> {impact.blockers.join(' ')}</p>
+    </>}
+   </section>}
    {loading?<p role="status" className="po-pm-loading">Loading projects…</p>:
     <div className="po-pm-scroll"><section aria-label="Active projects"><h3>Active projects ({active.length})</h3><ul>{active.map(item)}</ul>{!active.length&&<p>No active projects.</p>}</section>
     <section aria-label="Archived projects"><h3>Archived projects ({archived.length})</h3><ul>{archived.map(item)}</ul>{!archived.length&&<p>No archived projects.</p>}</section></div>}

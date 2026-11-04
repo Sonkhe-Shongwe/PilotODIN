@@ -27,3 +27,13 @@ test('escape keyboard focus containment and return, no active Studio reload',()=
  assert.match(studio,/pilotodin:project-metadata-changed/);
  assert.match(studio,/setProject\(old=>old\?\.id===id/);
 });
+
+test('read-only impact review is pinned to project revision with no destructive call',()=>{
+ assert.match(manager,/deletion-impact\?expected_revision=/);
+ assert.match(manager,/get<DeletionImpact>/);
+ assert.match(manager,/result\.preview_only!==true\|\|result\.deletion_available!==false/);
+ assert.match(manager,/role="region" aria-label="Deletion impact review"/);
+ assert.match(manager,/Permanent deletion is unavailable/);
+ assert.match(manager,/onClick=\{\(\)=>void review\(p\)\}/);
+ assert.doesNotMatch(manager,/DELETE|method:'DELETE'|deleteProject|purgeProject/);
+});

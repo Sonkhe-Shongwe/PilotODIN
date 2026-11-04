@@ -30,3 +30,15 @@
 .po-pm-loading{padding:18px}
 @media(max-width:620px){.po-pm-item{flex-wrap:wrap}.po-pm-controls{width:100%}.po-pm-dialog>header,.po-pm-dialog>footer,.po-pm-scroll{padding-inline:12px}}
 @media(prefers-reduced-motion:reduce){.po-pm-dialog *{animation:none!important;transition:none!important}}
+
+/* Read-only impact inventory, not a deletion confirmation or delete button. */
+.po-pm-impact{background:#f6f7fd;border:1px solid #ccd3e6;border-radius:10px;margin:12px 22px 0;padding:12px 15px;overflow-y:auto;max-height:48dvh;font-size:12px;line-height:1.5}
+.po-pm-impact-heading{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.po-pm-impact-heading>strong{color:#33278a;font-size:14px}
+.po-pm-impact-heading button{border:1px solid #cbd2e0;border-radius:7px;background:#fff;padding:6px 9px;font-size:12px}
+.po-pm-impact ul{list-style:none;padding:0;margin:10px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:7px}
+.po-pm-impact li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 9px;border:1px solid #e0e4f0;border-radius:6px;background:white}
+.po-pm-impact li strong{font-variant-numeric:tabular-nums}
+.po-pm-limitations{color:#657089}
+.po-pm-impact-blocked{color:#804321;background:#fff5e7;padding:9px;border-radius:7px;border:1px solid #ecd3a8}
+@media(max-width:620px){.po-pm-impact{margin-inline:12px;padding:10px}}
