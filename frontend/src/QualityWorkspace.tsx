@@ -3,6 +3,7 @@ import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, Histor
 import {downloadCleanedData,get,post} from './api';
 import {resolveQualityFocus} from './qualityHandoff';
 import {qualityPreviewLabel} from './qualityPreviewLabel';
+import {createQualityReadGuard} from './qualityReadGuard';
 import type {QualityFocus} from './qualityHandoff';
 import './quality-investigation.css';
 
@@ -48,6 +49,8 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const [error,setError]=useState('');
   // Re-run only GET reads when the local Quality backend has restarted.
   const [retryReads,setRetryReads]=useState(0);
+  const readGuard=useRef(createQualityReadGuard());
+  useEffect(()=>()=>readGuard.current.invalidateAll(),[]);
   const [notice,setNotice]=useState('');
   const [diagnostics,setDiagnostics]=useState<{column:string;missing_rows:number;missing_pct:number;row_numbers:number[];
      numeric_comparisons:{column:string;missing_group_median:number;other_group_median:number}[];
@@ -55,12 +58,35 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
      suggested_treatments:{id:string;label:string;value?:number;tradeoff:string}[];caution:string}|null>(null);
   const [diagnosing,setDiagnosing]=useState(false);
   const load=useCallback(async()=>{
+    const ticket=readGuard.current.beginSnapshot();
     const [q,h]=await Promise.all([get<Quality>(`/projects/${projectId}/quality`),get<HistoryData>(`/projects/${projectId}/quality/history`)]);
-    setQuality(q);setHistory(h);setExportVersion(v=>h.versions.some(x=>x.version===v)?v:q.version);return q;
+    // A previous initial load, manual refresh or mutation read must not
+    // overwrite a newer snapshot. Snapshot and history must agree on version.
+    if(!readGuard.current.isLatestSnapshot(ticket))return q;
+    if(q.project_id!==projectId||!Number.isSafeInteger(q.version)||q.version<0
+      ||h.current_version!==q.version)
+      throw new Error('Quality snapshot changed while loading. Retry loading Quality.');
+    if(!readGuard.current.acceptSnapshot(ticket,q.version))return q;
+    setQuality(q);setHistory(h);
+    setPreview(current=>current?.version===q.version?current:null);
+    setExportVersion(v=>h.versions.some(x=>x.version===v)?v:q.version);return q;
   },[projectId]);
   useEffect(()=>{let live=true;load().catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[load,retryReads]);
-  useEffect(()=>{let live=true;const query=`/projects/${projectId}/quality/preview?offset=${offset}&limit=12${quality?`&expected_version=${quality.version}`:''}${selected?`&issue_id=${encodeURIComponent(selected)}`:''}`;
-    get<Preview>(query).then(p=>{if(live)setPreview(p)}).catch(e=>{if(live){setPreview(null);setError(e.message)}});
+  useEffect(()=>{let live=true;
+    const ticket=readGuard.current.beginPreview();
+    const expectedVersion=quality?.version;
+    const query=`/projects/${projectId}/quality/preview?offset=${offset}&limit=12${quality?`&expected_version=${quality.version}`:''}${selected?`&issue_id=${encodeURIComponent(selected)}`:''}`;
+    // Never display an earlier page or version while this query is pending.
+    setPreview(null);
+    get<Preview>(query).then(p=>{
+      if(!live||!readGuard.current.isLatestPreview(ticket))return;
+      if(expectedVersion!==undefined&&p.version!==expectedVersion){
+        setError('Quality preview version changed. Retry loading Quality.');return;
+      }
+      setPreview(p);
+    }).catch(e=>{
+      if(live&&readGuard.current.isLatestPreview(ticket)){setPreview(null);setError(e.message)}
+    });
     return()=>{live=false};
   },[projectId,selected,offset,quality?.version,retryReads]);
   useEffect(()=>{
@@ -158,6 +184,8 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     await mutate('decisions',{expected_version:quality.version,issue_id:issue.id,decision},decision==='approve'?'Correction approved':'Recommendation rejected');
   }
   const display=quality?.issues.filter(x=>filter==='all'||(filter==='pending'&&x.decision==='pending'))??[];
+  // Preview columns and rows must never be rendered for another Quality version.
+  const verifiedPreview=quality&&preview?.version===quality.version?preview:null;
   return <div className="quality-page">
     <section className="quality-banner"><div><div className="eyebrow">EVIDENCE-BASED SMART AUTOPILOT</div><h2>Make your dataset trustworthy</h2><p>Inspect findings, preview proposed changes and approve only what makes sense. Your original upload stays untouched.</p></div><div className="quality-banner-cta"><span className="pill">WORKING VERSION {quality?.version??'—'}</span><button className="btn primary" disabled={busy||!quality||quality.summary.automatic_available===0} onClick={()=>quality&&void mutate('autopilot',{expected_version:quality.version},'Safe corrections completed')}><Sparkles size={16}/> Review {quality?.summary.automatic_available??0} safe fixes</button></div></section>
     {error&&<div className="alert-error" role="alert"><AlertCircle size={16}/><span>{error}</span><button type="button" className="btn small" onClick={()=>{setError('');setRetryReads(count=>count+1)}}>Retry loading Quality</button></div>}
@@ -180,7 +208,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
           <option value="csv">CSV</option><option value="xlsx">Excel XLSX</option>
         </select></label>
         <label>Optional text filter <select value={exportFilterColumn} onChange={e=>setExportFilterColumn(e.target.value)}>
-          <option value="">All rows</option>{Object.keys(preview?.rows[0]?.working??{}).map(c=><option key={c} value={c}>{c}</option>)}
+          <option value="">All rows</option>{Object.keys(verifiedPreview?.rows[0]?.working??{}).map(c=><option key={c} value={c}>{c}</option>)}
         </select></label>
         {exportFilterColumn&&<input aria-label="Filter contains" placeholder="Contains…" value={exportFilterValue} onChange={e=>setExportFilterValue(e.target.value)} />}
         <button className="btn primary" disabled={!quality||exporting||busy} onClick={()=>void exportCleanedData()}><FileSpreadsheet size={15}/>{exporting?'Exporting…':'Export dataset'}</button>
@@ -188,7 +216,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
       <details style={{marginTop:8}}><summary>Choose specific columns (optional)</summary>
         <p className="muted-caption">If none are selected, every column will be exported.</p>
         <div style={{display:'flex',flexWrap:'wrap',gap:12,marginTop:8}}>
-          {Object.keys(preview?.rows[0]?.working??{}).map(column=><label key={column} style={{display:'flex',gap:5,alignItems:'center'}}>
+          {Object.keys(verifiedPreview?.rows[0]?.working??{}).map(column=><label key={column} style={{display:'flex',gap:5,alignItems:'center'}}>
             <input type="checkbox" checked={exportColumns.includes(column)} onChange={e=>setExportColumns(cols=>e.target.checked?[...cols,column]:cols.filter(c=>c!==column))}/>{column}
           </label>)}
         </div>
@@ -218,12 +246,12 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     </div>}
     <div className="quality-split">
       <div className="panel quality-table-panel" ref={inspectorRef}>
-        <div className="panel-title"><ClipboardCheck size={18}/><h2>Dataset inspector</h2><span className="pill muted">{preview?.total_matching_rows??0} rows</span></div>
-        <div className="quality-toolbar"><div className="workspace-tabs" style={{margin:0}}>{(['original','working','proposed'] as const).map(t=><button className={'workspace-tab '+(view===t?'selected':'')} onClick={()=>setView(t)} key={t}>{t==='original'?'Original':t==='working'?'Current':'Proposed'}</button>)}</div><button className="btn small" onClick={()=>{setOffset(0);void load()}}><RefreshCw size={14}/> Refresh</button></div>
+        <div className="panel-title"><ClipboardCheck size={18}/><h2>Dataset inspector</h2><span className="pill muted">{verifiedPreview?.total_matching_rows??0} rows</span></div>
+        <div className="quality-toolbar"><div className="workspace-tabs" style={{margin:0}}>{(['original','working','proposed'] as const).map(t=><button className={'workspace-tab '+(view===t?'selected':'')} onClick={()=>setView(t)} key={t}>{t==='original'?'Original':t==='working'?'Current':'Proposed'}</button>)}</div><button className="btn small" onClick={()=>{setError('');setOffset(0);setRetryReads(count=>count+1)}}><RefreshCw size={14}/> Refresh</button></div>
         <p className="muted-caption">{issue?`Showing records related to: ${issue.title}`:'Showing a paginated sample of the working dataset.'} Changed cells are highlighted.</p>
-        <div className="table-scroll quality-table"><table><thead><tr><th>ROW</th>{Object.keys(preview?.rows[0]?.working??{}).map(c=><th key={c}>{c}</th>)}</tr></thead><tbody>{preview?.rows.map(r=>{const data=view==='original'?r.original:view==='proposed'?(r.proposed??r.working):r.working;return <tr key={r.row_number}><td className="cell-strong">{r.row_number}</td>{Object.keys(r.working).map(c=><td key={c} className={val(data[c])!==val(r.original[c])?'changed-cell':''} title={val(data[c])}>{val(data[c]).slice(0,45)}</td>)}</tr>})}</tbody></table></div>
-        {!preview?.rows.length&&<p className="body-muted">No matching records on this page.</p>}
-        <div className="quality-pagination"><button className="btn small" disabled={offset===0} onClick={()=>setOffset(Math.max(0,offset-12))}><ArrowLeft size={14}/> Previous</button><span>{preview?.total_matching_rows?`${offset+1}–${Math.min(offset+12,preview.total_matching_rows)} of ${preview.total_matching_rows}`:'No rows'}</span><button className="btn small" disabled={!preview||offset+12>=preview.total_matching_rows} onClick={()=>setOffset(offset+12)}>Next <ArrowRight size={14}/></button></div>
+        <div className="table-scroll quality-table"><table><thead><tr><th>ROW</th>{Object.keys(verifiedPreview?.rows[0]?.working??{}).map(c=><th key={c}>{c}</th>)}</tr></thead><tbody>{verifiedPreview?.rows.map(r=>{const data=view==='original'?r.original:view==='proposed'?(r.proposed??r.working):r.working;return <tr key={r.row_number}><td className="cell-strong">{r.row_number}</td>{Object.keys(r.working).map(c=><td key={c} className={val(data[c])!==val(r.original[c])?'changed-cell':''} title={val(data[c])}>{val(data[c]).slice(0,45)}</td>)}</tr>})}</tbody></table></div>
+        {!verifiedPreview?.rows.length&&<p className="body-muted">No matching records on this page.</p>}
+        <div className="quality-pagination"><button className="btn small" disabled={offset===0} onClick={()=>setOffset(Math.max(0,offset-12))}><ArrowLeft size={14}/> Previous</button><span>{verifiedPreview?.total_matching_rows?`${offset+1}–${Math.min(offset+12,verifiedPreview.total_matching_rows)} of ${verifiedPreview.total_matching_rows}`:'No rows'}</span><button className="btn small" disabled={!verifiedPreview||offset+12>=verifiedPreview.total_matching_rows} onClick={()=>setOffset(offset+12)}>Next <ArrowRight size={14}/></button></div>
       </div>
       <div ref={findingsRef} className="panel quality-findings-panel">
         <div className="panel-title"><Sparkles size={18}/><h2>Intelligent findings</h2><span className="pill muted">LOCAL RULES</span></div>
