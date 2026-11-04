@@ -208,7 +208,7 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
         .toBeVisible();
       await expect(switcher).toHaveValue(bid!);
       await expect(target).toHaveValue('Amount');
-      await expect(page).toHaveURL(/#\\/studio\\/prepare$/);
+      await expect(page).toHaveURL(UI+'/#/studio/prepare');
       expect(crossTabProfileReads).toBe(1);
       expect(approvals.length).toBe(originalPromptCount+1);
       expect(approvals.at(-1)).toMatch(/primary workspace.*discard/i);
