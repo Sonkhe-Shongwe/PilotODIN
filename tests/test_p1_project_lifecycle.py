@@ -239,3 +239,80 @@ def test_impact_safely_reports_active_training_and_does_not_modify_it(workspace)
     assert any("training" in note.lower() for note in payload["blockers"])
     assert storage.get_experiment(run)["status"]=="queued"
     assert all(path.read_bytes()==original for path,original,_ in sources)
+
+
+def test_archived_project_blocks_direct_and_indirect_http_mutations(workspace):
+    client,home,(a,b),sources=workspace
+    from backend import investigations, reports, autonomy, quality_approvals
+    investigations.init()
+    reports.init()
+    autonomy.init()
+    quality_approvals._init_tables()
+    eid=storage.new_experiment(a,{"target":"Flag"})
+    with storage.connect() as con:
+        con.execute("UPDATE experiments SET status='completed' WHERE id=?",(eid,))
+    inv=investigations.create(a,"Synthetic investigation of categories")
+    report_id=storage.uid()
+    with storage.connect() as con:
+        con.execute("INSERT INTO reports_v1 VALUES (?,?,?)",(report_id,a,storage.now()))
+    def snapshot():
+        with storage.connect() as con:
+            return {table:con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                for table in ("projects","quality_state","quality_versions",
+                              "quality_actions","quality_decisions","quality_approval_receipts",
+                              "experiments","investigations_v1","evidence_v1","odin_runs",
+                              "reports_v1","report_revisions_v1","target_business_context",
+                              "explore_snapshots_v1")}
+    before=snapshot()
+    assert _change(client,a,"archive",0).status_code==200
+    urls=[
+        f"/api/projects/{a}/quality/commit",
+        f"/api/projects/{a}/quality/proposals",
+        f"/api/projects/{a}/quality/decisions",
+        f"/api/projects/{a}/quality/export",
+        f"/api/projects/{a}/quality/impute",
+        f"/api/projects/{a}/experiments",
+        f"/api/projects/{a}/target-business-context",
+        f"/api/projects/{a}/investigations",
+        f"/api/projects/{a}/reports",
+        f"/api/projects/{a}/report-quality",
+        f"/api/projects/{a}/explore/saved",
+        f"/api/projects/{a}/assistant",
+        f"/api/experiments/{eid}/select",
+        f"/api/experiments/{eid}/predict",
+        f"/api/experiments/{eid}/cancel",
+        f"/api/investigations/{inv['id']}/runs",
+        f"/api/investigations/{inv['id']}/autonomy/start",
+        f"/api/investigations/{inv['id']}/autonomy/resume",
+        f"/api/investigations/{inv['id']}/autonomy/cancel",
+        f"/api/reports/{report_id}/revisions",
+    ]
+    for url in urls:
+        response=client.post(url,json={})
+        assert response.status_code==409,(url,response.status_code,response.text)
+        assert "archived" in response.json()["detail"].lower()
+    # A future caller cannot bypass the gate by replacing method POST with PUT.
+    assert client.put(f"/api/projects/{a}/quality/commit",json={}).status_code==409
+    assert client.delete(f"/api/projects/{a}/quality/commit").status_code==409
+    assert snapshot()==before
+    for source,payload,_ in sources:
+        assert source.read_bytes()==payload
+    assert client.get("/api/projects/manage").status_code==200
+    assert client.get(f"/api/projects/{a}/deletion-impact?expected_revision=1").status_code==200
+    assert _change(client,a,"rename",1,name="Archived renamed").status_code==200
+    assert _change(client,a,"restore",2).status_code==200
+    assert client.get(f"/api/projects/{a}").status_code==200
+    # Known active project still follows normal FastAPI validation, not archive denial.
+    assert client.post(f"/api/projects/{b}/quality/commit",json={}).status_code==422
+
+
+def test_archived_write_gate_does_not_preempt_desktop_session_auth(workspace,monkeypatch):
+    client,home,(a,b),sources=workspace
+    assert _change(client,a,"archive",0).status_code==200
+    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION","synthetic-local-test-only")
+    response=client.post(f"/api/projects/{a}/quality/commit",json={})
+    assert response.status_code==401,response.text
+    response=client.post(f"/api/projects/{a}/quality/commit",json={},
+        headers={"x-pilotodin-session":"synthetic-local-test-only"})
+    assert response.status_code==409,response.text
+    assert all(path.read_bytes()==payload for path,payload,_ in sources)

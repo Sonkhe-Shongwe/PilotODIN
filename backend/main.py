@@ -74,6 +74,9 @@ def _allowed_desktop_origin(origin: str) -> bool:
 async def desktop_session_guard(request: Request, call_next):
     secret = os.environ.get("PILOTODIN_DESKTOP_SESSION", "")
     if not secret:
+        archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
+        if archived is not None:
+            return JSONResponse({"detail": "Project is archived. Restore it in Manage projects before making changes."},status_code=409)
         return await call_next(request)
     # Let CORSMiddleware handle preflight; it must not grant an arbitrary
     # cross-site origin permission. Browser actual requests still need token.
@@ -88,6 +91,10 @@ async def desktop_session_guard(request: Request, call_next):
     provided = request.headers.get("x-pilotodin-session", "")
     if not hmac.compare_digest(provided, secret):
         return JSONResponse({"detail": "Desktop session authentication required"}, status_code=401)
+    # Session authentication precedes the read-only archive-status lookup.
+    archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
+    if archived is not None:
+        return JSONResponse({"detail": "Project is archived. Restore it in Manage projects before making changes."},status_code=409)
     return await call_next(request)
 
 

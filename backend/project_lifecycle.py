@@ -7,7 +7,61 @@ Archive hides a project from the active selector and from normal project loads.
 
 from __future__ import annotations
 
+import re
 from . import storage
+
+# Only known project-scoped HTTP mutations are covered by the request gate.
+# This is not an atomic lock against archive concurrent with an in-flight
+# operation. A later P1 increment must pair it with commit-time write checks.
+_PROJECT_ROUTE = re.compile(r"^/api/projects/([a-f0-9]{32})(?:/.*)?$")
+_EXPERIMENT_ROUTE = re.compile(r"^/api/experiments/([a-f0-9]{32})/(?:cancel|select|predict)$")
+_INVESTIGATION_ROUTE = re.compile(r"^/api/investigations/([a-f0-9]{32})/(?:runs|autonomy/(?:start|resume|cancel))$")
+_REPORT_ROUTE = re.compile(r"^/api/reports/([a-f0-9]{32})/revisions$")
+
+
+def archived_mutation_project(method: str, path: str) -> str | None:
+    """Find an archived owning project for a mutating HTTP request.
+
+    A 409 is deliberate for an archived owner. Missing projects/records fall
+    through to existing API 404/validation behaviour. Read-only GET/HEAD,
+    project import and lifecycle rename/restore are not blocked.
+    No SQL writes, project file reads or user-controlled query fragments.
+    """
+    if method.upper() not in ("POST", "PUT", "PATCH", "DELETE"):
+        return None
+    direct = _PROJECT_ROUTE.fullmatch(path)
+    if direct:
+        pid = direct.group(1)
+        if path in (f"/api/projects/{pid}/lifecycle",
+                    f"/api/projects/{pid}/deletion-impact"):
+            return None
+        sql = ("SELECT p.id FROM projects p JOIN project_lifecycle l "
+               "ON l.project_id=p.id WHERE p.id=? AND l.archived_at IS NOT NULL")
+    else:
+        experiment = _EXPERIMENT_ROUTE.fullmatch(path)
+        investigation = _INVESTIGATION_ROUTE.fullmatch(path)
+        report = _REPORT_ROUTE.fullmatch(path)
+        if experiment:
+            pid = experiment.group(1)
+            sql = ("SELECT p.id FROM experiments e JOIN projects p ON p.id=e.project_id "
+                   "JOIN project_lifecycle l ON l.project_id=p.id "
+                   "WHERE e.id=? AND l.archived_at IS NOT NULL")
+        elif investigation:
+            pid = investigation.group(1)
+            sql = ("SELECT p.id FROM investigations_v1 i JOIN projects p ON p.id=i.project_id "
+                   "JOIN project_lifecycle l ON l.project_id=p.id "
+                   "WHERE i.id=? AND l.archived_at IS NOT NULL")
+        elif report:
+            pid = report.group(1)
+            sql = ("SELECT p.id FROM reports_v1 r JOIN projects p ON p.id=r.project_id "
+                   "JOIN project_lifecycle l ON l.project_id=p.id "
+                   "WHERE r.id=? AND l.archived_at IS NOT NULL")
+        else:
+            return None
+    with storage.connect() as con:
+        found = con.execute(sql, (pid,)).fetchone()
+    return found["id"] if found else None
+
 
 
 class ProjectLifecycleError(ValueError):
