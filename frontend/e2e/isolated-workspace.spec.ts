@@ -1066,7 +1066,14 @@ test('keyboard Tab Shift-Tab sidebar toggle and arrow navigation retain syntheti
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button',{name:'New project: import dataset'})).toBeFocused();
   await page.keyboard.press('Tab');
+  const manage=page.getByRole('button',{name:'Manage projects'});
+  await expect(manage).toBeFocused();
+  await page.keyboard.press('Tab');
   const collapse=nav.getByRole('button',{name:'Collapse navigation sidebar'});
+  await expect(collapse).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(manage).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(collapse).toBeFocused();
   await page.keyboard.press('Enter');
   const expand=nav.getByRole('button',{name:'Expand navigation sidebar'});
