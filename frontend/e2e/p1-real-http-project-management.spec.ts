@@ -12,11 +12,11 @@ const csv=(prefix:'D'|'E')=>[
  ...Array.from({length:20},(_,i)=>prefix+String(i+1).padStart(4,'0')+','+(i+1)*19+','+(i%2?'ready':'hold')),
 ].join('\n')+'\n';
 type Permission={id:string;action:'rename'|'archive'|'restore';expected_revision:number;name?:string};
-const equivalent=(a:unknown,b:Permission)=>{
+const equivalent=(a:unknown,b:Omit<Permission,'id'>)=>{
  if(!a||typeof a!=='object'||Array.isArray(a))return false;
  const obj=a as Record<string,unknown>;
  return Object.keys(obj).sort().join('|')===Object.keys(b).sort().join('|')
-  &&Object.keys(b).every(k=>obj[k]===b[k as keyof Permission]);
+  &&Object.keys(b).every(k=>obj[k]===b[k as keyof Omit<Permission,'id'>]);
 };
 async function guardBrowser(context:BrowserContext,did:string,eid:string){
  let permit:Permission|null=null;
