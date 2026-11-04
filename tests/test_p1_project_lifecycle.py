@@ -427,3 +427,113 @@ def test_quality_write_first_serializes_archive_and_keeps_evidence(workspace, mo
             "SELECT current_version FROM quality_state WHERE project_id=?",(a,)
         ).fetchone()[0]==0
     assert all(path.read_bytes()==payload for path,payload,_ in sources)
+
+
+def test_archive_first_blocks_cached_reports_explore_and_investigations(workspace, monkeypatch):
+    """A pre-archive project object cannot authorize a late SQL insert."""
+    from backend import reports, saved_analyses, investigations, project_lifecycle
+    client, home, (a,b), sources = workspace
+    reports.init()
+    investigations.init()
+    original = storage.get_project(a)
+    existing_inv = investigations.create(a, "Disposable investigation of quality findings")
+    with storage.connect() as con:
+        before={
+            table:con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in ("investigations_v1", "evidence_v1",
+                          "explore_snapshots_v1", "reports_v1",
+                          "report_revisions_v1", "report_quality_audits_v1",
+                          "quality_versions")
+        }
+    assert _change(client,a,"archive",0).status_code==200
+    # Simulate a request which loaded a stale project before the archive and
+    # has already begun CPU-side chart/report/investigation computations.
+    get_original=storage.get_project
+    monkeypatch.setattr(storage,"get_project",
+        lambda pid: original if pid==a else get_original(pid))
+    operations=[
+        lambda: reports.capture_quality(a,0),
+        lambda: reports.save(a,"Synthetic reviewed report","", [storage.uid()]),
+        lambda: saved_analyses.save(
+            a,title="Synthetic Explore snapshot",expected_version=0,
+            x="Amount",y=None,kind="histogram",aggregation="count",
+            bins=8,correlation_method="pearson",filters=[]),
+        lambda: investigations.create(a,"Another disposable investigation for testing"),
+        lambda: investigations.run(existing_inv["id"],"overview",{},0),
+    ]
+    for write in operations:
+        with pytest.raises((reports.ReportError,
+                            saved_analyses.SavedAnalysisError,
+                            project_lifecycle.ProjectLifecycleError)) as error:
+            write()
+        assert error.value.status==409
+        assert "archived" in str(error.value).lower()
+    with storage.connect() as con:
+        after={
+            table:con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in before
+        }
+    assert after==before
+    for path,payload,_ in sources:
+        assert path.read_bytes()==payload
+    monkeypatch.setattr(storage,"get_project",get_original)
+    assert _change(client,a,"restore",1).status_code==200
+    # Restore puts the same project ID back into the normal write path.
+    audit=reports.capture_quality(a,0)
+    assert audit["project_id"]==a
+    report=reports.save(a,"Synthetic review report","", [audit["id"]])
+    assert report["project_id"]==a
+    captured=saved_analyses.save(
+        a,title="Restored Explore snapshot",expected_version=0,
+        x="Amount",y=None,kind="histogram",aggregation="count",
+        bins=8,correlation_method="pearson",filters=[])
+    assert captured["project_id"]==a
+    created=investigations.create(a,"Restored investigation with data provenance")
+    assert created["project_id"]==a
+
+
+def test_report_write_transaction_precedes_concurrent_archive(workspace, monkeypatch):
+    """An already-started report write reserves SQLite's shared archive lock."""
+    from backend import reports, project_lifecycle
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    client,home,(a,b),sources=workspace
+    reports.init()
+    acquired=Event()
+    continue_write=Event()
+    archive_started=Event()
+    normal=project_lifecycle.require_active_for_write
+
+    def intercept(con,pid):
+        assert pid==a and con.in_transaction
+        acquired.set()
+        if not continue_write.wait(timeout=12):
+            raise RuntimeError("Timed out waiting to release synthetic report writer")
+        return normal(con,pid)
+
+    monkeypatch.setattr(project_lifecycle,"require_active_for_write",intercept)
+    def archive():
+        archive_started.set()
+        return project_lifecycle.change(a,"archive",0)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        writer=pool.submit(reports.capture_quality,a,0)
+        try:
+            assert acquired.wait(timeout=12),"Report writer never acquired transaction"
+            lifecycle=pool.submit(archive)
+            assert archive_started.wait(timeout=5)
+            assert not lifecycle.done(), "Archive committed while report held write lock"
+        finally:
+            continue_write.set()
+        audit=writer.result(timeout=15)
+        archived=lifecycle.result(timeout=15)
+    assert audit["project_id"]==a
+    assert archived["archived_at"] is not None
+    with storage.connect() as con:
+        assert con.execute(
+            "SELECT COUNT(*) FROM report_quality_audits_v1 WHERE project_id=?",(a,)
+        ).fetchone()[0]==1
+        assert con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",(a,)
+        ).fetchone()[0]==0
+    assert all(path.read_bytes()==payload for path,payload,_ in sources)
