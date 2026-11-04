@@ -248,6 +248,13 @@ test('real HTTP reversible project management preserves mounted work on cross-wi
  expect(archived.status(),await archived.text()).toBe(200);
  expect((await archived.json()).archived_at).not.toBeNull();
  expect((await request.get(API+'/api/projects/'+pid)).status()).toBe(404);
+ // An already-mounted window cannot submit stale Quality, investigations,
+ // target context or reports after a different window archives its project.
+ for(const suffix of ['/quality/commit','/investigations','/target-business-context','/reports']){
+  const denied=await request.post(API+'/api/projects/'+pid+suffix,{data:{}});
+  expect(denied.status(),suffix+' '+await denied.text()).toBe(409);
+  expect((await denied.json()).detail).toContain('archived');
+ }
 
  // Only a versioned identity hint crosses pages. The receiver verifies
  // current backend metadata; no source, history or draft is transmitted.
