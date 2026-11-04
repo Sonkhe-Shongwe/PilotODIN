@@ -39,7 +39,10 @@ async function guardBrowser(context:BrowserContext,did:string,eid:string){
   const path=url.pathname.slice(4);
   const read=path==='/projects'||path==='/projects/manage'||path==='/ai/settings'
    ||[did,eid].some(id=>new RegExp('^/projects/'+id+'(?:/(?:live-profile|quality|quality/history|quality/preview|preparation|features|target-opportunities))?$').test(path));
-  if(method==='GET'&&read){await route.continue();return}
+  const impactRead=path==='/projects/'+did+'/deletion-impact'
+   && [...url.searchParams.keys()].length===1
+   && ['0','1','2','3'].includes(url.searchParams.get('expected_revision')??'');
+  if(method==='GET'&&(read||impactRead)){await route.continue();return}
   if(method==='PUT'&&url.search===''&&permit&&path==='/projects/'+permit.id+'/lifecycle'){
    let parsed:unknown;
    try{parsed=JSON.parse(request.postData()??'null')}catch{parsed=null}
@@ -111,6 +114,26 @@ test('real HTTP reversible project management preserves originals and active Stu
 
  // Rename only D; active E remains mounted and selected throughout.
  const dName=names.D.replace('.csv','');
+ // Read-only deletion impact review on synthetic D. No DELETE route exists.
+ await modal.getByRole('button',{name:'Review deletion impact for '+dName}).click();
+ const impact=modal.getByRole('region',{name:'Deletion impact review'});
+ await expect(impact).toContainText('Permanent deletion is unavailable.');
+ await expect(impact).toContainText('linked SQLite records');
+ await expect(impact).toContainText('Original dataset: Present.');
+ await expect(impact).toContainText('Managed dataset folder');
+ const impactApi=await request.get(API+'/api/projects/'+did+'/deletion-impact?expected_revision=0');
+ expect(impactApi.status()).toBe(200);
+ const body=await impactApi.json() as {
+  project_id:string;preview_only:boolean;deletion_available:boolean;
+  linked_sqlite_rows:number;records:{key:string;count:number}[];
+ };
+ expect(body.project_id).toBe(did);
+ expect(body.preview_only).toBe(true);
+ expect(body.deletion_available).toBe(false);
+ expect(body.records.find(item=>item.key==='quality_versions')?.count).toBe(1);
+ expect(body.linked_sqlite_rows).toBeGreaterThanOrEqual(2);
+ await impact.getByRole('button',{name:'Close impact review'}).click();
+ await expect(impact).toHaveCount(0);
  const replacement='Synthetic D review';
  const dRow=modal.locator('.po-pm-item').filter({hasText:dName});
  await dRow.getByRole('button',{name:'Rename '+dName}).click();
@@ -137,6 +160,16 @@ test('real HTTP reversible project management preserves originals and active Stu
  await expect(selector.locator('option[value="'+did+'"]')).toHaveCount(0);
  expect((await request.get(API+'/api/projects/'+did)).status()).toBe(404);
  await expect(selector).toHaveValue(eid);
+
+ // Archived projects can inspect their records, but never delete anything.
+ await archived.getByRole('button',{name:'Review deletion impact for '+replacement}).click();
+ await expect(impact).toContainText('Archived');
+ await expect(impact).toContainText('Permanent deletion is unavailable.');
+ const archivedImpact=await request.get(
+  API+'/api/projects/'+did+'/deletion-impact?expected_revision=2');
+ expect(archivedImpact.status()).toBe(200);
+ expect((await archivedImpact.json()).archived).toBe(true);
+ await impact.getByRole('button',{name:'Close impact review'}).click();
 
  // Restore the same immutable project identity, without reimporting.
  gate.authorize({id:did,action:'restore',expected_revision:2});
