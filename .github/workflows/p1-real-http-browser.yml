@@ -16,6 +16,9 @@ on:
       - backend/project_lifecycle.py
       - backend/quality.py
       - backend/quality_approvals.py
+      - backend/reports.py
+      - backend/saved_analyses.py
+      - backend/investigations.py
       - backend/storage.py
       - backend/main.py
       - frontend/e2e/p1-real-http-backend.ts

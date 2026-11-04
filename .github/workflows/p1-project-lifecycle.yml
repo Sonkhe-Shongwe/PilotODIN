@@ -10,6 +10,9 @@ on:
       - backend/project_lifecycle.py
       - backend/quality.py
       - backend/quality_approvals.py
+      - backend/reports.py
+      - backend/saved_analyses.py
+      - backend/investigations.py
       - backend/project_delete_impact.py
       - backend/main.py
       - tests/test_p1_project_lifecycle.py
@@ -42,6 +45,6 @@ jobs:
       - name: Install existing test requirements
         run: python -m pip install -r backend/requirements-test.txt
       - name: Validate source syntax
-        run: python -m compileall -q backend/project_lifecycle.py backend/project_delete_impact.py backend/storage.py backend/main.py backend/quality.py backend/quality_approvals.py tests/test_p1_project_lifecycle.py
+        run: python -m compileall -q backend/project_lifecycle.py backend/project_delete_impact.py backend/storage.py backend/main.py backend/quality.py backend/quality_approvals.py backend/reports.py backend/saved_analyses.py backend/investigations.py tests/test_p1_project_lifecycle.py
       - name: Exercise reversible synthetic project lifecycle
         run: python -m pytest -q tests/test_p1_project_lifecycle.py tests/test_p1_real_api_failed_switch.py tests/test_p1_import_recovery.py

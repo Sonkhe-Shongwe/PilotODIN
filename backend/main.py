@@ -1059,7 +1059,12 @@ def create_canvas_investigation(project_id: str,body:NewCanvasInvestigationReque
     objective = body.objective.strip()
     if len(objective) < 8:
         raise HTTPException(status_code=422,detail='Provide a meaningful investigation objective')
-    return investigations.create(project_id,objective)
+    try:
+        return investigations.create(project_id,objective)
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 @app.get('/api/investigations/{investigation_id}')
 def get_canvas_investigation(investigation_id: str):
@@ -1075,6 +1080,8 @@ def run_canvas_tool(investigation_id: str,body:CanvasToolRunRequest):
         raise HTTPException(status_code=404,detail=str(e)) from e
     except RuntimeError as e:
         raise HTTPException(status_code=409,detail=str(e)) from e
+    except project_lifecycle.ProjectLifecycleError as e:
+        raise HTTPException(status_code=e.status,detail=str(e)) from e
     except ValueError as e:
         raise HTTPException(status_code=422,detail=str(e)) from e
 

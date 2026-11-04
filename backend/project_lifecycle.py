@@ -70,6 +70,28 @@ class ProjectLifecycleError(ValueError):
         super().__init__(detail)
 
 
+def require_active_for_write(con, project_id: str) -> None:
+    """Validate project inside the caller's SQLite write transaction.
+
+    Caller MUST acquire BEGIN IMMEDIATE before invoking this helper; archive
+    takes the same SQLite writer lock. This fences archived-first and
+    write-first interleavings for every participating mutation path.
+    """
+    if not con.in_transaction:
+        raise RuntimeError("Archive write fence requires BEGIN IMMEDIATE")
+    row=con.execute(
+        "SELECT p.id,l.archived_at FROM projects p "
+        "LEFT JOIN project_lifecycle l ON l.project_id=p.id "
+        "WHERE p.id=?", (project_id,)
+    ).fetchone()
+    if row is None:
+        raise ProjectLifecycleError("Project no longer exists.",404)
+    if row["archived_at"] is not None:
+        raise ProjectLifecycleError(
+            "Project is archived. Restore it in Manage projects before saving changes.",409
+        )
+
+
 def listing() -> list[dict]:
     """Read-only catalogue of active and archived records, including CAS revision."""
     with storage.connect() as con:

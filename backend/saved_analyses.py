@@ -10,7 +10,7 @@ import hashlib
 import json
 import sqlite3
 
-from . import analytics, explore_filters, quality, storage
+from . import analytics, explore_filters, quality, storage, project_lifecycle
 
 MAX_SAVED = 50
 MAX_SNAPSHOT_BYTES = 110_000
@@ -104,7 +104,21 @@ def save(project_id: str, *, title: str, expected_version: int,
     digest=hashlib.sha256(canonical.encode('utf-8')).hexdigest()
     identity=storage.uid();created_at=storage.now()
     with storage.connect() as conn:
+        # _init uses executescript, which can commit an open SQLite transaction.
+        # Create idempotent schema BEFORE reserving the archive/write lock.
         _init(conn)
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            project_lifecycle.require_active_for_write(conn,project_id)
+        except project_lifecycle.ProjectLifecycleError as exc:
+            raise SavedAnalysisError(str(exc),exc.status) from exc
+        latest=conn.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",(project_id,)
+        ).fetchone()
+        if latest is None or latest["current_version"]!=version:
+            raise SavedAnalysisError(
+                "Dataset version changed while preparing the analysis. Refresh Explore before saving.",409
+            )
         conn.execute("""INSERT INTO explore_snapshots_v1
           (id,project_id,title,dataset_version,configuration_json,snapshot_json,sha256,created_at)
           VALUES(?,?,?,?,?,?,?,?)""",

@@ -21,9 +21,9 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether, CondPageBreak
 
 try:
-    from . import quality, storage, report_charts
+    from . import quality, storage, report_charts, project_lifecycle
 except ImportError:
-    import quality, storage, report_charts
+    import quality, storage, report_charts, project_lifecycle
 
 MAX_EVIDENCE = 15
 MAX_SNAPSHOT = 130_000
@@ -173,6 +173,7 @@ def capture_quality(project_id: str, expected_version: int) -> dict:
     with storage.connect() as con:
         con.execute('BEGIN IMMEDIATE')
         try:
+            project_lifecycle.require_active_for_write(con, project_id)
             quality._ensure(con, p)
             version, active = quality._state(con, project_id)
             if version != expected_version:
@@ -247,7 +248,7 @@ def capture_quality(project_id: str, expected_version: int) -> dict:
                    VALUES(?,?,?,?,?,?)''',
                 (ident, project_id, version, canonical, digest, captured)
             )
-        except quality.QualityError as exc:
+        except (quality.QualityError, project_lifecycle.ProjectLifecycleError) as exc:
             raise ReportError(str(exc), exc.status) from exc
     return {'id':ident,'project_id':project_id,'dataset_version':version,
             'source_snapshot_sha256':digest,'captured_at':captured,
@@ -459,6 +460,10 @@ def save(project_id: str, title: str, narrative: str, evidence_ids: list[str], r
         raise ReportError('Project does not exist',404)
     with storage.connect() as con:
         con.execute('BEGIN IMMEDIATE')
+        try:
+            project_lifecycle.require_active_for_write(con,project_id)
+        except project_lifecycle.ProjectLifecycleError as exc:
+            raise ReportError(str(exc),exc.status) from exc
         if report_id is not None:
             existing = con.execute('SELECT project_id FROM reports_v1 WHERE id=?',(report_id,)).fetchone()
             if existing is None:
