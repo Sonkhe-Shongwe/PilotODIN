@@ -9,19 +9,28 @@ const UI='http://127.0.0.1:5178';
 const API='http://127.0.0.1:8000';
 const A_FILENAME='pilotodin_p1_http_A.csv';
 const B_FILENAME='pilotodin_p1_http_B.csv';
-const csv=(prefix:string)=>[
-  'OrderID,Outcome,Amount',
-  ...Array.from({length:18},(_,i)=>
-    `${prefix}${String(i+1).padStart(4,'0')},${i%3===0?'Pending':'Approved'},${(i+1)*13}`),
-].join('\n')+'\n';
+// Keep A byte-for-byte compatible with its original pinned-source tests.
+ // B alone carries two bounded analysis-only columns. No real user files.
+const csv=(prefix:string)=>{
+  const diagnosticB=prefix==='B';
+  return [
+    diagnosticB?'OrderID,Outcome,Amount,MissingScore,ExtremeAmount':'OrderID,Outcome,Amount',
+    ...Array.from({length:18},(_,i)=>{
+      const base=`${prefix}${String(i+1).padStart(4,'0')},${i%3===0?'Pending':'Approved'},${(i+1)*13}`;
+      return diagnosticB
+        ?base+`,${i===2||i===11?'':i+1},${i===17?9999:i+10}`
+        :base;
+    }),
+  ].join('\n')+'\n';
+};
 
 type Audit={imports:number;blockedWrites:string[];unexpectedReads:string[];blockedOrigins:string[];backendReads:string[]};
-type AllowedInvestigation={projectId:string;issueId:string};
+type AllowedQualityReads={projectId:string;issueIds:string[];missingColumn:string};
 
 // The browser can send exact synthetic data to a real local backend, but no
 // other API mutation, cloud request or unknown GET may leave this context.
 async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string,
-  allowedInvestigation:AllowedInvestigation):Promise<Audit>{
+  allowedQualityReads:AllowedQualityReads):Promise<Audit>{
   const audit:Audit={imports:0,blockedWrites:[],unexpectedReads:[],blockedOrigins:[],backendReads:[]};
   await context.route('**/*',async(route:Route)=>{
     const req=route.request(),url=new URL(req.url()),method=req.method();
@@ -47,18 +56,22 @@ async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string,
     const p=url.pathname.slice(4);
     const allowedRead=p==='/projects'||p==='/ai/settings'
       ||/^\/projects\/[a-f0-9]{32}(?:\/(?:live-profile|quality|quality\/history|quality\/preview|preparation|features|target-opportunities))?$/.test(p);
-    // Allow only one pre-reviewed, source-bound read-only investigation of
-    // synthetic B's real identifier finding, pinned to original Quality v0.
-    // The finding identity is obtained from actual B Quality GET after import.
-    const allowedFindingRead=method==='GET'
-      && /^[a-f0-9]{32}$/.test(allowedInvestigation.projectId)
-      && allowedInvestigation.issueId.length>0
-      && allowedInvestigation.issueId.length<=128
-      && p===`/projects/${allowedInvestigation.projectId}/quality/investigate`
+    // Only the exact v0 generated B identifier/outlier issue IDs, discovered
+    // from real Quality GET, and one named B missingness column are permitted.
+    // Never allow arbitrary issue IDs, query extras, remote hosts or writes.
+    const validFixtureProject=/^[a-f0-9]{32}$/.test(allowedQualityReads.projectId);
+    const allowedFindingRead=method==='GET'&&validFixtureProject
+      && p===`/projects/${allowedQualityReads.projectId}/quality/investigate`
       && [...url.searchParams.keys()].length===2
-      && url.searchParams.get('issue_id')===allowedInvestigation.issueId
+      && allowedQualityReads.issueIds.some(id=>id.length>0&&id.length<=128
+        &&url.searchParams.get('issue_id')===id)
       && url.searchParams.get('expected_version')==='0';
-    if((method==='GET'&&allowedRead)||allowedFindingRead){
+    const allowedMissingnessRead=method==='GET'&&validFixtureProject
+      && p===`/projects/${allowedQualityReads.projectId}/quality/missingness`
+      && [...url.searchParams.keys()].length===1
+      && allowedQualityReads.missingColumn==='MissingScore'
+      && url.searchParams.get('column')===allowedQualityReads.missingColumn;
+    if((method==='GET'&&allowedRead)||allowedFindingRead||allowedMissingnessRead){
       audit.backendReads.push(p);
       await route.continue();return;
     }
@@ -116,8 +129,8 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
   expect(seed.status()).toBe(201);
   const aid=(await seed.json()).id as string;
   expect(aid).toMatch(/^[a-f0-9]{32}$/);
-  const allowedInvestigation:AllowedInvestigation={projectId:'',issueId:''};
-  const audit=await allowOnlyDisposableHTTP(context,sourceB,allowedInvestigation);
+  const allowedQualityReads:AllowedQualityReads={projectId:'',issueIds:[],missingColumn:''};
+  const audit=await allowOnlyDisposableHTTP(context,sourceB,allowedQualityReads);
   await page.addInitScript((id:string)=>{
     localStorage.setItem('pilotodin-current',id);
     localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','quality']));
@@ -144,7 +157,7 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
   await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
   await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
 
-  await test.step('investigate a genuine v0 identifier finding over real read-only backend HTTP',async()=>{
+  await test.step('investigate actual v0 identifier, missingness and outlier findings over real read-only backend HTTP',async()=>{
     // All evidence comes from the newly imported B synthetic source. No
     // correction, approval, export or arbitrary browser API write is allowed.
     const qualityResponse=await request.get(API+'/api/projects/'+bid+'/quality');
@@ -167,8 +180,17 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
 
     // Only this exact generated project, issue ID and original version may
     // use the extra browser GET through the fail-closed route.
-    allowedInvestigation.projectId=bid!;
-    allowedInvestigation.issueId=finding!.id;
+    const missingFinding=qualitySnapshot.issues.find(x=>
+      x.kind==='missing'&&x.column==='MissingScore');
+    const outlierFinding=qualitySnapshot.issues.find(x=>
+      x.kind==='outliers'&&x.column==='ExtremeAmount');
+    expect(missingFinding).toBeDefined();
+    expect(outlierFinding).toBeDefined();
+    expect(outlierFinding!.id.length).toBeGreaterThan(0);
+    expect(outlierFinding!.id.length).toBeLessThanOrEqual(128);
+    allowedQualityReads.projectId=bid!;
+    allowedQualityReads.issueIds=[finding!.id,outlierFinding!.id];
+    allowedQualityReads.missingColumn='MissingScore';
     const findingButton=primary.locator('.quality-issue')
       .filter({hasText:'Possible identifier or high-cardinality feature'})
       .filter({hasText:'OrderID'});
@@ -196,11 +218,69 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
     await expect(region).toContainText('OrderID');
     await expect(region).toContainText('18 affected of 18 records');
 
+    await test.step('verify numeric missingness diagnosis without approving median fill',async()=>{
+      const missingButton=primary.locator('.quality-issue')
+        .filter({hasText:'Missing or blank values'}).filter({hasText:'MissingScore'});
+      await expect(missingButton).toHaveCount(1);
+      await missingButton.click();
+      const missingResponse=page.waitForResponse(response=>{
+        const u=new URL(response.url());
+        return response.request().method()==='GET'&&u.origin===API
+          &&u.pathname===`/api/projects/${bid}/quality/missingness`
+          &&u.searchParams.get('column')==='MissingScore';
+      });
+      await primary.getByRole('button',{name:'Investigate missingness'}).click();
+      const reply=await missingResponse;
+      expect(reply.status()).toBe(200);
+      const report=await reply.json();
+      expect(report).toMatchObject({
+        operation:'missingness',column:'MissingScore',version:0,
+        total_rows:18,missing_rows:2,row_numbers:[3,12]
+      });
+      expect(report.suggested_treatments).toEqual(
+        expect.arrayContaining([expect.objectContaining({id:'median',requires_approval:true})]));
+      const region=primary.getByRole('region',{name:'Verified missing data investigation'});
+      await expect(region).toContainText('Local investigation · 2 missing');
+      await expect(region).toContainText('Rows: 3, 12');
+      // The median option is *shown* for review; never click its approval.
+    });
+
+    await test.step('verify genuine Tukey outlier diagnosis, with no deletion or correction',async()=>{
+      const outlierButton=primary.locator('.quality-issue')
+        .filter({hasText:'Unusual numerical values'}).filter({hasText:'ExtremeAmount'});
+      await expect(outlierButton).toHaveCount(1);
+      await outlierButton.click();
+      const outlierResponse=page.waitForResponse(response=>{
+        const u=new URL(response.url());
+        return response.request().method()==='GET'&&u.origin===API
+          &&u.pathname===`/api/projects/${bid}/quality/investigate`
+          &&u.searchParams.get('issue_id')===outlierFinding!.id
+          &&u.searchParams.get('expected_version')==='0';
+      });
+      await primary.getByRole('button',{name:'Investigate unusual values'}).click();
+      const reply=await outlierResponse;
+      expect(reply.status()).toBe(200);
+      const result=await reply.json();
+      expect(result).toMatchObject({
+        project_id:bid,version:0,issue_id:outlierFinding!.id,
+        kind:'outliers',column:'ExtremeAmount',
+        dataset_rows:18,affected_rows:1,affected_row_numbers:[18]
+      });
+      expect(result.statistical_method).toContain('Tukey');
+      expect(result.statistics.max).toBe(9999);
+      const region=primary.getByRole('region',{name:'Read-only finding investigation'});
+      await expect(region).toContainText('VERIFIED · v0');
+      await expect(region).toContainText('ExtremeAmount');
+      await expect(region).toContainText('1 affected of 18 records');
+    });
+
     const historyAfter=await request.get(API+'/api/projects/'+bid+'/quality/history');
     expect(historyAfter.status()).toBe(200);
     expect(await historyAfter.json()).toEqual(baseline);
     expect(audit.backendReads.filter(p=>
-      p===`/projects/${bid}/quality/investigate`)).toHaveLength(1);
+      p===`/projects/${bid}/quality/investigate`)).toHaveLength(2);
+    expect(audit.backendReads.filter(p=>
+      p===`/projects/${bid}/quality/missingness`)).toHaveLength(1);
     expect(audit.unexpectedReads).toEqual([]);
     expect(audit.blockedWrites).toEqual([]);
     expect(audit.blockedOrigins).toEqual([]);
