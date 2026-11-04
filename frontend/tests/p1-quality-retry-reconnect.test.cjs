@@ -203,7 +203,7 @@ function errorEffectHarness(){
   return new Promise((resolve,reject)=>reads.push({ticket,resolve,reject}));
  };
  const start=()=>{
-  const scope={load,readGuard,setError:v=>errors.push(v),
+  const scope={load,readGuard,retryReads:0,setError:v=>errors.push(v),
    useEffect:callback=>{cleanup=callback()}};
   vm.runInNewContext(errorEffectCompiled.outputText,scope,{timeout:1000});
  };
