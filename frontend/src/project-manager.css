@@ -21,7 +21,8 @@
 .po-pm-details small{font-size:11px;color:#76829a;overflow-wrap:anywhere}
 .po-pm-controls,.po-pm-edit{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .po-pm-edit label{font-size:11px}
-.po-pm-edit input{border:1px solid #aeb9d1;padding:8px;border-radius:7px;min-width:110px;max-width:240px}
+.po-pm-edit{width:100%;min-width:0}
+.po-pm-edit input{border:1px solid #aeb9d1;padding:8px;border-radius:7px;flex:1 1 360px;width:min(100%,440px);min-width:0;max-width:440px}
 .po-pm-controls button,.po-pm-edit button,.po-pm-dialog>footer button{display:inline-flex;align-items:center;gap:4px;border:1px solid #cdd3e4;border-radius:8px;padding:8px;background:white;font-size:12px;font-weight:700;color:#413684}
 .po-pm-controls button:hover:not(:disabled),.po-pm-edit button:hover:not(:disabled){background:#eeeafc}
 .po-pm-error,.po-pm-notice{padding:10px;margin:8px 22px;border-radius:7px;font-size:12px}
@@ -42,3 +43,6 @@
 .po-pm-limitations{color:#657089}
 .po-pm-impact-blocked{color:#804321;background:#fff5e7;padding:9px;border-radius:7px;border:1px solid #ecd3a8}
 @media(max-width:620px){.po-pm-impact{margin-inline:12px;padding:10px}}
+
+/* Long project names remain legible; buttons wrap rather than crowding input. */
+@media(max-width:620px){.po-pm-edit label{width:100%}.po-pm-edit input{flex:1 1 100%;max-width:none}}

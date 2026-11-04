@@ -53,3 +53,42 @@ test('remote lifecycle signal has no personal data; backend verification precede
  assert.match(shell,/Your unsaved fields remain visible here/);
  assert.doesNotMatch(code,/dataset_path|profile|original_source|setItem\([^)]*filename/);
 });
+
+
+test('duplicate project names show CSV and XLSX first without changing stable IDs',()=>{
+ const ts=require('typescript'),vm=require('node:vm');
+ const code=ts.transpileModule(file('projectOptionLabels.ts'),{
+  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}
+ }).outputText;
+ const sandbox={exports:{}};
+ vm.runInNewContext(code,sandbox);
+ const labels=sandbox.exports.projectOptionLabels;
+ const items=[
+  {id:'a'.repeat(32),name:'Synthetic Orders',filename:'Synthetic Orders.csv'},
+  {id:'b'.repeat(32),name:'Synthetic Orders',filename:'Synthetic Orders.xlsx'},
+  {id:'c'.repeat(32),name:'Other Project',filename:'Other Project.csv'},
+  {id:'d'.repeat(32),name:'Same',filename:'one.csv'},
+  {id:'e'.repeat(32),name:'same',filename:'two.csv'},
+ ];
+ const result=labels(items);
+ assert.equal(result.get(items[0].id),'[CSV] Synthetic Orders');
+ assert.equal(result.get(items[1].id),'[XLSX] Synthetic Orders');
+ assert.equal(result.get(items[2].id),'Other Project');
+ assert.equal(result.get(items[3].id),'[CSV] Same · dddddddd');
+ assert.equal(result.get(items[4].id),'[CSV] same · eeeeeeee');
+ assert.equal(result.size,items.length);
+ assert.match(shell,/projectOptionLabels\(projects\)/);
+ assert.match(shell,/selectorLabels\.get\(p\.id\)\?\?p\.name/);
+ assert.match(shell,/aria-label="Switch project"/);
+});
+test('selector full hit area, hover/focus and wider rename field remain wired',()=>{
+ const selectorCss=file('unified-shell.css');
+ const renameCss=file('project-manager.css');
+ assert.match(selectorCss,/\.po-project-switcher select\{\s*position:absolute;inset:0/);
+ assert.match(selectorCss,/\.po-project-switcher>\.po-project-switcher-arrow\{right:12px\}/);
+ assert.match(selectorCss,/pointer-events:none/);
+ assert.match(selectorCss,/\.po-project-switcher:hover\{/);
+ assert.match(selectorCss,/\.po-project-switcher:focus-within\{/);
+ assert.match(renameCss,/max-width:440px/);
+ assert.match(renameCss,/@media\(max-width:620px\).*\.po-pm-edit input\{flex:1 1 100%;max-width:none\}/s);
+});

@@ -3,6 +3,7 @@ import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPoin
 import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,Plus} from 'lucide-react';
 import {App} from './App';
 import {ProjectManager} from './ProjectManager';
+import {projectOptionLabels} from './projectOptionLabels';
 import {parseProjectLifecycleSignal,preserveMountedUnavailableProject,publishProjectLifecycleSignal,PROJECT_LIFECYCLE_SIGNAL_KEY} from './projectLifecycleSignal';
 import type {ManagedProject} from './ProjectManager';
 import type {PrimaryProjectLoadSnapshot} from './App';
@@ -88,6 +89,7 @@ export function UnifiedShell(){
  });
  const [projectId,setProjectId]=useState(localStorage.getItem('pilotodin-current')||'');
  const [projects,setProjects]=useState<ProjectListItem[]>([]);
+ const selectorLabels=useMemo(()=>projectOptionLabels(projects),[projects]);
  // Do not mount data-fetching workspaces until the saved project ID is checked
  // against this environment's catalogue. Live dev intentionally has isolated data.
  const [catalogState,setCatalogState]=useState<'loading'|'ready'|'failed'>('loading');
@@ -690,7 +692,15 @@ export function UnifiedShell(){
    <div className="po-shell-brand"><img className="po-brand-symbol" src="/pilotodin-symbol.svg" alt="" aria-hidden="true"/><span className="po-brand-wordmark"><span className="po-pilot">pilot</span><b>ODIN</b></span></div>
    <span className="po-shell-mode">LOCAL INTELLIGENCE WORKSPACE</span>
    {motionReduced&&<span className="po-motion-reduced" role="status" title="Windows or your browser requests reduced motion. PilotODIN honours this accessibility setting.">Animations reduced by system</span>}
-   <div className="po-project-switcher"><Database size={15}/><select aria-label="Switch project" title={projects.length<2?'Import another dataset to switch between projects':'Switch between imported projects'} value={projectId} onChange={e=>chooseProject(e.target.value)}><option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>{heldArchivedId===projectId&&!!projectId&&!projects.some(p=>p.id===projectId)&&<option value={projectId} disabled>Archived in another window (restore to continue)</option>}{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><ChevronDown size={14}/></div>
+   <div className="po-project-switcher">
+    <Database className="po-project-switcher-icon" size={16} aria-hidden="true"/>
+    <select aria-label="Switch project" title={selectorLabels.get(projectId)??(projects.length?'Switch between imported projects':'Import another dataset to switch between projects')} value={projectId} onChange={e=>chooseProject(e.target.value)}>
+     <option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>
+     {heldArchivedId===projectId&&!!projectId&&!projects.some(p=>p.id===projectId)&&<option value={projectId} disabled>Archived in another window (restore to continue)</option>}
+     {projects.map(p=><option key={p.id} value={p.id}>{selectorLabels.get(p.id)??p.name}</option>)}
+    </select>
+    <ChevronDown className="po-project-switcher-arrow" size={16} aria-hidden="true"/>
+   </div>
    <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>{setNewProjectOpen(true);navigate('overview')}}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
    <button type="button" className="po-manage-project-action" title="Rename, archive or restore projects" aria-label="Manage projects" onClick={()=>setProjectManagerOpen(true)}><Settings2 size={16} aria-hidden="true"/><span>Manage</span></button>
   </header>

@@ -13,6 +13,10 @@ on:
       - frontend/e2e/p1-real-http-quality-approval.spec.ts
       - frontend/e2e/p1-real-http-project-management.spec.ts
       - frontend/src/ProjectManager.tsx
+      - frontend/src/UnifiedShell.tsx
+      - frontend/src/unified-shell.css
+      - frontend/src/project-manager.css
+      - frontend/src/projectOptionLabels.ts
       - backend/project_lifecycle.py
       - backend/quality.py
       - backend/quality_approvals.py

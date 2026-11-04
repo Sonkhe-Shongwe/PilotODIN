@@ -99,6 +99,18 @@ test('real HTTP reversible project management preserves originals and active Stu
  await page.goto('/#/studio/overview');
  const selector=page.getByRole('combobox',{name:'Switch project'});
  await expect(selector).toHaveValue(eid);
+ // The arrow and name must share the exact native select hit target.
+ const switcher=page.locator('.po-project-switcher');
+ const arrowTarget=await page.evaluate(()=>{
+  const rect=document.querySelector('.po-project-switcher')!.getBoundingClientRect();
+  return document.elementFromPoint(rect.right-14,rect.top+rect.height/2)?.tagName;
+ });
+ expect(arrowTarget).toBe('SELECT');
+ await expect(switcher).toHaveCSS('cursor','pointer');
+ await selector.hover();
+ await expect(switcher).toHaveCSS('background-color','rgb(240, 247, 255)');
+ await selector.focus();
+ await expect(switcher).toHaveCSS('outline-style','solid');
  const opener=page.getByRole('button',{name:'Manage projects'});
  await opener.click();
  const modal=page.getByRole('dialog',{name:'Manage projects'});
@@ -137,7 +149,10 @@ test('real HTTP reversible project management preserves originals and active Stu
  const replacement='Synthetic D review';
  const dRow=modal.locator('.po-pm-item').filter({hasText:dName});
  await dRow.getByRole('button',{name:'Rename '+dName}).click();
- await modal.getByRole('textbox',{name:'Project name'}).fill(replacement);
+ const renameField=modal.getByRole('textbox',{name:'Project name'});
+ await expect(renameField).toHaveCSS('max-width','440px');
+ expect((await renameField.boundingBox())?.width).toBeGreaterThan(300);
+ await renameField.fill(replacement);
  gate.authorize({id:did,action:'rename',expected_revision:0,name:replacement});
  const renameResponse=page.waitForResponse(r=>r.request().method()==='PUT'&&
    r.url()===API+'/api/projects/'+did+'/lifecycle');
