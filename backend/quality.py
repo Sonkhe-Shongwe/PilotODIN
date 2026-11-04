@@ -71,6 +71,29 @@ def _init_tables() -> None:
         """)
 
 
+def _require_active_for_write(con, pid: str) -> None:
+    """Fence Quality writes under the SAME SQLite transaction as archiving.
+
+    Caller must acquire BEGIN IMMEDIATE before this check. Archive uses that
+    same SQLite write lock, so archive-first must reject this mutation; write-
+    first must finish before archive commits. A stale project object obtained
+    prior to BEGIN IMMEDIATE is never authority to write after archive.
+    """
+    if not con.in_transaction:
+        raise RuntimeError("Quality archive fence requires an active write transaction")
+    row = con.execute(
+        "SELECT l.archived_at FROM projects p "
+        "LEFT JOIN project_lifecycle l ON l.project_id=p.id WHERE p.id=?",
+        (pid,),
+    ).fetchone()
+    if row is None:
+        raise QualityError("Project no longer exists. No Quality changes were applied.",404)
+    if row["archived_at"] is not None:
+        raise QualityError(
+            "Project is archived. Restore it in Manage projects before making Quality changes.",409
+        )
+
+
 def _project(pid: str) -> dict:
     project = storage.get_project(pid)
     if project is None:
@@ -472,6 +495,7 @@ def autopilot(pid: str, expected_version: int) -> dict:
     # Each validated operation becomes a durable version and audit event.
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -491,6 +515,7 @@ def decide(pid: str, issue_id: str, expected_version: int, decision: str) -> dic
         raise QualityError("Decision must be approve or reject")
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -519,6 +544,7 @@ def approve_imputation(pid:str,column:str,issue_id:str,expected_version:int,stra
     p=_project(pid)
     with storage.connect() as con:
         con.execute('BEGIN IMMEDIATE')
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -557,6 +583,7 @@ def undo(pid: str, action_id: str, expected_version: int) -> dict:
     p=_project(pid)
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -580,6 +607,7 @@ def restore(pid: str, target_version: int, expected_version: int) -> dict:
     p=_project(pid)
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         current,ops=_state(con,pid)
         _check_version(current,expected_version)
