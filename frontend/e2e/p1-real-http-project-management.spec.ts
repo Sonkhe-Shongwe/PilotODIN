@@ -199,3 +199,93 @@ test('real HTTP reversible project management preserves originals and active Stu
  expect(row).toMatchObject({id:did,name:replacement,revision:3,archived_at:null});
  expect(await (await request.get(API+'/api/projects/'+did+'/quality/history')).json()).toEqual(historyBefore);
 });
+
+
+test('real HTTP reversible project management preserves mounted work on cross-window archive and restore',
+ async({page,context,request})=>{
+ if(process.env.CI!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+  throw Error('Refuse non-CI cross-window lifecycle acceptance');
+ const fileBytes=Buffer.from(csv('D'));
+ const upload=await request.post(API+'/api/projects',{multipart:{
+  file:{name:names.D,mimeType:'text/csv',buffer:fileBytes}
+ }});
+ expect(upload.status()).toBe(201);
+ const pid=(await upload.json()).id as string;
+ expect(pid).toMatch(/^[a-f0-9]{32}$/);
+ const signalKey='pilotodin-project-lifecycle-signal-v1';
+ await page.addInitScript((id:string)=>{
+  localStorage.setItem('pilotodin-current',id);
+  localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+  localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+ },pid);
+ await page.goto('/#/studio/prepare');
+ const selector=page.getByRole('combobox',{name:'Switch project'});
+ await expect(selector).toHaveValue(pid);
+ const initialName=names.D.replace('.csv','');
+ await expect(selector.locator('option[value="'+pid+'"]')).toHaveText(initialName);
+ const firstPane=page.locator('.po-primary-pane .po-pane-content');
+ await expect(firstPane).toBeVisible();
+ // Keep a reference to the mounted pane, not a persisted dataset or draft.
+ await page.evaluate(()=>{
+  (window as Window&{__p1ArchivePane?:Element|null}).__p1ArchivePane=
+   document.querySelector('.po-primary-pane .po-pane-content');
+ });
+
+ const other=await context.newPage();
+ await other.goto('/#/studio/overview');
+ await expect(other.getByRole('combobox',{name:'Switch project'})).toHaveValue(pid);
+ // Before the real archive, forged/future notifications cannot override the
+ // actual backend state or spuriously unmount a loaded Studio.
+ await other.evaluate(({key,id})=>{
+  localStorage.setItem(key,JSON.stringify({id,revision:99,archived:true}));
+ },{key:signalKey,id:pid});
+ await expect(selector).toHaveValue(pid);
+ await expect(page.locator('.po-shell-warning')).toHaveCount(0);
+
+ const archived=await request.put(API+'/api/projects/'+pid+'/lifecycle',{
+  data:{action:'archive',expected_revision:0}
+ });
+ expect(archived.status(),await archived.text()).toBe(200);
+ expect((await archived.json()).archived_at).not.toBeNull();
+ expect((await request.get(API+'/api/projects/'+pid)).status()).toBe(404);
+
+ // Only a versioned identity hint crosses pages. The receiver verifies
+ // current backend metadata; no source, history or draft is transmitted.
+ await other.evaluate(({key,id})=>{
+  localStorage.setItem(key,JSON.stringify({id,revision:1,archived:true}));
+ },{key:signalKey,id:pid});
+ await expect(page.locator('.po-shell-warning')).toContainText(
+  'This project was archived in another window.');
+ await expect(selector).toHaveValue(pid);
+ await expect(selector.locator('option[value="'+pid+'"]')).toContainText(
+  'Archived in another window');
+ const samePane=await page.evaluate(()=>{
+  const win=window as Window&{__p1ArchivePane?:Element|null};
+  return !!win.__p1ArchivePane&&
+   document.querySelector('.po-primary-pane .po-pane-content')===win.__p1ArchivePane;
+ });
+ expect(samePane).toBe(true);
+ expect(await page.evaluate(()=>localStorage.getItem('pilotodin-current'))).toBe(pid);
+ expect(await page.evaluate(()=>localStorage.getItem(signalKey))).toBe(
+  JSON.stringify({id:pid,revision:1,archived:true})
+ );
+
+ const restored=await request.put(API+'/api/projects/'+pid+'/lifecycle',{
+  data:{action:'restore',expected_revision:1}
+ });
+ expect(restored.status(),await restored.text()).toBe(200);
+ await other.evaluate(({key,id})=>{
+  localStorage.setItem(key,JSON.stringify({id,revision:2,archived:false}));
+ },{key:signalKey,id:pid});
+ await expect(selector.locator('option[value="'+pid+'"]')).toHaveText(initialName);
+ await expect(page.locator('.po-shell-warning')).toHaveCount(0);
+ expect(await page.evaluate(()=>{
+  const win=window as Window&{__p1ArchivePane?:Element|null};
+  return !!win.__p1ArchivePane&&
+   document.querySelector('.po-primary-pane .po-pane-content')===win.__p1ArchivePane;
+ })).toBe(true);
+ expect((await request.get(API+'/api/projects/'+pid)).status()).toBe(200);
+ expect((await request.get(API+'/api/projects/'+pid+'/quality/history')).status()).toBe(200);
+ expect((await request.get(API+'/api/projects/manage')).status()).toBe(200);
+ await other.close();
+});
