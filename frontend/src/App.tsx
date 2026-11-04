@@ -19,6 +19,7 @@ import {StudioAssistant} from './StudioAssistant';
 import {ReportWorkspace} from './ReportWorkspace';
 import {isSecondaryView} from './workspaceLayout';
 import {createProjectOperationGuard} from './projectOperationGuard';
+import {createLiveProfileVersionGuard} from './liveProfileVersionGuard';
 import {mayCommitProjectSelection} from './projectSelectionCommitGuard';
 import {navigateHashSmoothly} from './navigationMotion';
 
@@ -128,6 +129,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const latestProjectRequest=useRef(0);
   // A verified cross-root project handoff must accept local operations on mount.
   const projectOperations=useRef(createProjectOperationGuard(initialVerifiedProject?.id??''));
+  // Late reads from a prior Quality version cannot roll the visible profile back.
+  const liveProfileVersionGuard=useRef(createLiveProfileVersionGuard(
+    initialVerifiedProject?.id??'',initialVerifiedProject?.version??0));
   useEffect(()=>()=>projectOperations.current.invalidate(),[]);
   const [paletteOpen,setPaletteOpen]=useState(false);
   const [paletteQuery,setPaletteQuery]=useState('');
@@ -260,7 +264,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }
     const verifiedProject:Project=q.profile?{...p,profile:q.profile}:p;
     // Invalidate old-project operations only after both GETs and selection checks passed.
+    if(!Number.isSafeInteger(q.version)||q.version<0)throw new Error('Invalid working Quality version.');
     projectOperations.current.begin(pid);
+    liveProfileVersionGuard.current.reset(pid,q.version);
     if(!embedded&&pid!==project?.id)
       onPrimaryProjectLoaded?.(pid,{id:pid,project:verifiedProject,version:q.version});
     if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
@@ -443,7 +449,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     const currentProjectId=project.id;
     const generation=projectOperations.current.snapshot(currentProjectId);
     void get<{version:number;profile:Profile}>(`/projects/${currentProjectId}/live-profile`).then(next=>{
-      if(!projectOperations.current.accepts(currentProjectId,generation))return;
+      if(!projectOperations.current.accepts(currentProjectId,generation)
+        ||!liveProfileVersionGuard.current.accept(currentProjectId,next.version))return;
       setQualityVersion(next.version);
       setProject(old=>old?.id===currentProjectId?{...old,profile:next.profile}:old);
       setPrediction(null);
@@ -468,12 +475,14 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     const projectId=project.id, generation=projectOperations.current.snapshot(projectId);
     try{
       const v=await get<{version:number;profile:Profile}>(`/projects/${projectId}/live-profile`);
-      if(!projectOperations.current.accepts(projectId,generation))return;
+      if(!projectOperations.current.accepts(projectId,generation)
+        ||!liveProfileVersionGuard.current.accept(projectId,v.version))return;
       setQualityVersion(v.version);
       setProject(old=>old?.id===projectId?{...old,profile:v.profile}:old);
       if(experiment?.project_id===projectId){
         const updated=await get<Experiment>(`/experiments/${experiment.id}`);
-        if(!projectOperations.current.accepts(projectId,generation))return;
+        if(!projectOperations.current.accepts(projectId,generation)
+          ||!liveProfileVersionGuard.current.isCurrent(projectId,v.version))return;
         if(updated.project_id===projectId)setExperiment(current=>current?.id===updated.id?updated:current);
       }
       setPrediction(null);setNotice('Working dataset updated; dependent insights will refresh.');

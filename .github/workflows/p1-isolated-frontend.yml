@@ -63,6 +63,7 @@ jobs:
           tests/project-operation-guard.test.cjs
           tests/p1-primary-project-load-approval.test.cjs
           tests/p1-project-switch-generation.test.cjs
+          tests/p1-live-profile-version-order.test.cjs
       - name: Typecheck and compile frontend
         run: npm run build
       - name: Install Chromium for synthetic browser tests
