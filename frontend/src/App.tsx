@@ -394,9 +394,13 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   }
   function updatePredictionInput(name:string,value:string){
     // Invalidate a pending request even if the user later restores the old value.
+    // Editing must also release that stale request's loading lock, so a new
+    // prediction can be submitted without waiting for the old network reply.
     predictionRequestRevision.current+=1;
     setPredictVals(current=>({...current,[name]:value}));
     setPrediction(null);
+    setBusy(current=>current==='predict'?'':current);
+    setError('');
   }
   async function runPrediction(){
     if(!experiment?.selected_model||!experiment.results||!project||experiment.project_id!==project.id)return;
@@ -409,7 +413,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       if(!projectOperations.current.accepts(projectId,generation)||predictionRequestRevision.current!==requestRevision)return;
       setPrediction(result);setNotice('Prediction computed using the selected model');
     }catch(e){if(projectOperations.current.accepts(projectId,generation)&&predictionRequestRevision.current===requestRevision)setError((e as Error).message)}
-    finally{if(projectOperations.current.accepts(projectId,generation))setBusy('')}
+    // An older request cannot dismiss a newer request's loading indicator.
+    finally{if(projectOperations.current.accepts(projectId,generation)&&predictionRequestRevision.current===requestRevision)
+      setBusy(current=>current==='predict'?'':current)}
   }
   async function reopenExperiment(id:string){
     if(!project)return;
@@ -425,8 +431,11 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }catch(e){if(projectOperations.current.accepts(projectId,generation))setError((e as Error).message)}
   }
   useEffect(()=>{
+    // A model or dataset-version transition invalidates a pending prediction
+    // AND frees its UI loading state without changing another operation.
     predictionRequestRevision.current+=1;
     setPredictVals({});setPrediction(null);
+    setBusy(current=>current==='predict'?'':current);
   },[project?.id,experiment?.id,experiment?.selected_model,qualityVersion]);
   useEffect(()=>{
    const onDataset=(event:Event)=>{
