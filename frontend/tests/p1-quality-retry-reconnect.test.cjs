@@ -9,7 +9,7 @@ const guardModule={exports:{}};
 new Function('module','exports',guardJs)(guardModule,guardModule.exports);
 const {createQualityReadGuard}=guardModule.exports;
 const begin=src.indexOf('  const load=useCallback(async()=>{');
-const end=src.indexOf('\n  useEffect(()=>{let live=true;load()',begin);
+const end=src.indexOf('\n  useEffect(()=>{let live=true;',begin);
 assert.ok(begin>0&&end>begin,'Actual production Quality read loader must exist');
 const block=src.slice(begin,end);
 const compiled=ts.transpileModule(block+'\nexports.load=load;',{
