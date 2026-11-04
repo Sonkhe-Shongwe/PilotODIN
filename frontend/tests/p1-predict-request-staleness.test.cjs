@@ -22,20 +22,28 @@ function harness(){
   const project={id:'synthetic-project'};
   const experiment={id:'synthetic-experiment',project_id:project.id,selected_model:'model-1',results:{input_schema:[{name:'Amount'}]}};
   const projectOperations={current:{snapshot:()=>7,accepts:(id,generation)=>projectValid&&id===project.id&&generation===7}};
-  const exports={};
-  const handlers=new Function(
-    'experiment','project','predictVals','predictionRequestRevision','projectOperations',
-    'setError','setBusy','post','setPrediction','setNotice','setPredictVals','exports',
-    compiled.outputText+'\nreturn exports.handlers;'
-  )(experiment,project,values,requestRevision,projectOperations,
-    v=>{error=v},v=>{busy=typeof v==='function'?v(busy):v},(url,payload)=>{
-      requested={url,payload};
-      return new Promise((resolve,reject)=>pendingRequests.push({resolve,reject,url,payload}));
-    },
-    v=>{prediction=v},v=>{notice=v},fn=>{values=typeof fn==='function'?fn(values):fn},exports);
-  return {...handlers,
+  // React replaces its event closures after each render. Rebind the actual
+  // handlers on each synthetic interaction to the latest predictVals object.
+  // Previously this harness incorrectly reused the pre-edit render forever.
+  const bindHandlers=()=>{
+    const exports={};
+    return new Function(
+      'experiment','project','predictVals','predictionRequestRevision','projectOperations',
+      'setError','setBusy','post','setPrediction','setNotice','setPredictVals','exports',
+      compiled.outputText+'\nreturn exports.handlers;'
+    )(experiment,project,values,requestRevision,projectOperations,
+      v=>{error=v},v=>{busy=typeof v==='function'?v(busy):v},(url,payload)=>{
+        requested={url,payload};
+        return new Promise((resolve,reject)=>pendingRequests.push({resolve,reject,url,payload}));
+      },
+      v=>{prediction=v},v=>{notice=v},fn=>{values=typeof fn==='function'?fn(values):fn},exports);
+  };
+  return {
+    runPrediction:()=>bindHandlers().runPrediction(),
+    updatePredictionInput:(name,value)=>bindHandlers().updatePredictionInput(name,value),
     finish:(result,index=0)=>pendingRequests[index].resolve(result),
     fail:(err,index=0)=>pendingRequests[index].reject(err),
+    forceBusy:value=>{busy=value},
     invalidateProject:()=>{projectValid=false},
     state:()=>({values,prediction,busy,error,notice,requested,
       requests:pendingRequests.map(({url,payload})=>({url,payload})),
@@ -145,8 +153,12 @@ test('repeated Predict submissions accept only the latest reply even without an 
 
 test('editing unlocks only Predict loading, leaving unrelated operations alone',()=>{
   const h=harness();
+  h.forceBusy('train');
   h.updatePredictionInput('Amount','12');
-  assert.equal(h.state().busy,'');
+  assert.equal(h.state().busy,'train','editing a prediction input must not clear unrelated operation status');
+  h.forceBusy('predict');
+  h.updatePredictionInput('Amount','13');
+  assert.equal(h.state().busy,'','edited Predict input must allow another prediction');
   assert.equal(h.state().error,'');
   assert.equal(h.state().prediction,null);
   assert.match(app,/setBusy\(current=>current==='predict'\?'':current\)/);
