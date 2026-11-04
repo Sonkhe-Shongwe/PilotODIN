@@ -151,7 +151,7 @@ test('real HTTP Quality approval, keyboard consent, undo, restore and restart pr
   await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(pid);
   await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('button',{name:'Quality'}).click();
   const primary=page.locator('.po-primary-pane');
-  await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
+  await expect(primary.getByText('WORKING VERSION 0',{exact:true})).toBeVisible();
   const finding=primary.locator('.quality-issue').filter({hasText:'Surrounding whitespace'})
     .filter({hasText:'Segment'});
   await finding.click();
@@ -185,7 +185,7 @@ test('real HTTP Quality approval, keyboard consent, undo, restore and restart pr
     &&response.url()===`${API}/api/projects/${pid}/quality/commit`);
   await dialog.getByRole('button',{name:'Approve these changes'}).click();
   expect((await committed).status()).toBe(200);
-  await expect(primary.getByText('WORKING VERSION 1')).toBeVisible();
+  await expect(primary.getByText('WORKING VERSION 1',{exact:true})).toBeVisible();
   const v1=await preview(request,pid,1);
   expect(v1.rows[2].original.Segment).toBe(' North ');
   expect(v1.rows[2].working.Segment).toBe('North');
@@ -214,7 +214,7 @@ test('real HTTP Quality approval, keyboard consent, undo, restore and restart pr
     &&r.url()===`${API}/api/projects/${pid}/quality/commit`);
   await dialog.getByRole('button',{name:'Approve these changes'}).click();
   expect((await undoCommit).status()).toBe(200);
-  await expect(primary.getByText('WORKING VERSION 2')).toBeVisible();
+  await expect(primary.getByText('WORKING VERSION 2',{exact:true})).toBeVisible();
   const v2=await preview(request,pid,2);
   expect(v2.rows[2].working.Segment).toBe(' North ');
   const h2=await history(request,pid);
@@ -232,7 +232,7 @@ test('real HTTP Quality approval, keyboard consent, undo, restore and restart pr
     &&r.url()===`${API}/api/projects/${pid}/quality/commit`);
   await dialog.getByRole('button',{name:'Approve these changes'}).click();
   expect((await restoreCommit).status()).toBe(200);
-  await expect(primary.getByText('WORKING VERSION 3')).toBeVisible();
+  await expect(primary.getByText('WORKING VERSION 3',{exact:true})).toBeVisible();
   const v3=await preview(request,pid,3);
   expect(v3.rows[2].original.Segment).toBe(' North ');
   expect(v3.rows[2].working.Segment).toBe('North');
