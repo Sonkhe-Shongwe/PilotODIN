@@ -112,7 +112,11 @@ test('real HTTP reversible project management preserves originals and active Stu
  await dRow.getByRole('button',{name:'Rename '+dName}).click();
  await modal.getByRole('textbox',{name:'Project name'}).fill(replacement);
  gate.authorize({id:did,action:'rename',expected_revision:0,name:replacement});
+ const renameResponse=page.waitForResponse(r=>r.request().method()==='PUT'&&
+   r.url()===API+'/api/projects/'+did+'/lifecycle');
  await modal.getByRole('button',{name:'Save'}).click();
+ const renameReply=await renameResponse;
+ expect(renameReply.status(),await renameReply.text()).toBe(200);
  await expect(modal.getByText('Project renamed.')).toBeVisible();
  await expect(modal.getByRole('button',{name:'Archive '+replacement})).toBeVisible();
  const dRenamed=await request.get(API+'/api/projects/'+did);
