@@ -1,4 +1,6 @@
 # PilotODIN public-repository and development-process audit
+
+> **DATED PARTIAL AUDIT (4 November annotation):** The GitHub Actions counts and suggested next steps below describe the 3 November source-audit checkpoint and do not supersede [the updated documentation audit](./DOCUMENTATION_AUDIT_2026-11-04.md), [latest CI evidence](./PROJECT_STATUS_CURRENT.md) or the [owner phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md). Neither audit constitutes a security certification.
 **3 November 2026 | Read-only review checkpoint | Status: PARTIAL AUDIT, NOT A SECURITY OR RELEASE CERTIFICATION**
 
 ## 3 November 2026: Follow-up CI increment (verified)

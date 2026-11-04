@@ -1,5 +1,7 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+> **CURRENT POLICY, 4 November audit annotation:** P1 remains the one primary phase. The **“Current active assignment and handoff” paragraph at this document's end is its 28 October checkpoint**, not today's exact next step. Consult [current P1 closure matrix](./P1_CLOSURE_REGISTER_2026-10-28.md) and [current handoff](./SESSION_HANDOFF_CURRENT.md). The normative closure rules below are unchanged.
+
 **Adopted by owner:** 28 October 2026. **Current primary phase: P1.**
 **Authoritative branch:** `feature/live-dev-workspace-20261023`.
 **Authority:** Owner's revised execution preference. This decision supersedes earlier *active priority* sequencing notes in historical roadmap and status reflections, **but does not invalidate their technical evidence or phase dependencies**.

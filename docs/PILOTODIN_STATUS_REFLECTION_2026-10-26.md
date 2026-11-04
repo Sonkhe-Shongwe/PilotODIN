@@ -1,5 +1,7 @@
 # PilotODIN 1.0 | Verified Development Position and Phase Reflection
 
+> **HISTORICAL SNAPSHOT, not current (audited 4 November 2026):** This is the dated **26 October** phase reflection; its statement that P2 is the active phase was superseded by the [28 October P1 phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md). Later P2 font-resource DevQA success is separate from production Unicode acceptance and release licence approval. For authoritative present status see [current P0–P8 ledger](./PROJECT_STATUS_CURRENT.md). Preserve this file for dated evidence, not live next steps.
+
 **Checkpoint:** 26 October 2026 (South Africa)  
 **Authority:** Live GitHub branch `feature/live-dev-workspace-20261023`, plus dated owner Windows evidence and exact scoped acceptance records.  
 **Source HEAD at start of this reflection:** `a7755be64c33293ba94a363684fde0bb4ffc9fac`. Documentation commits move HEAD; fetch the live branch HEAD again before any engineering action.  
