@@ -16,10 +16,12 @@ const csv=(prefix:string)=>[
 ].join('\n')+'\n';
 
 type Audit={imports:number;blockedWrites:string[];unexpectedReads:string[];blockedOrigins:string[];backendReads:string[]};
+type AllowedInvestigation={projectId:string;issueId:string};
 
 // The browser can send exact synthetic data to a real local backend, but no
 // other API mutation, cloud request or unknown GET may leave this context.
-async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string):Promise<Audit>{
+async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string,
+  allowedInvestigation:AllowedInvestigation):Promise<Audit>{
   const audit:Audit={imports:0,blockedWrites:[],unexpectedReads:[],blockedOrigins:[],backendReads:[]};
   await context.route('**/*',async(route:Route)=>{
     const req=route.request(),url=new URL(req.url()),method=req.method();
@@ -45,7 +47,18 @@ async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string):
     const p=url.pathname.slice(4);
     const allowedRead=p==='/projects'||p==='/ai/settings'
       ||/^\/projects\/[a-f0-9]{32}(?:\/(?:live-profile|quality|quality\/history|quality\/preview|preparation|features|target-opportunities))?$/.test(p);
-    if(method==='GET'&&allowedRead){
+    // Allow only one pre-reviewed, source-bound read-only investigation of
+    // synthetic B's real identifier finding, pinned to original Quality v0.
+    // The finding identity is obtained from actual B Quality GET after import.
+    const allowedFindingRead=method==='GET'
+      && /^[a-f0-9]{32}$/.test(allowedInvestigation.projectId)
+      && allowedInvestigation.issueId.length>0
+      && allowedInvestigation.issueId.length<=128
+      && p===`/projects/${allowedInvestigation.projectId}/quality/investigate`
+      && [...url.searchParams.keys()].length===2
+      && url.searchParams.get('issue_id')===allowedInvestigation.issueId
+      && url.searchParams.get('expected_version')==='0';
+    if((method==='GET'&&allowedRead)||allowedFindingRead){
       audit.backendReads.push(p);
       await route.continue();return;
     }
@@ -103,7 +116,8 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
   expect(seed.status()).toBe(201);
   const aid=(await seed.json()).id as string;
   expect(aid).toMatch(/^[a-f0-9]{32}$/);
-  const audit=await allowOnlyDisposableHTTP(context,sourceB);
+  const allowedInvestigation:AllowedInvestigation={projectId:'',issueId:''};
+  const audit=await allowOnlyDisposableHTTP(context,sourceB,allowedInvestigation);
   await page.addInitScript((id:string)=>{
     localStorage.setItem('pilotodin-current',id);
     localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['overview','quality']));
@@ -129,6 +143,69 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
   await nav.getByRole('button',{name:'Quality'}).click();
   await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
   await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();
+
+  await test.step('investigate a genuine v0 identifier finding over real read-only backend HTTP',async()=>{
+    // All evidence comes from the newly imported B synthetic source. No
+    // correction, approval, export or arbitrary browser API write is allowed.
+    const qualityResponse=await request.get(API+'/api/projects/'+bid+'/quality');
+    expect(qualityResponse.status()).toBe(200);
+    const qualitySnapshot=await qualityResponse.json() as {
+      project_id:string;version:number;issues:{id:string;kind:string;column:string|null}[];
+    };
+    expect(qualitySnapshot.project_id).toBe(bid);
+    expect(qualitySnapshot.version).toBe(0);
+    const finding=qualitySnapshot.issues.find(x=>x.kind==='identifier'&&x.column==='OrderID');
+    expect(finding).toBeDefined();
+    expect(finding!.id.length).toBeGreaterThan(0);
+    expect(finding!.id.length).toBeLessThanOrEqual(128);
+    const historyBefore=await request.get(API+'/api/projects/'+bid+'/quality/history');
+    expect(historyBefore.status()).toBe(200);
+    const baseline=await historyBefore.json();
+    expect(baseline.current_version).toBe(0);
+    expect(baseline.actions).toEqual([]);
+    expect(baseline.decisions).toEqual([]);
+
+    // Only this exact generated project, issue ID and original version may
+    // use the extra browser GET through the fail-closed route.
+    allowedInvestigation.projectId=bid!;
+    allowedInvestigation.issueId=finding!.id;
+    const findingButton=primary.locator('.quality-issue')
+      .filter({hasText:'Possible identifier or high-cardinality feature'})
+      .filter({hasText:'OrderID'});
+    await expect(findingButton).toHaveCount(1);
+    await findingButton.click();
+    const investigationResponse=page.waitForResponse(response=>{
+      const url=new URL(response.url());
+      return response.request().method()==='GET'&&url.origin===API
+        &&url.pathname===`/api/projects/${bid}/quality/investigate`
+        &&url.searchParams.get('issue_id')===finding!.id
+        &&url.searchParams.get('expected_version')==='0';
+    });
+    await primary.getByRole('button',{name:'Investigate identifier characteristics'}).click();
+    const reply=await investigationResponse;
+    expect(reply.status()).toBe(200);
+    const investigation=await reply.json();
+    expect(investigation).toMatchObject({
+      project_id:bid,version:0,issue_id:finding!.id,
+      kind:'identifier',column:'OrderID',
+      dataset_rows:18,affected_rows:18
+    });
+    expect(investigation.statistical_method).toContain('Distinct-value');
+    const region=primary.getByRole('region',{name:'Read-only finding investigation'});
+    await expect(region).toContainText('VERIFIED · v0');
+    await expect(region).toContainText('OrderID');
+    await expect(region).toContainText('18 affected of 18 records');
+
+    const historyAfter=await request.get(API+'/api/projects/'+bid+'/quality/history');
+    expect(historyAfter.status()).toBe(200);
+    expect(await historyAfter.json()).toEqual(baseline);
+    expect(audit.backendReads.filter(p=>
+      p===`/projects/${bid}/quality/investigate`)).toHaveLength(1);
+    expect(audit.unexpectedReads).toEqual([]);
+    expect(audit.blockedWrites).toEqual([]);
+    expect(audit.blockedOrigins).toEqual([]);
+  });
+
   await nav.getByRole('button',{name:'Prepare'}).click();
   const target=primary.getByRole('combobox',{name:/target variable/i});
   await expect(target).toBeVisible();
