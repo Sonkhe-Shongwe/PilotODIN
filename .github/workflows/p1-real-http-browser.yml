@@ -11,6 +11,11 @@ on:
       - frontend/playwright.p1-real-http.config.ts
       - frontend/e2e/p1-real-http.spec.ts
       - frontend/e2e/p1-real-http-quality-approval.spec.ts
+      - frontend/e2e/p1-real-http-project-management.spec.ts
+      - frontend/src/ProjectManager.tsx
+      - backend/project_lifecycle.py
+      - backend/storage.py
+      - backend/main.py
       - frontend/e2e/p1-real-http-backend.ts
       # Rerun actual disposable-backend Quality recovery whenever its
       # production view or snapshot-ordering code changes.
@@ -75,3 +80,10 @@ jobs:
           npx --no-install playwright test
           --config=playwright.p1-real-http.config.ts
           -g "real HTTP Quality approval, keyboard consent"
+
+      - name: Run reversible project library across real local HTTP
+        working-directory: frontend
+        run: >-
+          npx --no-install playwright test
+          --config=playwright.p1-real-http.config.ts
+          -g "real HTTP reversible project management"
