@@ -40,6 +40,13 @@ PilotODIN has substantial React/TypeScript, FastAPI/SQLite and Tauri source; sev
 ## P1 validation blocker, reconciled 4 November 2026
 GitHub source and green CI do not establish the remaining Windows-native accessibility, physical scaling/Snap, actual Quality correction/restart and integrated recovery gates. Owner-deferred S1..S4/A1 have **no owner waiver**. Current phase is **P1 OPEN / native acceptance BLOCKED**, not closed, irrespective of the successful hosted Q3 tests. Issue #2 `BE-033` was reconciled against existing source (disabled selector placeholder plus New project control), with native multi-project acceptance still unverified. **This is documentation/QA reconciliation only, no new code, Windows run or tests.**
 
+## Current P1 project-management source increment (4 November 2026)
+**Verified tested SHA:** [`5c261a03765f`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5c261a03765f7fffe408273a9201ec16f940f3f0). Owner-authorised P1 project-management slice adds an accessible Manager UI and transactional revision-bound **Rename, Archive and Restore**, with archived projects hidden from active selection and original data/evidence retained. **Permanent Delete is not implemented or authorised as a blind data purge.**
+
+Tests: [9/9 isolated backend pytest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41827678997) on backend source ancestor `3fde4449`; [143/143 frontend Node, TS/Vite build, 5/5 hosted isolated Chromium](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41830669671); [all 3 real-Uvicorn/Chromium synthetic scenarios passed](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41830669685) on `5c261a03765f`, including synthetic project management rename/archive/restore and actual backend restart. Earlier failed CI attempts are historical and were not counted. **No owner/native Windows acceptance**, installer or protected original dataset touched.
+
+**P1 remains OPEN / native acceptance BLOCKED.** This new evidence does not change owner deferred S1..S4/A1 or unverified Narrator, real native Q3/N1 and resource acceptance. Issue #8 tracks further lifecycle design and deletion requirements.
+
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
 2. Do not create more speculative P1 tests when only missing native evidence blocks closure. Investigate a new code defect only if confirmed and in scope.
