@@ -76,6 +76,12 @@ At exact [integration-tested `0920202f5089`](https://github.com/Sonkhe-Shongwe/P
 
 **P1 OPEN.** This is a path-specific SQLite lock, not project-wide exclusion for background ML, autonomous investigations, target context or file artifacts. No permanent Delete or owner-native WebView2 tests, scaling, Narrator or resource certification.
 
+## 4 November 2026 | Stage A project-management UI corrections and native evidence reconciliation
+- At [source `75d8cd40df6b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/75d8cd40df6be5f03a0490b5857ad24b63036a30), project-name editing is responsive up to 440px, the actual native SELECT covers its arrow/name/icon hit area and advertises hover/focus, and identical display names are distinguished as [CSV] and [XLSX] (or project ID suffix if both same type). No changes to project IDs, original datasets, archive semantics or installed app.
+- Fresh green runs at the **same source SHA**: [P1 frontend #41892652596](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41892652596) **147/147 Node + TypeScript/Vite build + 5/5 isolated Chromium**, [P1 disposable real HTTP #41892652640](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41892652640) **4/4 independent Uvicorn/Chromium** including selector arrow hit-test, hover/focus and wide rename field. No owner Windows recheck of the new styling yet.
+- Earlier **owner native Windows DEV ONLY screenshots** of active/archived library, rename/reverse rename, CSV archive/restore and read-only impact establish scoped P1-M1/M2 native PASS, with independent XLSX and CSV imports. The native Quality display after restore showed working version 0 with 9 issues and 0 active corrections, but this is **not** a native correction/undo/restore/restart (Q3). Scales/OS Snap, reduced-motion behaviour, Narrator, full N1 and resource policy are still open.
+- Next: consolidate in-scope Windows acceptance and closure without repeating owner-pass fragments. **P1 OPEN**; no permanent deletion, installer/release certification or broader P2 scope.
+
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
 2. Do not create more speculative P1 tests when only missing native evidence blocks closure. Investigate a new code defect only if confirmed and in scope.
