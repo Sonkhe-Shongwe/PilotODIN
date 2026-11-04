@@ -53,6 +53,6 @@
 7. **Documentation maintenance:** add a new dated audit only when an actual new inconsistency or milestone warrants it. Keep current files concise and add historical detail to archival evidence, not the living handoff.
 
 ## Change and preservation controls
-The three legacy chronological files are preserved by **reusing their exact pre-audit Git blob IDs** under `docs/archive/`; no text has been silently revised. Their old original paths remain as concise compatible entry points. No application, lockfile, backend, database, private source, asset, model, installer, dataset or release code changed.
+Five original entry-point/history files (current handoff, P1 closure register, CONTINUE_HERE, root README, and the 27 October P1 handoff) are preserved under `docs/archive/` by **reusing their exact pre-audit Git blob IDs**; no archived text was silently revised. The original paths now remain concise compatible entry points. No application, lockfile, backend, database, private source, asset, model, installer, dataset or release code changed.
 
 **Audit limitation:** This document provides a complete repository Markdown **inventory and file-target link scan**, plus a risk-based semantic audit of governing and high-impact status records. It is **not** a claim that every statement in each of 69 historical files has been independently re-tested or individually redlined.

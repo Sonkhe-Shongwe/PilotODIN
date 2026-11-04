@@ -90,5 +90,7 @@ The 22 October owner-held Master Reconstruction Blueprint is the product specifi
 - [Former current handoff, unmodified bytes](./archive/SESSION_HANDOFF_PRE_AUDIT_2026-11-04.md)
 - [Former P1 closure register, unmodified bytes](./archive/P1_CLOSURE_REGISTER_PRE_AUDIT_2026-11-04.md)
 - [Former long CONTINUE_HERE chronology, unmodified bytes](./archive/CONTINUE_HERE_PRE_AUDIT_2026-11-04.md)
+- [Former root README, unmodified bytes](./archive/ROOT_README_PRE_AUDIT_2026-11-04.md)
+- [27 October P1 handoff, unmodified bytes](./archive/SESSION_HANDOFF_P1_2026-10-27_VERBATIM.md)
 
 **Inventory note:** The audit's baseline included 69 Markdown documents; this index contains those pre-audit documents plus new audit/status/index pages and archive entries. File links were checked at the file-target level only; anchors and external websites were not verified.
