@@ -14,6 +14,8 @@ on:
       - frontend/e2e/p1-real-http-project-management.spec.ts
       - frontend/src/ProjectManager.tsx
       - backend/project_lifecycle.py
+      - backend/quality.py
+      - backend/quality_approvals.py
       - backend/storage.py
       - backend/main.py
       - frontend/e2e/p1-real-http-backend.ts
