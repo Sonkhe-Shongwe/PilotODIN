@@ -7,6 +7,11 @@ const js=ts.transpileModule(guardSource,{compilerOptions:{target:ts.ScriptTarget
 const moduleExports={};
 new Function('module','exports',js)({exports:moduleExports},moduleExports);
 const {createProjectOperationGuard}=moduleExports;
+const profileGuardSource=fs.readFileSync(path.resolve(__dirname,'../src/liveProfileVersionGuard.ts'),'utf8');
+const profileJs=ts.transpileModule(profileGuardSource,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
+const profileExports={};
+new Function('module','exports',profileJs)({exports:profileExports},profileExports);
+const {createLiveProfileVersionGuard}=profileExports;
 const begin=app.indexOf('  async function loadProject(pid:string,approvedBeforeUpload=false):Promise<boolean>{');
 const end=app.indexOf('\n  useEffect(()=>{if(!project||!target)',begin);
 assert.ok(begin>=0&&end>begin,'actual project load handler must be present');
@@ -32,6 +37,7 @@ function harness(){
     onPrimaryUploadedProjectCommitted:()=>events.push('upload-committed'),
     setNotice:msg=>events.push('notice:'+msg),
     latestProjectRequest:{current:0},projectOperations:{current:guard},
+    liveProfileVersionGuard:{current:createLiveProfileVersionGuard('A',0)},
     get:url=>{reads.push(url);return gate.then(()=>{
       if(url.endsWith('/live-profile'))return {version:0};
       return {id:'B',name:'disposable',filename:'synthetic.csv'};

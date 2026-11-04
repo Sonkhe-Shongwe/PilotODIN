@@ -24,6 +24,16 @@ const guardMod=new Module(guardPath,module);
 guardMod.filename=guardPath;guardMod.paths=module.paths;
 guardMod._compile(guardJs.outputText,guardPath);
 const {mayCommitProjectSelection}=guardMod.exports;
+// The extracted real project-loader now rebases a verified Quality-version
+// guard. Provide the actual compiled module instead of a permissive stub.
+const profileGuardPath=path.resolve(__dirname,'../src/liveProfileVersionGuard.ts');
+const profileGuardJs=ts.transpileModule(fs.readFileSync(profileGuardPath,'utf8'),{
+ compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}
+});
+const profileGuardMod=new Module(profileGuardPath,module);
+profileGuardMod.filename=profileGuardPath;profileGuardMod.paths=module.paths;
+profileGuardMod._compile(profileGuardJs.outputText,profileGuardPath);
+const {createLiveProfileVersionGuard}=profileGuardMod.exports;
 
 function harness({approved=false,embedded=false,pid='B',current='A',shellCallback=true,
  fail=false,preapproved=false,selectedWhenStarted='A',selectedAfterFetch=null}={}){
@@ -44,6 +54,7 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
   latestProjectRequest:{current:0},
   projectOperations:{current:{begin:id=>{operations.generation.push(id);return 1},
    accepts:(id,generation)=>id===pid&&generation===1}},
+  liveProfileVersionGuard:{current:createLiveProfileVersionGuard(current,0)},
   get:async url=>{
    operations.reads.push(url);
    if(fail)throw Error('backend unavailable');
