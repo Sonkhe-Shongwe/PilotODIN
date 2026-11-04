@@ -184,3 +184,65 @@ test('inspector Refresh issues both Quality snapshot and preview GETs, never a w
  assert.doesNotMatch(handler,/post\(|commitProposal\(|mutate\(/);
  assert.ok(src.includes('const verifiedPreview=quality&&preview?.version===quality.version?preview:null'));
 });
+
+
+const vm=require('node:vm');
+const errorEffectStart=src.indexOf('  useEffect(()=>{let live=true;\n    // A newer direct load');
+const errorEffectEnd=src.indexOf('\n  useEffect(()=>{let live=true;\n    const ticket=readGuard.current.beginPreview();',errorEffectStart);
+assert.ok(errorEffectStart>=0&&errorEffectEnd>errorEffectStart,
+ 'Current production Quality snapshot error effect must exist');
+const errorEffectCompiled=ts.transpileModule(src.slice(errorEffectStart,errorEffectEnd),{
+ compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},reportDiagnostics:true
+});
+assert.equal((errorEffectCompiled.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0);
+function errorEffectHarness(){
+ const readGuard={current:createQualityReadGuard()},reads=[],errors=[];
+ let cleanup=()=>{};
+ const load=()=>{
+  const ticket=readGuard.current.beginSnapshot();
+  return new Promise((resolve,reject)=>reads.push({ticket,resolve,reject}));
+ };
+ const start=()=>{
+  const scope={load,readGuard,setError:v=>errors.push(v),
+   useEffect:callback=>{cleanup=callback()}};
+  vm.runInNewContext(errorEffectCompiled.outputText,scope,{timeout:1000});
+ };
+ return {start,load,reads,errors,unmount:()=>cleanup(),readGuard};
+}
+test('actual Quality read effect rejects an old failure after newer direct snapshot load',async()=>{
+ const h=errorEffectHarness();
+ h.start();
+ const newer=h.load();
+ h.reads[1].resolve({project_id:'isolated',version:1});
+ await newer;
+ h.reads[0].reject(new Error('stale disconnected backend'));
+ await Promise.resolve();await Promise.resolve();
+ assert.deepEqual(h.errors,[]);
+ assert.equal(h.readGuard.current.currentSnapshotTicket(),2);
+});
+test('actual Quality read effect retains latest backend error reporting',async()=>{
+ const h=errorEffectHarness();
+ h.start();
+ h.reads[0].reject(new Error('current backend unavailable'));
+ await Promise.resolve();await Promise.resolve();
+ assert.deepEqual(h.errors,['current backend unavailable']);
+});
+test('actual Quality read effect cannot surface previous retry error over latest retry',async()=>{
+ const h=errorEffectHarness();
+ h.start();
+ h.unmount();
+ h.start();
+ h.reads[0].reject(new Error('superseded retry failed'));
+ await Promise.resolve();await Promise.resolve();
+ assert.deepEqual(h.errors,[]);
+ h.reads[1].reject(new Error('latest retry failed'));
+ await Promise.resolve();await Promise.resolve();
+ assert.deepEqual(h.errors,['latest retry failed']);
+});
+test('actual Quality read effect ignores a failure after unmount',async()=>{
+ const h=errorEffectHarness();
+ h.start();h.unmount();h.readGuard.current.invalidateAll();
+ h.reads[0].reject(new Error('unmounted component failure'));
+ await Promise.resolve();await Promise.resolve();
+ assert.deepEqual(h.errors,[]);
+});
