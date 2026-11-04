@@ -24,8 +24,9 @@ jobs:
     timeout-minutes: 15
     env:
       PYTHONDONTWRITEBYTECODE: "1"
-      PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-project-lifecycle-${{ github.run_id }}
     steps:
+      - name: Use an isolated runner-owned data home
+        run: echo "PILOTODIN_HOME=${RUNNER_TEMP}/pilotodin-project-lifecycle-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
       - name: Checkout without saved credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
