@@ -43,7 +43,11 @@ async function guardBrowser(context:BrowserContext,did:string,eid:string){
   if(method==='PUT'&&url.search===''&&permit&&path==='/projects/'+permit.id+'/lifecycle'){
    let parsed:unknown;
    try{parsed=JSON.parse(request.postData()??'null')}catch{parsed=null}
-   if(equivalent(parsed,permit)){
+   const exactBody={
+    action:permit.action,expected_revision:permit.expected_revision,
+    ...(permit.name===undefined?{}:{name:permit.name}),
+   };
+   if(equivalent(parsed,exactBody)){
     audit.writes.push(permit);permit=null;
     await route.continue();return;
    }
