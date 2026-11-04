@@ -10,15 +10,16 @@ const API='http://127.0.0.1:8000';
 const A_FILENAME='pilotodin_p1_http_A.csv';
 const B_FILENAME='pilotodin_p1_http_B.csv';
 // Keep A byte-for-byte compatible with its original pinned-source tests.
- // B alone carries two bounded analysis-only columns. No real user files.
+// B has 24 synthetic records for the backend's >=20 finite-value IQR rule;
+// A stays 18 records byte-for-byte unchanged. No real user files.
 const csv=(prefix:string)=>{
   const diagnosticB=prefix==='B';
   return [
     diagnosticB?'OrderID,Outcome,Amount,MissingScore,ExtremeAmount':'OrderID,Outcome,Amount',
-    ...Array.from({length:18},(_,i)=>{
+    ...Array.from({length:diagnosticB?24:18},(_,i)=>{
       const base=`${prefix}${String(i+1).padStart(4,'0')},${i%3===0?'Pending':'Approved'},${(i+1)*13}`;
       return diagnosticB
-        ?base+`,${i===2||i===11?'':i+1},${i===17?9999:i+10}`
+        ?base+`,${i===2||i===11?'':i+1},${i===23?9999:i+10}`
         :base;
     }),
   ].join('\n')+'\n';
@@ -210,13 +211,13 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
     expect(investigation).toMatchObject({
       project_id:bid,version:0,issue_id:finding!.id,
       kind:'identifier',column:'OrderID',
-      dataset_rows:18,affected_rows:18
+      dataset_rows:24,affected_rows:24
     });
     expect(investigation.statistical_method).toContain('Distinct-value');
     const region=primary.getByRole('region',{name:'Read-only finding investigation'});
     await expect(region).toContainText('VERIFIED · v0');
     await expect(region).toContainText('OrderID');
-    await expect(region).toContainText('18 affected of 18 records');
+    await expect(region).toContainText('24 affected of 24 records');
 
     await test.step('verify numeric missingness diagnosis without approving median fill',async()=>{
       const missingButton=primary.locator('.quality-issue')
@@ -235,7 +236,7 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
       const report=await reply.json();
       expect(report).toMatchObject({
         operation:'missingness',column:'MissingScore',version:0,
-        total_rows:18,missing_rows:2,row_numbers:[3,12]
+        total_rows:24,missing_rows:2,row_numbers:[3,12]
       });
       expect(report.suggested_treatments).toEqual(
         expect.arrayContaining([expect.objectContaining({id:'median',requires_approval:true})]));
@@ -264,14 +265,14 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
       expect(result).toMatchObject({
         project_id:bid,version:0,issue_id:outlierFinding!.id,
         kind:'outliers',column:'ExtremeAmount',
-        dataset_rows:18,affected_rows:1,affected_row_numbers:[18]
+        dataset_rows:24,affected_rows:1,affected_row_numbers:[24]
       });
       expect(result.statistical_method).toContain('Tukey');
       expect(result.statistics.max).toBe(9999);
       const region=primary.getByRole('region',{name:'Read-only finding investigation'});
       await expect(region).toContainText('VERIFIED · v0');
       await expect(region).toContainText('ExtremeAmount');
-      await expect(region).toContainText('1 affected of 18 records');
+      await expect(region).toContainText('1 affected of 24 records');
     });
 
     const historyAfter=await request.get(API+'/api/projects/'+bid+'/quality/history');
