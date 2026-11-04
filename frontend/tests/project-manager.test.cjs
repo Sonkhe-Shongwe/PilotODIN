@@ -25,5 +25,5 @@ test('escape keyboard focus containment and return, no active Studio reload',()=
  assert.match(manager,/e.key!=='Tab'/);
  assert.match(manager,/opener\?\.isConnected\)opener.focus\(\)/);
  assert.match(studio,/pilotodin:project-metadata-changed/);
- assert.match(studio,/setProject\(old=>old\?\.id===d.id/);
+ assert.match(studio,/setProject\(old=>old\?\.id===id/);
 });
