@@ -19,6 +19,7 @@ on:
       - backend/reports.py
       - backend/saved_analyses.py
       - backend/investigations.py
+      - tests/test_p1_project_lifecycle.py
       - backend/storage.py
       - backend/main.py
       - frontend/e2e/p1-real-http-backend.ts
