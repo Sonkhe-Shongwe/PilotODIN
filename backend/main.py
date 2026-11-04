@@ -23,9 +23,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile, target_opportunities
+    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, target_opportunities
 except ImportError:
-    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile, target_opportunities
+    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, target_opportunities
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -252,7 +252,6 @@ def change_project_lifecycle(project_id: str, body: ProjectLifecycleRequest):
 @app.get("/api/projects/{project_id}/deletion-impact")
 def get_project_deletion_impact(project_id: str, expected_revision: int = Query(ge=0)):
     """Read-only deletion impact review; no deletion capability is exposed."""
-    from backend import project_delete_impact
     try:
         return project_delete_impact.impact(project_id, expected_revision)
     except project_lifecycle.ProjectLifecycleError as error:
