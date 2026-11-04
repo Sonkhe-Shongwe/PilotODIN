@@ -127,3 +127,115 @@ def test_active_training_and_odin_runs_fail_closed_before_archive(workspace):
     assert ok.json()["revision"]==1
     for path,payload,_ in sources:
         assert path.read_bytes()==payload
+
+
+def _impact(client, pid, revision):
+    return client.get(f"/api/projects/{pid}/deletion-impact",params={"expected_revision":revision})
+
+
+def test_deletion_impact_is_read_only_revision_bound_and_works_after_archive(workspace):
+    client,home,(a,b),sources=workspace
+    from backend import investigations, reports, autonomy, quality_approvals
+    investigations.init()
+    reports.init()
+    autonomy.init()
+    quality_approvals._init_tables()
+    run = storage.new_experiment(a,{"target":"Flag"})
+    now = storage.now()
+    investigation_id=storage.uid()
+    report_id=storage.uid()
+    with storage.connect() as con:
+        con.execute("UPDATE experiments SET status='completed' WHERE id=?",(run,))
+        con.execute(
+            "INSERT INTO investigations_v1 VALUES (?,?,?,?,?,?,?)",
+            (investigation_id,a,"Synthetic safe evidence",0,"draft",now,now),
+        )
+        con.execute(
+            "INSERT INTO evidence_v1 (id,investigation_id,operation,params,result,"
+            "dataset_version,tool_version,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+            (storage.uid(),investigation_id,"overview","{}","{}",0,"test","completed",now),
+        )
+        con.execute("INSERT INTO reports_v1 VALUES (?,?,?)",(report_id,a,now))
+        con.execute(
+            "INSERT INTO report_revisions_v1 "
+            "(id,report_id,number,title,narrative,snapshot_json,content_sha256,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (storage.uid(),report_id,1,"Synthetic report","", "{}","fixture",now)
+        )
+        before={table: con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in ("projects","project_lifecycle","quality_versions","experiments",
+                          "investigations_v1","evidence_v1","reports_v1","report_revisions_v1")}
+    (home/"models"/run).mkdir()
+    (home/"models"/run/"synthetic-model.joblib").write_bytes(b"fake-model-no-pickle-load")
+    first=_impact(client,a,0)
+    assert first.status_code==200,first.text
+    summary=first.json()
+    assert summary["preview_only"] is True
+    assert summary["deletion_available"] is False
+    assert summary["project_id"]==a and summary["revision"]==0
+    count={r["key"]:r["count"] for r in summary["records"]}
+    assert count["projects"]==1
+    assert count["quality_versions"]==1
+    assert count["experiments"]==1
+    assert count["investigations_v1"]==1 and count["evidence_v1"]==1
+    assert count["reports_v1"]==1 and count["report_revisions_v1"]==1
+    assert summary["artifacts"]["linked_model_directories_present"]==1
+    assert summary["artifacts"]["original_source_managed"] is True
+    assert summary["artifacts"]["original_source_present"] is True
+    assert summary["unclassified_tables"]==[]
+    assert summary["active_work"]=={"model_training":0,"odin_runs":0}
+    assert "dataset_path" not in str(summary) and str(home) not in str(summary)
+    assert _impact(client,a,1).status_code==409
+    assert _impact(client,"0"*32,0).status_code==404
+    assert client.delete(f"/api/projects/{a}/deletion-impact").status_code==405
+    assert _change(client,a,"archive",0).status_code==200
+    archived=_impact(client,a,1)
+    assert archived.status_code==200,archived.text
+    assert archived.json()["archived"] is True
+    assert archived.json()["records"][0]["count"]==1
+    assert _change(client,a,"restore",1).status_code==200
+    assert _impact(client,a,1).status_code==409
+    for source,payload,_ in sources:
+        assert source.read_bytes()==payload
+    assert (home/"models"/run/"synthetic-model.joblib").read_bytes()==b"fake-model-no-pickle-load"
+    with storage.connect() as con:
+        after={table: con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in before}
+    assert before["projects"]==after["projects"]
+    assert all(after[table]==before[table] for table in before if table!="project_lifecycle")
+    assert after["project_lifecycle"]==before["project_lifecycle"]+1
+
+
+def test_impact_flags_unclassified_sqlite_and_external_source_without_moving_files(workspace):
+    client,home,(a,b),sources=workspace
+    original=storage.get_project(a)["dataset_path"]
+    external=home.parent/"synthetic-external-source.csv"
+    external.write_bytes(sources[0][1])
+    with storage.connect() as con:
+        con.execute("UPDATE projects SET dataset_path=? WHERE id=?",(str(external),a))
+        con.execute("CREATE TABLE future_project_artifacts (id TEXT,project_id TEXT)")
+        con.execute("INSERT INTO future_project_artifacts VALUES (?,?)",("synthetic-record",a))
+    response=_impact(client,a,0)
+    assert response.status_code==200,response.text
+    item=response.json()
+    assert item["artifacts"]["original_source_managed"] is False
+    assert item["unclassified_tables"]==["future_project_artifacts"]
+    assert any("Unclassified" in reason for reason in item["blockers"])
+    assert item["deletion_available"] is False
+    with storage.connect() as con:
+        assert con.execute("SELECT COUNT(*) FROM future_project_artifacts").fetchone()[0]==1
+        con.execute("UPDATE projects SET dataset_path=? WHERE id=?",(original,a))
+    assert external.read_bytes()==sources[0][1]
+    assert all(path.read_bytes()==payload for path,payload,_ in sources)
+
+
+def test_impact_safely_reports_active_training_and_does_not_modify_it(workspace):
+    client,home,(a,b),sources=workspace
+    run=storage.new_experiment(a,{"target":"Flag"})
+    response=_impact(client,a,0)
+    assert response.status_code==200,response.text
+    payload=response.json()
+    assert payload["active_work"]["model_training"]==1
+    assert any("training" in note.lower() for note in payload["blockers"])
+    assert storage.get_experiment(run)["status"]=="queued"
+    assert all(path.read_bytes()==original for path,original,_ in sources)

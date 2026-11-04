@@ -249,6 +249,16 @@ def change_project_lifecycle(project_id: str, body: ProjectLifecycleRequest):
         raise HTTPException(status_code=error.status,detail=str(error)) from error
 
 
+@app.get("/api/projects/{project_id}/deletion-impact")
+def get_project_deletion_impact(project_id: str, expected_revision: int = Query(ge=0)):
+    """Read-only deletion impact review; no deletion capability is exposed."""
+    from backend import project_delete_impact
+    try:
+        return project_delete_impact.impact(project_id, expected_revision)
+    except project_lifecycle.ProjectLifecycleError as error:
+        raise HTTPException(status_code=error.status,detail=str(error)) from error
+
+
 @app.get("/api/projects/{project_id}")
 def get_project(project_id:str):
     p=project_or_404(project_id)
