@@ -68,10 +68,10 @@ jobs:
         run: >-
           npx --no-install playwright test
           --config=playwright.p1-real-http.config.ts
-          -g "^real HTTP import, Quality, rejected switch and restored source retain primary Prepare draft$"
+          -g "real HTTP import, Quality, rejected switch"
       - name: Run synthetic Quality approval, undo, restore and restart acceptance
         working-directory: frontend
         run: >-
           npx --no-install playwright test
           --config=playwright.p1-real-http.config.ts
-          -g "^real HTTP Quality approval, keyboard consent, undo, restore and restart preserve synthetic original$"
+          -g "real HTTP Quality approval, keyboard consent"
