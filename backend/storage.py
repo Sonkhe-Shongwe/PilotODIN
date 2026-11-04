@@ -29,6 +29,12 @@ def init():
             file_ext TEXT NOT NULL, dataset_path TEXT NOT NULL,
             profile TEXT NOT NULL, created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS project_lifecycle (
+            project_id TEXT PRIMARY KEY,
+            revision INTEGER NOT NULL DEFAULT 0,
+            archived_at TEXT,
+            FOREIGN KEY(project_id) REFERENCES projects(id)
+        );
         CREATE TABLE IF NOT EXISTS experiments (
             id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
             status TEXT NOT NULL, config TEXT NOT NULL,
@@ -132,14 +138,22 @@ def save_project(name, filename, ext, path, profile):
 
 def get_project(pid):
     with connect() as con:
-        row=con.execute("SELECT * FROM projects WHERE id=?", (pid,)).fetchone()
+        # Archived records stay durable but cannot be mounted as working projects.
+        row=con.execute(
+            "SELECT p.* FROM projects p LEFT JOIN project_lifecycle l ON p.id=l.project_id "
+            "WHERE p.id=? AND l.archived_at IS NULL", (pid,),
+        ).fetchone()
     if not row: return None
     return {**dict(row),"profile":json.loads(row["profile"])}
 
 
 def list_projects():
     with connect() as con:
-        rows=con.execute("SELECT id,name,filename,created_at FROM projects ORDER BY created_at DESC").fetchall()
+        rows=con.execute(
+            "SELECT p.id,p.name,p.filename,p.created_at FROM projects p "
+            "LEFT JOIN project_lifecycle l ON p.id=l.project_id "
+            "WHERE l.archived_at IS NULL ORDER BY p.created_at DESC",
+        ).fetchall()
     return [dict(x) for x in rows]
 
 

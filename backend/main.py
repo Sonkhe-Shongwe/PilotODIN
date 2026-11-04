@@ -23,9 +23,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile, target_opportunities
+    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile, target_opportunities
 except ImportError:
-    import ai_provider, ai_context, engine, storage, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile, target_opportunities
+    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, resource_policy, semantic_profile, target_opportunities
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -226,6 +226,27 @@ async def create_project(file: UploadFile = File(...)):
             ) from e
         raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}") from e
     return {"id":pid,"name":Path(filename).stem,"profile":prof}
+
+
+
+class ProjectLifecycleRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    action: Literal['rename','archive','restore']
+    expected_revision: int = Field(ge=0)
+    name: str | None = None
+
+
+@app.get("/api/projects/manage")
+def manage_projects():
+    return project_lifecycle.listing()
+
+
+@app.put("/api/projects/{project_id}/lifecycle")
+def change_project_lifecycle(project_id: str, body: ProjectLifecycleRequest):
+    try:
+        return project_lifecycle.change(project_id, body.action, body.expected_revision, body.name)
+    except project_lifecycle.ProjectLifecycleError as error:
+        raise HTTPException(status_code=error.status,detail=str(error)) from error
 
 
 @app.get("/api/projects/{project_id}")
