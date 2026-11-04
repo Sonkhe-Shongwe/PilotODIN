@@ -10,8 +10,8 @@ PilotODIN has substantial React/TypeScript, FastAPI/SQLite and Tauri source; sev
 ## Latest exact verified code and tests
 | Evidence track | Actual result | Source SHA and limitation |
 | --- | --- | --- |
-| Frontend Node + build + hosted isolated Chromium | **139/139 Node PASS, build PASS, 5/5 Chromium PASS** | [run #41815871607](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41815871607), tested SHA `570d98f0d57496a3a7dddb9ed6a5dab5192a9450`. Source focus correction `2cbd3e751f18`; no native Windows certification. |
-| Disposable loopback backend + Chromium | **2 separate integrated scenarios, both 1/1 PASS** | [run #41815871774](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41815871774), same tested SHA. Existing A/B read-only Quality and backend/project recovery PASS; new synthetic C UI consent/cancellation, version-bound approval, replay refusal, undo, restore, original preservation and real test-owned backend restart PASS. **Still not native WebView2/Narrator**. |
+| Frontend Node + build + hosted isolated Chromium | **144/144 Node PASS, build PASS, 5/5 Chromium PASS** | [run #41833432539](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432539), tested SHA `ebd10e2db992ee6bc4ec8dc53a436d156d226458`. Retains source focus correction and adds Manager impact preview; no native Windows certification. |
+| Disposable loopback backend + Chromium | **3 separate integrated scenarios, each 1/1 PASS** | [run #41833432977](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432977), same tested SHA. A/B Quality/recovery, C consent/approval/undo/restore and D/E manager with read-only impact and project rename/archive/restore/restart all PASS. **Still not native WebView2/Narrator**. |
 | Owner Windows P0 development | **117 frontend / 174 backend PASS** at dated checkpoint; observed A2/A3 walkthrough accepted | Earlier scoped Windows development checkpoint, not current whole-system or installed 1.0 certification. |
 | Owner Windows P1 native interaction | Edited Prepare title-bar X/Stay/Leave, docked Prepare and WIN-K1–K4 **owner-reported PASS** | DEV ONLY Tauri at dated evidence; untested S/A/screen reader gates remain. |
 
@@ -46,6 +46,13 @@ GitHub source and green CI do not establish the remaining Windows-native accessi
 Tests: [9/9 isolated backend pytest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41827678997) on backend source ancestor `3fde4449`; [143/143 frontend Node, TS/Vite build, 5/5 hosted isolated Chromium](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41830669671); [all 3 real-Uvicorn/Chromium synthetic scenarios passed](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41830669685) on `5c261a03765f`, including synthetic project management rename/archive/restore and actual backend restart. Earlier failed CI attempts are historical and were not counted. **No owner/native Windows acceptance**, installer or protected original dataset touched.
 
 **P1 remains OPEN / native acceptance BLOCKED.** This new evidence does not change owner deferred S1..S4/A1 or unverified Narrator, real native Q3/N1 and resource acceptance. Issue #8 tracks further lifecycle design and deletion requirements.
+
+## P1 read-only project deletion-impact increment (4 November 2026)
+[Exact tested SHA `ebd10e2db992`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ebd10e2db992ee6bc4ec8dc53a436d156d226458) adds **Review impact** to Manager, a no-write `GET /api/projects/{id}/deletion-impact` and an inventory of known direct/indirect SQLite relations plus safe classification of managed dataset/model locations and blockers. The preview reports deletion unavailable. **No permanent DELETE capability has been implemented.**
+
+Verified [12/12 backend pytest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41832930061) on unchanged backend source ancestor, [144/144 Node + build + 5/5 Chromium](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432539) and [3/3 real Uvicorn/Chromium](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/41833432977) on final tested SHA, all using disposable projects. [Detailed no-delete and future recovery plan](./P1_PROJECT_DELETION_IMPACT_AND_SAFETY_DESIGN_2026-11-04.md).
+
+**P1 OPEN / native acceptance BLOCKED**. Reviewed impact is not an exhaustive file manifest or an authorisation to delete. Owner Windows/WebView2, screen reader, physical scaling/Snap, Q3/N1 and resource gates are unchanged.
 
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
