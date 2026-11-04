@@ -316,3 +316,114 @@ def test_archived_write_gate_does_not_preempt_desktop_session_auth(workspace,mon
         headers={"x-pilotodin-session":"synthetic-local-test-only"})
     assert response.status_code==409,response.text
     assert all(path.read_bytes()==payload for path,payload,_ in sources)
+
+
+def test_quality_transaction_rejects_stale_prearchive_project_object(workspace, monkeypatch):
+    """Even a cached project dict cannot commit Quality writes after archive."""
+    from backend import quality_approvals, project_lifecycle
+    client,home,(a,b),sources=workspace
+    quality_approvals._init_tables()
+    stale=quality._project(a)
+    issues=quality.snapshot(a)["issues"]
+    assert issues, "Synthetic identifier must have an explainable Quality finding."
+    issue_id=issues[0]["id"]
+    with storage.connect() as con:
+        old_version=con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",(a,)
+        ).fetchone()[0]
+        old_counts={
+            t:con.execute(f"SELECT COUNT(*) FROM {t} WHERE project_id=?",(a,)).fetchone()[0]
+            for t in ("quality_versions","quality_actions","quality_decisions",
+                      "quality_approval_receipts")
+        }
+    # Normal HTTP entry check hides archived projects. Simulate an in-flight
+    # request that had already loaded this dict before the archive happened.
+    assert _change(client,a,"archive",0).status_code==200
+    original_project=quality._project
+    monkeypatch.setattr(quality,"_project",
+        lambda pid: stale if pid==a else original_project(pid))
+    operations=[
+        lambda: quality.decide(a,issue_id,old_version,"reject"),
+        lambda: quality.autopilot(a,old_version),
+        lambda: quality.approve_imputation(a,"Amount",issue_id,old_version),
+        lambda: quality.undo(a,storage.uid(),old_version),
+        lambda: quality.restore(a,0,old_version),
+        lambda: quality_approvals.prepare(
+            a,quality_approvals.ProposalRequest(
+                operation="restore",expected_version=old_version,target_version=0)),
+        lambda: quality_approvals.commit(
+            a,quality_approvals.ApprovalCommit(
+                proposal_id="0"*48,proposal_hash="0"*64)),
+    ]
+    for operation in operations:
+        with pytest.raises(quality.QualityError) as err:
+            operation()
+        assert err.value.status==409
+        assert "archived" in str(err.value).lower()
+    with storage.connect() as con:
+        assert con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",(a,)
+        ).fetchone()[0]==old_version
+        assert {
+            t:con.execute(f"SELECT COUNT(*) FROM {t} WHERE project_id=?",(a,)).fetchone()[0]
+            for t in old_counts
+        }==old_counts
+    assert all(path.read_bytes()==payload for path,payload,_ in sources)
+    monkeypatch.setattr(quality,"_project",original_project)
+    assert _change(client,a,"restore",1).status_code==200
+    # Restored projects retain the original successful edit path.
+    decision=quality.decide(a,issue_id,old_version,"reject")
+    assert decision["decision"]=="rejected"
+
+
+def test_quality_write_first_serializes_archive_and_keeps_evidence(workspace, monkeypatch):
+    """A live Quality writer holding BEGIN IMMEDIATE must finish before archive."""
+    from backend import project_lifecycle
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    client,home,(a,b),sources=workspace
+    issue_id=quality.snapshot(a)["issues"][0]["id"]
+    started=Event()
+    release=Event()
+    archive_entered=Event()
+    validate=quality._require_active_for_write
+
+    def hold_fence(con,pid):
+        # In real Quality code this callback runs after BEGIN IMMEDIATE.
+        assert con.in_transaction
+        assert pid==a
+        started.set()
+        if not release.wait(timeout=12):
+            raise RuntimeError("Quality test fence timed out; aborting without mutation")
+        validate(con,pid)
+
+    monkeypatch.setattr(quality,"_require_active_for_write",hold_fence)
+    def archive():
+        archive_entered.set()
+        return project_lifecycle.change(a,"archive",0)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        quality_job=pool.submit(quality.decide,a,issue_id,0,"reject")
+        try:
+            assert started.wait(timeout=12),"Quality writer did not acquire lock"
+            archive_job=pool.submit(archive)
+            assert archive_entered.wait(timeout=5)
+            # Because Quality holds SQLite's write transaction, archive cannot
+            # commit while the Quality writer is paused inside that transaction.
+            assert not archive_job.done()
+        finally:
+            release.set()
+        assert quality_job.result(timeout=15)["decision"]=="rejected"
+        result=archive_job.result(timeout=15)
+    assert result["archived_at"] is not None
+    with storage.connect() as con:
+        row=con.execute(
+            "SELECT status FROM quality_decisions WHERE project_id=? AND issue_id=?",
+            (a,issue_id)
+        ).fetchone()
+        assert row["status"]=="rejected"
+        assert con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",(a,)
+        ).fetchone()[0]==0
+    assert all(path.read_bytes()==payload for path,payload,_ in sources)
