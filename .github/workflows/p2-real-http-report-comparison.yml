@@ -1,0 +1,68 @@
+name: P2 Real HTTP Saved Revision Comparison
+
+# Trusted feature-branch CI only; never local developer machine, fork PR or user data.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p2-real-http-report-comparison.yml
+      - frontend/playwright.p2-real-http.config.ts
+      - frontend/e2e/p2-real-http-report-comparison.spec.ts
+      - frontend/e2e/p1-real-http-backend.ts
+      - frontend/src/ReportWorkspace.tsx
+      - frontend/src/reportRevisionComparison.ts
+      - frontend/src/reportComposerGate.ts
+      - frontend/src/UnifiedShell.tsx
+      - backend/reports.py
+      - backend/main.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p2-real-http-saved-comparison-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-real-http:
+    name: Owned Uvicorn + real browser saved revision comparison
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      P1_REAL_HTTP_E2E: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Choose CI-owned synthetic workspace
+        run: echo "PILOTODIN_HOME=${RUNNER_TEMP}/pilotodin-p1-real-http-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
+      - name: Checkout trusted source with no stored credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Use Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Use Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install isolated test dependencies
+        run: |
+          python -m pip install -r backend/requirements-test.txt
+          npm ci --prefix frontend --no-audit --no-fund
+      - name: Compile actual source without accessing owner files
+        run: python -m compileall -q backend
+      - name: Install CI-owned Chromium
+        working-directory: frontend
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Exercise immutable P2 revision comparison via actual backend and Chromium
+        working-directory: frontend
+        run: >-
+          npx --no-install playwright test
+          --config=playwright.p2-real-http.config.ts
