@@ -9,6 +9,7 @@ on:
       - .github/workflows/p2-real-http-report-comparison.yml
       - frontend/playwright.p2-real-http.config.ts
       - frontend/e2e/p2-real-http-report-comparison.spec.ts
+      - frontend/e2e/p2-real-http-guided-report-persistence.spec.ts
       - frontend/e2e/p1-real-http-backend.ts
       - frontend/src/ReportWorkspace.tsx
       - frontend/src/reportRevisionComparison.ts
