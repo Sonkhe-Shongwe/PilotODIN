@@ -9,7 +9,7 @@ if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
 }
 export default defineConfig({
  testDir:'./e2e',
- testMatch:['p2-real-http-report-comparison.spec.ts','p2-real-http-guided-report-persistence.spec.ts'],
+ testMatch:['p2-real-http-report-comparison.spec.ts','p2-real-http-guided-report-persistence.spec.ts','p2-real-http-mounted-handoff.spec.ts'],
  timeout:90_000,expect:{timeout:10_000},
  fullyParallel:false,workers:1,retries:0,reporter:'list',
  outputDir:'./test-results-p2-real-http',
@@ -21,6 +21,7 @@ export default defineConfig({
  },
  webServer:{
   command:'npx vite --host 127.0.0.1 --port 5178 --strictPort',
+  env:{VITE_P2_MOUNTED_HANDOFF_QA:'1'},
   url:'http://127.0.0.1:5178',reuseExistingServer:false,timeout:60_000,
  },
 });
