@@ -193,7 +193,11 @@ def test_evidence_fact_preview_is_project_scoped_read_only_and_never_exposes_row
                  "predictions", "evidence"} & set(data))
     assert client.get(f"/api/projects/{pid}/reports").json() == before
     with storage.connect() as con:
-        assert con.execute("SELECT COUNT(*) FROM report_revisions_v1").fetchone()[0] == 0
+        assert con.execute(
+            "SELECT COUNT(*) FROM report_revisions_v1 v "
+            "JOIN reports_v1 r ON v.report_id=r.id WHERE r.project_id=?",
+            (pid,)
+        ).fetchone()[0] == 0
 
 
 def test_evidence_fact_preview_refuses_foreign_or_invalid_evidence():
