@@ -474,6 +474,15 @@ def save(project_id: str, title: str, narrative: str, evidence_ids: list[str], r
         ident=report_id or storage.uid()
         if report_id is None:
             con.execute('INSERT INTO reports_v1 VALUES (?,?,?)',(ident,project_id,storage.now()))
+        else:
+            latest=con.execute('''SELECT number,snapshot_json,content_sha256
+                FROM report_revisions_v1 WHERE report_id=?
+                ORDER BY number DESC LIMIT 1''',(ident,)).fetchone()
+            if latest is not None and latest['snapshot_json']==canonical and hmac.compare_digest(latest['content_sha256'],digest):
+                # No duplicate history for an identical canonical saved revision.
+                result=load(ident,latest['number'])
+                result['unchanged']=True
+                return result
         number=con.execute('SELECT COALESCE(MAX(number),0)+1 FROM report_revisions_v1 WHERE report_id=?',(ident,)).fetchone()[0]
         revision=storage.uid()
         con.execute('''INSERT INTO report_revisions_v1
