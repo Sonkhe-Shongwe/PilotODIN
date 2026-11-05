@@ -301,10 +301,20 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
       failedStatuses.push(response.status());
   });
   const approvals:string[]=[];
+  let cancelFirst=true;
   page.on('dialog',async dialog=>{
     approvals.push(dialog.message());
-    await dialog.accept();
+    if(cancelFirst){cancelFirst=false;await dialog.dismiss();}
+    else await dialog.accept();
   });
+  // A cancelled switch must preserve the dirty Prepare form without even
+  // attempting another project's live-profile GET.
+  await switcher.selectOption(aid);
+  await expect(switcher).toHaveValue(bid!);
+  await expect(target).toHaveValue('Outcome');
+  expect(approvals).toHaveLength(1);
+  expect(approvals[0]).toMatch(/primary workspace.*discard/i);
+  expect(failedStatuses).toEqual([]);
   let hidden=false;
   try{
     expect(fixtureGuard('hide',aid)).toBe('P1_SYNTHETIC_SOURCE_HIDDEN');
@@ -315,8 +325,8 @@ test('real HTTP import, Quality, rejected switch and restored source retain prim
     await expect(switcher).toHaveValue(bid!);
     await expect(target).toHaveValue('Outcome');
     expect(failedStatuses).toContain(409);
-    expect(approvals).toHaveLength(1);
-    expect(approvals[0]).toMatch(/primary workspace.*discard/i);
+    expect(approvals).toHaveLength(2);
+    expect(approvals[1]).toMatch(/primary workspace.*discard/i);
     await nav.getByRole('button',{name:'Quality'}).click();
     await expect(primary.getByRole('heading',{name:'Data Quality',exact:true})).toBeVisible();
     await expect(primary.getByText('WORKING VERSION 0')).toBeVisible();

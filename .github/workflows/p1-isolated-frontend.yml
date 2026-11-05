@@ -56,6 +56,8 @@ jobs:
           tests/p1-playwright-pilot-contract.test.cjs
           tests/p1-primary-canvas-exit.test.cjs
           tests/p1-external-route-activation-guard.test.cjs
+          tests/p1-primary-draft-switch-safety.test.cjs
+          tests/p1-native-project-switch-consent.test.cjs
           tests/p1-unsaved-reload-guard.test.cjs
           tests/p1-primary-button-edit-markers.test.cjs
           tests/p1-predict-request-staleness.test.cjs

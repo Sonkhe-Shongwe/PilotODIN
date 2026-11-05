@@ -115,6 +115,7 @@ export function UnifiedShell(){
  // Tauri/WebView2 may not display a synchronous browser confirm. Keep native
  // project-switch consent serialized and never store unsaved form values.
  const nativeProjectSwitchPromptPending=useRef(false);
+ const [nativeProjectSwitchWaiting,setNativeProjectSwitchWaiting]=useState(false);
  // A consented external switch is provisional until the existing Studio has
  // read the requested project. A failed GET must never unmount this draft.
  const pendingExternalSwitch=useRef<{
@@ -552,14 +553,17 @@ export function UnifiedShell(){
    // Native system consent is asynchronous; cancellation or failure keeps the
    // current project and draft mounted. Ignore replies to stale project IDs.
    nativeProjectSwitchPromptPending.current=true;
+   setNativeProjectSwitchWaiting(true);
    const origin=projectId;
    void invoke<boolean>('confirm_native_project_switch').then(approved=>{
     nativeProjectSwitchPromptPending.current=false;
+    setNativeProjectSwitchWaiting(false);
     if(!approved||currentProjectRef.current!==origin||
       pendingExternalSwitch.current!==null)return;
     chooseProject(id,true);
    }).catch(()=>{
     nativeProjectSwitchPromptPending.current=false;
+    setNativeProjectSwitchWaiting(false);
     setWarning('Could not show the Windows unsaved-changes confirmation. Your current project and edits were kept.');
    });
    return;
@@ -718,7 +722,7 @@ export function UnifiedShell(){
    {motionReduced&&<span className="po-motion-reduced" role="status" title="Windows or your browser requests reduced motion. PilotODIN honours this accessibility setting.">Animations reduced by system</span>}
    <div className="po-project-switcher">
     <Database className="po-project-switcher-icon" size={16} aria-hidden="true"/>
-    <select aria-label="Switch project" title={selectorLabels.get(projectId)??(projects.length?'Switch between imported projects':'Import another dataset to switch between projects')} value={projectId} onChange={e=>chooseProject(e.target.value)}>
+    <select aria-label="Switch project" title={selectorLabels.get(projectId)??(projects.length?'Switch between imported projects':'Import another dataset to switch between projects')} value={projectId} disabled={nativeProjectSwitchWaiting} onChange={e=>chooseProject(e.target.value)}>
      <option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>
      {heldArchivedId===projectId&&!!projectId&&!projects.some(p=>p.id===projectId)&&<option value={projectId} disabled>Archived in another window (restore to continue)</option>}
      {projects.map(p=><option key={p.id} value={p.id}>{selectorLabels.get(p.id)??p.name}</option>)}
