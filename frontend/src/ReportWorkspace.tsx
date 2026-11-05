@@ -298,8 +298,27 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      {reports.length===0&&<p className="pd-report-muted">No reports saved in this project yet.</p>}
      {reports.map(item=><button key={item.id} disabled={busy==='save'||busy==='quality'||busy==='export'} className={activeId===item.id?'pd-report-selected':''} onClick={()=>void openReport(item.id)}><FileText size={17}/><span><strong>{item.title}</strong><small>Revision {item.revision} · {new Date(item.updated_at).toLocaleDateString()}</small></span></button>)}
      {opened&&<label className="pd-report-field">Open saved revision<select value={revision??opened.revision} disabled={busy==='save'||busy==='quality'||busy==='export'} onChange={e=>void openReport(opened.id,Number(e.target.value))}>{opened.revisions.map(n=><option key={n} value={n}>Revision {n}</option>)}</select></label>}
+     {opened&&opened.revisions.some(n=>n<opened.revision)&&<button type="button" className="ud-btn ud-btn-quiet" disabled={!!busy||comparisonBusy} onClick={()=>void comparePreviousSavedRevision()}>{comparisonBusy?'Comparing saved revisions…':'Compare with previous saved revision'}</button>}
      {opened&&<p className="pd-report-muted">Exports are generated locally from a saved revision. Editing above does not change the exported report until you save a new revision.</p>}
    </aside></div>
+   {comparisonError&&<p role="alert" className="pd-report-error">{comparisonError}</p>}
+   {revisionComparison&&revisionComparison.projectId===projectId&&revisionComparison.reportId===activeId&&
+    revisionComparison.comparison.to===(revision??opened?.revision)&&
+    <section className="pd-report-preview pd-report-revision-comparison" aria-label="Saved report revision differences">
+     <h3>Saved revision comparison</h3>
+     <p>Revision {revisionComparison.comparison.from} compared with revision {revisionComparison.comparison.to}. Only frozen saved evidence is compared; unsaved draft edits are excluded.</p>
+     <p className="pd-report-muted">Previous SHA-256: {revisionComparison.comparison.fromSha256.slice(0,16)}… · Selected SHA-256: {revisionComparison.comparison.toSha256.slice(0,16)}…</p>
+     {revisionComparison.comparison.identical&&<p>No saved report content differences detected.</p>}
+     {revisionComparison.comparison.titleChanged&&<div><h4>Title changed</h4><p><strong>Previous:</strong> {revisionComparison.comparison.oldTitle}</p><p><strong>Selected:</strong> {revisionComparison.comparison.newTitle}</p></div>}
+     {revisionComparison.comparison.narrativeChanged&&<div><h4>Interpretation changed</h4><p className="pd-report-diff-text"><strong>Previous:</strong> {revisionComparison.comparison.oldNarrative||'(empty)'}</p><p className="pd-report-diff-text"><strong>Selected:</strong> {revisionComparison.comparison.newNarrative||'(empty)'}</p></div>}
+     {revisionComparison.comparison.added.length>0&&<div><h4>New evidence</h4><ul>{revisionComparison.comparison.added.map(e=><li key={e.id}>{e.operation} · {e.id.slice(0,12)} · dataset v{e.toVersion}</li>)}</ul></div>}
+     {revisionComparison.comparison.removed.length>0&&<div><h4>Removed evidence</h4><ul>{revisionComparison.comparison.removed.map(e=><li key={e.id}>{e.operation} · {e.id.slice(0,12)} · dataset v{e.fromVersion}</li>)}</ul></div>}
+     {revisionComparison.comparison.changed.length>0&&<div><h4>Revised evidence snapshots</h4><ul>{revisionComparison.comparison.changed.map(e=><li key={e.id}>{e.operation} · {e.id.slice(0,12)} · dataset v{e.fromVersion} → v{e.toVersion}</li>)}</ul></div>}
+     {revisionComparison.comparison.orderChanged&&<p><strong>Exhibit order changed.</strong> Both revisions retain their original saved exhibit ordering.</p>}
+     {(revisionComparison.comparison.versionsAdded.length>0||revisionComparison.comparison.versionsRemoved.length>0)&&<p><strong>Dataset version coverage changed.</strong> Added: {revisionComparison.comparison.versionsAdded.join(', ')||'none'}; removed: {revisionComparison.comparison.versionsRemoved.join(', ')||'none'}.</p>}
+     {revisionComparison.comparison.otherSnapshotChanged&&<p>Other verified snapshot fields changed. Review the complete saved exports for full details; source evidence has not been recomputed.</p>}
+     {hasDraftChanges&&<p className="pd-report-warning">Your unsaved draft changes are not included in this comparison.</p>}
+    </section>}
    {previewError&&<p role="alert" className="pd-report-error">{previewError}</p>}
    {savedPreview&&savedPreview.projectId===projectId&&savedPreview.id===activeId&&savedPreview.revision===(revision??opened?.revision)&&<section className="pd-report-saved-preview" aria-label="Saved HTML report preview">
      <div className="pd-report-preview-heading">
