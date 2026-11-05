@@ -278,7 +278,17 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
 
   // The unified shell exposes New project; its nested legacy Studio
   // sidebar is hidden in this mode, so test the actual visible control.
+  // A pending shell dirty marker may still require explicit route consent
+  // while the just-reset report settles; the test grants that consent only
+  // for this requested import, never for the later rejection checks.
+  const acceptImportConsent=async (dialog:import('@playwright/test').Dialog)=>{
+   expect(dialog.message()).toContain('unsaved changes');
+   await dialog.accept();
+  };
+  page.on('dialog',acceptImportConsent);
   await page.getByRole('button',{name:'New project: import dataset'}).click();
+  page.off('dialog',acceptImportConsent);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
   await expect(primary.getByRole('button',{name:'Cancel upload'})).toBeVisible();
   await expect(primary.locator('.landing .upload-card')).toBeVisible();
   await primary.getByRole('button',{name:'Cancel upload'}).click();
