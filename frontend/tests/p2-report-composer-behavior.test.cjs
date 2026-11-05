@@ -110,3 +110,12 @@ test('INTEGRATION: draft changes and project/evidence navigation invalidate the 
  assert.match(ui,/latestReportList\.current/);
  assert.match(ui,/saveReportNative\(blob,filename,format\)/);
 });
+
+
+test('INTEGRATION: repeat submit keeps revision and reports no changes without stale success banners',()=>{
+ assert.match(ui,/unchanged\?:boolean/);
+ assert.match(ui,/setNotice\(saved\.unchanged/);
+ assert.match(ui,/No changes to save\. Saved revision/);
+ assert.match(ui,/userStartedDraft\.current=true;setBusy\('open'\);setError\(''\);setNotice\(''\)/);
+ assert.match(ui,/composerGuard\.current\.editDraft\(\);setNotice\(''\)/);
+});
