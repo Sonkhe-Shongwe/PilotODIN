@@ -62,6 +62,13 @@ test('INTEGRATION: both New and saved-report/revision navigation use same explic
  assert.match(ui,/onChange=\{e=>requestOpenReport\(opened\.id,Number\(e\.target\.value\)\)\}/);
  assert.match(ui,/const hasUnsavedWork=hasUnsavedReportDraft\(/);
 });
+test('INTEGRATION: visual draft warning uses same guard for new and saved reports',()=>{
+ assert.match(ui,/const hasUnsavedWork=hasUnsavedReportDraft\(/);
+ assert.match(ui,/\{hasUnsavedWork&&<p role="status" className="pd-report-warning">\{opened/);
+ assert.match(ui,/Unsaved report draft\. Save a revision before exporting\./);
+ assert.match(ui,/Unsaved changes\. Exports remain linked to the saved revision until you save again\./);
+ assert.doesNotMatch(ui,/\{hasDraftChanges&&<p role="status" className="pd-report-warning">Unsaved changes\./);
+});
 test('INTEGRATION: keep preserves state; approve invokes existing navigation and vetoes stale project approvals',()=>{
  assert.match(ui,/function approveReportDiscard\(\)/);
  assert.match(ui,/if\(!action\|\|action\.projectId!==activeProjectRef\.current\)return/);
