@@ -251,6 +251,22 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await discard.getByRole('button',{name:'Discard and continue'}).click();
   await expect(discard).toHaveCount(0);
   await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+
+  // A dirty Deliver primary view must not unmount when the shell rail selects
+  // Explore and the user denies the browser/native-compatible confirmation.
+  const draftLeavingDeliver='Unfinished analyst interpretation for this synthetic report.';
+  await primary.getByLabel('Interpretation and limitations').fill(draftLeavingDeliver);
+  let sawExitPrompt=false;
+  page.once('dialog',async dialog=>{
+   sawExitPrompt=true;
+   expect(dialog.message()).toContain('Your Deliver report contains unsaved changes');
+   await dialog.dismiss();
+  });
+  await page.locator('button.po-nav-item[aria-label="Explore"]').click();
+  expect(sawExitPrompt).toBe(true);
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(draftLeavingDeliver);
+  expect(page.url()).toContain('/studio/deliver');
   expect(audit.blockedWrites).toEqual([]);
   expect(audit.unexpected).toEqual([]);
   expect(audit.remote).toEqual([]);
