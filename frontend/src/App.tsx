@@ -153,6 +153,13 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   window.addEventListener('pilotodin:route-reverted',sync);
   return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync);window.removeEventListener('pilotodin:route-reverted',sync)}
  },[embeddedStage]);
+  function requestNewDataset():void{
+    // Authorise leaving an edited Deliver workspace before showing the import
+    // view. go() intentionally clears uploadOpen on successful navigation.
+    if(embedded||!go('overview'))return;
+    setFile(null);
+    setUploadOpen(true);
+  }
   function go(next:Stage):boolean{
     // Refuse destructive primary navigation BEFORE touching route or page state.
     // Embedded navigation continues to use its existing dock-only authority.
@@ -513,7 +520,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       <div className="studio-nav-scroll">
         <div className="workspace-label">YOUR PROJECT</div>
         <div className="project-choose"><FolderOpen size={17}/><select aria-label="Choose project" value={project?.id??''} onChange={e=>void loadProject(e.target.value)}><option value="" disabled>Choose a project</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-        <button className="new-project" disabled={embedded} onClick={()=>{if(!embedded){setUploadOpen(true);go('overview')}}}><Plus size={16}/> New dataset</button>
+        <button className="new-project" disabled={embedded} onClick={requestNewDataset}><Plus size={16}/> New dataset</button>
         <nav aria-label="Main navigation" className="studio-nav">
           <div className="workspace-label second">YOUR WORKSPACE</div>
           {NAV.filter(n=>['overview','understand','quality','explore'].includes(n.id)).map(n=>{const Icon=n.id==='overview'?House:n.icon;return <button key={n.id} className={cls('nav-item',page===n.id&&'active')} title={n.name} aria-label={n.name} aria-current={page===n.id?'page':undefined} disabled={!hasProject} onClick={()=>go(n.id)}><Icon size={18}/><span>{n.id==='overview'?'Home':n.id==='understand'?'Your data':n.name}</span>{page===n.id&&<span className="studio-active-pin"/>}</button>})}
