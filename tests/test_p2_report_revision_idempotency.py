@@ -170,3 +170,69 @@ def test_simultaneous_identical_submissions_do_not_create_duplicate_revisions():
         (r.status_code, r.text) for r in results]
     assert all(r.json()["revision_id"] == first["revision_id"] for r in results)
     assert len(stored_revisions(first["id"])) == 1
+
+
+def test_evidence_fact_preview_is_project_scoped_read_only_and_never_exposes_rows():
+    pid = project()
+    eid = evidence(pid, "overview")
+    before = client.get(f"/api/projects/{pid}/reports").json()
+    response = client.get(f"/api/projects/{pid}/report-evidence/{eid}/preview")
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["id"] == eid
+    assert data["operation"] == "overview"
+    assert data["dataset_version"] == 0
+    assert data["current_dataset_version"] == 0
+    assert data["historical"] is False
+    assert len(data["summary"]) <= 8
+    assert all(isinstance(f["label"], str) and len(f["label"]) <= 80
+               and isinstance(f["value"], str) and len(f["value"]) <= 140
+               for f in data["summary"])
+    assert "raw rows" in data["disclosure"]
+    assert not ({"data", "rows", "records", "result", "findings",
+                 "predictions", "evidence"} & set(data))
+    assert client.get(f"/api/projects/{pid}/reports").json() == before
+    with storage.connect() as con:
+        assert con.execute("SELECT COUNT(*) FROM report_revisions_v1").fetchone()[0] == 0
+
+
+def test_evidence_fact_preview_refuses_foreign_or_invalid_evidence():
+    pid = project()
+    eid = evidence(pid, "overview")
+    other = project()
+    assert client.get(
+        f"/api/projects/{other}/report-evidence/{eid}/preview"
+    ).status_code == 403
+    assert client.get(
+        f"/api/projects/{pid}/report-evidence/not-a-uuid/preview"
+    ).status_code == 422
+    assert client.get(
+        f"/api/projects/{pid}/report-evidence/{'f'*32}/preview"
+    ).status_code == 403
+    assert client.get(
+        f"/api/projects/{'e'*32}/report-evidence/{eid}/preview"
+    ).status_code == 404
+
+
+def test_quality_evidence_fact_preview_is_bounded_and_rejects_tampering():
+    pid = project()
+    audit = client.post(
+        f"/api/projects/{pid}/report-quality", json={"expected_version": 0})
+    assert audit.status_code == 201, audit.text
+    eid = audit.json()["id"]
+    response = client.get(f"/api/projects/{pid}/report-evidence/{eid}/preview")
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["operation"] == "quality_audit"
+    assert data["dataset_version"] == 0
+    assert any("findings" in fact["label"].lower() for fact in data["summary"])
+    assert "findings" not in data
+    assert "data" not in data
+    assert not isinstance(data.get("summary"), dict)
+    with storage.connect() as con:
+        con.execute(
+            "UPDATE report_quality_audits_v1 SET snapshot_json=? WHERE id=?",
+            ('{"dataset_version":0,"summary":{"Quality findings detected":999}}', eid))
+    denied = client.get(f"/api/projects/{pid}/report-evidence/{eid}/preview")
+    assert denied.status_code == 409
+    assert "integrity" in denied.json()["detail"].lower()
