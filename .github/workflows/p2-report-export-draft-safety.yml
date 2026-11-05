@@ -11,9 +11,11 @@ on:
       - frontend/src/ReportWorkspace.tsx
       - frontend/src/reportComposerGate.ts
       - frontend/src/reportRevisionComparison.ts
+      - frontend/src/reportDraftOutline.ts
       - frontend/src/report-workspace.css
       - frontend/tests/p2-report-read-safety.test.cjs
       - frontend/tests/p2-report-revision-comparison.test.cjs
+      - frontend/tests/p2-report-guided-outline.test.cjs
       - frontend/tests/p2-report-composer-behavior.test.cjs
       - frontend/tests/p2-report-navigation-contracts.test.cjs
       - frontend/tests/p2-saved-report-html-preview.test.cjs
@@ -54,6 +56,7 @@ jobs:
           node --test
           tests/p2-report-read-safety.test.cjs
           tests/p2-report-revision-comparison.test.cjs
+          tests/p2-report-guided-outline.test.cjs
           tests/p2-report-composer-behavior.test.cjs
           tests/p2-report-navigation-contracts.test.cjs
           tests/p2-saved-report-html-preview.test.cjs
