@@ -78,9 +78,9 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  useEffect(()=>{
    if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
    appliedHandoff.current=preselectEvidenceId;
-   clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    latestOpenRequest.current++;composerGuard.current.navigate();setBusy('');
+   clearComparison();
    const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
    if(!option){setError('This saved analysis is not available as verified evidence in the active project.');return;}
    userStartedDraft.current=true;
