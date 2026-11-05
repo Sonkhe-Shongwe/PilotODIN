@@ -95,7 +95,10 @@ test('INTEGRATION: after loading an export, stale views cannot launch native or 
  assert.match(ui,/if\(!isCurrent\(\)\)return; \/\/ Never launch Save As/);
  assert.match(ui,/if\(!isCurrent\(\)\)return; \/\/ An already-open native dialog/);
  assert.match(ui,/await saveReportNative\(blob,filename,format\)/);
- assert.match(ui,/finally\{if\(isCurrent\(\)\)setBusy\(''\)\}/);
+ assert.match(ui,/const draftTicket=composerGuard\.current\.currentDraft\(\)/);
+ assert.match(ui,/const sameView=\(\)=>activeProjectRef\.current===projectId/);
+ assert.match(ui,/isCurrentDraft\(draftTicket\)/);
+ assert.match(ui,/finally\{if\(sameView\(\)\)setBusy\(''\)\}/);
 });
 
 test('INTEGRATION: draft edits prevent in-flight report Open from overwriting new text',()=>{
@@ -105,4 +108,51 @@ test('INTEGRATION: draft edits prevent in-flight report Open from overwriting ne
  assert.match(ui,/onDraftEdit\(\);setNarrative\(e\.target\.value\)/);
  assert.match(ui,/onDraftEdit\(\);setSelected\(/);
  assert.match(ui,/if\(ticket!==latestOpenRequest\.current\)return;/);
+});
+
+test('BEHAVIOR: editing draft while PDF fetch is pending cancels Save As and clears busy',async()=>{
+ const reads=new ReportReadGate(),view=new ReportComposerGate();
+ const ticket=reads.beginExport(),activeView=view.currentView(),activeDraft=view.currentDraft();
+ const pending=deferred();
+ let busy='export',saveAs=0;
+ const sameView=()=>view.isCurrentView(activeView)&&reads.isCurrentExport(ticket);
+ const isCurrent=()=>sameView()&&view.isCurrentDraft(activeDraft);
+ const completion=pending.promise.then(()=>{
+  if(isCurrent())saveAs++;
+ }).finally(()=>{if(sameView())busy=''});
+ view.editDraft();
+ pending.resolve({filename:'stale-report.pdf'});
+ await completion;
+ assert.equal(saveAs,0);
+ assert.equal(busy,'');
+ assert.equal(view.isCurrentDraft(activeDraft),false);
+});
+
+test('BEHAVIOR: unchanged immutable revision fetch remains eligible for Save As',async()=>{
+ const reads=new ReportReadGate(),view=new ReportComposerGate();
+ const token=reads.beginExport(),v=view.currentView(),d=view.currentDraft();
+ const pending=deferred();
+ const saved=[];
+ const work=pending.promise.then(item=>{
+  if(view.isCurrentView(v)&&view.isCurrentDraft(d)&&reads.isCurrentExport(token))saved.push(item.filename);
+ });
+ pending.resolve({filename:'saved-revision.pdf'});
+ await work;
+ assert.deepEqual(saved,['saved-revision.pdf']);
+});
+
+test('BEHAVIOR: new project identity vetoes an export even before effect cleanup',async()=>{
+ const reads=new ReportReadGate(),view=new ReportComposerGate();
+ const token=reads.beginExport(),v=view.currentView(),d=view.currentDraft();
+ const activeProject={current:'disposable-A'},projectId='disposable-A';
+ const pending=deferred(),saved=[];
+ const work=pending.promise.then(item=>{
+  if(activeProject.current===projectId&&view.isCurrentView(v)&&
+     view.isCurrentDraft(d)&&reads.isCurrentExport(token))saved.push(item.filename);
+ });
+ // Mimics a new projectId prop rendered before the effect cleanup has reset gates.
+ activeProject.current='disposable-B';
+ pending.resolve({filename:'old-project.pdf'});
+ await work;
+ assert.deepEqual(saved,[]);
 });
