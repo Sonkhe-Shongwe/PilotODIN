@@ -77,3 +77,21 @@
 .pd-report-revision-comparison li{font-size:12px;line-height:1.55}
 .pd-report-diff-text{white-space:pre-wrap;overflow-wrap:anywhere}
 .pd-report-library button:focus-visible{outline:3px solid #087b87;outline-offset:2px}
+
+/* P2 bounded evidence facts: separately focusable preview, never a nested
+   button inside a checkbox label; preserves keyboard selection semantics. */
+.pd-report-evidence-row{display:flex;gap:9px;align-items:center;border-bottom:1px solid #edf0f6}
+.pd-report-evidence-row .pd-report-evidence{flex:1;min-width:0;border-bottom:0;cursor:pointer}
+.pd-report-inspect{flex-shrink:0;border:1px solid #b2cee0;background:#f6fbff;color:#255879;
+ border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700;cursor:pointer}
+.pd-report-inspect:focus-visible,.pd-report-inspection-heading button:focus-visible{outline:3px solid #087b87;outline-offset:2px}
+.pd-report-inspect:disabled{opacity:.6;cursor:wait}
+.pd-report-evidence-inspection{background:#f9fbfe;border:1px solid #d5deee;
+ border-radius:10px;margin:12px 0 18px;padding:14px;color:#253550;overflow-wrap:anywhere}
+.pd-report-inspection-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pd-report-inspection-heading h4{font-size:14px;margin:0}
+.pd-report-evidence-inspection dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin:12px 0}
+.pd-report-evidence-inspection dl>div{padding:8px;background:white;border:1px solid #e7edf5;border-radius:7px}
+.pd-report-evidence-inspection dt{font-size:11px;color:#647089;font-weight:700}
+.pd-report-evidence-inspection dd{font-size:13px;line-height:1.4;overflow-wrap:anywhere;margin:5px 0 0}
+@media(max-width:560px){.pd-report-evidence-row{flex-wrap:wrap;gap:0}.pd-report-inspect{margin:0 0 9px 8px}}
