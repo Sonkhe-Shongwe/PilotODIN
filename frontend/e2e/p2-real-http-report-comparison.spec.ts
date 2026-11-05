@@ -216,7 +216,10 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   // Keep the browser GET-only so a mistaken implicit POST fails this contract.
   await expect(primary.getByRole('button',{name:'Use General analysis outline'})).toBeDisabled();
   await primary.getByRole('button',{name:'New report'}).click();
+  const unsavedNotice=primary.locator('.pd-report-workspace > .pd-report-warning');
+  await expect(unsavedNotice).toHaveCount(0); // The untouched default title is not an edit.
   await primary.getByRole('button',{name:'Use General analysis outline'}).click();
+  await expect(unsavedNotice).toContainText('Unsaved report draft. Save a revision before exporting.');
   const outline=primary.locator('.pd-report-outline-progress');
   const narrativeArea=primary.getByLabel('Interpretation and limitations');
   await expect(outline).toContainText('0 of 4 sections complete');
@@ -264,9 +267,11 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await expect(discard).toHaveCount(0);
   await expect(primary.getByLabel('Report title')).toHaveValue(updatedTitle);
   await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(newNarrative);
+  await expect(unsavedNotice).toHaveCount(0);
 
   const changedSaved=newNarrative+' Additional unsaved human note.';
   await primary.getByLabel('Interpretation and limitations').fill(changedSaved);
+  await expect(unsavedNotice).toContainText('Unsaved changes. Exports remain linked to the saved revision until you save again.');
   await primary.getByRole('button',{name:'New report'}).click();
   await expect(discard).toBeVisible();
   await discard.getByRole('button',{name:'Keep editing'}).click();
@@ -275,6 +280,7 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await discard.getByRole('button',{name:'Discard and continue'}).click();
   await expect(discard).toHaveCount(0);
   await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+  await expect(unsavedNotice).toHaveCount(0);
 
   // The unified shell exposes New project; its nested legacy Studio
   // sidebar is hidden in this mode, so test the actual visible control.
