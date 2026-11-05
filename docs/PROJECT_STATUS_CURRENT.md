@@ -1,5 +1,5 @@
 # PilotODIN 1.0 | Current project status
-**As of:** 4 November 2026  
+**As of:** 5 November 2026  
 **Branch:** `feature/live-dev-workspace-20261023`  
 **Primary phase:** **P1 OPEN** under the [owner-adopted phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md).  
 **Release:** **NOT CERTIFIED**. This document is a scoped development ledger, not a release announcement.
@@ -89,6 +89,11 @@ The owner could not find median approval in a native missingness investigation b
 - Owner DEV ONLY native Windows screenshots on local head `a2e483e4b598` confirm updated Quality guidance (Corrections 2, Region case-change proposal, numeric UnitPrice median 135, collapsible diagnostic comparisons). On disposable CSV **Region row 44** correction `gauteng→Gauteng` approved as **v1**, then correctly undone as **v2**, then **v1 restored as new v3**; 8 issues, 7 need review, 1 active correction and v0–v3 visible. User approved this functional test and requested moving on. **Native Q3 apply/Undo/Restore OWNER PASS scoped, new Quality guidance visually OWNER PASS scoped.** Not yet Windows Narrator, failure/restart or file-hash proof.
 - Empty contextual space beside an inactive inspector is not a confirmed responsive defect (owner clarification); do not reopen this as a blocking layout bug.
 - Next focus: reconcile remaining formal P1 gates and owner deferral choices without repeating Quality screenshots. P1 is **not** automatically closed; native restart and N1 full journey plus physical scaling/accessibility/R1/C1 remain OPEN/UNVERIFIED until explicit disposition.
+
+## 5 November 2026 | Safe P1 macro suite ready for one local run
+- [`9bd610d551e4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9bd610d551e4954106dd304a21d8cca752fb583d) adds one-click local P1 automated runner, source tests, Windows RAM read-only inventory and manual native checklist. [Macro-specific Windows CI #42025887147](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42025887147) **5/5 PASS**. This is not evidence that the complete macro has already run on the owner's PC.
+- Next owner checkpoint: `git pull --ff-only origin feature/live-dev-workspace-20261023`, then double-click `Run_PilotODIN_P1_Acceptance_Macro.bat` without closing existing DEV servers. Runner checks clean tracked source, does not touch ports 8000/5174, refuses occupied 5187 for browser, runs isolated backend tests, focused frontend Node/build/Chromium where tools exist, snapshots Windows memory and writes one TEMP ZIP. Actual N1-native, S1–S4, A1/A2 and final C1 remain separate physical/manual decisions; true offline combined AI+ML/8GB is NOT TESTED.
+- Do not repeat accepted Quality lifecycle, Manager scoped evidence or WIN-K1–K4. P1 remains OPEN.
 
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.

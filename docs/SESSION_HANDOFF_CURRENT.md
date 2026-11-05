@@ -1,5 +1,5 @@
 # PilotODIN 1.0 | Current continuation checkpoint
-**Updated:** 4 November 2026  
+**Updated:** 5 November 2026  
 **Repository:** [Sonkhe-Shongwe/PilotODIN](https://github.com/Sonkhe-Shongwe/PilotODIN)  
 **Active branch:** `feature/live-dev-workspace-20261023`  
 **Primary phase:** **P1 OPEN**. No release certification.
@@ -79,6 +79,11 @@
 - Owner updated local DEV source to `a2e483e4b598` (tested UI code `14cd56bda04e`) and confirmed new Quality guidance: `Corrections (2)`, case inconsistency `Region: gauteng → Gauteng`, `UnitPrice` numeric median 135 with genuine proposed approval option and collapsed supporting comparisons. They declined more redundant screenshots or searching. Contextual white space beside an unfilled investigation panel is expected, **not a defect**.
 - On isolated disposable CSV, owner approved **1 changed cell at row 44** as **v1**, undid it as **v2** and restored v1 as **v3**. Screenshot confirms **8 issues, 7 need review, 1 active correction, and v0/v1/v2/v3 listed**. Owner elected to **approve the functional path and move on**. Record **P1-Q3 OWNER PASS scoped to native transitions** and **P1-U2 OWNER PASS scoped to native visual presentation**. **Do not claim native backend/frontend restart proof** or Narrator. Hosted synthetic C restart remains 4/4 integrated CI PASS on tested source.
 - **Next assignment:** closure reconciliation rather than another native Quality test. Assess unverified N1/S1–S4/A1/A2/R1/C1 against documented policy and possible explicit deferrals. Do not repeat accepted Quality, Manager or existing keyboard evidence.
+
+## P1 automated macro ready for owner local execution (5 November 2026)
+- Built [`Run_PilotODIN_P1_Acceptance_Macro.bat`](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/feature/live-dev-workspace-20261023/Run_PilotODIN_P1_Acceptance_Macro.bat) and `tools/Run_P1_Acceptance_Macro.py` at [`9bd610d551e4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9bd610d551e4954106dd304a21d8cca752fb583d). [Windows CI safety #42025887147](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42025887147) **5/5 tests PASS**, verifies source safety invariants only; actual owner Windows macro has **not been run**.
+- **Single next owner activity:** fast-forward Git pull, then double-click the batch file. It isolates backend pytest via a temporary PILOTODIN_HOME, executes focused Node project-switch/resource tests, builds Vite, optionally tests 5 isolated Chromium cases on port 5187, and collects a read-only Windows memory snapshot. Never access existing :8000 HTTP or owner data; no process kill, model loading or downloads. Requires preinstalled `.venv-live`, Node/npm, and browser binary for that phase. If missing, outcome BLOCKED and ZIP explains it. Tracked edits block preflight; untracked synthetic CSV/Cargo files are untouched.
+- Use resulting ZIP/summary and [native checklist](./P1_MACRO_NATIVE_CHECKLIST.md) for bounded N1/physical scaling/Narrator. Owner's native Quality v0→v3 and post-restart visible history already accepted. P1 remains OPEN until C1 independent closure disposition.
 
 ## Exactly one current next assignment
 **Complete the P1 native acceptance/closure decision**, not another speculative Quality fix. Reconcile each OPEN/DEFERRED gate against [P1 current matrix](./P1_CLOSURE_REGISTER_2026-10-28.md), use a disposable test project if actual Windows checks are authorised, preserve already passed keyboard evidence, and record a genuine PASS/FAIL/BLOCKED/approved deferral with actual observed source/environment. If a confirmed defect is discovered, fix it narrowly and verify; otherwise do not generate redundant hosted tests. **Do not mark P1 closed until the owner-approved closure policy permits it.**
