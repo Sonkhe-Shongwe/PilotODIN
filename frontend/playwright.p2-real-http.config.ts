@@ -9,7 +9,7 @@ if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
 }
 export default defineConfig({
  testDir:'./e2e',
- testMatch:'p2-real-http-report-comparison.spec.ts',
+ testMatch:['p2-real-http-report-comparison.spec.ts','p2-real-http-guided-report-persistence.spec.ts'],
  timeout:90_000,expect:{timeout:10_000},
  fullyParallel:false,workers:1,retries:0,reporter:'list',
  outputDir:'./test-results-p2-real-http',
