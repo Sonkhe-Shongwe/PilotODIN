@@ -623,8 +623,8 @@ export function UnifiedShell(){
   if(dock.secondary===view&&!confirmEditedDockDiscard('close-tab'))return;
   if(plan.nextActive!==active&&dock.secondary===plan.nextActive&&isSecondaryView(plan.nextActive)&&!confirmEditedDockDiscard('activate',plan.nextActive))return;
   if(plan.nextActive!==active&&needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,plan.nextActive,workspaceReady)){
-   if(!window.confirm(PRIMARY_CANVAS_EXIT_MESSAGE))return;
-   preapprovedRoutePush.current=view==='investigate'?'#/canvas':`#/studio/${view}`;
+   if(!window.confirm(primaryExitMessage(active)))return;
+   preapprovedRoutePush.current=plan.nextActive==='investigate'?'#/canvas':`#/studio/${plan.nextActive}`;
   }
   if(dock.secondary===view||dock.secondary===plan.nextActive&&plan.nextActive!==active)editedDock.current=null;
   pendingCloseFocus.current={projectId,view:plan.focus};
