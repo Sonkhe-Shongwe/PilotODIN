@@ -73,22 +73,24 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   const pid=(await upload.json()).id as string;
   expect(pid).toMatch(/^[a-f0-9]{32}$/);
 
-  const investigation=await request.post(API+`/api/projects/${pid}/investigations`,{
-   data:{objective:'Compare synthetic regional revenue across saved revisions'}
-  });
-  expect(investigation.status(),await investigation.text()).toBe(201);
-  const inv=await investigation.json() as {id:string;version:number};
-
   const evidenceIds:string[]=[];
+  // Each synthetic investigation has one completed artifact. Do not assume
+  // the first element of a reused investigation's history is the newest run.
   for(const [operation,params] of [
    ['overview',{}],['compare',{x:'Region',y:'Revenue'}]
   ] as const){
+   const investigation=await request.post(API+`/api/projects/${pid}/investigations`,{
+    data:{objective:'Synthetic '+operation+' report evidence for revision comparison'}
+   });
+   expect(investigation.status(),await investigation.text()).toBe(201);
+   const inv=await investigation.json() as {id:string;version:number};
    const run=await request.post(API+`/api/investigations/${inv.id}/runs`,{
     data:{operation,params,expected_version:inv.version}
    });
    expect(run.status(),await run.text()).toBe(200);
    evidenceIds.push((await run.json()).artifacts[0].id);
   }
+  expect(new Set(evidenceIds).size).toBe(2);
 
   const originalTitle='Synthetic Regional Overview';
   const updatedTitle='Synthetic Regional Revenue Reviewed';
