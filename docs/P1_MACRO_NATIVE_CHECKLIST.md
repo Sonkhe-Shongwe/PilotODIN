@@ -8,11 +8,13 @@ Native Quality Region correction v1 approval, v2 Undo, v3 Restore and visually r
 
 ## Batch 1: one P1-N1 native project-switch interaction
 
-1. [ ] Select disposable **CSV** project and open Prepare. Edit a target field without saving. Note its value.
-2. [ ] Select the disposable **XLSX** project in the top dropdown. Choose **Cancel/Stay** if prompted.
-3. [ ] Confirm CSV remains active and the edited Prepare target remains intact.
-4. [ ] Try switching again, explicitly consent to discard, confirm correct XLSX identity.
-5. [ ] Safely switch back to CSV. Record **PASS**, **FAIL** or **BLOCKED**.
+**Required source:** frontend fix `75aaa5587cb5` or descendant on the active branch. Hosted Node/build/Chromium, Windows Rust compilation and disposable real-HTTP tests are green; this does **not** establish native WebView2 acceptance. Close the existing **DEV ONLY** Tauri window and stop **only its own** frontend/Tauri terminal; leave the isolated backend and its disposable project data intact. Fast-forward the active branch with `git pull --ff-only origin feature/live-dev-workspace-20261023`, then relaunch the previously established native smoke workflow to load the newly compiled Rust command. If the tracked working tree is not clean or fast-forward pull fails, **STOP** instead of resetting or overwriting files. Check isolated backend readiness independently; old port snapshots are not current evidence.
+
+1. [ ] Select an existing **disposable CSV** project and open Prepare. Change the target to a **different** value, then confirm it visibly remains selected before switching. Do not save or train.
+2. [ ] Select the existing **disposable XLSX** project in the top dropdown. Verify the native Windows unsaved-changes dialog actually appears. Choose **Stay**.
+3. [ ] Confirm the CSV is still selected and the edited target remains intact; no project switch or data mutation occurred.
+4. [ ] Select XLSX again, this time choose **Switch project** in the native dialog. Verify the XLSX project actually opens and its identity is correct.
+5. [ ] Record **PASS** only if the real Windows dialog, Stay protection, explicit-consent switch and project identity all work. Otherwise record **FAIL/BLOCKED** with the observed outcome and source SHA. No repeat of accepted Quality, Manager, WIN-K1–K4 or the 6/6 automation macro.
 6. [ ] Deliberately unavailable source/backend recovery is covered by *isolated hosted CI and synthetic backend tests*. Do not rename a user's real data source or interrupt an unknown backend for a native fault-injection experiment. Native failure injection remains **UNVERIFIED** unless safely isolated and separately planned.
 
 ## Batch 2: physical Windows scales and Snap (S1–S4)
