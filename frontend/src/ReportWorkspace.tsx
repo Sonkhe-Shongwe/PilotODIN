@@ -6,6 +6,7 @@ import './report-workspace.css';
 import {ReportComposerGate,ReportReadGate} from './reportComposerGate';
 import {savedReportPreviewDocument} from './reportSavedPreview';
 import {compareFrozenReports,type RevisionComparison} from './reportRevisionComparison';
+import {REPORT_OUTLINES,canStartReportOutline,createReportOutline,reportOutlineProgress,type ReportOutlineId} from './reportDraftOutline';
 
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
@@ -25,6 +26,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [opened,setOpened]=useState<SavedReport|null>(null);
  const [title,setTitle]=useState(defaultTitle);
  const [narrative,setNarrative]=useState('');
+ const [activeOutlineId,setActiveOutlineId]=useState<ReportOutlineId|null>(null);
  const [selected,setSelected]=useState<string[]>([]);
  const [busy,setBusy]=useState('');
  const [error,setError]=useState('');
@@ -50,7 +52,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const appliedHandoff=useRef<string|null>(null);
  const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
-   let mounted=true;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
+   let mounted=true;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');setActiveOutlineId(null);
    setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');setEvidenceInspection(null);setInspectionBusy(null);setInspectionError('');
    if(!projectId)return;
    const listTicket=++latestReportList.current;
@@ -90,7 +92,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    userStartedDraft.current=true;
    setActiveId(null);setOpened(null);setRevision(null);
    setTitle(option.objective?`${option.objective} report`:'Explore investigation report');
-   setNarrative('');setSelected([preselectEvidenceId]);setError('');
+   setNarrative('');setActiveOutlineId(null);setSelected([preselectEvidenceId]);setError('');
    setNotice(`Verified ${option.stale?'historical ':' '}Explore evidence selected. Review its dataset version and add your interpretation before saving.`);
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
  function closeEvidenceInspection(){
@@ -146,7 +148,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      const data=await get<SavedReport>(`/reports/${encodeURIComponent(id)}${number?`?revision=${number}`:''}`);
      if(ticket!==latestOpenRequest.current)return;
      if(!data){throw new Error('Report not found')}
-     setActiveId(id);setOpened(data);setRevision(data.revision);setTitle(data.title);setNarrative(data.narrative);setSelected(data.evidence.map(e=>e.id));
+     setActiveId(id);setOpened(data);setRevision(data.revision);setTitle(data.title);setNarrative(data.narrative);setActiveOutlineId(null);setSelected(data.evidence.map(e=>e.id));
    }catch(e){if(ticket===latestOpenRequest.current)setError((e as Error).message)}
    finally{if(ticket===latestOpenRequest.current)setBusy('')}
  }
@@ -154,12 +156,13 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before creating another draft.');return;}
    closeEvidenceInspection();clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
-   composerGuard.current.navigate();latestOpenRequest.current++;setBusy('');userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setNotice('');setError('');}
+   composerGuard.current.navigate();latestOpenRequest.current++;setBusy('');userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setActiveOutlineId(null);setNotice('');setError('');}
  async function save(){
    clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    userStartedDraft.current=true;
    if(!selected.length){setError('Choose verified evidence before saving.');return;}
+   if(activeOutlineId&&!reportOutlineProgress(activeOutlineId,narrative).complete){setError('Complete every guided outline section, or choose freeform writing before saving.');return;}
    const gate=composerGuard.current;
    const ticket=gate.begin('save');
    if(!ticket){setError('Another report write is still completing.');return;}
@@ -288,6 +291,19 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    latestOpenRequest.current++;
    if(busy==='open')setBusy('');
  }
+ function startReportOutline(id:ReportOutlineId){
+   if(busy||composerGuard.current.hasPending()||!canStartReportOutline(narrative)){
+     setError('Start a guided outline only in an empty interpretation. Existing writing was not replaced.');
+     return;
+   }
+   onDraftEdit();
+   setNarrative(createReportOutline(id));setActiveOutlineId(id);
+   setError('');setNotice('');
+ }
+ function useFreeformWriting(){
+   setActiveOutlineId(null);setError('');
+   // Switching mode never deletes or rewrites any user-authored narrative.
+ }
  function shiftEvidence(id:string,by:number){
    onDraftEdit();
    setSelected(ids=>{const from=ids.indexOf(id);const to=from+by;if(from<0||to<0||to>=ids.length)return ids;
@@ -297,7 +313,8 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const options=[...availableMap.values()].slice(0,150);
  const savedIds=opened?.evidence.map(e=>e.id)??[];
  const hasDraftChanges=!!opened&&(title!==opened.title||narrative!==opened.narrative||selected.length!==savedIds.length||selected.some((id,index)=>id!==savedIds[index]));
- const saveReady=title.trim().length>=5&&selected.length>0;
+ const outlineProgress=activeOutlineId?reportOutlineProgress(activeOutlineId,narrative):null;
+ const saveReady=title.trim().length>=5&&selected.length>0&&(!outlineProgress||outlineProgress.complete);
  const reportStep=opened&&!hasDraftChanges?3:saveReady?2:1;
  return <div className="pd-report-workspace">
    <div className="pd-report-header"><div><span className="pd-report-eyebrow">DELIVER / LOCAL REPORTING</span><h2>Saved, evidence-backed reports</h2><p>Save revisions and export the exact same evidence to HTML or PDF. Source datasets remain unchanged.</p></div><button className="ud-btn ud-btn-quiet" disabled={busy==='save'||busy==='quality'||busy==='export'} onClick={newReport}><Plus size={15}/> New report</button></div>
@@ -307,6 +324,15 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    {notice&&<p role="status" className="pd-report-notice"><ShieldCheck size={16}/>{notice}</p>}
    <div className="pd-report-columns"><section className="pd-report-editor">
      <label className="pd-report-field">Report title<input value={title} maxLength={180} onChange={e=>{onDraftEdit();setTitle(e.target.value)}}/></label>
+     <section className="pd-report-outline-guide" aria-label="Guided report outlines">
+      <div><strong>Optional guided outline</strong><small>Choose a structure before writing. The headings contain no generated statistics, claims or AI conclusions. Only your text is saved.</small></div>
+      <div className="pd-report-outline-choices">{REPORT_OUTLINES.map(item=><button key={item.id} type="button" disabled={!!busy||!canStartReportOutline(narrative)} onClick={()=>startReportOutline(item.id)}>Use {item.label} outline</button>)}</div>
+      {outlineProgress&&<div className="pd-report-outline-progress" role="status">
+       <p><strong>{outlineProgress.completeCount} of {outlineProgress.total} sections complete.</strong> Finish each section before saving this guided draft.</p>
+       <ul>{outlineProgress.entries.map(item=><li key={item.heading}>{item.complete?'Complete':'Needs your interpretation'}: {item.heading}</li>)}</ul>
+       <button type="button" className="ud-btn ud-btn-quiet" onClick={useFreeformWriting}>Use freeform writing (keep my text)</button>
+      </div>}
+     </section>
      <label className="pd-report-field">Interpretation and limitations<textarea value={narrative} placeholder="Describe what the verified evidence establishes, what remains uncertain, and any important limitations. This text is authored by you." rows={5} maxLength={6000} onChange={e=>{onDraftEdit();setNarrative(e.target.value)}}/></label>
      <h3>Select verified evidence</h3>
      <div className="pd-report-quality-capture"><div><strong>Capture Quality findings</strong><small>Create a read-only, version-bound audit with issue counts and reviewed correction history. No source records or automatic corrections.</small></div><button type="button" className="ud-btn ud-btn-quiet" disabled={!!busy} onClick={()=>void captureQualityAudit()}>{busy==='quality'?'Capturing…':'Capture current Quality audit'}</button></div>
@@ -324,7 +350,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
       </section>}
      {selected.filter(id=>!availableMap.has(id)).length>0&&<p className="pd-report-muted">{selected.filter(id=>!availableMap.has(id)).length} additional saved evidence references retained from the loaded report.</p>}
      {selected.length>1&&<section className="pd-report-order" aria-label="Order of report exhibits"><h4>Report exhibit order</h4><p className="pd-report-muted">Exhibits appear in this order in both saved HTML and PDF revisions.</p><ol>{selected.map((id,index)=><li key={id}><span><b>{index+1}.</b> {availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,8)} · v{availableMap.get(id)?.version??opened?.evidence.find(item=>item.id===id)?.dataset_version??'?'}</span><div><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} earlier`} title="Move earlier" disabled={!!busy||index===0} onClick={()=>shiftEvidence(id,-1)}><ArrowUp size={15}/></button><button type="button" className="pd-report-order-button" aria-label={`Move exhibit ${index+1} later`} title="Move later" disabled={!!busy||index===selected.length-1} onClick={()=>shiftEvidence(id,1)}><ArrowDown size={15}/></button></div></li>)}</ol></section>}
-     <div className="pd-report-actions"><div><strong>{selected.length} verified evidence artifacts selected</strong><small>{!saveReady?'Enter a report title and select evidence to continue.':hasDraftChanges?'Save your changes before exporting an updated revision.':opened?'Current saved revision is ready for export.':'Save a frozen report revision to enable HTML/PDF exports.'}</small></div><button className="ud-btn ud-btn-primary" disabled={!!busy||!saveReady||!hasDraftChanges&&!!opened} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button></div>
+     <div className="pd-report-actions"><div><strong>{selected.length} verified evidence artifacts selected</strong><small>{outlineProgress&&!outlineProgress.complete?'Complete guided outline sections before saving, or switch to freeform.':!saveReady?'Enter a report title and select evidence to continue.':hasDraftChanges?'Save your changes before exporting an updated revision.':opened?'Current saved revision is ready for export.':'Save a frozen report revision to enable HTML/PDF exports.'}</small></div><button className="ud-btn ud-btn-primary" disabled={!!busy||!saveReady||!hasDraftChanges&&!!opened} onClick={()=>void save()}><Save size={16}/>{busy==='save'?'Saving…':activeId?'Save new revision':'Save report'}</button></div>
      <details className="pd-report-preview"><summary>Preview report contents</summary><h4>{title}</h4><p>{narrative||'No narrative supplied. Verified evidence will be presented below.'}</p><ul>{selected.map(id=><li key={id}>{availableMap.get(id)?.operation.replaceAll('_',' ')||'Saved evidence'} · {id.slice(0,12)}</li>)}</ul></details>
      {opened&&<div className="pd-report-export"><div><strong>Saved revision {opened.revision}</strong><small>SHA-256 {opened.content_sha256.slice(0,18)}…</small></div><button type="button" disabled={!!busy||previewBusy} title="Preview the exact saved HTML revision locally without downloading" onClick={()=>void previewSavedRevision()}><Eye size={15}/>{previewBusy?'Loading preview…':'Preview saved HTML'}</button><button disabled={!!busy||hasDraftChanges} title={hasDraftChanges?'Save draft changes before exporting':'Export the last saved revision as HTML'} onClick={()=>void download('html')}><FileDown size={15}/> Export HTML</button><button disabled={!!busy||hasDraftChanges} title={hasDraftChanges?'Save draft changes before exporting':'Export the last saved revision as PDF'} onClick={()=>void download('pdf')}><FileDown size={15}/> Export PDF</button></div>}
      {opened?.has_historical_evidence&&<p className="pd-report-warning">Historical evidence: at least one included dataset version differs from the current active version. Existing calculations are preserved, not silently recomputed.</p>}
