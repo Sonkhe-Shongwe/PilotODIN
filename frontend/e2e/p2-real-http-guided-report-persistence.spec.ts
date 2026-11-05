@@ -166,7 +166,7 @@ test('P2 guided report saves once, persists immutable narrative and exports same
    input:pdf,encoding:'utf8',maxBuffer:1024*1024,timeout:12000,
   });
   expect(extracted.status,extracted.stderr).toBe(0);
-  const pdfText=extracted.stdout.replace(/\\s+/g,' ');
+  const pdfText=extracted.stdout.replace(/\s+/g,' ');
   for(const phrase of [
    'Purpose and decision','Verified evidence interpretation',
    'Limitations and uncertainty','Recommendations and next steps',
