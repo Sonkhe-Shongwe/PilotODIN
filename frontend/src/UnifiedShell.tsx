@@ -71,6 +71,9 @@ function navigate(v:View){navigateHashSmoothly(v==='investigate'?'#/canvas':`#/s
 const labelFor=(view:View)=>ALL.find(i=>i.id===view)?.label??view;
 const PANEL_MIN_WIDTH=300;
 const PRIMARY_CANVAS_EXIT_MESSAGE='You changed fields in the primary workspace. Opening Investigate will discard those unsaved entries. Continue?';
+const primaryExitMessage=(current:View)=>current==='deliver'
+ ?'Your Deliver report contains unsaved changes. Switching workspaces will discard these edits. Continue?'
+ :PRIMARY_CANVAS_EXIT_MESSAGE;
 
 /** One persistent desktop shell. Tabs and layouts are scoped to a project, not to its data. */
 export function UnifiedShell(){
@@ -111,7 +114,7 @@ export function UnifiedShell(){
  const pendingDockDismissFocus=useRef<{projectId:string;view:View}|null>(null);
  // Memory-only flags: no form content or dataset values are stored.
  const editedDock=useRef<EditedDock|null>(null);
- const editedPrimary=useRef<{projectId:string;view:'prepare'|'model'|'predict'}|null>(null);
+ const editedPrimary=useRef<{projectId:string;view:'prepare'|'model'|'predict'|'deliver'}|null>(null);
  // Tauri/WebView2 may not display a synchronous browser confirm. Keep native
  // project-switch consent serialized and never store unsaved form values.
  const nativeProjectSwitchPromptPending=useRef(false);
@@ -327,7 +330,7 @@ export function UnifiedShell(){
    const primaryExit=needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,requested,workspaceReady);
    const dockPromotion=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
    if(!primaryExit&&dockPromotion!=='confirm-promote')return;
-   if(!window.confirm(primaryExit?PRIMARY_CANVAS_EXIT_MESSAGE:
+   if(!window.confirm(primaryExit?primaryExitMessage(active):
     'You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     event.preventDefault();
     return;
@@ -409,7 +412,11 @@ export function UnifiedShell(){
   return window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?');
  };
  const markPrimaryDraftEdited=(view:View)=>{
-  if(workspaceReady&&projectId&&(view==='prepare'||view==='model'||view==='predict'))editedPrimary.current={projectId,view};
+  if(workspaceReady&&projectId&&(view==='prepare'||view==='model'||view==='predict'||view==='deliver'))editedPrimary.current={projectId,view};
+ };
+ const clearPrimaryDraft=(view:View)=>{
+  if(editedPrimary.current?.projectId===projectId&&editedPrimary.current?.view===view)
+   editedPrimary.current=null;
  };
  // Rust vetoes an OS CloseRequested before sending a one-use ticket here.
  // Keep the latest project/form context without reinstalling the listener on
@@ -461,6 +468,10 @@ export function UnifiedShell(){
  // committing a route which would activate (and therefore unmount) its edited dock.
  const approvePrimaryStudioNavigation=(view:View):boolean=>{
   if(!workspaceReady)return false;
+  if(needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,view,workspaceReady)){
+   if(!window.confirm(primaryExitMessage(active)))return false;
+   preapprovedRoutePush.current=`#/studio/${view}`;
+  }
   if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
    if(!confirmEditedDockDiscard('activate',view))return false;
    // Promotion clears the old secondary slot only after approval.
@@ -473,9 +484,9 @@ export function UnifiedShell(){
  // Ask before leaving an edited dock, rather than navigating and warning too late.
  const navigateWithDockGuard=(view:View):boolean=>{
   if(needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,view,workspaceReady)){
-   if(!window.confirm(PRIMARY_CANVAS_EXIT_MESSAGE))return false;
+   if(!window.confirm(primaryExitMessage(active)))return false;
    // The next successful route commit, not this attempt, clears the draft marker.
-   preapprovedRoutePush.current='#/canvas';
+   preapprovedRoutePush.current=view==='investigate'?'#/canvas':`#/studio/${view}`;
   }
   if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
    if(!confirmEditedDockDiscard('activate',view))return false;
@@ -613,7 +624,7 @@ export function UnifiedShell(){
   if(plan.nextActive!==active&&dock.secondary===plan.nextActive&&isSecondaryView(plan.nextActive)&&!confirmEditedDockDiscard('activate',plan.nextActive))return;
   if(plan.nextActive!==active&&needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,plan.nextActive,workspaceReady)){
    if(!window.confirm(PRIMARY_CANVAS_EXIT_MESSAGE))return;
-   preapprovedRoutePush.current='#/canvas';
+   preapprovedRoutePush.current=view==='investigate'?'#/canvas':`#/studio/${view}`;
   }
   if(dock.secondary===view||dock.secondary===plan.nextActive&&plan.nextActive!==active)editedDock.current=null;
   pendingCloseFocus.current={projectId,view:plan.focus};
@@ -761,7 +772,7 @@ export function UnifiedShell(){
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
      <section className="po-primary-pane" id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
-       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryProjectLoaded={commitPrimaryLoadedProject} onPrimaryProjectLoadFailed={failPrimaryProjectLoad} primaryProjectHandoff={primaryProjectHandoff.current?.id===projectId?primaryProjectHandoff.current:undefined} onPrimaryProjectHandoffConsumed={consumePrimaryProjectHandoff} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
+       {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryDraftCleared={clearPrimaryDraft} onPrimaryProjectLoaded={commitPrimaryLoadedProject} onPrimaryProjectLoadFailed={failPrimaryProjectLoad} primaryProjectHandoff={primaryProjectHandoff.current?.id===projectId?primaryProjectHandoff.current:undefined} onPrimaryProjectHandoffConsumed={consumePrimaryProjectHandoff} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>
      </section>
      {mountDock&&<>
