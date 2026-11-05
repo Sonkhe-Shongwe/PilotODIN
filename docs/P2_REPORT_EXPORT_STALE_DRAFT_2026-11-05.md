@@ -1,0 +1,26 @@
+# PilotODIN P2 | Superseded report Save As veto after unsaved draft or project change
+
+**Date:** 5 November 2026  
+**Primary phase:** P2 ACTIVE / REVIEW_REQUIRED  
+**Branch:** `feature/live-dev-workspace-20261023`
+
+## Defect and safety objective
+The Deliver workspace's `ReportWorkspace.download` previously used the report-composer **view** generation and read-request ticket to reject stale HTTP results, but did not check the **draft** generation. Therefore, a pending saved PDF/HTML response could still start Save As after a user made newer unsaved edits to the report. The saved-revision request itself is immutable, but unexpectedly saving an older revision conflicts with the UI rule requiring users to save draft changes before starting an export. The in-flight export also relied on effect cleanup before noticing a newly selected project; the preview path already checked the active project ref immediately.
+
+**Bounded fix** (no backend/SQLite or report revisions changed):
+- [`acc051ca9c7f`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/acc051ca9c7fe2ee832bc2f4e1163a34167a00f1): `frontend/src/reportComposerGate.ts` now exposes read-only `currentDraft()` and `isCurrentDraft(token)`. Existing write ticket API, `editDraft`, `navigate` and `resetProject` remain unchanged.
+- [`d313bc19b1dd`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/d313bc19b1ddfb4a29add59510b3e65600f62f54): `ReportWorkspace.download` captures a draft-generation token and checks it along with active `projectId`, report-view generation and export ticket before opening either native Save As or a browser download. This is consistent with the existing saved-preview active-project guard. On completion, `busy` clears if the **view** remains current even if only the draft changed, avoiding a permanently disabled export UI.
+- The guard prevents a *not-yet-launched* file-write action. An already-open native Save As dialog or already-started file write cannot be rolled back by a later draft edit; existing UI/source comments explicitly retain that limitation. Do not claim filesystem-level rollback.
+
+## Behavioural regression tests
+- [`90c98ecaae05`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/90c98ecaae059429c47f5dc675b236bc0af712b8) extends `frontend/tests/p2-report-read-safety.test.cjs` with executable actual TypeScript `ReportComposerGate` generation tests and synthetic delayed responses. Covered: draft change vetoes delayed Save As and releases busy; unchanged draft allows it; new project identity vetoes the old response before effect cleanup; existing newer-request and navigation scenarios retained. Source integration assertions confirm React component wiring.
+- First attempt [P2 CI #42062103892](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42062103892) was **FAIL**, 25/26, because an earlier unrelated `p2-report-navigation-contracts.test.cjs` regular-expression test assumed handoff and navigation statements were adjacent. Actual production source already invalidated saved-preview state between them. No production defect or newly added behavioural test failure was evidenced by this failed run. Source test corrected in [`ae8d5d78d91a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ae8d5d78d91a480b7a9d41a2fdd30295ef9a9963), explicitly requiring both preview invalidation and report navigation in order.
+- **Final focused P2 CI** [#42062288350](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42062288350), exact tested SHA `ae8d5d78d91a480b7a9d41a2fdd30295ef9a9963`, Ubuntu 24.04 Node 22: **26/26 Node tests PASS**, **TypeScript/Vite production build PASS**. [`c625fefb6e5f`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c625fefb6e5f2088ffe8c2fa581d8ea4785d5367) adds scoped workflow using only locked frontend packages and synthetic guard tests.
+- Existing separate P1 frontend runner may independently test 5 browser cases after this source change. Report its exact run status separately; do not substitute this Node/production-build pass for actual Windows WebView2 file dialogs, backend HTTP integration or installed release acceptance.
+
+## Limits and next increment
+- This is a real React source hardening increment, not a new end-user reporting feature. It changes no report saved bytes, chart values, PDF font state, native save dialog implementation, browser download mechanics or actual installed application.
+- **P2 remains ACTIVE / REVIEW_REQUIRED**. The release-gated Unicode export path stays off; final six-file original font/OFL independent approval, manifest, normal-path PDF concurrency/extraction and owner Windows visual acceptance are pending. Do not silently approve release assets or repeat scoped accepted U2d frozen sidecar/U2f font-context/U2g dossier/one-page DevQA Unicode PDF tests.
+- Recommended next P2: review or obtain explicit six-file font release authorization to unblock ordinary application Unicode PDF, then implement/test only the needed production package and route with isolated synthetic fixtures. If not authorized, continue other verified P2 reporting accuracy/reliability defects without enabling unapproved fonts.
+
+**P1 development:** CLOSED; **P2:** OPEN; **P8 installed/offline release:** NOT CERTIFIED.
