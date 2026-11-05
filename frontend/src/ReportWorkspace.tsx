@@ -86,7 +86,12 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    return()=>{mounted=false;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++};
  },[projectId]);
  useEffect(()=>{
-   if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
+   if(!preselectEvidenceId){
+     // A revoked handoff may be requested anew later; it is not still pending.
+     appliedHandoff.current=null;
+     return;
+   }
+   if(!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
    // A refused handoff remains consumed until a genuinely new request arrives.
    appliedHandoff.current=preselectEvidenceId;
    const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
@@ -102,6 +107,12 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    }
    applyEvidenceHandoff(preselectEvidenceId);
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
+ useEffect(()=>{
+   // The parent can revoke or replace an incoming ID while Keep/Discard is
+   // visible. Never let consent for an obsolete request discard the draft.
+   setPendingDiscard(current=>current?.kind==='handoff'&&
+     (current.projectId!==projectId||current.id!==preselectEvidenceId)?null:current);
+ },[projectId,preselectEvidenceId]);
  useEffect(()=>{
    if(!pendingDiscard)return;
    const dialog=discardDialogRef.current;
@@ -233,8 +244,10 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    // Do not apply a stale modal approval to another project.
    if(!action||action.projectId!==activeProjectRef.current)return;
    if(action.kind==='new')newReport();
-   else if(action.kind==='handoff')applyEvidenceHandoff(action.id);
-   else void openReport(action.id,action.number);
+   else if(action.kind==='handoff'){
+     // An approval must authorize the latest actual prop, never a withdrawn ID.
+     if(action.id===preselectEvidenceId)applyEvidenceHandoff(action.id);
+   }else void openReport(action.id,action.number);
  }
  async function save(){
    clearComparison();
