@@ -112,3 +112,19 @@
 .pd-report-outline-progress p{font-size:12px;line-height:1.5;margin:0}
 .pd-report-outline-progress ul{font-size:12px;line-height:1.7;
  margin:8px 0 12px;padding-left:20px;color:#364966}
+
+/* The Deliver in-pane discard gate uses a focused, keyboard-contained dialog.
+   No browser-native confirm is required for Windows WebView2. */
+.pd-report-discard-backdrop{
+ position:fixed;inset:0;z-index:6000;background:rgba(12,21,42,.64);
+ display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.pd-report-discard-dialog{
+ background:#fff;color:#1c2c4b;border:1px solid #d7e2f1;border-radius:14px;
+ width:min(480px,100%);max-height:90vh;overflow:auto;
+ padding:24px;box-shadow:0 22px 55px rgba(8,22,45,.26);
+}
+.pd-report-discard-dialog h3{margin:0 0 12px;font-size:18px;color:#26355a}
+.pd-report-discard-dialog p{font-size:14px;line-height:1.55;margin:0 0 18px;color:#42536f}
+.pd-report-discard-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.pd-report-discard-actions button:focus-visible{outline:3px solid #087b87;outline-offset:3px}
