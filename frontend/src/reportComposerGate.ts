@@ -41,6 +41,7 @@ export class ReportReadGate {
  private evidence=0;
  private exporting=0;
  private previewing=0;
+ private comparing=0;
  beginEvidence():number {return ++this.evidence}
  isCurrentEvidence(ticket:number):boolean {return ticket===this.evidence}
  beginExport():number {return ++this.exporting}
@@ -48,5 +49,8 @@ export class ReportReadGate {
  beginPreview():number {return ++this.previewing}
  isCurrentPreview(ticket:number):boolean {return ticket===this.previewing}
  invalidatePreview():void {this.previewing++}
- invalidateAll():void {this.evidence++;this.exporting++;this.previewing++}
+ beginComparison():number {return ++this.comparing}
+ isCurrentComparison(ticket:number):boolean {return ticket===this.comparing}
+ invalidateComparison():void {this.comparing++}
+ invalidateAll():void {this.evidence++;this.exporting++;this.previewing++;this.comparing++}
 }
