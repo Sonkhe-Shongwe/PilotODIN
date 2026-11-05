@@ -68,7 +68,7 @@ function cls(...x:(string|false|undefined)[]){return x.filter(Boolean).join(' ')
 export type PrimaryProjectLoadSnapshot={id:string;project:Project;version:number};
 
 /** A second analytical pane receives an explicit stage and cannot control the global route. */
-export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose,onPrimaryDraftEdited,onPrimaryProjectLoaded,onPrimaryProjectLoadFailed,primaryProjectHandoff,onPrimaryProjectHandoffConsumed}:{
+export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimaryNavigate,onBeforePrimaryProjectLoad,onBeforePrimaryProjectUpload,onPrimaryUploadedProjectCommitted,forceNewProject=false,onNewProjectClose,onPrimaryDraftEdited,onPrimaryDraftCleared,onPrimaryProjectLoaded,onPrimaryProjectLoadFailed,primaryProjectHandoff,onPrimaryProjectHandoffConsumed}:{
   embeddedStage?: Stage;
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
@@ -82,6 +82,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   onPrimaryUploadedProjectCommitted?:()=>void;
   // Report only a memory-only edit signal; never transmit field values.
   onPrimaryDraftEdited?:(view:Stage)=>void;
+  onPrimaryDraftCleared?:(view:Stage)=>void;
   onPrimaryProjectLoaded?:(projectId:string,snapshot:PrimaryProjectLoadSnapshot)=>void;
   onPrimaryProjectLoadFailed?:(projectId:string)=>void;
   primaryProjectHandoff?:PrimaryProjectLoadSnapshot;
@@ -152,10 +153,10 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   window.addEventListener('pilotodin:route-reverted',sync);
   return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync);window.removeEventListener('pilotodin:route-reverted',sync)}
  },[embeddedStage]);
-  function go(next:Stage){
+  function go(next:Stage):boolean{
     // Refuse destructive primary navigation BEFORE touching route or page state.
     // Embedded navigation continues to use its existing dock-only authority.
-    if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next))return;
+    if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next))return false;
     if(next!=='quality')setQualityFocus(null);
     if(next!=='deliver')setDeliverEvidenceId(null);
     scrollRef.current[page]=mainRef.current?.scrollTop??0;
@@ -164,7 +165,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       if(!isSecondaryView(next)){
         setNotice('Open this workspace in the primary navigation instead.');
         setPaletteOpen(false);
-        return;
+        return false;
       }
       onEmbeddedNavigate?.(next);
       // Prop is authoritative: do not render an unapproved page while it updates.
@@ -174,6 +175,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }
     setError('');setUploadOpen(false);setMobileOpen(false);setPaletteOpen(false);
     setPaletteQuery('');
+    return true;
   }
   useEffect(()=>{setVisitedStages(s=>s.includes(page)?s:[...s,page]);
     if(previousPage.current!==page){
@@ -544,10 +546,10 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
         {project&&!showUpload&&page!=='ai_settings'&&<>
           {page!=='overview'&&<div className="heading"><div><div className="eyebrow">PROJECT / {project.name.toUpperCase()}</div><h1>{NAV.find(x=>x.id===page)?.name}</h1><p>{page==='understand'?'Explore the shape, quality and meaning of your uploaded data.':page==='quality'?'Review issues, make safe corrections and restore versions.':page==='explore'?'Investigate distributions, variables and relationships.':page==='assistant'?'Ask questions about verified facts in your dataset.':page==='prepare'?'Review what the model should learn and which features it may use.':page==='model'?'Choose algorithms and run an evidence-based comparison.':page==='evaluate'?'Understand model performance before selecting a prediction pipeline.':page==='deliver'?'Create evidence-backed reports, review saved revisions and export professional PDF or HTML documents.':'Apply your selected model to new observations.'}</p></div><div className="head-label"><FileSpreadsheet size={16}/>{project.filename}</div></div>}
           
-          {page==='deliver'&&<ReportWorkspace key={project.id} projectId={project.id} preselectEvidenceId={deliverEvidenceId}/>}
+          {page==='deliver'&&<ReportWorkspace key={project.id} projectId={project.id} preselectEvidenceId={deliverEvidenceId} onUnsavedChange={dirty=>{if(embedded)return;if(dirty)onPrimaryDraftEdited?.('deliver');else onPrimaryDraftCleared?.('deliver')}}/>}
           {page==='overview'&&<StudioHome project={project} projects={projects} onGo={go} onNew={()=>setUploadOpen(true)} onOpenProject={id=>void loadProject(id)} onResume={reopenExperiment} onAI={()=>setOdinOpen(true)}/>}
           {page==='quality'&&<section className="persisted-workspace"><QualityWorkspace key={project.id} projectId={project.id} initialFocus={qualityFocus} onChanged={()=>{setQualityFocus(null);void qualityChanged()}}/></section>}
-          {page==='explore'&&<section className="persisted-workspace"><ExploreWorkspace key={project.id} projectId={project.id} versionToken={qualityVersion} onReviewQuality={focus=>{if(focus.projectId===project.id&&focus.version===qualityVersion){setQualityFocus(focus);go('quality')}}} onSendToDeliver={snapshotId=>{if(/^[a-f0-9]{32}$/.test(snapshotId)){setDeliverEvidenceId(snapshotId);go('deliver')}}}/></section>}
+          {page==='explore'&&<section className="persisted-workspace"><ExploreWorkspace key={project.id} projectId={project.id} versionToken={qualityVersion} onReviewQuality={focus=>{if(focus.projectId===project.id&&focus.version===qualityVersion){setQualityFocus(focus);go('quality')}}} onSendToDeliver={snapshotId=>{if(/^[a-f0-9]{32}$/.test(snapshotId)&&go('deliver'))setDeliverEvidenceId(snapshotId)}}/></section>}
           {page==='assistant'&&<section className="persisted-workspace"><AssistantWorkspace key={project.id} projectId={project.id} onSettings={()=>go('ai_settings')}/></section>}
           {page==='understand'&&profile&&<><div className="metrics"><Metric label="DATASET RECORDS" value={fmt(profile.rows)} icon={<Database size={18}/>}/><Metric label="TOTAL COLUMNS" value={fmt(profile.columns_count)} icon={<Layers size={18}/>}/><Metric label="MISSING CELLS" value={fmt(profile.missing_cells)} icon={<CircleHelp size={18}/>}/><Metric label="EXACT DUPLICATES" value={fmt(profile.duplicate_rows)} icon={<Activity size={18}/>}/></div>
             <div className="panel insight"><div className="panel-title"><Sparkles size={19}/><h2>Dataset interpretation</h2><span className="pill muted">RULE-BASED ANALYSIS</span></div><p>{profile.summary}</p><p className="muted-caption">Local dataset statistics are calculated in Python. ODIN Intelligence above provides optional cloud-assisted interpretation from approved summaries.</p></div>
