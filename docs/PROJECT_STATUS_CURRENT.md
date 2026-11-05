@@ -114,6 +114,10 @@ The owner could not find median approval in a native missingness investigation b
 - Native P1-N1 consent Stay/Switch now owner PASS scoped; Quality/Manager/keyboard and prior 6/6 macro remain accepted, without repetition. Next within P1 is **A1 reduced-motion observed behaviour + A2 Windows Narrator**, then **R1 live memory/policy display** and **C1 closure disposition**. An "Animations reduced by system" badge is not an A1 behavioural PASS. Unobserved native failed-destination recovery remains an explicit residual, not silently accepted.
 - P1 **OPEN**, no release certification or new automated run. No production source, installed desktop binary or protected data changed by this documentation increment.
 
+## 5 November 2026 | Owner reduced-motion and Narrator checks reported no issue
+- Following the native DEV ONLY A1 reduced-animation/navigation/focus and A2 Windows Narrator spoken labels/keyboard/focus checks, owner responded **"ye all is well"**. Record P1-A1/A2 **OWNER-REPORTED NO-ISSUE / SCOPED ACCEPTANCE**, not independently recorded control-level screen-reader evidence, OS setting capture or release compliance. Preserve and do not repeat already accepted Quality/Manager/keyboard, N1 Stay/Switch, S1–S4 scale/Snap and local macro 6/6.
+- **P1 OPEN**. Current next acceptance focus: P1-R1 read-only actual native resource settings/installed and available RAM presentation, respecting prior Windows 7.804 GiB hardware inventory and not claiming combined AI+ML on 8GB. P1-C1 still requires formal review and a defensible disposition of outstanding native fault-recovery and other residuals. No production source/test/build changes in this owner-evidence update.
+
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
 2. Do not create more speculative P1 tests when only missing native evidence blocks closure. Investigate a new code defect only if confirmed and in scope.
