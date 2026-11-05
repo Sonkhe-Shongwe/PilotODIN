@@ -1,0 +1,57 @@
+name: P2 Report Export Draft Safety
+
+# Dedicated scoped P2 check on the trusted development branch.
+# No user project reads, browser download writes, real fonts, installers or models.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p2-report-export-draft-safety.yml
+      - frontend/src/ReportWorkspace.tsx
+      - frontend/src/reportComposerGate.ts
+      - frontend/tests/p2-report-read-safety.test.cjs
+      - frontend/tests/p2-report-composer-behavior.test.cjs
+      - frontend/tests/p2-report-navigation-contracts.test.cjs
+      - frontend/tests/p2-saved-report-html-preview.test.cjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p2-report-export-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export-guard:
+    name: Report async safety contracts and production frontend build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: "true"
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout trusted source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Exercise production guards and reporting lifecycle contracts
+        run: >-
+          node --test
+          tests/p2-report-read-safety.test.cjs
+          tests/p2-report-composer-behavior.test.cjs
+          tests/p2-report-navigation-contracts.test.cjs
+          tests/p2-saved-report-html-preview.test.cjs
+      - name: Typecheck and build real Vite production frontend
+        run: npm run build
