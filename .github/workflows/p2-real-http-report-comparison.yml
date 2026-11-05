@@ -58,9 +58,11 @@ jobs:
           npm ci --prefix frontend --no-audit --no-fund
       - name: Compile actual source without accessing owner files
         run: python -m compileall -q backend
-      - name: Install CI-owned Chromium
+      - name: Install only isolated headless Chromium shell
+        # Avoid mutating the runner's system packages to install optional fonts.
+        # If required host libraries are absent, Playwright must fail clearly.
         working-directory: frontend
-        run: npx --no-install playwright install --with-deps chromium
+        run: npx --no-install playwright install --only-shell chromium
       - name: Exercise immutable P2 revision comparison via actual backend and Chromium
         working-directory: frontend
         run: >-
