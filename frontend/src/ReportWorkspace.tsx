@@ -5,6 +5,7 @@ import {isDesktop} from './desktopBootstrap';
 import './report-workspace.css';
 import {ReportComposerGate,ReportReadGate} from './reportComposerGate';
 import {savedReportPreviewDocument} from './reportSavedPreview';
+import {compareFrozenReports,type RevisionComparison} from './reportRevisionComparison';
 
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
@@ -31,6 +32,9 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [savedPreview,setSavedPreview]=useState<{projectId:string;id:string;revision:number;html:string}|null>(null);
  const [previewBusy,setPreviewBusy]=useState(false);
  const [previewError,setPreviewError]=useState('');
+ const [revisionComparison,setRevisionComparison]=useState<{projectId:string;reportId:string;comparison:RevisionComparison}|null>(null);
+ const [comparisonBusy,setComparisonBusy]=useState(false);
+ const [comparisonError,setComparisonError]=useState('');
  const activeProjectRef=useRef(projectId);
  activeProjectRef.current=projectId; // Check project changes before effect cleanup runs.
  const userStartedDraft=useRef(false);
@@ -43,7 +47,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
    let mounted=true;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
-   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
+   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');
    if(!projectId)return;
    const listTicket=++latestReportList.current;
    void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(async data=>{
@@ -74,6 +78,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  useEffect(()=>{
    if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
    appliedHandoff.current=preselectEvidenceId;
+   clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    latestOpenRequest.current++;composerGuard.current.navigate();setBusy('');
    const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
@@ -84,8 +89,31 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    setNarrative('');setSelected([preselectEvidenceId]);setError('');
    setNotice(`Verified ${option.stale?'historical ':' '}Explore evidence selected. Review its dataset version and add your interpretation before saving.`);
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
+ function clearComparison(){
+   readGuard.current.invalidateComparison();
+   setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');
+ }
+ async function comparePreviousSavedRevision(){
+   if(!activeId||!opened)return;
+   const priorRevision=opened.revisions.filter(v=>v<opened.revision).at(-1);
+   if(priorRevision===undefined)return;
+   const view=composerGuard.current.currentView();
+   const ticket=readGuard.current.beginComparison();
+   const reportId=activeId,latest=opened;
+   const isCurrent=()=>activeProjectRef.current===projectId&&
+     composerGuard.current.isCurrentView(view)&&readGuard.current.isCurrentComparison(ticket);
+   setComparisonBusy(true);setComparisonError('');setRevisionComparison(null);
+   try{
+     // Both snapshots originate from the immutable authenticated report API.
+     const before=await get<SavedReport>(`/reports/${encodeURIComponent(reportId)}?revision=${priorRevision}`);
+     if(!isCurrent())return;
+     setRevisionComparison({projectId,reportId,comparison:compareFrozenReports(before,latest)});
+   }catch(e){if(isCurrent())setComparisonError((e as Error).message)}
+   finally{if(isCurrent())setComparisonBusy(false)}
+ }
  async function openReport(id:string,number?:number){
    if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before switching reports.');return;}
+   clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();
    const ticket=++latestOpenRequest.current;
@@ -100,9 +128,11 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  }
  function newReport(){
    if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before creating another draft.');return;}
+   clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();latestOpenRequest.current++;setBusy('');userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setNotice('');setError('');}
  async function save(){
+   clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    userStartedDraft.current=true;
    if(!selected.length){setError('Choose verified evidence before saving.');return;}
