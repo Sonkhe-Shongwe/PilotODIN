@@ -1176,6 +1176,12 @@ def list_available_report_evidence(project_id: str):
     return _report_call(lambda: reports.evidence_options(project_id))
 
 
+@app.get('/api/projects/{project_id}/report-evidence/{evidence_id}/preview')
+def preview_verified_report_evidence(project_id: str,evidence_id: str):
+    """Read-only bounded aggregates; never write a report or return raw rows."""
+    return _report_call(lambda: reports.evidence_preview(project_id,evidence_id))
+
+
 @app.post('/api/projects/{project_id}/report-quality',status_code=201)
 def capture_quality_report_evidence(project_id: str,body: QualityVersionRequest):
     """Explicit, read-only capture; does not approve or apply any correction."""
