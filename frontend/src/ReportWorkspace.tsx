@@ -7,6 +7,7 @@ import {ReportComposerGate,ReportReadGate} from './reportComposerGate';
 import {savedReportPreviewDocument} from './reportSavedPreview';
 import {compareFrozenReports,type RevisionComparison} from './reportRevisionComparison';
 import {REPORT_OUTLINES,canStartReportOutline,createReportOutline,reportOutlineProgress,type ReportOutlineId} from './reportDraftOutline';
+import {hasUnsavedReportDraft} from './reportDraftNavigationGuard';
 
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
@@ -41,6 +42,9 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [evidenceInspection,setEvidenceInspection]=useState<EvidenceInspection|null>(null);
  const [inspectionBusy,setInspectionBusy]=useState<string|null>(null);
  const [inspectionError,setInspectionError]=useState('');
+ const [pendingDiscard,setPendingDiscard]=useState<({kind:'new';projectId:string}|{kind:'open';projectId:string;id:string;number?:number})|null>(null);
+ const discardDialogRef=useRef<HTMLDivElement|null>(null);
+ const discardOpenerRef=useRef<HTMLElement|null>(null);
  const activeProjectRef=useRef(projectId);
  activeProjectRef.current=projectId; // Check project changes before effect cleanup runs.
  const userStartedDraft=useRef(false);
@@ -53,7 +57,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
    let mounted=true;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');setActiveOutlineId(null);
-   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');setEvidenceInspection(null);setInspectionBusy(null);setInspectionError('');
+   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');setEvidenceInspection(null);setInspectionBusy(null);setInspectionError('');setPendingDiscard(null);
    if(!projectId)return;
    const listTicket=++latestReportList.current;
    void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(async data=>{
@@ -95,6 +99,35 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    setNarrative('');setActiveOutlineId(null);setSelected([preselectEvidenceId]);setError('');
    setNotice(`Verified ${option.stale?'historical ':' '}Explore evidence selected. Review its dataset version and add your interpretation before saving.`);
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
+ useEffect(()=>{
+   if(!pendingDiscard)return;
+   const dialog=discardDialogRef.current;
+   if(!dialog)return;
+   const opener=discardOpenerRef.current;
+   const keep=dialog.querySelector<HTMLButtonElement>('[data-report-discard-keep]');
+   keep?.focus();
+   const onKeyDown=(event:KeyboardEvent)=>{
+     if(event.key==='Escape'){
+       event.preventDefault();event.stopPropagation();
+       setPendingDiscard(null);return;
+     }
+     if(event.key!=='Tab')return;
+     const buttons=Array.from(dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+     if(!buttons.length){event.preventDefault();return;}
+     const current=document.activeElement;
+     const index=buttons.indexOf(current as HTMLButtonElement);
+     if(event.shiftKey&&(index<=0)){event.preventDefault();buttons[buttons.length-1].focus();}
+     else if(!event.shiftKey&&(index===buttons.length-1||index<0)){
+       event.preventDefault();buttons[0].focus();
+     }
+   };
+   document.addEventListener('keydown',onKeyDown,true);
+   return()=>{
+     document.removeEventListener('keydown',onKeyDown,true);
+     if(opener?.isConnected&&!opener.matches(':disabled'))opener.focus();
+     discardOpenerRef.current=null;
+   };
+ },[pendingDiscard]);
  function closeEvidenceInspection(){
    readGuard.current.invalidateEvidenceInspection();
    setEvidenceInspection(null);setInspectionBusy(null);setInspectionError('');
@@ -157,6 +190,32 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    closeEvidenceInspection();clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();latestOpenRequest.current++;setBusy('');userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setActiveOutlineId(null);setNotice('');setError('');}
+ function requestNewReport(){
+   if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before creating another draft.');return;}
+   if(hasUnsavedWork){
+     discardOpenerRef.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
+     setPendingDiscard({kind:'new',projectId});
+     return;
+   }
+   newReport();
+ }
+ function requestOpenReport(id:string,number?:number){
+   if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before switching reports.');return;}
+   if(hasUnsavedWork){
+     discardOpenerRef.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
+     setPendingDiscard({kind:'open',projectId,id,number});
+     return;
+   }
+   void openReport(id,number);
+ }
+ function approveReportDiscard(){
+   const action=pendingDiscard;
+   setPendingDiscard(null);
+   // Do not apply a stale modal approval to another project.
+   if(!action||action.projectId!==activeProjectRef.current)return;
+   if(action.kind==='new')newReport();
+   else void openReport(action.id,action.number);
+ }
  async function save(){
    clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
@@ -313,11 +372,23 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const options=[...availableMap.values()].slice(0,150);
  const savedIds=opened?.evidence.map(e=>e.id)??[];
  const hasDraftChanges=!!opened&&(title!==opened.title||narrative!==opened.narrative||selected.length!==savedIds.length||selected.some((id,index)=>id!==savedIds[index]));
+ const hasUnsavedWork=hasUnsavedReportDraft({title,narrative,selected,defaultTitle,saved:opened});
  const outlineProgress=activeOutlineId?reportOutlineProgress(activeOutlineId,narrative):null;
  const saveReady=title.trim().length>=5&&selected.length>0&&(!outlineProgress||outlineProgress.complete);
  const reportStep=opened&&!hasDraftChanges?3:saveReady?2:1;
  return <div className="pd-report-workspace">
-   <div className="pd-report-header"><div><span className="pd-report-eyebrow">DELIVER / LOCAL REPORTING</span><h2>Saved, evidence-backed reports</h2><p>Save revisions and export the exact same evidence to HTML or PDF. Source datasets remain unchanged.</p></div><button className="ud-btn ud-btn-quiet" disabled={busy==='save'||busy==='quality'||busy==='export'} onClick={newReport}><Plus size={15}/> New report</button></div>
+   <div className="pd-report-header"><div><span className="pd-report-eyebrow">DELIVER / LOCAL REPORTING</span><h2>Saved, evidence-backed reports</h2><p>Save revisions and export the exact same evidence to HTML or PDF. Source datasets remain unchanged.</p></div><button className="ud-btn ud-btn-quiet" disabled={busy==='save'||busy==='quality'||busy==='export'} onClick={requestNewReport}><Plus size={15}/> New report</button></div>
+   {pendingDiscard&&pendingDiscard.projectId===projectId&&<div className="pd-report-discard-backdrop">
+     <div ref={discardDialogRef} role="dialog" aria-modal="true" aria-labelledby="pd-report-discard-title"
+       aria-describedby="pd-report-discard-description" className="pd-report-discard-dialog">
+       <h3 id="pd-report-discard-title">Discard unsaved report edits?</h3>
+       <p id="pd-report-discard-description">You have changes that are not in a saved report revision. {pendingDiscard.kind==='new'?'Starting another report':'Opening a saved report'} will replace your current title, interpretation and selected evidence. Nothing will be saved automatically.</p>
+       <div className="pd-report-discard-actions">
+        <button type="button" data-report-discard-keep onClick={()=>setPendingDiscard(null)} className="ud-btn ud-btn-primary">Keep editing</button>
+        <button type="button" onClick={approveReportDiscard} className="ud-btn ud-btn-quiet">Discard and continue</button>
+       </div>
+     </div>
+   </div>}
    <nav aria-label="Report creation steps" className="pd-report-flow">{[['1','Compose'],['2','Save revision'],['3','Export']].map(([step,label],i)=><span key={step} className={Number(step)===reportStep?'pd-report-step-current':Number(step)<reportStep?'pd-report-step-done':''}><b>{step}</b>{label}</span>)}</nav>
    {hasDraftChanges&&<p role="status" className="pd-report-warning">Unsaved changes. Exports remain linked to the saved revision until you save again.</p>}
    {error&&<p role="alert" className="pd-report-error"><AlertCircle size={16}/>{error}</p>}
@@ -357,8 +428,8 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      {opened&&opened.dataset_versions.length>1&&<p className="pd-report-warning">This saved report intentionally includes evidence from dataset versions {opened.dataset_versions.join(', ')}.</p>}
    </section><aside className="pd-report-library"><h3><History size={17}/> Saved reports</h3>
      {reports.length===0&&<p className="pd-report-muted">No reports saved in this project yet.</p>}
-     {reports.map(item=><button key={item.id} disabled={busy==='save'||busy==='quality'||busy==='export'} className={activeId===item.id?'pd-report-selected':''} onClick={()=>void openReport(item.id)}><FileText size={17}/><span><strong>{item.title}</strong><small>Revision {item.revision} · {new Date(item.updated_at).toLocaleDateString()}</small></span></button>)}
-     {opened&&<label className="pd-report-field">Open saved revision<select value={revision??opened.revision} disabled={busy==='save'||busy==='quality'||busy==='export'} onChange={e=>void openReport(opened.id,Number(e.target.value))}>{opened.revisions.map(n=><option key={n} value={n}>Revision {n}</option>)}</select></label>}
+     {reports.map(item=><button key={item.id} disabled={busy==='save'||busy==='quality'||busy==='export'} className={activeId===item.id?'pd-report-selected':''} onClick={()=>requestOpenReport(item.id)}><FileText size={17}/><span><strong>{item.title}</strong><small>Revision {item.revision} · {new Date(item.updated_at).toLocaleDateString()}</small></span></button>)}
+     {opened&&<label className="pd-report-field">Open saved revision<select value={revision??opened.revision} disabled={busy==='save'||busy==='quality'||busy==='export'} onChange={e=>requestOpenReport(opened.id,Number(e.target.value))}>{opened.revisions.map(n=><option key={n} value={n}>Revision {n}</option>)}</select></label>}
      {opened&&opened.revisions.some(n=>n<opened.revision)&&<button type="button" className="ud-btn ud-btn-quiet" disabled={!!busy||comparisonBusy} onClick={()=>void comparePreviousSavedRevision()}>{comparisonBusy?'Comparing saved revisions…':'Compare with previous saved revision'}</button>}
      {opened&&<p className="pd-report-muted">Exports are generated locally from a saved revision. Editing above does not change the exported report until you save a new revision.</p>}
    </aside></div>
