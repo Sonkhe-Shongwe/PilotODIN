@@ -95,7 +95,8 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  }
  async function comparePreviousSavedRevision(){
    if(!activeId||!opened)return;
-   const priorRevision=opened.revisions.filter(v=>v<opened.revision).at(-1);
+   const previousRevisions=opened.revisions.filter(v=>v<opened.revision);
+   const priorRevision=previousRevisions[previousRevisions.length-1];
    if(priorRevision===undefined)return;
    const view=composerGuard.current.currentView();
    const ticket=readGuard.current.beginComparison();
