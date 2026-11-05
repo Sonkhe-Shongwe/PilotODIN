@@ -29,6 +29,7 @@ function MountedHandoff(){
    <button type="button" onClick={()=>setIncoming(first)}>Request synthetic A</button>
    <button type="button" onClick={()=>setIncoming(second)}>Request synthetic B</button>
    <button type="button" onClick={()=>setIncoming(unknown)}>Request nonexistent evidence</button>
+   <button type="button" data-qa-withdraw onClick={()=>setIncoming(null)}>Withdraw incoming request</button>
    <button type="button" onClick={()=>setRenderNumber(n=>n+1)}>Rerender unchanged request</button>
    <output aria-label="Parent render count">{renderNumber}</output>
    <output aria-label="Deliver draft state">{dirty?'dirty':'clean'}</output>
