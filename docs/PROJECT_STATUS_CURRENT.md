@@ -1,11 +1,17 @@
 # PilotODIN 1.0 | Current project status
 **As of:** 5 November 2026  
 **Branch:** `feature/live-dev-workspace-20261023`  
-**Primary phase:** **P1 OPEN** under the [owner-adopted phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md).  
+**Primary phase:** **P2 ACTIVE** after owner-directed **P1 CLOSED for bounded development scope** on 5 November 2026; [closure record](./P1_CLOSURE_REGISTER_2026-10-28.md) includes explicit residuals. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) remains binding.  
 **Release:** **NOT CERTIFIED**. This document is a scoped development ledger, not a release announcement.
 
 ## Executive status
-PilotODIN has substantial React/TypeScript, FastAPI/SQLite and Tauri source; several core data, Quality, analysis, modelling and reporting workflows are implemented and have scoped development evidence. The app is **not** a fully integrated, self-contained offline 1.0 product yet. **Only P1 is the current primary implementation/acceptance phase**. Earlier focused P2–P5 engineering does not make those phases complete.
+PilotODIN has substantial React/TypeScript, FastAPI/SQLite and Tauri source and accepted scoped P0/P1 development workflows. **P1 development is now CLOSED; P2 reporting/Unicode is the single active phase.** The app is **not** a certified self-contained/offline 1.0 Windows product. P1 owner-native evidence is scoped, not global Windows release acceptance; earlier partial P2–P5 engineering does not make those phases complete.
+
+## 5 November 2026 | Active-phase transition and latest P1 evidence
+- **P1 CLOSED (development scope)** by owner-directed closure decision, with the exact [closure matrix and tracked residuals](./P1_CLOSURE_REGISTER_2026-10-28.md). Owner did not authorise a product release, installer, unsafe failure injection, data purge or AI training. Important non-release residuals remain under QA ownership, including owner-native intentionally failed destination and true multi-window behavior. No new confirmed critical/high P1 safety defect was identified in the reviewed scoped records; any subsequently confirmed severe safety fault supersedes phase sequencing.
+- **Latest P1 native Resource Settings R1:** owner screenshots show saved Low-memory/Performance/Adaptive modes, **7.80 GiB total**, **0.62 / 0.69 / 1.11 GiB available** at separate points, with truthful read-only status, numerical low-memory headroom screening disclosures and no automatic Qwen/task scheduler claim. P1-R1 **OWNER NATIVE UI PASS, scoped**; separate-process persistence and combined 8GB local AI/ML **NOT TESTED**. Windows owner-scoped N1 Stay/Switch and Q3 versions/restart previously passed; S1–S4/A1/A2 were owner-reported no-issue, not independently instrumented accessibility/scale certification.
+- **Latest tested P1 source remains** [`75aaa5587cb5`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/75aaa5587cb5fc346845f1200ea45660d7817045), with [frontend 160/160 + build + 5 Chromium](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42040011128), [Windows Tauri/Rust compile](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42038817777) and [real Uvicorn/Chromium CI SUCCESS](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42040011062). GitHub documentation updates are **not** fresh source test executions; original CI and local macro evidence retains exact historical SHA/environment scope.
+- **P2 now active**, next read-only actual Python sidecar font-dependency/environment readiness review from [P2-U2b](./P2_PDF_PRODUCTION_SIDECAR_FONT_GATE.md). No PyInstaller build, font staging, package installation, user-data rendering or release asset action is authorised merely by phase advancement.
 
 ## Latest exact verified code and tests
 | Evidence track | Actual result | Source SHA and limitation |
@@ -21,8 +27,8 @@ PilotODIN has substantial React/TypeScript, FastAPI/SQLite and Tauri source; sev
 | Phase | Current accepted boundary | Remaining / formal state |
 | --- | --- | --- |
 | **P0** Core A2/A3 development | Substantial owner-observed workflows and focused Windows automated checks; **development journey accepted** for the observed checkpoint | Broader production/offline release certification not granted |
-| **P1** Import, Quality, project/UI, resource policy | Hosted real-backend Q3 now verifies synthetic consent→approve→undo→restore→restart and mounted keyboard focus; earlier native unsaved-close/keyboard scoped PASS retained | **OPEN**. Native WebView2 Q3 and Narrator, physical scaling/snap, reduced motion, full native journey and formal closure remain |
-| **P2** Deliver / PDF / reports | Scoped report, immutable revision, Save As, font resource, Unicode DevQA and frozen sidecar proofs | **REVIEW REQUIRED**. Production Unicode PDF **VISUAL_FAIL** / not accepted; six-file final SHA/licence owner decision **NOT GRANTED**, end-user PDF/release gate open |
+| **P1** Import, Quality, project/UI, resource policy | Owner-native Quality lifecycle/restart display, project manager, unsaved-change Stay/Switch, keyboard; owner-reported scaling/Snap/Narrator/reduced motion; native resource mode/save/RAM display. Hosted integration and contracts separately PASS. | **CLOSED development scope (5 Nov)** with tracked unverified native forced-failure/multi-window and independent measurement limitations; P8 release gates remain OPEN. |
+| **P2** Deliver / PDF / reports | Scoped report, immutable revision, Save As, font resource, Unicode DevQA and standalone frozen font proof | **CURRENT ACTIVE: REVIEW REQUIRED**. Production Unicode PDF **VISUAL_FAIL** / not accepted; real sidecar resource readiness/inclusion, mixed-script renderer and independent release font SHA/licence owner decision remain OPEN. |
 | **P3** Semantic understanding | First shared semantic profile and focused verification | Partial. Broader semantic accuracy and real native UX validation |
 | **P4** Target intelligence | Focused ranking, business context, timing/provenance and two-axis evidence | Partial. Real-world decision value and integrated experience; **explicit user target choice required** |
 | **P5** Durable ML/resource task controls | Focused low-memory slot, factual progress, soft cooperative cancellation and interruption safeguards | Partial. General queue/retry/crash resume, process-level hard-stop and combined AI/ML scheduling |
@@ -118,7 +124,13 @@ The owner could not find median approval in a native missingness investigation b
 - Following the native DEV ONLY A1 reduced-animation/navigation/focus and A2 Windows Narrator spoken labels/keyboard/focus checks, owner responded **"ye all is well"**. Record P1-A1/A2 **OWNER-REPORTED NO-ISSUE / SCOPED ACCEPTANCE**, not independently recorded control-level screen-reader evidence, OS setting capture or release compliance. Preserve and do not repeat already accepted Quality/Manager/keyboard, N1 Stay/Switch, S1–S4 scale/Snap and local macro 6/6.
 - **P1 OPEN**. Current next acceptance focus: P1-R1 read-only actual native resource settings/installed and available RAM presentation, respecting prior Windows 7.804 GiB hardware inventory and not claiming combined AI+ML on 8GB. P1-C1 still requires formal review and a defensible disposition of outstanding native fault-recovery and other residuals. No production source/test/build changes in this owner-evidence update.
 
-## Current priority and next decision
+## Current P2 priority and next decision
+1. Execute **P2-U2b Gate A**, an isolated **read-only** assessment of existing Python dependency versions, previously verified font/OFL identities, RAM/disk readiness and actual sidecar build prerequisites. Record what is possible without altering `.venv-live`, developer `.venv`, staged binaries, owner project files or approved fonts.
+2. Do **not** claim the standalone frozen font worker proves the real production Python sidecar or mixed-script ReportLab PDFs. Any proposed build-only environment/dependency installation requires its own explicit approval under [P2 sidecar gate](./P2_PDF_PRODUCTION_SIDECAR_FONT_GATE.md).
+3. After bounded resource proof, continue focused renderer integration and synthetic visual/copy-search Unicode acceptance. P3–P8 retain their roadmap sequence; P8 offline installer, security, AI+ML 8GB and full screen-reader/release checks remain independent.
+4. If a genuine critical/high P1 data-loss or safety regression is discovered, pause P2 for a targeted safety fix; do not reopen P1 due only to previously recorded non-release residuals.
+
+## Historical previous P1 priority (superseded, retained for audit)
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
 2. Do not create more speculative P1 tests when only missing native evidence blocks closure. Investigate a new code defect only if confirmed and in scope.
 3. Carry out a narrowly permitted **read-only/offline 8 GB AI feasibility assessment** when authorised, without installing or training models in protected data.
