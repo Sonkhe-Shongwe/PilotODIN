@@ -10,10 +10,11 @@ const API='http://127.0.0.1:8000';
 const UI='http://127.0.0.1:5178';
 const C_FILENAME='pilotodin_p1_http_approval_C.csv';
 const source=[
-  'OrderID,Segment,Amount',
+  'OrderID,Segment,Amount,ReviewGroup',
   ...Array.from({length:24},(_,i)=>
     'C'+String(i+1).padStart(4,'0')+','+
-    (i===2?' North ':i%2===0?'North':'South')+','+(i+1)*7),
+    (i===2?' North ':i%2===0?'North':'South')+','+(i+1)*7+','+
+    (i===4?'':i%2===0?'Green':'Blue')),
 ].join('\n')+'\n';
 type Proposal={operation:'approve'|'undo'|'restore';expected_version:number;issue_id?:string;action_id?:string;target_version?:number};
 type Receipt={proposal_id:string;proposal_hash:string;project_id:string;expected_version:number;changed_cells:number;operation:string};
@@ -52,7 +53,10 @@ async function limitBrowserToSyntheticConsent(context:BrowserContext,pid:string)
     const read=path==='/projects'||path==='/ai/settings'||new RegExp(
       '^/projects/'+pid+'(?:/(?:live-profile|quality|quality/history|quality/preview|preparation|features|target-opportunities))?$'
     ).test(path);
-    if(method==='GET'&&read){
+    const missingDiagnosis=method==='GET'&&path===`/projects/${pid}/quality/missingness`
+      &&url.searchParams.get('column')==='ReviewGroup'
+      &&[...url.searchParams.keys()].length===1;
+    if(method==='GET'&&(read||missingDiagnosis)){
       await route.continue();return;
     }
     if(method==='POST'&&url.search===''&&path===`/projects/${pid}/quality/proposals`
@@ -157,6 +161,20 @@ test('real HTTP Quality approval, keyboard consent, undo, restore and restart pr
   await guide.getByRole('button',{name:/Review [0-9]+ available correction/}).click();
   await expect(primary.getByRole('region',{name:'Selected Quality finding'})).toBeVisible();
   await expect(primary.getByRole('button',{name:/Corrections \(/})).toBeVisible();
+  // Reproduce the owner's categorical missingness confusion without a write.
+  await primary.getByRole('button',{name:'All findings'}).click();
+  const readOnly=primary.locator('.quality-issue').filter({hasText:'Missing or blank values'})
+    .filter({hasText:'ReviewGroup'});
+  await readOnly.click();
+  const selectedFinding=primary.getByRole('region',{name:'Selected Quality finding'});
+  await expect(selectedFinding).toContainText('No direct correction is offered for this finding.');
+  await selectedFinding.getByRole('button',{name:'Investigate missingness'}).click();
+  const diagnosis=selectedFinding.getByRole('region',{name:'Verified missing data investigation'});
+  await expect(diagnosis).toContainText('Available treatments');
+  await expect(diagnosis).toContainText('No median-fill action is offered for this column.');
+  await expect(diagnosis).not.toContainText('Review and approve median fill');
+  await expect(diagnosis.getByText(/View supporting missingness comparisons/)).toBeVisible();
+  await expect(primary.getByText('WORKING VERSION 0',{exact:true})).toBeVisible();
   const finding=primary.locator('.quality-issue').filter({hasText:'Surrounding whitespace'})
     .filter({hasText:'Segment'});
   await finding.click();
