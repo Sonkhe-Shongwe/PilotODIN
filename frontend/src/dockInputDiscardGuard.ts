@@ -26,7 +26,7 @@ export function needsDockInputDiscardApproval(
  */
 export function hasUnsavedWorkspaceDraftForUnload(
   projectId:string,workspaceReady:boolean,activeView:string,
-  primary:{projectId:string;view:'prepare'|'model'|'predict'}|null,
+  primary:{projectId:string;view:'prepare'|'model'|'predict'|'deliver'}|null,
   secondary:EditedDock|null,currentDock:SecondaryView|null
 ):boolean {
   if(!projectId||!workspaceReady)return false;
