@@ -10,6 +10,9 @@ on:
       - frontend/playwright.p2-real-http.config.ts
       - frontend/e2e/p2-real-http-report-comparison.spec.ts
       - frontend/e2e/p2-real-http-guided-report-persistence.spec.ts
+      - frontend/e2e/p2-real-http-mounted-handoff.spec.ts
+      - frontend/p2_mounted_handoff_qa.html
+      - frontend/src/p2MountedEvidenceHandoffQa.tsx
       - frontend/e2e/p1-real-http-backend.ts
       - frontend/src/ReportWorkspace.tsx
       - frontend/src/reportRevisionComparison.ts
