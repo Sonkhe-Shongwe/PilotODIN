@@ -112,6 +112,9 @@ export function UnifiedShell(){
  // Memory-only flags: no form content or dataset values are stored.
  const editedDock=useRef<EditedDock|null>(null);
  const editedPrimary=useRef<{projectId:string;view:'prepare'|'model'|'predict'}|null>(null);
+ // Tauri/WebView2 may not display a synchronous browser confirm. Keep native
+ // project-switch consent serialized and never store unsaved form values.
+ const nativeProjectSwitchPromptPending=useRef(false);
  // A consented external switch is provisional until the existing Studio has
  // read the requested project. A failed GET must never unmount this draft.
  const pendingExternalSwitch=useRef<{
@@ -538,11 +541,32 @@ export function UnifiedShell(){
   window.dispatchEvent(new CustomEvent('pilotodin:project-metadata-changed',
    {detail:{id:next.id,name:next.name,filename:next.filename,archived:next.archived_at!==null}}));
  };
- const chooseProject=(id:string)=>{
+ const chooseProject=(id:string,approvedNative=false)=>{
   if(!id||id===projectId||!workspaceReady)return;
   // A previous approval for this exact in-flight read is not a second switch.
   if(pendingExternalSwitch.current?.requestedId===id)return;
-  if(!confirmProjectDraftDiscard())return;
+  if(nativeProjectSwitchPromptPending.current&&!approvedNative)return;
+  const hasDraft=editedPrimary.current?.projectId===projectId||
+   needsDockInputDiscardApproval(editedDock.current,projectId,dock.secondary,'switch-project');
+  if(!approvedNative&&isDesktop()&&hasDraft){
+   // Native system consent is asynchronous; cancellation or failure keeps the
+   // current project and draft mounted. Ignore replies to stale project IDs.
+   nativeProjectSwitchPromptPending.current=true;
+   const origin=projectId;
+   void invoke<boolean>('confirm_native_project_switch').then(approved=>{
+    nativeProjectSwitchPromptPending.current=false;
+    if(!approved||currentProjectRef.current!==origin||
+      pendingExternalSwitch.current!==null)return;
+    chooseProject(id,true);
+   }).catch(()=>{
+    nativeProjectSwitchPromptPending.current=false;
+    setWarning('Could not show the Windows unsaved-changes confirmation. Your current project and edits were kept.');
+   });
+   return;
+  }
+  if(!approvedNative){
+   if(!confirmProjectDraftDiscard())return;
+  }
   // Do not write shared selection or unmount A before both B GETs succeed.
   // Keep primary/dock edits and the import panel mounted if B fails.
   pendingExternalSwitch.current={

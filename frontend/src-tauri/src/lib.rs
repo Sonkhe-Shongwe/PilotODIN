@@ -113,6 +113,25 @@ async fn confirm_native_close(
         .await.map_err(|_| "Native confirmation could not finish".to_string())
 }
 
+// WebView2 must not use a synchronous browser confirm to discard edited inputs.
+// The native dialog has explicit Stay and Switch buttons and is owned by main.
+#[tauri::command]
+async fn confirm_native_project_switch(
+    window: tauri::WebviewWindow,
+) -> Result<bool, String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let prompt = window.dialog()
+        .message("You have unsaved changes in this workspace. Switching projects may discard those edits. Continue?")
+        .title("PilotODIN - Unsaved changes")
+        .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
+        .buttons(tauri_plugin_dialog::MessageDialogButtons::OkCancelCustom(
+            "Switch project".into(), "Stay".into(),
+        ))
+        .parent(&window);
+    tauri::async_runtime::spawn_blocking(move || prompt.blocking_show())
+        .await.map_err(|_| "Native project-switch confirmation could not finish".to_string())
+}
+
 #[derive(Deserialize)]
 struct ModelManifest {
     model_file: String,
@@ -415,7 +434,7 @@ pub fn run() {
         .manage(NativeCloseState::default())
         .invoke_handler(tauri::generate_handler![
             launch_backend, launch_bundled_ai, save_report_as,
-            resolve_native_close_request, confirm_native_close
+            resolve_native_close_request, confirm_native_close, confirm_native_project_switch
         ])
         .on_window_event(|window, event| {
             if window.label() != "main" { return; }

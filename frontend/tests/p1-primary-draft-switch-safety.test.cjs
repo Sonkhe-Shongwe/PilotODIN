@@ -81,6 +81,8 @@ test('primary draft capture is restricted to main Studio form, not its project s
  assert.match(app,/if\(embedded\|\|!project\|\|!\['prepare','model','predict'\]\.includes\(page\)\)return/);
  assert.match(app,/onPrimaryDraftEdited\?\.\(page\)/);
  assert.match(app,/onChooseTarget=\{column=>\{[^\n]*onPrimaryDraftEdited\?\.\('prepare'\)/);
+ assert.match(app,/if\(!embedded&&e\.target\.value!==target\)onPrimaryDraftEdited\?\.\('prepare'\)/,
+  'Target selection directly marks an unsaved draft without relying on bubbling');
  assert.match(shell,/onPrimaryDraftEdited=\{markPrimaryDraftEdited\}/);
  assert.doesNotMatch(shell,/<App embeddedStage=\{dock\.secondary!\}[^\n]*onPrimaryDraftEdited/);
 });
@@ -88,6 +90,11 @@ test('both project selectors and import preflight check drafts before any projec
  const choose=shell.slice(shell.indexOf('const chooseProject='),shell.indexOf('const sidebarViews='));
  const consent=choose.indexOf('if(!confirmProjectDraftDiscard())return;');
  const provisional=choose.indexOf('pendingExternalSwitch.current={');
+ const native=choose.indexOf("invoke<boolean>('confirm_native_project_switch')");
+ assert.ok(native>=0&&native<consent,'The native dialog precedes browser-only fallback');
+ assert.match(choose,/nativeProjectSwitchPromptPending\.current=true/);
+ assert.match(choose,/if\(!approved\|\|currentProjectRef\.current!==origin\|\|/);
+ assert.match(choose,/pendingExternalSwitch\.current!==null\)return/);
  const request=choose.indexOf("pilotodin:primary-project-load-requested");
  assert.ok(consent>=0&&provisional>consent&&request>provisional,
    'consent must precede a provisional B request, never an immediate identity commit');
@@ -112,4 +119,23 @@ test('primary draft is cleared only after a successful direct Studio fetch',()=>
  assert.match(shell,/const failPrimaryProjectLoad=\(id:string\)=>\{/);
  assert.match(shell,/onPrimaryProjectLoaded=\{commitPrimaryLoadedProject\}/);
  assert.doesNotMatch(source,/localStorage|sessionStorage|fetch\(|post\(|upload\(|train\(/);
+});
+
+
+test('native unsaved-project confirmation invokes a real owner-visible Windows dialog',()=>{
+ const rust=fs.readFileSync(path.resolve(__dirname,'../src-tauri/src/lib.rs'),'utf8');
+ const start=rust.indexOf('async fn confirm_native_project_switch(');
+ const end=rust.indexOf('\n#[derive(Deserialize)]',start);
+ assert.ok(start>0&&end>start);
+ const dialog=rust.slice(start,end);
+ assert.match(dialog,/window\.label\(\) != "main"/);
+ assert.match(dialog,/"Switch project"\.into\(\), "Stay"\.into\(\)/);
+ assert.match(dialog,/spawn_blocking\(move \|\| prompt\.blocking_show\(\)\)/);
+ assert.match(rust,/resolve_native_close_request, confirm_native_close, confirm_native_project_switch/);
+ const choose=shell.slice(shell.indexOf('const chooseProject='),shell.indexOf('const sidebarViews='));
+ assert.match(choose,/if\(!approvedNative&&isDesktop\(\)&&hasDraft\)/);
+ assert.match(choose,/chooseProject\(id,true\)/);
+ assert.match(choose,/setWarning\('Could not show the Windows unsaved-changes confirmation/);
+ assert.match(choose,/Your current project and edits were kept/);
+ assert.match(choose,/if\(!approvedNative\)\{\s+if\(!confirmProjectDraftDiscard\(\)\)return;/);
 });
