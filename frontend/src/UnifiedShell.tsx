@@ -740,7 +740,7 @@ export function UnifiedShell(){
     </select>
     <ChevronDown className="po-project-switcher-arrow" size={16} aria-hidden="true"/>
    </div>
-   <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>{setNewProjectOpen(true);navigate('overview')}}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
+   <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>{if(navigateWithDockGuard('overview'))setNewProjectOpen(true)}}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
    <button type="button" className="po-manage-project-action" title="Rename, archive or restore projects" aria-label="Manage projects" onClick={()=>setProjectManagerOpen(true)}><Settings2 size={16} aria-hidden="true"/><span>Manage</span></button>
   </header>
   {projectManagerOpen&&<ProjectManager currentProjectId={projectId} onClose={()=>setProjectManagerOpen(false)} onChanged={metadataChanged}/>}
