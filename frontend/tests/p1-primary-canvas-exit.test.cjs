@@ -35,5 +35,5 @@ test('exit guard only checks identity marker and shell connects every entry path
  assert.match(shell,/const navigateWithDockGuard=\(view:View\):boolean=>\{\s*if\(needsPrimaryStudioExitApproval\(/);
  assert.match(shell,/if\(primaryExit\)editedPrimary\.current=null/);
  assert.match(shell,/const beforeRoutePush=\(event:Event\)=>\{/);
- assert.match(shell,/preapprovedRoutePush\.current='#\/canvas'/);
+ assert.match(shell,/preapprovedRoutePush\.current=view==='investigate'\?'#\/canvas'/);
 });
