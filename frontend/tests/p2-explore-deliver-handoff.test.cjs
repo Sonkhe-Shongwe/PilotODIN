@@ -40,7 +40,8 @@ test('INTEGRATION: ReportWorkspace only resets handoff after validated evidence 
  assert.match(report,/const option=projectEvidence\.find\(item=>item\.id===preselectEvidenceId\)/);
  assert.match(report,/if\(composerGuard\.current\.hasPending\(\)\)/);
  assert.match(report,/if\(hasUnsavedWork\)\{[\s\S]*?setPendingDiscard\(\{kind:'handoff',projectId,id:preselectEvidenceId\}\)/);
- assert.match(report,/else if\(action\.kind==='handoff'\)applyEvidenceHandoff\(action\.id\)/);
+ assert.match(report,/else if\(action\.kind==='handoff'\)\{[\s\S]*?if\(action\.id===preselectEvidenceId\)applyEvidenceHandoff\(action\.id\)/);
+ assert.match(report,/setPendingDiscard\(current=>current\?\.kind==='handoff'&&[\s\S]*?current\.id!==preselectEvidenceId\?null:current/);
  assert.match(report,/function applyEvidenceHandoff\(id:string\)\{[\s\S]*?composerGuard\.current\.navigate\(\);setBusy\(''\)/);
  assert.match(report,/setNarrative\(''\);setActiveOutlineId\(null\);setSelected\(\[id\]\)/);
  assert.match(report,/pendingDiscard\.kind==='handoff'\?'Using a saved Explore analysis'/);
