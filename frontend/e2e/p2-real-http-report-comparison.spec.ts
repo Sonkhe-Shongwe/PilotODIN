@@ -39,8 +39,9 @@ async function protectBrowser(context:BrowserContext,pid:string,rid:string):Prom
   const path=url.pathname.slice(4),query=[...url.searchParams.entries()];
   const read=method==='GET'&&(
    (url.search===''&&['/projects','/ai/settings',
-      `/projects/${pid}`,`/projects/${pid}/reports`,
-      `/projects/${pid}/report-evidence`,`/reports/${rid}`].includes(path))||
+      `/projects/${pid}`,`/projects/${pid}/live-profile`,
+      `/projects/${pid}/reports`,`/projects/${pid}/report-evidence`,
+      `/reports/${rid}`].includes(path))||
    (path===`/reports/${rid}`&&query.length===1&&
       query[0][0]==='revision'&&['1','2'].includes(query[0][1])));
   if(read){
