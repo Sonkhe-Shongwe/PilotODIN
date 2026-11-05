@@ -129,7 +129,8 @@ test('BEHAVIOR: stale comparison token is invalidated by new revision selection/
 
 test('INTEGRATION: Deliver loads immutable old revision and protects against stale responses',()=>{
  assert.match(ui,/async function comparePreviousSavedRevision\(\)/);
- assert.match(ui,/opened\.revisions\.filter\(v=>v<opened\.revision\)\.at\(-1\)/);
+ assert.match(ui,/const previousRevisions=opened\.revisions\.filter\(v=>v<opened\.revision\)/);
+ assert.match(ui,/const priorRevision=previousRevisions\[previousRevisions\.length-1\]/);
  assert.match(ui,/const ticket=readGuard\.current\.beginComparison\(\)/);
  assert.match(ui,/activeProjectRef\.current===projectId/);
  assert.match(ui,/readGuard\.current\.isCurrentComparison\(ticket\)/);
