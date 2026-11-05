@@ -19,7 +19,7 @@ const csv=[
 ].join('\n')+'\n';
 
 type ReadAudit={reads:string[];unexpected:string[];blockedWrites:string[];remote:string[]};
-async function protectBrowser(context:BrowserContext,pid:string,rid:string):Promise<ReadAudit>{
+async function protectBrowser(context:BrowserContext,pid:string,rid:string,evidenceIds:string[]):Promise<ReadAudit>{
  const audit:ReadAudit={reads:[],unexpected:[],blockedWrites:[],remote:[]};
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
@@ -41,7 +41,7 @@ async function protectBrowser(context:BrowserContext,pid:string,rid:string):Prom
    (url.search===''&&['/projects','/ai/settings',
       `/projects/${pid}`,`/projects/${pid}/live-profile`,
       `/projects/${pid}/reports`,`/projects/${pid}/report-evidence`,
-      `/reports/${rid}`].includes(path))||
+      `/reports/${rid}`,...evidenceIds.map(id=>`/projects/${pid}/report-evidence/${id}/preview`)].includes(path))||
    (path===`/reports/${rid}`&&query.length===1&&
       query[0][0]==='revision'&&['1','2'].includes(query[0][1])));
   if(read){
@@ -114,7 +114,7 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
 
   const initialList=await (await request.get(API+`/api/projects/${pid}/reports`)).json();
   const q0=await (await request.get(API+`/api/projects/${pid}/quality/history`)).json();
-  const audit=await protectBrowser(context,pid,rid);
+  const audit=await protectBrowser(context,pid,rid,evidenceIds);
   await page.addInitScript((id:string)=>{
    localStorage.setItem('pilotodin-current',id);
    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
@@ -125,6 +125,23 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
   await expect(primary.getByText('Saved revision 2')).toBeVisible();
   await expect(primary.getByRole('button',{name:'Compare with previous saved revision'})).toBeVisible();
+  // The inspector fetches a verified summary but never mutates a selection.
+  const checkedBefore=await primary.locator('.pd-report-evidence-row input:checked').count();
+  const inspectRead=page.waitForResponse(res=>res.url()===
+   API+`/api/projects/${pid}/report-evidence/${evidenceIds[0]}/preview`&&
+   res.request().method()==='GET');
+  await primary.getByRole('button',{
+   name:`Inspect verified overview evidence ${evidenceIds[0].slice(0,12)}`
+  }).click();
+  expect((await inspectRead).status()).toBe(200);
+  const facts=primary.getByRole('region',{name:'Verified evidence facts'});
+  await expect(facts).toBeVisible();
+  await expect(facts).toContainText('dataset v0');
+  await expect(facts).toContainText(evidenceIds[0].slice(0,12));
+  await expect(facts).toContainText('Only bounded verified aggregate facts');
+  expect(await primary.locator('.pd-report-evidence-row input:checked').count()).toBe(checkedBefore);
+  await facts.getByRole('button',{name:'Close evidence facts'}).click();
+  await expect(facts).toHaveCount(0);
 
   const comparisonRequest=page.waitForResponse(res=>res.url()===
    API+`/api/reports/${rid}?revision=1`&&res.request().method()==='GET');
@@ -161,6 +178,7 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   expect(audit.unexpected).toEqual([]);
   expect(audit.remote).toEqual([]);
   expect(audit.reads).toContain(`/reports/${rid}?revision=1`);
+  expect(audit.reads).toContain(`/projects/${pid}/report-evidence/${evidenceIds[0]}/preview`);
   const afterList=await (await request.get(API+`/api/projects/${pid}/reports`)).json();
   const afterHistory=await (await request.get(API+`/api/projects/${pid}/quality/history`)).json();
   const stillFirst=await (await request.get(API+`/api/reports/${rid}?revision=1`)).json();
