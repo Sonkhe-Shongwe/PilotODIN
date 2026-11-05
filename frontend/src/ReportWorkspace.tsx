@@ -11,6 +11,7 @@ type EvidenceOption={id:string;operation:string;version:number;params:Record<str
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
 type Evidence={id:string;operation:string;dataset_version:number;tool_version:string;params:Record<string,unknown>;result:Record<string,unknown>};
 type SavedReport={id:string;title:string;narrative:string;revision:number;revisions:number[];dataset_versions:number[];current_dataset_version:number;has_historical_evidence:boolean;content_sha256:string;evidence:Evidence[];unchanged?:boolean};
+type EvidenceInspection={projectId:string;id:string;operation:string;dataset_version:number;current_dataset_version:number;historical:boolean;objective:string;summary:{label:string;value:string}[];additional_summary_facts:number;note:string;disclosure:string};
 
 function idsafeMessage(saved:{dataset_version:number;findings_total:number},selectionFull:boolean):string {
  return `Captured read-only Quality audit v${saved.dataset_version} with ${saved.findings_total} findings. ${selectionFull?'Evidence selection is full (15); deselect an item to include this audit.':'Audit selected for the next saved revision.'}`;
@@ -35,6 +36,9 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [revisionComparison,setRevisionComparison]=useState<{projectId:string;reportId:string;comparison:RevisionComparison}|null>(null);
  const [comparisonBusy,setComparisonBusy]=useState(false);
  const [comparisonError,setComparisonError]=useState('');
+ const [evidenceInspection,setEvidenceInspection]=useState<EvidenceInspection|null>(null);
+ const [inspectionBusy,setInspectionBusy]=useState<string|null>(null);
+ const [inspectionError,setInspectionError]=useState('');
  const activeProjectRef=useRef(projectId);
  activeProjectRef.current=projectId; // Check project changes before effect cleanup runs.
  const userStartedDraft=useRef(false);
@@ -47,7 +51,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [evidenceLoaded,setEvidenceLoaded]=useState(false);
  useEffect(()=>{
    let mounted=true;composerGuard.current.resetProject();readGuard.current.invalidateAll();latestReportList.current++;latestOpenRequest.current++;userStartedDraft.current=false;appliedHandoff.current=null;setBusy('');setReports([]);setProjectEvidence([]);setEvidenceLoaded(false);setActiveId(null);setOpened(null);setNarrative('');
-   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');
+   setTitle(defaultTitle);setSelected([]);setError('');setNotice('');setRevision(null);setSavedPreview(null);setPreviewBusy(false);setPreviewError('');setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');setEvidenceInspection(null);setInspectionBusy(null);setInspectionError('');
    if(!projectId)return;
    const listTicket=++latestReportList.current;
    void get<ReportSummary[]>(`/projects/${encodeURIComponent(projectId)}/reports`).then(async data=>{
@@ -80,7 +84,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    appliedHandoff.current=preselectEvidenceId;
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    latestOpenRequest.current++;composerGuard.current.navigate();setBusy('');
-   clearComparison();
+   clearComparison();closeEvidenceInspection();
    const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
    if(!option){setError('This saved analysis is not available as verified evidence in the active project.');return;}
    userStartedDraft.current=true;
@@ -89,6 +93,25 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    setNarrative('');setSelected([preselectEvidenceId]);setError('');
    setNotice(`Verified ${option.stale?'historical ':' '}Explore evidence selected. Review its dataset version and add your interpretation before saving.`);
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
+ function closeEvidenceInspection(){
+   readGuard.current.invalidateEvidenceInspection();
+   setEvidenceInspection(null);setInspectionBusy(null);setInspectionError('');
+ }
+ async function inspectVerifiedEvidence(id:string){
+   const view=composerGuard.current.currentView();
+   const ticket=readGuard.current.beginEvidenceInspection();
+   const isCurrent=()=>activeProjectRef.current===projectId&&
+     composerGuard.current.isCurrentView(view)&&readGuard.current.isCurrentEvidenceInspection(ticket);
+   setInspectionBusy(id);setInspectionError('');setEvidenceInspection(null);
+   try{
+     const data=await get<Omit<EvidenceInspection,'projectId'>>(
+       `/projects/${encodeURIComponent(projectId)}/report-evidence/${encodeURIComponent(id)}/preview`);
+     if(!isCurrent())return;
+     if(data.id!==id)throw new Error('Evidence identity changed during inspection.');
+     setEvidenceInspection({projectId,...data});
+   }catch(e){if(isCurrent())setInspectionError((e as Error).message)}
+   finally{if(isCurrent())setInspectionBusy(null)}
+ }
  function clearComparison(){
    readGuard.current.invalidateComparison();
    setRevisionComparison(null);setComparisonBusy(false);setComparisonError('');
@@ -114,7 +137,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  }
  async function openReport(id:string,number?:number){
    if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before switching reports.');return;}
-   clearComparison();
+   closeEvidenceInspection();clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();
    const ticket=++latestOpenRequest.current;
@@ -129,7 +152,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  }
  function newReport(){
    if(composerGuard.current.hasPending()){setError('A report write is still completing. Finish it before creating another draft.');return;}
-   clearComparison();
+   closeEvidenceInspection();clearComparison();
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();latestOpenRequest.current++;setBusy('');userStartedDraft.current=true;setActiveId(null);setOpened(null);setRevision(null);setSelected([]);setTitle(defaultTitle);setNarrative('');setNotice('');setError('');}
  async function save(){
