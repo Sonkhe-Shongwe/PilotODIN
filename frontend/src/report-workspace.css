@@ -63,3 +63,17 @@
  .pd-report-saved-preview{padding:10px}
  .pd-report-saved-preview-frame{height:62vh;min-height:300px}
 }
+
+
+/* Read-only comparison of two immutable saved revisions (not draft text). */
+.pd-report-revision-comparison{
+ margin-top:18px;padding:16px 18px;border-color:#d4dded;
+ background:#f9fbfe;color:#26374d;overflow-wrap:anywhere;
+}
+.pd-report-revision-comparison h3{font-size:16px;margin:0 0 10px;color:#28365b}
+.pd-report-revision-comparison h4{font-size:13px;margin:15px 0 7px;color:#3e4973}
+.pd-report-revision-comparison p{font-size:13px;line-height:1.6}
+.pd-report-revision-comparison ul{padding-left:19px;margin:8px 0}
+.pd-report-revision-comparison li{font-size:12px;line-height:1.55}
+.pd-report-diff-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.pd-report-library button:focus-visible{outline:3px solid #087b87;outline-offset:2px}
