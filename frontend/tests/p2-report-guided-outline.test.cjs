@@ -98,5 +98,5 @@ test('INTEGRATION: editable Deliver enforces blank-only outline insertion and ne
 test('INTEGRATION: opening or creating another report resets checklist rather than applying it to historic revisions',()=>{
  assert.match(ui,/setNarrative\(data\.narrative\);setActiveOutlineId\(null\)/);
  assert.match(ui,/setTitle\(defaultTitle\);setNarrative\(''\);setActiveOutlineId\(null\)/);
- assert.match(ui,/setNarrative\(''\);setActiveOutlineId\(null\);setSelected\(\[preselectEvidenceId\]\)/);
+ assert.match(ui,/setNarrative\(''\);setActiveOutlineId\(null\);setSelected\(\[id\]\)/);
 });
