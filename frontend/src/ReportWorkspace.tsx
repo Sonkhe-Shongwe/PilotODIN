@@ -196,8 +196,11 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  async function download(format:'html'|'pdf'){
    if(!activeId||!opened)return;
    const viewTicket=composerGuard.current.currentView();
+   const draftTicket=composerGuard.current.currentDraft();
    const exportTicket=readGuard.current.beginExport();
-   const isCurrent=()=>composerGuard.current.isCurrentView(viewTicket)&&readGuard.current.isCurrentExport(exportTicket);
+   const sameView=()=>activeProjectRef.current===projectId&&composerGuard.current.isCurrentView(viewTicket)&&readGuard.current.isCurrentExport(exportTicket);
+   // Edited drafts must not unexpectedly open Save As for an old saved revision.
+   const isCurrent=()=>sameView()&&composerGuard.current.isCurrentDraft(draftTicket);
    const reportId=activeId;
    const rev=revision??opened.revision;
    setBusy('export');setError('');
@@ -218,7 +221,8 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
        setNotice(`Started browser download for saved revision ${rev}: ${filename}. Confirm the file in Downloads.`);
      }
    }catch(e){if(isCurrent())setError((e as Error).message)}
-   finally{if(isCurrent())setBusy('')}
+   // A draft edit vetoes this export but must not leave the workspace stuck busy.
+   finally{if(sameView())setBusy('')}
  }
  function onDraftEdit(){
    userStartedDraft.current=true;composerGuard.current.editDraft();
