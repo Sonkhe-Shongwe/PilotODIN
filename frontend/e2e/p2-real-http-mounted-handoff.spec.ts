@@ -116,6 +116,25 @@ test('P2 mounted Deliver incoming evidence requires explicit consent, keeps refu
   await expect(title).toHaveValue(originalTitle);
   await expect(note).toHaveValue(originalNote);
 
+  // An external parent can revoke an offered handoff while its modal is open.
+  // Use a programmatic QA-control click because the live modal correctly
+  // prevents pointer interaction with the parent behind it.
+  await page.getByRole('button',{name:'Request synthetic A'}).click();
+  await expect(discard).toBeVisible();
+  await page.evaluate(()=>{
+   const withdraw=document.querySelector<HTMLButtonElement>('[data-qa-withdraw]');
+   if(!withdraw)throw new Error('Missing synthetic parent withdrawal control');
+   withdraw.click();
+  });
+  await expect(discard).toHaveCount(0);
+  await expect(title).toHaveValue(originalTitle);
+  await expect(note).toHaveValue(originalNote);
+  // Reissuing A after withdrawal is a NEW request, not replay of the old modal.
+  await page.getByRole('button',{name:'Request synthetic A'}).click();
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Keep editing'}).click();
+  await expect(note).toHaveValue(originalNote);
+
   // Unknown evidence must be refused before any discard consent or draft reset.
   await page.getByRole('button',{name:'Request nonexistent evidence'}).click();
   await expect(editor.getByRole('alert')).toContainText('not available as verified evidence');
@@ -123,8 +142,27 @@ test('P2 mounted Deliver incoming evidence requires explicit consent, keeps refu
   await expect(note).toHaveValue(originalNote);
   await expect(title).toHaveValue(originalTitle);
 
-  // A new valid request on the SAME mounted component can proceed only after
-  // the explicit user Discard; no implicit report save, Quality write or export.
+  // Replace an outstanding request while the modal is open. Approving it
+  // must use ONLY the latest prop, never the previous pending evidence ID.
+  await page.getByRole('button',{name:'Request synthetic B'}).click();
+  await expect(discard).toBeVisible();
+  await page.evaluate(()=>{
+   const newer=[...document.querySelectorAll<HTMLButtonElement>('button')]
+    .find(button=>button.textContent==='Request synthetic A');
+   if(!newer)throw new Error('Missing synthetic replacement control');
+   newer.click();
+  });
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(discard).toHaveCount(0);
+  await expect(title).toHaveValue(titles[0]+' report');
+  await expect(note).toHaveValue('');
+  await expect(editor.locator('.pd-report-evidence-row')
+   .filter({hasText:ids[0].slice(0,12)}).locator('input[type=checkbox]')).toBeChecked();
+
+  // A later valid request on this same mounted component still needs explicit
+  // consent once the user has written new text. No backend write is allowed.
+  await note.fill('New human analysis that must not be replaced silently.');
   await page.getByRole('button',{name:'Request synthetic B'}).click();
   await expect(discard).toBeVisible();
   await discard.getByRole('button',{name:'Discard and continue'}).click();
