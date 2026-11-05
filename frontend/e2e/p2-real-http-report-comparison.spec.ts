@@ -276,10 +276,40 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await expect(discard).toHaveCount(0);
   await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
 
+  // An accepted primary Studio New dataset action must actually show import.
+  // Previously go('overview') immediately cleared the uploadOpen flag.
+  await page.locator('button.new-project').click();
+  await expect(primary.getByRole('button',{name:'Cancel upload'})).toBeVisible();
+  await expect(primary.locator('.landing .upload-card')).toBeVisible();
+  await primary.getByRole('button',{name:'Cancel upload'}).click();
+  await page.locator('button.po-nav-item[aria-label="Deliver"]').click();
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+
   // A dirty Deliver primary view must not unmount when the shell rail selects
   // Explore and the user denies the browser/native-compatible confirmation.
   const draftLeavingDeliver='Unfinished analyst interpretation for this synthetic report.';
   await primary.getByLabel('Interpretation and limitations').fill(draftLeavingDeliver);
+
+  // A rejected New dataset request must NOT hide the report or open an
+  // importer. The shell's separate New project control must not arm a
+  // deferred import that appears on a later ordinary Home visit.
+  for(const trigger of [
+   () => page.locator('button.new-project').click(),
+   () => page.getByRole('button',{name:'New project: import dataset'}).click()
+  ]){
+   let prompted=false;
+   page.once('dialog',async dialog=>{
+    prompted=true;
+    expect(dialog.message()).toContain('Your Deliver report contains unsaved changes');
+    await dialog.dismiss();
+   });
+   await trigger();
+   expect(prompted).toBe(true);
+   await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+   await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(draftLeavingDeliver);
+   await expect(primary.locator('.landing')).toHaveCount(0);
+   expect(page.url()).toContain('/studio/deliver');
+  }
   let sawExitPrompt=false;
   page.once('dialog',async dialog=>{
    sawExitPrompt=true;
@@ -297,6 +327,9 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   const leaveDialog=primary.getByRole('dialog',{name:'Discard unsaved report edits?'});
   await leaveDialog.getByRole('button',{name:'Discard and continue'}).click();
   await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+  await page.locator('button.po-nav-item[aria-label="Home"]').click();
+  // A previously refused shell New project must not show a delayed importer.
+  await expect(primary.locator('.landing')).toHaveCount(0);
   await page.locator('button.po-nav-item[aria-label="Explore"]').click();
   const savedArea=primary.getByRole('region',{name:'Saved analytical investigations'});
   await expect(savedArea).toBeVisible();
