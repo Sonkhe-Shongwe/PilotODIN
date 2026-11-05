@@ -67,8 +67,13 @@ def measure_caption(spec: dict) -> str:
         "median": "Median", "mean": "Mean", "avg": "Mean", "average": "Mean",
         "sum": "Sum", "count": "Count", "min": "Minimum", "max": "Maximum"
     }
-    op = supported.get(agg, "Saved aggregate")
-    measure = (op + " of " + y) if y else (op + " of records")
+    if agg == "count":
+        # A selected Y counts its non-missing numeric observations, NOT all
+        # records in an X group. The unselected-Y path counts source records.
+        measure = ("Count of non-missing " + y) if y else "Record count"
+    else:
+        op = supported.get(agg, "Saved aggregate")
+        measure = (op + " of " + y) if y else (op + " of records")
     return measure + (" by " + x if x else "")
 
 
