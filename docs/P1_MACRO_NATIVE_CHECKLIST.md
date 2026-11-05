@@ -1,5 +1,7 @@
 # P1 native acceptance checklist after the automation macro
 
+> **5 November 2026 historical acceptance note:** This is the original execution checklist, retained as unmodified procedural evidence rather than replay instructions. The owner has now reported/completed native N1 Stay+Switch, S1–S4 scale/Snap no-issue, A1/A2 animation and Narrator no-issue, and shown R1 Resource-Aware Mode saved selection/RAM screenshots. The [formal P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) marks **P1 CLOSED for bounded development scope** with openly deferred non-release fault-injection/multi-window and E2/P8 tests. **Do not repeat these acceptance activities solely because original boxes below are unchecked.** P2 Unicode PDF work is active; this page does not authorise further P1 fault injection, data mutation or release actions.
+
 Use only the **DEV ONLY Tauri Windows window**, the verified isolated backend and disposable projects. Each unverified item starts **NOT RUN**. Never mark native or physical Windows behaviour PASS because automated Chromium or backend tests pass.
 
 ## Previously accepted and not to be repeated
