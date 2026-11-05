@@ -18,9 +18,9 @@ const csv=[
  '0005,East,230.00',
 ].join('\n')+'\n';
 
-type ReadAudit={reads:string[];unexpected:string[];blockedWrites:string[];remote:string[]};
+type ReadAudit={reads:string[];readOnlyCalculations:number;unexpected:string[];blockedWrites:string[];remote:string[]};
 async function protectBrowser(context:BrowserContext,pid:string,rid:string,evidenceIds:string[]):Promise<ReadAudit>{
- const audit:ReadAudit={reads:[],unexpected:[],blockedWrites:[],remote:[]};
+ const audit:ReadAudit={reads:[],readOnlyCalculations:0,unexpected:[],blockedWrites:[],remote:[]};
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
   if(url.origin===UI){
@@ -37,13 +37,26 @@ async function protectBrowser(context:BrowserContext,pid:string,rid:string,evide
    await route.abort('blockedbyclient');return;
   }
   const path=url.pathname.slice(4),query=[...url.searchParams.entries()];
+  // This POST is a strictly read-only analytical workbench computation on
+  // the disposable project, never a saved report/evidence mutation.
+  if(method==='POST'&&url.search===''&&path===`/projects/${pid}/explore/workbench`){
+   const body=request.postDataJSON();
+   if(body&&body.expected_version===0&&Array.isArray(body.filters)&&body.filters.length<=4&&
+       typeof body.x==='string'&&body.x.length<=256&&typeof body.kind==='string'){
+    audit.readOnlyCalculations++;
+    await route.continue();return;
+   }
+   audit.blockedWrites.push('Unapproved workbench calculation');
+   await route.fulfill({status:403,json:{detail:'Unapproved calculation'}});return;
+  }
   const read=method==='GET'&&(
+   (url.pathname.startsWith(`/api/projects/${pid}/explore/`)||
    (url.search===''&&['/projects','/ai/settings',
       `/projects/${pid}`,`/projects/${pid}/live-profile`,
       `/projects/${pid}/reports`,`/projects/${pid}/report-evidence`,
       `/reports/${rid}`,...evidenceIds.map(id=>`/projects/${pid}/report-evidence/${id}/preview`)].includes(path))||
    (path===`/reports/${rid}`&&query.length===1&&
-      query[0][0]==='revision'&&['1','2'].includes(query[0][1])));
+      query[0][0]==='revision'&&['1','2'].includes(query[0][1]))));
   if(read){
    audit.reads.push(path+url.search);
    await route.continue();return;
@@ -92,6 +105,17 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
    evidenceIds.push((await run.json()).artifacts[0].id);
   }
   expect(new Set(evidenceIds).size).toBe(2);
+
+  // This snapshot is synthetic and project-scoped. It exercises the real
+  // Explore saved-analysis to Deliver handoff without browser write approval.
+  const savedExploreTitle='Synthetic Saved Regional View';
+  const savedExplore=await request.post(API+`/api/projects/${pid}/explore/saved`,{
+   data:{title:savedExploreTitle,expected_version:0,x:'Region',y:'Revenue',
+    kind:'bar',aggregation:'sum',bins:16,correlation_method:'pearson',color_by:null,filters:[]}
+  });
+  expect(savedExplore.status(),await savedExplore.text()).toBe(201);
+  const savedExploreId=(await savedExplore.json()).id as string;
+  expect(savedExploreId).toMatch(/^[a-f0-9]{32}$/);
 
   const originalTitle='Synthetic Regional Overview';
   const updatedTitle='Synthetic Regional Revenue Reviewed';
@@ -267,6 +291,25 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
   await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(draftLeavingDeliver);
   expect(page.url()).toContain('/studio/deliver');
+
+  // Explicitly discard the disposable note before switching workspaces.
+  await primary.getByRole('button',{name:'New report'}).click();
+  const leaveDialog=primary.getByRole('dialog',{name:'Discard unsaved report edits?'});
+  await leaveDialog.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+  await page.locator('button.po-nav-item[aria-label="Explore"]').click();
+  const savedArea=primary.getByRole('region',{name:'Saved analytical investigations'});
+  await expect(savedArea).toBeVisible();
+  await savedArea.getByRole('button',{name:`Open ${savedExploreTitle} and jump to saved history`}).click();
+  await expect(savedArea.getByRole('button',{name:'Use verified evidence in Deliver'})).toBeVisible();
+  await savedArea.getByRole('button',{name:'Use verified evidence in Deliver'}).click();
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await expect(primary.getByLabel('Report title')).toHaveValue(savedExploreTitle+' report');
+  const incoming=primary.locator('.pd-report-evidence-row').filter({hasText:savedExploreId.slice(0,12)});
+  await expect(incoming).toHaveCount(1);
+  await expect(incoming.locator('input[type=checkbox]')).toBeChecked();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+  expect(audit.readOnlyCalculations).toBeGreaterThan(0);
   expect(audit.blockedWrites).toEqual([]);
   expect(audit.unexpected).toEqual([]);
   expect(audit.remote).toEqual([]);
