@@ -1,0 +1,169 @@
+import {test,expect} from '@playwright/test';
+import type {BrowserContext,Route} from '@playwright/test';
+import {Buffer} from 'node:buffer';
+import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
+import type {DisposableBackend} from './p1-real-http-backend';
+
+// One owned, temporary Uvicorn on CI :8000, dedicated Vite :5178.
+// All source CSV/report revisions are synthetic and only CI-runner-local.
+// Browser can READ the reviewed report paths but cannot mutate API state.
+const API='http://127.0.0.1:8000';
+const UI='http://127.0.0.1:5178';
+const csv=[
+ 'OrderID,Region,Revenue',
+ '0001,West,120.00',
+ '0002,East,220.00',
+ '0003,West,140.00',
+ '0004,North,180.00',
+ '0005,East,230.00',
+].join('\n')+'\n';
+
+type ReadAudit={reads:string[];unexpected:string[];blockedWrites:string[];remote:string[]};
+async function protectBrowser(context:BrowserContext,pid:string,rid:string):Promise<ReadAudit>{
+ const audit:ReadAudit={reads:[],unexpected:[],blockedWrites:[],remote:[]};
+ await context.route('**/*',async(route:Route)=>{
+  const request=route.request(),url=new URL(request.url()),method=request.method();
+  if(url.origin===UI){
+   if(method==='GET'||method==='HEAD'){await route.continue();return;}
+   audit.blockedWrites.push(method+' '+url.pathname+' [UI]');
+   await route.fulfill({status:403,json:{detail:'Unapproved browser write'}});return;
+  }
+  if(method==='GET'&&url.origin==='https://fonts.googleapis.com'&&url.pathname==='/css2'){
+   // No remote font downloads or page-origin credential propagation in CI.
+   await route.fulfill({status:200,contentType:'text/css',body:'/* local system font substitute */'});return;
+  }
+  if(url.origin!==API||!url.pathname.startsWith('/api/')){
+   audit.remote.push(method+' '+url.origin+url.pathname);
+   await route.abort('blockedbyclient');return;
+  }
+  const path=url.pathname.slice(4),query=[...url.searchParams.entries()];
+  const read=method==='GET'&&(
+   (url.search===''&&['/projects','/ai/settings',
+      `/projects/${pid}`,`/projects/${pid}/reports`,
+      `/projects/${pid}/report-evidence`,`/reports/${rid}`].includes(path))||
+   (path===`/reports/${rid}`&&query.length===1&&
+      query[0][0]==='revision'&&['1','2'].includes(query[0][1])));
+  if(read){
+   audit.reads.push(path+url.search);
+   await route.continue();return;
+  }
+  if(method==='GET'){
+   audit.unexpected.push(path+url.search);
+   await route.fulfill({status:404,json:{detail:'Unreviewed synthetic GET'}});return;
+  }
+  audit.blockedWrites.push(method+' '+path);
+  await route.fulfill({status:403,json:{detail:'All browser writes denied'}});return;
+ });
+ return audit;
+}
+let backend:DisposableBackend|null=null;
+test.beforeEach(async()=>{backend=await startDisposableBackend()});
+test.afterEach(async()=>{if(backend){const old=backend;backend=null;await stopDisposableBackend(old)}});
+
+test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser writes or source mutations',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only the isolated GitHub CI disposable backend may run this test.');
+
+  // Browser-independent, explicitly allowed synthetic seed writes.
+  const upload=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'PilotODIN_P2_Disposable_Revision_Compare.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(upload.status(),await upload.text()).toBe(201);
+  const pid=(await upload.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+
+  const investigation=await request.post(API+`/api/projects/${pid}/investigations`,{
+   data:{objective:'Compare synthetic regional revenue across saved revisions'}
+  });
+  expect(investigation.status(),await investigation.text()).toBe(201);
+  const inv=await investigation.json() as {id:string;version:number};
+
+  const evidenceIds:string[]=[];
+  for(const [operation,params] of [
+   ['overview',{}],['compare',{x:'Region',y:'Revenue'}]
+  ] as const){
+   const run=await request.post(API+`/api/investigations/${inv.id}/runs`,{
+    data:{operation,params,expected_version:inv.version}
+   });
+   expect(run.status(),await run.text()).toBe(200);
+   evidenceIds.push((await run.json()).artifacts[0].id);
+  }
+
+  const originalTitle='Synthetic Regional Overview';
+  const updatedTitle='Synthetic Regional Revenue Reviewed';
+  const oldNarrative='Original synthetic interpretation (not an inference).';
+  const newNarrative='Updated analyst interpretation. <script>window.p2Executed=true</script>';
+  const created=await request.post(API+`/api/projects/${pid}/reports`,{
+   data:{title:originalTitle,narrative:oldNarrative,evidence_ids:[evidenceIds[0]]}
+  });
+  expect(created.status(),await created.text()).toBe(201);
+  const first=await created.json() as {id:string;revision:number;content_sha256:string};
+  expect(first.revision).toBe(1);
+  const rid=first.id;
+  const revised=await request.post(API+`/api/reports/${rid}/revisions`,{
+   data:{title:updatedTitle,narrative:newNarrative,evidence_ids:[evidenceIds[1],evidenceIds[0]]}
+  });
+  expect(revised.status(),await revised.text()).toBe(201);
+  const second=await revised.json() as {revision:number;content_sha256:string};
+  expect(second.revision).toBe(2);
+  expect(first.content_sha256).not.toBe(second.content_sha256);
+
+  const initialList=await (await request.get(API+`/api/projects/${pid}/reports`)).json();
+  const q0=await (await request.get(API+`/api/projects/${pid}/quality/history`)).json();
+  const audit=await protectBrowser(context,pid,rid);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await expect(primary.getByText('Saved revision 2')).toBeVisible();
+  await expect(primary.getByRole('button',{name:'Compare with previous saved revision'})).toBeVisible();
+
+  const comparisonRequest=page.waitForResponse(res=>res.url()===
+   API+`/api/reports/${rid}?revision=1`&&res.request().method()==='GET');
+  await primary.getByRole('button',{name:'Compare with previous saved revision'}).click();
+  const priorResponse=await comparisonRequest;
+  expect(priorResponse.status()).toBe(200);
+  const compare=primary.getByRole('region',{name:'Saved report revision differences'});
+  await expect(compare).toBeVisible();
+  await expect(compare).toContainText('Revision 1 compared with revision 2');
+  await expect(compare).toContainText('Title changed');
+  await expect(compare).toContainText(originalTitle);
+  await expect(compare).toContainText(updatedTitle);
+  await expect(compare).toContainText('Interpretation changed');
+  await expect(compare).toContainText(oldNarrative);
+  await expect(compare).toContainText(newNarrative);
+  await expect(compare).toContainText('New evidence');
+  await expect(compare).toContainText(evidenceIds[1].slice(0,12));
+  await expect(compare).toContainText('Previous SHA-256: '+first.content_sha256.slice(0,16));
+  await expect(compare).toContainText('Selected SHA-256: '+second.content_sha256.slice(0,16));
+  expect(await page.evaluate(()=>(window as Window&{p2Executed?:boolean}).p2Executed)).toBeUndefined();
+  expect(await compare.locator('script').count()).toBe(0);
+
+  // Selecting the earlier revision replaces the currently visible content.
+  await primary.getByLabel('Open saved revision').selectOption('1');
+  await expect(primary.getByText('Saved revision 1')).toBeVisible();
+  await expect(compare).toHaveCount(0);
+  await expect(primary.getByRole('button',{name:'Compare with previous saved revision'})).toHaveCount(0);
+  await primary.getByLabel('Open saved revision').selectOption('2');
+  await expect(primary.getByText('Saved revision 2')).toBeVisible();
+  await expect(primary.getByRole('button',{name:'Compare with previous saved revision'})).toBeVisible();
+
+  // Browser was strictly GET-only, and immutable backend bytes/history did not change.
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(audit.reads).toContain(`/reports/${rid}?revision=1`);
+  const afterList=await (await request.get(API+`/api/projects/${pid}/reports`)).json();
+  const afterHistory=await (await request.get(API+`/api/projects/${pid}/quality/history`)).json();
+  const stillFirst=await (await request.get(API+`/api/reports/${rid}?revision=1`)).json();
+  const stillSecond=await (await request.get(API+`/api/reports/${rid}?revision=2`)).json();
+  expect(afterList).toEqual(initialList);
+  expect(afterHistory).toEqual(q0);
+  expect(stillFirst.content_sha256).toBe(first.content_sha256);
+  expect(stillSecond.content_sha256).toBe(second.content_sha256);
+ });
