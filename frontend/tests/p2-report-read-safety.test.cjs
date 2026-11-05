@@ -156,3 +156,31 @@ test('BEHAVIOR: new project identity vetoes an export even before effect cleanup
  await work;
  assert.deepEqual(saved,[]);
 });
+
+
+test('BEHAVIOR: P2 evidence inspection gate rejects stale results across selection and project reset',()=>{
+ const reads=new ReportReadGate();
+ const first=reads.beginEvidenceInspection();
+ const second=reads.beginEvidenceInspection();
+ assert.equal(reads.isCurrentEvidenceInspection(first),false);
+ assert.equal(reads.isCurrentEvidenceInspection(second),true);
+ reads.invalidateEvidenceInspection();
+ assert.equal(reads.isCurrentEvidenceInspection(second),false);
+ const third=reads.beginEvidenceInspection();
+ reads.invalidateAll();
+ assert.equal(reads.isCurrentEvidenceInspection(third),false);
+});
+
+test('INTEGRATION: bounded evidence inspection reads the verified API and never selects evidence',()=>{
+ assert.match(ui,/async function inspectVerifiedEvidence\(id:string\)/);
+ assert.match(ui,/beginEvidenceInspection\(\)/);
+ assert.match(ui,/isCurrentEvidenceInspection\(ticket\)/);
+ assert.match(ui,/activeProjectRef\.current===projectId/);
+ assert.match(ui,/report-evidence\/\$\{encodeURIComponent\(id\)\}\/preview/);
+ assert.match(ui,/if\(data\.id!==id\)throw new Error/);
+ assert.match(ui,/aria-label="Verified evidence facts"/);
+ assert.match(ui,/evidenceInspection\.historical/);
+ assert.match(ui,/additional_summary_facts/);
+ assert.match(ui,/closeEvidenceInspection\(\)/);
+ assert.match(ui,/Inspect facts/);
+});
