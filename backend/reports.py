@@ -573,6 +573,64 @@ def evidence_options(project_id: str):
     return sorted(options,key=lambda entry:(entry['created_at'],entry['id']),reverse=True)[:150]
 
 
+
+def evidence_preview(project_id: str, evidence_id: str):
+    """Bounded, project-scoped read of the same evidence eligible for a report.
+
+    Never return raw observation arrays, row IDs, prediction rows or complete
+    evidence payloads. Reuse the exact verifier used by immutable report saves.
+    This endpoint neither captures a Quality snapshot nor creates a revision.
+    """
+    if not re.fullmatch(r'[a-f0-9]{32}', evidence_id):
+        raise ReportError('Invalid evidence identifier')
+    if storage.get_project(project_id) is None:
+        raise ReportError('Project does not exist', 404)
+    with storage.connect() as con:
+        canonical, _ = _collect(con, project_id, 'Evidence preview', '', [evidence_id])
+    artifact = json.loads(canonical)['evidence'][0]
+    result = artifact.get('result', {})
+    summary = result.get('summary') if isinstance(result, dict) else None
+    facts = []
+    source = summary if isinstance(summary, dict) else {}
+    if not source and isinstance(result, dict):
+        # Legacy investigation tools do not always have a summary object.
+        # Only safe scalar facts, never result.data/findings/row examples.
+        source = {k: v for k, v in result.items()
+                  if k not in ('data', 'rows', 'records', 'findings', 'samples',
+                               'predictions', 'raw', 'note', 'warning', 'limitations')}
+    scalar_count = 0
+    for key, value in source.items():
+        if not isinstance(key, str) or not isinstance(value, (str, int, float, bool)):
+            continue
+        scalar_count += 1
+        if len(facts) >= 8:
+            continue
+        if isinstance(value, float) and not (-float('inf') < value < float('inf')):
+            continue
+        rendered = ('Yes' if value else 'No') if isinstance(value, bool) else str(value)
+        facts.append({'label': _display_label(key)[:80],
+                      'value': rendered[:140]})
+    note = result.get('note', '') if isinstance(result, dict) else ''
+    note = note[:240] if isinstance(note, str) else ''
+    # The current Quality dataset version may differ; never silently upgrade
+    # historical evidence or imply the old artifact was recomputed.
+    current_version = quality.current_version(project_id)
+    return {
+        'id': evidence_id,
+        'operation': artifact['operation'],
+        'dataset_version': artifact['dataset_version'],
+        'current_dataset_version': current_version,
+        'historical': artifact['dataset_version'] != current_version,
+        'objective': str(artifact.get('objective') or '')[:180],
+        'summary': facts,
+        'additional_summary_facts': max(0, scalar_count-len(facts)),
+        'note': note,
+        'disclosure': ('Only bounded verified aggregate facts are shown; raw rows, '
+                       'predictions and detailed evidence are excluded. '
+                       'The complete evidence is frozen only when you save a report.'),
+    }
+
+
 def load(report_id: str, revision: int | None = None):
     with storage.connect() as con:
         report=con.execute('SELECT * FROM reports_v1 WHERE id=?',(report_id,)).fetchone()
