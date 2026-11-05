@@ -34,3 +34,11 @@
 **Release gate unchanged:** independent source/face/RFN notice review and six final SHA-256 for three original unchanged Noto font binaries and their three complete original SIL OFL notices remain `NOT_GRANTED`; no asset downloaded, copied, installed, bundled or shipped here. **P2 remains ACTIVE / REVIEW_REQUIRED.**
 
 **Next:** owner Windows acceptance of the new dirty Deliver confirmation when practical, or explicit independent release font/OFL approval to enable normal packaged multilingual PDF integration. Avoid rerunning accepted earlier P1 and P2 developer-only proof suites without source change.
+
+## 5 November 2026 | In-place mounted handoff latest-request addendum
+
+The earlier limitation in this record, that a dirty mounted `ReportWorkspace` had no live DOM prop-change test, is **now closed for scoped real-HTTP Chromium development acceptance**. The new [mounted handoff acceptance record](./P2_MOUNTED_HANDOFF_LATEST_REQUEST_SAFETY_2026-11-05.md) documents an additional source-confirmed stale consent risk fixed at [`a69ec0d7ac4e`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a69ec0d7ac4e335914d50780f5e82d2fc10c65f1): a pending Keep/Discard handoff now clears if its parent withdraws or supersedes the evidence ID, and approval verifies the latest ID. A withdrawn/reissued request is handled as new.
+
+[GitHub Actions #42108605339](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42108605339) completed **3/3 actual FastAPI/SQLite+Chromium PASS** using synthetic evidence and the actual same mounted React component. [Focused #42108851071](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42108851071) completed **61/61 Node contracts and TypeScript/Vite build PASS**. A separate [shared frontend run #42108851036](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42108851036) was pending at documentation time and is **not assumed successful**. Test-only intermediate failed regex assertions remain recorded. No original data, backend API, saved report revisions, model, Unicode fonts or installed binaries changed.
+
+This addendum does **not** close owner-native Windows WebView2/Narrator, external-project or multi-window failure/race acceptance. P1 development remains CLOSED; P2 ACTIVE / REVIEW_REQUIRED; P8 NOT CERTIFIED. Original six-file font/OFL release approval stays `NOT_GRANTED`.
