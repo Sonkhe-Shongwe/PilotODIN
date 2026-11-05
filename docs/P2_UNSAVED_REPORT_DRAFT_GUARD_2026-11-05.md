@@ -1,0 +1,32 @@
+# PilotODIN P2 | Explicit discard consent for unsaved Deliver report drafts
+
+**Date:** 5 November 2026  
+**Active branch:** `feature/live-dev-workspace-20261023`  
+**Phase:** P2 ACTIVE / REVIEW_REQUIRED, P1 development CLOSED, P8 Windows/offline release NOT CERTIFIED.
+
+## Confirmed bug and bounded correction
+A source inspection of `frontend/src/ReportWorkspace.tsx` found a **user-data-loss risk**: the existing `newReport()` synchronously cleared the current title, narrative and evidence selections, and `openReport()` replaced them after fetching another immutable saved revision. Both were bound directly to the UI and neither asked for permission. The old `hasDraftChanges` flag only handled edits to an already **opened** saved revision, so a brand-new unsaved report's narrative and evidence selections were not even represented in that warning.
+
+The new `frontend/src/reportDraftNavigationGuard.ts` detects changes relative to the correct baseline:
+- **New report:** an untouched default title alone is not work; any title change, narrative characters or selected evidence is work and requires confirmation before replacement.
+- **Previously saved report:** compare the current title, narrative and ordered evidence identifiers to the exact saved revision, not the default title or a stale POST payload. An unchanged saved revision needs no prompt. A reordered or added/removed exhibit, or title/narrative edit, requires a prompt.
+
+`frontend/src/ReportWorkspace.tsx` now routes the **New report** button and both **saved report selection / saved revision dropdown** through dedicated `requestNewReport` / `requestOpenReport` functions. If there is unsaved work, no navigation ticket, evidence-list mutation or title reset occurs yet. An accessible, explicit in-app confirmation shows:
+- **Keep editing:** cancel, retain current title/narrative/evidence state and restore focus.
+- **Discard and continue:** only after explicit action, call the **same pre-existing** `newReport` or `openReport` implementation and its existing stale-read/write-ticket guards.
+- **Escape:** cancel and retain data. The modal initially focuses Keep, contains keyboard Tab focus and returns focus to the initiating control when possible. It uses a local HTML/React dialog overlay instead of assuming browser-native `window.confirm` works in Windows WebView2. The dialog is scoped to the originating `projectId`; stale approval after project identity changes cannot be applied.
+- Existing save/export handlers, immutable report JSON, backend/SQLite schema, Quality state, session credentials and native project-switch consent were **not changed**.
+
+## Actual test evidence and exact SHA
+- New [`frontend/tests/p2-report-draft-navigation-safety.test.cjs`](../frontend/tests/p2-report-draft-navigation-safety.test.cjs) executes the actual transpiled TypeScript baseline comparator. Tests cover new blank default-title bypass, any new user draft, untouched saved revision, saved title/narrative/ordered evidence changes, user revert, navigation action routing, Keep/Discard buttons, project-identity veto and keyboard Escape/Tab/focus contracts. Added to the existing focused P2 trusted-branch workflow.
+- [Focused P2 CI #42095251713](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42095251713) at source SHA `2c1502c235b74ec98c1662ecd3c2197a80356b09`: **53/53 Node tests PASS**, TypeScript checking PASS and production Vite build PASS. Later source changes were **E2E test only**, not production code or focused guards.
+- The preexisting disposable Playwright real backend scenario [`p2-real-http-report-comparison.spec.ts`](../frontend/e2e/p2-real-http-report-comparison.spec.ts) was extended: after authoring an unsaved 4-section report and selecting evidence, **New report** displays the dialog; initial keyboard focus is on Keep; Escape retains narrative and selection. Opening a different saved report demands consent; Keep retains the draft; Discard loads the intended stored revision. Editing an existing saved revision, then choosing New report, also prompts: Keep retains the modified text, and deliberate Discard resets it.
+- [Final hosted real Uvicorn + Chromium CI #42095369164](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42095369164) at exact tested source [`3f1ce29357ab32a2f1649c0a9ae0a7c32ab85113`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3f1ce29357ab32a2f1649c0a9ae0a7c32ab85113): **COMPLETED SUCCESS, 2/2 scenarios PASS**. Both the existing guided Save/reopen/HTML/PDF extraction and the extended verified evidence/revision navigation scenario passed using actual disposable FastAPI, SQLite, React and Chromium. The extended scenario remains browser **GET-only**, with no unintended report/database writes or external destinations.
+- A broader preexisting cross-phase frontend CI [#42095368995](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42095368995) is triggered for the same source SHA. Its conclusion must be independently recorded from its final logs, not inferred from the focused suite.
+
+## Acceptance and explicit remaining limits
+- **Scoped acceptance:** users cannot accidentally destroy an unsaved Deliver draft through the New report button or through a saved-report/revision selection without an in-app Keep/Discard decision. Cancelling preserves title/narrative/evidence; approving uses the previous read route. No new backend data writes were introduced.
+- **Not established:** physical owner Windows/WebView2 visual/Narrator/keyboarding check, entire application-wide navigation for every view, implicit Explore-to-Deliver evidence handoff while the Deliver workspace is already edited, a failed target read after discard approval, native installer/offline P8 or Windows multiwindow cases. These remain separate testable boundaries and must not be silently marked PASS.
+- **Unrelated P2 gate unchanged:** normal multilingual Unicode PDF remains unaccepted because the independent exact original three Noto fonts + three original OFL files, final six SHA-256/face/RFN/distribution and Third-Party Notices approval are still `NOT_GRANTED`. No font binaries, font paths, ReportLab rendering, installed Windows executable, private owner project files, sidecar or model was changed.
+
+**Next:** a bounded actual Windows owner-native review of this new dialog when practical; independently obtain explicit font/OFL approval for Unicode production. A source-reported cross-workspace Explore handoff may need a separate guard audit, not a blanket claim that all unsaved navigation is solved.
