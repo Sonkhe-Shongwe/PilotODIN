@@ -9,7 +9,7 @@ import {savedReportPreviewDocument} from './reportSavedPreview';
 type EvidenceOption={id:string;operation:string;version:number;params:Record<string,unknown>;stale?:boolean;objective?:string;source?:string};
 type ReportSummary={id:string;title:string;revision:number;updated_at:string};
 type Evidence={id:string;operation:string;dataset_version:number;tool_version:string;params:Record<string,unknown>;result:Record<string,unknown>};
-type SavedReport={id:string;title:string;narrative:string;revision:number;revisions:number[];dataset_versions:number[];current_dataset_version:number;has_historical_evidence:boolean;content_sha256:string;evidence:Evidence[]};
+type SavedReport={id:string;title:string;narrative:string;revision:number;revisions:number[];dataset_versions:number[];current_dataset_version:number;has_historical_evidence:boolean;content_sha256:string;evidence:Evidence[];unchanged?:boolean};
 
 function idsafeMessage(saved:{dataset_version:number;findings_total:number},selectionFull:boolean):string {
  return `Captured read-only Quality audit v${saved.dataset_version} with ${saved.findings_total} findings. ${selectionFull?'Evidence selection is full (15); deselect an item to include this audit.':'Audit selected for the next saved revision.'}`;
@@ -89,7 +89,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
    composerGuard.current.navigate();
    const ticket=++latestOpenRequest.current;
-   userStartedDraft.current=true;setBusy('open');setError('');
+   userStartedDraft.current=true;setBusy('open');setError('');setNotice('');
    try{
      const data=await get<SavedReport>(`/reports/${encodeURIComponent(id)}${number?`?revision=${number}`:''}`);
      if(ticket!==latestOpenRequest.current)return;
@@ -124,9 +124,13 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    if(gate.sameView(ticket)){
      const untouched=gate.sameDraft(ticket);
      setActiveId(saved.id);setOpened(saved);setRevision(saved.revision);
-     setNotice(untouched
-       ?`Saved revision ${saved.revision} with ${saved.evidence.length} verified evidence artifacts.`
-       :`Saved submitted revision ${saved.revision}. Newer draft edits were NOT included; save them separately.`);
+     setNotice(saved.unchanged
+       ?(untouched
+         ?`No changes to save. Saved revision ${saved.revision} remains unchanged.`
+         :`Submitted revision ${saved.revision} was already saved. Newer draft edits were NOT included; save them separately.`)
+       :(untouched
+         ?`Saved revision ${saved.revision} with ${saved.evidence.length} verified evidence artifacts.`
+         :`Saved submitted revision ${saved.revision}. Newer draft edits were NOT included; save them separately.`));
      // Never replace title/narrative/selected: they may have changed since POST.
    }
    const listTicket=++latestReportList.current;
@@ -225,7 +229,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    finally{if(sameView())setBusy('')}
  }
  function onDraftEdit(){
-   userStartedDraft.current=true;composerGuard.current.editDraft();
+   userStartedDraft.current=true;composerGuard.current.editDraft();setNotice('');
    // An in-flight report Open must not replace a draft the user edited after clicking.
    latestOpenRequest.current++;
    if(busy==='open')setBusy('');
