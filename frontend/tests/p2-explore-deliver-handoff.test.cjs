@@ -62,6 +62,19 @@ test('INTEGRATION: shell guards Deliver exit and receives only dirty markers, no
  assert.match(shell,/preapprovedRoutePush\.current=plan\.nextActive==='investigate'/);
  assert.doesNotMatch(source,/localStorage|sessionStorage|fetch\(|post\(/);
 });
+test('INTEGRATION: both New project entry points stage import only after navigation approval',()=>{
+ const begin=app.indexOf('function requestNewDataset():void{');
+ const end=app.indexOf('function go(next:Stage):boolean{',begin);
+ assert.ok(begin>=0&&end>begin,'Studio has an explicit guarded New dataset entry point');
+ const handler=app.slice(begin,end);
+ assert.match(handler,/if\(embedded\|\|!go\('overview'\)\)return/);
+ assert.ok(handler.indexOf("go('overview')")<handler.indexOf('setUploadOpen(true)'),
+  'Studio must not reveal upload before the shell approves navigation');
+ assert.match(app,/className="new-project" disabled=\{embedded\} onClick=\{requestNewDataset\}/);
+ assert.match(shell,/onClick=\{\(\)=>\{if\(navigateWithDockGuard\('overview'\)\)setNewProjectOpen\(true\)\}\}/);
+ assert.doesNotMatch(shell,/setNewProjectOpen\(true\);navigate\('overview'\)/);
+});
+
 test('INTEGRATION: native close and reload guard also accept Deliver dirty marker',()=>{
  const unload=fs.readFileSync(path.join(root,'dockInputDiscardGuard.ts'),'utf8');
  assert.match(unload,/view:'prepare'\|'model'\|'predict'\|'deliver'/);
