@@ -95,6 +95,10 @@ The owner could not find median approval in a native missingness investigation b
 - Next owner checkpoint: `git pull --ff-only origin feature/live-dev-workspace-20261023`, then double-click `Run_PilotODIN_P1_Acceptance_Macro.bat` without closing existing DEV servers. Runner checks clean tracked source, does not touch ports 8000/5174, refuses occupied 5187 for browser, runs isolated backend tests, focused frontend Node/build/Chromium where tools exist, snapshots Windows memory and writes one TEMP ZIP. Actual N1-native, S1–S4, A1/A2 and final C1 remain separate physical/manual decisions; true offline combined AI+ML/8GB is NOT TESTED.
 - Do not repeat accepted Quality lifecycle, Manager scoped evidence or WIN-K1–K4. P1 remains OPEN.
 
+## 5 November 2026 | Owner-local P1 automation macro completed
+- Owner supplied actual Windows run result `AUTOMATED_SUBSET_PASS_NOT_P1_CLOSURE` from clean tracked SHA `ce54118ee08c80ea469113094576f2453095b6f4`: **6/6 phases PASS**, specifically 2 real-ASGI recovery pytest, 27 resource pytest, 64 targeted Node project/resource tests, TypeScript/Vite build, 5 isolated Chromium browser journeys and Windows read-only memory inventory. Browser includes draft-preserving failed switch and simulated 150%/reduced motion, not physical Windows certification. Non-blocking Vite 500kB chunk advisory recorded. Owner data not accessed.
+- Windows 11 Pro 64-bit memory snapshot **7.804 GiB installed, 1.902 GiB free (24.4%)**, offline AI and simultaneous AI+ML **NOT TESTED**. Macro observed localhost 8000 FREE, 5174 IN_USE, 5187 FREE at test time. Before native N1, check isolated backend is actually online. Native N1, physical S/A, actual RAM UI and formal C1 still OPEN. No need to rerun passed macro.
+
 ## Current priority and next decision
 1. Use the [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) to reconcile remaining native acceptance, identify which owner-deferred checks must be explicitly accepted as deferrals, and keep P1 OPEN otherwise.
 2. Do not create more speculative P1 tests when only missing native evidence blocks closure. Investigate a new code defect only if confirmed and in scope.
