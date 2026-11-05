@@ -1,7 +1,7 @@
 /** Read-only comparison of two already-frozen, verified Deliver revisions.
  * This function does not fetch, recompute evidence, write, or trust draft state.
  */
-export type FrozenExhibit = {id:string;operation:string;dataset_version:number;[key:string]:unknown};
+export type FrozenExhibit = {id:string;operation:string;dataset_version:number};
 export type FrozenReport = {
  id:string;revision:number;title:string;narrative:string;
  content_sha256:string;dataset_versions:number[];evidence:FrozenExhibit[];
@@ -14,7 +14,7 @@ export type RevisionComparison = {
  added:ExhibitChange[];removed:ExhibitChange[];changed:ExhibitChange[];
  orderChanged:boolean;oldOrder:string[];newOrder:string[];
  versionsAdded:number[];versionsRemoved:number[];
- identical:boolean;
+ otherSnapshotChanged:boolean;identical:boolean;
 };
 
 export function compareFrozenReports(before:FrozenReport,after:FrozenReport):RevisionComparison {
@@ -56,6 +56,10 @@ export function compareFrozenReports(before:FrozenReport,after:FrozenReport):Rev
  const versionsRemoved=before.dataset_versions.filter(v=>!newVersions.has(v));
  const titleChanged=before.title!==after.title;
  const narrativeChanged=before.narrative!==after.narrative;
+ const visibleChanged=titleChanged||narrativeChanged||added.length>0||
+   removed.length>0||changed.length>0||orderChanged||
+   versionsAdded.length>0||versionsRemoved.length>0;
+ const otherSnapshotChanged=before.content_sha256!==after.content_sha256&&!visibleChanged;
  return {
   from:before.revision,to:after.revision,
   fromSha256:before.content_sha256,toSha256:after.content_sha256,
@@ -64,8 +68,7 @@ export function compareFrozenReports(before:FrozenReport,after:FrozenReport):Rev
   oldNarrative:before.narrative,newNarrative:after.narrative,
   added,removed,changed,orderChanged,oldOrder,newOrder,
   versionsAdded,versionsRemoved,
-  identical:!titleChanged&&!narrativeChanged&&added.length===0&&
-    removed.length===0&&changed.length===0&&!orderChanged&&
-    versionsAdded.length===0&&versionsRemoved.length===0,
+  otherSnapshotChanged,
+  identical:!visibleChanged&&before.content_sha256===after.content_sha256,
  };
 }
