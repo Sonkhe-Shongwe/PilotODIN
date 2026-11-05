@@ -1194,9 +1194,12 @@ def read_saved_report(report_id: str,revision: int | None = Query(default=None,g
     return _report_call(lambda: reports.load(report_id,revision))
 
 @app.post('/api/reports/{report_id}/revisions',status_code=201)
-def revise_saved_report(report_id: str,body:ReportSaveRequest):
+def revise_saved_report(report_id: str,body:ReportSaveRequest,response:Response):
     current=_report_call(lambda: reports.load(report_id))
-    return _report_call(lambda: reports.save(current['project_id'],body.title,body.narrative,body.evidence_ids,report_id))
+    saved=_report_call(lambda: reports.save(current['project_id'],body.title,body.narrative,body.evidence_ids,report_id))
+    if saved.get('unchanged'):
+        response.status_code=200  # No new immutable revision was created.
+    return saved
 
 @app.get('/api/reports/{report_id}/export/{format}')
 def export_saved_report(report_id: str,format: str,revision: int | None = Query(default=None,ge=1)):
