@@ -215,6 +215,42 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await primary.getByRole('button',{name:'Use freeform writing (keep my text)'}).click();
   await expect(outline).toHaveCount(0);
   expect(await narrativeArea.inputValue()).toBe(writtenText);
+
+  // Browser checks both unsaved NEW drafts and edited SAVED report drafts.
+  // Escape and Keep leave the authored text and selected evidence unchanged.
+  await primary.getByRole('button',{name:'New report'}).click();
+  const discard=primary.getByRole('dialog',{name:'Discard unsaved report edits?'});
+  await expect(discard).toBeVisible();
+  await expect(discard.getByRole('button',{name:'Keep editing'})).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(discard).toHaveCount(0);
+  expect(await narrativeArea.inputValue()).toBe(writtenText);
+  expect(await primary.locator('.pd-report-evidence-row input:checked').count()).toBe(1);
+
+  const savedChoice=primary.locator('.pd-report-library > button').first();
+  await savedChoice.click();
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Keep editing'}).click();
+  await expect(discard).toHaveCount(0);
+  expect(await narrativeArea.inputValue()).toBe(writtenText);
+
+  await savedChoice.click();
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(discard).toHaveCount(0);
+  await expect(primary.getByLabel('Report title')).toHaveValue(updatedTitle);
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(newNarrative);
+
+  const changedSaved=newNarrative+' Additional unsaved human note.';
+  await primary.getByLabel('Interpretation and limitations').fill(changedSaved);
+  await primary.getByRole('button',{name:'New report'}).click();
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Keep editing'}).click();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(changedSaved);
+  await primary.getByRole('button',{name:'New report'}).click();
+  await discard.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(discard).toHaveCount(0);
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
   expect(audit.blockedWrites).toEqual([]);
   expect(audit.unexpected).toEqual([]);
   expect(audit.remote).toEqual([]);
