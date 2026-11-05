@@ -187,4 +187,36 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   expect(afterHistory).toEqual(q0);
   expect(stillFirst.content_sha256).toBe(first.content_sha256);
   expect(stillSecond.content_sha256).toBe(second.content_sha256);
+
+  // Guided drafting is user-authored and never writes until explicit Save.
+  // Keep the browser GET-only so a mistaken implicit POST fails this contract.
+  await expect(primary.getByRole('button',{name:'Use General analysis outline'})).toBeDisabled();
+  await primary.getByRole('button',{name:'New report'}).click();
+  await primary.getByRole('button',{name:'Use General analysis outline'}).click();
+  const outline=primary.locator('.pd-report-outline-progress');
+  const narrativeArea=primary.getByLabel('Interpretation and limitations');
+  await expect(outline).toContainText('0 of 4 sections complete');
+  await expect(primary.getByRole('button',{name:'Save report'})).toBeDisabled();
+  await expect(primary.getByRole('button',{name:'Use General analysis outline'})).toBeDisabled();
+  const firstDraft=await narrativeArea.inputValue();
+  expect(firstDraft).toContain('Verified evidence interpretation');
+  expect(firstDraft).not.toContain('Accuracy: 99');
+
+  await narrativeArea.fill(
+   'Purpose and decision\n\nReview the synthetic project for a human decision.\n\n'+
+   'Verified evidence interpretation\n\nOnly figures verified in the chosen exhibit may be asserted.\n\n'+
+   'Limitations and uncertainty\n\nThis analysis does not prove causation.\n\n'+
+   'Recommendations and next steps\n\nReview source quality before deciding next actions.\n'
+  );
+  await expect(outline).toContainText('4 of 4 sections complete');
+  await primary.locator('.pd-report-evidence-row input').first().check();
+  await expect(primary.getByRole('button',{name:'Save report'})).toBeEnabled();
+  const writtenText=await narrativeArea.inputValue();
+  await primary.getByRole('button',{name:'Use freeform writing (keep my text)'}).click();
+  await expect(outline).toHaveCount(0);
+  expect(await narrativeArea.inputValue()).toBe(writtenText);
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect((await (await request.get(API+`/api/projects/${pid}/reports`)).json())).toEqual(initialList);
  });
