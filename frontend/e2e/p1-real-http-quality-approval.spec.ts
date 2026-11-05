@@ -152,6 +152,11 @@ test('real HTTP Quality approval, keyboard consent, undo, restore and restart pr
   await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('button',{name:'Quality'}).click();
   const primary=page.locator('.po-primary-pane');
   await expect(primary.getByText('WORKING VERSION 0',{exact:true})).toBeVisible();
+  const guide=primary.getByRole('region',{name:'Quality action guide'});
+  await expect(guide).toContainText('available proposed correction');
+  await guide.getByRole('button',{name:/Review [0-9]+ available correction/}).click();
+  await expect(primary.getByRole('region',{name:'Selected Quality finding'})).toBeVisible();
+  await expect(primary.getByRole('button',{name:/Corrections \(/})).toBeVisible();
   const finding=primary.locator('.quality-issue').filter({hasText:'Surrounding whitespace'})
     .filter({hasText:'Segment'});
   await finding.click();

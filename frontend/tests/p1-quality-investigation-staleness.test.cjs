@@ -129,3 +129,28 @@ test('actual Quality context effect invalidates both request families and clears
  ])assert.ok(body.includes(token),'Missing context invalidation: '+token);
  assert.doesNotMatch(body,/post\(|commitProposal\(|mutate\(|localStorage/);
 });
+
+
+test('Quality distinguishes real proposed corrections from read-only investigations',()=>{
+ const vm=require('node:vm');
+ const source=fs.readFileSync(path.resolve(__dirname,'../src/qualityActionGuide.ts'),'utf8');
+ const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2021}}).outputText;
+ const env={exports:{}};vm.runInNewContext(js,env);
+ const {canReviewCorrection,actionDescription,medianTreatmentHint}=env.exports;
+ const pending={kind:'case_variant',severity:'review',decision:'pending',proposal:{kind:'replace_exact'}};
+ const absent={kind:'missing',severity:'review',decision:'pending',proposal:null};
+ const approved={...pending,decision:'approved'};
+ assert.equal(canReviewCorrection(pending),true);
+ assert.equal(canReviewCorrection(absent),false);
+ assert.equal(canReviewCorrection(approved),false);
+ assert.equal(actionDescription(pending),'Correction available');
+ assert.match(actionDescription(absent),/Investigation only/);
+ assert.equal(actionDescription(approved),'Already approved');
+ assert.match(medianTreatmentHint(false),/No median-fill action is offered/);
+ assert.match(medianTreatmentHint(true),/available for this numeric column/);
+ assert.match(quality,/aria-label="Quality action guide"/);
+ assert.match(quality,/No direct correction is offered for this finding/);
+ assert.match(quality,/View supporting missingness comparisons/);
+ const treatments=quality.indexOf('<h4>Available treatments</h4>');
+ assert.ok(treatments>0&&treatments<quality.indexOf('View supporting missingness comparisons'));
+});

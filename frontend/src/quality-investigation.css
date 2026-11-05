@@ -16,3 +16,19 @@
 .po-quality-investigation-result li{margin:5px 0}
 .quality-table-panel{scroll-margin-top:24px}
 @media(max-width:550px){.po-quality-investigation-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* P1: find the supported decision immediately without promising unsupported treatment. */
+.po-quality-action-guide{border:1px solid #ccd8f0;background:#f4f8ff;border-radius:12px;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:14px 0 16px}
+.po-quality-action-guide strong{color:#283c6c;font-size:15px}
+.po-quality-action-guide p{color:#52617a;font-size:12px;line-height:1.55;margin:6px 0 0;max-width:650px}
+.po-quality-action-guide .btn{flex:0 0 auto;white-space:normal;text-align:center}
+.po-quality-nonaction-note,.po-quality-treatment-hint{border:1px solid #edd6a7;background:#fff9ef;color:#694d27!important;border-radius:9px;padding:10px 12px;line-height:1.55}
+.po-quality-diagnostic-details{border-top:1px solid #e0e5ed;margin:13px 0;padding:10px 0}
+.po-quality-diagnostic-details summary{font-weight:750;color:#403c84;cursor:pointer;padding:7px 0}
+.po-quality-diagnostic-details summary:hover{text-decoration:underline}
+.po-quality-diagnostic-details summary:focus-visible,.po-quality-action-guide button:focus-visible,.quality-issue:focus-visible,.quality-detail:focus-visible{outline:3px solid #0b9cbc;outline-offset:3px}
+.missingness-report h4{font-size:13px;color:#253c5c;margin:12px 0 6px}
+.missingness-report .treatment-option{border-bottom:1px solid #e2e7ef;padding:10px 0}
+@media(max-width:620px){.po-quality-action-guide{padding:12px}.po-quality-action-guide .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.po-quality-action-guide *, .quality-issue{animation:none!important;transition:none!important}}

@@ -2,6 +2,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, History, LoaderCircle, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Download, FileSpreadsheet, X} from 'lucide-react';
 import {downloadCleanedData,get,post} from './api';
 import {resolveQualityFocus} from './qualityHandoff';
+import {canReviewCorrection,actionDescription,medianTreatmentHint} from './qualityActionGuide';
 import {qualityPreviewLabel} from './qualityPreviewLabel';
 import {createQualityReadGuard} from './qualityReadGuard';
 import {handleQualityApprovalKeyDown} from './qualityApprovalFocus';
@@ -28,6 +29,7 @@ const badge=(s:string)=>s==='automatic'?'Safe correction':s==='information'?'Inf
 export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:string;onChanged:()=>void;initialFocus?:QualityFocus|null}){
   const [quality,setQuality]=useState<Quality|null>(null);
   const findingsRef=useRef<HTMLDivElement|null>(null);
+  const selectedFindingRef=useRef<HTMLDivElement|null>(null);
   const consumedFocus=useRef<QualityFocus|null>(null);
   const [handoffNote,setHandoffNote]=useState('');
   const inspectorRef=useRef<HTMLDivElement|null>(null);
@@ -38,7 +40,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const [preview,setPreview]=useState<Preview|null>(null);
   const [selected,setSelected]=useState<string>('');
   const [offset,setOffset]=useState(0);
-  const [filter,setFilter]=useState<'all'|'pending'|'history'>('all');
+  const [filter,setFilter]=useState<'all'|'corrections'|'pending'|'history'>('all');
   const [view,setView]=useState<'working'|'original'|'proposed'>('working');
   const [pendingApproval,setPendingApproval]=useState<{proposal:QualityProposal;message:string}|null>(null);
   const [exportVersion,setExportVersion]=useState(0);
@@ -248,7 +250,19 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     if(!quality||!issue)return;
     await mutate('decisions',{expected_version:quality.version,issue_id:issue.id,decision},decision==='approve'?'Correction approved':'Recommendation rejected');
   }
-  const display=quality?.issues.filter(x=>filter==='all'||(filter==='pending'&&x.decision==='pending'))??[];
+  const corrections=quality?.issues.filter(canReviewCorrection)??[];
+  const display=quality?.issues.filter(x=>filter==='all'||(filter==='corrections'&&canReviewCorrection(x))||(filter==='pending'&&x.decision==='pending'))??[];
+  function openFinding(id:string,correctionsOnly=false){
+    if(correctionsOnly)setFilter('corrections');
+    setSelected(id);setOffset(0);setView('proposed');setDiagnostics(null);
+    // Keep the selected action in sight for mouse, keyboard and reduced-motion users.
+    window.requestAnimationFrame(()=>{
+      const detail=selectedFindingRef.current;
+      if(!detail)return;
+      detail.focus({preventScroll:true});
+      detail.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start',inline:'nearest'});
+    });
+  }
   // Preview columns and rows must never be rendered for another Quality version.
   const verifiedPreview=quality&&preview?.version===quality.version?preview:null;
   return <div className="quality-page">
@@ -256,6 +270,16 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     {error&&<div className="alert-error" role="alert"><AlertCircle size={16}/><span>{error}</span><button type="button" className="btn small" onClick={()=>{setError('');setRetryReads(count=>count+1)}}>Retry loading Quality</button></div>}
     {notice&&<div className="quality-notice"><CheckCircle2 size={16}/>{notice}</div>}
     {handoffNote&&<div className="quality-notice" role="status"><ClipboardCheck size={16}/>{handoffNote}</div>}
+    <section role="region" aria-label="Quality action guide" className="po-quality-action-guide">
+     <div><strong>Choose your next Quality action</strong>
+      <p>{corrections.length>0
+       ?`${corrections.length} finding${corrections.length===1?' has':'s have'} an available proposed correction. Other findings may only support investigation or source verification.`
+       :'No direct corrections are offered in this working version. You can investigate findings, but there is no change available to approve.'}</p>
+     </div>
+     {corrections.length>0
+      ?<button type="button" className="btn primary" disabled={busy} onClick={()=>openFinding(corrections[0].id,true)}>Review {corrections.length} available correction{corrections.length===1?'':'s'} <ArrowRight size={15}/></button>
+      :<button type="button" className="btn" onClick={()=>{findingsRef.current?.focus();findingsRef.current?.scrollIntoView({behavior:'auto',block:'start'})}}>Explore findings <ArrowRight size={15}/></button>}
+    </section>
     <div className="quality-stats">
       <div><small>ISSUES FOUND</small><strong>{quality?.summary.issues??'—'}</strong></div>
       <div><small>NEED REVIEW</small><strong>{quality?.summary.review_required??'—'}</strong></div>
@@ -320,20 +344,25 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
       </div>
       <div ref={findingsRef} tabIndex={-1} className="panel quality-findings-panel">
         <div className="panel-title"><Sparkles size={18}/><h2>Intelligent findings</h2><span className="pill muted">LOCAL RULES</span></div>
-        <div className="quality-filters">{(['all','pending','history'] as const).map(t=><button className={filter===t?'selected':''} key={t} onClick={()=>setFilter(t)}>{t==='all'?'All findings':t==='pending'?'Pending':'History'}</button>)}</div>
+        <div className="quality-filters">{(['all','corrections','pending','history'] as const).map(t=><button className={filter===t?'selected':''} key={t} onClick={()=>setFilter(t)}>{t==='all'?'All findings':t==='corrections'?`Corrections (${corrections.length})`:t==='pending'?'Pending':'History'}</button>)}</div>
         {filter==='history'?<div className="history-list">
           <p className="muted-caption">Every version is retained, including reversed actions.</p>
           {history?.versions.slice().reverse().map(v=><div className="history-entry" key={v.version}><div><strong>Version {v.version} · {v.event}</strong><small>{new Date(v.created_at).toLocaleString()}</small></div>{quality&&v.version!==quality.version&&<button className="btn small" disabled={busy} onClick={()=>void mutate('restore',{expected_version:quality.version,target_version:v.version},'Version restored')}><RotateCcw size={14}/> Restore</button>}</div>)}
           <h3>Transformation log</h3>{history?.actions.map(a=><div className="history-entry" key={a.id}><div><strong>{a.kind} · {a.column}</strong><small>{a.affected_rows} rows · {a.source} · {a.active?'Active':'Inactive'}</small></div>{a.active&&quality&&<button className="btn small" disabled={busy} onClick={()=>void mutate('undo',{expected_version:quality.version,action_id:a.id},'Action undone')}><RotateCcw size={14}/> Undo</button>}</div>)}</div>:
-          <><div className="quality-issue-list">{display.map(it=><button className={'quality-issue '+(selected===it.id?'active':'')} key={it.id} onClick={()=>{setSelected(it.id);setOffset(0);setView('proposed');setDiagnostics(null)}}><span className={`quality-priority ${it.severity}`}/><span><b>{it.title}</b><small>{it.column??'Entire dataset'} · {it.affected_rows.toLocaleString()} affected · {it.decision==='pending'?badge(it.severity):it.decision}</small></span><ArrowRight size={14}/></button>)}</div>
-          {issue&&<div className="quality-detail"><div className="quality-detail-top"><h3>{issue.title}</h3><button className="btn small" onClick={()=>{setSelected('');setOffset(0);setView('working')}}>Clear</button></div><p>{issue.explanation}</p>{issue.proposal&&<div className="quality-proposal"><b>Proposed action</b><span>{issue.proposal.from!==undefined?`${issue.proposal.from} → ${issue.proposal.to}`:'Remove unnecessary surrounding whitespace from eligible category labels'}</span></div>}
+          <><div className="quality-issue-list">{display.map(it=><button className={'quality-issue '+(selected===it.id?'active':'')} key={it.id} onClick={()=>openFinding(it.id)} aria-expanded={selected===it.id} aria-controls="po-selected-quality-finding"><span className={`quality-priority ${it.severity}`}/><span><b>{it.title}</b><small>{it.column??'Entire dataset'} · {it.affected_rows.toLocaleString()} affected · {actionDescription(it)}</small></span><ArrowRight size={14}/></button>)}</div>
+          {issue&&<div id="po-selected-quality-finding" className="quality-detail" ref={selectedFindingRef} role="region" aria-label="Selected Quality finding" tabIndex={-1}><div className="quality-detail-top"><h3>{issue.title}</h3><button className="btn small" onClick={()=>{setSelected('');setOffset(0);setView('working')}}>Clear</button></div><p>{issue.explanation}</p>{issue.proposal&&<div className="quality-proposal"><b>Proposed action</b><span>{issue.proposal.from!==undefined?`${issue.proposal.from} → ${issue.proposal.to}`:'Remove unnecessary surrounding whitespace from eligible category labels'}</span></div>}
+           {!issue.proposal&&<p className="po-quality-nonaction-note">No direct correction is offered for this finding. Investigations are read-only and do not create a Quality version. A versioned change requires an explicit proposed treatment and approval.</p>}
           {Object.keys(issue.evidence).length>0&&<div className="quality-evidence">{Object.entries(issue.evidence).map(([k,v])=><span key={k}>{k.replaceAll('_',' ')}: <b>{typeof v==='object'?JSON.stringify(v):String(v)}</b></span>)}</div>}
           {(issue.decision==='pending'||issue.decision==='undone'||issue.decision==='rejected')&&issue.proposal&&<div className="quality-action-row"><button className="btn primary" disabled={busy} onClick={()=>void applyDecision('approve')}><CheckCircle2 size={15}/> {issue.automatic?'Review this correction':'Approve'}</button>{issue.decision==='pending'&&<button className="btn" disabled={busy} onClick={()=>void applyDecision('reject')}>Reject</button>}</div>}
           {issue.kind==='missing'&&issue.column&&<div className="missingness-action"><button className="btn" disabled={busy||diagnosing} onClick={()=>void diagnoseMissing(issue.column!)}>{diagnosing?<LoaderCircle className="spin" size={15}/>:<Sparkles size={15}/>} Investigate missingness</button>
              {diagnostics&&diagnostics.column===issue.column&&<div className="missingness-report" role="region" aria-label="Verified missing data investigation"><b>Local investigation · {diagnostics.missing_rows} missing ({diagnostics.missing_pct}%)</b><p>Rows: {diagnostics.row_numbers.slice(0,30).join(', ')}.</p>
-             {diagnostics.numeric_comparisons.map(c=><p key={c.column}><strong>{c.column}</strong> · median of affected rows {c.missing_group_median.toLocaleString()}, other rows {c.other_group_median.toLocaleString()}.</p>)}
-             {diagnostics.categorical_comparisons.map(c=><div key={c.column}><strong>{c.column}</strong><ul>{c.groups.map(g=><li key={g.label}>{g.label}: {g.missing_count}/{g.total_count} missing</li>)}</ul></div>)}
+             <h4>Available treatments</h4>
+             <p className="po-quality-treatment-hint">{medianTreatmentHint(diagnostics.suggested_treatments.some(t=>t.id==='median'))}</p>
              {diagnostics.suggested_treatments.map(t=><div key={t.id} className="treatment-option"><strong>{t.label}</strong><p>{t.tradeoff}</p>{t.id==='median'&&<button className="btn primary small" disabled={busy} onClick={()=>void approveMedian()}>Review and approve median fill</button>}</div>)}
+             <details className="po-quality-diagnostic-details"><summary>View supporting missingness comparisons ({diagnostics.numeric_comparisons.length+diagnostics.categorical_comparisons.length} fields)</summary>
+              {diagnostics.numeric_comparisons.map(c=><p key={c.column}><strong>{c.column}</strong> · median of affected rows {c.missing_group_median.toLocaleString()}, other rows {c.other_group_median.toLocaleString()}.</p>)}
+              {diagnostics.categorical_comparisons.map(c=><div key={c.column}><strong>{c.column}</strong><ul>{c.groups.map(g=><li key={g.label}>{g.label}: {g.missing_count}/{g.total_count} missing</li>)}</ul></div>)}
+             </details>
              <small>{diagnostics.caution}</small></div>}
           </div>}
           {(issue.kind==='outliers'||issue.kind==='identifier')&&issue.column&&<div className="po-quality-investigation">
