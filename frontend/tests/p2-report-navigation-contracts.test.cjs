@@ -20,7 +20,8 @@ test('New report, project switch, and explicit Explore evidence handoff invalida
  assert.match(src,/function newReport\(\)\{[\s\S]*?composerGuard\.current\.navigate\(\);latestOpenRequest\.current\+\+;setBusy\(''\)/);
  assert.match(src,/let mounted=true;composerGuard\.current\.resetProject\(\);readGuard\.current\.invalidateAll\(\);latestReportList\.current\+\+;latestOpenRequest\.current\+\+;/);
  assert.match(src,/return\(\)=>\{mounted=false;composerGuard\.current\.resetProject\(\);readGuard\.current\.invalidateAll\(\);latestReportList\.current\+\+;latestOpenRequest\.current\+\+\}/);
- assert.match(src,/appliedHandoff\.current=preselectEvidenceId;\s*latestOpenRequest\.current\+\+;composerGuard\.current\.navigate\(\);setBusy\(''\)/);
+ // The existing saved-preview invalidation is part of this navigation sequence.
+ assert.match(src,/appliedHandoff\.current=preselectEvidenceId;\s*readGuard\.current\.invalidatePreview\(\);setSavedPreview\(null\);setPreviewBusy\(false\);setPreviewError\(''\);\s*latestOpenRequest\.current\+\+;composerGuard\.current\.navigate\(\);setBusy\(''\)/);
 });
 
 test('Revision ordering, immutable saved exports and explicit target project evidence remain unchanged',()=>{
