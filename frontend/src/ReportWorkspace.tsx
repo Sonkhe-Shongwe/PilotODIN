@@ -20,7 +20,7 @@ function idsafeMessage(saved:{dataset_version:number;findings_total:number},sele
 }
 
 /** Persisted report composer; component-local draft, backend-owned saved revisions. */
-export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='Investigation report',preselectEvidenceId=null}:{projectId:string;availableEvidence?:EvidenceOption[];defaultTitle?:string;preselectEvidenceId?:string|null}) {
+export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='Investigation report',preselectEvidenceId=null,onUnsavedChange}:{projectId:string;availableEvidence?:EvidenceOption[];defaultTitle?:string;preselectEvidenceId?:string|null;onUnsavedChange?:(dirty:boolean)=>void}) {
  const [reports,setReports]=useState<ReportSummary[]>([]);
  const [projectEvidence,setProjectEvidence]=useState<EvidenceOption[]>([]);
  const [activeId,setActiveId]=useState<string|null>(null);
@@ -393,6 +393,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const savedIds=opened?.evidence.map(e=>e.id)??[];
  const hasDraftChanges=!!opened&&(title!==opened.title||narrative!==opened.narrative||selected.length!==savedIds.length||selected.some((id,index)=>id!==savedIds[index]));
  const hasUnsavedWork=hasUnsavedReportDraft({title,narrative,selected,defaultTitle,saved:opened});
+ useEffect(()=>{onUnsavedChange?.(hasUnsavedWork)},[hasUnsavedWork,onUnsavedChange]);
  const outlineProgress=activeOutlineId?reportOutlineProgress(activeOutlineId,narrative):null;
  const saveReady=title.trim().length>=5&&selected.length>0&&(!outlineProgress||outlineProgress.complete);
  const reportStep=opened&&!hasDraftChanges?3:saveReady?2:1;
