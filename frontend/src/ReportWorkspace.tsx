@@ -424,7 +424,9 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      </div>
    </div>}
    <nav aria-label="Report creation steps" className="pd-report-flow">{[['1','Compose'],['2','Save revision'],['3','Export']].map(([step,label],i)=><span key={step} className={Number(step)===reportStep?'pd-report-step-current':Number(step)<reportStep?'pd-report-step-done':''}><b>{step}</b>{label}</span>)}</nav>
-   {hasDraftChanges&&<p role="status" className="pd-report-warning">Unsaved changes. Exports remain linked to the saved revision until you save again.</p>}
+   {hasUnsavedWork&&<p role="status" className="pd-report-warning">{opened
+     ?'Unsaved changes. Exports remain linked to the saved revision until you save again.'
+     :'Unsaved report draft. Save a revision before exporting.'}</p>}
    {error&&<p role="alert" className="pd-report-error"><AlertCircle size={16}/>{error}</p>}
    {notice&&<p role="status" className="pd-report-notice"><ShieldCheck size={16}/>{notice}</p>}
    <div className="pd-report-columns"><section className="pd-report-editor">
