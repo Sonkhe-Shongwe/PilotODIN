@@ -42,7 +42,7 @@ class P2SavedChartCountSemantics(unittest.TestCase):
     def test_html_report_svg_title_and_caption_both_explain_count(self):
         _, spec = saved_spec()
         html = report_charts.html_chart(spec)
-        matched = re.search(r"<svg\\b.*?</svg>", html, flags=re.S)
+        matched = re.search(r"<svg\b.*?</svg>", html, flags=re.S)
         self.assertIsNotNone(matched)
         svg = ET.fromstring(matched.group(0))
         expected = report_charts.measure_caption(spec)
