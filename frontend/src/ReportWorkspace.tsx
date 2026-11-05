@@ -42,7 +42,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  const [evidenceInspection,setEvidenceInspection]=useState<EvidenceInspection|null>(null);
  const [inspectionBusy,setInspectionBusy]=useState<string|null>(null);
  const [inspectionError,setInspectionError]=useState('');
- const [pendingDiscard,setPendingDiscard]=useState<({kind:'new';projectId:string}|{kind:'open';projectId:string;id:string;number?:number})|null>(null);
+ const [pendingDiscard,setPendingDiscard]=useState<({kind:'new';projectId:string}|{kind:'open';projectId:string;id:string;number?:number}|{kind:'handoff';projectId:string;id:string})|null>(null);
  const discardDialogRef=useRef<HTMLDivElement|null>(null);
  const discardOpenerRef=useRef<HTMLElement|null>(null);
  const activeProjectRef=useRef(projectId);
@@ -87,17 +87,20 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
  },[projectId]);
  useEffect(()=>{
    if(!preselectEvidenceId||!evidenceLoaded||appliedHandoff.current===preselectEvidenceId)return;
+   // A refused handoff remains consumed until a genuinely new request arrives.
    appliedHandoff.current=preselectEvidenceId;
-   readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
-   latestOpenRequest.current++;composerGuard.current.navigate();setBusy('');
-   clearComparison();closeEvidenceInspection();
    const option=projectEvidence.find(item=>item.id===preselectEvidenceId);
    if(!option){setError('This saved analysis is not available as verified evidence in the active project.');return;}
-   userStartedDraft.current=true;
-   setActiveId(null);setOpened(null);setRevision(null);
-   setTitle(option.objective?`${option.objective} report`:'Explore investigation report');
-   setNarrative('');setActiveOutlineId(null);setSelected([preselectEvidenceId]);setError('');
-   setNotice(`Verified ${option.stale?'historical ':' '}Explore evidence selected. Review its dataset version and add your interpretation before saving.`);
+   if(composerGuard.current.hasPending()){
+     setError('A report write is still completing. Saved Explore evidence was not applied.');
+     return;
+   }
+   if(hasUnsavedWork){
+     discardOpenerRef.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
+     setPendingDiscard({kind:'handoff',projectId,id:preselectEvidenceId});
+     return;
+   }
+   applyEvidenceHandoff(preselectEvidenceId);
  },[projectEvidence,preselectEvidenceId,evidenceLoaded]);
  useEffect(()=>{
    if(!pendingDiscard)return;
@@ -128,6 +131,22 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      discardOpenerRef.current=null;
    };
  },[pendingDiscard]);
+ function applyEvidenceHandoff(id:string){
+   const option=projectEvidence.find(item=>item.id===id);
+   if(!option){setError('This saved analysis is not available as verified evidence in the active project.');return;}
+   if(composerGuard.current.hasPending()){
+     setError('A report write is still completing. Saved Explore evidence was not applied.');
+     return;
+   }
+   readGuard.current.invalidatePreview();setSavedPreview(null);setPreviewBusy(false);setPreviewError('');
+   latestOpenRequest.current++;composerGuard.current.navigate();setBusy('');
+   clearComparison();closeEvidenceInspection();
+   userStartedDraft.current=true;
+   setActiveId(null);setOpened(null);setRevision(null);
+   setTitle(option.objective?`${option.objective} report`:'Explore investigation report');
+   setNarrative('');setActiveOutlineId(null);setSelected([id]);setError('');
+   setNotice(`Verified ${option.stale?'historical ':' '}Explore evidence selected. Review its dataset version and add your interpretation before saving.`);
+ }
  function closeEvidenceInspection(){
    readGuard.current.invalidateEvidenceInspection();
    setEvidenceInspection(null);setInspectionBusy(null);setInspectionError('');
@@ -214,6 +233,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
    // Do not apply a stale modal approval to another project.
    if(!action||action.projectId!==activeProjectRef.current)return;
    if(action.kind==='new')newReport();
+   else if(action.kind==='handoff')applyEvidenceHandoff(action.id);
    else void openReport(action.id,action.number);
  }
  async function save(){
@@ -382,7 +402,7 @@ export function ReportWorkspace({projectId,availableEvidence=[],defaultTitle='In
      <div ref={discardDialogRef} role="dialog" aria-modal="true" aria-labelledby="pd-report-discard-title"
        aria-describedby="pd-report-discard-description" className="pd-report-discard-dialog">
        <h3 id="pd-report-discard-title">Discard unsaved report edits?</h3>
-       <p id="pd-report-discard-description">You have changes that are not in a saved report revision. {pendingDiscard.kind==='new'?'Starting another report':'Opening a saved report'} will replace your current title, interpretation and selected evidence. Nothing will be saved automatically.</p>
+       <p id="pd-report-discard-description">You have changes that are not in a saved report revision. {pendingDiscard.kind==='new'?'Starting another report':pendingDiscard.kind==='handoff'?'Using a saved Explore analysis':'Opening a saved report'} will replace your current title, interpretation and selected evidence. Nothing will be saved automatically.</p>
        <div className="pd-report-discard-actions">
         <button type="button" data-report-discard-keep onClick={()=>setPendingDiscard(null)} className="ud-btn ud-btn-primary">Keep editing</button>
         <button type="button" onClick={approveReportDiscard} className="ud-btn ud-btn-quiet">Discard and continue</button>
