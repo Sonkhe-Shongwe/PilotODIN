@@ -51,7 +51,7 @@ test('INTEGRATION: App does not queue Explore evidence if primary navigation was
  assert.match(app,/onSendToDeliver=\{snapshotId=>\{if\(\/\^\[a-f0-9\]\{32\}\$\/\.test\(snapshotId\)&&go\('deliver'\)\)setDeliverEvidenceId\(snapshotId\)\}\}/);
 });
 test('INTEGRATION: shell guards Deliver exit and receives only dirty markers, not narrative',()=>{
- assert.match(report,/onUnsavedChange\?\(dirty:boolean\)=>void/);
+ assert.match(report,/onUnsavedChange\?:\(dirty:boolean\)=>void/);
  assert.match(report,/onUnsavedChange\?\.\(hasUnsavedWork\)/);
  assert.match(app,/onPrimaryDraftCleared\?\.\('deliver'\)/);
  assert.match(app,/onPrimaryDraftEdited\?\.\('deliver'\)/);
