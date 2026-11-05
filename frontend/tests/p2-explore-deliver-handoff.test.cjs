@@ -9,9 +9,9 @@ const source=fs.readFileSync(path.join(root,'primaryStudioExitGuard.ts'),'utf8')
 const compiled=ts.transpileModule(source,{compilerOptions:{
  module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2021},reportDiagnostics:true});
 assert.equal(compiled.diagnostics?.length,0);
-const module={exports:{}};
-vm.runInNewContext(compiled.outputText,{module,exports:module.exports});
-const {needsPrimaryStudioExitApproval:needs}=module.exports;
+const fakeModule={exports:{}};
+vm.runInNewContext(compiled.outputText,{module:fakeModule,exports:fakeModule.exports});
+const {needsPrimaryStudioExitApproval:needs}=fakeModule.exports;
 const report=fs.readFileSync(path.join(root,'ReportWorkspace.tsx'),'utf8');
 const app=fs.readFileSync(path.join(root,'App.tsx'),'utf8');
 const shell=fs.readFileSync(path.join(root,'UnifiedShell.tsx'),'utf8');
