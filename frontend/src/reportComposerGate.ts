@@ -14,6 +14,8 @@ export class ReportComposerGate {
  hasPending():boolean {return this.pending!==null}
  currentView():number {return this.view}
  isCurrentView(token:number):boolean {return this.view===token}
+ currentDraft():number {return this.draft}
+ isCurrentDraft(token:number):boolean {return this.draft===token}
  begin(kind:ComposerWriteKind):ComposerWriteTicket|null {
   if(this.pending!==null)return null;
   const ticket={id:++this.next,view:this.view,draft:this.draft,kind};
