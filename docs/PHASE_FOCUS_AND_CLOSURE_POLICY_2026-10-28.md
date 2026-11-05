@@ -1,14 +1,14 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
-> **CURRENT POLICY, 4 November audit annotation:** P1 remains the one primary phase. The **“Current active assignment and handoff” paragraph at this document's end is its 28 October checkpoint**, not today's exact next step. Consult [current P1 closure matrix](./P1_CLOSURE_REGISTER_2026-10-28.md) and [current handoff](./SESSION_HANDOFF_CURRENT.md). The normative closure rules below are unchanged.
+> **5 November 2026 implementation-status annotation:** P1 has been recorded **CLOSED for bounded development scope** after owner-reported and scoped Windows/hosted acceptance. **P2 is the current single active phase.** Explicit residuals and non-release limits are in [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) and [current handoff](./SESSION_HANDOFF_CURRENT.md). The normative closure rules below remain unchanged. The 28 October P1 assignment at the end is historical.
 
-**Adopted by owner:** 28 October 2026. **Current primary phase: P1.**
+**Adopted by owner:** 28 October 2026. **Current primary phase: P2 (as of 5 November 2026).**
 **Authoritative branch:** `feature/live-dev-workspace-20261023`.
 **Authority:** Owner's revised execution preference. This decision supersedes earlier *active priority* sequencing notes in historical roadmap and status reflections, **but does not invalidate their technical evidence or phase dependencies**.
 
 ## Operating rule
 
-One primary implementation and acceptance phase at a time. Complete P1 to an explicitly documented, defensible closure state before scheduling discretionary P2–P8 feature work. Phase selection is not permission to conceal unresolved risks. Avoid scattering incremental polish across phases, and avoid endless new test scenarios in place of finishing complete product journeys.
+One primary implementation and acceptance phase at a time. As of 5 November 2026, P1 development scope is documented CLOSED and P2 is authorised. Continue to preserve the explicit P1 residuals rather than treating development closure as release certification. Phase selection is not permission to conceal unresolved risks. Avoid scattering incremental polish across phases, and avoid endless new test scenarios in place of finishing complete product journeys.
 
 An indicative **90–95%** phase-completeness target may guide planning but **is never an acceptance criterion**. The earlier P1 `~75%` and overall `~45%` figures were qualitative estimates, not audited earned-value measurements. Do not turn them into tracked KPI progress without an explicit, weighted requirement inventory. Prefer **accepted / blocked / open / deferred by approved dependency** per requirement.
 
@@ -39,7 +39,7 @@ Do not use a convenience improvement, attractive UI polish, unrelated explorator
 
 Do not rerun previously accepted suites on unchanged code. Do not infer clean offline release readiness from synthetic React tests. Do not overwrite owner-generated npm/Cargo lockfiles, local working changes, datasets or Tauri generated schemas. Do not launch installers, model downloads, paid services or GitHub Actions without explicit necessity and applicable approval.
 
-## Current active assignment and handoff
+## Historical 28 October active assignment and handoff (superseded on 5 November)
 
 - **Primary:** P1 — safe project/workspace and Quality life cycle, responsive/native workflows, unsaved forms and cross-tab/reload resilience. Its accepted subsets are recorded in [P1 Closure Register](./P1_CLOSURE_REGISTER_2026-10-28.md).
 - **Immediate next slice:** Primary Studio-owned **unsaved Prepare/Model form** changes during an attempted project switch; demonstrate safe Cancel and preserve the current project/form before extending to reload/cross-tab.
@@ -47,3 +47,6 @@ Do not rerun previously accepted suites on unchanged code. Do not infer clean of
 - **Late gates not waived:** Real 8 GB AI/ML, P6/P7 deterministic/autonomous workflows and P8 self-contained offline clean Windows installer and E-01–E-24 acceptance.
 
 References: [Consolidated Roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) · [Phase Reflection](./PILOTODIN_STATUS_REFLECTION_2026-10-26.md) · [Current Handoff](./SESSION_HANDOFF_CURRENT.md) · [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2).
+
+## 5 November 2026 | Owner-directed phase transition
+P1 development was closed under the existing exit policy after the user confirmed the remaining native workspace/Quality, scaling/Snap, Narrator/reduced-motion and resource status checks and asked why the phase was still being held. The [current P1 closure matrix](./P1_CLOSURE_REGISTER_2026-10-28.md) documents the exact owner evidence, historical CI and non-release residuals. **This was not an approval for destructive native fault injection, an unverified release, irreversible project deletion, skipped security requirements or offline AI/ML feasibility claims.** Any confirmed critical/high residual P1 data-safety defect takes priority if discovered. P2 is now the active phase, starting at [P2-U2b read-only Python sidecar font readiness](./P2_PDF_PRODUCTION_SIDECAR_FONT_GATE.md). No packaged sidecar, installer, licence grant or runtime download is authorised solely by this change.
