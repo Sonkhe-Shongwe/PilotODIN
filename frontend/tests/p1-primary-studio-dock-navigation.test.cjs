@@ -24,11 +24,11 @@ test('primary App exposes a typed veto callback and shell passes it only to prim
  assert.match(shell,/<App embeddedStage=\{dock\.secondary!\} embeddedProjectId=\{projectId\} onEmbeddedNavigate=\{view=>dockView\(view\)\}/);
 });
 test('go veto runs before quality focus, deliver focus, scroll or page mutation',()=>{
- const start=app.indexOf('  function go(next:Stage){');
+ const start=app.indexOf('  function go(next:Stage):boolean{');
  const end=app.indexOf('  useEffect(()=>{setVisitedStages',start);
  assert.ok(start>=0&&end>start);
  const body=app.slice(start,end);
- const guard=body.indexOf('if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next))return;');
+ const guard=body.indexOf('if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next))return false;');
  assert.ok(guard>=0);
  for(const effect of ["setQualityFocus(null)","setDeliverEvidenceId(null)","scrollRef.current[page]","navigateHashSmoothly("]){
   assert.ok(body.indexOf(effect)>guard, effect+' must follow veto');
