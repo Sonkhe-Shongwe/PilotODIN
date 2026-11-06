@@ -38,6 +38,8 @@ def test_native_page_requires_tauri_dev_and_denies_arbitrary_api_writes():
     assert "location.origin==='http://127.0.0.1:5181'" in src
     assert "isDesktop()" in src
     assert "approvedSaves<2" in src
+    assert "sessionStorage.getItem(saveCountKey)" in src
+    assert "sessionStorage.setItem(saveCountKey,String(approvedSaves))" in src
     assert "method==='GET'||method==='HEAD'" in src
     assert "url.pathname==='/api/projects/'+aid+'/semantic-business-context'" in src
     assert "obj.expected_version===0" in src

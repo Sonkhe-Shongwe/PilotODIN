@@ -20,7 +20,14 @@ const allowed=import.meta.env.DEV&&
 if(!allowed)throw new Error('P3 native QA requires an isolated synthetic Tauri window.');
 
 const originalFetch=window.fetch.bind(window);
-let approvedSaves=0;
+// Session storage retains only a synthetic POST counter across W2 reloads,
+// never a business description or real user data. Invalid counters fail closed.
+const saveCountKey='pilotodin-p3-native-qa-save-count';
+const previousSaves=sessionStorage.getItem(saveCountKey);
+let approvedSaves=previousSaves===null?0:Number(previousSaves);
+if(!Number.isSafeInteger(approvedSaves)||approvedSaves<0||approvedSaves>2){
+  throw new Error('Invalid synthetic P3 native save counter.');
+}
 window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{
   const raw=input instanceof Request?input.url:String(input);
   const url=new URL(raw,location.href);
@@ -46,7 +53,13 @@ window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{
           Array.isArray(fields)&&fields.length===1&&fields[0]?.column==='claim_amount'&&
           typeof fields[0]?.meaning==='string'&&fields[0].meaning.trim().length>=10&&
           fields[0].meaning.length<=300;
-        if(valid){approvedSaves++;return originalFetch(input,init)}
+        if(valid){
+          // Reserve the allowance before network activity. Failed saves require
+          // a fresh isolated QA run rather than an unlimited retry bypass.
+          approvedSaves++;
+          sessionStorage.setItem(saveCountKey,String(approvedSaves));
+          return originalFetch(input,init);
+        }
       }
     }
   }
