@@ -1,5 +1,8 @@
 # PilotODIN | Continue development
 
+**Owner native P3 W1–W4 evidence (6 November):** Actual Windows Tauri synthetic QA run has now reached its success path: console shows five owner `yes` answers W1a/W1b/W2/W3/W4, checks of original synthetic SHA256 and exactly two A-only HTTP 200 saves (source-verified program prerequisites), and a generated status-only ZIP. **Current status REVIEW_REQUIRED, not yet independently accepted**, because ZIP/manifest/local source SHA have not been inspected. Request owner **upload that status-only ZIP**; review it, add scoped acceptance conclusion in QA Issue #2 and update handoff/status. No further synthetic save clicks or source changes needed for this gate. P3 ACTIVE, P4 not activated, P8 NOT CERTIFIED.
+
+
 **P3 actual native editor evidence update (6 November):** owner Tauri screenshots show `UNVERIFIED` business meaning and editable user context, but first attempted Save was blocked by the QA fetch guard because Field 1 was `claim_id`, not the required `claim_amount`. Generic backend-down wording came from the wrapper's rejected Promise, not verified backend unavailability. [Harness-only fix `28f73c0bf195`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/28f73c0bf195d1e02ec209105f08945f46ba28e7) uses synthetic 403 JSON diagnostics; [P3 CI #42272688081](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42272688081) and [P1 #42272688254](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42272688254) **COMPLETED SUCCESS at source**. Owner should fix field dropdown **in existing running native window**, first test Stay, then Save A once, followed by W2/W3/W4 and status-only ZIP. Native semantic Save not yet verified; P3 ACTIVE, no P4/P8 release authorisation.
 
 
