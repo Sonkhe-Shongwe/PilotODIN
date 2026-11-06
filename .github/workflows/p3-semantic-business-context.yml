@@ -18,6 +18,13 @@ on:
       - tests/test_p3_semantic_profile.py
       - frontend/tests/p3-semantic-business-context-contracts.test.cjs
       - frontend/tests/p3-semantic-profile-contracts.test.cjs
+      - Run_PilotODIN_P3_Native_Semantic_QA.bat
+      - tools/Seed_P3_Native_Semantic_Context_Local.py
+      - tools/Run_P3_Native_Semantic_QA_Local.ps1
+      - frontend/p3_native_semantic_qa.html
+      - frontend/src/p3NativeSemanticQa.tsx
+      - frontend/src-tauri/tauri.p3-native-semantic-qa.conf.json
+      - tests/test_p3_native_qa_source.py
   workflow_dispatch:
 
 permissions:
@@ -54,7 +61,7 @@ jobs:
           python -m pip install -r backend/requirements-test.txt
           npm ci --prefix frontend --no-audit --no-fund
       - name: Compile modified Python modules
-        run: python -m py_compile backend/storage.py backend/main.py
+        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py
       - name: Run P3 new and affected previous Python contracts
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/p3-semantic-context-${{ github.run_id }}
@@ -62,6 +69,7 @@ jobs:
           python -m pytest -q tests/test_p3_semantic_business_context.py
           tests/test_p3_semantic_profile.py
           tests/test_p4_target_business_context.py
+          tests/test_p3_native_qa_source.py
       - name: Verify affected frontend API and UI source contracts
         run: >-
           node --test
