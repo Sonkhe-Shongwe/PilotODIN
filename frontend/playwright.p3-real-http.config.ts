@@ -9,7 +9,7 @@ if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
 }
 export default defineConfig({
  testDir:'./e2e',
- testMatch:'p3-real-http-semantic-context.spec.ts',
+ testMatch:'p3-real-http-semantic-*.spec.ts',
  timeout:90_000,
  expect:{timeout:12_000},
  fullyParallel:false,workers:1,retries:0,reporter:'list',

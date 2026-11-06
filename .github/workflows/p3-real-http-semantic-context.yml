@@ -10,6 +10,7 @@ on:
       - .github/workflows/p3-real-http-semantic-context.yml
       - frontend/playwright.p3-real-http.config.ts
       - frontend/e2e/p3-real-http-semantic-context.spec.ts
+      - frontend/e2e/p3-real-http-semantic-quality-version.spec.ts
       - frontend/e2e/p1-real-http-backend.ts
       - frontend/src/SemanticContextEditor.tsx
       - frontend/src/SemanticOverview.tsx
