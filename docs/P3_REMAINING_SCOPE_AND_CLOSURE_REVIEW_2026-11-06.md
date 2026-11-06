@@ -1,5 +1,10 @@
 # PilotODIN P3 | Remaining semantic scope and closure readiness
 
+## 6 November 2026 | Additional P3-04 W5 real HTTP Quality UI acceptance evidence
+[Source `805fb6582b47`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/805fb6582b47f1d16b3b10c041bd0db761646faf) adds a **CI-only synthetic, actual browser Quality UI version transition**, rather than relying only on backend API unit tests. [P3 real HTTP #42282095666](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42282095666) **2/2 PASS**, new W5 visual Quality reviewed Region whitespace proposal+one consented commit v0→v1; revisit `Your data` and verify **no migration of version-0 human descriptions**, stale GET/POST 409, original/working Quality preview and history correct. [P1 #42282095621](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42282095621) **160 Node, TS/Vite, 5 Chromium PASS**. Exact source `805fb6582b47f1d16b3b10c041bd0db761646faf`; test-only code, no owner data or training. [Dedicated W5 scoped evidence](./P3_W5_QUALITY_VERSION_BROWSER_ACCEPTANCE_2026-11-06.md).
+**Reconciled open risk:** W5 **hosted real HTTP browser is now scoped PASS**; W5 **physical native Windows Tauri/WebView2 remains NOT TESTED**. The owner should decide whether native W5 is required before P3 phase closure or formally defer it with impact/owner accountability. Broader P3-03 human adjudication, verification semantics, and frozen closure matrix remain owner choices, not inferred or silently waived.
+
+
 **Reviewed 6 November 2026.** Active phase: **P3** on `feature/live-dev-workspace-20261023`. This is a **scope reconciliation and evidence register**, not a frozen matrix, owner-approved waiver, phase closure or permission to start P4/P8. Follow [phase focus and six exit criteria](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md).
 
 ## Bounded implemented P3-03b review states
@@ -34,7 +39,7 @@ No earlier Windows acceptance is overwritten. [Owner-native W1a/W1b/W2/W3/W4](./
 | P3-03a human vs system domain, grain and exact field review | Scoped read-only source+real HTTP browser PASS | No independent semantic truth or automatic agreement |
 | P3-03b explicit unassessed and unknown/missing comparison visibility | Pure runtime contract, focused source/build and real HTTP owner-only-field browser **SCOPED PASS** | Owner must decide whether wider reconciliation/explicit human adjudication is within P3 1.0; do not treat text matching as verification |
 | P3-03 broader semantic adjudication and cross-view reuse | **OPEN**, no truth source or authorised P4 model/target propagation | Written owner scope decision (implement independently verifiable workflow, or defer named functionality/impact) before marking whole P3-03 complete |
-| P3-04 actual approved Quality v0→v1 version boundary | Python synthetic preview/explicit approval/commit regression **PASS** from earlier source; stale version requests return 409, old notes never silently migrate | **Native Windows W5 version-transition UI NOT TESTED**; decide whether required for P3 closure or explicitly defer with impact and owner signoff. Must not mutate any real dataset |
+| P3-04 actual approved Quality v0→v1 version boundary | Python backend synthetic v0→v1 PASS; **actual Quality UI + `Your data` real HTTP Chromium W5 PASS #42282095666** with one reviewed commit, stale v0 notes not migrated | **Native Windows W5 version-transition UI NOT TESTED**; decide whether required for P3 closure or explicitly defer with impact and owner signoff. Must not mutate any real dataset |
 | P3 phase-level development closure | **NOT READY**, matrix not owner-frozen and broader P3-03/W5 decisions open | Check no in-scope critical/high defects, accept/defer residuals, verify all six phase-policy exit criteria, owner approval, exact SHA and QA Issue #2 update |
 | P4 / P8 | **NOT AUTHORISED / NOT CERTIFIED** | Separate owner authorisation and release-specific evidence |
 
