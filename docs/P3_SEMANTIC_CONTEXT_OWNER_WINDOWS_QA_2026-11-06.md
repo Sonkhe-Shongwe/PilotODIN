@@ -21,6 +21,9 @@
 ## 6 November 2026 | P3-03a UI note
 The current source also displays user field meanings in the tentative-role table, and places the system's domain/possible unique key beside the owner's domain/row descriptions. Verify they remain clearly labelled **unverified** in W1/W2. A guessed unique key does not confirm row meaning; there is no automatic semantic match or disagreement decision. This UI feature has real Chromium CI PASS [#42252331820](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42252331820), but no physical owner Windows approval.
 
+## 6 November 2026 | Added unsaved-draft protection check (native pending)
+Source now tracks unsaved domain/row/field descriptions in the **primary** Data Dictionary via the same shared project and workspace consent marker used for other edited forms. Before W1's first Save, deliberately type valid unsaved domain text, attempt to switch to project B (once B is already imported), press **Stay/Cancel**, and confirm A's input remains. Then Save A and attempt the same switch again; it should succeed without a false dirty warning. Repeat once using keyboard navigation if the native shell is available. This is an **owner observation still to be performed**, not implied by GitHub [real hosted-browser 1/1 PASS #42255422240](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42255422240). Do not use installed release data or alter original projects. The native dialog may differ from the browser's confirmation wording; record its actual screen/state.
+
 ## Five narrowly scoped checks
 
 | Check | Owner action | Required result |
