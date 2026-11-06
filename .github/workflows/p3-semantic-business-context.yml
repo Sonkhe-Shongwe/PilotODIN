@@ -33,6 +33,8 @@ on:
       - frontend/src/p3NativeQualityW5Qa.tsx
       - frontend/src-tauri/tauri.p3-native-quality-w5-qa.conf.json
       - tests/test_p3_native_quality_w5_source.py
+      - tools/Verify_P3_Native_Quality_W5_Status.py
+      - tests/test_p3_w5_archive_verifier.py
   workflow_dispatch:
 
 permissions:
@@ -69,7 +71,7 @@ jobs:
           python -m pip install -r backend/requirements-test.txt
           npm ci --prefix frontend --no-audit --no-fund
       - name: Compile modified Python modules
-        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py tools/Seed_P3_Native_Quality_W5_Local.py
+        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py tools/Seed_P3_Native_Quality_W5_Local.py tools/Verify_P3_Native_Quality_W5_Status.py
       - name: Run P3 new and affected previous Python contracts
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/p3-semantic-context-${{ github.run_id }}
@@ -78,6 +80,7 @@ jobs:
           tests/test_p3_semantic_profile.py
           tests/test_p4_target_business_context.py
           tests/test_p3_native_qa_source.py tests/test_p3_native_quality_w5_source.py
+          tests/test_p3_w5_archive_verifier.py
       - name: Verify affected frontend API and UI source contracts
         run: >-
           node --test
