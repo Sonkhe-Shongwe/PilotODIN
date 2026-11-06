@@ -413,13 +413,13 @@ test('P2 simulated native Deliver consent preserves draft until fresh OS approva
   await page.getByRole('button',{name:'New project: import dataset'}).click();
   await expect.poll(commands).toBe(1);
   expect(page.url()).toContain('/studio/deliver');
-  await expect(note).toContainText('Human-authored synthetic interpretation');
+  await expect(note).toHaveValue('Human-authored synthetic interpretation must survive cancelled navigation.');
   await expect(primary.locator('.landing')).toHaveCount(0);
   // Double activation while one native dialog is pending cannot bypass it.
   await page.getByRole('button',{name:'New project: import dataset'}).click();
   expect(await commands()).toBe(1);
   await reply(false);
-  await expect(note).toContainText('Human-authored synthetic interpretation');
+  await expect(note).toHaveValue('Human-authored synthetic interpretation must survive cancelled navigation.');
   expect(page.url()).toContain('/studio/deliver');
 
   // An approval that returns after the user intentionally cleared the draft
