@@ -35,6 +35,7 @@ SUCCESS = {
     "stale_semantic_get": "PASS_HTTP_409",
     "stale_semantic_post": "PASS_HTTP_409",
     "current_semantic_context": "PASS_EMPTY_V1",
+    "historical_semantic_context": "PASS_V0_RETAINED_V1_ABSENT",
     "original_sha256": "PASS_UNCHANGED",
     "request_audit": "PASS_ONE_PROPOSAL_ONE_UI_COMMIT_ONE_REJECTED_STALE_POST",
     "owner_native_ui": "OWNER_REPORTED_PASS",

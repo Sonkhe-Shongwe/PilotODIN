@@ -49,7 +49,8 @@ def test_native_w5_runner_guard_and_evidence():
         "VITE_P3_NATIVE_W5_PROJECT","VITE_P3_NATIVE_W5_ISSUE",
         "npm run desktop:dev -- --config src-tauri/tauri.p3-native-quality-w5-qa.conf.json",
         "PASS_V0_TO_V1","PASS_EXACTLY_V0_V1","PASS_EMPTY_V1","PASS_HTTP_409",
-        "PASS_UNCHANGED","PASS_ONE_PROPOSAL_ONE_UI_COMMIT_ONE_REJECTED_STALE_POST",
+        "PASS_UNCHANGED","PASS_V0_RETAINED_V1_ABSENT","Verify_P3_Native_Quality_W5_History_Local.py",
+        "PASS_ONE_PROPOSAL_ONE_UI_COMMIT_ONE_REJECTED_STALE_POST",
         "OWNER_REPORTED_PASS","product_acceptance='NOT_TESTED'",
         "Stop-Process -Id $backendProcess.Id","Compress-Archive",
     ):

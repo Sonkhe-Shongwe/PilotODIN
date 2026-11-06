@@ -9,6 +9,7 @@ $frontend=Join-Path $root 'frontend'
 $pythonExe=Join-Path $root '.venv-live\Scripts\python.exe'
 $allocator=Join-Path $PSScriptRoot 'qa_foundation.py'
 $seeder=Join-Path $PSScriptRoot 'Seed_P3_Native_Quality_W5_Local.py'
+$historyVerifier=Join-Path $PSScriptRoot 'Verify_P3_Native_Quality_W5_History_Local.py'
 $config=Join-Path $frontend 'src-tauri\tauri.p3-native-quality-w5-qa.conf.json'
 $runDir=$null
 $backendProcess=$null
@@ -26,6 +27,7 @@ $record=[ordered]@{
  stale_semantic_get='NOT_CHECKED'
  stale_semantic_post='NOT_CHECKED'
  current_semantic_context='NOT_CHECKED'
+ historical_semantic_context='NOT_CHECKED'
  request_audit='NOT_CHECKED'
  owner_native_ui='NOT_OBSERVED'
  installer='NOT_BUILT'
@@ -79,7 +81,7 @@ function Denied-Expected([string]$path,[string]$method,[object]$payload){
 }
 try{
  if($env:OS -ne 'Windows_NT'){throw 'Requires physical Windows Tauri/WebView2; no native test ran.'}
- foreach($file in @($pythonExe,$allocator,$seeder,$config,
+ foreach($file in @($pythonExe,$allocator,$seeder,$historyVerifier,$config,
    (Join-Path $frontend 'p3_native_quality_w5_qa.html'),
    (Join-Path $frontend 'src\p3NativeQualityW5Qa.tsx'))){
   if(-not(Test-Path -LiteralPath $file -PathType Leaf)){
@@ -218,6 +220,21 @@ try{
  }
  Denied-Expected ('/projects/'+$id+'/semantic-business-context') 'POST' $stale
  $record.stale_semantic_post='PASS_HTTP_409'
+ # Existing v0 human descriptions must remain durable, not just absent on v1.
+ # Verify read-only SQLite state in this isolated disposable workspace.
+ Push-Location $root
+ try{
+  $historyOutput=@(& $pythonExe -B $historyVerifier $workspaceDir $manifestFile)
+  $historyCode=$LASTEXITCODE
+ }finally{Pop-Location}
+ if($historyCode -ne 0){throw 'Synthetic v0 semantic history was not preserved; DB read-only gate failed.'}
+ $historyResult=($historyOutput | Out-String | ConvertFrom-Json)
+ if($historyResult.state -ne 'PASS_V0_RETAINED_V1_ABSENT' -or
+    $historyResult.evidence -ne 'ISOLATED_SQLITE_READ_ONLY' -or
+    $historyResult.product_acceptance -ne 'NOT_TESTED'){
+  throw 'Synthetic v0 semantic history verifier did not prove the expected isolated state.'
+ }
+ $record.historical_semantic_context='PASS_V0_RETAINED_V1_ABSENT'
  if((Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash -ine $manifest.original_sha256){
   throw 'Original synthetic source changed after Quality commit.'
  }

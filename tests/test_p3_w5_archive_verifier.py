@@ -87,6 +87,7 @@ def test_refuses_untrusted_fixture_metadata(tmp_path,changed):
     {"source_worktree":"UNCOMMITTED_OWNER_WORK"},
     {"owner_native_ui":"NOT_OBSERVED"},
     {"request_audit":"NOT_CHECKED"},
+    {"historical_semantic_context":"NOT_CHECKED"},
     {"quality_version":"NOT_CHECKED"},
     {"product_acceptance":"ACCEPTED"},
     {"failure_category":"CONNECTION_ERROR"},
