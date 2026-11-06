@@ -32,7 +32,7 @@ test('exit guard only checks identity marker and shell connects every entry path
  const src=fs.readFileSync(p,'utf8');
  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
  assert.doesNotMatch(src,/localStorage|sessionStorage|fetch\(|post\(|window\.|predictVals|train\(/);
- assert.match(shell,/const navigateWithDockGuard=\(view:View\):boolean=>\{\s*if\(needsPrimaryStudioExitApproval\(/);
+ assert.match(shell,/const navigateWithDockGuard=\(view:View,afterNavigate\?:\(\)=>void,nativeApproved=false\):boolean=>\{\s*const primaryExit=needsPrimaryStudioExitApproval\(/);
  assert.match(shell,/if\(primaryExit\)editedPrimary\.current=null/);
  assert.match(shell,/const beforeRoutePush=\(event:Event\)=>\{/);
  assert.match(shell,/preapprovedRoutePush\.current=view==='investigate'\?'#\/canvas'/);
