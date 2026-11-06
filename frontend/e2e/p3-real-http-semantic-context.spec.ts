@@ -162,7 +162,8 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
    .toContainText('Not assessed: the system hint and user description are both unverified.');
   await expect(semantic.getByRole('row').filter({hasText:'policy_number'}).getByRole('cell').last())
    .toContainText('No user description; comparison unavailable.');
-  await expect(semantic.getByRole('row').filter({hasText:'claim_amount'}).getByRole('cell').last())
+  // USER DESCRIPTION stays in column 5; column 6 now exposes the review status.
+  await expect(semantic.getByRole('row').filter({hasText:'claim_amount'}).getByRole('cell').nth(4))
    .toContainText(fieldMeaning+' (user-described, not independently verified)');
   const savedBody=await (await request.get(API+'/api/projects/'+aid+'/semantics?expected_version=0')).json();
   expect(savedBody.user_context.domain_description).toBe(firstDomain);
