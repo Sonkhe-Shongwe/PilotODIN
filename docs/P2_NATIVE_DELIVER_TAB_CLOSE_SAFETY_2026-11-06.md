@@ -4,6 +4,13 @@
 **Branch:** `feature/live-dev-workspace-20261023`  
 **Phase:** P2 ACTIVE / REVIEW_REQUIRED; P1 CLOSED for bounded development; P8 installed offline Windows release NOT CERTIFIED.
 
+## 6 November 2026 | Owner defers optional native tab-X acceptance observation, with risk retained
+
+- **Owner decision:** Defer the **optional real Windows active dirty Deliver tab-X Keep/Leave observation** for **P2 development closure** on 6 November 2026, while retaining the verification gap and risk. This does **not** mean the tab-X feature failed or passed on native Windows, and is not a waiver of any later confirmed high/critical report-data defect. [Closure-readiness/risk owner record](./P2_CLOSURE_READINESS_AND_ACCESSIBILITY_QA_2026-11-06.md).
+- **Impact if the untested native path fails:** An unpresented/ignored leave prompt or incorrect focus/continuation could unexpectedly discard an unsaved Deliver draft. Impact could be **high** if reproduced; field likelihood/severity is unmeasured. The current source/automated tests provide confidence only at their prior exact source modalities/SHAs.
+- **Owner/follow-up:** **PilotODIN project owner and Windows release QA**, revisit before **P8 installed-product release certification** or at the first source change/real user failure relevant to native tab closure. Preserve source safety guards; the separately accepted sidebar Explore/New project navigation is an interim tested alternative, not proof of tab-X native correctness. Any observed unexpected loss triggers immediate safety triage even though the optional check was deferred.
+- **Current state:** `P2-N03 DEFERRED_BY_OWNER (physical native observation only)`, not `NATIVE_PASS`. P2 is still **ACTIVE / REVIEW_REQUIRED** because `P2-A01` physical Narrator/keyboard evidence is required. Unicode user-facing export remains deferred by owner but font release approval is still NOT_GRANTED; P8 NOT CERTIFIED.
+
 ## Source-confirmed inconsistency
 
 The full `UnifiedShell` already routes dirty Deliver exits initiated by the shell rail, header New project, direct Studio commands and external same-document URL changes through the one-use `confirm_native_deliver_exit` Tauri command. However, the **Close Deliver tab** button called `close(view)`, whose active dirty primary Deliver branch still required synchronous browser `window.confirm`. The browser prompt is not accepted as reliable physical Windows WebView2 native consent; tab close could remove the active report and its authored draft after a mismatched prompt.
