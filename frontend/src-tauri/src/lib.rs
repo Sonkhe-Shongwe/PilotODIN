@@ -132,6 +132,27 @@ async fn confirm_native_project_switch(
         .await.map_err(|_| "Native project-switch confirmation could not finish".to_string())
 }
 
+// Route changes from an edited Deliver workspace must not rely on the
+// synchronous browser confirm implementation in Windows WebView2.
+// This command only asks for consent. JS must recheck the live project, route
+// and dirty marker before performing any state transition.
+#[tauri::command]
+async fn confirm_native_deliver_exit(
+    window: tauri::WebviewWindow,
+) -> Result<bool, String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let prompt = window.dialog()
+        .message("Your Deliver report has unsaved changes. Switching workspaces will discard those edits.")
+        .title("PilotODIN - Unsaved Deliver report")
+        .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
+        .buttons(tauri_plugin_dialog::MessageDialogButtons::OkCancelCustom(
+            "Leave Deliver".into(), "Keep editing".into(),
+        ))
+        .parent(&window);
+    tauri::async_runtime::spawn_blocking(move || prompt.blocking_show())
+        .await.map_err(|_| "Native Deliver confirmation could not finish".to_string())
+}
+
 #[derive(Deserialize)]
 struct ModelManifest {
     model_file: String,
@@ -434,7 +455,8 @@ pub fn run() {
         .manage(NativeCloseState::default())
         .invoke_handler(tauri::generate_handler![
             launch_backend, launch_bundled_ai, save_report_as,
-            resolve_native_close_request, confirm_native_close, confirm_native_project_switch
+            resolve_native_close_request, confirm_native_close, confirm_native_project_switch,
+            confirm_native_deliver_exit
         ])
         .on_window_event(|window, event| {
             if window.label() != "main" { return; }
