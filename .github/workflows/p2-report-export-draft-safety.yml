@@ -23,6 +23,8 @@ on:
       - frontend/tests/p2-report-guided-outline.test.cjs
       - frontend/tests/p2-report-draft-navigation-safety.test.cjs
       - frontend/tests/p2-explore-deliver-handoff.test.cjs
+      - frontend/tests/p2-native-deliver-exit.test.cjs
+      - frontend/src-tauri/src/lib.rs
       - frontend/tests/p2-report-composer-behavior.test.cjs
       - frontend/tests/p2-report-navigation-contracts.test.cjs
       - frontend/tests/p2-saved-report-html-preview.test.cjs
@@ -66,6 +68,7 @@ jobs:
           tests/p2-report-guided-outline.test.cjs
           tests/p2-report-draft-navigation-safety.test.cjs
           tests/p2-explore-deliver-handoff.test.cjs
+          tests/p2-native-deliver-exit.test.cjs
           tests/p2-report-composer-behavior.test.cjs
           tests/p2-report-navigation-contracts.test.cjs
           tests/p2-saved-report-html-preview.test.cjs
