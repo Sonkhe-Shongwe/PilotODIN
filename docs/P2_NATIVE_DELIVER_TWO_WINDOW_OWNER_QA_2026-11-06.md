@@ -2,8 +2,25 @@
 
 **Created:** 6 November 2026  
 **Branch:** `feature/live-dev-workspace-20261023`  
-**State:** TEST-ONLY SOURCE READY / WINDOWS NATIVE OWNER ACCEPTANCE **PENDING**.  
+**State:** **THREE REQUIRED OWNER-NATIVE WINDOWS OBSERVATIONS SCOPED CLOSED** (6 November 2026); P2 remains REVIEW_REQUIRED.  
 **Phase:** P2 ACTIVE / REVIEW_REQUIRED. P1 CLOSED bounded development. P8 release NOT CERTIFIED.
+
+## 6 November 2026 | Owner Windows final three-outcome native two-window acceptance
+
+**Observed evidence:** The owner provided two actual Windows screenshots and confirmed completion of the isolated `Run_PilotODIN_P2_Native_Two_Window.bat` session. Window A is titled `PilotODIN P2 Two-Window QA - A Dirty Deliver`, shows `p2-two-window-A-synthetic` selected, the unsaved synthetic interpretation text `aaaa` still present in the live Deliver editor, and the exact cross-window warning `Another tab selected a different project. This window kept your unsaved Deliver report. Use Switch project here after saving; reloading may select the other tab's project.` This is direct owner-native visual evidence that a real cross-window selection event was handled without silently switching A. The screenshot alone does not independently display peer B or prove every action in the subsequent explicit consent sequence.
+
+**Final real owner PowerShell evidence:** Rust reports `Finished 'dev' profile` and `Running target\\debug\\pilotodin-desktop.exe`; three runner questions were answered `yes` and recorded verbatim:
+- `dirty_external_veto: OWNER_REPORTED_PASS` — a selection in peer window B caused an A warning while preserving A's project, route and identical dirty Deliver draft, without an automatic consent dialog. Warning, draft and project are screenshot-visible.
+- `explicit_switch_stay: OWNER_REPORTED_PASS` — using the selector in A to choose B produced the native Switch project / Stay consent, and Stay preserved original project and note. Owner-reported, not modal screenshot independently supplied for this exact run.
+- `explicit_switch_approve: OWNER_REPORTED_PASS` — on a separate deliberate selection and native approval, B opened only after consent and discarded A's unsaved report. Owner-reported, not independently screenshot-confirmed B view.
+
+The terminal prints `P2 native two-window Deliver: OWNER-REPORTED OBSERVATIONS COMPLETE (REVIEW REQUIRED).` and the BAT success line `Two-window native observations recorded; QA review remains required.`. The **status-only archive path was printed** at `C:\\Users\\Lenovo\\AppData\\Local\\pilotODIN\\DevQA\\archive\\P2-NATIVE-TWO-WINDOW-DELIVER-20261106T110500Z-c62024e517-two-window-status.zip`; the ZIP itself, manifest, exact recorded Git HEAD/worktree and hash checks were **not separately opened or independently attested**. The screenshot shows the console at its final `Press any key to continue` prompt; it is not an installed application/release evidence.
+
+**Scoped acceptance decision:** The three required **owner-native synthetic Tauri/WebView2 two-window observation scenarios are SCOPED CLOSED**, supported by visible project-A warning/draft persistence and three owner-reported final PASS lines. Previous source-level eight-test and QA-harness five-test passes are separate evidence with earlier verified provenance. No production code changes or GitHub CI executions occurred as a consequence of this owner observation. Do **not** rerun this accepted three-item scenario on unchanged source.
+
+**Other gates unchanged:** The independently accepted five-step Deliver Leave/Keep synthetic QA remains SCOPED CLOSED. This does not prove the optional dirty active-tab-close Keep/Leave sequence, Narrator/screen-reader acceptance, a globally installed or offline Windows package, release source hash, or full P2 completion. Original three unchanged Noto binaries + three complete OFL notices, six SHA-256 pins, Noto Sans SC face/RFN redistribution permission remain **NOT_GRANTED**; normal mixed-script PDF **NOT_ACCEPTED**, P8 Windows release **NOT CERTIFIED**. P1 bounded development CLOSED, **P2 ACTIVE / REVIEW_REQUIRED**.
+
+**Next:** Focus on the outstanding independent P2 font/OFL redistribution decision or another currently authorised P2 acceptance residual, without repeating passed five-step/three-step native QA, downloading fonts or building an installer. If a later regression changes these behaviours, use a new source-specific test and separately record it.
 
 ## Why this is separate from the completed five-step Deliver consent QA
 
