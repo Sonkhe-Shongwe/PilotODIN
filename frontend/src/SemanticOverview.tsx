@@ -21,6 +21,11 @@ export function SemanticOverview({projectId,version,columns}:{projectId:string;v
  const [data,setData]=useState<Semantics|null>(null);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
+ // Exact column-name pairing only. User descriptions are not tested for
+ // agreement with the inferred analytical role or treated as validated truth.
+ const ownerFieldDescriptions=new Map(
+  (data?.user_context?.field_definitions??[]).map(item=>[item.column,item.meaning] as const)
+ );
  useEffect(()=>{
   let live=true;
   setBusy(true);setError('');setData(null);
@@ -46,19 +51,30 @@ export function SemanticOverview({projectId,version,columns}:{projectId:string;v
    </div>
    <p className="muted-caption">{data.domain.reason} {data.domain.evidence_columns.length>0&&`Header clues: ${data.domain.evidence_columns.join(', ')}.`}</p>
    <p className="muted-caption">{data.grain.reason}</p>
+   {data.user_context&&<p className="muted-caption">Review system hypotheses beside your descriptions below. Matching words do not prove agreement; conflicting wording is not automatically classified. No model or dataset is changed.</p>}
    <details>
     <summary>Inspect tentative field meanings ({data.fields.length} fields with hints)</summary>
     <div className="po-col-table-scroll">
-     <table><thead><tr><th>FIELD</th><th>POSSIBLE ROLE</th><th>EVIDENCE BASIS</th><th>REVIEW NOTE</th></tr></thead>
-      <tbody>{data.fields.slice(0,20).flatMap(item=>item.hypotheses.map(h=><tr key={item.column+'-'+h.role}><td>{item.column}</td><td>{humanRole(h.role)} (unverified)</td><td>{humanRole(h.basis)}</td><td>{h.reason}</td></tr>))}</tbody>
+     <table><thead><tr><th>FIELD</th><th>POSSIBLE ROLE</th><th>EVIDENCE BASIS</th><th>REVIEW NOTE</th><th>USER DESCRIPTION (UNVERIFIED)</th></tr></thead>
+      <tbody>{data.fields.slice(0,20).flatMap(item=>item.hypotheses.map(h=><tr key={item.column+'-'+h.role}><td>{item.column}</td><td>{humanRole(h.role)} (unverified)</td><td>{humanRole(h.basis)}</td><td>{h.reason}</td><td>{ownerFieldDescriptions.has(item.column)?
+        <span>{ownerFieldDescriptions.get(item.column)} (user-described, not independently verified)</span>
+        :'No user description'}</td></tr>))}</tbody>
      </table>
     </div>
     {data.fields.length>20&&<p className="muted-caption">Showing the first 20 fields with hypotheses; no field was automatically modified.</p>}
    </details>
    {data.user_context&&<div className="po-col-metadata" role="region" aria-label="Owner-described business context">
     <div><small>User description, not independently verified</small>
-     {data.user_context.domain_description&&<p><strong>Domain:</strong> {data.user_context.domain_description}</p>}
-     {data.user_context.record_grain_description&&<p><strong>Row meaning:</strong> {data.user_context.record_grain_description}</p>}
+     {data.user_context.domain_description&&<div role="group" aria-label="Compare unverified domain statements">
+      <p><strong>System domain hypothesis:</strong> {data.domain.state==='hypothesis'?data.domain.label:'Unknown'}</p>
+      <p><strong>User-described domain:</strong> {data.user_context.domain_description}</p>
+      <p className="muted-caption">No automatic equivalence or disagreement finding; the dataset owner must review.</p>
+     </div>}
+     {data.user_context.record_grain_description&&<div role="group" aria-label="Compare record-key and row-meaning statements">
+      <p><strong>Possible unique row key:</strong> {data.grain.state==='hypothesis'?data.grain.identifier_column:'Unknown'}</p>
+      <p><strong>User-described row meaning:</strong> {data.user_context.record_grain_description}</p>
+      <p className="muted-caption">A unique row key does not independently establish what one row represents.</p>
+     </div>}
      {data.user_context.field_definitions.map(item=><p key={item.column}><strong>{item.column}:</strong> {item.meaning}</p>)}
     </div>
    </div>}

@@ -124,6 +124,15 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
   expect(saved.status(),await saved.text()).toBe(200);
   await expect(semantic.getByText('Saved for this dataset version as user-provided',{exact:false})).toBeVisible();
   await expect(semantic.getByRole('region',{name:'Owner-described business context'})).toContainText(firstDomain);
+  const domainReview=semantic.getByRole('group',{name:'Compare unverified domain statements'});
+  await expect(domainReview).toContainText(firstDomain);
+  await expect(domainReview).toContainText('No automatic equivalence or disagreement finding');
+  await expect(semantic.getByRole('group',{name:'Compare record-key and row-meaning statements'}))
+   .toContainText('A unique row key does not independently establish');
+  await semantic.locator('details').filter({hasText:'Inspect tentative field meanings'}).locator('summary').click();
+  await expect(semantic.getByRole('columnheader',{name:'USER DESCRIPTION (UNVERIFIED)'})).toBeVisible();
+  await expect(semantic.getByRole('row').filter({hasText:'claim_amount'}).getByRole('cell').last())
+   .toContainText(fieldMeaning+' (user-described, not independently verified)');
   const savedBody=await (await request.get(API+'/api/projects/'+aid+'/semantics?expected_version=0')).json();
   expect(savedBody.user_context.domain_description).toBe(firstDomain);
   expect(savedBody.domain).toEqual(original.domain);

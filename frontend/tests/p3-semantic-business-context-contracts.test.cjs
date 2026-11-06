@@ -47,3 +47,14 @@ test('P3 UI is integrated under existing versioned data dictionary',()=>{
  assert.match(s,/columns=\{dictionary\.columns\.map\(item=>item\.name\)\}/);
  assert.match(s,/version=\{dictionary\.version\}/);
 });
+
+test('P3-03a associates owner field definitions by exact column without asserting semantic agreement',()=>{
+ const screen=read('frontend/src/SemanticOverview.tsx');
+ assert.match(screen,/ownerFieldDescriptions=new Map/);
+ assert.match(screen,/ownerFieldDescriptions\.has\(item\.column\)/);
+ assert.match(screen,/USER DESCRIPTION \(UNVERIFIED\)/);
+ assert.match(screen,/user-described, not independently verified/);
+ assert.match(screen,/No automatic equivalence or disagreement finding/);
+ assert.match(screen,/unique row key does not independently establish/);
+ assert.doesNotMatch(screen,/setTarget\(|selectTarget\(|train_background\(/);
+});
