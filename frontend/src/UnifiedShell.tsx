@@ -370,7 +370,7 @@ export function UnifiedShell(){
     // A hashchange/history traversal may be committed before the shell sees it.
     // Restore the accepted URL and Studio page synchronously, leaving dirty
     // Deliver mounted. Only an approved native dialog may initiate a new push.
-    const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
+    const restore=acceptedRouteHash.current||'#/studio/deliver';
     window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+restore);
     window.dispatchEvent(new Event('pilotodin:route-reverted'));
     navigateWithDockGuard(requested);
