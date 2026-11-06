@@ -150,9 +150,9 @@ def test_actual_approved_quality_version_change_does_not_reuse_prior_semantic_co
         + ["Gauteng"] * 11
     )
     original = (
-        "claim_id,Region,claim_amount,policy_number\\n"
+        "claim_id,Region,claim_amount,policy_number\n"
         + "".join(
-            f"C{i:03d},{region},{100 + i},P{i % 4}\\n"
+            f"C{i:03d},{region},{100 + i},P{i % 4}\n"
             for i, region in enumerate(regions)
         )
     ).encode("utf-8")
