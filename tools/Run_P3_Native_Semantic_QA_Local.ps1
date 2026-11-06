@@ -98,7 +98,7 @@ try{
   }
   Write-Host 'Open GitHub Desktop > Changes to review what is modified.' -ForegroundColor Cyan
   Write-Host 'Preserve any owner work: commit it if ready, or stash it explicitly after review.' -ForegroundColor Cyan
-  Write-Host 'Do NOT discard changes, run git reset/clean, or disable this QA source guard.' -ForegroundColor Cyan
+  Write-Host 'Do NOT discard changes, run destructive Git cleanup commands, or disable this QA source guard.' -ForegroundColor Cyan
   throw 'Source checkout is dirty; no owner work was modified. Review or stash changes, then rerun.'
  }
  $record.source_worktree='CLEAN'
