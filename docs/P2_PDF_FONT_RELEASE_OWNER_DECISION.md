@@ -5,6 +5,24 @@
 **Current decision:** `NOT_GRANTED`  
 **Do not substitute this request for an actual recorded owner decision or legal review.**
 
+## 6 November 2026 | Independent upstream OFL and face metadata review, no release grant
+
+**Reviewed scope:** This is a **read-only, external-source verification**, not an owner approval or a new font source asset delivery. The exact upstream `google/fonts` Git commit `e7db6ca603fd4862010383ff17ffd6cc4ffac1c0` was queried directly for the original **three OFL.txt notice text files** and corresponding `METADATA.pb` source records. All three notices matched the existing candidate dossier's byte counts and original Git blob SHA-1s. No font binary was fetched, transformed, installed or redistributed; **none of the final six release SHA-256s is thereby established**.
+
+| Upstream original file | Git blob SHA-1 independently verified | Text bytes | First copyright/RFN finding |
+| --- | --- | ---: | --- |
+| `ofl/notosans/OFL.txt` | `6843f31878c9945e1e71e1baa275546b4eefead8` | 4,396 | Copyright 2022 The Noto Project Authors |
+| `ofl/notosanssc/OFL.txt` | `1c9f43281b8f216c5461fe9ac729afbade7724e4` | 4,388 | Copyright 2014–2021 Adobe; Reserved Font Name **Source** |
+| `ofl/notosanssymbols2/OFL.txt` | `7c95767f5c669c448148e7e6c8fc4ee2c85128b1` | 4,383 | Copyright 2022 The Noto Project Authors |
+
+**Original upstream metadata, same pinned commit:** `ofl/notosans/METADATA.pb` blob `87f93924f3fa3dbdfd2a5e38329d409159fa5126` identifies regular variable file `NotoSans[wdth,wght].ttf`, PostScript `NotoSans-Regular`. `ofl/notosanssc/METADATA.pb` blob `2da7e54d742a000810c6ec99ffae919158d9d4d6` identifies `NotoSansSC[wght].ttf`, `post_script_name=NotoSansSC-Thin`, declared `weight=400`, variable `wght` axis 100–900 and the **Source** RFN. `ofl/notosanssymbols2/METADATA.pb` blob `431ed8ccedced5b20f439d4df26871a98e68b6b2` identifies `NotoSansSymbols2-Regular.ttf` and PostScript `NotoSansSymbols2-Regular`. Metadata describes the upstream family and does **not** verify chosen ReportLab drawing weight or final packaged bytes.
+
+**Licence interpretation boundary:** The [OSI SIL OFL 1.1 text](https://opensource.org/license/OFL-1.1) expressly permits original and modified fonts to be bundled with software provided the copyright notice and licence accompany each copy and the RFN restriction is respected for **modified versions** (see licence conditions 2 and 3). The proposal remains **unchanged upstream originals**, not derived/renamed fonts. This is a general licence reading, **not an independent legal opinion, release clearance or actual owner approval**. The reserved `Source` name remains a review item if anyone proposes a conversion/renaming/derivative. The previous real synthetic PDF's thin CJK appearance requires a deliberate unchanged-variable-font face/weight presentation decision before release.
+
+**What remains unavailable and must not be fabricated:** No immutable **final six release SHA-256/size/path** attestations from actual distribution-ready bytes; no signed independent owner/legal review reference; no chosen final CJK appearance decision; no proven accessible in-app Third-Party Notices location and full three-notice distribution; no packaged offline installed Unicode PDF, concurrent export or corrupt-asset native evidence. The preexisting `28/28` source and authenticated HTTP Windows test result is accepted **at its original scope** and must not be rerun merely to repeat this source notice review. `backend.pdf_release_font_loader.RELEASE_APPROVAL_STATUS="NOT_GRANTED"`, empty reference and empty pins remain mandatory. The legacy PDF path stays active. **No font binaries or licence files were committed in this review.**
+
+**Next binding decision:** Independent owner/designated reviewer either (a) documents explicit approval of the exact original unchanged three fonts plus three full notices, chosen SC face and accessible notice distribution, and separately approves final actual six-file SHA-256 identities before a deliberate release-asset source commit; or (b) **defers end-user mixed Unicode PDF** while retaining legacy export. Neither branch is silently selected here. P2 remains **ACTIVE / REVIEW_REQUIRED** with the Unicode release dependency **BLOCKED ON OWNER DECISION**; no installer or phase transition is authorised.
+
 ## The precise choice
 
 The proposed release uses **three ORIGINAL UNMODIFIED font binaries** from
