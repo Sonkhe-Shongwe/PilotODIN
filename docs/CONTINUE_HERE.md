@@ -1,5 +1,8 @@
 # PilotODIN | Continue development
 
+**Accepted P3 native W1–W4 (6 November 2026):** Owner-uploaded status-only ZIP reviewed independently, [scoped acceptance record](./P3_NATIVE_SEMANTIC_WINDOWS_QA_REVIEW_2026-11-06.md) `P3-NATIVE-SEMANTIC-W1-W4-ACCEPTED-2026-11-06`; all five owner-reported native observations, run-source SHA `57817544768af1681f60cb4600dbc4dde984a7cb`, matching Windows CRLF synthetic fixture hashes, exactly two runner-audited A-only saves, zero native exit. Do not rerun accepted synthetic W1–W4; original archive still says REVIEW_REQUIRED/product NOT_TESTED because **this is a separate narrow QA disposition**, not release certification. Remaining P3-03 reconciliation/owner scope and native version-change W5 require separate decision before P3 closure. P3 ACTIVE, P4 not authorised, P8 NOT CERTIFIED.
+
+
 **Owner native P3 W1–W4 evidence (6 November):** Actual Windows Tauri synthetic QA run has now reached its success path: console shows five owner `yes` answers W1a/W1b/W2/W3/W4, checks of original synthetic SHA256 and exactly two A-only HTTP 200 saves (source-verified program prerequisites), and a generated status-only ZIP. **Current status REVIEW_REQUIRED, not yet independently accepted**, because ZIP/manifest/local source SHA have not been inspected. Request owner **upload that status-only ZIP**; review it, add scoped acceptance conclusion in QA Issue #2 and update handoff/status. No further synthetic save clicks or source changes needed for this gate. P3 ACTIVE, P4 not activated, P8 NOT CERTIFIED.
 
 
