@@ -14,7 +14,7 @@ const bid=String(import.meta.env.VITE_P3_NATIVE_QA_PROJECT_B??'');
 const allowed=import.meta.env.DEV&&
   import.meta.env.VITE_PILOTODIN_NATIVE_SMOKE==='1'&&
   import.meta.env.VITE_P3_NATIVE_SEMANTIC_QA==='1'&&
-  location.origin==='http://127.0.0.1:5181'&&
+  location.origin==='http://127.0.0.1:5178'&&
   /^[a-f0-9]{32}$/.test(aid)&&/^[a-f0-9]{32}$/.test(bid)&&aid!==bid&&
   isDesktop()&&!!document.getElementById('root');
 if(!allowed)throw new Error('P3 native QA requires an isolated synthetic Tauri window.');

@@ -2,8 +2,8 @@
   "$schema": "https://schema.tauri.app/config/2",
   "identifier": "com.pilotodin.p3semanticqa",
   "build": {
-    "beforeDevCommand": "npm run dev -- --port 5181",
-    "devUrl": "http://127.0.0.1:5181/p3_native_semantic_qa.html"
+    "beforeDevCommand": "npm run dev -- --port 5178",
+    "devUrl": "http://127.0.0.1:5178/p3_native_semantic_qa.html"
   },
   "app": {
     "windows": [

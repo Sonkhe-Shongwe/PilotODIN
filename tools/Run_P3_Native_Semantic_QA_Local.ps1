@@ -87,8 +87,8 @@ try{
   throw 'Source checkout is dirty; no owner work was modified. Use a clean QA checkout.'
  }
  $record.source_worktree='CLEAN'
- if(Port-Occupied 8000 -or Port-Occupied 5181){
-  throw 'Ports 8000 or 5181 already in use. Refusing to stop another process.'
+ if(Port-Occupied 8000 -or Port-Occupied 5178){
+  throw 'Ports 8000 or 5178 already in use. Refusing to stop another process.'
  }
  $tokens=$null
  $parserErrors=$null
