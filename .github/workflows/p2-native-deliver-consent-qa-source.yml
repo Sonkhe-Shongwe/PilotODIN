@@ -1,0 +1,57 @@
+name: P2 Native Deliver Consent QA Windows Source Preflight
+
+# No Tauri launch, no model assets, no product data, no installer.
+# Owner physical Windows WebView2 acceptance remains a separate manual gate.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p2-native-deliver-consent-qa-source.yml
+      - tools/Run_P2_Native_Deliver_Consent_Local.ps1
+      - tools/Seed_P2_Native_Deliver_Consent_Local.py
+      - Run_PilotODIN_P2_Native_Deliver_Consent.bat
+      - frontend/src-tauri/tauri.p2-native-deliver-consent.conf.json
+      - frontend/src/p2NativeDeliverConsentQa.tsx
+      - frontend/p2_native_deliver_consent_qa.html
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-syntax-and-isolation:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Parse runner using actual Windows PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runner = 'tools/Run_P2_Native_Deliver_Consent_Local.ps1'
+          $tokens = $null
+          $issues = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path (Get-Location) $runner), [ref]$tokens, [ref]$issues
+          ) | Out-Null
+          if ($issues.Count -ne 0) {
+            $issues | ForEach-Object { Write-Host $_.Message }
+            throw 'P2 native consent Windows PowerShell runner does not parse.'
+          }
+          Write-Host 'Windows PowerShell native consent runner source: SYNTAX PASS'
+      - name: Validate isolated QA manifest and Python source without importing backend
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cfg = Get-Content -Raw 'frontend/src-tauri/tauri.p2-native-deliver-consent.conf.json' | ConvertFrom-Json
+          if ($cfg.identifier -ne 'com.pilotodin.p2deliverconsentqa' -or $cfg.bundle.active -ne $false -or
+              $cfg.build.devUrl -ne 'http://127.0.0.1:5177/p2_native_deliver_consent_qa.html' -or
+              @($cfg.bundle.externalBin).Count -ne 0 -or @($cfg.bundle.resources).Count -ne 0) {
+            throw 'Tauri config is not the isolated non-distributable P2 consent QA variant.'
+          }
+          python -c "import ast,pathlib; ast.parse(pathlib.Path('tools/Seed_P2_Native_Deliver_Consent_Local.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw 'Synthetic Python seeder syntax failed.' }
+          Write-Host 'Windows QA source and non-distributable Tauri config: PASS'
