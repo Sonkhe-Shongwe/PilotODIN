@@ -49,8 +49,11 @@ def main() -> int:
     need(os.name == "nt", "Owner Windows is required")
     need(not os.getenv("PILOTODIN_HOME") and not os.getenv("PILOTODIN_DESKTOP_SESSION"),
          "Refusing an existing PilotODIN user or desktop workspace")
+    # Direct script execution starts with tools/ on sys.path, not repo root.
+    # Add the verified checkout only, before importing the local backend.
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
     from qa_foundation import create_run, default_root
-    from pathlib import Path
     git_head = "NOT_ATTESTED"
     try:
         branch = subprocess.run(["git", "-C", str(ROOT), "branch", "--show-current"],
