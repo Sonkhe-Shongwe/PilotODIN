@@ -472,9 +472,16 @@ export function UnifiedShell(){
  };
  // The primary App has its own local go() path; it must consult the shell BEFORE
  // committing a route which would activate (and therefore unmount) its edited dock.
- const approvePrimaryStudioNavigation=(view:View):boolean=>{
+ const approvePrimaryStudioNavigation=(view:View,afterNavigate?:()=>void):boolean=>{
   if(!workspaceReady)return false;
   if(needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,view,workspaceReady)){
+   if(active==='deliver'&&isDesktop()){
+    // Studio's go() is synchronous. The shell owns the one-use native dialog,
+    // route commit and optional importer action after explicit permission.
+    // Return false now so App cannot mutate or unmount the dirty report.
+    navigateWithDockGuard(view,afterNavigate);
+    return false;
+   }
    if(!window.confirm(primaryExitMessage(active)))return false;
    preapprovedRoutePush.current=`#/studio/${view}`;
   }
