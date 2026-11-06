@@ -1,5 +1,8 @@
 # PilotODIN | Continue development
 
+**Observed owner P3 native QA preflight BLOCK (6 November 2026):** screenshot showed dirty local Git checkout, not a native WebView2 failure, no local SHA or changed filenames supplied, no DevQA archive expected. The safe diagnostic fix [source `29ee9c3ee38d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/29ee9c3ee38da356b1a47c97c9fb9c23f163b5ac) now gives a bounded local `git status` summary without changing files. [P3 CI #42268719075](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42268719075) **COMPLETED SUCCESS**; first diagnostic [#42268529423](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42268529423) failed a warning-text static assertion, subsequently fixed. Owner must review/stash or commit intentional local changes in GitHub Desktop, sync and rerun native BAT. No P3 W1-W4 owner WebView2 acceptance yet.
+
+
 **P3-04 native test next:** Use the **corrected port 5178** [P3 native QA BAT](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/feature/live-dev-workspace-20261023/Run_PilotODIN_P3_Native_Semantic_QA.bat) in a clean authorised Windows checkout. Source [`18b101a54fec`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/18b101a54fece45cbeec9fbdb29974f9960be691) repaired an incompatible port 5181 without weakening backend CORS; all exact-source [P3 #42266693174](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42266693174), [P1 #42266693163](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42266693163), and [Windows host compile #42266693190](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42266693190) completed SUCCESS. **Owner physical WebView2 W1–W4 still pending; no native product acceptance, installer or release claim.**
 
 
