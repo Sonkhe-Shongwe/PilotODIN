@@ -20,6 +20,13 @@ const allowed=import.meta.env.DEV&&
 if(!allowed)throw new Error('P3 native QA requires an isolated synthetic Tauri window.');
 
 const originalFetch=window.fetch.bind(window);
+// A blocked synthetic request is an explicit local 403, not a network failure.
+// The shared API client can then display the controlled QA reason accurately.
+function rejectSyntheticQaRequest(message:string):Promise<Response>{
+  return Promise.resolve(new Response(JSON.stringify({detail:message}),{
+    status:403,headers:{'Content-Type':'application/json'},
+  }));
+}
 // Session storage retains only a synthetic POST counter across W2 reloads,
 // never a business description or real user data. Invalid counters fail closed.
 const saveCountKey='pilotodin-p3-native-qa-save-count';
@@ -39,7 +46,7 @@ window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{
     if(method==='POST'&&url.pathname==='/api/projects/'+aid+'/semantic-business-context'&&
        url.search===''&&approvedSaves<2&&typeof init?.body==='string'){
       let body:unknown=null;
-      try{body=JSON.parse(init.body)}catch{return Promise.reject(new Error('Invalid QA save body.'))}
+      try{body=JSON.parse(init.body)}catch{return rejectSyntheticQaRequest('Synthetic P3 QA blocked an invalid Save request. No API request was sent.')}
       if(body&&typeof body==='object'&&!Array.isArray(body)){
         const obj=body as Record<string,unknown>;
         const keys=Object.keys(obj).sort().join(',');
@@ -60,10 +67,13 @@ window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{
           sessionStorage.setItem(saveCountKey,String(approvedSaves));
           return originalFetch(input,init);
         }
+        return rejectSyntheticQaRequest(
+          'Synthetic P3 QA blocked this Save before contacting the backend. Select claim_amount (not claim_id), use exactly one complete field definition, and enter business-area and row descriptions of at least 10 characters. Only synthetic project A, version 0, permits two saves.'
+        );
       }
     }
   }
-  return Promise.reject(new Error('Synthetic P3 native QA blocks all other writes and remote requests.'));
+  return rejectSyntheticQaRequest('Synthetic P3 native QA blocks this request. Only two complete business-description saves to synthetic project A are allowed; no request was sent.');
 }) as typeof fetch;
 
 // The app's native QA identity has an isolated localStorage profile.

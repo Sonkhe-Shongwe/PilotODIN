@@ -44,7 +44,14 @@ def test_native_page_requires_tauri_dev_and_denies_arbitrary_api_writes():
     assert "url.pathname==='/api/projects/'+aid+'/semantic-business-context'" in src
     assert "obj.expected_version===0" in src
     assert "fields[0]?.column==='claim_amount'" in src
-    assert "Synthetic P3 native QA blocks all other writes and remote requests" in src
+    assert "function rejectSyntheticQaRequest(message:string):Promise<Response>" in src
+    assert "new Response(JSON.stringify({detail:message})" in src
+    assert "status:403" in src
+    assert "Select claim_amount (not claim_id)" in src
+    assert "No API request was sent" in src
+    assert "Only two complete business-description saves to synthetic project A" in src
+    assert "Synthetic P3 native QA blocks this request" in src
+    assert "Promise.reject(new Error('Synthetic P3 native QA" not in src
     assert "<UnifiedShell/>" in src
     assert "startDesktopBackend" not in src
     assert "localStorage.setItem('pilotodin-current',aid)" in src
