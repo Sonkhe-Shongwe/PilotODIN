@@ -47,8 +47,8 @@ test('INTEGRATION: ReportWorkspace only resets handoff after validated evidence 
  assert.match(report,/pendingDiscard\.kind==='handoff'\?'Using a saved Explore analysis'/);
 });
 test('INTEGRATION: App does not queue Explore evidence if primary navigation was denied',()=>{
- assert.match(app,/function go\(next:Stage\):boolean\{/);
- assert.match(app,/if\(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate\(next\)\)return false/);
+ assert.match(app,/function go\(next:Stage,afterNavigate\?:\(\)=>void\):boolean\{/);
+ assert.match(app,/if\(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate\(next,complete\)\)return false/);
  assert.match(app,/onSendToDeliver=\{snapshotId=>\{if\(\/\^\[a-f0-9\]\{32\}\$\/\.test\(snapshotId\)&&go\('deliver'\)\)setDeliverEvidenceId\(snapshotId\)\}\}/);
 });
 test('INTEGRATION: shell guards Deliver exit and receives only dirty markers, not narrative',()=>{
@@ -65,12 +65,12 @@ test('INTEGRATION: shell guards Deliver exit and receives only dirty markers, no
 });
 test('INTEGRATION: both New project entry points stage import only after navigation approval',()=>{
  const begin=app.indexOf('function requestNewDataset():void{');
- const end=app.indexOf('function go(next:Stage):boolean{',begin);
+ const end=app.indexOf('function go(next:Stage,afterNavigate?:()=>void):boolean{',begin);
  assert.ok(begin>=0&&end>begin,'Studio has an explicit guarded New dataset entry point');
  const handler=app.slice(begin,end);
- assert.match(handler,/if\(embedded\|\|!go\('overview'\)\)return/);
- assert.ok(handler.indexOf("go('overview')")<handler.indexOf('setUploadOpen(true)'),
-  'Studio must not reveal upload before the shell approves navigation');
+ assert.match(handler,/if\(embedded\)return/);
+ assert.match(handler,/go\('overview',\(\)=>\{setFile\(null\);setUploadOpen\(true\)\}\)/,
+  'Studio must stage the importer only via a post-navigation callback');
  assert.match(app,/className="new-project" disabled=\{embedded\} onClick=\{requestNewDataset\}/);
  assert.match(shell,/onClick=\{\(\)=>navigateWithDockGuard\('overview',\(\)=>setNewProjectOpen\(true\)\)\}/);
  assert.doesNotMatch(shell,/setNewProjectOpen\(true\);navigate\('overview'\)/);
