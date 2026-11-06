@@ -72,7 +72,7 @@ test('INTEGRATION: both New project entry points stage import only after navigat
  assert.ok(handler.indexOf("go('overview')")<handler.indexOf('setUploadOpen(true)'),
   'Studio must not reveal upload before the shell approves navigation');
  assert.match(app,/className="new-project" disabled=\{embedded\} onClick=\{requestNewDataset\}/);
- assert.match(shell,/onClick=\{\(\)=>\{if\(navigateWithDockGuard\('overview'\)\)setNewProjectOpen\(true\)\}\}/);
+ assert.match(shell,/onClick=\{\(\)=>navigateWithDockGuard\('overview',\(\)=>setNewProjectOpen\(true\)\)\}/);
  assert.doesNotMatch(shell,/setNewProjectOpen\(true\);navigate\('overview'\)/);
 });
 
