@@ -336,6 +336,13 @@ export function UnifiedShell(){
    const primaryExit=needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,requested,workspaceReady);
    const dockPromotion=planExternalRouteActivation(active,requested,dock.secondary,editedDock.current,projectId,workspaceReady);
    if(!primaryExit&&dockPromotion!=='confirm-promote')return;
+   if(primaryExit&&active==='deliver'&&isDesktop()){
+    // Cancel an unapproved hash PUSH before it enters browser history.
+    // The existing native one-use shell guard owns any later route commit.
+    event.preventDefault();
+    navigateWithDockGuard(requested);
+    return;
+   }
    if(!window.confirm(primaryExit?primaryExitMessage(active):
     'You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     event.preventDefault();
@@ -359,8 +366,18 @@ export function UnifiedShell(){
    const primaryExit=needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,requested,workspaceReady);
    const alreadyApproved=preapprovedRoutePush.current===requestedHash;
    preapprovedRoutePush.current=null;
+   if(primaryExit&&!alreadyApproved&&active==='deliver'&&isDesktop()){
+    // A hashchange/history traversal may be committed before the shell sees it.
+    // Restore the accepted URL and Studio page synchronously, leaving dirty
+    // Deliver mounted. Only an approved native dialog may initiate a new push.
+    const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
+    window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+restore);
+    window.dispatchEvent(new Event('pilotodin:route-reverted'));
+    navigateWithDockGuard(requested);
+    return;
+   }
    if((primaryExit||decision==='confirm-promote')&&!alreadyApproved&&!window.confirm(
-     primaryExit?PRIMARY_CANVAS_EXIT_MESSAGE:
+     primaryExit?primaryExitMessage(active):
       'You changed fields in the docked workspace. This action may discard those entries. Continue?')){
     const restore=acceptedRouteHash.current||(active==='investigate'?'#/canvas':`#/studio/${active}`);
     window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+restore);
