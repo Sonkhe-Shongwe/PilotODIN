@@ -150,7 +150,7 @@ test('capture listeners run before ordinary App hash listeners and are removed o
 });
 test('the shell retains existing project, tab, and keyboard navigation without editing data',()=>{
  assert.match(shell,/const chooseProject=\(id:string,approvedNative=false\)=>/);
- assert.match(shell,/const navigateWithDockGuard=\(view:View\):boolean=>/);
+ assert.match(shell,/const navigateWithDockGuard=\(view:View,afterNavigate\?:\(\)=>void,nativeApproved=false\):boolean=>/);
  assert.match(shell,/onPrimaryNavigate=\{approvePrimaryStudioNavigation\}/);
  assert.match(shell,/const onWorkspaceTabKeyDown=/);
  assert.match(shell,/const onSidebarKeyDown=/);
