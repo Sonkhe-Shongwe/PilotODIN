@@ -103,7 +103,7 @@ try {
   if($runName -notmatch '^P2-NATIVE-DELIVER-CONSENT-[0-9TZ]+-[a-f0-9]{10}$'){
     throw 'Allocated synthetic run has an unexpected identity.'
   }
-  $home=Join-Path $runDir 'workspace'
+  $isolatedWorkspaceHome=Join-Path $runDir 'workspace'
   $fixture=Join-Path $runDir 'fixtures\synthetic-consent-manifest.json'
   $logDir=Join-Path $runDir 'logs'
   $backendLog=Join-Path $logDir 'backend-stdout.log'
@@ -112,7 +112,7 @@ try {
   $nativeLog=Join-Path $logDir 'native-shell-build.log'
   Write-Host ('P2 NATIVE CONSENT QA RUN: '+$runDir) -ForegroundColor Cyan
   Write-Host 'This is NOT the normal PilotODIN installed desktop or your real project catalogue.'
-  $env:PILOTODIN_HOME=$home
+  $env:PILOTODIN_HOME=$isolatedWorkspaceHome
   Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
   Remove-Item Env:\PILOTODIN_DESKTOP_ALLOW_DEV -ErrorAction SilentlyContinue
   $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
@@ -174,8 +174,8 @@ try {
   if($results -contains $false){throw 'One or more actual native observation steps failed or were not performed.'}
   $record.owner_native_observations='OWNER_REPORTED_PASS_REVIEW_REQUIRED'
   $sourceRel=[string]$manifest.source_relative
-  $dataset=[IO.Path]::GetFullPath((Join-Path $home $sourceRel))
-  $homeFull=[IO.Path]::GetFullPath($home).TrimEnd('\')+'\'
+  $dataset=[IO.Path]::GetFullPath((Join-Path $isolatedWorkspaceHome $sourceRel))
+  $homeFull=[IO.Path]::GetFullPath($isolatedWorkspaceHome).TrimEnd('\')+'\'
   if(-not $dataset.StartsWith($homeFull,[StringComparison]::OrdinalIgnoreCase)){
     throw 'Synthetic manifest source resolved outside the QA workspace.'
   }
