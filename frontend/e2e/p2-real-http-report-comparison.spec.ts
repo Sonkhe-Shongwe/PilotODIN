@@ -359,3 +359,95 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   expect(audit.remote).toEqual([]);
   expect((await (await request.get(API+`/api/projects/${pid}/reports`)).json())).toEqual(initialList);
  });
+
+
+test('P2 simulated native Deliver consent preserves draft until fresh OS approval without browser fallback',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only the isolated GitHub CI disposable backend may run this test.');
+  const upload=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'PilotODIN_P2_Native_Consent_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(upload.status(),await upload.text()).toBe(201);
+  const pid=(await upload.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const beforeReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const beforeQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  const note=primary.getByLabel('Interpretation and limitations');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await note.fill('Human-authored synthetic interpretation must survive cancelled navigation.');
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+
+  // Simulate the native IPC bridge AFTER the web app has mounted. This does
+  // not claim that Rust, WebView2 or native Windows UI was executed.
+  await page.evaluate(()=>{
+   type ExitProbe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(name:string)=>Promise<boolean>};
+    __p2NativeInvocations?:string[];
+    __p2NativeReplies?:Array<(approved:boolean)=>void>;
+   };
+   const w=window as ExitProbe;
+   w.__p2NativeInvocations=[];
+   w.__p2NativeReplies=[];
+   w.__TAURI_INTERNALS__={invoke:(name:string)=>{
+    if(name!=='confirm_native_deliver_exit')return Promise.reject(new Error('Unexpected synthetic native IPC'));
+    w.__p2NativeInvocations!.push(name);
+    return new Promise<boolean>(resolve=>w.__p2NativeReplies!.push(resolve));
+   }};
+  });
+  const commands=()=>page.evaluate(()=>(window as Window&{__p2NativeInvocations?:string[]}).__p2NativeInvocations?.length??0);
+  const reply=(approved:boolean)=>page.evaluate((yes:boolean)=>{
+   const w=window as Window&{__p2NativeReplies?:Array<(answer:boolean)=>void>};
+   const complete=w.__p2NativeReplies?.shift();
+   if(!complete)throw new Error('No synthetic native consent request is pending');
+   complete(yes);
+  },approved);
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  await expect.poll(commands).toBe(1);
+  expect(page.url()).toContain('/studio/deliver');
+  await expect(note).toContainText('Human-authored synthetic interpretation');
+  await expect(primary.locator('.landing')).toHaveCount(0);
+  // Double activation while one native dialog is pending cannot bypass it.
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  expect(await commands()).toBe(1);
+  await reply(false);
+  await expect(note).toContainText('Human-authored synthetic interpretation');
+  expect(page.url()).toContain('/studio/deliver');
+
+  // An approval that returns after the user intentionally cleared the draft
+  // is stale, so it must not open the import panel.
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  await expect.poll(commands).toBe(2);
+  await primary.getByRole('button',{name:'New report'}).click();
+  const discard=primary.getByRole('dialog',{name:'Discard unsaved report edits?'});
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(note).toHaveValue('');
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toHaveCount(0);
+  await reply(true);
+  expect(page.url()).toContain('/studio/deliver');
+  await expect(primary.locator('.landing')).toHaveCount(0);
+
+  // Only fresh explicit native consent may open the real Studio importer.
+  await note.fill('New disposable report draft.');
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toBeVisible();
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  await expect.poll(commands).toBe(3);
+  await reply(true);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
+  await expect(primary.locator('.landing .upload-card')).toBeVisible();
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
+ });
