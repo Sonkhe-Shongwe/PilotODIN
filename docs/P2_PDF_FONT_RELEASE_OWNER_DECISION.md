@@ -2,8 +2,21 @@
 
 **Date:** 27 October 2026  
 **Scope:** Release-font and redistribution decision only.  
-**Current decision:** `NOT_GRANTED`  
+**Unicode font release/redistribution approval:** `NOT_GRANTED`  
+**Initial 1.0 Unicode product scope:** **DEFERRED BY OWNER (6 November 2026)**  
 **Do not substitute this request for an actual recorded owner decision or legal review.**
+
+## 6 November 2026 | Owner product-scope decision: defer end-user Unicode PDF from initial PilotODIN 1.0
+
+**Decision source:** Owner's explicit ChatGPT approval on 6 November 2026, in response to whether PilotODIN 1.0 can launch with standard PDF and HTML first: **"are you comfortable releasing 1.0 with standard PDF and HTML reporting first? im good here"**. This affirmatively authorises **deferring user-facing mixed-language Unicode PDF from the initial 1.0 product/development scope**, retaining the existing standard/legacy PDF and HTML reporting paths. It **does not** authorise shipment, an installer, release certification, an unreviewed font package, or closure of the whole P2 phase. The decision is recorded as `P2-UNICODE-1.0-DEFER-2026-11-06` for project traceability; this is an internal decision ID, **not** an external legal approval or digital signature.
+
+**Binding initial-1.0 requirements:** Guided Deliver, immutable saved report revisions, standard authenticated HTML export and **existing legacy PDF export** remain in scope, with their accepted specific source/HTTP and native evidence unchanged. The normal mixed-language Unicode PDF renderer is **not required for 1.0 development acceptance**. Preserve the previously accepted developer-only prototype and its tests in the repository without changing, deleting, packaging, enabling or rerunning them merely to execute this deferral. Do not promise full mixed-script glyph fidelity from the legacy PDF path.
+
+**Deferred beyond initial 1.0:** Any normal/user-facing Unicode PDF activation; bundling three original Noto binaries and three complete original OFL notices; signed/independent redistribution and RFN/face/weight review, final six approved SHA-256s and complete accessible Third-Party Notices; frozen/installed Unicode export and concurrency/corrupt-asset proof. These requirements remain tracked as deferred, not waived or completed. A future owner-authorised scope/release change must restore the acceptance gates before activation. The loader must **remain** `RELEASE_APPROVAL_STATUS="NOT_GRANTED"`, blank `RELEASE_APPROVAL_REFERENCE` and `RELEASE_PINNED_FILES=()`. No font asset or licence binary may be staged under this decision.
+
+**Closure impact:** The missing font distribution approval is **no longer a blocker for *initial-1.0 P2 development scope***, because end-user Unicode PDF is expressly out of scope; it remains an **unresolved future-feature licensing dependency**. P2 **stays ACTIVE / REVIEW_REQUIRED** until the remaining in-scope acceptance matrix, any actual critical/high defects, and open keyboard/accessibility or optional tab-close residuals have been classified according to the phase-closure policy. Owner acceptance of legacy exports does **not** certify the packaged/offline/8 GiB P8 release or authorise moving into P3.
+
+**Historical-record rule:** Earlier `PENDING` product-scope decision requests and statements requiring the owner to choose include/defer below in this document are **superseded by this dated decision**. Earlier technical findings, missing release hashes, prior test evidence and `NOT_GRANTED` *licensing/activation* state remain true. Do not rewrite old CI, owner-native test records or the historical licensing decision fields as if they were ever granted.
 
 ## 6 November 2026 | Independent upstream OFL and face metadata review, no release grant
 
