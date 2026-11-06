@@ -55,7 +55,7 @@ export function SemanticOverview({projectId,version,columns}:{projectId:string;v
     </div>
     {data.fields.length>20&&<p className="muted-caption">Showing the first 20 fields with hypotheses; no field was automatically modified.</p>}
    </details>
-   {data.user_context&&<div className="po-col-metadata" aria-label="Owner-described business context">
+   {data.user_context&&<div className="po-col-metadata" role="region" aria-label="Owner-described business context">
     <div><small>User description, not independently verified</small>
      {data.user_context.domain_description&&<p><strong>Domain:</strong> {data.user_context.domain_description}</p>}
      {data.user_context.record_grain_description&&<p><strong>Row meaning:</strong> {data.user_context.record_grain_description}</p>}
