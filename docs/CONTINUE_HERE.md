@@ -1,5 +1,8 @@
 # PilotODIN | Continue development
 
+**Current testable P3 native QA source:** [`3b1b33ab8bd4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3b1b33ab8bd46f874ff335c2309215fadc627808) retains the original isolated A/B native launcher and adds a reload-safe, session-only two-save counter. [P3 CI #42265559018](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42265559018) and [P1 #42265558850](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42265558850) **COMPLETED SUCCESS** at that exact source SHA. These do not include actual owner Tauri WebView2 W1-W4 evidence; use the clean-checkout BAT and submit status-only QA artifact for review. No P3 phase closure or P8 certification.
+
+
 **Current P3-04 native acceptance route:** Dedicated [synthetic Tauri owner QA launcher](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/feature/live-dev-workspace-20261023/Run_PilotODIN_P3_Native_Semantic_QA.bat) is source-implemented and [CI #42264899312](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42264899312) verifies 26 Python, 10 Node, TS/Vite plus Windows PowerShell syntax at SHA `6389a84e835f`. This does **not** prove native window execution. Actual owner W1-W4 Windows WebView2 and final P3 closure remain PENDING; follow [exact owner checklist](./P3_SEMANTIC_CONTEXT_OWNER_WINDOWS_QA_2026-11-06.md). No installer, P4 activation or release certification.
 
 **Current entry point, updated 6 November 2026.** This page is a short routing aid. The former 114 KB chronological handoff is [preserved verbatim in the archive](./archive/CONTINUE_HERE_PRE_AUDIT_2026-11-04.md).
