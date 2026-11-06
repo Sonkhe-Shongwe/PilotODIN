@@ -1,0 +1,44 @@
+# P3-04 W5 | Automation-first Windows native Quality acceptance
+
+**Date:** 6 November 2026  
+**Branch:** \`feature/live-dev-workspace-20261023\`  
+**Source implementation:** [\`ded194f10e21\`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ded194f10e210d1ff9003b22285698f046be98a7)  
+**Focused assertion correction:** [\`4862e0ee23b1\`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4862e0ee23b1d5bc4203249906846845127909d4)  
+**Disposition:** SOURCE/FOCUSED TESTS VERIFIED. **Physical owner Windows WebView2 W5 NOT TESTED.** P3 stays active. Not full installer, P3 closure, P4 or release acceptance.
+
+## Implemented bounded W5 route
+
+A distinct, dev-only native W5 identity \`com.pilotodin.p3qualityw5qa\` and entry \`p3_native_quality_w5_qa.html\` use the existing UnifiedShell/Quality and Your data workspaces. The tester double-clicks [Run_PilotODIN_P3_Native_Quality_W5_QA.bat](../Run_PilotODIN_P3_Native_Quality_W5_QA.bat) in the clean, authorised source checkout. This is **not** the older W1–W4 editor QA runner; earlier W1–W4 native acceptance remains intact.
+
+The preflight requires Windows, clean authorised branch, existing .venv-live Python, node_modules, npm, cargo and free 8000/5178 loopback ports. It never installs dependencies, checks out a new branch, discards/stashes owner work, touches installed projects, starts AI or builds an installer. A fresh isolated \`qa_foundation.py\` run under the existing DevQA root holds a generated 36-row CSV. Two Region values have surrounding spaces and exact unverified owner-described **synthetic** version-zero metadata is stored separately. The seeder checks project identity, source bytes, initial version, exact eligible whitespace issue and context.
+
+The native UI hard-blocks non-allowlisted requests and all but one exact \`operation=approve\`, \`expected_version=0\`, preselected \`issue_id\` Quality proposal. The proposal response must be from the matching synthetic project, must report two changed cells and a valid receipt; then, and only then, one exact receipt-ID/hash Quality commit is allowed. Both allowances are consumed **before** network requests and the write budget survives page refresh. Refresh during an unfinished approval invalidates the in-memory receipt and therefore safely requires a fresh isolated run. Nothing in the test creates production editing privilege, and no automatic consent is granted: the owner must click the actual review/approval UI.
+
+After the native window closes, PowerShell automatically verifies exact v1, history [v0,v1], absent old context on v1, stale v0 semantic GET+POST HTTP 409, two precise Region rows (immutable original versus committed working data), source SHA-256 unchanged, and a strictly ordered access-log audit: **one 200 proposal, one 200 Quality commit, one 409 intentionally rejected stale semantic POST**, with no other backend mutation. A single owner yes/no confirmation records whether physical WebView2 visibly showed current v1 and no prior semantic notes. The QA outcome remains \`REVIEW_REQUIRED\` and \`product_acceptance=NOT_TESTED\` even if all scoped checks pass. The test-owned Uvicorn PID is stopped in finally and process-level environment is restored. The generated status-only ZIP includes the result and two manifests, not the synthetic CSV, draft content, private database or raw logs.
+
+## Exact minimum owner interaction once the source is synced
+
+1. Review any uncommitted local GitHub Desktop changes without discarding them; use a clean checkout of the authorised branch.
+2. Double-click \`Run_PilotODIN_P3_Native_Quality_W5_QA.bat\`. The runner stages synthetic data, compiles the existing frontend and starts a separate native development window.
+3. In Quality, select **Region / Surrounding whitespace**, then **Review this correction**. Inspect the exact dialog, then click **Approve these changes**. This is an explicit consent action **only on the isolated synthetic project**.
+4. Confirm native Quality shows **WORKING VERSION 1**, and **Your data** contains no old v0 owner descriptions. Close the window; answer the one native observation prompt. The remaining integrity, API/permission and evidence checks are automatic.
+5. If the runner reports a passing synthetic result, submit its **status-only** \`-p3-w5-status.zip\` for independent QA disposition. Keep the result as REVIEW_REQUIRED until inspected. If blocked, use the precise failure category instead. Do not rerun accepted W1–W4.
+
+## Actual automated source verification
+
+| Source | CI run | Actual observed result | Boundary |
+| --- | --- | --- | --- |
+| \`ded194f10e21\` | [P1 isolated #42288574987](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42288574987) | **COMPLETED SUCCESS**: 160/160 Node; TS/Vite PASS; 5/5 Chromium PASS | General frontend compatibility, not physical native W5 |
+| \`ded194f10e21\` | [Build E Windows compile #42288574715](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42288574715) | **COMPLETED SUCCESS**: Windows Rust/Tauri dev-profile compile, with intentional compile-only invalid assets | No native QA UI launched, no installer or shippable package |
+| \`ded194f10e21\` | [P3 focus #42288574728](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42288574728) | **COMPLETED FAILURE**: 32/33 Python passed; new Quality CORS test incorrectly asserted HTTP 403 for an unknown project at a disallowed origin, actual route returned 404 without CORS allow-origin. Windows PowerShell parser PASS | Static test expectation error, not a mutation or loss. Retain this failure history |
+| \`4862e0ee23b1\` | [P3 focus #42288768189](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42288768189) | **COMPLETED SUCCESS**: 33/33 Python; 11/11 Node; TS/Vite PASS; **both P3 PowerShell scripts parse on Windows-2022** | Corrected CORS assertion checks actual absent allow-origin; no real native window or owner W5 |
+
+The latest source change after the original frontend/Tauri green builds is limited to the source test assertion. This correction was followed by the passing focused Python, Node, TypeScript/Vite and PowerShell workflow. It does not imply a new Tauri compilation at the test-only commit.
+
+**Important distinction:** [Prior real-Uvicorn Chromium W5 #42282095666](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42282095666) already passed 2/2 full synthetic browser scenarios at \`805fb658\`. The new runner prepares a **separate physical native** proof without pretending an automated Chromium run can certify WebView2. W1–W4 prior physical owner acceptance is not repeated.
+
+## Remaining decisions and phase boundary
+
+- Native W5 owner test and independent status ZIP review: **PENDING**, do not mark passed before evidence exists.
+- P3-03 broader semantic truth/adjudication and phase closure-matrix scope: **owner decision remains open**. No automatic agreement, confirmation of owner text or model/target propagation was added.
+- P3 active; P1/P2 bounded development closed; P4 not authorised; P8 offline Windows release not certified.
