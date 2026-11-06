@@ -60,6 +60,12 @@ def test_windows_launcher_is_isolated_preflight_only_and_records_truth():
     assert "CARGO_NET_OFFLINE='true'" in script
     assert "feature/live-dev-workspace-20261023" in script
     assert "git" in script and "status --porcelain" in script
+    assert "if($LASTEXITCODE -ne 0)" in script
+    assert "Select-Object -First 12" in script
+    assert "GitHub Desktop > Changes" in script
+    assert "Never put owner file names or contents in the" in script
+    assert "Do NOT discard changes" in script
+    assert "If stopped before QA allocation, no status archive exists." in bat
     assert "PILOTODIN_HOME=$workspaceDir" in script
     assert "Port-Occupied 8000 -or Port-Occupied 5178" in script
     assert "VITE_P3_NATIVE_QA_PROJECT_A" in script

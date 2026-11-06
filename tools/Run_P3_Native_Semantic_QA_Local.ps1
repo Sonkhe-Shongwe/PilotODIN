@@ -82,9 +82,24 @@ try{
  $record.source_head=(& $git -C $root rev-parse HEAD).Trim()
  if($record.source_head -notmatch '^[a-f0-9]{40}$'){throw 'Cannot attest exact Git SHA.'}
  $changes=@(& $git -C $root status --porcelain)
+ if($LASTEXITCODE -ne 0){
+  throw 'Git status failed; cannot safely verify the source checkout.'
+ }
  if($changes.Count -gt 0){
   $record.source_worktree='UNCOMMITTED_OWNER_FILES_PRESENT'
-  throw 'Source checkout is dirty; no owner work was modified. Use a clean QA checkout.'
+  # Local console output ONLY. Never put owner file names or contents in the
+  # status-only QA archive, and never auto-stash, delete, reset or commit them.
+  Write-Host ('Git reports '+$changes.Count+' modified or untracked path entries:') -ForegroundColor Yellow
+  @($changes | Select-Object -First 12) | ForEach-Object {
+   Write-Host ('  '+$_) -ForegroundColor Yellow
+  }
+  if($changes.Count -gt 12){
+   Write-Host ('  ... and '+($changes.Count-12)+' more. Review GitHub Desktop > Changes.') -ForegroundColor Yellow
+  }
+  Write-Host 'Open GitHub Desktop > Changes to review what is modified.' -ForegroundColor Cyan
+  Write-Host 'Preserve any owner work: commit it if ready, or stash it explicitly after review.' -ForegroundColor Cyan
+  Write-Host 'Do NOT discard changes, run git reset/clean, or disable this QA source guard.' -ForegroundColor Cyan
+  throw 'Source checkout is dirty; no owner work was modified. Review or stash changes, then rerun.'
  }
  $record.source_worktree='CLEAN'
  if(Port-Occupied 8000 -or Port-Occupied 5178){

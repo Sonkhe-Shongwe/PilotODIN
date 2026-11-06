@@ -8,6 +8,6 @@ echo Only two approved semantic-description saves to synthetic project A are all
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\Run_P3_Native_Semantic_QA_Local.ps1"
 set "RESULT=%ERRORLEVEL%"
 echo.
-if "%RESULT%"=="0" (echo P3 owner observations recorded for REVIEW, not automatic release acceptance.) else (echo P3 NATIVE QA BLOCKED OR FAILED. Review the displayed status-only archive.)
+if "%RESULT%"=="0" (echo P3 owner observations recorded for REVIEW, not automatic release acceptance.) else (echo P3 NATIVE QA BLOCKED OR FAILED. Review the error above. If stopped before QA allocation, no status archive exists.)
 pause
 exit /b %RESULT%
