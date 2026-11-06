@@ -24,6 +24,22 @@
 
 **Next:** Type one synthetic draft in Deliver; follow the five existing instructions and capture the actual native modal and final truthful console answers. The separate two-window storage selection, font/OFL approval and P8 release remain open.
 
+## 6 November 2026 | Owner native Leave/Keep dialog and report-draft behaviour observed
+
+**Evidence source:** Four actual owner Windows screenshots plus the owner's explicit observation from the currently open synthetic Tauri full-shell QA session. Screenshots show (1) `Unsaved report draft. Save a revision before exporting.` in Deliver, (2) the genuine Windows modal `PilotODIN - Unsaved Deliver report` with `Leave Deliver` and `Keep editing` and explanatory discard warning, (3) the original synthetic note `Synthetic test report. Checking unsaved changes.` still present in Deliver after the modal was dismissed with **Keep editing**, and (4) Explore active with the same isolated synthetic four-row project after **Leave Deliver**. The owner explicitly states: **"keep edditing the words remain. leaving it leaves smoothly. i go back the words are gone"**. Thus the reopened Deliver editor no longer contains the discarded unsaved note, which is the expected behaviour after explicit Leave and does not indicate a defect. No report was saved.
+
+**Acceptance matrix, deliberately scoped:**
+- **A: Unsaved new-report warning after editing: OWNER WINDOWS VISUAL PASS.** The warning and authored synthetic report are visible in separate screenshots of the same local test session.
+- **B: Shell Explore, native Keep editing, current report preserved: OWNER WINDOWS VISUAL + OWNER-REPORTED PASS.** The native modal is shown, Deliver remains active, and the synthetic note remains visible. The screenshots do not directly expose the URL hash; the retained active Deliver view is visible.
+- **D: Shell Explore, native Leave Deliver, resulting Explore view: OWNER WINDOWS VISUAL + OWNER-REPORTED PASS FOR ROUTE AND DISCARD ONLY.** Explore is visibly active with 4 records, 3 fields, 0 missing cells and 0 exact duplicates on the isolated synthetic project; owner confirms revisiting Deliver no longer shows the unsaved note. **Keyboard focus/Tab usability and duplicate-prompt absence are not directly documented**, so the full D checklist remains pending those observations.
+- **C: Header New project, Keep and no immediate/deferred importer: NOT YET OBSERVED.**
+- **E: Header New project, Leave and importer only after approval: NOT YET OBSERVED.**
+- Optional sixth active dirty tab-close Keep/Leave: NOT YET OBSERVED. Separate native two-window `storage` transition: NOT YET OBSERVED.
+
+**Limits:** Owner screenshots show the actual **synthetic development** Tauri/WebView2 application, not a packaged/installed Windows release. No terminal final five-answer record, status ZIP, `git rev-parse HEAD`, native app exit code, narrator output, automated CI for these manually observed actions, original dataset or original report mutation is presented. Keep previous green source/Windows build evidence separate. P2 remains **ACTIVE / REVIEW_REQUIRED** and the five-item native consent gate **PARTIALLY OBSERVED**, not closed. No fix is justified for the expected intentional Leave/discard behaviour.
+
+**Exact next action in this currently open safe QA session:** Complete **C** by returning to Deliver, typing a fresh disposable note, pressing header **New project**, choosing **Keep editing**, and verifying the draft remains and no importer opens then or later. Complete **E** using a fresh note and **Leave Deliver**, observing that the importer opens only after consent. Check usable keyboard focus after the Explore Leave transition; then close the QA window and answer the five final questions truthfully. Do not run unrelated tests or save/import anything.
+
 ## Why this specific new gate exists
 
 The earlier [native Deliver source and simulated-IPC acceptance](./P2_NATIVE_DELIVER_SHELL_EXIT_CONSENT_2026-11-06.md) established the Rust command compiled and a Chromium simulation handled Keep/Leave and stale replies. **It did not show a real Windows WebView2 owner-visible Leave Deliver / Keep editing dialog.**
