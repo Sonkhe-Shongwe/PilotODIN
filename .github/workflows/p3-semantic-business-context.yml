@@ -13,6 +13,7 @@ on:
       - backend/semantic_profile.py
       - frontend/src/SemanticContextEditor.tsx
       - frontend/src/SemanticOverview.tsx
+      - frontend/src/p3SemanticReview.ts
       - frontend/src/ColumnInvestigation.tsx
       - tests/test_p3_semantic_business_context.py
       - tests/test_p3_semantic_profile.py

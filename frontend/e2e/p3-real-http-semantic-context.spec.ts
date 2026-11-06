@@ -152,10 +152,16 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
   const domainReview=semantic.getByRole('group',{name:'Compare unverified domain statements'});
   await expect(domainReview).toContainText(firstDomain);
   await expect(domainReview).toContainText('No automatic equivalence or disagreement finding');
+  await expect(domainReview).toContainText('Human review status: Not assessed');
   await expect(semantic.getByRole('group',{name:'Compare record-key and row-meaning statements'}))
    .toContainText('A unique row key does not independently establish');
   await semantic.locator('details').filter({hasText:'Inspect tentative field meanings'}).locator('summary').click();
   await expect(semantic.getByRole('columnheader',{name:'USER DESCRIPTION (UNVERIFIED)'})).toBeVisible();
+  await expect(semantic.getByRole('columnheader',{name:'HUMAN REVIEW STATUS'})).toBeVisible();
+  await expect(semantic.getByRole('row').filter({hasText:'claim_amount'}).getByRole('cell').last())
+   .toContainText('Not assessed: the system hint and user description are both unverified.');
+  await expect(semantic.getByRole('row').filter({hasText:'policy_number'}).getByRole('cell').last())
+   .toContainText('No user description; comparison unavailable.');
   await expect(semantic.getByRole('row').filter({hasText:'claim_amount'}).getByRole('cell').last())
    .toContainText(fieldMeaning+' (user-described, not independently verified)');
   const savedBody=await (await request.get(API+'/api/projects/'+aid+'/semantics?expected_version=0')).json();

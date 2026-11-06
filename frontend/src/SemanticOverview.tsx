@@ -3,6 +3,7 @@ import {AlertTriangle,BookOpen,LoaderCircle} from 'lucide-react';
 import {get} from './api';
 import {SemanticContextEditor} from './SemanticContextEditor';
 import type {UserSemanticContext} from './SemanticContextEditor';
+import {fieldReviewState,fieldReviewText} from './p3SemanticReview';
 
 type SemanticHypothesis={
  role:string;state:'hypothesis';basis:string;reason:string
@@ -29,6 +30,10 @@ export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
  const ownerFieldDescriptions=new Map(
   (data?.user_context?.field_definitions??[]).map(item=>[item.column,item.meaning] as const)
  );
+ // Compare only exact column names in the same project and Quality version.
+ // A field without a machine hint still retains its user description here.
+ const hintedFieldNames=new Set((data?.fields??[]).map(item=>item.column));
+ const describedFieldNames=new Set(ownerFieldDescriptions.keys());
  useEffect(()=>{
   let live=true;
   setBusy(true);setError('');setData(null);
@@ -58,10 +63,10 @@ export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
    <details>
     <summary>Inspect tentative field meanings ({data.fields.length} fields with hints)</summary>
     <div className="po-col-table-scroll">
-     <table><thead><tr><th>FIELD</th><th>POSSIBLE ROLE</th><th>EVIDENCE BASIS</th><th>REVIEW NOTE</th><th>USER DESCRIPTION (UNVERIFIED)</th></tr></thead>
+     <table><thead><tr><th>FIELD</th><th>POSSIBLE ROLE</th><th>EVIDENCE BASIS</th><th>REVIEW NOTE</th><th>USER DESCRIPTION (UNVERIFIED)</th><th>HUMAN REVIEW STATUS</th></tr></thead>
       <tbody>{data.fields.slice(0,20).flatMap(item=>item.hypotheses.map(h=><tr key={item.column+'-'+h.role}><td>{item.column}</td><td>{humanRole(h.role)} (unverified)</td><td>{humanRole(h.basis)}</td><td>{h.reason}</td><td>{ownerFieldDescriptions.has(item.column)?
         <span>{ownerFieldDescriptions.get(item.column)} (user-described, not independently verified)</span>
-        :'No user description'}</td></tr>))}</tbody>
+        :'No user description'}</td><td>{fieldReviewText(fieldReviewState(item.column,hintedFieldNames,describedFieldNames))}</td></tr>))}</tbody>
      </table>
     </div>
     {data.fields.length>20&&<p className="muted-caption">Showing the first 20 fields with hypotheses; no field was automatically modified.</p>}
@@ -71,14 +76,16 @@ export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
      {data.user_context.domain_description&&<div role="group" aria-label="Compare unverified domain statements">
       <p><strong>System domain hypothesis:</strong> {data.domain.state==='hypothesis'?data.domain.label:'Unknown'}</p>
       <p><strong>User-described domain:</strong> {data.user_context.domain_description}</p>
-      <p className="muted-caption">No automatic equivalence or disagreement finding; the dataset owner must review.</p>
+      <p className="muted-caption">Human review status: Not assessed. No automatic equivalence or disagreement finding; the dataset owner must review.</p>
      </div>}
      {data.user_context.record_grain_description&&<div role="group" aria-label="Compare record-key and row-meaning statements">
       <p><strong>Possible unique row key:</strong> {data.grain.state==='hypothesis'?data.grain.identifier_column:'Unknown'}</p>
       <p><strong>User-described row meaning:</strong> {data.user_context.record_grain_description}</p>
-      <p className="muted-caption">A unique row key does not independently establish what one row represents.</p>
+      <p className="muted-caption">Human review status: Not assessed. A unique row key does not independently establish what one row represents.</p>
      </div>}
-     {data.user_context.field_definitions.map(item=><p key={item.column}><strong>{item.column}:</strong> {item.meaning}</p>)}
+     {data.user_context.field_definitions.map(item=><p key={item.column}><strong>{item.column}:</strong> {item.meaning}
+      <span className="muted-caption"> {fieldReviewText(fieldReviewState(item.column,hintedFieldNames,describedFieldNames))}</span>
+     </p>)}
     </div>
    </div>}
    <SemanticContextEditor projectId={projectId} version={version} columns={columns}

@@ -98,3 +98,34 @@ test('P3 unsaved business context uses existing primary project, exit and native
  assert.match(unload,/view:'understand'\|'prepare'/);
  assert.doesNotMatch(editor,/localStorage|sessionStorage|train_background\(|setTarget\(/);
 });
+
+test('P3-03b review states preserve owner-only meaning without inventing system agreement',()=>{
+ const ts=require('typescript'),Module=require('node:module');
+ const file=path.join(root,'frontend/src/p3SemanticReview.ts');
+ const out=ts.transpileModule(read('frontend/src/p3SemanticReview.ts'),{
+  compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},
+  reportDiagnostics:true
+ });
+ assert.equal((out.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
+ const m=new Module(file,module);m.filename=file;m.paths=module.paths;m._compile(out.outputText,file);
+ const {fieldReviewState,fieldReviewText}=m.exports;
+ const hints=new Set(['claim_amount','claim_id']);
+ const notes=new Set(['claim_amount','freeform_notes']);
+ const paired=fieldReviewState('claim_amount',hints,notes);
+ const noHint=fieldReviewState('freeform_notes',hints,notes);
+ const noNote=fieldReviewState('claim_id',hints,notes);
+ assert.equal(paired,'paired_unassessed');
+ assert.equal(noHint,'owner_without_system_hint');
+ assert.equal(noNote,'owner_description_missing');
+ assert.match(fieldReviewText(paired),/Not assessed.*unverified/i);
+ assert.match(fieldReviewText(noHint),/No system field hypothesis.*Comparison not assessed/i);
+ assert.match(fieldReviewText(noNote),/No user description.*unavailable/i);
+ assert.equal(fieldReviewState('claim_amount_extra',hints,notes),'owner_description_missing');
+ const overview=read('frontend/src/SemanticOverview.tsx');
+ assert.match(overview,/new Set\(\(data\?\.fields\?\?\[\]\)\.map\(item=>item\.column\)\)/);
+ assert.match(overview,/describedFieldNames=new Set\(ownerFieldDescriptions\.keys\(\)\)/);
+ assert.match(overview,/HUMAN REVIEW STATUS/);
+ assert.match(overview,/fieldReviewText\(fieldReviewState\(item\.column,hintedFieldNames,describedFieldNames\)\)/);
+ assert.match(overview,/Human review status: Not assessed/);
+ assert.doesNotMatch(overview,/agreement_verified|reconcile_and_save|approve_target|setTarget\(/);
+});
