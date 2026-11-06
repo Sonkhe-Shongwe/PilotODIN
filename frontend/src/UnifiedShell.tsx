@@ -109,6 +109,8 @@ export function UnifiedShell(){
  useEffect(()=>()=>{nativeDeliverExitTicket.current++;nativeDeliverExitPending.current=false},[]);
  const [openTabs,setOpenTabs]=useState<View[]>(()=>readTabs(localStorage.getItem('pilotodin-current')||''));
  const [dock,setDock]=useState<DockLayout>(()=>readDock(localStorage.getItem('pilotodin-current')||''));
+ const currentDockSecondaryRef=useRef(dock.secondary);
+ currentDockSecondaryRef.current=dock.secondary;
  const [restoredFor,setRestoredFor]=useState<string|null>(null);
  const [warning,setWarning]=useState('');
  // Creation uses the existing Studio import form rather than a second uploader.
@@ -407,6 +409,8 @@ export function UnifiedShell(){
   };
  },[active,dock.secondary,projectId,workspaceReady]);
  const shownTabs=useMemo(()=>restoredFor===projectId?openTabs.filter(isWorkspaceView):[],[openTabs,restoredFor,projectId]);
+ const currentTabsSignatureRef=useRef('');
+ currentTabsSignatureRef.current=shownTabs.join('|');
  useEffect(()=>{
   const pending=pendingCloseFocus.current;
   if(!pending)return;
@@ -670,14 +674,43 @@ export function UnifiedShell(){
   if(next!==active){navigateWithDockGuard(next,()=>target?.focus());return;}
   target?.focus();
  };
- const close=(view:View)=>{
+ const close=(view:View,nativeApproved=false)=>{
   if(!workspaceReady)return;
+  // A second tab click cannot bypass another outstanding native Deliver prompt.
+  if(!nativeApproved&&isDesktop()&&nativeDeliverExitPending.current)return;
   const plan=planWorkspaceTabClose(shownTabs,active,view);
   if(!plan)return;
+  const primaryExit=plan.nextActive!==active&&
+   needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,plan.nextActive,workspaceReady);
+  if(primaryExit&&!nativeApproved&&active==='deliver'&&isDesktop()){
+   // The same main-window Rust dialog protects both navigation and tab close.
+   // Approval may only close the original tab under the original tab layout.
+   const originProject=projectId,originHash=window.location.hash;
+   const originTabs=shownTabs.join('|'),originDock=dock.secondary;
+   const ticket=++nativeDeliverExitTicket.current;
+   nativeDeliverExitPending.current=true;
+   void invoke<boolean>('confirm_native_deliver_exit').then(approved=>{
+    if(ticket!==nativeDeliverExitTicket.current)return;
+    nativeDeliverExitPending.current=false;
+    if(!approved||currentProjectRef.current!==originProject||
+       currentActiveRef.current!=='deliver'||window.location.hash!==originHash||
+       editedPrimary.current?.projectId!==originProject||editedPrimary.current?.view!=='deliver'||
+       currentTabsSignatureRef.current!==originTabs||
+       currentDockSecondaryRef.current!==originDock)return;
+    // Re-run every remaining dock guard before mutating the tab or route.
+    close(view,true);
+   }).catch(()=>{
+    if(ticket!==nativeDeliverExitTicket.current)return;
+    nativeDeliverExitPending.current=false;
+    setWarning('Could not show the Windows Deliver tab-close confirmation. Your unsaved report was kept.');
+   });
+   return;
+  }
   if(dock.secondary===view&&!confirmEditedDockDiscard('close-tab'))return;
   if(plan.nextActive!==active&&dock.secondary===plan.nextActive&&isSecondaryView(plan.nextActive)&&!confirmEditedDockDiscard('activate',plan.nextActive))return;
-  if(plan.nextActive!==active&&needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,plan.nextActive,workspaceReady)){
-   if(!window.confirm(primaryExitMessage(active)))return;
+  if(primaryExit){
+   if(!nativeApproved&&!window.confirm(primaryExitMessage(active)))return;
+   // Only the next exact route is authorised, never future workspace changes.
    preapprovedRoutePush.current=plan.nextActive==='investigate'?'#/canvas':`#/studio/${plan.nextActive}`;
   }
   if(dock.secondary===view||dock.secondary===plan.nextActive&&plan.nextActive!==active)editedDock.current=null;
