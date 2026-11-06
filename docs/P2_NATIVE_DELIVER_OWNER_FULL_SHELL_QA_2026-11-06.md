@@ -2,7 +2,7 @@
 
 **Date:** 6 November 2026  
 **Branch:** `feature/live-dev-workspace-20261023`  
-**Status:** Test-only SOURCE READY; **owner Windows execution NOT YET OBSERVED**. **P2 ACTIVE / REVIEW_REQUIRED; P8 NOT CERTIFIED.**
+**Status:** **FIVE REQUIRED OWNER WINDOWS NATIVE OBSERVATIONS COMPLETE / SCOPED ACCEPTED** on 6 November 2026; other P2 and release requirements remain **REVIEW_REQUIRED**. **P2 ACTIVE; P8 NOT CERTIFIED.**
 
 ## 6 November 2026 | First owner native startup observed; test badge no longer masks New project
 
@@ -47,6 +47,23 @@
 **Updated five-item assessment:** **A PASS** owner screenshot (unsaved warning); **B PASS** screenshot + owner report (Explore/Keep preserves draft); **C OWNER-REPORTED PASS** (header New project/Keep preserves draft, no immediate importer); **D PARTIAL PASS** screenshot + owner report (Explore/Leave activates Explore and intentionally discards draft), while keyboard focus/Tab and duplicate prompt absence remain unverified; **E OWNER-REPORTED PASS** (header New project/Leave discards draft and importer appears only after consent). C's explicit *no delayed importer on later Home visit* is not independently verified. These are **scoped synthetic native observations, not the completed five-prompt runner acceptance**.
 
 **Still pending:** Close the currently running QA window and answer the runner's five prompts truthfully; capture final `result.json`/status-only summary or console. Test whether keyboard Tab focus remains usable after D, and whether an importer appears belatedly after C's Keep on a normal Home visit. Do not infer these items from images. Optional sixth tab-close, independent two-window external selection, screen-reader/Narrator, installed product acceptance, Unicode release fonts and P8 certification remain separate. There is **no source-confirmed defect** in the documented intended Keep/discard/importer behaviour, so no code correction is justified at this point.
+
+## 6 November 2026 | Final owner Windows five-item runner result: scoped acceptance
+
+**Fresh evidence:** Owner-provided screenshot of the completed actual Windows PowerShell QA runner after the physical synthetic Tauri full-shell session. It shows a successful Rust `Finished 'dev' profile [unoptimized + debuginfo]` and `Running target\\debug\\pilotodin-desktop.exe`, all five literal runner prompts answered `yes`, with **five `OWNER_REPORTED_PASS` result lines**:
+- `dirty_warning: OWNER_REPORTED_PASS` (A, edited synthetic Deliver draft warning).
+- `explore_keep: OWNER_REPORTED_PASS` (B, native Keep preserves draft, Deliver and route).
+- `new_project_keep: OWNER_REPORTED_PASS` (C, native Keep retains draft; no immediate **or later** importer).
+- `explore_leave: OWNER_REPORTED_PASS` (D, native Leave navigates to Explore; keyboard focus stays usable).
+- `new_project_leave: OWNER_REPORTED_PASS` (E, native Leave opens only the synthetic importer after authorisation).
+
+**Final launcher messages observed verbatim:** `P2 native Deliver consent: OWNER-REPORTED SCOPED OBSERVATION COMPLETE (REVIEW REQUIRED).`, followed by `P2 native consent: OWNER OBSERVATION RECORDED; still needs QA review.`. A status-only QA archive path is printed under the owner's local `AppData\\Local\\PilotODIN\\DevQA\\archive` folder, ending `P2-NATIVE-DELIVER-CONSENT-20261106T093946Z-302c9362b4-native-consent-status.zip`. The screenshot verifies the path **was printed**, but the ZIP contents/`result.json` were **not separately inspected**; no personal files, original datasets, or native logs were supplied. Final PowerShell process state is shown awaiting `Press any key to continue` in the BAT, with success branch text. No need to rerun the completed five-step QA.
+
+**Acceptance decision: FIVE REQUIRED FULL-SHELL OWNER-NATIVE OBSERVATION SCENARIOS SCOPED CLOSED.** Supporting evidence includes prior actual modal and unsaved report screenshots, actual Explore view, explicit owner text-retention/discard and importer reports, and this final five-line status output. This accepts synthetic Windows Tauri/WebView2 behavior **as owner-observed**, not independently instrumented accessibility, full binary provenance or installed release. The owner also reports Explore and tab interactions working without an issue; this is a **non-specific owner report**, not full documentation of the optional sixth active dirty tab-close Keep/Leave sequence, so that separate optional scenario is not formally scored as PASS.
+
+**Not promoted:** The runner's own `product_acceptance=NOT_TESTED` / `REVIEW_REQUIRED` remains accurate. GitHub branch HEAD is current at verification time but the owner screenshot does not display `git rev-parse HEAD` or exact source lock/working tree. Independent two-window cross-project `storage` native behavior, instrumented Narrator/screen reader, actual installed package, Unicode PDF release font/three OFL and hash redistribution authority, 8 GiB release benchmark and P8 certification remain OPEN or NOT GRANTED. P1 development CLOSED; **P2 ACTIVE / REVIEW_REQUIRED**. This milestone is not global P2 completion.
+
+**Next justified work:** Do not repeat the five owner native observations or change passing production code. Continue with the remaining separate, requirement-scoped P2 blockers using isolated data and explicit acceptance evidence; pursue the independent original Noto/OFL release rights decision before activating product Unicode PDF. No installer, font downloads, training, or destructive data work is permitted by this decision.
 
 ## Why this specific new gate exists
 
