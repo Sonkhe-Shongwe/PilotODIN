@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {post} from './api';
 
 export type UserSemanticContext={
@@ -9,10 +9,11 @@ export type UserSemanticContext={
 type Definition={column:string;meaning:string};
 
 export function SemanticContextEditor({
- projectId,version,columns,existing,onSaved,
+ projectId,version,columns,existing,onSaved,onUnsavedChange,
 }:{
  projectId:string;version:number;columns:string[];
- existing:UserSemanticContext|null;onSaved:(value:UserSemanticContext)=>void
+ existing:UserSemanticContext|null;onSaved:(value:UserSemanticContext)=>void;
+ onUnsavedChange?:(dirty:boolean)=>void
 }){
  const [domain,setDomain]=useState(existing?.domain_description??'');
  const [grain,setGrain]=useState(existing?.record_grain_description??'');
@@ -21,6 +22,17 @@ export function SemanticContextEditor({
  const [error,setError]=useState('');
  const [success,setSuccess]=useState(false);
  const available=columns.slice(0,80);
+ // Compare only version-pinned saved text. A stale/unverified description is
+ // never converted into a hypothesis or persisted merely by editing a field.
+ const fieldsForSave=definitions.map(d=>({column:d.column,meaning:d.meaning.trim()}));
+ const dirty=domain.trim()!==(existing?.domain_description??'')||
+  grain.trim()!==(existing?.record_grain_description??'')||
+  JSON.stringify(fieldsForSave)!==JSON.stringify(existing?.field_definitions??[]);
+ useEffect(()=>{
+  onUnsavedChange?.(dirty);
+  // A permitted workspace/project exit can now clear only its own edit marker.
+  return()=>{if(dirty)onUnsavedChange?.(false)};
+ },[dirty,onUnsavedChange]);
  const validText=(text:string)=>!text.trim()||text.trim().length>=10;
  const validFields=definitions.every(d=>available.includes(d.column)&&d.meaning.trim().length>=10)&&
                   new Set(definitions.map(d=>d.column)).size===definitions.length;
@@ -79,6 +91,7 @@ export function SemanticContextEditor({
    <div><button type="button" className="btn small"
     disabled={busy||definitions.length>=8||!available.some(name=>!definitions.some(d=>d.column===name))}
     onClick={addField}>Add field definition</button></div>
+   {dirty&&<p className="muted-caption" role="status">Unsaved business descriptions. Save them before changing projects or leaving Your data.</p>}
    {!ready&&<p className="muted-caption">Enter at least one description of 10 or more characters. Each selected field also needs a unique, meaningful definition.</p>}
    {error&&<p role="alert" className="alert-error">{error}</p>}
    {success&&<p role="status" className="muted-caption">Saved for this dataset version as user-provided, not independently verified.</p>}

@@ -110,19 +110,44 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
   await expect(semantic.getByRole('heading',{name:'Business meaning hypotheses'})).toBeVisible();
   await expect(semantic.getByText('UNVERIFIED',{exact:true})).toBeVisible();
   await expect(semantic.getByText('Optional: describe what this dataset means')).toBeVisible();
-  await semantic.getByText('Optional: describe what this dataset means').click();
-  await semantic.getByLabel('What business area does this dataset describe?').fill(firstDomain);
+  const editorDisclosure=semantic.getByText('Optional: describe what this dataset means');
+  await editorDisclosure.focus();
+  await page.keyboard.press('Enter');
+  await expect(semantic.getByLabel('What business area does this dataset describe?')).toBeVisible();
+  const domainEditor=semantic.getByLabel('What business area does this dataset describe?');
+  await domainEditor.fill('short');
+  await expect(semantic.getByRole('button',{name:'Save business descriptions'})).toBeDisabled();
+  await domainEditor.fill(firstDomain);
   await semantic.getByLabel('What does one row represent?').fill(rowMeaning);
   await semantic.getByRole('button',{name:'Add field definition'}).click();
   await semantic.getByLabel('Field 1').selectOption('claim_amount');
+  await semantic.getByLabel('Owner-described meaning').fill('tiny');
+  await expect(semantic.getByRole('button',{name:'Save business descriptions'})).toBeDisabled();
   await semantic.getByLabel('Owner-described meaning').fill(fieldMeaning);
+  await expect(semantic.getByText('Unsaved business descriptions.',{exact:false})).toBeVisible();
+  const switcherBeforeSave=page.getByRole('combobox',{name:'Switch project'});
+  let declinedMessage='';
+  page.once('dialog',async dialog=>{
+   declinedMessage=dialog.message();
+   await dialog.dismiss();
+  });
+  await switcherBeforeSave.selectOption(bid);
+  await expect(switcherBeforeSave).toHaveValue(aid);
+  await expect(domainEditor).toHaveValue(firstDomain);
+  expect(declinedMessage).toMatch(/unsaved|changed fields|discard/i);
+  // Save through keyboard activation after declining navigation.
+
   const savedResponse=page.waitForResponse(r=>
    r.url()===API+'/api/projects/'+aid+'/semantic-business-context'&&
    r.request().method()==='POST');
-  await semantic.getByRole('button',{name:'Save business descriptions'}).click();
+  const saveByKey=semantic.getByRole('button',{name:'Save business descriptions'});
+  await saveByKey.focus();
+  await expect(saveByKey).toBeFocused();
+  await page.keyboard.press('Enter');
   const saved=await savedResponse;
   expect(saved.status(),await saved.text()).toBe(200);
   await expect(semantic.getByText('Saved for this dataset version as user-provided',{exact:false})).toBeVisible();
+  await expect(semantic.getByText('Unsaved business descriptions.',{exact:false})).toHaveCount(0);
   await expect(semantic.getByRole('region',{name:'Owner-described business context'})).toContainText(firstDomain);
   const domainReview=semantic.getByRole('group',{name:'Compare unverified domain statements'});
   await expect(domainReview).toContainText(firstDomain);

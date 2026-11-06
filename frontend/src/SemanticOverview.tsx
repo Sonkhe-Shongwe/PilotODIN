@@ -17,7 +17,10 @@ type Semantics={
 };
 const humanRole=(text:string)=>text.replaceAll('_',' ');
 
-export function SemanticOverview({projectId,version,columns}:{projectId:string;version:number;columns:string[]}){
+export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
+ projectId:string;version:number;columns:string[];
+ onUnsavedChange?:(dirty:boolean)=>void
+}){
  const [data,setData]=useState<Semantics|null>(null);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
@@ -79,7 +82,8 @@ export function SemanticOverview({projectId,version,columns}:{projectId:string;v
     </div>
    </div>}
    <SemanticContextEditor projectId={projectId} version={version} columns={columns}
-    existing={data.user_context} onSaved={value=>setData(prev=>prev?{...prev,user_context:value}:prev)}/>
+    existing={data.user_context} onSaved={value=>setData(prev=>prev?{...prev,user_context:value}:prev)}
+    onUnsavedChange={onUnsavedChange}/>
    <p className="muted-caption"><AlertTriangle size={13}/> {data.unknown} If the record grain or outcome timing matters, confirm it before modelling.</p>
    <p className="muted-caption">{data.note} Working version: {data.version}.</p>
   </>}

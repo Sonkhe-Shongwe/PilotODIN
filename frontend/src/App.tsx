@@ -567,7 +567,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
           {page==='assistant'&&<section className="persisted-workspace"><AssistantWorkspace key={project.id} projectId={project.id} onSettings={()=>go('ai_settings')}/></section>}
           {page==='understand'&&profile&&<><div className="metrics"><Metric label="DATASET RECORDS" value={fmt(profile.rows)} icon={<Database size={18}/>}/><Metric label="TOTAL COLUMNS" value={fmt(profile.columns_count)} icon={<Layers size={18}/>}/><Metric label="MISSING CELLS" value={fmt(profile.missing_cells)} icon={<CircleHelp size={18}/>}/><Metric label="EXACT DUPLICATES" value={fmt(profile.duplicate_rows)} icon={<Activity size={18}/>}/></div>
             <div className="panel insight"><div className="panel-title"><Sparkles size={19}/><h2>Dataset interpretation</h2><span className="pill muted">RULE-BASED ANALYSIS</span></div><p>{profile.summary}</p><p className="muted-caption">Local dataset statistics are calculated in Python. ODIN Intelligence above provides optional cloud-assisted interpretation from approved summaries.</p></div>
-            <ColumnInvestigation key={project.id} projectId={project.id} versionToken={qualityVersion}/>
+            <ColumnInvestigation key={project.id} projectId={project.id} versionToken={qualityVersion}
+             onUnsavedChange={dirty=>{
+              if(embedded)return;
+              if(dirty)onPrimaryDraftEdited?.('understand');
+              else onPrimaryDraftCleared?.('understand');
+             }}/>
              <div className="panel"><div className="panel-title"><FileSpreadsheet size={18}/><h2>Data preview</h2></div><div className="table-scroll"><table><thead><tr>{profile.columns.slice(0,10).map(c=><th key={c.name}>{c.name}</th>)}</tr></thead><tbody>{profile.preview.map((row,i)=><tr key={i}>{profile.columns.slice(0,10).map(c=><td key={c.name}>{row[c.name]===null?'—':String(row[c.name]??'—').slice(0,55)}</td>)}</tr>)}</tbody></table></div><p className="muted-caption">Showing up to 7 rows and 10 columns.</p></div>
             {profile.warnings.length>0&&<div className="panel"><div className="panel-title"><AlertCircle size={18}/><h2>Review before modelling</h2></div>{profile.warnings.slice(0,7).map((s,i)=><div key={i} className="warning-line"><AlertCircle size={15}/>{s}</div>)}</div>}
             <div className="panel action-panel"><div><h3>Ready to define your objective?</h3><p>Choose the column you want to predict and review the preparation plan.</p></div><button className="btn primary" onClick={()=>go('prepare')}>Prepare data <ArrowRight size={17}/></button></div>

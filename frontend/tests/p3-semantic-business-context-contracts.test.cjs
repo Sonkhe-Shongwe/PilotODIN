@@ -58,3 +58,43 @@ test('P3-03a associates owner field definitions by exact column without assertin
  assert.match(screen,/unique row key does not independently establish/);
  assert.doesNotMatch(screen,/setTarget\(|selectTarget\(|train_background\(/);
 });
+
+test('P3 unsaved business context uses existing primary project, exit and native close guards',()=>{
+ const ts=require('typescript'),Module=require('node:module');
+ const file=path.join(root,'frontend/src/primaryStudioExitGuard.ts');
+ const program=ts.transpileModule(fs.readFileSync(file,'utf8'),{
+  compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},
+  reportDiagnostics:true
+ });
+ assert.equal((program.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
+ const m=new Module(file,module);m.filename=file;m.paths=module.paths;m._compile(program.outputText,file);
+ const needs=m.exports.needsPrimaryStudioExitApproval;
+ const edit={projectId:'A',view:'understand'};
+ assert.equal(needs(edit,'A','understand','quality',true),true);
+ assert.equal(needs(edit,'A','understand','investigate',true),true);
+ assert.equal(needs(edit,'A','understand','deliver',true),true);
+ assert.equal(needs(edit,'A','understand','understand',true),false);
+ assert.equal(needs(edit,'B','understand','quality',true),false);
+ assert.equal(needs(edit,'A','understand','quality',false),false);
+ // The older Prepare/Model/Predict contract remains unchanged.
+ assert.equal(needs({projectId:'A',view:'prepare'},'A','prepare','quality',true),false);
+ const app=read('frontend/src/App.tsx');
+ const shell=read('frontend/src/UnifiedShell.tsx');
+ const dictionary=read('frontend/src/ColumnInvestigation.tsx');
+ const overview=read('frontend/src/SemanticOverview.tsx');
+ const editor=read('frontend/src/SemanticContextEditor.tsx');
+ const unload=read('frontend/src/dockInputDiscardGuard.ts');
+ assert.match(editor,/onUnsavedChange\?\.\(dirty\)/);
+ assert.match(editor,/onUnsavedChange\?\.\(false\)/);
+ assert.match(editor,/existing\?\.domain_description/);
+ assert.match(editor,/existing\?\.field_definitions/);
+ assert.match(editor,/Unsaved business descriptions/);
+ assert.match(dictionary,/onUnsavedChange=\{onUnsavedChange\}/);
+ assert.match(overview,/onUnsavedChange=\{onUnsavedChange\}/);
+ assert.match(app,/if\(dirty\)onPrimaryDraftEdited\?\.\('understand'\)/);
+ assert.match(app,/onPrimaryDraftCleared\?\.\('understand'\)/);
+ assert.match(shell,/view==='understand'\|\|view==='prepare'/);
+ assert.match(shell,/Your Data Dictionary has unsaved business descriptions/);
+ assert.match(unload,/view:'understand'\|'prepare'/);
+ assert.doesNotMatch(editor,/localStorage|sessionStorage|train_background\(|setTarget\(/);
+});

@@ -73,6 +73,8 @@ const PANEL_MIN_WIDTH=300;
 const PRIMARY_CANVAS_EXIT_MESSAGE='You changed fields in the primary workspace. Opening Investigate will discard those unsaved entries. Continue?';
 const primaryExitMessage=(current:View)=>current==='deliver'
  ?'Your Deliver report contains unsaved changes. Switching workspaces will discard these edits. Continue?'
+ :current==='understand'
+ ?'Your Data Dictionary has unsaved business descriptions. Switching workspaces will discard these edits. Continue?'
  :PRIMARY_CANVAS_EXIT_MESSAGE;
 
 /** One persistent desktop shell. Tabs and layouts are scoped to a project, not to its data. */
@@ -446,7 +448,7 @@ export function UnifiedShell(){
   return window.confirm('You changed fields in the docked workspace. This action may discard those entries. Continue?');
  };
  const markPrimaryDraftEdited=(view:View)=>{
-  if(workspaceReady&&projectId&&(view==='prepare'||view==='model'||view==='predict'||view==='deliver'))editedPrimary.current={projectId,view};
+  if(workspaceReady&&projectId&&(view==='understand'||view==='prepare'||view==='model'||view==='predict'||view==='deliver'))editedPrimary.current={projectId,view};
  };
  const clearPrimaryDraft=(view:View)=>{
   if(editedPrimary.current?.projectId===projectId&&editedPrimary.current?.view===view)

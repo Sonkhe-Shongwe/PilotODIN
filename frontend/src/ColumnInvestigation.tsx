@@ -20,7 +20,9 @@ function pretty(value:number|null|undefined):string{
 function display(value:unknown):string{return value===null||value===undefined?'(Missing)':String(value);}
 type SortBy='source'|'name'|'missing'|'unique';
 
-export function ColumnInvestigation({projectId,versionToken}:{projectId:string;versionToken:number}){
+export function ColumnInvestigation({projectId,versionToken,onUnsavedChange}:{
+ projectId:string;versionToken:number;onUnsavedChange?:(dirty:boolean)=>void
+}){
  const [dictionary,setDictionary]=useState<Dictionary|null>(null);
  const [selected,setSelected]=useState('');
  const [detail,setDetail]=useState<ColumnDetail|null>(null);
@@ -80,7 +82,7 @@ export function ColumnInvestigation({projectId,versionToken}:{projectId:string;v
     {Object.entries(dictionary.role_counts).map(([role,count])=><span key={role}><strong>{count}</strong> {role}</span>)}
    </div>
    <SemanticOverview key={projectId+'-'+dictionary.version} projectId={projectId} version={dictionary.version}
-    columns={dictionary.columns.map(item=>item.name)}/>
+    columns={dictionary.columns.map(item=>item.name)} onUnsavedChange={onUnsavedChange}/>
    <div className="po-col-toolbar">
     <label className="po-col-search"><Search size={15}/><input aria-label="Search columns by name or type" placeholder="Find a field or dtype…" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <label>Analytical role<select aria-label="Filter columns by analytical role" value={roleFilter} onChange={e=>setRoleFilter(e.target.value)}><option value="all">All roles</option>{Object.keys(dictionary.role_counts).map(role=><option key={role} value={role}>{role}</option>)}</select></label>
