@@ -618,3 +618,87 @@ test('P2 external hash push uses native Deliver consent before changing workspac
   expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(initialReports);
   expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(initialQuality);
  });
+
+
+test('P2 Close Deliver tab waits for native consent and preserves dirty report on Keep',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only isolated GitHub CI may run this synthetic real-browser scenario.');
+  const created=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'P2_Tab_Close_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(created.status(),await created.text()).toBe(201);
+  const pid=(await created.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const beforeReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const beforeQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['explore','deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  const note=primary.getByLabel('Interpretation and limitations');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  const draft='Disposable report must survive rejecting a native tab-close request.';
+  await note.fill(draft);
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+  const close=page.getByRole('button',{name:'Close Deliver tab'});
+  await expect(close).toBeVisible();
+
+  // Hosted CI uses a simulated IPC bridge after mounting the real UI, never a
+  // physical WebView2/Rust dialog. Owner-native acceptance remains separate.
+  await page.evaluate(()=>{
+   type Probe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(command:string)=>Promise<boolean>};
+    __p2TabCloseCalls?:string[];
+    __p2TabCloseAnswers?:Array<(answer:boolean)=>void>;
+   };
+   const w=window as Probe;
+   w.__p2TabCloseCalls=[];
+   w.__p2TabCloseAnswers=[];
+   w.__TAURI_INTERNALS__={invoke:command=>{
+    if(command!=='confirm_native_deliver_exit')
+     return Promise.reject(new Error('Unexpected synthetic native command'));
+    w.__p2TabCloseCalls!.push(command);
+    return new Promise<boolean>(resolve=>w.__p2TabCloseAnswers!.push(resolve));
+   }};
+  });
+  const commands=()=>page.evaluate(()=>(
+   window as Window&{__p2TabCloseCalls?:string[]}
+  ).__p2TabCloseCalls?.length??0);
+  const reply=(allow:boolean)=>page.evaluate(approved=>{
+   const w=window as Window&{__p2TabCloseAnswers?:Array<(answer:boolean)=>void>};
+   const resolve=w.__p2TabCloseAnswers?.shift();
+   if(!resolve)throw new Error('No native tab-close response is pending');
+   resolve(approved);
+  },allow);
+
+  await close.click();
+  await expect.poll(commands).toBe(1);
+  await expect(note).toHaveValue(draft);
+  await expect(close).toBeVisible();
+  expect(page.url()).toContain('/studio/deliver');
+  await close.click();
+  expect(await commands()).toBe(1);
+  await reply(false);
+  await expect(note).toHaveValue(draft);
+  await expect(close).toBeVisible();
+
+  // A fresh explicit Leave applies the exact original close plan once.
+  await close.click();
+  await expect.poll(commands).toBe(2);
+  await expect(note).toHaveValue(draft);
+  await reply(true);
+  await expect(page).toHaveURL(/#\/studio\/explore/);
+  await expect(close).toHaveCount(0);
+  await expect(primary.getByRole('region',{name:'Saved analytical investigations'})).toBeVisible();
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
+ });
