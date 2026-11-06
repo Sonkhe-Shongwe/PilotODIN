@@ -1,0 +1,67 @@
+name: P3 Real HTTP Semantic Context Browser Acceptance
+
+# Trusted feature-branch direct push only. Isolated synthetic CSVs and
+# runner-owned services; never connect to owner data or any installed EXE.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p3-real-http-semantic-context.yml
+      - frontend/playwright.p3-real-http.config.ts
+      - frontend/e2e/p3-real-http-semantic-context.spec.ts
+      - frontend/e2e/p3-real-http-semantic-quality-version.spec.ts
+      - frontend/e2e/p1-real-http-backend.ts
+      - frontend/src/SemanticContextEditor.tsx
+      - frontend/src/SemanticOverview.tsx
+      - frontend/src/ColumnInvestigation.tsx
+      - frontend/src/api.ts
+      - backend/main.py
+      - backend/storage.py
+      - backend/semantic_profile.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p3-real-http-semantic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-real-browser-and-backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 23
+    env:
+      CI: "true"
+      P1_REAL_HTTP_E2E: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Select the runner-owned synthetic backend home
+        run: echo "PILOTODIN_HOME=${RUNNER_TEMP}/pilotodin-p1-real-http-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
+      - name: Checkout without saved credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install already declared test dependencies
+        run: |
+          python -m pip install -r backend/requirements-test.txt
+          npm ci --prefix frontend --no-audit --no-fund
+      - name: Compile backend source
+        run: python -m py_compile backend/main.py backend/storage.py backend/semantic_profile.py
+      - name: Install disposable headless Chromium shell
+        working-directory: frontend
+        run: npx --no-install playwright install --only-shell chromium
+      - name: Run actual synthetic UI against real local HTTP backend
+        working-directory: frontend
+        run: npx --no-install playwright test --config=playwright.p3-real-http.config.ts

@@ -2,7 +2,7 @@ name: Build E Native Windows Compilation
 
 on:
   push:
-    branches: [build-e]
+    branches: [build-e, feature/live-dev-workspace-20261023]
     paths:
       - 'frontend/src-tauri/**'
       - '.github/workflows/native-windows-compile.yml'

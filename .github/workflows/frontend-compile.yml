@@ -2,16 +2,6 @@ name: Build E - Frontend Compilation
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'frontend/**'
-      - 'desktop/Verify_Frontend_Windows.ps1'
-      - 'desktop/Verify_Frontend.cmd'
-      - '.github/workflows/frontend-compile.yml'
-  pull_request:
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/frontend-compile.yml'
 
 permissions:
   contents: read

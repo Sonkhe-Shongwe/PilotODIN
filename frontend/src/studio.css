@@ -330,3 +330,66 @@ body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .quality-approval-dialog{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;box-shadow:0 20px 90px rgba(17,27,55,.28);}
 .quality-approval-steps{max-height:140px;overflow:auto;background:#f7f8fc;border-radius:8px;padding:8px 12px;}
 .quality-approval-steps p{margin:5px 0;font-size:13px;}
+
+/* Grouped, resource-aware model library; no unnecessary new installer. */
+.model-family-list{display:grid;gap:20px}
+.model-family{border:1px solid var(--po-border,#e2e6f0);background:linear-gradient(120deg,#fafaff,#f5fcff);border-radius:16px;padding:16px}
+.model-family-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:13px;color:#25264e}
+.model-family-heading strong{font-size:15px}
+.model-family-heading small{color:#73829a;font-size:12px}
+.model-family .model-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.model-family .model-choice{height:auto;min-height:94px;align-items:flex-start;text-align:left}
+.model-choice-copy{display:flex!important;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.model-choice-copy strong{font-size:13px;line-height:1.3}
+.model-choice-copy small{font-size:11px!important;font-weight:400;line-height:1.35;color:#71809b}
+.model-choice-copy .model-cost{color:#6653bd;font-size:10px!important}
+@media(max-width:680px){.model-family .model-grid{grid-template-columns:1fr}}
+
+/* Macro A3 · bounded, auditable predictor review (no automatic exclusions). */
+.po-feature-audit-title{font-size:14px;margin:20px 0 10px;color:#334066}
+.po-ml-feature-audit{max-height:390px;overflow:auto;border:1px solid #e2e6f1;border-radius:10px}
+.po-ml-feature-audit table{min-width:720px}
+.po-ml-feature-audit td,.po-ml-feature-audit th{font-size:12px;padding:10px;vertical-align:top}
+.po-ml-feature-audit td:first-child strong,.po-ml-feature-audit td:first-child small,.po-ml-feature-audit td:last-child small{display:block;overflow-wrap:anywhere}
+.po-ml-feature-audit small{font-size:11px;color:#65728d;margin-top:3px}
+.po-ml-risk-high{color:#955021}
+.po-ml-feature-risk-gate{margin-top:14px;padding:16px;border:1px solid #e7cfaa;border-radius:11px;background:#fffaf0}
+.po-ml-feature-risk-gate>strong{display:flex;align-items:center;gap:7px;color:#804d1b}
+.po-ml-feature-risk-gate p{font-size:12px;line-height:1.65;color:#68543e}
+.po-ml-feature-risk-gate .acknowledge{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.5}
+
+/* A3: clear model-vs-baseline evidence and probability caveats. */
+.po-ml-heldout-baseline{margin:16px 0;padding:16px;border:1px solid #d8dfec;border-radius:12px;background:#f8fbff}
+.po-ml-heldout-baseline h3{font-size:14px;color:#263e62;margin:0 0 11px}
+.po-ml-baseline-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.po-ml-baseline-row>div{display:flex;flex-direction:column;gap:7px;background:#fff;border:1px solid #e1e6ee;border-radius:9px;padding:11px}
+.po-ml-baseline-row small{color:#63718b;font-size:11px;line-height:1.45}
+.po-ml-baseline-row strong{color:#283b61;font-size:14px;overflow-wrap:anywhere}
+.po-ml-heldout-baseline .muted-caption{font-size:11px;line-height:1.6}
+.po-ml-uncalibrated{margin:11px 0;padding:11px 13px;border-left:3px solid #bd8a33;border-radius:6px;background:#fff7e9;color:#785328;font-size:12px;line-height:1.6}
+@media(max-width:760px){.po-ml-baseline-row{grid-template-columns:1fr}}
+
+
+/* Macro A3 · memory-aware local training and bounded sensitivity diagnostics. */
+.po-ml-resource-plan{margin:14px 0;padding:14px;border:1px solid #d6e1ef;border-radius:11px;background:#f7faff}
+.po-ml-resource-plan>strong{display:flex;gap:8px;align-items:center;font-size:13px;color:#354b6c}
+.po-ml-resource-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:11px 0}
+.po-ml-resource-metrics>span{display:flex;flex-direction:column;gap:3px;padding:9px;background:#fff;border:1px solid #e0e7f1;border-radius:8px;font-size:11px;color:#51627a}
+.po-ml-resource-metrics b{font-size:14px;color:#243b5e}
+.po-ml-resource-plan p,.po-ml-resource-plan small{font-size:11px;line-height:1.6;color:#596983}
+.po-ml-resource-warning{border-color:#dbc697;background:#fff9ea}
+.po-ml-sensitivity{margin:20px 0;padding:16px;background:#f9fbff;border:1px solid #dae2f0;border-radius:13px}
+.po-ml-sensitivity-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.po-ml-sensitivity-head h3{font-size:15px;margin:0;flex:1;min-width:160px}
+.po-ml-sensitivity .body-muted{font-size:12px;line-height:1.7;margin:10px 0}
+.po-ml-sensitivity-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.po-ml-sensitivity-stats span{padding:9px;background:#fff;border:1px solid #e0e6ee;border-radius:9px;font-size:11px;line-height:1.5;color:#66748c}
+.po-ml-sensitivity-stats strong{display:block;font-size:14px;color:#283e63}
+.po-ml-sensitivity-caution{display:flex;align-items:center;gap:7px;padding:9px;background:#fff7e7;color:#795628;border-left:3px solid #b5842e;border-radius:6px;font-size:12px;line-height:1.6}
+.po-ml-sensitivity-table{max-height:325px;overflow:auto;margin:12px 0}
+.po-ml-sensitivity-table table{width:100%;min-width:530px}
+.po-ml-sensitivity-table td,.po-ml-sensitivity-table th{font-size:12px;padding:9px}
+.po-ml-sensitivity-table td small{font-size:10px;color:#718096}
+.po-ml-sensitivity-notes{font-size:11px;color:#647089}
+.po-ml-sensitivity-notes ul{margin:8px 0 0 12px;padding-left:13px;line-height:1.6}
+@media(max-width:680px){.po-ml-resource-metrics{grid-template-columns:1fr}.po-ml-sensitivity-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}

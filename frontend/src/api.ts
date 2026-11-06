@@ -15,15 +15,18 @@ function authHeaders(): Record<string,string> {
 }
 export type Col = {name:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;unique:number;identifier_risk:boolean;leakage_risk:boolean;sample_values:(string|number|null)[]};
 export type Profile = {filename:string;rows:number;columns_count:number;missing_cells:number;duplicate_rows:number;columns:Col[];preview:Record<string,unknown>[];target_candidates:string[];warnings:string[];summary:string;summary_source:string;guidance:string[]};
-export type Prep = {task:'classification'|'regression';target:string;available_features:string[];recommend_exclude:{column:string;reason:string;requires_review:boolean}[];missing_targets:number;transformations:string[];warnings:string[]};
+export type FeatureAudit = {column:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;distinct:number;risk:'high'|'review'|'low';reasons:string[];treatment:string;default_included:boolean};
+export type Prep = {task:'classification'|'regression';target:string;resource_plan?:{labelled_rows:number;source_features:number;estimated_encoded_columns:number;estimated_dense_training_mb:number;row_limit:number;selected_model_row_limit:number;selected_model_guard:string;model_family_row_limits:Record<string,number>;estimated_dense_mb_limit:number;within_local_budget:boolean;note:string};resource_plan_scope?:string;available_features:string[];recommend_exclude:{column:string;reason:string;requires_review:boolean}[];feature_audit:FeatureAudit[];high_risk_features:string[];missing_targets:number;transformations:string[];warnings:string[]};
 export type ModelReport = {key:string;name:string;cv_metric?:number;cv_std?:number;status:'ready'|'failed';error?:string};
-export type Field = {name:string;kind:'number'|'select'|'text';min?:number;max?:number;options?:string[];required:boolean};
+export type Field = {name:string;kind:'number'|'select'|'text';min?:number;max?:number;options?:string[];required:boolean;domain?:{min?:number;max?:number;integer?:boolean}|null};
 export type Results = {task:string;target:string;features:string[];excluded_features:string[];labelled_rows:number;train_rows:number;test_rows:number;folds:number;primary_metric:string;baseline_cv:number;models:ModelReport[];input_schema:Field[];warning:string;beats_baseline?:boolean;split_strategy?:string;split_column?:string|null};
-export type Experiment = {id:string;project_id:string;status:string;config:{target:string;task:string;excluded:string[];models:string[];quality_version?:number;split_strategy?:string;split_column?:string|null};results:Results|null;error:string|null;selected_model:string|null;final_results:Record<string,unknown>|null;is_stale?:boolean;dataset_version?:number;current_version?:number};
+export type ExperimentProgressEvent = {stage:string;label:string;detail:string;at:string};
+export type ExperimentProgress = {stage:string;label:string;detail:string;updated_at:string|null;history:ExperimentProgressEvent[];history_available:boolean};
+export type Experiment = {id:string;project_id:string;status:string;config:{target:string;task:string;excluded:string[];models:string[];quality_version?:number;split_strategy?:string;split_column?:string|null;max_duration_seconds?:number|null};results:Results|null;error:string|null;selected_model:string|null;final_results:Record<string,unknown>|null;is_stale?:boolean;dataset_version?:number;current_version?:number;progress?:ExperimentProgress;control?:{cancel_requested:boolean;deadline_at:string|null;interruption_is_cooperative:boolean}};
 export type Project = {id:string;name:string;filename:string;profile:Profile;experiments:{id:string;status:string;selected_model:string|null;created_at:string}[]};
 
 async function check(res:Response){
-  if(!res.ok){let detail = `Request failed (${res.status})`;try{const o=await res.json();detail=typeof o.detail==='string'?o.detail:JSON.stringify(o.detail)}catch{}throw new Error(detail)}
+  if(!res.ok){let detail = `Request failed (${res.status})`;try{const o=await res.json();const d=o?.detail;detail=typeof d==='string'?d:(d&&typeof d==='object'&&!Array.isArray(d)&&typeof d.message==='string'?d.message:JSON.stringify(d))}catch{}throw new Error(detail)}
   return res.json();
 }
 async function fetchLocal(path:string,options:RequestInit):Promise<Response>{
@@ -59,6 +62,14 @@ function bundledStartIssue(error:unknown):string {
 }
 async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Promise<string|null>{
  if(!desktopEndpoint || !shouldLaunchBundledAI(path,method,body))return null;
+ // The Rust command can start a memory-hungry model BEFORE Python receives
+ // the AI request. Consult the same local-session policy first, fail closed
+ // on unavailable preflight, and let Python still return deterministic rules.
+ try {
+  const preflight=await check(await fetchLocal('/resource/preflight?operation=local_inference',
+   {headers:authHeaders()})) as {decision:string;code?:string};
+  if(preflight.decision!=='allow')return 'resource_limited';
+ } catch {return 'resource_preflight_unavailable';}
  try {await invoke('launch_bundled_ai');return null;}
  catch (error) {return bundledStartIssue(error);}
 }
@@ -95,9 +106,39 @@ export async function downloadCleanedData(path:string,body:unknown):Promise<{blo
 
 /** Authenticated binary download. Never put desktop session credentials in URLs. */
 export async function downloadReportFile(path:string):Promise<{blob:Blob;filename:string}> {
+ // A report export filename is a cross-layer integrity contract, never a cosmetic fallback.
+ const identity=path.match(/^\/reports\/([a-f0-9]{32})\/export\/(html|pdf)\?revision=([1-9][0-9]*)$/i);
+ if(!identity)throw new Error('Report export URL must identify an exact saved report and revision.');
+ const [,reportId,format,revision]=identity;
+ const expectedFilename=`pilotodin_report_${reportId.slice(0,12).toLowerCase()}_rev${revision}.${format.toLowerCase()}`;
  const response=await fetchLocal(path,{method:'GET',headers:authHeaders()});
  if(!response.ok){await check(response);throw new Error('Report export failed')}
- const contentDisposition=response.headers.get('content-disposition')??'';
- const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1]??'pilotodin_report.pdf';
- return {blob:await response.blob(),filename:filename.replace(/[\\/]/g,'_')};
+ // Cross-origin WebView2 cannot read this non-safelisted header unless FastAPI
+ // explicitly provides Access-Control-Expose-Headers: Content-Disposition.
+ const contentDisposition=response.headers.get('content-disposition');
+ if(!contentDisposition)throw new Error('Report filename header is unavailable to the desktop webview. Check CORS exposed headers; Save As was not opened.');
+ const filename=contentDisposition.match(/filename="?([^";]+)"?/i)?.[1];
+ if(filename!==expectedFilename)throw new Error('Report export filename does not match the saved report revision. Save As was not opened.');
+ const contentType=response.headers.get('content-type')??'';
+ const validMime=format==='pdf'?/^application\/pdf(?:;|$)/i.test(contentType):/^text\/html(?:;|$)/i.test(contentType);
+ if(!validMime)throw new Error('Report export returned an unexpected file type. No Save As dialog was opened.');
+ const blob=await response.blob();
+ const signature=await blob.slice(0,24).text();
+ const validSignature=format==='pdf'?signature.startsWith('%PDF-'):signature.toLowerCase().startsWith('<!doctype html>');
+ if(!validSignature)throw new Error('Report export is incomplete or invalid. No Save As dialog was opened.');
+ return {blob,filename:expectedFilename};
+}
+
+
+/** Native Tauri-only Save As. Browser downloads remain a separate path. */
+export type NativeReportSaveStatus = {status:'saved'|'cancelled';filename:string|null};
+export async function saveReportNative(blob:Blob, filename:string, format:'html'|'pdf'):Promise<NativeReportSaveStatus> {
+ if(!('__TAURI_INTERNALS__' in window))throw new Error('Native Save As is only available inside the PilotODIN desktop application.');
+ if(!filename.toLowerCase().endsWith('.'+format))throw new Error('Report filename does not match its file type.');
+ const maxBytes=12*1024*1024;
+ if(blob.size<=0||blob.size>maxBytes)throw new Error('Report is empty or exceeds the native Save As limit.');
+ const bytes=Array.from(new Uint8Array(await blob.arrayBuffer()));
+ const result=await invoke<NativeReportSaveStatus>('save_report_as',{format,filename,bytes});
+ if(result.status!=='saved'&&result.status!=='cancelled')throw new Error('Unexpected result from native Save As.');
+ return result;
 }

@@ -71,6 +71,29 @@ def _init_tables() -> None:
         """)
 
 
+def _require_active_for_write(con, pid: str) -> None:
+    """Fence Quality writes under the SAME SQLite transaction as archiving.
+
+    Caller must acquire BEGIN IMMEDIATE before this check. Archive uses that
+    same SQLite write lock, so archive-first must reject this mutation; write-
+    first must finish before archive commits. A stale project object obtained
+    prior to BEGIN IMMEDIATE is never authority to write after archive.
+    """
+    if not con.in_transaction:
+        raise RuntimeError("Quality archive fence requires an active write transaction")
+    row = con.execute(
+        "SELECT l.archived_at FROM projects p "
+        "LEFT JOIN project_lifecycle l ON l.project_id=p.id WHERE p.id=?",
+        (pid,),
+    ).fetchone()
+    if row is None:
+        raise QualityError("Project no longer exists. No Quality changes were applied.",404)
+    if row["archived_at"] is not None:
+        raise QualityError(
+            "Project is archived. Restore it in Manage projects before making Quality changes.",409
+        )
+
+
 def _project(pid: str) -> dict:
     project = storage.get_project(pid)
     if project is None:
@@ -80,7 +103,21 @@ def _project(pid: str) -> dict:
 
 def _ensure(con, p: dict) -> None:
     pid = p["id"]
-    sha = _digest(p["dataset_path"])
+    try:
+        sha = _digest(p["dataset_path"])
+    except FileNotFoundError as exc:
+        # An older workspace may hold absolute paths from before it was moved.
+        # Never silently bind a same-named replacement or reset Quality history.
+        raise QualityError(
+            "The original dataset is missing from its recorded location. "
+            "Restore or verify the exact original source before retrying. "
+            "No Quality changes were applied.", 409,
+        ) from exc
+    except PermissionError as exc:
+        raise QualityError(
+            "The original dataset cannot be read at its recorded location. "
+            "Check file access before retrying. No Quality changes were applied.", 409,
+        ) from exc
     state = con.execute("SELECT original_sha256 FROM quality_state WHERE project_id=?", (pid,)).fetchone()
     if state is None:
         con.execute("INSERT INTO quality_state VALUES(?,?,0)", (pid, sha))
@@ -216,6 +253,31 @@ def _issue(kind: str, column: str | None, count: int, title: str, explanation: s
             "proposal": proposal, "evidence": evidence or {}}
 
 
+
+def _outlier_profile(series: pd.Series) -> dict | None:
+    """One finite-value Tukey rule for detection, preview and investigation.
+
+    A Boolean is not a measurement. Non-finite values are not quietly treated
+    as outside the IQR fences; they are counted separately as unusable values.
+    """
+    if not pd.api.types.is_numeric_dtype(series) or pd.api.types.is_bool_dtype(series):
+        return None
+    numeric = pd.to_numeric(series,errors="coerce").replace([float("inf"),float("-inf")],float("nan"))
+    finite = numeric.dropna()
+    if len(finite)<20 or finite.nunique()<6:
+        return None
+    q1,q3=float(finite.quantile(.25)),float(finite.quantile(.75))
+    iqr=q3-q1
+    if not iqr>0:
+        return None
+    low,high=q1-1.5*iqr,q3+1.5*iqr
+    mask=(numeric.lt(low)|numeric.gt(high)).fillna(False)
+    return {"mask":mask, "q1":q1,"q3":q3,"iqr":iqr,"low":float(low),
+            "high":float(high),"outliers":int(mask.sum()),"finite_count":int(len(finite)),
+            "excluded_count":int(series.notna().sum()-len(finite)),
+            "median":float(finite.median()),"min":float(finite.min()),"max":float(finite.max())}
+
+
 def _issues(df: pd.DataFrame) -> list[dict]:
     issues: list[dict] = []
     count = len(df)
@@ -237,18 +299,14 @@ def _issues(df: pd.DataFrame) -> list[dict]:
             issues.append(_issue("identifier", name, count, "Possible identifier or high-cardinality feature",
                                  "Inspect before modelling; leading zeros and unique values may be meaningful.",
                                  severity="information", evidence={"unique": int(s.nunique(dropna=True))}))
-        if pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s):
-            numeric = pd.to_numeric(s, errors="coerce").dropna()
-            if len(numeric) >= 20 and numeric.nunique() >= 6:
-                q1, q3 = numeric.quantile(.25), numeric.quantile(.75)
-                iqr = q3 - q1
-                if iqr > 0:
-                    low, high = float(q1 - 1.5 * iqr), float(q3 + 1.5 * iqr)
-                    n_outlier = int(((numeric < low) | (numeric > high)).sum())
-                    if n_outlier:
-                        issues.append(_issue("outliers", name, n_outlier, "Unusual numerical values",
-                                             "Values outside the IQR fences warrant investigation, not automatic removal.",
-                                             evidence={"lower_fence": round(low, 4), "upper_fence": round(high, 4)}))
+        profile=_outlier_profile(s)
+        if profile and profile["outliers"]:
+            issues.append(_issue("outliers", name, profile["outliers"], "Unusual numerical values",
+                                 "Values outside finite-data IQR fences warrant investigation, not automatic removal.",
+                                 evidence={"lower_fence":round(profile["low"],4),
+                                           "upper_fence":round(profile["high"],4),
+                                           "finite_values":profile["finite_count"],
+                                           "excluded_nonfinite":profile["excluded_count"]}))
         if not (pd.api.types.is_object_dtype(s) or pd.api.types.is_string_dtype(s)):
             continue
         vals = s.dropna()
@@ -437,6 +495,7 @@ def autopilot(pid: str, expected_version: int) -> dict:
     # Each validated operation becomes a durable version and audit event.
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -456,6 +515,7 @@ def decide(pid: str, issue_id: str, expected_version: int, decision: str) -> dic
         raise QualityError("Decision must be approve or reject")
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -484,6 +544,7 @@ def approve_imputation(pid:str,column:str,issue_id:str,expected_version:int,stra
     p=_project(pid)
     with storage.connect() as con:
         con.execute('BEGIN IMMEDIATE')
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -522,6 +583,7 @@ def undo(pid: str, action_id: str, expected_version: int) -> dict:
     p=_project(pid)
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         version,ops=_state(con,pid)
         _check_version(version,expected_version)
@@ -545,6 +607,7 @@ def restore(pid: str, target_version: int, expected_version: int) -> dict:
     p=_project(pid)
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        _require_active_for_write(con,pid)
         _ensure(con,p)
         current,ops=_state(con,pid)
         _check_version(current,expected_version)
@@ -564,13 +627,16 @@ def restore(pid: str, target_version: int, expected_version: int) -> dict:
         return {"version":nxt,"restored_from":target_version,"active_actions":len(restored_ops)}
 
 
-def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int = 20) -> dict:
+def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int = 20,
+            expected_version: int | None = None) -> dict:
     if offset < 0 or limit < 1 or limit > 200:
         raise QualityError("Offset must be nonnegative; limit must be 1–200")
     p=_project(pid)
     with storage.connect() as con:
         _ensure(con,p)
         version,ops=_state(con,pid)
+        if expected_version is not None and expected_version!=version:
+            raise QualityError('Working dataset changed. Refresh Quality before inspecting rows.',409)
         original=_source_df(p)
         current=_materialize(con,p,ops)
         issue=None
@@ -587,6 +653,15 @@ def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int =
                 else: indexes=list(current.index)
             elif issue["kind"]=="missing" and col:
                 indexes=current.index[current[col].map(lambda v: pd.isna(v) or (isinstance(v,str) and not v.strip()))].tolist()
+            elif issue["kind"]=="outliers" and col:
+                outlier_profile=_outlier_profile(current[col])
+                indexes=current.index[outlier_profile["mask"]].tolist() if outlier_profile else []
+            elif issue["kind"]=="exact_duplicates":
+                indexes=current.index[current.duplicated(keep="first")].tolist()
+            elif issue["kind"]=="identifier" and col:
+                # Include missing identifier cells in the same review population
+                # represented by the finding's affected row count.
+                indexes=list(current.index)
             else:
                 indexes=list(current.index)
         else:

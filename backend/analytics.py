@@ -23,7 +23,7 @@ def describe(df: pd.DataFrame, version: int) -> dict:
         numeric=pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s)
         info={"name":name,"kind":"numeric" if numeric else "categorical",
               "unique":int(s.nunique(dropna=True)),"missing":int(s.isna().sum()),
-              "missing_pct":round(float(s.isna().mean())*100,2)}
+              "missing_pct":round(float(s.isna().mean())*100,2) if len(s) else 0.0}
         if numeric:
             v=pd.to_numeric(s,errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
             if not v.empty:
@@ -41,15 +41,43 @@ def _column(df:pd.DataFrame,name:str):
     return df[name]
 
 
-def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', aggregation:str='mean', bins:int=16)->dict:
+def category_labels(series:pd.Series)->pd.Series:
+    """Consistent display labels for categorical grouping without null collisions.
+
+    Real categorical values can literally contain '(Missing)'. Assign null
+    observations a distinct display label in that situation. All chart and
+    chart-to-record group operations must call this same helper.
+    """
+    observed=series.dropna().astype(str)
+    missing='(Missing)'
+    if (observed=='(Missing)').any():
+        missing='(Missing values)'
+        while (observed==missing).any():
+            missing+=' [null]'
+    return pd.Series(
+        [missing if pd.isna(value) else str(value) for value in series],
+        index=series.index,dtype='object'
+    )
+
+def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', aggregation:str='mean', bins:int=16, color_by:str|None=None)->dict:
     xs=_column(df,x)
     if y: _column(df,y)
+    if color_by:
+        _column(df,color_by)
+        if color_by in (x,y) or color_by.lower().endswith(('id','key','code','number')):
+            raise ValueError('Choose a separate, non-identifier category field for scatter colouring')
+        if pd.api.types.is_numeric_dtype(df[color_by]):
+            raise ValueError('Scatter colouring requires a categorical field')
+        if df[color_by].dropna().nunique() > 8:
+            raise ValueError('Scatter colouring supports at most eight observed categories')
     if kind=='auto':
         kind='scatter' if y and pd.api.types.is_numeric_dtype(xs) and pd.api.types.is_numeric_dtype(df[y]) else ('bar' if y or not pd.api.types.is_numeric_dtype(xs) else 'histogram')
     if kind not in ('bar','histogram','scatter','line','box'):
         raise ValueError('Supported charts: bar, histogram, scatter, line, box')
     if aggregation not in ('mean','sum','count','median'):
         raise ValueError('Unsupported aggregation')
+    if color_by and kind!='scatter':
+        raise ValueError('Category colouring is only available for scatter charts')
     out={"version":version,"type":kind,"x":x,"y":y,"aggregation":aggregation,
          "sampled":False,"data":[],"note":"Descriptive relationships do not establish causation."}
     if kind=='histogram':
@@ -57,38 +85,105 @@ def chart(df:pd.DataFrame,version:int, x:str, y:str|None=None, kind:str='auto', 
         if numeric.empty: raise ValueError('Histogram requires numeric values')
         bins=max(4,min(int(bins),40))
         counts, edges=np.histogram(numeric.to_numpy(dtype=float),bins=bins)
-        out['data']=[{'label':f'{edges[i]:,.2f}–{edges[i+1]:,.2f}', 'x':float((edges[i]+edges[i+1])/2),'value':int(c)} for i,c in enumerate(counts)]
+        out['data']=[{'label':f'{edges[i]:,.2f}–{edges[i+1]:,.2f}', 'x':float((edges[i]+edges[i+1])/2),'start':float(edges[i]),'end':float(edges[i+1]),'value':int(c)} for i,c in enumerate(counts)]
+        out['valid_observations']=int(numeric.size)
+        out['excluded_observations']=int(len(xs)-numeric.size)
+        out['note']='Frequency per interval. Missing or non-finite observations are excluded.'
     elif kind in ('scatter','line'):
         if not y: raise ValueError('Scatter and line charts need an Y column')
-        view=df[[x,y]].copy()
+        view=df[list(dict.fromkeys([x,y]+([color_by] if color_by and kind=='scatter' else [])))].copy()
         if kind=='scatter':
+            # The sampled point carries its position in the filtered snapshot.
+            # Never use arbitrary dataframe index labels as a persisted row ID.
+            view.index=pd.RangeIndex(len(view))
             view[x]=pd.to_numeric(view[x],errors='coerce')
             view[y]=pd.to_numeric(view[y],errors='coerce')
-            view=view.replace([np.inf,-np.inf],np.nan).dropna()
+            view[[x,y]]=view[[x,y]].replace([np.inf,-np.inf],np.nan)
+            view=view.dropna(subset=[x,y])
             if view.empty: raise ValueError('Scatter requires two numeric columns')
+            out['valid_observations']=int(len(view))
+            out['excluded_observations']=int(len(df)-len(view))
             if len(view)>500: view=view.sample(n=500,random_state=42);out['sampled']=True
-            out['data']=[{'x':float(a),'y':float(b)} for a,b in zip(view[x],view[y])]
+            if color_by:
+                labels=category_labels(view[color_by])
+                out['color_by']=color_by
+                out['color_groups']=[{'label':str(k),'count':int(v)} for k,v in labels.value_counts().items()]
+                out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i),'group':str(g)} for i,a,b,g in zip(view.index,view[x],view[y],labels)]
+                out['note']='Categories and legend counts describe plotted valid pairs only; sampling may omit some groups. Colours do not imply causation.'
+            else:
+                out['data']=[{'x':float(a),'y':float(b),'row_ref':int(i)} for i,a,b in zip(view.index,view[x],view[y])]
         else:
-            view[y]=pd.to_numeric(view[y],errors='coerce');view=view.dropna()
-            if view.empty: raise ValueError('Line chart requires a numeric Y column')
+            # Only the Y measure must be finite. Missing X represents a
+            # legitimate chart group, rather than losing complete Y records.
+            view[y]=pd.to_numeric(view[y],errors='coerce').replace([np.inf,-np.inf],np.nan)
+            view=view.dropna(subset=[y])
+            if view.empty: raise ValueError('Line chart requires a finite numeric Y column')
+            out['valid_observations']=int(len(view))
+            out['excluded_observations']=int(len(df)-len(view))
+            view[x]=category_labels(view[x])
             groups=view.groupby(x,dropna=False)[y].agg(aggregation if aggregation!='count' else 'count').reset_index()
             if len(groups)>80: groups=groups.iloc[np.linspace(0,len(groups)-1,80,dtype=int)];out['sampled']=True
             out['data']=[{'label':str(a),'value':float(b)} for a,b in zip(groups[x],groups[y])]
+            out['note']='Aggregated finite Y observations by X. Missing X labels are grouped as (Missing). At most 80 chart groups are shown.'
     elif kind=='box':
         s=pd.to_numeric(xs,errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
         if s.empty: raise ValueError('Box summary needs numeric values')
-        out['data']=[{'label':x,'min':float(s.min()),'q1':float(s.quantile(.25)),
-                      'median':float(s.median()),'q3':float(s.quantile(.75)),'max':float(s.max())}]
+        out['valid_observations']=int(len(s))
+        out['excluded_observations']=int(len(xs)-len(s))
+        q1=float(s.quantile(.25));q3=float(s.quantile(.75));iqr=q3-q1
+        low,high=q1-1.5*iqr,q3+1.5*iqr
+        inliers=s[(s>=low)&(s<=high)]
+        outliers=s[(s<low)|(s>high)].sort_values().to_numpy(dtype=float)
+        out['data']=[{'label':x,'min':float(s.min()),'q1':q1,'median':float(s.median()),'q3':q3,'max':float(s.max()),
+                      'whisker_low':float(inliers.min()) if not inliers.empty else float(s.min()),
+                      'whisker_high':float(inliers.max()) if not inliers.empty else float(s.max()),
+                      'outliers':[float(v) for v in outliers[:40]],'outliers_total':int(len(outliers))}]
+        out['note']='Whiskers end at observed inliers within 1.5×IQR fences; marked outliers may still be valid.'
     else:
         if y:
             v=pd.to_numeric(df[y],errors='coerce')
             if aggregation!='count' and v.notna().sum()==0:raise ValueError('Y must be numeric for the chosen aggregation')
-            grouped=pd.DataFrame({'category':xs.fillna('(Missing)').astype(str),'value':v}).groupby('category',dropna=False)['value'].agg(aggregation).sort_values(ascending=False)
+            grouped=pd.DataFrame({'category':category_labels(xs),'value':v}).groupby('category',dropna=False)['value'].agg(aggregation).sort_values(ascending=False)
+            if aggregation=='count':
+                out['note']=f'Count of non-missing {y} observations by {x}. Missing values in the selected measure are excluded.'
         else:
-            grouped=xs.fillna('(Missing)').astype(str).value_counts()
+            grouped=category_labels(xs).value_counts()
+            out['note']=f'Record count by {x}; no numeric measure is required.'
         out['truncated']=len(grouped)>30
         out['data']=[{'label':str(k),'value':float(v)} for k,v in grouped.head(30).items() if pd.notna(v)]
     return out
+
+
+def correlation(df: pd.DataFrame, version: int, method: str = 'pearson') -> dict:
+    """Bounded pairwise-complete correlation matrix, without causal inference."""
+    if method not in ('pearson','spearman'):
+        raise ValueError('Choose Pearson or Spearman correlation')
+    fields=[name for name in df if pd.api.types.is_numeric_dtype(df[name])
+            and not pd.api.types.is_bool_dtype(df[name])
+            and not name.lower().endswith(('id','key','code','number'))][:14]
+    if len(fields)<2:
+        return {'version':version,'method':method,'columns':fields,'cells':[],
+                'note':'At least two non-identifier numeric fields are needed.'}
+    view=df[fields].apply(pd.to_numeric,errors='coerce').replace([np.inf,-np.inf],np.nan)
+    cells=[]
+    for y in fields:
+        for x in fields:
+            if x==y:
+                clean=view[x].dropna()
+                n=int(len(clean))
+                score=1.0 if n>=3 and clean.nunique()>=2 else None
+                cells.append({'x':x,'y':y,'r':score,'n':n})
+                continue
+            clean=view[[x,y]].dropna()
+            n=int(len(clean))
+            if n<3 or clean[x].nunique()<2 or clean[y].nunique()<2:
+                score=None
+            else:
+                v=clean[x].corr(clean[y],method=method)
+                score=round(float(v),5) if pd.notna(v) and np.isfinite(v) else None
+            cells.append({'x':x,'y':y,'r':score,'n':n})
+    return {'version':version,'method':method,'columns':fields,'cells':cells,
+            'note':'Pairwise complete cases only. Blank cells have fewer than 3 pairs or no variation. Correlation does not establish causation.'}
 
 
 def insights(df:pd.DataFrame,version:int)->dict:

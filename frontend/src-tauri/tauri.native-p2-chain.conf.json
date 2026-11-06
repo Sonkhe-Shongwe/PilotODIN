@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.pilotodin.p2nativechainqa",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --port 5176",
+    "devUrl": "http://127.0.0.1:5176/p2_native_live_report_test.html"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PilotODIN P2 Live Report → Native Save As QA (DEV ONLY)",
+        "width": 1150,
+        "height": 870,
+        "minWidth": 850,
+        "minHeight": 650
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "externalBin": [],
+    "resources": []
+  }
+}

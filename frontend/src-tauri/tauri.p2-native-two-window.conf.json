@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.pilotodin.p2twowindowqa",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --port 5177",
+    "devUrl": "http://127.0.0.1:5177/p2_native_deliver_consent_qa.html"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PilotODIN P2 Two-Window QA - A Dirty Deliver",
+        "url": "http://127.0.0.1:5177/p2_native_deliver_consent_qa.html",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 1010,
+        "minHeight": 680
+      },
+      {
+        "label": "qapeer",
+        "title": "PilotODIN P2 Two-Window QA - B Selection Only",
+        "url": "http://127.0.0.1:5177/p2_native_two_window_peer.html",
+        "width": 510,
+        "height": 420,
+        "minWidth": 470,
+        "minHeight": 360
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "externalBin": [],
+    "resources": []
+  }
+}

@@ -1,0 +1,51 @@
+# P2 native export command acceptance (synthetic, DEV ONLY)
+
+**26 October 2026. First owner Windows execution FAIL at expected-folder SHA checks; five native UI actions PASS. Read-only recovery launcher committed; recovery owner run pending.**
+
+## Accepted predecessor and evidence limits
+The owner said **"all passed next"** for the updated `Run_PilotODIN_P2_Real_API_Integration.bat` gate, which requires four phases: TS/Vite, 3/3 real mounted React/FastAPI report and HTML scenarios, binary HTTP validation of both PDF revisions and original synthetic CSV checksums. No output screenshot or green ZIP was supplied, so this is **owner-reported scoped developer PASS**, not independently inspected four-phase logs. Earlier initial and second real full-stack ZIPs documented the original Chromium PDF attachment fetch failure; preserving that distinction remains important. Prior A4 actual Tauri dev window Save As/Cancel passed its own historical manual smoke, but not the newest report-specific split acceptance.
+
+## Why the next test is necessary
+A genuine Windows Tauri `save_report_as` API call and OS file dialog are separate from HTTP PDF byte delivery. We must not infer real Save As behavior from headless Chromium or plain Python HTTP. The production Tauri `save_report_as` already checks report type/size/filename before showing an OS dialog and verifies the written file hash after completion. This change tests that boundary with synthetic bytes and owner-interactive native dialogs; it changes **no production code**.
+
+## Files and test scope
+- `frontend/public/p2-native-fixtures/report.pdf` is a tiny valid one-page PDF with only synthetic text, validated for readability at source creation. `report.html` is a tiny static HTML with no user data and no script.
+- `frontend/p2_native_export_test.html` and `frontend/src/p2NativeExportTest.ts` are a clearly labeled test-only view importing the existing `@tauri-apps/api/core` and calling the **real** `save_report_as` Rust command, with five owner-clicked actions:
+  1. Save synthetic PDF to the temporary folder and retain `PilotODIN_P2_Synthetic.pdf`.
+  2. Save synthetic HTML to the same temporary folder and retain `PilotODIN_P2_Synthetic.html`.
+  3. Open PDF Save As for `PilotODIN_P2_Cancel.pdf` and click **Cancel**; status must be `cancelled`.
+  4. Pass non-PDF bytes with declared format PDF; Rust must reject before opening any dialog.
+  5. Pass valid PDF bytes with `.html` filename; Rust must reject extension mismatch before dialog.
+- `frontend/src-tauri/tauri.native-p2-smoke.conf.json` is a separate **development-only** Tauri overlay using loopback 5175, separate test identifier and `bundle.active=false`. It does **not** alter the normal PilotODIN Tauri config or launch the engine or optional AI.
+- `tools/Verify_P2_Native_Export_Local.ps1` runs on Windows from the existing repository, checks active feature branch, installed npm/Cargo and local fixture files. Runs **only** frontend TS/Vite build and the test-only Tauri dev window, setting `CARGO_NET_OFFLINE=true` to prohibit new dependency downloads. It creates a unique **Windows Temp/save-target** directory and prints its full path; only that folder is valid for these test saves. After the owner finishes the five test buttons, closes the Tauri window, and confirms the displayed status lines, it independently compares the two saved-file SHA-256 values to the committed fixtures, checks Cancel did not create the third file, and confirms the fixture originals are unchanged.
+- `Run_PilotODIN_P2_Native_Export.bat` launches the interactive PowerShell test. The result is one `pilotodin-p2-native-*.zip` with JSON, frontend build log and Tauri dev log. Do NOT upload user data or files outside this temporary test suite.
+
+## Safety and genuine acceptance boundary
+The app runs an actual Tauri **development** window. It does not start the normal backend, open existing user projects, run machine learning, download/launch Qwen or build an installer. Native compilation may use local cached Rust toolchain artifacts only; if unavailable, report a real failure rather than downloading dependencies. Existing background user apps are untouched. If an unexpected native dialog or file appears, cancel, close the test window and report FAIL.
+
+Acceptance requires TS/Vite PASS, native dev process exit PASS, owner-observed FIVE real native action results PASS, saved PDF/HTML byte hashes PASS, cancel target absent PASS and original synthetic fixture hashes unchanged PASS. The manual observation is explicitly not an automated UI test; the SHA verification is automated. No aspect of this gate proves report composer → real FastAPI → native Save As integration, interrupted native disk writes, browser PDF attachment downloads, WebView2 packaging, final installer E-01–E-24, or local-Qwen combined 8 GB memory.
+
+**Exactly one owner action:** Pull `feature/live-dev-workspace-20261023` safely, then double-click `Run_PilotODIN_P2_Native_Export.bat` from the repo root. Use the unique temp destination path printed in PowerShell, click all five test buttons in the separate window, close it, answer the one yes/no prompt truthfully. Green send console screenshot; red upload printed `pilotodin-p2-native-*.zip`.
+
+## First Windows owner result and verified diagnostic (26 October 2026)
+
+Owner's actual native test window screenshot shows all FIVE buttons **PASS** (real PDF and HTML Save As reported saved, Cancel confirmed, bad bytes and wrong filename/extension rejected). The independently uploaded `pilotodin-p2-native-97ede86c0092.zip` contains `result.json` and the two command logs. JSON: **TS/Vite PASS, Tauri native DEV PASS, five native observations PASS, Cancel file absent PASS, original fixture SHA intact PASS, PDF expected-folder SHA FAIL, HTML expected-folder SHA FAIL; OVERALL FAIL**. The file log shows Rust compilation finished and native executable ran. The ZIP does NOT include actual saved PDF/HTML, output directory, separate existence booleans or actual saved-output hash values. `Verify_P2_Native_Export_Local.ps1` combined `Test-Path` and `Get-FileHash` into one boolean for each output; both failure outcomes are indistinguishable. A different chosen folder is plausible given the Rust command returns only filename after OS Save As and verified bytes on the chosen path; it is not established, and no source file integrity failure was shown. The original FAIL cannot be relabelled PASS.
+
+### Narrow recovery without repeating five native actions
+
+Added `Run_PilotODIN_P2_Native_Verify_Existing_Files.bat` and `tools/Verify_P2_Native_Existing_Files.ps1`. The new verifier does NOT start Tauri/Rust/FastAPI or change anything. It locks expected PDF/HTML SHA-256 to the **actual first-run JSON** values, checks current committed fixtures match, prompts owner to attest that the TWO existing outputs are the original files saved by the previous P2 native dialogs without copying, renaming or editing them, and asks for the **directory** where the two were actually saved. It reads only the two expected output filenames and Cancel target in that specific folder; distinguishes missing files from bad SHA, and writes only a small temporary `pilotodin-p2-native-recovery-*.zip` containing result.json with statuses but NOT folder paths or user file bytes. Any missing/mismatched file or provenance not confirmed leaves FAIL. This is a read-only follow-up evidence gate, not a replacement native UI simulation.
+
+If BOTH output file hashes match, Cancel remains absent in the same selected folder and original fixture hashes match, combine with five prior observed native UI passes to support **scoped native save content-integrity at that owner-selected destination**, with the caveat that the originally requested temp/save-target folder was not established. It does not certify full report composer → live API → Tauri integrated export, native installer or 8 GB AI. A failed recovery must remain FAILED and may require a new interactive native test with an unambiguous save path.
+
+**Exact next action:** Pull the active feature branch preserving uncommitted work and run `Run_PilotODIN_P2_Native_Verify_Existing_Files.bat` once. Locate the original two files in File Explorer, do not copy/rename/edit, enter their containing folder at the prompt. If red share generated recovery ZIP; if green share console screenshot. No need to recompile Tauri or rerun previously green checks.
+
+## Uploaded saved files independently verified (26 October 2026)
+
+After the recovery launcher prompted for file provenance, the user instead uploaded the two purported original saved outputs in chat. The assistant accessed their actual bytes and computed SHA-256 independently (not relying on filenames or screenshots):
+
+| Uploaded synthetic output | Bytes | SHA-256 | Expected first-run fixture hash |
+|---|---:|---|---|
+| `PilotODIN_P2_Synthetic.pdf` | 720 | `42db62afed2edc10aa27fb1db239da7dcbb5cf0e0b6c343306c8b5174a4d7fa8` | EXACT MATCH |
+| `PilotODIN_P2_Synthetic.html` | 245 | `13ff57225c51cad2d9887494d823483ef3d99d6598163a9ef9576a9e57c9d7ca` | EXACT MATCH |
+
+The PDF is recognized as PDF v1.4, one page. The HTML contains only the predefined synthetic QA markup. **Scoped decision: ACCEPT owner-presented native synthetic output content integrity and the previously photographed five native command/UI operations.** This is stronger content evidence than the original test ZIP, which lacked exported bytes. However, file uploads do **not** independently establish the original Windows Save As destination, that the files were never copied, or successful writing inside the first launcher's required Temp/save-target directory. Therefore the first launcher remains **overall FAIL** in history (both expected-folder checks FAIL), and `Run_PilotODIN_P2_Native_Verify_Existing_Files.bat` remains **optional and not owner-completed** for extra original-folder provenance. Do not require another native build or hash-only test just to establish content identity again. Neither this evidence nor the first-run UI screenshot certifies the full live report API → Tauri shell export journey, native release packaging, interrupted write recovery, AI or combined 8 GB runtime.

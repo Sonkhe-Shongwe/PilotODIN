@@ -8,8 +8,20 @@ export function isDesktop(): boolean {
   return '__TAURI_INTERNALS__' in window;
 }
 
+export function isNativeA4SmokeMode(): boolean {
+  // Only the source-controlled Vite development server may enable this mode.
+  // It is compile-time false in every production Tauri/browser build.
+  return import.meta.env.DEV && import.meta.env.VITE_PILOTODIN_NATIVE_SMOKE === '1';
+}
+
 export async function startDesktopBackend(): Promise<void> {
   if (!isDesktop()) return;
+  if (isNativeA4SmokeMode()) {
+    // The explicitly launched dev backend already listens on 127.0.0.1:8000.
+    // Do not spawn an unbundled sidecar or touch the installed app data dir.
+    // The native Tauri commands (including Save As) remain fully functional.
+    return;
+  }
   const connection = await invoke<DesktopConnection>('launch_backend');
   configureDesktopAPI(connection);
   // A Windows-packed Python runtime can take several seconds to initialise.

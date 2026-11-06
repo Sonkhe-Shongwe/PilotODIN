@@ -23,7 +23,7 @@ ai_secrets.dpapi
 ai_settings.json
 
 # Rust and desktop build artifacts
-src-tauri/target/
+frontend/src-tauri/target/
 src-tauri/binaries/*.exe
 src-tauri/binaries/*.pdb
 frontend/package-lock.json.old
@@ -40,3 +40,30 @@ frontend/src-tauri/resources/llama-runtime/*.dll
 frontend/src-tauri/binaries/pilotodin-inference-*.exe
 # Local Windows frontend compilation evidence
 frontend-check-results/
+
+# Isolated, disposable live development runtime (never commit local projects)
+.pilotodin-dev-data/
+.pilotodin-dev-cache/
+.venv-live/
+
+# Verified-but-not-approved font binaries are build-review-only and must never be committed.
+/build/p2-pdf-font-preflight/
+# P2-U2a PyInstaller-only font test; never commit build outputs or third-party binaries.
+/build/p2-pdf-frozen-resource-probe/
+
+# P2-U2c: independently consented full scientific sidecar DevQA tooling only.
+/build/p2-sidecar-env/
+
+# P2 all local DevQA frozen engines, Unicode PDF proofs and review receipts.
+# Files under build/ may embed third-party font subsets or private runtime logs.
+# Never stage them from GitHub Desktop or commit them as source.
+/build/
+
+# P2 final release font/OFL resources are not independently approved yet.
+# Future release requires deliberate reviewed asset inclusion, not incidental Git add.
+/backend/assets/pdf_fonts/
+
+# Browser integration QA artifacts: traces/screenshots may contain workspace UI content.
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/

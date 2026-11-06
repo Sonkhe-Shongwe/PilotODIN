@@ -1,0 +1,50 @@
+name: P1 Project Lifecycle Disposable Backend Acceptance
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p1-project-lifecycle.yml
+      - backend/storage.py
+      - backend/project_lifecycle.py
+      - backend/quality.py
+      - backend/quality_approvals.py
+      - backend/reports.py
+      - backend/saved_analyses.py
+      - backend/investigations.py
+      - backend/project_delete_impact.py
+      - backend/main.py
+      - tests/test_p1_project_lifecycle.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p1-project-lifecycle
+  cancel-in-progress: true
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Use an isolated runner-owned data home
+        run: echo "PILOTODIN_HOME=${RUNNER_TEMP}/pilotodin-project-lifecycle-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
+      - name: Checkout without saved credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.11"
+      - name: Install existing test requirements
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Validate source syntax
+        run: python -m compileall -q backend/project_lifecycle.py backend/project_delete_impact.py backend/storage.py backend/main.py backend/quality.py backend/quality_approvals.py backend/reports.py backend/saved_analyses.py backend/investigations.py tests/test_p1_project_lifecycle.py
+      - name: Exercise reversible synthetic project lifecycle
+        run: python -m pytest -q tests/test_p1_project_lifecycle.py tests/test_p1_real_api_failed_switch.py tests/test_p1_import_recovery.py
