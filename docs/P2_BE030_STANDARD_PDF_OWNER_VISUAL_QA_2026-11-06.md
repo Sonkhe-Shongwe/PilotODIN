@@ -1,0 +1,35 @@
+# PilotODIN P2 | BE-030 current standard PDF visual quality review
+
+**Created:** 6 November 2026  
+**Phase:** P2 ACTIVE / REVIEW_REQUIRED; P3 NOT AUTHORISED; P8 installed/offline release NOT CERTIFIED  
+**Owner acceptance:** **PENDING actual synthetic standard PDF visual review**. This is **not** a Unicode release gate, installer test or proof that an installed Windows export dialog works.
+
+## Why this is the next bounded task
+
+[BE-030 in QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) originally recorded a three-page A4 export with raw JSON, broken pagination and little human-readable analysis. Later `backend/reports.py` clearly implements structured verified facts, tables, saved chart vectors, sections and page footers, but **the present ordinary/legacy PDF appearance was not independently visually accepted**. Prior genuine user review of a development-only opt-in Unicode PDF is not proof of the current standard PDF format. The owner has already decided to ship standard PDF/HTML first and defer end-user Unicode PDF; therefore the relevant P2 quality gate is **normal legacy PDF**, not new font work.
+
+## Test-only implementation
+
+- [`Run_PilotODIN_P2_Standard_PDF_Visual.bat`](../Run_PilotODIN_P2_Standard_PDF_Visual.bat) invokes only the existing `.venv-live\Scripts\python.exe`. It runs [three new source-only contracts](../tests/test_p2_legacy_pdf_visual_source.py) before making even a synthetic project, then runs [the isolated synthetic PDF generator](../tools/Run_P2_Legacy_PDF_Visual_Local.py). No `pip`/`npm` installs, GitHub Actions dispatch, model training, font download or release build. The BAT refuses an existing `PILOTODIN_HOME` or desktop-session environment.
+- The generator first validates actual Windows, exact authorised feature branch, no current product workspace/session, and creates **one fresh** `qa_foundation.create_run` home under `%LOCALAPPDATA%\PilotODIN\DevQA\runs\P2-LEGACY-PDF-VISUAL-...`. Source data are exactly **eight invented rows** with three columns `OrderID,Region,Revenue`; original CSV SHA-256 is verified before and after.
+- It sets `PILOTODIN_HOME` only inside its owned Python process, and uses **real in-process `FastAPI TestClient(app)` normal endpoints**, not mocks: one synthetic upload, two completed disposable investigation analyses (`overview`, `compare`), one saved Explore **bar chart**, one immutable saved report with **three verified frozen evidence IDs**, and actual GET `/api/reports/{id}/export/pdf?revision=1` plus `html`. HTTP response filename/MIME, title, saved evidence order, revision SHA-256, PDF extraction and HTML SVG chart are checked. Script explicitly refuses any Unicode release approval other than `NOT_GRANTED` with empty release pins/reference.
+- Generated **standard PDF**, matching saved **HTML reference** and first up to six **rendered PNG page previews** remain in the run's local `exports` folder for manual comparison. Only the run manifest and `diagnostics/result.json` are placed in a **status-only** ZIP. The archive contains no report PDF, HTML, preview PNG, CSV rows, owner data or native logs.
+- The generator may open the local synthetic PDF in the owner's default viewer after verification, but **no user PDF/data outside the newly created DevQA home is opened or changed**. Output `be_030_owner_visual=PENDING` is deliberately not converted to PASS by programmatic PDF extraction or page rendering.
+
+**Current source verification (not execution):** GitHub branch HEAD and exact checked-in test/runner/BAT contents were read back; three source contract definitions, source isolation, normal API paths, rendering and page-preview steps and preflight-before-run ordering are present. **The three Python unittest contracts, full FastAPI/ReportLab render, Windows owner run, visual pages and status archive integrity are NOT YET EXECUTED OR OBSERVED.** Do not record a 3/3 PASS, E2E PASS or BE-030 FIXED based on source review alone.
+
+## One Windows owner action
+
+1. Update the active `feature/live-dev-workspace-20261023` branch without discarding local working changes. Close previous synthetic QA windows. Do **not** launch normal PilotODIN or alter the live project home.
+2. Double-click **`Run_PilotODIN_P2_Standard_PDF_Visual.bat`** from the repository root. It requires the already provisioned `.venv-live`; it installs nothing and performs **only synthetic** FastAPI project/report writes inside the fresh DevQA run. If its three source checks or Python/API/PDF checks fail, **stop** and share the console error. Do not change backend products to make tests green.
+3. If successful, the console prints `SYNTHETIC normal saved PDF and HTML HTTP export: SOURCE/EXTRACTION PASS`, absolute PDF/HTML paths, number of A4 pages and status-only ZIP. The default PDF viewer may open; if it does not, open exactly the **printed** PDF in the DevQA `exports` folder. Inspect its pages and, if useful, corresponding `P2_BE030_SYNTHETIC_PAGE_XX.png` images.
+4. Confirm whether the report title, analyst-written interpretation, **three** evidence exhibits, **verified facts/observations tables**, **saved bar chart**, source/version/digest provenance, limitations and page footers are all readable; check page breaks, clipped labels, empty pages, page-number coherence, chart legibility and excessive whitespace. Compare against the automatically produced **matching synthetic HTML reference** if needed.
+5. Send either **`BE-030 visual PASS`** with a screenshot of the relevant PDF pages, or **`BE-030 visual FAIL`** with the precise page/layout defect and final PowerShell console. Screenshots/PDF must contain **only the synthetic eight-row fixture**, never an owner dataset. A clean extracted PDF alone cannot prove visual quality.
+
+## Acceptance decision and other outstanding scope
+
+**Only after real owner inspection** can the current **standard/legacy PDF synthetic report visual** be marked **SCOPED ACCEPTED**, provided no materially misleading/clipped/blank/opaque table or chart content appears and the normal API/extraction validations pass. If it fails, record the defect and correct the smallest relevant renderer bug with focused regression; do not waive a high presentation problem by asserting the feature is optional.
+
+This is **not** proof of rich multi-dataset analysis, all report types, production installed Windows native Save As, complete font glyph coverage, PDF Unicode release rights, concurrent exports or P8 certification. If the current standard report appears acceptable, the remaining **BE-028 advanced model/chart evidence depth** and **BE-029 broader report UX discoverability** still need explicit owner scope/deferral decisions and full phase-matrix freeze/signoff. [Historical High reconciliation](./P2_DELIVER_HIGH_SEVERITY_RECONCILIATION_2026-11-06.md).
+
+**No P2 closure or P3 activation is authorised by this test preparation.** Preserve the accepted five-step consent, three-step two-window and four-step A01 Windows keyboard/Narrator results; owner-deferred tab-X native observation remains open for pre-P8 QA.
