@@ -10,10 +10,11 @@ const firstDomain='Owner-described insurance claim processing dataset';
 const revisedDomain='Owner-described synthetic insurance cases, revised locally';
 const rowMeaning='Each synthetic row represents one individual submitted case';
 const fieldMeaning='Requested claim amount, as described by this fixture owner';
+const ownerOnlyMeaning='Freeform case note for local synthetic manual review';
 const source=(tag:string)=>[
- 'claim_id,claim_amount,policy_number',
+ 'claim_id,claim_amount,policy_number,freeform_note',
  ...Array.from({length:20},(_,i)=>
-  tag+String(i+1).padStart(3,'0')+','+String((i+1)*21)+',P'+String((i%4)+1))
+  tag+String(i+1).padStart(3,'0')+','+String((i+1)*21)+',P'+String((i%4)+1)+',note_'+String(i+1))
 ].join('\n')+'\n';
 
 type Audit={saved:number;blocked:string[];remote:string[];reads:string[]};
@@ -45,7 +46,7 @@ async function protectBrowser(context:BrowserContext,ids:[string,string]):Promis
   const detailRead=method==='GET'&&ids.some(id=>path==='/projects/'+id+'/columns/detail')&&
    [...url.searchParams.keys()].sort().join(',')==='expected_version,name'&&
    url.searchParams.get('expected_version')==='0'&&
-   ['claim_id','claim_amount','policy_number'].includes(url.searchParams.get('name')??'');
+   ['claim_id','claim_amount','policy_number','freeform_note'].includes(url.searchParams.get('name')??'');
   if(simpleRead||semanticsRead||detailRead){audit.reads.push(path);await route.continue();return;}
   if(method==='POST'&&path==='/projects/'+ids[0]+'/semantic-business-context'&&url.search===''&&audit.saved<2){
    let body:unknown;
@@ -58,8 +59,9 @@ async function protectBrowser(context:BrowserContext,ids:[string,string]):Promis
      object.expected_version===0&&
      [firstDomain,revisedDomain].includes(String(domain))&&
      object.record_grain_description===rowMeaning&&
-     Array.isArray(fields)&&fields.length===1&&
-     fields[0].column==='claim_amount'&&fields[0].meaning===fieldMeaning;
+     Array.isArray(fields)&&fields.length===2&&
+     fields[0].column==='claim_amount'&&fields[0].meaning===fieldMeaning&&
+     fields[1].column==='freeform_note'&&fields[1].meaning===ownerOnlyMeaning;
    if(valid){
     audit.saved++;await route.continue();return;
    }
@@ -124,6 +126,10 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
   await semantic.getByLabel('Owner-described meaning').fill('tiny');
   await expect(semantic.getByRole('button',{name:'Save business descriptions'})).toBeDisabled();
   await semantic.getByLabel('Owner-described meaning').fill(fieldMeaning);
+  // An owner may also describe a field with no machine role hypothesis.
+  await semantic.getByRole('button',{name:'Add field definition'}).click();
+  await semantic.getByLabel('Field 2').selectOption('freeform_note');
+  await semantic.getByLabel('Owner-described meaning').nth(1).fill(ownerOnlyMeaning);
   await expect(semantic.getByText('Unsaved business descriptions.',{exact:false})).toBeVisible();
   const switcherBeforeSave=page.getByRole('combobox',{name:'Switch project'});
   let declinedMessage='';
@@ -149,6 +155,9 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
   await expect(semantic.getByText('Saved for this dataset version as user-provided',{exact:false})).toBeVisible();
   await expect(semantic.getByText('Unsaved business descriptions.',{exact:false})).toHaveCount(0);
   await expect(semantic.getByRole('region',{name:'Owner-described business context'})).toContainText(firstDomain);
+  await expect(semantic.getByRole('region',{name:'Owner-described business context'})).toContainText(ownerOnlyMeaning);
+  await expect(semantic.getByRole('region',{name:'Owner-described business context'}))
+   .toContainText('No system field hypothesis; user description unverified. Comparison not assessed.');
   const domainReview=semantic.getByRole('group',{name:'Compare unverified domain statements'});
   await expect(domainReview).toContainText(firstDomain);
   await expect(domainReview).toContainText('No automatic equivalence or disagreement finding');
@@ -175,7 +184,8 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
   await semantic.getByText('Review or revise your business descriptions').click();
   await expect(semantic.getByLabel('What business area does this dataset describe?')).toHaveValue(firstDomain);
   await expect(semantic.getByLabel('What does one row represent?')).toHaveValue(rowMeaning);
-  await expect(semantic.getByLabel('Owner-described meaning')).toHaveValue(fieldMeaning);
+  await expect(semantic.getByLabel('Owner-described meaning').first()).toHaveValue(fieldMeaning);
+  await expect(semantic.getByLabel('Owner-described meaning').nth(1)).toHaveValue(ownerOnlyMeaning);
   await semantic.getByLabel('What business area does this dataset describe?').fill(revisedDomain);
   const editResponse=page.waitForResponse(r=>
    r.url()===API+'/api/projects/'+aid+'/semantic-business-context'&&
