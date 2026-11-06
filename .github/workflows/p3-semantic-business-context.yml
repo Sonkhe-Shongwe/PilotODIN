@@ -26,6 +26,13 @@ on:
       - frontend/src/p3NativeSemanticQa.tsx
       - frontend/src-tauri/tauri.p3-native-semantic-qa.conf.json
       - tests/test_p3_native_qa_source.py
+      - Run_PilotODIN_P3_Native_Quality_W5_QA.bat
+      - tools/Seed_P3_Native_Quality_W5_Local.py
+      - tools/Run_P3_Native_Quality_W5_QA_Local.ps1
+      - frontend/p3_native_quality_w5_qa.html
+      - frontend/src/p3NativeQualityW5Qa.tsx
+      - frontend/src-tauri/tauri.p3-native-quality-w5-qa.conf.json
+      - tests/test_p3_native_quality_w5_source.py
   workflow_dispatch:
 
 permissions:
@@ -62,7 +69,7 @@ jobs:
           python -m pip install -r backend/requirements-test.txt
           npm ci --prefix frontend --no-audit --no-fund
       - name: Compile modified Python modules
-        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py
+        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py tools/Seed_P3_Native_Quality_W5_Local.py
       - name: Run P3 new and affected previous Python contracts
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/p3-semantic-context-${{ github.run_id }}
@@ -70,7 +77,7 @@ jobs:
           python -m pytest -q tests/test_p3_semantic_business_context.py
           tests/test_p3_semantic_profile.py
           tests/test_p4_target_business_context.py
-          tests/test_p3_native_qa_source.py
+          tests/test_p3_native_qa_source.py tests/test_p3_native_quality_w5_source.py
       - name: Verify affected frontend API and UI source contracts
         run: >-
           node --test
@@ -93,10 +100,14 @@ jobs:
         run: |
           $tokens = $null
           $parseErrors = $null
-          $source = Join-Path $env:GITHUB_WORKSPACE 'tools\Run_P3_Native_Semantic_QA_Local.ps1'
-          [System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$parseErrors) | Out-Null
-          if ($parseErrors -and $parseErrors.Count -gt 0) {
-            $parseErrors | ForEach-Object { Write-Host $_.Message }
-            throw 'P3 native QA Windows PowerShell source has syntax errors.'
+          foreach ($name in @('Run_P3_Native_Semantic_QA_Local.ps1', 'Run_P3_Native_Quality_W5_QA_Local.ps1')) {
+            $source = Join-Path $env:GITHUB_WORKSPACE ('tools\' + $name)
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors -and $parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Host $_.Message }
+              throw ('P3 native QA PowerShell parse failed: ' + $name)
+            }
           }
-          Write-Host 'Windows PowerShell parse PASS. Native app and W1-W4 NOT TESTED.'
+          Write-Host 'Both P3 PowerShell scripts parse. Native W1-W4 not rerun, W5 not tested.'
