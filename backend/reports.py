@@ -888,16 +888,17 @@ def render_pdf(report: dict, *, unicode_context=None) -> bytes:
         safe = (unicode_context.markup(text) if unicode_context is not None else
                 escape(text).replace('\n','<br/>'))
         return Paragraph(safe, styles[style])
-    def table(headers,records):
+    def table(headers,records, *, compact=False):
         if not headers or not records:return []
         width=doc.width/max(len(headers),1)
         cells=[[p(v,'ODINMeta') for v in headers]]
         cells.extend([p(v,'ODINBody') for v in row] for row in records)
         obj=Table(cells,colWidths=[width]*len(headers),repeatRows=1,hAlign='LEFT')
+        row_pad = 3 if compact else 6
         obj.setStyle(TableStyle([
           ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#f0efff')),
           ('BOTTOMPADDING',(0,0),(-1,0),9),('TOPPADDING',(0,0),(-1,0),8),
-          ('BOTTOMPADDING',(0,1),(-1,-1),6),('TOPPADDING',(0,1),(-1,-1),6),
+          ('BOTTOMPADDING',(0,1),(-1,-1),row_pad),('TOPPADDING',(0,1),(-1,-1),row_pad),
           ('LINEBELOW',(0,0),(-1,-1),.35,colors.HexColor('#dee2ee')),
           ('VALIGN',(0,0),(-1,-1),'TOP')]))
         return [obj,Spacer(1,10)]
@@ -925,34 +926,53 @@ def render_pdf(report: dict, *, unicode_context=None) -> bytes:
                         + ('Experiment created' if art['operation']=='model_evaluation' else 'Computed')
                         + f" {art['computed_at']}",'ODINMeta'),
                       p('Investigation: '+art['objective'])]
-        fact_table=table(['Measure','Verified value'],facts)
-        # Keep standard-sized metric tables with the source heading, instead
-        # of orphaning "Model Evaluation" on one page and values on the next.
-        # Oversized fact tables can still flow across pages.
-        if fact_table and len(facts)<=18:
+        visual = art.get('result', {}).get('visual') if isinstance(art.get('result'), dict) else None
+        spec = report_charts.visual_spec(visual) if isinstance(visual, dict) else None
+        # A short saved Explore chart was previously split from its exact
+        # verified-value table by an avoidable extra page on the real BE-030
+        # legacy PDF. Let its metric table repeat its header over a page
+        # boundary and keep the compact chart with the short value table.
+        # Other exhibit types and larger tables keep their existing layout.
+        compact_explore = (unicode_context is None
+                           and art.get('operation') == 'explore_snapshot'
+                           and spec is not None
+                           and 0 < len(facts) <= 12 and 0 < len(records) <= 8)
+        fact_table=table(['Measure','Verified value'],facts,compact=compact_explore)
+        if compact_explore:
+            # Reserve space for the exhibit heading and initial facts, while
+            # allowing the continuation rows to flow onto the next page.
+            story.append(CondPageBreak(155))
+            story.extend([*exhibit_header,*fact_table])
+        elif fact_table and len(facts)<=18:
+            # Preserve non-Explore heading and small fact table grouping.
             story.append(KeepTogether([*exhibit_header,*fact_table]))
         else:
             story.append(CondPageBreak(190))
             story.extend([*exhibit_header,*fact_table])
-        visual = art.get('result', {}).get('visual') if isinstance(art.get('result'), dict) else None
-        if isinstance(visual, dict):
-            spec = report_charts.visual_spec(visual)
-            if spec is not None:
-                # Keep the heading, bounded vector chart and limitations
-                # together rather than orphaning the heading at page bottom.
-                chart_section = [
-                    p('Saved chart visualization','ODINHeading'),
-                    report_charts.pdf_chart(spec, width=doc.width, unicode_context=unicode_context),
-                ]
-                if spec.get('note'):
-                    chart_section.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
+        chart_and_values_grouped = False
+        if spec is not None:
+            # Preserve exact saved vector values and labels; only opt into the
+            # compact 175pt canvas for the short legacy Explore exhibit.
+            chart_section = [
+                p('Saved chart visualization','ODINHeading'),
+                report_charts.pdf_chart(spec, width=doc.width,
+                                        unicode_context=unicode_context,
+                                        compact=compact_explore),
+            ]
+            if spec.get('note'):
+                chart_section.append(p('Chart limitations: ' + spec['note'],'ODINMeta'))
+            if compact_explore:
+                observations=[p('Verified observations','ODINHeading'),
+                              *table(columns,records,compact=True)]
+                story.append(KeepTogether([*chart_section,*observations]))
+                chart_and_values_grouped = True
+            else:
                 story.append(KeepTogether(chart_section))
-        if records:
+        if records and not chart_and_values_grouped:
             table_section=[p('Verified observations','ODINHeading'),*table(columns,records)]
             if len(records)<=12:
-                # Short finding/class/Explore tables belong together on one
-                # page. The previous CondPageBreak(160) could still leave
-                # the section heading orphaned above a page break.
+                # Keep small non-Explore finding tables and their headings
+                # together. Large tables still flow with repeated headers.
                 story.append(KeepTogether(table_section))
             else:
                 story.append(CondPageBreak(190))
