@@ -8,7 +8,7 @@
 
 The previous P2 work implemented main-shell Tauri-native **Leave Deliver / Keep editing** via the one-use Rust command `confirm_native_deliver_exit`, but `UnifiedShell.approvePrimaryStudioNavigation` still used synchronous browser `window.confirm` even when primary Studio was itself calling `App.go(next)`. That entry point remains reachable from Studio's **Ctrl+K command palette** while a Deliver report is dirty, even though the nested Studio sidebar and top bar are hidden by the unified shell's layout.
 
-Consequently shell rail/header actions and a Studio command for the same dirty Deliver report used different consent mechanisms. The code also required an after-approval continuation to ensure optional New dataset importer intent, quality/evidence focus, UI notice/error reset and the command palette were not changed before native consent or forgotten after native consent. This was a **source-confirmed inconsistency**, not an observed physical Windows dialog incident.
+Consequently shell rail/header actions and a Studio command for the same dirty Deliver report used different consent mechanisms. The code also required an after-approval continuation to ensure optional New dataset importer intent, quality/evidence focus, UI error reset and the command palette were not changed before native consent or forgotten after native consent. This was a **source-confirmed inconsistency**, not an observed physical Windows dialog incident.
 
 ## Bounded production fix
 
