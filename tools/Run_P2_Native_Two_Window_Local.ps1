@@ -100,7 +100,7 @@ try{
   throw 'Unexpected new QA allocation status.'
  }
  $runDir=[string]$allocated.run_dir
- if(-not[IO.Path]::IsPathRooted($runDir) -or
+ if(-not [IO.Path]::IsPathRooted($runDir) -or
     (Split-Path $runDir -Leaf) -notmatch '^P2-NATIVE-TWO-WINDOW-DELIVER-[0-9TZ]+-[a-f0-9]{10}$'){
   throw 'Unrecognised isolated QA run identity.'
  }
