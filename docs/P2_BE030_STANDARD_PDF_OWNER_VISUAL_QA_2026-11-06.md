@@ -2,7 +2,19 @@
 
 **Created:** 6 November 2026  
 **Phase:** P2 ACTIVE / REVIEW_REQUIRED; P3 NOT AUTHORISED; P8 installed/offline release NOT CERTIFIED  
-**Owner acceptance:** **PENDING actual synthetic standard PDF visual review**. This is **not** a Unicode release gate, installer test or proof that an installed Windows export dialog works.
+**Owner acceptance:** **Actual synthetic Windows source/API/PDF extraction PASS; visual page review PENDING**. This is **not** a Unicode release gate, installer test or proof that an installed Windows export dialog works.
+
+## 6 November 2026 | Actual owner Windows generator execution: source and extraction PASS, visual still PENDING
+
+**Actual Windows console evidence received:** Owner ran the intended `Run_PilotODIN_P2_Standard_PDF_Visual.bat` in an Administrator Windows Terminal. Screenshot shows the three source-only contract tests ran `Ran 3 tests in 0.006s` then `OK`; actual script continued and printed `SYNTHETIC normal saved PDF and HTML HTTP export: SOURCE/EXTRACTION PASS`. This establishes the executed script's normal FastAPI synthetic saved-report content/extraction checks succeeded, not merely a static source review.
+
+**Exact local output identity from the screenshot:** QA run `P2-LEGACY-PDF-VISUAL-20261106T132535Z-f7893c5cac` under `C:\\Users\\Lenovo\\AppData\\Local\\pilotODIN\\DevQA\\runs\\`. Normal PDF and matching HTML reference were created in its `exports` directory as `P2_BE030_SYNTHETIC_STANDARD_PDF_REVIEW.pdf` and `P2_BE030_SYNTHETIC_STANDARD_HTML_REFERENCE.html`. Console explicitly reports **`Rendered page PNGs: 4`** and **`PDF page count: 4. Owner visual quality acceptance remains PENDING.`** Status-only ZIP path printed at `C:\\Users\\Lenovo\\AppData\\Local\\pilotODIN\\DevQA\\archive\\P2-LEGACY-PDF-VISUAL-20261106T132535Z-f7893c5cac-be030-status-only.zip`. ZIP contents, Python result JSON, source Git HEAD, actual PDF/HTML bytes, and four page PNGs were **not independently opened or inspected** in this ChatGPT session. The screenshot shows the BAT at its final `Press any key to continue` prompt, not an installed release or owner quality signoff.
+
+**Deprecation note:** Python emitted `warning: The 'fitz' API is deprecated and will be removed in future. Use 'import pymupdf' instead.` The script continued to successful generation and extraction. This is **non-blocking compatibility maintenance**, not evidence that current PDF charts/layout failed; avoid scope creep or dependency updates for a harmless warning.
+
+**Bounded acceptance:** `BE-030 SYNTHETIC STANDARD PDF API/CONTENT/EXTRACTION: PASS (owner Windows console)`; **`BE-030 ACTUAL VISUAL QUALITY: PENDING`** until owner submits the four synthetic PDF page screenshots or the synthetic PDF file for inspection. The test's automated checks already report that a frozen 3-evidence saved revision, chart and basic narrative were exported; **chart/table clarity, clipping, page distribution and professional quality cannot be inferred from the console**. The final PDF has **four pages**, which is not automatically a defect or a pass. No source changes, user data mutation, font release approval or P8 product certification followed from the screenshot.
+
+**Next exact action:** Inspect the PDF already generated in the run's `exports` folder and supply images of **pages 1–4** or upload the synthetic PDF. Review title, narrative, 3 evidence exhibits, table/chart readability, limitations and provenance, page breaks, whitespace, page numbers, clipped labels and empty pages. Do **not** rerun the BAT: the successful synthetic report already exists. On visual problems, record the actual page-specific defect before remediation; otherwise mark scoped BE-030 visual accepted with evidence.
 
 ## Why this is the next bounded task
 
