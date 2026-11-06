@@ -18,6 +18,9 @@
 2. Use the two tiny **repository-owned** files in `tests/fixtures`: [p3_semantic_owner_A.csv](../tests/fixtures/p3_semantic_owner_A.csv) and [p3_semantic_owner_B.csv](../tests/fixtures/p3_semantic_owner_B.csv). Each holds 20 **fully invented** records using `claim_id`, `claim_amount` and `policy_number`. Do not alter or import any real projects for this QA.
 3. If using existing `Start_PilotODIN_Live_Dev.bat`, note that it opens **a browser preview** and writes to its separate `.pilotodin-dev-data` workspace, **not** the installed app's data. A PASS in that preview must be labelled **Windows browser developer PASS**, **not native WebView2 PASS**. If you already have a functioning native Tauri development shell, test the same synthetic flow in that shell and record its mode; do not create an installer or install new toolchains just for this gate.
 
+## 6 November 2026 | P3-03a UI note
+The current source also displays user field meanings in the tentative-role table, and places the system's domain/possible unique key beside the owner's domain/row descriptions. Verify they remain clearly labelled **unverified** in W1/W2. A guessed unique key does not confirm row meaning; there is no automatic semantic match or disagreement decision. This UI feature has real Chromium CI PASS [#42252331820](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42252331820), but no physical owner Windows approval.
+
 ## Five narrowly scoped checks
 
 | Check | Owner action | Required result |
