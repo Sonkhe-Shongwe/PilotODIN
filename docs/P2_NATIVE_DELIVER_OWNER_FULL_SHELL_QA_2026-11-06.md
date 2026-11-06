@@ -16,6 +16,14 @@
 
 **Status:** Windows Tauri **window-open observed, scoped**; native Keep/Leave/focus and new-project importer outcomes **PENDING**. P2 ACTIVE / REVIEW_REQUIRED, P8 NOT CERTIFIED. This is not evidence of running a real installed product.
 
+## 6 November 2026 | Corrected badge observed in owner's real Windows Tauri QA window
+
+**Owner-provided actual Windows screenshot after the test-only badge source correction:** The titled `PilotODIN P2 Native Deliver Consent - SYNTHETIC DEV QA` window visibly displays the genuine `UnifiedShell` header with **New project** and Manage unobstructed, an isolated `p2-native-consent-synthetic` project, Deliver active, Explore/Home tabs, and the small amber **SYNTHETIC QA - NO WRITES** badge at the **bottom-left**. This is **OWNER WINDOWS VISUAL PASS, scoped for the QA badge position and header control visibility**, after committed QA source `1c1efbd6b249` and two local source tests `49913b8bc786`. No need to repeat that visual check on unchanged source.
+
+**Not observed in this screenshot:** A typed dirty draft and its warning, Windows **Leave Deliver / Keep editing** native modal, Keep/Leave outcome, New project importer deferral, keyboard focus, the five final PowerShell answers, process exit code or native cross-window project selection. The five actual manual checks therefore remain **PENDING**, and the existing Windows QA session may be used to complete them. Do not equate visible controls with successful dialogs or completed native acceptance. No production source, dataset, saved report, model, installer or release fonts were changed by this observation.
+
+**Next:** Type one synthetic draft in Deliver; follow the five existing instructions and capture the actual native modal and final truthful console answers. The separate two-window storage selection, font/OFL approval and P8 release remain open.
+
 ## Why this specific new gate exists
 
 The earlier [native Deliver source and simulated-IPC acceptance](./P2_NATIVE_DELIVER_SHELL_EXIT_CONSENT_2026-11-06.md) established the Rust command compiled and a Chromium simulation handled Keep/Leave and stale replies. **It did not show a real Windows WebView2 owner-visible Leave Deliver / Keep editing dialog.**
