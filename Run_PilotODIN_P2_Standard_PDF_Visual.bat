@@ -24,7 +24,7 @@ if defined PILOTODIN_DESKTOP_SESSION (
   exit /b 1
 )
 echo Checking isolated QA source before creating any synthetic project...
-"%~dp0.venv-live\Scripts\python.exe" -B -m unittest discover -s "%~dp0tests" -p "test_p2_legacy_pdf_visual_source.py"
+"%~dp0.venv-live\Scripts\python.exe" -B -m unittest discover -s "%~dp0tests" -p "test_p2_legacy_pdf_*.py"
 if ERRORLEVEL 1 (
   echo QA source preflight FAILED. No disposable report was generated.
   pause
