@@ -1,5 +1,17 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+## 6 November 2026 | Owner directive: automation-first engineering and acceptance
+
+**Binding execution preference:** Keep PilotODIN development, test execution, QA evidence gathering, verification, source commits, and handoff maintenance as automated as safely possible. Prefer a single bounded, repeatable synthetic test command to multi-step owner questionnaires. Reuse already accepted tests; do not request their repetition on unchanged relevant code.
+
+- Automate disposable-fixture setup, isolated process lifecycle, backend and UI assertions, checksums, request-denial auditing, pass/fail recording, evidence redaction, and cleanup **without touching owner projects**. Fail closed on a dirty checkout or unexpected state and preserve all owner work.
+- For P3 W5, existing real HTTP Chromium/browser acceptance is **PASS** at its exact earlier source SHA; the remaining native Windows Tauri/WebView2 proof should use a **purpose-built, maximally automated, one-run synthetic harness**, not the already accepted W1–W4 two-save harness. Automatically verify the actual consented Quality version transition, current/historical semantic boundaries and original-file integrity. Obtain owner observation only for UI behaviour that cannot be independently attested by that harness.
+- Owner consent for a data-changing action remains a **fresh explicit gesture** even with synthetic QA; never silently generalise test-only allowance into production permission. Native acceptance, source/CI acceptance and full release certification remain separate, and unperformed work must remain pending.
+- Do not consume hosted CI minutes, install dependencies, create an installer, run model training, access real datasets or advance P4 solely to reduce the owner's manual burden. Preserve the established manual-only workflow restrictions and phase/QA gates. A source-only automated script cannot claim physical owner Windows results.
+
+This process preference **does not decide** whether broad P3-03 semantic adjudication is included/deferred, whether native W5 is mandatory for closure, or whether P3 is complete. Those phase-scope decisions remain open in the existing review register.
+
+
 > **6 November 2026 P3 activation annotation:** Owner said "okay lets begin" immediately after reviewing the P3 plan. **P3 is now the one active primary development phase**. P1/P2 remain development-closed with residuals, P4+ are not newly authorised; P8 release is not certified. Current P3 status/CI evidence is [recorded here](./P3_SEMANTIC_CONTEXT_ACCEPTANCE_2026-11-06.md). Earlier "no active phase" annotations below are historical. The phase exit criteria and exceptions remain binding.
 
 > **6 November 2026 current phase annotation:** P2 **CLOSED for bounded development** with an owner-frozen 14-gate matrix, documented residuals and [formal closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md). P1 remains bounded-development closed; no new primary phase is active and P3 requires separate authorisation. The six exit criteria and safety exceptions below remain binding, and P8 offline Windows release is NOT CERTIFIED.
