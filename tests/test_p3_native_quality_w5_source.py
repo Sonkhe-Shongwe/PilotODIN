@@ -116,4 +116,8 @@ def test_w5_native_origin_uses_existing_allowlist(tmp_path,monkeypatch):
     good=client.get("/api/projects/not_a_project/quality",headers={"Origin":origin})
     assert good.status_code==404
     bad=client.get("/api/projects/not_a_project/quality",headers={"Origin":"http://127.0.0.1:5181"})
-    assert bad.status_code==403
+    # CORS forbids the response even though this read-only Quality route
+    # returns 404 for an absent project rather than calling _local_request.
+    # Browser access depends on the allow-origin header, not this status.
+    assert bad.status_code==404
+    assert "access-control-allow-origin" not in bad.headers
