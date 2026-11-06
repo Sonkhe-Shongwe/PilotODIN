@@ -20,7 +20,7 @@ These choices do **not** approve P2 closure now, waive serious defects, authoris
 
 ## P2-A01: required focused Windows keyboard + Narrator test
 
-**Status: REQUIRED IN-SCOPE / OWNER NATIVE EVIDENCE PENDING.** Existing five-step native consent and three-step cross-window owner tests remain **SCOPED ACCEPTED**. The additional requirement is not to repeat those tests, but to verify the accessibility modality against actual Windows Narrator.
+**Status: FOUR INTERACTIONS OWNER-REPORTED PASS, FINAL WINDOWS CONSOLE/SESSION EXIT PENDING.** Existing five-step native consent and three-step cross-window owner tests remain **SCOPED ACCEPTED**. The additional requirement is not to repeat those tests, but to verify the accessibility modality against actual Windows Narrator.
 
 ### New scoped launcher
 
@@ -40,6 +40,20 @@ The **new test-only BAT** invokes the **existing** `tools/Run_P2_Native_Deliver_
 
 **Acceptance threshold:** All four **actually owner-observed** entries `OWNER_REPORTED_PASS` plus actual native session/build exit without failure allow **P2-A01 scoped owner-native PASS**, subject to review of any contradictory visual/accessibility observations. A `FAIL_OR_NOT_OBSERVED` must remain **OPEN** and be investigated; do not call the phase closed. A success is not WCAG certification, full screen-reader coverage or P8 installed Windows release acceptance. This test-only runner has **not yet been executed on Windows**, so no PASS is claimed in this document.
 
+## 6 November 2026 | Owner Windows accessibility observations: all four reported working, final runner pending
+
+**Fresh owner evidence:** A screenshot from the actual `PilotODIN P2 Native Deliver Consent - SYNTHETIC DEV QA` Windows Tauri window shows a real system dialog titled `PilotODIN - Unsaved Deliver report`, with the explicit buttons `Leave Deliver` and `Keep editing`, over an open Deliver editor with the disposable narrative `aaa`. This directly demonstrates the native modal and edited report presence in the synthetic QA app; a still screenshot does **not** prove keyboard input, actual Narrator speech or later importer state.
+
+**Direct owner-reported four focused results, prior to runner exit:** Owner explicitly wrote `a1 is fine`, `a2 als i dentifies`, `a3 yes all works`, `a4 greate as well` after being given the four A01 tasks. Record:
+- `a01_warning_narrator: OWNER_REPORTED_PASS (CONVERSATION; FINAL CONSOLE PENDING)` — owner confirms warning discoverable by Narrator.
+- `a01_native_dialog_narrator: OWNER_REPORTED_PASS (CONVERSATION; FINAL CONSOLE PENDING)` — owner confirms purpose and Leave/Keep options identifiable.
+- `a01_keep_focus: OWNER_REPORTED_PASS (CONVERSATION; FINAL CONSOLE PENDING)` — owner confirms Tab/Shift+Tab, Keep preserves report and focus.
+- `a01_leave_importer_focus: OWNER_REPORTED_PASS (CONVERSATION; FINAL CONSOLE PENDING)` — owner confirms Explore/Leave and later New project importer accessible.
+
+**Scope-specific interpretation:** This is credible **actual owner Windows Narrator/keyboard observation**, unlike previous simulated-browser coverage, but no terminal screenshot shows the four exact runner `OWNER_REPORTED_PASS` strings, QA artifact integrity result or successful native process exit. For the predeclared A01 acceptance gate, **A01 = OWNER-REPORTED FOUR INTERACTIONS PASS / FINAL RUNNER VERIFICATION PENDING**, not yet unconditional `SCOPED CLOSED`. The owner should close the test window, answer the **four** `yes/no` questions truthfully, and share the resulting PowerShell console. Do not redo the already exercised interactions or the previous five/three accepted native journeys unless an observed failure changes the result.
+
+**Additional closure issue identified during final triage:** The historical master Issue #2 main defect table still lists P2-linked high-severity `BE-028` (report evidence/composition), `BE-029` (workflow/discoverability), `BE-030` (export presentation) and `BE-031` (HTML filename). Later implementation clearly addresses parts, including guided drafting, bounded evidence fact inspection, revision idempotency/comparison, renderer exhibit tables/chart logic, explicit `Content-Disposition` exposure and strict HTML-vs-PDF filename validation. The **historical Issue #2 rows have not yet been reclassified as wholly fixed/accepted**. The actual remainder of each high item must be reviewed against current source and accepted test modality; do **not** call the entire P2 critical/high gate closed merely because the two old startup blockers were fixed. This reconciliation is separate from A01 and precedes P2 closure signoff. Other cross-phase high/critical entries in Issue #2 stay owned by their authorised phase, not silently waived.
+
 ## P2 closure-readiness assessment against adopted phase policy
 
 The [adopted one-primary-phase closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) requires a frozen in-scope matrix, no unresolved confirmed critical/high defects, required true browser/native evidence, narrow changed-source regression/build, data-safety guarantees and reconciled Issue #2 / both handoffs.
@@ -47,8 +61,8 @@ The [adopted one-primary-phase closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_
 | Policy gate | Current evidence and remaining action | Status |
 | --- | --- | --- |
 | Frozen P2 scope | [14-row current register](./P2_ACCEPTANCE_REGISTER_CURRENT.md): U04 Unicode deferred, U07 standard PDF/HTML retained, N03 optional observation deferred by owner, A01 physical Windows required; final owner-accepted **whole-P2 phase scope/freeze** must still be recorded | **REVIEW REQUIRED** |
-| Confirmed high/critical in-scope defects | Prior scope-targeted QA entries document corrections, not a newly confirmed unaddressed critical/high P2 issue in the records reviewed. The latest full [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and any subsequently reported failures require a deliberate final triage; do not infer global cleanliness from absence of a reported complaint | **FINAL TRIAGE REQUIRED** |
-| Essential workflows pass appropriate modalities | Previously accepted saved revisions, legacy PDF/HTML, authenticated browser and synthetic native five-step consent + three-step two-window observations remain accepted at their exact scopes. New **A01 screen-reader and focus** modality is still unobserved | **BLOCKED ON A01 WINDOWS RESULT** |
+| Confirmed high/critical in-scope defects | Prior scope-targeted QA entries document corrections, not a newly confirmed unaddressed critical/high P2 issue in the records reviewed. The latest full [Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and any subsequently reported failures require a deliberate final triage; do not infer global cleanliness from absence of a reported complaint | **FINAL P2 HIGH-SEVERITY ISSUE TRIAGE REQUIRED (BE-028–031)** |
+| Essential workflows pass appropriate modalities | Previously accepted saved revisions, legacy PDF/HTML, authenticated browser and synthetic native five-step consent + three-step two-window observations remain accepted at their exact scopes. New **A01 screen-reader and focus** modality is still unobserved | **A01 OWNER INTERACTIONS PASS REPORTED; FINAL RUNNER/EXIT PENDING** |
 | Changed code tests and build | No production source change in this increment. QA-only runner optional-mode contracts can be tested at source level; the new mode's native Windows run/build is **pending**. Prior CI results remain attached to historical commits | **QA SOURCE CHECK; WINDOWS PENDING** |
 | Data protection / no mutation | Existing isolated QA runner seeds disposable data and blocks API writes. This plan does not touch real datasets, immutable saved reports, font binaries, models or installer | **EXISTING ISOLATION PRESERVED (source-level)** |
 | Authoritative documentation / owner closure decision | Current acceptance register, source-specific owner decision and handoffs/Issue #2 updated for N03/A01; **P2 owner closure signoff is not yet supplied** | **PENDING AFTER A01 AND TRIAGE** |
