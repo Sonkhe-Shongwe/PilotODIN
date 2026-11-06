@@ -53,6 +53,12 @@ def test_native_w5_runner_guard_and_evidence():
         "PASS_ONE_PROPOSAL_ONE_UI_COMMIT_ONE_REJECTED_STALE_POST",
         "OWNER_REPORTED_PASS","product_acceptance='NOT_TESTED'",
         "Stop-Process -Id $backendProcess.Id","Compress-Archive",
+        "Verify_P3_Native_Quality_W5_Status.py",
+        "--expected-source ([string]$record.source_head)",
+        "STATUS_ARCHIVE_INTEGRITY_PASS",
+        "STATUS_ONLY_ZIP_SELF_CHECK_FAILED",
+        "native_acceptance -ne 'PENDING_INDEPENDENT_REVIEW'",
+        "source_sha_matches_supplied_expectation -ne $true",
     ):
         assert expected in source,expected
     assert "Run_P3_Native_Quality_W5_QA_Local.ps1" in bat

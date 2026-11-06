@@ -10,6 +10,7 @@ $pythonExe=Join-Path $root '.venv-live\Scripts\python.exe'
 $allocator=Join-Path $PSScriptRoot 'qa_foundation.py'
 $seeder=Join-Path $PSScriptRoot 'Seed_P3_Native_Quality_W5_Local.py'
 $historyVerifier=Join-Path $PSScriptRoot 'Verify_P3_Native_Quality_W5_History_Local.py'
+$statusVerifier=Join-Path $PSScriptRoot 'Verify_P3_Native_Quality_W5_Status.py'
 $config=Join-Path $frontend 'src-tauri\tauri.p3-native-quality-w5-qa.conf.json'
 $runDir=$null
 $backendProcess=$null
@@ -81,7 +82,7 @@ function Denied-Expected([string]$path,[string]$method,[object]$payload){
 }
 try{
  if($env:OS -ne 'Windows_NT'){throw 'Requires physical Windows Tauri/WebView2; no native test ran.'}
- foreach($file in @($pythonExe,$allocator,$seeder,$historyVerifier,$config,
+ foreach($file in @($pythonExe,$allocator,$seeder,$historyVerifier,$statusVerifier,$config,
    (Join-Path $frontend 'p3_native_quality_w5_qa.html'),
    (Join-Path $frontend 'src\p3NativeQualityW5Qa.tsx'))){
   if(-not(Test-Path -LiteralPath $file -PathType Leaf)){
@@ -285,8 +286,37 @@ try{
    $files=@($recordFile,(Join-Path $runDir 'manifest.json'),(Join-Path $runDir 'fixtures\p3-native-w5-manifest.json')) |
      Where-Object {Test-Path -LiteralPath $_ -PathType Leaf}
    Compress-Archive -LiteralPath $files -DestinationPath $archive -ErrorAction Stop
+   if($exitCode -eq 0){
+    # Run the existing read-only status verifier as part of the same one-click
+    # procedure. This is local self-check, NOT independent WebView2 acceptance.
+    # Trust only the actual exit code AND its scoped JSON verdict.
+    $inspectionText=@(& $pythonExe -B $statusVerifier $archive --expected-source ([string]$record.source_head))
+    $inspectionCode=$LASTEXITCODE
+    $inspected=$null
+    if($inspectionCode -eq 0){
+     try{$inspected=($inspectionText | Out-String | ConvertFrom-Json)}
+     catch{$inspected=$null}
+    }
+    if($inspectionCode -ne 0 -or $null -eq $inspected -or
+       $inspected.verdict -ne 'STATUS_ARCHIVE_INTEGRITY_PASS' -or
+       $inspected.native_acceptance -ne 'PENDING_INDEPENDENT_REVIEW' -or
+       $inspected.product_acceptance -ne 'NOT_TESTED' -or
+       $inspected.source_sha_matches_supplied_expectation -ne $true){
+     $record.state='FAIL_OR_BLOCKED'
+     $record.failure_category='STATUS_ONLY_ZIP_SELF_CHECK_FAILED'
+     $exitCode=1
+     $record | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $recordFile -Encoding UTF8
+     Compress-Archive -LiteralPath $files -DestinationPath $archive -Force -ErrorAction Stop
+     Write-Warning 'P3 W5 status archive local self-check failed. Status is BLOCKED, not accepted.'
+    }else{
+     Write-Host 'Status-only ZIP integrity self-check PASS (native evidence still requires independent review).' -ForegroundColor Green
+    }
+   }
    Write-Host ('Status-only QA evidence (no datasets or logs): '+$archive) -ForegroundColor Cyan
-  }catch{Write-Warning ('Could not create status-only W5 evidence: '+$_.Exception.Message)}
+  }catch{
+   $exitCode=1
+   Write-Warning ('P3 W5 evidence generation or self-check failed; result NOT accepted: '+$_.Exception.Message)
+  }
  }
 }
 exit $exitCode
