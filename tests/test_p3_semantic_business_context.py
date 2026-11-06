@@ -126,3 +126,105 @@ def test_one_section_only_is_valid(tmp_path, monkeypatch):
     assert result.status_code == 200, result.text
     assert result.json()["domain_description"] == ""
     assert result.json()["field_definitions"][0]["column"] == "claim_id"
+
+def test_actual_approved_quality_version_change_does_not_reuse_prior_semantic_context(
+    tmp_path, monkeypatch
+):
+    """Real proposal/commit path: a human description must stay on its old version."""
+    from pathlib import Path
+    from backend import quality
+
+    home = tmp_path / "p3-disposable-version-transition"
+    (home / "datasets").mkdir(parents=True)
+    (home / "models").mkdir()
+    monkeypatch.setattr(storage, "HOME", home)
+    monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
+    storage.init()
+    quality._init_tables()
+    client = TestClient(main.app)
+
+    regions = (
+        ["Mpumalanga"] * 20
+        + ["Mpimilanga"] * 3
+        + [" Mpumalanga "] * 2
+        + ["Gauteng"] * 11
+    )
+    original = (
+        "claim_id,Region,claim_amount,policy_number\\n"
+        + "".join(
+            f"C{i:03d},{region},{100 + i},P{i % 4}\\n"
+            for i, region in enumerate(regions)
+        )
+    ).encode("utf-8")
+    imported = client.post(
+        "/api/projects",
+        files={"file": ("synthetic_p3_version.csv", original, "text/csv")},
+    )
+    assert imported.status_code == 201, imported.text
+    pid = imported.json()["id"]
+    original_path = Path(storage.get_project(pid)["dataset_path"])
+    assert original_path.read_bytes() == original
+    assert quality.current_version(pid) == 0
+
+    saved = client.post(
+        f"/api/projects/{pid}/semantic-business-context",
+        json={**payload(0), "domain_description": "Version zero synthetic insurance notes"},
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["verification_state"] == "user_described_not_independently_verified"
+    before = client.get(f"/api/projects/{pid}/semantics?expected_version=0")
+    assert before.status_code == 200, before.text
+    assert before.json()["user_context"]["domain_description"] == (
+        "Version zero synthetic insurance notes"
+    )
+
+    # Review the exact synthetic whitespace correction, then explicitly approve
+    # only its one-time receipt. Legacy direct/autopilot writes are not permitted.
+    preview = client.post(
+        f"/api/projects/{pid}/quality/proposals",
+        json={"operation": "autopilot", "expected_version": 0},
+    )
+    assert preview.status_code == 200, preview.text
+    reviewed = preview.json()
+    assert reviewed["changed_cells"] == 2
+    assert reviewed["expected_version"] == 0
+    committed = client.post(
+        f"/api/projects/{pid}/quality/commit",
+        json={
+            "proposal_id": reviewed["proposal_id"],
+            "proposal_hash": reviewed["proposal_hash"],
+        },
+    )
+    assert committed.status_code == 200, committed.text
+    assert committed.json()["version"] == 1
+    assert quality.current_version(pid) == 1
+    assert original_path.read_bytes() == original
+
+    # A stale GET or Save cannot make version-0 owner notes appear current.
+    assert client.get(f"/api/projects/{pid}/semantics?expected_version=0").status_code == 409
+    assert client.post(
+        f"/api/projects/{pid}/semantic-business-context",
+        json=payload(0),
+    ).status_code == 409
+    current = client.get(f"/api/projects/{pid}/semantics?expected_version=1")
+    assert current.status_code == 200, current.text
+    assert current.json()["user_context"] is None
+    assert storage.semantic_context(pid, 0)["domain_description"] == (
+        "Version zero synthetic insurance notes"
+    )
+    assert storage.semantic_context(pid, 1) is None
+
+    # Version 1 may get new explicit notes, never a silent migration of v0.
+    next_notes = client.post(
+        f"/api/projects/{pid}/semantic-business-context",
+        json={**payload(1), "domain_description": "Separate version one insurance notes"},
+    )
+    assert next_notes.status_code == 200, next_notes.text
+    assert storage.semantic_context(pid, 1)["domain_description"] == (
+        "Separate version one insurance notes"
+    )
+    assert storage.semantic_context(pid, 0)["domain_description"] == (
+        "Version zero synthetic insurance notes"
+    )
+    assert original_path.read_bytes() == original
+
