@@ -163,8 +163,14 @@ def main() -> int:
         html_path.write_bytes(html.content)
         with fitz.open(stream=pdf.content, filetype="pdf") as doc:
             pages = [page.get_text() for page in doc]
-            need(1 <= len(pages) <= 12 and all(len(text.strip()) >= 35 for text in pages),
-                 "Unexpected blank, oversized or unreadable standard PDF pages")
+            need(1 <= len(pages) <= 3 and all(len(text.strip()) >= 35 for text in pages),
+                 "Unexpected blank or excessive standard PDF pages after BE-030 layout fix")
+            chart_pages = [index for index, txt in enumerate(pages)
+                           if "Saved chart visualization" in txt]
+            value_pages = [index for index, txt in enumerate(pages)
+                           if "Verified observations" in txt and "710.0" in txt]
+            need(chart_pages == [2] and value_pages == [2],
+                 "Short saved chart and exact value table must share page three")
             combined = " ".join(pages).replace("\n", " ")
             for phrase in (TITLE, "Evidence register", "Saved chart visualization",
                            "Methodology and limitations", frozen["content_sha256"]):
