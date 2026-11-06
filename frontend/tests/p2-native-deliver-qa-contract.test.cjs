@@ -59,7 +59,10 @@ test('seed refuses non-empty and redirected workspace, validates true bytes and 
 test('Windows entrypoint never starts installed release, modifies originals or installs packages',()=>{
  assert.match(bat,/Run_P2_Native_Deliver_Consent_Local\.ps1/);
  assert.match(ps,/qaTool init --phase P2-NATIVE-DELIVER-CONSENT --json/);
- assert.match(ps,/PILOTODIN_HOME=\$home/);
+ assert.match(ps,/PILOTODIN_HOME=\$isolatedWorkspaceHome/);
+ assert.match(ps,/\$isolatedWorkspaceHome=Join-Path \$runDir 'workspace'/);
+ assert.doesNotMatch(ps,/(?:^|\n)\s*\$(?:home|host|pid|profile|input|matches|error)\s*=/im,
+  'Windows PowerShell automatic variables must not be assigned');
  assert.match(ps,/PILOTODIN_DESKTOP_SESSION/);
  assert.match(ps,/CARGO_NET_OFFLINE='true'/);
  assert.match(ps,/Port-Occupied 8000 -or Port-Occupied 5177/);
