@@ -1,10 +1,12 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+> **6 November 2026 P3 activation annotation:** Owner said "okay lets begin" immediately after reviewing the P3 plan. **P3 is now the one active primary development phase**. P1/P2 remain development-closed with residuals, P4+ are not newly authorised; P8 release is not certified. Current P3 status/CI evidence is [recorded here](./P3_SEMANTIC_CONTEXT_ACCEPTANCE_2026-11-06.md). Earlier "no active phase" annotations below are historical. The phase exit criteria and exceptions remain binding.
+
 > **6 November 2026 current phase annotation:** P2 **CLOSED for bounded development** with an owner-frozen 14-gate matrix, documented residuals and [formal closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md). P1 remains bounded-development closed; no new primary phase is active and P3 requires separate authorisation. The six exit criteria and safety exceptions below remain binding, and P8 offline Windows release is NOT CERTIFIED.
 
 > **5 November 2026 implementation-status annotation:** P1 has been recorded **CLOSED for bounded development scope** after owner-reported and scoped Windows/hosted acceptance. **P2 is the current single active phase.** Explicit residuals and non-release limits are in [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) and [current handoff](./SESSION_HANDOFF_CURRENT.md). The normative closure rules below remain unchanged. The 28 October P1 assignment at the end is historical.
 
-**Adopted by owner:** 28 October 2026. **Current primary phase: none pending P3 authorisation (6 November 2026); P2 bounded development CLOSED.**
+**Adopted by owner:** 28 October 2026. **Current primary phase: P3 ACTIVE by owner direction (6 November 2026); P2 bounded development CLOSED.**
 **Authoritative branch:** `feature/live-dev-workspace-20261023`.
 **Authority:** Owner's revised execution preference. This decision supersedes earlier *active priority* sequencing notes in historical roadmap and status reflections, **but does not invalidate their technical evidence or phase dependencies**.
 

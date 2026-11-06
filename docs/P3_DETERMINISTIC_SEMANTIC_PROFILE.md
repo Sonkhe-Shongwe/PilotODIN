@@ -2,6 +2,8 @@
 
 **25 October 2026 — P3 first deterministic semantic-profile increment FOCUSED WINDOWS ACCEPTANCE PASS (initial failure corrected by owner-tested targeted rerun).**
 
+> **6 November 2026 P3 phase activation:** The owner approved starting P3 after reviewing its plan; P3-02 user-described dataset business context has source/CI acceptance evidence and an outstanding real browser/native interaction gate. See [P3 current acceptance register](./P3_SEMANTIC_CONTEXT_ACCEPTANCE_2026-11-06.md). All earlier P3-01 failure/repair notes below remain historically accurate.
+
 ## Why P3 follows the accepted P5 minimum
 
 The owner's published complexity-last roadmap places deterministic P3 semantic understanding and P4 target opportunity ranking ahead of large P5/P7 orchestration. The P5 foundation now has owner-inspected 25/3 (single Low-memory slot), 18/7 + Vite (durable training progress), and **45/12 + Vite (cooperative cancellation/soft timeout)** green focused Windows suites. Full durable scheduling and hard preemptive job kill remain later architecture problems. Do not lose time repeatedly testing earlier accepted P5 work.
