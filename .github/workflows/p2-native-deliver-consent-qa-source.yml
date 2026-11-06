@@ -42,6 +42,19 @@ jobs:
             throw 'P2 native consent Windows PowerShell runner does not parse.'
           }
           Write-Host 'Windows PowerShell native consent runner source: SYNTAX PASS'
+      - name: Reject reserved PowerShell variables and source-preflight findings
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $raw = & python tools/qa_foundation.py preflight tools/Run_P2_Native_Deliver_Consent_Local.ps1 tools/Seed_P2_Native_Deliver_Consent_Local.py
+          $exit = $LASTEXITCODE
+          if ($exit -ne 0) { throw 'DevQA source preflight has blockers.' }
+          $check = ($raw | Out-String | ConvertFrom-Json)
+          if ($check.status -ne 'REVIEW_READY' -or @($check.findings).Count -ne 0) {
+            $raw | Write-Host
+            throw 'DevQA reserved-variable/side-effect source preflight requires review.'
+          }
+          Write-Host 'DevQA native consent source preflight: PASS (zero findings)'
       - name: Validate isolated QA manifest and Python source without importing backend
         shell: powershell
         run: |
