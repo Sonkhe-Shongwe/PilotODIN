@@ -1,8 +1,11 @@
-# PilotODIN P2 | Fourteen-row closure-evidence audit (CANDIDATE, NOT OWNER-FROZEN)
+# PilotODIN P2 | Owner-frozen fourteen-row evidence audit
 
 **Reviewed:** 6 November 2026.  
-**Phase:** P2 ACTIVE / REVIEW_REQUIRED. P1 CLOSED for bounded development; P3 NOT AUTHORISED; P8 Windows/offline release NOT CERTIFIED.  
-**Verified current source/CI checkpoint:** feature `feature/live-dev-workspace-20261023`, `d1159954b5d5432bfd6fe189cc0c8071587d7558` for latest executed BE-030 Python production-renderer CI. **This is a candidate mapping of the existing 14-row register, not owner approval of full P2 closure.** The eventual documentation-only audit commit is a later SHA, not an additional source test.
+**Phase:** P2 CLOSED bounded development by express owner decision 6 November 2026. P1 CLOSED for bounded development; P3 NOT AUTHORISED; P8 Windows/offline release NOT CERTIFIED.  
+**Verified current source/CI checkpoint:** feature `feature/live-dev-workspace-20261023`, `d1159954b5d5432bfd6fe189cc0c8071587d7558` for latest executed BE-030 Python production-renderer CI. **This 14-row mapping is now owner-frozen for bounded P2 development closure, without changing any accepted/owner-deferred evidence limits.** The eventual documentation-only audit commit is a later SHA, not an additional source test.
+
+## 6 November 2026 | Owner-frozen P2 closure
+**Decision `P2-DEVELOPMENT-CLOSED-2026-11-06`: P2 CLOSED FOR BOUNDED DEVELOPMENT with its exact 14-row matrix and approved residuals** after the owner replied "i approve next" to the explicit P2 freeze/closure question. [Binding closure record](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) and [frozen P2 matrix](./P2_ACCEPTANCE_REGISTER_CURRENT.md). P1 remains bounded-development closed. **No new primary phase active; P3 deterministic semantic profile is the next candidate, NOT automatically authorised. P8 release NOT CERTIFIED.** Historical P2 ACTIVE, owner-choice pending and pre-closure "next" text below is superseded by this dated decision, not erased. Existing BE-030 corrected three-page visual PASS and [2/2 production renderer CI PASS](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42237999530) are separate scoped evidence; refreshed owner BAT/source SHA unattested. BE-031 native Save As, owner-deferred dirty native tab-X, non-released Unicode fonts and clean offline Windows release retain explicit gates. No new tests or application source change in this documentation-only closure.
 
 ## Essential acceptances and exact modal limits
 

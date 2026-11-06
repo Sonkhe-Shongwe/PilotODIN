@@ -1,8 +1,10 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+> **6 November 2026 current phase annotation:** P2 **CLOSED for bounded development** with an owner-frozen 14-gate matrix, documented residuals and [formal closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md). P1 remains bounded-development closed; no new primary phase is active and P3 requires separate authorisation. The six exit criteria and safety exceptions below remain binding, and P8 offline Windows release is NOT CERTIFIED.
+
 > **5 November 2026 implementation-status annotation:** P1 has been recorded **CLOSED for bounded development scope** after owner-reported and scoped Windows/hosted acceptance. **P2 is the current single active phase.** Explicit residuals and non-release limits are in [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) and [current handoff](./SESSION_HANDOFF_CURRENT.md). The normative closure rules below remain unchanged. The 28 October P1 assignment at the end is historical.
 
-**Adopted by owner:** 28 October 2026. **Current primary phase: P2 (as of 5 November 2026).**
+**Adopted by owner:** 28 October 2026. **Current primary phase: none pending P3 authorisation (6 November 2026); P2 bounded development CLOSED.**
 **Authoritative branch:** `feature/live-dev-workspace-20261023`.
 **Authority:** Owner's revised execution preference. This decision supersedes earlier *active priority* sequencing notes in historical roadmap and status reflections, **but does not invalidate their technical evidence or phase dependencies**.
 
