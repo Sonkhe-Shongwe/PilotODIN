@@ -1,7 +1,7 @@
 # P2 synthetic full UnifiedShell native consent observation only.
 # One new DevQA home, backend on owned :8000 and Vite :5177, no installer/AI.
 [CmdletBinding()]
-param()
+param([switch]$AccessibilityOnly)
 $ErrorActionPreference='Stop'
 $root=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $frontend=Join-Path $root 'frontend'
@@ -13,6 +13,7 @@ $runDir=$null
 $backend=$null
 $record=[ordered]@{
   phase='P2-NATIVE-DELIVER-CONSENT'
+  observation_mode=$(if($AccessibilityOnly){'P2-A01-FOCUSED-NARRATOR'}else{'P2-NATIVE-FIVE-STEP'})
   state='BLOCKED'
   product_acceptance='NOT_TESTED'
   owner_native_observations='NOT_TESTED'
@@ -153,8 +154,18 @@ try {
   Write-Host 'The native test window will open the REAL main UnifiedShell in Deliver.'
   Write-Host 'Use ONLY the four-row SYNTHETIC project, report text, main rail and New project actions.'
   Write-Host 'Do not use Save, import, exports, Quality edits, models, ODIN or any original projects.'
-  Write-Host 'Observe the actual Windows system dialog: Leave Deliver / Keep editing.'
-  Write-Host 'After completing the interactions, close the test window and answer the prompts.'
+  if($AccessibilityOnly){
+    Write-Host 'P2-A01 ACCESSIBILITY-ONLY: do not rerun the previously accepted five-step consent questionnaire.' -ForegroundColor Cyan
+    Write-Host 'Turn Windows Narrator on with Win+Ctrl+Enter; use keyboard Tab, Shift+Tab and Enter/Space to navigate.'
+    Write-Host '1: Type synthetic Deliver note; check unsaved warning discoverable with Narrator.'
+    Write-Host '2: Keyboard-activate Explore; Narrator must identify native dialog, Keep editing and Leave Deliver.'
+    Write-Host '3: Choose Keep by keyboard: report retained, focus and keyboard navigation remain usable.'
+    Write-Host '4: Leave via keyboard; confirm Explore focus; new note then New project/Leave and importer accessible.'
+    Write-Host 'Record NO if a step is not actually observed or Narrator cannot identify an essential control.'
+  }else{
+    Write-Host 'Observe the actual Windows system dialog: Leave Deliver / Keep editing.'
+  }
+  Write-Host 'After the interactions, close the test window and answer only the prompted scoped questions.'
   Push-Location $frontend
   try{
     $previousPreference=$ErrorActionPreference
@@ -164,15 +175,26 @@ try {
   }finally{$ErrorActionPreference=$previousPreference;Pop-Location}
   if($nativeCode -ne 0){throw 'Full shell Tauri development process failed or closed with an error.'}
   $record.native_tauri_full_shell='OWNER_WINDOW_CLOSED_WITH_ZERO_PROCESS_EXIT'
-  $results=@(
-    (Owner-Check 'dirty_warning' 'A: Deliver showed the unsaved report warning after you typed a short synthetic note.'),
-    (Owner-Check 'explore_keep' 'B: Clicking shell Explore showed native Leave Deliver / Keep editing. You chose Keep editing, and Deliver, the note and route stayed unchanged.'),
-    (Owner-Check 'new_project_keep' 'C: Clicking shell New project showed the native dialog. Keep editing left the report visible and did NOT open an importer, immediately or later.'),
-    (Owner-Check 'explore_leave' 'D: A fresh native dialog appeared when you retried Explore. Choosing Leave Deliver opened Explore; keyboard focus stayed usable.'),
-    (Owner-Check 'new_project_leave' 'E: After returning to Deliver and typing a new note, choosing Leave Deliver on New project opened only the synthetic importer.')
-  )
+  if($AccessibilityOnly){
+    # The accepted A-E consent test remains untouched as the default branch.
+    # P2-A01 requires actual screen-reader and keyboard owner observations.
+    $results=@(
+      (Owner-Check 'a01_warning_narrator' 'A01-1: In the synthetic Deliver note, Narrator could identify the unsaved-report warning (automatic announcement or by keyboard reading it).'),
+      (Owner-Check 'a01_native_dialog_narrator' 'A01-2: Using the keyboard on Explore triggered the native modal; Narrator clearly identified its purpose and differentiated Leave Deliver and Keep editing.'),
+      (Owner-Check 'a01_keep_focus' 'A01-3: Tab/Shift+Tab reached the modal choices. Keyboard choosing Keep editing preserved the note and Deliver view, and usable focus returned without trapping the keyboard.'),
+      (Owner-Check 'a01_leave_importer_focus' 'A01-4: Keyboard choosing Leave Deliver reached Explore with usable focus. Returning to Deliver with a fresh note, keyboard New project/Leave opened an understandable, keyboard-accessible synthetic importer only after consent.')
+    )
+  }else{
+    $results=@(
+      (Owner-Check 'dirty_warning' 'A: Deliver showed the unsaved report warning after you typed a short synthetic note.'),
+      (Owner-Check 'explore_keep' 'B: Clicking shell Explore showed native Leave Deliver / Keep editing. You chose Keep editing, and Deliver, the note and route stayed unchanged.'),
+      (Owner-Check 'new_project_keep' 'C: Clicking shell New project showed the native dialog. Keep editing left the report visible and did NOT open an importer, immediately or later.'),
+      (Owner-Check 'explore_leave' 'D: A fresh native dialog appeared when you retried Explore. Choosing Leave Deliver opened Explore; keyboard focus stayed usable.'),
+      (Owner-Check 'new_project_leave' 'E: After returning to Deliver and typing a new note, choosing Leave Deliver on New project opened only the synthetic importer.')
+    )
+  }
   if($results -contains $false){throw 'One or more actual native observation steps failed or were not performed.'}
-  $record.owner_native_observations='OWNER_REPORTED_PASS_REVIEW_REQUIRED'
+  $record.owner_native_observations=$(if($AccessibilityOnly){'P2_A01_OWNER_REPORTED_PASS_REVIEW_REQUIRED'}else{'OWNER_REPORTED_PASS_REVIEW_REQUIRED'})
   $sourceRel=[string]$manifest.source_relative
   $dataset=[IO.Path]::GetFullPath((Join-Path $isolatedWorkspaceHome $sourceRel))
   $homeFull=[IO.Path]::GetFullPath($isolatedWorkspaceHome).TrimEnd('\')+'\'
@@ -195,7 +217,11 @@ try {
   $record.state='REVIEW_REQUIRED'
   $record.product_acceptance='NOT_TESTED'
   $exitCode=0
-  Write-Host 'P2 native Deliver consent: OWNER-REPORTED SCOPED OBSERVATION COMPLETE (REVIEW REQUIRED).' -ForegroundColor Green
+  if($AccessibilityOnly){
+    Write-Host 'P2-A01 native keyboard/Narrator: OWNER-REPORTED OBSERVATIONS COMPLETE (REVIEW REQUIRED).' -ForegroundColor Green
+  }else{
+    Write-Host 'P2 native Deliver consent: OWNER-REPORTED SCOPED OBSERVATION COMPLETE (REVIEW REQUIRED).' -ForegroundColor Green
+  }
 }catch{
   $record.state='FAIL_OR_BLOCKED'
   $record.failure_category=$_.Exception.Message
