@@ -1,4 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
+
+## 6 November 2026 | Finalised CI status for P3-02d adjacent P1 real-HTTP regression
+- **Newly verified result, not a new application change:** Previously still-running [P1 disposable real-HTTP run #42255787905](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42255787905) on source SHA `94577c12e86e0f450d74bc24f2cb5145b2e96993` is now **COMPLETED SUCCESS**, final workflow update `2026-11-06T16:59:08Z`. Inspected job `128022485504` and actual logs: **1 passed (20.8s)** import/Quality/recovery, **1 passed (7.7s)** Quality approval/undo/restore/restart and **2 passed (9.5s)** reversible project library. All associated job steps concluded success in isolated Linux Uvicorn/Chromium with synthetic project storage.
+- **Scope:** This resolves the earlier **IN PROGRESS** entry in [P3 draft-safety evidence](./P3_UNSAVED_BUSINESS_CONTEXT_DRAFT_QA_2026-11-06.md) and the historical QA comment. It is **adjacent P1 regression**, not a fresh P3 workflow run, a new test of documentation-only HEAD `9c904ed44eda`, an owner-native WebView2 observation or a release acceptance. Prior three red source workflows at `6542ea18` and their separate subsequent green scopes remain recorded.
+- **Work this continuation:** Read-only GitHub source/CI verification and documentation reconciliation only. No application, tests, datasets, model weights, fonts, installer or CI workflow was modified or rerun. P3 remains ACTIVE. **Next: owner native Windows W1-W4 synthetic semantic-editor journey with exact local SHA and mode**, then reassess P3-03/P3-04 only against actual acceptance evidence.
+
 **Updated:** 6 November 2026  
 **Repository:** [Sonkhe-Shongwe/PilotODIN](https://github.com/Sonkhe-Shongwe/PilotODIN)  
 **Active branch:** `feature/live-dev-workspace-20261023`  

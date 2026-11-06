@@ -1,4 +1,8 @@
 # PilotODIN 1.0 | Current project status
+
+## 6 November 2026 | Final late P1 CI result reconciled during P3 continuation
+[Previously pending P1 real-HTTP regression #42255787905](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42255787905) on source `94577c12e86e0f450d74bc24f2cb5145b2e96993` completed **SUCCESS** at `2026-11-06T16:59:08Z`. Actual job `128022485504` logs show **1 + 1 + 2 = 4 passed** synthetic browser tests across existing P1 import/Quality/recovery, approval/undo/restore/restart and reversible project-library journeys. This was an asynchronous completion of an existing run, not newly initiated testing in this documentation reconciliation. P3-specific CI was **not** rerun by the `94577c12` compatibility-only patch, and the later `9c904ed` commit was documentation-only. **Owner native P3 Windows WebView2 W1-W4 remains PENDING.** P3 ACTIVE, P1/P2 bounded development CLOSED, P4 not activated, P8 NOT CERTIFIED.
+
 **As of:** 6 November 2026  
 **Branch:** `feature/live-dev-workspace-20261023`  
 **Primary phase:** **P3 ACTIVE** after owner authorisation 6 November 2026. P1 and P2 remain CLOSED for bounded development, with recorded residuals. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) remains binding.  

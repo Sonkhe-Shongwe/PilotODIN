@@ -1,5 +1,9 @@
 # PilotODIN P3 | Current semantic intelligence development and acceptance register
 
+## 6 November 2026 | Completed adjacent P1 real-HTTP run, P3 native still open
+The P1 real-HTTP regression previously described as running after source compatibility SHA `94577c12` reached **COMPLETED SUCCESS** in [run #42255787905](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42255787905), exact SHA `94577c12e86e0f450d74bc24f2cb5145b2e96993`, updated `16:59:08Z`. Job `128022485504` actual logs: 1 synthetic import/Quality/recovery browser PASS; 1 approval/undo/restore/restart PASS; 2 reversible project-library browser PASS. This is adjacent P1 coverage, **not** another P3 test or native Windows validation. Earlier P3/TypeScript failures and subsequent P1/P2 scoped green runs remain separate. **P3-02d owner Windows WebView2 W1-W4 is still pending**, P3-03a scoped acceptance only, P3-04/phase closure open. No application or tests were changed in this reconciliation.
+
+
 **Date:** 6 November 2026  
 **Active phase:** **P3 ACTIVE / IN DEVELOPMENT** under the owner's "okay lets begin" instruction directly following the reviewed P3 plan. P1 and P2 remain closed for bounded development. This is **not** P3 completion, P4 reactivation or 1.0 release certification.  
 **Branch:** `feature/live-dev-workspace-20261023`.  

@@ -1,5 +1,12 @@
 # PilotODIN P3 | Unsaved semantic descriptions, primary-workspace draft protection
 
+## Final CI disposition of the previously running adjacent P1 regression (checked 6 November 2026)
+
+The earlier item 4 **IN PROGRESS** below is preserved as the accurate status *at the time of first drafting*, not the final conclusion. [P1 run #42255787905](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42255787905), on exact `94577c12e86e0f450d74bc24f2cb5145b2e96993`, completed **SUCCESS** (workflow updated `2026-11-06T16:59:08Z`). Actual job `128022485504` step summary was successful; its logs report **1 passed (20.8s)** for original disposable import/Quality/recovery, **1 passed (7.7s)** for Quality approval/undo/restore/restart, and **2 passed (9.5s)** for reversible project library. Synthetic Ubuntu real-Uvicorn/Chromium only.
+
+This P1 result does **not** retroactively make the first P3 focused run `#42255422039` green, imply the P3-specific suite was rerun after the type correction, or replace owner physical Windows WebView2 W1-W4. No code or additional CI was executed for this documentation-only reconciliation. Prior failure and scope boundaries below remain authoritative.
+
+
 **Date:** 6 November 2026. **Phase:** P3 ACTIVE, P1/P2 bounded development CLOSED, P8 NOT CERTIFIED.  
 **Source feature SHA:** `6542ea18e58f44de14ff740840af96e2f117c3ed`. **Compatibility fix SHA:** `94577c12e86e0f450d74bc24f2cb5145b2e96993`.  
 **Acceptance:** **Scoped browser and source PASS** with a preserved failed first CI set, **owner native Windows WebView2 acceptance PENDING**.
