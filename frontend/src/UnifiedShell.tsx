@@ -27,7 +27,7 @@ import {NATIVE_CLOSE_EVENT,resolveNativeCloseRequest} from './nativeCloseConsent
 import type {NativeCloseRequest} from './nativeCloseConsent';
 import {planExternalRouteActivation} from './externalRouteActivationGuard';
 import {needsPrimaryStudioExitApproval} from './primaryStudioExitGuard';
-import {planExternalProjectTransition} from './externalProjectTransitionGuard';
+import {planExternalProjectTransition,shouldHoldNativeDeliverExternalProjectChange} from './externalProjectTransitionGuard';
 import type {EditedDock} from './dockInputDiscardGuard';
 import {nextSidebarViewByKey} from './sidebarKeyboardNavigation';
 import type {SidebarMode} from './sidebarPreferences';
@@ -269,6 +269,13 @@ export function UnifiedShell(){
    const decision=planExternalProjectTransition(projectId,requested,dock.secondary,editedDock.current,workspaceReady,unavailable,editedPrimary.current?.projectId??null);
    if(decision==='unchanged'){
     if(event.type==='pilotodin:project-changed')void refreshProjects();
+    return;
+   }
+   if(shouldHoldNativeDeliverExternalProjectChange(event.type,decision,isDesktop(),projectId,editedPrimary.current)){
+    // Another window's selector is not permission to discard our report.
+    // Keep this project mounted until the user switches with native consent here.
+    setWarning("Another tab selected a different project. This window kept your unsaved Deliver report. Use Switch project here after saving; reloading may select the other tab's project.");
+    event.stopImmediatePropagation();
     return;
    }
    if(decision==='confirm'&&!window.confirm(
