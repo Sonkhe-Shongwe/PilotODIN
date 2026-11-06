@@ -42,6 +42,17 @@ The runner labels successful responses `OWNER_REPORTED_PASS_REVIEW_REQUIRED`, wi
 
 **Remaining P2:** physical Windows keyboard/Narrator and direct Studio/external hash/tab-close/dock consent paths remain distinct from the five scoped shell cases. Normal mixed-script Unicode PDF still requires independent approval of **three unchanged Noto binaries, three full original OFL notices, six exact release SHA-256 pins, Noto Sans SC face/RFN and accessible notices**. `RELEASE_APPROVAL_STATUS=NOT_GRANTED` and P8 installer NOT CERTIFIED are unchanged.
 
+## Windows PowerShell reserved-name repair and definitive post-fix source acceptance
+
+During source review, `tools/Run_P2_Native_Deliver_Consent_Local.ps1` was found assigning `$home`. Windows PowerShell treats this as the built-in read-only `$HOME`, case-insensitively; the old P2 native-chain test had historically failed from the same kind of issue. **No owner Windows QA was attempted with this invalid runner.** [Repair `8a95bb81ecf8`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8a95bb81ecf82d55a19242af62f082362d8ecc6a) renamed every such use to `$isolatedWorkspaceHome` without changing the QA path or isolation rule.
+
+- [Guard contract `b7dcc16c3283`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b7dcc16c32831a46e42cb5cff14ffdaeb95b784f) now rejects assigning PowerShell reserved `HOME/HOST/PID/PROFILE/INPUT/MATCHES/ERROR` automatic variables. Historical intermediate [focused #42158920592](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42158920592) is **FAILED** only because the prior source regex still expected `$home`; this was repaired by the new guard assertion.
+- [Windows PowerShell preflight workflow `4382d5edf15b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4382d5edf15b0eb3e38bec3a9e39c91bad1297b9) runs the actual Windows PowerShell AST parser and `qa_foundation.py preflight` on both Python and PowerShell source, requiring **zero** findings and validating isolated non-bundled Tauri config. Final [CI #42158971543](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42158971543) **COMPLETED SUCCESS**.
+- Final [focused P2 #42158967267](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42158967267) **COMPLETED SUCCESS, 77/77 Node tests and TS/Vite production build**, exact tested test/source commit `b7dcc16c32831a46e42cb5cff14ffdaeb95b784f`.
+- Final [shared frontend #42158967263](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42158967263) **COMPLETED SUCCESS, 160/160 Node + TS/Vite production build + 5/5 isolated Chromium**, same tested SHA. No running Tauri native dialog or physical Windows owner observation was performed by any of these workflows.
+
+The source-only launcher gate is now **ready for one scoped physical Windows run**. The result of that future run must be recorded independently and must not be assumed from CI.
+
 ## Verified source preflight, not an owner-native pass
 
 - [Windows PowerShell parser and non-distributable QA config #42158598871](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42158598871): **COMPLETED SUCCESS**, Windows PowerShell source parses; no launcher run.
