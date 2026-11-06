@@ -161,12 +161,20 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     go('overview',()=>{setFile(null);setUploadOpen(true)});
   }
   function go(next:Stage,afterNavigate?:()=>void):boolean{
+    // Keep Studio-local cleanup with the exact approved route. For a native
+    // Windows dialog this callback is deferred, so cancel never hides a draft
+    // or arms an importer and Leave closes the command palette correctly.
+    const complete=()=>{
+      if(next!=='quality')setQualityFocus(null);
+      if(next!=='deliver')setDeliverEvidenceId(null);
+      scrollRef.current[page]=mainRef.current?.scrollTop??0;
+      setError('');setUploadOpen(false);setMobileOpen(false);setPaletteOpen(false);
+      setPaletteQuery('');
+      afterNavigate?.();
+    };
     // Refuse destructive primary navigation BEFORE touching route or page state.
     // Embedded navigation continues to use its existing dock-only authority.
-    if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next,afterNavigate))return false;
-    if(next!=='quality')setQualityFocus(null);
-    if(next!=='deliver')setDeliverEvidenceId(null);
-    scrollRef.current[page]=mainRef.current?.scrollTop??0;
+    if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next,complete))return false;
     if(embedded){
       // Embedded views cannot navigate the main window or escape the dock registry.
       if(!isSecondaryView(next)){
@@ -180,9 +188,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       if(location.hash!==`#/studio/${next}`)navigateHashSmoothly(`#/studio/${next}`,()=>setPage(next));
       else setPage(next);
     }
-    setError('');setUploadOpen(false);setMobileOpen(false);setPaletteOpen(false);
-    setPaletteQuery('');
-    afterNavigate?.();
+    complete();
     return true;
   }
   useEffect(()=>{setVisitedStages(s=>s.includes(page)?s:[...s,page]);
