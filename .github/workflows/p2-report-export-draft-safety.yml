@@ -24,6 +24,13 @@ on:
       - frontend/tests/p2-report-draft-navigation-safety.test.cjs
       - frontend/tests/p2-explore-deliver-handoff.test.cjs
       - frontend/tests/p2-native-deliver-exit.test.cjs
+      - frontend/tests/p2-native-deliver-qa-contract.test.cjs
+      - frontend/src/p2NativeDeliverConsentQa.tsx
+      - frontend/p2_native_deliver_consent_qa.html
+      - frontend/src-tauri/tauri.p2-native-deliver-consent.conf.json
+      - tools/Run_P2_Native_Deliver_Consent_Local.ps1
+      - tools/Seed_P2_Native_Deliver_Consent_Local.py
+      - Run_PilotODIN_P2_Native_Deliver_Consent.bat
       - frontend/src-tauri/src/lib.rs
       - frontend/tests/p2-report-composer-behavior.test.cjs
       - frontend/tests/p2-report-navigation-contracts.test.cjs
@@ -69,6 +76,7 @@ jobs:
           tests/p2-report-draft-navigation-safety.test.cjs
           tests/p2-explore-deliver-handoff.test.cjs
           tests/p2-native-deliver-exit.test.cjs
+          tests/p2-native-deliver-qa-contract.test.cjs
           tests/p2-report-composer-behavior.test.cjs
           tests/p2-report-navigation-contracts.test.cjs
           tests/p2-saved-report-html-preview.test.cjs
