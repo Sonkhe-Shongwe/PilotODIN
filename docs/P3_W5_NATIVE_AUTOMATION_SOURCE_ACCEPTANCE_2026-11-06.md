@@ -42,3 +42,16 @@ The latest source change after the original frontend/Tauri green builds is limit
 - Native W5 owner test and independent status ZIP review: **PENDING**, do not mark passed before evidence exists.
 - P3-03 broader semantic truth/adjudication and phase closure-matrix scope: **owner decision remains open**. No automatic agreement, confirmation of owner text or model/target propagation was added.
 - P3 active; P1/P2 bounded development closed; P4 not authorised; P8 offline Windows release not certified.
+
+## Automated review of the future status-only archive
+
+A second safety layer, [`tools/Verify_P3_Native_Quality_W5_Status.py`](../tools/Verify_P3_Native_Quality_W5_Status.py), is now implemented and source-tested. It is entirely read-only, standard-library Python, with no extraction, application launch, Git mutation or access to datasets. To review a **completed** W5 run's archive, use:
+
+```powershell
+python tools/Verify_P3_Native_Quality_W5_Status.py "C:\path\to\P3-NATIVE-QUALITY-W5-...-p3-w5-status.zip" --expected-source EXACT_40_CHARACTER_GIT_SHA
+```
+
+Supply the correct independently checked local source SHA, not a guessed SHA. An archive from a failed run yields `NOT_ACCEPTED`; an unexpected or corrupted archive yields `REFUSED`. Even a good archive reports `STATUS_ARCHIVE_INTEGRITY_PASS`, with `owner_native_observation=OWNER_REPORTED_PASS_NOT_INDEPENDENTLY_OBSERVED`, `native_acceptance=PENDING_INDEPENDENT_REVIEW`, and `product_acceptance=NOT_TESTED`. Check real owner Windows evidence and source provenance separately. Never relabel an archive verification as automatic native acceptance.
+
+**Exact source CI:** [P3 #42291865357](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42291865357) **COMPLETED SUCCESS**, 55/55 Python (including hostile/corrupted ZIP and false-PASS tests), 11/11 Node, TS/Vite and Windows PowerShell parser at [`b74c61a03ec3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b74c61a03ec32ad39dc95bb7135cea9564773b32). This is no new physical WebView2 W5 observation.
+
