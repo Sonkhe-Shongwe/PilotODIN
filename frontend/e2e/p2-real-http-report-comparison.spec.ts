@@ -451,3 +451,89 @@ test('P2 simulated native Deliver consent preserves draft until fresh OS approva
   expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
   expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
  });
+
+
+test('P2 direct Studio command palette uses the same simulated native Deliver consent and closes only after approval',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only isolated disposable GitHub CI can run this real-UI scenario.');
+  const created=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'P2_Direct_Studio_Consent_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(created.status(),await created.text()).toBe(201);
+  const pid=(await created.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const beforeReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const beforeQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  const note=primary.getByLabel('Interpretation and limitations');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  const draft='Unpublished synthetic Deliver narrative via Studio command palette.';
+  await note.fill(draft);
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+
+  // Tauri IPC is simulated ONLY after mounting the real UI. Actual native
+  // Rust + Windows dialog execution remains a separate owner acceptance gate.
+  await page.evaluate(()=>{
+   type Probe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(name:string)=>Promise<boolean>};
+    __p2DirectCalls?:string[];
+    __p2DirectReplies?:Array<(answer:boolean)=>void>;
+   };
+   const w=window as Probe;
+   w.__p2DirectCalls=[];
+   w.__p2DirectReplies=[];
+   w.__TAURI_INTERNALS__={invoke:name=>{
+    if(name!=='confirm_native_deliver_exit')return Promise.reject(new Error('Unexpected synthetic native request'));
+    w.__p2DirectCalls!.push(name);
+    return new Promise<boolean>(resolve=>w.__p2DirectReplies!.push(resolve));
+   }};
+  });
+  const count=()=>page.evaluate(()=>(
+   window as Window&{__p2DirectCalls?:string[]}
+  ).__p2DirectCalls?.length??0);
+  const answer=(allow:boolean)=>page.evaluate(approved=>{
+   const w=window as Window&{__p2DirectReplies?:Array<(answer:boolean)=>void>};
+   const done=w.__p2DirectReplies?.shift();
+   if(!done)throw new Error('No pending synthetic Windows response');
+   done(approved);
+  },allow);
+
+  // The app's Ctrl+K command palette is a direct Studio go() path, not the
+  // unified shell rail or header tested by earlier native IPC coverage.
+  await page.keyboard.press('Control+k');
+  const palette=page.getByRole('dialog',{name:'Search PilotODIN workspaces'});
+  await expect(palette).toBeVisible();
+  await palette.getByRole('button',{name:/Overview/}).click();
+  await expect.poll(count).toBe(1);
+  await expect(note).toHaveValue(draft);
+  await expect(palette).toBeVisible();
+  expect(page.url()).toContain('/studio/deliver');
+
+  await answer(false);
+  await expect(note).toHaveValue(draft);
+  await expect(palette).toBeVisible();
+  expect(page.url()).toContain('/studio/deliver');
+
+  await palette.getByRole('button',{name:/Overview/}).click();
+  await expect.poll(count).toBe(2);
+  await expect(palette).toBeVisible();
+  await answer(true);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
+  await expect(palette).toHaveCount(0);
+  await expect(primary.locator('.landing')).toHaveCount(0); // Navigating Home alone must not arm an importer.
+  await expect(page.locator('button.po-nav-item[aria-label="Home"]')).toHaveAttribute('aria-current','page');
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
+ });
