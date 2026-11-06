@@ -24,6 +24,7 @@ on:
       - frontend/tests/p2-report-draft-navigation-safety.test.cjs
       - frontend/tests/p2-explore-deliver-handoff.test.cjs
       - frontend/tests/p2-native-deliver-exit.test.cjs
+      - frontend/tests/p2-native-deliver-tab-close.test.cjs
       - frontend/tests/p2-direct-studio-native-exit.test.cjs
       - frontend/tests/p2-external-native-deliver-route.test.cjs
       - frontend/tests/p2-native-deliver-qa-contract.test.cjs
@@ -78,6 +79,7 @@ jobs:
           tests/p2-report-draft-navigation-safety.test.cjs
           tests/p2-explore-deliver-handoff.test.cjs
           tests/p2-native-deliver-exit.test.cjs
+          tests/p2-native-deliver-tab-close.test.cjs
           tests/p2-direct-studio-native-exit.test.cjs
           tests/p2-external-native-deliver-route.test.cjs
           tests/p2-native-deliver-qa-contract.test.cjs
