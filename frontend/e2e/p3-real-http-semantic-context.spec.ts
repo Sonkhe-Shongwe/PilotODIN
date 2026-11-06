@@ -114,6 +114,7 @@ test('P3 real HTTP semantic descriptions save, reopen, edit and stay project/ver
   await semantic.getByLabel('What business area does this dataset describe?').fill(firstDomain);
   await semantic.getByLabel('What does one row represent?').fill(rowMeaning);
   await semantic.getByRole('button',{name:'Add field definition'}).click();
+  await semantic.getByLabel('Field 1').selectOption('claim_amount');
   await semantic.getByLabel('Owner-described meaning').fill(fieldMeaning);
   const savedResponse=page.waitForResponse(r=>
    r.url()===API+'/api/projects/'+aid+'/semantic-business-context'&&
