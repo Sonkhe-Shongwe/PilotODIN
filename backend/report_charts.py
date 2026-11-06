@@ -164,7 +164,8 @@ def html_chart(spec: dict) -> str:
     return "".join(result)
 
 
-def pdf_chart(spec: dict, width: float = 500.0, *, unicode_context=None) -> Drawing:
+def pdf_chart(spec: dict, width: float = 500.0, *, unicode_context=None,
+              compact: bool = False) -> Drawing:
     """Preserve existing vector plotting; only text may use explicit new faces.
 
     Ordinary saved reports still take the original chart code path. The
@@ -178,10 +179,11 @@ def pdf_chart(spec: dict, width: float = 500.0, *, unicode_context=None) -> Draw
         if not isinstance(unicode_context, UnicodePDFContext):
             raise ValueError("Expected registered Unicode PDF chart context")
         unicode_context.assert_ready()
-    # The existing 220 pt charts stay unchanged. Only the explicit,
-    # currently DevQA-only Unicode path uses a compact chart so one
-    # short synthetic report need not spill a handful of lines to page 2.
-    height = 175.0 if unicode_context is not None else 220.0
+    # Keep the existing 220 pt default for all prior chart consumers.
+    # Only a caller explicitly laying out a short, verified Explore exhibit
+    # may request the 175 pt compact drawing already used by Unicode DevQA.
+    # This is presentation only: values, group labels and bounds are unchanged.
+    height = 175.0 if (unicode_context is not None or compact) else 220.0
     d = Drawing(width, height)
     def put_text(x, y, text, *, anchor="start", size=8, color=None, room=300):
         if unicode_context is None:
