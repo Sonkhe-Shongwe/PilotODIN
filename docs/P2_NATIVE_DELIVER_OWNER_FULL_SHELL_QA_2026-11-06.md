@@ -32,6 +32,8 @@ Do not click **Save, Upload/Analyse, Export, Quality corrections, model training
 4. Repeat **Explore**, this time selecting **Leave Deliver**. Confirm Explore becomes active only after explicit approval, no duplicate confirmation appears, and keyboard focus/Tab navigation remains usable.
 5. Return to **Deliver**, type a new synthetic note and select **New project**. Choose **Leave Deliver**. Confirm the normal **synthetic importer** opens only after the approval. Do not select or import another file.
 
+**Optional sixth native observation (not automatically scored by this five-question runner):** With **Explore** also open as a tab, return to **Deliver** and type a short fresh synthetic note. Click the small **Close Deliver tab** button. The actual Windows **Leave Deliver / Keep editing** native dialog must appear. Choose **Keep editing** and verify both the Deliver tab and note remain. Click it again and choose **Leave Deliver**; only then should the Deliver tab close and Explore become active. If the dialog does not appear, or the draft is lost after Keep, report the failure explicitly with a screenshot. This optional extra does **not** convert the five automatic prompts into six accepted observations.
+
 After all observations, close the QA Tauri window. If a separate **Close PilotODIN / Stay** native close confirmation appears, choose Close to exit the QA window. Then answer the **five yes/no prompts** in PowerShell according to what ACTUALLY happened. A missing step is **no**, not an inferred pass.
 
 ## Acceptance recording and limits
