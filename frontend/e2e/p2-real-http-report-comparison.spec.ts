@@ -537,3 +537,84 @@ test('P2 direct Studio command palette uses the same simulated native Deliver co
   expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
   expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
  });
+
+
+test('P2 external hash push uses native Deliver consent before changing workspace',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('This scenario requires the isolated GitHub CI backend and synthetic data.');
+  const created=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'P2_External_Native_Hash_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(created.status(),await created.text()).toBe(201);
+  const pid=(await created.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const initialReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const initialQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  const draft='Original disposable report survives a rejected external URL hash.';
+  const note=primary.getByLabel('Interpretation and limitations');
+  await note.fill(draft);
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+
+  // A simulated Tauri IPC bridge is installed after genuine app hydration.
+  // No Rust dialog or native Windows GUI is executed by this Chromium test.
+  await page.evaluate(()=>{
+   type NativeProbe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(name:string)=>Promise<boolean>};
+    __p2ExternalCalls?:string[];
+    __p2ExternalAnswers?:Array<(answer:boolean)=>void>;
+   };
+   const w=window as NativeProbe;
+   w.__p2ExternalCalls=[];
+   w.__p2ExternalAnswers=[];
+   w.__TAURI_INTERNALS__={invoke:name=>{
+    if(name!=='confirm_native_deliver_exit')
+     return Promise.reject(new Error('Unexpected native IPC in synthetic external route QA'));
+    w.__p2ExternalCalls!.push(name);
+    return new Promise<boolean>(resolve=>w.__p2ExternalAnswers!.push(resolve));
+   }};
+  });
+  const count=()=>page.evaluate(()=>(
+   window as Window&{__p2ExternalCalls?:string[]}
+  ).__p2ExternalCalls?.length??0);
+  const reply=(allow:boolean)=>page.evaluate(answer=>{
+   const w=window as Window&{__p2ExternalAnswers?:Array<(v:boolean)=>void>};
+   const resolve=w.__p2ExternalAnswers?.shift();
+   if(!resolve)throw new Error('No synthetic external native consent is pending');
+   resolve(answer);
+  },allow);
+
+  // This is an external browser hash assignment, NOT a Studio go() or rail click.
+  await page.evaluate(()=>{window.location.hash='#/studio/explore'});
+  await expect.poll(count).toBe(1);
+  await expect(page).toHaveURL(/#\/studio\/deliver/);
+  await expect(note).toHaveValue(draft);
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await reply(false);
+  await expect(note).toHaveValue(draft);
+  await expect(page).toHaveURL(/#\/studio\/deliver/);
+
+  await page.evaluate(()=>{window.location.hash='#/studio/overview'});
+  await expect.poll(count).toBe(2);
+  await expect(page).toHaveURL(/#\/studio\/deliver/);
+  await expect(note).toHaveValue(draft);
+  await reply(true);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
+  await expect(page.locator('button.po-nav-item[aria-label="Home"]')).toHaveAttribute('aria-current','page');
+  await expect(primary.locator('.landing')).toHaveCount(0);
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(initialReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(initialQuality);
+ });
