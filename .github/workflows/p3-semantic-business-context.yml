@@ -77,3 +77,25 @@ jobs:
           frontend/tests/p3-semantic-profile-contracts.test.cjs
       - name: Build actual frontend TypeScript and Vite bundle
         run: npm run build --prefix frontend
+
+  p3-native-powershell-parser:
+    # Syntax-only Windows validation. Does NOT open WebView2 or run owner acceptance.
+    runs-on: windows-2022
+    timeout-minutes: 6
+    steps:
+      - name: Checkout trusted source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Parse P3 synthetic native QA launcher in Windows PowerShell
+        shell: powershell
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          $source = Join-Path $env:GITHUB_WORKSPACE 'tools\Run_P3_Native_Semantic_QA_Local.ps1'
+          [System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors -and $parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Host $_.Message }
+            throw 'P3 native QA Windows PowerShell source has syntax errors.'
+          }
+          Write-Host 'Windows PowerShell parse PASS. Native app and W1-W4 NOT TESTED.'
