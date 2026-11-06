@@ -124,7 +124,7 @@ export function UnifiedShell(){
  const pendingDockDismissFocus=useRef<{projectId:string;view:View}|null>(null);
  // Memory-only flags: no form content or dataset values are stored.
  const editedDock=useRef<EditedDock|null>(null);
- const editedPrimary=useRef<{projectId:string;view:'prepare'|'model'|'predict'|'deliver'}|null>(null);
+ const editedPrimary=useRef<{projectId:string;view:'understand'|'prepare'|'model'|'predict'|'deliver'}|null>(null);
  // Tauri/WebView2 may not display a synchronous browser confirm. Keep native
  // project-switch consent serialized and never store unsaved form values.
  const nativeProjectSwitchPromptPending=useRef(false);

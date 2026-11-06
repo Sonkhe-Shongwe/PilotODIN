@@ -78,6 +78,6 @@ test('INTEGRATION: both New project entry points stage import only after navigat
 
 test('INTEGRATION: native close and reload guard also accept Deliver dirty marker',()=>{
  const unload=fs.readFileSync(path.join(root,'dockInputDiscardGuard.ts'),'utf8');
- assert.match(unload,/view:'prepare'\|'model'\|'predict'\|'deliver'/);
+ assert.match(unload,/view:'understand'\|'prepare'\|'model'\|'predict'\|'deliver'/);
  assert.match(shell,/onPrimaryDraftCleared=\{clearPrimaryDraft\}/);
 });
