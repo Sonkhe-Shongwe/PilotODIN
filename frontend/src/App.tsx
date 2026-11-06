@@ -73,7 +73,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   embeddedProjectId?: string;
   onEmbeddedNavigate?:(view:Stage)=>void;
   // Primary Studio changes need shell approval before they can discard an edited dock.
-  onPrimaryNavigate?:(view:Stage)=>boolean;
+  onPrimaryNavigate?:(view:Stage,afterNavigate?:()=>void)=>boolean;
   // Shell approval must precede any primary project state reset.
   onBeforePrimaryProjectLoad?:(projectId:string)=>boolean;
   // Consent must happen before upload creates a new local dataset project.
@@ -154,16 +154,16 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('pilotodin:route-commit',sync);window.removeEventListener('pilotodin:route-reverted',sync)}
  },[embeddedStage]);
   function requestNewDataset():void{
-    // Authorise leaving an edited Deliver workspace before showing the import
-    // view. go() intentionally clears uploadOpen on successful navigation.
-    if(embedded||!go('overview'))return;
-    setFile(null);
-    setUploadOpen(true);
+    // Stage importer state only after navigation approval. A native Windows
+    // dialog completes asynchronously, so the post-navigation callback must
+    // be carried through the shell rather than set eagerly on refusal.
+    if(embedded)return;
+    go('overview',()=>{setFile(null);setUploadOpen(true)});
   }
-  function go(next:Stage):boolean{
+  function go(next:Stage,afterNavigate?:()=>void):boolean{
     // Refuse destructive primary navigation BEFORE touching route or page state.
     // Embedded navigation continues to use its existing dock-only authority.
-    if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next))return false;
+    if(!embedded&&next!==page&&onPrimaryNavigate&&!onPrimaryNavigate(next,afterNavigate))return false;
     if(next!=='quality')setQualityFocus(null);
     if(next!=='deliver')setDeliverEvidenceId(null);
     scrollRef.current[page]=mainRef.current?.scrollTop??0;
@@ -182,6 +182,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }
     setError('');setUploadOpen(false);setMobileOpen(false);setPaletteOpen(false);
     setPaletteQuery('');
+    afterNavigate?.();
     return true;
   }
   useEffect(()=>{setVisitedStages(s=>s.includes(page)?s:[...s,page]);
