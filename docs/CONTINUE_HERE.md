@@ -1,5 +1,8 @@
 # PilotODIN | Continue development
 
+**P3-04 native test next:** Use the **corrected port 5178** [P3 native QA BAT](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/feature/live-dev-workspace-20261023/Run_PilotODIN_P3_Native_Semantic_QA.bat) in a clean authorised Windows checkout. Source [`18b101a54fec`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/18b101a54fece45cbeec9fbdb29974f9960be691) repaired an incompatible port 5181 without weakening backend CORS; all exact-source [P3 #42266693174](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42266693174), [P1 #42266693163](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42266693163), and [Windows host compile #42266693190](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42266693190) completed SUCCESS. **Owner physical WebView2 W1–W4 still pending; no native product acceptance, installer or release claim.**
+
+
 **Current testable P3 native QA source:** [`3b1b33ab8bd4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3b1b33ab8bd46f874ff335c2309215fadc627808) retains the original isolated A/B native launcher and adds a reload-safe, session-only two-save counter. [P3 CI #42265559018](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42265559018) and [P1 #42265558850](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42265558850) **COMPLETED SUCCESS** at that exact source SHA. These do not include actual owner Tauri WebView2 W1-W4 evidence; use the clean-checkout BAT and submit status-only QA artifact for review. No P3 phase closure or P8 certification.
 
 
