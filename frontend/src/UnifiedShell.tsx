@@ -625,9 +625,10 @@ export function UnifiedShell(){
   const next=nextSidebarViewByKey(sidebarViews,view,event.key);
   if(!next)return;
   event.preventDefault();
-  if(next!==active&&!navigateWithDockGuard(next))return;
   const buttons=event.currentTarget.closest('#po-nav-items')?.querySelectorAll<HTMLButtonElement>('.po-nav-item');
-  buttons?.item(sidebarViews.indexOf(next))?.focus();
+  const target=buttons?.item(sidebarViews.indexOf(next));
+  if(next!==active){navigateWithDockGuard(next,()=>target?.focus());return;}
+  target?.focus();
  };
  const onWorkspaceTabKeyDown=(event:ReactKeyboardEvent<HTMLButtonElement>,view:View)=>{
   // Keyboard reorder does not activate a workspace, dock it or discard its inputs.
@@ -640,9 +641,10 @@ export function UnifiedShell(){
   const next=nextWorkspaceTabByKey(shownTabs,view,event.key);
   if(!next)return;
   event.preventDefault();
-  if(next!==active&&!navigateWithDockGuard(next))return;
   const tabButtons=event.currentTarget.closest('[role="tablist"]')?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
-  tabButtons?.item(shownTabs.indexOf(next))?.focus();
+  const target=tabButtons?.item(shownTabs.indexOf(next));
+  if(next!==active){navigateWithDockGuard(next,()=>target?.focus());return;}
+  target?.focus();
  };
  const close=(view:View)=>{
   if(!workspaceReady)return;
@@ -768,7 +770,7 @@ export function UnifiedShell(){
     </select>
     <ChevronDown className="po-project-switcher-arrow" size={16} aria-hidden="true"/>
    </div>
-   <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>{if(navigateWithDockGuard('overview'))setNewProjectOpen(true)}}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
+   <button type="button" className="po-new-project-action" title="Import a CSV or Excel file as a separate project" aria-label="New project: import dataset" onClick={()=>navigateWithDockGuard('overview',()=>setNewProjectOpen(true))}><Plus size={16} aria-hidden="true"/><span>New project</span></button>
    <button type="button" className="po-manage-project-action" title="Rename, archive or restore projects" aria-label="Manage projects" onClick={()=>setProjectManagerOpen(true)}><Settings2 size={16} aria-hidden="true"/><span>Manage</span></button>
   </header>
   {projectManagerOpen&&<ProjectManager currentProjectId={projectId} onClose={()=>setProjectManagerOpen(false)} onChanged={metadataChanged}/>}
