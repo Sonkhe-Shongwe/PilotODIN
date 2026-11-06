@@ -650,6 +650,48 @@ def save_target_business_context(
     )
 
 
+class SemanticFieldDescription(BaseModel):
+    column: str = Field(min_length=1, max_length=256)
+    meaning: str = Field(min_length=10, max_length=300)
+
+
+class SemanticBusinessContextRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    domain_description: str = Field(default="", max_length=300)
+    record_grain_description: str = Field(default="", max_length=300)
+    field_definitions: list[SemanticFieldDescription] = Field(default_factory=list, max_length=8)
+
+
+@app.post("/api/projects/{project_id}/semantic-business-context")
+def save_semantic_business_context(
+    project_id: str, request: Request, body: SemanticBusinessContextRequest
+):
+    """Explicitly save user descriptions only, never verified business facts."""
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != body.expected_version:
+        raise HTTPException(status_code=409,
+            detail="Working dataset version changed. Refresh before saving business context.")
+    if not frame.columns.is_unique:
+        raise HTTPException(status_code=422, detail="Expected distinct dataset column names")
+    domain = body.domain_description.strip()
+    grain = body.record_grain_description.strip()
+    if (domain and len(domain) < 10) or (grain and len(grain) < 10):
+        raise HTTPException(status_code=422, detail="Descriptions must contain at least 10 characters")
+    definitions = []
+    seen = set()
+    for item in body.field_definitions:
+        col, meaning = item.column.strip(), item.meaning.strip()
+        if col not in frame.columns or col in seen or len(meaning) < 10:
+            raise HTTPException(status_code=422, detail="Unknown, repeated or invalid field definition")
+        seen.add(col)
+        definitions.append({"column": col, "meaning": meaning})
+    if not (domain or grain or definitions):
+        raise HTTPException(status_code=422, detail="Enter at least one business description")
+    return storage.save_semantic_context(project_id, version, domain, grain, definitions)
+
+
 @app.get("/api/projects/{project_id}/semantics")
 def semantic_overview(
     project_id: str, request: Request, expected_version: int = Query(ge=0)
@@ -666,7 +708,9 @@ def semantic_overview(
             detail="Working dataset changed. Refresh the data dictionary before reviewing semantics."
         )
     try:
-        return semantic_profile.overview(frame, version)
+        result = semantic_profile.overview(frame, version)
+        result["user_context"] = storage.semantic_context(project_id, version)
+        return result
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

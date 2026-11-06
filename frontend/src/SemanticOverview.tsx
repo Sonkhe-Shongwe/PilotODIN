@@ -1,6 +1,8 @@
 import {useEffect,useState} from 'react';
 import {AlertTriangle,BookOpen,LoaderCircle} from 'lucide-react';
 import {get} from './api';
+import {SemanticContextEditor} from './SemanticContextEditor';
+import type {UserSemanticContext} from './SemanticContextEditor';
 
 type SemanticHypothesis={
  role:string;state:'hypothesis';basis:string;reason:string
@@ -10,11 +12,12 @@ type Semantics={
  domain:{state:'hypothesis'|'unknown';label:string|null;evidence_columns:string[];reason:string};
  grain:{state:'hypothesis'|'unknown';identifier_column:string|null;reason:string};
  fields:{column:string;observed:{dtype:string;missing:number;unique:number;rows:number};hypotheses:SemanticHypothesis[]}[];
- observed:string;inferred:string;unknown:string;note:string
+ observed:string;inferred:string;unknown:string;note:string;
+ user_context:UserSemanticContext|null
 };
 const humanRole=(text:string)=>text.replaceAll('_',' ');
 
-export function SemanticOverview({projectId,version}:{projectId:string;version:number}){
+export function SemanticOverview({projectId,version,columns}:{projectId:string;version:number;columns:string[]}){
  const [data,setData]=useState<Semantics|null>(null);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
@@ -52,6 +55,15 @@ export function SemanticOverview({projectId,version}:{projectId:string;version:n
     </div>
     {data.fields.length>20&&<p className="muted-caption">Showing the first 20 fields with hypotheses; no field was automatically modified.</p>}
    </details>
+   {data.user_context&&<div className="po-col-metadata" aria-label="Owner-described business context">
+    <div><small>User description, not independently verified</small>
+     {data.user_context.domain_description&&<p><strong>Domain:</strong> {data.user_context.domain_description}</p>}
+     {data.user_context.record_grain_description&&<p><strong>Row meaning:</strong> {data.user_context.record_grain_description}</p>}
+     {data.user_context.field_definitions.map(item=><p key={item.column}><strong>{item.column}:</strong> {item.meaning}</p>)}
+    </div>
+   </div>}
+   <SemanticContextEditor projectId={projectId} version={version} columns={columns}
+    existing={data.user_context} onSaved={value=>setData(prev=>prev?{...prev,user_context:value}:prev)}/>
    <p className="muted-caption"><AlertTriangle size={13}/> {data.unknown} If the record grain or outcome timing matters, confirm it before modelling.</p>
    <p className="muted-caption">{data.note} Working version: {data.version}.</p>
   </>}

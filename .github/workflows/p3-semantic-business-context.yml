@@ -1,0 +1,71 @@
+name: P3 User-Described Semantic Business Context
+
+# Synthetic project/version fixtures only. No owner datasets, installers, model fitting,
+# cloud inference, original font assets or new release builds.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p3-semantic-business-context.yml
+      - backend/main.py
+      - backend/storage.py
+      - backend/semantic_profile.py
+      - frontend/src/SemanticContextEditor.tsx
+      - frontend/src/SemanticOverview.tsx
+      - frontend/src/ColumnInvestigation.tsx
+      - tests/test_p3_semantic_business_context.py
+      - tests/test_p3_semantic_profile.py
+      - frontend/tests/p3-semantic-business-context-contracts.test.cjs
+      - frontend/tests/p3-semantic-profile-contracts.test.cjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p3-semantic-context-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-semantic-context:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout trusted branch without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install existing backend test requirements and locked frontend packages
+        run: |
+          python -m pip install -r backend/requirements-test.txt
+          npm ci --prefix frontend --no-audit --no-fund
+      - name: Compile modified Python modules
+        run: python -m py_compile backend/storage.py backend/main.py
+      - name: Run P3 new and affected previous Python contracts
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/p3-semantic-context-${{ github.run_id }}
+        run: >-
+          python -m pytest -q tests/test_p3_semantic_business_context.py
+          tests/test_p3_semantic_profile.py
+          tests/test_p4_target_business_context.py
+      - name: Verify affected frontend API and UI source contracts
+        run: >-
+          node --test
+          frontend/tests/p3-semantic-business-context-contracts.test.cjs
+          frontend/tests/p3-semantic-profile-contracts.test.cjs
+      - name: Build actual frontend TypeScript and Vite bundle
+        run: npm run build --prefix frontend

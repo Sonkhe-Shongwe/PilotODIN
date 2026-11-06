@@ -58,6 +58,16 @@ def init():
             deadline_at TEXT,
             FOREIGN KEY(experiment_id) REFERENCES experiments(id)
         );
+        CREATE TABLE IF NOT EXISTS semantic_business_context (
+            project_id TEXT NOT NULL,
+            quality_version INTEGER NOT NULL,
+            domain_description TEXT NOT NULL,
+            record_grain_description TEXT NOT NULL,
+            field_definitions_json TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (project_id,quality_version),
+            FOREIGN KEY(project_id) REFERENCES projects(id)
+        );
         CREATE TABLE IF NOT EXISTS target_business_context (
             project_id TEXT NOT NULL,
             quality_version INTEGER NOT NULL,
@@ -156,6 +166,42 @@ def list_projects():
         ).fetchall()
     return [dict(x) for x in rows]
 
+
+
+# P3 bounded human-authored metadata; not independently verified business truth.
+def semantic_context(project_id: str, quality_version: int) -> dict | None:
+    with connect() as con:
+        row = con.execute(
+            "SELECT domain_description,record_grain_description,field_definitions_json,"
+            "updated_at FROM semantic_business_context WHERE project_id=? AND quality_version=?",
+            (project_id, quality_version),
+        ).fetchone()
+    if row is None:
+        return None
+    return {
+        "domain_description": row["domain_description"],
+        "record_grain_description": row["record_grain_description"],
+        "field_definitions": json.loads(row["field_definitions_json"]),
+        "updated_at": row["updated_at"],
+        "verification_state": "user_described_not_independently_verified",
+    }
+
+
+def save_semantic_context(project_id: str, quality_version: int,
+                          domain: str, grain: str, fields: list[dict]) -> dict:
+    timestamp = now()
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        con.execute(
+            "INSERT INTO semantic_business_context VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT(project_id,quality_version) DO UPDATE SET "
+            "domain_description=excluded.domain_description,"
+            "record_grain_description=excluded.record_grain_description,"
+            "field_definitions_json=excluded.field_definitions_json,"
+            "updated_at=excluded.updated_at",
+            (project_id,quality_version,domain,grain,json.dumps(fields,ensure_ascii=False),timestamp),
+        )
+    return semantic_context(project_id, quality_version)
 
 
 # Explicit USER-PROVIDED descriptions; storing them does not validate truth.

@@ -79,7 +79,8 @@ export function ColumnInvestigation({projectId,versionToken}:{projectId:string;v
     <span><strong>{pretty(dictionary.rows)}</strong> records</span>
     {Object.entries(dictionary.role_counts).map(([role,count])=><span key={role}><strong>{count}</strong> {role}</span>)}
    </div>
-   <SemanticOverview key={projectId+'-'+dictionary.version} projectId={projectId} version={dictionary.version}/>
+   <SemanticOverview key={projectId+'-'+dictionary.version} projectId={projectId} version={dictionary.version}
+    columns={dictionary.columns.map(item=>item.name)}/>
    <div className="po-col-toolbar">
     <label className="po-col-search"><Search size={15}/><input aria-label="Search columns by name or type" placeholder="Find a field or dtype…" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <label>Analytical role<select aria-label="Filter columns by analytical role" value={roleFilter} onChange={e=>setRoleFilter(e.target.value)}><option value="all">All roles</option>{Object.keys(dictionary.role_counts).map(role=><option key={role} value={role}>{role}</option>)}</select></label>
