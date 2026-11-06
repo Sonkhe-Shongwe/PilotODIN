@@ -101,6 +101,12 @@ export function UnifiedShell(){
  const heldArchivedRef=useRef('');
  const currentProjectRef=useRef(projectId);
  currentProjectRef.current=projectId;
+ const currentActiveRef=useRef(active);
+ currentActiveRef.current=active;
+ // One-use native dialog; no draft text is cached in the consent ticket.
+ const nativeDeliverExitPending=useRef(false);
+ const nativeDeliverExitTicket=useRef(0);
+ useEffect(()=>()=>{nativeDeliverExitTicket.current++;nativeDeliverExitPending.current=false},[]);
  const [openTabs,setOpenTabs]=useState<View[]>(()=>readTabs(localStorage.getItem('pilotodin-current')||''));
  const [dock,setDock]=useState<DockLayout>(()=>readDock(localStorage.getItem('pilotodin-current')||''));
  const [restoredFor,setRestoredFor]=useState<string|null>(null);
@@ -482,18 +488,40 @@ export function UnifiedShell(){
  };
  // When a docked view becomes the primary view, the embedded form unmounts.
  // Ask before leaving an edited dock, rather than navigating and warning too late.
- const navigateWithDockGuard=(view:View):boolean=>{
-  if(needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,view,workspaceReady)){
-   if(!window.confirm(primaryExitMessage(active)))return false;
-   // The next successful route commit, not this attempt, clears the draft marker.
-   preapprovedRoutePush.current=view==='investigate'?'#/canvas':`#/studio/${view}`;
+ const navigateWithDockGuard=(view:View,afterNavigate?:()=>void,nativeApproved=false):boolean=>{
+  const primaryExit=needsPrimaryStudioExitApproval(editedPrimary.current,projectId,active,view,workspaceReady);
+  if(primaryExit){
+   if(!nativeApproved&&active==='deliver'&&isDesktop()){
+    // Native approval is asynchronous; no route, draft or importer changes first.
+    if(nativeDeliverExitPending.current)return false;
+    const sourceProject=projectId,sourceView=active,sourceHash=window.location.hash;
+    const ticket=++nativeDeliverExitTicket.current;
+    nativeDeliverExitPending.current=true;
+    void invoke<boolean>('confirm_native_deliver_exit').then(approved=>{
+     if(ticket!==nativeDeliverExitTicket.current)return;
+     nativeDeliverExitPending.current=false;
+     if(!approved||currentProjectRef.current!==sourceProject||
+      currentActiveRef.current!==sourceView||window.location.hash!==sourceHash||
+      editedPrimary.current?.projectId!==sourceProject||editedPrimary.current?.view!=='deliver')return;
+     navigateWithDockGuard(view,afterNavigate,true);
+    }).catch(()=>{
+     if(ticket!==nativeDeliverExitTicket.current)return;
+     nativeDeliverExitPending.current=false;
+     setWarning('Could not show the Windows Deliver confirmation. Your unsaved report was kept.');
+    });
+    return false;
+   }
+   if(!nativeApproved&&!window.confirm(primaryExitMessage(active)))return false;
   }
   if(view!==active&&dock.secondary===view&&isSecondaryView(view)){
    if(!confirmEditedDockDiscard('activate',view))return false;
    editedDock.current=null;
    setDock(current=>nextDockLayout(current,{kind:'close'}));
   }
+  // Set route-specific preapproval only after all navigation guards pass.
+  if(primaryExit)preapprovedRoutePush.current=view==='investigate'?'#/canvas':`#/studio/${view}`;
   navigate(view);
+  afterNavigate?.();
   return true;
  };
  // Primary Studio may load projects directly from its selector, Home cards or
