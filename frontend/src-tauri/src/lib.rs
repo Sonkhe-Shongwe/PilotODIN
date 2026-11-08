@@ -108,9 +108,25 @@ fn finish_p3_w5_synthetic_qa(window: tauri::WebviewWindow) -> Result<(), String>
         eprintln!("[PilotODIN W5 QA] {reason}");
         return Err(reason.into());
     }
-    // QA-only explicit finish bypasses a potentially stuck CloseRequested
-    // ticket; production app unsaved-draft veto remains unchanged.
-    window.destroy().map_err(|_| "W5 QA native window destroy failed".to_string())
+    // A synchronous destroy can discard the WebView before Tauri's invoke
+    // response reaches JS. A rejected invoke with no Error/string then looks
+    // like a QA failure despite the reviewed version being valid. Acknowledge
+    // the command first; close only this already scope-checked QA window from
+    // the UI thread, after a short bounded interval. Production CloseRequested
+    // and unsaved-work veto remain entirely unchanged.
+    let app = window.app_handle().clone();
+    let qa_window = window.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(350));
+        if app.run_on_main_thread(move || {
+            if qa_window.destroy().is_err() {
+                eprintln!("[PilotODIN W5 QA] delayed native window destroy failed");
+            }
+        }).is_err() {
+            eprintln!("[PilotODIN W5 QA] delayed native window dispatch failed");
+        }
+    });
+    Ok(())
 }
 
 // This is intentionally a Rust-side dialog. The Tauri dialog plugin may

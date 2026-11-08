@@ -59,7 +59,11 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert 'tauri://localhost/p3_native_quality_w5_qa.html' in rust
     assert "cfg!(debug_assertions)" in rust
     assert 'window.label() != "main"' in rust
-    assert "window.destroy()" in rust
+    assert "qa_window.destroy()" in rust
+    assert "std::thread::sleep(std::time::Duration::from_millis(350))" in rust
+    assert "app.run_on_main_thread(move || {" in rust
+    assert "Ok(())" in rust
+    assert "window.destroy().map_err" not in rust
     assert "finish_p3_w5_synthetic_qa, confirm_native_deliver_exit" in rust
     assert "fn synthetic_w5_finish_is_not_a_general_native_close_bypass()" in rust
     assert "typeof error==='string'?error" in client
