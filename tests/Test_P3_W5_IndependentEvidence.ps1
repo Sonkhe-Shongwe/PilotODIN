@@ -58,7 +58,34 @@ try {
     $record.quality_version -ne 'NOT_CHECKED'){
   throw 'Known-incomplete result incorrectly labelled'
  }
- Write-Host 'W5 SPLIT RUNNER SELF-TEST PASS: known-good, known-bad, and incomplete scenarios.'
+ # Verify the runner's real Start-Process invocation on physical Windows CI.
+ # This one deliberately lacks a manifest, so the probe MUST return failure
+ # without contacting any owner project or starting a native desktop window.
+ $workspace=Join-Path $root 'workspace'
+ New-Item -ItemType Directory -Path $workspace | Out-Null
+ New-Item -ItemType Directory -Path (Join-Path $root 'diagnostics') | Out-Null
+ $probeOut=Join-Path $root 'probe-stdout.log'
+ $probeErr=Join-Path $root 'probe-stderr.log'
+ $previousHome=$env:PILOTODIN_HOME
+ try {
+  $env:PILOTODIN_HOME=$workspace
+  $python=(Get-Command python.exe -ErrorAction Stop).Source
+  $repoRoot=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+  $probe=Start-Process -FilePath $python -WorkingDirectory $repoRoot -ArgumentList @(
+   '-B','-m','tools.P3_W5_Functional_Probe'
+  ) -PassThru -NoNewWindow -RedirectStandardOutput $probeOut -RedirectStandardError $probeErr
+  if(-not $probe.WaitForExit(20000)){throw 'Actual Windows background probe did not exit'}
+  if($probe.ExitCode -ne 2){throw 'Deliberately invalid probe did not fail closed'}
+  $probeStatus=Get-Content -LiteralPath (Join-Path $root 'diagnostics\functional-result.json') -Raw | ConvertFrom-Json
+  if($probeStatus.functional_state -ne 'FAIL_OR_INCOMPLETE' -or
+     $probeStatus.product_acceptance -ne 'NOT_TESTED' -or
+     $probeStatus.native_shutdown -ne 'INDEPENDENT_NOT_TESTED'){
+   throw 'Actual Windows background probe process was not isolated and fail closed'
+  }
+ }finally{
+  [Environment]::SetEnvironmentVariable('PILOTODIN_HOME',$previousHome,'Process')
+ }
+ Write-Host 'W5 SPLIT RUNNER SELF-TEST PASS: known-good, known-bad, incomplete and actual Windows probe launch.'
 } finally {
  Remove-Item -LiteralPath $path -ErrorAction SilentlyContinue
  Remove-Item -LiteralPath $root -Force -ErrorAction SilentlyContinue
