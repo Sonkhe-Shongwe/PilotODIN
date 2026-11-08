@@ -98,11 +98,24 @@ fn finish_p3_w5_synthetic_qa(window: tauri::WebviewWindow) -> Result<(), String>
     if window.label() != "main" { return Err("Unexpected desktop window".into()); }
     let qa_flag = std::env::var("VITE_P3_NATIVE_QUALITY_W5_QA").ok();
     let smoke_flag = std::env::var("VITE_PILOTODIN_NATIVE_SMOKE").ok();
+    let identifier = &window.app_handle().config().identifier;
     if !eligible_p3_w5_qa_exit(
-        cfg!(debug_assertions), &window.app_handle().config().identifier,
+        cfg!(debug_assertions), identifier,
         qa_flag.as_deref(), smoke_flag.as_deref(),
     ) {
-        return Err("Synthetic P3 W5 exit is unavailable outside the dedicated dev QA app".into());
+        // Bounded diagnostic categories only. No raw environment values,
+        // paths, project identifiers, or user data leave this function.
+        let reason = if !cfg!(debug_assertions) {
+            "W5 QA finish refused: this is not a debug build"
+        } else if identifier != "com.pilotodin.p3qualityw5qa" {
+            "W5 QA finish refused: native QA application identity mismatch"
+        } else if qa_flag.as_deref() != Some("1") {
+            "W5 QA finish refused: missing dedicated W5 launch flag"
+        } else {
+            "W5 QA finish refused: missing native smoke launch flag"
+        };
+        eprintln!("[PilotODIN W5 QA] {reason}");
+        return Err(reason.into());
     }
     // QA-only explicit finish bypasses a potentially stuck CloseRequested
     // ticket; production app unsaved-draft veto remains unchanged.

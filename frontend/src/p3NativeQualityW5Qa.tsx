@@ -141,7 +141,13 @@ finishButton.addEventListener('click',async()=>{
   finishStatus.textContent='W5 checks confirmed. Closing this synthetic window...';
   await invoke<void>('finish_p3_w5_synthetic_qa');
  }catch(error){
-  finishStatus.textContent=error instanceof Error?error.message:'Synthetic QA finish blocked.';
+  // Tauri invoke rejects custom Rust command failures as *strings*. Do not
+  // collapse those into an unhelpful generic message during owner Windows QA.
+  // Keep diagnostics bounded and never include project contents or tokens.
+  const reason=error instanceof Error?error.message:
+    typeof error==='string'?error:'Unclassified synthetic QA finish failure.';
+  finishStatus.textContent=reason.slice(0,220);
+  console.warn('[PilotODIN synthetic W5 finish refused]',reason.slice(0,220));
   finishButton.disabled=false;
  }
 });

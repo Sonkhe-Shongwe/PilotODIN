@@ -57,6 +57,13 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert "window.destroy()" in rust
     assert "finish_p3_w5_synthetic_qa, confirm_native_deliver_exit" in rust
     assert "fn synthetic_w5_finish_is_not_a_general_native_close_bypass()" in rust
+    assert "typeof error==='string'?error" in client
+    assert "reason.slice(0,220)" in client
+    assert "Synthetic QA finish blocked." not in client
+    assert "W5 QA finish refused: native QA application identity mismatch" in rust
+    assert "W5 QA finish refused: missing dedicated W5 launch flag" in rust
+    assert "W5 QA finish refused: missing native smoke launch flag" in rust
+    assert 'eprintln!("[PilotODIN W5 QA] {reason}")' in rust
 
 
 def test_native_w5_runner_guard_and_evidence():
