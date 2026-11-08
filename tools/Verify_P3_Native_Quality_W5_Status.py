@@ -29,6 +29,9 @@ HASH_RE = re.compile(r"[a-f0-9]{64}\Z")
 ID_RE = re.compile(r"[a-f0-9]{32}\Z")
 SUCCESS = {
     "native_mode": "OWNER_WINDOW_CLOSED_WITH_ZERO_TAURI_EXIT",
+    "native_shutdown_status": "PASS_ZERO_EXIT",
+    "functional_state": "PASS",
+    "functional_failure_category": "",
     "quality_version": "PASS_V0_TO_V1",
     "version_history": "PASS_EXACTLY_V0_V1",
     "stale_semantic_get": "PASS_HTTP_409",

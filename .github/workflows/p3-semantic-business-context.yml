@@ -29,6 +29,10 @@ on:
       - Run_PilotODIN_P3_Native_Quality_W5_QA.bat
       - tools/Seed_P3_Native_Quality_W5_Local.py
       - tools/Run_P3_Native_Quality_W5_QA_Local.ps1
+      - tools/P3_W5_Functional_Probe.py
+      - tools/Read_P3_W5_Functional_Result.ps1
+      - tests/Test_P3_W5_IndependentEvidence.ps1
+      - tests/test_p3_w5_functional_probe.py
       - frontend/p3_native_quality_w5_qa.html
       - frontend/src/p3NativeQualityW5Qa.tsx
       - frontend/src/p3NativeW5IpcGuard.ts
@@ -75,7 +79,7 @@ jobs:
           python -m pip install -r backend/requirements-test.txt
           npm ci --prefix frontend --no-audit --no-fund
       - name: Compile modified Python modules
-        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py tools/Seed_P3_Native_Quality_W5_Local.py tools/Verify_P3_Native_Quality_W5_Status.py tools/Verify_P3_Native_Quality_W5_History_Local.py
+        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py tools/Seed_P3_Native_Quality_W5_Local.py tools/Verify_P3_Native_Quality_W5_Status.py tools/Verify_P3_Native_Quality_W5_History_Local.py tools/P3_W5_Functional_Probe.py
       - name: Run P3 new and affected previous Python contracts
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/p3-semantic-context-${{ github.run_id }}
@@ -86,6 +90,7 @@ jobs:
           tests/test_p3_native_qa_source.py tests/test_p3_native_quality_w5_source.py
           tests/test_p3_w5_archive_verifier.py
           tests/test_p3_native_quality_w5_history.py
+          tests/test_p3_w5_functional_probe.py
       - name: Verify affected frontend API and UI source contracts
         run: >-
           node --test
@@ -119,4 +124,6 @@ jobs:
               throw ('P3 native QA PowerShell parse failed: ' + $name)
             }
           }
-          Write-Host 'Both P3 PowerShell scripts parse. Native W1-W4 not rerun, W5 not tested.'
+          & (Join-Path $env:GITHUB_WORKSPACE 'tests\Test_P3_W5_IndependentEvidence.ps1')
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw 'W5 evidence classification self-test failed.' }
+          Write-Host 'P3 PowerShell parsed; known-good/known-bad split-status self-test passed. Physical W5 not tested.'

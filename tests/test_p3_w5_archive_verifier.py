@@ -103,6 +103,9 @@ def test_refuses_untrusted_fixture_metadata(tmp_path,changed):
 
 @pytest.mark.parametrize("changed",[
     {"source_worktree":"UNCOMMITTED_OWNER_WORK"},
+    {"functional_state":"NOT_TESTED"},
+    {"native_shutdown_status":"FAIL_NONZERO_EXIT"},
+    {"functional_failure_category":"INCOMPLETE"},
     {"owner_native_ui":"NOT_OBSERVED"},
     {"request_audit":"NOT_CHECKED"},
     {"historical_semantic_context":"NOT_CHECKED"},
@@ -115,6 +118,15 @@ def test_refuses_false_success_or_forbidden_scope(tmp_path,changed):
     sample=_archive(tmp_path,result=changed)
     with pytest.raises(ArchiveRefused):
         inspect_archive(sample)
+
+
+def test_functional_pass_still_cannot_certify_failed_native_close(tmp_path):
+    archive=_archive(tmp_path,result={
+        "state":"FAIL_OR_BLOCKED", "functional_state":"PASS",
+        "native_shutdown_status":"FAIL_NONZERO_EXIT", "native_mode":"NOT_TESTED",
+        "owner_native_ui":"NOT_OBSERVED",
+    })
+    assert inspect_archive(archive)["verdict"]=="NOT_ACCEPTED"
 
 
 def test_does_not_certify_failed_native_test(tmp_path):

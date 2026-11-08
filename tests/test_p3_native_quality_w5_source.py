@@ -117,9 +117,11 @@ def test_native_w5_runner_guard_and_evidence():
         "PILOTODIN_HOME=$workspaceDir","Port-Occupied 8000 -or Port-Occupied 5178",
         "VITE_P3_NATIVE_W5_PROJECT","VITE_P3_NATIVE_W5_ISSUE",
         "npm run desktop:dev -- --config src-tauri/tauri.p3-native-quality-w5-qa.conf.json",
-        "PASS_V0_TO_V1","PASS_EXACTLY_V0_V1","PASS_EMPTY_V1","PASS_HTTP_409",
-        "PASS_UNCHANGED","PASS_V0_RETAINED_V1_ABSENT","Verify_P3_Native_Quality_W5_History_Local.py",
-        "PASS_ONE_PROPOSAL_ONE_UI_COMMIT_ONE_REJECTED_STALE_POST",
+        "P3_W5_Functional_Probe.py","Read_P3_W5_Functional_Result.ps1",
+        "Start-Process -FilePath $pythonExe","tools.P3_W5_Functional_Probe",
+        "Import-P3W5FunctionalReport -Path $probeResultFile -Record $record",
+        "functional_state='NOT_TESTED'","native_shutdown_status='NOT_TESTED'",
+        "PASS_ZERO_EXIT","FAIL_NONZERO_EXIT",
         "OWNER_REPORTED_PASS","product_acceptance='NOT_TESTED'",
         "Stop-Process -Id $backendProcess.Id","Compress-Archive",
         "Verify_P3_Native_Quality_W5_Status.py",
@@ -138,6 +140,15 @@ def test_native_w5_runner_guard_and_evidence():
         "After 12s W5 finishes automatically.",
     ):
         assert expected in source,expected
+    assert source.index("$functionalState=Import-P3W5FunctionalReport") < source.index(
+        "if($nativeCode -ne 0)"
+    )
+    probe=read("tools/P3_W5_Functional_Probe.py")
+    for expected in ("PASS_V0_TO_V1","PASS_EXACTLY_V0_V1","PASS_EMPTY_V1",
+                     "PASS_HTTP_409","PASS_UNCHANGED","PASS_V0_RETAINED_V1_ABSENT",
+                     "PASS_ONE_PROPOSAL_ONE_UI_COMMIT_ONE_REJECTED_STALE_POST"):
+        assert expected in probe
+    assert "Read-Host" not in probe
     assert "Run_P3_Native_Quality_W5_QA_Local.ps1" in bat
     assert not re.search(r"(?i)npm\s+ci|cargo\s+install|winget\s+install|git\s+reset|Remove-Item\s+-Recurse",source)
 

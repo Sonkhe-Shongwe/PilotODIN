@@ -11,9 +11,13 @@ $allocator=Join-Path $PSScriptRoot 'qa_foundation.py'
 $seeder=Join-Path $PSScriptRoot 'Seed_P3_Native_Quality_W5_Local.py'
 $historyVerifier=Join-Path $PSScriptRoot 'Verify_P3_Native_Quality_W5_History_Local.py'
 $statusVerifier=Join-Path $PSScriptRoot 'Verify_P3_Native_Quality_W5_Status.py'
+$functionalProbe=Join-Path $PSScriptRoot 'P3_W5_Functional_Probe.py'
+$functionalReader=Join-Path $PSScriptRoot 'Read_P3_W5_Functional_Result.ps1'
 $config=Join-Path $frontend 'src-tauri\tauri.p3-native-quality-w5-qa.conf.json'
 $runDir=$null
 $backendProcess=$null
+$probeProcess=$null
+$probeResultFile=$null
 $exitCode=1
 $record=[ordered]@{
  phase=$phase
@@ -22,6 +26,9 @@ $record=[ordered]@{
  source_head='NOT_ATTESTED'
  source_worktree='NOT_CHECKED'
  native_mode='NOT_TESTED'
+ native_shutdown_status='NOT_TESTED'
+ functional_state='NOT_TESTED'
+ functional_failure_category=''
  original_sha256='NOT_CHECKED'
  quality_version='NOT_CHECKED'
  version_history='NOT_CHECKED'
@@ -61,34 +68,17 @@ function Wait-Project([string]$projectId){
  }
  return $false
 }
-function Read-Expected([string]$path){
- return Invoke-RestMethod -Uri ('http://127.0.0.1:8000/api'+$path) -Method GET -TimeoutSec 12
-}
-function Denied-Expected([string]$path,[string]$method,[object]$payload){
- $status=0
- try{
-  $args=@{Uri=('http://127.0.0.1:8000/api'+$path);Method=$method;TimeoutSec=12;UseBasicParsing=$true}
-  if($method -eq 'POST'){
-   $args.ContentType='application/json'
-   $args.Body=($payload | ConvertTo-Json -Depth 5 -Compress)
-  }
-  $res=Invoke-WebRequest @args
-  $status=[int]$res.StatusCode
- }catch{
-  if(-not $_.Exception.Response){throw}
-  $status=[int]$_.Exception.Response.StatusCode
- }
- if($status -ne 409){throw ('Expected stale semantic HTTP 409, received '+$status)}
-}
 try{
  if($env:OS -ne 'Windows_NT'){throw 'Requires physical Windows Tauri/WebView2; no native test ran.'}
- foreach($file in @($pythonExe,$allocator,$seeder,$historyVerifier,$statusVerifier,$config,
+ foreach($file in @($pythonExe,$allocator,$seeder,$historyVerifier,$statusVerifier,$functionalProbe,$functionalReader,$config,
    (Join-Path $frontend 'p3_native_quality_w5_qa.html'),
    (Join-Path $frontend 'src\p3NativeQualityW5Qa.tsx'))){
   if(-not(Test-Path -LiteralPath $file -PathType Leaf)){
    throw ('Missing existing native QA prerequisite: '+$file)
   }
  }
+ # Shared with the real Windows known-good/bad harness classification self-test.
+ . $functionalReader
  if(-not(Test-Path -LiteralPath (Join-Path $frontend 'node_modules') -PathType Container)){
   throw 'Pre-existing node_modules required. No dependencies will be installed.'
  }
@@ -183,6 +173,15 @@ try{
   '-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--lifespan','off'
  ) -PassThru -NoNewWindow -RedirectStandardOutput $backendStdout -RedirectStandardError $backendStderr
  if(-not(Wait-Project $id)){throw 'Isolated FastAPI backend did not become available.'}
+ # Start an independent data verifier WHILE the native QA window is open.
+ # Its only write is an intentionally rejected stale semantic POST (HTTP 409).
+ $probeResultFile=Join-Path $runDir 'diagnostics\functional-result.json'
+ $probeOut=Join-Path $runDir 'logs\functional-probe-stdout.log'
+ $probeErr=Join-Path $runDir 'logs\functional-probe-stderr.log'
+ $probeProcess=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
+  '-B','-m','tools.P3_W5_Functional_Probe'
+ ) -PassThru -NoNewWindow -RedirectStandardOutput $probeOut -RedirectStandardError $probeErr
+ Write-Host 'Independent W5 data probe started. Native window exit cannot overwrite data results.' -ForegroundColor Cyan
  Push-Location $frontend
  try{
   $oldPref=$ErrorActionPreference;$ErrorActionPreference='Continue'
@@ -205,74 +204,21 @@ try{
     Tee-Object -FilePath $nativeLog
   $nativeCode=$LASTEXITCODE
  }finally{$ErrorActionPreference=$oldPref;Pop-Location}
- if($nativeCode -ne 0){throw 'Native Tauri W5 QA window exited with an error.'}
+ # Merge isolated data evidence FIRST, independent of native window exit.
+ if($probeProcess -and -not $probeProcess.HasExited){
+  $null=$probeProcess.WaitForExit(15000)
+ }
+ $functionalState=Import-P3W5FunctionalReport -Path $probeResultFile -Record $record
+ $record.native_shutdown_status=if($nativeCode -eq 0){'PASS_ZERO_EXIT'}else{'FAIL_NONZERO_EXIT'}
+ if($nativeCode -ne 0){
+  throw ('Native QA window exit failed (code '+$nativeCode+
+   '), but independent data result is '+$functionalState)
+ }
  $record.native_mode='OWNER_WINDOW_CLOSED_WITH_ZERO_TAURI_EXIT'
- $quality=Read-Expected ('/projects/'+$id+'/quality')
- if($quality.version -ne 1){throw 'Actual native UI did not complete exactly one reviewed Quality v0-to-v1 action.'}
- $record.quality_version='PASS_V0_TO_V1'
- $history=Read-Expected ('/projects/'+$id+'/quality/history')
- $versions=@($history.versions | ForEach-Object {[int]$_.version})
- if($history.current_version -ne 1 -or
-    ($versions -join ',') -ne '0,1'){throw 'Unexpected Quality version history.'}
- $record.version_history='PASS_EXACTLY_V0_V1'
- $v1=Read-Expected ('/projects/'+$id+'/semantics?expected_version=1')
- if($v1.version -ne 1 -or $null -ne $v1.user_context){
-  throw 'Previous unverified semantic descriptions silently transferred to version one.'
+ if($functionalState -ne 'PASS'){
+  throw ('Native QA closed but independent data verification did not pass: '+$functionalState)
  }
- $record.current_semantic_context='PASS_EMPTY_V1'
- $preview=Read-Expected ('/projects/'+$id+'/quality/preview?offset=0&limit=10&expected_version=1')
- if($preview.version -ne 1 -or @($preview.rows).Count -lt 3 -or
-    $preview.rows[1].original.Region -cne ' Mpumalanga ' -or
-    $preview.rows[1].working.Region -cne 'Mpumalanga' -or
-    $preview.rows[2].original.Region -cne ' Mpumalanga ' -or
-    $preview.rows[2].working.Region -cne 'Mpumalanga'){
-  throw 'Original versus approved working Region cells do not match expected W5 values.'
- }
- Denied-Expected ('/projects/'+$id+'/semantics?expected_version=0') 'GET' $null
- $record.stale_semantic_get='PASS_HTTP_409'
- $stale=@{
-  expected_version=0
-  domain_description='Synthetic old version context must not migrate'
-  record_grain_description='One original synthetic insurance claim per row'
-  field_definitions=@(@{column='claim_amount';meaning='Synthetic requested amount for old version'})
- }
- Denied-Expected ('/projects/'+$id+'/semantic-business-context') 'POST' $stale
- $record.stale_semantic_post='PASS_HTTP_409'
- # Existing v0 human descriptions must remain durable, not just absent on v1.
- # Verify read-only SQLite state in this isolated disposable workspace.
- Push-Location $root
- try{
-  $historyOutput=@(& $pythonExe -B $historyVerifier $workspaceDir $manifestFile)
-  $historyCode=$LASTEXITCODE
- }finally{Pop-Location}
- if($historyCode -ne 0){throw 'Synthetic v0 semantic history was not preserved; DB read-only gate failed.'}
- $historyResult=($historyOutput | Out-String | ConvertFrom-Json)
- if($historyResult.state -ne 'PASS_V0_RETAINED_V1_ABSENT' -or
-    $historyResult.evidence -ne 'ISOLATED_SQLITE_READ_ONLY' -or
-    $historyResult.product_acceptance -ne 'NOT_TESTED'){
-  throw 'Synthetic v0 semantic history verifier did not prove the expected isolated state.'
- }
- $record.historical_semantic_context='PASS_V0_RETAINED_V1_ABSENT'
- if((Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash -ine $manifest.original_sha256){
-  throw 'Original synthetic source changed after Quality commit.'
- }
- $record.original_sha256='PASS_UNCHANGED'
- $access=if(Test-Path -LiteralPath $backendStdout -PathType Leaf){
-  Get-Content -LiteralPath $backendStdout -Raw -ErrorAction SilentlyContinue
- }else{''}
- $mutations=@([regex]::Matches($access,'(?m)"(?:POST|PUT|PATCH|DELETE) /api/[^\r\n]+'))
- $expected=@(
-  'POST /api/projects/'+$id+'/quality/proposals HTTP/1.1" 200',
-  'POST /api/projects/'+$id+'/quality/commit HTTP/1.1" 200',
-  'POST /api/projects/'+$id+'/semantic-business-context HTTP/1.1" 409'
- )
- if($mutations.Count -ne 3){throw ('Unexpected number of backend write requests: '+$mutations.Count)}
- for($i=0;$i -lt 3;$i++){
-  if(-not $mutations[$i].Value.Contains($expected[$i])){
-   throw ('Unexpected backend mutation request or order at audit index '+$i)
-  }
- }
- $record.request_audit='PASS_ONE_PROPOSAL_ONE_UI_COMMIT_ONE_REJECTED_STALE_POST'
+ Write-Host 'Independent data and native close checks passed; confirm your own observation.' -ForegroundColor Green
  $response=(Read-Host 'Observed ACTUAL native WebView2 working v1 and empty Your data v1 notes? [yes/no]').Trim().ToLowerInvariant()
  if($response -notin @('yes','y')){throw 'Owner native visual W5 observation was not confirmed.'}
  $record.owner_native_ui='OWNER_REPORTED_PASS'
@@ -287,6 +233,20 @@ try{
  Write-Host ('P3 native W5 NOT ACCEPTED: '+$record.failure_category) -ForegroundColor Red
  $exitCode=1
 }finally{
+ # When native launch/exit fails, preserve already completed functional checks.
+ # Stop only our test-owned probe, never arbitrary processes or user projects.
+ if($probeProcess){
+  try{
+   if(-not $probeProcess.HasExited){$null=$probeProcess.WaitForExit(6000)}
+   if(-not $probeProcess.HasExited){
+    Stop-Process -Id $probeProcess.Id -ErrorAction Stop
+    Write-Warning 'Isolated W5 functional probe incomplete. No data acceptance assumed.'
+   }
+  }catch{Write-Warning 'Could not stop only the owned probe process.'}
+ }
+ if($probeResultFile){
+  $null=Import-P3W5FunctionalReport -Path $probeResultFile -Record $record
+ }
  if($backendProcess -and -not $backendProcess.HasExited){
   try{Stop-Process -Id $backendProcess.Id -Force -ErrorAction Stop}
   catch{Write-Warning 'Test-owned backend PID could not be stopped; do not stop unrelated processes.'}
