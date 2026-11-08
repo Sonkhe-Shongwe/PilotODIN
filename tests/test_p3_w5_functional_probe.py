@@ -117,8 +117,8 @@ def _approve_exact_synthetic_correction(workspace, meta, client):
     assert committed.status_code == 200, committed.text
     log=workspace.parent/"logs"/"backend-stdout.log"
     log.write_text(
-        f'127.0.0.1:1234 - "POST /api/projects/{pid}/quality/proposals HTTP/1.1" 200 OK\\n'
-        f'127.0.0.1:1234 - "POST /api/projects/{pid}/quality/commit HTTP/1.1" 200 OK\\n',
+        f'127.0.0.1:1234 - "POST /api/projects/{pid}/quality/proposals HTTP/1.1" 200 OK\n'
+        f'127.0.0.1:1234 - "POST /api/projects/{pid}/quality/commit HTTP/1.1" 200 OK\n',
         encoding="utf-8"
     )
 
@@ -135,7 +135,7 @@ def _redirect_probe_to_real_local_test_client(monkeypatch, workspace, client):
             log=workspace.parent/"logs"/"backend-stdout.log"
             with log.open("a", encoding="utf-8") as handle:
                 handle.write(
-                    f'127.0.0.1:1234 - "POST /api{path} HTTP/1.1" {response.status_code} OK\\n'
+                    f'127.0.0.1:1234 - "POST /api{path} HTTP/1.1" {response.status_code} OK\n'
                 )
         return response.status_code, response.json()
     monkeypatch.setattr(probe,"request_json",local_request)
