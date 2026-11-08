@@ -75,7 +75,13 @@ try {
    '-B','-m','tools.P3_W5_Functional_Probe'
   ) -PassThru -NoNewWindow -RedirectStandardOutput $probeOut -RedirectStandardError $probeErr
   if(-not $probe.WaitForExit(20000)){throw 'Actual Windows background probe did not exit'}
-  if($probe.ExitCode -ne 2){throw 'Deliberately invalid probe did not fail closed'}
+  if($probe.ExitCode -ne 2){
+   $errorDetail=if(Test-Path -LiteralPath $probeErr){
+    (Get-Content -LiteralPath $probeErr -Tail 12 | Out-String)
+   }else{'No stderr file.'}
+   Write-Host ('Isolated probe stderr diagnostic: '+$errorDetail)
+   throw ('Deliberately invalid probe exited '+$probe.ExitCode+' instead of safe code 2')
+  }
   $probeStatus=Get-Content -LiteralPath (Join-Path $root 'diagnostics\functional-result.json') -Raw | ConvertFrom-Json
   if($probeStatus.functional_state -ne 'FAIL_OR_INCOMPLETE' -or
      $probeStatus.product_acceptance -ne 'NOT_TESTED' -or
