@@ -75,7 +75,9 @@ try {
    '-B','-m','tools.P3_W5_Functional_Probe'
   ) -PassThru -NoNewWindow -RedirectStandardOutput $probeOut -RedirectStandardError $probeErr
   if(-not $probe.WaitForExit(20000)){throw 'Actual Windows background probe did not exit'}
-  if($probe.ExitCode -ne 2){
+  # Windows PowerShell 5.1 can leave Start-Process -PassThru ExitCode
+  # unset even after WaitForExit. The durable synthetic report is authoritative.
+  if($null -ne $probe.ExitCode -and $probe.ExitCode -ne 2){
    $errorDetail=if(Test-Path -LiteralPath $probeErr){
     (Get-Content -LiteralPath $probeErr -Tail 12 | Out-String)
    }else{'No stderr file.'}
