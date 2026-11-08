@@ -87,6 +87,11 @@ try {
  }
  Write-Host 'W5 SPLIT RUNNER SELF-TEST PASS: known-good, known-bad, incomplete and actual Windows probe launch.'
 } finally {
- Remove-Item -LiteralPath $path -ErrorAction SilentlyContinue
- Remove-Item -LiteralPath $root -Force -ErrorAction SilentlyContinue
+ # Temporary CI-only directory. Do not let PowerShell 5.1 Remove-Item
+ # errors mask a legitimate known-good/bad harness result.
+ if($root -and $root.StartsWith([IO.Path]::GetTempPath(),[StringComparison]::OrdinalIgnoreCase) -and
+    (Test-Path -LiteralPath $root -PathType Container)){
+  try{[IO.Directory]::Delete($root,$true)}
+  catch{Write-Warning 'Could not tidy the isolated W5 self-test directory.'}
+ }
 }
