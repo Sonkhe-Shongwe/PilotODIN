@@ -78,6 +78,8 @@ export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
     </div>
     {data.fields.length>20&&<p className="muted-caption">Showing the first 20 fields with hypotheses; no field was automatically modified.</p>}
    </details>
+   <p className="muted-caption">The table compares unverified statements. An explicit owner
+    assessment of a tentative field role is recorded separately below, not as verified truth.</p>
    {data.user_context&&<div className="po-col-metadata" role="region" aria-label="Owner-described business context">
     <div><small>User description, not independently verified</small>
      {data.user_context.domain_description&&<div role="group" aria-label="Compare unverified domain statements">
@@ -99,7 +101,7 @@ export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
     existing={data.user_context} onSaved={value=>setData(prev=>prev?{...prev,user_context:value}:prev)}
     onUnsavedChange={setDescriptionDirty}/>
    <SemanticReviewPanel projectId={projectId} version={version}
-    onUnsavedChange={setHumanReviewDirty}/>
+    ownerContext={data.user_context} onUnsavedChange={setHumanReviewDirty}/>
    <p className="muted-caption"><AlertTriangle size={13}/> {data.unknown} If the record grain or outcome timing matters, confirm it before modelling.</p>
    <p className="muted-caption">{data.note} Working version: {data.version}.</p>
   </>}

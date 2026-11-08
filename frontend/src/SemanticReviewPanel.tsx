@@ -1,5 +1,6 @@
 import {useEffect,useState} from 'react';
 import {get,post} from './api';
+import type {UserSemanticContext} from './SemanticContextEditor';
 
 type Decision='acceptable'|'needs_correction'|'cannot_assess';
 type SavedReview={
@@ -20,8 +21,9 @@ const decisionText:Record<Decision,string>={
  cannot_assess:'Cannot assess',
 };
 
-export function SemanticReviewPanel({projectId,version,onUnsavedChange}:{
- projectId:string;version:number;onUnsavedChange?:(dirty:boolean)=>void
+export function SemanticReviewPanel({projectId,version,ownerContext,onUnsavedChange}:{
+ projectId:string;version:number;ownerContext:UserSemanticContext|null;
+ onUnsavedChange?:(dirty:boolean)=>void
 }){
  const [candidates,setCandidates]=useState<Candidate[]>([]);
  const [selected,setSelected]=useState('');
@@ -32,6 +34,9 @@ export function SemanticReviewPanel({projectId,version,onUnsavedChange}:{
  const [error,setError]=useState('');
  const [saved,setSaved]=useState(false);
  const chosen=candidates.find(item=>reviewKey(item)===selected);
+ const ownerDescription=ownerContext?.field_definitions.find(
+  item=>item.column===chosen?.column
+ )?.meaning;
  const dirty=!!chosen&&(
   decision!==(chosen.review?.decision??'')||
   explanation.trim()!==(chosen.review?.explanation??'')
@@ -107,6 +112,10 @@ export function SemanticReviewPanel({projectId,version,onUnsavedChange}:{
      <p><strong>Field:</strong> {chosen.column}</p>
      <p><strong>Tentative role:</strong> {chosen.role.replaceAll('_',' ')}</p>
      <p className="muted-caption">{chosen.reason} Basis: {chosen.basis.replaceAll('_',' ')}.</p>
+     <p><strong>Saved owner description (unverified):</strong> {ownerDescription??
+      'No owner description saved for this field.'}</p>
+     <p className="muted-caption">Your assessment is about this tentative role.
+      It does not prove agreement with the saved description.</p>
     </div>
     {chosen.reassessment_required&&<p className="muted-caption" role="status">
      An earlier review belongs to a changed hypothesis. Reassess explicitly; the old decision is not inherited.

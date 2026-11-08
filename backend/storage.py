@@ -87,6 +87,7 @@ def init():
             quality_version INTEGER NOT NULL,
             column_name TEXT NOT NULL,
             hypothesis_role TEXT NOT NULL,
+            hypothesis_hash TEXT NOT NULL,
             revision INTEGER NOT NULL,
             previous_decision TEXT,
             decision TEXT NOT NULL,
@@ -286,9 +287,9 @@ def save_human_review(project_id: str, quality_version: int, column: str,
         )
         con.execute(
             "INSERT INTO semantic_human_review_events "
-            "(project_id,quality_version,column_name,hypothesis_role,revision,"
-            "previous_decision,decision,occurred_at) VALUES(?,?,?,?,?,?,?,?)",
-            (project_id,quality_version,column,role,new_revision,
+            "(project_id,quality_version,column_name,hypothesis_role,hypothesis_hash,"
+            "revision,previous_decision,decision,occurred_at) VALUES(?,?,?,?,?,?,?,?,?)",
+            (project_id,quality_version,column,role,hypothesis_hash,new_revision,
              None if prior is None else prior["decision"],decision,timestamp),
         )
     return {

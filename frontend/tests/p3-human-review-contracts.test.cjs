@@ -45,6 +45,8 @@ test('P3-03 review UI requires owner click, revision lock and protects unsaved c
  assert.match(panel,/onUnsavedChange\?\.\(dirty\)/);
  assert.match(panel,/owner_attestation_not_independently_verified/);
  assert.match(panel,/reassessment_required/);
+ assert.match(panel,/Saved owner description \(unverified\)/);
+ assert.match(overview,/ownerContext=\{data\.user_context\}/);
  assert.match(panel,/disabled=\{busy\|\|dirty\}/);
  assert.doesNotMatch(panel,/train_background|setTarget\(|selectTarget\(/);
  assert.match(overview,/descriptionDirty\|\|humanReviewDirty/);

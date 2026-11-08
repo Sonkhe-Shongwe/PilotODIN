@@ -64,6 +64,9 @@ def test_no_automatic_review_and_explicit_save_reload(tmp_path,monkeypatch):
     assert again["revision"]==1
     with storage.connect() as con:
         assert con.execute("SELECT count(*) FROM semantic_human_review_events").fetchone()[0]==1
+        assert con.execute(
+            "SELECT hypothesis_hash FROM semantic_human_review_events"
+        ).fetchone()[0] == entry["hypothesis_hash"]
         assert tuple(con.execute("SELECT revision,decision FROM semantic_human_review_events").fetchone())==(1,"acceptable")
     assert client.get(f"/api/projects/{pid}/semantics?expected_version=0").json()["user_context"] is None
     assert storage.recent_experiments(pid)==[]
