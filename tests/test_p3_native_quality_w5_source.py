@@ -50,8 +50,13 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert "snapshot.version!==1||snapshot.user_context!==null" in client
     assert "invoke<void>('finish_p3_w5_synthetic_qa')" in client
     assert "fn finish_p3_w5_synthetic_qa(window: tauri::WebviewWindow)" in rust
-    assert 'debug && identifier == "com.pilotodin.p3qualityw5qa"' in rust
-    assert 'qa_flag == Some("1") && smoke_flag == Some("1")' in rust
+    assert 'let page_url = window.url()' in rust
+    assert 'page_url.split(\'#\').next()' in rust
+    assert 'without_fragment == "http://127.0.0.1:5178/p3_native_quality_w5_qa.html"' in rust
+    assert 'if !debug { return false; }' in rust
+    assert 'http://127.0.0.1:5178/p3_native_quality_w5_qa.html?unsafe=1' in rust
+    assert 'http://127.0.0.1:5173/' in rust
+    assert 'tauri://localhost/p3_native_quality_w5_qa.html' in rust
     assert "cfg!(debug_assertions)" in rust
     assert 'window.label() != "main"' in rust
     assert "window.destroy()" in rust
@@ -60,9 +65,8 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert "typeof error==='string'?error" in client
     assert "reason.slice(0,220)" in client
     assert "Synthetic QA finish blocked." not in client
-    assert "W5 QA finish refused: native QA application identity mismatch" in rust
-    assert "W5 QA finish refused: missing dedicated W5 launch flag" in rust
-    assert "W5 QA finish refused: missing native smoke launch flag" in rust
+    assert "W5 QA finish refused: not the exact isolated W5 local page" in rust
+    assert "W5 QA finish refused: cannot determine WebView page origin" in rust
     assert 'eprintln!("[PilotODIN W5 QA] {reason}")' in rust
 
 

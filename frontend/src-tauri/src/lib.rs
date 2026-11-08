@@ -81,45 +81,36 @@ fn resolve_native_close_request(
     Ok(())
 }
 
-// QA-only deterministic exit for the isolated P3 Quality W5 native test.
-// It cannot close the installed app or the accepted W1-W4 harness: debug
-// build, exact native QA application identifier and both launch flags are
-// all mandatory. Only an explicit click in the synthetic QA window invokes
-// it, after the frontend verifies the reviewed v1 state.
-fn eligible_p3_w5_qa_exit(
-    debug: bool, identifier: &str, qa_flag: Option<&str>, smoke_flag: Option<&str>,
-) -> bool {
-    debug && identifier == "com.pilotodin.p3qualityw5qa"
-        && qa_flag == Some("1") && smoke_flag == Some("1")
+// QA-only deterministic exit for the *specific* native W5 dev page.
+// The original environment/identifier checks could disagree with Tauri dev
+// configuration merging. The loaded WebView URL is a stronger, independently
+// observable QA-scope boundary: a debug build serving only this exact page
+// on the one-use loopback test port. This command is inaccessible to normal
+// 5173 development and production tauri:// or https:// application windows.
+fn eligible_p3_w5_qa_exit(debug: bool, page_url: &str) -> bool {
+    if !debug { return false; }
+    let without_fragment = page_url.split('#').next().unwrap_or_default();
+    without_fragment == "http://127.0.0.1:5178/p3_native_quality_w5_qa.html"
 }
 
 #[tauri::command]
 fn finish_p3_w5_synthetic_qa(window: tauri::WebviewWindow) -> Result<(), String> {
     if window.label() != "main" { return Err("Unexpected desktop window".into()); }
-    let qa_flag = std::env::var("VITE_P3_NATIVE_QUALITY_W5_QA").ok();
-    let smoke_flag = std::env::var("VITE_PILOTODIN_NATIVE_SMOKE").ok();
-    let identifier = &window.app_handle().config().identifier;
-    if !eligible_p3_w5_qa_exit(
-        cfg!(debug_assertions), identifier,
-        qa_flag.as_deref(), smoke_flag.as_deref(),
-    ) {
-        // Bounded diagnostic categories only. No raw environment values,
-        // paths, project identifiers, or user data leave this function.
+    let page_url = window.url()
+        .map_err(|_| "W5 QA finish refused: cannot determine WebView page origin".to_string())?;
+    if !eligible_p3_w5_qa_exit(cfg!(debug_assertions), page_url.as_str()) {
         let reason = if !cfg!(debug_assertions) {
             "W5 QA finish refused: this is not a debug build"
-        } else if identifier != "com.pilotodin.p3qualityw5qa" {
-            "W5 QA finish refused: native QA application identity mismatch"
-        } else if qa_flag.as_deref() != Some("1") {
-            "W5 QA finish refused: missing dedicated W5 launch flag"
         } else {
-            "W5 QA finish refused: missing native smoke launch flag"
+            "W5 QA finish refused: not the exact isolated W5 local page"
         };
+        // Never emit raw URL, environment, source path, tokens or data here.
         eprintln!("[PilotODIN W5 QA] {reason}");
         return Err(reason.into());
     }
     // QA-only explicit finish bypasses a potentially stuck CloseRequested
     // ticket; production app unsaved-draft veto remains unchanged.
-    window.destroy().map_err(|e| format!("Synthetic native QA window could not close: {e}"))
+    window.destroy().map_err(|_| "W5 QA native window destroy failed".to_string())
 }
 
 // This is intentionally a Rust-side dialog. The Tauri dialog plugin may
@@ -478,23 +469,29 @@ mod native_close_ticket_tests {
 
     #[test]
     fn synthetic_w5_finish_is_not_a_general_native_close_bypass() {
+        let w5 = "http://127.0.0.1:5178/p3_native_quality_w5_qa.html";
+        assert!(eligible_p3_w5_qa_exit(true, w5));
         assert!(eligible_p3_w5_qa_exit(
-            true, "com.pilotodin.p3qualityw5qa", Some("1"), Some("1")
+            true, "http://127.0.0.1:5178/p3_native_quality_w5_qa.html#/studio/quality"
+        ));
+        assert!(!eligible_p3_w5_qa_exit(false, w5));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "http://127.0.0.1:5173/"
         ));
         assert!(!eligible_p3_w5_qa_exit(
-            false, "com.pilotodin.p3qualityw5qa", Some("1"), Some("1")
+            true, "http://localhost:5178/p3_native_quality_w5_qa.html"
         ));
         assert!(!eligible_p3_w5_qa_exit(
-            true, "com.pilotodin.studio", Some("1"), Some("1")
+            true, "http://127.0.0.1:5178/p3_native_semantic_qa.html"
         ));
         assert!(!eligible_p3_w5_qa_exit(
-            true, "com.pilotodin.p3semanticqa", Some("1"), Some("1")
+            true, "http://127.0.0.1:5178/p3_native_quality_w5_qa.html?unsafe=1"
         ));
         assert!(!eligible_p3_w5_qa_exit(
-            true, "com.pilotodin.p3qualityw5qa", None, Some("1")
+            true, "tauri://localhost/p3_native_quality_w5_qa.html"
         ));
         assert!(!eligible_p3_w5_qa_exit(
-            true, "com.pilotodin.p3qualityw5qa", Some("1"), None
+            true, "https://example.com/p3_native_quality_w5_qa.html"
         ));
     }
 
