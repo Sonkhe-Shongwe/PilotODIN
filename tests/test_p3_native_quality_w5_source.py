@@ -55,7 +55,7 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert "cfg!(debug_assertions)" in rust
     assert 'window.label() != "main"' in rust
     assert "window.destroy()" in rust
-    assert "confirm_native_deliver_exit, finish_p3_w5_synthetic_qa" in rust
+    assert "finish_p3_w5_synthetic_qa, confirm_native_deliver_exit" in rust
     assert "fn synthetic_w5_finish_is_not_a_general_native_close_bypass()" in rust
 
 

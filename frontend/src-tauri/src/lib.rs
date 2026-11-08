@@ -506,7 +506,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             launch_backend, launch_bundled_ai, save_report_as,
             resolve_native_close_request, confirm_native_close, confirm_native_project_switch,
-            confirm_native_deliver_exit, finish_p3_w5_synthetic_qa
+            finish_p3_w5_synthetic_qa, confirm_native_deliver_exit
         ])
         .on_window_event(|window, event| {
             if window.label() != "main" { return; }
