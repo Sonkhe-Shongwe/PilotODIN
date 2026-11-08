@@ -77,6 +77,21 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert 'eprintln!("[PilotODIN W5 QA] {reason}")' in rust
 
 
+def test_w5_auto_finish_requires_reviewed_commit_and_owner_navigation():
+    source=read("frontend/src/p3NativeQualityW5Qa.tsx")
+    assert "let autoFinishAttempted=false;" in source
+    assert "const autoReviewRoute='#/studio/understand';" in source
+    assert "budget.proposals!==1||budget.commits!==1" in source
+    assert "location.hash!==autoReviewRoute" in source
+    assert "window.addEventListener('hashchange',scheduleSyntheticW5AutoFinish)" in source
+    assert "window.addEventListener('pilotodin:route-commit',scheduleSyntheticW5AutoFinish)" in source
+    assert "clearTimeout(autoFinishTimer)" in source
+    assert "autoFinishAttempted=true;" in source
+    assert "finishButton.click(); // Reuses server v1/context verification and Rust gate." in source
+    assert "},12000);" in source
+    assert "Approve these changes" not in source
+
+
 def test_native_w5_runner_guard_and_evidence():
     source=read("tools/Run_P3_Native_Quality_W5_QA_Local.ps1")
     bat=read("Run_PilotODIN_P3_Native_Quality_W5_QA.bat")
@@ -103,6 +118,7 @@ def test_native_w5_runner_guard_and_evidence():
         "$unexpectedChanges.Count -gt 0",
         "TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI",
         "UNCOMMITTED_OWNER_WORK",
+        "After 12s W5 finishes automatically.",
     ):
         assert expected in source,expected
     assert "Run_P3_Native_Quality_W5_QA_Local.ps1" in bat

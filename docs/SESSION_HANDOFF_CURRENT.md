@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 8 November 2026 | Native W5 no longer needs a separate manual Finish click
+- **Source change:** Dedicated dev-only synthetic W5 page now schedules a one-shot automatic finish **only after** the owner explicitly approves exactly one reviewed Region proposal/commit and navigates to Your data. It displays a 12-second review notice, cancels if the route changes or the guarded state is not exactly one proposal plus one commit, and never retries automatically on a failure. The existing manual Finish button stays as a fallback; both paths perform fresh backend Quality v1 and empty current-version semantics checks before invoking the exact QA-only Rust exit command. No automatic Quality approval or unreviewed API write was added.
+- **Runner:** Prints the one-run procedure. The final PowerShell human observation prompt is retained and must be answered truthfully; backend version, history, SQLite, original hash, stale HTTP, request audit and status-only ZIP verification remain automated. No automatic process termination, Git reset, dependency install, existing project or accepted W1-W4 test was introduced.
+- **Acceptance boundary:** This source change cannot operate an already-running owner's Windows executable. Native W5 PENDING physical completion and independent ZIP review, P3 ACTIVE; P4 NOT AUTHORISED, P8 NOT CERTIFIED.
+
+
 ## 8 November 2026 | W5 finish IPC-before-destroy fix, verified source, native acceptance still pending
 Owner provided Windows Cargo console: **output filename collision WARNING** for bin/lib `pilotodin-desktop`; build nevertheless finished and native executable launched. W5 Quality v1 and empty current-version notes visually observed but Finish still displayed "Unclassified synthetic QA finish failure" in the running executable. Do not equate the warning with that failure or claim W5 passed.
 

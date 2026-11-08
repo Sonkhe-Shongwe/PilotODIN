@@ -116,6 +116,13 @@ createRoot(document.getElementById('root')!).render(<React.StrictMode><UnifiedSh
 // fails closed if its JS acknowledgement is missing. This isolated control
 // checks the committed v1 and fresh empty v1 descriptions before calling the
 // separate, debug-only Rust QA command. Never available in production.
+// Native QA automation is NEVER permission to auto-approve data changes.
+// Arm only after the exact explicitly reviewed one-proposal/one-commit action
+// and the owner navigating to Your data. PowerShell still asks the owner to
+// confirm what was physically seen.
+let autoFinishTimer:ReturnType<typeof setTimeout>|null=null;
+let autoFinishAttempted=false;
+const autoReviewRoute='#/studio/understand';
 const finishButton=document.createElement('button');
 finishButton.type='button';
 finishButton.setAttribute('aria-label','Finish synthetic W5 QA and run automated checks');
@@ -152,3 +159,26 @@ finishButton.addEventListener('click',async()=>{
  }
 });
 document.body.append(finishStatus,finishButton);
+
+function scheduleSyntheticW5AutoFinish(){
+  if(autoFinishTimer!==null){
+    clearTimeout(autoFinishTimer);
+    autoFinishTimer=null;
+  }
+  // Route alone never authorises an exit; exact explicit Quality approval
+  // and commit must already have occurred. Normal product is never affected.
+  if(autoFinishAttempted||finishButton.disabled||
+     budget.proposals!==1||budget.commits!==1||
+     location.hash!==autoReviewRoute)return;
+  finishStatus.textContent='Your data review: W5 will finish automatically after 12 seconds. Confirm v1 user descriptions are empty.';
+  autoFinishTimer=setTimeout(()=>{
+    autoFinishTimer=null;
+    if(location.hash!==autoReviewRoute||budget.proposals!==1||
+       budget.commits!==1||finishButton.disabled)return;
+    autoFinishAttempted=true; // One attempt. Never auto-retry on an error.
+    finishButton.click(); // Reuses server v1/context verification and Rust gate.
+  },12000);
+}
+window.addEventListener('hashchange',scheduleSyntheticW5AutoFinish);
+window.addEventListener('pilotodin:route-commit',scheduleSyntheticW5AutoFinish);
+scheduleSyntheticW5AutoFinish();

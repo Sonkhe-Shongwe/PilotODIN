@@ -195,7 +195,8 @@ try{
  Write-Host '1. In Quality, open Region / Surrounding whitespace and click Review this correction.'
  Write-Host '2. In the exact review dialog, inspect 2 affected cells and click Approve these changes.'
  Write-Host '3. Confirm Quality says WORKING VERSION 1 and Your data has no old version-0 notes.'
- Write-Host 'Close the native window. Automated version, integrity, audit and stale-response tests follow.'
+ Write-Host 'In Your data, inspect empty v1 descriptions. After 12s W5 finishes automatically.'
+ Write-Host 'Use Finish W5 QA and verify only as fallback; automatic audit and ZIP follow.'
  Write-Host 'Never upload, export, train, use Ask ODIN, or use a real project in this run.'
  Push-Location $frontend
  try{
