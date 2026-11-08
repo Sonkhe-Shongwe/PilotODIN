@@ -81,6 +81,34 @@ fn resolve_native_close_request(
     Ok(())
 }
 
+// QA-only deterministic exit for the isolated P3 Quality W5 native test.
+// It cannot close the installed app or the accepted W1-W4 harness: debug
+// build, exact native QA application identifier and both launch flags are
+// all mandatory. Only an explicit click in the synthetic QA window invokes
+// it, after the frontend verifies the reviewed v1 state.
+fn eligible_p3_w5_qa_exit(
+    debug: bool, identifier: &str, qa_flag: Option<&str>, smoke_flag: Option<&str>,
+) -> bool {
+    debug && identifier == "com.pilotodin.p3qualityw5qa"
+        && qa_flag == Some("1") && smoke_flag == Some("1")
+}
+
+#[tauri::command]
+fn finish_p3_w5_synthetic_qa(window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let qa_flag = std::env::var("VITE_P3_NATIVE_QUALITY_W5_QA").ok();
+    let smoke_flag = std::env::var("VITE_PILOTODIN_NATIVE_SMOKE").ok();
+    if !eligible_p3_w5_qa_exit(
+        cfg!(debug_assertions), &window.app_handle().config().identifier,
+        qa_flag.as_deref(), smoke_flag.as_deref(),
+    ) {
+        return Err("Synthetic P3 W5 exit is unavailable outside the dedicated dev QA app".into());
+    }
+    // QA-only explicit finish bypasses a potentially stuck CloseRequested
+    // ticket; production app unsaved-draft veto remains unchanged.
+    window.destroy().map_err(|e| format!("Synthetic native QA window could not close: {e}"))
+}
+
 // This is intentionally a Rust-side dialog. The Tauri dialog plugin may
 // replace browser window.confirm with an asynchronous IPC function, so the
 // native close handshake must never assume a synchronous browser boolean.
@@ -433,7 +461,29 @@ mod report_save_tests {
 
 #[cfg(test)]
 mod native_close_ticket_tests {
-    use super::consume_native_close_ticket;
+    use super::{consume_native_close_ticket, eligible_p3_w5_qa_exit};
+
+    #[test]
+    fn synthetic_w5_finish_is_not_a_general_native_close_bypass() {
+        assert!(eligible_p3_w5_qa_exit(
+            true, "com.pilotodin.p3qualityw5qa", Some("1"), Some("1")
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            false, "com.pilotodin.p3qualityw5qa", Some("1"), Some("1")
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "com.pilotodin.studio", Some("1"), Some("1")
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "com.pilotodin.p3semanticqa", Some("1"), Some("1")
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "com.pilotodin.p3qualityw5qa", None, Some("1")
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "com.pilotodin.p3qualityw5qa", Some("1"), None
+        ));
+    }
 
     #[test]
     fn only_current_ticket_can_authorize_one_native_close_resolution() {
@@ -456,7 +506,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             launch_backend, launch_bundled_ai, save_report_as,
             resolve_native_close_request, confirm_native_close, confirm_native_project_switch,
-            confirm_native_deliver_exit
+            confirm_native_deliver_exit, finish_p3_w5_synthetic_qa
         ])
         .on_window_event(|window, event| {
             if window.label() != "main" { return; }

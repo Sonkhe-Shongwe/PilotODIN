@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 8 November 2026 | Owner native W5 UI reached v1, but OS close handshake blocked final ZIP
+- Owner screenshot verifies true Windows Tauri native W5 launched; the exact Region two-cell trim was reviewed and approved; Quality shows v1/history v0+v1; Your data v1 shows no inherited user field descriptions. Terminal confirmed Rust dev executable running. **These are observed scoped UI assertions only**, not completed automated runner/archive acceptance.
+- OS title-bar X remained unresponsive. Existing Rust `CloseRequested` synchronously prevents close and can hold a pending token indefinitely if frontend acknowledgement never arrives. Implement a **synthetic-W5-only explicit Finish button**, requiring v1/empty-context checks and Rust debug+exact QA identifier+flags before window.destroy(). The installed app's unsaved-form close veto is untouched. Current already-running executable cannot receive this code; owner must stop only synthetic QA process and rerun after source sync. W5 remains PENDING until genuine completed runner status-only ZIP and independent review. W1–W4 unchanged, P3 active, P4 unauthorised, P8 uncertified.
+
+
 ## 8 November 2026 | Native W5 clean-source preflight supports expected untracked Tauri outputs
 
 Owner Windows screenshot confirmed a W5 preflight block from `?? frontend/src-tauri/Cargo.lock`, `?? frontend/src-tauri/target/`, followed by `?? frontend/src-tauri/gen/`. The owner already preserved Cargo.lock and target outside the repository; the remaining gen directory is **not** evidence of a broken Quality workflow. This is a build-artifact/worktree preflight mismatch, not native W5 acceptance.

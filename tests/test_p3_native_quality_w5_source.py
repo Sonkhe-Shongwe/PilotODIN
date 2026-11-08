@@ -40,6 +40,25 @@ def test_native_w5_client_has_no_unreviewed_write_path():
     assert "startDesktopBackend" not in source
     assert "autopilot" not in source
 
+def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
+    client=read("frontend/src/p3NativeQualityW5Qa.tsx")
+    rust=read("frontend/src-tauri/src/lib.rs")
+    assert "Finish W5 QA and verify" in client
+    assert "finishButton.addEventListener('click',async()=>{" in client
+    assert "budget.proposals!==1||budget.commits!==1" in client
+    assert "Working version 1 was not confirmed." in client
+    assert "snapshot.version!==1||snapshot.user_context!==null" in client
+    assert "invoke<void>('finish_p3_w5_synthetic_qa')" in client
+    assert "fn finish_p3_w5_synthetic_qa(window: tauri::WebviewWindow)" in rust
+    assert 'debug && identifier == "com.pilotodin.p3qualityw5qa"' in rust
+    assert 'qa_flag == Some("1") && smoke_flag == Some("1")' in rust
+    assert "cfg!(debug_assertions)" in rust
+    assert 'window.label() != "main"' in rust
+    assert "window.destroy()" in rust
+    assert "confirm_native_deliver_exit, finish_p3_w5_synthetic_qa" in rust
+    assert "fn synthetic_w5_finish_is_not_a_general_native_close_bypass()" in rust
+
+
 def test_native_w5_runner_guard_and_evidence():
     source=read("tools/Run_P3_Native_Quality_W5_QA_Local.ps1")
     bat=read("Run_PilotODIN_P3_Native_Quality_W5_QA.bat")

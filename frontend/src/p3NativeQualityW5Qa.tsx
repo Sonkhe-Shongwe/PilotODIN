@@ -2,6 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop} from './desktopBootstrap';
+import {invoke} from '@tauri-apps/api/core';
 import './styles.css';
 import './studio.css';
 import './design-tokens.css';
@@ -109,3 +110,39 @@ banner.style.cssText='position:fixed;z-index:99999;bottom:8px;left:12px;padding:
 banner.textContent='P3 W5 SYNTHETIC QA - ONE REVIEWED REGION CORRECTION ONLY';
 document.body.appendChild(banner);
 createRoot(document.getElementById('root')!).render(<React.StrictMode><UnifiedShell/></React.StrictMode>);
+
+
+// Explicit W5-only exit: the general Rust CloseRequested handler intentionally
+// fails closed if its JS acknowledgement is missing. This isolated control
+// checks the committed v1 and fresh empty v1 descriptions before calling the
+// separate, debug-only Rust QA command. Never available in production.
+const finishButton=document.createElement('button');
+finishButton.type='button';
+finishButton.setAttribute('aria-label','Finish synthetic W5 QA and run automated checks');
+finishButton.textContent='Finish W5 QA and verify';
+finishButton.style.cssText='position:fixed;z-index:99999;bottom:10px;right:14px;padding:10px 16px;border:2px solid #4131b6;border-radius:8px;background:#eeeaff;color:#24205f;font:700 13px system-ui;cursor:pointer';
+const finishStatus=document.createElement('span');
+finishStatus.setAttribute('role','status');
+finishStatus.style.cssText='position:fixed;z-index:99999;bottom:55px;right:14px;max-width:330px;padding:5px;background:#fff9e8;color:#513b12;font:600 12px system-ui';
+finishButton.addEventListener('click',async()=>{
+ if(finishButton.disabled)return;
+ finishButton.disabled=true;
+ finishStatus.textContent='Checking the synthetic W5 version and descriptions...';
+ try{
+  if(budget.proposals!==1||budget.commits!==1)
+   throw new Error('Approve the exact two-cell Region correction first.');
+  const q=await window.fetch(`${API}/api/projects/${pid}/quality`);
+  if(!q.ok||((await q.json()) as {version:number}).version!==1)
+   throw new Error('Working version 1 was not confirmed.');
+  const s=await window.fetch(`${API}/api/projects/${pid}/semantics?expected_version=1`);
+  const snapshot=(await s.json()) as {version:number;user_context:unknown};
+  if(!s.ok||snapshot.version!==1||snapshot.user_context!==null)
+   throw new Error('Version 1 must have no inherited user descriptions.');
+  finishStatus.textContent='W5 checks confirmed. Closing this synthetic window...';
+  await invoke<void>('finish_p3_w5_synthetic_qa');
+ }catch(error){
+  finishStatus.textContent=error instanceof Error?error.message:'Synthetic QA finish blocked.';
+  finishButton.disabled=false;
+ }
+});
+document.body.append(finishStatus,finishButton);
