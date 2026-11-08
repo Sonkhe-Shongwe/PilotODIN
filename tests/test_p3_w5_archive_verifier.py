@@ -25,7 +25,7 @@ def _archive(tmp_path: Path, *, result=None, baseline=None, fixture=None, other=
     raw=source_bytes()
     output={
         "phase":PHASE, "state":"REVIEW_REQUIRED",
-        "source_head":HEAD, "failure_category":"",
+        "source_head":HEAD, "failure_category":"", "source_worktree":"CLEAN",
         **SUCCESS,
     }
     if result:output.update(result)
