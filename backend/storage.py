@@ -259,6 +259,9 @@ def save_human_review(project_id: str, quality_version: int, column: str,
     timestamp=now()
     with connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        # Match project archive's SQLite writer lock before this consented write.
+        from .project_lifecycle import require_active_for_write
+        require_active_for_write(con,project_id)
         state=con.execute(
             "SELECT current_version FROM quality_state WHERE project_id=?",
             (project_id,),

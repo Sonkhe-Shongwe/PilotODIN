@@ -70,6 +70,13 @@ def test_no_automatic_review_and_explicit_save_reload(tmp_path,monkeypatch):
         assert tuple(con.execute("SELECT revision,decision FROM semantic_human_review_events").fetchone())==(1,"acceptable")
     assert client.get(f"/api/projects/{pid}/semantics?expected_version=0").json()["user_context"] is None
     assert storage.recent_experiments(pid)==[]
+    from backend import project_delete_impact
+    impact=project_delete_impact.impact(pid,0)
+    table_counts={x["key"]:x["count"] for x in impact["records"]}
+    assert table_counts["semantic_human_reviews"]==1
+    assert table_counts["semantic_human_review_events"]==1
+    assert impact["unclassified_tables"]==[]
+    assert impact["deletion_available"] is False
     assert __import__("pathlib").Path(storage.get_project(pid)["dataset_path"]).read_bytes()==raw
 
 

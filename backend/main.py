@@ -788,6 +788,8 @@ def save_human_semantic_review(
         )
     except storage.HumanReviewConflict as exc:
         raise HTTPException(status_code=409,detail=str(exc)) from exc
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
 
 
 @app.get("/api/projects/{project_id}/columns/detail")
