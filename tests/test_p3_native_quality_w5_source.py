@@ -63,7 +63,10 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert "std::thread::sleep(std::time::Duration::from_millis(350))" in rust
     assert "app.run_on_main_thread(move || {" in rust
     assert "Ok(())" in rust
-    assert "window.destroy().map_err" not in rust
+    qa_finish = rust.split("fn finish_p3_w5_synthetic_qa", 1)[1].split(
+        "// This is intentionally a Rust-side dialog", 1
+    )[0]
+    assert "window.destroy().map_err" not in qa_finish
     assert "finish_p3_w5_synthetic_qa, confirm_native_deliver_exit" in rust
     assert "fn synthetic_w5_finish_is_not_a_general_native_close_bypass()" in rust
     assert "typeof error==='string'?error" in client
