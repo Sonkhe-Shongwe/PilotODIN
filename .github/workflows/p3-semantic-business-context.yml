@@ -11,6 +11,10 @@ on:
       - backend/main.py
       - backend/storage.py
       - backend/semantic_profile.py
+      - backend/semantic_review.py
+      - frontend/src/SemanticReviewPanel.tsx
+      - tests/test_p3_human_semantic_review.py
+      - frontend/tests/p3-human-review-contracts.test.cjs
       - frontend/src/SemanticContextEditor.tsx
       - frontend/src/SemanticOverview.tsx
       - frontend/src/p3SemanticReview.ts
@@ -79,7 +83,7 @@ jobs:
           python -m pip install -r backend/requirements-test.txt
           npm ci --prefix frontend --no-audit --no-fund
       - name: Compile modified Python modules
-        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py tools/Seed_P3_Native_Quality_W5_Local.py tools/Verify_P3_Native_Quality_W5_Status.py tools/Verify_P3_Native_Quality_W5_History_Local.py tools/P3_W5_Functional_Probe.py
+        run: python -m py_compile backend/storage.py backend/main.py tools/Seed_P3_Native_Semantic_Context_Local.py tools/Seed_P3_Native_Quality_W5_Local.py tools/Verify_P3_Native_Quality_W5_Status.py tools/Verify_P3_Native_Quality_W5_History_Local.py tools/P3_W5_Functional_Probe.py backend/semantic_review.py
       - name: Run P3 new and affected previous Python contracts
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/p3-semantic-context-${{ github.run_id }}
@@ -91,12 +95,14 @@ jobs:
           tests/test_p3_w5_archive_verifier.py
           tests/test_p3_native_quality_w5_history.py
           tests/test_p3_w5_functional_probe.py
+          tests/test_p3_human_semantic_review.py
       - name: Verify affected frontend API and UI source contracts
         run: >-
           node --test
           frontend/tests/p3-semantic-business-context-contracts.test.cjs
           frontend/tests/p3-semantic-profile-contracts.test.cjs
           frontend/tests/p3-native-w5-ipc-guard.test.cjs
+          frontend/tests/p3-human-review-contracts.test.cjs
       - name: Build actual frontend TypeScript and Vite bundle
         run: npm run build --prefix frontend
 

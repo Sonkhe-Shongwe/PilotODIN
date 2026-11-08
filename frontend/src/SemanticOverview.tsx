@@ -4,6 +4,7 @@ import {get} from './api';
 import {SemanticContextEditor} from './SemanticContextEditor';
 import type {UserSemanticContext} from './SemanticContextEditor';
 import {fieldReviewState,fieldReviewText} from './p3SemanticReview';
+import {SemanticReviewPanel} from './SemanticReviewPanel';
 
 type SemanticHypothesis={
  role:string;state:'hypothesis';basis:string;reason:string
@@ -25,6 +26,12 @@ export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
  const [data,setData]=useState<Semantics|null>(null);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
+ const [descriptionDirty,setDescriptionDirty]=useState(false);
+ const [humanReviewDirty,setHumanReviewDirty]=useState(false);
+ // The primary Studio unsaved guard protects both independent forms.
+ useEffect(()=>{onUnsavedChange?.(descriptionDirty||humanReviewDirty)},
+  [descriptionDirty,humanReviewDirty,onUnsavedChange]);
+ useEffect(()=>()=>onUnsavedChange?.(false),[onUnsavedChange]);
  // Exact column-name pairing only. User descriptions are not tested for
  // agreement with the inferred analytical role or treated as validated truth.
  const ownerFieldDescriptions=new Map(
@@ -90,7 +97,9 @@ export function SemanticOverview({projectId,version,columns,onUnsavedChange}:{
    </div>}
    <SemanticContextEditor projectId={projectId} version={version} columns={columns}
     existing={data.user_context} onSaved={value=>setData(prev=>prev?{...prev,user_context:value}:prev)}
-    onUnsavedChange={onUnsavedChange}/>
+    onUnsavedChange={setDescriptionDirty}/>
+   <SemanticReviewPanel projectId={projectId} version={version}
+    onUnsavedChange={setHumanReviewDirty}/>
    <p className="muted-caption"><AlertTriangle size={13}/> {data.unknown} If the record grain or outcome timing matters, confirm it before modelling.</p>
    <p className="muted-caption">{data.note} Working version: {data.version}.</p>
   </>}

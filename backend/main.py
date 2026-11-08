@@ -23,9 +23,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, target_opportunities
+    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities
 except ImportError:
-    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, target_opportunities
+    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -713,6 +713,81 @@ def semantic_overview(
         return result
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class HumanSemanticReviewRequest(BaseModel):
+    expected_version: int = Field(ge=0)
+    column: str = Field(min_length=1,max_length=256)
+    role: str = Field(min_length=1,max_length=96)
+    hypothesis_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    decision: Literal["acceptable","needs_correction","cannot_assess"]
+    explanation: str = Field(default="",max_length=300)
+    expected_revision: int = Field(ge=0)
+
+
+def _current_human_review_candidates(project_id: str, expected_version: int):
+    project_or_404(project_id)
+    frame, version=quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(status_code=409,
+            detail="Working dataset changed. Refresh Your data before reviewing interpretations.")
+    if not frame.columns.is_unique:
+        raise HTTPException(status_code=422, detail="Expected distinct dataset column names")
+    return semantic_review.candidates(frame, version)
+
+
+@app.get("/api/projects/{project_id}/semantic-reviews")
+def list_human_semantic_reviews(
+    project_id: str, request: Request, expected_version: int = Query(ge=0)
+):
+    """Only current, explicitly human-reviewable unverified field hypotheses."""
+    _local_request(request)
+    candidates=_current_human_review_candidates(project_id,expected_version)
+    reviews=storage.human_reviews(project_id,expected_version)
+    result=[]
+    for item in candidates:
+        record=reviews.get((item["column"],item["role"]))
+        exact=record is not None and record["hypothesis_hash"] == item["hypothesis_hash"]
+        result.append({
+            **item,
+            "revision":0 if record is None else record["revision"],
+            "reassessment_required":record is not None and not exact,
+            "review":({
+                "decision":record["decision"],"explanation":record["explanation"],
+                "revision":record["revision"],"updated_at":record["updated_at"],
+                "review_state":"owner_attestation_not_independently_verified",
+            } if exact else None),
+        })
+    return {"version":expected_version,"candidates":result,
+            "note":"Human review is an owner assessment, not independently verified truth."}
+
+
+@app.post("/api/projects/{project_id}/semantic-reviews")
+def save_human_semantic_review(
+    project_id: str, request: Request, body: HumanSemanticReviewRequest
+):
+    """One explicitly chosen owner review; no automatic approvals or ML reuse."""
+    _local_request(request)
+    candidates=_current_human_review_candidates(project_id,body.expected_version)
+    column=body.column
+    role=body.role
+    matched=semantic_review.selected_candidate(
+        candidates,column,role,body.hypothesis_hash
+    )
+    if matched is None:
+        raise HTTPException(status_code=422,
+            detail="Field hypothesis changed or is unavailable. Refresh before reviewing.")
+    explanation=body.explanation.strip()
+    if body.decision == "needs_correction" and len(explanation) < 10:
+        raise HTTPException(status_code=422,
+            detail="Explain the needed correction in at least 10 characters.")
+    try:
+        return storage.save_human_review(
+            project_id,body.expected_version,column,role,body.hypothesis_hash,
+            body.decision,explanation,body.expected_revision,
+        )
+    except storage.HumanReviewConflict as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
 @app.get("/api/projects/{project_id}/columns/detail")

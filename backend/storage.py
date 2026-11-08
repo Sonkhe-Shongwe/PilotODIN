@@ -68,6 +68,32 @@ def init():
             PRIMARY KEY (project_id,quality_version),
             FOREIGN KEY(project_id) REFERENCES projects(id)
         );
+        CREATE TABLE IF NOT EXISTS semantic_human_reviews (
+            project_id TEXT NOT NULL,
+            quality_version INTEGER NOT NULL,
+            column_name TEXT NOT NULL,
+            hypothesis_role TEXT NOT NULL,
+            hypothesis_hash TEXT NOT NULL,
+            decision TEXT NOT NULL,
+            explanation TEXT NOT NULL,
+            revision INTEGER NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (project_id, quality_version, column_name, hypothesis_role),
+            FOREIGN KEY(project_id) REFERENCES projects(id)
+        );
+        CREATE TABLE IF NOT EXISTS semantic_human_review_events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT NOT NULL,
+            quality_version INTEGER NOT NULL,
+            column_name TEXT NOT NULL,
+            hypothesis_role TEXT NOT NULL,
+            revision INTEGER NOT NULL,
+            previous_decision TEXT,
+            decision TEXT NOT NULL,
+            occurred_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS semantic_review_event_lookup
+            ON semantic_human_review_events(project_id,quality_version,column_name,hypothesis_role,event_id);
         CREATE TABLE IF NOT EXISTS target_business_context (
             project_id TEXT NOT NULL,
             quality_version INTEGER NOT NULL,
@@ -202,6 +228,75 @@ def save_semantic_context(project_id: str, quality_version: int,
             (project_id,quality_version,domain,grain,json.dumps(fields,ensure_ascii=False),timestamp),
         )
     return semantic_context(project_id, quality_version)
+
+
+class HumanReviewConflict(ValueError):
+    """A stale version or concurrently modified human review was rejected."""
+
+
+def human_reviews(project_id: str, quality_version: int) -> dict[tuple[str, str], dict]:
+    """Only read records for the exact project and Quality version requested."""
+    with connect() as con:
+        rows=con.execute(
+            "SELECT column_name,hypothesis_role,hypothesis_hash,decision,explanation,"
+            "revision,updated_at FROM semantic_human_reviews "
+            "WHERE project_id=? AND quality_version=? ORDER BY column_name,hypothesis_role",
+            (project_id,quality_version),
+        ).fetchall()
+    return {(row["column_name"],row["hypothesis_role"]):dict(row) for row in rows}
+
+
+def save_human_review(project_id: str, quality_version: int, column: str,
+                      role: str, hypothesis_hash: str, decision: str,
+                      explanation: str, expected_revision: int) -> dict:
+    """Single immediate SQLite transaction, optimistic revision and immutable audit.
+
+    Quality version must still be current at the transaction boundary.
+    This protects against a version change between the API's displayed
+    candidate check and persistence, not just stale client payloads.
+    """
+    timestamp=now()
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        state=con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",
+            (project_id,),
+        ).fetchone()
+        if state is None or int(state["current_version"]) != quality_version:
+            raise HumanReviewConflict("Working dataset version changed; refresh Your data before reviewing.")
+        prior=con.execute(
+            "SELECT revision,decision FROM semantic_human_reviews "
+            "WHERE project_id=? AND quality_version=? AND column_name=? AND hypothesis_role=?",
+            (project_id,quality_version,column,role),
+        ).fetchone()
+        current_revision=0 if prior is None else int(prior["revision"])
+        if current_revision != expected_revision:
+            raise HumanReviewConflict("This review changed in another window; refresh before saving.")
+        new_revision=current_revision+1
+        con.execute(
+            "INSERT INTO semantic_human_reviews "
+            "(project_id,quality_version,column_name,hypothesis_role,hypothesis_hash,"
+            "decision,explanation,revision,updated_at) VALUES(?,?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(project_id,quality_version,column_name,hypothesis_role) DO UPDATE SET "
+            "hypothesis_hash=excluded.hypothesis_hash,decision=excluded.decision,"
+            "explanation=excluded.explanation,revision=excluded.revision,"
+            "updated_at=excluded.updated_at",
+            (project_id,quality_version,column,role,hypothesis_hash,
+             decision,explanation,new_revision,timestamp),
+        )
+        con.execute(
+            "INSERT INTO semantic_human_review_events "
+            "(project_id,quality_version,column_name,hypothesis_role,revision,"
+            "previous_decision,decision,occurred_at) VALUES(?,?,?,?,?,?,?,?)",
+            (project_id,quality_version,column,role,new_revision,
+             None if prior is None else prior["decision"],decision,timestamp),
+        )
+    return {
+        "column":column,"role":role,"hypothesis_hash":hypothesis_hash,
+        "decision":decision,"explanation":explanation,"revision":new_revision,
+        "updated_at":timestamp,
+        "review_state":"owner_attestation_not_independently_verified",
+    }
 
 
 # Explicit USER-PROVIDED descriptions; storing them does not validate truth.
