@@ -77,6 +77,23 @@ def test_w5_explicit_finish_is_scoped_to_synthetic_debug_app():
     assert 'eprintln!("[PilotODIN W5 QA] {reason}")' in rust
 
 
+def test_w5_tauri_native_finish_ipc_is_not_blocked_by_qa_fetch_guard():
+    source=read("frontend/src/p3NativeQualityW5Qa.tsx")
+    guard=read("frontend/src/p3NativeW5IpcGuard.ts")
+    assert "import {isNativeW5FinishIpcRequest} from './p3NativeW5IpcGuard';" in source
+    assert "if(isNativeW5FinishIpcRequest(url,method,init))return nativeFetch(input,init);" in source
+    assert source.index("if(isNativeW5FinishIpcRequest(url,method,init))") < source.index(
+        "if(url.origin!==API||!url.pathname.startsWith('/api/'))"
+    )
+    assert "url.pathname!=='/finish_p3_w5_synthetic_qa'" in guard
+    assert "url.protocol==='ipc:'&&url.hostname==='localhost'" in guard
+    assert "url.protocol==='http:'&&url.hostname==='ipc.localhost'" in guard
+    assert "headers.has('Tauri-Invoke-Key')" in guard
+    assert "headers.has('Tauri-Callback')" in guard
+    assert "headers.has('Tauri-Error')" in guard
+    assert "'Unclassified synthetic QA finish failure.'" not in source
+
+
 def test_w5_auto_finish_requires_reviewed_commit_and_owner_navigation():
     source=read("frontend/src/p3NativeQualityW5Qa.tsx")
     assert "let autoFinishAttempted=false;" in source

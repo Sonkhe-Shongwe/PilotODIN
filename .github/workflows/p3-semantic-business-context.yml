@@ -31,6 +31,8 @@ on:
       - tools/Run_P3_Native_Quality_W5_QA_Local.ps1
       - frontend/p3_native_quality_w5_qa.html
       - frontend/src/p3NativeQualityW5Qa.tsx
+      - frontend/src/p3NativeW5IpcGuard.ts
+      - frontend/tests/p3-native-w5-ipc-guard.test.cjs
       - frontend/src-tauri/tauri.p3-native-quality-w5-qa.conf.json
       - tests/test_p3_native_quality_w5_source.py
       - tools/Verify_P3_Native_Quality_W5_Status.py
@@ -89,6 +91,7 @@ jobs:
           node --test
           frontend/tests/p3-semantic-business-context-contracts.test.cjs
           frontend/tests/p3-semantic-profile-contracts.test.cjs
+          frontend/tests/p3-native-w5-ipc-guard.test.cjs
       - name: Build actual frontend TypeScript and Vite bundle
         run: npm run build --prefix frontend
 

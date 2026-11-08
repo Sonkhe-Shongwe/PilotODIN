@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop} from './desktopBootstrap';
 import {invoke} from '@tauri-apps/api/core';
+import {isNativeW5FinishIpcRequest} from './p3NativeW5IpcGuard';
 import './styles.css';
 import './studio.css';
 import './design-tokens.css';
@@ -56,6 +57,12 @@ window.fetch=((input:RequestInfo|URL,init?:RequestInit):Promise<Response>=>{
   const raw=input instanceof Request?input.url:String(input);
   const url=new URL(raw,location.href);
   const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
+  // Tauri's WebView2 IPC bridge uses window.fetch for Rust commands.
+  // A synthetic Response(403) here does not reject fetch, so Tauri may
+  // treat that Response as the invoke rejection rather than falling back.
+  // Only the exact native W5 finish command with Tauri's IPC headers is
+  // forwarded to the original WebView fetch; all unrelated IPC stays blocked.
+  if(isNativeW5FinishIpcRequest(url,method,init))return nativeFetch(input,init);
   if(url.origin===location.origin&&(method==='GET'||method==='HEAD'))
     return nativeFetch(input,init);
   if(url.origin!==API||!url.pathname.startsWith('/api/'))
@@ -152,7 +159,11 @@ finishButton.addEventListener('click',async()=>{
   // collapse those into an unhelpful generic message during owner Windows QA.
   // Keep diagnostics bounded and never include project contents or tokens.
   const reason=error instanceof Error?error.message:
-    typeof error==='string'?error:'Unclassified synthetic QA finish failure.';
+    typeof error==='string'?error:
+    error instanceof Response?
+      'Synthetic QA native IPC returned HTTP '+error.status:
+      'Synthetic QA finish encountered a nonstandard IPC response ('+
+      Object.prototype.toString.call(error).slice(0,40)+').';
   finishStatus.textContent=reason.slice(0,220);
   console.warn('[PilotODIN synthetic W5 finish refused]',reason.slice(0,220));
   finishButton.disabled=false;
