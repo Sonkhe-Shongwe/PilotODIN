@@ -43,11 +43,13 @@ async function protectBrowser(context:BrowserContext,ids:[string,string]):Promis
   ].includes(path);
   const semanticsRead=method==='GET'&&ids.some(id=>path==='/projects/'+id+'/semantics')&&
    [...url.searchParams.keys()].length===1&&url.searchParams.get('expected_version')==='0';
+  const ownerReviewRead=method==='GET'&&ids.some(id=>path==='/projects/'+id+'/semantic-reviews')&&
+   [...url.searchParams.keys()].length===1&&url.searchParams.get('expected_version')==='0';
   const detailRead=method==='GET'&&ids.some(id=>path==='/projects/'+id+'/columns/detail')&&
    [...url.searchParams.keys()].sort().join(',')==='expected_version,name'&&
    url.searchParams.get('expected_version')==='0'&&
    ['claim_id','claim_amount','policy_number','freeform_note'].includes(url.searchParams.get('name')??'');
-  if(simpleRead||semanticsRead||detailRead){audit.reads.push(path);await route.continue();return;}
+  if(simpleRead||semanticsRead||ownerReviewRead||detailRead){audit.reads.push(path);await route.continue();return;}
   if(method==='POST'&&path==='/projects/'+ids[0]+'/semantic-business-context'&&url.search===''&&audit.saved<2){
    let body:unknown;
    try{body=req.postDataJSON()}catch{body=null}

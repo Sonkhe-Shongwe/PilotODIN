@@ -55,11 +55,14 @@ async function scopeBrowser(context:BrowserContext,pid:string,issueId:string){
   const semanticsRead=method==='GET'&&p===base+'/semantics'&&
    [...url.searchParams.keys()].length===1&&
    ['0','1'].includes(url.searchParams.get('expected_version')??'');
+  const ownerReviewRead=method==='GET'&&p===base+'/semantic-reviews'&&
+   [...url.searchParams.keys()].length===1&&
+   ['0','1'].includes(url.searchParams.get('expected_version')??'');
   const detailRead=method==='GET'&&p===base+'/columns/detail'&&
    [...url.searchParams.keys()].sort().join(',')==='expected_version,name'&&
    ['0','1'].includes(url.searchParams.get('expected_version')??'')&&
    ['claim_id','claim_amount','policy_number','Region'].includes(url.searchParams.get('name')??'');
-  if(simpleRead||previewRead||semanticsRead||detailRead){
+  if(simpleRead||previewRead||semanticsRead||ownerReviewRead||detailRead){
    await route.continue();return;
   }
   if(method==='POST'&&url.search===''&&p===base+'/quality/proposals'&&audit.proposals===0){

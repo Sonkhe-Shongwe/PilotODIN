@@ -11,6 +11,10 @@ on:
       - frontend/playwright.p3-real-http.config.ts
       - frontend/e2e/p3-real-http-semantic-context.spec.ts
       - frontend/e2e/p3-real-http-semantic-quality-version.spec.ts
+      - frontend/e2e/p3-real-http-semantic-human-review.spec.ts
+      - frontend/src/SemanticReviewPanel.tsx
+      - backend/semantic_review.py
+      - tests/test_p3_human_semantic_review.py
       - frontend/e2e/p1-real-http-backend.ts
       - frontend/src/SemanticContextEditor.tsx
       - frontend/src/SemanticOverview.tsx
@@ -58,7 +62,7 @@ jobs:
           python -m pip install -r backend/requirements-test.txt
           npm ci --prefix frontend --no-audit --no-fund
       - name: Compile backend source
-        run: python -m py_compile backend/main.py backend/storage.py backend/semantic_profile.py
+        run: python -m py_compile backend/main.py backend/storage.py backend/semantic_profile.py backend/semantic_review.py
       - name: Install disposable headless Chromium shell
         working-directory: frontend
         run: npx --no-install playwright install --only-shell chromium

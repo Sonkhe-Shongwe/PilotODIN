@@ -164,6 +164,13 @@ def test_transaction_gate_refuses_incorrect_current_quality_state(tmp_path,monke
     item=candidate(client,pid)
     # Simulates a concurrent Quality commit between candidate GET and write,
     # even if an API-level view returns a previously cached version.
+    # Simulate a concurrent commit AFTER the API saw the old Quality frame.
+    # Keep the deliberately stale API-level snapshot while testing SQLite's
+    # independent BEGIN IMMEDIATE + quality_state write gate.
+    stale_frame,_=main.quality.current_data(pid)
+    monkeypatch.setattr(main.quality, "current_data",
+        lambda project_id:(stale_frame,0) if project_id==pid else
+            (_ for _ in ()).throw(AssertionError("Other project")))
     with storage.connect() as con:
         con.execute("UPDATE quality_state SET current_version=1 WHERE project_id=?",(pid,))
     assert client.post(f"/api/projects/{pid}/semantic-reviews",
