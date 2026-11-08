@@ -90,9 +90,9 @@ test('P3 unsaved business context uses existing primary project, exit and native
  assert.match(editor,/existing\?\.field_definitions/);
  assert.match(editor,/Unsaved business descriptions/);
  assert.match(dictionary,/onUnsavedChange=\{onUnsavedChange\}/);
- assert.match(overview,/onUnsavedChange=\\{setDescriptionDirty\\}/);
- assert.match(overview,/onUnsavedChange=\\{setHumanReviewDirty\\}/);
- assert.match(overview,/descriptionDirty\\|\\|humanReviewDirty/);
+ assert.match(overview,/onUnsavedChange=\{setDescriptionDirty\}/);
+ assert.match(overview,/onUnsavedChange=\{setHumanReviewDirty\}/);
+ assert.match(overview,/descriptionDirty\|\|humanReviewDirty/);
  assert.match(app,/if\(dirty\)onPrimaryDraftEdited\?\.\('understand'\)/);
  assert.match(app,/onPrimaryDraftCleared\?\.\('understand'\)/);
  assert.match(shell,/view==='understand'\|\|view==='prepare'/);
