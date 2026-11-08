@@ -28,7 +28,6 @@ SHA_RE = re.compile(r"[a-f0-9]{40}\Z")
 HASH_RE = re.compile(r"[a-f0-9]{64}\Z")
 ID_RE = re.compile(r"[a-f0-9]{32}\Z")
 SUCCESS = {
-    "source_worktree": "CLEAN",
     "native_mode": "OWNER_WINDOW_CLOSED_WITH_ZERO_TAURI_EXIT",
     "quality_version": "PASS_V0_TO_V1",
     "version_history": "PASS_EXACTLY_V0_V1",
@@ -162,6 +161,12 @@ def inspect_archive(path: Path, expected_source: str | None = None) -> dict:
         }
     if outcome.get("failure_category") != "":
         raise ArchiveRefused("Successful QA archive has a nonempty failure category")
+    # The native preflight permits exactly these attested worktree states.
+    # A dirty tracked checkout can never be represented as scoped W5 success.
+    if outcome.get("source_worktree") not in (
+        "CLEAN", "TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI"
+    ):
+        raise ArchiveRefused("W5 checkout source was not clean or safely scoped")
     for field, expected in SUCCESS.items():
         if outcome.get(field) != expected:
             raise ArchiveRefused("Success claim mismatches required field: " + field)
@@ -169,6 +174,7 @@ def inspect_archive(path: Path, expected_source: str | None = None) -> dict:
         "verdict": "STATUS_ARCHIVE_INTEGRITY_PASS",
         "archive_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "source_head_declared": source_head,
+        "source_worktree_reported": outcome["source_worktree"],
         "source_sha_matches_supplied_expectation": expected_source is not None,
         "synthetic_source_sha256": digest,
         "original_data_integrity": "RUNNER_REPORTED_PASS",

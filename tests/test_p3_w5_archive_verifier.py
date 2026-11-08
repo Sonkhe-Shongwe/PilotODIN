@@ -61,6 +61,24 @@ def test_valid_synthetic_archive_is_only_status_integrity_pass(tmp_path):
     assert result["archive_sha256"]==hashlib.sha256(sample.read_bytes()).hexdigest()
 
 
+def test_expected_untracked_tauri_artifacts_do_not_falsely_fail_archive(tmp_path):
+    sample = _archive(tmp_path, result={
+        "source_worktree": "TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI"
+    })
+    out = inspect_archive(sample, expected_source=HEAD)
+    assert out["verdict"] == "STATUS_ARCHIVE_INTEGRITY_PASS"
+    assert out["source_worktree_reported"] == "TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI"
+    assert out["native_acceptance"] == "PENDING_INDEPENDENT_REVIEW"
+
+
+def test_refuses_non_exact_untracked_tauri_status(tmp_path):
+    sample = _archive(tmp_path, result={
+        "source_worktree": "TRACKED_CLEAN_WITH_OTHER_UNTRACKED"
+    })
+    with pytest.raises(ArchiveRefused, match="source was not clean"):
+        inspect_archive(sample)
+
+
 def test_refuses_wrong_sha_or_wrong_phase(tmp_path):
     sample=_archive(tmp_path)
     with pytest.raises(ArchiveRefused, match="source SHA"):

@@ -99,15 +99,31 @@ try{
  if($branch -ne 'feature/live-dev-workspace-20261023'){throw ('Unexpected branch: '+$branch)}
  $record.source_head=(& $git -C $root rev-parse HEAD).Trim()
  if($record.source_head -notmatch '^[a-f0-9]{40}$'){throw 'Cannot attest source commit.'}
- $changes=@(& $git -C $root status --porcelain)
+ # Never ignore tracked changes. Only three exact, untracked Tauri build
+ # artifacts may coexist with clean tracked source during this synthetic QA.
+ # Keep Cargo.lock visible for future dependency/release review; do not globally
+ # gitignore it, auto-delete it, stash it or mark it as tracked.
+ $changes=@(& $git -C $root status --porcelain --untracked-files=normal)
  if($LASTEXITCODE -ne 0){throw 'Git status failed; refusing to alter owner work.'}
- if($changes.Count -gt 0){
+ $allowedTauriUntracked=@(
+  '?? frontend/src-tauri/Cargo.lock',
+  '?? frontend/src-tauri/gen/',
+  '?? frontend/src-tauri/target/'
+ )
+ $unexpectedChanges=@($changes | Where-Object { $_ -notin $allowedTauriUntracked })
+ if($unexpectedChanges.Count -gt 0){
   $record.source_worktree='UNCOMMITTED_OWNER_WORK'
-  Write-Host 'Source checkout is dirty. Review GitHub Desktop > Changes and preserve owner work.' -ForegroundColor Yellow
-  @($changes | Select-Object -First 12) | ForEach-Object {Write-Host ('  '+$_)}
-  throw 'Require a clean checkout; no files were modified.'
+  Write-Host 'Unreviewed source/worktree changes detected. Preserve them in GitHub Desktop.' -ForegroundColor Yellow
+  @($unexpectedChanges | Select-Object -First 12) | ForEach-Object {Write-Host ('  '+$_)}
+  throw 'Require clean tracked source; no files were modified.'
  }
- $record.source_worktree='CLEAN'
+ if($changes.Count -gt 0){
+  $record.source_worktree='TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI'
+  Write-Host 'Tracked source clean; only known untracked Tauri outputs remain. Preserving them.' -ForegroundColor Cyan
+  @($changes | Select-Object -First 3) | ForEach-Object {Write-Host ('  '+$_)}
+ }else{
+  $record.source_worktree='CLEAN'
+ }
  if(Port-Occupied 8000 -or Port-Occupied 5178){
   throw 'Ports 8000 or 5178 already occupied. Refusing to stop another process.'
  }

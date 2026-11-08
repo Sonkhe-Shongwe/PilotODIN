@@ -1,5 +1,14 @@
 # PilotODIN 1.0 | Current project status
 
+## 8 November 2026 | Native W5 clean-source preflight supports expected untracked Tauri outputs
+
+Owner Windows screenshot confirmed a W5 preflight block from `?? frontend/src-tauri/Cargo.lock`, `?? frontend/src-tauri/target/`, followed by `?? frontend/src-tauri/gen/`. The owner already preserved Cargo.lock and target outside the repository; the remaining gen directory is **not** evidence of a broken Quality workflow. This is a build-artifact/worktree preflight mismatch, not native W5 acceptance.
+
+The W5 runner now checks `git status --porcelain --untracked-files=normal` and allows **only** these three exact `??` untracked Tauri artifact paths while still rejecting all tracked, staged, deleted, modified or other untracked changes. It does not remove, stash, restore or conceal anything and does not modify global `.gitignore`. The run records `TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI` rather than claiming an entirely clean worktree when these artifacts are present; the independent status-only ZIP verifier recognises that narrowly scoped value. `Cargo.lock` remains visible for future intentional dependency-lock review, not silently ignored globally.
+
+**Owner action after syncing this commit:** No further generated-directory moves. Confirm the expected branch in GitHub Desktop, fetch/pull the updated branch while preserving all local changes, then double-click `Run_PilotODIN_P3_Native_Quality_W5_QA.bat`. If the runner finds any *other* source changes it must still stop safely. The actual native W5 test and independent owner evidence remain pending; W1–W4 already accepted, P3 active, P4 unauthorised, P8 not certified.
+
+
 ## 6 November 2026 | P3 W5 native acceptance now checks historical v0 note retention
 - **Specific acceptance gap:** The earlier native W5 runner proved **v1 does not inherit v0 descriptions**, but did not independently assert that **the original v0 descriptions remain stored after Quality approval**. The existing synthetic backend test covered that invariant, not the new native runner's own database.
 - **Bounded implementation:** [Source `11c30a3514e7`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/11c30a3514e7809cffa0cf6eaa8fe6086f59ad3b) adds `tools/Verify_P3_Native_Quality_W5_History_Local.py`. It checks the **fresh disposable W5 SQLite database in read-only mode** after the reviewed Quality v0→v1: one synthetic project; exact Quality versions [0,1]; exact original v0 domain, record-grain and `claim_amount` meaning; and **no v1 semantic-context row**. It refuses missing/modified original descriptions, stray newer notes, wrong workspace or unexpected version. The native runner requires `historical_semantic_context=PASS_V0_RETAINED_V1_ABSENT` before a REVIEW_REQUIRED result; the offline ZIP verifier requires the same field. No production app, source CSV, true user metadata, model or installer altered.

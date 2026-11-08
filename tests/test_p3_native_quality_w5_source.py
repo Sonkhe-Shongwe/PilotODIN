@@ -59,6 +59,13 @@ def test_native_w5_runner_guard_and_evidence():
         "STATUS_ONLY_ZIP_SELF_CHECK_FAILED",
         "native_acceptance -ne 'PENDING_INDEPENDENT_REVIEW'",
         "source_sha_matches_supplied_expectation -ne $true",
+        "status --porcelain --untracked-files=normal",
+        "'?? frontend/src-tauri/Cargo.lock'",
+        "'?? frontend/src-tauri/gen/'",
+        "'?? frontend/src-tauri/target/'",
+        "$unexpectedChanges.Count -gt 0",
+        "TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI",
+        "UNCOMMITTED_OWNER_WORK",
     ):
         assert expected in source,expected
     assert "Run_P3_Native_Quality_W5_QA_Local.ps1" in bat

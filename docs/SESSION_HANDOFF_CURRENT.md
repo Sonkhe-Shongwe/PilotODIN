@@ -1,5 +1,14 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 8 November 2026 | Native W5 clean-source preflight supports expected untracked Tauri outputs
+
+Owner Windows screenshot confirmed a W5 preflight block from `?? frontend/src-tauri/Cargo.lock`, `?? frontend/src-tauri/target/`, followed by `?? frontend/src-tauri/gen/`. The owner already preserved Cargo.lock and target outside the repository; the remaining gen directory is **not** evidence of a broken Quality workflow. This is a build-artifact/worktree preflight mismatch, not native W5 acceptance.
+
+The W5 runner now checks `git status --porcelain --untracked-files=normal` and allows **only** these three exact `??` untracked Tauri artifact paths while still rejecting all tracked, staged, deleted, modified or other untracked changes. It does not remove, stash, restore or conceal anything and does not modify global `.gitignore`. The run records `TRACKED_CLEAN_EXPECTED_UNTRACKED_TAURI` rather than claiming an entirely clean worktree when these artifacts are present; the independent status-only ZIP verifier recognises that narrowly scoped value. `Cargo.lock` remains visible for future intentional dependency-lock review, not silently ignored globally.
+
+**Owner action after syncing this commit:** No further generated-directory moves. Confirm the expected branch in GitHub Desktop, fetch/pull the updated branch while preserving all local changes, then double-click `Run_PilotODIN_P3_Native_Quality_W5_QA.bat`. If the runner finds any *other* source changes it must still stop safely. The actual native W5 test and independent owner evidence remain pending; W1–W4 already accepted, P3 active, P4 unauthorised, P8 not certified.
+
+
 ## 6 November 2026 | Native W5 one-click runner now self-checks its evidence ZIP
 - **Execution improvement:** The isolated Windows W5 launcher now runs `Verify_P3_Native_Quality_W5_Status.py` automatically against its newly created status-only ZIP and locally attested clean-branch HEAD, checking exit code plus explicit integrity/PENDING/NOT_TESTED verdicts. Invalid archive self-check fails closed and rewrites a blocked result where possible; missing archive also fails the runner. No extra owner command is required for local ZIP verification. This is a local evidence self-check, not independent physical WebView2 observation, and cannot close P3. Native W5 still requires the existing short owner UI approval/observation and separate independent review; W1–W4 remain accepted.
 
