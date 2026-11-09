@@ -83,6 +83,27 @@ test('P4-07 decision usefulness reviews observed identifier repetition without t
  assert.ok(tests.includes(name));
 });
 
+test('P4-08 explicit defer, decline, abstain and selected-target evidence stay local',()=>{
+ const panel=read('frontend/src/TargetOpportunities.tsx');
+ const app=read('frontend/src/App.tsx');
+ assert.match(panel,/type ReviewDisposition='deferred'\|'declined'/);
+ assert.match(panel,/const \[reviewDispositions,setReviewDispositions\]=useState/);
+ assert.match(panel,/if\(selectedTarget===column\)onClearTarget\(\)/);
+ assert.match(panel,/if\(selectedTarget\)onClearTarget\(\)/);
+ assert.match(panel,/No prediction objective right now/);
+ assert.match(panel,/Deferred.*Declined|Deferred':'Declined/);
+ assert.match(panel,/Defer target in this review/);
+ assert.match(panel,/Decline target in this review/);
+ assert.match(panel,/Selected target suitability checkpoint/);
+ assert.match(panel,/This manually selected column is not in the/);
+ assert.match(panel,/Clear selected target and preparation/);
+ assert.match(panel,/Not saved or excluded from manual selection/);
+ assert.match(app,/onClearTarget=\{\(\)=>\{if\(!target\)return;/);
+ assert.match(app,/setTarget\(''\);setPrep\(null\);setExperiment\(null\);setConfirmSplit\(false\);setError\(''\)/);
+ assert.doesNotMatch(panel,/post<|run_training\(|startTrain\(|localStorage\.setItem|sessionStorage\.setItem/);
+ assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
+});
+
 test('P4-05 tests cover disclosed ordering, overflow, no target, missing labels',()=>{
  const testSource=read('tests/test_p4_review_queue.py');
  for(const testName of [

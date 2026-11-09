@@ -112,6 +112,29 @@ test('P4-05 real HTTP: review ordering, other targets and explicit selection onl
   const pressed=other.locator('button[aria-pressed="true"]');
   await expect(pressed).toHaveCount(1);
   await expect(pressed).toHaveText('Chosen for preparation review');
+  const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
+  await expect(checkpoint).toContainText('independent decision');
+  await expect(checkpoint).toContainText('This selection is not evidence of suitability');
+  await firstRow.getByRole('button',{name:'Defer target in this review'}).click();
+  await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
+  await expect(checkpoint).toHaveCount(0);
+  await expect(firstRow.getByText('Deferred for this review only.',{exact:false})).toBeVisible();
+  await firstRow.getByRole('button',{name:'Review this alternative target'}).click();
+  await expect(checkpoint).toBeVisible();
+  await firstRow.getByRole('button',{name:'Decline target in this review'}).click();
+  await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
+  await expect(firstRow.getByText('Declined for this review only.',{exact:false})).toBeVisible();
+  // The owner's manual choice still works and is not misrepresented as a
+  // verified P4 suitability finding when outside the bounded queue.
+  await page.getByLabel('TARGET VARIABLE').selectOption('feature');
+  await expect(checkpoint).toContainText('not in the bounded P4 review queue');
+  await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
+  await firstRow.getByRole('button',{name:'Review this alternative target'}).click();
+  await section.getByRole('button',{name:'No prediction objective right now'}).click();
+  await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
+  await expect(section.getByText('No prediction target selected in this review.',{exact:false})).toBeVisible();
+  await expect(checkpoint).toHaveCount(0);
 
   // No target automatically fit, no server-side train or mutation from this UI.
   expect(blocked).toEqual([]);

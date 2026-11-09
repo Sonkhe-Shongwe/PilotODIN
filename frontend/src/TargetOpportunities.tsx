@@ -84,6 +84,8 @@ type Opportunity={
   safe_to_train_automatically:false
  }
 };
+type ReviewDisposition='deferred'|'declined';
+
 type OpportunityResponse={
  version:number;ranking_basis:string;suggestions:Opportunity[];
  ranking_contract?:{
@@ -98,15 +100,33 @@ type OpportunityResponse={
 };
 
 export function TargetOpportunities({
- projectId,version,selectedTarget,onChooseTarget,
+ projectId,version,selectedTarget,onChooseTarget,onClearTarget,
 }:{
  projectId:string;version:number;selectedTarget:string;
- onChooseTarget:(column:string)=>void
+ onChooseTarget:(column:string)=>void;onClearTarget:()=>void
 }){
  const [data,setData]=useState<OpportunityResponse|null>(null);
  const [error,setError]=useState('');
  const [loading,setLoading]=useState(false);
  const [refresh,setRefresh]=useState(0);
+ // Review dispositions are temporary UI state. They never modify saved
+ // target context, block manual selection or authorise a training experiment.
+ const [reviewDispositions,setReviewDispositions]=useState<Record<string,ReviewDisposition>>({});
+ const [abstained,setAbstained]=useState(false);
+ const selectedCandidate=data&&selectedTarget
+  ?[...data.suggestions,...(data.other_reviewable??[])].find(item=>item.column===selectedTarget)
+  :undefined;
+ function markDisposition(column:string,decision:ReviewDisposition){
+  setReviewDispositions(previous=>({...previous,[column]:decision}));
+  setAbstained(false);
+  // An owner who defers/declines the currently chosen target must not retain
+  // a stale preparation plan or experiment in the parent Studio.
+  if(selectedTarget===column)onClearTarget();
+ }
+ function abstainForNow(){
+  setAbstained(true);
+  if(selectedTarget)onClearTarget();
+ }
  useEffect(()=>{
   let active=true;
   setData(null);setError('');setLoading(true);
@@ -125,6 +145,39 @@ export function TargetOpportunities({
   {loading&&<p role="status" className="muted-caption"><LoaderCircle size={15} className="spin"/> Checking local label statistics…</p>}
   {error&&<p role="alert" className="alert-error">{error}</p>}
   {data&&<>
+   <div className="mini-info" aria-label="Target suitability review options">
+    <p className="muted-caption"><strong>Owner decision:</strong> You may review a target,
+     defer it, decline it for this review, or continue without a prediction objective.
+     Deferring and declining are temporary UI choices, not saved assessments, permanent
+     exclusions or permissions to train. The manual target selector remains available.</p>
+    <button type="button" className="btn small" onClick={abstainForNow}>
+     No prediction objective right now
+    </button>
+    {abstained&&!selectedTarget&&<p className="muted-caption" role="status">
+     No prediction target selected in this review. Preparation is cleared; you can
+     explore descriptively or choose a target later. This choice is not saved.
+    </p>}
+   </div>
+   {selectedTarget&&<div className="mini-info" role="group"
+     aria-label="Selected target suitability checkpoint">
+    <p className="muted-caption"><strong>Selected for preparation review:</strong> {selectedTarget}.
+     This selection is not evidence of suitability or permission to train.</p>
+    {selectedCandidate?<>
+     <p className="muted-caption">Observed: {selectedCandidate.labelled_rows.toLocaleString()}
+      {' '}non-missing labels, {selectedCandidate.missing_labels.toLocaleString()} missing.
+      Technical screening: {selectedCandidate.technical_status}; independent decision
+      value, label origin and prediction timing remain unverified.</p>
+     <p className="muted-caption">Review group/time dependence before choosing a split.
+      {' '}{selectedCandidate.decision_utility?.entity_repetition.repeated.length??0}
+      {' '}identifier-like columns showed repeated values in the bounded scan;
+      this does not independently establish entity identity or leakage.</p>
+    </>:<p className="muted-caption">This manually selected column is not in the
+      bounded P4 review queue. No target suitability finding is implied.
+      Check its label meaning, prediction timing and validation risks independently.</p>}
+    <button type="button" className="btn small" onClick={onClearTarget}>
+     Clear selected target and preparation
+    </button>
+   </div>}
    {data.ranking_contract&&<p className="muted-caption" role="note">
     <strong>Review order, not an estimated business-value ranking.</strong> Documented questions
     appear first, followed by observed label support and a deterministic name tie-break.
@@ -174,9 +227,20 @@ export function TargetOpportunities({
          <p className="muted-caption">{item.risk_review.note}</p>
         </details>}
         {item.review_warnings.slice(0,3).map((warning,i)=><p className="muted-caption" key={i}><AlertCircle size={13}/> {warning}</p>)}
+        {selectedTarget!==item.column&&reviewDispositions[item.column]&&
+         <p className="muted-caption" role="status">
+          {reviewDispositions[item.column]==='deferred'?'Deferred':'Declined'} for this
+          review only. Not saved or excluded from manual selection.
+         </p>}
         <button type="button" className="btn small" aria-pressed={selectedTarget===item.column} onClick={()=>onChooseTarget(item.column)}>
          {selectedTarget===item.column?<><CheckCircle2 size={14}/> Chosen for preparation review</>:'Review this target'}
         </button>
+        <button type="button" className="btn small"
+         aria-pressed={selectedTarget!==item.column&&reviewDispositions[item.column]==='deferred'}
+         onClick={()=>markDisposition(item.column,'deferred')}>Defer target in this review</button>
+        <button type="button" className="btn small"
+         aria-pressed={selectedTarget!==item.column&&reviewDispositions[item.column]==='declined'}
+         onClick={()=>markDisposition(item.column,'declined')}>Decline target in this review</button>
        </div>
       </article>)}
      </div>}
@@ -216,10 +280,21 @@ export function TargetOpportunities({
       </details>
       <TargetContextEditor projectId={projectId} version={version} column={item.column}
        existing={item.user_context??null} onSaved={()=>setRefresh(n=>n+1)}/>
+      {selectedTarget!==item.column&&reviewDispositions[item.column]&&
+       <p className="muted-caption" role="status">
+        {reviewDispositions[item.column]==='deferred'?'Deferred':'Declined'} for this
+        review only. Not saved or excluded from manual selection.
+       </p>}
       <button type="button" className="btn small" aria-pressed={selectedTarget===item.column}
        onClick={()=>onChooseTarget(item.column)}>
        {selectedTarget===item.column?'Chosen for preparation review':'Review this alternative target'}
       </button>
+      <button type="button" className="btn small"
+       aria-pressed={selectedTarget!==item.column&&reviewDispositions[item.column]==='deferred'}
+       onClick={()=>markDisposition(item.column,'deferred')}>Defer target in this review</button>
+      <button type="button" className="btn small"
+       aria-pressed={selectedTarget!==item.column&&reviewDispositions[item.column]==='declined'}
+       onClick={()=>markDisposition(item.column,'declined')}>Decline target in this review</button>
      </div>
     </div>)}
    </details>}
