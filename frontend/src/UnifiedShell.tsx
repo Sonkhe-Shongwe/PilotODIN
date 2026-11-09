@@ -162,6 +162,8 @@ export function UnifiedShell(){
     setHeldArchivedId('');
    }
    const mountedId=currentProjectRef.current;
+   // Empty import workspace IDs must never be reported as archived.
+   const mountedIsHeldArchived=isCurrentProjectHeldArchived(mountedId,heldArchivedRef.current);
    if(shouldClearUnavailableProject(selectedAtRequestStart,latest,rows)){
     if(preserveMountedUnavailableProject(mountedId,latest,selectedAtRequestStart,
       mountedIsHeldArchived)){
