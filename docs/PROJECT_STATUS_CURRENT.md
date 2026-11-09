@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | P4-23 controlled Windows GO/NO-GO plan; optional shell clock proposed only
+
+- Owner said `next` with a side question about a live app clock. **No authorisation to build or install a newer ~1.5 GB QA installer or to code/ship a clock was granted.** [P4-23 one-pass native acceptance plan](./P4_23_CONSOLIDATED_WINDOWS_ACCEPTANCE_GO_NO_GO_2026-11-09.md) defines exact-source CI build provenance, separate owner build-vs-install consent, original EXE/data baseline and repeat hash, condensed N8–N12+UI regression acceptance, owner-native RAM/offline observation, and original real-business Gate C. No acceptance is asserted by drafting a plan.
+- [Global shell clock UX proposal](./UX_OPTIONAL_PERSISTENT_SHELL_CLOCK_2026-11-09.md): actual header is `UnifiedShell.tsx` 52 px `.po-shell-title`; best placement between flexible workspace caption and project switcher, local minute-level HH:mm clock, responsive hide, no network or project data. **NOT IMPLEMENTED**, not P4 blocker.
+- **Confirmed current branch P4 Actions [#42700800731](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42700800731): COMPLETED SUCCESS** at code+docs SHA `40fa584...`, including Python, Node, production build, 8 real HTTP browser and disposable Windows integrity probe; the actual owner app still comes from historical `bca3c57...`. **P4 ACTIVE, closure NOT APPROVED, Gate C UNVERIFIED, P5 NOT AUTHORISED, P8 NOT CERTIFIED**.
+
+
 ## 9 November 2026 | P4-22 read-only Windows preservation/RAM probe source and synthetic CI PASS
 
 - **Authorised risk-first P4 continuation:** Owner said `next` after P4-21, not permission to rebuild a Windows installer, install software on owner PC, train models, waive P4-R01–R06 or advance P5. [P4-22 integrity/hardware readiness report](./P4_22_WINDOWS_INTEGRITY_AND_RESOURCE_READINESS_2026-11-09.md).
