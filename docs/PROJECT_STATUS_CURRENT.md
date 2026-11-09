@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | P4-21 atomic target-context save integrity fence, exact P4 CI green
+
+- **Owner asked `next` to continue P4 risk-first safety work, not to reopen rejected closure or authorise a Windows rebuild or P5.** [P4-21 scoped audit](./P4_21_ATOMIC_TARGET_CONTEXT_SAVE_INTEGRITY_AUDIT_2026-11-09.md).
+- **Confirmed source race:** `POST target-business-context` checked Quality version and active project before a separate `save_target_context` SQLite commit. A concurrent Quality version change or archive between those two operations could permit a false-success stale write. [Atomic correction `65f8059`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/65f805933b5993c25f66d4a3e50a76cde91c56db) rechecks current `quality_state.current_version` and the existing project-archive fence under `BEGIN IMMEDIATE` before insertion. Main route maps stale/archived conflicts to HTTP 409. Added two deterministic interleaving regressions (Quality change / project archive) and revised synthetic fixture state only.
+- **Verified actual source CI:** [P4 #42696149447](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42696149447) **COMPLETED SUCCESS**: **110/110 Python, 28/28 Node, TS/Vite production build PASS, 8/8 real-HTTP Chromium PASS**. Adjacent P1 lifecycle, P3 semantic and P2 revisions/ P1 source recovery passed at same code SHA; P1 separate real-HTTP was still **IN PROGRESS at drafting**. The owner-installed QA Windows binary remains older `bca3c57...`; atomic source guard is **NOT native retested**.
+- **Next actual gates:** P4 ACTIVE, owner refused risk-deferring closure. Original real operational Gate C **UNVERIFIED/NOT WAIVED**, source-fixed UI and Windows N8–N12, 8 GB/offline resource and old-data recovery **OPEN**. No model, owner data, installer or release touched. P5 NOT AUTHORISED, P8 NOT CERTIFIED; QA #2/#9 OPEN.
+
+
 ## 9 November 2026 | P4-20 labelled-row predictor screening defect source-fixed, exact CI 108/28/8 PASS
 
 - **P4 risk-first instruction:** User said `next`; no approval to accept residual risk/close P4 or start P5. [P4-20 scope and evidence ledger](./P4_20_LABELLED_ROW_PREDICTOR_OVERLAP_SAFETY_AUDIT_2026-11-09.md).
