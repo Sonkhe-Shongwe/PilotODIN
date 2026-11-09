@@ -87,7 +87,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           npm ci --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw 'Locked frontend dependency installation failed' }
-          npx tauri build --config src-tauri/tauri.p4-native-qa.conf.json
+          npx tauri build --config src-tauri/tauri.p4-native-qa.conf.json --no-binary-patching
           if ($LASTEXITCODE -ne 0) { throw 'Source-matched Windows NSIS build failed' }
       - name: Verify installed payload on disposable CI runner, never owner PC
         shell: pwsh
@@ -106,10 +106,14 @@ jobs:
           if ($installed.Count -ne 1 -or -not (Test-Path -LiteralPath $source)) {
             throw 'Cannot establish compiled-vs-installed Windows EXE identity'
           }
-          if ((Get-FileHash $installed[0].FullName -Algorithm SHA256).Hash -ne
-              (Get-FileHash $source -Algorithm SHA256).Hash) {
-            throw 'Installed QA EXE differs from the source-matched compiled EXE'
+          $installedHash = (Get-FileHash $installed[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $compiledHash = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host ("Compiled EXE: {0} bytes, SHA256={1}" -f (Get-Item $source).Length, $compiledHash)
+          Write-Host ("CI installed EXE: {0} bytes, SHA256={1}" -f $installed[0].Length, $installedHash)
+          if ($installedHash -ne $compiledHash) {
+            throw 'Installed QA EXE differs from the source-matched compiled EXE; fail closed.'
           }
+          Write-Host 'Source-matched compiled and CI-installed Windows EXE SHA256: MATCH'
       - name: Emit SHA256 manifest for exact source and built/installed QA artifact
         shell: pwsh
         run: |
