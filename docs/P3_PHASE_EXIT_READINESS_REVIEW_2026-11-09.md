@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | P3 phase-exit readiness assessment
 
+## 9 November 2026 | Later successful native W5 ZIP independently reviewed: W5 SCOPED ACCEPTED
+
+- **New evidence was supplied:** Owner provided the earlier `...181423Z-462deb4cae` copy (still **BLOCKED**) **and the distinct later successful** `P3-NATIVE-QUALITY-W5-20261108T192325Z-d69d006698-p3-w5-status.zip` (archive SHA256 `31f109f1941902ef7508ce96fdb020073a5bfa6fd73d4b7773db427916878827`). Do not accidentally use the earlier blocked run for acceptance.
+- [Independent read-only report](./P3_W5_NATIVE_EVIDENCE_REVIEW_2026-11-09.md): ZIP CRC, exact three JSON records, run identity, deterministic 36-row/860-byte source SHA, safe synthetic-only scope and all 17 required status fields verified; runner reported `functional_state=PASS`, `native_shutdown_status=PASS_ZERO_EXIT`, exact Quality `v0→v1`, preserved v0 metadata, empty v1 notes, stale requests 409 and exact write audit. Source `9042c660ff541d4a012c7e3d637aa2a47f9bd841` independently confirmed on GitHub, with [P3 CI #42512462060](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42512462060) SUCCESS at that SHA.
+- **Verdict:** `STATUS_ARCHIVE_INTEGRITY_PASS`; native W5 **SCOPED ACCEPTED on owner-reported WebView2 observation + independently reviewed evidence integrity**, not independently filmed native behaviour or product release certification. `REVIEW_REQUIRED` is the successful runner stage requiring this external evidence check, not a failure. The archive reviewer’s generic `PENDING_INDEPENDENT_REVIEW` field merely refuses to assert physically witnessed native UI; the scoped review above states the actual limits.
+- **P3 closure gate 3 W5 gap now addressed:** Native W1–W5 original bounded evidence accepted at their exact SHAs. New Option A owner-review control has source/real-HTTP and owner Chrome visual evidence but no separate Tauri visual observation; determine if indispensable. **P3 still ACTIVE**, candidate scope not owner-frozen, P3 high-severity triage and separate owner closure approval open. P4 NOT AUTHORISED; P8 NOT CERTIFIED. **No repeated W5 QA.**
+
+
 **Reviewed:** 9 November 2026  
 **Authorised repository/branch:** `Sonkhe-Shongwe/PilotODIN` / `feature/live-dev-workspace-20261023`  
 **Last application/source test SHA:** `42176b3ea90eae7dcd891fe11170ec16839118d8`  
