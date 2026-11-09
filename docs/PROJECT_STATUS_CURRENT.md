@@ -1,9 +1,15 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | P4 helper CI registration and exact-source green checks
+
+- [`9688862237ec39c8191b4e072c55f13eb0e68f14`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9688862237ec39c8191b4e072c55f13eb0e68f14) registers the 21 read-only installer-manifest synthetic guard tests in the scoped P4 GitHub workflow. [Run #42634879419](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42634879419) **COMPLETED SUCCESS**: 96 Python, 27 Node, Vite/TypeScript build, 8 disposable real-HTTP Chromium. No Windows installer or owner native tests at this SHA; previous Windows #42621192759 PASSED on `bca3c57...` only.
+- **Phase truth unchanged:** P4 ACTIVE, P4 native owner NOT TESTED, real-business suitability UNVERIFIED; QA Issues #9 and #2 OPEN; separate explicit phase closure absent; P5 NOT AUTHORISED; P8 NOT CERTIFIED. No owner data, original installation, release or model altered.
+
+
 ## 9 November 2026 | P4-16 integrity-check tooling added, source-only tests PASSED
 
 - **Scope/code:** [Commit `92c6cf31582994abb514bd8517fe4cb29b08b4d1`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/92c6cf31582994abb514bd8517fe4cb29b08b4d1) adds a non-mutating P4 milestone QA manifest/NSIS checker and 21 synthetic tests. It rejects mismatched source SHA, CI/product identity/acceptance flags, filename/size/checksum and changed bytes. No product logic, model, installer construction, owner system or user data modified.
-- **Verification scope:** 21/21 local synthetic pytest cases, compileall PASS; exact uploaded file blob hashes compared with local tested files. No real 1.59 GB installer hash was recomputed, no owner-native run and no exact-new-commit hosted CI. Prior [Windows CI #42621192759](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42621192759) succeeded only for its source SHA `bca3c57...`; previous failed #42614732584 and #42615013119 remain failures.
+- **Verification scope:** 21/21 local synthetic pytest cases, compileall PASS; exact uploaded file blob hashes compared with local tested files. No real 1.59 GB installer hash was recomputed, no owner-native run and later hosted P4 CI at `968886...` completed successfully. Prior [Windows CI #42621192759](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42621192759) succeeded only for its source SHA `bca3c57...`; previous failed #42614732584 and #42615013119 remain failures.
 - **Acceptance and next:** P4 ACTIVE, owner Windows and independent real-business gate pending. QA Issue #9 accepts observations, master QA #2 remains open. Obtain separate owner consent for any native installation; before such testing the supplied manifest and existing installer may be integrity-compared read-only. P5 not authorised; P8 not certified.
 
 

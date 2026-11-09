@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | P4-16 Windows QA Installer: Verified Source-to-Installed Provenance
 
+## 9 November 2026 | Hosted synthetic P4 verifier test registration PASS
+
+At [workflow registration commit `9688862237ec39c8191b4e072c55f13eb0e68f14`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9688862237ec39c8191b4e072c55f13eb0e68f14), the existing P4 CI now explicitly runs `tests/test_p4_installer_provenance.py`. [Ubuntu P4 run #42634879419](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42634879419) **COMPLETED SUCCESS** with **96/96 Python**, **27/27 Node**, build PASS and **8/8 disposable real-HTTP Chromium**. The 21 checksum tests use invented small non-executable bytes. They are **not an observed hash match against the real ~1.59 GB NSIS**, not a new Windows QA build and not installed owner's Windows acceptance. Previous Windows runner source-matched build #42621192759 remains the **separate** earlier `bca3...` pass. Physical side-by-side Windows, offline 8 GB and business evidence remain NOT TESTED/UNVERIFIED.
+
+
 ## 9 November 2026 | Additional read-only owner QA integrity-check preparation
 
 At [P4 checker code commit `92c6cf31582994abb514bd8517fe4cb29b08b4d1`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/92c6cf31582994abb514bd8517fe4cb29b08b4d1), new `qa/p4_native/verify_qa_installer_provenance.py` checks a **previously downloaded and extracted** QA NSIS file against a **separately independently sourced** JSON manifest. The helper validates the exact owner-supplied expected commit, the two different QA/production identities, positive CI-installed engine and executable-match flags, strictly false owner installation/release flags, installer name, byte size and streamed SHA-256. It does not unpack, run or install the EXE, fetch the manifest, touch projects or verify any real Windows workflow.
@@ -10,7 +15,7 @@ Run only as an optional **pre-install, read-only check** after obtaining the man
 py qa/p4_native/verify_qa_installer_provenance.py --manifest "C:\\QA\\source-and-windows-artifact.json" --installer "C:\\QA\\pilotODIN-P4-Native-QA_1.0.0-alpha.1_x64-setup.exe" --expected-source bca3c57b94a425cd9ef489726e721328d12c2ead
 ```
 
-**Synthetic verification only:** 21/21 local pytest checks PASS; `compileall` PASS; no real installer bytes were supplied, downloaded, hashed or installed during this increment. The current GitHub code blob was checked against tested local bytes; **there is no fresh CI pass at this helper's own SHA**. A PASS means *only supplied-manifest-to-file integrity*, not provenance authenticity, installed-app equality, native UI, side-by-side coexistence, 8 GB, business suitability or release. Owner-native acceptance requires an independently approved milestone test; Issue #9 and master QA #2 remain OPEN.
+**Synthetic verification only:** 21/21 local pytest checks PASS; `compileall` PASS; no real installer bytes were supplied, downloaded, hashed or installed during this increment. The current GitHub code blob was checked against tested local bytes; **subsequent scoped P4 CI at `968886...` passed the helper's synthetic tests, but no new Windows installer or owner native acceptance**. A PASS means *only supplied-manifest-to-file integrity*, not provenance authenticity, installed-app equality, native UI, side-by-side coexistence, 8 GB, business suitability or release. Owner-native acceptance requires an independently approved milestone test; Issue #9 and master QA #2 remain OPEN.
 
 
 **Evidence date:** 9 November 2026  
