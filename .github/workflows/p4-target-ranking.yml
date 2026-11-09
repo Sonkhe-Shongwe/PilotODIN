@@ -122,3 +122,19 @@ jobs:
       - name: Test actual P4 review queue against disposable real HTTP backend
         working-directory: frontend
         run: npx --no-install playwright test --config=playwright.p4-real-http.config.ts
+
+
+  p4-readonly-windows-probe:
+    name: Exercise preservation/hash collector on synthetic Windows fixture ONLY
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Positive and negative read-only integrity cases on fake app files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./qa/p4_native/Test_P4_Native_Readiness_Probe.ps1
