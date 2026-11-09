@@ -113,8 +113,11 @@ export function TargetOpportunities({
  // target context, block manual selection or authorise a training experiment.
  const [reviewDispositions,setReviewDispositions]=useState<Record<string,ReviewDisposition>>({});
  const [abstained,setAbstained]=useState(false);
+ // Blocked examples are a bounded, read-only subset. Manual selection of a
+ // known blocked target must not be mislabelled as merely outside the queue.
  const selectedCandidate=data&&selectedTarget
-  ?[...data.suggestions,...(data.other_reviewable??[])].find(item=>item.column===selectedTarget)
+  ?[...data.suggestions,...(data.other_reviewable??[]),...data.blocked_examples]
+    .find(item=>item.column===selectedTarget)
   :undefined;
  function markDisposition(column:string,decision:ReviewDisposition){
   setReviewDispositions(previous=>({...previous,[column]:decision}));
@@ -163,6 +166,17 @@ export function TargetOpportunities({
     <p className="muted-caption"><strong>Selected for preparation review:</strong> {selectedTarget}.
      This selection is not evidence of suitability or permission to train.</p>
     {selectedCandidate?<>
+     {selectedCandidate.technical_status==='blocked'?<div
+       className="mini-info warn-icon" role="alert"
+       aria-label="Selected target structural blockers">
+      <strong>Structurally blocked target: not recommended or approved for training.</strong>
+      <p className="muted-caption">This was manually selected despite known P4
+       screening blockers. Choosing it does not resolve those blockers or override
+       downstream preparation and training safeguards.</p>
+      <ul>{selectedCandidate.blockers.map(reason=>
+       <li className="muted-caption" key={reason}>{reason}</li>)}</ul>
+     </div>:<p className="muted-caption">
+      Structurally reviewable, not independently validated or approved.</p>}
      <p className="muted-caption">Observed: {selectedCandidate.labelled_rows.toLocaleString()}
       {' '}non-missing labels, {selectedCandidate.missing_labels.toLocaleString()} missing.
       Technical screening: {selectedCandidate.technical_status}; independent decision
@@ -172,7 +186,8 @@ export function TargetOpportunities({
       {' '}identifier-like columns showed repeated values in the bounded scan;
       this does not independently establish entity identity or leakage.</p>
     </>:<p className="muted-caption">This manually selected column is not in the
-      bounded P4 review queue. No target suitability finding is implied.
+      bounded P4 review queue or bounded blocked examples. No target suitability
+      finding is implied. The list is incomplete; absence from it is not approval.
       Check its label meaning, prediction timing and validation risks independently.</p>}
     <button type="button" className="btn small" onClick={onClearTarget}>
      Clear selected target and preparation
@@ -305,7 +320,11 @@ export function TargetOpportunities({
    {data.blocked_examples.length>0&&<details>
     <summary>Why some named columns were not suggested ({data.blocked_count})</summary>
     {data.blocked_examples.map(item=><div className="warning-line" key={item.column}><AlertCircle size={14}/><span><b>{item.column}</b>: {item.blockers.join(' ')}</span></div>)}
-   </details>}
+    {data.blocked_count>data.blocked_examples.length&&<p className="muted-caption">
+     {data.blocked_count-data.blocked_examples.length} additional blocked named
+     columns are not expanded in this bounded list. Omitted does not mean cleared.
+    </p>}
+   </details>
    <p className="muted-caption">{data.ranking_basis} {data.note}</p>
    <p className="muted-caption">Current approved dataset version: {data.version}. No label values, predictions or training outcomes are returned by this screening.</p>
   </>}

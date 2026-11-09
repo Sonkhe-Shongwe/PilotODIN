@@ -263,3 +263,57 @@ test('P4-09 real HTTP: project switch resets target review state',async({page,co
  }
  expect(blocked).toEqual([]);
 });
+
+
+test('P4-11 real HTTP: manual blocked target shows exact structural reasons',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+   throw Error('Only trusted disposable GitHub browser tests may execute');
+  const rareCsv=[
+   'account_id,churn,feature',
+   ...Array.from({length:80},(_,i)=>[
+    'P4-RARE-'+Math.floor(i/2),i<76?'Y':'N',i%8,
+   ].join(',')),
+  ].join('\n')+'\n';
+  const upload=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'p4_11_rare.csv',mimeType:'text/csv',buffer:Buffer.from(rareCsv)},
+  }});
+  expect(upload.status(),await upload.text()).toBe(201);
+  const projectId=(await upload.json()).id as string;
+  const check=await request.get(
+   `${API}/api/projects/${projectId}/target-opportunities?expected_version=0`);
+  expect(check.status(),await check.text()).toBe(200);
+  const result=await check.json();
+  expect(result.abstained).toBe(true);
+  expect(result.blocked_examples[0].column).toBe('churn');
+  expect(result.blocked_examples[0].blockers.join(' ')).toContain('at least 6');
+  const blocked=await readOnlyBrowserGuard(context,projectId);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },projectId);
+  await page.goto('/#/studio/prepare');
+  const section=page.getByRole('region',{name:'Potential prediction opportunities'});
+  await expect(section).toContainText('No named outcome with sufficient technically supported labels');
+  await expect(section.locator('article.model-choice')).toHaveCount(0);
+  const target=page.getByLabel('TARGET VARIABLE');
+  await target.selectOption('churn'); // Explicit manual choice, not P4 approval.
+  const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
+  const structural=checkpoint.getByRole('alert',{name:'Selected target structural blockers'});
+  await expect(structural).toContainText('Structurally blocked target');
+  await expect(structural).toContainText('at least 6 labelled rows');
+  await expect(checkpoint).toContainText('Technical screening: blocked');
+  await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  await expect(target).toHaveValue('');
+  await expect(checkpoint).toHaveCount(0);
+  await target.selectOption('account_id'); // No screened outcome hint.
+  await expect(checkpoint).toContainText('not in the bounded P4 review queue');
+  await expect(checkpoint).toContainText('absence from it is not approval');
+  await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  expect(blocked).toEqual([]);
+  const project=await request.get(`${API}/api/projects/${projectId}`);
+  expect(project.status()).toBe(200);
+  expect((await project.json()).experiments).toEqual([]);
+ });

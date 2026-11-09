@@ -218,3 +218,22 @@ def test_p4_07_no_target_abstention_and_rare_class_blockers_stay_intact():
     assert blocked["decision_utility"]["action_state"] == "owner_described_unverified"
     assert blocked["decision_utility"]["training_authorised"] is False
     assert blocked["decision_utility"]["entity_repetition"]["repeated"]
+
+
+def test_p4_11_bounded_blocked_examples_disclose_omissions():
+    # Six outcome-named columns fail the minority-class threshold.
+    # Only the first five returned examples can have exact reasons shown.
+    frame = pd.DataFrame({
+        **{f"outcome_{j:02d}": ["Y"] * 76 + ["N"] * 4 for j in range(6)},
+        "feature": [i % 8 for i in range(80)],
+    })
+    result = target_opportunities.recommend(frame, 0)
+    assert result["abstained"] is True
+    assert result["blocked_count"] == 6
+    assert len(result["blocked_examples"]) == target_opportunities.MAX_BLOCKED_EXAMPLES
+    assert all(item["technical_status"] == "blocked" for item in result["blocked_examples"])
+    assert all(item["safe_to_train_automatically"] is False
+               for item in result["blocked_examples"])
+    assert all(any("at least 6" in reason for reason in item["blockers"])
+               for item in result["blocked_examples"])
+    assert result["suggestions"] == []

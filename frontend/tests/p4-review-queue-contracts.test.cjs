@@ -104,6 +104,24 @@ test('P4-08 explicit defer, decline, abstain and selected-target evidence stay l
  assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
 });
 
+test('P4-11 manually selected known blockers remain visible without granting training',()=>{
+ const panel=read('frontend/src/TargetOpportunities.tsx');
+ const backend=read('backend/target_opportunities.py');
+ const review=read('tests/test_p4_review_queue.py');
+ const browser=read('frontend/e2e/p4-real-http-review-queue.spec.ts');
+ assert.match(panel,/\.\.\.data\.blocked_examples/);
+ assert.match(panel,/selectedCandidate\.technical_status==='blocked'/);
+ assert.match(panel,/Selected target structural blockers/);
+ assert.match(panel,/selectedCandidate\.blockers\.map/);
+ assert.match(panel,/not recommended or approved for training/);
+ assert.match(panel,/absence from it is not approval/);
+ assert.match(panel,/data\.blocked_count>data\.blocked_examples\.length/);
+ assert.match(backend,/MAX_BLOCKED_EXAMPLES = 5/);
+ assert.match(review,/test_p4_11_bounded_blocked_examples_disclose_omissions/);
+ assert.match(browser,/P4-11 real HTTP: manual blocked target shows exact structural reasons/);
+ assert.doesNotMatch(panel,/startTrain\(|post<|run_training\(|autoSelectTarget\(/);
+});
+
 test('P4-09 phase-exit negative matrix has API and isolated project-switch evidence',()=>{
  const cases=read('tests/test_p4_phase_exit_matrix.py');
  const browser=read('frontend/e2e/p4-real-http-review-queue.spec.ts');
