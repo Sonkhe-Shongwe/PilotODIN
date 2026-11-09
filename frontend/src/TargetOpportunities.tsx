@@ -324,7 +324,7 @@ export function TargetOpportunities({
      {data.blocked_count-data.blocked_examples.length} additional blocked named
      columns are not expanded in this bounded list. Omitted does not mean cleared.
     </p>}
-   </details>
+   </details>}
    <p className="muted-caption">{data.ranking_basis} {data.note}</p>
    <p className="muted-caption">Current approved dataset version: {data.version}. No label values, predictions or training outcomes are returned by this screening.</p>
   </>}
