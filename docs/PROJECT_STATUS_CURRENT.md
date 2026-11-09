@@ -1,5 +1,14 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | P4 ACTIVE: explainable target review queue scoped PASS
+
+- **Owner direction:** After explicit P3 closure, owner replied `next` to the proposed P4-05 implementation. Start **P4** as one bounded current primary phase. P1/P2/P3 remain **CLOSED for bounded development**; do not infer P5/P6/P7/P8 authorisation, release certification or automatic selection.
+- [P4-05 scoped acceptance](./P4_05_REVIEW_QUEUE_ACCEPTANCE_2026-11-09.md): existing four accepted P4 increments preserved. New transparent *human investigation ordering* explains candidate position from user-described (not independently verified) business question, aggregate labelled rows and deterministic name tie-break. Four always-needed evidence checks plus contextual missing-label/header timing questions remain unverified, with no safety/value/performance score.
+- Top 3 cards plus up to 12 eligible alternatives are visible. Each alternate requires **explicit owner click** to move into existing Prepare; no model, experiment, source-file change, consent bypass, pretrained AI or installed app alteration.
+- **Actual CI PASS at last changed code SHA `ecb43e7162f002fd81a32064340e718e42419c73`:** [P4 #42582746289](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42582746289) 38 Python, 17 Node, TS/Vite, 1 isolated real HTTP Chromium passed; [P1 frontend #42582746278](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42582746278) SUCCESS at same SHA. Previous stale-contract red run was fixed; no new product defect.
+- **Current phase:** P4 ACTIVE; P4-05 first bounded increment scoped source/real-browser ACCEPTED; complete business decision ranking and end-to-end/native P4 acceptance still OPEN. P8 NOT CERTIFIED. **Next engineering work:** evidence-backed decision-value criteria and explicit target-review journey. Do not ask owner to repeat unchanged P3/W5 or previously passed P4 gates.
+
+
 ## 9 November 2026 | P3 owner-authorised BOUNDED DEVELOPMENT CLOSURE
 
 - **Owner explicitly approved** after being told `P3 overall closure: Awaiting final review and approval` and replied `i approve`. This covers **bounded P3 development**, not automatic P4 authorisation, not a whole-app no-high-defect assertion and not P8 release certification.
