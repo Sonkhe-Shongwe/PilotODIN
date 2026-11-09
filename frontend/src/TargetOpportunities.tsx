@@ -84,6 +84,12 @@ type Opportunity={
   safe_to_train_automatically:false
  }
 };
+type ManualTargetInspection={
+ project_id:string;version:number;column:string;
+ inspection_scope:'single_manual_column_not_ranked_or_approved';
+ name_hint:'supported_outcome_name'|'no_supported_outcome_name';
+ candidate:Opportunity;training_authorised:false;note:string
+};
 type ReviewDisposition='deferred'|'declined';
 
 type OpportunityResponse={
@@ -113,12 +119,22 @@ export function TargetOpportunities({
  // target context, block manual selection or authorise a training experiment.
  const [reviewDispositions,setReviewDispositions]=useState<Record<string,ReviewDisposition>>({});
  const [abstained,setAbstained]=useState(false);
- // Blocked examples are a bounded, read-only subset. Manual selection of a
- // known blocked target must not be mislabelled as merely outside the queue.
- const selectedCandidate=data&&selectedTarget
+ const [manualInspection,setManualInspection]=useState<ManualTargetInspection|null>(null);
+ const [manualInspectionError,setManualInspectionError]=useState('');
+ const [manualInspectionLoading,setManualInspectionLoading]=useState(false);
+ // Avoid extra HTTP work for already-disclosed candidates. Inspect only the
+ // explicit manual choice outside both capped lists, never auto-select one.
+ const listedCandidate=data&&selectedTarget
   ?[...data.suggestions,...(data.other_reviewable??[]),...data.blocked_examples]
     .find(item=>item.column===selectedTarget)
   :undefined;
+ const needsManualInspection=Boolean(data&&selectedTarget&&!listedCandidate);
+ const currentManualInspection=needsManualInspection&&manualInspection&&
+  manualInspection.project_id===projectId&&manualInspection.version===version&&
+  manualInspection.column===selectedTarget&&
+  manualInspection.inspection_scope==='single_manual_column_not_ranked_or_approved'
+   ?manualInspection:null;
+ const selectedCandidate=listedCandidate??currentManualInspection?.candidate;
  function markDisposition(column:string,decision:ReviewDisposition){
   setReviewDispositions(previous=>({...previous,[column]:decision}));
   setAbstained(false);
@@ -142,6 +158,27 @@ export function TargetOpportunities({
       .finally(()=>{if(active)setLoading(false)});
   return ()=>{active=false};
  },[projectId,version,refresh]);
+ useEffect(()=>{
+  let active=true;
+  setManualInspection(null);setManualInspectionError('');setManualInspectionLoading(false);
+  if(!data||!selectedTarget||listedCandidate)return ()=>{active=false};
+  setManualInspectionLoading(true);
+  const path=`/projects/${encodeURIComponent(projectId)}/target-opportunities/inspect`+
+   `?expected_version=${version}&column=${encodeURIComponent(selectedTarget)}`;
+  get<ManualTargetInspection>(path).then(result=>{
+   if(!active)return;
+   if(result.project_id!==projectId||result.version!==version||
+      result.column!==selectedTarget||
+      result.inspection_scope!=='single_manual_column_not_ranked_or_approved'||
+      result.training_authorised!==false){
+    setManualInspectionError('Selected target evidence changed. Refresh the review.');
+    return;
+   }
+   setManualInspection(result);
+  }).catch((e:Error)=>{if(active)setManualInspectionError(e.message)})
+   .finally(()=>{if(active)setManualInspectionLoading(false)});
+  return ()=>{active=false};
+ },[projectId,version,selectedTarget,data,listedCandidate]);
  return <section className="panel" aria-label="Potential prediction opportunities">
   <div className="panel-title"><SearchCheck size={19}/><h2>Potential prediction opportunities</h2><span className="pill muted">UNVERIFIED</span></div>
   <p className="body-muted">These are header-based possibilities screened for observed label support, not confirmed business objectives, model performance or permission to train. You decide the target.</p>
@@ -165,6 +202,15 @@ export function TargetOpportunities({
      aria-label="Selected target suitability checkpoint">
     <p className="muted-caption"><strong>Selected for preparation review:</strong> {selectedTarget}.
      This selection is not evidence of suitability or permission to train.</p>
+    {needsManualInspection&&<p className="muted-caption" role="note">
+     On-demand single-column review, not part of the capped ranking or proof of training approval.
+    </p>}
+    {needsManualInspection&&manualInspectionLoading&&<p role="status" className="muted-caption">
+     Inspecting the manually selected column in the current Quality version…
+    </p>}
+    {needsManualInspection&&manualInspectionError&&<p role="alert" className="alert-error">
+     Could not verify this selected column: {manualInspectionError}. Do not infer suitability.
+    </p>}
     {selectedCandidate?<>
      {selectedCandidate.technical_status==='blocked'?<div
        className="mini-info warn-icon" role="alert"
@@ -177,6 +223,18 @@ export function TargetOpportunities({
        <li className="muted-caption" key={reason}>{reason}</li>)}</ul>
      </div>:<p className="muted-caption">
       Structurally reviewable, not independently validated or approved.</p>}
+     {currentManualInspection&&<details aria-label="On-demand selected target evidence">
+      <summary>Inspect unverified single-column evidence</summary>
+      <p className="muted-caption">Header clue: {currentManualInspection.name_hint==='supported_outcome_name'
+       ?'An outcome-like name, not independently verified business meaning.'
+       :'No supported outcome-name clue; manual selection is not a recommendation.'}</p>
+      {selectedCandidate.risk_review&&<ul>
+       {selectedCandidate.risk_review.questions.map(question=>
+        <li key={question} className="muted-caption">{question}</li>)}
+      </ul>}
+      {selectedCandidate.decision_utility&&
+       <DecisionUtilityEvidence review={selectedCandidate.decision_utility}/>}
+     </details>}
      <p className="muted-caption">Observed: {selectedCandidate.labelled_rows.toLocaleString()}
       {' '}non-missing labels, {selectedCandidate.missing_labels.toLocaleString()} missing.
       Technical screening: {selectedCandidate.technical_status}; independent decision
@@ -188,6 +246,7 @@ export function TargetOpportunities({
     </>:<p className="muted-caption">This manually selected column is not in the
       bounded P4 review queue or bounded blocked examples. No target suitability
       finding is implied. The list is incomplete; absence from it is not approval.
+      {needsManualInspection?' No verified inspection result is available yet.':''}
       Check its label meaning, prediction timing and validation risks independently.</p>}
     <button type="button" className="btn small" onClick={onClearTarget}>
      Clear selected target and preparation

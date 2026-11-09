@@ -613,6 +613,30 @@ def target_opportunity_overview(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@app.get("/api/projects/{project_id}/target-opportunities/inspect")
+def inspect_manual_target_opportunity(
+    project_id: str, request: Request,
+    expected_version: int = Query(ge=0),
+    column: str = Query(min_length=1, max_length=200),
+):
+    """Exact project and Quality-version read-only, single-column review."""
+    _local_request(request)
+    project_or_404(project_id)
+    frame, version = quality.current_data(project_id)
+    if version != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset version changed. Refresh selected target evidence.",
+        )
+    try:
+        details = target_opportunities.inspect_manual_target(
+            frame, version, column, storage.target_contexts(project_id, version)
+        )
+        return {"project_id": project_id, **details}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 class TargetBusinessContextRequest(BaseModel):
     expected_version: int = Field(ge=0)
     target_column: str = Field(min_length=1, max_length=200)

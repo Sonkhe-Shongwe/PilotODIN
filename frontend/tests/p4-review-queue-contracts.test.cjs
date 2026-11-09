@@ -104,6 +104,34 @@ test('P4-08 explicit defer, decline, abstain and selected-target evidence stay l
  assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
 });
 
+test('P4-12 manual target inspection is current-version, read-only and unranked',()=>{
+ const main=read('backend/main.py');
+ const backend=read('backend/target_opportunities.py');
+ const panel=read('frontend/src/TargetOpportunities.tsx');
+ const tests=read('tests/test_p4_manual_target_inspection.py');
+ const browser=read('frontend/e2e/p4-real-http-review-queue.spec.ts');
+ assert.match(main,/@app\.get\("\/api\/projects\/\{project_id\}\/target-opportunities\/inspect"\)/);
+ assert.match(main,/def inspect_manual_target_opportunity\(/);
+ assert.match(main,/_local_request\(request\)/);
+ assert.match(main,/if version != expected_version:/);
+ assert.match(backend,/def inspect_manual_target\(/);
+ assert.match(backend,/single_manual_column_not_ranked_or_approved/);
+ assert.match(backend,/No supported outcome-name clue was identified/);
+ assert.match(backend,/"training_authorised": False/);
+ assert.doesNotMatch(backend,/\.fit\(|run_training\(|cross_val_score\(/);
+ assert.match(panel,/needsManualInspection/);
+ assert.match(panel,/get<ManualTargetInspection>\(path\)/);
+ assert.match(panel,/encodeURIComponent\(selectedTarget\)/);
+ assert.match(panel,/manualInspection\.project_id===projectId/);
+ assert.match(panel,/manualInspection\.version===version/);
+ assert.match(panel,/On-demand selected target evidence/);
+ assert.match(panel,/Could not verify this selected column/);
+ assert.doesNotMatch(panel,/startTrain\(|post<|run_training\(|autoSelectTarget\(/);
+ assert.match(tests,/test_p4_12_selected_column_outside_caps_is_screened_without_reordering/);
+ assert.match(tests,/test_p4_12_local_version_project_and_invalid_column_rejection/);
+ assert.match(browser,/P4-12 real HTTP: out-of-cap manual target inspection and no writes/);
+});
+
 test('P4-11 manually selected known blockers remain visible without granting training',()=>{
  const panel=read('frontend/src/TargetOpportunities.tsx');
  const backend=read('backend/target_opportunities.py');

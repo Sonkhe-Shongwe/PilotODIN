@@ -128,7 +128,7 @@ test('P4-05 real HTTP: review ordering, other targets and explicit selection onl
   // The owner's manual choice still works and is not misrepresented as a
   // verified P4 suitability finding when outside the bounded queue.
   await page.getByLabel('TARGET VARIABLE').selectOption('feature');
-  await expect(checkpoint).toContainText('not in the bounded P4 review queue');
+  await expect(checkpoint).toContainText('No supported outcome-name clue');
   await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
   await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
   await firstRow.getByRole('button',{name:'Review this alternative target'}).click();
@@ -309,9 +309,83 @@ test('P4-11 real HTTP: manual blocked target shows exact structural reasons',
   await expect(target).toHaveValue('');
   await expect(checkpoint).toHaveCount(0);
   await target.selectOption('account_id'); // No screened outcome hint.
-  await expect(checkpoint).toContainText('not in the bounded P4 review queue');
-  await expect(checkpoint).toContainText('absence from it is not approval');
+  await expect(checkpoint).toContainText('No supported outcome-name clue');
+  await expect(checkpoint).toContainText('not recommended or approved for training');
   await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  expect(blocked).toEqual([]);
+  const project=await request.get(`${API}/api/projects/${projectId}`);
+  expect(project.status()).toBe(200);
+  expect((await project.json()).experiments).toEqual([]);
+ });
+
+
+test('P4-12 real HTTP: out-of-cap manual target inspection and no writes',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+   throw Error('Only trusted disposable GitHub browser tests may execute');
+  const headers=[
+   'account_id','feature',
+   ...Array.from({length:22},(_,i)=>'outcome_'+String(i).padStart(2,'0')),
+   ...Array.from({length:6},(_,i)=>'rare_outcome_'+String(i).padStart(2,'0')),
+  ];
+  const rows=Array.from({length:80},(_,i)=>[
+   'PRIVATE-SYNTH-'+Math.floor(i/2),String(i%9),
+   ...Array.from({length:22},()=>i%2?'Y':'N'),
+   ...Array.from({length:6},()=>i<76?'Y':'N'),
+  ].join(','));
+  const csvBody=[headers.join(','),...rows].join('\n')+'\n';
+  const uploaded=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'p4_12_overflow.csv',mimeType:'text/csv',buffer:Buffer.from(csvBody)},
+  }});
+  expect(uploaded.status(),await uploaded.text()).toBe(201);
+  const projectId=(await uploaded.json()).id as string;
+  const normal=await request.get(
+   `${API}/api/projects/${projectId}/target-opportunities?expected_version=0`);
+  expect(normal.status(),await normal.text()).toBe(200);
+  const ranked=await normal.json();
+  expect(ranked.omitted_reviewable_count).toBe(7);
+  expect(ranked.blocked_count).toBe(6);
+  expect(ranked.blocked_examples.length).toBe(5);
+  expect(ranked.suggestions.some((x:{column:string})=>x.column==='outcome_21')).toBe(false);
+  const read=async(column:string)=>request.get(
+   `${API}/api/projects/${projectId}/target-opportunities/inspect?expected_version=0&column=${column}`);
+  expect((await read('outcome_21')).status()).toBe(200);
+  expect((await read('rare_outcome_05')).status()).toBe(200);
+  expect((await read('account_id')).status()).toBe(200);
+  expect((await request.get(
+   `${API}/api/projects/${projectId}/target-opportunities/inspect?expected_version=1&column=outcome_21`))
+   .status()).toBe(409);
+  const blocked=await readOnlyBrowserGuard(context,projectId);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },projectId);
+  await page.goto('/#/studio/prepare');
+  const section=page.getByRole('region',{name:'Potential prediction opportunities'});
+  await expect(section).toBeVisible();
+  const choice=page.getByLabel('TARGET VARIABLE');
+  const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
+  await choice.selectOption('outcome_21');
+  await expect(checkpoint).toContainText('On-demand single-column review');
+  await expect(checkpoint).toContainText('Technical screening: reviewable');
+  await expect(checkpoint.getByText('Structurally reviewable, not independently validated'))
+   .toBeVisible();
+  await checkpoint.locator('details[aria-label="On-demand selected target evidence"] summary').click();
+  await expect(checkpoint.getByLabel('Decision usefulness evidence'))
+   .toContainText('Decision usefulness: not established');
+  await choice.selectOption('rare_outcome_05');
+  await expect(checkpoint.getByRole('alert',{name:'Selected target structural blockers'}))
+   .toContainText('at least 6 labelled rows');
+  await choice.selectOption('account_id');
+  await expect(checkpoint.getByRole('alert',{name:'Selected target structural blockers'}))
+   .toContainText('No supported outcome-name clue');
+  await expect(checkpoint.getByRole('alert',{name:'Selected target structural blockers'}))
+   .toContainText('identifier');
+  await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  await expect(choice).toHaveValue('');
+  await expect(checkpoint).toHaveCount(0);
   expect(blocked).toEqual([]);
   const project=await request.get(`${API}/api/projects/${projectId}`);
   expect(project.status()).toBe(200);

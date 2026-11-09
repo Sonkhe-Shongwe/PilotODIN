@@ -426,3 +426,58 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
         ),
         "privacy": "Read-only aggregate counts and column names only; no raw label values or rows returned.",
     }
+
+
+
+def inspect_manual_target(
+    frame: pd.DataFrame, version: int, column: str,
+    user_contexts: dict | None = None,
+) -> dict:
+    """Review one explicit manual choice without changing capped queue policy.
+
+    This is a read-only aggregate screen. Neither a header hint nor user
+    description verifies label meaning, value, lawful use or training consent.
+    """
+    if not frame.columns.is_unique:
+        raise ValueError("Target inspection requires unique column names")
+    if column not in frame.columns:
+        raise ValueError("Selected target column is not in the working dataset version")
+    question = _match_outcome(column)
+    named = question is not None
+    candidate = _candidate(
+        frame, column, question or
+        "No supported outcome-name clue; confirm the intended decision.", version
+    )
+    if not named:
+        candidate["blockers"].insert(
+            0, "No supported outcome-name clue was identified; manual choice is "
+            "not a reviewed or verified prediction objective."
+        )
+        candidate["technical_status"] = "blocked"
+        candidate["task_hypothesis"] = None
+    description = (user_contexts or {}).get(column)
+    if description is not None:
+        candidate["user_context"] = {
+            **description,
+            "verification_state": "user_described_not_independently_verified",
+        }
+        candidate["business_relevance"] = "user_described_unverified"
+    else:
+        candidate["user_context"] = None
+    candidate["risk_review"] = target_timing_review.review_prediction_context(
+        frame.columns, column, candidate["user_context"]
+    )
+    candidate["assessment_axes"] = _assessment_axes(candidate)
+    candidate["decision_utility"] = _decision_utility_review(
+        candidate, _repeated_identifier_evidence(frame)
+    )
+    return {
+        "version": version,
+        "column": column,
+        "inspection_scope": "single_manual_column_not_ranked_or_approved",
+        "name_hint": "supported_outcome_name" if named else "no_supported_outcome_name",
+        "candidate": candidate,
+        "training_authorised": False,
+        "note": "Observed aggregates are not independently validated outcomes, "
+                "training consent or proof of business value.",
+    }
