@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 9 November 2026 | P4-22 read-only Windows preservation/RAM probe source and synthetic CI PASS
+
+- **Authorised risk-first P4 continuation:** Owner said `next` after P4-21, not permission to rebuild a Windows installer, install software on owner PC, train models, waive P4-R01–R06 or advance P5. [P4-22 integrity/hardware readiness report](./P4_22_WINDOWS_INTEGRITY_AND_RESOURCE_READINESS_2026-11-09.md).
+- **New opt-in read-only source:** `qa/p4_native/Measure_P4_Native_Readiness.ps1` can capture an external before/after original-EXE SHA and full original-data *aggregate* path+content tree digest, reject changed/missing files, compare QA EXE to independently obtained current CI SHA, and **optionally** sample Windows QA-rooted process private/working-set/system RAM. Outputs only local `baseline.json`/`verification.json` **outside** app data/install directories. Never installs, launches, trains or touches actual owner projects; optional memory figures **PARTIAL_OBSERVATION**, offline/8 GB **NOT TESTED**. Synthetic Windows CI harness also refuses mutations of old exe/data or QA hash mismatch.
+- **Verified at exact tested code [`c47895f`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c47895f42afe6576ab72ccd773084a97af905dfb):** [P4 #42699737670](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42699737670) **COMPLETED SUCCESS** with **110/110 Python, 28/28 Node, TS/Vite build, 8/8 real-HTTP browser, and new Windows-2022 integrity/PowerShell-RAM-probe job PASS**. Windows test used only fake file fixtures and the CI runner's own PowerShell memory, **not the PilotODIN application**. No installer was rebuilt; P4-16 installed owner binary remains older `bca3c57...`.
+- **Controlling phase:** P4 **ACTIVE**, P4 closure **NOT APPROVED**, original operational Gate C **UNVERIFIED/NOT WAIVED**, native N8–N12, latest source parity, true 8 GB/offline and full original restoration **OPEN**. P5 NOT AUTHORISED; P8 NOT CERTIFIED; Issues #2/#9 OPEN. Next meaningful dependency: one separately approved current-source QA/native+measured hardware milestone and independent real-decision evidence, not more repetitive synthetic manual CSV tests.
+
+
 ## 9 November 2026 | P4-21 atomic target-context save integrity fence, exact P4 CI green
 
 - **Owner asked `next` to continue P4 risk-first safety work, not to reopen rejected closure or authorise a Windows rebuild or P5.** [P4-21 scoped audit](./P4_21_ATOMIC_TARGET_CONTEXT_SAVE_INTEGRITY_AUDIT_2026-11-09.md).
