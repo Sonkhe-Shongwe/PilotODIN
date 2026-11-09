@@ -1,5 +1,15 @@
 # PilotODIN 1.0 | P3 phase-exit readiness assessment
 
+## 9 November 2026 | P3 owner-authorised BOUNDED DEVELOPMENT CLOSURE
+
+- **Owner explicitly approved** after being told `P3 overall closure: Awaiting final review and approval` and replied `i approve`. This covers **bounded P3 development**, not automatic P4 authorisation, not a whole-app no-high-defect assertion and not P8 release certification.
+- **Formal scope/risk review:** [`P3_DEVELOPMENT_CLOSURE_2026-11-09.md`](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md) freezes P3-01/02/03a/b, P3-03 **Option A** manual owner-attestation and P3-04 version boundary; names every accepted evidence family and source SHA. Original W1–W4 and independently reviewed successful W5 (owner native attestation plus integrity-checked status archive) are scoped accepted. New Option A real-HTTP/Chromium, owner Chrome and backend consent/version/audit evidence accepted without claiming independent native Tauri observation.
+- **Gate 2 screened:** Master QA Issue #2 BE-001–BE-035 screened for P3 bounded semantic metadata/consent risks; **no known still-open confirmed critical/high within the frozen P3 requirements**. Critical/high *elsewhere* (ODIN AI, Investigate tie-breaking, Predict invalid values, Deliver reports, Explore) remain open with unchanged severity and future release implications.
+- **Residual R-01:** Separate WebView2 manual-review form parity was **not physically demonstrated**; classified as native integration **UNTESTED**, not PASS, to be checked once in a consolidated future native/release gate (at latest P8). Standard React/HTTP form does not add new native OS/IPC behavior. No need to repeat W5/W1–W4 or all accepted browser tests. Independent truth/ontology/cross-view propagation excluded from Option A.
+- **Six scoped exit criteria:** Bounded scope frozen, P3-specific critical/high screen complete, essential prior native and current real-browser journeys assessed with explicit R-01, narrow tests/build green at last *application* SHA `42176b3ea90eae7dcd891fe11170ec16839118d8` (native W5 at `9042c660ff541d4a012c7e3d637aa2a47f9bd841`), durability/consent demonstrated, this issue + both handoffs + owner approval recorded. Documentation commit is not a new product build.
+- **Status:** P1/P2/P3 **CLOSED for bounded development**. **NO primary new phase authorised**, P4 **NOT AUTHORISED**, P8 **NOT CERTIFIED**. Reopen a new P3 critical/high safety defect if one is credibly found despite closure.
+
+
 ## 9 November 2026 | Later successful native W5 ZIP independently reviewed: W5 SCOPED ACCEPTED
 
 - **New evidence was supplied:** Owner provided the earlier `...181423Z-462deb4cae` copy (still **BLOCKED**) **and the distinct later successful** `P3-NATIVE-QUALITY-W5-20261108T192325Z-d69d006698-p3-w5-status.zip` (archive SHA256 `31f109f1941902ef7508ce96fdb020073a5bfa6fd73d4b7773db427916878827`). Do not accidentally use the earlier blocked run for acceptance.
