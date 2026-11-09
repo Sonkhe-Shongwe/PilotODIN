@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | P4 native Windows acceptance kit
 
+## 9 November 2026 | Current evidence and P4-22 read-only collector (NO ACTION REQUIRED NOW)
+
+**Actual owner-native evidence is no longer entirely UNTESTED.** The owner installed and SHA-verified a **separate** `pilotODIN-P4-Native-QA` from historical source `bca3c57b94a425cd9ef489726e721328d12c2ead`, without replacing the old `pilotODIN`; observed basic Home/Prepare, native classification, repeated-ID evidence, explicit target choice and abstention, regression and visible project-switch isolation. Those tested subcases are recorded in [P4 Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9). **N8–N12, full old-data post-test hashing, 8 GB offline performance, independent business Gate C and newest source fixes are NOT owner-native verified.** The `RESULTS_TEMPLATE.md` remains an **unfilled template**, not a record of the owner's previous screenshots.
+
+A new **opt-in** [read-only Windows original-preservation and RAM evidence collector](./Measure_P4_Native_Readiness.ps1) is available for a **future separately authorised** current-source QA milestone. It was tested on disposable synthetic Windows CI files and the runner's own PowerShell process in [P4 #42699737670](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42699737670), **not run on the owner's computer**. It creates only external `baseline.json` and `verification.json`, detects changes to old EXE/data files and QA EXE hash mismatch, and labels optional RAM readings as **PARTIAL_OBSERVATION**, never as an 8 GB/offline certificate. See [P4-22 evidence and limits](../../docs/P4_22_WINDOWS_INTEGRITY_AND_RESOURCE_READINESS_2026-11-09.md). **Do not run it, build a new installer or repeat owner tests until separately approved.** P4 ACTIVE, P5 NOT AUTHORISED, P8 NOT CERTIFIED.
+
+
 ## P4-16 current-source installer integrity check (new, read-only)
 
 The original `p4-native-v1` CSV fixtures below remain applicable **only as synthetic examples**; their historical source-lineage note does not certify the new QA installation. P4-16 produced a distinct `pilotODIN-P4-Native-QA` candidate from source `bca3c57b94a425cd9ef489726e721328d12c2ead`, whose **disposable CI** provenance passed in [run #42621192759](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42621192759). Owner PC still NOT TESTED.
