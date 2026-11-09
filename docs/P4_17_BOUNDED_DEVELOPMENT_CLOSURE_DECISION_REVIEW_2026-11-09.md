@@ -1,5 +1,19 @@
 # PilotODIN 1.0 | P4-17 Bounded Development Closure Decision Review
 
+## Owner decision: P4 closure proposal NOT APPROVED (9 November 2026)
+
+After reading the P4-17 proposal to close bounded development with unresolved residuals deferred, the owner explicitly replied **"we shouldnt risk"**. This is interpreted narrowly as **not accepting the proposed P4 closure/deferral now**. It does not claim the owner rejected the feature, demanded zero risk, or authorised a new phase. Do not treat the earlier reviewer recommendation as an owner acceptance.
+
+**Binding disposition:** **P4 ACTIVE / P4-17 CLOSURE NOT APPROVED / P5 NOT AUTHORISED / P8 NOT CERTIFIED**. The original P4 real-world Gate C has **not** been amended or deferred by owner signoff; business/operational suitability remains UNVERIFIED. P4-R01–R06 remain **OPEN**, not accepted closures. Master QA #2 and P4 evidence Issue #9 remain OPEN.
+
+**Next risk-first work, without repetitive owner manual tests:**
+1. **P4 correctness and data safety first:** use the existing synthetic suites to consolidate fail-closed negative classifications (76/4, 24/80, unnamed outcomes), stale Quality-version/project isolation, and no unintended training/writes. Preserve test status distinctions: automated PASS is not physical Windows PASS; no direct user data access.
+2. **Owner-native parity where unavoidable:** the two source-fixed UI defects (phantom archive banner and unreadable decision evidence), selected-target readability, old-data preservation, and offline/8 GB constraints require a **single justified later consolidated Windows candidate** with appropriate hardware/measurement checks, rather than another ~1.5 GB installer per patch. Do not build or install without explicit separate authorisation.
+3. **Gate C before any operational use or P4 acceptance on original terms:** establish a truthful, independently supported decision owner, exact label origin, prediction timing, true grouping/time independence, non-model baseline and expected benefit/cost, fair/lawful purpose. If no suitable real-world case exists, record **UNVERIFIED or NO SUITABLE PREDICTION OBJECTIVE**, not a fabricated PASS or compulsory training.
+4. **P4-specific defect triage:** retain medium BE-024 Prepare-controls risk and the native UX reports in master QA #2; escalate any proven high/critical P4 correctness or privacy issue immediately. Keep unrelated critical/high release blockers visible without reclassifying them as P4 defects.
+
+**Acceptance boundary:** Owner rejected *closing with those risks deferred*; it is not permission to abandon CI-first development or to require unlimited manual validation. Resume bounded risk resolution in P4, then prepare a new evidence-based closure proposal for a separate owner decision.
+
 **Review date:** 9 November 2026  
 **Authority:** Owner said "okay lets do that" to performing a **consolidated P4 closure review**, not to an already-passed P4 closure decision or authorisation to implement P5.  
 **Repository/branch:** `Sonkhe-Shongwe/PilotODIN` / `feature/live-dev-workspace-20261023`  

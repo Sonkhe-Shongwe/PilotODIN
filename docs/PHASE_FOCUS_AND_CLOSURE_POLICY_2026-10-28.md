@@ -1,5 +1,12 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+## 9 November 2026 | Owner declined risk-deferral proposal; P4 stays ACTIVE
+
+- **Explicit owner reaction to P4-17 recommendation:** **"we shouldnt risk"**, in response to a request to approve bounded P4 closure with named residuals deferred. **No approval was given; do not close P4 or silently amend the original real-business acceptance Gate C.** [P4-17 reviewed decision and risk-first plan](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md).
+- **Controlling phase:** P4 **ACTIVE, owner closure NOT APPROVED**, Gate C UNVERIFIED, P4-R01–R06 OPEN. P5 NOT AUTHORISED, P8 NOT CERTIFIED, QA Issue #2 and P4 owner Issue #9 OPEN.
+- **Next bounded task:** consolidate remaining fail-closed synthetic/backend/browser negative, version and no-training/no-write evidence first. Do not impose repetitive native CSV imports on owner; reserve **one future owner-approved consolidated Windows build/hardware test** for source-fixed UI, actual resource/offline, data preservation, and native-specific risk. Independent operational target/label/timing/benefit/fairness evidence remains a separate necessary Gate C, not something to invent from fixture CSVs.
+
+
 ## 9 November 2026 | P4-17 consolidated owner decision review: proposed, NOT closed
 
 - **Authority strictly limited:** Owner said `okay lets do that` after being offered a **formal P4 closure review**. This authorises the review, not unconditional P4 closure, approval of unresolved Gate C or activation of P5. [P4-17 full six-criterion review](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md) has been committed with scoped requirement matrix, source/browser/native proof, risk owners, and original acceptance limitations.

@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | Owner declined risk-deferral proposal; P4 stays ACTIVE
+
+- **Explicit owner reaction to P4-17 recommendation:** **"we shouldnt risk"**, in response to a request to approve bounded P4 closure with named residuals deferred. **No approval was given; do not close P4 or silently amend the original real-business acceptance Gate C.** [P4-17 reviewed decision and risk-first plan](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md).
+- **Controlling phase:** P4 **ACTIVE, owner closure NOT APPROVED**, Gate C UNVERIFIED, P4-R01–R06 OPEN. P5 NOT AUTHORISED, P8 NOT CERTIFIED, QA Issue #2 and P4 owner Issue #9 OPEN.
+- **Next bounded task:** consolidate remaining fail-closed synthetic/backend/browser negative, version and no-training/no-write evidence first. Do not impose repetitive native CSV imports on owner; reserve **one future owner-approved consolidated Windows build/hardware test** for source-fixed UI, actual resource/offline, data preservation, and native-specific risk. Independent operational target/label/timing/benefit/fairness evidence remains a separate necessary Gate C, not something to invent from fixture CSVs.
+
+
 ## 9 November 2026 | P4-17 consolidated closure review completed, explicit owner decision pending
 
 - **Formal current readiness assessment:** [P4-17 bounded closure decision review](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md). The owner authorised **the review**, not automatic P4 closure. Reviewer proposes **conditional bounded P4 development closure** with original real-business Gate C **explicitly deferred only if owner approves**; native negative/version/offline gates and source-fixed, not native-retested UI defects remain named residuals. No real business objective certified.
