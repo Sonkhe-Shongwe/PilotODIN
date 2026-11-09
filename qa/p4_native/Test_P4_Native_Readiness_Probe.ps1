@@ -34,6 +34,23 @@ try {
  $raw=Get-Content -LiteralPath (Join-Path $out 'verification.json') -Raw
  if ($raw.Contains('synthetic-private.csv') -or $raw.Contains('other-private.txt') -or
      $raw.Contains('SYNTHETIC-ONLY-DATA')) {throw 'Private file name or value escaped'}
+ # Exercise the memory-sampling code against THIS disposable CI shell only.
+ # This proves mechanics, not Tauri/engine/AI memory, sustained 8 GB, or offline.
+ $processPath=(Get-Process -Id $PID -ErrorAction Stop).Path
+ $processHash=(Get-FileHash -LiteralPath $processPath -Algorithm SHA256).Hash.ToLowerInvariant()
+ $sampleFolder=Join-Path $root 'sample-current-ci-pwsh'
+ [void](New-Item -ItemType Directory -Path $sampleFolder)
+ Copy-Item -LiteralPath (Join-Path $out 'baseline.json') -Destination (Join-Path $sampleFolder 'baseline.json')
+ & $probe -Stage Verify -OriginalExe $oldExe -OriginalData $data -EvidenceDir $sampleFolder -QaExe $processPath -ExpectedQaSha256 $processHash -Samples 2 -IntervalSeconds 1
+ $sample=Get-Content -LiteralPath (Join-Path $sampleFolder 'verification.json') -Raw | ConvertFrom-Json
+ if ($sample.ram.status -ne 'PARTIAL_OBSERVATION' -or
+     $sample.ram.samples_with_qa_process -lt 1 -or
+     $sample.ram.max_tracked_private_mib -le 0 -or
+     $sample.ram.observed_total_system_gib -le 0 -or
+     $sample.ram.offline_certified -ne $false -or
+     $sample.offline_8gb_acceptance -ne 'NOT_TESTED') {
+  throw 'Disposable PowerShell process sampling failed or overstated resource/offline certification'
+ }
  $baseline=Join-Path $out 'baseline.json'
  function CheckReject([scriptblock]$mutation,[string]$label) {
   $folder=Join-Path $root ('case-' + $label)
