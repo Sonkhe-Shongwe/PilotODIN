@@ -458,3 +458,60 @@ test('P4-13 real HTTP: wide target inspection displays bounded incomplete status
   expect(project.status()).toBe(200);
   expect((await project.json()).experiments).toEqual([]);
  });
+
+
+test('P4-14 real HTTP: incomplete wide queue abstains without recommending',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+   throw Error('Only trusted disposable GitHub browser tests may execute');
+  const header=[
+   'account_id','churn',
+   ...Array.from({length:70},(_,i)=>'feature_'+String(i).padStart(2,'0')),
+  ];
+  const rows=Array.from({length:80},(_,i)=>[
+   'PRIVATE-TEST-'+Math.floor(i/2),i%2?'Y':'N',
+   ...Array.from({length:70},(_,j)=>String((i+j)%11)),
+  ].join(','));
+  const csvBody=[header.join(','),...rows].join('\n')+'\n';
+  const uploaded=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'p4_14_wide_queue.csv',mimeType:'text/csv',buffer:Buffer.from(csvBody)},
+  }});
+  expect(uploaded.status(),await uploaded.text()).toBe(201);
+  const projectId=(await uploaded.json()).id as string;
+  const reply=await request.get(
+   `${API}/api/projects/${projectId}/target-opportunities?expected_version=0`);
+  expect(reply.status(),await reply.text()).toBe(200);
+  const ranking=await reply.json();
+  expect(ranking.abstained).toBe(true);
+  expect(ranking.suggestions).toEqual([]);
+  expect(ranking.other_reviewable).toEqual([]);
+  expect(ranking.queue_resource_review.truncated).toBe(true);
+  expect(ranking.queue_resource_review.incomplete_reasons).toContain('predictors');
+  expect(ranking.queue_resource_review.rows_examined).toBe(80);
+  expect(ranking.queue_resource_review.headers_examined).toBe(72);
+  expect(ranking.queue_resource_review.candidate_columns_examined).toBe(1);
+  expect(ranking.blocked_examples[0].technical_status).toBe('blocked');
+  const blocked=await readOnlyBrowserGuard(context,projectId);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },projectId);
+  await page.goto('/#/studio/prepare');
+  const section=page.getByRole('region',{name:'Potential prediction opportunities'});
+  const banner=section.getByRole('alert',{name:'Incomplete target recommendation screening'});
+  await expect(banner).toContainText('Incomplete target screening: no recommended target');
+  await expect(banner).toContainText('headers examined: 72 of 72');
+  await expect(section.locator('article.model-choice')).toHaveCount(0);
+  await page.getByLabel('TARGET VARIABLE').selectOption('churn');
+  const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
+  await expect(checkpoint.getByRole('alert',{name:'Selected target structural blockers'}))
+   .toContainText('Main target review queue scan was truncated');
+  await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  await expect(checkpoint).toHaveCount(0);
+  expect(blocked).toEqual([]);
+  const project=await request.get(`${API}/api/projects/${projectId}`);
+  expect(project.status()).toBe(200);
+  expect((await project.json()).experiments).toEqual([]);
+ });

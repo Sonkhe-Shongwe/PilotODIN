@@ -15,6 +15,7 @@ on:
       - frontend/tests/p4-review-queue-contracts.test.cjs
       - tests/test_p4_review_queue.py
       - tests/test_p4_manual_target_inspection.py
+      - tests/test_p4_queue_resource_bounds.py
       - tests/test_p4_phase_exit_matrix.py
       - tests/test_p4_native_acceptance_kit.py
       - qa/p4_native/**
@@ -69,6 +70,7 @@ jobs:
           tests/test_p4_two_axis_evidence.py
           tests/test_p4_review_queue.py
           tests/test_p4_manual_target_inspection.py
+          tests/test_p4_queue_resource_bounds.py
           tests/test_p4_phase_exit_matrix.py
           tests/test_p4_native_acceptance_kit.py
       - name: Verify P4 source contracts and manual target choice

@@ -104,6 +104,32 @@ test('P4-08 explicit defer, decline, abstain and selected-target evidence stay l
  assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
 });
 
+test('P4-14 whole queue caps row/header/candidate/predictor scans and abstains on gaps',()=>{
+ const backend=read('backend/target_opportunities.py');
+ const panel=read('frontend/src/TargetOpportunities.tsx');
+ const tests=read('tests/test_p4_queue_resource_bounds.py');
+ const browser=read('frontend/e2e/p4-real-http-review-queue.spec.ts');
+ const workflow=read('.github/workflows/p4-target-ranking.yml');
+ assert.match(backend,/MAX_QUEUE_ROWS = 5000/);
+ assert.match(backend,/MAX_QUEUE_HEADERS = 100/);
+ assert.match(backend,/MAX_QUEUE_PREDICTORS = 64/);
+ assert.match(backend,/MAX_QUEUE_NAMED_CANDIDATES = 64/);
+ assert.match(backend,/MAX_QUEUE_PARTIAL_EXAMPLES = 5/);
+ assert.match(backend,/candidates_to_screen =/);
+ assert.match(backend,/frame\.iloc\[:examined_rows, bounded_indices\]/);
+ assert.match(backend,/candidate\["technical_status"\] = "blocked"/);
+ assert.match(backend,/candidate\["task_hypothesis"\] = None/);
+ assert.match(backend,/"queue_resource_review": resource_review/);
+ assert.match(panel,/Incomplete target recommendation screening/);
+ assert.match(panel,/Incomplete target screening: no recommended target/);
+ assert.match(tests,/test_p4_14_large_header_candidate_list_never_full_scans/);
+ assert.match(tests,/test_p4_14_over_ml_cap_preserves_caution_without_fake_full_label_count/);
+ assert.match(browser,/P4-14 real HTTP: incomplete wide queue abstains without recommending/);
+ assert.match(workflow,/tests\/test_p4_queue_resource_bounds\.py/);
+ assert.doesNotMatch(backend,/\.fit\(|run_training\(|cross_val_score\(/);
+ assert.doesNotMatch(panel,/startTrain\(|run_training\(|autoSelectTarget\(/);
+});
+
 test('P4-13 caps row and predictor scans and never implies clearance on truncation',()=>{
  const backend=read('backend/target_opportunities.py');
  const panel=read('frontend/src/TargetOpportunities.tsx');

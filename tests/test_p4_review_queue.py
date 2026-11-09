@@ -197,8 +197,10 @@ def test_p4_07_bounded_scanning_discloses_incomplete_evidence():
     out = target_opportunities.recommend(frame, 2)
     review = out["blocked_examples"][0]["decision_utility"]
     probe = review["entity_repetition"]
-    assert probe["rows_examined"] == cap
+    assert probe["rows_examined"] == target_opportunities.MAX_QUEUE_ROWS
     assert probe["total_rows"] == cap + 1
+    assert out["queue_resource_review"]["truncated"] is True
+    assert out["abstained"] is True
     assert probe["scan_truncated"] is True
     assert probe["repeated"] == []
     assert review["training_authorised"] is False

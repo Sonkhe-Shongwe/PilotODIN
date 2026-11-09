@@ -101,6 +101,14 @@ type ReviewDisposition='deferred'|'declined';
 
 type OpportunityResponse={
  version:number;ranking_basis:string;suggestions:Opportunity[];
+ queue_resource_review?:{
+  scope:'bounded_read_only_queue_screening';rows_examined:number;
+  total_rows:number;headers_examined:number;total_headers:number;
+  max_rows:number;max_headers:number;max_candidate_columns:number;
+  max_predictors_per_candidate:number;named_outcome_headers_seen:number;
+  candidate_columns_examined:number;truncated:boolean;
+  incomplete_reasons:string[];interpretation:string
+ };
  ranking_contract?:{
   purpose:'human_review_queue_not_business_value_ranking';ordered_by:string[];
   business_value_verified:false;model_performance_measured:false;
@@ -281,6 +289,21 @@ export function TargetOpportunities({
     <button type="button" className="btn small" onClick={onClearTarget}>
      Clear selected target and preparation
     </button>
+   </div>}
+   {data.queue_resource_review?.truncated&&<div role="alert"
+     aria-label="Incomplete target recommendation screening"
+     className="mini-info warn-icon">
+    <strong>Incomplete target screening: no recommended target.</strong>
+    <p className="muted-caption">Rows examined: {
+     data.queue_resource_review.rows_examined.toLocaleString()
+    } of {data.queue_resource_review.total_rows.toLocaleString()};
+     {' '}headers examined: {data.queue_resource_review.headers_examined.toLocaleString()}
+     {' '}of {data.queue_resource_review.total_headers.toLocaleString()};
+     {' '}named candidates checked: {data.queue_resource_review.candidate_columns_examined}.
+    </p>
+    <p className="muted-caption">{data.queue_resource_review.interpretation}
+     {' '}The review queue has not validated any omitted outcome, and observed
+     label counts shown below apply only to the bounded sample.</p>
    </div>}
    {data.ranking_contract&&<p className="muted-caption" role="note">
     <strong>Review order, not an estimated business-value ranking.</strong> Documented questions

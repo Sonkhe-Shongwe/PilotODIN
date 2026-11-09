@@ -20,6 +20,12 @@ except ImportError:  # Support direct-backend development launches.
 MAX_SUGGESTIONS = 3
 MAX_OTHER_REVIEWABLE = 12
 MAX_BLOCKED_EXAMPLES = 5
+# P4-14 whole queue budget, independent of loading the approved Quality data.
+MAX_QUEUE_ROWS = 5000
+MAX_QUEUE_HEADERS = 100
+MAX_QUEUE_PREDICTORS = 64
+MAX_QUEUE_NAMED_CANDIDATES = 64
+MAX_QUEUE_PARTIAL_EXAMPLES = 5
 # Bounded read-only scan; never disclose identifier values or claim group identity.
 MAX_ENTITY_HEADERS = 100
 MAX_ENTITY_COLUMNS = 8
@@ -350,15 +356,93 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
     if not frame.columns.is_unique:
         raise ValueError("Target recommendations require unique column names")
     user_contexts = user_contexts or {}
-    entity_evidence = _repeated_identifier_evidence(frame)
+    total_rows, total_headers = frame.shape
+    examined_rows = min(total_rows, MAX_QUEUE_ROWS)
+    scanned_headers = list(frame.columns[:MAX_QUEUE_HEADERS])
+    named_headers = [(str(col), _match_outcome(str(col))) for col in scanned_headers]
+    named_headers = [(name, question) for name, question in named_headers if question]
+    reasons = []
+    if total_rows > examined_rows:
+        reasons.append("rows")
+    if total_headers > len(scanned_headers):
+        reasons.append("headers")
+    if total_headers - 1 > MAX_QUEUE_PREDICTORS:
+        reasons.append("predictors")
+    if len(named_headers) > MAX_QUEUE_NAMED_CANDIDATES:
+        reasons.append("candidate_columns")
+    incomplete = bool(reasons)
+    # Do not rank a partially examined queue. Only the first five named
+    # headers get sampled blocker details, not a training-ready status.
+    candidates_to_screen = (
+        named_headers[:MAX_QUEUE_PARTIAL_EXAMPLES] if incomplete else named_headers
+    )
+    preview = frame.iloc[:examined_rows, :len(scanned_headers)] if incomplete else frame
+    entity_evidence = _repeated_identifier_evidence(preview)
+    if incomplete:
+        entity_evidence["total_rows"] = total_rows
+        entity_evidence["scan_truncated"] = True
+        entity_evidence["interpretation"] += (
+            " The queue-level preview is incomplete. Absence of repeated "
+            "values does not establish independent records."
+        )
+    resource_review = {
+        "scope": "bounded_read_only_queue_screening",
+        "rows_examined": examined_rows,
+        "total_rows": total_rows,
+        "headers_examined": len(scanned_headers),
+        "total_headers": total_headers,
+        "max_rows": MAX_QUEUE_ROWS,
+        "max_headers": MAX_QUEUE_HEADERS,
+        "max_candidate_columns": MAX_QUEUE_NAMED_CANDIDATES,
+        "max_predictors_per_candidate": MAX_QUEUE_PREDICTORS,
+        "named_outcome_headers_seen": len(named_headers),
+        "candidate_columns_examined": len(candidates_to_screen),
+        "truncated": incomplete,
+        "incomplete_reasons": reasons,
+        "interpretation": (
+            "This incomplete queue scan cannot recommend any target. "
+            "Unexamined rows, headers or predictors may change the assessment. "
+            "The existing manual chooser has separate bounded inspection."
+            if incomplete else
+            "All rows and headers were examined for structural screening only. "
+            "Prediction utility and suitability are not independently verified."
+        ),
+    }
     suggestions = []
     blocked = []
-    for col in frame.columns:
-        name = str(col)
-        question = _match_outcome(name)
-        if question is None:
-            continue
-        candidate = _candidate(frame, name, question, version)
+    for name, question in candidates_to_screen:
+        if incomplete:
+            predictor_positions = []
+            for index, col in enumerate(scanned_headers):
+                if col == name:
+                    continue
+                predictor_positions.append(index)
+                if len(predictor_positions) >= MAX_QUEUE_PREDICTORS:
+                    break
+            target_index = frame.columns.get_loc(name)
+            bounded_indices = sorted([*predictor_positions, target_index])
+            screen = frame.iloc[:examined_rows, bounded_indices]
+        else:
+            screen = frame
+        candidate = _candidate(screen, name, question, version)
+        if incomplete:
+            candidate["blockers"].insert(
+                0, "Main target review queue scan was truncated by row, "
+                "header, candidate or predictor limits; full eligibility "
+                "cannot be established from these partial observations."
+            )
+            if total_rows > engine.MAX_ML_LABELLED_ROWS:
+                candidate["blockers"].append(
+                    "The source has more rows than the local ML cap of "
+                    f"{engine.MAX_ML_LABELLED_ROWS:,} labelled rows; a full "
+                    "label count is required before eligibility can be assessed."
+                )
+            candidate["technical_status"] = "blocked"
+            candidate["task_hypothesis"] = None
+            candidate["review_warnings"].insert(
+                0, "Label and predictor counts are sample-only; incomplete "
+                "screening is not independent validation."
+            )
         if name in user_contexts:
             # User statements provide described decision context; never
             # assert their truth, legal basis, leakage safety or readiness.
@@ -397,6 +481,7 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
     other = suggestions[MAX_SUGGESTIONS:MAX_SUGGESTIONS + MAX_OTHER_REVIEWABLE]
     return {
         "version": version,
+        "queue_resource_review": resource_review,
         "ranking_basis": "Structural eligibility first; user-described contexts appear first, then observed label support. User text is unverified and not a business-value score. No model trained.",
         "ranking_contract": {
             "purpose": "human_review_queue_not_business_value_ranking",
@@ -419,12 +504,18 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
         "blocked_count": len(blocked),
         "abstained": not bool(top),
         "abstention_reason": (
+            "Incomplete target screening: the bounded queue reached its row, "
+            "header, predictor or candidate limit. No target is recommended "
+            "from partial evidence. The manual target chooser remains available."
+            if incomplete else
             "No named outcome with sufficient technically supported labels was found. "
             "Use descriptive analysis or define and verify a real business target yourself."
             if not top else None
         ),
         "business_context_state": "user_described_unverified" if any(item["user_context"] for item in top) else "unverified",
         "note": (
+            "For incomplete screening, blocker counts reflect only the "
+            "inspected subset and are not the total number of blocked outcomes. "
             "A saved user description is not independently verified and cannot override technical blockers. "
             "Suggestions are unverified hypotheses, not approved labels or training recommendations. "
             "Explicit user target selection and all existing backend training/validation gates remain required."
