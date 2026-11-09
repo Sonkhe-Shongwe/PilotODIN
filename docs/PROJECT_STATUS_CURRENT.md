@@ -1,5 +1,14 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | P3 six-gate closure review prepared, not closed
+
+- [P3 phase-exit readiness assessment](./P3_PHASE_EXIT_READINESS_REVIEW_2026-11-09.md) reconciles all bounded P3-01 through P3-04 evidence and the approved P3-03 Option A scope. Exact most recently validated *application* source: `42176b3ea90eae7dcd891fe11170ec16839118d8`; all affected P3, real-browser, P1 lifecycle/build workflows completed SUCCESS at that SHA. A documentation-only later commit does not invalidate source CI.
+- Owner's 9 November Chrome screenshots of the synthetic Orders CSV working v3 show `Cannot assess` **saved review revision 1** with persisted-looking explanation and neutral/unverified label; this is **owner visual browser evidence**, not independently observed F5 reload or native Tauri acceptance. CI real-HTTP browser does exercise Save/reload/edit/stale revision.
+- W1–W4 previously independently accepted. W5 most recent physical run is **owner-reported** success but its *successful* status-only ZIP has not been independently reviewed; the previous uploaded ZIP was BLOCKED and must never be misrepresented as passed. No repeat W5 requested. Option A native-only UI observation remains unproven.
+- **Six exit criteria:** candidate scope matrix READY BUT NOT OWNER-FROZEN; P3 high-severity triage and explicit signoff OPEN; real-browser PASS/native PARTIAL; code+build PASS; scoped durability/consent PASS with native gap; issue/handoff evidence documented but P3 owner phase closure PENDING. P3 ACTIVE; P4 NOT AUTHORISED; P8 NOT CERTIFIED.
+- **Next:** Recover exact successful W5 archive if already generated (read-only review); decide whether Option A's new controls require a minimal native UI smoke check, then owner scope freeze and separate phase-closure decision. No new feature or test repetition.
+
+
 ## 8 November 2026 | Owner approved P3-03 Option A, bounded human semantic review source and browser PASS
 
 - **Owner scope decision:** Owner explicitly selected **Option A** in the current conversation. This authorises a bounded P3-03 owner *attestation* of current field hypotheses, NOT automatic business truth, ML/target selection, installed product mutation, P4 or release certification. Option B was not selected. No independent authority for domain/record-grain truth was provided.
