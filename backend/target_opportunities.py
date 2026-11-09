@@ -91,8 +91,16 @@ def _is_identifier(name: str) -> bool:
 
 
 def _is_date(name: str, series: pd.Series) -> bool:
-    tokens = set(_normalized(name).split("_"))
-    return bool(tokens & TIME_TOKENS) or pd.api.types.is_datetime64_any_dtype(series)
+    normalized = _normalized(name)
+    tokens = set(normalized.split("_"))
+    # Multiword event-time suffixes (created_at, updated_at, etc.) are split
+    # into separate tokens and previously escaped TIME_TOKENS. Treat *_at
+    # names conservatively as timestamp-like, even when CSV dates are strings.
+    return (
+        bool(tokens & TIME_TOKENS)
+        or normalized.endswith("_at")
+        or pd.api.types.is_datetime64_any_dtype(series)
+    )
 
 
 def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> dict:

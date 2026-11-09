@@ -254,3 +254,55 @@ def test_finite_binary_numeric_target_remains_structurally_reviewable():
     assert candidate["task_hypothesis"] == "classification"
     assert candidate["technical_status"] == "reviewable"
     assert candidate["safe_to_train_automatically"] is False
+
+
+@pytest.mark.parametrize("header", [
+    "outcome_created_at", "churn_updated_at", "fraud_reported_at",
+])
+def test_timestamp_named_outcome_string_values_are_blocked(header):
+    # Two distinct ISO timestamp strings were previously inferred as two
+    # classification labels because created_at/updated_at got split on '_'.
+    frame = pd.DataFrame({
+        header: ["2026-01-01T00:00:00", "2026-01-02T00:00:00"] * 40,
+        "feature": [i % 9 for i in range(80)],
+    })
+    original = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 0)
+    assert result["abstained"] is True
+    assert result["suggestions"] == []
+    candidate = {item["column"]: item for item in result["blocked_examples"]}[header]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["labelled_rows"] == 80
+    assert candidate["distinct_labels"] == 2
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("date/time" in x for x in candidate["blockers"])
+    assert frame.equals(original)
+
+
+def test_timestamp_named_manual_target_is_not_approved():
+    frame = pd.DataFrame({
+        "outcome_created_at": ["2026-01-01", "2026-01-02"] * 40,
+        "feature": [i % 7 for i in range(80)],
+    })
+    result = target_opportunities.inspect_manual_target(frame, 2, "outcome_created_at")
+    candidate = result["candidate"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["decision_utility"]["training_authorised"] is False
+    assert result["training_authorised"] is False
+    assert any("date/time" in x for x in candidate["blockers"])
+
+
+def test_valid_numeric_future_cost_target_preserved_after_timestamp_guard():
+    frame = pd.DataFrame({
+        "future_cost": [float(i + 110) for i in range(80)],
+        "feature": [i % 8 for i in range(80)],
+    })
+    result = target_opportunities.recommend(frame, 1)
+    assert not result["abstained"]
+    candidate = result["suggestions"][0]
+    assert candidate["column"] == "future_cost"
+    assert candidate["task_hypothesis"] == "regression"
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["safe_to_train_automatically"] is False
