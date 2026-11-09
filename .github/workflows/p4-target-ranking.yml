@@ -13,6 +13,9 @@ on:
       - frontend/src/TargetOpportunities.tsx
       - frontend/tests/p4-review-queue-contracts.test.cjs
       - tests/test_p4_review_queue.py
+      - frontend/tests/p4-target-opportunities-contracts.test.cjs
+      - frontend/e2e/p4-real-http-review-queue.spec.ts
+      - frontend/playwright.p4-real-http.config.ts
   workflow_dispatch:
 
 permissions:
@@ -70,3 +73,38 @@ jobs:
           frontend/tests/p4-review-queue-contracts.test.cjs
       - name: Build actual TypeScript and Vite bundle
         run: npm run build --prefix frontend
+
+  p4-disposable-real-http-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      CI: "true"
+      P1_REAL_HTTP_E2E: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Set exact CI-owned disposable backend home
+        run: echo "PILOTODIN_HOME=${RUNNER_TEMP}/pilotodin-p1-real-http-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
+      - name: Checkout trusted branch without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install existing backend and frontend test dependencies
+        run: |
+          python -m pip install -r backend/requirements-test.txt
+          npm ci --prefix frontend --no-audit --no-fund
+      - name: Install isolated headless Chromium
+        working-directory: frontend
+        run: npx --no-install playwright install --only-shell chromium
+      - name: Test actual P4 review queue against disposable real HTTP backend
+        working-directory: frontend
+        run: npx --no-install playwright test --config=playwright.p4-real-http.config.ts
