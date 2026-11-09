@@ -66,6 +66,7 @@ jobs:
           tests/p1-quality-investigation-staleness.test.cjs
           tests/project-operation-guard.test.cjs
           tests/project-manager.test.cjs
+          tests/p4-native-empty-catalogue-archive-banner.test.cjs
           tests/p1-primary-project-load-approval.test.cjs
           tests/p1-project-switch-generation.test.cjs
           tests/p1-live-profile-version-order.test.cjs

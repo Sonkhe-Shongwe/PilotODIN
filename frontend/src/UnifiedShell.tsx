@@ -4,7 +4,7 @@ import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Sett
 import {App} from './App';
 import {ProjectManager} from './ProjectManager';
 import {projectOptionLabels} from './projectOptionLabels';
-import {parseProjectLifecycleSignal,preserveMountedUnavailableProject,publishProjectLifecycleSignal,PROJECT_LIFECYCLE_SIGNAL_KEY} from './projectLifecycleSignal';
+import {isCurrentProjectHeldArchived,parseProjectLifecycleSignal,preserveMountedUnavailableProject,publishProjectLifecycleSignal,PROJECT_LIFECYCLE_SIGNAL_KEY} from './projectLifecycleSignal';
 import type {ManagedProject} from './ProjectManager';
 import type {PrimaryProjectLoadSnapshot} from './App';
 import {navigateHashSmoothly} from './navigationMotion';
@@ -164,10 +164,10 @@ export function UnifiedShell(){
    const mountedId=currentProjectRef.current;
    if(shouldClearUnavailableProject(selectedAtRequestStart,latest,rows)){
     if(preserveMountedUnavailableProject(mountedId,latest,selectedAtRequestStart,
-      heldArchivedRef.current===mountedId)){
+      mountedIsHeldArchived)){
      // Another tab changed the shared selector, or archived our open project.
      // Never clear shared storage or unmount our potentially edited workspace.
-     setWarning(heldArchivedRef.current===mountedId
+     setWarning(mountedIsHeldArchived
       ?'This project was archived in another window. Your unsaved fields remain visible here. Restore it using Manage projects before making changes.'
       :'Another tab selected a project that is no longer available. Your current workspace remains mounted; choose a valid project before reloading.');
      return;
@@ -177,7 +177,7 @@ export function UnifiedShell(){
     setWarning('The previously selected project is no longer available. Choose another project to continue.');
     window.dispatchEvent(new CustomEvent('pilotodin:project-changed',{detail:{reason:'unavailable'}}));
    }else{
-    setWarning(heldArchivedRef.current===mountedId
+    setWarning(mountedIsHeldArchived
      ?'This project was archived in another window. Your unsaved fields remain visible here. Restore it using Manage projects before making changes.':'');
    }
   }catch(e){

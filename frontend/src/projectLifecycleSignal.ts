@@ -32,3 +32,10 @@ export function preserveMountedUnavailableProject(
   mountedId!==sharedSelectedId||(heldArchived&&mountedId===unavailableId)
  );
 }
+
+/** An empty import workspace must never be reported as archived elsewhere.
+ * Only a non-empty, currently mounted project can be held by a verified lifecycle event.
+ */
+export function isCurrentProjectHeldArchived(mountedId:string,heldArchivedId:string):boolean{
+ return mountedId.length>0&&heldArchivedId===mountedId;
+}
