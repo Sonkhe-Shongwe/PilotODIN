@@ -1,5 +1,14 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 10 November 2026 | Selected Satin Chronograph IMPLEMENTED IN SOURCE; frontend CI PASS
+
+- **Owner authorization:** After explicitly selecting design **B**, the owner said `next`; interpreted as approval to implement the **Satin Chronograph UI only**. This is NOT permission to build/install a full Windows QA installer, accept incomplete P4 gates, start P5 or certify a release.
+- **Exact frontend source:** [`41a04a4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/41a04a43a416b35936f66c76f30fa773dcd1b766) adds a single `ShellClock` to the persistent `UnifiedShell.tsx` header before the project switcher, a pure local-time formatter and 40px satin-lilac/violet/teal styling in `unified-shell.css`. The clock updates just after each minute boundary, refreshes on foreground/focus after sleep, removes listeners/timers on unmount, and makes no project-storage or network calls.
+- **Responsive UI:** Full time + short date on wide headers, time only at widths <=1200px, hidden <=1000px so the project selector, New project and Manage actions retain priority. No flashing digits, animation loops, backend clock, training integration or external clock dependency.
+- **Exact evidence:** [`f42bee6`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f42bee63666861a8f0ba02ab83d931883d389ff7) adds a real isolated Chromium layout check at 1440px, 1100px and 900px, maintaining no API writes; [P1 frontend CI #42710036050](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42710036050) **COMPLETED SUCCESS**, **167/167 Node contract/behavior tests**, TypeScript/Vite production build PASS, **6/6 isolated Chromium browser tests**. This CI does **not** certify the actual installed Windows WebView2 appearance or changed EXE; existing owner's QA app still has older source `bca3c57...`.
+- **Status:** Satin clock **IMPLEMENTED + SOURCE/BROWSER VERIFIED**, owner-native aesthetic review **PENDING**. P4 remains **ACTIVE**, its original business/native/offline gates OPEN, P5 NOT AUTHORISED, P8 NOT CERTIFIED. No Windows installer was built.
+
+
 ## Owner design selection, 10 November 2026
 
 **SELECTED:** **B. Satin Chronograph**, with the quiet visual restraint of A. The owner explicitly said **"okay b it is then"** after viewing three design studies. This authorises the aesthetic direction, **not automatically the implementation, an installer build, or a P4 phase transition**.
