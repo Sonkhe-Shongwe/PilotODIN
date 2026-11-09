@@ -67,6 +67,7 @@ jobs:
           tests/project-operation-guard.test.cjs
           tests/project-manager.test.cjs
           tests/p4-native-empty-catalogue-archive-banner.test.cjs
+          tests/shell-clock.test.cjs
           tests/p1-primary-project-load-approval.test.cjs
           tests/p1-project-switch-generation.test.cjs
           tests/p1-live-profile-version-order.test.cjs

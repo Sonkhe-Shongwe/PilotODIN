@@ -3,6 +3,7 @@ import type {CSSProperties,DragEvent as ReactDragEvent,PointerEvent as ReactPoin
 import {Activity,BarChart3,BrainCircuit,Database,FileText,FlaskConical,Home,Settings2,ShieldCheck,Target,X,ChevronDown,Columns2,PanelRightClose,ArrowLeftRight,GripVertical,RotateCcw,PanelLeftClose,Plus} from 'lucide-react';
 import {App} from './App';
 import {ProjectManager} from './ProjectManager';
+import {ShellClock} from './ShellClock';
 import {projectOptionLabels} from './projectOptionLabels';
 import {isCurrentProjectHeldArchived,parseProjectLifecycleSignal,preserveMountedUnavailableProject,publishProjectLifecycleSignal,PROJECT_LIFECYCLE_SIGNAL_KEY} from './projectLifecycleSignal';
 import type {ManagedProject} from './ProjectManager';
@@ -829,6 +830,7 @@ export function UnifiedShell(){
    <div className="po-shell-brand"><img className="po-brand-symbol" src="/pilotodin-symbol.svg" alt="" aria-hidden="true"/><span className="po-brand-wordmark"><span className="po-pilot">pilot</span><b>ODIN</b></span></div>
    <span className="po-shell-mode">LOCAL INTELLIGENCE WORKSPACE</span>
    {motionReduced&&<span className="po-motion-reduced" role="status" title="Windows or your browser requests reduced motion. PilotODIN honours this accessibility setting.">Animations reduced by system</span>}
+   <ShellClock/>
    <div className="po-project-switcher">
     <Database className="po-project-switcher-icon" size={16} aria-hidden="true"/>
     <select aria-label="Switch project" title={selectorLabels.get(projectId)??(projects.length?'Switch between imported projects':'Import another dataset to switch between projects')} value={projectId} disabled={nativeProjectSwitchWaiting} onChange={e=>chooseProject(e.target.value)}>
