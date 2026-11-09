@@ -88,6 +88,13 @@ type ManualTargetInspection={
  project_id:string;version:number;column:string;
  inspection_scope:'single_manual_column_not_ranked_or_approved';
  name_hint:'supported_outcome_name'|'no_supported_outcome_name';
+ resource_review:{
+  scope:'bounded_single_column_structural_observations';
+  rows_examined:number;total_rows:number;columns_examined:number;
+  total_columns:number;predictor_columns_examined:number;
+  total_predictor_columns:number;row_limit:number;
+  predictor_column_limit:number;truncated:boolean;interpretation:string
+ };
  candidate:Opportunity;training_authorised:false;note:string
 };
 type ReviewDisposition='deferred'|'declined';
@@ -212,6 +219,27 @@ export function TargetOpportunities({
      Could not verify this selected column: {manualInspectionError}. Do not infer suitability.
     </p>}
     {selectedCandidate?<>
+     {currentManualInspection&&<div className="mini-info" role="note"
+       aria-label="Bounded manual screening coverage">
+      <p className="muted-caption"><strong>{
+       currentManualInspection.resource_review.truncated
+        ?'Incomplete structural scan: not approved.'
+        :'Full structural scan within the configured inspection limits; not approved.'
+      }</strong></p>
+      <p className="muted-caption">Rows checked:{
+       ' '}{currentManualInspection.resource_review.rows_examined.toLocaleString()}
+       {' '}of {currentManualInspection.resource_review.total_rows.toLocaleString()};
+       {' '}other columns checked:{
+       ' '}{currentManualInspection.resource_review.predictor_columns_examined.toLocaleString()}
+       {' '}of {currentManualInspection.resource_review.total_predictor_columns.toLocaleString()}.
+       {' '}This inspection caps its scan at {
+        currentManualInspection.resource_review.row_limit.toLocaleString()
+       } rows and {currentManualInspection.resource_review.predictor_column_limit} other columns.</p>
+      <p className="muted-caption">{currentManualInspection.resource_review.interpretation}</p>
+      {currentManualInspection.resource_review.truncated&&<p className="muted-caption">
+       Label counts below are sample-only. Unexamined data may change eligibility,
+       and this result does not authorise model training.</p>}
+     </div>}
      {selectedCandidate.technical_status==='blocked'?<div
        className="mini-info warn-icon" role="alert"
        aria-label="Selected target structural blockers">
@@ -235,7 +263,9 @@ export function TargetOpportunities({
       {selectedCandidate.decision_utility&&
        <DecisionUtilityEvidence review={selectedCandidate.decision_utility}/>}
      </details>}
-     <p className="muted-caption">Observed: {selectedCandidate.labelled_rows.toLocaleString()}
+     <p className="muted-caption">Observed {
+      currentManualInspection?.resource_review.truncated?'in bounded sample':'in selected dataset'
+     }: {selectedCandidate.labelled_rows.toLocaleString()}
       {' '}non-missing labels, {selectedCandidate.missing_labels.toLocaleString()} missing.
       Technical screening: {selectedCandidate.technical_status}; independent decision
       value, label origin and prediction timing remain unverified.</p>

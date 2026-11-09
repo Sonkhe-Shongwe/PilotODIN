@@ -391,3 +391,70 @@ test('P4-12 real HTTP: out-of-cap manual target inspection and no writes',
   expect(project.status()).toBe(200);
   expect((await project.json()).experiments).toEqual([]);
  });
+
+
+test('P4-13 real HTTP: wide target inspection displays bounded incomplete status',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+   throw Error('Trusted synthetic CI only');
+  const headers=[
+   'account_id',
+   ...Array.from({length:36},(_,i)=>'feature_'+String(i).padStart(2,'0')),
+   ...Array.from({length:17},(_,i)=>'outcome_'+String(i).padStart(2,'0')),
+   'outcome_99',
+  ];
+  const rows=Array.from({length:80},(_,i)=>[
+   'ID-'+Math.floor(i/2),
+   ...Array.from({length:36},(_,j)=>String((i+j)%13)),
+   ...Array.from({length:17},()=>i%2?'Y':'N'),
+   i%2?'Y':'N',
+  ].join(','));
+  const upload=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'p4_13_synthetic_wide.csv',mimeType:'text/csv',
+    buffer:Buffer.from([headers.join(','),...rows].join('\n')+'\n')},
+  }});
+  expect(upload.status(),await upload.text()).toBe(201);
+  const projectId=(await upload.json()).id as string;
+  const response=await request.get(
+   `${API}/api/projects/${projectId}/target-opportunities?expected_version=0`);
+  expect(response.status(),await response.text()).toBe(200);
+  const shortlist=await response.json();
+  expect(shortlist.omitted_reviewable_count).toBe(3);
+  const detail=await request.get(
+   `${API}/api/projects/${projectId}/target-opportunities/inspect?expected_version=0&column=outcome_99`);
+  expect(detail.status(),await detail.text()).toBe(200);
+  const inspected=await detail.json();
+  expect(inspected.resource_review.truncated).toBe(true);
+  expect(inspected.resource_review.rows_examined).toBe(80);
+  expect(inspected.resource_review.total_rows).toBe(80);
+  expect(inspected.resource_review.columns_examined).toBe(33);
+  expect(inspected.resource_review.total_columns).toBe(55);
+  expect(inspected.resource_review.predictor_columns_examined).toBe(32);
+  expect(inspected.resource_review.total_predictor_columns).toBe(54);
+  expect(inspected.candidate.technical_status).toBe('blocked');
+  expect(inspected.training_authorised).toBe(false);
+  const blocked=await readOnlyBrowserGuard(context,projectId);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },projectId);
+  await page.goto('/#/studio/prepare');
+  const section=page.getByRole('region',{name:'Potential prediction opportunities'});
+  await expect(section).toBeVisible();
+  await page.getByLabel('TARGET VARIABLE').selectOption('outcome_99');
+  const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
+  const coverage=checkpoint.getByRole('note',{name:'Bounded manual screening coverage'});
+  await expect(coverage).toContainText('Incomplete structural scan: not approved');
+  await expect(coverage).toContainText('other columns checked: 32 of 54');
+  await expect(coverage).toContainText('Label counts below are sample-only');
+  await expect(checkpoint.getByRole('alert',{name:'Selected target structural blockers'}))
+   .toContainText('truncated by its row or predictor-column budget');
+  await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  await expect(checkpoint).toHaveCount(0);
+  expect(blocked).toEqual([]);
+  const project=await request.get(`${API}/api/projects/${projectId}`);
+  expect(project.status()).toBe(200);
+  expect((await project.json()).experiments).toEqual([]);
+ });

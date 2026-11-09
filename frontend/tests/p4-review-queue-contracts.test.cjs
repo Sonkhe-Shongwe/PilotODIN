@@ -104,6 +104,33 @@ test('P4-08 explicit defer, decline, abstain and selected-target evidence stay l
  assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
 });
 
+test('P4-13 caps row and predictor scans and never implies clearance on truncation',()=>{
+ const backend=read('backend/target_opportunities.py');
+ const panel=read('frontend/src/TargetOpportunities.tsx');
+ const tests=read('tests/test_p4_manual_target_inspection.py');
+ const browser=read('frontend/e2e/p4-real-http-review-queue.spec.ts');
+ assert.match(backend,/MAX_MANUAL_INSPECT_ROWS = 5000/);
+ assert.match(backend,/MAX_MANUAL_INSPECT_PREDICTORS = 32/);
+ assert.match(backend,/frame\.iloc\[:inspected_rows, inspected_positions\]/);
+ assert.match(backend,/if truncated:/);
+ assert.match(backend,/candidate\["technical_status"\] = "blocked"/);
+ assert.match(backend,/candidate\["task_hypothesis"\] = None/);
+ assert.match(backend,/"resource_review": resource_review/);
+ assert.match(backend,/entity_evidence\["total_rows"\] = len\(frame\)/);
+ assert.match(panel,/Bounded manual screening coverage/);
+ assert.match(panel,/Incomplete structural scan: not approved/);
+ assert.match(panel,/Label counts below are sample-only/);
+ const isolated=read('frontend/e2e/isolated-workspace.spec.ts');
+ assert.match(isolated,/resource_review:\{/);
+ assert.match(isolated,/predictor_column_limit:32,truncated:false/);
+ assert.match(tests,/test_p4_13_wide_and_long_budgets_do_not_scan_unbounded_predictors/);
+ assert.match(tests,/test_p4_13_wide_only_boundary_blocks_instead_of_claiming_no_predictors/);
+ assert.match(tests,/test_p4_13_row_only_boundary_is_conservative_without_training/);
+ assert.match(browser,/P4-13 real HTTP: wide target inspection displays bounded incomplete status/);
+ assert.doesNotMatch(backend,/\.fit\(|run_training\(|cross_val_score\(/);
+ assert.doesNotMatch(panel,/startTrain\(|run_training\(|autoSelectTarget\(/);
+});
+
 test('P4-12 manual target inspection is current-version, read-only and unranked',()=>{
  const main=read('backend/main.py');
  const backend=read('backend/target_opportunities.py');

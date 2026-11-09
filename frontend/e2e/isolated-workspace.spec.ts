@@ -241,6 +241,13 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
       result={project_id:id,version:0,column:'fraud_reported',
        inspection_scope:'single_manual_column_not_ranked_or_approved',
        name_hint:'supported_outcome_name',training_authorised:false,
+       resource_review:{
+        scope:'bounded_single_column_structural_observations',
+        rows_examined:2,total_rows:2,columns_examined:2,total_columns:2,
+        predictor_columns_examined:1,total_predictor_columns:1,
+        row_limit:5000,predictor_column_limit:32,truncated:false,
+        interpretation:'Full test-only structural scan; no training approval.',
+       },
        note:'Synthetic test response, not actual label verification',
        candidate:{column:'fraud_reported',quality_version:0,
         technical_status:'blocked',task_hypothesis:null,

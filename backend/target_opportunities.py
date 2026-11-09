@@ -25,6 +25,11 @@ MAX_ENTITY_HEADERS = 100
 MAX_ENTITY_COLUMNS = 8
 MAX_ENTITY_ROWS = 30000
 MAX_ENTITY_FLAGS = 5
+# P4-13 single-column inspection budget: sampling is never full approval.
+# 5000 x 33 cells bounds the candidate predictor sweep, excluding the
+# previously loaded DataFrame and the separate capped name/identifier reviews.
+MAX_MANUAL_INSPECT_ROWS = 5000
+MAX_MANUAL_INSPECT_PREDICTORS = 32
 _NAME_NORMALIZE = re.compile(r"[^a-z0-9]+")
 
 # Explanation phrases are questions, not proven domain facts or scores.
@@ -444,10 +449,67 @@ def inspect_manual_target(
         raise ValueError("Selected target column is not in the working dataset version")
     question = _match_outcome(column)
     named = question is not None
+    # Select at most one target and the first 32 other predictors, regardless
+    # of whether the target header is far beyond the first 100 columns.
+    # Never scan every predictor's values to decide whether to sample.
+    predictor_positions = []
+    for index, name in enumerate(frame.columns):
+        if name == column:
+            continue
+        predictor_positions.append(index)
+        if len(predictor_positions) == MAX_MANUAL_INSPECT_PREDICTORS:
+            break
+    inspected_positions = sorted([
+        *predictor_positions, frame.columns.get_loc(column)
+    ])
+    inspected_rows = min(len(frame), MAX_MANUAL_INSPECT_ROWS)
+    bounded = frame.iloc[:inspected_rows, inspected_positions]
+    truncated = (
+        len(frame) > inspected_rows or
+        len(frame.columns) - 1 > len(predictor_positions)
+    )
+    resource_review = {
+        "scope": "bounded_single_column_structural_observations",
+        "rows_examined": inspected_rows,
+        "total_rows": len(frame),
+        "columns_examined": len(inspected_positions),
+        "total_columns": len(frame.columns),
+        "predictor_columns_examined": len(predictor_positions),
+        "total_predictor_columns": len(frame.columns) - 1,
+        "row_limit": MAX_MANUAL_INSPECT_ROWS,
+        "predictor_column_limit": MAX_MANUAL_INSPECT_PREDICTORS,
+        "truncated": truncated,
+        "interpretation": (
+            "Observed label and predictor counts describe only the scanned subset. "
+            "Unexamined rows or columns could change the assessment; a limited "
+            "scan is structurally blocked pending independent full review."
+            if truncated else
+            "All rows and columns were scanned for this P4 structural review. "
+            "This does not prove operational suitability or training permission."
+        ),
+    }
     candidate = _candidate(
-        frame, column, question or
+        bounded, column, question or
         "No supported outcome-name clue; confirm the intended decision.", version
     )
+    if truncated:
+        candidate["blockers"].insert(
+            0, "Single-column structural inspection was truncated by its "
+            "row or predictor-column budget; full eligibility is unknown."
+        )
+        candidate["blockers"] = [
+            message.replace(
+                "No non-constant, non-empty candidate predictor remains.",
+                "No usable predictor was observed in the bounded sample; "
+                "unexamined rows or columns may contain a valid predictor."
+            ) for message in candidate["blockers"]
+        ]
+        candidate["technical_status"] = "blocked"
+        candidate["task_hypothesis"] = None
+        candidate["review_warnings"].insert(
+            0, "Partial observations are not a whole-dataset label count or "
+            "a verified structural clearance."
+        )
     if not named:
         candidate["blockers"].insert(
             0, "No supported outcome-name clue was identified; manual choice is "
@@ -468,12 +530,21 @@ def inspect_manual_target(
         frame.columns, column, candidate["user_context"]
     )
     candidate["assessment_axes"] = _assessment_axes(candidate)
+    entity_evidence = _repeated_identifier_evidence(bounded)
+    if truncated:
+        entity_evidence["total_rows"] = len(frame)
+        entity_evidence["scan_truncated"] = True
+        entity_evidence["interpretation"] += (
+            " Manual inspection also limited row or column coverage; missing "
+            "flags do not demonstrate independent records."
+        )
     candidate["decision_utility"] = _decision_utility_review(
-        candidate, _repeated_identifier_evidence(frame)
+        candidate, entity_evidence
     )
     return {
         "version": version,
         "column": column,
+        "resource_review": resource_review,
         "inspection_scope": "single_manual_column_not_ranked_or_approved",
         "name_hint": "supported_outcome_name" if named else "no_supported_outcome_name",
         "candidate": candidate,
