@@ -104,6 +104,31 @@ test('P4-08 explicit defer, decline, abstain and selected-target evidence stay l
  assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
 });
 
+test('P4-15 consolidated phase-exit regression spans P4-01 to P4-14 without training',()=>{
+ const tests=read('tests/test_p4_consolidated_acceptance.py');
+ const browser=read('frontend/e2e/p4-real-http-review-queue.spec.ts');
+ const workflow=read('.github/workflows/p4-target-ranking.yml');
+ const review=read('backend/target_opportunities.py');
+ const main=read('backend/main.py');
+ for(const name of [
+  'test_p4_15_consolidated_queue_cases',
+  'test_p4_15_queue_abstention_does_not_authorise_manual_inspection',
+  'test_p4_15_ambiguous_label_and_duplicate_header_cannot_create_approval',
+  'test_p4_15_api_project_version_description_origin_and_no_training'
+ ])assert.match(tests,new RegExp(name));
+ assert.match(tests,/storage\.recent_experiments\(pid\) == \[\]/);
+ assert.match(tests,/test_p4_15_consolidated_queue_cases\(kind, task, abstained, truncated\)/);
+ assert.match(browser,/P4-15 real HTTP: consolidated incomplete-queue and project isolation/);
+ assert.match(browser,/readOnlyBrowserGuard\(context,a,undefined,\[b\]\)/);
+ assert.match(browser,/No prediction objective right now/);
+ assert.match(browser,/status\(\)\)\.toBe\(409\)/);
+ assert.match(browser,/status\(\)\)\.toBe\(403\)/);
+ assert.match(workflow,/tests\/test_p4_consolidated_acceptance\.py/);
+ assert.match(review,/"automatic_target_selection": False/);
+ assert.match(main,/@app\.get\("\/api\/projects\/\{project_id\}\/target-opportunities\/inspect"\)/);
+ assert.doesNotMatch(review,/\.fit\(|run_training\(|cross_val_score\(/);
+});
+
 test('P4-14 whole queue caps row/header/candidate/predictor scans and abstains on gaps',()=>{
  const backend=read('backend/target_opportunities.py');
  const panel=read('frontend/src/TargetOpportunities.tsx');

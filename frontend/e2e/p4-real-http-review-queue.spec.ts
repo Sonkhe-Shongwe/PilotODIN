@@ -515,3 +515,96 @@ test('P4-14 real HTTP: incomplete wide queue abstains without recommending',
   expect(project.status()).toBe(200);
   expect((await project.json()).experiments).toEqual([]);
  });
+
+
+test('P4-15 real HTTP: consolidated incomplete-queue and project isolation',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+   throw Error('Only trusted disposable GitHub browser tests may execute');
+  async function upload(name:string,body:string){
+   const res=await request.post(API+'/api/projects',{multipart:{
+    file:{name,mimeType:'text/csv',buffer:Buffer.from(body)},
+   }});
+   expect(res.status(),await res.text()).toBe(201);
+   return (await res.json()).id as string;
+  }
+  const wideHeaders=[
+   'account_id','churn',
+   ...Array.from({length:70},(_,i)=>'feature_'+String(i).padStart(2,'0')),
+  ];
+  const wideCsv=[
+   wideHeaders.join(','),
+   ...Array.from({length:80},(_,i)=>[
+    'SYNTH-P415-'+Math.floor(i/2),i%2?'Y':'N',
+    ...Array.from({length:70},(_,j)=>String((i+j)%11)),
+   ].join(',')),
+  ].join('\n')+'\n';
+  const regressionCsv=[
+   'account_id,future_cost,feature',
+   ...Array.from({length:80},(_,i)=>[
+    'SYNTH-COST-'+Math.floor(i/2),100+i,i%7,
+   ].join(',')),
+  ].join('\n')+'\n';
+  const a=await upload('p4_15_wide_only.csv',wideCsv);
+  const b=await upload('p4_15_regression_only.csv',regressionCsv);
+  const reviewA=await request.get(
+   `${API}/api/projects/${a}/target-opportunities?expected_version=0`);
+  expect(reviewA.status(),await reviewA.text()).toBe(200);
+  expect((await reviewA.json()).queue_resource_review.truncated).toBe(true);
+  const reviewB=await request.get(
+   `${API}/api/projects/${b}/target-opportunities?expected_version=0`);
+  expect(reviewB.status(),await reviewB.text()).toBe(200);
+  const bInfo=await reviewB.json();
+  expect(bInfo.queue_resource_review.truncated).toBe(false);
+  expect(bInfo.suggestions[0].column).toBe('future_cost');
+  const stale=await request.get(
+   `${API}/api/projects/${b}/target-opportunities/inspect?expected_version=1&column=future_cost`);
+  expect(stale.status()).toBe(409);
+  const foreign=await request.get(
+   `${API}/api/projects/${a}/target-opportunities/inspect?expected_version=0&column=churn`,
+   {headers:{Origin:'https://external.example'}});
+  expect(foreign.status()).toBe(403);
+  const blocked=await readOnlyBrowserGuard(context,a,undefined,[b]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },a);
+  await page.goto('/#/studio/prepare');
+  const chooser=page.getByRole('combobox',{name:'Switch project'});
+  const section=page.getByRole('region',{name:'Potential prediction opportunities'});
+  const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
+  const target=page.getByLabel('TARGET VARIABLE');
+  await expect(chooser).toHaveValue(a);
+  await expect(section.getByRole('alert',{name:'Incomplete target recommendation screening'}))
+   .toContainText('no recommended target');
+  await expect(section.locator('article.model-choice')).toHaveCount(0);
+  await target.selectOption('churn');
+  await expect(checkpoint.getByRole('alert',{name:'Selected target structural blockers'}))
+   .toContainText('Main target review queue scan was truncated');
+  page.on('dialog',dialog=>void dialog.accept());
+  await chooser.selectOption(b);
+  await expect(chooser).toHaveValue(b);
+  await expect(target).toHaveValue('');
+  await expect(checkpoint).toHaveCount(0);
+  await expect(section.getByRole('alert',{name:'Incomplete target recommendation screening'}))
+   .toHaveCount(0);
+  await expect(section.locator('article.model-choice').first()).toContainText('future_cost');
+  await section.getByRole('button',{name:'Review this target'}).first().click();
+  await expect(checkpoint).toContainText('future_cost');
+  await section.getByRole('button',{name:'No prediction objective right now'}).click();
+  await expect(target).toHaveValue('');
+  await chooser.selectOption(a);
+  await expect(chooser).toHaveValue(a);
+  await expect(target).toHaveValue('');
+  await expect(checkpoint).toHaveCount(0);
+  await expect(section.getByRole('alert',{name:'Incomplete target recommendation screening'}))
+   .toContainText('no recommended target');
+  expect(blocked).toEqual([]);
+  for(const id of [a,b]){
+   const project=await request.get(`${API}/api/projects/${id}`);
+   expect(project.status()).toBe(200);
+   expect((await project.json()).experiments).toEqual([]);
+  }
+ });
