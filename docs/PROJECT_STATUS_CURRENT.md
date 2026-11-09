@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current project status
 
+## 10 November 2026 | Clock browser screenshots published and responsive layout CI PASS
+
+- **Satin Chronograph aesthetic milestone:** The owner's selected Concept B remains implemented once in the persistent application header; [isolated frontend CI #42713766107](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42713766107) at `4a7a2a2...` **PASS** with **167/167 Node, TypeScript/Vite build, 6/6 browser**. Three actual screenshot files from synthetic browser header at **1440/1100/900px** were published in the run's `PilotODIN-Satin-Clock-Browser-Samples-NOT-WINDOWS-ACCEPTANCE` artifact (ID 13717785078), no user data exposed.
+- **Native/phase distinction:** Browser screenshots are not the Windows installed QA app. A single eventual owner-approved current-source Windows QA milestone can inspect clock finish alongside latest P4 source fixes, data preservation and offline/8 GB. **No new installer build/install authorised or triggered**. P4 ACTIVE, Gate C UNVERIFIED, P5 NOT AUTHORISED, P8 NOT CERTIFIED. [Clock research and verified source](./UX_OPTIONAL_PERSISTENT_SHELL_CLOCK_2026-11-09.md).
+
+
 ## 10 November 2026 | Selected Satin Chronograph IMPLEMENTED IN SOURCE; frontend CI PASS
 
 - **Owner authorization:** After explicitly selecting design **B**, the owner said `next`; interpreted as approval to implement the **Satin Chronograph UI only**. This is NOT permission to build/install a full Windows QA installer, accept incomplete P4 gates, start P5 or certify a release.

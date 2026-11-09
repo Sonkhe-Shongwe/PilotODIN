@@ -1,5 +1,16 @@
 # PilotODIN | Persistent Live Clock, Research and Aesthetic Design Specification
 
+## 10 November 2026 | Satin Chronograph browser-rendered visual evidence PASS
+
+**Evidence status:** **SOURCE/BROWSER VERIFIED**, owner-native Windows/WebView2 appearance **NOT TESTED**. Clock is already implemented in `frontend/src/UnifiedShell.tsx` and `ShellClock.tsx` from `41a04a43...`. Owner chose Concept B. No new app installer was built or deployed.
+
+The existing isolated Playwright header test now emits **three screenshot files** with an entirely synthetic, fixed browser time and an empty test-owned project catalogue: `p4-satin-clock-wide-1440.png`, `p4-satin-clock-compact-1100.png`, `p4-satin-clock-hidden-900.png`. It checks clock visibility, date suppression, responsive hiding, and unobstructed project selector/Manage actions. These are genuine rendered header screenshots, not generated designs or actual Windows acceptance; the browser test still denies all owner-data/backend access.
+
+**Exact source CI:** [Frontend Actions #42713766107](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42713766107) at [`4a7a2a2`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4a7a2a2a09c54fb8677d2b40010a8e0db1cea832): **COMPLETED SUCCESS**, 167/167 Node contracts, TypeScript/Vite production build PASS, 6/6 isolated Chromium scenarios. Artifact **`PilotODIN-Satin-Clock-Browser-Samples-NOT-WINDOWS-ACCEPTANCE`**, GitHub Actions artifact ID `13717785078`, was actually published (79,774 ZIP bytes), and has the standard short-lived lifecycle of CI artifacts. User can open the Actions run's **Artifacts** section to view/download; do not infer a stable direct PNG URL.
+
+**Next aesthetic gate:** In the **one future independently authorised consolidated Windows QA** candidate, inspect the real header with its project picker, text scaling, local system clock and high-DPI WebView2. Refine only if the native screenshot shows a concrete appearance/overflow issue. Do not build a new 1.5 GB installer for the clock alone. The clock is NOT an independently mandatory P4 safety/business acceptance requirement.
+
+
 ## 10 November 2026 | Selected Satin Chronograph IMPLEMENTED IN SOURCE; frontend CI PASS
 
 - **Owner authorization:** After explicitly selecting design **B**, the owner said `next`; interpreted as approval to implement the **Satin Chronograph UI only**. This is NOT permission to build/install a full Windows QA installer, accept incomplete P4 gates, start P5 or certify a release.

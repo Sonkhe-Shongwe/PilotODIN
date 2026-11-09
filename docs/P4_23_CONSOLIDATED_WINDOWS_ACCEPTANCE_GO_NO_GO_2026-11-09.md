@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | P4-23 Consolidated Owner Windows Acceptance Go/No-Go
 
+## 10 November 2026 | Clock browser screenshots published and responsive layout CI PASS
+
+- **Satin Chronograph aesthetic milestone:** The owner's selected Concept B remains implemented once in the persistent application header; [isolated frontend CI #42713766107](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42713766107) at `4a7a2a2...` **PASS** with **167/167 Node, TypeScript/Vite build, 6/6 browser**. Three actual screenshot files from synthetic browser header at **1440/1100/900px** were published in the run's `PilotODIN-Satin-Clock-Browser-Samples-NOT-WINDOWS-ACCEPTANCE` artifact (ID 13717785078), no user data exposed.
+- **Native/phase distinction:** Browser screenshots are not the Windows installed QA app. A single eventual owner-approved current-source Windows QA milestone can inspect clock finish alongside latest P4 source fixes, data preservation and offline/8 GB. **No new installer build/install authorised or triggered**. P4 ACTIVE, Gate C UNVERIFIED, P5 NOT AUTHORISED, P8 NOT CERTIFIED. [Clock research and verified source](./UX_OPTIONAL_PERSISTENT_SHELL_CLOCK_2026-11-09.md).
+
+
 **Prepared:** 9 November 2026  
 **Current status:** **PLAN READY; NEW WINDOWS BUILD NOT AUTHORISED; NEW INSTALL NOT AUTHORISED; OWNER NATIVE RETEST NOT STARTED.**  
 **Current branch:** `feature/live-dev-workspace-20261023`, last observed checkout/documentation HEAD `40fa5849aee478a2750cbc07aafb6d685bb93119`. A build must independently verify the **actual** source SHA at build time; this document's SHA is not a reusable build manifest.  
@@ -36,7 +42,7 @@ A single batch should replace repetitive manual CSV tours. Each checked line mus
 
 ## Why clock UI is not part of this gate
 
-User separately asked whether a live clock is feasible and where to display it. **It is feasible but not implemented or authorised in this milestone.** The visible desktop's *persistent* top header is owned by `frontend/src/UnifiedShell.tsx` (not the embedded `App.tsx` topbar, which is hidden by shell CSS). The best candidate placement is **before the existing project switcher**, but at 52 px height and constrained width it needs responsive hiding at narrow widths. Read browser/Windows local clock, minute-level updates with cleanup, no network, no project state mutation, no seconds by default, accessibility-friendly display. This is future UX backlog, not an unclosed P4 risk or business validity gate.
+User selected **Satin Chronograph B**, and the clock is now **implemented/source-verified**. It was not part of the P4-23 plan when first drafted. Browser rendered screenshots are available in [isolated frontend CI #42713766107](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42713766107), but its actual native WebView2 appearance has NOT been tested. The planned combined QA candidate should check the clock once alongside other UI fixes, without making this aesthetic addition a P4 safety gate. The visible desktop's *persistent* top header is owned by `frontend/src/UnifiedShell.tsx` (not the embedded `App.tsx` topbar, which is hidden by shell CSS). The best candidate placement is **before the existing project switcher**, but at 52 px height and constrained width it needs responsive hiding at narrow widths. Read browser/Windows local clock, minute-level updates with cleanup, no network, no project state mutation, no seconds by default, accessibility-friendly display. This is future UX backlog, not an unclosed P4 risk or business validity gate.
 
 ## Controlling decision
 
