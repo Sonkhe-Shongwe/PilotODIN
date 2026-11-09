@@ -1,5 +1,14 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## Owner design selection, 10 November 2026
+
+**SELECTED:** **B. Satin Chronograph**, with the quiet visual restraint of A. The owner explicitly said **"okay b it is then"** after viewing three design studies. This authorises the aesthetic direction, **not automatically the implementation, an installer build, or a P4 phase transition**.
+
+Frozen design intent: one compact light satin-lilac clock capsule in the persistent `UnifiedShell.tsx` 52px header, placed just before the project selector; deep-violet tabular `HH:mm` digits, a small readable day/date line, one fine teal accent, minimal shadow, soft border and no blinking or distracting motion. At narrower widths the date reduces first, then the clock hides to protect project actions. Use local system time with minute updates and accessible full-date/time-zone information, no network/data storage.
+
+**Current state:** Design **SELECTED / NOT IMPLEMENTED**. Build and installation consent not given. P4 remains ACTIVE; P5 NOT AUTHORISED and P8 NOT CERTIFIED.
+
+
 ## 9 November 2026 | P4-23 controlled Windows GO/NO-GO plan; optional shell clock proposed only
 
 - Owner said `next` with a side question about a live app clock. **No authorisation to build or install a newer ~1.5 GB QA installer or to code/ship a clock was granted.** [P4-23 one-pass native acceptance plan](./P4_23_CONSOLIDATED_WINDOWS_ACCEPTANCE_GO_NO_GO_2026-11-09.md) defines exact-source CI build provenance, separate owner build-vs-install consent, original EXE/data baseline and repeat hash, condensed N8–N12+UI regression acceptance, owner-native RAM/offline observation, and original real-business Gate C. No acceptance is asserted by drafting a plan.

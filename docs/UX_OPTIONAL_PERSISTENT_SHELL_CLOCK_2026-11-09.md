@@ -1,5 +1,14 @@
 # PilotODIN | Persistent Live Clock, Research and Aesthetic Design Specification
 
+## Owner design selection, 10 November 2026
+
+**SELECTED:** **B. Satin Chronograph**, with the quiet visual restraint of A. The owner explicitly said **"okay b it is then"** after viewing three design studies. This authorises the aesthetic direction, **not automatically the implementation, an installer build, or a P4 phase transition**.
+
+Frozen design intent: one compact light satin-lilac clock capsule in the persistent `UnifiedShell.tsx` 52px header, placed just before the project selector; deep-violet tabular `HH:mm` digits, a small readable day/date line, one fine teal accent, minimal shadow, soft border and no blinking or distracting motion. At narrower widths the date reduces first, then the clock hides to protect project actions. Use local system time with minute updates and accessible full-date/time-zone information, no network/data storage.
+
+**Current state:** Design **SELECTED / NOT IMPLEMENTED**. Build and installation consent not given. P4 remains ACTIVE; P5 NOT AUTHORISED and P8 NOT CERTIFIED.
+
+
 **Research date:** 9 November 2026  
 **State:** **RESEARCHED DESIGN PROPOSAL ONLY. NOT IMPLEMENTED, NOT CURRENTLY A P4 ACCEPTANCE CONDITION.**  
 **User priority:** A visually exceptional clock, not merely a working timer. User's request to **research aesthetics** does not itself authorise source changes, a new installer, local Windows testing or P4 closure.
