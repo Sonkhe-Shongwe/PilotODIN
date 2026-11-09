@@ -75,5 +75,13 @@ jobs:
         run: npm run build
       - name: Install Chromium for synthetic browser tests
         run: npx --no-install playwright install --with-deps chromium
-      - name: Run 5 targeted P1 synthetic browser scenarios
+      - name: Run 6 targeted P1 synthetic browser scenarios
         run: npx --no-install playwright test --config=playwright.config.ts -g "keyboard Tab Shift-Tab|keyboard dock resize|simulated 150 percent|primary Studio dirty Prepare cannot enter Investigation|isolated import Quality and failed project switch|satin chronograph clock stays"
+      - name: Publish synthetic satin-clock HEADER-ONLY visual samples (not native approval)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PilotODIN-Satin-Clock-Browser-Samples-NOT-WINDOWS-ACCEPTANCE
+          path: frontend/test-results/p4-satin-clock-*.png
+          if-no-files-found: error
+          retention-days: 7

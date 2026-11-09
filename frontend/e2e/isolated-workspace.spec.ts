@@ -1322,6 +1322,9 @@ test('isolated import Quality and failed project switch preserve the synthetic u
 
 test('satin chronograph clock stays elegant without crowding the project selector',async({page,context})=>{
   const audit=await installIsolatedAPI(context,false);
+  // The fixed, entirely synthetic timestamp makes visual review reproducible;
+  // no production/system clock is modified by this isolated Chromium context.
+  await page.clock.setFixedTime(new Date('2026-11-10T08:41:00.000Z'));
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/#/studio/overview');
   const clock=page.locator('.po-shell-title .po-shell-clock');
@@ -1336,17 +1339,27 @@ test('satin chronograph clock stays elegant without crowding the project selecto
   const largeClock=await clock.boundingBox();
   const largeProject=await selector.boundingBox();
   expect(largeClock&&largeProject&&largeClock.x+largeClock.width<=largeProject.x).toBeTruthy();
+  // Export ONLY the synthetic global header, never projects or page content.
+  await page.locator('.po-shell-title').screenshot({
+    path:'test-results/p4-satin-clock-wide-1440.png',animations:'disabled'
+  });
 
   await page.setViewportSize({width:1100,height:800});
   await expect(clock).toBeVisible();
   await expect(date).toBeHidden();
   await expect(selector).toBeInViewport();
   await expect(page.getByRole('button',{name:'Manage projects'})).toBeInViewport();
+  await page.locator('.po-shell-title').screenshot({
+    path:'test-results/p4-satin-clock-compact-1100.png',animations:'disabled'
+  });
 
   await page.setViewportSize({width:900,height:800});
   await expect(clock).toBeHidden();
   await expect(selector).toBeInViewport();
   await expect(page.getByRole('button',{name:'Manage projects'})).toBeInViewport();
+  await page.locator('.po-shell-title').screenshot({
+    path:'test-results/p4-satin-clock-hidden-900.png',animations:'disabled'
+  });
 
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);
