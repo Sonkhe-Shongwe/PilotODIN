@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | P4-20 labelled-row predictor screening defect source-fixed, exact CI 108/28/8 PASS
+
+- **P4 risk-first instruction:** User said `next`; no approval to accept residual risk/close P4 or start P5. [P4-20 scope and evidence ledger](./P4_20_LABELLED_ROW_PREDICTOR_OVERLAP_SAFETY_AUDIT_2026-11-09.md).
+- **Source-confirmed structural false readiness:** `_candidate` previously treated an input predictor as usable if it varied anywhere in the dataset, even when all varying observations occurred only in rows with **missing target labels**. On an 80-row synthetic `churn` frame with 40 observed labels and 40 missing, the sole `feature` could be missing or constant throughout *all labelled rows* and still count as a predictor. [Fix `1d8e4b8`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1d8e4b8d18e21c3d2508f42f53632c2f09644e2f) restricts structural predictor variability screening to `frame.loc[series.notna()]`, shared by queue and manual target inspection. Four new synthetic cases cover both false-positive patterns, manual fail-closed path and a valid partially labelled control.
+- **Verified exact source:** [P4 Actions #42693382629](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42693382629) **COMPLETED SUCCESS**: **108/108 Python**, **28/28 Node**, TS/Vite production build **PASS**, **8/8 real-HTTP Chromium/Uvicorn PASS**. Physical installed QA binary is older `bca3c57...`; this source fix **NOT owner-native tested**. No download, reinstallation, actual data access or model training.
+- **No phase-risk waiver:** P4 **ACTIVE**, real target/business Gate C **UNVERIFIED/NOT WAIVED**, native N8–N12 and offline/8 GB measurement OPEN, master QA #2 and P4 issue #9 OPEN. P5 NOT AUTHORISED, P8 NOT CERTIFIED.
+
+
 ## 9 November 2026 | P4-19 compound timestamp-header screening correction, exact-source CI PASS
 
 - **Authorised P4 risk-first continuation:** User said `next` after P4-18, with prior decision **not to accept risk-deferring P4 closure** intact. [P4-19 focused audit](./P4_19_COMPOUND_TIMESTAMP_HEADER_SAFETY_AUDIT_2026-11-09.md).
