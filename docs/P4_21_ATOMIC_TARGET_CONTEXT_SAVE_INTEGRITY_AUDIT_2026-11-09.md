@@ -31,7 +31,7 @@ No inference, target recommendation, model training/selection, source CSV, Quali
 | Disposable real-HTTP Chromium target-review suite | **8/8 PASS** in #42696149447 |
 | Related project-lifecycle and P3 semantic source/browser CI | Project-lifecycle #42696149805, P3 semantic source #42696149733 and P3 semantic browser #42696149834 **COMPLETED SUCCESS** at same code SHA |
 | P2 saved-revision/report and P1 source recovery adjacent workflows | #42696149579, #42696149694, #42696149671 **COMPLETED SUCCESS** at same code SHA |
-| P1 real-HTTP browser adjacent workflow | **IN PROGRESS at report drafting**; do not infer a pass from other workflows |
+| P1 real-HTTP browser adjacent workflow | [#42696149724](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42696149724) **COMPLETED SUCCESS at the same code SHA** |
 | New P4 atomic guard on owner's physically installed Windows Tauri/WebView2 | **NOT TESTED**; QA installation remains earlier exact source `bca3c57b94a425cd9ef489726e721328d12c2ead` |
 | Real simultaneous thread/process schedule under owner Windows | **NOT DIRECTLY REPRODUCED**; deterministic forced interleaving and SQLite transaction lock semantics tested via synthetic API |
 | Measured native 8 GB/offline and full data-integrity/restore | **OPEN / NOT FULLY TESTED**; no installer, old-project operation or model training executed |
