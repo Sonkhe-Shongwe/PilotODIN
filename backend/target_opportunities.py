@@ -164,8 +164,13 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
                 blockers.append("Regression labels must be finite numeric values.")
         except (ValueError, TypeError, OverflowError):
             blockers.append("Regression labels could not be validated as finite numeric values.")
+    # A predictor varying only on rows WITHOUT a known label cannot supply
+    # supervised learning evidence. Screen the labelled records, not the
+    # entire dataset; this is still only structural, never leakage approval.
+    labelled_frame = frame.loc[series.notna()]
     predictors = [c for c in frame.columns if c != name and
-                  frame[c].notna().any() and frame[c].nunique(dropna=True) > 1]
+                  labelled_frame[c].notna().any() and
+                  labelled_frame[c].nunique(dropna=True) > 1]
     if not predictors:
         blockers.append("No non-constant, non-empty candidate predictor remains.")
     if labelled > engine.MAX_ML_LABELLED_ROWS:

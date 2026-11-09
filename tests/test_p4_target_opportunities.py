@@ -306,3 +306,71 @@ def test_valid_numeric_future_cost_target_preserved_after_timestamp_guard():
     assert candidate["task_hypothesis"] == "regression"
     assert candidate["technical_status"] == "reviewable"
     assert candidate["safe_to_train_automatically"] is False
+
+
+
+@pytest.mark.parametrize("case", ["unlabelled_only", "constant_when_labelled"])
+def test_predictors_varying_only_outside_labelled_records_are_blocked(case):
+    # Forty labels satisfy the label and minority-class thresholds, but a
+    # globally varying feature is unusable for labelled supervised examples.
+    labelled = ["Y", "N"] * 20
+    if case == "unlabelled_only":
+        feature = [None] * 40 + [i % 7 for i in range(40)]
+    else:
+        feature = [1] * 40 + [i % 7 for i in range(40)]
+    frame = pd.DataFrame({
+        "churn": labelled + [None] * 40,
+        "feature": feature,
+    })
+    before = frame.copy(deep=True)
+    assert frame["feature"].nunique(dropna=True) > 1
+    assert frame.loc[frame["churn"].notna(), "feature"].nunique(dropna=True) <= 1
+
+    queue = target_opportunities.recommend(frame, 4)
+    assert queue["abstained"] is True
+    assert queue["suggestions"] == []
+    candidate = {item["column"]: item for item in queue["blocked_examples"]}["churn"]
+    assert candidate["labelled_rows"] == 40
+    assert candidate["missing_labels"] == 40
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert any("No non-constant, non-empty candidate predictor" in b
+               for b in candidate["blockers"])
+    assert candidate["safe_to_train_automatically"] is False
+    assert frame.equals(before)
+
+
+def test_manual_inspection_blocks_unlabelled_only_predictor_variation():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 20 + [None] * 40,
+        "feature": [None] * 40 + [i % 9 for i in range(40)],
+    })
+    before = frame.copy(deep=True)
+    inspected = target_opportunities.inspect_manual_target(frame, 2, "churn")
+    candidate = inspected["candidate"]
+    assert inspected["training_authorised"] is False
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["decision_utility"]["training_authorised"] is False
+    assert any("No non-constant, non-empty candidate predictor" in b
+               for b in candidate["blockers"])
+    assert frame.equals(before)
+
+
+def test_partly_missing_labels_with_varying_labelled_predictor_stay_reviewable():
+    # Missing target labels do not alone invalidate a supervised hypothesis.
+    # Variability within the labelled subset remains enough for P4 screening.
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 20 + [None] * 40,
+        "feature": [i % 7 for i in range(40)] + [None] * 40,
+    })
+    review = target_opportunities.recommend(frame, 0)
+    assert review["abstained"] is False
+    candidate = review["suggestions"][0]
+    assert candidate["column"] == "churn"
+    assert candidate["labelled_rows"] == 40
+    assert candidate["missing_labels"] == 40
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert any("missing" in w.lower() for w in candidate["review_warnings"])
+    assert candidate["safe_to_train_automatically"] is False
