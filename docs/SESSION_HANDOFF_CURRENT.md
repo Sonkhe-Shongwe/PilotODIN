@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 9 November 2026 | P4-19 compound timestamp-header screening correction, exact-source CI PASS
+
+- **Authorised P4 risk-first continuation:** User said `next` after P4-18, with prior decision **not to accept risk-deferring P4 closure** intact. [P4-19 focused audit](./P4_19_COMPOUND_TIMESTAMP_HEADER_SAFETY_AUDIT_2026-11-09.md).
+- **Verified false-eligibility gap:** `_is_date()` split `created_at`/`updated_at` into words so those multiword members of `TIME_TOKENS` were never matched. For string-typed date columns such as `outcome_created_at` or `churn_updated_at`, two distinct ISO strings could be falsely shown as possible classification target. [Fix `749dd3f`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/749dd3f7890c316020341accdb4d0e0b4afd51c3) conservatively blocks headers ending `_at` in both main queue and manual inspection, while retaining genuine numeric `future_cost` regression. Added five synthetic tests.
+- **Exact-source CI:** [P4 #42691710713](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42691710713) **COMPLETED SUCCESS**, **104/104 Python, 28/28 Node, Vite/TypeScript production build, 8/8 real-HTTP Chromium**. This is **not native verification** at the owner PC; installed `pilotODIN-P4-Native-QA` remains earlier `bca3c57...`. No new Windows installer, download, training or user project change.
+- **Blocking acceptance remains unchanged:** P4 **ACTIVE**, original real-business Gate C **UNVERIFIED/NOT WAIVED**, remaining native/offline 8GB/data-integrity risks OPEN, P5 **NOT AUTHORISED**, P8 **NOT CERTIFIED**. QA Issues #2/#9 OPEN.
+
+
 ## 9 November 2026 | P4-18 non-finite numeric label fail-closed fix; exact-source CI PASS, phase still ACTIVE
 
 - **User's instruction:** `next` to continue **P4 safety-risk resolution**, not to reconsider the owner's rejected P4 closure deferral, build/install another QA application, fit models or advance P5. [P4-18 evidence ledger](./P4_18_FAIL_CLOSED_TARGET_SCREENING_SAFETY_AUDIT_2026-11-09.md).
