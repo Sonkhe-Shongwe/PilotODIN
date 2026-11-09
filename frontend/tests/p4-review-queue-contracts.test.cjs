@@ -104,6 +104,20 @@ test('P4-08 explicit defer, decline, abstain and selected-target evidence stay l
  assert.match(app,/if\(!project\|\|!prep\|\|prep\.target!==target\)return/);
 });
 
+test('P4-09 phase-exit negative matrix has API and isolated project-switch evidence',()=>{
+ const cases=read('tests/test_p4_phase_exit_matrix.py');
+ const browser=read('frontend/e2e/p4-real-http-review-queue.spec.ts');
+ const workflow=read('.github/workflows/p4-target-ranking.yml');
+ for(const kind of ['classification','regression','rare','insufficient','no_named_target'])
+  assert.ok(cases.includes('"'+kind+'"'));
+ assert.match(cases,/test_p4_09_project_and_quality_version_isolation_and_stale_rejection/);
+ assert.match(cases,/status_code == 409/);
+ assert.match(cases,/storage\.recent_experiments\(a\) == \[\]/);
+ assert.match(browser,/P4-09 real HTTP: project switch resets target review state/);
+ assert.match(browser,/expected_version=1/);
+ assert.match(workflow,/tests\/test_p4_phase_exit_matrix\.py/);
+});
+
 test('P4-05 tests cover disclosed ordering, overflow, no target, missing labels',()=>{
  const testSource=read('tests/test_p4_review_queue.py');
  for(const testName of [

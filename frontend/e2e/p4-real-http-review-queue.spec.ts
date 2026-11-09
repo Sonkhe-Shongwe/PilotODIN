@@ -24,7 +24,7 @@ test.afterEach(async()=>{
  if(backend){const owned=backend;backend=null;await stopDisposableBackend(owned)}
 });
 
-async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[]){
+async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[],extraProjectIds:string[]=[]){
  const blocked:string[]=[];
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
@@ -37,8 +37,9 @@ async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allo
   }
   if(url.origin===API&&method==='GET'&&url.pathname.startsWith('/api/')){
    const p=url.pathname.slice('/api'.length);
-   const expected=p===`/projects/${projectId}`||
-    p.startsWith(`/projects/${projectId}/`)||p==='/projects'||p==='/ai/settings';
+   const expected=[projectId,...extraProjectIds].some(id=>
+    p===`/projects/${id}`||p.startsWith(`/projects/${id}/`))
+    ||p==='/projects'||p==='/ai/settings';
    if(expected){await route.continue();return}
   }
   if(allowedContextWrites&&url.origin===API&&method==='POST'&&
@@ -186,4 +187,79 @@ test('P4-06 real HTTP: explicit alternative business-context save promotes revie
  expect(blocked).toEqual([]);
  const project=await request.get(`${API}/api/projects/${projectId}`);
  expect((await project.json()).experiments).toEqual([]);
+});
+
+
+test('P4-09 real HTTP: project switch resets target review state',async({page,context,request})=>{
+ if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+    process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+  throw Error('Only trusted disposable GitHub browser tests may execute');
+ async function create(name:string,body:string){
+  const response=await request.post(API+'/api/projects',{multipart:{
+   file:{name,mimeType:'text/csv',buffer:Buffer.from(body)},
+  }});
+  expect(response.status(),await response.text()).toBe(201);
+  return (await response.json()).id as string;
+ }
+ const regressionCsv=[
+  'account_id,future_cost,feature',
+  ...Array.from({length:80},(_,i)=>[
+   'COST-'+Math.floor(i/2),120+i,i%9,
+  ].join(',')),
+ ].join('\n')+'\n';
+ const unrelatedCsv=[
+  'row_id,generic_measure,feature',
+  ...Array.from({length:80},(_,i)=>['NEUTRAL-'+i,i*3,i%7].join(',')),
+ ].join('\n')+'\n';
+ const a=await create('p4_09_classification.csv',csv);
+ const b=await create('p4_09_regression.csv',regressionCsv);
+ const c=await create('p4_09_unrelated.csv',unrelatedCsv);
+ for(const id of [a,b,c]){
+  const stale=await request.get(
+   `${API}/api/projects/${id}/target-opportunities?expected_version=1`);
+  expect(stale.status()).toBe(409);
+ }
+ const blocked=await readOnlyBrowserGuard(context,a,undefined,[b,c]);
+ await page.addInitScript((id:string)=>{
+  localStorage.setItem('pilotodin-current',id);
+  localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+  localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+ },a);
+ await page.goto('/#/studio/prepare');
+ const section=page.getByRole('region',{name:'Potential prediction opportunities'});
+ const chooser=page.getByRole('combobox',{name:'Switch project'});
+ await expect(section).toBeVisible();
+ await expect(chooser).toHaveValue(a);
+ const original=section.locator('article.model-choice').first();
+ await original.getByRole('button',{name:'Defer target in this review'}).click();
+ await expect(original.getByText('Deferred for this review only.',{exact:false})).toBeVisible();
+ page.on('dialog',dialog=>void dialog.accept());
+ await chooser.selectOption(b);
+ await expect(chooser).toHaveValue(b);
+ await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
+ await expect(section.locator('article.model-choice').first()).toContainText('future_cost');
+ await expect(section.getByText('Deferred for this review only.',{exact:false})).toHaveCount(0);
+ await section.getByRole('button',{name:'Review this target'}).first().click();
+ await expect(section.getByRole('group',{name:'Selected target suitability checkpoint'}))
+  .toContainText('future_cost');
+ await chooser.selectOption(c);
+ await expect(chooser).toHaveValue(c);
+ await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
+ await expect(section).toContainText(
+  'No named outcome with sufficient technically supported labels was found');
+ await expect(section.locator('article.model-choice')).toHaveCount(0);
+ await section.getByRole('button',{name:'No prediction objective right now'}).click();
+ await expect(section.getByText('No prediction target selected in this review.',{exact:false}))
+  .toBeVisible();
+ await chooser.selectOption(a);
+ await expect(chooser).toHaveValue(a);
+ await expect(page.getByLabel('TARGET VARIABLE')).toHaveValue('');
+ await expect(section.getByText('Deferred for this review only.',{exact:false})).toHaveCount(0);
+ await expect(section.getByRole('button',{name:'Review this target'}).first()).toBeVisible();
+ for(const id of [a,b,c]){
+  const response=await request.get(`${API}/api/projects/${id}`);
+  expect(response.status()).toBe(200);
+  expect((await response.json()).experiments).toEqual([]);
+ }
+ expect(blocked).toEqual([]);
 });

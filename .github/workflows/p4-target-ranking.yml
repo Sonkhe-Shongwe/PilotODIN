@@ -13,6 +13,7 @@ on:
       - frontend/src/TargetOpportunities.tsx
       - frontend/tests/p4-review-queue-contracts.test.cjs
       - tests/test_p4_review_queue.py
+      - tests/test_p4_phase_exit_matrix.py
       - frontend/tests/p4-target-opportunities-contracts.test.cjs
       - frontend/e2e/p4-real-http-review-queue.spec.ts
       - frontend/playwright.p4-real-http.config.ts
@@ -63,6 +64,7 @@ jobs:
           tests/test_p4_prediction_timing_review.py
           tests/test_p4_two_axis_evidence.py
           tests/test_p4_review_queue.py
+          tests/test_p4_phase_exit_matrix.py
       - name: Verify P4 source contracts and manual target choice
         run: >-
           node --test
