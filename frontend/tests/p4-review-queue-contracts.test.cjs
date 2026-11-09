@@ -132,6 +132,17 @@ test('P4-12 manual target inspection is current-version, read-only and unranked'
  assert.match(browser,/P4-12 real HTTP: out-of-cap manual target inspection and no writes/);
 });
 
+test('P4-12 isolated P1 browser mock accepts only synthetic read-only target detail',()=>{
+ const browser=read('frontend/e2e/isolated-workspace.spec.ts');
+ assert.match(browser,/target-opportunities\/inspect/);
+ assert.match(browser,/expected_version=0&column=fraud_reported/);
+ assert.match(browser,/inspection_scope:'single_manual_column_not_ranked_or_approved'/);
+ assert.match(browser,/technical_status:'blocked'/);
+ assert.match(browser,/Local modelling requires at least 30 labelled rows/);
+ assert.match(browser,/training_authorised:false/);
+ assert.match(browser,/audit\.unexpectedReads\.push\(pathname\+url\.search\)/);
+});
+
 test('P4-11 manually selected known blockers remain visible without granting training',()=>{
  const panel=read('frontend/src/TargetOpportunities.tsx');
  const backend=read('backend/target_opportunities.py');

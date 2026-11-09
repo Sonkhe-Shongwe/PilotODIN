@@ -229,6 +229,24 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
         actions:[]};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/quality/preview`){
       result={version:0,total_matching_rows:2,offset:0,limit:12,rows:[]};
+    // P4-12: synthetic selected columns are absent from these intentionally
+    // empty lists. Allow only exact version-pinned GETs for the test field.
+    }else if(withProject&&(
+       pathname===`/projects/${TEST_PROJECT}/target-opportunities/inspect`||
+       ((withSecondProject||imported)&&
+        pathname===`/projects/${TEST_PROJECT_B}/target-opportunities/inspect`)
+      )&&url.search==='?expected_version=0&column=fraud_reported'){
+      const id=pathname.startsWith(`/projects/${TEST_PROJECT_B}/`)
+        ?TEST_PROJECT_B:TEST_PROJECT;
+      result={project_id:id,version:0,column:'fraud_reported',
+       inspection_scope:'single_manual_column_not_ranked_or_approved',
+       name_hint:'supported_outcome_name',training_authorised:false,
+       note:'Synthetic test response, not actual label verification',
+       candidate:{column:'fraud_reported',quality_version:0,
+        technical_status:'blocked',task_hypothesis:null,
+        labelled_rows:2,missing_labels:0,
+        blockers:['Local modelling requires at least 30 labelled rows.'],
+        safe_to_train_automatically:false}};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/target-opportunities`){
       result={version:0,ranking_basis:'Synthetic test, no real target ranking',
         suggestions:[],blocked_examples:[],eligible_count:0,blocked_count:0,
