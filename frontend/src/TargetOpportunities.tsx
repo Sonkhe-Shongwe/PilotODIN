@@ -22,7 +22,7 @@ type DecisionUtilityReview={
 };
 
 function DecisionUtilityEvidence({review}:{review:DecisionUtilityReview}){
- return <div className="mini-info" aria-label="Decision usefulness evidence">
+ return <div className="mini-info po-p4-decision-evidence" aria-label="Decision usefulness evidence">
   <p className="muted-caption"><strong>Decision usefulness: not established.</strong>
    {' '}An owner description does not verify practical benefit, label origin, decision timing or safe validation.</p>
   <p className="muted-caption"><strong>Decision action:</strong> {review.action_state==='owner_described_unverified'

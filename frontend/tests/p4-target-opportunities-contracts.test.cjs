@@ -63,3 +63,14 @@ test('P4 synthetic backend suite covers abstention, sensitive flags, label suppo
   'test_project_version_and_origin_guards_are_enforced',
  ])assert.ok(src.includes(n),'Missing regression: '+n);
 });
+
+test('P4 decision-evidence layout is readable vertically instead of inherited seven-column mini-info flex',()=>{
+ const src=read('frontend/src/TargetOpportunities.tsx');
+ const css=read('frontend/src/studio.css');
+ assert.match(src,/className="mini-info po-p4-decision-evidence" aria-label="Decision usefulness evidence"/);
+ assert.match(css,/\.studio-app \.mini-info\.po-p4-decision-evidence\{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere\}/);
+ assert.match(css,/\.po-p4-decision-evidence>ul\{margin:10px 0;padding-left:20px\}/);
+ assert.match(css,/\.po-p4-decision-evidence \.muted-caption\{color:#41536a!important;font-size:12px;line-height:1\.65!important;margin:8px 0!important\}/);
+ for(const phrase of ['Record-dependence check:','additional occurrences beyond the first','No business value, lawful use'])
+  assert.ok(src.includes(phrase),'Evidence text was removed: '+phrase);
+});

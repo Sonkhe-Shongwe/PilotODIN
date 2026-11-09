@@ -393,3 +393,9 @@ body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .po-ml-sensitivity-notes{font-size:11px;color:#647089}
 .po-ml-sensitivity-notes ul{margin:8px 0 0 12px;padding-left:13px;line-height:1.6}
 @media(max-width:680px){.po-ml-resource-metrics{grid-template-columns:1fr}.po-ml-sensitivity-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* P4 owner-native QA: narrative evidence must not inherit horizontal mini-info flex columns.
+   Scope only to Target Intelligence; keep all review warnings visible on narrower panes. */
+.studio-app .mini-info.po-p4-decision-evidence{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.studio-app .mini-info.po-p4-decision-evidence>ul{margin:10px 0;padding-left:20px}
+.studio-app .mini-info.po-p4-decision-evidence .muted-caption{color:#41536a!important;font-size:12px;line-height:1.65!important;margin:8px 0!important}
