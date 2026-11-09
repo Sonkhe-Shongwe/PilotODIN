@@ -41,6 +41,21 @@ test('P4-05 UI explains review order and exposes other targets by explicit click
  assert.doesNotMatch(panel,/startTrain\(|post<|run_training\(|autoSelectTarget\(/);
 });
 
+test('P4-06 alternative targets expose the same version-scoped human review path',()=>{
+ const panel=read('frontend/src/TargetOpportunities.tsx');
+ const alternative=panel.split('data.other_reviewable!.map(item=>')[1]?.split('{(data.omitted_reviewable_count')[0];
+ assert.ok(alternative,'Expected bounded alternative review section');
+ assert.match(alternative,/Review evidence for alternative/);
+ assert.match(alternative,/Inspect evidence and unresolved risks/);
+ assert.match(alternative,/review_priority\?\.required_checks/);
+ assert.match(alternative,/item\.risk_review\.header_flags/);
+ assert.match(alternative,/Business value and target safety remain unverified/);
+ assert.match(alternative,/TargetContextEditor projectId=\{projectId\} version=\{version\} column=\{item\.column\}/);
+ assert.match(alternative,/existing=\{item\.user_context\?\?null\} onSaved=\{\(\)=>setRefresh\(n=>n\+1\)\}/);
+ assert.match(alternative,/onClick=\{\(\)=>onChooseTarget\(item\.column\)\}/);
+ assert.doesNotMatch(alternative,/startTrain\(|post<|run_training\(|autoSelectTarget\(/);
+});
+
 test('P4-05 tests cover disclosed ordering, overflow, no target, missing labels',()=>{
  const testSource=read('tests/test_p4_review_queue.py');
  for(const testName of [

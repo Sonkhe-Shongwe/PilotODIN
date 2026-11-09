@@ -142,6 +142,31 @@ export function TargetOpportunities({
       <p className="muted-caption"><strong>{item.column}</strong> · possible
        {' '}{item.task_hypothesis} · {item.labelled_rows.toLocaleString()} observed labels.
        {' '}{item.review_priority?.ordering_reason}</p>
+      <details aria-label={`Review evidence for alternative ${item.column}`}>
+       <summary>Inspect evidence and unresolved risks</summary>
+       <p className="muted-caption"><strong>Review priority {item.review_priority?.position} of {item.review_priority?.total_reviewable}:</strong>
+        {' '}{item.review_priority?.ordering_reason} This is not a business-value or model-performance ranking.</p>
+       <p className="muted-caption"><strong>Technical evidence:</strong> {item.labelled_rows.toLocaleString()} observed labels,
+        {' '}{item.distinct_labels.toLocaleString()} distinct values;
+        {' '}{item.assessment_axes?.technical.state==='structurally_reviewable'?'structurally reviewable, not validated':'requires structural review'}.</p>
+       <p className="muted-caption"><strong>Decision evidence:</strong> {item.user_context
+        ?'Owner-described, not independently verified':'Undocumented; intended decision remains unknown'}.</p>
+       <ul>{(item.review_priority?.required_checks??[]).map(check=>
+        <li className="muted-caption" key={check.topic}><strong>{check.topic.replaceAll('_',' ')}:</strong> {check.action}</li>)}</ul>
+       {item.risk_review&&<>
+        {item.risk_review.timing_cue==='possible_after_event_wording'&&
+         <p className="muted-caption">Owner wording may indicate a post-event prediction moment; verify timing.</p>}
+        {item.risk_review.label_cue!=='not_determined'&&
+         <p className="muted-caption">Label provenance remains uncertain or potentially proxy-based; investigate the original source.</p>}
+        {item.risk_review.header_flags.length>0&&<p className="muted-caption">Header-only risk clues:
+         {' '}{item.risk_review.header_flags.map(flag=>flag.column).join(', ')}. These do not prove leakage.</p>}
+        {item.risk_review.header_review_incomplete&&
+         <p className="muted-caption">Header review is bounded and may omit other risks.</p>}
+       </>}
+       <p className="muted-caption">Business value and target safety remain unverified. Review is not permission to train.</p>
+      </details>
+      <TargetContextEditor projectId={projectId} version={version} column={item.column}
+       existing={item.user_context??null} onSaved={()=>setRefresh(n=>n+1)}/>
       <button type="button" className="btn small" aria-pressed={selectedTarget===item.column}
        onClick={()=>onChooseTarget(item.column)}>
        {selectedTarget===item.column?'Chosen for preparation review':'Review this alternative target'}
