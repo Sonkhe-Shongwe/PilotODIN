@@ -18,6 +18,7 @@ except ImportError:  # Support direct-backend development launches.
     import target_timing_review
 
 MAX_SUGGESTIONS = 3
+MAX_OTHER_REVIEWABLE = 12
 MAX_BLOCKED_EXAMPLES = 5
 _NAME_NORMALIZE = re.compile(r"[^a-z0-9]+")
 
@@ -197,6 +198,78 @@ def _assessment_axes(candidate: dict) -> dict:
     }
 
 
+
+def _review_priority(candidate: dict, position: int, total: int) -> dict:
+    """Explain an investigation queue, never assign target value or safety.
+
+    A description documents a question, not verified outcome provenance.
+    Label counts are observations, never modelling success estimates.
+    """
+    described = candidate["user_context"] is not None
+    risk = candidate["risk_review"]
+    review_steps = [
+        {
+            "topic": "decision",
+            "state": "described_unverified" if described else "not_documented",
+            "action": (
+                "Verify the proposed decision and outcome definition against an operational source."
+                if described else
+                "Describe the exact outcome and decision this prediction would support."
+            ),
+        },
+        {
+            "topic": "label_provenance",
+            "state": "not_independently_verified",
+            "action": "Confirm who recorded the label and whether it is a trustworthy outcome.",
+        },
+        {
+            "topic": "prediction_time",
+            "state": "not_independently_verified",
+            "action": "Verify the prediction moment and which input fields existed before it.",
+        },
+        {
+            "topic": "validation",
+            "state": "not_independently_verified",
+            "action": "Check group/time dependence, leakage and a defensible holdout before training.",
+        },
+    ]
+    if candidate["missing_labels"]:
+        review_steps.append({
+            "topic": "missing_labels",
+            "state": "observed_missing_labels",
+            "action": "Investigate missing-label selection bias before choosing this target.",
+        })
+    if (
+        risk["timing_cue"] != "not_determined"
+        or risk["label_cue"] != "not_determined"
+        or risk["header_flags"]
+        or risk["header_review_incomplete"]
+    ):
+        review_steps.append({
+            "topic": "possible_leakage_or_provenance",
+            "state": "unverified_lexical_clues",
+            "action": "Investigate the timing, source or header clues shown in the risk review.",
+        })
+    return {
+        "position": position,
+        "total_reviewable": total,
+        "group": "described_question_first" if described else "decision_not_described",
+        "ordering_reason": (
+            "The owner has documented a proposed decision; this is NOT verified business value."
+            if described else
+            "No proposed decision is recorded; this is NOT evidence of lower business value."
+        ),
+        "label_support_reason": (
+            f"{candidate['labelled_rows']:,} non-missing labels are observed; "
+            "support counts are NOT a predictive-success estimate."
+        ),
+        "required_checks": review_steps,
+        "business_value": "not_established",
+        "target_safety": "not_established",
+        "training_authorised": False,
+    }
+
+
 def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = None) -> dict:
     if not frame.columns.is_unique:
         raise ValueError("Target recommendations require unique column names")
@@ -233,11 +306,34 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
         item["column"].casefold(),
     ))
     blocked.sort(key=lambda item: item["column"].casefold())
+    # Rank for HUMAN INVESTIGATION only. This is not a calibrated estimate of
+    # usefulness, performance or permission to train; never hide alternative
+    # eligible targets just because they fell below the three-card shortlist.
+    for position, candidate in enumerate(suggestions, start=1):
+        candidate["review_priority"] = _review_priority(
+            candidate, position, len(suggestions)
+        )
     top = suggestions[:MAX_SUGGESTIONS]
+    other = suggestions[MAX_SUGGESTIONS:MAX_SUGGESTIONS + MAX_OTHER_REVIEWABLE]
     return {
         "version": version,
         "ranking_basis": "Structural eligibility first; user-described contexts appear first, then observed label support. User text is unverified and not a business-value score. No model trained.",
+        "ranking_contract": {
+            "purpose": "human_review_queue_not_business_value_ranking",
+            "ordered_by": [
+                "whether_owner_described_decision",
+                "observed_nonmissing_label_count",
+                "deterministic_column_name",
+            ],
+            "business_value_verified": False,
+            "model_performance_measured": False,
+            "automatic_target_selection": False,
+        },
         "suggestions": top,
+        "other_reviewable": other,
+        "omitted_reviewable_count": max(
+            0, len(suggestions) - MAX_SUGGESTIONS - MAX_OTHER_REVIEWABLE
+        ),
         "blocked_examples": blocked[:MAX_BLOCKED_EXAMPLES],
         "eligible_count": len(suggestions),
         "blocked_count": len(blocked),
