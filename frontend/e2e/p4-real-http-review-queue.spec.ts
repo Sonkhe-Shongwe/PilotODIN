@@ -87,8 +87,8 @@ test('P4-05 real HTTP: review ordering, other targets and explicit selection onl
   })).toBeVisible();
   await expect(section.getByText('Evidence needed before selecting this target')).toHaveCount(3);
   const other=section.locator('details[aria-label="Additional reviewable target alternatives"]');
-  await expect(other.locator('summary')).toContainText('More structurally reviewable targets');
-  await other.locator('summary').click();
+  await expect(other.locator(':scope > summary')).toContainText('More structurally reviewable targets');
+  await other.locator(':scope > summary').click();
   const firstRow=other.locator('.warning-line').first();
   const evidence=firstRow.locator('details[aria-label^="Review evidence for alternative"]');
   await expect(evidence.locator('summary')).toHaveText('Inspect evidence and unresolved risks');
@@ -131,7 +131,7 @@ test('P4-06 real HTTP: explicit alternative business-context save promotes revie
  const section=page.getByRole('region',{name:'Potential prediction opportunities'});
  await expect(section).toBeVisible();
  const other=section.locator('details[aria-label="Additional reviewable target alternatives"]');
- await other.locator('summary').click();
+ await other.locator(':scope > summary').click();
  const firstRow=other.locator('.warning-line').first();
  const column=(await firstRow.locator('strong').first().textContent())?.trim();
  expect(column).toBeTruthy();
