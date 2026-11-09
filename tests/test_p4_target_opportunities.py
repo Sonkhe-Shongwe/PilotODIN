@@ -203,3 +203,54 @@ def test_project_version_and_origin_guards_are_enforced(tmp_path, monkeypatch):
     assert client.get("/api/projects/missing/target-opportunities?expected_version=4").status_code==404
     assert client.get(f"/api/projects/{pid}/target-opportunities?expected_version=-1").status_code==422
     assert storage.recent_experiments(pid)==[]
+
+
+def test_nonfinite_two_class_numeric_target_is_blocked_not_a_classification():
+    # pandas counts infinities as labelled and sees two distinct classes.
+    # The previous task inference accepted +inf/-inf as a well-supported
+    # classification target even though they cannot be trusted outcomes.
+    frame = pd.DataFrame({
+        "churn": [float("inf")] * 40 + [float("-inf")] * 40,
+        "feature": [i % 8 for i in range(80)],
+    })
+    original = frame.copy(deep=True)
+    review = target_opportunities.recommend(frame, 0)
+    assert review["abstained"] is True
+    assert review["suggestions"] == []
+    assert review["eligible_count"] == 0
+    blocked = {x["column"]: x for x in review["blocked_examples"]}["churn"]
+    assert blocked["labelled_rows"] == 80  # observed, but unusable
+    assert blocked["distinct_labels"] == 2
+    assert blocked["technical_status"] == "blocked"
+    assert blocked["task_hypothesis"] is None
+    assert blocked["safe_to_train_automatically"] is False
+    assert any("finite" in message.lower() for message in blocked["blockers"])
+    assert frame.equals(original)
+
+
+def test_nonfinite_numeric_target_also_blocked_in_explicit_manual_inspection():
+    frame = pd.DataFrame({
+        "churn": [1.0] * 40 + [float("inf")] * 40,
+        "feature": [i % 8 for i in range(80)],
+    })
+    result = target_opportunities.inspect_manual_target(frame, 2, "churn")
+    candidate = result["candidate"]
+    assert result["training_authorised"] is False
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert any("finite" in message.lower() for message in candidate["blockers"])
+    assert candidate["decision_utility"]["training_authorised"] is False
+
+
+def test_finite_binary_numeric_target_remains_structurally_reviewable():
+    frame = pd.DataFrame({
+        "outcome": [0.0, 1.0] * 40,
+        "feature": [i % 8 for i in range(80)],
+    })
+    review = target_opportunities.recommend(frame, 3)
+    assert not review["abstained"]
+    candidate = review["suggestions"][0]
+    assert candidate["column"] == "outcome"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["safe_to_train_automatically"] is False

@@ -124,6 +124,18 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
         blockers.append("Local modelling requires at least 30 labelled rows.")
     if distinct < 2:
         blockers.append("The target has fewer than two observed labels.")
+    # Numeric infinity values are non-missing in pandas and can otherwise
+    # masquerade as two well-supported classification classes. Fail closed
+    # BEFORE infer_task() handles the two-distinct-values shortcut.
+    if pd.api.types.is_complex_dtype(series):
+        blockers.append("Complex-valued target labels are not supported.")
+    elif pd.api.types.is_numeric_dtype(series) and labelled:
+        try:
+            observed = series.dropna().to_numpy(dtype=float)
+            if not np.isfinite(observed).all():
+                blockers.append("Numeric target labels must be finite; infinity is not a valid observed outcome.")
+        except (TypeError, ValueError, OverflowError):
+            blockers.append("Numeric target labels could not be verified as finite values.")
     if distinct >= max(10, int(labelled*.98)) and not pd.api.types.is_numeric_dtype(series):
         blockers.append("High-cardinality text is likely a record key or free text rather than a supported label.")
     if not blockers:
