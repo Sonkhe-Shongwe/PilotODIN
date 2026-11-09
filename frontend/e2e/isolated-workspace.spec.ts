@@ -1318,3 +1318,37 @@ test('isolated import Quality and failed project switch preserve the synthetic u
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+
+test('satin chronograph clock stays elegant without crowding the project selector',async({page,context})=>{
+  const audit=await installIsolatedAPI(context,false);
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/studio/overview');
+  const clock=page.locator('.po-shell-title .po-shell-clock');
+  const time=clock.locator('.po-shell-clock-time');
+  const date=clock.locator('.po-shell-clock-date');
+  const selector=page.getByRole('combobox',{name:'Switch project'});
+  await expect(clock).toBeVisible();
+  await expect(time).toHaveText(/^\d{2}:\d{2}$/);
+  await expect(date).toBeVisible();
+  await expect(clock).toHaveAttribute('aria-label',/.{10,}/);
+  await expect(clock).toHaveCSS('height','40px');
+  const largeClock=await clock.boundingBox();
+  const largeProject=await selector.boundingBox();
+  expect(largeClock&&largeProject&&largeClock.x+largeClock.width<=largeProject.x).toBeTruthy();
+
+  await page.setViewportSize({width:1100,height:800});
+  await expect(clock).toBeVisible();
+  await expect(date).toBeHidden();
+  await expect(selector).toBeInViewport();
+  await expect(page.getByRole('button',{name:'Manage projects'})).toBeInViewport();
+
+  await page.setViewportSize({width:900,height:800});
+  await expect(clock).toBeHidden();
+  await expect(selector).toBeInViewport();
+  await expect(page.getByRole('button',{name:'Manage projects'})).toBeInViewport();
+
+  expect(audit.writes).toEqual([]);
+  expect(audit.unexpectedReads).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
+});
