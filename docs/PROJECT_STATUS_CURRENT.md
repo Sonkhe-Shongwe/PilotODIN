@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current project status
 
+## 9 November 2026 | P4-16 integrity-check tooling added, source-only tests PASSED
+
+- **Scope/code:** [Commit `92c6cf31582994abb514bd8517fe4cb29b08b4d1`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/92c6cf31582994abb514bd8517fe4cb29b08b4d1) adds a non-mutating P4 milestone QA manifest/NSIS checker and 21 synthetic tests. It rejects mismatched source SHA, CI/product identity/acceptance flags, filename/size/checksum and changed bytes. No product logic, model, installer construction, owner system or user data modified.
+- **Verification scope:** 21/21 local synthetic pytest cases, compileall PASS; exact uploaded file blob hashes compared with local tested files. No real 1.59 GB installer hash was recomputed, no owner-native run and no exact-new-commit hosted CI. Prior [Windows CI #42621192759](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42621192759) succeeded only for its source SHA `bca3c57...`; previous failed #42614732584 and #42615013119 remain failures.
+- **Acceptance and next:** P4 ACTIVE, owner Windows and independent real-business gate pending. QA Issue #9 accepts observations, master QA #2 remains open. Obtain separate owner consent for any native installation; before such testing the supplied manifest and existing installer may be integrity-compared read-only. P5 not authorised; P8 not certified.
+
+
 ## 9 November 2026 | P4-16 source-matched Windows CI QA installer PASS, owner native still NOT TESTED
 
 - **Authorised P4-only milestone:** Owner said `next` to resolve the failed P4-16 source-to-installed Windows executable hash check, **not** to install locally or replace the old October `pilotODIN` under AppData, change owner projects, release, start P5 or close P4. The QA app `com.pilotodin.p4nativeqa` / `pilotODIN-P4-Native-QA` is intentionally named differently from production `com.pilotodin.studio`, but actual simultaneous installation on the owner PC remains NOT TESTED.

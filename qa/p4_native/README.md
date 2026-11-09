@@ -1,5 +1,18 @@
 # PilotODIN 1.0 | P4 native Windows acceptance kit
 
+## P4-16 current-source installer integrity check (new, read-only)
+
+The original `p4-native-v1` CSV fixtures below remain applicable **only as synthetic examples**; their historical source-lineage note does not certify the new QA installation. P4-16 produced a distinct `pilotODIN-P4-Native-QA` candidate from source `bca3c57b94a425cd9ef489726e721328d12c2ead`, whose **disposable CI** provenance passed in [run #42621192759](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42621192759). Owner PC still NOT TESTED.
+
+Before *any separately approved* owner milestone installation, obtain `source-and-windows-artifact.json` from that exact trusted GitHub workflow and the matching extracted QA NSIS file (if still available). An optional standalone, **non-executing and non-installing** integrity check is:
+
+```powershell
+py qa/p4_native/verify_qa_installer_provenance.py --manifest "C:\\QA\\source-and-windows-artifact.json" --installer "C:\\QA\\pilotODIN-P4-Native-QA_1.0.0-alpha.1_x64-setup.exe" --expected-source bca3c57b94a425cd9ef489726e721328d12c2ead
+```
+
+Requires Python only for this **developer QA helper**, not the shipped desktop app. It checks source and QA/production IDs, CI/safety flags, installer filename, byte size and SHA-256, and rejects mismatch. The manifest must be sourced independently from GitHub; the helper does **not** establish authenticity of the supplied JSON, certify origin by signature, safely install software, verify old-app coexistence or approve a release. Synthetic helper tests: `python -m pytest -q tests/test_p4_installer_provenance.py` (21 local cases passed on 9 Nov 2026; not a Windows test). Never install the candidate without explicit separate owner consent. After verified owner-side installation, fill only actually observed N1–N10 and business evidence in [Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9).
+
+
 **Kit:** p4-native-v1, 9 November 2026. All values are invented. This is a **manual test aid**, not proof of running the app or permission to close P4.
 
 ## Before importing anything
