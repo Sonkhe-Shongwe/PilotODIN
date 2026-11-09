@@ -143,3 +143,78 @@ def test_all_blocked_or_no_named_outcomes_abstain_without_queue_or_approval():
         assert result["other_reviewable"] == []
         assert result["omitted_reviewable_count"] == 0
         assert result["ranking_contract"]["automatic_target_selection"] is False
+
+
+
+def test_p4_07_repeated_identifier_values_are_observed_not_proven_leakage():
+    frame = make_frame()
+    frame["account_id"] = [f"private-account-{i // 2}" for i in range(len(frame))]
+    original = frame.copy(deep=True)
+    out = target_opportunities.recommend(frame, 5, {
+        "churn": context("churn")
+    })
+    assert frame.equals(original)
+    check = out["suggestions"][0]["decision_utility"]
+    assert check["state"] == "independent_evidence_required"
+    assert check["action_state"] == "owner_described_unverified"
+    assert check["baseline_comparison_state"] == "not_established"
+    assert check["measured_decision_benefit"] is False
+    assert check["verified_group_independence"] is False
+    assert check["training_authorised"] is False
+    rep = check["entity_repetition"]
+    assert rep["rows_examined"] == 80
+    assert rep["total_rows"] == 80
+    assert rep["repeated"] == [{
+        "column": "account_id",
+        "nonmissing_observations": 80,
+        "distinct_observed_values": 40,
+        "additional_occurrences": 40,
+    }]
+    assert "private-account-0" not in json.dumps(out)
+    assert "private-order-0" not in json.dumps(out)
+    assert out["suggestions"][0]["review_priority"]["business_value"] == "not_established"
+
+
+def test_p4_07_unique_identifiers_do_not_prove_independence():
+    out = target_opportunities.recommend(make_frame(), 3)
+    review = out["suggestions"][0]["decision_utility"]
+    assert review["action_state"] == "undocumented"
+    assert review["entity_repetition"]["repeated"] == []
+    assert "absence of repeats" in review["entity_repetition"]["interpretation"]
+    assert review["verified_group_independence"] is False
+    assert review["verified_prediction_time"] is False
+    assert review["verified_label_origin"] is False
+    assert review["training_authorised"] is False
+
+
+def test_p4_07_bounded_scanning_discloses_incomplete_evidence():
+    cap = target_opportunities.MAX_ENTITY_ROWS
+    frame = pd.DataFrame({
+        "account_id": [f"id-{i}" for i in range(cap + 1)],
+        "churn": ["Y", "N"] * ((cap + 1) // 2) + ["Y"],
+        "feature": list(range(cap + 1)),
+    })
+    out = target_opportunities.recommend(frame, 2)
+    review = out["blocked_examples"][0]["decision_utility"]
+    probe = review["entity_repetition"]
+    assert probe["rows_examined"] == cap
+    assert probe["total_rows"] == cap + 1
+    assert probe["scan_truncated"] is True
+    assert probe["repeated"] == []
+    assert review["training_authorised"] is False
+
+
+def test_p4_07_no_target_abstention_and_rare_class_blockers_stay_intact():
+    frame = pd.DataFrame({
+        "account_id": [f"id-{i // 2}" for i in range(80)],
+        "churn": ["Y"] * 77 + ["N"] * 3,
+        "feature": list(range(80)),
+    })
+    out = target_opportunities.recommend(frame, 0, {"churn": context("churn")})
+    assert out["abstained"] is True
+    assert not out["suggestions"]
+    blocked = out["blocked_examples"][0]
+    assert blocked["technical_status"] == "blocked"
+    assert blocked["decision_utility"]["action_state"] == "owner_described_unverified"
+    assert blocked["decision_utility"]["training_authorised"] is False
+    assert blocked["decision_utility"]["entity_repetition"]["repeated"]

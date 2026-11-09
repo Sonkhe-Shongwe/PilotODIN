@@ -9,7 +9,7 @@ const UI='http://127.0.0.1:5178';
 const csv=[
  'row_id,churn,fraud_reported,outcome,failure_flag,future_cost,feature',
  ...Array.from({length:80},(_,i)=>[
-  'P4-'+String(i).padStart(3,'0'),
+  'P4-'+String(Math.floor(i/2)).padStart(3,'0'),
   i%2?'Y':'N',
   i%3?'Y':'N',
   i%2?'done':'pending',
@@ -86,6 +86,13 @@ test('P4-05 real HTTP: review ordering, other targets and explicit selection onl
    exact:false,
   })).toBeVisible();
   await expect(section.getByText('Evidence needed before selecting this target')).toHaveCount(3);
+  const evidenceTop=section.locator('article.model-choice').first()
+   .locator('details[aria-label^="Evidence needed for"]');
+  await evidenceTop.locator(':scope > summary').click();
+  const utility=evidenceTop.getByLabel('Decision usefulness evidence');
+  await expect(utility).toContainText('Decision usefulness: not established');
+  await expect(utility).toContainText('40 additional occurrences beyond the first');
+  await expect(utility).toContainText('Comparison with the existing process');
   const other=section.locator('details[aria-label="Additional reviewable target alternatives"]');
   await expect(other.locator(':scope > summary')).toContainText('More structurally reviewable targets');
   await other.locator(':scope > summary').click();
@@ -94,6 +101,8 @@ test('P4-05 real HTTP: review ordering, other targets and explicit selection onl
   await expect(evidence.locator('summary')).toHaveText('Inspect evidence and unresolved risks');
   await evidence.locator('summary').click();
   await expect(evidence.getByText('Business value and target safety remain unverified.',{exact:false})).toBeVisible();
+  await expect(evidence.getByLabel('Decision usefulness evidence')).toContainText(
+   '40 additional occurrences beyond the first');
   expect(await evidence.locator('li').count()).toBeGreaterThanOrEqual(4);
   await expect(firstRow.locator('details.po-context-editor summary')).toBeVisible();
   const alternative=other.getByRole('button',{name:'Review this alternative target'}).first();

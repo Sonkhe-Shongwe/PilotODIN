@@ -4,6 +4,52 @@ import {get} from './api';
 import {TargetContextEditor} from './TargetContextEditor';
 import type {UserTargetContext} from './TargetContextEditor';
 
+type DecisionUtilityReview={
+ state:'independent_evidence_required';
+ action_state:'owner_described_unverified'|'undocumented';
+ baseline_comparison_state:'not_established';
+ verified_label_origin:false;verified_prediction_time:false;
+ verified_group_independence:false;measured_decision_benefit:false;
+ entity_repetition:{
+  rows_examined:number;total_rows:number;identifier_headers_examined:number;
+  scan_truncated:boolean;basis:'bounded_observed_values_in_identifier_like_headers';
+  interpretation:string;repeated:{
+   column:string;nonmissing_observations:number;distinct_observed_values:number;
+   additional_occurrences:number
+  }[]
+ };
+ next_questions:string[];training_authorised:false;
+};
+
+function DecisionUtilityEvidence({review}:{review:DecisionUtilityReview}){
+ return <div className="mini-info" aria-label="Decision usefulness evidence">
+  <p className="muted-caption"><strong>Decision usefulness: not established.</strong>
+   {' '}An owner description does not verify practical benefit, label origin, decision timing or safe validation.</p>
+  <p className="muted-caption"><strong>Decision action:</strong> {review.action_state==='owner_described_unverified'
+   ?'Owner described an intended action; independent operational evidence is still required.'
+   :'No intended action is documented.'}</p>
+  <p className="muted-caption"><strong>Comparison with the existing process:</strong>
+   {' '}No measured benefit, costs or non-model baseline have been established.</p>
+  <p className="muted-caption"><strong>Record-dependence check:</strong>
+   {' '}{review.entity_repetition.rows_examined.toLocaleString()} of
+   {' '}{review.entity_repetition.total_rows.toLocaleString()} records examined;
+   {' '}{review.entity_repetition.identifier_headers_examined} identifier-like headers checked.</p>
+  {review.entity_repetition.repeated.length>0?<ul>
+   {review.entity_repetition.repeated.map(x=><li className="muted-caption" key={x.column}>
+    <strong>{x.column}</strong>: {x.nonmissing_observations.toLocaleString()} non-missing values,
+    {' '}{x.distinct_observed_values.toLocaleString()} distinct;
+    {' '}{x.additional_occurrences.toLocaleString()} additional occurrences beyond the first.
+   </li>)}
+  </ul>:<p className="muted-caption">No repeated identifier-like values detected in the bounded scan.</p>}
+  {review.entity_repetition.scan_truncated&&<p className="muted-caption">
+   Scan limits reached; additional identifier repetition may be unreported.</p>}
+  <p className="muted-caption">{review.entity_repetition.interpretation}</p>
+  <ul>{review.next_questions.map(question=><li className="muted-caption" key={question}>{question}</li>)}</ul>
+  <p className="muted-caption">No business value, lawful use, label truth, group independence,
+   model performance or training permission is established by this review.</p>
+ </div>
+}
+
 type Opportunity={
  column:string;quality_version:number;task_hypothesis:'classification'|'regression'|null;
  technical_status:'reviewable'|'blocked';business_relevance:'unverified'|'user_described_unverified';
@@ -11,6 +57,7 @@ type Opportunity={
  possible_decision_question:string;labelled_rows:number;missing_labels:number;
  distinct_labels:number;smallest_class:number|null;observed_evidence:string[];
  blockers:string[];review_warnings:string[];safe_to_train_automatically:false;
+ decision_utility?:DecisionUtilityReview;
  assessment_axes?:{
   technical:{state:'structurally_reviewable'|'structurally_blocked';
    basis:'observed_aggregates_and_structural_screening';
@@ -99,6 +146,7 @@ export function TargetOpportunities({
            <li key={check.topic} className="muted-caption">
             <strong>{check.topic.replaceAll('_',' ')}:</strong> {check.action}
            </li>)}</ul>
+          {item.decision_utility&&<DecisionUtilityEvidence review={item.decision_utility}/>}
           <p className="muted-caption">Business value and target safety are not established
            by these observed counts or an owner description.</p>
          </details>
@@ -163,6 +211,7 @@ export function TargetOpportunities({
         {item.risk_review.header_review_incomplete&&
          <p className="muted-caption">Header review is bounded and may omit other risks.</p>}
        </>}
+       {item.decision_utility&&<DecisionUtilityEvidence review={item.decision_utility}/>}
        <p className="muted-caption">Business value and target safety remain unverified. Review is not permission to train.</p>
       </details>
       <TargetContextEditor projectId={projectId} version={version} column={item.column}

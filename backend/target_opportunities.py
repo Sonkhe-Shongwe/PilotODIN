@@ -20,6 +20,11 @@ except ImportError:  # Support direct-backend development launches.
 MAX_SUGGESTIONS = 3
 MAX_OTHER_REVIEWABLE = 12
 MAX_BLOCKED_EXAMPLES = 5
+# Bounded read-only scan; never disclose identifier values or claim group identity.
+MAX_ENTITY_HEADERS = 100
+MAX_ENTITY_COLUMNS = 8
+MAX_ENTITY_ROWS = 30000
+MAX_ENTITY_FLAGS = 5
 _NAME_NORMALIZE = re.compile(r"[^a-z0-9]+")
 
 # Explanation phrases are questions, not proven domain facts or scores.
@@ -166,6 +171,72 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     }
 
 
+def _repeated_identifier_evidence(frame: pd.DataFrame) -> dict:
+    """Observe repeated identifier-like *values*, not verified entity identity.
+
+    A bounded leading-row scan reports aggregate duplicate occurrences only.
+    Not finding repeats is never evidence that a random split is valid.
+    """
+    columns = list(frame.columns)
+    names = [name for name in columns[:MAX_ENTITY_HEADERS]
+             if _is_identifier(str(name))]
+    sample = frame.iloc[:MAX_ENTITY_ROWS]
+    repeated = []
+    for name in names[:MAX_ENTITY_COLUMNS]:
+        present = sample[name].dropna()
+        distinct = int(present.nunique(dropna=True))
+        extra = int(len(present) - distinct)
+        if extra > 0 and len(repeated) < MAX_ENTITY_FLAGS:
+            repeated.append({
+                "column": str(name),
+                "nonmissing_observations": int(len(present)),
+                "distinct_observed_values": distinct,
+                "additional_occurrences": extra,
+            })
+    return {
+        "rows_examined": int(len(sample)),
+        "total_rows": int(len(frame)),
+        "identifier_headers_examined": min(len(names), MAX_ENTITY_COLUMNS),
+        "scan_truncated": (
+            len(frame) > MAX_ENTITY_ROWS or
+            len(columns) > MAX_ENTITY_HEADERS or
+            len(names) > MAX_ENTITY_COLUMNS or
+            len(repeated) >= MAX_ENTITY_FLAGS
+        ),
+        "repeated": repeated,
+        "basis": "bounded_observed_values_in_identifier_like_headers",
+        "interpretation": (
+            "Repeated values may indicate dependent records. Column names do "
+            "not prove entity identity, and absence of repeats does not "
+            "verify random-split independence."
+        ),
+    }
+
+
+def _decision_utility_review(candidate: dict, entity_evidence: dict) -> dict:
+    """Separate observed record structure from unverified operational value."""
+    described = candidate["user_context"] is not None
+    return {
+        "state": "independent_evidence_required",
+        "action_state": "owner_described_unverified" if described else "undocumented",
+        "baseline_comparison_state": "not_established",
+        "verified_label_origin": False,
+        "verified_prediction_time": False,
+        "verified_group_independence": False,
+        "measured_decision_benefit": False,
+        "entity_repetition": entity_evidence,
+        "next_questions": [
+            "Who acts on this prediction, and what alternative action is available?",
+            "Compared with the existing non-model process, what measured benefit "
+            "and costs would justify the intervention?",
+            "Who independently verifies the outcome label, and when is it recorded?",
+            "Which predictors exist at the real decision moment?",
+            "Do repeated entities or time order require grouped or temporal validation?",
+        ],
+        "training_authorised": False,
+    }
+
+
 def _assessment_axes(candidate: dict) -> dict:
     """Two independent evidence states, never numeric success or business-value scores."""
     has_description = candidate.get("user_context") is not None
@@ -274,6 +345,7 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
     if not frame.columns.is_unique:
         raise ValueError("Target recommendations require unique column names")
     user_contexts = user_contexts or {}
+    entity_evidence = _repeated_identifier_evidence(frame)
     suggestions = []
     blocked = []
     for col in frame.columns:
@@ -297,6 +369,9 @@ def recommend(frame: pd.DataFrame, version: int, user_contexts: dict | None = No
             frame.columns, name, candidate["user_context"]
         )
         candidate["assessment_axes"] = _assessment_axes(candidate)
+        candidate["decision_utility"] = _decision_utility_review(
+            candidate, entity_evidence
+        )
         (suggestions if candidate["technical_status"] == "reviewable" else blocked).append(candidate)
     # Observed labelled support is a deterministic ordering aid, not a
     # validation score or a claim of decision value/predictive performance.

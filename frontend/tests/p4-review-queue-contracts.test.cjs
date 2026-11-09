@@ -56,6 +56,33 @@ test('P4-06 alternative targets expose the same version-scoped human review path
  assert.doesNotMatch(alternative,/startTrain\(|post<|run_training\(|autoSelectTarget\(/);
 });
 
+test('P4-07 decision usefulness reviews observed identifier repetition without training',()=>{
+ const backend=read('backend/target_opportunities.py');
+ const panel=read('frontend/src/TargetOpportunities.tsx');
+ assert.match(backend,/def _repeated_identifier_evidence\(frame: pd\.DataFrame\)/);
+ assert.match(backend,/MAX_ENTITY_ROWS = 30000/);
+ assert.match(backend,/MAX_ENTITY_COLUMNS = 8/);
+ assert.match(backend,/def _decision_utility_review\(candidate: dict, entity_evidence: dict\)/);
+ assert.match(backend,/candidate\["decision_utility"\] = _decision_utility_review/);
+ assert.match(backend,/"measured_decision_benefit": False/);
+ assert.match(backend,/"verified_group_independence": False/);
+ assert.match(backend,/"training_authorised": False/);
+ assert.doesNotMatch(backend,/run_training\(|cross_val_score\(|\.fit\(/);
+ assert.match(panel,/function DecisionUtilityEvidence/);
+ assert.match(panel,/Decision usefulness: not established/);
+ assert.match(panel,/Comparison with the existing process/);
+ assert.match(panel,/Record-dependence check/);
+ assert.match(panel,/item\.decision_utility&&<DecisionUtilityEvidence review=\{item\.decision_utility\}\/>/);
+ assert.equal((panel.match(/item\.decision_utility&&<DecisionUtilityEvidence/g)||[]).length,2);
+ assert.doesNotMatch(panel,/startTrain\(|autoSelectTarget\(|run_training\(/);
+ const tests=read('tests/test_p4_review_queue.py');
+ for(const name of ['test_p4_07_repeated_identifier_values_are_observed_not_proven_leakage',
+ 'test_p4_07_unique_identifiers_do_not_prove_independence',
+ 'test_p4_07_bounded_scanning_discloses_incomplete_evidence',
+ 'test_p4_07_no_target_abstention_and_rare_class_blockers_stay_intact'])
+ assert.ok(tests.includes(name));
+});
+
 test('P4-05 tests cover disclosed ordering, overflow, no target, missing labels',()=>{
  const testSource=read('tests/test_p4_review_queue.py');
  for(const testName of [
