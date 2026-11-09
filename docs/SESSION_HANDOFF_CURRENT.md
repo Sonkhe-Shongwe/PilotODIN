@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 9 November 2026 | P4-18 non-finite numeric label fail-closed fix; exact-source CI PASS, phase still ACTIVE
+
+- **User's instruction:** `next` to continue **P4 safety-risk resolution**, not to reconsider the owner's rejected P4 closure deferral, build/install another QA application, fit models or advance P5. [P4-18 evidence ledger](./P4_18_FAIL_CLOSED_TARGET_SCREENING_SAFETY_AUDIT_2026-11-09.md).
+- **Source-confirmed correctness gap:** pandas counts `+Infinity` and `-Infinity` as non-missing, two-class numeric outcomes. The previous P4 target screening checked finiteness only for regression; `engine.infer_task` treats two distinct numeric labels as classification, yielding a misleading `structurally reviewable` target. Corrected `backend/target_opportunities.py::_candidate` to fail closed on non-finite numeric labels/complex types **before binary task inference**, shared by normal shortlist and explicit manual inspect. Added **three synthetic tests** including finite 0/1 control. [Code `9dbc923`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9dbc9236cb0fad7ebab481b92095190af3cc1738).
+- **Verified exact-source P4 Actions [#42689004962](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42689004962): COMPLETED SUCCESS, 99/99 Python, 28/28 Node, TypeScript/Vite PASS, 8/8 real-HTTP browser.** Earlier native owner QA installation remains at older `bca3c57...`; this finite-label correction **NOT OWNER-NATIVE TESTED**, and no installer/download/old data changed.
+- **Existing negative gates** rare class 4/80, 24/80 observed labels, no named target, source-derived probability, capped incomplete scan, stale project/Quality version and foreign Origin all have **automated PASS** coverage at this source SHA, but native N8–N12 remain partially or entirely **NOT TESTED**. Original real-business Gate C **UNVERIFIED/NOT WAIVED**; offline 8 GB and full data integrity still open. Master QA #2, P4 owner #9 OPEN; **P4 ACTIVE, P5 NOT AUTHORISED, P8 NOT CERTIFIED**.
+
+
 ## 9 November 2026 | Owner declined risk-deferral proposal; P4 stays ACTIVE
 
 - **Explicit owner reaction to P4-17 recommendation:** **"we shouldnt risk"**, in response to a request to approve bounded P4 closure with named residuals deferred. **No approval was given; do not close P4 or silently amend the original real-business acceptance Gate C.** [P4-17 reviewed decision and risk-first plan](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md).
