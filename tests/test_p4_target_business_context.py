@@ -32,9 +32,16 @@ def _client_with_projects(tmp_path,monkeypatch):
     monkeypatch.setattr(storage,"HOME",home)
     monkeypatch.setattr(storage,"DB_PATH",home/"pilotodin.sqlite3")
     storage.init()
+    main.quality._init_tables()  # synthetic SQLite Quality state for CAS tests
     ids=[]
     for n in ("A","B"):
         ids.append(storage.save_project(n,n+".csv",".csv",home/"datasets"/(n+".csv"),{"rows":80}))
+    with storage.connect() as con:
+        for pid in ids:
+            con.execute(
+                "INSERT INTO quality_state(project_id,original_sha256,current_version) "
+                "VALUES (?,?,?)", (pid,"synthetic-fixture-only",2)
+            )
     monkeypatch.setattr(main.quality,"current_data",lambda pid: (_frame(),2)
                         if pid in ids else (_ for _ in ()).throw(AssertionError("wrong project")))
     return TestClient(main.app),ids
@@ -131,3 +138,49 @@ def test_unrelated_business_text_never_creates_a_new_label_candidate():
     })
     assert out["abstained"]
     assert not out["suggestions"]
+
+
+
+def test_quality_revision_between_initial_check_and_context_commit_returns_409(tmp_path, monkeypatch):
+    # Simulate a competing, completed Quality revision in the exact gap
+    # between main.quality.current_data and the later storage transaction.
+    client, (pid, other) = _client_with_projects(tmp_path, monkeypatch)
+    original_save = storage.save_target_context
+
+    def quality_changed_before_commit(*args):
+        with storage.connect() as con:
+            con.execute(
+                "UPDATE quality_state SET current_version=3 WHERE project_id=?",
+                (pid,),
+            )
+        return original_save(*args)
+
+    monkeypatch.setattr(storage, "save_target_context", quality_changed_before_commit)
+    response = client.post(f"/api/projects/{pid}/target-business-context", json=_payload())
+    assert response.status_code == 409, response.text
+    assert "version changed" in response.json()["detail"]
+    assert storage.target_contexts(pid, 2) == {}
+    assert storage.target_contexts(pid, 3) == {}
+    assert storage.target_contexts(other, 2) == {}
+    assert storage.recent_experiments(pid) == []
+
+
+def test_archive_between_initial_check_and_context_commit_returns_409(tmp_path, monkeypatch):
+    # The read-only HTTP middleware could see an active project just before
+    # another window archives it. The write transaction MUST still refuse.
+    from backend import project_lifecycle
+
+    client, (pid, other) = _client_with_projects(tmp_path, monkeypatch)
+    original_save = storage.save_target_context
+
+    def archived_before_commit(*args):
+        project_lifecycle.change(pid, "archive", expected_revision=0)
+        return original_save(*args)
+
+    monkeypatch.setattr(storage, "save_target_context", archived_before_commit)
+    response = client.post(f"/api/projects/{pid}/target-business-context", json=_payload())
+    assert response.status_code == 409, response.text
+    assert "archived" in response.json()["detail"].lower()
+    assert storage.target_contexts(pid, 2) == {}
+    assert storage.target_contexts(other, 2) == {}
+    assert storage.recent_experiments(pid) == []

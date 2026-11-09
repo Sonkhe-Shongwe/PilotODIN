@@ -102,11 +102,18 @@ def test_p4_09_project_and_quality_version_isolation_and_stale_rejection(
     monkeypatch.setattr(storage, "HOME", home)
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
+    main.quality._init_tables()  # synthetic fixture uses controlled version state
     a = storage.save_project("Synthetic A", "a.csv", ".csv",
                              home / "datasets" / "a.csv", {"rows": 80})
     b = storage.save_project("Synthetic B", "b.csv", ".csv",
                              home / "datasets" / "b.csv", {"rows": 80})
     version = {a: 0, b: 0}
+    with storage.connect() as con:
+        for pid in (a,b):
+            con.execute(
+                "INSERT INTO quality_state(project_id,original_sha256,current_version) "
+                "VALUES (?,?,?)", (pid,"synthetic-fixture-only",0)
+            )
     frames = {a: _frame("classification"), b: _frame("regression")}
     monkeypatch.setattr(main.quality, "current_data",
                         lambda pid: (frames[pid], version[pid]))
@@ -130,6 +137,8 @@ def test_p4_09_project_and_quality_version_isolation_and_stale_rejection(
     assert storage.target_contexts(b, 0) == {}
     # Simulated new approved Quality version, not a Quality approval test.
     version[a] = 1
+    with storage.connect() as con:
+        con.execute("UPDATE quality_state SET current_version=1 WHERE project_id=?", (a,))
     frames[a] = _frame("classification").assign(
         feature=lambda f: f["feature"] * 2
     )

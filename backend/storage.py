@@ -303,6 +303,10 @@ def save_human_review(project_id: str, quality_version: int, column: str,
     }
 
 
+class TargetContextConflict(ValueError):
+    """The chosen Quality version changed before target context could be saved."""
+
+
 # Explicit USER-PROVIDED descriptions; storing them does not validate truth.
 def target_contexts(project_id: str, quality_version: int) -> dict[str, dict]:
     with connect() as con:
@@ -321,6 +325,20 @@ def save_target_context(project_id: str, quality_version: int, target_column: st
     timestamp=now()
     with connect() as con:
         con.execute("BEGIN IMMEDIATE")
+        # The API's earlier Quality-version and archive check can race with a
+        # Quality revision or project archive. Recheck BOTH under the same
+        # SQLite writer lock used by those mutations before any INSERT.
+        from .project_lifecycle import require_active_for_write
+        require_active_for_write(con, project_id)
+        version_row = con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",
+            (project_id,),
+        ).fetchone()
+        if version_row is None or int(version_row["current_version"]) != quality_version:
+            raise TargetContextConflict(
+                "Working dataset version changed before target context was saved. "
+                "Refresh the target review and retry."
+            )
         con.execute(
             "INSERT INTO target_business_context "
             "(project_id,quality_version,target_column,outcome_definition,decision_action,"

@@ -669,9 +669,14 @@ def save_target_business_context(
         raise HTTPException(status_code=422,detail="Each context description must contain at least 10 non-space characters")
     if not body.target_column.strip():
         raise HTTPException(status_code=422,detail="Target column cannot be blank")
-    return storage.save_target_context(
-        project_id, version, body.target_column, *(value.strip() for value in fields)
-    )
+    try:
+        return storage.save_target_context(
+            project_id, version, body.target_column, *(value.strip() for value in fields)
+        )
+    except storage.TargetContextConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
 
 
 class SemanticFieldDescription(BaseModel):

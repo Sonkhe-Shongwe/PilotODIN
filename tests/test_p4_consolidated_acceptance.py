@@ -138,6 +138,7 @@ def test_p4_15_api_project_version_description_origin_and_no_training(
     monkeypatch.setattr(storage, "HOME", home)
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
+    main.quality._init_tables()  # controlled Quality CAS state in disposable DB
     a = storage.save_project("Synthetic A", "a.csv", ".csv",
                              home / "datasets" / "a.csv", {"rows": 80})
     b = storage.save_project("Synthetic B", "b.csv", ".csv",
@@ -145,6 +146,12 @@ def test_p4_15_api_project_version_description_origin_and_no_training(
     c = storage.save_project("Synthetic C", "c.csv", ".csv",
                              home / "datasets" / "c.csv", {"rows": 80})
     versions = {a: 0, b: 0, c: 0}
+    with storage.connect() as con:
+        for pid in (a,b,c):
+            con.execute(
+                "INSERT INTO quality_state(project_id,original_sha256,current_version) "
+                "VALUES (?,?,?)", (pid,"synthetic-fixture-only",0)
+            )
     frames = {
         a: _frame("classification"),
         b: _frame("regression"),
@@ -190,6 +197,8 @@ def test_p4_15_api_project_version_description_origin_and_no_training(
     assert storage.target_contexts(b, 0) == {}
     assert storage.target_contexts(c, 0) == {}
     versions[a] = 1
+    with storage.connect() as con:
+        con.execute("UPDATE quality_state SET current_version=1 WHERE project_id=?", (a,))
     assert client.get(base_a + "/target-opportunities",
                       params={"expected_version": 0}).status_code == 409
     assert client.get(base_a + "/target-opportunities/inspect",
