@@ -55,3 +55,25 @@ def test_p4_16_historical_native_release_scripts_not_mutated():
     assert (ROOT / "desktop/Stage_Pinned_Offline_AI.ps1").exists()
     assert (ROOT / "desktop/Verify_Installed_PilotODIN.ps1").exists()
     assert (ROOT / "qa/p4_native/README.md").exists()
+
+
+
+def test_p4_24_selected_clock_is_in_safe_global_source_before_packaging():
+    """The selected clock ships in the isolated shell; no data/network access."""
+    shell = (ROOT / "frontend/src/UnifiedShell.tsx").read_text(encoding="utf-8")
+    component = (ROOT / "frontend/src/ShellClock.tsx").read_text(encoding="utf-8")
+    stylesheet = (ROOT / "frontend/src/unified-shell.css").read_text(encoding="utf-8")
+    fmt = (ROOT / "frontend/src/shellClockFormat.ts").read_text(encoding="utf-8")
+    assert "import {ShellClock} from './ShellClock';" in shell
+    header = shell.split('<header className="po-shell-title">', 1)[1].split("</header>", 1)[0]
+    assert header.count("<ShellClock/>") == 1
+    assert header.index("<ShellClock/>") < header.index('className="po-project-switcher"')
+    assert 'className="po-shell-clock"' in component
+    assert "visibilitychange" in component
+    assert "msUntilNextClockMinute(Date.now())" in component
+    assert ".po-shell-clock{" in stylesheet
+    assert ".po-shell-clock-time{" in stylesheet
+    assert "font-variant-numeric:tabular-nums" in stylesheet
+    assert "msUntilNextClockMinute" in fmt
+    for blocked in ("fetch(", "localStorage", "sessionStorage", "invoke(", "startTrain(", "post("):
+        assert blocked not in component

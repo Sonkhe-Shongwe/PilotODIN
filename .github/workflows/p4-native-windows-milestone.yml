@@ -1,5 +1,8 @@
 name: P4-16 Source-Matched Windows Native QA Build
 
+# One owner-approved, source-matched GitHub CI build on 10 Nov 2026 following direct QA build approval request.
+# P4 still active; NO owner install, release, P5 or operational acceptance is authorised.
+
 # Only this P4 milestone job packages a full Windows installer. This is NOT
 # a release or an owner's installed-app verification. No owner PC is touched.
 on:
@@ -67,7 +70,7 @@ jobs:
       - name: Self-check P4 QA workflow and isolation rules with stdlib Python
         shell: pwsh
         run: |
-          python -c "import runpy; m=runpy.run_path('tests/test_p4_native_windows_milestone_source.py'); tests=[fn for name,fn in m.items() if name.startswith('test_')]; assert len(tests)==3; [fn() for fn in tests]; print('3/3 isolated P4 build-source contracts passed')"
+          python -c "import runpy; m=runpy.run_path('tests/test_p4_native_windows_milestone_source.py'); tests=[fn for name,fn in m.items() if name.startswith('test_')]; assert len(tests)==4; [fn() for fn in tests]; print('4/4 isolated P4 build-source/clock contracts passed')"
           if ($LASTEXITCODE -ne 0) { throw 'P4 isolated QA source self-check failed' }
       - name: Stage independently pinned offline AI and complete redistributable notices
         shell: pwsh
@@ -89,6 +92,28 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Locked frontend dependency installation failed' }
           npx tauri build --config src-tauri/tauri.p4-native-qa.conf.json --no-binary-patching
           if ($LASTEXITCODE -ne 0) { throw 'Source-matched Windows NSIS build failed' }
+      - name: Confirm compiled frontend includes Satin Chronograph before accepting QA packaging
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $assetRoot = 'frontend/dist/assets'
+          if (-not (Test-Path -LiteralPath $assetRoot -PathType Container)) {
+            throw 'Missing bundled frontend assets; refuse QA package.'
+          }
+          $files = @(Get-ChildItem -LiteralPath $assetRoot -Recurse -File |
+            Where-Object { $_.Extension -in @('.js','.css') })
+          if ($files.Count -lt 1) { throw 'No built frontend scripts or styles.' }
+          $found = $false
+          foreach ($file in $files) {
+            if (Select-String -LiteralPath $file.FullName -Pattern 'po-shell-clock-time' -SimpleMatch -Quiet) {
+              $found = $true
+              break
+            }
+          }
+          if (-not $found) {
+            throw 'Satin Chronograph class missing from built frontend; refuse acceptance.'
+          }
+          Write-Host 'Built frontend contains Satin Chronograph UI; not owner-native visual validation.'
       - name: Verify installed payload on disposable CI runner, never owner PC
         shell: pwsh
         run: |
