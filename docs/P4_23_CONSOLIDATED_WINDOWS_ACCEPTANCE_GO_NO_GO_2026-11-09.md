@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | P4-23 Consolidated Owner Windows Acceptance Go/No-Go
 
+## 10 November 2026 | P4 in-flight Windows CI review, NOT a completed installer acceptance
+
+- **Observed remote Actions state (10 Nov, approximately 01:00 UTC):** [exact-source P4-16 QA run #42730585801](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42730585801) at source SHA [`0c7a2b4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/0c7a2b4cf1bdb4b5dba6582dc306493c741e2d23) was **IN PROGRESS**, conclusion `null`, attempt 1. Exact checkout/SHA, 4/4 standalone source/clock contracts, pinned offline model staging, a real authenticated local Qwen3 generation check on the GitHub Windows runner, and frozen Windows Python engine build/launch each had **completed successfully**. Tauri/NSIS production packaging remained **IN PROGRESS**; compiled-clock gate, disposable CI installer/EXE hash check, manifest, and both uploads were still **PENDING**. Artifact listing was **empty** at inspection. These are individual step results, **NOT overall CI success or an installable verified artifact**.
+- **Branch versus tested source:** GitHub branch HEAD before this documentation correction was `43ef76270c4436db22f4176a7afcc23378fd3f0c`, one commit ahead of the queued build source. GitHub compare reports that intervening commit changes **only these three Markdown continuity/acceptance documents**, not app code, model/runtime inputs, test scripts or the Windows installer workflow. This review itself changes Markdown only and does **not** retest production source or trigger another P4 Windows package workflow (its push path filters exclude documentation).
+- **Next strict gate:** Re-query the *same* run's final conclusion and each artifact, inspect its independently published source/installer manifest and hashes **only if workflow finishes successfully**. If failed/cancelled, preserve exact failure and avoid reusing an unverified old artifact. One remote build was approved; an owner's **local download/install needs a separate explicit decision**, with trusted provenance and old-app/data preservation safeguards. Real physical Windows N8-N12, full offline/8 GB, original Gate C and P4 owner sign-off remain **OPEN**. **P4 ACTIVE; P5 NOT AUTHORISED; P8 NOT CERTIFIED.**
+
 ## 10 November 2026 | ONE current-source P4 native QA installer build TRIGGERED, run still IN PROGRESS
 
 - **Authority:** User replied `next` immediately after the explicit question `Do you approve running that one GitHub Actions QA build? It will not install anything on your PC or affect your existing projects.` This was interpreted as authorisation **for ONE remote CI QA build only**. This does NOT authorise download, installing or launching an application on owner's Windows, replacing existing `pilotODIN`, using any real data, model training, closing P4, starting P5 or certifying release.
@@ -14,13 +20,15 @@
 - **Native/phase distinction:** Browser screenshots are not the Windows installed QA app. A single eventual owner-approved current-source Windows QA milestone can inspect clock finish alongside latest P4 source fixes, data preservation and offline/8 GB. **No new installer build/install authorised or triggered**. P4 ACTIVE, Gate C UNVERIFIED, P5 NOT AUTHORISED, P8 NOT CERTIFIED. [Clock research and verified source](./UX_OPTIONAL_PERSISTENT_SHELL_CLOCK_2026-11-09.md).
 
 
+**Historical snapshot prepared on 9 November 2026, BEFORE the separately approved 10 November CI build. The build-authorisation row below is superseded by the dated updates above; local installation remains unauthorised.**
+
 **Prepared:** 9 November 2026  
-**Current status:** **PLAN READY; NEW WINDOWS BUILD NOT AUTHORISED; NEW INSTALL NOT AUTHORISED; OWNER NATIVE RETEST NOT STARTED.**  
+**Historical 9 Nov status (superseded for CI build only):** **PLAN READY; NEW WINDOWS BUILD NOT AUTHORISED AT THAT DATE; NEW LOCAL INSTALL NOT AUTHORISED; OWNER NATIVE RETEST NOT STARTED.**  
 **Current branch:** `feature/live-dev-workspace-20261023`, last observed checkout/documentation HEAD `40fa5849aee478a2750cbc07aafb6d685bb93119`. A build must independently verify the **actual** source SHA at build time; this document's SHA is not a reusable build manifest.  
 **Authorisation basis:** User said `next` following source-side P4-22 readiness, not explicit consent for a new ~1.5 GB Windows NSIS build, download or install. The original owner's `we shouldnt risk` decision against closure with residuals deferred remains controlling.  
 **Source evidence:** [P4-22 tool/limit report](./P4_22_WINDOWS_INTEGRITY_AND_RESOURCE_READINESS_2026-11-09.md). [P4 exact-source Actions #42700800731](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42700800731) at `40fa5849...`: **COMPLETED SUCCESS** in source/real-HTTP/synthetic Windows-probe tasks. The already installed Windows QA executable remains historical source `bca3c57...`, with no newer source fixes natively verified.
 
-## Before building: strict GO / NO-GO
+## Historical pre-build GO / NO-GO (snapshot; 10 Nov CI-build permission now granted)
 
 | Gate | GO only when | Current state |
 | --- | --- | --- |
