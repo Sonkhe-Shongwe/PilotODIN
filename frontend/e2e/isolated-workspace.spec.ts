@@ -319,7 +319,7 @@ test('empty project catalogue displays safe onboarding and disables import witho
   await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue('');
   expect(audit.writes).toEqual([]);
   expect(audit.unexpectedReads).toEqual([]);
-   expect(audit.blockedOrigins).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
 });
 
 test('edited Prepare dock rejects a new import before any backend POST',async({page,context})=>{
@@ -1396,5 +1396,5 @@ test('drag Your data onto Prepare page docks side by side without backend writes
  await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
  expect(audit.writes).toEqual([]);
  expect(audit.unexpectedReads).toEqual([]);
- expect(audit.blockedOrigins).toEqual([]);
+  expect(audit.blockedOrigins).toEqual([]);
 });
