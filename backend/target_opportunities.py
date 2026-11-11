@@ -103,8 +103,21 @@ def _is_date(name: str, series: pd.Series) -> bool:
     )
 
 
+def _value_dtype(series: pd.Series):
+    """Inspect a categorical column's observed value dtype, not its wrapper.
+
+    pandas' is_numeric_dtype(series) is False for categorical numeric values,
+    which must still pass the same nonfinite checks as plain numeric columns.
+    This is read-only: category definitions and source values remain intact.
+    """
+    if isinstance(series.dtype, pd.CategoricalDtype):
+        return series.cat.categories.dtype
+    return series.dtype
+
+
 def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> dict:
     series = frame[name]
+    target_value_dtype = _value_dtype(series)
     # Empty or whitespace-only strings are not observed outcome labels.
     # Inspect a local view; never modify the original Quality snapshot.
     blank_text = series.map(lambda value: isinstance(value, str) and not value.strip())
@@ -156,16 +169,16 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     # Numeric infinity values are non-missing in pandas and can otherwise
     # masquerade as two well-supported classification classes. Fail closed
     # BEFORE infer_task() handles the two-distinct-values shortcut.
-    if pd.api.types.is_complex_dtype(series):
+    if pd.api.types.is_complex_dtype(target_value_dtype):
         blockers.append("Complex-valued target labels are not supported.")
-    elif pd.api.types.is_numeric_dtype(series) and labelled:
+    elif pd.api.types.is_numeric_dtype(target_value_dtype) and labelled:
         try:
             finite_values = labels.dropna().to_numpy(dtype=float)
             if not np.isfinite(finite_values).all():
                 blockers.append("Numeric target labels must be finite; infinity is not a valid observed outcome.")
         except (TypeError, ValueError, OverflowError):
             blockers.append("Numeric target labels could not be verified as finite values.")
-    if distinct >= max(10, int(labelled*.98)) and not pd.api.types.is_numeric_dtype(series):
+    if distinct >= max(10, int(labelled*.98)) and not pd.api.types.is_numeric_dtype(target_value_dtype):
         blockers.append("High-cardinality text is likely a record key or free text rather than a supported label.")
     if not blockers:
         try:
@@ -194,7 +207,7 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
 
     def has_observed_variation(column: str) -> bool:
         values = labelled_frame[column]
-        if pd.api.types.is_numeric_dtype(values):
+        if pd.api.types.is_numeric_dtype(_value_dtype(values)):
             # Infinity is not usable predictor variation. A nonfinite-only
             # column, or one finite value plus infinity, must not make a
             # target look structurally reviewable. Do not alter Quality data.

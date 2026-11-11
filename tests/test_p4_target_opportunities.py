@@ -633,3 +633,87 @@ def test_p4_real_text_predictor_variation_survives_padding_and_internal_spaces()
     assert manual["candidate"]["technical_status"] == "reviewable"
     assert manual["training_authorised"] is False
     assert frame.equals(before)
+
+
+@pytest.mark.parametrize("numeric_labels", [
+    [float("inf"), float("-inf")] * 40,
+    [1.0, float("inf")] * 40,
+    [1.0, float("-inf")] * 40,
+])
+def test_p4_categorical_numeric_target_infinities_fail_closed(numeric_labels):
+    # pandas labels with CategoricalDtype are not considered numeric by
+    # is_numeric_dtype(series), even when the categories are numeric.
+    frame = pd.DataFrame({
+        "churn": pd.Categorical(numeric_labels),
+        "feature": [i % 8 for i in range(80)],
+    })
+    original = frame.copy(deep=True)
+    assert not pd.api.types.is_numeric_dtype(frame["churn"])
+    assert pd.api.types.is_numeric_dtype(frame["churn"].cat.categories.dtype)
+    queue = target_opportunities.recommend(frame, 0)
+    assert queue["abstained"] is True
+    candidate = {item["column"]: item for item in queue["blocked_examples"]}["churn"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("finite" in blocker.lower() for blocker in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 0, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["training_authorised"] is False
+    assert frame.equals(original)
+
+
+@pytest.mark.parametrize("numeric_predictor", [
+    [float("inf"), float("-inf")] * 40,
+    [3.0, float("inf")] * 40,
+    [3.0, float("-inf")] * 40,
+])
+def test_p4_categorical_numeric_predictor_infinities_not_variation(numeric_predictor):
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "signal": pd.Categorical(numeric_predictor),
+    })
+    original = frame.copy(deep=True)
+    assert not pd.api.types.is_numeric_dtype(frame["signal"])
+    queue = target_opportunities.recommend(frame, 1)
+    assert queue["abstained"] is True
+    candidate = {item["column"]: item for item in queue["blocked_examples"]}["churn"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert any("No non-constant, non-empty candidate predictor" in blocker
+               for blocker in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 1, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["training_authorised"] is False
+    assert frame.equals(original)
+
+
+def test_p4_categorical_numeric_finite_controls_remain_structural_only():
+    frame = pd.DataFrame({
+        "churn": pd.Categorical([0.0, 1.0] * 40),
+        "signal": pd.Categorical([10.0, 20.0, float("inf"), float("-inf")] * 20),
+    })
+    original = frame.copy(deep=True)
+    queue = target_opportunities.recommend(frame, 7)
+    candidate = {item["column"]: item for item in queue["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 7, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(original)
+
+
+def test_p4_categorical_complex_target_is_explicitly_blocked():
+    frame = pd.DataFrame({
+        "churn": pd.Categorical([complex(1, 1), complex(2, 2)] * 40),
+        "feature": [i % 5 for i in range(80)],
+    })
+    original = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 0)
+    candidate = {item["column"]: item for item in result["blocked_examples"]}["churn"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert any("Complex-valued" in blocker for blocker in candidate["blockers"])
+    assert frame.equals(original)
