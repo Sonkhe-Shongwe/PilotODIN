@@ -87,7 +87,7 @@ test('tab movement does not call navigation or quality/data writes',()=>{
  assert.doesNotMatch(helper,/navigate\(|dockView\(|localStorage|sessionStorage|fetch\(|post\(|setActive|setDock/);
  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
  assert.match(shell,/const draggedTab=useRef<\{projectId:string;view:View\}\|null>\(null\)/);
- assert.match(shell,/useEffect\(\(\)=>\{draggedTab\.current=null;setTabDropTarget\(null\)\},\[projectId\]\)/);
+ assert.match(shell,/useEffect\(\(\)=>\{draggedTab\.current=null;setTabDropTarget\(null\);setPrimaryDockHover\(false\)\},\[projectId\]\)/);
 });
 test('project order is still saved and restored through existing scoped key',()=>{
  const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
