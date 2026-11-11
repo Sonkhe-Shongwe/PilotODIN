@@ -19,6 +19,17 @@ function Test-P4FlagOutsideQuotes {
     return (-not $quoted)
 }
 
+# Windows PowerShell 5.1 uses .NET Framework and has no IsPathFullyQualified.
+# IsPathRooted alone accepts drive-relative C:foo and root-relative \foo;
+# accept only explicit drive-absolute or complete UNC share paths.
+function Test-P4AbsoluteWindowsPath {
+    param([string]$Candidate)
+    if ([string]::IsNullOrWhiteSpace($Candidate) -or
+        -not [IO.Path]::IsPathRooted($Candidate)) { return $false }
+    return ($Candidate -match '^[A-Za-z]:[\\/]' -or
+            $Candidate -match '^\\\\[^\\/]+[\\/][^\\/]+(?:[\\/]|$)')
+}
+
 function Resolve-P4WebViewProcessOwnership {
     [CmdletBinding()]
     param(
@@ -29,6 +40,10 @@ function Resolve-P4WebViewProcessOwnership {
     if ([string]::IsNullOrWhiteSpace($OriginalDataRoot) -or
         [string]::IsNullOrWhiteSpace($QaDataRoot)) {
         throw 'Missing expected application roots; observation refused.'
+    }
+    if (-not (Test-P4AbsoluteWindowsPath -Candidate $OriginalDataRoot) -or
+        -not (Test-P4AbsoluteWindowsPath -Candidate $QaDataRoot)) {
+        throw 'Expected original and QA profile roots must be absolute Windows paths.'
     }
     $original = [IO.Path]::GetFullPath($OriginalDataRoot).TrimEnd([char]'\',[char]'/')
     $qa = [IO.Path]::GetFullPath($QaDataRoot).TrimEnd([char]'\',[char]'/')
@@ -63,7 +78,7 @@ function Resolve-P4WebViewProcessOwnership {
             $flags[0].Groups[2].Value
         }
         if ([string]::IsNullOrWhiteSpace($value) -or
-            -not [IO.Path]::IsPathFullyQualified($value)) {
+            -not (Test-P4AbsoluteWindowsPath -Candidate $value)) {
             $unresolvedCount++
             continue
         }

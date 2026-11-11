@@ -140,3 +140,9 @@ jobs:
           ./qa/p4_native/Test_P4_Native_Readiness_Probe.ps1
           ./qa/p4_native/Test_P4_Original_Storage_Compare.ps1
           ./qa/p4_native/Test_P4_WebView_Process_Evidence.ps1
+      - name: Verify WebView observer on actual Windows PowerShell 5.1 (.NET Framework)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Expected Windows PowerShell 5.1, not pwsh.' }
+          ./qa/p4_native/Test_P4_WebView_Process_Evidence.ps1

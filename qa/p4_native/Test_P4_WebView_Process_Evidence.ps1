@@ -21,6 +21,8 @@ $records = @(
     (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir=' + $otherProfile)),
     (Process 'msedgewebview2.exe' 'msedgewebview2.exe --type=renderer'),
     (Process 'msedgewebview2.exe' 'msedgewebview2.exe --user-data-dir=relative-profile'),
+    (Process 'msedgewebview2.exe' 'msedgewebview2.exe --user-data-dir=C:relative-profile'),
+    (Process 'msedgewebview2.exe' 'msedgewebview2.exe --user-data-dir=\root-relative-profile'),
     (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir="' + $oldProfile + '" --user-data-dir="' + $qaProfile + '"')),
     # The text below is inside --log-file, never a separate --user-data-dir flag.
     (Process 'msedgewebview2.exe' ('msedgewebview2.exe --log-file="note --user-data-dir=' + $oldProfile + ' trailing"')),
@@ -31,11 +33,11 @@ $records = @(
     (Process 'chrome.exe' ('chrome.exe --user-data-dir="' + $oldProfile + '"'))
 )
 $observed = Resolve-P4WebViewProcessOwnership -Processes $records -OriginalDataRoot $old -QaDataRoot $qa
-Check ($observed.webview2_processes_observed -eq 10) 'WebView2 process count wrong'
+Check ($observed.webview2_processes_observed -eq 12) 'WebView2 process count wrong'
 Check ($observed.original_profile_processes -eq 2) 'Original flag recognition wrong'
 Check ($observed.qa_profile_processes -eq 1) 'QA flag recognition wrong'
 Check ($observed.other_profile_processes -eq 1) 'Sibling prefix misclassified'
-Check ($observed.unresolved_profile_processes -eq 6) 'Ambiguous/missing/relative flag guessed'
+Check ($observed.unresolved_profile_processes -eq 8) 'Ambiguous/missing/relative flag guessed'
 Check ($observed.status -eq 'CURRENT_LAUNCH_FLAGS_ONLY_NOT_HISTORICAL_WRITE_PROOF') 'Misleading result status'
 Check (-not $observed.historical_writer_process_identified -and
        -not $observed.qa_cross_app_write_excluded -and
@@ -51,6 +53,19 @@ try {
     $null=Resolve-P4WebViewProcessOwnership -Processes @() -OriginalDataRoot $old -QaDataRoot (Join-Path $old 'nested')
 } catch { $badRoots = $true }
 Check $badRoots 'Overlapping roots were accepted'
+# Root-relative inputs must not be silently resolved against the caller's cwd.
+foreach ($badRoot in @('relative-app-root','C:relative-app-root','\root-relative-app-root')) {
+    $refused=$false
+    try {
+        $null=Resolve-P4WebViewProcessOwnership -Processes @() -OriginalDataRoot $badRoot -QaDataRoot $qa
+    } catch { $refused=$true }
+    Check $refused 'Relative app roots were silently resolved'
+}
+# A complete UNC share is absolute but outside either app's explicit roots.
+$uncRecord=@((Process 'msedgewebview2.exe' 'msedgewebview2.exe --user-data-dir=\\synthetic-server\synthetic-share\EBWebView'))
+$unc=Resolve-P4WebViewProcessOwnership -Processes $uncRecord -OriginalDataRoot $old -QaDataRoot $qa
+Check ($unc.other_profile_processes -eq 1 -and $unc.unresolved_profile_processes -eq 0) 'Valid UNC absolute profile incorrectly refused'
+
 $src = Join-Path $PSScriptRoot '..\..\frontend\src-tauri'
 $cfgOld = Get-Content -LiteralPath (Join-Path $src 'tauri.conf.json') -Raw | ConvertFrom-Json
 $cfgQa = Get-Content -LiteralPath (Join-Path $src 'tauri.p4-native-qa.conf.json') -Raw | ConvertFrom-Json
@@ -61,5 +76,5 @@ Check ($observerSource.Contains('Get-CimInstance')) 'Observer missing live metad
 foreach ($forbidden in @('Start-Process','Stop-Process','Remove-Item','Set-Content','Copy-Item','New-Item','New-Object')) {
     Check (-not $observerSource.Contains($forbidden)) 'Observer source contains mutable operation'
 }
-Write-Host 'PASS: synthetic WebView2 flag classification, conflicting/empty/relative guard, prefix safety, both Tauri IDs and no observer writes.'
+Write-Host ('PASS: synthetic WebView2 profile flag cases on PowerShell ' + $PSVersionTable.PSVersion.ToString() + '; absolute drive/UNC, C:relative and \root-relative safety, both Tauri IDs, no observer writes.')
 Write-Host 'NOT TESTED: owner Windows live processes, historical file writer, actual profile isolation or offline 8GB.'
