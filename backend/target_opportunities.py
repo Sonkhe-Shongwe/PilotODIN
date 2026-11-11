@@ -99,7 +99,10 @@ def _is_date(name: str, series: pd.Series) -> bool:
     return (
         bool(tokens & TIME_TOKENS)
         or normalized.endswith("_at")
-        or pd.api.types.is_datetime64_any_dtype(series)
+        # Categorical datetime values must be temporal too: pandas reports
+        # is_datetime64_any_dtype(series) == False for a categorical wrapper.
+        # Inspect only the underlying value dtype; do not change source data.
+        or pd.api.types.is_datetime64_any_dtype(_value_dtype(series))
     )
 
 

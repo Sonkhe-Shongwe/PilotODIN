@@ -717,3 +717,59 @@ def test_p4_categorical_complex_target_is_explicitly_blocked():
     assert candidate["task_hypothesis"] is None
     assert any("Complex-valued" in blocker for blocker in candidate["blockers"])
     assert frame.equals(original)
+
+
+@pytest.mark.parametrize("name, values", [
+    ("outcome", pd.date_range("2026-01-01", periods=2).repeat(40)),
+    ("churn", pd.date_range("2026-01-01", periods=2, tz="UTC").repeat(40)),
+])
+def test_p4_datetime_categorical_outcome_is_not_classification(name, values):
+    # An unqualified outcome header must not make datetime categories into
+    # ordinary two-class outcomes. The existing header-only *_at guard cannot
+    # detect a CategoricalDtype holding datetime64 timestamps.
+    frame = pd.DataFrame({
+        name: pd.Categorical(values),
+        "signal": [i % 8 for i in range(80)],
+    })
+    before = frame.copy(deep=True)
+    assert not pd.api.types.is_datetime64_any_dtype(frame[name])
+    assert pd.api.types.is_datetime64_any_dtype(frame[name].cat.categories.dtype)
+    queue = target_opportunities.recommend(frame, 2)
+    assert queue["abstained"] is True
+    candidate = {item["column"]: item for item in queue["blocked_examples"]}[name]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("date/time" in reason for reason in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 2, name)
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["candidate"]["task_hypothesis"] is None
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_ordinary_categorical_outcome_and_duration_target_stay_reviewable():
+    # Ordinary classification categories and numeric duration outcomes
+    # retain structural-review semantics, never training authorisation.
+    cat_frame = pd.DataFrame({
+        "outcome": pd.Categorical(["Y", "N"] * 40),
+        "signal": [i % 7 for i in range(80)],
+    })
+    duration_frame = pd.DataFrame({
+        "time_to_resolution": [float(i + 1) for i in range(80)],
+        "kind": ["A", "B"] * 40,
+    })
+    for frame, name, task in (
+        (cat_frame, "outcome", "classification"),
+        (duration_frame, "time_to_resolution", "regression"),
+    ):
+        before = frame.copy(deep=True)
+        queue = target_opportunities.recommend(frame, 3)
+        candidate = {item["column"]: item for item in queue["suggestions"]}[name]
+        assert candidate["technical_status"] == "reviewable"
+        assert candidate["task_hypothesis"] == task
+        assert candidate["safe_to_train_automatically"] is False
+        manual = target_opportunities.inspect_manual_target(frame, 3, name)
+        assert manual["candidate"]["technical_status"] == "reviewable"
+        assert manual["training_authorised"] is False
+        assert frame.equals(before)
