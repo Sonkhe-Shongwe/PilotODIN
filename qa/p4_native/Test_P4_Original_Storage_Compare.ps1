@@ -48,7 +48,7 @@ try {
  # P4-41: v1 file fingerprints ignore empty directories. The read-only
  # comparator must fail on layout drift even when every file hash still matches.
  $newEmpty=Join-Path $current 'other\disposable-empty-directory'
- [void](New-Item -LiteralPath $newEmpty -ItemType Directory -ErrorAction Stop)
+ [void](New-Item -Path $newEmpty -ItemType Directory -ErrorAction Stop)
  $addedEmpty=& $compare @params
  if ($addedEmpty.status -ne 'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED' -or
      $addedEmpty.file_fingerprint_matches_p4_22_baseline -ne $true -or
@@ -75,7 +75,7 @@ try {
      $missingEmpty.browser_cache_candidate_directory_changes -ne 1) {
   throw 'Removed empty browser/cache directory bypassed full preservation safety'
  }
- [void](New-Item -LiteralPath $emptyCache -ItemType Directory -ErrorAction Stop)
+ [void](New-Item -Path $emptyCache -ItemType Directory -ErrorAction Stop)
  $restored=& $compare @params
  if ($restored.status -ne 'FULL_FINGERPRINT_MATCH' -or $restored.all_changed_directories -ne 0) {
   throw 'Restoring disposable empty directories did not restore a full match'
