@@ -40,6 +40,9 @@ function Tree([string]$source) {
  $queue=New-Object 'System.Collections.Generic.Queue[string]'
  $entries=New-Object 'System.Collections.Generic.List[object]'
  $files=@{}
+ # Directory paths must be compared independently of file hashes: empty
+ # directories have no file entry in the historical P4-22 baseline.
+ $directories=@{}
  $queue.Enqueue($source)
  [long]$total=0
  while ($queue.Count -gt 0) {
@@ -48,7 +51,15 @@ function Tree([string]$source) {
    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
     throw 'Reparse point inside source refused; snapshot incomplete.'
    }
-   if ($item.PSIsContainer) { $queue.Enqueue($item.FullName); continue }
+   if ($item.PSIsContainer) {
+    $relativeDir=$item.FullName.Substring($source.Length).TrimStart([char]'\',[char]'/').Replace('\','/')
+    if ($directories.ContainsKey($relativeDir)) {
+     throw 'Ambiguous case-insensitive directory name; snapshot refused.'
+    }
+    $directories[$relativeDir]=$true
+    $queue.Enqueue($item.FullName)
+    continue
+   }
    $relative=$item.FullName.Substring($source.Length).TrimStart([char]'\',[char]'/').Replace('\','/')
    if ($files.ContainsKey($relative)) { throw 'Ambiguous case-insensitive file name; snapshot refused.' }
    [long]$bytes=$item.Length
@@ -68,6 +79,8 @@ function Tree([string]$source) {
   total_bytes=$total
   content_and_relative_path_tree_sha256=(ShaText $builder.ToString())
   files=$files
+  directories=$directories
+  directory_count=$directories.Count
  }
 }
 function Category([string]$relative) {
@@ -114,6 +127,28 @@ $allDataGood=($now.file_count -eq $baseline.original.original_data.file_count -a
  $now.total_bytes -eq $baseline.original.original_data.total_bytes -and
  $now.content_and_relative_path_tree_sha256 -eq $baseline.original.original_data.content_and_relative_path_tree_sha256)
 
+# The P4-22 v1 baseline fingerprints FILES, not empty directories.
+# Use the independently preserved backup as an additional source for
+# read-only directory-layout comparison. Never rewrite or rebaseline v1.
+$directoryCounts=@{
+ critical_project_store=@{added=0;missing=0}
+ browser_cache_candidate=@{added=0;missing=0}
+ unclassified=@{added=0;missing=0}
+}
+foreach ($name in @(@($before.directories.Keys) + @($now.directories.Keys) | Sort-Object -Unique)) {
+ $was=$before.directories.ContainsKey($name)
+ $is=$now.directories.ContainsKey($name)
+ if ($was -eq $is) {continue}
+ $change=if ($is) {'added'} else {'missing'}
+ $category=Category ($name+'/')
+ $directoryCounts[$category][$change]++
+}
+$criticalDirectoryChanges=$directoryCounts.critical_project_store.added+$directoryCounts.critical_project_store.missing
+$browserDirectoryChanges=$directoryCounts.browser_cache_candidate.added+$directoryCounts.browser_cache_candidate.missing
+$otherDirectoryChanges=$directoryCounts.unclassified.added+$directoryCounts.unclassified.missing
+$allDirectoryChanges=$criticalDirectoryChanges+$browserDirectoryChanges+$otherDirectoryChanges
+$directoryLayoutGood=($allDirectoryChanges -eq 0 -and $before.directory_count -eq $now.directory_count)
+
 # No raw paths, file names, record contents, per-file hashes or identifiers are
 # displayed or written. Counts are inclusive: critical changes never waived.
 $counts=@{
@@ -140,12 +175,21 @@ $browserTotal=$browser.added+$browser.modified+$browser.missing
 $otherTotal=$other.added+$other.modified+$other.missing
 
 [pscustomobject][ordered]@{
- status=if ($allDataGood -and $oldExeGood) {'FULL_FINGERPRINT_MATCH'} else {'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED'}
+ status=if ($allDataGood -and $directoryLayoutGood -and $oldExeGood) {'FULL_FINGERPRINT_MATCH'} else {'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED'}
  independent_backup_matches_baseline=$true
  original_exe_matches_baseline=$oldExeGood
- full_original_data_tree_matches_baseline=$allDataGood
+ full_original_data_tree_matches_baseline=($allDataGood -and $directoryLayoutGood)
+ file_fingerprint_matches_p4_22_baseline=$allDataGood
+ directory_layout_matches_independent_backup=$directoryLayoutGood
+ directory_layout_reference='independent_backup_only_p4_22_v1_baseline_files_only'
  baseline_file_count=$before.file_count
  current_file_count=$now.file_count
+ backup_directory_count=$before.directory_count
+ current_directory_count=$now.directory_count
+ critical_project_store_directory_changes=$criticalDirectoryChanges
+ browser_cache_candidate_directory_changes=$browserDirectoryChanges
+ unclassified_directory_changes=$otherDirectoryChanges
+ all_changed_directories=$allDirectoryChanges
  critical_project_store_changes=$criticalTotal
  critical_project_store_added=$core.added
  critical_project_store_modified=$core.modified
@@ -153,9 +197,10 @@ $otherTotal=$other.added+$other.modified+$other.missing
  browser_cache_candidate_changes=$browserTotal
  unclassified_changes=$otherTotal
  all_changed_files=$criticalTotal+$browserTotal+$otherTotal
+ all_changed_items=$criticalTotal+$browserTotal+$otherTotal+$allDirectoryChanges
  full_data_integrity_waived=$false
  project_data_certified=$false
  writer_process_identified=$false
  offline_8gb_certified=$false
- note='Directory categories are source-derived hints, not forensic attribution. Full-tree mismatch is still FAIL. No restore, cleanup, model or user data write.'
+ note='Directory categories are source-derived hints, not forensic attribution. Empty-directory layout compares current against independent backup only; historic P4-22 v1 baseline never fingerprinted directories, so baseline-time directory provenance cannot be proved. Any file or directory mismatch is FAIL. No restore, cleanup, model or user data write.'
 }

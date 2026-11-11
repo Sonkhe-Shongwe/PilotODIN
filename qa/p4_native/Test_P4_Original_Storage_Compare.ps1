@@ -36,12 +36,51 @@ try {
  }
  $initial=& $compare @params
  if ($initial.status -ne 'FULL_FINGERPRINT_MATCH' -or
+     $initial.all_changed_directories -ne 0 -or
+     $initial.directory_layout_matches_independent_backup -ne $true -or
      $initial.all_changed_files -ne 0 -or
      $initial.critical_project_store_changes -ne 0 -or
      $initial.original_exe_matches_baseline -ne $true) {
   throw 'Unmodified synthetic original incorrectly rejected'
  }
  $backupHash=(Get-FileHash -LiteralPath (Join-Path $backup 'data\pilotodin.sqlite3') -Algorithm SHA256).Hash
+
+ # P4-41: v1 file fingerprints ignore empty directories. The read-only
+ # comparator must fail on layout drift even when every file hash still matches.
+ $newEmpty=Join-Path $current 'other\disposable-empty-directory'
+ [void](New-Item -LiteralPath $newEmpty -ItemType Directory -ErrorAction Stop)
+ $addedEmpty=& $compare @params
+ if ($addedEmpty.status -ne 'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED' -or
+     $addedEmpty.file_fingerprint_matches_p4_22_baseline -ne $true -or
+     $addedEmpty.full_original_data_tree_matches_baseline -ne $false -or
+     $addedEmpty.directory_layout_matches_independent_backup -ne $false -or
+     $addedEmpty.all_changed_files -ne 0 -or
+     $addedEmpty.all_changed_directories -ne 1 -or
+     $addedEmpty.unclassified_directory_changes -ne 1 -or
+     $addedEmpty.all_changed_items -ne 1) {
+  throw 'Added empty directory bypassed full preservation safety'
+ }
+ $privateOutput=$addedEmpty | ConvertTo-Json -Depth 8
+ if ($privateOutput.Contains('disposable-empty-directory')) {
+  throw 'Original directory path escaped aggregate-only output'
+ }
+ Remove-Item -LiteralPath $newEmpty -ErrorAction Stop
+
+ $emptyCache=Join-Path $current 'WebView2\Cache'
+ Remove-Item -LiteralPath $emptyCache -ErrorAction Stop
+ $missingEmpty=& $compare @params
+ if ($missingEmpty.status -ne 'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED' -or
+     $missingEmpty.all_changed_files -ne 0 -or
+     $missingEmpty.all_changed_directories -ne 1 -or
+     $missingEmpty.browser_cache_candidate_directory_changes -ne 1) {
+  throw 'Removed empty browser/cache directory bypassed full preservation safety'
+ }
+ [void](New-Item -LiteralPath $emptyCache -ItemType Directory -ErrorAction Stop)
+ $restored=& $compare @params
+ if ($restored.status -ne 'FULL_FINGERPRINT_MATCH' -or $restored.all_changed_directories -ne 0) {
+  throw 'Restoring disposable empty directories did not restore a full match'
+ }
+
  Set-Content -LiteralPath (Join-Path $current 'WebView2\IndexedDB\000001.log') -Value 'NEW-BROWSER-CACHE' -NoNewline
  Set-Content -LiteralPath (Join-Path $current 'WebView2\Cache\index') -Value 'FAKE' -NoNewline
  $browser=& $compare @params
@@ -81,7 +120,7 @@ try {
  if ($baseline.purpose -ne 'ORIGINAL_PRESERVATION_BASELINE_NOT_ACCEPTANCE') {
   throw 'Baseline overwritten during read-only comparison'
  }
- Write-Host 'PASS: synthetic full match, WebView-only drift still FAIL, protected SQLite/dataset drift blocked, unknown changes retained, EXE drift, backup tamper fail-closed.'
+ Write-Host 'PASS: synthetic full match, added/removed EMPTY directories fail preservation (file hashes unchanged), WebView-only drift still FAIL, protected SQLite/dataset drift blocked, unknown changes retained, EXE drift, backup tamper fail-closed.'
  Write-Host 'NOT TESTED: owner real files, writer attribution, critical store preservation on Windows, physical offline/8GB or P4 release acceptance.'
 } finally {
  Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
