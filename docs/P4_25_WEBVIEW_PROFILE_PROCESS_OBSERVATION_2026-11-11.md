@@ -28,6 +28,10 @@ First implementation [4bdccbe](https://github.com/Sonkhe-Shongwe/PilotODIN/commi
 - Python 110/110 PASS, Node 29/29 PASS, TypeScript/Vite frontend build PASS, disposable real-HTTP Chromium browser 9/9 PASS.
 - None used owner files, actual owner WebView2 processes, an installer or model training. At initial report capture the subsequent documentation/README run had not finished; its later verified conclusion is recorded above.
 
+## 11 November 2026 | P4-28 native observer attempt FAILED in Windows PowerShell, compatibility correction CI PASS
+
+Owner-provided Windows PowerShell screenshot shows that the P4-27 optional observer was **actually attempted** but returned `[System.IO.Path] does not contain a method named 'IsPathFullyQualified'`. There was **no valid owner process-count output**. The error is consistent with Windows PowerShell 5.1 / .NET Framework. The [P4-28 source fix](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a0aa6922b1eff3324f8c9d6c38171a415973ad5e) removed that unavailable method and added Windows PowerShell 5.1 synthetic CI. Exact-source [#43055194559](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43055194559) **COMPLETED SUCCESS** with all three jobs. Owner physical retest is **PENDING**. The optional command below must only be rerun using corrected local source and existing naturally running apps. Strict original full-data-tree preservation remains **FAIL**. No historical writer attribution or risk waiver.
+
 ## Optional owner-side observation procedure (NOT EXECUTED)
 
 This is an **owner-approved, opt-in, read-only Windows diagnostic**, not an automatic next development action. Use it only when PilotODIN is already naturally running and owner decides to collect live metadata. Do **not** start either application solely for the test; do not run the older `Measure_P4_Native_Readiness.ps1` RAM collector, modify/rebaseline files, restore/delete caches, or install software for this observation. It cannot resolve the historical writer attribution on its own.
