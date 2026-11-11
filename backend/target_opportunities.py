@@ -105,10 +105,14 @@ def _is_date(name: str, series: pd.Series) -> bool:
 
 def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> dict:
     series = frame[name]
+    # Empty or whitespace-only strings are not observed outcome labels.
+    # Inspect a local view; never modify the original Quality snapshot.
+    blank_text = series.map(lambda value: isinstance(value, str) and not value.strip())
+    labels = series.mask(blank_text)
     rows = len(series)
-    labelled = int(series.notna().sum())
+    labelled = int(labels.notna().sum())
     missing = rows-labelled
-    distinct = int(series.nunique(dropna=True))
+    distinct = int(labels.nunique(dropna=True))
     evidence = [
         f"{labelled:,} non-missing labels out of {rows:,} records",
         f"{distinct:,} distinct non-missing label values",
@@ -126,6 +130,11 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
         )
     if _is_identifier(name):
         blockers.append("The header resembles a record identifier, not an outcome.")
+    if bool(blank_text.any()):
+        blockers.append(
+            "Blank or whitespace-only target labels must be cleaned in Quality "
+            "before this column can be reviewed as a supervised outcome."
+        )
     if _is_date(name, series):
         blockers.append("A date/time column is not a supported supervised target for this MVP.")
     if labelled < 30:
@@ -139,8 +148,8 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
         blockers.append("Complex-valued target labels are not supported.")
     elif pd.api.types.is_numeric_dtype(series) and labelled:
         try:
-            observed = series.dropna().to_numpy(dtype=float)
-            if not np.isfinite(observed).all():
+            finite_values = labels.dropna().to_numpy(dtype=float)
+            if not np.isfinite(finite_values).all():
                 blockers.append("Numeric target labels must be finite; infinity is not a valid observed outcome.")
         except (TypeError, ValueError, OverflowError):
             blockers.append("Numeric target labels could not be verified as finite values.")
@@ -148,18 +157,18 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
         blockers.append("High-cardinality text is likely a record key or free text rather than a supported label.")
     if not blockers:
         try:
-            task = engine.infer_task(series)
+            task = engine.infer_task(labels)
         except ValueError as exc:
             blockers.append(str(exc))
     if task == "classification":
-        counts = series.value_counts(dropna=True)
+        counts = labels.value_counts(dropna=True)
         min_class = int(counts.min()) if not counts.empty else 0
         evidence.append(f"Smallest observed class: {min_class:,} rows")
         if min_class < 6:
             blockers.append("Each classification class requires at least 6 labelled rows.")
     if task == "regression":
         try:
-            values = pd.to_numeric(series.dropna(), errors="coerce")
+            values = pd.to_numeric(labels.dropna(), errors="coerce")
             if not np.isfinite(values.to_numpy(dtype=float)).all():
                 blockers.append("Regression labels must be finite numeric values.")
         except (ValueError, TypeError, OverflowError):
@@ -167,7 +176,7 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     # A predictor varying only on rows WITHOUT a known label cannot supply
     # supervised learning evidence. Screen the labelled records, not the
     # entire dataset; this is still only structural, never leakage approval.
-    labelled_frame = frame.loc[series.notna()]
+    labelled_frame = frame.loc[labels.notna()]
     predictors = [c for c in frame.columns if c != name and
                   labelled_frame[c].notna().any() and
                   labelled_frame[c].nunique(dropna=True) > 1]

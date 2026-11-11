@@ -374,3 +374,48 @@ def test_partly_missing_labels_with_varying_labelled_predictor_stay_reviewable()
     assert candidate["task_hypothesis"] == "classification"
     assert any("missing" in w.lower() for w in candidate["review_warnings"])
     assert candidate["safe_to_train_automatically"] is False
+
+
+@pytest.mark.parametrize("blank_text", ["", " ", "\t", " \t "])
+def test_p4_blank_text_outcomes_are_not_counted_as_real_labels(blank_text):
+    # Previously, forty whitespace-only strings could masquerade as
+    # forty valid members of a second target class.
+    frame = pd.DataFrame({
+        "churn": ["Y"] * 40 + [blank_text] * 40,
+        "feature": list(range(80)),
+    })
+    original = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 3)
+    assert result["abstained"] is True
+    assert result["suggestions"] == []
+    candidate = {x["column"]: x for x in result["blocked_examples"]}["churn"]
+    assert candidate["labelled_rows"] == 40
+    assert candidate["missing_labels"] == 40
+    assert candidate["distinct_labels"] == 1
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("Blank or whitespace-only" in x for x in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 3, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["candidate"]["labelled_rows"] == 40
+    assert manual["training_authorised"] is False
+    assert frame.equals(original)
+
+
+def test_p4_one_whitespace_label_does_not_silently_make_reviewable_target():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40 + [" \t "],
+        "feature": list(range(81)),
+    })
+    result = target_opportunities.recommend(frame, 0)
+    assert result["abstained"]
+    candidate = {x["column"]: x for x in result["blocked_examples"]}["churn"]
+    assert candidate["labelled_rows"] == 80
+    assert candidate["missing_labels"] == 1
+    assert candidate["distinct_labels"] == 2
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert any("Blank or whitespace-only" in x for x in candidate["blockers"])
+    # Original text labels remain untouched, not silently trimmed or imputed.
+    assert frame.loc[80, "churn"] == " \t "
