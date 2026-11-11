@@ -21,8 +21,10 @@ function harness({models=['logistic_regression'],excluded=[],embedded=false,
    'onPrimaryDraftEdited','setModels','setExcluded','exports',
    compiled.outputText+'\nreturn exports.methods;')(
      selected,out,embedded,prepPresent?{high_risk_features:highRisk,available_features:available}:null,
-     hints,view=>events.push(view),next=>{selected=next},next=>{out=next},exports);
- return {...fn,events,getModels:()=>selected,getExcluded:()=>out};
+     hints,view=>events.push(view),next=>{selected=next},
+     next=>{out=typeof next==='function'?next(out):next},exports);
+ return {...fn,events,getModels:()=>selected,getExcluded:()=>out,
+   simulateQueuedCheckboxSelection:column=>{out=[...out,column]}};
 }
 test('Model button can add and remove choices while reporting each real edit',()=>{
  const add=harness();add.toggleModelChoice('random_forest');
@@ -47,6 +49,13 @@ test('Prepare suggestions report only a newly excluded feature, not a no-op',()=
  assert.deepEqual(already.events,[]);
  const notReady=harness({prepPresent:false});notReady.applyHighRiskExclusionSuggestions();
  assert.deepEqual(notReady.events,[]);
+});
+test('suggestions preserve a newer checkbox choice absent from the handler closure',()=>{
+ const h=harness({excluded:['prior_manual']});
+ h.simulateQueuedCheckboxSelection('later_manual');
+ h.applyHighRiskExclusionSuggestions();
+ assert.deepEqual(h.getExcluded(),['prior_manual','later_manual','risk_id','amount']);
+ assert.deepEqual(h.events,['prepare']);
 });
 test('docked button edits never masquerade as primary Studio edits',()=>{
  const h=harness({embedded:true});h.toggleModelChoice('random_forest');

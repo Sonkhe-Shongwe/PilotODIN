@@ -375,10 +375,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       ...featureHints.filter(f=>f.risk==='high').map(f=>f.column)
         .filter(column=>prep.available_features.includes(column)),
     ];
-    const next=[...new Set([...excluded,...proposed])];
-    if(next.length===excluded.length)return;
+    // Only mark a real edit, and merge against the CURRENT React state.
+    // A checkbox edit queued after this handler's render must never be lost.
+    const additions=proposed.filter(column=>!excluded.includes(column));
+    if(!additions.length)return;
     if(!embedded)onPrimaryDraftEdited?.('prepare');
-    setExcluded(next);
+    setExcluded(current=>[...new Set([...current,...additions])]);
   }
   async function startTrain(){
     if(!project||!prep||prep.target!==target)return;

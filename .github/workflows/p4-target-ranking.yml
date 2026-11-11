@@ -12,6 +12,9 @@ on:
       - backend/main.py
       - backend/target_timing_review.py
       - frontend/src/TargetOpportunities.tsx
+      - frontend/src/App.tsx
+      - frontend/tests/ml-a3-feature-preparation.test.cjs
+      - frontend/tests/p1-primary-button-edit-markers.test.cjs
       - frontend/tests/p4-review-queue-contracts.test.cjs
       - tests/test_p4_target_opportunities.py
       - tests/test_p4_target_business_context.py
@@ -92,6 +95,8 @@ jobs:
           frontend/tests/p4-prediction-timing-contracts.test.cjs
           frontend/tests/p4-two-axis-contracts.test.cjs
           frontend/tests/p4-review-queue-contracts.test.cjs
+          frontend/tests/ml-a3-feature-preparation.test.cjs
+          frontend/tests/p1-primary-button-edit-markers.test.cjs
       - name: Build actual TypeScript and Vite bundle
         run: npm run build --prefix frontend
 
