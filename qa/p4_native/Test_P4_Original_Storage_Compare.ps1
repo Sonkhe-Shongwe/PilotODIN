@@ -7,14 +7,14 @@ if ($env:RUNNER_OS -ne 'Windows' -or -not $env:RUNNER_TEMP) {
 $probe=Join-Path $PSScriptRoot 'Measure_P4_Native_Readiness.ps1'
 $compare=Join-Path $PSScriptRoot 'Compare_P4_Original_Storage.ps1'
 $root=Join-Path $env:RUNNER_TEMP ('p4-storage-compare-' + [guid]::NewGuid().ToString('N'))
-[void](New-Item -LiteralPath $root -ItemType Directory -ErrorAction Stop)
+[void](New-Item -Path $root -ItemType Directory -ErrorAction Stop)
 try {
  $backup=Join-Path $root 'backup'
  $current=Join-Path $root 'current'
  $exeRoot=Join-Path $root 'original-app'
  $evidence=Join-Path $root 'evidence'
  foreach ($p in @($backup,$exeRoot,$evidence)) {
-  [void](New-Item -LiteralPath $p -ItemType Directory -ErrorAction Stop)
+  [void](New-Item -Path $p -ItemType Directory -ErrorAction Stop)
  }
  $exe=Join-Path $exeRoot 'pilotodin-desktop.exe'
  Set-Content -LiteralPath $exe -Value 'DISPOSABLE-EXE' -NoNewline
