@@ -56,7 +56,7 @@ type NetworkAudit={writes:string[]; unexpectedReads:string[]; blockedOrigins:str
  * Every API response comes from this handler, never the actual :8000 backend.
  * Unrecognised requests return a synthetic 404 and are recorded.
  */
-async function installIsolatedAPI(context:BrowserContext,withProject:boolean,withSecondProject=false,withImport=false):Promise<NetworkAudit>{
+async function installIsolatedAPI(context:BrowserContext,withProject:boolean,withSecondProject=false,withImport=false,withColumnInvestigation=false):Promise<NetworkAudit>{
   const audit:NetworkAudit={writes:[],unexpectedReads:[],blockedOrigins:[],stubbedFontStylesheets:[],readOnlyCalculations:[],syntheticImports:[]};
   // A real upload is impossible in this isolated browser. The opt-in import
   // adds only an in-memory B fixture after a strict multipart payload check.
@@ -202,6 +202,44 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
       result=imported?importedProject:syntheticSecondProject;
     }else if(withProject&&(withSecondProject||imported)&&pathname===`/projects/${TEST_PROJECT_B}/live-profile`){
       result={version:0,profile:imported?importedProfile:secondProfile};
+    // Opt-in only for the actual drag Your Data into Prepare browser scenario.
+    // Column dictionary reads are synthetic, version-0, and never leave this
+    // isolated browser. No other project's columns or semantic endpoints pass.
+    }else if(withProject&&withColumnInvestigation&&
+      pathname===`/projects/${TEST_PROJECT}/columns/overview`&&url.search===''){
+      result={version:0,rows:2,column_count:2,note:'Synthetic field summary, no real dataset',
+        role_counts:{candidate_target:1,numeric_feature:1},
+        columns:[
+         {name:'fraud_reported',dtype:'object',role:'candidate_target',
+          role_explanation:'Synthetic label; not business approved',rows:2,non_null:2,
+          missing:0,missing_pct:0,unique:2,unique_pct:100,
+          identifier_candidate:false,warnings:[]},
+         {name:'amount',dtype:'int64',role:'numeric_feature',
+          role_explanation:'Synthetic numeric observation',rows:2,non_null:2,
+          missing:0,missing_pct:0,unique:2,unique_pct:100,
+          identifier_candidate:false,warnings:[]},
+        ]};
+    }else if(withProject&&withColumnInvestigation&&
+      pathname===`/projects/${TEST_PROJECT}/columns/detail`&&
+      url.search==='?name=fraud_reported&expected_version=0'){
+      result={version:0,name:'fraud_reported',dtype:'object',role:'candidate_target',
+        role_explanation:'Synthetic label; not business approved',rows:2,non_null:2,
+        missing:0,missing_pct:0,unique:2,unique_pct:100,
+        identifier_candidate:false,warnings:[],examples:['N','Y'],
+        sample_rows:[{row_number:1,value:'N',missing:false},
+          {row_number:2,value:'Y',missing:false}],statistics:null,
+        distribution:[{value:'N',count:1,pct:50},{value:'Y',count:1,pct:50}],
+        invalid_or_nonfinite:0,sample_note:'Synthetic sample',distribution_note:'Synthetic counts'};
+    }else if(withProject&&withColumnInvestigation&&
+      pathname===`/projects/${TEST_PROJECT}/semantics`&&url.search==='?expected_version=0'){
+      result={version:0,rows:2,columns_examined:2,columns_total:2,
+        domain:{state:'unknown',label:null,evidence_columns:[],reason:'Not verified'},
+        grain:{state:'unknown',identifier_column:null,reason:'Not verified'},
+        fields:[],observed:'Synthetic summary',inferred:'Unverified',
+        unknown:'Owner decision required.',note:'Isolated local fixture',user_context:null};
+    }else if(withProject&&withColumnInvestigation&&
+      pathname===`/projects/${TEST_PROJECT}/semantic-reviews`&&url.search==='?expected_version=0'){
+      result={version:0,candidates:[],note:'Synthetic, no saved reviews'};
     }else if(withProject&&withImport&&imported&&pathname===`/projects/${TEST_PROJECT_B}/quality`){
       result={project_id:TEST_PROJECT_B,version:0,rows:2,columns:2,
         summary:{issues:0,automatic_available:0,review_required:0,information:0,applied_actions:0},issues:[]};
@@ -1367,7 +1405,7 @@ test('satin chronograph clock stays elegant without crowding the project selecto
 });
 
 test('drag Your data onto Prepare page docks side by side without backend writes',async({page,context})=>{
- const audit=await installIsolatedAPI(context,true);
+ const audit=await installIsolatedAPI(context,true,false,false,true);
  await page.setViewportSize({width:1440,height:900});
  await page.addInitScript((id:string)=>{
   localStorage.setItem('pilotodin-current',id);
@@ -1387,6 +1425,7 @@ test('drag Your data onto Prepare page docks side by side without backend writes
  await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
  await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
  await expect(dock.getByRole('heading',{name:'Understand',exact:true})).toBeVisible();
+ await expect(dock.getByRole('region',{name:'Data dictionary and field investigation'})).toContainText('2 fields');
  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
  // The existing explicit icon must continue to work independently.
  await dock.getByRole('button',{name:'Close docked pane'}).click();
