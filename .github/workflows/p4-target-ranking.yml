@@ -13,6 +13,13 @@ on:
       - backend/target_timing_review.py
       - frontend/src/TargetOpportunities.tsx
       - frontend/tests/p4-review-queue-contracts.test.cjs
+      - tests/test_p4_target_opportunities.py
+      - tests/test_p4_target_business_context.py
+      - tests/test_p4_prediction_timing_review.py
+      - tests/test_p4_two_axis_evidence.py
+      - frontend/tests/p4-business-context-contracts.test.cjs
+      - frontend/tests/p4-prediction-timing-contracts.test.cjs
+      - frontend/tests/p4-two-axis-contracts.test.cjs
       - tests/test_p4_review_queue.py
       - tests/test_p4_manual_target_inspection.py
       - tests/test_p4_queue_resource_bounds.py

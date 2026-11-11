@@ -264,3 +264,20 @@ test('P4-05 tests cover disclosed ordering, overflow, no target, missing labels'
   'test_all_blocked_or_no_named_outcomes_abstain_without_queue_or_approval',
  ])assert.ok(testSource.includes(testName),'Missing focused regression: '+testName);
 });
+
+
+test('P4 workflow path filter covers every focused Python and Node test it invokes',()=>{
+ const workflow=read('.github/workflows/p4-target-ranking.yml');
+ const pathsSection=workflow.split('    paths:\n')[1]?.split('  workflow_dispatch:')[0];
+ assert.ok(pathsSection,'Expected GitHub push path filter in P4 workflow');
+ const triggers=new Set(
+  [...pathsSection.matchAll(/^\s*-\s+([^\s]+)\s*$/gm)].map(m=>m[1])
+ );
+ const exercised=new Set(
+  [...workflow.matchAll(/\b(?:tests\/test_p4_[a-z0-9_]+\.py|frontend\/tests\/p4-[a-z0-9-]+\.test\.cjs)\b/g)]
+   .map(m=>m[0])
+ );
+ assert.ok(exercised.size>=12,'Unexpectedly short P4 test suite');
+ for(const name of exercised)
+  assert.ok(triggers.has(name),'P4 test-only edits would not trigger CI: '+name);
+});
