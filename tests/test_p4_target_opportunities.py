@@ -528,3 +528,61 @@ def test_p4_internal_spaces_in_real_text_outcomes_remain_valid_for_review():
     assert candidate["safe_to_train_automatically"] is False
     assert target_opportunities.inspect_manual_target(frame, 0, "churn")["training_authorised"] is False
     assert frame.equals(before)
+
+
+@pytest.mark.parametrize("predictor", [
+    [float("inf"), float("-inf")] * 40,
+    [2.0, float("inf")] * 40,
+    [2.0, float("-inf")] * 40,
+])
+def test_p4_nonfinite_numeric_predictor_does_not_establish_usable_variation(predictor):
+    # Pandas treats infinities as nonmissing, distinct values, but no finite
+    # two-value predictor remains after screening. Training remains forbidden.
+    frame = pd.DataFrame({"churn": ["Y", "N"] * 40, "signal": predictor})
+    original = frame.copy(deep=True)
+    assert frame["signal"].nunique(dropna=True) == 2
+    result = target_opportunities.recommend(frame, 0)
+    assert result["abstained"] is True
+    assert result["suggestions"] == []
+    candidate = {x["column"]: x for x in result["blocked_examples"]}["churn"]
+    assert candidate["labelled_rows"] == 80
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert any("No non-constant, non-empty candidate predictor" in x
+               for x in candidate["blockers"])
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 0, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["training_authorised"] is False
+    assert frame.equals(original)
+
+
+def test_p4_two_finite_numeric_predictor_values_still_support_structural_review():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "signal": [0.0, 1.0, float("inf"), float("-inf")] * 20,
+    })
+    original = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 0)
+    candidate = {x["column"]: x for x in result["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 0, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(original)
+
+
+def test_p4_missing_numeric_predictor_values_remain_not_usable():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "signal": [float("nan"), float("inf"), float("-inf"), 4.0] * 20,
+    })
+    original = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 0)
+    assert result["abstained"] is True
+    candidate = {x["column"]: x for x in result["blocked_examples"]}["churn"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["safe_to_train_automatically"] is False
+    assert frame.equals(original)

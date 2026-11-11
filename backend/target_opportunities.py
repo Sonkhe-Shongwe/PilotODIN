@@ -194,7 +194,15 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
 
     def has_observed_variation(column: str) -> bool:
         values = labelled_frame[column]
-        if pd.api.types.is_object_dtype(values) or pd.api.types.is_string_dtype(values):
+        if pd.api.types.is_numeric_dtype(values):
+            # Infinity is not usable predictor variation. A nonfinite-only
+            # column, or one finite value plus infinity, must not make a
+            # target look structurally reviewable. Do not alter Quality data.
+            finite_or_missing = values.map(
+                lambda value: pd.isna(value) or bool(np.isfinite(value))
+            )
+            values = values.where(finite_or_missing)
+        elif pd.api.types.is_object_dtype(values) or pd.api.types.is_string_dtype(values):
             empty_text = values.map(
                 lambda value: isinstance(value, str) and not value.strip()
             )
