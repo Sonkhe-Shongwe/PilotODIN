@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | P4 native Windows acceptance kit
 
+## 11 November 2026 | P4-41 empty-directory integrity guard (source CI only)
+
+The original-data read-only comparator now rejects **added or removed empty directories** even when all files still match the historical P4-22 file-only baseline. Directory paths are compared only **in memory against the independently preserved backup** and reported as aggregate added/missing counts; no names or source paths are exported. Historical `baseline.json` v1 was not changed and did not record directories, so historic baseline-time directory layout cannot be certified. Synthetic Windows tests for this strict failure passed on **PowerShell 7 and Windows PowerShell 5.1** in [exact-source P4 CI #43093680329](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43093680329), source `817783dc`. The owner's observed **full-tree 320 vs 346 file preservation FAIL is unchanged**; 74 browser/cache items remain candidates, historical writer unknown. **No new owner command or installer is requested.** See [P4-41 focused report](../../docs/P4_41_EMPTY_DIRECTORY_PRESERVATION_FAIL_CLOSED_2026-11-11.md).
+
 ## 11 November 2026 | Current P4-25 evidence (no owner command required)
 
 The owner has executed the P4-24 read-only storage check: independent baseline backup TRUE, original EXE hash TRUE, 0 critical project-store data/ changes, 74 WebView/cache candidate differences, 0 unclassified. **Entire original-data preservation remains FAIL**, with no writer-process attribution, cache waiver, RAM/8GB certification or independent Gate C. Older acceptance notes below represent their original test dates, not current status.
