@@ -28,6 +28,27 @@ First implementation [4bdccbe](https://github.com/Sonkhe-Shongwe/PilotODIN/commi
 - Python 110/110 PASS, Node 29/29 PASS, TypeScript/Vite frontend build PASS, disposable real-HTTP Chromium browser 9/9 PASS.
 - None used owner files, actual owner WebView2 processes, an installer or model training. At initial report capture the subsequent documentation/README run had not finished; its later verified conclusion is recorded above.
 
+## Optional owner-side observation procedure (NOT EXECUTED)
+
+This is an **owner-approved, opt-in, read-only Windows diagnostic**, not an automatic next development action. Use it only when PilotODIN is already naturally running and owner decides to collect live metadata. Do **not** start either application solely for the test; do not run the older `Measure_P4_Native_Readiness.ps1` RAM collector, modify/rebaseline files, restore/delete caches, or install software for this observation. It cannot resolve the historical writer attribution on its own.
+
+Open Windows PowerShell in the trusted *current source* PilotODIN repository root (branch `feature/live-dev-workspace-20261023` containing the P4-26 fix). The commands below use the default Windows local-app-data roots derived from the existing distinct Tauri identifiers; confirm the actual root layout locally before use. They print no private root path, command line, PID, file content or hash:
+
+```powershell
+if (-not $env:LOCALAPPDATA) { throw 'LocalAppData unavailable; no observation taken.' }
+$originalRoot = Join-Path $env:LOCALAPPDATA 'com.pilotodin.studio'
+$qaRoot = Join-Path $env:LOCALAPPDATA 'com.pilotodin.p4nativeqa'
+& .\qa\p4_native\Observe_P4_WebView_Profile_Processes.ps1 `
+    -OriginalDataRoot $originalRoot -QaDataRoot $qaRoot |
+  Select-Object status,webview2_processes_observed,original_profile_processes,qa_profile_processes,other_profile_processes,unresolved_profile_processes,historical_writer_process_identified,qa_cross_app_write_excluded,original_full_data_preservation_passed,original_project_data_certified,offline_8gb_certified
+```
+
+If the file is missing, the expected roots cannot be established, the PowerShell execution policy refuses the script, or CIM access errors, **stop and record NOT TESTED/UNRESOLVED**. Do not download unverified replacements, bypass execution policy, elevate privileges, modify app files or force a new process to start. The command is intended to be run in the user's existing trusted repository checkout, not via remote execution.
+
+Record only the sanitized aggregate output and whether original, QA or neither application was *already* running. Interpret zero observed processes as **INCONCLUSIVE**; a resolved original/QA launch flag establishes **only a current profile argument**, not writer identity or absence of past cross-app writes. Missing/ambiguous flags remain unresolved. No output category waives the previously failed strict original-data-tree comparison.
+
+**Latest source evidence:** P4-26 classifier/test source `50351860537ff2c55be83d01c82f152fc21d09f2` passed [CI #43052326497](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43052326497) in a synthetic Windows runner, not on owner hardware. Owner live process observation: **NOT EXECUTED**. Full original preservation: **FAIL**. P4 closure and P5 authorisation: **NOT APPROVED**.
+
 ## Acceptance and next constrained work
 
 | Requirement | State |
