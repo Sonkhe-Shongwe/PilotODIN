@@ -139,3 +139,4 @@ jobs:
           $ErrorActionPreference = 'Stop'
           ./qa/p4_native/Test_P4_Native_Readiness_Probe.ps1
           ./qa/p4_native/Test_P4_Original_Storage_Compare.ps1
+          ./qa/p4_native/Test_P4_WebView_Process_Evidence.ps1
