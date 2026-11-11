@@ -2,6 +2,23 @@
 # No filesystem or process enumeration takes place in this module.
 Set-StrictMode -Version Latest
 
+# A flag embedded in another quoted argument is not an argument boundary.
+# Windows command-line double quotes preceded by an odd number of backslashes
+# are escaped; reject ambiguous cases instead of attributing profile ownership.
+function Test-P4FlagOutsideQuotes {
+    param([string]$CommandLine, [int]$Position)
+    $quoted = $false
+    for ($i = 0; $i -lt $Position; $i++) {
+        if ($CommandLine[$i] -ne '"') { continue }
+        $slashes = 0
+        for ($j = $i - 1; $j -ge 0 -and $CommandLine[$j] -eq [char]'\'; $j--) {
+            $slashes++
+        }
+        if (($slashes % 2) -eq 0) { $quoted = -not $quoted }
+    }
+    return (-not $quoted)
+}
+
 function Resolve-P4WebViewProcessOwnership {
     [CmdletBinding()]
     param(
@@ -32,8 +49,11 @@ function Resolve-P4WebViewProcessOwnership {
         # Exactly one explicit quoted or unspaced --user-data-dir.
         # Never guess from PID, parent PID, window title or Tauri ID.
         $cmd = [string]$process.CommandLine
-        $flags = [regex]::Matches($cmd, '(?i)(?:^|\s)--user-data-dir=(?:"([^"]+)"|([^\s"]+))')
-        if ($flags.Count -ne 1) {
+        # Require a complete flag token, not a prefix of a malformed token.
+        # Its leading space also must be outside other quoted arguments.
+        $flags = [regex]::Matches($cmd, '(?i)(?:^|\s)--user-data-dir=(?:"([^"]+)"|([^\s"]+))(?=\s|$)')
+        if ($flags.Count -ne 1 -or
+            -not (Test-P4FlagOutsideQuotes -CommandLine $cmd -Position $flags[0].Index)) {
             $unresolvedCount++
             continue
         }

@@ -22,14 +22,20 @@ $records = @(
     (Process 'msedgewebview2.exe' 'msedgewebview2.exe --type=renderer'),
     (Process 'msedgewebview2.exe' 'msedgewebview2.exe --user-data-dir=relative-profile'),
     (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir="' + $oldProfile + '" --user-data-dir="' + $qaProfile + '"')),
+    # The text below is inside --log-file, never a separate --user-data-dir flag.
+    (Process 'msedgewebview2.exe' ('msedgewebview2.exe --log-file="note --user-data-dir=' + $oldProfile + '"')),
+    (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir="' + $qaProfile + '"garbage')),
+    (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir=' + $oldProfile + '"garbage')),
+    # A valid flag remains discoverable after an unrelated quoted argument.
+    (Process 'msedgewebview2.exe' ('msedgewebview2.exe --log-file="safe message" --user-data-dir="' + $oldProfile + '"')),
     (Process 'chrome.exe' ('chrome.exe --user-data-dir="' + $oldProfile + '"'))
 )
 $observed = Resolve-P4WebViewProcessOwnership -Processes $records -OriginalDataRoot $old -QaDataRoot $qa
-Check ($observed.webview2_processes_observed -eq 6) 'WebView2 process count wrong'
-Check ($observed.original_profile_processes -eq 1) 'Original flag recognition wrong'
+Check ($observed.webview2_processes_observed -eq 10) 'WebView2 process count wrong'
+Check ($observed.original_profile_processes -eq 2) 'Original flag recognition wrong'
 Check ($observed.qa_profile_processes -eq 1) 'QA flag recognition wrong'
 Check ($observed.other_profile_processes -eq 1) 'Sibling prefix misclassified'
-Check ($observed.unresolved_profile_processes -eq 3) 'Ambiguous/missing/relative flag guessed'
+Check ($observed.unresolved_profile_processes -eq 6) 'Ambiguous/missing/relative flag guessed'
 Check ($observed.status -eq 'CURRENT_LAUNCH_FLAGS_ONLY_NOT_HISTORICAL_WRITE_PROOF') 'Misleading result status'
 Check (-not $observed.historical_writer_process_identified -and
        -not $observed.qa_cross_app_write_excluded -and
