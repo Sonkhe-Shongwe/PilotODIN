@@ -281,3 +281,20 @@ test('P4 workflow path filter covers every focused Python and Node test it invok
  for(const name of exercised)
   assert.ok(triggers.has(name),'P4 test-only edits would not trigger CI: '+name);
 });
+
+
+test('owner installer freeze disables every known installer and installer-verification job',()=>{
+ const guarded=[
+  ['.github/workflows/p4-native-windows-milestone.yml','full-p4-qa-package'],
+  ['.github/workflows/bundled-windows-installer.yml','offline-windows-installer'],
+  ['.github/workflows/windows-desktop.yml','windows-installer'],
+  ['.github/workflows/verify-existing-installer.yml','clean-install'],
+ ];
+ for(const [path,job] of guarded){
+  const content=read(path);
+  const section=content.split('  '+job+':\n')[1];
+  assert.ok(section,'Expected installer-related workflow job '+job);
+  const header=section.split(/^\s{4}steps:/m)[0];
+  assert.match(header,/^    if: \$\{\{ false \}\}\s*$/m,'Missing fail-closed installer freeze for '+path);
+ }
+});

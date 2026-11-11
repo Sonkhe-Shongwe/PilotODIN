@@ -31,6 +31,10 @@ concurrency:
 
 jobs:
   full-p4-qa-package:
+    # Owner's 11 Nov 2026 freeze: no intermediate PilotODIN installer or
+    # installer-verification runs through P4-P7, even on manual dispatch.
+    # At final P8, remove only with separate explicit owner approval.
+    if: ${{ false }}
     name: Build exact-source side-by-side Windows QA installer and identity proof
     runs-on: windows-2022
     timeout-minutes: 160
