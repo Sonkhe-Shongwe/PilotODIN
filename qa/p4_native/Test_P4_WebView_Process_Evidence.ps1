@@ -23,7 +23,7 @@ $records = @(
     (Process 'msedgewebview2.exe' 'msedgewebview2.exe --user-data-dir=relative-profile'),
     (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir="' + $oldProfile + '" --user-data-dir="' + $qaProfile + '"')),
     # The text below is inside --log-file, never a separate --user-data-dir flag.
-    (Process 'msedgewebview2.exe' ('msedgewebview2.exe --log-file="note --user-data-dir=' + $oldProfile + '"')),
+    (Process 'msedgewebview2.exe' ('msedgewebview2.exe --log-file="note --user-data-dir=' + $oldProfile + ' trailing"')),
     (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir="' + $qaProfile + '"garbage')),
     (Process 'msedgewebview2.exe' ('msedgewebview2.exe --user-data-dir=' + $oldProfile + '"garbage')),
     # A valid flag remains discoverable after an unrelated quoted argument.
