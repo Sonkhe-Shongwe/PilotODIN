@@ -5,7 +5,7 @@ Set-StrictMode -Version Latest
 function Resolve-P4WebViewProcessOwnership {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)][object[]]$Processes,
+        [Parameter(Mandatory=$true)][AllowEmptyCollection()][object[]]$Processes,
         [Parameter(Mandatory=$true)][string]$OriginalDataRoot,
         [Parameter(Mandatory=$true)][string]$QaDataRoot
     )
