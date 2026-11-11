@@ -46,3 +46,26 @@ A successful synthetic Windows job is **not** direct Windows owner file-integrit
 Preserve the trusted backup, saved original P4-22 baseline and failed verification; no cleanup, restore, cache exclusion, new baseline or reinstall to force a pass. First decide whether a single opt-in, source-matched **read-only** native run against these preserved sources is justified to identify changes specifically within critical data/ and verify original production EXE. If needed, collect process-aware native evidence separately because folder classification cannot identify who wrote files.
 
 Full original production data preservation remains **FAILED pending root cause**. Offline local model, sustained 8 GB, current-source Windows docking/native UI retest and real-world operational Gate C remain unresolved. **P4 ACTIVE; P5 NOT AUTHORISED; P8 NOT CERTIFIED.**
+
+## New owner Windows evidence | 11 November 2026
+
+The owner ran this exact comparator in Windows PowerShell against the preserved independently verified pre-QA backup, original production directory and original EXE, then supplied the resulting console screenshot. **This supersedes the earlier 'tool not yet run on owner files' status for evidence acquired later**; it does not change the historical source-only CI statement above.
+
+| Reported field | Owner Windows value |
+|---|---|
+| `status` | `REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED` |
+| `independent_backup_matches_baseline` | `True` |
+| `original_exe_matches_baseline` | `True` |
+| `full_original_data_tree_matches_baseline` | `False` |
+| `baseline_file_count` / `current_file_count` | `320` / `346` |
+| `critical_project_store_changes` (added/modified/missing) | `0` (`0/0/0`) |
+| `browser_cache_candidate_changes` | `74` |
+| `unclassified_changes` | `0` |
+| `all_changed_files` | `74` |
+| `full_data_integrity_waived` / `project_data_certified` | `False` / `False` |
+| `writer_process_identified` / `offline_8gb_certified` | `False` / `False` |
+
+**Interpretation:** The original EXE and backup are confirmed unchanged by the read-only comparator. It found **zero relative-path/content differences inside the source-defined critical `data/` project-store subtree**. All 74 differences were classified as *browser/cache candidates* by directory-segment patterns. This does **not** prove the changes harmless, identify the writer process, ensure native cross-app WebView profile isolation or certify entire original-data preservation. The original strict full-tree hash still **FAILS**; no accepted cache exemption or approval to bypass P4-22 occurred. This new complete classification resolves the earlier *partial top-15 view* only: the previously undisplayed 12 differences are now also in the browser/cache-candidate category, not unclassified.
+
+**Next:** Preserve the trusted backup, original baseline and failed verification. Continue narrow Windows WebView2 profile/process ownership investigation (source-derived user-data folder and, if needed, owner-authorised local process observation) without new installer, data writes, deletions, new baseline or owner risk waiver. P4 ACTIVE, full integrity and RAM certification open, real business Gate C unverified, P5 not authorised and P8 not certified. This is documentation of an actual owner-native diagnostic, **not fresh CI**.
+
