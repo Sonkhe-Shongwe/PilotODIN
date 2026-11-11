@@ -14,6 +14,10 @@ Owner-native read-only P4-24 result: independently verified backup matches saved
 - Private command lines, profile paths, file names, user data and per-process identifiers remain in memory and are never output/persisted. Output has aggregate counts and explicit false flags for historical file-writer attribution, no-QA-cross-app-write proof, full original-data preservation, critical project-data certification and offline 8 GB certification.
 - It does NOT inspect historical file writes, prove that any observed process wrote any file, or rule out other processes. A QA-profile launch flag is neither proof of never writing outside the QA path nor business release acceptance. The original strict P4-22 baseline/collector and full-tree failure are unchanged.
 
+## Follow-up verified CI on the subsequent documentation/README commit
+
+After the P4-25 source and the initial report were committed, GitHub completed [P4 workflow #43049490270](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43049490270) **SUCCESS** at exact [`7fda31d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7fda31d0d0fe15bfa4867c52173bd79ab84ca2a6). All three jobs completed successfully: Linux synthetic Python/Node/build, disposable real-HTTP Chromium, and synthetic Windows preservation/profile observer. The `qa/p4_native/README.md` change in that commit met the P4 workflow push-path trigger. This corrects the initial point-in-time statement that the documentation successor had no fresh CI. It was an exact-source rerun of already implemented code, NOT a new production implementation or owner native test. No original data, acceptance gate, historical writer attribution or owner decision changed. The present report correction is documentation-only and carries no fresh CI claim.
+
 ## Engineering source commit and verification
 
 First implementation [4bdccbe](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4bdccbe6bc4bd2e908ac0e990b8d468e08fa3248), workflow [#43048430220](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43048430220), ended CANCELLED on newer push; its Windows job FAILED because mandatory PowerShell binding rejected the empty synthetic process list. This failure remains in the evidence history. Fixed by accepting empty arrays in [c02b491](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c02b49187422b95d1b2c3e9a165d02b58155bd61).
@@ -22,7 +26,7 @@ First implementation [4bdccbe](https://github.com/Sonkhe-Shongwe/PilotODIN/commi
 **Full P4 GitHub CI:** [#43048615880](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43048615880) COMPLETED SUCCESS, all 3 jobs at that SHA:
 - Windows 2022 synthetic P4-22 and P4-24 integrity fixtures PASS; new P4-25 synthetic WebView2 classifier PASS for original/QA/outside profiles, prefix sibling guard, conflicting/relative/empty flags, overlapping roots rejection, distinct source Tauri IDs and no observer write operations.
 - Python 110/110 PASS, Node 29/29 PASS, TypeScript/Vite frontend build PASS, disposable real-HTTP Chromium browser 9/9 PASS.
-- None used owner files, actual owner WebView2 processes, an installer or model training. This document and subsequent documentation-only commit do not have fresh CI of their own.
+- None used owner files, actual owner WebView2 processes, an installer or model training. At initial report capture the subsequent documentation/README run had not finished; its later verified conclusion is recorded above.
 
 ## Acceptance and next constrained work
 
