@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | P4 native Windows acceptance kit
 
+## 11 November 2026 | Current P4-25 evidence (no owner command required)
+
+The owner has executed the P4-24 read-only storage check: independent baseline backup TRUE, original EXE hash TRUE, 0 critical project-store data/ changes, 74 WebView/cache candidate differences, 0 unclassified. **Entire original-data preservation remains FAIL**, with no writer-process attribution, cache waiver, RAM/8GB certification or independent Gate C. Older acceptance notes below represent their original test dates, not current status.
+
+The optional read-only [Windows WebView2 process observer](./Observe_P4_WebView_Profile_Processes.ps1), [pure classifier](./P4_WebView_Process_Evidence.psm1) and [synthetic test](./Test_P4_WebView_Process_Evidence.ps1) passed [P4 Windows CI #43048615880](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43048615880) at c02b491. They classify CURRENT --user-data-dir launch arguments from Windows msedgewebview2.exe; private command lines and paths are not printed and no apps are launched or owner data written. **Owner native process observation has NOT occurred**. Empty process snapshots or a QA-specific launch argument cannot prove historical file-write isolation. No further owner action, installer, cleanup or baseline reset is requested now. See [P4-25 report](../../docs/P4_25_WEBVIEW_PROFILE_PROCESS_OBSERVATION_2026-11-11.md).
+
+
 ## 9 November 2026 | Current evidence and P4-22 read-only collector (NO ACTION REQUIRED NOW)
 
 **Actual owner-native evidence is no longer entirely UNTESTED.** The owner installed and SHA-verified a **separate** `pilotODIN-P4-Native-QA` from historical source `bca3c57b94a425cd9ef489726e721328d12c2ead`, without replacing the old `pilotODIN`; observed basic Home/Prepare, native classification, repeated-ID evidence, explicit target choice and abstention, regression and visible project-switch isolation. Those tested subcases are recorded in [P4 Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9). **N8–N12, full old-data post-test hashing, 8 GB offline performance, independent business Gate C and newest source fixes are NOT owner-native verified.** The `RESULTS_TEMPLATE.md` remains an **unfilled template**, not a record of the owner's previous screenshots.
