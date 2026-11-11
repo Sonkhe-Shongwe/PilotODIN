@@ -592,6 +592,26 @@ def column_investigation_overview(project_id: str):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+def _require_p4_review_version_fresh(project_id: str, expected_version: int) -> None:
+    """Fail closed if a Quality revision commits during read-only target review.
+
+    Check the authoritative committed SQLite version again AFTER the bounded
+    scan. No write lock, new Quality state, data mutation or model fitting.
+    This narrows a stale-response window; it does not create an atomic snapshot
+    or replace the frontend's version-bound explicit target selection.
+    """
+    with storage.connect() as con:
+        row = con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",
+            (project_id,),
+        ).fetchone()
+    if row is None or int(row["current_version"]) != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail="Working dataset version changed during target review. Refresh and retry.",
+        )
+
+
 @app.get("/api/projects/{project_id}/target-opportunities")
 def target_opportunity_overview(
     project_id: str, request: Request, expected_version: int = Query(ge=0)
@@ -606,9 +626,11 @@ def target_opportunity_overview(
             detail="Working dataset version changed. Refresh target recommendations before selecting a target.",
         )
     try:
-        return target_opportunities.recommend(
+        result = target_opportunities.recommend(
             frame, version, storage.target_contexts(project_id, version)
         )
+        _require_p4_review_version_fresh(project_id, version)
+        return result
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -632,6 +654,7 @@ def inspect_manual_target_opportunity(
         details = target_opportunities.inspect_manual_target(
             frame, version, column, storage.target_contexts(project_id, version)
         )
+        _require_p4_review_version_fresh(project_id, version)
         return {"project_id": project_id, **details}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

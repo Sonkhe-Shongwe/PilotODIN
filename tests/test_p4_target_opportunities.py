@@ -187,7 +187,13 @@ def test_project_version_and_origin_guards_are_enforced(tmp_path, monkeypatch):
     monkeypatch.setattr(storage,"HOME",home)
     monkeypatch.setattr(storage,"DB_PATH",home/"pilotodin.sqlite3")
     storage.init()
+    main.quality._init_tables()
     pid=storage.save_project("Synthetic","data.csv",".csv",home/"datasets"/"data.csv",{"rows":80})
+    with storage.connect() as con:
+        con.execute(
+            "INSERT INTO quality_state(project_id,original_sha256,current_version) "
+            "VALUES (?,?,?)", (pid, "synthetic-only", 4)
+        )
     monkeypatch.setattr(main.quality,"current_data",lambda id: (
         insurance_frame(),4
     ) if id==pid else (_ for _ in ()).throw(AssertionError("wrong project")))

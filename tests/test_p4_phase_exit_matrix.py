@@ -178,3 +178,131 @@ def test_p4_09_duplicate_headers_and_derived_score_do_not_get_approved():
     assert out["abstained"]
     assert out["suggestions"] == []
     assert out["blocked_examples"][0]["safe_to_train_automatically"] is False
+
+
+@pytest.mark.parametrize("review_path", ["queue", "manual"])
+def test_p4_quality_commit_during_target_review_fails_closed(
+    tmp_path, monkeypatch, review_path
+):
+    """A competing approved Quality revision cannot return stale target evidence."""
+    home = tmp_path / "p4-final-version-cas"
+    (home / "datasets").mkdir(parents=True)
+    (home / "models").mkdir()
+    monkeypatch.setattr(storage, "HOME", home)
+    monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
+    storage.init()
+    main.quality._init_tables()
+    first = storage.save_project(
+        "Synthetic changing", "one.csv", ".csv",
+        home / "datasets" / "one.csv", {"rows": 80}
+    )
+    other = storage.save_project(
+        "Synthetic untouched", "two.csv", ".csv",
+        home / "datasets" / "two.csv", {"rows": 80}
+    )
+    with storage.connect() as con:
+        for pid in (first, other):
+            con.execute(
+                "INSERT INTO quality_state(project_id,original_sha256,current_version) "
+                "VALUES (?,?,?)", (pid, "synthetic-only", 2)
+            )
+    frames = {first: _frame("classification"), other: _frame("regression")}
+    versions = {first: 2, other: 2}
+    monkeypatch.setattr(
+        main.quality, "current_data", lambda pid: (frames[pid], versions[pid])
+    )
+    original = (
+        target_opportunities.recommend
+        if review_path == "queue"
+        else target_opportunities.inspect_manual_target
+    )
+    shifted = False
+
+    def concurrent_revision(*args, **kwargs):
+        nonlocal shifted
+        result = original(*args, **kwargs)
+        if not shifted:
+            # The competing transaction is already committed before P4's
+            # final version recheck. This mimics another Quality approval,
+            # never a model fit or a real user dataset.
+            with storage.connect() as con:
+                con.execute(
+                    "UPDATE quality_state SET current_version=3 WHERE project_id=?",
+                    (first,)
+                )
+            shifted = True
+        return result
+
+    monkeypatch.setattr(
+        target_opportunities,
+        "recommend" if review_path == "queue" else "inspect_manual_target",
+        concurrent_revision,
+    )
+    client = TestClient(main.app)
+    suffix = (
+        "/target-opportunities"
+        if review_path == "queue"
+        else "/target-opportunities/inspect"
+    )
+    params = {"expected_version": 2}
+    if review_path == "manual":
+        params["column"] = "churn"
+    response = client.get(f"/api/projects/{first}{suffix}", params=params)
+    assert response.status_code == 409, response.text
+    assert "version changed during target review" in response.json()["detail"]
+    assert "suggestions" not in response.json()
+    assert "candidate" not in response.json()
+    assert storage.recent_experiments(first) == []
+    assert storage.target_contexts(first, 2) == {}
+    with storage.connect() as con:
+        versions_after = {
+            pid: con.execute(
+                "SELECT current_version FROM quality_state WHERE project_id=?",
+                (pid,),
+            ).fetchone()["current_version"]
+            for pid in (first, other)
+        }
+    assert versions_after == {first: 3, other: 2}
+    assert client.get(
+        f"/api/projects/{other}/target-opportunities",
+        params={"expected_version": 2},
+    ).status_code == 200
+    versions[first] = 3
+    recovered = client.get(
+        f"/api/projects/{first}{suffix}",
+        params={"expected_version": 3, **({"column": "churn"} if review_path == "manual" else {})},
+    )
+    assert recovered.status_code == 200, recovered.text
+    assert storage.recent_experiments(first) == []
+
+
+def test_p4_missing_committed_quality_state_refuses_false_review(
+    tmp_path, monkeypatch
+):
+    """The post-scan check may not assume a mock or missing DB row is current."""
+    home = tmp_path / "p4-uninitialised-test-fixture"
+    (home / "datasets").mkdir(parents=True)
+    (home / "models").mkdir()
+    monkeypatch.setattr(storage, "HOME", home)
+    monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
+    storage.init()
+    main.quality._init_tables()
+    pid = storage.save_project(
+        "Synthetic no version row", "missing.csv", ".csv",
+        home / "datasets" / "missing.csv", {"rows": 80}
+    )
+    monkeypatch.setattr(
+        main.quality, "current_data",
+        lambda _: (_frame("classification"), 0),
+    )
+    response = TestClient(main.app).get(
+        f"/api/projects/{pid}/target-opportunities",
+        params={"expected_version": 0},
+    )
+    assert response.status_code == 409
+    with storage.connect() as con:
+        assert con.execute(
+            "SELECT COUNT(*) FROM quality_state WHERE project_id=?",
+            (pid,),
+        ).fetchone()[0] == 0
+    assert storage.recent_experiments(pid) == []

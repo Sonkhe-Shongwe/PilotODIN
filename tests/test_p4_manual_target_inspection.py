@@ -69,11 +69,18 @@ def test_p4_12_local_version_project_and_invalid_column_rejection(tmp_path, monk
     monkeypatch.setattr(storage, "HOME", home)
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
+    main.quality._init_tables()
     ids = [
         storage.save_project(n, n + ".csv", ".csv", home / "datasets" / (n + ".csv"), {"rows": 80})
         for n in ("A", "B")
     ]
     version = {ids[0]: 3, ids[1]: 0}
+    with storage.connect() as con:
+        for pid in ids:
+            con.execute(
+                "INSERT INTO quality_state(project_id,original_sha256,current_version) "
+                "VALUES (?,?,?)", (pid, "synthetic-only", version[pid])
+            )
     frames = {ids[0]: synthetic_frame(), ids[1]: pd.DataFrame({
         "account_id": ["B-" + str(i) for i in range(80)],
         "future_cost": [float(i + 100) for i in range(80)],
@@ -109,6 +116,10 @@ def test_p4_12_local_version_project_and_invalid_column_rejection(tmp_path, monk
         params={"expected_version": 0, "column": "future_cost"},
     ).status_code == 200
     version[a] = 4
+    with storage.connect() as con:
+        con.execute(
+            "UPDATE quality_state SET current_version=4 WHERE project_id=?", (a,)
+        )
     assert client.get(path, params={"expected_version": 3, "column": "outcome_21"}).status_code == 409
     now = client.get(path, params={"expected_version": 4, "column": "outcome_21"})
     assert now.status_code == 200
