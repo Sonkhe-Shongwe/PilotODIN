@@ -246,7 +246,7 @@ export function UnifiedShell(){
   try{localStorage.setItem(dockStorageKey(projectId),JSON.stringify(dock))}catch{setWarning('Pane layout could not be saved; project data is unaffected.')}
  },[dock,projectId,restoredFor]);
  useEffect(()=>()=>dragCleanup.current?.(),[]);
- useEffect(()=>{draggedTab.current=null;setTabDropTarget(null)},[projectId]);
+ useEffect(()=>{draggedTab.current=null;setTabDropTarget(null);setPrimaryDockHover(false)},[projectId]);
  useEffect(()=>{
   const node=splitRef.current;
   if(!node)return;
@@ -765,11 +765,38 @@ export function UnifiedShell(){
   draggedTab.current=null;
   setTabDropTarget(null);
  };
+ const [primaryDockHover,setPrimaryDockHover]=useState(false);
+ // A tab dragged over the workspace itself should dock here. The tab strip
+ // remains an independent reorder target; foreign files/URLs never dock.
+ const canDockOverPrimary=(event:ReactDragEvent)=>{
+  const dragged=draggedTab.current;
+  return !!projectId&&workspaceReady&&!!dragged&&dragged.projectId===projectId&&
+   isSecondaryView(dragged.view)&&dragged.view!==active&&
+   Array.from(event.dataTransfer.types).includes('text/x-pilotodin-workspace');
+ };
+ const onPrimaryDragOver=(event:ReactDragEvent<HTMLElement>)=>{
+  if(!canDockOverPrimary(event))return;
+  event.preventDefault();event.stopPropagation();
+  event.dataTransfer.dropEffect='move';
+  setPrimaryDockHover(true);
+ };
+ const onPrimaryDragLeave=(event:ReactDragEvent<HTMLElement>)=>{
+  if(!event.currentTarget.contains(event.relatedTarget as Node|null))setPrimaryDockHover(false);
+ };
+ const onPrimaryDrop=(event:ReactDragEvent<HTMLElement>)=>{
+  if(!canDockOverPrimary(event))return;
+  event.preventDefault();event.stopPropagation();
+  const view=draggedTab.current!.view;
+  setPrimaryDockHover(false);
+  draggedTab.current=null;setTabDropTarget(null);
+  dockView(view);
+ };
  const onDrop=(event:ReactDragEvent)=>{
   event.preventDefault();
   const proposed=event.dataTransfer.getData('text/x-pilotodin-workspace');
   if(isSecondaryView(proposed))dockView(proposed);
   draggedTab.current=null;
+  setPrimaryDockHover(false);
   setTabDropTarget(null);
  };
  const resize=(event:ReactPointerEvent<HTMLDivElement>)=>{
@@ -860,7 +887,7 @@ export function UnifiedShell(){
    </nav>
    <section className="po-shell-workspace">
     <div className="po-global-tabs" role="tablist" aria-label="Open analytical workspaces" ref={tablistRef}>
-     {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''} ${tabDropTarget?.view===view?`po-tab-drop-${tabDropTarget.side}`:''}`} key={view} draggable={!!projectId&&workspaceReady} onDragStart={event=>{draggedTab.current={projectId,view};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/x-pilotodin-tab',view);if(isSecondaryView(view))event.dataTransfer.setData('text/x-pilotodin-workspace',view)}} onDragOver={event=>onTabDragOver(event,view)} onDrop={event=>onTabDrop(event,view)} onDragEnd={()=>{draggedTab.current=null;setTabDropTarget(null)}}>
+     {shownTabs.map(view=><div className={`po-tab ${active===view?'po-tab-selected':''} ${tabDropTarget?.view===view?`po-tab-drop-${tabDropTarget.side}`:''}`} key={view} draggable={!!projectId&&workspaceReady} onDragStart={event=>{draggedTab.current={projectId,view};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/x-pilotodin-tab',view);if(isSecondaryView(view))event.dataTransfer.setData('text/x-pilotodin-workspace',view)}} onDragOver={event=>onTabDragOver(event,view)} onDrop={event=>onTabDrop(event,view)} onDragEnd={()=>{draggedTab.current=null;setTabDropTarget(null);setPrimaryDockHover(false)}}>
       <button type="button" role="tab" id={`po-workspace-tab-${view}`} aria-controls="po-current-workspace" aria-selected={active===view} tabIndex={active===view?0:-1} onKeyDown={event=>onWorkspaceTabKeyDown(event,view)} onClick={()=>navigateWithDockGuard(view)} title="Drag to reorder; Alt+Shift+Left/Right moves this tab">{labelFor(view)}</button>
       {projectId&&isSecondaryView(view)&&<button type="button" title={`Dock ${labelFor(view)} beside current view`} aria-label={`Dock ${labelFor(view)} beside current view`} onClick={()=>dockView(view)}><Columns2 size={13}/></button>}
       {shownTabs.length>1&&<button type="button" aria-label={`Close ${labelFor(view)} tab`} onClick={()=>close(view)}><X size={12}/></button>}
@@ -870,7 +897,7 @@ export function UnifiedShell(){
     </div>
     {warning&&<p className="po-shell-warning" role="status">{warning}</p>}
     <div className={`po-pane-layout ${canSplit?'po-pane-split':''} ${dock.side==='left'?'po-dock-left':''}`} ref={splitRef} style={paneStyle}>
-     <section className="po-primary-pane" id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0}>
+     <section className={`po-primary-pane ${primaryDockHover?'po-primary-dock-hover':''}`} id="po-current-workspace" role="tabpanel" aria-labelledby={`po-workspace-tab-${active}`} tabIndex={0} onDragOver={onPrimaryDragOver} onDragLeave={onPrimaryDragLeave} onDrop={onPrimaryDrop}>
       <div className="po-pane-content" key={`primary-${projectId}-${active==='investigate'?'canvas':'studio'}`}>
        {workspaceReady?(active==='investigate'?<InvestigationCanvas key={`canvas-${projectId}`}/>:<App key={`studio-${projectId}`} onPrimaryNavigate={approvePrimaryStudioNavigation} onBeforePrimaryProjectLoad={approvePrimaryProjectLoad} onBeforePrimaryProjectUpload={approvePrimaryProjectUpload} onPrimaryUploadedProjectCommitted={commitPrimaryUploadedProject} onPrimaryDraftEdited={markPrimaryDraftEdited} onPrimaryDraftCleared={clearPrimaryDraft} onPrimaryProjectLoaded={commitPrimaryLoadedProject} onPrimaryProjectLoadFailed={failPrimaryProjectLoad} primaryProjectHandoff={primaryProjectHandoff.current?.id===projectId?primaryProjectHandoff.current:undefined} onPrimaryProjectHandoffConsumed={consumePrimaryProjectHandoff} forceNewProject={newProjectOpen&&active==='overview'} onNewProjectClose={()=>setNewProjectOpen(false)}/>):<div className="po-pane-placeholder" role="status"><Database size={26}/><strong>{catalogState==='loading'?'Checking available projects':catalogState==='failed'?'Project catalogue unavailable':'Restoring project workspace'}</strong><p>{catalogState==='failed'?warning:catalogState==='ready'?'Restoring this project’s saved tabs and dock before loading its data.':'Checking that the saved project belongs to this local workspace before loading its data.'}</p>{catalogState==='failed'&&<button type="button" className="ud-btn ud-btn-primary" onClick={()=>{setCatalogState('loading');void refreshProjects()}}>Retry project check</button>}</div>}
       </div>

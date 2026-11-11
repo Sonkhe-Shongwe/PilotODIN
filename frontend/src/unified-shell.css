@@ -385,3 +385,13 @@
  .po-shell-clock-date{display:none}
 }
 @media(max-width:1000px){.po-shell-clock{display:none}}
+
+/* P4 desktop affordance: dragging an eligible tab over the current page docks it.
+   The overlay is pointer-transparent and never captures file drops. */
+.po-primary-pane.po-primary-dock-hover{position:relative}
+.po-primary-pane.po-primary-dock-hover::after{
+ content:"Drop to dock beside this workspace";
+ position:absolute;inset:10px;display:flex;align-items:center;justify-content:center;
+ pointer-events:none;z-index:20;border:2px dashed #6a50d6;border-radius:13px;
+ background:rgba(238,234,255,.88);color:#382790;font-size:15px;font-weight:800
+}

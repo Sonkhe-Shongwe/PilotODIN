@@ -104,3 +104,16 @@ test('keyboard alternative and drop edge indication are explicit',()=>{
  assert.match(css,/\.po-tab-drop-before::before/);
  assert.match(css,/\.po-tab-drop-after::after/);
 });
+
+test('drag-to-dock accepts only matching project tabs in workspace content',()=>{
+ const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+ const css=fs.readFileSync(path.resolve(__dirname,'../src/unified-shell.css'),'utf8');
+ assert.match(shell,/const canDockOverPrimary=/);
+ assert.match(shell,/dragged\.projectId===projectId/);
+ assert.match(shell,/dragged\.view!==active/);
+ assert.match(shell,/Array\.from\(event\.dataTransfer\.types\)\.includes\('text\/x-pilotodin-workspace'\)/);
+ assert.match(shell,/onDragOver=\{onPrimaryDragOver\} onDragLeave=\{onPrimaryDragLeave\} onDrop=\{onPrimaryDrop\}/);
+ assert.match(css,/\.po-primary-pane\.po-primary-dock-hover::after/);
+ // Keep independent tab-strip reorder behaviour: dropping on a tab does not dock.
+ assert.match(shell,/onDrop=\{event=>onTabDrop\(event,view\)\}/);
+});

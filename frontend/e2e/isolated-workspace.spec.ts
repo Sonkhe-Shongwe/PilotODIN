@@ -1365,3 +1365,36 @@ test('satin chronograph clock stays elegant without crowding the project selecto
   expect(audit.unexpectedReads).toEqual([]);
   expect(audit.blockedOrigins).toEqual([]);
 });
+
+test('drag Your data onto Prepare page docks side by side without backend writes',async({page,context})=>{
+ const audit=await installIsolatedAPI(context,true);
+ await page.setViewportSize({width:1440,height:900});
+ await page.addInitScript((id:string)=>{
+  localStorage.setItem('pilotodin-current',id);
+  localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,
+   JSON.stringify(['overview','understand','prepare']));
+  localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+ },TEST_PROJECT);
+ await page.goto('/#/studio/prepare');
+ const primary=page.locator('.po-primary-pane');
+ await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
+ const dataTab=page.locator('.po-tab').filter({has:page.locator('#po-workspace-tab-understand')});
+ await expect(dataTab).toBeVisible();
+ // Real Chromium drag gesture, not synthetic dispatchEvent or a preseeded dock.
+ await dataTab.dragTo(primary);
+ const dock=page.locator('.po-secondary-pane');
+ await expect(dock).toBeVisible();
+ await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
+ await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
+ await expect(dock.getByRole('heading',{name:'Understand',exact:true})).toBeVisible();
+ await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(TEST_PROJECT);
+ // The existing explicit icon must continue to work independently.
+ await dock.getByRole('button',{name:'Close docked pane'}).click();
+ await expect(dock).toBeHidden();
+ await page.getByRole('button',{name:'Dock Your data beside current view'}).click();
+ await expect(dock).toBeVisible();
+ await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
+ expect(audit.writes).toEqual([]);
+ expect(audit.unexpectedReads).toEqual([]);
+ expect(audit.blockedOrigins).toEqual([]);
+});
