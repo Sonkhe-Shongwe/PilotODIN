@@ -108,7 +108,14 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     # Empty or whitespace-only strings are not observed outcome labels.
     # Inspect a local view; never modify the original Quality snapshot.
     blank_text = series.map(lambda value: isinstance(value, str) and not value.strip())
-    labels = series.mask(blank_text)
+    # "Y" and "Y " are not reliable distinct outcome classes. Do not
+    # silently trim a real label; exclude padded strings from this temporary
+    # screen and require an explicit Quality correction before target review.
+    padded_text = series.map(
+        lambda value: isinstance(value, str)
+        and bool(value.strip()) and value != value.strip()
+    )
+    labels = series.mask(blank_text | padded_text)
     rows = len(series)
     labelled = int(labels.notna().sum())
     missing = rows-labelled
@@ -134,6 +141,11 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
         blockers.append(
             "Blank or whitespace-only target labels must be cleaned in Quality "
             "before this column can be reviewed as a supervised outcome."
+        )
+    if bool(padded_text.any()):
+        blockers.append(
+            "Leading or trailing whitespace in target labels must be corrected "
+            "in Quality before this column can be reviewed as a supervised outcome."
         )
     if _is_date(name, series):
         blockers.append("A date/time column is not a supported supervised target for this MVP.")

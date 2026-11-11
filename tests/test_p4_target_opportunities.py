@@ -464,3 +464,67 @@ def test_p4_two_real_predictor_categories_with_blank_values_stay_reviewable():
     assert candidate["technical_status"] == "reviewable"
     assert candidate["safe_to_train_automatically"] is False
     assert frame.equals(before)
+
+
+@pytest.mark.parametrize("padded_label", ["Y ", " Y", "\tY", "Y\n", "  Y  "])
+def test_p4_padded_target_label_cannot_be_a_false_second_class(padded_label):
+    # Before the guard, 40 plain "Y" and 40 padded "Y" were considered two
+    # well-supported classification classes. The temporary review excludes
+    # malformed strings without silently trimming or modifying Quality data.
+    frame = pd.DataFrame({
+        "churn": ["Y"] * 40 + [padded_label] * 40,
+        "feature": list(range(80)),
+    })
+    before = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 3)
+    assert result["abstained"] is True
+    assert result["suggestions"] == []
+    candidate = {x["column"]: x for x in result["blocked_examples"]}["churn"]
+    assert candidate["labelled_rows"] == 40
+    assert candidate["missing_labels"] == 40
+    assert candidate["distinct_labels"] == 1
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("Leading or trailing whitespace" in x for x in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 3, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["candidate"]["labelled_rows"] == 40
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_single_padded_label_blocks_otherwise_valid_target_without_imputation():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40 + [" N "],
+        "feature": list(range(81)),
+    })
+    snapshot = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 6)
+    candidate = {x["column"]: x for x in result["blocked_examples"]}["churn"]
+    assert result["abstained"] is True
+    assert candidate["labelled_rows"] == 80
+    assert candidate["missing_labels"] == 1
+    assert candidate["distinct_labels"] == 2
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert any("Leading or trailing whitespace" in x for x in candidate["blockers"])
+    assert frame.equals(snapshot)
+
+
+def test_p4_internal_spaces_in_real_text_outcomes_remain_valid_for_review():
+    frame = pd.DataFrame({
+        "churn": ["in progress", "not resolved"] * 40,
+        "feature": list(range(80)),
+    })
+    before = frame.copy(deep=True)
+    result = target_opportunities.recommend(frame, 0)
+    candidate = {x["column"]: x for x in result["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["labelled_rows"] == 80
+    assert candidate["missing_labels"] == 0
+    assert candidate["distinct_labels"] == 2
+    assert candidate["safe_to_train_automatically"] is False
+    assert target_opportunities.inspect_manual_target(frame, 0, "churn")["training_authorised"] is False
+    assert frame.equals(before)
