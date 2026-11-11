@@ -176,10 +176,21 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     # A predictor varying only on rows WITHOUT a known label cannot supply
     # supervised learning evidence. Screen the labelled records, not the
     # entire dataset; this is still only structural, never leakage approval.
+    # Empty and whitespace-only text also cannot provide real variation.
+    # Build a local masked view, never changing the approved Quality frame.
     labelled_frame = frame.loc[labels.notna()]
-    predictors = [c for c in frame.columns if c != name and
-                  labelled_frame[c].notna().any() and
-                  labelled_frame[c].nunique(dropna=True) > 1]
+
+    def has_observed_variation(column: str) -> bool:
+        values = labelled_frame[column]
+        if pd.api.types.is_object_dtype(values) or pd.api.types.is_string_dtype(values):
+            empty_text = values.map(
+                lambda value: isinstance(value, str) and not value.strip()
+            )
+            values = values.mask(empty_text)
+        return values.nunique(dropna=True) > 1
+
+    predictors = [c for c in frame.columns
+                  if c != name and has_observed_variation(c)]
     if not predictors:
         blockers.append("No non-constant, non-empty candidate predictor remains.")
     if labelled > engine.MAX_ML_LABELLED_ROWS:

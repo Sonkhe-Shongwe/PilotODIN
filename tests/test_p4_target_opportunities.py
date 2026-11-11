@@ -419,3 +419,48 @@ def test_p4_one_whitespace_label_does_not_silently_make_reviewable_target():
     assert any("Blank or whitespace-only" in x for x in candidate["blockers"])
     # Original text labels remain untouched, not silently trimmed or imputed.
     assert frame.loc[80, "churn"] == " \t "
+
+
+@pytest.mark.parametrize("predictor", [
+    [" ", "\t"] * 40,
+    ["", " "] * 40,
+    ["only-one", " "] * 40,
+])
+def test_p4_blank_only_or_constant_nonblank_predictor_cannot_support_target(predictor):
+    # Raw two-string values are not evidence of a usable predictor when
+    # some or all values are only whitespace.
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "feature": predictor,
+    })
+    before = frame.copy(deep=True)
+    assert frame["feature"].nunique(dropna=True) == 2
+    queue = target_opportunities.recommend(frame, 0)
+    assert queue["abstained"] is True
+    assert queue["suggestions"] == []
+    candidate = {item["column"]: item for item in queue["blocked_examples"]}["churn"]
+    assert candidate["labelled_rows"] == 80
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("No non-constant, non-empty candidate predictor" in blocker
+               for blocker in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 0, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_two_real_predictor_categories_with_blank_values_stay_reviewable():
+    # Missing text values are ignored for predictor-variation screening, not
+    # silently rewritten. Two genuine categories still support structural review.
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "feature": ["first", "second", " "] * 26 + ["first", "second"],
+    })
+    before = frame.copy(deep=True)
+    candidate = target_opportunities.recommend(frame, 0)["suggestions"][0]
+    assert candidate["column"] == "churn"
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["safe_to_train_automatically"] is False
+    assert frame.equals(before)
