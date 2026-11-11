@@ -2,6 +2,13 @@ name: P4-16 Source-Matched Windows Native QA Build
 
 # One owner-approved, source-matched GitHub CI build on 10 Nov 2026 following direct QA build approval request.
 # P4 still active; NO owner install, release, P5 or operational acceptance is authorised.
+# 11 Nov 2026 P4-33: OWNER EXPRESSLY AUTHORISED exactly one GitHub Actions
+# isolated current-source Windows QA build and source/compiled/CI-installed EXE
+# hash provenance verification. Build approval is NOT owner-PC installation,
+# a release, original-data modification, risk waiver, P4 closure, or P5 approval.
+# This comment-only GitHub push records that one-time approval and triggers
+# the already-existing push-filtered CI packaging workflow exactly once.
+
 
 # Only this P4 milestone job packages a full Windows installer. This is NOT
 # a release or an owner's installed-app verification. No owner PC is touched.
