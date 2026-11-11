@@ -2,6 +2,29 @@
 
 11 November 2026. P4 safety diagnostic correction only; no installed app, owner data, model, installer or release change.
 
+## 11 November 2026 | Owner-native corrected observer retested successfully
+
+**Actual user-supplied Windows PowerShell screenshot:** After fast-forwarding the local authorised checkout to `7f2eb5f`, owner ran the same read-only observer. The module file search returned only a comment mentioning the previously unsupported `IsPathFullyQualified`, and the command produced a complete structured result without the earlier method-not-found error. This upgrades the **compatibility repair's owner-native execution status to PASS**. Preserve the earlier runtime FAIL as history.
+
+| Current launch-profile field | Owner screenshot |
+| --- | ---: |
+| `webview2_processes_observed` | 26 |
+| `original_profile_processes` | 0 |
+| `qa_profile_processes` | 6 |
+| `other_profile_processes` | 20 |
+| `unresolved_profile_processes` | 0 |
+| `observed_user_data_directories` | 26 |
+| `snapshot_is_atomic` | false |
+| `historical_writer_process_identified` | false |
+| `qa_cross_app_write_excluded` | false |
+| `original_full_data_preservation_passed` | false |
+| `original_project_data_certified` | false |
+| `offline_8gb_certified` | false |
+
+**Interpretation is narrow:** 6 observed WebView2 launch arguments are classified beneath the supplied QA application-local-data root, none beneath the supplied original root, and 20 outside both roots; `other` does not identify or exonerate unrelated applications. `observed_user_data_directories=26` means 26 process flags classified by this observer, **not proof of 26 unique directories**. This non-atomic current snapshot cannot identify historical file writers, prove that the original app was or was not running, exclude QA cross-app file writes or waive strict preservation. No raw user paths, command lines, file names or PIDs were recorded into GitHub.
+
+**Phase gates unchanged:** P4-24 full original tree comparison remains **FAIL** (320 baseline vs 346 current files; 74 browser/cache candidate differences); original protected `data/` subtree 0 detected differences, independent backup and original EXE match baseline. No new baseline or automatic cache exclusion. Native source-fixed dock UI, local offline Qwen/8 GB and business Gate C unverified. **P4 ACTIVE, P4-R01–R06 OPEN; P5 NOT AUTHORISED; P8 NOT CERTIFIED.** [Synthetic CI #43055194559](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43055194559) at [`a0aa692`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a0aa6922b1eff3324f8c9d6c38171a415973ad5e) remains the last completed exact-code verification for the observer. No new source implementation or owner action is required simply to repeat the snapshot.
+
 ## Owner native failure and scope
 
 The owner executed the previously prepared read-only WebView2 observation in Windows PowerShell from a local PilotODIN checkout, using original/QA `LocalAppData` roots. The screenshot contains:
