@@ -608,3 +608,71 @@ test('P4-15 real HTTP: consolidated incomplete-queue and project isolation',
    expect((await project.json()).experiments).toEqual([]);
   }
  });
+
+test('P4 N10 real HTTP: no-named-target manual review remains vertically readable and blocked',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+   throw Error('Only trusted disposable GitHub browser tests may execute');
+  const synthetic=[
+   'account_id,feature,generic_measure',
+   ...Array.from({length:80},(_,i)=>[
+    'SYNTH-N10-'+Math.floor(i/2),i%9,i*3,
+   ].join(',')),
+  ].join('\n')+'\n';
+  const res=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'p4_n10_disposable.csv',mimeType:'text/csv',buffer:Buffer.from(synthetic)},
+  }});
+  expect(res.status(),await res.text()).toBe(201);
+  const projectId=(await res.json()).id as string;
+  const blocked=await readOnlyBrowserGuard(context,projectId);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },projectId);
+  await page.goto('/#/studio/prepare');
+  const section=page.getByRole('region',{name:'Potential prediction opportunities'});
+  const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
+  await expect(section).toContainText(
+   'No named outcome with sufficient technically supported labels was found');
+  await expect(checkpoint).toHaveCount(0);
+  await section.getByRole('button',{name:'No prediction objective right now'}).click();
+  await expect(section).toContainText('Preparation is cleared');
+  await page.getByLabel('TARGET VARIABLE').selectOption('generic_measure');
+  await expect(checkpoint).toBeVisible();
+  const coverage=checkpoint.getByRole('note',{name:'Bounded manual screening coverage'});
+  const warning=checkpoint.getByRole('alert',{name:'Selected target structural blockers'});
+  await expect(coverage).toContainText('Full structural scan');
+  await expect(warning).toContainText(
+   'Structurally blocked target: not recommended or approved for training');
+  await expect(checkpoint).toHaveCSS('display','block');
+  for(const width of [1440,1100]){
+   await page.setViewportSize({width,height:900});
+   await expect(checkpoint).toBeVisible();
+   const layout=await checkpoint.evaluate((node)=>{
+    const selected=[
+     node.querySelector(':scope > p'),
+     node.querySelector(':scope > [role="note"]'),
+     node.querySelector(':scope > [role="alert"]'),
+     node.querySelector(':scope > button'),
+    ];
+    if(selected.some(item=>!item))return {valid:false,vertical:false,overflow:true};
+    const boxes=selected.map(item=>item!.getBoundingClientRect());
+    return {
+     valid:true,
+     vertical:boxes.slice(1).every((box,i)=>box.top>=boxes[i].bottom-2),
+     overflow:node.scrollWidth>node.clientWidth+2,
+    };
+   });
+   expect(layout.valid).toBe(true);
+   expect(layout.vertical).toBe(true);
+   expect(layout.overflow).toBe(false);
+  }
+  await checkpoint.getByRole('button',{name:'Clear selected target and preparation'}).click();
+  await expect(checkpoint).toHaveCount(0);
+  expect(blocked).toEqual([]);
+  const project=await request.get(`${API}/api/projects/${projectId}`);
+  expect(project.status()).toBe(200);
+  expect((await project.json()).experiments).toEqual([]);
+ });

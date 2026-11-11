@@ -213,7 +213,7 @@ export function TargetOpportunities({
      explore descriptively or choose a target later. This choice is not saved.
     </p>}
    </div>
-   {selectedTarget&&<div className="mini-info" role="group"
+   {selectedTarget&&<div className="mini-info po-p4-selected-checkpoint" role="group"
      aria-label="Selected target suitability checkpoint">
     <p className="muted-caption"><strong>Selected for preparation review:</strong> {selectedTarget}.
      This selection is not evidence of suitability or permission to train.</p>

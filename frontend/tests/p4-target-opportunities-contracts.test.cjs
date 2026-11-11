@@ -74,3 +74,15 @@ test('P4 decision-evidence layout is readable vertically instead of inherited se
  for(const phrase of ['Record-dependence check:','additional occurrences beyond the first','No business value, lawful use'])
   assert.ok(src.includes(phrase),'Evidence text was removed: '+phrase);
 });
+
+test('P4 selected-target checkpoint and nested blocker/coverage cards stack vertically',()=>{
+ const src=read('frontend/src/TargetOpportunities.tsx');
+ const css=read('frontend/src/studio.css');
+ assert.match(src,/className="mini-info po-p4-selected-checkpoint" role="group"/);
+ assert.match(css,/\.studio-app \.mini-info\.po-p4-selected-checkpoint\{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere\}/);
+ assert.match(css,/\.studio-app \.po-p4-selected-checkpoint>\.mini-info\{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere;margin:12px 0\}/);
+ for(const text of ['Selected target suitability checkpoint','Selected target structural blockers',
+  'On-demand selected target evidence','Clear selected target and preparation']){
+  assert.ok(src.includes(text),'Lost required selected target evidence: '+text);
+ }
+});

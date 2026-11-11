@@ -399,3 +399,12 @@ body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .studio-app .mini-info.po-p4-decision-evidence{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere}
 .studio-app .mini-info.po-p4-decision-evidence>ul{margin:10px 0;padding-left:20px}
 .studio-app .mini-info.po-p4-decision-evidence .muted-caption{color:#41536a!important;font-size:12px;line-height:1.65!important;margin:8px 0!important}
+
+/* P4 N10 native regression: stack the selected-target narrative and its nested
+   scan/warning cards, without changing other mini-info layouts. */
+.studio-app .mini-info.po-p4-selected-checkpoint{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.studio-app .po-p4-selected-checkpoint>.mini-info{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere;margin:12px 0}
+.studio-app .po-p4-selected-checkpoint .muted-caption{color:#465773!important;font-size:12px;line-height:1.6!important;margin:8px 0!important}
+.studio-app .po-p4-selected-checkpoint ul{margin:8px 0;padding-left:22px}
+.studio-app .po-p4-selected-checkpoint details{margin:12px 0;min-width:0}
+.studio-app .po-p4-selected-checkpoint>button{margin-top:10px;max-width:100%;white-space:normal}
