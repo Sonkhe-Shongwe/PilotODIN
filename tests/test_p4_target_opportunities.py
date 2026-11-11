@@ -586,3 +586,50 @@ def test_p4_missing_numeric_predictor_values_remain_not_usable():
     assert candidate["technical_status"] == "blocked"
     assert candidate["safe_to_train_automatically"] is False
     assert frame.equals(original)
+
+
+@pytest.mark.parametrize("predictor", [
+    ["Gold", "Gold "] * 40,
+    ["Gold", " Gold"] * 40,
+    ["Gold", "\tGold"] * 40,
+    ["Gold ", " Gold"] * 40,
+])
+def test_p4_padded_text_predictor_does_not_create_spurious_variation(predictor):
+    # Padding is not a second usable predictor category. No data are trimmed
+    # or written, and both shortlist and explicit manual review must abstain.
+    frame = pd.DataFrame({"churn": ["Y", "N"] * 40, "feature": predictor})
+    before = frame.copy(deep=True)
+    assert frame["feature"].nunique(dropna=True) == 2
+    review = target_opportunities.recommend(frame, 0)
+    assert review["abstained"] is True
+    assert review["suggestions"] == []
+    candidate = {item["column"]: item for item in review["blocked_examples"]}["churn"]
+    assert candidate["labelled_rows"] == 80
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("No non-constant, non-empty candidate predictor" in blocker
+               for blocker in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 0, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_real_text_predictor_variation_survives_padding_and_internal_spaces():
+    # Two genuine categories remain enough for STRUCTURAL review only.
+    # Padded strings are not silently corrected or approved for model fitting.
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "feature": ["High risk", "Low risk", " High risk", "Low risk "] * 20,
+    })
+    before = frame.copy(deep=True)
+    review = target_opportunities.recommend(frame, 0)
+    candidate = {item["column"]: item for item in review["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 0, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)

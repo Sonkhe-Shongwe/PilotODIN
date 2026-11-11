@@ -203,10 +203,14 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
             )
             values = values.where(finite_or_missing)
         elif pd.api.types.is_object_dtype(values) or pd.api.types.is_string_dtype(values):
-            empty_text = values.map(
-                lambda value: isinstance(value, str) and not value.strip()
+            # Spelling differences caused only by leading/trailing whitespace
+            # are not reliable predictor variation. Mask locally rather than
+            # normalising or editing an approved dataset version.
+            blank_or_padded_text = values.map(
+                lambda value: isinstance(value, str)
+                and (not value.strip() or value != value.strip())
             )
-            values = values.mask(empty_text)
+            values = values.mask(blank_or_padded_text)
         return values.nunique(dropna=True) > 1
 
     predictors = [c for c in frame.columns
