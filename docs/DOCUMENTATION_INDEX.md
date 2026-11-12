@@ -1,9 +1,34 @@
 # PilotODIN | Documentation index
-**Current as of 4 November 2026.** This is a navigation index, not an assertion that historical pages contain current next actions.
+
+**Current navigation:** 12 November 2026, branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence ACTIVE**; P1, P2 and P3 closed for bounded development at their recorded modalities. **P4-R01–R06 OPEN**, real-business Gate C UNVERIFIED, historical original whole-app-data integrity STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED. See the live documents for any subsequent state change.
+
+## Current authoritative route, in reading order
+
+1. [Current session handoff](./SESSION_HANDOFF_CURRENT.md) for latest specific checkpoint and next evidence requirement (chronological history, **not** short).
+2. [Project status](./PROJECT_STATUS_CURRENT.md) for cross-phase disposition and release restrictions (chronological history).
+3. [One-primary-phase and owner closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) for governing authorisation, build freeze and acceptance decisions.
+4. [P4 owner acceptance go/no-go](./P4_23_CONSOLIDATED_WINDOWS_ACCEPTANCE_GO_NO_GO_2026-11-09.md), [P4 bounded closure proposal and owner refusal](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md), and [P4 evidence/physical native intake](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md).
+5. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and [P4 owner evidence Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9). Do not mistake a draft/CI run for final owner acceptance.
+
+## Current phase evidence and recent checkpoints
+
+- **Prior phase closure:** [P1 development closure register](./P1_CLOSURE_REGISTER_2026-10-28.md), [P2 bounded development closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md), [P3 bounded development closure](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md). These are not release certification.
+- **P4 safety and provenance:** [P4-24 historical storage drift](./P4_24_STORAGE_DRIFT_ISOLATION_SOURCE_VERIFICATION_2026-11-11.md), [P4-25 WebView process snapshot](./P4_25_WEBVIEW_PROFILE_PROCESS_OBSERVATION_2026-11-11.md), [P4-46 evidence boundary](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), [P4-47 one-use native evidence](./P4_47_ONE_APPROVED_UNPACKAGED_NATIVE_CI_ACCEPTANCE_2026-11-12.md).
+- **Gate C and research:** [P4-54 historical calendar baseline](./P4_54_PUBLIC_BIKE_FIXED_ORIGIN_CALENDAR_BASELINE_2026-11-12.md), [P4-55 one approved research fit](./P4_55_ONE_PUBLIC_BIKE_RESEARCH_FIT_2026-11-12.md), [P4-56 GitHub CI use-case feasibility](./P4_56_CI_GATE_C_HISTORY_FEASIBILITY_2026-11-12.md).
+- **Current P4 acceptance-support tools:** [P4-57 local shadow-log validator](./P4_57_LOCAL_SHADOW_DECISION_LOG_VALIDATION_2026-11-12.md), [P4-58 run-attribution fix](./P4_58_SHADOW_STUDY_ATTRIBUTION_IDENTITY_CORRECTION_2026-11-12.md). **No prospective owner evidence, Gate C approval or native acceptance inferred.**
+- **Documentation provenance:** [4 November historical cleanup audit](./DOCUMENTATION_AUDIT_2026-11-04.md); [12 November current navigation audit](./DOCUMENTATION_CLEANING_AUDIT_2026-11-12.md).
+
+**Index scope:** A curated current route with a preserved legacy navigation snapshot below, not an exhaustive list of all 172 `docs/` Markdown files. Newer GitHub HEAD, current handoff, owner decisions and verified CI evidence supersede historical status paragraphs. Keep chronological failures and historical acceptance observations intact.
+
+---
+
+## Historical navigation snapshot (4 November 2026, retained for traceability)
+
+**As of 4 November 2026.** The following inventory predates P2/P3 closure and P4 work. It is not a current phase instruction.
 
 **Start here:** [short continuation handoff](./SESSION_HANDOFF_CURRENT.md) · [cross-phase status](./PROJECT_STATUS_CURRENT.md) · [P1 closure matrix](./P1_CLOSURE_REGISTER_2026-10-28.md) · [audit](./DOCUMENTATION_AUDIT_2026-11-04.md).
 
-The 22 October owner-held Master Reconstruction Blueprint is the product specification; do not infer implementation or release acceptance from a design. The 24 October owner-held roadmap DOCX is dated planning. The 28 October owner-adopted [phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) sets **P1 active** over earlier historical P2-priority paragraphs.
+The 22 October owner-held Master Reconstruction Blueprint is the product specification; do not infer implementation or release acceptance from a design. The 24 October owner-held roadmap DOCX is dated planning. At this historical 4 November checkpoint, the 28 October owner-adopted [phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) recorded **P1 active**; that historical fact is superseded by the current P4 status at the top of this index.
 
 ## Current status and governance
 - [`SESSION_HANDOFF_CURRENT.md`](./SESSION_HANDOFF_CURRENT.md)
