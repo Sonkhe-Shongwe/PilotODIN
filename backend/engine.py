@@ -152,7 +152,12 @@ def preparation(df: pd.DataFrame, target: str) -> dict:
         if distinct <= 1: reasons.append("constant or empty column")
         normalized = name.lower().replace(" ", "_")
         leakage = any(term in normalized for term in LEAK_TERMS)
-        identifier = (normalized.endswith(("id","key")) and distinct >= len(df)*.9)
+        # Keep mandatory Prepare/admission review aligned with the existing
+        # feature-advice check: near-unique *Code/*Number fields may be identifiers,
+        # even though their names do not end with id/key. This is a warning,
+        # never proof of actual identity or prediction-time leakage.
+        identifier = (normalized.endswith(("id","key","code","number"))
+                      and distinct >= len(df)*.9)
         if leakage: reasons.append("possible outcome leakage")
         if identifier: reasons.append("likely identifier")
         if reasons:

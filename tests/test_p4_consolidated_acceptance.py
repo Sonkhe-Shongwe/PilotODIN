@@ -220,3 +220,70 @@ def test_p4_15_api_project_version_description_origin_and_no_training(
     assert storage.target_contexts(a, 1) == {}
     for pid in (a, b, c):
         assert storage.recent_experiments(pid) == []
+
+
+@pytest.mark.parametrize("field", [
+    "TransactionCode", "ClaimNumber", "customer_number", "batch_code",
+])
+def test_p4_59_high_cardinality_code_number_requires_backend_review_without_fitting(
+    field, monkeypatch
+):
+    """Fail closed before queueing: feature advice and admission must agree."""
+    from fastapi import BackgroundTasks, HTTPException
+    from backend import analytics, engine
+
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        field: [f"SYNTHETIC-{i:03d}" for i in range(80)],
+        "event_type": ["retail", "service"] * 40,
+    })
+    untouched = frame.copy(deep=True)
+    advice = analytics.recommend_features(frame, "churn", 0)
+    flagged = {item["column"] for item in advice["features"] if item["risk"] == "high"}
+    assert field in flagged
+
+    prepare = engine.preparation(frame, "churn")
+    assert field in prepare["high_risk_features"]
+    audit = {item["column"]: item for item in prepare["feature_audit"]}
+    assert audit[field]["risk"] == "high"
+    assert "likely identifier" in audit[field]["reasons"]
+    assert audit["event_type"]["risk"] == "low"
+
+    # Replace only lookup functions with synthetic in-memory evidence. An
+    # unacknowledged request must be rejected before writing an experiment
+    # or invoking any background model fit.
+    monkeypatch.setattr(main, "project_or_404", lambda pid: {"id": pid})
+    monkeypatch.setattr(main.quality, "current_data", lambda pid: (frame, 0))
+    def forbidden_queue(*_args, **_kwargs):
+        raise AssertionError("Safety regression: training was admitted or queued")
+    monkeypatch.setattr(main.storage, "new_experiment", forbidden_queue)
+    monkeypatch.setattr(main.storage, "new_experiment_with_capacity", forbidden_queue)
+    request = main.ExperimentRequest(
+        target="churn", task="classification",
+        models=["logistic_regression"], acknowledge_random_split=True,
+        acknowledge_feature_risks=False, expected_quality_version=0,
+    )
+    with pytest.raises(HTTPException) as blocked:
+        main.new_experiment("disposable-synthetic", request, BackgroundTasks())
+    assert blocked.value.status_code == 422
+    assert "Review high-risk predictors" in str(blocked.value.detail)
+    assert field in str(blocked.value.detail)
+    assert frame.equals(untouched)
+
+
+def test_p4_59_low_cardinality_codes_are_not_mistaken_for_unique_identifiers():
+    """The structural flag requires near-unique observed values."""
+    from backend import analytics, engine
+
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "TransactionCode": ["A", "B"] * 40,
+        "event_type": ["retail", "service"] * 40,
+    })
+    advice = analytics.recommend_features(frame, "churn", 0)
+    a = {item["column"]: item for item in advice["features"]}
+    prep = engine.preparation(frame, "churn")
+    p = {item["column"]: item for item in prep["feature_audit"]}
+    assert a["TransactionCode"]["risk"] == "low"
+    assert p["TransactionCode"]["risk"] == "low"
+    assert "TransactionCode" not in prep["high_risk_features"]
