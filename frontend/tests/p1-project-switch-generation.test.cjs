@@ -47,7 +47,7 @@ function harness(){
     embeddedStage:undefined,requestedStudioStage:()=> 'quality',scrollRef:{current:{}}
   };
   for(const name of ['setProject','setPrep','setExperiment','setPrediction','setTarget',
-    'setQualityFocus','setDeliverEvidenceId','setQualityVersion','setFeatureHints',
+    'setQualityFocus','setDeliverEvidenceId','setQualityVersion','setFeatureHintSnapshot',
     'setExcluded','setPredictVals','setConfirmSplit','setPage','setVisitedStages',
     'setUploadOpen','setError'])
     ctx[name]=value=>events.push(name);

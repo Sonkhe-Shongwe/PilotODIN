@@ -286,7 +286,8 @@ test('successful B Prepare mounts target screening at verified version without l
   assert.match(app,/<TargetOpportunities key=\{project\.id\+'-'\+qualityVersion\} projectId=\{project\.id\} version=\{qualityVersion\}/);
   assert.match(src,/\/projects\/\$\{projectId\}\/target-opportunities\?expected_version=\$\{version\}/);
   assert.match(app,/if\(!project\|\|!target\)\{setPrep\(null\);return;\}/);
-  assert.match(app,/if\(!project\|\|!target\)\{setFeatureHints\(\[\]\);return;\}/);
+  assert.match(app,/if\(!project\|\|!target\)\{setFeatureHintSnapshot\(null\);return;\}/);
+  assert.match(app,/const featureHints=visibleFeatureHints\(featureHintSnapshot,project\?\.id,target,qualityVersion\)/);
   assert.match(spec,/expect\(\(await bOpportunities\)\.status\(\)\)\.toBe\(200\)/);
   assert.match(spec,/expect\(profileReads\)\.toBe\(1\)/);
   assert.match(spec,/expect\(audit\.unexpectedReads\)\.toEqual\(\[\]\)/);

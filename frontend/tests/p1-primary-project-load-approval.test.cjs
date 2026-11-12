@@ -41,7 +41,7 @@ function harness({approved=false,embedded=false,pid='B',current='A',shellCallbac
  const currentProject={id:current};
  let sharedSelection=selectedWhenStarted;
  const setters=['setProject','setPrep','setExperiment','setPrediction','setTarget',
-  'setQualityFocus','setDeliverEvidenceId','setQualityVersion','setFeatureHints',
+  'setQualityFocus','setDeliverEvidenceId','setQualityVersion','setFeatureHintSnapshot',
   'setExcluded','setPredictVals','setConfirmSplit','setPage','setVisitedStages',
   'setUploadOpen','setError'];
  const ctx={
