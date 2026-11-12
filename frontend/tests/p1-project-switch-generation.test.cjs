@@ -13,7 +13,7 @@ const profileExports={};
 new Function('module','exports',profileJs)({exports:profileExports},profileExports);
 const {createLiveProfileVersionGuard}=profileExports;
 const begin=app.indexOf('  async function loadProject(pid:string,approvedBeforeUpload=false):Promise<boolean>{');
-const end=app.indexOf('\n  useEffect(()=>{if(!project||!target)',begin);
+const end=app.indexOf('\n  useEffect(',begin);
 assert.ok(begin>=0&&end>begin,'actual project load handler must be present');
 const body=app.slice(begin,end);
 const compiled=ts.transpileModule(body+'\nexports.loadProject=loadProject;',{

@@ -8,7 +8,7 @@ const Module=require('node:module');
 const app=fs.readFileSync(path.resolve(__dirname,'../src/App.tsx'),'utf8');
 const shell=fs.readFileSync(path.resolve(__dirname,'../src/UnifiedShell.tsx'),'utf8');
 const begin=app.indexOf('  async function loadProject(pid:string,approvedBeforeUpload=false):Promise<boolean>{');
-const end=app.indexOf('\n  useEffect(()=>{if(!project||!target)',begin);
+const end=app.indexOf('\n  useEffect(',begin);
 assert.ok(begin>=0&&end>begin,'The actual loadProject body must be present');
 const body=app.slice(begin,end);
 const compiled=ts.transpileModule(body+'\nexport {loadProject};',{
@@ -260,6 +260,6 @@ test('only a successful approved external load stages a one-use verified project
  const refIndex=shell.indexOf('primaryProjectHandoff.current=snapshot');
  const successIndex=shell.indexOf('setProjectId(id)',refIndex);
  assert.ok(refIndex>=0&&successIndex>refIndex,'snapshot must be staged before keyed shell remount');
- const catchBody=app.slice(app.indexOf('}catch(e){',app.indexOf('async function loadProject(')),app.indexOf('useEffect(()=>{if(!project||!target)'));
+ const catchBody=app.slice(app.indexOf('}catch(e){',app.indexOf('async function loadProject(')),app.indexOf('\n  useEffect(',app.indexOf('async function loadProject(')));
  assert.doesNotMatch(catchBody,/onPrimaryProjectLoaded|primaryProjectHandoff/,'failed project GET must not create a verified handoff');
 });
