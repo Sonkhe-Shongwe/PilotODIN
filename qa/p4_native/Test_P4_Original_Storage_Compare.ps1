@@ -82,6 +82,52 @@ try {
  }
 
  Set-Content -LiteralPath (Join-Path $current 'WebView2\IndexedDB\000001.log') -Value 'NEW-BROWSER-CACHE' -NoNewline
+ # P4-43: deterministic single-pass false PASS regression. The synthetic
+ # current/backup file changes AFTER the first tree scan when ShaFile reads
+ # the original EXE. Old comparator would return FULL_FINGERPRINT_MATCH.
+ # New final sequential scans must refuse to make an integrity claim.
+ function global:Get-FileHash {
+  [CmdletBinding()]
+  param([Parameter(Mandatory=$true)][string]$LiteralPath,
+        [string]$Algorithm = 'SHA256')
+  $result=Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath -Algorithm $Algorithm -ErrorAction Stop
+  if ($global:P4SyntheticRaceArm -and $LiteralPath -eq $global:P4SyntheticRaceExe) {
+   $global:P4SyntheticRaceArm=$false
+   Set-Content -LiteralPath $global:P4SyntheticRaceVictim -Value 'POST-SCAN-SYNTHETIC-TAMPER' -NoNewline -ErrorAction Stop
+  }
+  return $result
+ }
+ try {
+  foreach ($kind in @('current','backup')) {
+   $victim=if ($kind -eq 'current') {
+    Join-Path $current 'data\datasets\example.csv'
+   } else {
+    Join-Path $backup 'data\datasets\example.csv'
+   }
+   $global:P4SyntheticRaceArm=$true
+   $global:P4SyntheticRaceExe=$exe
+   $global:P4SyntheticRaceVictim=$victim
+   $rejected=$false
+   try {$null=& $compare @params} catch {
+    if ($_.Exception.Message -notlike '*changed during preservation comparison*') {throw}
+    $rejected=$true
+   }
+   if ($global:P4SyntheticRaceArm -or -not $rejected) {
+    throw "Post-scan $kind mutation escaped full preservation check"
+   }
+   Set-Content -LiteralPath $victim -Value 'SYNTHETIC-CSV' -NoNewline -ErrorAction Stop
+  }
+ } finally {
+  Remove-Item -Path Function:\global:Get-FileHash -ErrorAction SilentlyContinue
+  Remove-Variable -Name P4SyntheticRaceArm,P4SyntheticRaceExe,P4SyntheticRaceVictim -Scope Global -ErrorAction SilentlyContinue
+ }
+ $stableAgain=& $compare @params
+ if ($stableAgain.status -ne 'FULL_FINGERPRINT_MATCH' -or
+     $stableAgain.sequential_rescan_consistent -ne $true -or
+     $stableAgain.snapshot_is_atomic -ne $false) {
+  throw 'Restored synthetic tree did not produce a correctly limited stable verdict'
+ }
+
  Set-Content -LiteralPath (Join-Path $current 'WebView2\Cache\index') -Value 'FAKE' -NoNewline
  $browser=& $compare @params
  if ($browser.status -ne 'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED' -or
@@ -120,7 +166,7 @@ try {
  if ($baseline.purpose -ne 'ORIGINAL_PRESERVATION_BASELINE_NOT_ACCEPTANCE') {
   throw 'Baseline overwritten during read-only comparison'
  }
- Write-Host 'PASS: synthetic full match, added/removed EMPTY directories fail preservation (file hashes unchanged), WebView-only drift still FAIL, protected SQLite/dataset drift blocked, unknown changes retained, EXE drift, backup tamper fail-closed.'
+ Write-Host 'PASS: synthetic stable double scan, deterministic mid-comparison original/backup mutations refused, empty-directory drift, browser-cache mismatch, protected SQLite/dataset drift, EXE drift and backup tamper fail-closed.'
  Write-Host 'NOT TESTED: owner real files, writer attribution, critical store preservation on Windows, physical offline/8GB or P4 release acceptance.'
 } finally {
  Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue

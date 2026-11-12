@@ -83,6 +83,18 @@ function Tree([string]$source) {
   directory_count=$directories.Count
  }
 }
+function SameTree([hashtable]$left,[hashtable]$right) {
+ # The v1 file fingerprint is compared separately from the complete
+ # directory path set, which also includes empty directories.
+ if ($left.file_count -ne $right.file_count -or
+     $left.total_bytes -ne $right.total_bytes -or
+     $left.content_and_relative_path_tree_sha256 -ne $right.content_and_relative_path_tree_sha256 -or
+     $left.directory_count -ne $right.directory_count) { return $false }
+ foreach ($name in $left.directories.Keys) {
+  if (-not $right.directories.ContainsKey($name)) { return $false }
+ }
+ return $true
+}
 function Category([string]$relative) {
  # The native launcher explicitly uses app_local_data_dir()/data as
  # PILOTODIN_HOME. backend/storage.py stores SQLite and artifacts there.
@@ -122,7 +134,8 @@ if ($before.file_count -ne $baseline.original.original_data.file_count -or
  throw 'Backup does not reproduce the original P4-22 baseline; do not interpret changes.'
 }
 $now=Tree $current
-$oldExeGood=(ShaFile $oldExe) -eq $baseline.original.old_exe_sha256.ToLowerInvariant()
+$firstExeSha=ShaFile $oldExe
+$oldExeGood=$firstExeSha -eq $baseline.original.old_exe_sha256.ToLowerInvariant()
 $allDataGood=($now.file_count -eq $baseline.original.original_data.file_count -and
  $now.total_bytes -eq $baseline.original.original_data.total_bytes -and
  $now.content_and_relative_path_tree_sha256 -eq $baseline.original.original_data.content_and_relative_path_tree_sha256)
@@ -174,6 +187,19 @@ $criticalTotal=$core.added+$core.modified+$core.missing
 $browserTotal=$browser.added+$browser.modified+$browser.missing
 $otherTotal=$other.added+$other.modified+$other.missing
 
+# P4-43: sequential filesystem enumeration is NOT an atomic snapshot.
+# Re-read both trees and the original EXE after computing change categories.
+# If ANY file hash, path, size, directory membership, or EXE digest differs
+# between observations, fail closed without claiming a stable verdict.
+$backupRecheck=Tree $backup
+$currentRecheck=Tree $current
+$exeRecheckSha=ShaFile $oldExe
+if (-not (SameTree $before $backupRecheck) -or
+    -not (SameTree $now $currentRecheck) -or
+    $firstExeSha -ne $exeRecheckSha) {
+ throw 'Source changed during preservation comparison; stable integrity evidence cannot be established. No cleanup, restore or rebaseline.'
+}
+
 [pscustomobject][ordered]@{
  status=if ($allDataGood -and $directoryLayoutGood -and $oldExeGood) {'FULL_FINGERPRINT_MATCH'} else {'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED'}
  independent_backup_matches_baseline=$true
@@ -202,5 +228,7 @@ $otherTotal=$other.added+$other.modified+$other.missing
  project_data_certified=$false
  writer_process_identified=$false
  offline_8gb_certified=$false
- note='Directory categories are source-derived hints, not forensic attribution. Empty-directory layout compares current against independent backup only; historic P4-22 v1 baseline never fingerprinted directories, so baseline-time directory provenance cannot be proved. Any file or directory mismatch is FAIL. No restore, cleanup, model or user data write.'
+ sequential_rescan_consistent=$true
+ snapshot_is_atomic=$false
+ note='Directory categories are source-derived hints, not forensic attribution. Empty-directory layout compares current against independent backup only; historic P4-22 v1 baseline never fingerprinted directories, so baseline-time directory provenance cannot be proved. Any file or directory mismatch is FAIL. A second sequential scan checks for drift but is NOT an atomic snapshot or historical attribution. No restore, cleanup, model or user data write.'
 }
