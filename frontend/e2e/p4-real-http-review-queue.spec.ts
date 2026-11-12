@@ -788,3 +788,102 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   expect((await p.json()).experiments).toEqual([]);
  });
 
+
+test('P4-79 real HTTP: reopened experiment settings are read from saved record, never Prepare draft',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+    throw Error('Only trusted disposable GitHub browser tests may execute');
+
+  // Create only a disposable project. The apparent experiment records below
+  // are GET-only route fixtures; do not queue, fit or persist ANY model.
+  const uploaded=await request.post(API+'/api/projects',{multipart:{
+    file:{name:'p4_79_history_read_only.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(uploaded.status(),await uploaded.text()).toBe(201);
+  const projectId=(await uploaded.json()).id as string;
+  const chosenId='a'.repeat(32),legacyId='b'.repeat(32);
+  const fakeHistory=[
+    {id:chosenId,status:'completed',selected_model:'logistic_regression',created_at:'2026-11-12T12:00:00Z'},
+    {id:legacyId,status:'failed',selected_model:null,created_at:'2026-11-11T12:00:00Z'}
+  ];
+  const saved={
+    id:chosenId,project_id:projectId,status:'completed',
+    config:{target:'churn',task:'classification',excluded:[],models:['logistic_regression'],
+      quality_version:0,split_strategy:'random',split_column:null,
+      numeric_imputation:'mean',categorical_imputation:'constant'},
+    results:{task:'classification',target:'churn',features:['feature'],excluded_features:[],
+      labelled_rows:80,train_rows:64,test_rows:16,folds:5,
+      primary_metric:'F1 macro',baseline_cv:0.5,beats_baseline:true,
+      models:[{key:'logistic_regression',name:'Logistic Regression',
+        cv_metric:0.75,cv_std:0.02,status:'ready'}],
+      input_schema:[{name:'feature',kind:'number',required:false}],
+      warning:'Synthetic display fixture only'},
+    error:null,selected_model:'logistic_regression',final_results:null,is_stale:false
+  };
+  const legacy={
+    id:legacyId,project_id:projectId,status:'failed',
+    config:{target:'churn',task:'classification',excluded:[],models:['logistic_regression'],
+      quality_version:0,split_strategy:'random',split_column:null},
+    results:null,error:'Synthetic no-fit test record',selected_model:null,
+    final_results:null,is_stale:false
+  };
+  const intercepted:string[]=[];
+  const blocked=await readOnlyBrowserGuard(context,projectId);
+  // Last registered Playwright handler runs first. Pass all unrelated requests
+  // through the strict browser read-only allowlist above.
+  await context.route('**/api/**',async route=>{
+    const req=route.request(),url=new URL(req.url());
+    if(req.method()!=='GET'||url.origin!==API){await route.fallback();return}
+    if(url.pathname===`/api/projects/${projectId}`){
+      const actual=await route.fetch();
+      expect(actual.status()).toBe(200);
+      const genuine=await actual.json();
+      intercepted.push('project-list');
+      await route.fulfill({response:actual,json:{...genuine,experiments:fakeHistory}});
+      return;
+    }
+    if(url.pathname===`/api/experiments/${chosenId}`||
+       url.pathname===`/api/experiments/${legacyId}`){
+      intercepted.push(url.pathname.endsWith(chosenId)?'explicit-record':'legacy-record');
+      await route.fulfill({status:200,contentType:'application/json',
+        body:JSON.stringify(url.pathname.endsWith(chosenId)?saved:legacy)});
+      return;
+    }
+    await route.fallback();
+  });
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['evaluate']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'evaluate');
+  },projectId);
+  await page.goto('/#/studio/evaluate');
+  const history=page.locator('button.mini-experiment');
+  await expect(history).toHaveCount(2);
+  // A historical failed attempt does not imply any model was fitted.
+  await history.nth(1).click();
+  const audit=page.getByRole('region',{name:'Recorded experiment preprocessing'});
+  await expect(audit).toContainText('Median (legacy default; not recorded)');
+  await expect(audit).toContainText('Mode (legacy default; not recorded)');
+  await expect(audit).toContainText('working data version v0');
+  await expect(audit).toContainText('not the current Prepare draft or independent proof');
+  await expect(page.getByRole('heading',{name:'Training failed'})).toBeVisible();
+
+  // Reopen the different, explicitly configured record from Overview.
+  await page.getByRole('button',{name:'Overview',exact:true}).click();
+  await page.locator('.studio-history button.studio-recent').first().click();
+  await expect(audit).toContainText('Numeric missing values: Mean');
+  await expect(audit).toContainText('Categorical missing values: Reserved missing marker');
+  await expect(audit).not.toContainText('legacy default');
+  await page.getByRole('button',{name:'Open Predict Studio'}).click();
+  await expect(audit).toContainText('Numeric missing values: Mean');
+  await expect(audit).toContainText('Categorical missing values: Reserved missing marker');
+  // No prediction or fit action is ever invoked in this display-only check.
+  expect(intercepted).toContain('project-list');
+  expect(intercepted).toContain('legacy-record');
+  expect(intercepted).toContain('explicit-record');
+  expect(blocked).toEqual([]);
+  const realProject=await request.get(`${API}/api/projects/${projectId}`);
+  expect(realProject.status(),await realProject.text()).toBe(200);
+  expect((await realProject.json()).experiments).toEqual([]);
+ });
