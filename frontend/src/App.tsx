@@ -5,6 +5,8 @@ import {Experiment, Prep, Profile, Project, Field, get, post, upload} from './ap
 import {QualityWorkspace} from './QualityWorkspace';
 import {CategoryQualityAdvice} from './CategoryQualityReviewPrompt';
 import {hasWhitespaceCategoryCollision} from './categoryQualityAdvice';
+import {visibleFeatureHints} from './featureHintScope';
+import type {ScopedFeatureHints} from './featureHintScope';
 import type {QualityFocus} from './qualityHandoff';
 import {ExploreWorkspace} from './ExploreWorkspace';
 import {ColumnInvestigation} from './ColumnInvestigation';
@@ -123,7 +125,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const [qualityVersion,setQualityVersion]=useState(initialVerifiedProject?.version??0);
   const [qualityFocus,setQualityFocus]=useState<QualityFocus|null>(null);
   const [deliverEvidenceId,setDeliverEvidenceId]=useState<string|null>(null);
-  const [featureHints,setFeatureHints]=useState<{column:string;risk:string;reasons:string[]}[]>([]);
+  const [featureHintSnapshot,setFeatureHintSnapshot]=useState<ScopedFeatureHints|null>(null);
+  // Never render or apply hints from a different project, target, or Quality version.
+  const featureHints=visibleFeatureHints(featureHintSnapshot,project?.id,target,qualityVersion);
   const liveProjectId=useRef(project?.id??'');
   liveProjectId.current=project?.id??'';
   const uploadViewMounted=useRef(true);
@@ -303,7 +307,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       onPrimaryProjectLoaded?.(pid,{id:pid,project:verifiedProject,version:q.version});
     if(approvedBeforeUpload)onPrimaryUploadedProjectCommitted?.();
     setProject(null);setPrep(null);setExperiment(null);setPrediction(null);setTarget('');setQualityFocus(null);setDeliverEvidenceId(null);
-    setQualityVersion(q.version);setFeatureHints([]);setProject(verifiedProject);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
+    setQualityVersion(q.version);setFeatureHintSnapshot(null);setProject(verifiedProject);if(!embedded)localStorage.setItem('pilotodin-current',pid);setTarget('');setPrep(null);setExcluded([]);setExperiment(null);setPrediction(null);setPredictVals({});setConfirmSplit(false);setPage(embeddedStage??requestedStudioStage());setVisitedStages([embeddedStage??requestedStudioStage()]);scrollRef.current={};setUploadOpen(false);setError('');return true;}catch(e){
       if(request!==latestProjectRequest.current)return false;
       setError(`Could not open project: ${(e as Error).message}`);
       if(!embedded)onPrimaryProjectLoadFailed?.(pid);
@@ -318,7 +322,15 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }).catch(e=>{if(active){setPrep(null);setError(e.message)}});
     return()=>{active=false};
   },[project?.id,target,qualityVersion]);
-  useEffect(()=>{if(!project||!target){setFeatureHints([]);return;}let live=true;get<{features:{column:string;risk:string;reasons:string[]}[]}>(`/projects/${project.id}/features?target=${encodeURIComponent(target)}`).then(r=>{if(live)setFeatureHints(r.features)}).catch(()=>{if(live)setFeatureHints([])});return()=>{live=false};},[project?.id,target,qualityVersion]);
+  useEffect(()=>{
+    if(!project||!target){setFeatureHintSnapshot(null);return;}
+    const requested={projectId:project.id,target,version:qualityVersion};
+    let live=true;
+    get<{features:{column:string;risk:string;reasons:string[]}[]}>(`/projects/${requested.projectId}/features?target=${encodeURIComponent(requested.target)}`)
+      .then(r=>{if(live)setFeatureHintSnapshot({...requested,features:r.features});})
+      .catch(()=>{if(live)setFeatureHintSnapshot(null);});
+    return()=>{live=false};
+  },[project?.id,target,qualityVersion]);
   useEffect(()=>{
     if(!experiment||!project||!['queued','running'].includes(experiment.status))return;
     const projectId=project.id, experimentId=experiment.id;

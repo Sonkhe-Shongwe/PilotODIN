@@ -28,6 +28,35 @@ function harness({models=['logistic_regression'],excluded=[],embedded=false,
  return {...fn,events,getModels:()=>selected,getExcluded:()=>out,
    simulateQueuedCheckboxSelection:column=>{out=[...out,column]}};
 }
+
+const hintScopeSource=fs.readFileSync(path.resolve(__dirname,'../src/featureHintScope.ts'),'utf8');
+const hintScopeCompiled=ts.transpileModule(hintScopeSource,{
+ compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS},
+ reportDiagnostics:true,
+});
+assert.equal((hintScopeCompiled.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
+const hintScopeExports={};
+new Function('exports','module',hintScopeCompiled.outputText)(
+ hintScopeExports,{exports:hintScopeExports});
+const {visibleFeatureHints}=hintScopeExports;
+
+test('Prepare feature hints match project, target and Quality version before they can affect exclusions',()=>{
+ const advice=[{column:'risk_id',risk:'high',reasons:['possible leakage']}];
+ const snapshot={projectId:'project-A',target:'churn',version:4,features:advice};
+ assert.deepEqual(visibleFeatureHints(snapshot,'project-A','churn',4),advice);
+ assert.deepEqual(visibleFeatureHints(snapshot,'project-B','churn',4),[]);
+ assert.deepEqual(visibleFeatureHints(snapshot,'project-A','fraud',4),[]);
+ assert.deepEqual(visibleFeatureHints(snapshot,'project-A','churn',5),[]);
+ assert.deepEqual(visibleFeatureHints(snapshot,'project-A','',4),[]);
+ assert.deepEqual(visibleFeatureHints(snapshot,undefined,'churn',4),[]);
+ assert.deepEqual(visibleFeatureHints(null,'project-A','churn',4),[]);
+ // A late old request must still be ignored after switching back to a
+ // different Quality version, even if its field names happen to be identical.
+ const lateOld={...snapshot,version:3};
+ assert.deepEqual(visibleFeatureHints(lateOld,'project-A','churn',4),[]);
+ assert.equal(snapshot.features[0].column,'risk_id');
+});
+
 test('Model button can add and remove choices while reporting each real edit',()=>{
  const add=harness();add.toggleModelChoice('random_forest');
  assert.deepEqual(add.getModels(),['logistic_regression','random_forest']);

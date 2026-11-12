@@ -5,6 +5,17 @@ const path=require('node:path');
 const read=name=>fs.readFileSync(path.join(__dirname,'../src',name),'utf8');
 const app=read('App.tsx'),api=read('api.ts'),css=read('studio.css');
 
+test('Prepare binds feature-advice identity to the current selection before showing risk hints',()=>{
+ const scope=read('featureHintScope.ts');
+ assert.match(scope,/snapshot\.projectId===projectId&&snapshot\.target===target&&/);
+ assert.match(scope,/snapshot\.version===version\?snapshot\.features:\[\]/);
+ assert.match(app,/const \[featureHintSnapshot,setFeatureHintSnapshot\]=useState<ScopedFeatureHints\|null>\(null\)/);
+ assert.match(app,/const featureHints=visibleFeatureHints\(featureHintSnapshot,project\?\.id,target,qualityVersion\)/);
+ assert.match(app,/setFeatureHintSnapshot\(\{\.\.\.requested,features:r\.features\}\)/);
+ assert.match(app,/if\(live\)setFeatureHintSnapshot\(null\)/);
+ assert.doesNotMatch(app,/setFeatureHints\(/);
+});
+
 test('Prepare exposes server-derived per-feature treatments rather than guessing model importance',()=>{
  assert.match(api,/export type FeatureAudit = \{column:string/);
  assert.match(api,/high_risk_features:string\[\]/);
