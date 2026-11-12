@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current project status
 
+
+## 12 November 2026 | P4-77 guarded categorical Prepare missing-value option
+
+- **Bounded implementation:** Mode (default) or reserved missing marker for categorical predictors, separate from numeric median/mean. Strict API validation, per-experiment provenance, actual baseline/candidate fold-preprocessor wiring, collision rejection and a preserved server-derived default feature audit. [P4-77 report](./P4_77_CATEGORICAL_MISSING_VALUE_ALTERNATIVE_2026-11-12.md). No model fit, original data operation, native build or installer.
+- **Exact chronology:** Initial [4937ba02](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4937ba02c5cead7dcf5f26da29eb8a2c3158e3d4) P4 [#43294157690](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43294157690) **FAIL** (server-audit Node contract; Python/browser/Windows synthetic checks passed). One-file source fix [7458cab4](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7458cab46baa3e9fc6b98f67277a6d1d3240b7b2); corrective [P4 #43294447975](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43294447975) **SUCCESS 3/3**, 183 Python, 59 Node, Vite, 10/10 real-HTTP browser, synthetic Windows; [P1 #43294447676](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43294447676) SUCCESS, 187 Node, Vite, 7/7 browser. Historical failure preserved.
+- **Gates:** P4 ACTIVE, R01-R06 OPEN, real-business Gate C UNVERIFIED, broader BE-024 OPEN, original whole app-data historical STRICT FAIL, native/physical offline 8 GB incomplete, P5 NOT AUTHORISED, P8 NOT CERTIFIED. One-use approvals consumed, installer freeze unchanged.
+
+
 ## 12 November 2026 | P4-76 supported numeric preprocessing choice
 
 - **BE-024 limited real alternative implemented in source:** Prepare now selects **median (default) or mean** imputation for numeric predictors, updates per-field/overall treatment explanations, and sends the choice through an allowlisted FastAPI request to persisted experiment config and actual baseline/candidate fold pipelines. Old configurations default to median, while unknown values are rejected. This is one **global numeric** strategy choice, not per-column or categorical customization. [P4-76 scope, evidence and limits](./P4_76_NUMERIC_IMPUTATION_ALTERNATIVE_PREPARE_PIPELINE_2026-11-12.md).

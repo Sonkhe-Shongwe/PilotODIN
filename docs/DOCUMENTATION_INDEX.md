@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **P4-77:** [Guarded categorical missing-marker option and exact-source CI record](./P4_77_CATEGORICAL_MISSING_VALUE_ALTERNATIVE_2026-11-12.md). P4 first run #43294157690 FAILED; corrected source 7458cab4 P4 #43294447975 and P1 #43294447676 SUCCESS. BE-024 still OPEN.
 - **Prior phase closure:** [P1 development closure register](./P1_CLOSURE_REGISTER_2026-10-28.md), [P2 bounded development closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md), [P3 bounded development closure](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md). These are not release certification.
 - **P4 safety and provenance:** [P4-24 historical storage drift](./P4_24_STORAGE_DRIFT_ISOLATION_SOURCE_VERIFICATION_2026-11-11.md), [P4-25 WebView process snapshot](./P4_25_WEBVIEW_PROFILE_PROCESS_OBSERVATION_2026-11-11.md), [P4-46 evidence boundary](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), [P4-47 one-use native evidence](./P4_47_ONE_APPROVED_UNPACKAGED_NATIVE_CI_ACCEPTANCE_2026-11-12.md).
 - **P4-61 owner-approved manual-only Gate C candidate study:** [Frozen rule and constraints](./P4_61_OWNER_APPROVED_MANUAL_CI_GATE_C_FEASIBILITY_2026-11-12.md); [latest P4-64 exact-source study observation](./P4_64_PREPARE_AND_FEATURE_ADVICE_QUALITY_VERSION_BINDING_2026-11-12.md). **Five** GitHub-timestamped rule witnesses, 4 first P1 successes, **1 earlier P1 FAILURE preserved**, 0 independently observed human preflight actions or measured business benefit. **Gate C UNVERIFIED**.
