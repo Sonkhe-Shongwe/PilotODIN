@@ -18,6 +18,7 @@ on:
       - frontend/tests/p4-review-queue-contracts.test.cjs
       - tests/test_p4_target_opportunities.py
       - tests/test_p4_bike_public_import.py
+      - tests/test_p4_bike_time_readiness.py
       - tests/fixtures/public_bike_daily_preday_731.csv
       - tests/test_p4_target_business_context.py
       - tests/test_p4_prediction_timing_review.py
@@ -89,6 +90,7 @@ jobs:
           python -m pytest -q
           tests/test_p4_target_opportunities.py
           tests/test_p4_bike_public_import.py
+          tests/test_p4_bike_time_readiness.py
           tests/test_p4_target_business_context.py
           tests/test_p4_prediction_timing_review.py
           tests/test_p4_two_axis_evidence.py
