@@ -18,7 +18,7 @@
 - **Current P4 acceptance-support tools:** [P4-57 local shadow-log validator](./P4_57_LOCAL_SHADOW_DECISION_LOG_VALIDATION_2026-11-12.md), [P4-58 run-attribution fix](./P4_58_SHADOW_STUDY_ATTRIBUTION_IDENTITY_CORRECTION_2026-11-12.md). **No prospective owner evidence, Gate C approval or native acceptance inferred.**
 - **Documentation provenance:** [4 November historical cleanup audit](./DOCUMENTATION_AUDIT_2026-11-04.md); [12 November current navigation audit](./DOCUMENTATION_CLEANING_AUDIT_2026-11-12.md).
 
-**Index scope:** A curated current route with a preserved legacy navigation snapshot below, not an exhaustive list of all 172 `docs/` Markdown files. Newer GitHub HEAD, current handoff, owner decisions and verified CI evidence supersede historical status paragraphs. Keep chronological failures and historical acceptance observations intact.
+**Index scope:** A curated current route with a preserved legacy navigation snapshot below, not an exhaustive list of the repository's Markdown files (172 at the pre-cleanup audit baseline). Newer GitHub HEAD, current handoff, owner decisions and verified CI evidence supersede historical status paragraphs. Keep chronological failures and historical acceptance observations intact.
 
 ---
 

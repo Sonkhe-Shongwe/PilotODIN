@@ -26,7 +26,7 @@
 - Scanned Markdown relative file links in **six** sampled documents at initial checkpoint: `docs/DOCUMENTATION_INDEX.md`, `README.md`, `docs/CONTINUE_HERE.md`, `docs/LIVE_DEVELOPMENT.md`, `docs/DOCUMENTATION_AUDIT_2026-11-04.md`, and `docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md`.
 - **139 relative file-link occurrences**, zero missing file targets by path normalisation against the exact Git tree. URLs, GitHub-hosted external destinations, heading-anchor fragments, files not in the sample, and Markdown syntax in nested formatting were **not fully audited**. Do not say full-repository link integrity PASS.
 - Index links to historic `docs/archive` items remain valid; no file deletion, relocation or historical commit rewrite.
-- After cleanup, the revised landing docs should be rechecked against the same Git tree (plus the new report), especially their newly added phase, QA and P4 report references.
+- After cleanup, the proposed Git blobs for the five changed/new files were fetched and their relative Markdown targets checked against the same Git tree plus this report: **131 relative link occurrences, 0 missing file targets** (updated index 99, root README 12, CONTINUE_HERE 17, STUDIO_README 3, audit report 0). This is a file-target check only, **not** a validated heading-anchor, external URL or full-repository link scan.
 
 ## 4. Authorised cleanup boundaries
 
