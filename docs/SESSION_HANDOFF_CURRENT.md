@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-72 native WebView CDP discovery limitation addressed in QA source only
+
+- **Verified P4-71 log:** Windows native process, distinct profile and 5 WebView2 processes PASS; CDP endpoint was READY, but one-shot Playwright discovery found no `http://127.0.0.1:5173` page. The log **does not identify** which target URLs were present, so underlying cause is UNKNOWN, not proven an application error. [P4-72 analysis](./P4_72_NATIVE_WEBVIEW_CDP_TARGET_DISCOVERY_SOURCE_REVIEW_2026-11-12.md).
+- **QA-only repair:** bounded 20x/1.5s target polling, strict unique root matching and privacy-safe target classifications; standard-library Node regression tests for origin rules. Does not navigate on unknown targets, relax original identity checks, compile native, dispatch CI, create installer or use original data.
+- **Outstanding:** Source-only evidence, **no new Windows-native run**; N2–N12 still NOT TESTED, P4 ACTIVE, R01–R06 OPEN, Gate C UNVERIFIED, historic original-data STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED. P4-71 one-use approval consumed.
+
 ## 12 November 2026 | P4-71 one approved unpackaged Windows native build PASS, native interactions BLOCKED
 
 - **Native SUCCESS at exact source 8060d17b:** [Windows run #43276839784](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43276839784) **2/2 jobs successful**; one Tauri DEV binary compiled on disposable Windows 2022 (18,318,848 bytes, SHA-256 965fe3c4f125406b8f1b9d40528f58033aebe29c786b7e83abecaa8a3f493ebc); actual isolated app root and **5 WebView2 processes** present; production/older QA roots absent before and after in hosted runner; disposable loopback backend health ready. **No installer, EXE upload/installation, model fit, sidecar, Qwen or owner PC/original data access.**

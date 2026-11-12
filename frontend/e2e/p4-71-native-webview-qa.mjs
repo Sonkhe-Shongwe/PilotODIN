@@ -1,3 +1,4 @@
+import { isExpectedDevPage, safeTargetClass } from './p4-72-cdp-target-classifier.mjs';
 // P4-71 disposable CI only: attach to ACTUAL Tauri native WebView2, no original user data.
 import { chromium, expect } from '@playwright/test';
 const required = {CI:'true',GITHUB_ACTIONS:'true',RUNNER_OS:'Windows',RUNNER_ENVIRONMENT:'github-hosted',VITE_PILOTODIN_NATIVE_SMOKE:'1'};
@@ -49,9 +50,25 @@ try {
  process.exit(0);
 }
 try{
- const page=browser.contexts().flatMap(c=>c.pages()).find(p=>p.url().startsWith(SITE));
+ let page=null;
+ let observed=[];
+ // A CDP endpoint becoming ready does not guarantee the WebView target has
+ // already navigated. Retry discovery only; no navigation or app mutation.
+ for(let i=0;i<20;i++){
+  const candidates=browser.contexts().flatMap(c=>c.pages());
+  const matching=candidates.filter(candidate=>isExpectedDevPage(candidate.url()));
+  if(matching.length===1){page=matching[0];break;}
+  if(matching.length>1){
+   console.log('NATIVE INTERACTIONS BLOCKED: ambiguous multiple developer UI targets.');
+   process.exit(0);
+  }
+  observed=candidates.map(candidate=>safeTargetClass(candidate.url()));
+  if(i<19)await new Promise(resolve=>setTimeout(resolve,1500));
+ }
  if(!page){
-  console.log('NATIVE INTERACTIONS BLOCKED: no actual Tauri dev WebView2 at 127.0.0.1:5173.');
+  // Never log complete URLs, access tokens, query strings or private paths.
+  console.log('NATIVE INTERACTIONS BLOCKED: expected developer UI target unavailable after bounded retries.');
+  console.log('CDP target classifications: '+JSON.stringify([...new Set(observed)].sort())+'; count='+observed.length);
   process.exit(0);
  }
  const context=page.context();
