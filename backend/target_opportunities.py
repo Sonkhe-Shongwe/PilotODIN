@@ -229,10 +229,17 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
             values = values.mask(blank_or_padded_text)
         return values.nunique(dropna=True) > 1
 
+    # Identifier-like headers may be unique per record but are not reliable
+    # standalone predictive inputs. Exclude them from the minimum usable
+    # predictor evidence, while retaining the full read-only source frame.
     predictors = [c for c in frame.columns
-                  if c != name and has_observed_variation(c)]
+                  if c != name and not _is_identifier(str(c))
+                  and has_observed_variation(c)]
     if not predictors:
-        blockers.append("No non-constant, non-empty candidate predictor remains.")
+        blockers.append(
+            "No non-constant, non-empty candidate predictor remains after "
+            "excluding identifier-like headers."
+        )
     if labelled > engine.MAX_ML_LABELLED_ROWS:
         blockers.append(
             f"{labelled:,} labelled rows exceed the current {engine.MAX_ML_LABELLED_ROWS:,}-row local ML cap."

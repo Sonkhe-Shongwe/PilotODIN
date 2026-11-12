@@ -779,3 +779,51 @@ def test_p4_ordinary_categorical_outcome_and_duration_target_stay_reviewable():
         assert manual["candidate"]["technical_status"] == "reviewable"
         assert manual["training_authorised"] is False
         assert frame.equals(before)
+
+
+@pytest.mark.parametrize("identifier_header", [
+    "account_id", "policy_number", "customer_uuid", "case_key",
+])
+def test_p4_identifier_only_predictor_cannot_support_structural_target_review(identifier_header):
+    # Before this guard, any varying identifier satisfied the only predictor
+    # requirement for a valid binary target, even without an actual signal.
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        identifier_header: [f"ID-{i:03d}" for i in range(80)],
+    })
+    before = frame.copy(deep=True)
+    assert frame[identifier_header].nunique(dropna=True) == 80
+    ranked = target_opportunities.recommend(frame, 4)
+    assert ranked["abstained"] is True
+    assert ranked["suggestions"] == []
+    candidate = {x["column"]: x for x in ranked["blocked_examples"]}["churn"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("excluding identifier-like headers" in x for x in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 4, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["candidate"]["task_hypothesis"] is None
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_real_varying_predictor_remains_reviewable_alongside_identifier():
+    # An identifier does not invalidate a distinct, non-identifier signal.
+    # Structural review is not approval to train or a business value claim.
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "account_id": [f"ID-{i:03d}" for i in range(80)],
+        "event_type": ["A", "B"] * 40,
+    })
+    before = frame.copy(deep=True)
+    ranked = target_opportunities.recommend(frame, 4)
+    candidate = {x["column"]: x for x in ranked["suggestions"]}["churn"]
+    assert ranked["abstained"] is False
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 4, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
