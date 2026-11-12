@@ -18,7 +18,7 @@ from sklearn.metrics import mean_absolute_error
 
 from backend import engine
 
-SOURCE = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "public_bike_daily_categorical_preday_731.csv"
+SOURCE = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "public_bike_daily_categorical_preday_731.csv"
 SOURCE_SHA256 = "8981926c70d117fd487ce5ac5d0381be30dd159488576646c67978a2d3139a2e"
 TARGET = "daily_rentals_target"
 SPLIT = "date"
