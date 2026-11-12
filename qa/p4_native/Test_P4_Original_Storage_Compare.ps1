@@ -85,47 +85,44 @@ try {
  # current/backup file changes AFTER the first tree scan when ShaFile reads
  # the original EXE. Old comparator would return FULL_FINGERPRINT_MATCH.
  # New final sequential scans must refuse to make an integrity claim.
- Set-Item -Path Function:\global:Get-FileHash -Value {
-  [CmdletBinding()]
-  param([Parameter(Mandatory=$true)][string]$LiteralPath,
-        [string]$Algorithm = 'SHA256')
-  $result=Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath -Algorithm $Algorithm -ErrorAction Stop
-  if ($global:P4SyntheticRaceArm -and $LiteralPath -eq $global:P4SyntheticRaceExe) {
+ # Use a disposable child scope: function name interception is inherited by
+ # the comparator called inside, but is discarded before normal cases resume.
+ & {
+  function Get-FileHash {
+   [CmdletBinding()]
+   param([Parameter(Mandatory=$true)][string]$LiteralPath,
+         [string]$Algorithm = 'SHA256')
+   $result=Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath -Algorithm $Algorithm -ErrorAction Stop
+   if ($global:P4SyntheticRaceArm -and $LiteralPath -eq $global:P4SyntheticRaceExe) {
+    $global:P4SyntheticRaceArm=$false
+    Set-Content -LiteralPath $global:P4SyntheticRaceVictim -Value 'POST-SCAN-SYNTHETIC-TAMPER' -NoNewline -ErrorAction Stop
+   }
+   return $result
+  }
+  try {
+   foreach ($kind in @('current','backup')) {
+    $victim=if ($kind -eq 'current') {
+     Join-Path $current 'data\datasets\example.csv'
+    } else {
+     Join-Path $backup 'data\datasets\example.csv'
+    }
+    $global:P4SyntheticRaceArm=$true
+    $global:P4SyntheticRaceExe=$exe
+    $global:P4SyntheticRaceVictim=$victim
+    $rejected=$false
+    try {$null=& $compare @params} catch {
+     if ($_.Exception.Message -notlike '*changed during preservation comparison*') {throw}
+     $rejected=$true
+    }
+    if ($global:P4SyntheticRaceArm -or -not $rejected) {
+     throw "Post-scan $kind mutation escaped full preservation check"
+    }
+    Set-Content -LiteralPath $victim -Value 'SYNTHETIC-CSV' -NoNewline -ErrorAction Stop
+   }
+  } finally {
    $global:P4SyntheticRaceArm=$false
-   Set-Content -LiteralPath $global:P4SyntheticRaceVictim -Value 'POST-SCAN-SYNTHETIC-TAMPER' -NoNewline -ErrorAction Stop
+   Remove-Variable -Name P4SyntheticRaceArm,P4SyntheticRaceExe,P4SyntheticRaceVictim -Scope Global -ErrorAction SilentlyContinue
   }
-  return $result
- } -ErrorAction Stop
- try {
-  foreach ($kind in @('current','backup')) {
-   $victim=if ($kind -eq 'current') {
-    Join-Path $current 'data\datasets\example.csv'
-   } else {
-    Join-Path $backup 'data\datasets\example.csv'
-   }
-   $global:P4SyntheticRaceArm=$true
-   $global:P4SyntheticRaceExe=$exe
-   $global:P4SyntheticRaceVictim=$victim
-   $rejected=$false
-   try {$null=& $compare @params} catch {
-    if ($_.Exception.Message -notlike '*changed during preservation comparison*') {throw}
-    $rejected=$true
-   }
-   if ($global:P4SyntheticRaceArm -or -not $rejected) {
-    throw "Post-scan $kind mutation escaped full preservation check"
-   }
-   Set-Content -LiteralPath $victim -Value 'SYNTHETIC-CSV' -NoNewline -ErrorAction Stop
-  }
- } finally {
-  # The dynamically installed global function can outlive the test block.
-  # Disarm it before cleanup and make sure the real cmdlet is restored.
-  $global:P4SyntheticRaceArm=$false
-  Remove-Item -Path Function:\Get-FileHash -ErrorAction SilentlyContinue
-  Remove-Item -Path Function:\global:Get-FileHash -ErrorAction SilentlyContinue
-  if ((Get-Command -Name Get-FileHash -ErrorAction Stop).CommandType -ne 'Cmdlet') {
-   throw 'Synthetic Get-FileHash shim leaked beyond the disposable race test'
-  }
-  Remove-Variable -Name P4SyntheticRaceArm,P4SyntheticRaceExe,P4SyntheticRaceVictim -Scope Global -ErrorAction SilentlyContinue
  }
  $stableAgain=& $compare @params
  if ($stableAgain.status -ne 'FULL_FINGERPRINT_MATCH' -or
