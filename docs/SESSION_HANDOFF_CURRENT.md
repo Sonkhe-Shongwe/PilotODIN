@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-82 NESO innovation research proposal, UNSENT DRAFT
+
+- **Practical external next step without inventing an operator partnership:** [Unsended, read-only NESO forecast-assurance research concept note and introductory outreach wording](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md). Scope targets auditable as-of day-ahead forecast comparisons, whole-settlement-day/DST preservation, strictly separate cardinal-point versus half-hourly definitions, honest official-forecast vs independent non-model baselines and *conditional* independent decision-utility review. References official NESO innovation Big Idea and dataset-specific rights, plus existing P4-65/P4-70 evidence.
+- **Explicit non-claims and stop conditions:** no NESO sponsorship, contact, submitted form, business-owner approval, licensed Elexon redistribution permission, new fit, forecast-benefit proof, native Windows or original-owner data operation. A new formal NIA collaboration would require intellectual-property rights review. The draft asks for an exploratory discussion first and requires separate owner approval to send.
+- **Gates unchanged:** P4 ACTIVE, P4-R01–R06 OPEN, Gate C UNVERIFIED, historic entire original app-data STRICT FAIL (320 vs 346, 74 differences, writer UNKNOWN), current-source physical native/offline 8 GB incomplete, BE-024 wider scope OPEN, P5 NOT AUTHORISED, P8 NOT CERTIFIED. This commit is docs-only; latest passing application-source tests remain P4 #43299568196 and P1 #43299568087 at `db811488`.
+
+
 ## 12 November 2026 | P4-81 independently sourced online Gate C candidate review
 
 - **Candidate identified, no artificial Gate C pass:** [Online organisational and data-rights comparison](./P4_81_EXTERNAL_GATE_C_CANDIDATE_NESO_ESKOM_2026-11-12.md) favours NESO's documented national day-ahead demand forecasting and control-room balancing process. Official historical forecasts/publication timestamps and Elexon INDO outturn, specific NESO open-licensed data resources, and an actual innovation proposal channel are independently documented. Existing P4-65–P4-70 cross-source work is reused; this is no model run or new outcome measurement. Eskom's national demand case is locally relevant but its portal data terms restrict exploitation, so reuse/permission must be clarified; TfL BikePoint is a weaker third prospect.
