@@ -375,11 +375,18 @@ def test_p4_76_numeric_imputation_allowlist_and_unfitted_pipeline():
         target="churn", task="classification", models=["logistic_regression"]
     )
     assert default.numeric_imputation == "median"
+    assert default.categorical_imputation == "most_frequent"
     chosen = main.ExperimentRequest(
         target="churn", task="classification", models=["logistic_regression"],
         numeric_imputation="mean",
     )
     assert chosen.numeric_imputation == "mean"
+    marker_choice = main.ExperimentRequest(target="churn", task="classification",
+                                           models=["logistic_regression"], categorical_imputation="constant")
+    assert marker_choice.categorical_imputation == "constant"
+    with pytest.raises(ValidationError):
+        main.ExperimentRequest(target="churn", task="classification", models=["logistic_regression"],
+                               categorical_imputation="forward_fill")
     with pytest.raises(ValidationError):
         main.ExperimentRequest(
             target="churn", task="classification", models=["logistic_regression"],
@@ -396,6 +403,22 @@ def test_p4_76_numeric_imputation_allowlist_and_unfitted_pipeline():
         assert numeric.named_steps["imputer"].strategy == strategy
         assert categorical.named_steps["imputer"].strategy == "most_frequent"
         assert pipe.named_steps["model"].__class__.__name__ == "LogisticRegression"
+    for strategy in ("most_frequent", "constant"):
+        pipe = engine.make_pipeline(frame, "classification", "logistic_regression",
+                                    categorical_imputation=strategy)
+        cat = next(steps for name, steps, _columns
+                   in pipe.named_steps["preprocessor"].transformers if name == "categorical")
+        assert cat.named_steps["imputer"].strategy == strategy
+        if strategy == "constant":
+            assert cat.named_steps["imputer"].fill_value == engine.CATEGORICAL_MISSING_MARKER
+    with pytest.raises(ValueError, match="most_frequent or constant"):
+        engine.make_pipeline(frame, "classification", "logistic_regression",
+                             categorical_imputation="forward_fill")
+    with pytest.raises(ValueError, match="reserved categorical missing marker"):
+        collision = frame.copy(deep=True)
+        collision.loc[0, "event_type"] = engine.CATEGORICAL_MISSING_MARKER
+        engine.make_pipeline(collision, "classification", "logistic_regression",
+                             categorical_imputation="constant")
     with pytest.raises(ValueError, match="median or mean"):
         engine.make_pipeline(frame, "classification", "logistic_regression",
                              numeric_imputation="forward_fill")
@@ -428,10 +451,11 @@ def test_p4_76_worker_forwards_persisted_strategy_without_fitting(monkeypatch):
         "target": "churn", "task": "classification", "excluded": [],
         "models": ["logistic_regression"], "quality_version": 0,
         "split_strategy": "random", "split_column": None,
-        "numeric_imputation": "mean",
+        "numeric_imputation": "mean", "categorical_imputation": "constant",
     }
     main.train_background("synthetic-eid", "synthetic-pid", base)
     assert captured["numeric_imputation"] == "mean"
+    assert captured["categorical_imputation"] == "constant"
     assert callable(captured["stop_check"])
     assert captured["terminal"][0][1] == "failed"
     assert "no-fit sentinel" in captured["terminal"][1]["error"]

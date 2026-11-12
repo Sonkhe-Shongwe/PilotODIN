@@ -79,7 +79,7 @@ test('numeric imputation choice is version-reset, user-selectable and persists i
  const engine=fs.readFileSync(path.join(__dirname,'../../backend/engine.py'),'utf8');
  const backend=fs.readFileSync(path.join(__dirname,'../../backend/main.py'),'utf8');
  assert.match(app,/const \[numericImputation,setNumericImputation\]=useState<'median'\|'mean'>\('median'\)/);
- assert.match(app,/setNumericImputation\('median'\);if\(!project\|\|!target\)/);
+ assert.match(app,/setNumericImputation\('median'\);setCategoricalImputation\('most_frequent'\);if\(!project\|\|!target\)/);
  assert.match(app,/aria-label="Numeric imputation method"/);
  assert.match(app,/numeric_imputation:numericImputation/);
  assert.match(app,/f\.kind==='numeric'\?`Numeric: \${numericImputation} imputation/);
@@ -87,6 +87,21 @@ test('numeric imputation choice is version-reset, user-selectable and persists i
  assert.match(backend,/"numeric_imputation":body\.numeric_imputation/);
  assert.match(backend,/numeric_imputation=config\.get\("numeric_imputation", "median"\)/);
  assert.match(engine,/SimpleImputer\(strategy=numeric_imputation, keep_empty_features=True\)/);
- assert.match(engine,/make_pipeline\(X_train,task,models\[0\],numeric_imputation\)/);
- assert.match(engine,/make_pipeline\(X_train,task,key,numeric_imputation\)/);
+ assert.match(engine,/make_pipeline\(X_train,task,models\[0\],numeric_imputation,categorical_imputation\)/);
+ assert.match(engine,/make_pipeline\(X_train,task,key,numeric_imputation,categorical_imputation\)/);
+});
+
+test('categorical marker option is scoped, allowlisted and wired into both fold pipelines',()=>{
+  const engine=fs.readFileSync(path.join(__dirname,'../../backend/engine.py'),'utf8');
+  const backend=fs.readFileSync(path.join(__dirname,'../../backend/main.py'),'utf8');
+  assert.match(app,/setCategoricalImputation\('most_frequent'\);if\(!project\|\|!target\)/);
+  assert.match(app,/aria-label="Categorical imputation method"/);
+  assert.match(app,/categorical_imputation:categoricalImputation/);
+  assert.match(backend,/categorical_imputation: Literal\['most_frequent','constant'\] = 'most_frequent'/);
+  assert.match(backend,/"categorical_imputation":body\.categorical_imputation/);
+  assert.match(backend,/categorical_imputation=config\.get\("categorical_imputation", "most_frequent"\)/);
+  assert.match(engine,/check_categorical_missing_marker\(X, categorical_imputation\)/);
+  assert.match(engine,/fill_value=CATEGORICAL_MISSING_MARKER if categorical_imputation == "constant" else None/);
+  assert.match(engine,/make_pipeline\(X_train,task,models\[0\],numeric_imputation,categorical_imputation\)/);
+  assert.match(engine,/make_pipeline\(X_train,task,key,numeric_imputation,categorical_imputation\)/);
 });

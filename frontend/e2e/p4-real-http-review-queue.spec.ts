@@ -733,6 +733,14 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(transactionRow).toContainText('Included predictor');
   await expect(transactionRow).toContainText('High — review required');
   await expect(transactionRow).toContainText('Categorical: mode imputation');
+   const categoricalStrategy=page.getByLabel('Categorical imputation method');
+   await expect(categoricalStrategy).toHaveValue('most_frequent');
+   await categoricalStrategy.selectOption('constant');
+   await expect(transactionRow).toContainText('Categorical: missing-marker imputation');
+   await expect(page.locator('.panel.insight').filter({hasText:'Automatic preprocessing plan'}))
+     .toContainText('Categorical: training-fold missing-marker imputation');
+   await categoricalStrategy.selectOption('most_frequent');
+   await expect(transactionRow).toContainText('Categorical: mode imputation');
   await expect(eventRow).toContainText('Included predictor');
   await expect(amountRow).toContainText('Numeric: median imputation');
   const numericStrategy=page.getByLabel('Numeric imputation method');

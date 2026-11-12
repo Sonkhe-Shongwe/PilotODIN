@@ -227,6 +227,8 @@ def make_estimator(task: str, key: str):
 
 
 NUMERIC_IMPUTATION_STRATEGIES = ("median", "mean")
+CATEGORICAL_IMPUTATION_STRATEGIES = ("most_frequent", "constant")
+CATEGORICAL_MISSING_MARKER = "__PILOTODIN_MISSING__"
 
 
 def validate_numeric_imputation(strategy: str) -> str:
@@ -236,16 +238,41 @@ def validate_numeric_imputation(strategy: str) -> str:
     return strategy
 
 
+def validate_categorical_imputation(strategy: str) -> str:
+    """Allowlist the categorical missing-value strategy."""
+    if strategy not in CATEGORICAL_IMPUTATION_STRATEGIES:
+        raise ValueError("Categorical imputation must be most_frequent or constant")
+    return strategy
+
+
+def check_categorical_missing_marker(X: pd.DataFrame, strategy: str) -> None:
+    """Do not merge a real observed category with the reserved missing marker."""
+    validate_categorical_imputation(strategy)
+    if strategy != "constant":
+        return
+    for column in X:
+        if (inferred_kind(X[column]) == "categorical"
+                and X[column].dropna().eq(CATEGORICAL_MISSING_MARKER).any()):
+            raise ValueError(
+                "The reserved categorical missing marker already exists as a data value "
+                f"in {column}. Select mode imputation instead."
+            )
+
+
 def make_pipeline(X: pd.DataFrame, task: str, model: str,
-                  numeric_imputation: str = "median") -> Pipeline:
+                  numeric_imputation: str = "median",
+                  categorical_imputation: str = "most_frequent") -> Pipeline:
     numeric_imputation = validate_numeric_imputation(numeric_imputation)
+    check_categorical_missing_marker(X, categorical_imputation)
     numeric = [c for c in X if inferred_kind(X[c]) == "numeric"]
     categorical = [c for c in X if c not in numeric]
     # Keep missing-only columns stable across folds; let imputers use safe constants.
     num_pipe = Pipeline([("imputer", SimpleImputer(strategy=numeric_imputation, keep_empty_features=True))])
     if model in ("logistic_regression", "linear_regression", "ridge", "elastic_net", "knn", "svm", "svr"):
         num_pipe.steps.append(("scaler", StandardScaler()))
-    cat_pipe = Pipeline([("imputer", SimpleImputer(strategy="most_frequent", keep_empty_features=True)),
+    cat_pipe = Pipeline([("imputer", SimpleImputer(strategy=categorical_imputation,
+                                                      fill_value=CATEGORICAL_MISSING_MARKER if categorical_imputation == "constant" else None,
+                                                      keep_empty_features=True)),
                          ("encoder", OneHotEncoder(handle_unknown="infrequent_if_exist", max_categories=25))])
     ct = ColumnTransformer([("numeric",num_pipe,numeric),("categorical",cat_pipe,categorical)], sparse_threshold=0)
     return Pipeline([("preprocessor", ct), ("model", make_estimator(task, model))])
@@ -456,8 +483,9 @@ def reliability_report(development:dict, final:dict, selected_model:str)->dict:
 
 def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: list[str], task: str,
                  split_strategy:str='random', split_column:str|None=None, stop_check=None,
-                 numeric_imputation:str='median'):
+                 numeric_imputation:str='median', categorical_imputation:str='most_frequent'):
     numeric_imputation = validate_numeric_imputation(numeric_imputation)
+    validate_categorical_imputation(categorical_imputation)
     # Optional cooperative checkpoint. sklearn's individual fit/CV call is
     # blocking; interruption is checked between expensive operations only.
     def checkpoint():
@@ -475,6 +503,7 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     # Preserve the original user exclusions in the persisted experiment.
     fit_excluded = list(dict.fromkeys([*excluded, *([split_column] if split_strategy != 'random' else [])]))
     X, y, task = validate_config(df, target, fit_excluded, models, task)
+    check_categorical_missing_marker(X, categorical_imputation)
     if X.empty or not X.shape[1]:raise ValueError('No predictor fields after split-column exclusion')
     cv_groups=None
     if split_strategy=='group':
@@ -537,7 +566,7 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
         cv=StratifiedKFold(n_splits=folds,shuffle=True,random_state=SEED) if task=='classification' else KFold(n_splits=folds,shuffle=True,random_state=SEED)
     score='f1_macro' if task=='classification' else 'neg_mean_absolute_error'
     baseline=DummyClassifier(strategy='most_frequent') if task=='classification' else DummyRegressor(strategy='median')
-    base_pipe=Pipeline([('preprocessor',make_pipeline(X_train,task,models[0],numeric_imputation).named_steps['preprocessor']),('model',baseline)])
+    base_pipe=Pipeline([('preprocessor',make_pipeline(X_train,task,models[0],numeric_imputation,categorical_imputation).named_steps['preprocessor']),('model',baseline)])
     cv_kwargs={'groups':cv_groups} if cv_groups is not None else {}
     # Group-aware CV is only valid when no group appears in both development folds.
     checkpoint()
@@ -546,7 +575,7 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     reports,pipelines=[],{}
     for key in models:
         checkpoint()
-        pipe=make_pipeline(X_train,task,key,numeric_imputation)
+        pipe=make_pipeline(X_train,task,key,numeric_imputation,categorical_imputation)
         try:
             scores=cross_val_score(pipe,X_train,y_train,cv=cv,scoring=score,n_jobs=1,error_score='raise',**cv_kwargs)
             checkpoint()
@@ -566,7 +595,7 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     wins=[m for m in reports if m['status']=='ready' and
           (m['cv_metric']<baseline_cv if task=='regression' else m['cv_metric']>baseline_cv)]
     return {'task':task,'target':target,'features':list(X.columns),'excluded_features':excluded,
-            'numeric_imputation':numeric_imputation,
+            'numeric_imputation':numeric_imputation,'categorical_imputation':categorical_imputation,
             'split_strategy':split_strategy,'split_column':split_column,
             'labelled_rows':len(y),'train_rows':len(X_train),'test_rows':len(X_test),'folds':folds,
             'primary_metric':'F1 macro (higher is better)' if task=='classification' else 'MAE (lower is better)',

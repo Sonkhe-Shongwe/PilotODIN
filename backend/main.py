@@ -107,6 +107,7 @@ class ExperimentRequest(BaseModel):
     acknowledge_feature_risks: bool = False
     # v1 supported numeric alternatives; default preserves old experiment behavior.
     numeric_imputation: Literal['median','mean'] = 'median'
+    categorical_imputation: Literal['most_frequent','constant'] = 'most_frequent'
     split_strategy: str = 'random'
     split_column: str | None = None
     expected_quality_version: int | None = Field(default=None, ge=0)
@@ -314,6 +315,7 @@ def train_background(eid:str,pid:str,config:dict):
             df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")},
             stop_check=lambda: storage.check_training_interruption(eid),
             numeric_imputation=config.get("numeric_imputation", "median"),
+            categorical_imputation=config.get("categorical_imputation", "most_frequent"),
         )
         if not storage.advance_running_experiment(
             eid,"saving_artifacts","Model comparisons finished; saving fitted pipelines and held-out evaluation data."
@@ -363,7 +365,8 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
         # The split key remains available in the original frame for group/time CV.
         fit_excluded=list(dict.fromkeys([*body.excluded_features,
             *([body.split_column] if body.split_strategy!='random' else [])]))
-        engine.validate_config(df,body.target,fit_excluded,body.models,body.task)
+        effective_X, _, _ = engine.validate_config(df,body.target,fit_excluded,body.models,body.task)
+        engine.check_categorical_missing_marker(effective_X, body.categorical_imputation)
         preparation_audit=engine.preparation(df,body.target)
         included_risks=sorted(set(preparation_audit["high_risk_features"])-set(body.excluded_features)
                               -({body.split_column} if body.split_strategy!="random" else set()))
@@ -389,6 +392,7 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
             "quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column,
             "acknowledge_feature_risks":bool(body.acknowledge_feature_risks),
             "numeric_imputation":body.numeric_imputation,
+            "categorical_imputation":body.categorical_imputation,
             "reviewed_high_risk_features":included_risks,
             "max_duration_seconds":body.max_duration_seconds}
     try:
