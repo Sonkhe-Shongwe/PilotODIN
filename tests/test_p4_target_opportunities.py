@@ -827,3 +827,66 @@ def test_p4_real_varying_predictor_remains_reviewable_alongside_identifier():
     assert manual["candidate"]["technical_status"] == "reviewable"
     assert manual["training_authorised"] is False
     assert frame.equals(before)
+
+
+@pytest.mark.parametrize("camel_identifier", [
+    "accountId", "CustomerID", "claimUUID", "paymentGuid",
+])
+def test_p4_mixed_case_identifier_only_predictor_is_not_reviewable(camel_identifier):
+    # P4-48 handles snake_case IDs. Mixed-case headers must not bypass the
+    # same structural safeguard, including explicit manual-target inspection.
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        camel_identifier: [f"record-{i:03d}" for i in range(80)],
+    })
+    before = frame.copy(deep=True)
+    assert target_opportunities._is_identifier(camel_identifier)
+    ranked = target_opportunities.recommend(frame, 8)
+    assert ranked["abstained"] is True
+    assert ranked["suggestions"] == []
+    candidate = {x["column"]: x for x in ranked["blocked_examples"]}["churn"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("excluding identifier-like headers" in x for x in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 8, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+@pytest.mark.parametrize("ordinary_header", ["valid", "paid", "grid"])
+def test_p4_mixed_case_identifier_suffix_does_not_match_ordinary_words(ordinary_header):
+    # Do not overmatch lower-case 'id' in legitimate non-identifier words.
+    assert not target_opportunities._is_identifier(ordinary_header)
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        ordinary_header: list(range(80)),
+    })
+    before = frame.copy(deep=True)
+    ranked = target_opportunities.recommend(frame, 8)
+    candidate = {x["column"]: x for x in ranked["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 8, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_camel_identifier_does_not_hide_separate_real_predictor():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "accountId": [f"record-{i:03d}" for i in range(80)],
+        "event_type": ["A", "B"] * 40,
+    })
+    before = frame.copy(deep=True)
+    ranked = target_opportunities.recommend(frame, 5)
+    candidate = {x["column"]: x for x in ranked["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 5, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)

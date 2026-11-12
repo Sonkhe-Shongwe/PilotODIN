@@ -59,6 +59,10 @@ IDENTIFIER_TOKENS = {
     "postal", "zip", "account_number", "claim_number", "policy_number",
 }
 IDENTIFIER_ENDINGS = ("_id", "_uuid", "_key", "_code", "_number")
+# Mixed-case source headers such as accountId or CustomerID are identifiers
+# too. Require a case-sensitive suffix boundary to avoid treating ordinary
+# lowercase words such as 'valid', 'paid' and 'grid' as identifiers.
+_CAMEL_IDENTIFIER_SUFFIX = re.compile(r"[A-Za-z0-9](?:ID|Id|UUID|Uuid|GUID|Guid)$")
 # A duration such as time_to_resolution is not necessarily a timestamp.
 TIME_TOKENS = {"date", "datetime", "timestamp", "created_at", "updated_at"}
 SENSITIVE_TERMS = {
@@ -87,7 +91,11 @@ def _match_outcome(name: str) -> str | None:
 
 def _is_identifier(name: str) -> bool:
     normalized = _normalized(name)
-    return normalized in IDENTIFIER_TOKENS or normalized.endswith(IDENTIFIER_ENDINGS)
+    return (
+        normalized in IDENTIFIER_TOKENS
+        or normalized.endswith(IDENTIFIER_ENDINGS)
+        or bool(_CAMEL_IDENTIFIER_SUFFIX.search(name.strip()))
+    )
 
 
 def _is_date(name: str, series: pd.Series) -> bool:
