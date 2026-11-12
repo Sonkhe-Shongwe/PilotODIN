@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current project status
 
+## 12 November 2026 | P4-80 consolidated acceptance worklist and independent-evidence intake
+
+- **Actionable next-step plan, not a new acceptance result:** [P4-80 risk-by-risk worklist, Gate C private-safe intake, R06 historical attribution boundaries and conditional native execution order](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md). Reuses P4-17/46/50/71 evidence and the existing native N1–N12 kit; no duplicate fixture, new code, source tests, CI, user-device action, training, native compilation or installer.
+- **Actual dependencies:** obtain one independently controlled real decision/outcome/benefit case **or record NO SUITABLE CASE**; review any already-existing incident-time file/process audit if available, without asking to create it or scan original data; only after separately authorised native scope and suitable hardware perform isolated current-source Windows + offline 8 GB checks.
+- **No status promotion:** P4 ACTIVE, R01–R06 OPEN, Gate C UNVERIFIED, entire original app-data historical STRICT FAIL (320 vs 346; 74 differences; writer UNKNOWN), P5 NOT AUTHORISED, P8 NOT CERTIFIED. Latest actual passing application source remains `db811488` P4 #43299568196 (183 Python, 60 Node, 11 browser) and P1 #43299568087; P4-80 docs-only source must not be represented as newly CI-verified application behaviour.
+
+
 ## 12 November 2026 | P4-79 real-browser saved-experiment provenance acceptance
 
 - **Meaningful known test gap addressed without fitting:** P4-78's history display is now exercised in the actual browser using a disposable real Uvicorn project plus **GET-only synthetic experiment overlays**. Checks legacy default labels, explicitly saved numeric mean + categorical missing-marker values in Evaluate/Predict and **zero real backend experiments**. This is rendering/flow evidence, **not** model persistence, actual fit or Windows native acceptance. [Focused P4-79 evidence](./P4_79_SAVED_EXPERIMENT_READ_ONLY_BROWSER_ACCEPTANCE_2026-11-12.md).
