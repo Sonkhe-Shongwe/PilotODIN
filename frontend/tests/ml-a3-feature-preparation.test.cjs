@@ -105,3 +105,18 @@ test('categorical marker option is scoped, allowlisted and wired into both fold 
   assert.match(engine,/make_pipeline\(X_train,task,models\[0\],numeric_imputation,categorical_imputation\)/);
   assert.match(engine,/make_pipeline\(X_train,task,key,numeric_imputation,categorical_imputation\)/);
 });
+
+test('Evaluate and Predict display saved preprocessing provenance rather than current Prepare draft',()=>{
+  const section=app.slice(app.indexOf('function RecordedExperimentPreprocessing('),app.indexOf('/** A one-use, memory-only snapshot'));
+  assert.match(section,/experiment\.config\.numeric_imputation/);
+  assert.match(section,/experiment\.config\.categorical_imputation/);
+  assert.match(section,/experiment\.config\.quality_version/);
+  assert.match(section,/numeric===undefined\?'Median \(legacy default; not recorded\)'/);
+  assert.match(section,/categorical===undefined\?'Mode \(legacy default; not recorded\)'/);
+  assert.match(section,/not the current Prepare draft or independent proof of a fitted model/);
+  assert.match(section,/aria-label="Recorded experiment preprocessing"/);
+  const matches=app.match(/<RecordedExperimentPreprocessing experiment=\{experiment\}\/>/g)||[];
+  assert.equal(matches.length,2);
+  assert.match(app,/page==='evaluate'[\s\S]*?<RecordedExperimentPreprocessing experiment=\{experiment\}\/>/);
+  assert.match(app,/page==='predict'&&experiment\?\.selected_model&&experiment\.results&&!stale&&<RecordedExperimentPreprocessing/);
+});
