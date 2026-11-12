@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **P4-81:** [Independent online real-operator prospect review: NESO favoured over Eskom/TfL, with licensing, operational decision and missing Gate C requirements](./P4_81_EXTERNAL_GATE_C_CANDIDATE_NESO_ESKOM_2026-11-12.md). Candidate found, **R01/Gate C remains UNVERIFIED**, no new model fit or operator approval.
 - **P4-80:** [Practical consolidated R01–R06 worklist, Gate C independent evidence intake and safe R06/native conditional action order](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md). **Documentation only**, no new run or risk closure; latest application CI remains P4-79.
 - **P4-79:** [P4-78 saved-experiment display exercised by GET-only synthetic browser response overlays](./P4_79_SAVED_EXPERIMENT_READ_ONLY_BROWSER_ACCEPTANCE_2026-11-12.md). Initial P4 #43298867168 FAIL; corrected `db811488` P4 #43299568196 PASS 11/11 browser, P1 #43299568087 PASS; no model fit/native.
 - **P4-78:** [Saved experiment preprocessing choices visible in Evaluate/Predict, corrected-source CI proof and evidence limits](./P4_78_SAVED_EXPERIMENT_PREPROCESSING_PROVENANCE_2026-11-12.md). P4 #43296116379 PASS; P1 #43296116284 PASS. No native/browser reenactment of saved experiment; P4 still open.

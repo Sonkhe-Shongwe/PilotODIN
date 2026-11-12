@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current project status
 
+## 12 November 2026 | P4-81 independently sourced online Gate C candidate review
+
+- **Candidate identified, no artificial Gate C pass:** [Online organisational and data-rights comparison](./P4_81_EXTERNAL_GATE_C_CANDIDATE_NESO_ESKOM_2026-11-12.md) favours NESO's documented national day-ahead demand forecasting and control-room balancing process. Official historical forecasts/publication timestamps and Elexon INDO outturn, specific NESO open-licensed data resources, and an actual innovation proposal channel are independently documented. Existing P4-65–P4-70 cross-source work is reused; this is no model run or new outcome measurement. Eskom's national demand case is locally relevant but its portal data terms restrict exploitation, so reuse/permission must be clarified; TfL BikePoint is a weaker third prospect.
+- **Gate C missing:** no NESO operational decision-owner engagement/consent, frozen complete as-of predictor evidence, fair precommitted holdout, independently measured decision utility, or signoff. An operational forecast is not automatically a non-model baseline. **R01 UNVERIFIED, not passed.** No outreach or data request was made.
+- **All safety gates unchanged:** P4 ACTIVE, R01–R06 OPEN, broader BE-024 OPEN, historical full original application-data STRICT FAIL (320 vs 346; writer UNKNOWN), native/physical 8 GB incomplete, P5 NOT AUTHORISED, P8 NOT CERTIFIED. Docs-only research does not create application CI evidence or renew consumed model-fit/native authority.
+
+
 ## 12 November 2026 | P4-80 consolidated acceptance worklist and independent-evidence intake
 
 - **Actionable next-step plan, not a new acceptance result:** [P4-80 risk-by-risk worklist, Gate C private-safe intake, R06 historical attribution boundaries and conditional native execution order](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md). Reuses P4-17/46/50/71 evidence and the existing native N1–N12 kit; no duplicate fixture, new code, source tests, CI, user-device action, training, native compilation or installer.
