@@ -2,10 +2,13 @@ name: Build E Native Windows Compilation
 
 on:
   push:
-    branches: [build-e, feature/live-dev-workspace-20261023]
+    # P4-P7 owner freeze: native compile probes must not run on the
+    # live-dev feature branch, even when src-tauri configs change.
+    branches: [build-e]
     paths:
       - 'frontend/src-tauri/**'
       - '.github/workflows/native-windows-compile.yml'
+  # Legacy Build E compile-only workflow; not an authorised P4 native QA.
   workflow_dispatch:
 
 permissions:

@@ -37,3 +37,11 @@ test("desktop build script refuses intermediate packaging", () => {
   assert.equal(p.status, 2);
   assert.match(p.stderr, /STOP: PilotODIN intermediate installer packaging remains frozen/);
 });
+
+test("legacy native compilation is not triggered by P4 development branch", () => {
+  const yaml = fs.readFileSync(
+    path.join(root, "..", ".github", "workflows", "native-windows-compile.yml"), "utf8"
+  );
+  assert.match(yaml, /branches:\s*\[build-e\]/);
+  assert.doesNotMatch(yaml, /branches:\s*\[[^\]]*feature\/live-dev-workspace/);
+});
