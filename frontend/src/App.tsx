@@ -6,6 +6,7 @@ import {QualityWorkspace} from './QualityWorkspace';
 import {CategoryQualityAdvice} from './CategoryQualityReviewPrompt';
 import {hasWhitespaceCategoryCollision} from './categoryQualityAdvice';
 import {visibleFeatureHints} from './featureHintScope';
+import {selectedFeatureBudget} from './selectedFeatureBudget';
 import type {ScopedFeatureHints} from './featureHintScope';
 import type {QualityFocus} from './qualityHandoff';
 import {ExploreWorkspace} from './ExploreWorkspace';
@@ -397,6 +398,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   }
   async function startTrain(){
     if(!project||!prep||prep.target!==target)return;
+    if(modelBudgetExceeded){setError('Selected predictor estimate or model row limit exceeds the local training budget. Review exclusions and model selection.');return;}
     if(unresolvedFeatureRisks.length&&!acknowledgeFeatureRisks){setError('Review or exclude high-risk predictors before training.');return;}
     const projectId=project.id, generation=projectOperations.current.snapshot(projectId);
     setError('');setBusy('train');
@@ -508,8 +510,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const profile=project?.profile;
   const unresolvedFeatureRisks=(prep?.high_risk_features??[]).filter(name=>!excluded.includes(name)&&!(splitStrategy!=='random'&&splitColumn===name));
   const selectedResourcePlan=prep?.resource_plan;
+  // Current included fields, never the stale all-candidate plan. The backend
+  // independently rechecks the final labelled-only data before any fit.
+  const selectedBudget=prep?selectedFeatureBudget(prep.feature_audit,prep.resource_plan,excluded,splitStrategy,splitColumn):null;
   const modelRowLimit=selectedResourcePlan?Math.min(selectedResourcePlan.row_limit,...models.map(key=>selectedResourcePlan.model_family_row_limits[key]??selectedResourcePlan.row_limit)):null;
-  const modelBudgetExceeded=!!selectedResourcePlan&&modelRowLimit!==null&&selectedResourcePlan.labelled_rows>modelRowLimit;
+  const rowBudgetExceeded=!!selectedResourcePlan&&modelRowLimit!==null&&selectedResourcePlan.labelled_rows>modelRowLimit;
+  const modelBudgetExceeded=rowBudgetExceeded||!!selectedBudget?.denseLimitExceeded;
   useEffect(()=>{setAcknowledgeFeatureRisks(false)},[project?.id,target,qualityVersion,excluded,splitStrategy,splitColumn]);
   const prepRisk=prep?.recommend_exclude??[];
   // No mutation until the user confirms a proposed high-risk exclusion diff.
@@ -620,11 +626,11 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
                 <div className="feature-grid">{prep.available_features.map(c=>{const hint=prepRisk.find(x=>x.column===c);const isOut=excluded.includes(c);return <label className={cls('feature-chip',isOut&&'excluded')} key={c}><input type="checkbox" checked={isOut} onChange={(e:any)=>setExcluded(a=>e.target.checked?[...a,c]:a.filter(x=>x!==c))}/><span>{c}</span>{hint&&<span title={hint.reason}><AlertCircle size={15}/></span>}</label>})}</div>
                 <p className="muted-caption">Checked features will be excluded. Columns with warning icons need contextual review.</p>
                  <div className="mini-info">{prep.available_features.length} candidate predictors · {prep.feature_audit.filter(f=>f.default_included&&!excluded.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length} currently included · {unresolvedFeatureRisks.length} included high-risk predictors. Split columns and all-empty fields are excluded by the backend.</div>
-                 {prep.resource_plan&&<div className={cls('po-ml-resource-plan',!prep.resource_plan.within_local_budget&&'po-ml-resource-warning')}>
-                   <strong><Database size={17}/> Local training resource preflight</strong>
-                   <div className="po-ml-resource-metrics"><span><b>{prep.resource_plan.labelled_rows.toLocaleString()}</b> labelled rows</span><span><b>{prep.resource_plan.estimated_encoded_columns.toLocaleString()}</b> estimated encoded columns</span><span><b>{prep.resource_plan.estimated_dense_training_mb.toLocaleString()} MB</b> approximate dense matrix</span></div>
-                   <p>{prep.resource_plan.within_local_budget?'Within the initial local training budget based on all usable candidates.':'Candidate feature set exceeds the initial local training budget; exclude fields or use a separately reviewed smaller dataset before training.'} Training rejects datasets exceeding {prep.resource_plan.row_limit.toLocaleString()} labelled rows or {prep.resource_plan.estimated_dense_mb_limit} MB estimated dense features.</p>
-                   <small>{prep.resource_plan_scope} {prep.resource_plan.note}</small>
+                 {selectedBudget&&prep.resource_plan&&<div className={cls('po-ml-resource-plan',selectedBudget.denseLimitExceeded&&'po-ml-resource-warning')}>
+                   <strong><Database size={17}/> Local training resource preflight: selected predictors</strong>
+                   <div className="po-ml-resource-metrics"><span><b>{prep.resource_plan.labelled_rows.toLocaleString()}</b> labelled rows</span><span><b>{selectedBudget.estimatedEncodedColumns.toLocaleString()}</b> estimated encoded columns</span><span><b>{selectedBudget.estimatedDenseTrainingMb.toLocaleString()} MB</b> approximate dense matrix</span></div>
+                   <p>{selectedBudget.denseLimitExceeded?'The currently included predictors exceed this preliminary memory budget, or no usable predictors remain. Review exclusions before training.':'The current included predictors fit this preliminary dense-matrix estimate.'} Training rejects datasets exceeding {prep.resource_plan.row_limit.toLocaleString()} labelled rows or {prep.resource_plan.estimated_dense_mb_limit} MB estimated dense features.</p>
+                   <small>Selected-feature estimate reflects your exclusions and split key. It is not measured RAM or model approval. The backend recalculates on labelled rows and may reject the request. {prep.resource_plan.note}</small>
                  </div>}
                  <h3 className="po-feature-audit-title">Feature-by-feature preparation audit</h3>
                  <div className="table-scroll po-ml-feature-audit"><table><thead><tr><th>FIELD / ROLE</th><th>OBSERVATIONS</th><th>PREPROCESSING</th><th>RISK REVIEW</th></tr></thead><tbody>
@@ -637,7 +643,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
           </>}
           {page==='model'&&!prep&&<MissingRequirement icon={<FlaskConical size={30}/>} title="Choose a prediction target first" body="Model Lab needs a confirmed target and preprocessing plan. You can return here at any time." action="Review preparation" onAction={()=>go('prepare')}/>}
           {page==='model'&&prep&&<><div className="panel"><div className="panel-title"><FlaskConical size={19}/><h2>Choose up to five models</h2><span className="pill">{models.length} / 5 selected</span></div><p className="body-muted">PilotODIN will compare models using cross-validation on the development split. Higher macro F1 is better for classification; lower MAE is better for regression.</p><div className="mini-info"><Sparkles size={16}/> Suggested comparison: {prep.task==='regression'?'Linear Regression as a transparent baseline alongside Random Forest / Gradient Boosting':'Logistic Regression as an interpretable baseline alongside Random Forest / Extra Trees'}. The winner is decided by cross-validation, not the suggestion.</div>
-            {models.length>0&&prep.resource_plan&&<div className={cls('mini-info',modelBudgetExceeded&&'warn-icon')} role="status"><Database size={16}/> Selected-model budget: at most {modelRowLimit?.toLocaleString()} labelled rows for this comparison. {models.some(m=>m==='svm'||m==='svr')?'Kernel SVM/SVR training has a stricter row limit.':models.includes('knn')?'K-nearest neighbours training has a stricter row limit.':'General resource limit applies.'} {modelBudgetExceeded?'This dataset exceeds the selected algorithm budget. Remove the expensive model or use a reviewed smaller dataset.':'All selected model-family row limits are satisfied; the server checks dense memory separately.'}</div>}
+            {models.length>0&&prep.resource_plan&&<div className={cls('mini-info',modelBudgetExceeded&&'warn-icon')} role="status"><Database size={16}/> Selected-model budget: at most {modelRowLimit?.toLocaleString()} labelled rows for this comparison. {models.some(m=>m==='svm'||m==='svr')?'Kernel SVM/SVR training has a stricter row limit.':models.includes('knn')?'K-nearest neighbours training has a stricter row limit.':'General resource limit applies.'} {modelBudgetExceeded?(rowBudgetExceeded?'This dataset exceeds the selected algorithm row limit. Remove the expensive model or use a reviewed smaller dataset.':'The selected predictor set exceeds the preliminary dense-memory limit or has no usable features. Review exclusions before training.'):'The selected row and predictor estimates are within budget; the server performs a final admission check.'}</div>}
             <div className="model-family-list">{MODEL_CATEGORIES.map(category=>{const options=available.filter(([key])=>MODEL_INFO[key]?.category===category);if(!options.length)return null;return <section className="model-family" key={category}><div className="model-family-heading"><strong>{category}</strong><small>{options.length} supported algorithms</small></div><div className="model-grid">{options.map(([key,label])=><button key={key} type="button" aria-pressed={models.includes(key)} className={cls('model-choice',models.includes(key)&&'chosen')} onClick={()=>toggleModelChoice(key)}><div className="model-icon">{models.includes(key)?<Check size={18}/>:<FlaskConical size={18}/>}</div><span className="model-choice-copy"><strong>{label}</strong><small>{MODEL_INFO[key]?.summary}</small><small className="model-cost">Resource level: {MODEL_INFO[key]?.cost}</small></span></button>)}</div></section>})}</div></div>
             <div className="panel"><div className="panel-title"><ShieldCheck size={19}/><h2>Validation safeguards</h2></div><div className="validation-row"><span>Hold-out test set</span><strong>20% (untouched until model selection)</strong></div><div className="validation-row"><span>Development split</span><strong>80% (5-fold CV when possible)</strong></div><div className="validation-row"><span>Primary metric</span><strong>{prep.task==='classification'?'Macro F1':'Mean Absolute Error'}</strong></div>
               <label className="field-label">VALIDATION STRATEGY</label>

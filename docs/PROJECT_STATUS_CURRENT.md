@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current project status
 
+## 12 November 2026 | P4-75 selection-aware Prepare resource guidance
+
+- **Confirmed UX/source mismatch:** the Python backend estimates fit memory after feature exclusions, but Prepare displayed a stale **all-candidate** estimate even after selection changes. P4-75 introduces a bounded, conservative selected-feature preview that accounts for exclusions and group/time split columns, failing closed on empty/invalid/over-budget matrices while preserving server final admission. The original Train button checked **row limits only**, not the stale dense matrix; no historical dense-related button failure is claimed. [P4-75 record](./P4_75_SELECTED_FEATURE_MEMORY_PREFLIGHT_2026-11-12.md).
+- **Verification:** six pure helper unit tests PASSED locally; the real-HTTP P4-62 synthetic browser case now checks **28→26→1** encoded columns as manual/suggested exclusions change, without creating any training experiment. Full CI results must be separately checked. This does not add editable preprocessing algorithms or actual Windows-native execution.
+- **Unchanged:** P4 ACTIVE, R01–R06 OPEN, business Gate C UNVERIFIED, BE-024 broader preprocessing alternatives OPEN, original entire app-local-data STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED; earlier one-use native/model-fit approvals consumed, no installer.
+
 ## 12 November 2026 | P4-74 real-HTTP Prepare audit + Quality-version consistency regression
 
 - **Targeted verified test gap:** Existing P4-62 real-HTTP Chromium checked manual high-risk exclusion preservation but not that the per-column Prepare audit, included predictor count and version-pinned `/preparation` / `/features` agreed during that same synthetic project journey. P4-74 extends the existing CI-only synthetic test to assert exact field treatments, excluded-row changes, high-risk warning, 3→1 included predictors and stale-version 409 from both read endpoints, with **zero** experiment records. [P4-74 focused record](./P4_74_REAL_HTTP_PREPARE_FIELD_AUDIT_AND_VERSION_CONTRACT_2026-11-12.md).

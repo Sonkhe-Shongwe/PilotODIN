@@ -706,6 +706,8 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   const manual=page.locator('.feature-chip').filter({hasText:'event_type'}).getByRole('checkbox');
   await expect(risk).toBeVisible();
   await expect(risk).not.toBeChecked();
+  const resource=page.locator('.po-ml-resource-plan');
+  await expect(resource).toContainText('28 estimated encoded columns');
   // P4-74: the version-pinned backend plan must agree with the visible audit
   // before and after user choices. No model fit or writable project endpoints.
   const plan=await request.get(`${API}/api/projects/${projectId}/preparation?target=churn&expected_version=0`);
@@ -734,6 +736,7 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(eventRow).toContainText('Included predictor');
   await expect(amountRow).toContainText('Numeric: median imputation');
   await manual.check();
+  await expect(resource).toContainText('26 estimated encoded columns');
   await expect(eventRow).toContainText('Excluded by user');
   await expect(eventRow).toContainText('No training transform');
   await expect(transactionRow).toContainText('Included predictor');
@@ -753,6 +756,7 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(preview).toHaveCount(0);
   await expect(risk).toBeChecked();
   await expect(manual).toBeChecked();
+  await expect(resource).toContainText('1 estimated encoded columns');
   await expect(transactionRow).toContainText('Excluded by user');
   await expect(transactionRow).toContainText('No training transform');
   await expect(eventRow).toContainText('Excluded by user');

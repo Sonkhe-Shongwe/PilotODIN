@@ -63,3 +63,13 @@ test('suggested exclusions never remove manual exclusions and temporal guard is 
  assert.match(app,/Identical timestamps at a train\/test boundary are rejected/);
  assert.match(app,/go\('evaluate'\);\s*setNotice\('Model selected\. Review held-out evaluation results/);
 });
+
+test('selected predictor budget updates with current exclusions and retains backend authority',()=>{
+ const helper=read('selectedFeatureBudget.ts');
+ assert.match(app,/selectedFeatureBudget\(prep\.feature_audit,prep\.resource_plan,excluded,splitStrategy,splitColumn\)/);
+ assert.match(app,/const modelBudgetExceeded=rowBudgetExceeded\|\|!!selectedBudget\?\.denseLimitExceeded/);
+ assert.match(app,/selectedBudget\.estimatedEncodedColumns\.toLocaleString\(\)/);
+ assert.match(app,/Selected-feature estimate reflects your exclusions and split key/);
+ assert.match(helper,/Math\.min\(25,Math\.max\(1,field\.distinct\)\)/);
+ assert.match(helper,/denseLimitExceeded: !safe \|\| width===0 \|\| bytes >/);
+});
