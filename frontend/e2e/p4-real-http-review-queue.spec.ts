@@ -688,7 +688,7 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
       'SYNTH-'+String(i).padStart(3,'0'),i%2?'Y':'N',
       i%3?'service':'retail',100+i,
     ].join(',')),
-  ].join('\\n')+'\\n';
+  ].join('\n')+'\n';
   const uploaded=await request.post(API+'/api/projects',{multipart:{
     file:{name:'p4_62_exclusion_review.csv',mimeType:'text/csv',buffer:Buffer.from(fixture)}
   }});
