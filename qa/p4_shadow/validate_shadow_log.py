@@ -71,6 +71,7 @@ def _minutes(value: Any, field: str) -> None:
 def validate(pre: list[dict[str, Any]], post: list[dict[str, Any]]) -> dict[str, int]:
     """Validate manually supplied records. Does not mutate input or contact GitHub."""
     seen_pre: dict[str, datetime] = {}
+    seen_patches: set[tuple[str, str, str]] = set()
     for row in pre:
         _keys(row, _PRE_FIELDS, "pre")
         cid = _nonempty(row["change_id"], "pre.change_id")
@@ -82,6 +83,10 @@ def validate(pre: list[dict[str, Any]], post: list[dict[str, Any]]) -> dict[str,
             raise ValidationError("pre.base_sha: lowercase 40-character Git commit SHA required")
         if not isinstance(row["patch_sha256"], str) or not _SHA64.fullmatch(row["patch_sha256"]):
             raise ValidationError("pre.patch_sha256: lowercase 64-character digest required")
+        patch_identity = (row["branch"], row["base_sha"], row["patch_sha256"])
+        if patch_identity in seen_patches:
+            raise ValidationError("pre: duplicate branch/base/patch identity under different change_id")
+        seen_patches.add(patch_identity)
         paths = row["changed_paths"]
         if (not isinstance(paths, list) or not paths or len(paths) > 500 or
                 any(not isinstance(x, str) or not x or x.startswith("/") or
@@ -96,7 +101,9 @@ def validate(pre: list[dict[str, Any]], post: list[dict[str, Any]]) -> dict[str,
             raise ValidationError("pre.proposed_check: must be null if not recommended")
         _nonempty(row["rationale"], "pre.rationale")
 
-    seen_post: set[tuple[str, int]] = set()
+    # GitHub Actions run IDs identify a single execution globally, not per change.
+    seen_runs: set[int] = set()
+    push_times: dict[str, datetime] = {}
     censored = failures = completed = 0
     for row in post:
         _keys(row, _POST_FIELDS, "post")
@@ -106,13 +113,16 @@ def validate(pre: list[dict[str, Any]], post: list[dict[str, Any]]) -> dict[str,
         pushed = _utc(row["push_at_utc"], "post.push_at_utc")
         if not seen_pre[cid] < pushed:
             raise ValidationError("post.push_at_utc: predecision must precede push")
+        if cid in push_times and push_times[cid] != pushed:
+            raise ValidationError("post.push_at_utc: one change must have one consistent push timestamp")
+        push_times[cid] = pushed
         started = _utc(row["run_started_at_utc"], "post.run_started_at_utc") if row["run_started_at_utc"] is not None else None
         if started is not None and started < pushed:
             raise ValidationError("post.run_started_at_utc: cannot precede push")
         run_id = row["workflow_run_id"]
-        if type(run_id) is not int or run_id <= 0 or (cid, run_id) in seen_post:
-            raise ValidationError("post.workflow_run_id: unique positive integer per change")
-        seen_post.add((cid, run_id))
+        if type(run_id) is not int or run_id <= 0 or run_id in seen_runs:
+            raise ValidationError("post.workflow_run_id: positive and globally unique across changes")
+        seen_runs.add(run_id)
         _nonempty(row["workflow"], "post.workflow")
         conclusion = row["run_conclusion"]
         attribution = row["failure_attribution"]

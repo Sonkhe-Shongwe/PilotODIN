@@ -63,6 +63,36 @@ class ShadowLogTests(unittest.TestCase):
         with self.assertRaises(validator.ValidationError):
             validator.validate([before], [after, deepcopy(after)])
 
+    def test_same_ci_run_cannot_be_counted_for_two_changes(self):
+        first, first_run = pre_record(), post_record()
+        other = {**first, "change_id": "synthetic-002", "patch_sha256": "c" * 64}
+        same_run = {**first_run, "change_id": "synthetic-002"}
+        with self.assertRaisesRegex(validator.ValidationError, "globally unique"):
+            validator.validate([first, other], [first_run, same_run])
+
+    def test_identical_patch_cannot_be_double_counted_with_new_change_id(self):
+        first = pre_record()
+        other = {**first, "change_id": "synthetic-002"}
+        with self.assertRaisesRegex(validator.ValidationError, "duplicate branch/base/patch"):
+            validator.validate([first, other], [])
+
+    def test_distinct_ci_runs_on_same_push_are_allowed(self):
+        before, first = pre_record(), post_record()
+        second = {**first, "workflow_run_id": 123456790,
+                  "workflow": "Another independently triggered verification",
+                  "run_conclusion": "success", "failure_attribution": "not_applicable"}
+        self.assertEqual(validator.validate([before], [first, second]), {
+            "pre_changes": 1, "post_runs": 2, "completed_runs": 2,
+            "failed_runs": 1, "censored_or_unresolved": 0,
+        })
+
+    def test_same_change_cannot_mix_different_push_timestamps(self):
+        before, first = pre_record(), post_record()
+        second = {**first, "workflow_run_id": 123456790,
+                  "push_at_utc": "2026-11-12T09:00:30Z"}
+        with self.assertRaisesRegex(validator.ValidationError, "consistent push timestamp"):
+            validator.validate([before], [first, second])
+
     def test_missing_predecision_is_not_retroactively_admitted(self):
         with self.assertRaisesRegex(validator.ValidationError, "missing pre-push"):
             validator.validate([], [post_record()])
