@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-79 real-browser saved-experiment provenance acceptance
+
+- **Meaningful known test gap addressed without fitting:** P4-78's history display is now exercised in the actual browser using a disposable real Uvicorn project plus **GET-only synthetic experiment overlays**. Checks legacy default labels, explicitly saved numeric mean + categorical missing-marker values in Evaluate/Predict and **zero real backend experiments**. This is rendering/flow evidence, **not** model persistence, actual fit or Windows native acceptance. [Focused P4-79 evidence](./P4_79_SAVED_EXPERIMENT_READ_ONLY_BROWSER_ACCEPTANCE_2026-11-12.md).
+- **Preserve red-to-green chronology:** [`02567978`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/025679784cbafd6cefafedf9eb36cc3a718824ae) [P4 #43298867168](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43298867168) **FAIL**: 10/11 browser; newly added test timed out waiting for Overview navigation despite having reached legacy display checks. Test-only [`db811488`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/db811488cef9a53b53736ff5d42d6643f4853ac3) reloads Evaluate instead. Exact-source [P4 #43299568196](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43299568196) **SUCCESS 3/3**: 183 Python, 60 Node, Vite, 11/11 browser and synthetic Windows safety; [P1 #43299568087](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43299568087) **SUCCESS**: 187 Node, Vite, 7/7 Chromium.
+- **Unchanged authorisation:** P4 ACTIVE; BE-024 broader scope and R01–R06 OPEN, Gate C UNVERIFIED, historical full original app-data STRICT FAIL 320 vs 346 / writer UNKNOWN, physical native/offline 8 GB incomplete, P5 NOT AUTHORISED, P8 NOT CERTIFIED. No installer, training or one-use authority reuse.
+
+
 ## 12 November 2026 | P4-78 saved experiment preprocessing provenance in Evaluate/Predict
 
 - **BE-024 source-level visibility defect addressed:** Evaluate/Predict now display the experiment's **recorded numeric/categorical preprocessing** and pinned Quality version, not the current Prepare draft. Missing fields are clearly identified as **unrecorded legacy defaults**, without claiming a successful fit. Two-file [source `cf674b83`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/cf674b83e2915959ee7aa3c327928d46eebec949); [focused record](./P4_78_SAVED_EXPERIMENT_PREPROCESSING_PROVENANCE_2026-11-12.md). No training, model or owner-data mutation.
