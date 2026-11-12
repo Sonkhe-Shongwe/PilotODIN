@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-67 executable NESO/Elexon no-fit vintage verifier, 11/11 synthetic tests PASS
+
+- **Actual P4 research instrumentation:** A single-request, no-model read-only verifier now exists in [qa/p4_neso](../qa/p4_neso/README.md) with pinned user CSV source SHA, strict 46/48/50 settlement-period and London DST handling, full forecast MW / publication-time comparison, official HTTPS host redirect rejection, preserved raw response only when explicitly requested, and explicit direct-endpoint versus local-JSON provenance. [Focused P4-67 evidence](./P4_67_NESO_ELEXON_INDEPENDENT_VINTAGE_VERIFIER_2026-11-12.md). All **11/11 local synthetic tests PASS**, Python compile PASS, and the read-only actual NESO selected-day (2025-06-15) source record check PASS. Code and unit tests are exact Git-blob-identical copies of locally tested files, not a PilotODIN product engine change.
+- **External Elexon historic endpoint still inaccessible from this environment:** No live Elexon JSON response obtained, no cross-source matched forecast vintage, no independently proven release or real decision cutoff. Synthetic API response is not an independent archive witness. This stage adds a tested *future evidence tool*, **not Gate C certification**.
+- **Owner restrictions unchanged:** P4 ACTIVE, R01–R06 OPEN, original real-business Gate C UNVERIFIED, historical entire original app-local-data STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED. No model training, native compilation, installer, manual CI dispatch, original owner Windows/data operation or owner acceptance. Next needs genuine historical NDF response plus a real operational decision/benefit owner.
+
 ## 12 November 2026 | P4-66 independent Elexon vintage evidence route, 10:00 timing exceptions
 
 - **New externally grounded evidence route:** NESO documents its actual ENCC demand forecast, strategy and balancing operational functions. Elexon's official public **NDF** archive supports publication-time filtering and retrieval of superseded forecasts, but **no live historical response was retrieved or matched to the NESO file**. Ofgem's public assessment describes potential demand-accuracy benefit, not PilotODIN achieved benefit. [Focused P4-66 record](./P4_66_NESO_OPERATIONAL_OWNER_AND_ELEXON_VINTAGE_ROUTE_2026-11-12.md).
