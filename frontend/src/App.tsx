@@ -107,6 +107,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const [target,setTarget]=useState('');
   const [prep,setPrep]=useState<Prep|null>(null);
   const [excluded,setExcluded]=useState<string[]>([]);
+  const [numericImputation,setNumericImputation]=useState<'median'|'mean'>('median');
   const [reviewHighRiskExclusions,setReviewHighRiskExclusions]=useState(false);
   const [models,setModels]=useState<string[]>(['logistic_regression','random_forest','extra_trees']);
   const [confirmSplit,setConfirmSplit]=useState(false);
@@ -315,7 +316,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
       // Never remove the user's selected project on a transient API failure.
       return false;
     }}
-  useEffect(()=>{if(!project||!target){setPrep(null);return;}let active=true;
+  useEffect(()=>{setNumericImputation('median');if(!project||!target){setPrep(null);return;}let active=true;
     setPrep(null); // A previous target/version's plan must not be reused while loading.
     get<Prep>(`/projects/${project.id}/preparation?target=${encodeURIComponent(target)}&expected_version=${qualityVersion}`).then(p=>{
       if(!active||p.quality_version!==qualityVersion||p.target!==target)return;
@@ -409,10 +410,11 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
         split_strategy:splitStrategy,split_column:splitStrategy==='random'?null:splitColumn,
         expected_quality_version:qualityVersion,
         acknowledge_feature_risks:acknowledgeFeatureRisks,
+        numeric_imputation:numericImputation,
         max_duration_seconds:trainingLimitMinutes?trainingLimitMinutes*60:null
       });
       if(!projectOperations.current.accepts(projectId,generation))return;
-      setExperiment({id:d.id,project_id:projectId,status:d.status,config:{target,task:prep.task,excluded,models,quality_version:qualityVersion,split_strategy:splitStrategy,split_column:splitColumn,max_duration_seconds:trainingLimitMinutes?trainingLimitMinutes*60:null},results:null,error:null,selected_model:null,final_results:null});
+      setExperiment({id:d.id,project_id:projectId,status:d.status,config:{target,task:prep.task,excluded,models,quality_version:qualityVersion,split_strategy:splitStrategy,split_column:splitColumn,numeric_imputation:numericImputation,max_duration_seconds:trainingLimitMinutes?trainingLimitMinutes*60:null},results:null,error:null,selected_model:null,final_results:null});
       setProject(p=>p?.id===projectId?{...p,experiments:[{id:d.id,status:d.status,selected_model:null,created_at:new Date().toISOString()},...p.experiments]}:p);
       go('evaluate');setNotice('Experiment created. Training status will update automatically.');
     }catch(e){if(projectOperations.current.accepts(projectId,generation))setError((e as Error).message)}
@@ -634,10 +636,18 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
                  </div>}
                  <h3 className="po-feature-audit-title">Feature-by-feature preparation audit</h3>
                  <div className="table-scroll po-ml-feature-audit"><table><thead><tr><th>FIELD / ROLE</th><th>OBSERVATIONS</th><th>PREPROCESSING</th><th>RISK REVIEW</th></tr></thead><tbody>
-                   {prep.feature_audit.map(f=>{const excludedByChoice=excluded.includes(f.column),isSplit=splitStrategy!=='random'&&splitColumn===f.column;return <tr key={f.column}><td><strong>{f.column}</strong><small>{excludedByChoice?'Excluded by user':isSplit?'Excluded as split key':!f.default_included?'Unusable / excluded':'Included predictor'}</small></td><td>{f.kind} · {f.missing} missing ({f.missing_pct}%) · {f.distinct} distinct</td><td>{excludedByChoice||isSplit||!f.default_included?'No training transform':f.treatment}</td><td>{f.risk==='high'?<strong className="po-ml-risk-high">High — review required</strong>:f.risk==='review'?'Review suggested':'No structural warning'}{f.reasons.length>0&&<small>{f.reasons.join('; ')}</small>}</td></tr>})}
+                   {prep.feature_audit.map(f=>{const excludedByChoice=excluded.includes(f.column),isSplit=splitStrategy!=='random'&&splitColumn===f.column;return <tr key={f.column}><td><strong>{f.column}</strong><small>{excludedByChoice?'Excluded by user':isSplit?'Excluded as split key':!f.default_included?'Unusable / excluded':'Included predictor'}</small></td><td>{f.kind} · {f.missing} missing ({f.missing_pct}%) · {f.distinct} distinct</td><td>{excludedByChoice||isSplit||!f.default_included?'No training transform':f.kind==='numeric'?`Numeric: ${numericImputation} imputation fitted on training folds`:f.treatment}</td><td>{f.risk==='high'?<strong className="po-ml-risk-high">High — review required</strong>:f.risk==='review'?'Review suggested':'No structural warning'}{f.reasons.length>0&&<small>{f.reasons.join('; ')}</small>}</td></tr>})}
                  </tbody></table></div>
               </div>
-              <div className="panel insight"><div className="panel-title"><WandSparkles size={19}/><h2>Automatic preprocessing plan</h2></div>{prep.transformations.map((p,i)=><div className="checkline" key={i}><CheckCircle2 size={17}/>{p}</div>)}<p className="muted-caption">Preprocessing is learned independently within cross-validation folds to avoid test leakage.</p></div>
+              <div className="panel insight"><div className="panel-title"><WandSparkles size={19}/><h2>Automatic preprocessing plan</h2></div>
+                <label className="field-label" htmlFor="numeric-imputation-strategy">Numeric missing-value treatment</label>
+                <select id="numeric-imputation-strategy" className="input" aria-label="Numeric imputation method" value={numericImputation} onChange={event=>{if(!embedded)onPrimaryDraftEdited?.('prepare');setNumericImputation(event.target.value as 'median'|'mean')}}>
+                  <option value="median">Median (default, resistant to outliers)</option>
+                  <option value="mean">Mean (sensitive to outliers)</option>
+                </select>
+                <p className="muted-caption">Applies to all included numeric predictors. This setting is persisted with the experiment and fitted separately inside training folds, not applied to your original dataset.</p>
+                {prep.transformations.map((p,i)=><div className="checkline" key={i}><CheckCircle2 size={17}/>{p.startsWith('Numeric:')?`Numeric: training-fold ${numericImputation} imputation; all-missing columns omitted`:p}</div>)}
+                <p className="muted-caption">Preprocessing is learned independently within cross-validation folds to avoid test leakage.</p></div>
               <div className="panel action-panel"><div><h3>Preparation configuration ready</h3><p>Your source file is preserved; this configuration determines the modelling inputs.</p></div><button className="btn primary" onClick={()=>go('model')}>Open Model Lab <ArrowRight size={17}/></button></div>
             </>}
           </>}

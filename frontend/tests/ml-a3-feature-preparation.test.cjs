@@ -73,3 +73,20 @@ test('selected predictor budget updates with current exclusions and retains back
  assert.match(helper,/Math\.min\(25,Math\.max\(1,field\.distinct\)\)/);
  assert.match(helper,/denseLimitExceeded: !safe \|\| width===0 \|\| bytes >/);
 });
+
+
+test('numeric imputation choice is version-reset, user-selectable and persists into experiment request',()=>{
+ const engine=fs.readFileSync(path.join(__dirname,'../../backend/engine.py'),'utf8');
+ const backend=fs.readFileSync(path.join(__dirname,'../../backend/main.py'),'utf8');
+ assert.match(app,/const \[numericImputation,setNumericImputation\]=useState<'median'\|'mean'>\('median'\)/);
+ assert.match(app,/setNumericImputation\('median'\);if\(!project\|\|!target\)/);
+ assert.match(app,/aria-label="Numeric imputation method"/);
+ assert.match(app,/numeric_imputation:numericImputation/);
+ assert.match(app,/f\.kind==='numeric'\?`Numeric: \${numericImputation} imputation/);
+ assert.match(backend,/numeric_imputation: Literal\['median','mean'\] = 'median'/);
+ assert.match(backend,/"numeric_imputation":body\.numeric_imputation/);
+ assert.match(backend,/numeric_imputation=config\.get\("numeric_imputation", "median"\)/);
+ assert.match(engine,/SimpleImputer\(strategy=numeric_imputation, keep_empty_features=True\)/);
+ assert.match(engine,/make_pipeline\(X_train,task,models\[0\],numeric_imputation\)/);
+ assert.match(engine,/make_pipeline\(X_train,task,key,numeric_imputation\)/);
+});

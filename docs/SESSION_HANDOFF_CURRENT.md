@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-76 supported numeric preprocessing choice
+
+- **BE-024 limited real alternative implemented in source:** Prepare now selects **median (default) or mean** imputation for numeric predictors, updates per-field/overall treatment explanations, and sends the choice through an allowlisted FastAPI request to persisted experiment config and actual baseline/candidate fold pipelines. Old configurations default to median, while unknown values are rejected. This is one **global numeric** strategy choice, not per-column or categorical customization. [P4-76 scope, evidence and limits](./P4_76_NUMERIC_IMPUTATION_ALTERNATIVE_PREPARE_PIPELINE_2026-11-12.md).
+- **No fit:** tests construct unfitted sklearn pipelines and use a no-fit worker sentinel; real-HTTP browser toggles the selector without creating experiments. CI outcomes must be recorded separately, not presumed PASS.
+- **Gates unchanged:** P4 ACTIVE, R01–R06 OPEN, real business Gate C UNVERIFIED, BE-024 broader scope OPEN, historical full original app-local-data STRICT FAIL, native/physical 8 GB incomplete, P5 NOT AUTHORISED, P8 NOT CERTIFIED. No owner native/ML approval reused, no installer.
+
 ## 12 November 2026 | P4-75 selection-aware Prepare resource guidance
 
 - **Confirmed UX/source mismatch:** the Python backend estimates fit memory after feature exclusions, but Prepare displayed a stale **all-candidate** estimate even after selection changes. P4-75 introduces a bounded, conservative selected-feature preview that accounts for exclusions and group/time split columns, failing closed on empty/invalid/over-budget matrices while preserving server final admission. The original Train button checked **row limits only**, not the stale dense matrix; no historical dense-related button failure is claimed. [P4-75 record](./P4_75_SELECTED_FEATURE_MEMORY_PREFLIGHT_2026-11-12.md).

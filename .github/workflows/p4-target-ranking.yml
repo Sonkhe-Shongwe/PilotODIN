@@ -10,9 +10,11 @@ on:
       - .github/workflows/p4-target-ranking.yml
       - backend/target_opportunities.py
       - backend/main.py
+      - backend/engine.py
       - backend/target_timing_review.py
       - frontend/src/TargetOpportunities.tsx
       - frontend/src/App.tsx
+      - frontend/src/api.ts
       - frontend/src/selectedFeatureBudget.ts
       - frontend/tests/ml-a3-feature-preparation.test.cjs
       - frontend/tests/p4-75-selected-feature-budget.test.cjs

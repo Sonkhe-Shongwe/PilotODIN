@@ -735,6 +735,14 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(transactionRow).toContainText('Categorical: mode imputation');
   await expect(eventRow).toContainText('Included predictor');
   await expect(amountRow).toContainText('Numeric: median imputation');
+  const numericStrategy=page.getByLabel('Numeric imputation method');
+  await expect(numericStrategy).toHaveValue('median');
+  await numericStrategy.selectOption('mean');
+  await expect(amountRow).toContainText('Numeric: mean imputation');
+  await expect(page.locator('.panel.insight').filter({hasText:'Automatic preprocessing plan'}))
+    .toContainText('Numeric: training-fold mean imputation');
+  await numericStrategy.selectOption('median');
+  await expect(amountRow).toContainText('Numeric: median imputation');
   await manual.check();
   await expect(resource).toContainText('26 estimated encoded columns');
   await expect(eventRow).toContainText('Excluded by user');

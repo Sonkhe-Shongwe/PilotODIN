@@ -226,11 +226,23 @@ def make_estimator(task: str, key: str):
     return mapping[key]
 
 
-def make_pipeline(X: pd.DataFrame, task: str, model: str) -> Pipeline:
+NUMERIC_IMPUTATION_STRATEGIES = ("median", "mean")
+
+
+def validate_numeric_imputation(strategy: str) -> str:
+    """Allow only known fold-fitted numeric imputation methods; fail closed."""
+    if strategy not in NUMERIC_IMPUTATION_STRATEGIES:
+        raise ValueError("Numeric imputation must be median or mean")
+    return strategy
+
+
+def make_pipeline(X: pd.DataFrame, task: str, model: str,
+                  numeric_imputation: str = "median") -> Pipeline:
+    numeric_imputation = validate_numeric_imputation(numeric_imputation)
     numeric = [c for c in X if inferred_kind(X[c]) == "numeric"]
     categorical = [c for c in X if c not in numeric]
     # Keep missing-only columns stable across folds; let imputers use safe constants.
-    num_pipe = Pipeline([("imputer", SimpleImputer(strategy="median", keep_empty_features=True))])
+    num_pipe = Pipeline([("imputer", SimpleImputer(strategy=numeric_imputation, keep_empty_features=True))])
     if model in ("logistic_regression", "linear_regression", "ridge", "elastic_net", "knn", "svm", "svr"):
         num_pipe.steps.append(("scaler", StandardScaler()))
     cat_pipe = Pipeline([("imputer", SimpleImputer(strategy="most_frequent", keep_empty_features=True)),
@@ -443,7 +455,9 @@ def reliability_report(development:dict, final:dict, selected_model:str)->dict:
 
 
 def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: list[str], task: str,
-                 split_strategy:str='random', split_column:str|None=None, stop_check=None):
+                 split_strategy:str='random', split_column:str|None=None, stop_check=None,
+                 numeric_imputation:str='median'):
+    numeric_imputation = validate_numeric_imputation(numeric_imputation)
     # Optional cooperative checkpoint. sklearn's individual fit/CV call is
     # blocking; interruption is checked between expensive operations only.
     def checkpoint():
@@ -523,7 +537,7 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
         cv=StratifiedKFold(n_splits=folds,shuffle=True,random_state=SEED) if task=='classification' else KFold(n_splits=folds,shuffle=True,random_state=SEED)
     score='f1_macro' if task=='classification' else 'neg_mean_absolute_error'
     baseline=DummyClassifier(strategy='most_frequent') if task=='classification' else DummyRegressor(strategy='median')
-    base_pipe=Pipeline([('preprocessor',make_pipeline(X_train,task,models[0]).named_steps['preprocessor']),('model',baseline)])
+    base_pipe=Pipeline([('preprocessor',make_pipeline(X_train,task,models[0],numeric_imputation).named_steps['preprocessor']),('model',baseline)])
     cv_kwargs={'groups':cv_groups} if cv_groups is not None else {}
     # Group-aware CV is only valid when no group appears in both development folds.
     checkpoint()
@@ -532,7 +546,7 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     reports,pipelines=[],{}
     for key in models:
         checkpoint()
-        pipe=make_pipeline(X_train,task,key)
+        pipe=make_pipeline(X_train,task,key,numeric_imputation)
         try:
             scores=cross_val_score(pipe,X_train,y_train,cv=cv,scoring=score,n_jobs=1,error_score='raise',**cv_kwargs)
             checkpoint()
@@ -552,6 +566,7 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     wins=[m for m in reports if m['status']=='ready' and
           (m['cv_metric']<baseline_cv if task=='regression' else m['cv_metric']>baseline_cv)]
     return {'task':task,'target':target,'features':list(X.columns),'excluded_features':excluded,
+            'numeric_imputation':numeric_imputation,
             'split_strategy':split_strategy,'split_column':split_column,
             'labelled_rows':len(y),'train_rows':len(X_train),'test_rows':len(X_test),'folds':folds,
             'primary_metric':'F1 macro (higher is better)' if task=='classification' else 'MAE (lower is better)',

@@ -105,6 +105,8 @@ class ExperimentRequest(BaseModel):
     models: list[str] = Field(min_length=1,max_length=5)
     acknowledge_random_split: bool = False
     acknowledge_feature_risks: bool = False
+    # v1 supported numeric alternatives; default preserves old experiment behavior.
+    numeric_imputation: Literal['median','mean'] = 'median'
     split_strategy: str = 'random'
     split_column: str | None = None
     expected_quality_version: int | None = Field(default=None, ge=0)
@@ -311,6 +313,7 @@ def train_background(eid:str,pid:str,config:dict):
         result, pipes, x_test, y_test = engine.run_training(
             df,**{k:config[k] for k in ("target","excluded","models","task","split_strategy","split_column")},
             stop_check=lambda: storage.check_training_interruption(eid),
+            numeric_imputation=config.get("numeric_imputation", "median"),
         )
         if not storage.advance_running_experiment(
             eid,"saving_artifacts","Model comparisons finished; saving fitted pipelines and held-out evaluation data."
@@ -385,6 +388,7 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
     config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,
             "quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column,
             "acknowledge_feature_risks":bool(body.acknowledge_feature_risks),
+            "numeric_imputation":body.numeric_imputation,
             "reviewed_high_risk_features":included_risks,
             "max_duration_seconds":body.max_duration_seconds}
     try:

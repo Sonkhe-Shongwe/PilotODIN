@@ -359,3 +359,81 @@ def test_p4_64_prepare_and_feature_advice_enforce_quality_version_without_traini
         assert interleaved.status_code == 409
     assert frame.equals(original)
     assert storage.recent_experiments(pid) == []
+
+
+def test_p4_76_numeric_imputation_allowlist_and_unfitted_pipeline():
+    """Inspect actual pipeline configuration; fitting is deliberately prohibited."""
+    from pydantic import ValidationError
+    from backend import engine
+
+    frame = pd.DataFrame({
+        "amount": [1.0, None, 3.0, 8.0],
+        "event_type": ["retail", "service", None, "retail"],
+    })
+    original = frame.copy(deep=True)
+    default = main.ExperimentRequest(
+        target="churn", task="classification", models=["logistic_regression"]
+    )
+    assert default.numeric_imputation == "median"
+    chosen = main.ExperimentRequest(
+        target="churn", task="classification", models=["logistic_regression"],
+        numeric_imputation="mean",
+    )
+    assert chosen.numeric_imputation == "mean"
+    with pytest.raises(ValidationError):
+        main.ExperimentRequest(
+            target="churn", task="classification", models=["logistic_regression"],
+            numeric_imputation="forward_fill",
+        )
+    for strategy in ("median", "mean"):
+        pipe = engine.make_pipeline(frame, "classification", "logistic_regression",
+                                    numeric_imputation=strategy)
+        transforms = pipe.named_steps["preprocessor"].transformers
+        numeric = next(steps for name, steps, _columns in transforms
+                       if name == "numeric")
+        categorical = next(steps for name, steps, _columns in transforms
+                           if name == "categorical")
+        assert numeric.named_steps["imputer"].strategy == strategy
+        assert categorical.named_steps["imputer"].strategy == "most_frequent"
+        assert pipe.named_steps["model"].__class__.__name__ == "LogisticRegression"
+    with pytest.raises(ValueError, match="median or mean"):
+        engine.make_pipeline(frame, "classification", "logistic_regression",
+                             numeric_imputation="forward_fill")
+    assert frame.equals(original)
+
+
+def test_p4_76_worker_forwards_persisted_strategy_without_fitting(monkeypatch):
+    """Worker's config plumbing is exercised entirely with stubs, no storage/fit."""
+    frame = pd.DataFrame({"amount": [1.0, None, 2.0],
+                          "churn": ["Y", "N", "Y"]})
+    captured = {}
+    monkeypatch.setattr(main.storage, "claim_queued_experiment", lambda eid: True)
+    monkeypatch.setattr(main.storage, "check_training_interruption", lambda eid: None)
+    monkeypatch.setattr(main.storage, "get_project", lambda pid: {"id": pid})
+    monkeypatch.setattr(main, "df_for", lambda project, version: frame)
+    monkeypatch.setattr(main.storage, "advance_running_experiment",
+                        lambda *args, **kwargs: True)
+
+    def forbidden_fit(_frame, **kwargs):
+        captured.update(kwargs)
+        raise RuntimeError("P4-76 deliberate no-fit sentinel")
+
+    def capture_terminal(*args, **kwargs):
+        captured["terminal"] = (args, kwargs)
+        return True
+
+    monkeypatch.setattr(main.engine, "run_training", forbidden_fit)
+    monkeypatch.setattr(main.storage, "finish_running_experiment", capture_terminal)
+    base = {
+        "target": "churn", "task": "classification", "excluded": [],
+        "models": ["logistic_regression"], "quality_version": 0,
+        "split_strategy": "random", "split_column": None,
+        "numeric_imputation": "mean",
+    }
+    main.train_background("synthetic-eid", "synthetic-pid", base)
+    assert captured["numeric_imputation"] == "mean"
+    assert callable(captured["stop_check"])
+    assert captured["terminal"][0][1] == "failed"
+    assert "no-fit sentinel" in captured["terminal"][1]["error"]
+    assert frame.equals(pd.DataFrame({"amount": [1.0, None, 2.0],
+                                      "churn": ["Y", "N", "Y"]}))
