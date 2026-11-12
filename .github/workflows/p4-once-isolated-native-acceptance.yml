@@ -4,10 +4,10 @@ name: P4 Owner-Approved ONE Native Unpackaged Windows Acceptance
 # isolated Windows-native executable compilation on disposable GH runner
 # and limited noninteractive runtime smoke. No installer, model, original
 # owner data, transfer/install, P5, P8 or P4 exit is authorised.
+# P4-47: one owner-authorised native CI ran and PASSED #43159387547.
+# ARCHIVED, DISABLED. Never run preflight/compile again without NEW approval.
 on:
-  push:
-    branches: [feature/live-dev-workspace-20261023]
-    paths: [.github/workflows/p4-once-isolated-native-acceptance.yml]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   p4-preflight:
-    if: "${{ github.event.head_commit.message == 'ci(p4): one owner-authorised isolated unpackaged native acceptance' && github.run_attempt == 1 }}"
+    if: ${{ false }} # one-time authorisation consumed; job permanently disabled
     name: Source and disposable Windows storage preflight, NO COMPILATION
     runs-on: windows-2022
     timeout-minutes: 15
@@ -42,7 +42,7 @@ jobs:
         run: node frontend/scripts/p4-one-time-native-ci-preflight.mjs
 
   p4-one-unpackaged-native:
-    if: ${{ github.run_attempt == 1 }}
+    if: ${{ false }} # no second compile from this archived workflow
     needs: p4-preflight
     name: ONE isolated native EXE only, NO INSTALLER, no upload
     runs-on: windows-2022
