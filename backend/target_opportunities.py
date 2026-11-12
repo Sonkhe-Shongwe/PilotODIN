@@ -236,10 +236,13 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
                   if c != name and not _is_identifier(str(c))
                   and has_observed_variation(c)]
     if not predictors:
-        blockers.append(
-            "No non-constant, non-empty candidate predictor remains after "
-            "excluding identifier-like headers."
-        )
+        # Keep the stable diagnostic for the bounded manual-review path,
+        # which rewrites it to avoid claiming completeness after truncation.
+        blockers.append("No non-constant, non-empty candidate predictor remains.")
+        if any(_is_identifier(str(c)) for c in frame.columns if c != name):
+            blockers.append(
+                "Predictor evidence was evaluated after excluding identifier-like headers."
+            )
     if labelled > engine.MAX_ML_LABELLED_ROWS:
         blockers.append(
             f"{labelled:,} labelled rows exceed the current {engine.MAX_ML_LABELLED_ROWS:,}-row local ML cap."
