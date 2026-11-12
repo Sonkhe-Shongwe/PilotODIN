@@ -869,9 +869,12 @@ test('P4-79 real HTTP: reopened experiment settings are read from saved record, 
   await expect(audit).toContainText('not the current Prepare draft or independent proof');
   await expect(page.getByRole('heading',{name:'Training failed'})).toBeVisible();
 
-  // Reopen the different, explicitly configured record from Overview.
-  await page.getByRole('button',{name:'Overview',exact:true}).click();
-  await page.locator('.studio-history button.studio-recent').first().click();
+  // Reload Evaluate to start a fresh read-only session, then reopen the
+  // explicitly configured record from the saved-history list. This avoids
+  // depending on a shell navigation control outside the targeted P4 view.
+  await page.reload();
+  await expect(history).toHaveCount(2);
+  await history.first().click();
   await expect(audit).toContainText('Numeric missing values: Mean');
   await expect(audit).toContainText('Categorical missing values: Reserved missing marker');
   await expect(audit).not.toContainText('legacy default');
