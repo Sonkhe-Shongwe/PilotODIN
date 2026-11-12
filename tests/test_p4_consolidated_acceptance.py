@@ -287,3 +287,75 @@ def test_p4_59_low_cardinality_codes_are_not_mistaken_for_unique_identifiers():
     assert a["TransactionCode"]["risk"] == "low"
     assert p["TransactionCode"]["risk"] == "low"
     assert "TransactionCode" not in prep["high_risk_features"]
+
+
+def test_p4_64_prepare_and_feature_advice_enforce_quality_version_without_training(
+    tmp_path, monkeypatch
+):
+    """Pinned read-only advice fails closed on stale and mid-read revisions."""
+    home = tmp_path / "p4-64-versioned-prepare"
+    (home / "datasets").mkdir(parents=True)
+    (home / "models").mkdir()
+    monkeypatch.setattr(storage, "HOME", home)
+    monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
+    storage.init()
+    main.quality._init_tables()
+    pid = storage.save_project(
+        "P4-64 synthetic", "synthetic.csv", ".csv",
+        home / "datasets" / "synthetic.csv", {"rows": 80}
+    )
+    with storage.connect() as con:
+        con.execute(
+            "INSERT INTO quality_state(project_id,original_sha256,current_version) "
+            "VALUES (?,?,?)", (pid, "synthetic-only", 0)
+        )
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "TransactionCode": [f"SYNTHETIC-{n:03d}" for n in range(80)],
+        "event_type": ["retail", "service"] * 40,
+    })
+    original = frame.copy(deep=True)
+    state = {"version": 0}
+    monkeypatch.setattr(main.quality, "current_data",
+                        lambda _pid: (frame, state["version"]))
+    client = TestClient(main.app)
+    base = f"/api/projects/{pid}"
+    for path in ("/preparation", "/features"):
+        response = client.get(base + path,
+                              params={"target": "churn", "expected_version": 0})
+        assert response.status_code == 200, response.text
+        obj = response.json()
+        assert obj["quality_version" if path == "/preparation" else "version"] == 0
+        flagged = (
+            obj["high_risk_features"] if path == "/preparation" else
+            [f["column"] for f in obj["features"] if f["risk"] == "high"]
+        )
+        assert "TransactionCode" in flagged
+        assert client.get(base + path, params={
+            "target": "churn", "expected_version": -1
+        }).status_code == 422
+
+    # Newer version is committed before the read: old Prepare and feature
+    # recommendations must be rejected instead of silently recomputed.
+    state["version"] = 1
+    with storage.connect() as con:
+        con.execute("UPDATE quality_state SET current_version=1 WHERE project_id=?",
+                    (pid,))
+    for path in ("/preparation", "/features"):
+        old = client.get(base + path,
+                         params={"target": "churn", "expected_version": 0})
+        assert old.status_code == 409
+        current = client.get(base + path,
+                             params={"target": "churn", "expected_version": 1})
+        assert current.status_code == 200, current.text
+        assert current.json()["quality_version" if path == "/preparation" else "version"] == 1
+
+    # Simulated interleaving: data loader supplied revision 0, but SQLite's
+    # authoritative version is 1 at the post-calculation recheck.
+    state["version"] = 0
+    for path in ("/preparation", "/features"):
+        interleaved = client.get(base + path,
+                                 params={"target": "churn", "expected_version": 0})
+        assert interleaved.status_code == 409
+    assert frame.equals(original)
+    assert storage.recent_experiments(pid) == []

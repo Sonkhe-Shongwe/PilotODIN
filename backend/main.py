@@ -273,10 +273,25 @@ def get_project(project_id:str):
 
 
 @app.get("/api/projects/{project_id}/preparation")
-def prepare(project_id:str,target:str):
-    p=project_or_404(project_id)
-    try: return engine.preparation(df_for(p),target)
-    except ValueError as e: raise HTTPException(status_code=422,detail=str(e))
+def prepare(project_id: str, target: str,
+            expected_version: int | None = Query(default=None, ge=0)):
+    """Return a revision-bound Prepare plan without changing legacy readers."""
+    project_or_404(project_id)
+    try:
+        frame, version = quality.current_data(project_id)
+        if expected_version is not None and version != expected_version:
+            raise HTTPException(
+                status_code=409,
+                detail="Working dataset version changed. Refresh Prepare before continuing.",
+            )
+        result = engine.preparation(frame, target)
+        if expected_version is not None:
+            _require_p4_review_version_fresh(project_id, version)
+        return {"quality_version": version, **result}
+    except quality.QualityError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 def train_background(eid:str,pid:str,config:dict):
@@ -1029,13 +1044,25 @@ def explore_insights(project_id: str):
 
 
 @app.get("/api/projects/{project_id}/features")
-def feature_recommendations(project_id: str, target: str):
+def feature_recommendations(project_id: str, target: str,
+                            expected_version: int | None = Query(default=None, ge=0)):
+    """Reject stale advice when the displayed Quality revision differs."""
     project_or_404(project_id)
     try:
-        df,version=quality.current_data(project_id)
-        return analytics.recommend_features(df,target,version)
-    except ValueError as e:
-        raise HTTPException(status_code=422,detail=str(e)) from e
+        frame, version = quality.current_data(project_id)
+        if expected_version is not None and version != expected_version:
+            raise HTTPException(
+                status_code=409,
+                detail="Working dataset version changed. Refresh feature advice.",
+            )
+        result = analytics.recommend_features(frame, target, version)
+        if expected_version is not None:
+            _require_p4_review_version_fresh(project_id, version)
+        return result
+    except quality.QualityError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 class AskRequest(BaseModel):

@@ -11,9 +11,17 @@ test('Prepare binds feature-advice identity to the current selection before show
  assert.match(scope,/snapshot\.version===version\?snapshot\.features:\[\]/);
  assert.match(app,/const \[featureHintSnapshot,setFeatureHintSnapshot\]=useState<ScopedFeatureHints\|null>\(null\)/);
  assert.match(app,/const featureHints=visibleFeatureHints\(featureHintSnapshot,project\?\.id,target,qualityVersion\)/);
- assert.match(app,/setFeatureHintSnapshot\(\{\.\.\.requested,features:r\.features\}\)/);
+ assert.match(app,/r\.version===requested\.version\?\{\.\.\.requested,features:r\.features\}:null/);
  assert.match(app,/if\(live\)setFeatureHintSnapshot\(null\)/);
  assert.doesNotMatch(app,/setFeatureHints\(/);
+});
+
+test('Prepare and advice are version-pinned and refuse wrong response revisions',()=>{
+ assert.match(api,/export type Prep = \{quality_version:number;task:/);
+ assert.match(app,/preparation\?target=\$\{encodeURIComponent\(target\)\}&expected_version=\$\{qualityVersion\}/);
+ assert.match(app,/if\(!active\|\|p\.quality_version!==qualityVersion\|\|p\.target!==target\)return/);
+ assert.match(app,/features\?target=\$\{encodeURIComponent\(requested\.target\)\}&expected_version=\$\{requested\.version\}/);
+ assert.match(app,/r\.version===requested\.version\?\{\.\.\.requested,features:r\.features\}:null/);
 });
 
 test('Prepare exposes server-derived per-feature treatments rather than guessing model importance',()=>{

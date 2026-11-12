@@ -217,10 +217,10 @@ test('approved A-to-B Prepare fixture serves the complete bounded read-only requ
     {path:'/projects/playwright-synthetic-project/live-profile',check:value=>value.version===0},
     {path:'/projects/playwright-synthetic-project/target-opportunities?expected_version=0',
       check:value=>value.version===0&&value.abstained===true},
-    {path:'/projects/playwright-synthetic-project/preparation?target=fraud_reported',
-      check:value=>value.target==='fraud_reported'},
-    {path:'/projects/playwright-synthetic-project/features?target=fraud_reported',
-      check:value=>Array.isArray(value.features)},
+    {path:'/projects/playwright-synthetic-project/preparation?target=fraud_reported&expected_version=0',
+      check:value=>value.target==='fraud_reported'&&value.quality_version===0},
+    {path:'/projects/playwright-synthetic-project/features?target=fraud_reported&expected_version=0',
+      check:value=>value.version===0&&Array.isArray(value.features)},
     {path:'/projects/playwright-synthetic-second-project',
       check:value=>value.id==='playwright-synthetic-second-project'},
     {path:'/projects/playwright-synthetic-second-project/live-profile',
@@ -254,8 +254,8 @@ test('second-project target opportunities require explicit opt-in and version; a
     '/target-opportunities',
     '/target-opportunities?expected_version=1',
     '/target-opportunities?expected_version=0&extra=unapproved',
-    '/preparation?target=fraud_reported',
-    '/features?target=fraud_reported',
+    '/preparation?target=fraud_reported&expected_version=0',
+    '/features?target=fraud_reported&expected_version=0',
     '/quality',
     '/explore/overview',
   ]){
@@ -267,8 +267,8 @@ test('second-project target opportunities require explicit opt-in and version; a
     '/projects/playwright-synthetic-second-project/target-opportunities',
     '/projects/playwright-synthetic-second-project/target-opportunities?expected_version=1',
     '/projects/playwright-synthetic-second-project/target-opportunities?expected_version=0&extra=unapproved',
-    '/projects/playwright-synthetic-second-project/preparation?target=fraud_reported',
-    '/projects/playwright-synthetic-second-project/features?target=fraud_reported',
+    '/projects/playwright-synthetic-second-project/preparation?target=fraud_reported&expected_version=0',
+    '/projects/playwright-synthetic-second-project/features?target=fraud_reported&expected_version=0',
     '/projects/playwright-synthetic-second-project/quality',
     '/projects/playwright-synthetic-second-project/explore/overview',
   ]);
@@ -278,6 +278,24 @@ test('second-project target opportunities require explicit opt-in and version; a
   }
   assert.equal(audit.writes.length,3);
   assert.deepEqual(audit.blockedOrigins,[]);
+});
+
+
+test('unversioned and stale Quality-version synthetic Prepare reads are blocked',async()=>{
+ const {call,audit}=await setup(true);
+ const base='http://127.0.0.1:8000/api/projects/playwright-synthetic-project';
+ const paths=[
+  '/preparation?target=fraud_reported',
+  '/features?target=fraud_reported',
+  '/preparation?target=fraud_reported&expected_version=1',
+  '/features?target=fraud_reported&expected_version=1',
+ ];
+ for(const suffix of paths){
+  const response=await call(base+suffix);
+  assert.equal(response.response.status,404,suffix);
+ }
+ assert.deepEqual(audit.unexpectedReads,paths.map(p=>'/projects/playwright-synthetic-project'+p));
+ assert.deepEqual(audit.writes,[]);
 });
 
 test('successful B Prepare mounts target screening at verified version without launching B preparation or feature reads',()=>{

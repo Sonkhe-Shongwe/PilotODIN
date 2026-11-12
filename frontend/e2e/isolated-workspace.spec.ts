@@ -250,13 +250,13 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
     }else if(withProject&&withImport&&imported&&pathname===`/projects/${TEST_PROJECT_B}/quality/preview`){
       result={version:0,total_matching_rows:2,offset:0,limit:12,rows:[]};
     }else if(withProject&&withImport&&imported
-      &&pathname===`/projects/${TEST_PROJECT_B}/preparation`&&url.search==='?target=fraud_reported'){
-      result={task:'classification',target:'fraud_reported',available_features:['amount'],
+      &&pathname===`/projects/${TEST_PROJECT_B}/preparation`&&url.search==='?target=fraud_reported&expected_version=0'){
+      result={quality_version:0,task:'classification',target:'fraud_reported',available_features:['amount'],
         recommend_exclude:[],feature_audit:[],high_risk_features:[],
         missing_targets:0,transformations:[],warnings:[]};
     }else if(withProject&&withImport&&imported
-      &&pathname===`/projects/${TEST_PROJECT_B}/features`&&url.search==='?target=fraud_reported'){
-      result={features:[]};
+      &&pathname===`/projects/${TEST_PROJECT_B}/features`&&url.search==='?target=fraud_reported&expected_version=0'){
+      result={version:0,features:[]};
     }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/quality`){
       result={project_id:TEST_PROJECT,version:0,rows:2,columns:2,
         summary:{issues:0,automatic_available:0,review_required:0,information:0,applied_actions:0},
@@ -307,10 +307,12 @@ async function installIsolatedAPI(context:BrowserContext,withProject:boolean,wit
         suggestions:[],blocked_examples:[],eligible_count:0,blocked_count:0,
         abstained:true,abstention_reason:'No business objective verified for synthetic B',
         business_context_state:'unverified',note:'Synthetic second-project fixture only',privacy:'No user data'};
-    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/features`){
-      result={features:[]};
-    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/preparation`){
-      result={task:'classification',target:'fraud_reported',available_features:['amount'],
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/features`
+      &&url.search==='?target=fraud_reported&expected_version=0'){
+      result={version:0,features:[]};
+    }else if(withProject&&pathname===`/projects/${TEST_PROJECT}/preparation`
+      &&url.search==='?target=fraud_reported&expected_version=0'){
+      result={quality_version:0,task:'classification',target:'fraud_reported',available_features:['amount'],
         recommend_exclude:[],feature_audit:[],high_risk_features:[],
         missing_targets:0,transformations:[],warnings:[]};
     // The Explore UI mounts multiple read-only panels, even for history-only

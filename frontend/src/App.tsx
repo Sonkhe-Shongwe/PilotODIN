@@ -316,8 +316,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     }}
   useEffect(()=>{if(!project||!target){setPrep(null);return;}let active=true;
     setPrep(null); // A previous target/version's plan must not be reused while loading.
-    get<Prep>(`/projects/${project.id}/preparation?target=${encodeURIComponent(target)}`).then(p=>{
-      if(!active)return;setPrep(p);setExcluded(p.recommend_exclude.filter(c=>c.reason.includes('constant')||c.reason.includes('all values')).map(c=>c.column));
+    get<Prep>(`/projects/${project.id}/preparation?target=${encodeURIComponent(target)}&expected_version=${qualityVersion}`).then(p=>{
+      if(!active||p.quality_version!==qualityVersion||p.target!==target)return;
+      setPrep(p);setExcluded(p.recommend_exclude.filter(c=>c.reason.includes('constant')||c.reason.includes('all values')).map(c=>c.column));
       setModels(p.task==='classification'?['logistic_regression','random_forest','extra_trees']:['linear_regression','random_forest','gradient_boosting']);
     }).catch(e=>{if(active){setPrep(null);setError(e.message)}});
     return()=>{active=false};
@@ -326,8 +327,8 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     if(!project||!target){setFeatureHintSnapshot(null);return;}
     const requested={projectId:project.id,target,version:qualityVersion};
     let live=true;
-    get<{features:{column:string;risk:string;reasons:string[]}[]}>(`/projects/${requested.projectId}/features?target=${encodeURIComponent(requested.target)}`)
-      .then(r=>{if(live)setFeatureHintSnapshot({...requested,features:r.features});})
+    get<{version:number;features:{column:string;risk:string;reasons:string[]}[]}>(`/projects/${requested.projectId}/features?target=${encodeURIComponent(requested.target)}&expected_version=${requested.version}`)
+      .then(r=>{if(live)setFeatureHintSnapshot(r.version===requested.version?{...requested,features:r.features}:null);})
       .catch(()=>{if(live)setFeatureHintSnapshot(null);});
     return()=>{live=false};
   },[project?.id,target,qualityVersion]);
