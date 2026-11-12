@@ -3,7 +3,8 @@ name: P4-71 ONE Owner-Approved Isolated Windows Native Acceptance
 # One explicit owner approval in conversation, 12 Nov 2026.
 # Exactly one disposable Windows-2022 Tauri DEV build with a distinct app id.
 # No installer, sidecar, Qwen, artifact upload, original app-data or owner PC.
-# Triggered only by a single marker and an exact one-time commit message.
+# Owner-approved one-use run #43276316744 already dispatched; both jobs permanently disabled.
+# Triggered only by the historic single-use marker, which must not be replayed.
 on:
   push:
     branches:
@@ -20,7 +21,7 @@ concurrency:
 
 jobs:
   p4-71-mandatory-preflight:
-    if: "github.event_name == 'push' && github.event.head_commit.message == 'qa(p4-71): recover checkout depth before one native build'"
+    if: ${{ false }} # single owner-approved P4-71 run dispatched, disabled after trigger
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -35,7 +36,7 @@ jobs:
 
   p4-71-native-dev:
     needs: p4-71-mandatory-preflight
-    if: "needs.p4-71-mandatory-preflight.result == 'success'"
+    if: ${{ false }} # no second compilation permitted without fresh consent
     name: ONE unpackaged native DEV compilation and controlled synthetic QA
     runs-on: windows-2022
     timeout-minutes: 100
