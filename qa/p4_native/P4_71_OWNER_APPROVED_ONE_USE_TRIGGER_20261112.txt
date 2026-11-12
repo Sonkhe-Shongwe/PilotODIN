@@ -4,3 +4,4 @@ Identifier: com.pilotodin.p4isolatednativedev
 No installer, packaging, original app/data, Qwen model, cloud provider, model training or release.
 This marker is single-use, bound to its one exact triggering commit and condition.
 Recovery: first run 43276025772 stopped in mandatory preflight on shallow checkout; no compilation started. This is the only corrected trigger.
+Second run 43276316744: both source preflights PASS; runtime PowerShell reserved $home variable blocked BEFORE compilation. No EXE, sidecar, installer or model produced. Third and last trigger validates runtime path before a single native build.

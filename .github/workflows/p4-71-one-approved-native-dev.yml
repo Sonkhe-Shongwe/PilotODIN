@@ -3,7 +3,7 @@ name: P4-71 ONE Owner-Approved Isolated Windows Native Acceptance
 # One explicit owner approval in conversation, 12 Nov 2026.
 # Exactly one disposable Windows-2022 Tauri DEV build with a distinct app id.
 # No installer, sidecar, Qwen, artifact upload, original app-data or owner PC.
-# Owner-approved one-use run #43276316744 already dispatched; both jobs permanently disabled.
+# One-use chronology: #43276025772 shallow checkout preflight failure; #43276316744 reserved PowerShell variable failure; NEITHER started a native compilation. This trigger is the last allowed recovery to attempt the ONE approved compilation.
 # Triggered only by the historic single-use marker, which must not be replayed.
 on:
   push:
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   p4-71-mandatory-preflight:
-    if: ${{ false }} # single owner-approved P4-71 run dispatched, disabled after trigger
+    if: "github.event_name == 'push' && github.event.head_commit.message == 'qa(p4-71): verified one-shot environment recovery'"
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -29,14 +29,14 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-          fetch-depth: 3
+          fetch-depth: 5
       - name: Verify source parent and distinct app identities before native compilation
         shell: pwsh
-        run: ./qa/p4_native/Run_P4_71_Disposable_Windows.ps1 -PreflightOnly
+        run: ./qa/p4_native/Run_P4_71_Disposable_Windows.ps1 -ValidateRuntime
 
   p4-71-native-dev:
     needs: p4-71-mandatory-preflight
-    if: ${{ false }} # no second compilation permitted without fresh consent
+    if: "needs.p4-71-mandatory-preflight.result == 'success'"
     name: ONE unpackaged native DEV compilation and controlled synthetic QA
     runs-on: windows-2022
     timeout-minutes: 100
@@ -48,10 +48,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-          fetch-depth: 3
+          fetch-depth: 5
       - name: Recheck isolation preflight on compile runner
         shell: pwsh
-        run: ./qa/p4_native/Run_P4_71_Disposable_Windows.ps1 -PreflightOnly
+        run: ./qa/p4_native/Run_P4_71_Disposable_Windows.ps1 -ValidateRuntime
       - name: Python 3.11 for disposable loopback backend
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:

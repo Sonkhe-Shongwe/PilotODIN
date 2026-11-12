@@ -1,4 +1,4 @@
-param([switch]$PreflightOnly)
+param([switch]$PreflightOnly, [switch]$ValidateRuntime)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $base = 'fc20659e5fced50f046fee56a3b35334caa96fa3'
@@ -10,7 +10,7 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
     $env:RUNNER_OS -ne 'Windows' -or $env:GITHUB_EVENT_NAME -ne 'push' -or
     $env:GITHUB_REF_NAME -ne $branch) { Fail 'Requires one trusted disposable GitHub-hosted Windows push run, never owner Windows' }
 $actual = (& git -C $root rev-parse HEAD).Trim()
-$parent = (& git -C $root rev-parse 'HEAD~2').Trim()
+$parent = (& git -C $root rev-parse 'HEAD~4').Trim()
 if ($LASTEXITCODE -ne 0 -or $actual -ne $env:GITHUB_SHA -or $parent -ne $base) { Fail 'Approved exact source/parent SHA mismatch' }
 $allowed = @(
  '.github/workflows/p4-71-one-approved-native-dev.yml',
@@ -18,7 +18,7 @@ $allowed = @(
  'qa/p4_native/Run_P4_71_Disposable_Windows.ps1',
  'frontend/e2e/p4-71-native-webview-qa.mjs'
 )
-$changed = @(& git -C $root diff --name-only 'HEAD~2' 'HEAD')
+$changed = @(& git -C $root diff --name-only 'HEAD~4' 'HEAD')
 foreach ($path in $changed) { if ($path -notin $allowed) { Fail 'Unapproved application/source change in the one-shot commit' } }
 if ($changed.Count -ne 4) { Fail 'One-shot commit must contain only four reviewed QA/trigger files' }
 $production = Get-Content (Join-Path $frontend 'src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json
@@ -46,14 +46,14 @@ foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
    if (Test-Path -LiteralPath (Join-Path $appdata $item)) { Fail 'Protected production or old-QA appdata unexpectedly present on disposable runner' }
  }
 }
-if ($PreflightOnly) {
- Write-Host "P4-71 HOSTED WINDOWS PREFLIGHT PASS: exact HEAD=$actual parent=$base; distinct IDs; original app roots absent; bundle forbidden; no native build yet."
+$qaHome = Join-Path $env:RUNNER_TEMP ('P4-71-only-home-' + $env:GITHUB_RUN_ID)
+if (Test-Path -LiteralPath $qaHome) { Fail 'Disposable test home unexpectedly exists; refusing reuse' }
+if ($PreflightOnly -or $ValidateRuntime) {
+ Write-Host "P4-71 HOSTED WINDOWS PREFLIGHT + RUNTIME PATH PASS: exact HEAD=$actual approved_base=$base; distinct IDs; original roots absent; reserved variable avoided; bundle forbidden; no native compilation."
  exit 0
 }
-$home = Join-Path $env:RUNNER_TEMP ('P4-71-only-home-' + $env:GITHUB_RUN_ID)
-if (Test-Path -LiteralPath $home) { Fail 'Disposable test home unexpectedly exists; refusing reuse' }
-New-Item -ItemType Directory -Path $home | Out-Null
-$env:PILOTODIN_HOME = $home
+New-Item -ItemType Directory -Path $qaHome | Out-Null
+$env:PILOTODIN_HOME = $qaHome
 $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT = 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV'
 $env:VITE_PILOTODIN_NATIVE_SMOKE = '1'
 # Remote debugger applies to disposable hosted WebView2 only. No other host is exposed.
