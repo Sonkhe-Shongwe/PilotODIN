@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current project status
 
+## 12 November 2026 | P4-66 independent Elexon vintage evidence route, 10:00 timing exceptions
+
+- **New externally grounded evidence route:** NESO documents its actual ENCC demand forecast, strategy and balancing operational functions. Elexon's official public **NDF** archive supports publication-time filtering and retrieval of superseded forecasts, but **no live historical response was retrieved or matched to the NESO file**. Ofgem's public assessment describes potential demand-accuracy benefit, not PilotODIN achieved benefit. [Focused P4-66 record](./P4_66_NESO_OPERATIONAL_OWNER_AND_ELEXON_VINTAGE_ROUTE_2026-11-12.md).
+- **New read-only source check:** the same P4-65 uploaded SHA has **2,052/2,052 preceding-day Publish_Datetime dates**, one per day; **six otherwise eligible 2026 target dates have printed publish clock >10:00**. The hypothetical 10:00 cutoff cannot silently include them, and GMT/BST labels must not be interpreted as UTC merely from a Z suffix. No operational decision time was authorised or independently proven.
+- **No acceptance promotion:** source-only observation and official API documentation; **zero cross-provider matching, no model training, no new CI/native/installer, no measured decision utility**. P4 ACTIVE, R01–R06 OPEN, Gate C UNVERIFIED, historical original-data STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED. Next requires authenticated vintage evidence and a real operational decision owner, not more speculative retrospective experiments.
+
 ## 12 November 2026 | P4-65 NESO public-data no-fit settlement audit and frozen retrospective windows
 
 - **Verified public research snapshot:** The owner-provided NESO 1b-incentive.csv (SHA-256 a9992f87a766f3cf3307b24cc7c9940e797bdea855427e6e31647984e27bdc0f; 98,466 rows) was independently examined read-only. Europe/London settlement-day checks quarantine 2021-10-31, 2022-10-30 and the incomplete 2026-11-12; **98,350 rows on 2,049 days** remain. Published forecast absolute error arithmetic uses TRIAD-corrected outturn, 313 nonzero adjustments; eligible baseline **644.7488 MW MAE**. Existing NESO retrospective MAE: 2021-24 **607.5977**, 2025 **679.4651**, inspected 2026 **765.9768 MW**. [Full P4-65 evidence and protocol](./P4_65_NESO_DAY_AHEAD_DATA_AND_NO_FIT_PROTOCOL_2026-11-12.md).
