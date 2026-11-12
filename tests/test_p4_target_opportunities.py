@@ -890,3 +890,68 @@ def test_p4_camel_identifier_does_not_hide_separate_real_predictor():
     assert manual["candidate"]["technical_status"] == "reviewable"
     assert manual["training_authorised"] is False
     assert frame.equals(before)
+
+
+@pytest.mark.parametrize("code_header", [
+    "TransactionCode", "ClaimNumber", "batch_code", "accountNumber",
+])
+def test_p4_60_near_unique_code_number_cannot_fake_sole_predictor(code_header):
+    """P4 review must not treat an identified possible row key as a signal."""
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        code_header: [f"synthetic-{i:03d}" for i in range(80)],
+    })
+    before = frame.copy(deep=True)
+    assert target_opportunities._is_identifier_predictor(
+        code_header, frame[code_header]
+    )
+    ranked = target_opportunities.recommend(frame, 60)
+    assert ranked["abstained"] is True
+    assert ranked["suggestions"] == []
+    candidate = {x["column"]: x for x in ranked["blocked_examples"]}["churn"]
+    assert candidate["technical_status"] == "blocked"
+    assert candidate["task_hypothesis"] is None
+    assert candidate["safe_to_train_automatically"] is False
+    assert any("excluding identifier-like headers" in x for x in candidate["blockers"])
+    manual = target_opportunities.inspect_manual_target(frame, 60, "churn")
+    assert manual["candidate"]["technical_status"] == "blocked"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_60_low_cardinality_business_code_remains_structurally_reviewable():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "TransactionCode": ["retail", "service"] * 40,
+    })
+    before = frame.copy(deep=True)
+    assert not target_opportunities._is_identifier_predictor(
+        "TransactionCode", frame["TransactionCode"]
+    )
+    ranked = target_opportunities.recommend(frame, 60)
+    candidate = {x["column"]: x for x in ranked["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 60, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)
+
+
+def test_p4_60_real_predictor_survives_near_unique_code_screening():
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 40,
+        "TransactionCode": [f"synthetic-{i:03d}" for i in range(80)],
+        "event_type": ["retail", "service"] * 40,
+    })
+    before = frame.copy(deep=True)
+    ranked = target_opportunities.recommend(frame, 60)
+    candidate = {x["column"]: x for x in ranked["suggestions"]}["churn"]
+    assert candidate["technical_status"] == "reviewable"
+    assert candidate["task_hypothesis"] == "classification"
+    assert candidate["safe_to_train_automatically"] is False
+    manual = target_opportunities.inspect_manual_target(frame, 60, "churn")
+    assert manual["candidate"]["technical_status"] == "reviewable"
+    assert manual["training_authorised"] is False
+    assert frame.equals(before)

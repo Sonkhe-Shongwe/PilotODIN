@@ -98,6 +98,22 @@ def _is_identifier(name: str) -> bool:
     )
 
 
+def _is_identifier_predictor(name: str, labelled_values: pd.Series) -> bool:
+    """Exclude near-unique Code/Number fields from *minimum* predictor proof.
+
+    These often act as row keys even when the header lacks an ID/Key suffix.
+    Low-cardinality business codes remain eligible structural evidence.
+    Use only observed labelled rows, consistent with other predictor checks.
+    Neither exclusion from this screen nor a warning proves actual identity.
+    """
+    normalized = name.casefold().replace(" ", "_")
+    return _is_identifier(name) or (
+        bool(len(labelled_values))
+        and normalized.endswith(("code", "number"))
+        and labelled_values.nunique(dropna=True) >= len(labelled_values) * .9
+    )
+
+
 def _is_date(name: str, series: pd.Series) -> bool:
     normalized = _normalized(name)
     tokens = set(normalized.split("_"))
@@ -241,13 +257,15 @@ def _candidate(frame: pd.DataFrame, name: str, question: str, version: int) -> d
     # standalone predictive inputs. Exclude them from the minimum usable
     # predictor evidence, while retaining the full read-only source frame.
     predictors = [c for c in frame.columns
-                  if c != name and not _is_identifier(str(c))
+                  if c != name
+                  and not _is_identifier_predictor(str(c), labelled_frame[c])
                   and has_observed_variation(c)]
     if not predictors:
         # Keep the stable diagnostic for the bounded manual-review path,
         # which rewrites it to avoid claiming completeness after truncation.
         blockers.append("No non-constant, non-empty candidate predictor remains.")
-        if any(_is_identifier(str(c)) for c in frame.columns if c != name):
+        if any(_is_identifier_predictor(str(c), labelled_frame[c])
+               for c in frame.columns if c != name):
             blockers.append(
                 "Predictor evidence was evaluated after excluding identifier-like headers."
             )
