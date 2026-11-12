@@ -4,9 +4,9 @@
   "version": "1.0.0-alpha.1",
   "identifier": "com.pilotodin.studio",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "node scripts/deny-unsafe-default-tauri-dev.mjs",
     "devUrl": "http://127.0.0.1:5173",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "node scripts/deny-intermediate-installer.mjs",
     "frontendDist": "../dist"
   },
   "app": {

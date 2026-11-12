@@ -45,3 +45,20 @@ test("legacy native compilation is not triggered by P4 development branch", () =
   assert.match(yaml, /branches:\s*\[build-e\]/);
   assert.doesNotMatch(yaml, /branches:\s*\[[^\]]*feature\/live-dev-workspace/);
 });
+
+test("raw default Tauri dev and build have source-level fail-closed hooks", () => {
+  assert.equal(prod.build.beforeDevCommand, "node scripts/deny-unsafe-default-tauri-dev.mjs");
+  assert.equal(prod.build.beforeBuildCommand, "node scripts/deny-intermediate-installer.mjs");
+  assert.equal(dev.build.beforeDevCommand, "npm run dev");
+  // Merge-patch semantics: isolated override replaces only dev hook;
+  // production-identity default has no usable pre-dev server startup.
+  const merged = { ...prod.build, ...dev.build };
+  assert.equal(merged.beforeDevCommand, "npm run dev");
+  assert.equal(merged.beforeBuildCommand, "node scripts/deny-intermediate-installer.mjs");
+  const denial = spawnSync(process.execPath, ["scripts/deny-unsafe-default-tauri-dev.mjs"], {
+    cwd: root, encoding: "utf8"
+  });
+  assert.equal(denial.status, 2);
+  assert.match(denial.stderr, /STOP: Default Tauri native development uses PilotODIN production identity/);
+  assert.equal(prod.identifier, "com.pilotodin.studio");
+});

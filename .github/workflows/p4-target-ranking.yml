@@ -34,6 +34,8 @@ on:
       - frontend/tests/p4-target-opportunities-contracts.test.cjs
       - frontend/package.json
       - frontend/scripts/p4-isolated-native-dev.mjs
+      - frontend/scripts/deny-unsafe-default-tauri-dev.mjs
+      - frontend/src-tauri/tauri.conf.json
       - frontend/scripts/deny-intermediate-installer.mjs
       - frontend/src-tauri/tauri.p4-isolated-native-dev.conf.json
       - frontend/tests/p4-native-dev-isolation.test.cjs

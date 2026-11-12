@@ -18,5 +18,8 @@
     "active": false,
     "externalBin": [],
     "resources": []
+  },
+  "build": {
+    "beforeDevCommand": "npm run dev"
   }
 }
