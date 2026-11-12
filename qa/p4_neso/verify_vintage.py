@@ -106,7 +106,8 @@ def valid_elexon_groups(records, target: date, expected: int):
             continue
         if record.get('dataset') not in (None,'NDF'):
             continue
-        if record.get('boundary') not in (None, '', 'National'):
+        # Elexon NDF's national boundary is coded 'N' in the real BMRS feed.
+        if record.get('boundary') not in (None, '', 'National', 'N'):
             invalid+=1
             continue
         try:
@@ -135,6 +136,7 @@ def compare(neso, elexon_raw: bytes) -> dict:
     result={'target_date':neso['day'], 'neso_file_sha256':neso['hash'],
             'elexon_payload_sha256':digest(elexon_raw), 'elexon_records_total':len(records),
             'elexon_target_vintages':len(groups), 'elexon_target_invalid_rows':invalid,
+            'elexon_target_accepted_rows':sum(len(x) for x in groups.values()),
             'neso_publish_label_local_gmt_bst':neso['publish_label'],
             'neso_publish_utc_derived_not_independently_verified':neso['publish_utc_derived'],
             'expected_settlement_periods':expected,'candidate_vintages':[]}

@@ -48,3 +48,17 @@ This mode **does not access the network**. It intentionally exits nonzero even i
 - P4 remains active; R01–R06 and original Gate C remain open, P5 unauthorised and P8 uncertified. No intermediate installers.
 
 **If using the standalone ZIP instead of the GitHub repository**, extract it into a disposable folder and invoke `python verify_vintage.py` and `python -m unittest discover -s . -p "test_*.py"`. The code and the CLI parameters are identical; the path prefix `qa/p4_neso/` applies only to the GitHub layout.
+
+## P4-68 correction following owner observed Elexon NDF response
+
+The **official Elexon NDF national boundary is `N`**, not the literal `National` used by P4-67's original strict filter. An owner-side direct HTTPS response for the frozen 2025-06-14 publication window returned **2,816 total records**, **1,531 for target 2025-06-15**, all target records `dataset=NDF` and `boundary=N`. The P4-67 verifier incorrectly rejected those 1,531 rows. P4-68 accepts `N`, preserves existing explicit national encodings, and refuses other zonal codes. This is a **verifier defect**, not an Elexon data failure.
+
+**Run against the saved response (no further API request):**
+
+```powershell
+python verify_vintage.py --neso ".\1b-incentive.csv" --target-date 2025-06-15 --elexon-json ".\elexon_ndf_2025-06-14_original.json"
+```
+
+The shell path in this example is local to an isolated research folder. **Do not use the original installed PilotODIN app-data path.** Unlike `--fetch`, the local-input mode deliberately **never grants independently authenticated provenance or a Gate C PASS**, even if it reports matching forecast fields. The result lists every distinct published timestamp as a separate candidate, rather than merging partial updates across publication instants. The owner-observed sample at `2025-06-14T23:47:00Z` is not itself evidence of the NESO file's original `2025-06-14 09:45 BST` forecast; compare the complete candidate set and report any discrepancies.
+
+Initial post-fix tests: **14/14 PASS** locally, including two tests that initially failed with the genuine old boundary rule, national-boundary acceptance, non-national rejection, incomplete-vintage non-merging, and all prior safety checks. **No actual saved Elexon JSON was provided to the assistant for direct comparison in this checkpoint.**

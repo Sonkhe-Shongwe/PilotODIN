@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-68 Elexon NDF national-boundary verifier defect corrected
+
+- **Real owner-observed failure:** P4-67 direct Elexon HTTPS retrieval returned 2,816 records; 1,531 target-day NDF rows, every target row had `boundary=N`. P4-67's national-only filter rejected all of them, so its no-data verdict was a **false negative caused by the research verifier**, not proof of Elexon data absence. Raw JSON saved by owner but not uploaded here; no independent in-session payload verification. [Focused P4-68 evidence](./P4_68_ELEXON_NDF_BOUNDARY_PARSING_CORRECTION_2026-11-12.md).
+- **Bounded QA fix:** Accept published national code `N`, still refuse other boundary values; count accepted target records. Two new regressions failed on old code; **14/14 isolated local Python tests PASS** after correction, including no synthetic merge of partial published vintages. Research script/tests/readme only; no PilotODIN runtime app change, no model fit, manual CI, native build, installer or original data operation.
+- **Next:** Recheck the preserved owner-side JSON with **offline** `--elexon-json` and compare each separate publish-time group. No exact NESO-to-Elexon vintage match has been shown; Gate C UNVERIFIED, P4 ACTIVE, P4-R01–R06 OPEN, old original whole-app-data STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED.
+
 ## 12 November 2026 | P4-67 executable NESO/Elexon no-fit vintage verifier, 11/11 synthetic tests PASS
 
 - **Actual P4 research instrumentation:** A single-request, no-model read-only verifier now exists in [qa/p4_neso](../qa/p4_neso/README.md) with pinned user CSV source SHA, strict 46/48/50 settlement-period and London DST handling, full forecast MW / publication-time comparison, official HTTPS host redirect rejection, preserved raw response only when explicitly requested, and explicit direct-endpoint versus local-JSON provenance. [Focused P4-67 evidence](./P4_67_NESO_ELEXON_INDEPENDENT_VINTAGE_VERIFIER_2026-11-12.md). All **11/11 local synthetic tests PASS**, Python compile PASS, and the read-only actual NESO selected-day (2025-06-15) source record check PASS. Code and unit tests are exact Git-blob-identical copies of locally tested files, not a PilotODIN product engine change.

@@ -32,6 +32,35 @@ class VerificationTests(unittest.TestCase):
         if dup:rows.append(rows[0].copy())
         return json.dumps({'data':rows}).encode()
 
+    def test_official_elexon_national_boundary_n_accepted(self):
+        # Owner-observed NDF payload returns boundary="N", not "National".
+        rows=json.loads(self.payload())['data']
+        for row in rows: row['boundary']='N'
+        result=v.compare(self.neso,json.dumps({'data':rows}).encode())
+        self.assertEqual(result['elexon_target_invalid_rows'],0)
+        self.assertEqual(result['elexon_target_vintages'],1)
+        self.assertEqual(result['verdict'],'EXACT_TIMESTAMP_AND_ALL_PERIOD_VALUES_MATCHED_IN_JSON')
+
+    def test_unknown_boundary_does_not_pass_as_national(self):
+        rows=json.loads(self.payload())['data']
+        for row in rows: row['boundary']='S'
+        result=v.compare(self.neso,json.dumps({'data':rows}).encode())
+        self.assertEqual(result['elexon_target_invalid_rows'],48)
+        self.assertEqual(result['verdict'],'NO_ELEXON_NDF_DATA_FOR_TARGET_DAY_IN_RESPONSE')
+
+    def test_mixed_partial_national_publications_never_conjure_full_vintage(self):
+        rows=[]
+        for i in range(1,25):
+            rows.append({'dataset':'NDF','boundary':'N','settlementDate':self.day.isoformat(),
+                         'settlementPeriod':i,'demand':1000+i,'publishTime':self.utc})
+        for i in range(25,49):
+            rows.append({'dataset':'NDF','boundary':'N','settlementDate':self.day.isoformat(),
+                         'settlementPeriod':i,'demand':1000+i,'publishTime':'2025-06-14T23:47:00Z'})
+        result=v.compare(self.neso,json.dumps({'data':rows}).encode())
+        self.assertEqual(result['elexon_target_vintages'],2)
+        self.assertEqual(result['verdict'],'NO_COMPLETE_EXACT_NESO_VALUE_AND_TIMESTAMP_MATCH')
+        self.assertEqual(len(result['candidate_vintages']),2)
+
     def test_dst_periods(self):
         self.assertEqual(v.expected_periods(date(2025,3,30)),46)
         self.assertEqual(v.expected_periods(date(2025,10,26)),50)
