@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current project status
 
+## 12 November 2026 | P4-78 saved experiment preprocessing provenance in Evaluate/Predict
+
+- **BE-024 source-level visibility defect addressed:** Evaluate/Predict now display the experiment's **recorded numeric/categorical preprocessing** and pinned Quality version, not the current Prepare draft. Missing fields are clearly identified as **unrecorded legacy defaults**, without claiming a successful fit. Two-file [source `cf674b83`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/cf674b83e2915959ee7aa3c327928d46eebec949); [focused record](./P4_78_SAVED_EXPERIMENT_PREPROCESSING_PROVENANCE_2026-11-12.md). No training, model or owner-data mutation.
+- **Exact-source CI:** [P4 #43296116379](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43296116379) **SUCCESS 3/3**: 183 Python, 60 Node, TypeScript/Vite, 10/10 disposable real-HTTP Chromium, hosted synthetic Windows safety. [P1 #43296116284](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43296116284) **SUCCESS**: 187 Node, TypeScript/Vite, 7/7 isolated Chromium. [P2 #43296116207](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43296116207) SUCCESS. No separate saved-experiment UI or physical/native execution of this panel occurred.
+- **Gates unchanged:** P4 ACTIVE, R01–R06 OPEN, Gate C UNVERIFIED, BE-024 broader scope OPEN, historical entire original app-local-data STRICT FAIL (320/346, 74 differences, writer UNKNOWN), native/8 GB incomplete, P5 NOT AUTHORISED, P8 NOT CERTIFIED. No reuse of consumed approvals or installer.
+
+
 
 ## 12 November 2026 | P4-77 guarded categorical Prepare missing-value option
 
