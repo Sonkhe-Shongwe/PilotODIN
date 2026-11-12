@@ -10,7 +10,7 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
     $env:RUNNER_OS -ne 'Windows' -or $env:GITHUB_EVENT_NAME -ne 'push' -or
     $env:GITHUB_REF_NAME -ne $branch) { Fail 'Requires one trusted disposable GitHub-hosted Windows push run, never owner Windows' }
 $actual = (& git -C $root rev-parse HEAD).Trim()
-$parent = (& git -C $root rev-parse 'HEAD^').Trim()
+$parent = (& git -C $root rev-parse 'HEAD~2').Trim()
 if ($LASTEXITCODE -ne 0 -or $actual -ne $env:GITHUB_SHA -or $parent -ne $base) { Fail 'Approved exact source/parent SHA mismatch' }
 $allowed = @(
  '.github/workflows/p4-71-one-approved-native-dev.yml',
@@ -18,7 +18,7 @@ $allowed = @(
  'qa/p4_native/Run_P4_71_Disposable_Windows.ps1',
  'frontend/e2e/p4-71-native-webview-qa.mjs'
 )
-$changed = @(& git -C $root diff --name-only 'HEAD^' 'HEAD')
+$changed = @(& git -C $root diff --name-only 'HEAD~2' 'HEAD')
 foreach ($path in $changed) { if ($path -notin $allowed) { Fail 'Unapproved application/source change in the one-shot commit' } }
 if ($changed.Count -ne 4) { Fail 'One-shot commit must contain only four reviewed QA/trigger files' }
 $production = Get-Content (Join-Path $frontend 'src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json

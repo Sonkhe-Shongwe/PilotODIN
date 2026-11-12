@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   p4-71-mandatory-preflight:
-    if: "github.event_name == 'push' && github.event.head_commit.message == 'qa(p4-71): one approved isolated unpackaged native Windows session'"
+    if: "github.event_name == 'push' && github.event.head_commit.message == 'qa(p4-71): recover checkout depth before one native build'"
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+          fetch-depth: 3
       - name: Verify source parent and distinct app identities before native compilation
         shell: pwsh
         run: ./qa/p4_native/Run_P4_71_Disposable_Windows.ps1 -PreflightOnly
@@ -46,6 +47,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+          fetch-depth: 3
       - name: Recheck isolation preflight on compile runner
         shell: pwsh
         run: ./qa/p4_native/Run_P4_71_Disposable_Windows.ps1 -PreflightOnly
