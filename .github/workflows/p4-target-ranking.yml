@@ -40,7 +40,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: pilotodin-p4-ranking-${{ github.ref }}
+  # Recovery-only isolation: previous group's zero-job queued run cannot be
+  # cancelled (GitHub API HTTP 409). Keep CI source-only, no installer jobs.
+  group: pilotodin-p4-ranking-recovery-20261112-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
