@@ -36,3 +36,37 @@ operators must explicitly choose a time split. No training, real business
 Gate C approval, native Windows acceptance or deployment is performed in
 this test. Dataset values are public historical observations, not uploaded
 private customer records.
+
+
+## P4-53: additive nominal-code research derivative
+
+The optional `public_bike_daily_categorical_preday_731.csv` is **another
+user-data-free research view** derived only from the original 731-row
+`public_bike_daily_preday_731.csv`. It contains exactly the same `date`,
+`daily_rentals_target`, column order, rows, and calendar-code information.
+Every nominal numeric code in `season`, `yr`, `mnth`, `holiday`,
+`weekday`, `workingday` is converted reversibly into text:
+`season_1`, `yr_0`, `mnth_01`, `holiday_0`, `weekday_6`,
+`workingday_0` etc. We do not invent semantic labels or operational
+availability from category numbers. This prevents the generic numeric-dtype
+preprocessing path from automatically treating e.g. season or weekday codes
+as continuous magnitudes; it allows the existing categorical one-hot path.
+
+- Derived file SHA-256: `8981926c70d117fd487ce5ac5d0381be30dd159488576646c67978a2d3139a2e`; 51,950 bytes; 731 rows / 8 fields.
+- All source totals and dates preserve their exact text values; reverse mapping
+  from each code string reproduces original numeric code, tested across all rows.
+- Dates must still be explicitly chosen as **Time** split metadata, not
+  predictors. The current `/preparation` endpoint still *lists* the date
+  in available features prior to split selection.
+- `holiday`, `workingday` and possibly season policy still need real
+  historical as-of-time availability evidence. The public Capital Bikeshare
+  system data documentation (https://capitalbikeshare.com/system-data)
+  describes **monthly** published trip history in its current policy,
+  not verified daily outcome publication for 2011-2012.
+- **No estimator fit, no model score, no operational business authorisation,
+  no native app/owner data access**. The typed derivative is not a claim
+  that original bike data's category metadata was operationally validated.
+
+Public source: https://archive.ics.uci.edu/dataset/275/bike-sharing-dataset
+(UCI lists season, year, month, holiday, weekday and workingday as
+categorical/binary variables; CC BY 4.0.)

@@ -19,6 +19,8 @@ on:
       - tests/test_p4_target_opportunities.py
       - tests/test_p4_bike_public_import.py
       - tests/test_p4_bike_time_readiness.py
+      - tests/test_p4_bike_categorical_readiness.py
+      - tests/fixtures/public_bike_daily_categorical_preday_731.csv
       - tests/fixtures/public_bike_daily_preday_731.csv
       - tests/test_p4_target_business_context.py
       - tests/test_p4_prediction_timing_review.py
@@ -91,6 +93,7 @@ jobs:
           tests/test_p4_target_opportunities.py
           tests/test_p4_bike_public_import.py
           tests/test_p4_bike_time_readiness.py
+          tests/test_p4_bike_categorical_readiness.py
           tests/test_p4_target_business_context.py
           tests/test_p4_prediction_timing_review.py
           tests/test_p4_two_axis_evidence.py
