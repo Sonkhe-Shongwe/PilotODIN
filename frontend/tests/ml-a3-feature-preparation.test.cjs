@@ -29,6 +29,16 @@ test('high-risk predictors need a user decision in both UI and backend request',
  assert.match(app,/I deliberately accept their inclusion in this experiment/);
 });
 
+test('Prepare previews an additive exclusion diff and requires an explicit second click',()=>{
+ assert.match(app,/const \[reviewHighRiskExclusions,setReviewHighRiskExclusions\]=useState\(false\)/);
+ assert.match(app,/const pendingHighRiskExclusions=highRiskExclusionCandidates\.filter/);
+ assert.match(app,/Will additionally exclude \(\{pendingHighRiskExclusions\.length\}\)/);
+ assert.match(app,/Already excluded, kept unchanged \(\{excluded\.length\}\)/);
+ assert.match(app,/Included predictors: \{includedNow\} before, \{includedAfterReview\} after/);
+ assert.match(app,/if\(!prep\|\|!reviewHighRiskExclusions\)return/);
+ assert.match(app,/setReviewHighRiskExclusions\(false\).*\[project\?\.id,target,qualityVersion\]/);
+});
+
 test('suggested exclusions never remove manual exclusions and temporal guard is visible',()=>{
  assert.match(app,/setExcluded\(current=>\[\.\.\.new Set\(\[\.\.\.current,/);
  assert.match(app,/Identical timestamps at a train\/test boundary are rejected/);

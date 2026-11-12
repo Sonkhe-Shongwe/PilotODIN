@@ -104,6 +104,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const [target,setTarget]=useState('');
   const [prep,setPrep]=useState<Prep|null>(null);
   const [excluded,setExcluded]=useState<string[]>([]);
+  const [reviewHighRiskExclusions,setReviewHighRiskExclusions]=useState(false);
   const [models,setModels]=useState<string[]>(['logistic_regression','random_forest','extra_trees']);
   const [confirmSplit,setConfirmSplit]=useState(false);
   const [acknowledgeFeatureRisks,setAcknowledgeFeatureRisks]=useState(false);
@@ -366,21 +367,20 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
     if(!embedded)onPrimaryDraftEdited?.('model');
     setModels(next);
   }
-  // Apply-suggestions is another button-only form edit. Never report an edit
-  // when every proposed feature was already excluded.
+  // Preview exact changes before this button-only edit; preserve manual exclusions.
   function applyHighRiskExclusionSuggestions(){
-    if(!prep)return;
+    if(!prep||!reviewHighRiskExclusions)return;
     const proposed=[
       ...prep.high_risk_features,
       ...featureHints.filter(f=>f.risk==='high').map(f=>f.column)
         .filter(column=>prep.available_features.includes(column)),
     ];
-    // Only mark a real edit, and merge against the CURRENT React state.
-    // A checkbox edit queued after this handler's render must never be lost.
+    // Merge against current React state; never discard a queued checkbox edit.
     const additions=proposed.filter(column=>!excluded.includes(column));
-    if(!additions.length)return;
+    if(!additions.length){setReviewHighRiskExclusions(false);return;}
     if(!embedded)onPrimaryDraftEdited?.('prepare');
     setExcluded(current=>[...new Set([...current,...additions])]);
+    setReviewHighRiskExclusions(false);
   }
   async function startTrain(){
     if(!project||!prep||prep.target!==target)return;
@@ -499,6 +499,15 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const modelBudgetExceeded=!!selectedResourcePlan&&modelRowLimit!==null&&selectedResourcePlan.labelled_rows>modelRowLimit;
   useEffect(()=>{setAcknowledgeFeatureRisks(false)},[project?.id,target,qualityVersion,excluded,splitStrategy,splitColumn]);
   const prepRisk=prep?.recommend_exclude??[];
+  // No mutation until the user confirms a proposed high-risk exclusion diff.
+  const highRiskExclusionCandidates=prep?[...new Set([
+    ...prep.high_risk_features,
+    ...featureHints.filter(f=>f.risk==='high').map(f=>f.column)
+  ])].filter(column=>prep.available_features.includes(column)):[];
+  const pendingHighRiskExclusions=highRiskExclusionCandidates.filter(column=>!excluded.includes(column));
+  const includedNow=(prep?.feature_audit??[]).filter(f=>f.default_included&&!excluded.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length;
+  const includedAfterReview=(prep?.feature_audit??[]).filter(f=>f.default_included&&!excluded.includes(f.column)&&!pendingHighRiskExclusions.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length;
+  useEffect(()=>{setReviewHighRiskExclusions(false)},[project?.id,target,qualityVersion]);
   const available=prep?.task==='regression'?R_MODELS:C_MODELS;
   const ordered=useMemo(()=>[...((experiment?.results?.models??[]).filter(x=>x.status==='ready'))].sort((a,b)=> experiment?.results?.task==='regression'?(a.cv_metric??0)-(b.cv_metric??0):(b.cv_metric??0)-(a.cv_metric??0)),[experiment?.results]);
   const hasProject=!!project;
@@ -583,7 +592,16 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
             <TargetOpportunities key={project.id+'-'+qualityVersion} projectId={project.id} version={qualityVersion} selectedTarget={target} onChooseTarget={column=>{if(!profile.columns.some(c=>c.name===column))return;if(!embedded)onPrimaryDraftEdited?.('prepare');setTarget(column);setPrep(null);setExperiment(null);setConfirmSplit(false);setError('')}} onClearTarget={()=>{if(!target)return;if(!embedded)onPrimaryDraftEdited?.('prepare');setTarget('');setPrep(null);setExperiment(null);setConfirmSplit(false);setError('')}}/>
             {prep&&<>{!embedded&&<CategoryQualityAdvice projectId={project.id} version={qualityVersion} columns={prep.feature_audit.filter(f=>f.kind==='categorical'&&f.default_included&&!excluded.includes(f.column)).map(f=>f.column)} location="prepare" onReview={(focus:QualityFocus)=>{if(focus.projectId===project.id&&focus.version===qualityVersion){setQualityFocus(focus);go('quality')}}}/>}<div className="metrics three"><Metric label="TASK IDENTIFIED" value={prep.task==='classification'?'Classification':'Regression'} icon={<Target size={18}/>} small/><Metric label="INCLUDED PREDICTORS" value={String(prep.feature_audit.filter(f=>f.default_included&&!excluded.includes(f.column)&&!(splitStrategy!=='random'&&splitColumn===f.column)).length)} icon={<Database size={18}/>}/><Metric label="MISSING TARGETS" value={String(prep.missing_targets)} icon={<Activity size={18}/>}/></div>
               <div className="panel"><div className="panel-title"><ClipboardCheck size={19}/><h2>Review feature exclusions</h2></div><p className="body-muted">The model will use all columns except the target and features you deliberately exclude. Suggested exclusions are not automatically enforced.</p>
-                <button className="btn small" onClick={applyHighRiskExclusionSuggestions}><Sparkles size={14}/> Apply high-risk exclusion suggestions</button>
+                <button className="btn small" type="button" aria-expanded={reviewHighRiskExclusions} disabled={!highRiskExclusionCandidates.length} onClick={()=>setReviewHighRiskExclusions(open=>!open)}><Sparkles size={14}/> Review high-risk exclusion suggestions</button>
+                {reviewHighRiskExclusions&&<div className="mini-info po-ml-exclusion-review" role="group" aria-label="Review proposed high-risk exclusions" style={{display:'block',minWidth:0,overflowWrap:'anywhere'}}>
+                  <strong>Review exclusions before applying</strong>
+                  <p className="muted-caption">Will additionally exclude ({pendingHighRiskExclusions.length}): {pendingHighRiskExclusions.length?pendingHighRiskExclusions.join(', '):'None. All suggested fields are already excluded.'}</p>
+                  <p className="muted-caption">Already excluded, kept unchanged ({excluded.length}): {excluded.length?excluded.join(', '):'None'}</p>
+                  <p className="muted-caption">Included predictors: {includedNow} before, {includedAfterReview} after. These are structural counts, not validated importance.</p>
+                  <p className="muted-caption">Nothing changes until you explicitly apply. You can cancel or edit checkboxes manually.</p>
+                  <button className="btn small" type="button" disabled={!pendingHighRiskExclusions.length} onClick={applyHighRiskExclusionSuggestions}>Apply reviewed exclusions</button>
+                  <button className="btn small" type="button" onClick={()=>setReviewHighRiskExclusions(false)}>Cancel exclusion review</button>
+                </div>}
                 <p className="muted-caption">Only structural screening, not validated importance: verify timing and compare features with training-only cross-validation.</p>
                 {featureHints.filter(f=>f.risk!=='low').map(f=><div className="warning-line" key={f.column}><AlertCircle size={14}/><b>{f.column}</b>: {f.reasons.join('; ')}</div>)}
                 <div className="feature-grid">{prep.available_features.map(c=>{const hint=prepRisk.find(x=>x.column===c);const isOut=excluded.includes(c);return <label className={cls('feature-chip',isOut&&'excluded')} key={c}><input type="checkbox" checked={isOut} onChange={(e:any)=>setExcluded(a=>e.target.checked?[...a,c]:a.filter(x=>x!==c))}/><span>{c}</span>{hint&&<span title={hint.reason}><AlertCircle size={15}/></span>}</label>})}</div>

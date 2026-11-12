@@ -13,16 +13,18 @@ const compiled=ts.transpileModule(source+'\nexports.methods={toggleModelChoice,a
 assert.equal((compiled.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0);
 function harness({models=['logistic_regression'],excluded=[],embedded=false,
  highRisk=['risk_id'],hints=[{column:'amount',risk:'high'}],
- available=['risk_id','amount'],prepPresent=true}={}){
+ available=['risk_id','amount'],prepPresent=true,reviewOpen=true}={}){
  const events=[];
  let selected=[...models],out=[...excluded];
  const exports={};
  const fn=new Function('models','excluded','embedded','prep','featureHints',
-   'onPrimaryDraftEdited','setModels','setExcluded','exports',
+   'onPrimaryDraftEdited','setModels','setExcluded','reviewHighRiskExclusions',
+   'setReviewHighRiskExclusions','exports',
    compiled.outputText+'\nreturn exports.methods;')(
      selected,out,embedded,prepPresent?{high_risk_features:highRisk,available_features:available}:null,
      hints,view=>events.push(view),next=>{selected=next},
-     next=>{out=typeof next==='function'?next(out):next},exports);
+     next=>{out=typeof next==='function'?next(out):next},reviewOpen,
+     ()=>{},exports);
  return {...fn,events,getModels:()=>selected,getExcluded:()=>out,
    simulateQueuedCheckboxSelection:column=>{out=[...out,column]}};
 }
@@ -50,6 +52,13 @@ test('Prepare suggestions report only a newly excluded feature, not a no-op',()=
  const notReady=harness({prepPresent:false});notReady.applyHighRiskExclusionSuggestions();
  assert.deepEqual(notReady.events,[]);
 });
+test('reviewed exclusions cannot be applied without explicit preview approval',()=>{
+ const h=harness({reviewOpen:false});
+ h.applyHighRiskExclusionSuggestions();
+ assert.deepEqual(h.getExcluded(),[]);
+ assert.deepEqual(h.events,[]);
+});
+
 test('suggestions preserve a newer checkbox choice absent from the handler closure',()=>{
  const h=harness({excluded:['prior_manual']});
  h.simulateQueuedCheckboxSelection('later_manual');
@@ -66,7 +75,10 @@ test('docked button edits never masquerade as primary Studio edits',()=>{
 });
 test('real buttons are wired through the guarded handlers and never persist draft fields',()=>{
  assert.match(app,/className=\{cls\('model-choice',models\.includes\(key\)&&'chosen'\)\} onClick=\{\(\)=>toggleModelChoice\(key\)\}/);
- assert.match(app,/Apply high-risk exclusion suggestions<\/button>/);
+ assert.match(app,/Review high-risk exclusion suggestions<\/button>/);
+ assert.match(app,/onClick=\{\(\)=>setReviewHighRiskExclusions\(open=>!open\)\}/);
+ assert.match(app,/Apply reviewed exclusions<\/button>/);
+ assert.match(app,/Cancel exclusion review<\/button>/);
  assert.match(app,/onClick=\{applyHighRiskExclusionSuggestions\}/);
  assert.match(source,/if\(!embedded\)onPrimaryDraftEdited\?\.\('model'\)/);
  assert.match(source,/if\(!embedded\)onPrimaryDraftEdited\?\.\('prepare'\)/);

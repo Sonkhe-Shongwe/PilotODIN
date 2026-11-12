@@ -676,3 +676,56 @@ test('P4 N10 real HTTP: no-named-target manual review remains vertically readabl
   expect(project.status()).toBe(200);
   expect((await project.json()).experiments).toEqual([]);
  });
+ 
+test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additive apply',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+    throw Error('Only trusted disposable GitHub browser tests may execute');
+  const fixture=[
+    'TransactionID,churn,event_type,amount',
+    ...Array.from({length:80},(_,i)=>[
+      'SYNTH-'+String(i).padStart(3,'0'),i%2?'Y':'N',
+      i%3?'service':'retail',100+i,
+    ].join(',')),
+  ].join('\\n')+'\\n';
+  const uploaded=await request.post(API+'/api/projects',{multipart:{
+    file:{name:'p4_62_exclusion_review.csv',mimeType:'text/csv',buffer:Buffer.from(fixture)}
+  }});
+  expect(uploaded.status(),await uploaded.text()).toBe(201);
+  const projectId=(await uploaded.json()).id as string;
+  const blocked=await readOnlyBrowserGuard(context,projectId);
+  await page.addInitScript((id:string)=>{
+    localStorage.setItem('pilotodin-current',id);
+    localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
+    localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
+  },projectId);
+  await page.goto('/#/studio/prepare');
+  await page.getByLabel('TARGET VARIABLE').selectOption('churn');
+  const risk=page.locator('.feature-chip').filter({hasText:'TransactionID'}).getByRole('checkbox');
+  const manual=page.locator('.feature-chip').filter({hasText:'event_type'}).getByRole('checkbox');
+  await expect(risk).toBeVisible();
+  await expect(risk).not.toBeChecked();
+  await manual.check();
+  const reviewButton=page.getByRole('button',{name:'Review high-risk exclusion suggestions'});
+  await reviewButton.click();
+  const preview=page.getByRole('group',{name:'Review proposed high-risk exclusions'});
+  await expect(preview).toContainText('Will additionally exclude (1): TransactionID');
+  await expect(preview).toContainText('Already excluded, kept unchanged (1): event_type');
+  await expect(preview).toContainText('Included predictors: 2 before, 1 after');
+  await expect(risk).not.toBeChecked();
+  await preview.getByRole('button',{name:'Cancel exclusion review'}).click();
+  await expect(preview).toHaveCount(0);
+  await expect(manual).toBeChecked();
+  await expect(risk).not.toBeChecked();
+  await reviewButton.click();
+  await preview.getByRole('button',{name:'Apply reviewed exclusions'}).click();
+  await expect(preview).toHaveCount(0);
+  await expect(risk).toBeChecked();
+  await expect(manual).toBeChecked();
+  expect(blocked).toEqual([]);
+  const p=await request.get(API+'/api/projects/'+projectId);
+  expect(p.status()).toBe(200);
+  expect((await p.json()).experiments).toEqual([]);
+ });
+
