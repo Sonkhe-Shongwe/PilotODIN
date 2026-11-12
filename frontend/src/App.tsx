@@ -512,7 +512,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const selectedResourcePlan=prep?.resource_plan;
   // Current included fields, never the stale all-candidate plan. The backend
   // independently rechecks the final labelled-only data before any fit.
-  const selectedBudget=prep?selectedFeatureBudget(prep.feature_audit,prep.resource_plan,excluded,splitStrategy,splitColumn):null;
+  const selectedBudget=prep?.resource_plan?selectedFeatureBudget(prep.feature_audit,prep.resource_plan,excluded,splitStrategy,splitColumn):null;
   const modelRowLimit=selectedResourcePlan?Math.min(selectedResourcePlan.row_limit,...models.map(key=>selectedResourcePlan.model_family_row_limits[key]??selectedResourcePlan.row_limit)):null;
   const rowBudgetExceeded=!!selectedResourcePlan&&modelRowLimit!==null&&selectedResourcePlan.labelled_rows>modelRowLimit;
   const modelBudgetExceeded=rowBudgetExceeded||!!selectedBudget?.denseLimitExceeded;
