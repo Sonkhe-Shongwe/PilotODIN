@@ -1,0 +1,5 @@
+P4-71 | OWNER APPROVED 2026-11-12 | one disposable Windows-native development compilation only.
+Base source SHA: fc20659e5fced50f046fee56a3b35334caa96fa3
+Identifier: com.pilotodin.p4isolatednativedev
+No installer, packaging, original app/data, Qwen model, cloud provider, model training or release.
+This marker is single-use, bound to its one exact triggering commit and condition.
