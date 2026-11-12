@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current project status
 
+## 12 November 2026 | P4-54 independent real-data fixed-origin calendar baseline: NO-FIT audit
+
+- **Meaningful negative historical result:** public user-uploaded daily UCI Bike Sharing data (731 rows) under the predeclared P4-52 first-584 vs last-147 chronological periods. A reference rule using development-only **month × workingday mean** has 147-day holdout **MAE 2,353.14**, **worse** than the development-only constant median **2,259.16** (by 93.98/day, ~4.16%). Month-only 2,387.14, month×weekday 2,375.19, weekday-only 2,287.17; these diagnostics do **not** justify holdout-based model selection. Computed independently in JS on the checked-in fixture and Python/pandas on the uploaded CSV, no ML fit/experiment API.
+- **Critical comparability finding:** 24 development month×workingday categories, minimum group count 9, final holdout unknown groups **0**; but expanding CV folds had respectively **141/146, 61/146, 0/146** dates with unseen month×workingday groups, forcing fallback means. Mean daily rentals rose from **4,153.60** development to **5,897.80** holdout; Sep-Dec 2011 **3,609.99** vs 2012 **5,686.81**. These are period differences, not proven causes or model predictions.
+- **Decision boundary:** current rolling previous-day/7-day/week-ago references are conditional on report latency, and **not equivalent** to a 147-day fixed-origin forecast. P4-54 documents frozen horizon, timestamp/as-of availability, cold-category/2013 unknown-year risk, holdout reuse concern and business-owner dependency before any separately approved research fit. See [P4-54 report](./P4_54_PUBLIC_BIKE_FIXED_ORIGIN_CALENDAR_BASELINE_2026-11-12.md). **No new source-code change, CI, native build, model fitting or owner original-data access.**
+- **Gate status unchanged:** Real business Gate C **UNVERIFIED**, historical original whole app-data-tree R06 **STRICT FAIL** (320 backup vs 346 files, 74 browser/cache candidates and unknown past writer), **P4 ACTIVE / R01–R06 OPEN, P5 NOT AUTHORISED, P8 NOT CERTIFIED**.
+
 ## 12 November 2026 | P4-53 nominal calendar-type research fixture: EXACT-SOURCE CI PASS
 
 - **Substantive data-semantics finding:** UCI identifies six pre-day fields (`season,yr,mnth,holiday,weekday,workingday`) as category/binary codes, but generic `backend/engine.py::inferred_kind` treats numeric CSV values as **continuous numeric features** in Prepare and model preprocessing. For linear regressors this can imply arbitrary ordinal distances. The production engine was NOT modified.
