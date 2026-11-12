@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current project status
 
+## 12 November 2026 | P4-74 real-HTTP Prepare audit + Quality-version consistency regression
+
+- **Targeted verified test gap:** Existing P4-62 real-HTTP Chromium checked manual high-risk exclusion preservation but not that the per-column Prepare audit, included predictor count and version-pinned `/preparation` / `/features` agreed during that same synthetic project journey. P4-74 extends the existing CI-only synthetic test to assert exact field treatments, excluded-row changes, high-risk warning, 3→1 included predictors and stale-version 409 from both read endpoints, with **zero** experiment records. [P4-74 focused record](./P4_74_REAL_HTTP_PREPARE_FIELD_AUDIT_AND_VERSION_CONTRACT_2026-11-12.md).
+- **No app runtime changes:** source-only QA test/doc change, no trainer/engine modification, native compilation, installer, original data, sidecar/Qwen, CI dispatch or Gate C signoff. P4-71 native authority remains consumed. Full BE-024 configurable strategies still OPEN, R01–R06 OPEN, Gate C UNVERIFIED, historical full original-data STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED.
+
 ## 12 November 2026 | P4-73 testable CDP page discovery and required native bridge signal
 
 - **Confirmed QA gap:** P4-72's static URL matcher tests did not exercise polling; P4-71/72 probe could accept any same-origin page without verifying the injected Tauri native bridge. P4-73 adds a tested injected-snapshot bounded polling helper and requires read-only `window.__TAURI_INTERNALS__.invoke` presence **before synthetic project creation**, with redacted classifications and fail-closed missing/ambiguous cases. [Focused P4-73 record](./P4_73_NATIVE_CDP_DISCOVERY_AND_TAURI_BRIDGE_GUARD_2026-11-12.md).

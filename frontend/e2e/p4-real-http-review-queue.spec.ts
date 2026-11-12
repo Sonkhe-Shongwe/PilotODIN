@@ -706,7 +706,37 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   const manual=page.locator('.feature-chip').filter({hasText:'event_type'}).getByRole('checkbox');
   await expect(risk).toBeVisible();
   await expect(risk).not.toBeChecked();
+  // P4-74: the version-pinned backend plan must agree with the visible audit
+  // before and after user choices. No model fit or writable project endpoints.
+  const plan=await request.get(`${API}/api/projects/${projectId}/preparation?target=churn&expected_version=0`);
+  expect(plan.status(),await plan.text()).toBe(200);
+  const planJson=await plan.json();
+  expect(planJson.quality_version).toBe(0);
+  expect(planJson.target).toBe('churn');
+  expect(planJson.feature_audit.find((entry:{column:string})=>entry.column==='TransactionID')?.risk).toBe('high');
+  const advice=await request.get(`${API}/api/projects/${projectId}/features?target=churn&expected_version=0`);
+  expect(advice.status(),await advice.text()).toBe(200);
+  const adviceJson=await advice.json();
+  expect(adviceJson.version).toBe(0);
+  expect(adviceJson.features.find((entry:{column:string})=>entry.column==='TransactionID')?.risk).toBe('high');
+  for(const path of ['preparation','features']){
+   const stale=await request.get(`${API}/api/projects/${projectId}/${path}?target=churn&expected_version=1`);
+   expect(stale.status(),await stale.text()).toBe(409);
+  }
+  const audit=page.locator('.po-ml-feature-audit tbody');
+  const transactionRow=audit.locator('tr').filter({hasText:'TransactionID'});
+  const eventRow=audit.locator('tr').filter({hasText:'event_type'});
+  const amountRow=audit.locator('tr').filter({hasText:'amount'});
+  await expect(page.getByRole('heading',{name:'Feature-by-feature preparation audit'})).toBeVisible();
+  await expect(transactionRow).toContainText('Included predictor');
+  await expect(transactionRow).toContainText('High — review required');
+  await expect(transactionRow).toContainText('Categorical: mode imputation');
+  await expect(eventRow).toContainText('Included predictor');
+  await expect(amountRow).toContainText('Numeric: median imputation');
   await manual.check();
+  await expect(eventRow).toContainText('Excluded by user');
+  await expect(eventRow).toContainText('No training transform');
+  await expect(transactionRow).toContainText('Included predictor');
   const reviewButton=page.getByRole('button',{name:'Review high-risk exclusion suggestions'});
   await reviewButton.click();
   const preview=page.getByRole('group',{name:'Review proposed high-risk exclusions'});
@@ -723,6 +753,15 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(preview).toHaveCount(0);
   await expect(risk).toBeChecked();
   await expect(manual).toBeChecked();
+  await expect(transactionRow).toContainText('Excluded by user');
+  await expect(transactionRow).toContainText('No training transform');
+  await expect(eventRow).toContainText('Excluded by user');
+  await expect(amountRow).toContainText('Included predictor');
+  await expect(amountRow).toContainText('Numeric: median imputation');
+  const included=page.locator('.mini-info').filter({hasText:'candidate predictors'});
+  await expect(included).toContainText('3 candidate predictors');
+  await expect(included).toContainText('1 currently included');
+  await expect(included).toContainText('0 included high-risk predictors');
   expect(blocked).toEqual([]);
   const p=await request.get(API+'/api/projects/'+projectId);
   expect(p.status()).toBe(200);
