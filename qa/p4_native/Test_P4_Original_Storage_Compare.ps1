@@ -81,12 +81,11 @@ try {
   throw 'Restoring disposable empty directories did not restore a full match'
  }
 
- Set-Content -LiteralPath (Join-Path $current 'WebView2\IndexedDB\000001.log') -Value 'NEW-BROWSER-CACHE' -NoNewline
  # P4-43: deterministic single-pass false PASS regression. The synthetic
  # current/backup file changes AFTER the first tree scan when ShaFile reads
  # the original EXE. Old comparator would return FULL_FINGERPRINT_MATCH.
  # New final sequential scans must refuse to make an integrity claim.
- function global:Get-FileHash {
+ Set-Item -Path Function:\global:Get-FileHash -Value {
   [CmdletBinding()]
   param([Parameter(Mandatory=$true)][string]$LiteralPath,
         [string]$Algorithm = 'SHA256')
@@ -96,7 +95,7 @@ try {
    Set-Content -LiteralPath $global:P4SyntheticRaceVictim -Value 'POST-SCAN-SYNTHETIC-TAMPER' -NoNewline -ErrorAction Stop
   }
   return $result
- }
+ } -ErrorAction Stop
  try {
   foreach ($kind in @('current','backup')) {
    $victim=if ($kind -eq 'current') {
@@ -128,6 +127,7 @@ try {
   throw 'Restored synthetic tree did not produce a correctly limited stable verdict'
  }
 
+ Set-Content -LiteralPath (Join-Path $current 'WebView2\IndexedDB\000001.log') -Value 'NEW-BROWSER-CACHE' -NoNewline
  Set-Content -LiteralPath (Join-Path $current 'WebView2\Cache\index') -Value 'FAKE' -NoNewline
  $browser=& $compare @params
  if ($browser.status -ne 'REVIEW_REQUIRED_FULL_PRESERVATION_NOT_PASSED' -or
