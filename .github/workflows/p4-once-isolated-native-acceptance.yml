@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   p4-preflight:
-    if: ${{ github.event.head_commit.message == 'ci(p4): one owner-authorised isolated unpackaged native acceptance' && github.run_attempt == 1 }}
+    if: "${{ github.event.head_commit.message == 'ci(p4): one owner-authorised isolated unpackaged native acceptance' && github.run_attempt == 1 }}"
     name: Source and disposable Windows storage preflight, NO COMPILATION
     runs-on: windows-2022
     timeout-minutes: 15
