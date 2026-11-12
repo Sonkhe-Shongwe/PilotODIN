@@ -1,4 +1,4 @@
-import { isExpectedDevPage, safeTargetClass } from './p4-72-cdp-target-classifier.mjs';
+import { discoverUniqueDevPage, hasTauriNativeBridge } from './p4-73-cdp-target-discovery.mjs';
 // P4-71 disposable CI only: attach to ACTUAL Tauri native WebView2, no original user data.
 import { chromium, expect } from '@playwright/test';
 const required = {CI:'true',GITHUB_ACTIONS:'true',RUNNER_OS:'Windows',RUNNER_ENVIRONMENT:'github-hosted',VITE_PILOTODIN_NATIVE_SMOKE:'1'};
@@ -50,25 +50,22 @@ try {
  process.exit(0);
 }
 try{
- let page=null;
- let observed=[];
- // A CDP endpoint becoming ready does not guarantee the WebView target has
- // already navigated. Retry discovery only; no navigation or app mutation.
- for(let i=0;i<20;i++){
-  const candidates=browser.contexts().flatMap(c=>c.pages());
-  const matching=candidates.filter(candidate=>isExpectedDevPage(candidate.url()));
-  if(matching.length===1){page=matching[0];break;}
-  if(matching.length>1){
-   console.log('NATIVE INTERACTIONS BLOCKED: ambiguous multiple developer UI targets.');
-   process.exit(0);
-  }
-  observed=candidates.map(candidate=>safeTargetClass(candidate.url()));
-  if(i<19)await new Promise(resolve=>setTimeout(resolve,1500));
+ const discovered=await discoverUniqueDevPage(
+  ()=>browser.contexts().flatMap(context=>context.pages()),
+  ()=>new Promise(resolve=>setTimeout(resolve,1500)),
+  20
+ );
+ if(discovered.status!=='FOUND'){
+  // Diagnostic classes are deliberately fixed categories, never raw URLs.
+  console.log('NATIVE INTERACTIONS BLOCKED: '+discovered.status);
+  if(discovered.classes)console.log('CDP target classes: '+JSON.stringify(discovered.classes)+'; count='+discovered.count);
+  process.exit(0);
  }
- if(!page){
-  // Never log complete URLs, access tokens, query strings or private paths.
-  console.log('NATIVE INTERACTIONS BLOCKED: expected developer UI target unavailable after bounded retries.');
-  console.log('CDP target classifications: '+JSON.stringify([...new Set(observed)].sort())+'; count='+observed.length);
+ const page=discovered.page;
+ // Even an exact loopback URL can belong to a non-Tauri browsing context.
+ // Require the actual injected native bridge BEFORE creating QA projects.
+ if(!(await hasTauriNativeBridge(page))){
+  console.log('NATIVE INTERACTIONS BLOCKED: no callable Tauri native IPC bridge on the selected target. No QA projects created.');
   process.exit(0);
  }
  const context=page.context();

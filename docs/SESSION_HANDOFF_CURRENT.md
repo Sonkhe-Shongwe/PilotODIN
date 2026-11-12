@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-73 testable CDP page discovery and required native bridge signal
+
+- **Confirmed QA gap:** P4-72's static URL matcher tests did not exercise polling; P4-71/72 probe could accept any same-origin page without verifying the injected Tauri native bridge. P4-73 adds a tested injected-snapshot bounded polling helper and requires read-only `window.__TAURI_INTERNALS__.invoke` presence **before synthetic project creation**, with redacted classifications and fail-closed missing/ambiguous cases. [Focused P4-73 record](./P4_73_NATIVE_CDP_DISCOVERY_AND_TAURI_BRIDGE_GUARD_2026-11-12.md).
+- **Verification:** **6/6 local Node pure tests PASS**, no actual Windows/native test or CI dispatch. P4-71 one-use authority consumed; its compiled WebView interactions remain NOT TESTED. No installer, app runtime modification, owner original data, training or model work.
+- **No gate promotion:** P4 ACTIVE, R01–R06 OPEN, real business Gate C UNVERIFIED, historical whole original app-local-data STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED.
+
 ## 12 November 2026 | P4-72 native WebView CDP discovery limitation addressed in QA source only
 
 - **Verified P4-71 log:** Windows native process, distinct profile and 5 WebView2 processes PASS; CDP endpoint was READY, but one-shot Playwright discovery found no `http://127.0.0.1:5173` page. The log **does not identify** which target URLs were present, so underlying cause is UNKNOWN, not proven an application error. [P4-72 analysis](./P4_72_NATIVE_WEBVIEW_CDP_TARGET_DISCOVERY_SOURCE_REVIEW_2026-11-12.md).
