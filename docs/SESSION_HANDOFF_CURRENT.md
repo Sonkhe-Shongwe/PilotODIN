@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 12 November 2026 | P4-50 read-only evidence intake and no-build acceptance plan
+
+- **Owner chose evidence-first safety over another native build.** Read-only review of [owner P4-24 original-data evidence](./P4_24_STORAGE_DRIFT_ISOLATION_SOURCE_VERIFICATION_2026-11-11.md), [P4-25 owner process snapshot](./P4_25_WEBVIEW_PROFILE_PROCESS_OBSERVATION_2026-11-11.md), [P4-46 feasibility](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), latest [P4-49 source CI](./P4_49_MIXED_CASE_IDENTIFIER_SCREEN_2026-11-12.md) and Issues #2/#9 found **no supplied contemporaneous file/process write-attribution audit and no independent real-business Gate C**. Does not establish that owner Windows historic logs do not exist.
+- **Preservation verdict UNCHANGED:** trusted independent backup and original EXE SHA matched, original critical `data/` file diff 0, entire original app-local-data 320 vs 346 files with 74 WebView/cache *candidates* **STRICT FAIL**, historical writer **UNKNOWN**. No cache waiver, cleanup, baseline update, new physical comparison or attribution made.
+- **Next acceptance plan:** [P4-50 focused evidence-intake + single native milestone](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md) gives source-linked requirements for historical process evidence (if pre-existing), real Gate C owner/label/timing/baseline/cost/fairness intake, and one future source-matched native N1–N12 + Prepare/UX + physical offline 8GB Qwen + prospective original non-interference sequence. **Plan only, not executed.**
+- **No code, CI, native executable, installer, training, owner-file access or owner risk decision**. Previous one-use unpackaged native permission remains consumed. **P4-R01–R06 OPEN; P4 ACTIVE; P5 NOT AUTHORISED; P8 NOT CERTIFIED.** Next dependency is newly available owner-supplied independent evidence or a distinct, explicit native-test permission, not another speculative patch.
+
 ## 12 November 2026 | P4-49 mixed-case identifier screening guard: EXACT-SOURCE CI PASS
 
 - **Verified source gap:** P4-48 rejected identifier-only `account_id` predictors but `_is_identifier` lost mixed-case suffix boundaries under `casefold()`, so `accountId`, `CustomerID`, `claimUUID` and `paymentGuid` were not excluded. Such sole varying identifier predictors could falsely support `technical_status=reviewable` for an otherwise well-labelled supervised outcome. This is a source/synthetic finding, NOT an observed owner-data incident.
