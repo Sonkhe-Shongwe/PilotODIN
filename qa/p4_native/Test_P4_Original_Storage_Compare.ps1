@@ -117,7 +117,14 @@ try {
    Set-Content -LiteralPath $victim -Value 'SYNTHETIC-CSV' -NoNewline -ErrorAction Stop
   }
  } finally {
+  # The dynamically installed global function can outlive the test block.
+  # Disarm it before cleanup and make sure the real cmdlet is restored.
+  $global:P4SyntheticRaceArm=$false
+  Remove-Item -Path Function:\Get-FileHash -ErrorAction SilentlyContinue
   Remove-Item -Path Function:\global:Get-FileHash -ErrorAction SilentlyContinue
+  if ((Get-Command -Name Get-FileHash -ErrorAction Stop).CommandType -ne 'Cmdlet') {
+   throw 'Synthetic Get-FileHash shim leaked beyond the disposable race test'
+  }
   Remove-Variable -Name P4SyntheticRaceArm,P4SyntheticRaceExe,P4SyntheticRaceVictim -Scope Global -ErrorAction SilentlyContinue
  }
  $stableAgain=& $compare @params
