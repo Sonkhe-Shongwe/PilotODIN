@@ -32,6 +32,11 @@ on:
       - tests/test_p4_installer_provenance.py
       - qa/p4_native/**
       - frontend/tests/p4-target-opportunities-contracts.test.cjs
+      - frontend/package.json
+      - frontend/scripts/p4-isolated-native-dev.mjs
+      - frontend/scripts/deny-intermediate-installer.mjs
+      - frontend/src-tauri/tauri.p4-isolated-native-dev.conf.json
+      - frontend/tests/p4-native-dev-isolation.test.cjs
       - frontend/e2e/p4-real-http-review-queue.spec.ts
       - frontend/playwright.p4-real-http.config.ts
   workflow_dispatch:
@@ -99,6 +104,7 @@ jobs:
           frontend/tests/p4-review-queue-contracts.test.cjs
           frontend/tests/ml-a3-feature-preparation.test.cjs
           frontend/tests/p1-primary-button-edit-markers.test.cjs
+          frontend/tests/p4-native-dev-isolation.test.cjs
       - name: Build actual TypeScript and Vite bundle
         run: npm run build --prefix frontend
 
