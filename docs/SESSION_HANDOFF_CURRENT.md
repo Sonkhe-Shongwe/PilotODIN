@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | P4 closure readiness review
+
+- [Closure review](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-p4-closure-readiness-review) reconciles the passing hosted R04 retest and R05 control evidence with the P4 exit criteria. R05 has a concrete remaining BE-024 gap: the per-field Prepare audit omits the specified category samples. Synthetic saved-strategy display has passed; real fitted-experiment persistence with the new settings remains unverified.
+- **P4 stays active.** N12 remains partial, physical R03 remains not tested, and R06 retains the historical strict fail and unknown writer. Owner closure signoff remains pending. The next in-repo task is the remaining BE-024 audit coverage. The physical track needs a qualifying 8 GB Windows machine and available approved Qwen runtime/model before an offline session can be scoped.
+- Review basis [`9620beac3c2b1aea59bd3e55266623827b05d4ae`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9620beac3c2b1aea59bd3e55266623827b05d4ae). Latest scoped [hosted R04 retest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) and [regular P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707627) passed at `f9ef20b76dc42f29c0f7a866c1d1c0538c0113b1`. Gate C applies before real-world prediction use. P5 is unauthorised and P8 is uncertified.
+
 ## 13 November 2026 | Synchronized Windows docking retest
 
 - [Hosted Windows #43427707718](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) passed both jobs. One unpackaged build at `f9ef20b76dc42f29c0f7a866c1d1c0538c0113b1` verified drag-to-dock, explicit Dock beside, close and narrow-width pause/restore in the isolated WebView2 app. The final drag-over was accepted with Prepare active, one drop fired, and the drag ended with effect `move`. The synchronized retest passes the remaining hosted R04 cases. The earlier failed runs remain in the record.
