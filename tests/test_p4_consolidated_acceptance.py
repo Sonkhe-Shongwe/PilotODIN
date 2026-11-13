@@ -384,6 +384,37 @@ def test_prepare_category_examples_are_bounded_and_hide_high_risk_values():
     pd.testing.assert_frame_equal(frame, original)
 
 
+def test_missing_marker_expansion_counts_toward_training_admission(monkeypatch):
+    from fastapi import BackgroundTasks, HTTPException
+
+    engine = main.engine
+    rows = 40
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 20,
+        "event_type": ["retail", "service", None, "service"] * 10,
+        "capped": [None] + [f"segment-{i}" for i in range(rows - 1)],
+        "amount": range(rows),
+    })
+    predictors = frame.drop(columns="churn")
+    assert engine.training_resource_plan(predictors, rows)["estimated_encoded_columns"] == 28
+    assert engine.training_resource_plan(predictors, rows, categorical_imputation="constant")["estimated_encoded_columns"] == 29
+
+    monkeypatch.setattr(engine, "MAX_DENSE_TRAIN_BYTES", rows * 28 * 8)
+    monkeypatch.setattr(main, "project_or_404", lambda _: {"id": "synthetic"})
+    monkeypatch.setattr(main.quality, "current_data", lambda _: (frame, 0))
+    body = main.ExperimentRequest(target="churn", task="classification", models=["logistic_regression"],
+                                  categorical_imputation="constant", acknowledge_random_split=True)
+    tasks = BackgroundTasks()
+    with pytest.raises(HTTPException, match="Local training resource guardrail exceeded") as rejected:
+        main.new_experiment("synthetic", body, tasks)
+    assert rejected.value.status_code == 422
+    assert not tasks.tasks
+
+    with pytest.raises(ValueError, match="Local training resource guardrail exceeded"):
+        engine.run_training(frame, "churn", [], ["logistic_regression"], "classification",
+                            categorical_imputation="constant")
+
+
 def test_p4_76_numeric_imputation_allowlist_and_unfitted_pipeline():
     """Inspect actual pipeline configuration; fitting is deliberately prohibited."""
     from pydantic import ValidationError

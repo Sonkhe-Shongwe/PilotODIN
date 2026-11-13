@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-import type {BrowserContext,Route} from '@playwright/test';
+import type {BrowserContext,Locator,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -700,7 +700,7 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
     'TransactionID,churn,event_type,amount',
     ...Array.from({length:80},(_,i)=>[
       'SYNTH-'+String(i).padStart(3,'0'),i%2?'Y':'N',
-      i%3?'service':'retail',100+i,
+      i===1?'':i%3?'service':'retail',100+i,
     ].join(',')),
   ].join('\n')+'\n';
   const uploaded=await request.post(API+'/api/projects',{multipart:{
@@ -752,14 +752,22 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(transactionRow).not.toContainText('SYNTH-000');
   await expect(eventRow).toContainText('Observed examples (2 of 2) "retail", "service"');
   await expect(amountRow).not.toContainText('Observed examples');
+  const width = (row: Locator) => row.locator('.po-ml-encoded-width');
+  await expect(width(transactionRow)).toHaveText('Estimated encoded columns: 25');
+  await expect(width(eventRow)).toHaveText('Estimated encoded columns: 2');
+  await expect(width(amountRow)).toHaveText('Estimated encoded columns: 1');
    const categoricalStrategy=page.getByLabel('Categorical imputation method');
    await expect(categoricalStrategy).toHaveValue('most_frequent');
    await categoricalStrategy.selectOption('constant');
    await expect(transactionRow).toContainText('Categorical: missing-marker imputation');
+   await expect(width(eventRow)).toHaveText('Estimated encoded columns: 3');
+   await expect(resource).toContainText('29 estimated encoded columns');
    await expect(page.locator('.panel.insight').filter({hasText:'Automatic preprocessing plan'}))
      .toContainText('Categorical: training-fold missing-marker imputation');
    await categoricalStrategy.selectOption('most_frequent');
    await expect(transactionRow).toContainText('Categorical: mode imputation');
+   await expect(width(eventRow)).toHaveText('Estimated encoded columns: 2');
+   await expect(resource).toContainText('28 estimated encoded columns');
   await expect(eventRow).toContainText('Included predictor');
   await expect(amountRow).toContainText('Numeric: median imputation');
   const numericStrategy=page.getByLabel('Numeric imputation method');
@@ -774,6 +782,7 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(resource).toContainText('26 estimated encoded columns');
   await expect(eventRow).toContainText('Excluded by user');
   await expect(eventRow).toContainText('No training transform');
+  await expect(width(eventRow)).toHaveText('Estimated encoded columns: 0');
   await expect(transactionRow).toContainText('Included predictor');
   const reviewButton=page.getByRole('button',{name:'Review high-risk exclusion suggestions'});
   await reviewButton.click();
@@ -794,6 +803,7 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(resource).toContainText('1 estimated encoded columns');
   await expect(transactionRow).toContainText('Excluded by user');
   await expect(transactionRow).toContainText('No training transform');
+  await expect(width(transactionRow)).toHaveText('Estimated encoded columns: 0');
   await expect(eventRow).toContainText('Excluded by user');
   await expect(amountRow).toContainText('Included predictor');
   await expect(amountRow).toContainText('Numeric: median imputation');

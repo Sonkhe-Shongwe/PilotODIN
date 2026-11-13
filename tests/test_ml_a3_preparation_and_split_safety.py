@@ -103,13 +103,13 @@ def test_group_and_time_keys_are_excluded_before_api_and_worker_resource_checks(
     real_plan = engine.training_resource_plan
     planned_predictors = []
 
-    def audited_plan(X, rows, models=None):
+    def audited_plan(X, rows, models=None, *, categorical_imputation="most_frequent"):
         if models is not None:
             # preparation() intentionally displays a broad BEFORE-exclusions
             # estimate. Training and API cost checks must use fitted columns.
             assert split_column not in X.columns
             planned_predictors.append(list(X.columns))
-        return real_plan(X, rows, models)
+        return real_plan(X, rows, models, categorical_imputation=categorical_imputation)
 
     monkeypatch.setattr(engine, "training_resource_plan", audited_plan)
     monkeypatch.setattr(main, "project_or_404", lambda _: {"id": "demo"})

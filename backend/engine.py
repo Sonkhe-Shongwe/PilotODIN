@@ -240,6 +240,7 @@ def make_estimator(task: str, key: str):
 NUMERIC_IMPUTATION_STRATEGIES = ("median", "mean")
 CATEGORICAL_IMPUTATION_STRATEGIES = ("most_frequent", "constant")
 CATEGORICAL_MISSING_MARKER = "__PILOTODIN_MISSING__"
+MAX_ONE_HOT_CATEGORIES = 25
 
 
 def validate_numeric_imputation(strategy: str) -> str:
@@ -284,12 +285,14 @@ def make_pipeline(X: pd.DataFrame, task: str, model: str,
     cat_pipe = Pipeline([("imputer", SimpleImputer(strategy=categorical_imputation,
                                                       fill_value=CATEGORICAL_MISSING_MARKER if categorical_imputation == "constant" else None,
                                                       keep_empty_features=True)),
-                         ("encoder", OneHotEncoder(handle_unknown="infrequent_if_exist", max_categories=25))])
+                         ("encoder", OneHotEncoder(handle_unknown="infrequent_if_exist",
+                                                  max_categories=MAX_ONE_HOT_CATEGORIES))])
     ct = ColumnTransformer([("numeric",num_pipe,numeric),("categorical",cat_pipe,categorical)], sparse_threshold=0)
     return Pipeline([("preprocessor", ct), ("model", make_estimator(task, model))])
 
 
-def validate_config(df: pd.DataFrame, target: str, excluded: list[str], models: list[str], task: str) -> tuple[pd.DataFrame, pd.Series, str]:
+def validate_config(df: pd.DataFrame, target: str, excluded: list[str], models: list[str], task: str,
+                    *, categorical_imputation: str = "most_frequent") -> tuple[pd.DataFrame, pd.Series, str]:
     if target not in df.columns: raise ValueError("Target not found")
     actual_task = infer_task(df[target])
     if task != actual_task: raise ValueError(f"Selected target requires {actual_task}; requested {task}.")
@@ -308,7 +311,7 @@ def validate_config(df: pd.DataFrame, target: str, excluded: list[str], models: 
     if len(y) < 30: raise ValueError("At least 30 labelled rows are required for the local MVP")
     if task == "classification" and int(y.value_counts().min()) < 6:
         raise ValueError("Classification requires at least 6 cases in every class for stable splitting and cross-validation")
-    budget=training_resource_plan(X,len(y),models)
+    budget=training_resource_plan(X,len(y),models,categorical_imputation=categorical_imputation)
     if not budget["within_local_budget"]:
         raise ValueError(
             "Local training resource guardrail exceeded: "
@@ -334,16 +337,23 @@ MAX_KERNEL_MODEL_ROWS = 5_000  # nonlinear SVC/SVR train-time scales poorly
 MAX_NEIGHBOUR_MODEL_ROWS = 12_000  # preserve practical CPU predict responsiveness
 
 
-def training_resource_plan(X: pd.DataFrame, labelled_rows: int, models: list[str] | None = None) -> dict:
+def training_resource_plan(X: pd.DataFrame, labelled_rows: int, models: list[str] | None = None,
+                           *, categorical_imputation: str = "most_frequent") -> dict:
     """Conservative dense-matrix upper bound before starting expensive CV.
 
-    Capped one-hot encoding uses at most 25 columns per categorical source.
+    Capped one-hot encoding uses at most 25 columns per categorical source,
+    including a dedicated missing category when requested and needed.
     Assume *all* labelled rows could be training data because group splits
     need not retain a strict 80/20 row ratio. This is not a peak RSS bound.
     """
-    numerical=sum(inferred_kind(X[col])=="numeric" for col in X)
-    categories=[col for col in X if inferred_kind(X[col])!="numeric"]
-    encoded_width=numerical + sum(min(25,max(1,int(X[col].nunique(dropna=True)))) for col in categories)
+    encoded_width = 0
+    for _, values in X.items():
+        if inferred_kind(values) == "numeric":
+            encoded_width += 1
+        else:
+            distinct = int(values.nunique(dropna=True))
+            missing_marker = categorical_imputation == "constant" and values.isna().any()
+            encoded_width += min(MAX_ONE_HOT_CATEGORIES, max(1, distinct + int(missing_marker)))
     estimated=int(labelled_rows*encoded_width*8)
     selected=set(models or [])
     if selected.intersection(("svm","svr")):
@@ -513,7 +523,8 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
     # fitted. Group IDs and timestamps are split metadata, never features.
     # Preserve the original user exclusions in the persisted experiment.
     fit_excluded = list(dict.fromkeys([*excluded, *([split_column] if split_strategy != 'random' else [])]))
-    X, y, task = validate_config(df, target, fit_excluded, models, task)
+    X, y, task = validate_config(df, target, fit_excluded, models, task,
+                                 categorical_imputation=categorical_imputation)
     check_categorical_missing_marker(X, categorical_imputation)
     if X.empty or not X.shape[1]:raise ValueError('No predictor fields after split-column exclusion')
     cv_groups=None

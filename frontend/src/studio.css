@@ -353,6 +353,7 @@ body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .po-ml-feature-audit td:first-child strong,.po-ml-feature-audit td:first-child small,.po-ml-feature-audit td:last-child small{display:block;overflow-wrap:anywhere}
 .po-ml-feature-audit small{font-size:11px;color:#65728d;margin-top:3px}
 .po-ml-category-examples{display:block;max-width:24ch;overflow-wrap:anywhere}
+.po-ml-encoded-width{display:block}
 .po-ml-risk-high{color:#955021}
 .po-ml-feature-risk-gate{margin-top:14px;padding:16px;border:1px solid #e7cfaa;border-radius:11px;background:#fffaf0}
 .po-ml-feature-risk-gate>strong{display:flex;align-items:center;gap:7px;color:#804d1b}

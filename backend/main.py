@@ -365,7 +365,9 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
         # The split key remains available in the original frame for group/time CV.
         fit_excluded=list(dict.fromkeys([*body.excluded_features,
             *([body.split_column] if body.split_strategy!='random' else [])]))
-        effective_X, _, _ = engine.validate_config(df,body.target,fit_excluded,body.models,body.task)
+        effective_X, _, _ = engine.validate_config(
+            df,body.target,fit_excluded,body.models,body.task,
+            categorical_imputation=body.categorical_imputation)
         engine.check_categorical_missing_marker(effective_X, body.categorical_imputation)
         preparation_audit=engine.preparation(df,body.target)
         included_risks=sorted(set(preparation_audit["high_risk_features"])-set(body.excluded_features)

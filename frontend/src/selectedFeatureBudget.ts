@@ -8,6 +8,7 @@ export type SelectedFeatureAudit = {
   kind: 'numeric'|'categorical';
   distinct: number;
   default_included: boolean;
+  missing: number;
 };
 export type SelectedBudgetLimits = {
   labelled_rows: number;
@@ -15,6 +16,7 @@ export type SelectedBudgetLimits = {
 };
 export type SelectedFeatureBudget = {
   includedFeatures: number;
+  encodedColumnsByField: ReadonlyMap<string, number | null>;
   estimatedEncodedColumns: number;
   estimatedDenseTrainingMb: number;
   denseLimitExceeded: boolean;
@@ -25,23 +27,35 @@ export function selectedFeatureBudget(
   limits: SelectedBudgetLimits,
   excluded: readonly string[],
   splitStrategy: 'random'|'group'|'time',
-  splitColumn: string
+  splitColumn: string,
+  categoricalImputation: 'most_frequent'|'constant' = 'most_frequent'
 ): SelectedFeatureBudget {
   const exclusions = new Set(excluded);
   const active = fields.filter(field => field.default_included &&
     !exclusions.has(field.column) &&
     (splitStrategy==='random' || field.column!==splitColumn));
-  const valid = Number.isSafeInteger(limits.labelled_rows) && limits.labelled_rows>=0 &&
-    Number.isFinite(limits.estimated_dense_mb_limit) && limits.estimated_dense_mb_limit>0 &&
-    active.every(field => Number.isSafeInteger(field.distinct) && field.distinct>0 &&
-      (field.kind==='numeric'||field.kind==='categorical'));
-  const width = valid ? active.reduce((sum, field) => sum +
-    (field.kind==='numeric' ? 1 : Math.min(25,Math.max(1,field.distinct))),0) : 0;
+  const encodedColumnsByField = new Map<string, number | null>();
+  let width = 0;
+  let valid = Number.isSafeInteger(limits.labelled_rows) && limits.labelled_rows>=0 &&
+    Number.isFinite(limits.estimated_dense_mb_limit) && limits.estimated_dense_mb_limit>0;
+  for (const field of active) {
+    if (!Number.isSafeInteger(field.distinct) || field.distinct<=0 ||
+        (field.kind!=='numeric' && field.kind!=='categorical')) {
+      encodedColumnsByField.set(field.column, null);
+      valid = false;
+      continue;
+    }
+    const missingMarker = categoricalImputation==='constant' && field.missing>0;
+    const columns = field.kind==='numeric' ? 1 : Math.min(25, field.distinct + Number(missingMarker));
+    encodedColumnsByField.set(field.column, columns);
+    width += columns;
+  }
   const bytes = limits.labelled_rows*width*8;
   const safe = valid && Number.isSafeInteger(width) && Number.isSafeInteger(bytes);
   return {
     includedFeatures: active.length,
-    estimatedEncodedColumns: width,
+    encodedColumnsByField,
+    estimatedEncodedColumns: valid ? width : 0,
     estimatedDenseTrainingMb: safe ? Math.round(bytes / (1024*1024)*100)/100 : 0,
     // No predictors is blocked by the existing backend's validate_config too.
     denseLimitExceeded: !safe || width===0 || bytes > limits.estimated_dense_mb_limit*1024*1024,

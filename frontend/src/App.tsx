@@ -535,7 +535,7 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   const selectedResourcePlan=prep?.resource_plan;
   // Current included fields, never the stale all-candidate plan. The backend
   // independently rechecks the final labelled-only data before any fit.
-  const selectedBudget=prep?.resource_plan?selectedFeatureBudget(prep.feature_audit,prep.resource_plan,excluded,splitStrategy,splitColumn):null;
+  const selectedBudget=prep?.resource_plan?selectedFeatureBudget(prep.feature_audit,prep.resource_plan,excluded,splitStrategy,splitColumn,categoricalImputation):null;
   const modelRowLimit=selectedResourcePlan?Math.min(selectedResourcePlan.row_limit,...models.map(key=>selectedResourcePlan.model_family_row_limits[key]??selectedResourcePlan.row_limit)):null;
   const rowBudgetExceeded=!!selectedResourcePlan&&modelRowLimit!==null&&selectedResourcePlan.labelled_rows>modelRowLimit;
   const modelBudgetExceeded=rowBudgetExceeded||!!selectedBudget?.denseLimitExceeded;
@@ -653,13 +653,15 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
                    <strong><Database size={17}/> Local training resource preflight: selected predictors</strong>
                    <div className="po-ml-resource-metrics"><span><b>{prep.resource_plan.labelled_rows.toLocaleString()}</b> labelled rows</span><span><b>{selectedBudget.estimatedEncodedColumns.toLocaleString()}</b> estimated encoded columns</span><span><b>{selectedBudget.estimatedDenseTrainingMb.toLocaleString()} MB</b> approximate dense matrix</span></div>
                    <p>{selectedBudget.denseLimitExceeded?'The currently included predictors exceed this preliminary memory budget, or no usable predictors remain. Review exclusions before training.':'The current included predictors fit this preliminary dense-matrix estimate.'} Training rejects datasets exceeding {prep.resource_plan.row_limit.toLocaleString()} labelled rows or {prep.resource_plan.estimated_dense_mb_limit} MB estimated dense features.</p>
-                   <small>Selected-feature estimate reflects your exclusions and split key. It is not measured RAM or model approval. The backend recalculates on labelled rows and may reject the request. {prep.resource_plan.note}</small>
+                   <small>Estimates reflect exclusions, the split key and the missing-value strategy. Fitted widths may be lower because encoding is learned on each training fold. The backend recalculates on labelled rows. {prep.resource_plan.note}</small>
                  </div>}
                  <h3 className="po-feature-audit-title">Feature-by-feature preparation audit</h3>
                  <div className="table-scroll po-ml-feature-audit"><table><thead><tr><th>FIELD / ROLE</th><th>OBSERVATIONS</th><th>PREPROCESSING</th><th>RISK REVIEW</th></tr></thead><tbody>
                    {prep.feature_audit.map(f=>{
                     const excludedByChoice=excluded.includes(f.column),isSplit=splitStrategy!=='random'&&splitColumn===f.column;
+                    const inactive=excludedByChoice||isSplit||!f.default_included;
                     const examples=f.category_examples??[];
+                    const encodedColumns=inactive?0:selectedBudget?.encodedColumnsByField.get(f.column);
                     return <tr key={f.column}>
                      <td><strong>{f.column}</strong><small>{excludedByChoice?'Excluded by user':isSplit?'Excluded as split key':!f.default_included?'Unusable / excluded':'Included predictor'}</small></td>
                      <td>{f.kind} · {f.missing} missing ({f.missing_pct}%) · {f.distinct} distinct
@@ -667,7 +669,9 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
                       {f.kind==='categorical'&&f.risk!=='high'&&examples.length>0&&
                        <small className="po-ml-category-examples">Observed examples ({examples.length} of {f.distinct}) {examples.map(value=>JSON.stringify(value)).join(', ')}</small>}
                      </td>
-                     <td>{excludedByChoice||isSplit||!f.default_included?'No training transform':f.kind==='numeric'?`Numeric: ${numericImputation} imputation fitted on training folds`:categoricalImputation==='constant'?`Categorical: missing-marker imputation + capped one-hot encoding fitted on training folds`:f.treatment}</td>
+                     <td>{inactive?'No training transform':f.kind==='numeric'?`Numeric: ${numericImputation} imputation fitted on training folds`:categoricalImputation==='constant'?`Categorical: missing-marker imputation + capped one-hot encoding fitted on training folds`:f.treatment}
+                      <small className="po-ml-encoded-width">Estimated encoded columns: {encodedColumns??'Unavailable'}</small>
+                     </td>
                      <td>{f.risk==='high'?<strong className="po-ml-risk-high">High — review required</strong>:f.risk==='review'?'Review suggested':'No structural warning'}{f.reasons.length>0&&<small>{f.reasons.join('; ')}</small>}</td>
                     </tr>
                    })}
