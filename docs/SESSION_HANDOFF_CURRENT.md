@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 Windows FileIO rundown experiment
+
+- [Source `553c323`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/553c323ebabd28fade6621fb6ad5898eb14f3853) repeats the two known pre-opened writes with a named Windows Performance Recorder FileIO session running alongside the existing ETW trace. It keeps both handles open through WPR stop, then compares decoded classic FileIo opcode 36 names with the ETW write file keys. [Follow-up `4fdd574`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4fdd5743e6adeb0b79bd9a801a4ab4c70e281496) reports counts at each decoding stage. Raw captures stay in runner temp. All 60 targeted tests passed.
+- [Instrumented Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43491838473/job/132114742495) observed 349 classic FileIo rundown events, but Get-WinEvent yielded zero decoded names. [Trace-report cross-check at source `36766d6`](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43492341394/job/132116492143) observed 342 rundown events in Get-WinEvent and found zero records matching the classic rundown schema in the tracerpt XML decoder. Both controlled writes again matched one successful request and the issuing thread. Neither decoder recovered a usable path for either target. The targeted suite passed 61 tests after adding the XML decoding check.
+- **Next.** Use the native ProcessTrace consumer or an equivalent raw ETL decoder on the same control. Check that it exposes the opcode 36 payload and file key before testing either path match. If a raw decoder confirms the gap, investigate an independent source of path evidence for handles opened before capture. Strict N12 coverage, combined calibration and native acceptance remain pending.
+
 ## 13 November 2026 | N12 pre-opened file handle control
 
 - [Source `30a48b4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/30a48b4c536c9241e038e9726a0c13d36a31187e) opens two generated files before ETW starts, one inside the synthetic protected directory and one outside it. It checks each target with Windows GetFinalPathNameByHandle, writes distinct byte counts, and uses the write windows and completions to check for prior ETW name evidence. The report publishes only labels and outcomes. All 60 targeted tests passed.
