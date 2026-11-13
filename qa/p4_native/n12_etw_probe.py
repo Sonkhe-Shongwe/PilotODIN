@@ -11,7 +11,6 @@ from ctypes import wintypes
 from pathlib import Path
 from uuid import uuid4
 
-from n12_calibration import calibrate
 from n12_trace import local_disposable_path
 
 
@@ -91,6 +90,13 @@ def probe(root):
     root.mkdir()
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
+    source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
+    source.parent.mkdir()
+    destination.parent.mkdir()
+    source.write_bytes(b"cross-directory marker")
+    protected = root / "synthetic-protected"
+    protected.mkdir()
+    marker = protected / "transient.bin"
     providers = root / "providers.txt"
     providers.write_text(
         "Microsoft-Windows-Kernel-File 0x1ef0 4\n"
@@ -107,13 +113,18 @@ def probe(root):
     if started.returncode:
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
     try:
+        # Give the new session a separate process launch before measuring the
+        # fixture. Start the calibration parent inside the trace as well.
+        run_writer("pass")
         fixture_start = utc_ticks()
-        fixture = calibrate(root / "markers")
+        result = subprocess.run(
+            [sys.executable, "-B", str(Path(__file__).with_name("n12_calibration.py")), str(root / "markers")],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=20, check=False,
+        )
+        if result.returncode:
+            raise RuntimeError("The generated N12 calibration failed.")
+        fixture = json.loads(result.stdout)
         fixture["start_window"] = [fixture_start, utc_ticks()]
-        source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
-        source.parent.mkdir()
-        destination.parent.mkdir()
-        source.write_bytes(b"cross-directory marker")
         writer_start = utc_ticks()
         writer_pid = run_writer(
             "import os,sys\n"
@@ -126,9 +137,6 @@ def probe(root):
         writer_window = [writer_start, utc_ticks()]
         if source.exists() or destination.read_bytes() != b"cross-directory marker":
             raise RuntimeError("The cross-directory fixture did not finish at the expected destination.")
-        protected = root / "synthetic-protected"
-        protected.mkdir()
-        marker = protected / "transient.bin"
         run_writer("from pathlib import Path\nimport sys\n"
                    "path = Path(sys.argv[1])\npath.write_bytes(b'generated')\npath.unlink()", marker)
         if any(protected.iterdir()):
