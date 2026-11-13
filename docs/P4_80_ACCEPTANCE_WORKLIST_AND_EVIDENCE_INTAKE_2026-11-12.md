@@ -11,7 +11,7 @@
 | Gate | Existing verifiable evidence | Specific missing proof | Next safe action / dependency | Current verdict |
 | --- | --- | --- | --- | --- |
 | **R01 / Gate C:** real-world prediction use | Deterministic target review and historical research | Independently checkable decision owner and intervention, outcome provenance, as-of inputs, suitable evaluation, baseline and measured benefit, and permitted use | Use §B when a specific real-world prediction use is proposed | **UNVERIFIED / REQUIRED BEFORE REAL USE** |
-| **R02:** native negative and Quality-version parity | P4 source/browser tests including rare class 4/80, sparse labels 24/80, unnamed target, 409 and project isolation; partial earlier owner-native journey | Current-source actual WebView2 N8–N11 and incomplete N4/N7/N12 | Only in **one separately authorised isolated native session** using existing N1–N12 kit | **OPEN / NATIVE NOT TESTED** |
+| **R02:** native negative and Quality-version parity | P4 source/browser tests including rare class 4/80, sparse labels 24/80, unnamed target, 409 and project isolation; partial owner and hosted Windows observations | Current-source N8–N11 and incomplete N4/N7/N12 | Continue the existing N1–N12 kit in a separately authorised isolated session with native dialog input | **OPEN / PARTIAL NATIVE EVIDENCE** |
 | **R03:** offline 8 GB coexistence | Limited hosted native boot/WebView process evidence; resource estimators are not RAM measurements | Physical 8 GB Windows, actual offline local Qwen + WebView2 + backend/analytics, sustained process/RAM and workload observations | Owner-provided eligible hardware/runtime and separately approved measured test; preagree workload, duration and stop limits | **OPEN / NOT TESTED** |
 | **R04:** current native UX | False archive alert and compressed decision-evidence display source-fixed, browser checks pass | Actual current-source native readability of target strip, review/abstain, archive warning and evidence panels | Capture screenshots and source/native SHA **only after authorised isolation preflight** | **OPEN / NATIVE RETEST PENDING** |
 | **R05 / BE-024:** Prepare review | Additive high-risk exclusions, per-feature audit, numeric median/mean and categorical mode/marker are source/browser verified; saved-history visibility tested with synthetic GET overlays | Accepted final required scope for per-field controls, and current-source native controls/UX and versions | Confirm **exact mandatory acceptance scope** before freezing changes; test controls as part of consolidated native session; do not call global choices full per-column support | **OPEN / PARTIAL SOURCE EVIDENCE** |
@@ -61,9 +61,9 @@ A **separate, future, explicitly approved** native isolation study may compare t
 
 ## D. Consolidated native acceptance is a conditional downstream task
 
-**Current state: BLOCKED for new execution.** [P4-71](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md) compiled a single unpackaged isolated Windows debug app and confirmed boot + five WebView processes, but UI CDP discovery blocked N2–N12. That approval was **one-use and consumed**; the workflow is disarmed. A generic `next` or this checklist does not provide new native-build authority.
+**Current state: partial Windows observations recorded.** The approved 13 November run reached the actual Tauri WebView2. It stopped at the first project switch with the native consent path pending. See the run record below. Both one-use workflows are disarmed and the build approvals have been consumed.
 
-1. **Prerequisite:** explicit separate owner approval for any fresh unpackaged native compilation; maintain the owner's **no intermediate installers through P4–P7** directive. A new distributed EXE, MSI or NSIS is not authorised. If no approval, keep R02/R04/R05 native evidence **BLOCKED / NOT TESTED**.
+1. **Prerequisite:** explicit separate owner approval for any fresh unpackaged native compilation; maintain the owner's **no intermediate installers through P4–P7** directive. A new distributed EXE, MSI or NSIS is not authorised. Record any outstanding cases as **BLOCKED / NOT TESTED** until they are observed.
 2. **Preflight before any future permitted run:** freeze exact source commit and trusted native binary SHA; prove unique QA app ID, WebView profile, disposable `PILOTODIN_HOME`, no original-root paths, no inherited user data, no unintended cloud access. If any mismatch: **STOP**.
 3. **Single bounded native journey:** use [existing N1–N12 kit](../qa/p4_native/README.md) and [result template](../qa/p4_native/RESULTS_TEMPLATE.md), not new CSV imports against owner projects. Include R04 UX and R05 Prepare controls. Record case-level exact source/native SHA, timestamps, actual observed PASS/FAIL/BLOCKED/NOT TESTED.
 4. **Physical R03 check separately conditional:** genuine 8 GB hardware with available, permitted local Qwen + WebView2 + backend under offline conditions, agreed resource thresholds and workload. If prerequisites unavailable, it stays **NOT TESTED**, not a proxy PASS.
@@ -72,8 +72,7 @@ A **separate, future, explicitly approved** native isolation study may compare t
 
 ### Current-source Windows checklist, 13 November 2026
 
-Use the existing kit for synthetic fixtures, N1–N12 case IDs and the result template. Use this section for the current execution scope and the Gate C decision at the top of this worklist for phase closure. [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43299568196) and [workspace CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43299568087) ran at `db811488`. Only documentation changed between that source and the 13 November checklist revision. Those runs established browser, source and synthetic PowerShell evidence. The [last Windows dev run](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md) established startup and isolated WebView processes. It stopped at UI discovery before fixture creation. The [revised discovery and bridge guard](./P4_73_NATIVE_CDP_DISCOVERY_AND_TAURI_BRIDGE_GUARD_2026-11-12.md) has helper-test evidence and still needs a Windows run.
-
+Use the existing kit for synthetic fixtures, N1–N12 case IDs and the result template. Use this section for current execution scope and the Gate C decision at the top of this worklist for phase closure. The [12 November Windows run](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md) stopped at UI discovery before fixture creation. The revised discovery and bridge guard reached actual WebView2 in the 13 November run. The [P4 synthetic CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43387057176) passed at the exact Windows build source.
 
 If discovery or the Tauri bridge check blocks, the revised probe records the Vite loopback response and redacted WebView2 debugger page counts/categories. The probe returns a distinct non-zero blocked result before fixture creation. A diagnostic response confirms only what the local endpoints reported. The original P4-71 workflow is disarmed and its preflight is pinned to the consumed source approval. A future session needs its own approved source pin and run configuration.
 
@@ -91,14 +90,28 @@ If discovery or the Tauri bridge check blocks, the revised probe records the Vit
 
 R03 still needs the separately approved physical offline measurement. R06 remains historically **STRICT FAIL**, with the writer **UNKNOWN**. Neither is covered by the Windows cases above.
 
+### 13 November 2026 native run record
+
+[Windows run 43387057193, attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43387057193/job/131757987632) used source `50b683f0f87797fe2efe7a34dfca85a31507a0d0`. Preflight and one unpackaged build passed. Executable SHA-256 `acf6a3c468916731e4fdd8bc56264f76f65bc465a255850e640c0cc2d1764bc8`, 18,353,664 bytes. The isolated profile was present, six WebView2 processes matched its app identity, and the WebView exposed the callable Tauri bridge. The hosted runner's protected profile paths were absent after cleanup. No installer or build artifact was transferred.
+
+| Case | 13 November observation |
+| --- | --- |
+| N1 | **PASS** for build provenance, isolated profile and actual WebView2 with a disposable backend. |
+| N2–N4 | **PARTIAL** against this checklist. Classification opportunity, a repeated-ID count, and defer/review/clear were exercised. Full alternatives, selection-to-defer and decline were outside the observed sequence. |
+| N7 | **BLOCKED** in the automation at the first switch. The selector remained disabled on the original synthetic project and timed out after five seconds. Source review traced that disabled state to the awaited native project-switch consent. The probe used WebView2 CDP and had no interaction with the OS dialog. The log did not capture the dialog itself or prove a project-switch product defect. |
+| N5–N6, N8–N11, R04 layout and R05 Prepare | **NOT TESTED** in this run. |
+| N12 | **PARTIAL**. The probe's cleanup checked the five disposable projects for zero experiments, with no reported cleanup failure. The PowerShell postrun check verified absence of the protected hosted-runner paths. Full network and write evidence was outside this observation. |
+
+For a future isolated Windows session, verify the native **Stay** and **Switch project** actions using desktop-level input on the test machine and capture the resulting project and draft states. Keep the product consent prompt in place. [Existing source tests](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43386014036/job/131754560680) cover the asynchronous consent branches using a simulated native response. R03 and the original-device R06 comparison were outside the hosted run.
+
 ## E. Practical order for the next sessions
 
 | Priority | Next deliverable | Who supplies the missing fact | Stop / done rule |
 | --- | --- | --- | --- |
-| **Windows checklist ready** | Execute the cases in §D once the native session is authorised and a Windows environment is available | Current-source native observations | Record case-level results using the existing N1–N12 kit. Track any reproducible defect and any outstanding BE-024 scope decision. |
+| **Resume Windows QA** | Exercise the Windows-native project-switch prompt with a desktop-level input driver or an operator in a future isolated session, then continue the remaining cases in §D | Current-source native observations | Record Stay and Switch project outcomes and report unexecuted cases individually. |
 | **R06 evidence** | Assess any already-existing incident-time writer evidence if available | Owner or existing evidence records | With current evidence, retain historical **STRICT FAIL** and writer **UNKNOWN**. |
 | **Native and physical acceptance** | One isolated current-source Windows session, plus a physical offline 8 GB check when the prerequisites are met | Suitable environment and existing authorisation requirements | Record each result. Missing prerequisites leave the applicable checks **BLOCKED / NOT TESTED**. |
 | **P4 engineering closure** | Review R02–R06 and the phase exit criteria | Owner signs off on the recorded results and any explicit risk dispositions | P4 closure requires a separate decision. |
 | **Before real-world prediction use** | Verify one proposed decision using §B | Accountable decision owner and independently checkable evidence | Gate C stays **UNVERIFIED** until the evidence supports use. |
 
-**P4 status after the 13 November scope decision:** ACTIVE. R02–R06 are open, Gate C is unverified for real use, and the historical whole-tree result is STRICT FAIL. P5 is not authorised and P8 is not certified. This worklist update records no new application test result.
+**P4 status after the 13 November scope decision:** ACTIVE. R02–R06 are open, Gate C is unverified for real use, and the historical whole-tree result is STRICT FAIL. P5 is not authorised and P8 is not certified.
