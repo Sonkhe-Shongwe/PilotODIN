@@ -1,7 +1,6 @@
 import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
-import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
-import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
+import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityAfterRelaunch, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -111,7 +110,9 @@ async function runNativeProbe(browser) {
  if(relaunch){
   const projectId=(await readFile(receiptPath,'utf8')).trim();
   if(!/^[0-9a-f]{32}$/.test(projectId))throw Error('Invalid synthetic Quality project ID');
-  await verifyRelaunchedQuality(page,projectId);
+  await verifyP4QualityAfterRelaunch(page,API,projectId);
+  await noTraining([projectId]);
+  console.log('N11 native process relaunch restores the synthetic project and Prepare version 1: PASS');
   return;
  }
  for(const kind of ['classification','regression','rare','insufficient','neutral','quality'])ids[kind]=await create(kind);
@@ -215,26 +216,6 @@ async function runNativeProbe(browser) {
   await writeFile(receiptPath,ids.quality+'\n',{flag:'wx'});
   console.log('N11 ready for native close and relaunch');
  }finally{await noTraining(all);}
-}
-async function verifyRelaunchedQuality(page,projectId) {
- const chooser=page.getByRole('combobox',{name:'Switch project'});
- const navigation=page.getByRole('navigation',{name:'Workspace navigation'});
- const review=page.getByRole('region',{name:'Potential prediction opportunities'});
- const target=page.getByLabel('TARGET VARIABLE');
- await expect(chooser).toHaveValue(projectId,{timeout:45000});
- await navigation.getByRole('button',{name:'Prepare',exact:true}).click();
- await expect(review).toContainText('Current approved dataset version: 1.');
- await expect(target).toHaveValue('');
- const planV1=p4PreparationRequestUrl(API,projectId,'churn',1);
- const [response]=await Promise.all([
-  page.waitForResponse(r=>r.url()===planV1&&r.request().method()==='GET',{timeout:30000}),
-  target.selectOption('churn'),
- ]);
- expect(response.status()).toBe(200);
- expect(await response.json()).toMatchObject({quality_version:1,target:'churn'});
- await expect(page.getByRole('heading',{name:'Automatic preprocessing plan'})).toBeVisible();
- await noTraining([projectId]);
- console.log('N11 native process relaunch restores the synthetic project and Prepare version 1: PASS');
 }
 async function main() {
  let browser;

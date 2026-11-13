@@ -1,9 +1,11 @@
 import {test,expect} from '@playwright/test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {join} from 'node:path';
 import {openP4FixtureWorkspace} from './p4-open-fixture-workspace.mjs';
 import {p4PreparationRequestUrl} from './p4-preparation-request.mjs';
-import {p4QualityFixture,verifyP4QualityTransition} from './p4-quality-version-transition.mjs';
+import {p4QualityFixture,verifyP4QualityAfterRelaunch,verifyP4QualityTransition} from './p4-quality-version-transition.mjs';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
@@ -903,7 +905,7 @@ test('P4-79 real HTTP: reopened experiment settings are read from saved record, 
   expect((await realProject.json()).experiments).toEqual([]);
  });
 
-test('P4 N11 real HTTP: Quality approval refreshes Prepare after switching projects and survives reopening',async({page,context,request})=>{
+test('P4 N11 real HTTP: Quality approval refreshes Prepare and survives a browser restart',async({playwright,request})=>{
   if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
      process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
     throw Error('Trusted synthetic CI only');
@@ -919,20 +921,43 @@ test('P4 N11 real HTTP: Quality approval refreshes Prepare after switching proje
   expect(uploaded.status(),await uploaded.text()).toBe(201);
   const {id:projectId}=await uploaded.json();
   const writes:string[]=[];
-  const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[initialId],writes);
-  await page.goto('/');
-  await openP4FixtureWorkspace(page,UI,initialId);
-  const chooser=page.getByRole('combobox',{name:'Switch project'});
-  await expect(chooser).toHaveValue(initialId);
-  await expect(page.getByRole('region',{name:'Potential prediction opportunities'})).toContainText('churn');
-  await chooser.selectOption(projectId);
-  await verifyP4QualityTransition(page,API+'/api',projectId,async(url:string)=>{
-    const response=await request.get(url);
-    return {status:response.status(),json:()=>response.json()};
+  const profile=await mkdtemp(join(process.env.RUNNER_TEMP!,'pilotodin-p4-n11-chromium-'));
+  const launch=()=>playwright.chromium.launchPersistentContext(profile,{
+    baseURL:UI,serviceWorkers:'block',viewport:{width:1440,height:900},
   });
-  expect(writes).toEqual([
-    `/api/projects/${projectId}/quality/proposals`,
-    `/api/projects/${projectId}/quality/commit`,
-  ]);
-  expect(blocked).toEqual([]);
+  try{
+    const context=await launch();
+    try{
+      const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[initialId],writes);
+      const [page]=context.pages();
+      await page.goto('/');
+      await openP4FixtureWorkspace(page,UI,initialId);
+      const chooser=page.getByRole('combobox',{name:'Switch project'});
+      await expect(chooser).toHaveValue(initialId);
+      await expect(page.getByRole('region',{name:'Potential prediction opportunities'})).toContainText('churn');
+      await chooser.selectOption(projectId);
+      await verifyP4QualityTransition(page,API+'/api',projectId,async(url:string)=>{
+        const response=await request.get(url);
+        return {status:response.status(),json:()=>response.json()};
+      });
+      expect(writes).toEqual([
+        `/api/projects/${projectId}/quality/proposals`,
+        `/api/projects/${projectId}/quality/commit`,
+      ]);
+      expect(blocked).toEqual([]);
+    }finally{await context.close()}
+
+    const reopened=await launch();
+    try{
+      const blocked=await readOnlyBrowserGuard(reopened,projectId,undefined,[initialId]);
+      const [page]=reopened.pages();
+      // Start from the desktop's root URL without seeding the project's saved state.
+      await page.goto('/');
+      await verifyP4QualityAfterRelaunch(page,API+'/api',projectId);
+      expect(blocked).toEqual([]);
+      const project=await request.get(`${API}/api/projects/${projectId}`);
+      expect(project.status()).toBe(200);
+      expect((await project.json()).experiments).toEqual([]);
+    }finally{await reopened.close()}
+  }finally{await rm(profile,{recursive:true,force:true})}
 });
