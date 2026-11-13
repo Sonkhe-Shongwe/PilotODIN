@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 live fixture markers observed
+
+- The owner approved one new disposable hosted Windows collector run. [Run #43458458941](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43458458941) at [`67d85f5`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/67d85f5962dbfebebbb1fc54f7f5764eba59c71c) verified Sysmon 15.22 and Process Monitor 4.13 and completed the generated fixture. The quiet stop command returned successfully. The capture process exited with code 1. The backing file (90,356,359 bytes) and exported CSV (40,407,638 bytes) were closed and readable, and the reducer produced a redacted summary.
+- **Observed fixture markers:** The reducer bound the calibration parent and child and found both loopback protocols and all five expected file operations, including the exact rename destination. Process Monitor counts for the calibration process group were two creates, two writes, two resizes, one rename and one delete. The summary reported `file-mutation-path-unresolved` and `procmon-coverage-not-confirmed`. The workflow failed with the capture explicitly diagnostic. The raw trace remained in runner temp, so the unresolved row cannot be identified from the retained summary.
+- **Next:** Prepare redacted diagnostics for unresolved Process Monitor mutation paths and determine how to establish capture continuity and disposition of the observed exit code before seeking another live run. The [workflow is disabled](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1c46082ab2b5f0b3533aebf8ee668e086e3a74ca) and the one-time approval is consumed. R02/N12 remains partial. The native PilotODIN journey was not run, the historical port 443 connection remains unattributed, and P4 remains active.
+
 ## 13 November 2026 | N12 Process Monitor stop and export correction
 
 - [Source `371111b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/371111b05493754f4888be7b593a434990be9763) uses Process Monitor's quiet stop command and distinguishes command failures, capture-process timeouts and nonzero capture-process exit codes. It checks that the backing file and CSV are closed and nonempty. A usable export after abnormal shutdown is diagnostic evidence only. The capture-loss review requirement remains in place.
