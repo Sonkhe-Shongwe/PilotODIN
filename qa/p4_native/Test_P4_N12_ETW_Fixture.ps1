@@ -10,23 +10,31 @@ $manifestPath = Join-Path $root 'fixture.json'
 $eventsPath = Join-Path $root 'events.jsonl'
 $result | Set-Content -LiteralPath $manifestPath -Encoding utf8
 $provider = [guid]'edd08927-9cc4-4e65-b970-c2560fb5c289'
+$processProvider = [guid]'22fb2cd6-0e7b-422b-a0c7-2fad1fd0e716'
 $ids = @{}
 $stream = [IO.StreamWriter]::new($eventsPath, $false, [Text.UTF8Encoding]::new($false))
 try {
     Get-WinEvent -Path (Join-Path $root 'fixture.etl') -Oldest | ForEach-Object {
         $event = $_
-        if ($event.ProviderId -eq $provider) {
-            $eventId = $event.Id
+        $eventId = $event.Id
+        $isFileEvent = $event.ProviderId -eq $provider
+        $isLifecycleEvent = $event.ProviderId -eq $processProvider -and $eventId -in 1,2
+        if ($isFileEvent) {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
-            if ($eventId -in 12,14,16,17,18,19,24,27) {
-                $xml = [xml]$event.ToXml()
-                $fields = @{}
-                foreach ($field in $xml.SelectNodes("//*[local-name()='EventData']/*[local-name()='Data']")) {
-                    $fields[$field.GetAttribute('Name')] = $field.InnerText
-                }
-                $stream.WriteLine((@{ id = $eventId; pid = $event.ProcessId; data = $fields } |
-                    ConvertTo-Json -Compress -Depth 4))
+        }
+        if ($isLifecycleEvent -or ($isFileEvent -and $eventId -in 12,14,16,17,18,19,24,27)) {
+            $xml = [xml]$event.ToXml()
+            $fields = @{}
+            foreach ($field in $xml.SelectNodes("//*[local-name()='EventData']/*[local-name()='Data']")) {
+                $fields[$field.GetAttribute('Name')] = $field.InnerText
             }
+            $stream.WriteLine((@{
+                id = $eventId
+                pid = $event.ProcessId
+                ticks = $event.TimeCreated.ToUniversalTime().Ticks
+                lifecycle = $isLifecycleEvent
+                data = $fields
+            } | ConvertTo-Json -Compress -Depth 4))
         }
     }
 } finally {
@@ -48,9 +56,13 @@ if ($capture.counters.events_lost -ne 0 -or $capture.counters.log_buffers_lost -
 $expected = @(
     'fixture:create:original', 'fixture:write:original', 'fixture:resize:original',
     'fixture:rename:original:renamed', 'fixture:delete:renamed',
-    'second-writer:rename:source:destination'
+    'second-writer:rename:source:destination',
+    'other:create:protected', 'other:write:protected', 'other:delete:protected'
 )
 $missing = @($expected | Where-Object { -not $summary.correlation.operations.Contains($_) })
-if ($missing.Count -or $summary.correlation.unresolved.Count) {
+if ($missing.Count -or $summary.correlation.unresolved.Count -or
+    $summary.correlation.operations.Contains('second-writer:create:source') -or
+    -not $summary.correlation.failed.Contains('second-writer:open:source') -or
+    $summary.correlation.protected_writes -lt 1) {
     throw "ETW fixture correlation incomplete. Missing: $($missing -join ', ')."
 }

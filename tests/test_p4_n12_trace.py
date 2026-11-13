@@ -13,6 +13,64 @@ from xml.etree import ElementTree as ET
 import pytest
 
 from qa.p4_native import n12_calibration, n12_trace as trace
+from qa.p4_native.n12_etw_correlate import correlate
+
+
+def test_etw_failed_open_and_reused_pid_and_file_object():
+    capture = {
+        "fixture": {"child_pid": 12, "start_window": [1, 3],
+                    "fixture": r"D:\qa\original", "renamed_fixture": r"D:\qa\renamed"},
+        "second_writer": {"pid": 20, "start_window": [4, 6],
+                          "source": r"D:\qa\source", "destination": r"D:\qa\destination"},
+        "device": r"\Device\HarddiskVolume3", "protected_root": r"D:\qa\protected",
+    }
+    rows = []
+
+    def event(event_id, pid, *, lifecycle=False, **data):
+        rows.append({"id": event_id, "pid": pid, "ticks": len(rows) + 1,
+                     "lifecycle": lifecycle, "data": data})
+
+    event(1, 0, lifecycle=True, ProcessID=12)
+    event(12, 12, FileObject=8, Irp=11, FileName=r"D:\qa\original")
+    event(24, 0, Irp=11, Status=0, ExtraInformation=2)
+    event(2, 0, lifecycle=True, ProcessID=12)
+    event(1, 0, lifecycle=True, ProcessID=20)
+    event(12, 20, FileObject=8, Irp=11, FileName=r"D:\qa\source")
+    event(24, 0, Irp=11, Status="0xc0000035", ExtraInformation=2)
+    event(1, 0, lifecycle=True, ProcessID=12)
+    event(16, 12, FileObject=8, Irp=11)
+    event(24, 0, Irp=11, Status=0)
+    event(12, 12, FileObject=8, Irp=11,
+          FileName=r"\Device\HarddiskVolume3\qa\protected\private-file")
+    event(24, 0, Irp=11, Status=0, ExtraInformation=2)
+    event(16, 12, FileObject=8, Irp=11)
+    event(24, 0, Irp=11, Status=0)
+    event(14, 12, FileObject=8)
+    event(16, 12, FileObject=8, Irp=11)
+    event(24, 0, Irp=11, Status=0)
+    # A new open also invalidates an old object mapping if its close was absent.
+    event(12, 12, FileObject=8, Irp=11, FileName=r"D:\qa\protected\private-file")
+    event(24, 0, Irp=11, Status=0, ExtraInformation=1)
+    event(12, 12, FileObject=8, Irp=11, FileName=r"D:\qa\untracked")
+    event(24, 0, Irp=11, Status=0, ExtraInformation=1)
+    event(16, 12, FileObject=8, Irp=11)
+    event(24, 0, Irp=11, Status=0)
+
+    assert correlate(capture, rows) == {
+        "operations": {"fixture:create:original": 1, "other:create:protected": 1,
+                       "other:write:protected": 1},
+        "failed": {"second-writer:open:source": 1},
+        "unresolved": {},
+        "protected_writes": 2,
+    }
+
+    # Two overlapping requests cannot share a success completion.
+    event(12, 12, FileObject=9, Irp=15, FileName=r"D:\qa\protected\private-file")
+    event(12, 12, FileObject=10, Irp=15, FileName=r"D:\qa\untracked")
+    event(24, 0, Irp=15, Status=0, ExtraInformation=2)
+    report = correlate(capture, rows)
+    assert report["protected_writes"] == 2
+    assert report["unresolved"] == {"other:open:irp-reused-before-completion": 1}
 
 BASE = "2026-11-13"
 PYTHON = r"C:\Runtime\python.exe"

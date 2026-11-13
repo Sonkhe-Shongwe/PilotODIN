@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from ctypes import wintypes
 from pathlib import Path
 from uuid import uuid4
@@ -66,38 +67,72 @@ def volume_device(drive):
     return target.value
 
 
+def utc_ticks():
+    return time.time_ns() // 100 + 621355968000000000
+
+
+def run_writer(code, *paths):
+    result = subprocess.Popen(
+        [sys.executable, "-B", "-c", code, *map(str, paths)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    with result:
+        try:
+            if result.wait(timeout=10):
+                raise RuntimeError("A generated file writer failed.")
+        except subprocess.TimeoutExpired:
+            result.kill()
+            result.wait()
+            raise
+    return result.pid
+
+
 def probe(root):
     root.mkdir()
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
+    providers = root / "providers.txt"
+    providers.write_text(
+        "Microsoft-Windows-Kernel-File 0x1ef0 4\n"
+        "Microsoft-Windows-Kernel-Process 0x10 4\n",
+        encoding="ascii",
+    )
     # Names, file I/O, completion, creation, writes, and delete/rename paths.
     logman = [str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")]
     started = subprocess.run(
-        [*logman, "create", "trace", session, "-p", "Microsoft-Windows-Kernel-File",
-         "0x1ef0", "4", "-o", str(etl), "-max", "128", "-bs", "64", "-nb", "16", "128", "-ets"],
+        [*logman, "create", "trace", session, "-pf", str(providers),
+         "-o", str(etl), "-max", "128", "-bs", "64", "-nb", "16", "128", "-ets"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20, check=False,
     )
     if started.returncode:
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
     try:
+        fixture_start = utc_ticks()
         fixture = calibrate(root / "markers")
+        fixture["start_window"] = [fixture_start, utc_ticks()]
         source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
         source.parent.mkdir()
         destination.parent.mkdir()
         source.write_bytes(b"cross-directory marker")
-        with subprocess.Popen(
-            [sys.executable, "-B", "-c", "import os,sys; os.rename(*sys.argv[1:])",
-             str(source), str(destination)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        ) as writer:
-            try:
-                if writer.wait(timeout=10):
-                    raise RuntimeError("The cross-directory fixture writer failed.")
-            except subprocess.TimeoutExpired:
-                writer.kill()
-                writer.wait()
-                raise
+        writer_start = utc_ticks()
+        writer_pid = run_writer(
+            "import os,sys\n"
+            "try:\n with open(sys.argv[1], 'xb'): pass\n"
+            "except FileExistsError: pass\n"
+            "else: raise RuntimeError('Exclusive create should fail')\n"
+            "os.rename(*sys.argv[1:])",
+            source, destination,
+        )
+        writer_window = [writer_start, utc_ticks()]
         if source.exists() or destination.read_bytes() != b"cross-directory marker":
             raise RuntimeError("The cross-directory fixture did not finish at the expected destination.")
+        protected = root / "synthetic-protected"
+        protected.mkdir()
+        marker = protected / "transient.bin"
+        run_writer("from pathlib import Path\nimport sys\n"
+                   "path = Path(sys.argv[1])\npath.write_bytes(b'generated')\npath.unlink()", marker)
+        if any(protected.iterdir()):
+            raise RuntimeError("The synthetic protected directory did not return to baseline.")
     finally:
         try:
             counters = stop_trace(session)
@@ -108,7 +143,10 @@ def probe(root):
     if etl.stat().st_size == 0 or counters["buffers_written"] == 0:
         raise RuntimeError("ETW trace was empty.")
     return {"fixture": fixture, "counters": counters, "device": volume_device(root.drive),
-            "second_writer": {"pid": writer.pid, "source": str(source), "destination": str(destination)}}
+            "protected_root": str(protected), "second_writer": {
+                "pid": writer_pid, "source": str(source), "destination": str(destination),
+                "start_window": writer_window,
+            }}
 
 
 if __name__ == "__main__":
