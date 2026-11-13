@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ github.run_attempt == 1 }}
+    if: ${{ false }} # One-time provisioning approval consumed by run 43452047885
     runs-on: windows-2022
     timeout-minutes: 10
     env:
