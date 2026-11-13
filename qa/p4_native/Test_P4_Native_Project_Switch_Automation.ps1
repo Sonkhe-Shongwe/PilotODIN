@@ -57,7 +57,7 @@ try {
         Invoke-P4NativeProjectSwitchControl -AppProcessId $fixtureProcess.Id -Action 'Stay' -TimeoutSeconds 5
         throw 'Synthetic dialog with a missing button was unexpectedly accepted'
     } catch {
-        if ($_.Exception.Message -notmatch 'Stage=DIALOG_FOUND_BUTTONS_MISSING; last matching dialog button count=1') { throw }
+        if ($_.Exception.Message -notmatch 'Stage=DIALOG_FOUND_BUTTONS_MISSING; UI Automation button count=\d+; native button count=1') { throw }
     }
     if ($fixtureProcess.HasExited) { throw 'The driver closed a synthetic dialog with a missing button' }
     Write-Output 'Synthetic Windows dialog: missing button reported without invoking Stay'
