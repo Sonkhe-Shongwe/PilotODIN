@@ -32,7 +32,7 @@ def canonical_file_path(value, devices):
     return None
 
 
-def correlate_requests(events, resolve_path, classify_process, tracked, record, *, strict=False):
+def correlate_requests(events, resolve_path, classify_process, tracked, record, *, strict=False, details=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = {}
     opened, pending = {}, {}
@@ -43,6 +43,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         return tracked(source) or tracked(destination) or (
             strict and (actor != "other" or operation == "rename" or source is None)
         )
+
+    def flag(actor, reason, event_id, info_class):
+        unresolved[f"{actor}:{reason}"] += 1
+        if details is not None:
+            info = info_class if type(info_class) is int and 0 <= info_class <= 255 else "unknown"
+            suffix = f":info-{info}" if event_id == 17 else ""
+            details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
 
     for event in sorted(events, key=lambda record: record["ticks"]):
         kind, pid, data = event["id"], event["pid"], event["data"]
@@ -65,7 +72,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 continue
             if not irp or irp not in pending:
                 continue
-            operation, actor, identity, handle, source, destination, requested = pending.pop(irp)
+            operation, actor, identity, handle, source, destination, requested, event_id, info_class = pending.pop(irp)
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
             if status is None:
@@ -82,7 +89,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if in_scope and operation == "open" and open_result not in {0, 1, 2, 3}:
                 unresolved[f"{actor}:open:unknown-open-result"] += 1
             if in_scope and mutation and handle[1] is None:
-                unresolved[f"{actor}:{operation}:process-lifetime-missing"] += 1
+                flag(actor, f"{operation}:process-lifetime-missing", event_id, info_class)
             if operation == "open":
                 if source:
                     opened[handle] = source
@@ -91,18 +98,18 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 opened[handle] = destination
             if in_scope and mutation:
                 if operation == "unsupported":
-                    unresolved[f"{actor}:unsupported-file-operation"] += 1
+                    flag(actor, "unsupported-file-operation", event_id, info_class)
                 if not source or (operation == "rename" and not destination):
-                    unresolved[f"{actor}:{operation}:path-missing"] += 1
+                    flag(actor, f"{operation}:path-missing", event_id, info_class)
                 if source or destination:
                     record(actor, identity, operation, source, destination, requested, ticks, True)
             continue
         if kind == 27 and irp in pending:
-            operation, owner, identity, obj, source, previous, requested = pending[irp]
+            operation, owner, identity, obj, source, previous, requested, event_id, info_class = pending[irp]
             if operation == "rename" and obj == handle and path:
                 if previous and previous != path:
                     unresolved[f"{owner}:rename:destination-ambiguous"] += 1
-                pending[irp] = (operation, owner, identity, obj, source, path, requested)
+                pending[irp] = (operation, owner, identity, obj, source, path, requested, event_id, info_class)
             continue
         if strict and kind == 27 and path and relevant(actor, "rename", None, path):
             unresolved[f"{actor}:rename:request-missing-or-ambiguous"] += 1
@@ -115,8 +122,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                      23: "unsupported", 29: "unsupported", 34: "unsupported"}.get(kind)
         if operation == "unsupported" and not strict:
             operation = None
+        info_class = number(data.get("InfoClass")) if kind == 17 else None
         if kind == 17:
-            if number(data.get("InfoClass")) == 20:  # FileEndOfFileInformation
+            if info_class == 20:  # FileEndOfFileInformation
                 operation = "resize"
             elif strict:
                 operation = "unsupported"
@@ -126,7 +134,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1
             continue
         if irp in pending:
-            old_operation, owner, _, _, old_source, old_destination, _ = pending.pop(irp)
+            old_operation, owner, _, _, old_source, old_destination, _, _, _ = pending.pop(irp)
             if relevant(owner, old_operation, old_source, old_destination):
                 unresolved[f"{owner}:{old_operation}:irp-reused-before-completion"] += 1
             ambiguous_irps.add(irp)
@@ -134,10 +142,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if operation and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:irp-ambiguous"] += 1
         elif operation:
-            pending[irp] = (operation, actor, identity, handle, source, None, ticks)
-    for operation, actor, _, _, source, destination, _ in pending.values():
+            pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind, info_class)
+    for operation, actor, _, _, source, destination, _, event_id, info_class in pending.values():
         if relevant(actor, operation, source, destination):
-            unresolved[f"{actor}:{operation}:completion-missing"] += 1
+            flag(actor, f"{operation}:completion-missing", event_id, info_class)
     return unresolved
 
 

@@ -364,6 +364,16 @@ def verify_connection_lifetimes(connections, processes, roles, issues):
             issues.add("connection-outside-process-lifetime")
 
 
+def calibration_file_events(root, child_guid):
+    marker = windows_path(root["fixture"])
+    renamed = windows_path(root["renamed_fixture"])
+    require(marker != renamed and ntpath.dirname(marker) == ntpath.dirname(renamed),
+            "calibration markers must be distinct siblings")
+    return {(child_guid, "create", marker), (child_guid, "write", marker),
+            (child_guid, "resize", marker), (child_guid, "rename", marker, renamed),
+            (child_guid, "delete", renamed)}
+
+
 def calibration_window(root, process, processes, connections, file_events, issues):
     children = [p for p in processes.values() if p.parent == process.guid]
     if len(children) != 1:
@@ -372,14 +382,7 @@ def calibration_window(root, process, processes, connections, file_events, issue
     child = children[0]
     if not process.sha256 or child.sha256 != process.sha256 or child.image != process.image:
         issues.add("calibration-image-identity-missing-or-mismatched")
-    marker = windows_path(root["fixture"])
-    renamed = windows_path(root["renamed_fixture"])
-    require(marker != renamed and ntpath.dirname(marker) == ntpath.dirname(renamed),
-            "calibration markers must be distinct siblings")
-    expected = {(child.guid, "create", marker), (child.guid, "write", marker),
-                (child.guid, "resize", marker), (child.guid, "rename", marker, renamed),
-                (child.guid, "delete", renamed)}
-    if not expected <= file_events:
+    if not calibration_file_events(root, child.guid) <= file_events:
         issues.add("calibration-file-events-missing")
     if not (process.end and child.end and process.start <= child.start <= child.end <= process.end):
         issues.add("calibration-child-lifecycle-missing")
@@ -547,7 +550,7 @@ def etw_events(path, capture_bounds, expected_digest):
         require(has_events, "ETW event export is empty")
 
 
-def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues):
+def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *, details=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -604,7 +607,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             (event for event in events if event["ticks"] <= end_ticks),
             lambda value: canonical_file_path(value, devices),
             classify_process, lambda value: value is not None and
-            any(inside(value, root) for root in protected), record, strict=True,
+            any(inside(value, root) for root in protected), record, strict=True, details=details,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -744,6 +747,65 @@ def check_etw_export(manifest, path):
     return count
 
 
+def check_etw_preflight(manifest, fixture, path):
+    """Exercise strict ETW correlation using fixture PIDs and ETW lifetimes."""
+    if __package__:
+        from .n12_etw_correlate import number
+    else:
+        from n12_etw_correlate import number
+
+    issues = set()
+    with evidence_stage("ETW capture metadata"):
+        start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
+        bounds, _ = etw_capture_contract(manifest, start, end, issues)
+    root = manifest["calibration"]
+    parent_pid, child_pid = root["pid"], fixture["child_pid"]
+    require(type(parent_pid) is int and type(child_pid) is int and
+            parent_pid > 0 and child_pid > 0 and parent_pid != child_pid
+            and child_pid == root["child_pid"], "invalid calibration fixture PIDs")
+    first, last = fixture["start_window"]
+    require(bounds[0] <= first < last <= bounds[1], "fixture lifetime window outside ETW capture")
+    lifecycles = {(pid, kind): [] for pid in (parent_pid, child_pid) for kind in (1, 2)}
+    with evidence_stage("ETW fixture lifetimes"):
+        for event in etw_events(path, bounds, manifest["etw"]["events_sha256"]):
+            if event["lifecycle"] and first <= event["ticks"] <= last:
+                key = (number(event["data"]["ProcessID"]), event["id"])
+                if key in lifecycles:
+                    lifecycles[key].append(event["ticks"])
+    require(all(len(stamps) == 1 for stamps in lifecycles.values()),
+            "fixture ETW lifetimes missing or ambiguous")
+    parent_start, parent_stop, child_start, child_stop = (
+        stamps[0] for stamps in lifecycles.values()
+    )
+    require(parent_start <= child_start < child_stop <= parent_stop,
+            "fixture ETW lifetimes are inconsistent")
+
+    image = windows_path(root["image"])
+    anchor = utc_time(manifest["etw"]["start_utc"])
+    processes = {}
+    for guid, parent, pid, birth, stop in (
+        ("parent", "", parent_pid, parent_start, parent_stop),
+        ("child", "parent", child_pid, child_start, child_stop),
+    ):
+        processes[guid] = Process(guid, parent, pid, image, None,
+                                  anchor + timedelta(microseconds=(birth - bounds[0]) // 10),
+                                  "", anchor + timedelta(microseconds=(stop - bounds[0]) // 10))
+    details = Counter()
+    roles = dict.fromkeys(processes, "calibration")
+    protected = [windows_path(path) for path in manifest["protected_roots"].values()]
+    require(protected, "missing ETW calibration protected roots")
+    permitted = {"calibration": [ntpath.dirname(windows_path(root["fixture"]))]}
+    counts, violations, file_events, unresolved = inspect_etw_files(
+        manifest, path, start, end, processes, roles, protected, permitted, issues, details=details)
+    matched = calibration_file_events(root, "child") <= file_events
+    return {"scope": "strict ETW diagnostic preflight with generated process evidence",
+            "etw_coverage": "BLOCKED" if issues or violations or not matched else "CLEAN",
+            "coverage_issues": sorted(issues), "expected_fixture_operations_matched": matched,
+            "file_events": counts, "file_violations": violations,
+            "etw_unresolved_mutations": unresolved, "etw_unresolved_event_types": details,
+            "native_n12_accepted": False}
+
+
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     subcommands = cli.add_subparsers(dest="mode", required=True)
@@ -753,6 +815,9 @@ def main():
     etw_export = subcommands.add_parser("check-etw-export")
     etw_export.add_argument("manifest", type=Path)
     etw_export.add_argument("etw_events", type=Path)
+    etw_preflight = subcommands.add_parser("check-etw-preflight")
+    for argument in ("manifest", "fixture", "etw_events"):
+        etw_preflight.add_argument(argument, type=Path)
     for mode in ("check-calibration", "check-calibration-etw"):
         calibration = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "file_trace", "output"):
@@ -770,6 +835,13 @@ def main():
             count = check_etw_export(read_json(args.manifest), args.etw_events)
             print(f"N12 ETW export passed validation: {count} events.")
             return 0
+        if args.mode == "check-etw-preflight":
+            result = check_etw_preflight(read_json(args.manifest), read_json(args.fixture)["fixture"],
+                                         args.etw_events)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            expected_issues = {"etw-mutation-coverage-unresolved"}
+            ready = result["expected_fixture_operations_matched"] and not result["file_violations"]
+            return 0 if ready and set(result["coverage_issues"]) <= expected_issues else 2
         if args.mode == "snapshot":
             manifest = read_json(local_disposable_path(args.manifest, runner_temp_only=True))
             require(manifest["disposable"] is True, "snapshot requires a disposable manifest")

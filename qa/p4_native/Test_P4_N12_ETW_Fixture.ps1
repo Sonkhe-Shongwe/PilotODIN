@@ -149,3 +149,7 @@ $missing = @($expected | Where-Object { -not $summary.correlation.operations.Con
 if ($missing.Count -or $summary.correlation.unresolved.Count) {
     throw "ETW fixture correlation incomplete. Missing: $($missing -join ', ')."
 }
+if ($CalibrationOnly) {
+    python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-preflight $reducerManifest $manifestPath $eventsPath
+    if ($LASTEXITCODE -ne 0) { throw 'The strict ETW diagnostic preflight failed.' }
+}

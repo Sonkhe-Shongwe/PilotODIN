@@ -361,6 +361,21 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert result.returncode == 0, result.stderr
     assert json.loads(calibration_output.read_text(encoding="utf-8"))["coverage"] == "CALIBRATED"
 
+    emit(1, 0, 1, lifecycle=True, ProcessID=30)
+    emit(6, 0, 2, lifecycle=True, ProcessID=30)
+    mutation(3, 31, 8, 17, InfoClass=4)
+    report()
+    fixture = dict(calibration_manifest["calibration"], child_pid=31,
+                   start_window=[trace.utc_ticks(trace.utc_time(instant(n))) for n in (0, 7)])
+    calibration_manifest["calibration"] = fixture
+    preflight = trace.check_etw_preflight(calibration_manifest, fixture, etw_path)
+    assert preflight["expected_fixture_operations_matched"]
+    assert preflight["coverage_issues"] == ["etw-mutation-coverage-unresolved"]
+    assert preflight["etw_unresolved_event_types"]["calibration:event-17:info-4:unsupported-file-operation"] == 1
+    assert r"C:\QA" not in json.dumps(preflight)
+    del rows[-4:]
+    report()
+
     blocked_output = tmp_path / "blocked.json"
     command = [sys.executable, trace.__file__, "check-calibration-etw",
                *map(str, (manifest_path, sysmon, etw_path, blocked_output))]
