@@ -156,7 +156,12 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
   // Late reads from a prior Quality version cannot roll the visible profile back.
   const liveProfileVersionGuard=useRef(createLiveProfileVersionGuard(
     initialVerifiedProject?.id??'',initialVerifiedProject?.version??0));
-  useEffect(()=>()=>projectOperations.current.invalidate(),[]);
+  useEffect(()=>{
+    // Strict Mode replays mount effects. Restore the verified handoff's scope
+    // after cleanup, since that path skips loadProject on mount.
+    if(initialVerifiedProject)projectOperations.current.begin(initialVerifiedProject.id);
+    return()=>projectOperations.current.invalidate();
+  },[]);
   const [paletteOpen,setPaletteOpen]=useState(false);
   const [paletteQuery,setPaletteQuery]=useState('');
   const [mobileOpen,setMobileOpen]=useState(false);

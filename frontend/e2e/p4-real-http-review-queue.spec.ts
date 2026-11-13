@@ -903,20 +903,29 @@ test('P4-79 real HTTP: reopened experiment settings are read from saved record, 
   expect((await realProject.json()).experiments).toEqual([]);
  });
 
-test('P4 N11 real HTTP: Quality approval refreshes Prepare and survives reopening',async({page,context,request})=>{
+test('P4 N11 real HTTP: Quality approval refreshes Prepare after switching projects and survives reopening',async({page,context,request})=>{
   if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
      process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
     throw Error('Trusted synthetic CI only');
 
+  const initial=await request.post(API+'/api/projects',{multipart:{
+    file:{name:'p4_n11_initial.csv',mimeType:'text/csv',buffer:Buffer.from(csv)},
+  }});
+  expect(initial.status(),await initial.text()).toBe(201);
+  const {id:initialId}=await initial.json();
   const uploaded=await request.post(API+'/api/projects',{multipart:{
     file:{name:'p4_n11_disposable.csv',mimeType:'text/csv',buffer:Buffer.from(p4QualityFixture)},
   }});
   expect(uploaded.status(),await uploaded.text()).toBe(201);
   const {id:projectId}=await uploaded.json();
   const writes:string[]=[];
-  const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[],writes);
+  const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[initialId],writes);
   await page.goto('/');
-  await openP4FixtureWorkspace(page,UI,projectId);
+  await openP4FixtureWorkspace(page,UI,initialId);
+  const chooser=page.getByRole('combobox',{name:'Switch project'});
+  await expect(chooser).toHaveValue(initialId);
+  await expect(page.getByRole('region',{name:'Potential prediction opportunities'})).toContainText('churn');
+  await chooser.selectOption(projectId);
   await verifyP4QualityTransition(page,API+'/api',projectId,async(url:string)=>{
     const response=await request.get(url);
     return {status:response.status(),json:()=>response.json()};
