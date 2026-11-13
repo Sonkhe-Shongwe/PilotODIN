@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | R05 Windows runner prepared
+
+- The [R05 workflow](../.github/workflows/p4-native-r05-fitted-prepare.yml) and [runner mode](../qa/p4_native/Run_P4_71_Disposable_Windows.ps1) are staged on the development branch with both native jobs disabled. The launch requires a new approval marker and a direct child of the reviewed source. The runner rejects reruns, unrelated launch changes and combined case modes.
+- **Next:** Obtain explicit approval for one unpackaged GitHub-hosted Windows build and one experiment on 40 generated rows. After approval, enable the two jobs and add `qa/p4_native/P4_WINDOWS_R05_FITTED_PREPARE_APPROVAL.txt` in the same direct-child commit. Its two lines are `reviewed_source=<full reviewed parent SHA>` and `scope=r05-one-build-one-synthetic-fit`. Review the exact two-file diff before pushing, verify the run at the launch SHA, then disarm the jobs. [Acceptance scope](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026--r05-windows-acceptance-rehearsal).
+
 ## 13 November 2026 | R05 Windows acceptance rehearsal
 
 - [P4 CI #43435787562](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43435787562) passed 185 Python tests, 78 Node checks, the frontend build, 13 Chromium scenarios and the synthetic Windows preservation job at [5577cb7](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5577cb72b0e3fb7f2ebe95c35ec5f29bb5819574). The new browser case verified category examples, estimates, a fitted experiment reopened from history, and the stale Predict guard. The regular Windows job checks preservation tools on synthetic files.
