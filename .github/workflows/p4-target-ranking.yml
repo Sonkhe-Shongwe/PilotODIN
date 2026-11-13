@@ -49,6 +49,11 @@ on:
       - frontend/src-tauri/tauri.p4-isolated-native-dev.conf.json
       - frontend/tests/p4-native-dev-isolation.test.cjs
       - frontend/e2e/p4-real-http-review-queue.spec.ts
+      - frontend/e2e/p4-71-native-webview-qa.mjs
+      - frontend/e2e/p4-72-cdp-target-classifier.mjs
+      - frontend/e2e/p4-72-cdp-target-classifier.test.mjs
+      - frontend/e2e/p4-73-cdp-target-discovery.mjs
+      - frontend/e2e/p4-73-cdp-target-discovery.test.mjs
       - frontend/playwright.p4-real-http.config.ts
   workflow_dispatch:
 
@@ -120,6 +125,8 @@ jobs:
           frontend/tests/p4-75-selected-feature-budget.test.cjs
           frontend/tests/p1-primary-button-edit-markers.test.cjs
           frontend/tests/p4-native-dev-isolation.test.cjs
+          frontend/e2e/p4-72-cdp-target-classifier.test.mjs
+          frontend/e2e/p4-73-cdp-target-discovery.test.mjs
       - name: Build actual TypeScript and Vite bundle
         run: npm run build --prefix frontend
 
