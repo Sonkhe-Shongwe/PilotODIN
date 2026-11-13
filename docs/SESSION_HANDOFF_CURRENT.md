@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | Hosted Windows R05 fitted Prepare acceptance
+
+- [Windows R05 #43439284563](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563) passed preflight and native acceptance. The one unpackaged build used [`7448245`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/74482456c0d5a433093ed0180cb1a859f25775a2), executable SHA-256 `ef862dd519866fa4063b6931e7088edd95f64961294d90e8027c4cfbcd44d052` (18,354,176 bytes). The runner fitted one logistic regression candidate on 40 generated rows in a disposable project. The [workflow disarmed](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/52df1439d241acd9d26cd2da0d9b4222a3f5e8dc) after completion. [P4 CI #43439284349](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284349) also passed 185 Python tests, 78 Node checks, the frontend build, 13 Chromium scenarios and the synthetic Windows preservation job.
+- Windows WebView2 verified the Prepare category examples and encoded-column estimates, reopened the fitted experiment from project history with mean imputation, the dedicated categorical missing marker and Quality version 1, and kept the historical record visible while blocking new predictions after the dataset advanced to version 2.
+- N12 remains partial. WebView interception recorded zero browser writes, zero unexpected requests and three blocked font requests. Both TCP snapshots observed one non-loopback IPv4 connection to port 443 owned by the isolated WebView2 Network Service. The destination and purpose were not captured. Protected production and previous QA profile paths were absent in the disposable runner checks. The one synthetic experiment and Quality changes were made by the loopback test driver.
+- **Next:** Carry the hosted R05 pass into the P4 closure review. Remaining items include N12 network and write evidence, R03 physical 8 GB offline operation, the historical R06 integrity failure and owner signoff. P4 stays active.
+
 ## 13 November 2026 | R05 Windows runner prepared
 
 - The [R05 workflow](../.github/workflows/p4-native-r05-fitted-prepare.yml) and [runner mode](../qa/p4_native/Run_P4_71_Disposable_Windows.ps1) are staged on the development branch with both native jobs disabled. The launch requires a new approval marker and a direct child of the reviewed source. The runner rejects reruns, unrelated launch changes and combined case modes.
