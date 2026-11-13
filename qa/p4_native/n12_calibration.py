@@ -53,7 +53,7 @@ def calibrate(directory: Path) -> dict:
             if child.poll() is None:
                 child.kill()
                 child.wait()
-    return {"role": "calibration", "pid": os.getpid(), "image": sys.executable,
+    return {"role": "calibration", "pid": os.getpid(), "image": sys.executable, "child_pid": child.pid,
             "fixture": str(original), "renamed_fixture": str(renamed), "port": address[1]}
 
 

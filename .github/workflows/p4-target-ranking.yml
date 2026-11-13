@@ -265,3 +265,7 @@ jobs:
             throw 'N12 synthetic preservation check failed.'
           }
           Write-Host 'N12 synthetic Windows snapshot and loopback/file operation fixture passed.'
+
+      - name: Probe Windows ETW loss counters and generated fixture events
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1
