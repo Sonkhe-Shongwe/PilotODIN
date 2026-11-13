@@ -177,16 +177,31 @@ if ($PreopenedControl) {
     if ($Rundown) {
         $rundownPath = Join-Path $root 'rundown.jsonl'
         $classicFile = [guid]'90cbdc39-4a3e-11d1-84f4-0000f80464e3'
+        $rundownCounts = @{ classic_events = 0; opcode_36 = 0; decoded_names = 0 }
         $rundownStream = [IO.StreamWriter]::new($rundownPath, $false, [Text.UTF8Encoding]::new($false))
         try {
             Get-WinEvent -Path (Join-Path $root 'rundown.etl') -Oldest | ForEach-Object {
                 $event = $_
+                if ($event.ProviderId -eq $classicFile) { $rundownCounts.classic_events++ }
                 if ($event.ProviderId -eq $classicFile -and $event.Opcode -eq 36) {
+                    $rundownCounts.opcode_36++
                     $values = @($event.Properties | ForEach-Object Value)
+                    $key, $name = $null, $null
                     if ($values.Count -eq 2 -and $values[1] -is [string]) {
+                        $key, $name = [string]$values[0], $values[1]
+                    } else {
+                        $xml = [xml]$event.ToXml()
+                        $keyNode = $xml.SelectSingleNode("//*[local-name()='Data' and @Name='FileObject']")
+                        $nameNode = $xml.SelectSingleNode("//*[local-name()='Data' and @Name='FileName']")
+                        if ($keyNode -and $nameNode) {
+                            $key, $name = $keyNode.InnerText, $nameNode.InnerText
+                        }
+                    }
+                    if ($key -and $name) {
+                        $rundownCounts.decoded_names++
                         $rundownStream.WriteLine((@{
-                            key = [string]$values[0]
-                            path = $values[1]
+                            key = $key
+                            path = $name
                         } | ConvertTo-Json -Compress))
                     }
                 }
@@ -194,6 +209,7 @@ if ($PreopenedControl) {
         } finally {
             $rundownStream.Dispose()
         }
+        Write-Host ('Windows FileIO rundown record counts: ' + ($rundownCounts | ConvertTo-Json -Compress))
         $controlArgs += $rundownPath
     }
     python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') @controlArgs
