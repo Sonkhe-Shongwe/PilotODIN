@@ -56,21 +56,48 @@ def stop_trace(session):
     )}
 
 
+def volume_device(drive):
+    target = ctypes.create_unicode_buffer(4096)
+    query = ctypes.WinDLL("kernel32").QueryDosDeviceW
+    query.argtypes = (wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD)
+    query.restype = wintypes.DWORD
+    if not query(drive, target, len(target)):
+        raise RuntimeError("Could not resolve the fixture drive's device name.")
+    return target.value
+
+
 def probe(root):
     root.mkdir()
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
-    # Kernel File keywords for names, file I/O, completion, creation and writes.
+    # Names, file I/O, completion, creation, writes, and delete/rename paths.
     logman = [str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")]
     started = subprocess.run(
         [*logman, "create", "trace", session, "-p", "Microsoft-Windows-Kernel-File",
-         "0x2f0", "4", "-o", str(etl), "-max", "128", "-bs", "64", "-nb", "16", "128", "-ets"],
+         "0x1ef0", "4", "-o", str(etl), "-max", "128", "-bs", "64", "-nb", "16", "128", "-ets"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20, check=False,
     )
     if started.returncode:
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
     try:
         fixture = calibrate(root / "markers")
+        source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
+        source.parent.mkdir()
+        destination.parent.mkdir()
+        source.write_bytes(b"cross-directory marker")
+        with subprocess.Popen(
+            [sys.executable, "-B", "-c", "import os,sys; os.rename(*sys.argv[1:])",
+             str(source), str(destination)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        ) as writer:
+            try:
+                if writer.wait(timeout=10):
+                    raise RuntimeError("The cross-directory fixture writer failed.")
+            except subprocess.TimeoutExpired:
+                writer.kill()
+                writer.wait()
+                raise
+        if source.exists() or destination.read_bytes() != b"cross-directory marker":
+            raise RuntimeError("The cross-directory fixture did not finish at the expected destination.")
     finally:
         try:
             counters = stop_trace(session)
@@ -80,7 +107,8 @@ def probe(root):
             raise
     if etl.stat().st_size == 0 or counters["buffers_written"] == 0:
         raise RuntimeError("ETW trace was empty.")
-    return {"fixture": fixture, "counters": counters}
+    return {"fixture": fixture, "counters": counters, "device": volume_device(root.drive),
+            "second_writer": {"pid": writer.pid, "source": str(source), "destination": str(destination)}}
 
 
 if __name__ == "__main__":
