@@ -1,4 +1,4 @@
-param([switch]$PreflightOnly, [switch]$ValidateRuntime)
+param([switch]$PreflightOnly, [switch]$ValidateRuntime, [switch]$DockingOnly)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $base = 'adf521269ab0dbc75c03223cfe14561dbbb2edc5'
@@ -116,11 +116,16 @@ try {
  # Collect probe diagnostics even if the readiness poll found no debugger.
  Push-Location $frontend
  try {
-   node e2e/p4-71-native-webview-qa.mjs
+   if ($DockingOnly) { node e2e/p4-71-native-webview-qa.mjs --verify-docking }
+   else { node e2e/p4-71-native-webview-qa.mjs }
    if ($LASTEXITCODE -eq 2) { Fail 'Native startup verified; N2-N12 BLOCKED before fixture creation. See loopback diagnostics.' }
    if ($LASTEXITCODE -eq 3) { Fail 'Native project switch BLOCKED at the Windows confirmation. See the per-case probe output.' }
-   if ($LASTEXITCODE -ne 0) { Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval' }
+   if ($LASTEXITCODE -ne 0) {
+     if ($DockingOnly) { Fail 'R04 WebView2 docking probe failed. See the per-step results and drag event counts.' }
+     Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval'
+   }
  } finally { Pop-Location }
+ if ($DockingOnly) { return }
  $closedAppPid = [int]$env:P4_NATIVE_QA_APP_PID
  Close-P4VerifiedWindow -AppProcessId $closedAppPid -ExpectedPath $binary -ExpectedTitle $isolated.app.windows[0].title
  Write-Host 'N11 isolated app accepted its Windows close request and exited normally.'

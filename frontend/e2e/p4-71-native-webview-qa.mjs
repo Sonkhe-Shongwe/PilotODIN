@@ -16,10 +16,12 @@ for(const [key,value] of Object.entries(required)) {
 if(!process.env.PILOTODIN_HOME?.includes('P4-71-only-home-'))throw Error('P4-71 BLOCKED: no disposable isolated test home');
 const API='http://127.0.0.1:8000/api';
 const SITE='http://127.0.0.1:5173';
-const relaunch=process.argv[2]==='--verify-relaunch';
+const mode=process.argv[2];
+const relaunch=mode==='--verify-relaunch';
+const dockingOnly=mode==='--verify-docking';
 const receiptPath=join(process.env.PILOTODIN_HOME,'p4-synthetic-projects.json');
 const captureDir=join(process.env.PILOTODIN_HOME,'captures');
-if(process.argv.length!== (relaunch ? 3 : 2))throw Error('Unexpected QA probe arguments');
+if(process.argv.length!==(relaunch||dockingOnly?3:2))throw Error('Unexpected QA probe arguments');
 const invokeDialog=fileURLToPath(new URL('../../qa/p4_native/Invoke_P4_Native_Project_Switch_Dialog.ps1',import.meta.url));
 const execFileAsync=promisify(execFile);
 
@@ -80,7 +82,7 @@ async function noTraining(ids){
  }
 }
 
-async function verifyWindowsLayout(page) {
+async function verifyWindowsLayout(page, { captureCheckpoint = true } = {}) {
  const navigation=page.getByRole('navigation',{name:'Workspace navigation'});
  const primary=page.locator('.po-primary-pane');
  const checkpoint=primary.getByRole('group',{name:'Selected target suitability checkpoint'});
@@ -88,33 +90,75 @@ async function verifyWindowsLayout(page) {
  console.log('R04 native WebView viewport '+JSON.stringify(nativeViewport));
  const session=await page.context().newCDPSession(page);
  try {
-  for(const width of [1440,1100]){
-   await session.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:0,mobile:false});
-   await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
-   await expect(checkpoint).toBeVisible();
-   await expect(checkpoint).toHaveCSS('display','block');
-   expect(await checkpoint.evaluate(node=>node.scrollWidth<=node.clientWidth+2)).toBe(true);
-   await expect(page.locator('.po-shell-warning')).toHaveCount(0);
-   await checkpoint.screenshot({path:join(captureDir,'prepare-review-'+width+'.png'),animations:'disabled',timeout:15000});
+  if(captureCheckpoint){
+   for(const width of [1440,1100]){
+    await session.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:0,mobile:false});
+    await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
+    await expect(checkpoint).toBeVisible();
+    await expect(checkpoint).toHaveCSS('display','block');
+    expect(await checkpoint.evaluate(node=>node.scrollWidth<=node.clientWidth+2)).toBe(true);
+    await expect(page.locator('.po-shell-warning')).toHaveCount(0);
+    await checkpoint.screenshot({path:join(captureDir,'prepare-review-'+width+'.png'),animations:'disabled',timeout:15000});
+   }
+   console.log('R04 target checkpoint and archive warning at two WebView widths: PASS');
   }
-  console.log('R04 target checkpoint and archive warning at two WebView widths: PASS');
   await session.send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:0,mobile:false});
   await navigation.getByRole('button',{name:'Your data',exact:true}).click();
   await navigation.getByRole('button',{name:'Prepare',exact:true}).click();
+  await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
   const dataTab=page.locator('.po-tab').filter({has:page.locator('#po-workspace-tab-understand')});
+  await expect(dataTab).toHaveAttribute('draggable','true');
   const dock=page.getByRole('region',{name:'Docked Your data workspace'});
-  await dataTab.dragTo(primary);
-  await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
-  await dock.getByRole('button',{name:'Close docked pane'}).click();
   await expect(dock).toBeHidden();
+  const dragEvents=await page.evaluateHandle(()=>{
+   const events={start:0,over:0,drop:0,end:0};
+   const tab=document.getElementById('po-workspace-tab-understand')?.closest('.po-tab');
+   const pane=document.getElementById('po-current-workspace');
+   if(!tab||!pane)throw Error('R04 drag source or destination is missing');
+   const controller=new AbortController();
+   const options={capture:true,signal:controller.signal};
+   tab.addEventListener('dragstart',()=>events.start++,options);
+   tab.addEventListener('dragend',()=>events.end++,options);
+   pane.addEventListener('dragover',event=>{
+    if(event.dataTransfer?.types.includes('text/x-pilotodin-workspace'))events.over++;
+   },options);
+   pane.addEventListener('drop',event=>{
+    if(event.dataTransfer?.types.includes('text/x-pilotodin-workspace'))events.drop++;
+   },options);
+   return {events,controller};
+  });
+  let dragError;
+  try{
+   await dataTab.dragTo(primary,{timeout:10000});
+   await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
+   console.log('R04 tab drag opened the correct dock: PASS');
+  }catch(error){
+   dragError=error;
+   console.error('R04 tab drag did not verify:',error.message);
+  }finally{
+   const events=await dragEvents.evaluate(({events,controller})=>{
+    controller.abort();
+    return events;
+   });
+   await dragEvents.dispose();
+   console.log('R04 HTML drag events '+JSON.stringify(events));
+  }
+  if(await dock.isVisible()){
+   await dock.getByRole('button',{name:'Close docked pane'}).click();
+   await expect(dock).toBeHidden();
+  }
   await page.getByRole('button',{name:'Dock Your data beside current view'}).click();
-  await expect(dock).toBeVisible();
+  await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
+  console.log('R04 explicit Dock beside control: PASS');
   await session.send('Emulation.setDeviceMetricsOverride',{width:730,height:900,deviceScaleFactor:0,mobile:false});
   await expect(dock).toBeHidden();
   await expect(page.locator('.po-dock-narrow-notice')).toBeVisible();
   await session.send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:0,mobile:false});
   await expect(dock).toBeVisible();
   await dock.getByRole('button',{name:'Close docked pane'}).click();
+  await expect(dock).toBeHidden();
+  console.log('R04 dock close and narrow WebView pause/restore: PASS');
+  if(dragError)throw dragError;
   console.log('R04 docking drag, close, reopen and narrow WebView pause/restore: PASS');
  }finally{
   await session.send('Emulation.clearDeviceMetricsOverride');
@@ -216,6 +260,19 @@ async function runNativeProbe(browser) {
   }
  });
  console.log('ACTUAL Tauri WebView2 reached, local URL only');
+ if(dockingOnly){
+  const projectId=await create('classification');
+  try{
+   await openP4FixtureWorkspace(page,SITE,projectId);
+   await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(projectId,{timeout:45000});
+   await verifyWindowsLayout(page,{captureCheckpoint:false});
+  }finally{
+   await noTraining([projectId]);
+   expect(writes).toEqual([]);
+   reportTraffic();
+  }
+  return;
+ }
  if(relaunch){
   const saved=JSON.parse(await readFile(receiptPath,'utf8'));
   if(Object.keys(saved).length!==7||Object.values(saved).some(id=>typeof id!=='string'||!/^[0-9a-f]{32}$/.test(id)))throw Error('Invalid synthetic project receipt');
