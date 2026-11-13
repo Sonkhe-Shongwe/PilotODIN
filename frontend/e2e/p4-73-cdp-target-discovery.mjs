@@ -1,4 +1,4 @@
-// P4-73 pure, no-network native CDP discovery. Browser snapshot and wait are injected.
+// P4-73 native CDP discovery and redacted loopback diagnostics.
 import {isExpectedDevPage, safeTargetClass} from './p4-72-cdp-target-classifier.mjs';
 
 export async function discoverUniqueDevPage(snapshot, wait, maxAttempts=20) {
@@ -25,4 +25,50 @@ export async function hasTauriNativeBridge(page) {
       Boolean(window.__TAURI_INTERNALS__ &&
         typeof window.__TAURI_INTERNALS__.invoke==='function'))===true;
   } catch {return false;}
+}
+
+async function fetchLoopback(fetcher, url) {
+  try {
+    const response = await fetcher(url, {
+      redirect: 'error',
+      signal: AbortSignal.timeout(2000),
+    });
+    return {response, httpStatus: response.status};
+  } catch (error) {
+    return {status: error?.name === 'TimeoutError' ? 'timeout' : 'unavailable'};
+  }
+}
+
+export async function diagnoseDevPage(fetcher = fetch) {
+  const [vite, debuggerList] = await Promise.all([
+    fetchLoopback(fetcher, 'http://127.0.0.1:5173/'),
+    fetchLoopback(fetcher, 'http://127.0.0.1:9331/json/list'),
+  ]);
+  const devServer = vite.response ? {httpStatus: vite.httpStatus} : vite;
+  if (vite.response?.body) await vite.response.body.cancel().catch(() => {});
+  if (!debuggerList.response) return {devServer, debuggerList};
+  const {response, httpStatus} = debuggerList;
+  if (!response.ok) {
+    if (response.body) await response.body.cancel().catch(() => {});
+    return {devServer, debuggerList: {httpStatus}};
+  }
+  let targets;
+  try {
+    targets = await response.json();
+  } catch {
+    return {devServer, debuggerList: {httpStatus, status: 'unreadable'}};
+  }
+  if (!Array.isArray(targets)) {
+    return {devServer, debuggerList: {httpStatus, status: 'invalid'}};
+  }
+  const pages = targets.filter(target => target?.type === 'page');
+  return {
+    devServer,
+    debuggerList: {
+      httpStatus,
+      pageCount: pages.length,
+      otherTargetCount: targets.length - pages.length,
+      pageClasses: [...new Set(pages.map(page => safeTargetClass(page.url)))].sort(),
+    },
+  };
 }

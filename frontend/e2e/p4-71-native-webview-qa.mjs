@@ -1,4 +1,4 @@
-import { discoverUniqueDevPage, hasTauriNativeBridge } from './p4-73-cdp-target-discovery.mjs';
+import { diagnoseDevPage, discoverUniqueDevPage, hasTauriNativeBridge } from './p4-73-cdp-target-discovery.mjs';
 // P4-71 disposable CI only: attach to ACTUAL Tauri native WebView2, no original user data.
 import { chromium, expect } from '@playwright/test';
 const required = {CI:'true',GITHUB_ACTIONS:'true',RUNNER_OS:'Windows',RUNNER_ENVIRONMENT:'github-hosted',VITE_PILOTODIN_NATIVE_SMOKE:'1'};
@@ -41,15 +41,11 @@ async function noTraining(ids){
   if((await resp.json()).experiments?.length!==0)throw Error('STOP: unexpected model experiment in disposable project');
  }
 }
-let browser;
-try {
- browser=await chromium.connectOverCDP('http://127.0.0.1:9331',{timeout:15000});
-}catch(error){
- console.log('NATIVE INTERACTIONS BLOCKED: WebView2 CDP unavailable; cannot claim N2-N11 native checks.');
- console.log('CDP failure category: '+(error?.name??'unknown'));
- process.exit(0);
+async function reportBlockedDiscovery() {
+ process.exitCode=2;
+ console.log('NATIVE LOOPBACK DIAGNOSTICS: '+JSON.stringify(await diagnoseDevPage()));
 }
-try{
+async function runNativeProbe(browser) {
  const discovered=await discoverUniqueDevPage(
   ()=>browser.contexts().flatMap(context=>context.pages()),
   ()=>new Promise(resolve=>setTimeout(resolve,1500)),
@@ -59,14 +55,16 @@ try{
   // Diagnostic classes are deliberately fixed categories, never raw URLs.
   console.log('NATIVE INTERACTIONS BLOCKED: '+discovered.status);
   if(discovered.classes)console.log('CDP target classes: '+JSON.stringify(discovered.classes)+'; count='+discovered.count);
-  process.exit(0);
+  await reportBlockedDiscovery();
+  return;
  }
  const page=discovered.page;
  // Even an exact loopback URL can belong to a non-Tauri browsing context.
  // Require the actual injected native bridge BEFORE creating QA projects.
  if(!(await hasTauriNativeBridge(page))){
   console.log('NATIVE INTERACTIONS BLOCKED: no callable Tauri native IPC bridge on the selected target. No QA projects created.');
-  process.exit(0);
+  await reportBlockedDiscovery();
+  return;
  }
  const context=page.context();
  await context.route('**/*',async route=>{
@@ -122,4 +120,21 @@ try{
   console.log('N12 no model experiments: PASS');
   console.log('P4-71 BOUNDED ACTUAL NATIVE WEBVIEW INTERACTION SUITE: PASS, remaining R02-R06 open.');
  }finally{await noTraining(all);}
-}finally{await browser.close().catch(()=>{});}
+}
+async function main() {
+ let browser;
+ try {
+  browser=await chromium.connectOverCDP('http://127.0.0.1:9331',{timeout:15000});
+ } catch (error) {
+  console.log('NATIVE INTERACTIONS BLOCKED: WebView2 CDP unavailable; cannot claim N2-N12 native checks.');
+  console.log('CDP failure category: '+(error?.name??'unknown'));
+  await reportBlockedDiscovery();
+  return;
+ }
+ try {
+  await runNativeProbe(browser);
+ } finally {
+  await browser.close().catch(()=>{});
+ }
+}
+await main();

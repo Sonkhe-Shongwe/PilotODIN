@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {discoverUniqueDevPage,hasTauriNativeBridge} from './p4-73-cdp-target-discovery.mjs';
+import {diagnoseDevPage,discoverUniqueDevPage,hasTauriNativeBridge} from './p4-73-cdp-target-discovery.mjs';
 const page = u=>({url:()=>u});
 const wanted=page('http://127.0.0.1:5173/#/studio/prepare');
 const empty=page('about:blank');
@@ -46,5 +46,56 @@ test('native bridge must exist and supply actual callable invoke',async()=>{
   } finally {
     if(original===undefined)delete globalThis.window;
     else globalThis.window=original;
+  }
+});
+
+test('blocked discovery compares the dev server with debugger page categories', async () => {
+  const called = [];
+  const result = await diagnoseDevPage(async (url, options) => {
+    called.push(url);
+    assert.equal(options.redirect, 'error');
+    assert.ok(options.signal instanceof AbortSignal);
+    if (url.endsWith(':5173/')) return new Response('private response body');
+    return Response.json([
+      {type: 'page', url: 'http://127.0.0.1:5173/#/studio/prepare', title: 'private title'},
+      {type: 'page', url: 'https://example.org/private-path?token=private-query'},
+      {type: 'service_worker', url: 'https://example.org/private-worker'},
+    ]);
+  });
+  assert.deepEqual(called, ['http://127.0.0.1:5173/', 'http://127.0.0.1:9331/json/list']);
+  assert.deepEqual(result, {
+    devServer: {httpStatus: 200},
+    debuggerList: {
+      httpStatus: 200,
+      pageCount: 2,
+      otherTargetCount: 1,
+      pageClasses: ['expected-5173-root', 'other-web-origin'],
+    },
+  });
+  assert.doesNotMatch(JSON.stringify(result), /private/);
+});
+
+test('failed loopback requests report statuses without exposing request errors', async () => {
+  const result = await diagnoseDevPage(async (url) => {
+    if (url.endsWith(':5173/')) throw new DOMException('private error', 'TimeoutError');
+    return new Response('private debugger error', {status: 503});
+  });
+  assert.deepEqual(result, {devServer: {status: 'timeout'}, debuggerList: {httpStatus: 503}});
+});
+
+test('empty and unreadable debugger results are distinct from a server failure', async () => {
+  for (const [response, expected] of [
+    [Response.json([]), {pageCount: 0, otherTargetCount: 0, pageClasses: []}],
+    [Response.json({}), {status: 'invalid'}],
+    [new Response('invalid JSON'), {status: 'unreadable'}],
+  ]) {
+    const result = await diagnoseDevPage(async (url) => {
+      if (url.endsWith(':5173/')) throw new TypeError('private error');
+      return response;
+    });
+    assert.deepEqual(result, {
+      devServer: {status: 'unavailable'},
+      debuggerList: {httpStatus: 200, ...expected},
+    });
   }
 });

@@ -100,15 +100,13 @@ try {
   Where-Object {$_.CommandLine -and $_.CommandLine.Contains('com.pilotodin.p4isolatednativedev')})
  Write-Host "NATIVE WEBVIEW SMOKE: isolated_app_root_present=$(Test-Path $isolatedRoot); isolated_WebView2_processes=$($webviews.Count); debugger_ready=$cdp"
  if (-not (Test-Path $isolatedRoot) -or $webviews.Count -lt 1) { Fail 'Actual native WebView2 profile isolation/startup not proven' }
- if ($cdp) {
-   Push-Location $frontend
-   try {
-     node e2e/p4-71-native-webview-qa.mjs
-     if ($LASTEXITCODE -ne 0) { Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval' }
-   } finally { Pop-Location }
- } else {
-   Write-Host 'NATIVE INTERACTIONS BLOCKED: WebView2 CDP unavailable. N2-N11 NOT TESTED; native startup isolation only.'
- }
+ # Collect probe diagnostics even if the readiness poll found no debugger.
+ Push-Location $frontend
+ try {
+   node e2e/p4-71-native-webview-qa.mjs
+   if ($LASTEXITCODE -eq 2) { Fail 'Native startup verified; N2-N12 BLOCKED before fixture creation. See loopback diagnostics.' }
+   if ($LASTEXITCODE -ne 0) { Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval' }
+ } finally { Pop-Location }
  # Do not count this hosted runner as a physical 8 GB/Qwen/offline acceptance.
  Write-Host 'R03 PHYSICAL 8GB + QWEN OFFLINE: NOT TESTED. No model fitted. No original owner files touched.'
 } finally {
