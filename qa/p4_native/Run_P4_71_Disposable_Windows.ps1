@@ -86,8 +86,13 @@ try {
    if ($native.HasExited) { Fail 'Native developer build/launcher exited; do not repeat this one-shot build' }
    if (Test-Path -LiteralPath $binary -PathType Leaf) {
      $nativeProcess = @(Get-CimInstance Win32_Process -Filter "Name = 'pilotodin-desktop.exe'" -ErrorAction SilentlyContinue |
-       Where-Object { $_.ExecutablePath -and $_.ExecutablePath.EndsWith('src-tauri\target\debug\pilotodin-desktop.exe',[System.StringComparison]::OrdinalIgnoreCase) })
-     if ($nativeProcess.Count -gt 0) { $compiled = $true; break }
+       Where-Object { [string]::Equals($_.ExecutablePath, $binary, [StringComparison]::OrdinalIgnoreCase) })
+     if ($nativeProcess.Count -gt 1) { Fail 'More than one isolated QA desktop process was found' }
+     if ($nativeProcess.Count -eq 1) {
+       $env:P4_NATIVE_QA_APP_PID = [string]$nativeProcess[0].ProcessId
+       $compiled = $true
+       break
+     }
    }
  }
  if (-not $compiled) { Fail 'Single native developer compilation/runtime failed to start inside time budget' }
@@ -109,6 +114,7 @@ try {
  try {
    node e2e/p4-71-native-webview-qa.mjs
    if ($LASTEXITCODE -eq 2) { Fail 'Native startup verified; N2-N12 BLOCKED before fixture creation. See loopback diagnostics.' }
+   if ($LASTEXITCODE -eq 3) { Fail 'Native project switch BLOCKED at the Windows confirmation. See the per-case probe output.' }
    if ($LASTEXITCODE -ne 0) { Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval' }
  } finally { Pop-Location }
  # Do not count this hosted runner as a physical 8 GB/Qwen/offline acceptance.
