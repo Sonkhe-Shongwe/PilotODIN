@@ -1,7 +1,7 @@
-param([switch]$PreflightOnly, [switch]$ValidateRuntime, [switch]$DockingOnly)
+param([switch]$PreflightOnly, [switch]$ValidateRuntime, [switch]$DockingOnly, [switch]$AcceptanceOnly)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$base = 'adf521269ab0dbc75c03223cfe14561dbbb2edc5'
+$base = 'f2174a5372e3ad5b27606d72025ad4d1f18e457b'
 $branch = 'feature/live-dev-workspace-20261023'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $frontend = Join-Path $root 'frontend'
@@ -17,10 +17,12 @@ if ($LASTEXITCODE -ne 0 -or $commitAndParents.Count -ne 2 -or $commitAndParents[
 }
 if ($env:GITHUB_RUN_ATTEMPT -ne '1') { Fail 'One-shot approval excludes re-runs' }
 $allowed = @(
- '.github/workflows/p4-native-consolidated-20261113.yml',
- 'qa/p4_native/P4_WINDOWS_CONSOLIDATED_APPROVAL_20261113.txt',
+ '.github/workflows/p4-native-remaining-acceptance-20261113.yml',
+ 'qa/p4_native/P4_WINDOWS_REMAINING_ACCEPTANCE_APPROVAL_20261113.txt',
  'qa/p4_native/Run_P4_71_Disposable_Windows.ps1',
- 'frontend/e2e/p4-71-native-webview-qa.mjs'
+ 'frontend/e2e/p4-71-native-webview-qa.mjs',
+ 'frontend/e2e/p4-quality-version-transition.mjs',
+ 'frontend/e2e/p4-open-fixture-workspace.mjs'
 )
 $changed = @(& git -C $root diff --name-only $base $actual)
 if ($LASTEXITCODE -ne 0 -or $changed.Count -ne $allowed.Count) { Fail 'One-shot launch must contain exactly the reviewed QA setup changes' }
@@ -43,7 +45,7 @@ if ($production.identifier -ne 'com.pilotodin.studio' -or
     $production.build.beforeDevCommand -ne 'node scripts/deny-unsafe-default-tauri-dev.mjs' -or
     $production.build.beforeBuildCommand -ne 'node scripts/deny-intermediate-installer.mjs') { Fail 'Production/QA/dev identities, bundles or default-deny hooks differ from reviewed source' }
 if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_CONSOLIDATED_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_REMAINING_ACCEPTANCE_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
 if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
 foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
  foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
@@ -56,6 +58,7 @@ if ($PreflightOnly -or $ValidateRuntime) {
  Write-Host "P4-71 HOSTED WINDOWS PREFLIGHT + RUNTIME PATH PASS: exact HEAD=$actual approved_base=$base; distinct IDs; original roots absent; reserved variable avoided; bundle forbidden; no native compilation."
  exit 0
 }
+if (-not $AcceptanceOnly -or $DockingOnly) { Fail 'The approved launch covers the remaining acceptance probe only' }
 New-Item -ItemType Directory -Path $qaHome | Out-Null
 $env:PILOTODIN_HOME = $qaHome
 $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT = 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV'
@@ -68,6 +71,21 @@ $backend = $null
 $native = $null
 $reopened = $null
 $devServer = $null
+function Write-ScopedNetworkSnapshot([string]$stage) {
+ try {
+   $profileProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" |
+     Where-Object { $_.CommandLine -and $_.CommandLine.Contains('com.pilotodin.p4isolatednativedev') })
+   $ownedIds = @($backend.Id, [int]$env:P4_NATIVE_QA_APP_PID) + @($profileProcesses | ForEach-Object { $_.ProcessId })
+   $connections = @(Get-NetTCPConnection -State Established -ErrorAction Stop |
+     Where-Object { $_.OwningProcess -in $ownedIds })
+   $loopback = @($connections | Where-Object {
+     [System.Net.IPAddress]::IsLoopback([System.Net.IPAddress]::Parse($_.RemoteAddress))
+   }).Count
+   Write-Host "N12 TCP snapshot ${stage}: processes=$($ownedIds.Count) loopback=$loopback other=$($connections.Count - $loopback)"
+ } catch {
+   Write-Host "N12 TCP snapshot ${stage}: unavailable"
+ }
+}
 try {
  $backend = Start-Process -FilePath 'python.exe' -ArgumentList @('-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--no-access-log') -WorkingDirectory $root -PassThru
  $ready = $false
@@ -113,19 +131,25 @@ try {
   Where-Object {$_.CommandLine -and $_.CommandLine.Contains('com.pilotodin.p4isolatednativedev')})
  Write-Host "NATIVE WEBVIEW SMOKE: isolated_app_root_present=$(Test-Path $isolatedRoot); isolated_WebView2_processes=$($webviews.Count); debugger_ready=$cdp"
  if (-not (Test-Path $isolatedRoot) -or $webviews.Count -lt 1) { Fail 'Actual native WebView2 profile isolation/startup not proven' }
+ Write-ScopedNetworkSnapshot 'before interactions'
  # Collect probe diagnostics even if the readiness poll found no debugger.
  Push-Location $frontend
  try {
-   if ($DockingOnly) { node e2e/p4-71-native-webview-qa.mjs --verify-docking }
+   if ($AcceptanceOnly) { node e2e/p4-71-native-webview-qa.mjs --verify-acceptance }
+   elseif ($DockingOnly) { node e2e/p4-71-native-webview-qa.mjs --verify-docking }
    else { node e2e/p4-71-native-webview-qa.mjs }
    if ($LASTEXITCODE -eq 2) { Fail 'Native startup verified; N2-N12 BLOCKED before fixture creation. See loopback diagnostics.' }
    if ($LASTEXITCODE -eq 3) { Fail 'Native project switch BLOCKED at the Windows confirmation. See the per-case probe output.' }
    if ($LASTEXITCODE -ne 0) {
+     if ($AcceptanceOnly) { Fail 'Remaining Windows acceptance probe failed. See R04, R05 and N12 case results.' }
      if ($DockingOnly) { Fail 'R04 WebView2 docking probe failed. See the per-step results and drag event counts.' }
      Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval'
    }
- } finally { Pop-Location }
- if ($DockingOnly) { return }
+ } finally {
+   Pop-Location
+   Write-ScopedNetworkSnapshot 'after interactions'
+ }
+ if ($AcceptanceOnly -or $DockingOnly) { return }
  $closedAppPid = [int]$env:P4_NATIVE_QA_APP_PID
  Close-P4VerifiedWindow -AppProcessId $closedAppPid -ExpectedPath $binary -ExpectedTitle $isolated.app.windows[0].title
  Write-Host 'N11 isolated app accepted its Windows close request and exited normally.'

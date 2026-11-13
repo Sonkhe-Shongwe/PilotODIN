@@ -10,7 +10,7 @@ export const p4QualityFixture = [
   ].join(',')),
 ].join('\n') + '\n';
 
-export async function verifyP4QualityTransition(page, api, projectId, read) {
+export async function verifyP4QualityTransition(page, api, projectId, read, { beforeEdit, afterEdit } = {}) {
   const navigation = page.getByRole('navigation', { name: 'Workspace navigation' });
   const review = page.getByRole('region', { name: 'Potential prediction opportunities' });
   const target = page.getByLabel('TARGET VARIABLE');
@@ -27,6 +27,7 @@ export async function verifyP4QualityTransition(page, api, projectId, read) {
   const before = await read(planV0);
   expect(before.status).toBe(200);
   expect(await before.json()).toMatchObject({ quality_version: 0, target: 'churn' });
+  await beforeEdit?.();
 
   await navigation.getByRole('button', { name: 'Quality', exact: true }).click();
   await expect(page.getByText('WORKING VERSION 0', { exact: true })).toBeVisible();
@@ -50,6 +51,7 @@ export async function verifyP4QualityTransition(page, api, projectId, read) {
   await expect(review).toContainText('Current approved dataset version: 1.');
   await expect(target).toHaveValue('churn');
   await expect(planHeading).toBeVisible();
+  await afterEdit?.();
 
   await reloadP4SyntheticWorkspace(page);
   await expect(chooser).toHaveValue(projectId);

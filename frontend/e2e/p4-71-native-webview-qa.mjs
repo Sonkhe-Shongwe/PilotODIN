@@ -19,9 +19,10 @@ const SITE='http://127.0.0.1:5173';
 const mode=process.argv[2];
 const relaunch=mode==='--verify-relaunch';
 const dockingOnly=mode==='--verify-docking';
+const acceptance=mode==='--verify-acceptance';
 const receiptPath=join(process.env.PILOTODIN_HOME,'p4-synthetic-projects.json');
 const captureDir=join(process.env.PILOTODIN_HOME,'captures');
-if(process.argv.length!==(relaunch||dockingOnly?3:2))throw Error('Unexpected QA probe arguments');
+if(process.argv.length!==(relaunch||dockingOnly||acceptance?3:2))throw Error('Unexpected QA probe arguments');
 const invokeDialog=fileURLToPath(new URL('../../qa/p4_native/Invoke_P4_Native_Project_Switch_Dialog.ps1',import.meta.url));
 const execFileAsync=promisify(execFile);
 
@@ -214,6 +215,112 @@ async function verifyWindowsPrepare(page,projectId){
  await expect(categorical).toHaveValue('most_frequent');
  console.log('R05 per-field audit, global strategies, cancel/apply additive exclusions, version and target reset: PASS');
 }
+
+async function setPrepareOverrides(page){
+ const numeric=page.getByLabel('Numeric imputation method');
+ const categorical=page.getByLabel('Categorical imputation method');
+ await numeric.selectOption('mean');
+ await categorical.selectOption('constant');
+ await expect(numeric).toHaveValue('mean');
+ await expect(categorical).toHaveValue('constant');
+}
+
+async function expectPrepareDefaults(page){
+ await expect(page.getByLabel('Numeric imputation method')).toHaveValue('median');
+ await expect(page.getByLabel('Categorical imputation method')).toHaveValue('most_frequent');
+}
+
+async function verifyProjectStrategyReset(page,fromId,toId){
+ await openP4FixtureWorkspace(page,SITE,fromId);
+ const chooser=page.getByRole('combobox',{name:'Switch project'});
+ const target=page.getByLabel('TARGET VARIABLE');
+ const navigation=page.getByRole('navigation',{name:'Workspace navigation'});
+ await expect(chooser).toHaveValue(fromId,{timeout:45000});
+ await target.selectOption('churn');
+ await setPrepareOverrides(page);
+ if(!(await chooseNativeDialogAction(chooser,toId,'Switch project')))throw Error('Project switch consent did not complete');
+ await expect(chooser).toHaveValue(toId);
+ await navigation.getByRole('button',{name:'Prepare',exact:true}).click();
+ await expect(target).toHaveValue('');
+ await target.selectOption('churn');
+ await expectPrepareDefaults(page);
+ console.log('R05 Prepare overrides reset after a consented Windows project switch: PASS');
+}
+
+async function verifySavedStrategyDisplay(page,context,projectId){
+ const id='a'.repeat(32);
+ const projectUrl=`${API}/projects/${projectId}`;
+ const experimentUrl=`${API}/experiments/${id}`;
+ const item={id,status:'completed',selected_model:'logistic_regression',created_at:'2026-11-12T12:00:00Z'};
+ const record={
+  ...item,project_id:projectId,
+  config:{target:'churn',task:'classification',excluded:[],models:['logistic_regression'],
+   quality_version:0,split_strategy:'random',split_column:null,numeric_imputation:'mean',categorical_imputation:'constant'},
+  results:{task:'classification',target:'churn',features:['amount'],excluded_features:[],
+   labelled_rows:80,train_rows:64,test_rows:16,folds:5,primary_metric:'F1 macro',
+   baseline_cv:0.5,beats_baseline:true,
+   models:[{key:'logistic_regression',name:'Logistic Regression',cv_metric:0.75,cv_std:0.02,status:'ready'}],
+   input_schema:[{name:'amount',kind:'number',required:false}],warning:'Synthetic display fixture only'},
+  error:null,final_results:null,is_stale:false,
+ };
+ const project=await fetch(projectUrl);
+ expect(project.status).toBe(200);
+ const genuine=await project.json();
+ expect(genuine.experiments).toEqual([]);
+ const showFixture=async route=>{
+  if(route.request().method()!=='GET')return route.fallback();
+  const json=route.request().url()===projectUrl?{...genuine,experiments:[item]}:record;
+  await route.fulfill({status:200,json});
+ };
+ await context.route(projectUrl,showFixture);
+ await context.route(experimentUrl,showFixture);
+ try{
+  await openP4FixtureWorkspace(page,SITE,projectId);
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(projectId,{timeout:45000});
+  await page.getByLabel('TARGET VARIABLE').selectOption('churn');
+  await expectPrepareDefaults(page);
+  await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('button',{name:'Evaluate',exact:true}).click();
+  await page.locator('button.mini-experiment').click();
+  const audit=page.getByRole('region',{name:'Recorded experiment preprocessing'});
+  for(const view of ['Evaluate','Predict']){
+   if(view==='Predict')await page.getByRole('button',{name:'Open Predict Studio'}).click();
+   await expect(audit).toContainText('Numeric missing values: Mean');
+   await expect(audit).toContainText('Categorical missing values: Reserved missing marker');
+   await expect(audit).toContainText('working data version v0');
+   console.log('R05 '+view+' displayed recorded choices from the synthetic GET fixture: PASS');
+  }
+ }finally{
+  await context.unroute(experimentUrl,showFixture);
+  await context.unroute(projectUrl,showFixture);
+ }
+}
+
+async function runRemainingAcceptance(page,context,ids,writes){
+ const failures=[];
+ const check=async(name,run)=>{
+  try{await run()}catch(error){failures.push(name);console.error(name+' check stopped:',error.message)}
+ };
+ await check('R04 docking',async()=>{
+  await openP4FixtureWorkspace(page,SITE,ids.prepare);
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(ids.prepare,{timeout:45000});
+  await verifyWindowsLayout(page,{captureCheckpoint:false});
+ });
+ await check('R05 project switch',()=>verifyProjectStrategyReset(page,ids.prepare,ids.quality));
+ await check('R05 Quality change',async()=>{
+  await openP4FixtureWorkspace(page,SITE,ids.quality);
+  await verifyP4QualityTransition(page,API,ids.quality,url=>fetch(url),{
+   beforeEdit:()=>setPrepareOverrides(page),
+   afterEdit:async()=>{
+    await expectPrepareDefaults(page);
+    console.log('R05 Prepare overrides reset after Quality version 0 to 1: PASS');
+   },
+  });
+ });
+ await check('R05 saved experiment',()=>verifySavedStrategyDisplay(page,context,ids.prepare));
+ expect(writes).toEqual(['proposals','commit']);
+ if(failures.length)throw Error('Hosted Windows checks failed: '+failures.join(', '));
+}
+
 async function reportBlockedDiscovery() {
  process.exitCode=2;
  console.log('NATIVE LOOPBACK DIAGNOSTICS: '+JSON.stringify(await diagnoseDevPage()));
@@ -260,6 +367,18 @@ async function runNativeProbe(browser) {
   }
  });
  console.log('ACTUAL Tauri WebView2 reached, local URL only');
+ if(acceptance){
+  ids.prepare=await create('prepare');
+  ids.quality=await create('quality');
+  try{
+   await runRemainingAcceptance(page,context,ids,writes);
+  }finally{
+   await noTraining(Object.values(ids));
+   console.log('N12 experiment count: zero in both disposable projects');
+   reportTraffic();
+  }
+  return;
+ }
  if(dockingOnly){
   const projectId=await create('classification');
   try{
