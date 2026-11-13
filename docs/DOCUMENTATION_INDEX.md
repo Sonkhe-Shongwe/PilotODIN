@@ -12,6 +12,8 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November consolidated Windows QA:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance). N11 same-binary relaunch passed. The tested Prepare controls passed. R04 drag-to-dock remains open after the workflow failed at that check.
+
 - **13 November Windows:** [P4 Quality relaunch checkpoint](./SESSION_HANDOFF_CURRENT.md#13-november-2026--p4-quality-relaunch-checkpoint) and [native run record](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-windows-quality-refresh-retest). Hosted Windows passed the Quality edit, version guard, Prepare refresh and WebView reload. Same-binary Windows process relaunch is pending.
 - **13 November:** [Owner decision on Gate C](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c) moves real-world decision suitability to pre-use approval. The [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) tracks engineering closure against R02–R06.
 - **13 Nov owner correction (binding):** **No cold emailing or unsolicited external outreach as a requirement for progress.** P4-82 NESO outreach draft [withdrawn from the active plan](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md) and retained only as unsent history. No operator response required to continue safe in-scope technical work; R01 Gate C remains UNVERIFIED, P4 ACTIVE, no invented approval.
