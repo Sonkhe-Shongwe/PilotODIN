@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 live collector calibration blocked
+
+- The owner approved one disposable Windows runner for Sysmon and Process Monitor provisioning and the generated N12 fixture. [First launch #43451750075](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43451750075) failed before either collector was installed or started. The workflow expected the wrong Sysmon signer. Its parallel [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43451750087) had a cancelled job after the corrected push.
+- [Corrected run #43452047885](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43452047885) at [`7ab0d2f`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7ab0d2facd0dfe8f32d8ff6946b040a84d144af4) verified the Microsoft signatures and reviewed SHA-256 values for Sysmon 15.22 and Process Monitor 4.13. It started capture and the generated fixture returned successfully. Process Monitor then failed the clean-exit check and the cleanup command reported a warning. The workflow stopped before export and reduction, so live TCP/UDP and file-operation capture coverage are **UNVERIFIED**. No native PilotODIN run was performed.
+- The [disarm commit](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/cf3bf3793f0cfc7411258a427b1f86851e16c7b5) disables the job. The one-run provisioning approval is consumed. [Exact-source P4 CI #43452047877](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43452047877) passed all three regular jobs. The local N12 and related suites passed 44 tests.
+- **Next:** Prepare a bounded Process Monitor stop/export correction that records timeout and exit-code outcomes separately and checks the resulting backing file before reduction. Capture-loss review remains required for a clean calibration. Run on a freshly approved disposable Windows runner. R02/N12 is partial, the historical port 443 connection is unattributed, and P4 remains active.
+
 ## 13 November 2026 | N12 hosted collector inventory
 
 - [Read-only Windows inventory #43450570161](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43450570161) completed at [`5533c03`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5533c030b53272499e72857b47ca94837d0ae424). The `win22 20261101.353.1` runner had no detected Sysmon service or enabled operational channel. Process Monitor was absent from PATH and the checked install directories. The inventory job passed. Live calibration is **BLOCKED** on this runner image until the collectors are available and configured.
