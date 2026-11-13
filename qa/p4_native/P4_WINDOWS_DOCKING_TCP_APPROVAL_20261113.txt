@@ -1,0 +1,3 @@
+13 November 2026. Owner approved one focused unpackaged GitHub-hosted Windows build for R04 docking and N12 TCP connection ownership.
+Reviewed source: 4d05c0e715b8e8772c999f3f4196875358db624f.
+Scope: isolated hosted runner and one disposable synthetic project. No installer, executable transfer, owner PC access, original data, Qwen, model fitting or repeat compilation.

@@ -1,7 +1,7 @@
 param([switch]$PreflightOnly, [switch]$ValidateRuntime, [switch]$DockingOnly, [switch]$AcceptanceOnly)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$base = 'f2174a5372e3ad5b27606d72025ad4d1f18e457b'
+$base = '4d05c0e715b8e8772c999f3f4196875358db624f'
 $branch = 'feature/live-dev-workspace-20261023'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $frontend = Join-Path $root 'frontend'
@@ -17,12 +17,9 @@ if ($LASTEXITCODE -ne 0 -or $commitAndParents.Count -ne 2 -or $commitAndParents[
 }
 if ($env:GITHUB_RUN_ATTEMPT -ne '1') { Fail 'One-shot approval excludes re-runs' }
 $allowed = @(
- '.github/workflows/p4-native-remaining-acceptance-20261113.yml',
- 'qa/p4_native/P4_WINDOWS_REMAINING_ACCEPTANCE_APPROVAL_20261113.txt',
- 'qa/p4_native/Run_P4_71_Disposable_Windows.ps1',
- 'frontend/e2e/p4-71-native-webview-qa.mjs',
- 'frontend/e2e/p4-quality-version-transition.mjs',
- 'frontend/e2e/p4-open-fixture-workspace.mjs'
+ '.github/workflows/p4-native-docking-tcp-20261113.yml',
+ 'qa/p4_native/P4_WINDOWS_DOCKING_TCP_APPROVAL_20261113.txt',
+ 'qa/p4_native/Run_P4_71_Disposable_Windows.ps1'
 )
 $changed = @(& git -C $root diff --name-only $base $actual)
 if ($LASTEXITCODE -ne 0 -or $changed.Count -ne $allowed.Count) { Fail 'One-shot launch must contain exactly the reviewed QA setup changes' }
@@ -45,7 +42,7 @@ if ($production.identifier -ne 'com.pilotodin.studio' -or
     $production.build.beforeDevCommand -ne 'node scripts/deny-unsafe-default-tauri-dev.mjs' -or
     $production.build.beforeBuildCommand -ne 'node scripts/deny-intermediate-installer.mjs') { Fail 'Production/QA/dev identities, bundles or default-deny hooks differ from reviewed source' }
 if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_REMAINING_ACCEPTANCE_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_DOCKING_TCP_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
 if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
 foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
  foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
@@ -58,7 +55,7 @@ if ($PreflightOnly -or $ValidateRuntime) {
  Write-Host "P4-71 HOSTED WINDOWS PREFLIGHT + RUNTIME PATH PASS: exact HEAD=$actual approved_base=$base; distinct IDs; original roots absent; reserved variable avoided; bundle forbidden; no native compilation."
  exit 0
 }
-if (-not $AcceptanceOnly -or $DockingOnly) { Fail 'The approved launch covers the remaining acceptance probe only' }
+if (-not $DockingOnly -or $AcceptanceOnly) { Fail 'The approved launch covers only docking and TCP attribution' }
 New-Item -ItemType Directory -Path $qaHome | Out-Null
 $env:PILOTODIN_HOME = $qaHome
 $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT = 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV'
