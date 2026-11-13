@@ -27,7 +27,7 @@ jobs:
         shell: pwsh
         run: |
           $parent = git rev-parse HEAD^
-          if ($LASTEXITCODE -ne 0 -or $parent -ne 'a52c8a137ef73e9989a64b15f3336205f563cbd8' -or
+          if ($LASTEXITCODE -ne 0 -or $parent -ne '20c83bcfb5f9d5836aa6fa3b8026f6ed1aa899b5' -or
               $env:GITHUB_RUN_ATTEMPT -ne '1') {
             throw 'The approved collector calibration is for one run from the reviewed parent.'
           }

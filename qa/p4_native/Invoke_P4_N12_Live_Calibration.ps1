@@ -17,18 +17,22 @@ function Start-CollectorCommand($Executable, $Arguments, $Description) {
     if ($process.ExitCode -ne 0) { throw "$Description exited with code $($process.ExitCode)." }
 }
 
-function Get-MicrosoftCollector($Name, $Executable) {
+function Get-MicrosoftCollector($Name, $Executable, $Publisher, $ExpectedHash) {
     $archive = Join-Path $root "$Name.zip"
     $directory = Join-Path $root $Name
     Invoke-WebRequest -Uri "https://download.sysinternals.com/files/$Name.zip" -OutFile $archive -TimeoutSec 60
     Expand-Archive -LiteralPath $archive -DestinationPath $directory
     $binary = Get-Item -LiteralPath (Join-Path $directory $Executable)
     $signature = Get-AuthenticodeSignature -LiteralPath $binary.FullName
+    $signer = if ($signature.SignerCertificate) {
+        $signature.SignerCertificate.GetNameInfo([Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
+    }
     if ($signature.Status -ne 'Valid' -or
-        $signature.SignerCertificate.GetNameInfo([Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false) -ne 'Microsoft Corporation') {
-        throw "$Name failed Microsoft signature validation."
+        $signer -ne $Publisher) {
+        throw "$Name failed Microsoft signature validation (status $($signature.Status), signer '$signer')."
     }
     $hash = (Get-FileHash -LiteralPath $binary.FullName -Algorithm SHA256).Hash
+    if ($hash -ne $ExpectedHash) { throw "$Name differs from the reviewed binary SHA-256." }
     Write-Host "$Name version $($binary.VersionInfo.FileVersion), SHA-256 $hash"
     return $binary.FullName
 }
@@ -42,8 +46,8 @@ $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-live-$env:GITHUB_RUN_ID"
 New-Item -ItemType Directory -Path $root | Out-Null
 $channel = 'Microsoft-Windows-Sysmon/Operational'
 $clock = Get-TimeZone
-$sysmon = Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe'
-$procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe'
+$sysmon = Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
+$procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe' 'Microsoft Corporation' 'aa0b10e936feea464348695f8a85a2dcafd2cb3dabd1d47d8a57e7594783b27b'
 $config = Join-Path $root 'sysmon-config.xml'
 $pml = Join-Path $root 'capture.pml'
 $csv = Join-Path $root 'capture.csv'
