@@ -11,10 +11,17 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     throw 'Live calibration requires the first run on disposable hosted Windows.'
 }
 
+. (Join-Path $PSScriptRoot 'P4_N12_Collector_Process.ps1')
+
 function Start-CollectorCommand($Executable, $Arguments, $Description) {
     $process = Start-Process -FilePath $Executable -ArgumentList $Arguments -PassThru
-    if (-not $process.WaitForExit(45000)) { throw "$Description timed out." }
-    if ($process.ExitCode -ne 0) { throw "$Description exited with code $($process.ExitCode)." }
+    try {
+        $result = Wait-P4N12CollectorExit -Process $process -TimeoutMs 45000
+        if ($result.Status -eq 'TIMEOUT') { throw "$Description timed out." }
+        if ($result.Status -ne 'EXITED') { throw "$Description exited with code $($result.ExitCode)." }
+    } finally {
+        $process.Dispose()
+    }
 }
 
 function Get-MicrosoftCollector($Name, $Executable, $Publisher, $ExpectedHash) {
@@ -68,7 +75,7 @@ $summary = Join-Path $root 'summary.json'
 '@ | Set-Content -LiteralPath $config -Encoding ascii
 
 $installStarted = $false
-$captureActive = $false
+$capture = $null
 try {
     if ($clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
     $installStarted = $true
@@ -77,7 +84,6 @@ try {
     $firstRecord = $latest.RecordId + 1
 
     $capture = Start-Process -FilePath $procmon -ArgumentList "/AcceptEula /Quiet /Minimized /NoFilter /BackingFile `"$pml`"" -PassThru
-    $captureActive = $true
     Start-CollectorCommand $procmon '/WaitForIdle' 'Process Monitor readiness'
     $capture.Refresh()
     if ($capture.HasExited -or -not (Test-Path -LiteralPath $pml -PathType Leaf)) {
@@ -92,13 +98,25 @@ try {
     $end = [DateTimeOffset]::UtcNow
     $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
 
-    Start-CollectorCommand $procmon '/Terminate' 'Process Monitor stop'
-    if (-not $capture.WaitForExit(30000) -or $capture.ExitCode -ne 0) {
-        throw 'Process Monitor capture did not exit cleanly.'
+    $stopError = $null
+    try {
+        Start-CollectorCommand $procmon '-terminate -quiet' 'Process Monitor stop command'
+    } catch {
+        $stopError = $_.Exception.Message
+        Write-Warning $stopError
     }
-    $captureActive = $false
+    $captureExit = Wait-P4N12CollectorExit -Process $capture -TimeoutMs 30000
+    if ($captureExit.Status -eq 'TIMEOUT') {
+        throw 'Process Monitor capture process was still running 30 seconds after the stop command.'
+    }
+    Write-Host "Process Monitor capture process exited with code $($captureExit.ExitCode)."
+    if ($captureExit.Status -ne 'EXITED') {
+        $stopError = 'Process Monitor capture process returned a nonzero exit code.'
+        Write-Warning $stopError
+    }
+    Confirm-P4N12ClosedCapture -Path $pml -Description 'Process Monitor backing file'
     Start-CollectorCommand $procmon "/AcceptEula /Quiet /Minimized /NoFilter /OpenLog `"$pml`" /SaveAs `"$csv`"" 'Process Monitor export'
-    if (-not (Test-Path -LiteralPath $csv -PathType Leaf)) { throw 'Process Monitor CSV is missing.' }
+    Confirm-P4N12ClosedCapture -Path $csv -Description 'Process Monitor CSV'
 
     # Normalize English 12-hour timestamps if Procmon exported them. The
     # host clock is UTC. Preserve fractional seconds and the rest of each row.
@@ -136,21 +154,36 @@ try {
     # that flag false and use the summary to assess the known fixture events.
     python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration $manifest $xml $normalized $summary
     $result = $LASTEXITCODE
-    if (Test-Path -LiteralPath $summary -PathType Leaf) {
-        $report = Get-Content -LiteralPath $summary -Raw
-        $report | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append | Write-Host
-        $evidence = $report | ConvertFrom-Json
-        if ($result -eq 2 -and $evidence.coverage_issues.Count -eq 1 -and
-            $evidence.coverage_issues[0] -eq 'procmon-coverage-not-confirmed') {
-            Write-Host 'Live fixture markers: PASS. Capture-loss review: BLOCKED.'
-            return
-        }
+    if (-not (Test-Path -LiteralPath $summary -PathType Leaf)) {
+        throw "Live collector calibration produced no summary (reducer exit $result)."
+    }
+    $report = Get-Content -LiteralPath $summary -Raw
+    $report | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append | Write-Host
+    if ($null -ne $stopError) {
+        throw 'Process Monitor shutdown was abnormal. The reduced capture is diagnostic only.'
+    }
+    $evidence = $report | ConvertFrom-Json
+    if ($result -eq 2 -and $evidence.coverage_issues.Count -eq 1 -and
+        $evidence.coverage_issues[0] -eq 'procmon-coverage-not-confirmed') {
+        Write-Host 'Live fixture markers: PASS. Capture-loss review: BLOCKED.'
+        return
     }
     if ($result -ne 0) { throw "Live collector calibration did not pass (exit $result)." }
 } finally {
-    if ($captureActive) {
-        try { Start-CollectorCommand $procmon '/Terminate' 'Process Monitor cleanup' }
-        catch { Write-Warning 'Process Monitor cleanup did not complete.' }
+    if ($null -ne $capture) {
+        try {
+            if (-not $capture.HasExited) {
+                Start-CollectorCommand $procmon '-terminate -quiet' 'Process Monitor cleanup command'
+                $cleanup = Wait-P4N12CollectorExit -Process $capture -TimeoutMs 30000
+                if ($cleanup.Status -ne 'EXITED') {
+                    Write-Warning "Process Monitor cleanup result: $($cleanup.Status), exit code $($cleanup.ExitCode)."
+                }
+            }
+        } catch {
+            Write-Warning "Process Monitor cleanup: $($_.Exception.Message)"
+        } finally {
+            $capture.Dispose()
+        }
     }
     if ($installStarted -and @(Get-Service -Name Sysmon,Sysmon64 -ErrorAction SilentlyContinue).Count -gt 0) {
         try { Start-CollectorCommand $sysmon '-u' 'Sysmon cleanup' }

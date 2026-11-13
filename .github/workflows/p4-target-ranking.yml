@@ -213,6 +213,15 @@ jobs:
       - name: Verify close status for a Windows process opened by PID
         shell: pwsh
         run: ./qa/p4_native/Test_P4_Verified_Window_Close.ps1
+      - name: Verify N12 collector exit and backing-file checks on synthetic inputs
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          $source = (Resolve-Path './qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1').Path
+          [void][System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count) { throw ($parseErrors -join [Environment]::NewLine) }
+          ./qa/p4_native/Test_P4_N12_Collector_Process.ps1
 
       - name: Python 3.11 for N12 synthetic Windows fixture
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
