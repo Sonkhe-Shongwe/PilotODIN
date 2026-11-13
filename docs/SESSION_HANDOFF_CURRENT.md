@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 offline fonts and native evidence plan
+
+- [6a5d3d3](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6a5d3d368f5f74c8bdb062bff15665b234d27a26) replaces the Google Fonts stylesheet request with bundled Inter and Manrope assets and OFL notices. [P4 CI #43442391630](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43442391630) passed 185 Python tests, 78 Node checks, the build, 13 Chromium cases and the synthetic Windows preservation collector checks. P4-62 loaded both faces with no unexpected browser request. [P1 CI #43442391665](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43442391665) also passed.
+- **Next:** The [N12 plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026--n12-startup-to-exit-evidence-plan) specifies startup-to-exit Windows network attribution and independent file-write observation on a disposable runner. The plan awaits implementation and a separately approved native run. The historical port 443 connection remains unattributed and N12 stays partial.
+- R03 remains untested. The earlier inventory detected 7.804 GiB physical RAM with 0.670 GiB available at the time. Confirm suitable hardware and existing local pinned Qwen/runtime artifacts before a measured physical offline session. R06 remains a historical strict failure with an unknown writer. P4 remains active.
+
 ## 13 November 2026 | Hosted Windows R05 fitted Prepare acceptance
 
 - [Windows R05 #43439284563](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563) passed preflight and native acceptance. The one unpackaged build used [`7448245`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/74482456c0d5a433093ed0180cb1a859f25775a2), executable SHA-256 `ef862dd519866fa4063b6931e7088edd95f64961294d90e8027c4cfbcd44d052` (18,354,176 bytes). The runner fitted one logistic regression candidate on 40 generated rows in a disposable project. The [workflow disarmed](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/52df1439d241acd9d26cd2da0d9b4222a3f5e8dc) after completion. [P4 CI #43439284349](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284349) also passed 185 Python tests, 78 Node checks, the frontend build, 13 Chromium scenarios and the synthetic Windows preservation job.
