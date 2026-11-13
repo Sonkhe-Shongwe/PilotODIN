@@ -1,10 +1,17 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | P4 Quality relaunch checkpoint
+
+- Hosted Windows [run #43409810256](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43409810256) at `4c20567c101297bea4b8b2a6a9db1997c7f0336e` passed N1–N10 and the N11 Quality edit, stale-request rejection, Prepare refresh and WebView reload. The workflow failed at the shutdown check before it could start a second Windows app process. N12 verified zero experiments only.
+- The shutdown check now retains the process handle and reports the exit code. [P4 CI #43410749201](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43410749201) at `491e684097158c515dccf7f71a42436f656a7d7f` exercised exit codes 0 and 17 on a synthetic Windows form.
+- QA commit [`624a78ffe9c90298ded84ffaea57703fd95c133b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/624a78ffe9c90298ded84ffaea57703fd95c133b) shares the post-relaunch assertions between the Windows probe and real-HTTP browser test. Chromium restarted from the same disposable profile and the root URL, restored the selected project and Quality version 1 with an empty target draft, and fetched the version-1 plan on explicit selection. Zero experiments were present. [P4 #43412117655](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43412117655) passed all three jobs (183 Python, 76 Node, TypeScript/Vite, 12 browser and synthetic Windows). [P1 #43412117701](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43412117701) passed (187 Node, TypeScript/Vite and 7 browser). The restart evidence is from Chromium on Linux.
+- The [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#d-consolidated-native-acceptance-is-a-conditional-downstream-task) records the hosted results and the remaining Windows sequence. The next native run needs fresh approval and should cover same-binary process relaunch, R04 layout, R05 Prepare controls and outstanding N12 evidence.
+
 ## 13 November 2026 | Owner decision on Gate C
 
 - **Gate C / R01 moves to pre-use approval.** It stays **UNVERIFIED** and applies before predictions inform a specific real-world decision. The owner removed it from P4 engineering closure. The [phase policy records the scope](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c).
 - **P4 remains ACTIVE.** Engineering closure still requires current-source Windows and Prepare acceptance (R02, R04, R05), measured physical 8 GB offline operation (R03), an explicit disposition of the historical original-data integrity failure (R06), and owner signoff. The historical whole-tree comparison remains **STRICT FAIL** with 74 differences and an unknown writer. P5 is not authorised and P8 is not certified.
-- **Next:** Use the [updated P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#e-practical-order-for-the-next-sessions) to reconcile source coverage and prepare the existing native checks. The no-outreach direction and intermediate installer freeze continue to apply. The internal CI study stays observation-only.
+- **Next:** Follow the [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#e-practical-order-for-the-next-sessions) and the Windows checkpoint above. The no-outreach direction and intermediate installer freeze apply. The internal CI study stays observation-only.
 
 ## 13 November 2026 | Owner restriction: NO COLD OUTREACH AS A DEVELOPMENT DEPENDENCY
 
