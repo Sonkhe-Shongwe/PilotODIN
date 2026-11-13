@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 combined calibration reaches strict ETW coverage check
+
+- [Approved run #43478728040](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43478728040) ran once at launch commit `a4aad25` on one disposable hosted Windows runner. The launch parent was `3a423e4`, with only documentation differences from preflight-tested `ba11a38`. The runner verified and installed pinned Sysmon 15.22 and exported bounded Sysmon XML and built-in ETW evidence. The reducer wrote a redacted summary and returned exit 2 with the sole coverage issue `etw-mutation-coverage-unresolved`.
+- The combined checks raised no Sysmon continuity, fixture lifecycle, loopback TCP/UDP, ETW loss or expected-file-operation blockers. The summary matched all five required fixture mutation types and reported no file violations. It did report two unsupported operations attributed to the calibration process tree, one with an unresolved path. Other writers also had missing lifetimes or paths, unsupported operations, and a missing completion. Raw captures stayed in runner temp. [Provisioning is disabled](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/d5de95dc64be49731dcaa3cea886b7f9e71ede83).
+- **Next.** Exercise the combined reducer's strict ETW correlation on the real calibration-only ETW fixture in regular Windows CI using generated process evidence. Report fixed event IDs, information classes and counts for unsupported operations, and distinguish incomplete path or lifetime evidence without publishing raw records. Preserve the strict block for unresolved mutations. Use the result to determine whether the collector needs better context or specific operation handling before considering another combined rehearsal. Combined calibration and native acceptance remain pending.
+
 ## 13 November 2026 | N12 calibration-only Windows preflight
 
 - [Source `ba11a38`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ba11a382e1cb48195f3ca9287bde5645b9e6e8e3) adds the calibration-only capture to regular P4 CI alongside the expanded ETW fixture. It uses the same generated workload, PowerShell export and ETW capture validation as the combined rehearsal. The local suite passed 56 tests. The synthetic regression exercises calibration-only correlation with a valid process start and with that start missing.
