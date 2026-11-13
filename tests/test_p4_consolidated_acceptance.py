@@ -361,6 +361,29 @@ def test_p4_64_prepare_and_feature_advice_enforce_quality_version_without_traini
     assert storage.recent_experiments(pid) == []
 
 
+def test_prepare_category_examples_are_bounded_and_hide_high_risk_values():
+    long_label = "x" * 100
+    frame = pd.DataFrame({
+        "churn": ["Y", "N"] * 4,
+        "event_type": [None, "retail", "retail", long_label, "service", "online", "branch", "other"],
+        "TransactionCode": [f"SYNTHETIC-{i}" for i in range(8)],
+        "post_outcome": ["done", "pending"] * 4,
+        "is_mobile": [True, False] * 4,
+        "amount": range(8),
+        "empty": pd.Series([None] * 8, dtype="object"),
+    })
+    original = frame.copy(deep=True)
+    plan = main.engine.preparation(frame, "churn")
+    audit = {entry["column"]: entry for entry in plan["feature_audit"]}
+    assert audit["event_type"]["category_examples"] == ["retail", "x" * 79 + "…", "service", "online", "branch"]
+    assert audit["event_type"]["distinct"] == 6
+    assert audit["is_mobile"]["category_examples"] == ["True", "False"]
+    for column in ("TransactionCode", "post_outcome", "amount", "empty"):
+        assert audit[column]["category_examples"] == []
+    assert "churn" not in audit
+    pd.testing.assert_frame_equal(frame, original)
+
+
 def test_p4_76_numeric_imputation_allowlist_and_unfitted_pipeline():
     """Inspect actual pipeline configuration; fitting is deliberately prohibited."""
     from pydantic import ValidationError

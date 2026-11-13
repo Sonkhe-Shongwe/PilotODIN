@@ -657,7 +657,20 @@ export function App({embeddedStage,embeddedProjectId,onEmbeddedNavigate,onPrimar
                  </div>}
                  <h3 className="po-feature-audit-title">Feature-by-feature preparation audit</h3>
                  <div className="table-scroll po-ml-feature-audit"><table><thead><tr><th>FIELD / ROLE</th><th>OBSERVATIONS</th><th>PREPROCESSING</th><th>RISK REVIEW</th></tr></thead><tbody>
-                   {prep.feature_audit.map(f=>{const excludedByChoice=excluded.includes(f.column),isSplit=splitStrategy!=='random'&&splitColumn===f.column;return <tr key={f.column}><td><strong>{f.column}</strong><small>{excludedByChoice?'Excluded by user':isSplit?'Excluded as split key':!f.default_included?'Unusable / excluded':'Included predictor'}</small></td><td>{f.kind} · {f.missing} missing ({f.missing_pct}%) · {f.distinct} distinct</td><td>{excludedByChoice||isSplit||!f.default_included?'No training transform':f.kind==='numeric'?`Numeric: ${numericImputation} imputation fitted on training folds`:categoricalImputation==='constant'?`Categorical: missing-marker imputation + capped one-hot encoding fitted on training folds`:f.treatment}</td><td>{f.risk==='high'?<strong className="po-ml-risk-high">High — review required</strong>:f.risk==='review'?'Review suggested':'No structural warning'}{f.reasons.length>0&&<small>{f.reasons.join('; ')}</small>}</td></tr>})}
+                   {prep.feature_audit.map(f=>{
+                    const excludedByChoice=excluded.includes(f.column),isSplit=splitStrategy!=='random'&&splitColumn===f.column;
+                    const examples=f.category_examples??[];
+                    return <tr key={f.column}>
+                     <td><strong>{f.column}</strong><small>{excludedByChoice?'Excluded by user':isSplit?'Excluded as split key':!f.default_included?'Unusable / excluded':'Included predictor'}</small></td>
+                     <td>{f.kind} · {f.missing} missing ({f.missing_pct}%) · {f.distinct} distinct
+                      {f.kind==='categorical'&&f.distinct>0&&f.risk==='high'&&<small className="po-ml-category-examples">Examples hidden for high-risk fields</small>}
+                      {f.kind==='categorical'&&f.risk!=='high'&&examples.length>0&&
+                       <small className="po-ml-category-examples">Observed examples ({examples.length} of {f.distinct}) {examples.map(value=>JSON.stringify(value)).join(', ')}</small>}
+                     </td>
+                     <td>{excludedByChoice||isSplit||!f.default_included?'No training transform':f.kind==='numeric'?`Numeric: ${numericImputation} imputation fitted on training folds`:categoricalImputation==='constant'?`Categorical: missing-marker imputation + capped one-hot encoding fitted on training folds`:f.treatment}</td>
+                     <td>{f.risk==='high'?<strong className="po-ml-risk-high">High — review required</strong>:f.risk==='review'?'Review suggested':'No structural warning'}{f.reasons.length>0&&<small>{f.reasons.join('; ')}</small>}</td>
+                    </tr>
+                   })}
                  </tbody></table></div>
               </div>
               <div className="panel insight"><div className="panel-title"><WandSparkles size={19}/><h2>Automatic preprocessing plan</h2></div>

@@ -39,6 +39,8 @@ LABELS = {
     "naive_bayes": "Gaussian Naive Bayes", "elastic_net": "Elastic Net",
 }
 LEAK_TERMS = ("diagnosis", "final_result", "outcome_after", "post_outcome", "target_encoded", "approved_after")
+PREPARE_CATEGORY_EXAMPLE_LIMIT = 5
+PREPARE_CATEGORY_EXAMPLE_LENGTH = 80
 
 
 def native(value: Any) -> Any:
@@ -137,6 +139,7 @@ def preparation(df: pd.DataFrame, target: str) -> dict:
 
     The audit is deterministic and does not estimate predictive importance:
     leakage and identifiers require domain review, not automatic deletion.
+    Category examples are display-only and omitted for high-risk fields.
     """
     if target not in df.columns: raise ValueError("Target column not found")
     task = infer_task(df[target])
@@ -168,12 +171,20 @@ def preparation(df: pd.DataFrame, target: str) -> dict:
                      if missing == len(df) or distinct == 0 else
                      "Numeric: median imputation fitted on training folds" if kind == "numeric" else
                      "Categorical: mode imputation + capped one-hot encoding fitted on training folds")
+        category_examples = []
+        if kind == "categorical" and distinct and risk != "high":
+            for value in series.dropna().unique()[:PREPARE_CATEGORY_EXAMPLE_LIMIT]:
+                label = str(value)
+                if len(label) > PREPARE_CATEGORY_EXAMPLE_LENGTH:
+                    label = label[:PREPARE_CATEGORY_EXAMPLE_LENGTH - 1] + "…"
+                category_examples.append(label)
         feature_audit.append({
             "column":name,"kind":kind,"missing":missing,
             "missing_pct":round(100*missing/len(df),2),
             "distinct":distinct,"risk":risk,
             "reasons":reasons,"treatment":treatment,
             "default_included":bool(distinct>0),
+            "category_examples":category_examples,
         })
     return {
         "task":task,"target":target,"available_features":predictors,

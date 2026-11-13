@@ -729,7 +729,8 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   const planJson=await plan.json();
   expect(planJson.quality_version).toBe(0);
   expect(planJson.target).toBe('churn');
-  expect(planJson.feature_audit.find((entry:{column:string})=>entry.column==='TransactionID')?.risk).toBe('high');
+  expect(planJson.feature_audit.find((entry:{column:string})=>entry.column==='TransactionID')).toMatchObject({risk:'high',category_examples:[]});
+  expect(planJson.feature_audit.find((entry:{column:string})=>entry.column==='event_type')?.category_examples).toEqual(['retail','service']);
   const advice=await request.get(`${API}/api/projects/${projectId}/features?target=churn&expected_version=0`);
   expect(advice.status(),await advice.text()).toBe(200);
   const adviceJson=await advice.json();
@@ -747,6 +748,10 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(transactionRow).toContainText('Included predictor');
   await expect(transactionRow).toContainText('High — review required');
   await expect(transactionRow).toContainText('Categorical: mode imputation');
+  await expect(transactionRow).toContainText('Examples hidden for high-risk fields');
+  await expect(transactionRow).not.toContainText('SYNTH-000');
+  await expect(eventRow).toContainText('Observed examples (2 of 2) "retail", "service"');
+  await expect(amountRow).not.toContainText('Observed examples');
    const categoricalStrategy=page.getByLabel('Categorical imputation method');
    await expect(categoricalStrategy).toHaveValue('most_frequent');
    await categoricalStrategy.selectOption('constant');
