@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | Owner decision on Gate C
+
+- **Gate C / R01 moves to pre-use approval.** It stays **UNVERIFIED** and applies before predictions inform a specific real-world decision. The owner removed it from P4 engineering closure. The [phase policy records the scope](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c).
+- **P4 remains ACTIVE.** Engineering closure still requires current-source Windows and Prepare acceptance (R02, R04, R05), measured physical 8 GB offline operation (R03), an explicit disposition of the historical original-data integrity failure (R06), and owner signoff. The historical whole-tree comparison remains **STRICT FAIL** with 74 differences and an unknown writer. P5 is not authorised and P8 is not certified.
+- **Next:** Use the [updated P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#e-practical-order-for-the-next-sessions) to reconcile source coverage and prepare the existing native checks. The no-outreach direction and intermediate installer freeze continue to apply. The internal CI study stays observation-only.
+
 ## 13 November 2026 | Owner restriction: NO COLD OUTREACH AS A DEVELOPMENT DEPENDENCY
 
 - **Binding owner correction:** No cold emails, unsolicited partnership/innovation proposals, or external organisation replies as prerequisites for PilotODIN progress. The NESO P4-82 **unsent outreach draft is WITHDRAWN FROM THE ACTIVE ROADMAP**, preserved in history only and **must not be sent or proposed again as a next step**. No email, Big Idea submission, application or external communication occurred.

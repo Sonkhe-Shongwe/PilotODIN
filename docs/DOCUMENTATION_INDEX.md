@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**Current navigation:** 12 November 2026, branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence ACTIVE**; P1, P2 and P3 closed for bounded development at their recorded modalities. **P4-R01–R06 OPEN**, real-business Gate C UNVERIFIED, historical original whole-app-data integrity STRICT FAIL, P5 NOT AUTHORISED, P8 NOT CERTIFIED. See the live documents for any subsequent state change.
+**Current navigation:** 13 November 2026, branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence ACTIVE**. P1, P2 and P3 are closed for bounded development. P4-R02–R06 are open. Gate C is **UNVERIFIED** and required before real-world prediction use. The historical original whole-app-data integrity result is **STRICT FAIL**. P5 is not authorised and P8 is not certified.
 
 ## Current authoritative route, in reading order
 
@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November:** [Owner decision on Gate C](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c) moves real-world decision suitability to pre-use approval. The [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) tracks engineering closure against R02–R06.
 - **13 Nov owner correction (binding):** **No cold emailing or unsolicited external outreach as a requirement for progress.** P4-82 NESO outreach draft [withdrawn from the active plan](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md) and retained only as unsent history. No operator response required to continue safe in-scope technical work; R01 Gate C remains UNVERIFIED, P4 ACTIVE, no invented approval.
 - **P4-82:** [NESO Innovation team concept note and initial outreach draft, read-only research scope, methodology, dataset-rights/IP checks and explicit no-contact state](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md). Draft only, **Gate C UNVERIFIED**, no submission or training.
 - **P4-81:** [Independent online real-operator prospect review: NESO favoured over Eskom/TfL, with licensing, operational decision and missing Gate C requirements](./P4_81_EXTERNAL_GATE_C_CANDIDATE_NESO_ESKOM_2026-11-12.md). Candidate found, **R01/Gate C remains UNVERIFIED**, no new model fit or operator approval.

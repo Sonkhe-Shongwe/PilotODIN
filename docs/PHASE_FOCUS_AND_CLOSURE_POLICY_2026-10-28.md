@@ -1,5 +1,14 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+## 13 November 2026 | Owner decision on Gate C
+
+The owner approved moving **P4-R01 / Gate C** from P4 engineering closure to the approval of a specific real-world prediction use. This decision supersedes the 9 November bundled deferral decision only for Gate C.
+
+- **P4 engineering closure** requires evidence that Target Intelligence presents plausible targets and their limits, lets users select or abstain explicitly, and respects Quality versions, project boundaries and consent. Closure also requires the phase exit criteria below, resolution of the outstanding R02–R06 requirements and explicit owner signoff. P4 is ACTIVE. P5 is not authorised and P8 is not certified.
+- **Gate C is UNVERIFIED and required before using predictions to inform a real decision.** For the proposed workflow, verify the accountable decision owner and action, outcome provenance, information available at decision time, a fair time- or group-based evaluation, measured decision value against the current process or a non-model baseline, and permitted use with appropriate oversight. A workflow the owner already runs can qualify if the evidence can be independently checked. See the [Gate C intake checklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#b-gate-c-ownerdecision-evidence-intake-safe-to-complete-without-data-uploads).
+- **Next engineering review** covers current-source Windows behaviour and Prepare controls (R02, R04, R05), measured offline operation on physical 8 GB hardware (R03), and disposition of the historical original-data integrity failure (R06). The whole-tree comparison recorded 74 differences, with 320 baseline files and 346 observed. The historical writer is unknown. The intermediate installer freeze and existing native and data-operation authorisation boundaries continue to apply.
+- The [internal CI study](./P4_61_OWNER_APPROVED_MANUAL_CI_GATE_C_FEASIBILITY_2026-11-12.md) retains its observation-only scope. A trial that acts on recommendations would require its own approval. The 13 November no-cold-outreach direction remains in force.
+
 ## 11 November 2026 | P4-34 fail-closed CI guard enforces no intermediate installers, exact-source tests PASS
 
 - **Owner's controlling instruction:** "no mor installers until we reach the end". This supersedes earlier plans for another P4 native-build milestone. **No further full Windows installer build, experimental NSIS artifact, intermediate installer download or owner-PC installation through P4–P7.** The final P8 release stage is the only planned exception, and it will still require fresh explicit owner approval and safety gates.
