@@ -8,6 +8,7 @@
 #include <tdh.h>
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -459,7 +460,7 @@ int wmain(int argc, wchar_t* argv[]) {
     logfile.EventRecordCallback = &on_event;
     logfile.Context = &context;
 
-    const TRACEHANDLE trace = OpenTraceW(&logfile);
+    TRACEHANDLE trace = OpenTraceW(&logfile);
     if (trace == INVALID_PROCESSTRACE_HANDLE) {
         std::cerr << "OpenTraceW failed with Windows status " << GetLastError() << ".\n";
         return 3;
@@ -467,7 +468,7 @@ int wmain(int argc, wchar_t* argv[]) {
 
     context.tracePointerSize = logfile.LogfileHeader.PointerSize;
     ULONG processStatus = ProcessTrace(
-        const_cast<PTRACEHANDLE>(&trace), 1, nullptr, nullptr);
+        &trace, 1, nullptr, nullptr);
     const ULONG closeStatus = CloseTrace(trace);
     context.output.flush();
     const bool outputOk = static_cast<bool>(context.output);
