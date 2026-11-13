@@ -408,8 +408,9 @@ test('keyboard, focus and emulated-DPI browser QA is isolated and clearly non-na
 
 test('import-to-Quality failure recovery scenario requires an opt-in bounded in-memory fixture',()=>{
   const anchor=spec.indexOf("test('isolated import Quality and failed project switch preserve the synthetic unsaved draft'");
-  assert.ok(anchor>0);
-  const scenario=spec.slice(anchor);
+  const nextScenario=spec.indexOf("\ntest(",anchor+1);
+  assert.ok(anchor>0&&nextScenario>anchor);
+  const scenario=spec.slice(anchor,nextScenario);
   assert.match(spec,/withSecondProject=false,withImport=false/);
   assert.match(spec,/req\.postData\(\)===expected/);
   assert.match(spec,/audit\.syntheticImports\.push\('POST \/projects \[exact synthetic multipart only\]'\)/);
