@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November N12 hosted collector inventory:** [Windows inventory](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43450570161) completed. Live calibration is blocked pending collector setup. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-hosted-collector-inventory)
 - **13 November N12 collector check:** The [standalone calibration command](../qa/p4_native/N12_TRACE.md#standalone-collector-calibration-on-hosted-windows) is covered by local synthetic tests. Live collector calibration is pending. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-standalone-collector-check)
 - **13 November N12 tooling:** [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43445876232) passed, including 16 new synthetic trace tests and the Windows calibration fixture. Live collector calibration is pending. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-trace-tools-prepared)
 - **13 November R05 fitted Prepare acceptance:** Scoped native Windows pass for encoded estimates, category examples, saved fitted-history reopening and the stale prediction guard. [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026--hosted-windows-r05-fitted-prepare-acceptance)

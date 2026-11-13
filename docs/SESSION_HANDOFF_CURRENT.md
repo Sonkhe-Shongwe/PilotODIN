@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 hosted collector inventory
+
+- [Read-only Windows inventory #43450570161](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43450570161) completed at [`5533c03`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5533c030b53272499e72857b47ca94837d0ae424). The `win22 20261101.353.1` runner had no detected Sysmon service or enabled operational channel. Process Monitor was absent from PATH and the checked install directories. The inventory job passed. Live calibration is **BLOCKED** on this runner image until the collectors are available and configured.
+- **Next:** Obtain approval to provision Microsoft Sysmon and Process Monitor on one disposable hosted Windows runner and run the generated N12 fixture against the live collectors. Keep raw captures in runner temp and report the redacted calibration result. The native PilotODIN trace requires its own approval. R02/N12 remains partial and the historical port 443 connection remains unattributed.
+
 ## 13 November 2026 | N12 standalone collector check
 
 - The [N12 runbook](../qa/p4_native/N12_TRACE.md#standalone-collector-calibration-on-hosted-windows) now uses `check-calibration` to verify a generated fixture against Sysmon and Procmon before a native journey. Both audit modes verify the actual rename destination and calibration executable identity. Local N12, acceptance-kit and installer-provenance suites passed 44 tests, including 20 N12 tests.
