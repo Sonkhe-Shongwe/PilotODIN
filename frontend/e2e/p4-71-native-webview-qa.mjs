@@ -1,6 +1,7 @@
 import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
 import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityAfterRelaunch, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
+import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -16,7 +17,8 @@ if(!process.env.PILOTODIN_HOME?.includes('P4-71-only-home-'))throw Error('P4-71 
 const API='http://127.0.0.1:8000/api';
 const SITE='http://127.0.0.1:5173';
 const relaunch=process.argv[2]==='--verify-relaunch';
-const receiptPath=join(process.env.PILOTODIN_HOME,'n11-quality-project.txt');
+const receiptPath=join(process.env.PILOTODIN_HOME,'p4-synthetic-projects.json');
+const captureDir=join(process.env.PILOTODIN_HOME,'captures');
 if(process.argv.length!== (relaunch ? 3 : 2))throw Error('Unexpected QA probe arguments');
 const invokeDialog=fileURLToPath(new URL('../../qa/p4_native/Invoke_P4_Native_Project_Switch_Dialog.ps1',import.meta.url));
 const execFileAsync=promisify(execFile);
@@ -42,6 +44,9 @@ async function chooseNativeDialogAction(chooser, destination, action) {
  return true;
 }
 function csvFor(kind){
+ if(kind==='prepare')return ['TransactionID,churn,event_type,amount',
+  ...Array.from({length:80},(_,i)=>['SYNTH-'+String(i).padStart(3,'0'),i%2?'Y':'N',i%3?'service':'retail',100+i].join(',')),
+ ].join('\n')+'\n';
  const heads=['account_id','feature'];
  if(kind==='classification')heads.push('churn','fraud_reported','failure_flag','outcome','future_cost');
  else if(kind==='regression')heads.push('future_cost');
@@ -74,6 +79,97 @@ async function noTraining(ids){
   if((await resp.json()).experiments?.length!==0)throw Error('STOP: unexpected model experiment in disposable project');
  }
 }
+
+async function verifyWindowsLayout(page) {
+ const navigation=page.getByRole('navigation',{name:'Workspace navigation'});
+ const primary=page.locator('.po-primary-pane');
+ const checkpoint=primary.getByRole('group',{name:'Selected target suitability checkpoint'});
+ const nativeViewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,scale:devicePixelRatio}));
+ console.log('R04 native WebView viewport '+JSON.stringify(nativeViewport));
+ const session=await page.context().newCDPSession(page);
+ try {
+  for(const width of [1440,1100]){
+   await session.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:0,mobile:false});
+   await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
+   await expect(checkpoint).toBeVisible();
+   await expect(checkpoint).toHaveCSS('display','block');
+   expect(await checkpoint.evaluate(node=>node.scrollWidth<=node.clientWidth+2)).toBe(true);
+   await expect(page.locator('.po-shell-warning')).toHaveCount(0);
+   await checkpoint.screenshot({path:join(captureDir,'prepare-review-'+width+'.png'),animations:'disabled',timeout:15000});
+  }
+  console.log('R04 target checkpoint and archive warning at two WebView widths: PASS');
+  await session.send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:0,mobile:false});
+  await navigation.getByRole('button',{name:'Your data',exact:true}).click();
+  await navigation.getByRole('button',{name:'Prepare',exact:true}).click();
+  const dataTab=page.locator('.po-tab').filter({has:page.locator('#po-workspace-tab-understand')});
+  const dock=page.getByRole('region',{name:'Docked Your data workspace'});
+  await dataTab.dragTo(primary);
+  await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');
+  await dock.getByRole('button',{name:'Close docked pane'}).click();
+  await expect(dock).toBeHidden();
+  await page.getByRole('button',{name:'Dock Your data beside current view'}).click();
+  await expect(dock).toBeVisible();
+  await session.send('Emulation.setDeviceMetricsOverride',{width:730,height:900,deviceScaleFactor:0,mobile:false});
+  await expect(dock).toBeHidden();
+  await expect(page.locator('.po-dock-narrow-notice')).toBeVisible();
+  await session.send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:0,mobile:false});
+  await expect(dock).toBeVisible();
+  await dock.getByRole('button',{name:'Close docked pane'}).click();
+  console.log('R04 docking drag, close, reopen and narrow WebView pause/restore: PASS');
+ }finally{
+  await session.send('Emulation.clearDeviceMetricsOverride');
+  await session.detach();
+ }
+}
+
+async function verifyWindowsPrepare(page,projectId){
+ await openP4FixtureWorkspace(page,SITE,projectId);
+ await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(projectId);
+ const target=page.getByLabel('TARGET VARIABLE');
+ await target.selectOption('churn');
+ const audit=page.locator('.po-ml-feature-audit tbody');
+ const amount=audit.getByRole('row').filter({hasText:'amount'});
+ const category=audit.getByRole('row').filter({hasText:'event_type'});
+ const numeric=page.getByLabel('Numeric imputation method');
+ const categorical=page.getByLabel('Categorical imputation method');
+ await expect(numeric).toHaveValue('median');
+ await expect(categorical).toHaveValue('most_frequent');
+ await expect(amount).toContainText('Numeric: median imputation');
+ await expect(category).toContainText('Categorical: mode imputation');
+ await numeric.selectOption('mean');
+ await categorical.selectOption('constant');
+ await expect(amount).toContainText('Numeric: mean imputation');
+ await expect(category).toContainText('Categorical: missing-marker imputation');
+ const risk=page.locator('.feature-chip').filter({hasText:'TransactionID'}).getByRole('checkbox');
+ const manual=page.locator('.feature-chip').filter({hasText:'event_type'}).getByRole('checkbox');
+ await manual.check();
+ const review=page.getByRole('button',{name:'Review high-risk exclusion suggestions'});
+ const preview=page.getByRole('group',{name:'Review proposed high-risk exclusions'});
+ await review.click();
+ await expect(preview).toContainText('Will additionally exclude (1): TransactionID');
+ await expect(preview).toContainText('Already excluded, kept unchanged (1): event_type');
+ await preview.getByRole('button',{name:'Cancel exclusion review'}).click();
+ await expect(manual).toBeChecked();
+ await expect(risk).not.toBeChecked();
+ await review.click();
+ await preview.getByRole('button',{name:'Apply reviewed exclusions'}).click();
+ await expect(manual).toBeChecked();
+ await expect(risk).toBeChecked();
+ await expect(page.locator('.mini-info').filter({hasText:'candidate predictors'})).toContainText('1 currently included');
+ await expect(category).toContainText('Excluded by user');
+ const plan=await fetch(p4PreparationRequestUrl(API,projectId,'churn',0));
+ const advice=await fetch(`${API}/projects/${projectId}/features?target=churn&expected_version=0`);
+ expect(plan.status).toBe(200);
+ expect(advice.status).toBe(200);
+ expect(await plan.json()).toMatchObject({quality_version:0,target:'churn'});
+ expect(await advice.json()).toMatchObject({version:0});
+ await target.selectOption('');
+ await expect(numeric).toHaveCount(0);
+ await target.selectOption('churn');
+ await expect(numeric).toHaveValue('median');
+ await expect(categorical).toHaveValue('most_frequent');
+ console.log('R05 per-field audit, global strategies, cancel/apply additive exclusions, version and target reset: PASS');
+}
 async function reportBlockedDiscovery() {
  process.exitCode=2;
  console.log('NATIVE LOOPBACK DIAGNOSTICS: '+JSON.stringify(await diagnoseDevPage()));
@@ -95,6 +191,13 @@ async function runNativeProbe(browser) {
  const page=discovered.page;
  const context=page.context();
  const ids={};
+ const writes=[];
+ const blocked={external:0,unexpectedLocal:0,font:0};
+ const reportTraffic=()=>{
+  console.log('N12 intercepted WebView traffic '+JSON.stringify({writes,blocked}));
+  expect(blocked.unexpectedLocal).toBe(0);
+  expect(blocked.external).toBe(0);
+ };
  await context.route('**/*',async route=>{
   const u=new URL(route.request().url());
   const method=route.request().method();
@@ -103,19 +206,34 @@ async function runNativeProbe(browser) {
   const allowed=(u.origin===SITE&&['GET','HEAD'].includes(method))
    ||(u.origin==='http://127.0.0.1:8000'&&(['GET','OPTIONS'].includes(method)||qualityWrite))
    ||u.hostname==='ipc.localhost'||['tauri:','data:','blob:'].includes(u.protocol);
+  if(qualityWrite)writes.push(u.pathname.split('/').at(-1));
   if(allowed)await route.continue();
-  else await route.abort('blockedbyclient');
+  else{
+   if(u.origin==='https://fonts.googleapis.com'&&method==='GET'&&u.pathname==='/css2')blocked.font++;
+   else if(u.origin===SITE||u.origin==='http://127.0.0.1:8000')blocked.unexpectedLocal++;
+   else blocked.external++;
+   await route.abort('blockedbyclient');
+  }
  });
  console.log('ACTUAL Tauri WebView2 reached, local URL only');
  if(relaunch){
-  const projectId=(await readFile(receiptPath,'utf8')).trim();
-  if(!/^[0-9a-f]{32}$/.test(projectId))throw Error('Invalid synthetic Quality project ID');
-  await verifyP4QualityAfterRelaunch(page,API,projectId);
-  await noTraining([projectId]);
-  console.log('N11 native process relaunch restores the synthetic project and Prepare version 1: PASS');
+  const saved=JSON.parse(await readFile(receiptPath,'utf8'));
+  if(Object.keys(saved).length!==7||Object.values(saved).some(id=>typeof id!=='string'||!/^[0-9a-f]{32}$/.test(id)))throw Error('Invalid synthetic project receipt');
+  const failures=[];
+  try{
+   await verifyP4QualityAfterRelaunch(page,API,saved.quality);
+   console.log('N11 native process relaunch restores the synthetic project and Prepare version 1: PASS');
+   try{await verifyWindowsLayout(page)}catch(error){failures.push('R04');console.error('R04 check stopped:',error.message)}
+   try{await verifyWindowsPrepare(page,saved.prepare)}catch(error){failures.push('R05');console.error('R05 check stopped:',error.message)}
+  }finally{
+   await noTraining(Object.values(saved));
+   console.log('N12 experiment count after relaunch: zero across all seven synthetic projects');
+   reportTraffic();
+  }
+  if(failures.length)throw Error('Hosted Windows checks failed: '+failures.join(', '));
   return;
  }
- for(const kind of ['classification','regression','rare','insufficient','neutral','quality'])ids[kind]=await create(kind);
+ for(const kind of ['classification','regression','rare','insufficient','neutral','quality','prepare'])ids[kind]=await create(kind);
  const all=Object.values(ids);
  try{
   await openP4FixtureWorkspace(page,SITE,ids.classification);
@@ -213,9 +331,10 @@ async function runNativeProbe(browser) {
   await expect(chooser).toHaveValue(ids.quality);
   await expect(section).toContainText('Current approved dataset version: 1.');
   await expect(target).toHaveValue('');
-  await writeFile(receiptPath,ids.quality+'\n',{flag:'wx'});
+  expect(writes).toEqual(['proposals','commit']);
+  await writeFile(receiptPath,JSON.stringify(ids),{flag:'wx'});
   console.log('N11 ready for native close and relaunch');
- }finally{await noTraining(all);}
+ }finally{await noTraining(all);reportTraffic();}
 }
 async function main() {
  let browser;

@@ -1,7 +1,7 @@
 param([switch]$PreflightOnly, [switch]$ValidateRuntime)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$base = 'a9ccf9ebcb3fd41caa994af1eaa8a7b15942c0d1'
+$base = 'adf521269ab0dbc75c03223cfe14561dbbb2edc5'
 $branch = 'feature/live-dev-workspace-20261023'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $frontend = Join-Path $root 'frontend'
@@ -17,11 +17,10 @@ if ($LASTEXITCODE -ne 0 -or $commitAndParents.Count -ne 2 -or $commitAndParents[
 }
 if ($env:GITHUB_RUN_ATTEMPT -ne '1') { Fail 'One-shot approval excludes re-runs' }
 $allowed = @(
- '.github/workflows/p4-native-quality-relaunch-20261113.yml',
- 'qa/p4_native/P4_WINDOWS_QUALITY_RELAUNCH_APPROVAL_20261113.txt',
+ '.github/workflows/p4-native-consolidated-20261113.yml',
+ 'qa/p4_native/P4_WINDOWS_CONSOLIDATED_APPROVAL_20261113.txt',
  'qa/p4_native/Run_P4_71_Disposable_Windows.ps1',
- 'frontend/e2e/p4-71-native-webview-qa.mjs',
- 'frontend/e2e/p4-quality-version-transition.mjs'
+ 'frontend/e2e/p4-71-native-webview-qa.mjs'
 )
 $changed = @(& git -C $root diff --name-only $base $actual)
 if ($LASTEXITCODE -ne 0 -or $changed.Count -ne $allowed.Count) { Fail 'One-shot launch must contain exactly the reviewed QA setup changes' }
@@ -44,7 +43,7 @@ if ($production.identifier -ne 'com.pilotodin.studio' -or
     $production.build.beforeDevCommand -ne 'node scripts/deny-unsafe-default-tauri-dev.mjs' -or
     $production.build.beforeBuildCommand -ne 'node scripts/deny-intermediate-installer.mjs') { Fail 'Production/QA/dev identities, bundles or default-deny hooks differ from reviewed source' }
 if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_QUALITY_RELAUNCH_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_CONSOLIDATED_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
 if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
 foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
  foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
@@ -64,6 +63,7 @@ $env:VITE_PILOTODIN_NATIVE_SMOKE = '1'
 # Remote debugger applies to disposable hosted WebView2 only. No other host is exposed.
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9331'
 . (Join-Path $PSScriptRoot 'Close_P4_Verified_Window.ps1')
+$isolatedRoot = Join-Path $env:LOCALAPPDATA 'com.pilotodin.p4isolatednativedev'
 $backend = $null
 $native = $null
 $reopened = $null
@@ -109,7 +109,6 @@ try {
    Start-Sleep -Seconds 2
    try { $v = Invoke-RestMethod -Uri 'http://127.0.0.1:9331/json/version' -TimeoutSec 2; if ($v.webSocketDebuggerUrl) { $cdp=$true; break } } catch { }
  }
- $isolatedRoot=Join-Path $env:LOCALAPPDATA 'com.pilotodin.p4isolatednativedev'
  $webviews=@(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue |
   Where-Object {$_.CommandLine -and $_.CommandLine.Contains('com.pilotodin.p4isolatednativedev')})
  Write-Host "NATIVE WEBVIEW SMOKE: isolated_app_root_present=$(Test-Path $isolatedRoot); isolated_WebView2_processes=$($webviews.Count); debugger_ready=$cdp"
@@ -167,7 +166,7 @@ try {
  Push-Location $frontend
  try {
    node e2e/p4-71-native-webview-qa.mjs --verify-relaunch
-   if ($LASTEXITCODE -ne 0) { Fail 'N11 post-relaunch version and Prepare plan were not verified' }
+   if ($LASTEXITCODE -ne 0) { Fail 'Post-relaunch probe reported an incomplete or failed check. See individual N11, R04, R05 and N12 results.' }
  } finally { Pop-Location }
  # Do not count this hosted runner as a physical 8 GB/Qwen/offline acceptance.
  Write-Host 'R03 PHYSICAL 8GB + QWEN OFFLINE: NOT TESTED. No model fitted. No original owner files touched.'
@@ -181,5 +180,11 @@ try {
    if (Test-Path -LiteralPath (Join-Path $baseDir $name)) { Fail 'Unexpected protected profile path created: STOP/FAIL' }
   }
  }
+ $qaFileCount = @(Get-ChildItem -LiteralPath $qaHome -File -Recurse -ErrorAction Stop).Count
+ $profileFileCount = 0
+ if (Test-Path -LiteralPath $isolatedRoot -PathType Container) {
+   $profileFileCount = @(Get-ChildItem -LiteralPath $isolatedRoot -File -Recurse -ErrorAction Stop).Count
+ }
+ Write-Host "N12 scoped file inventory: disposable QA home files=$qaFileCount; isolated WebView profile files=$profileFileCount"
  Write-Host 'POSTRUN PROTECTED IDENTITIES ABSENT on disposable hosted runner. Historical owner R06 FAIL unchanged.'
 }
