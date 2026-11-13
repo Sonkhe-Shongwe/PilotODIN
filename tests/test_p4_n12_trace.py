@@ -191,6 +191,14 @@ def test_preopened_control_requires_completion_and_does_not_infer_names():
     assert "private.bin" not in json.dumps(targets)
     events.append(event(10, 91, FileKey=40, FileName=outside))
     assert preopened_report(capture, events)["targets"]["protected"]["name_evidence"] == "conflicting-or-different"
+    rundown = [{"key": "0x28", "path": protected}, {"key": "41", "path": outside},
+               {"key": "41", "path": protected}]
+    report = preopened_report(capture, events, rundown)
+    assert report["rundown_keys"] == 2
+    assert report["targets"]["protected"]["rundown_name"] == "matches-target"
+    assert report["targets"]["outside"]["rundown_name"] == "conflicting-or-different"
+    assert report["targets"]["outside"]["completion"] == "unverified"
+    assert "private.bin" not in json.dumps(report)
 
 
 BASE = "2026-11-13"

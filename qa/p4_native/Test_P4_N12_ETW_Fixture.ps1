@@ -1,6 +1,6 @@
 # A disposable fixture probe. The ETL and raw event payloads stay in runner temp.
 [CmdletBinding()]
-param([switch]$WithSysmon, [switch]$CalibrationOnly, [switch]$PreopenedControl)
+param([switch]$WithSysmon, [switch]$CalibrationOnly, [switch]$PreopenedControl, [switch]$Rundown)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -17,6 +17,10 @@ if ($PreopenedControl -and ($WithSysmon -or $CalibrationOnly)) {
     throw 'The pre-opened control uses its own ETW-only fixture.'
 }
 if ($PreopenedControl) { $probeArgs += '--preopened-control' }
+if ($Rundown) {
+    if (-not $PreopenedControl) { throw 'Rundown requires the pre-opened control.' }
+    $probeArgs += '--rundown'
+}
 function Get-ProcessBookend {
     Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |
         Where-Object CreationDate |
@@ -169,7 +173,30 @@ if ($WithSysmon) {
 python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-export $reducerManifest $eventsPath
 if ($LASTEXITCODE -ne 0) { throw 'The Windows ETW export failed reducer validation.' }
 if ($PreopenedControl) {
-    python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') $manifestPath $eventsPath --preopened-control
+    $controlArgs = @($manifestPath, $eventsPath, '--preopened-control')
+    if ($Rundown) {
+        $rundownPath = Join-Path $root 'rundown.jsonl'
+        $classicFile = [guid]'90cbdc39-4a3e-11d1-84f4-0000f80464e3'
+        $rundownStream = [IO.StreamWriter]::new($rundownPath, $false, [Text.UTF8Encoding]::new($false))
+        try {
+            Get-WinEvent -Path (Join-Path $root 'rundown.etl') -Oldest | ForEach-Object {
+                $event = $_
+                if ($event.ProviderId -eq $classicFile -and $event.Opcode -eq 36) {
+                    $values = @($event.Properties | ForEach-Object Value)
+                    if ($values.Count -eq 2 -and $values[1] -is [string]) {
+                        $rundownStream.WriteLine((@{
+                            key = [string]$values[0]
+                            path = $values[1]
+                        } | ConvertTo-Json -Compress))
+                    }
+                }
+            }
+        } finally {
+            $rundownStream.Dispose()
+        }
+        $controlArgs += $rundownPath
+    }
+    python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') @controlArgs
     if ($LASTEXITCODE -ne 0) { throw 'The pre-opened control could not validate both write completions.' }
     return
 }

@@ -251,11 +251,17 @@ def correlate(capture, events):
             "protected_writes": protected_writes}
 
 
-def preopened_report(capture, events):
+def preopened_report(capture, events, rundown=None):
     """Compare ETW path evidence to independently checked fixture handles."""
     control = capture["preopened"]
     devices = {capture["device"].casefold(): capture["protected_root"][:2].casefold()}
     events = sorted(events, key=lambda event: event["ticks"])
+    rundown_names = {}
+    if rundown is not None:
+        for entry in rundown:
+            key = number(entry["key"])
+            path = canonical_file_path(entry["path"], devices)
+            rundown_names.setdefault(key, set()).add(path)
     outcomes = {}
     for label in ("protected", "outside"):
         write = control["writes"][label]
@@ -268,6 +274,8 @@ def preopened_report(capture, events):
         ]
         outcome = {"request_candidates": len(candidates), "completion": "unverified",
                    "issuing_thread": "unverified", "name_evidence": "unavailable"}
+        if rundown is not None:
+            outcome["rundown_name"] = "unavailable"
         outcomes[label] = outcome
         if len(candidates) != 1:
             continue
@@ -276,6 +284,15 @@ def preopened_report(capture, events):
         if number(data.get("IssuingThreadId", data.get("ThreadId"))) == control["tid"]:
             outcome["issuing_thread"] = "matches"
         irp, key = (number(data.get(field)) for field in ("Irp", "FileKey"))
+        expected = canonical_file_path(write["path"], devices)
+        if expected is None:
+            raise ValueError("Invalid generated control path.")
+        if rundown is not None:
+            names_for_key = rundown_names.get(key)
+            if key and names_for_key:
+                outcome["rundown_name"] = (
+                    "matches-target" if names_for_key == {expected} else "conflicting-or-different"
+                )
         if irp:
             for event in events:
                 if (event["ticks"] <= request["ticks"] or event["lifecycle"]
@@ -297,23 +314,28 @@ def preopened_report(capture, events):
                 elif event["id"] in (11, 18, 19, 23, 29):
                     names.clear()
         if names:
-            expected = canonical_file_path(write["path"], devices)
-            if expected is None:
-                raise ValueError("Invalid generated control path.")
             outcome["name_evidence"] = (
                 "matches-target" if names == {expected} else "conflicting-or-different"
             )
-    return {"scope": "generated writes through pre-opened handles", "targets": outcomes}
+    result = {"scope": "generated writes through pre-opened handles", "targets": outcomes}
+    if rundown is not None:
+        result["rundown_keys"] = len(rundown_names)
+    return result
+
 
 def main():
     capture_path, events_path = map(Path, sys.argv[1:3])
     options = sys.argv[3:]
-    if options not in ([], ["--preopened-control"]):
+    if options and (options[0] != "--preopened-control" or len(options) > 2):
         raise ValueError("Unexpected correlation options.")
     capture = json.loads(capture_path.read_text(encoding="utf-8-sig"))
+    rundown = None
+    if len(options) == 2:
+        with Path(options[1]).open(encoding="utf-8-sig") as stream:
+            rundown = [json.loads(line) for line in stream]
     with events_path.open(encoding="utf-8-sig") as stream:
         events = (json.loads(line) for line in stream)
-        report = preopened_report(capture, events) if options else correlate(capture, events)
+        report = preopened_report(capture, events, rundown) if options else correlate(capture, events)
     print(json.dumps(report))
     if options and any(target["completion"] != "success" for target in report["targets"].values()):
         return 2

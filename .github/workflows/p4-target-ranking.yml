@@ -277,3 +277,7 @@ jobs:
       - name: Check ETW writes through handles opened before capture
         shell: pwsh
         run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl
+
+      - name: Compare Windows file-name rundown with known handle targets
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl -Rundown

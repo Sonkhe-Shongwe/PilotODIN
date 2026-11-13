@@ -100,7 +100,7 @@ def probe(root, *, calibration_only=False, thread_context=False):
     return capture_fixture(root, calibration_only=calibration_only, thread_context=thread_context)
 
 
-def preopened_control(root):
+def preopened_control(root, *, rundown=False):
     import msvcrt
 
     root.mkdir()
@@ -119,7 +119,28 @@ def preopened_control(root):
             if not 0 < length < len(name) or Path(name.value.removeprefix("\\\\?\\")) != path:
                 raise RuntimeError("Windows did not confirm the generated handle target.")
             controls[label] = (path, stream, b"x" * size)
-        return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
+        if not rundown:
+            return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
+        # Keep the control handles open through WPR's stop-time rundown.
+        wpr = Path(os.environ["SystemRoot"]) / "System32" / "wpr.exe"
+        instance = ["-instancename", f"PilotODIN-{uuid4().hex}"]
+        def run_wpr(*arguments):
+            return subprocess.run([str(wpr), *arguments, *instance], timeout=60,
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+
+        if (status := run_wpr("-start", "FileIO")) != 0:
+            raise RuntimeError(f"Windows FileIO recording did not start (exit {status}).")
+        stopped = False
+        try:
+            capture = capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
+            status = run_wpr("-stop", str(root / "rundown.etl"), "-skipPdbGen")
+            if status:
+                raise RuntimeError(f"Windows FileIO recording did not stop cleanly (exit {status}).")
+            stopped = True
+            return capture
+        finally:
+            if not stopped:
+                run_wpr("-cancel")
 
 
 def capture_fixture(root, *, calibration_only, thread_context, controls=None):
@@ -208,12 +229,13 @@ if __name__ == "__main__":
     try:
         options = sys.argv[2:]
         if len(sys.argv) < 2 or options not in (
-            [], ["--calibration-only"], ["--calibration-only", "--thread-context"], ["--preopened-control"],
+            [], ["--calibration-only"], ["--calibration-only", "--thread-context"],
+            ["--preopened-control"], ["--preopened-control", "--rundown"],
         ):
             raise ValueError("Unexpected probe arguments.")
         root = local_disposable_path(Path(sys.argv[1]), runner_temp_only=True)
-        if options == ["--preopened-control"]:
-            print(json.dumps(preopened_control(root)))
+        if "--preopened-control" in options:
+            print(json.dumps(preopened_control(root, rundown="--rundown" in options)))
         else:
             print(json.dumps(probe(root, calibration_only="--calibration-only" in options,
                                    thread_context="--thread-context" in options)))
