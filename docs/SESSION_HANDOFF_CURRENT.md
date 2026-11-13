@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 redacted path diagnostics
+
+- [Source `6d04e81`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6d04e81b2189938849d03cdc964f4b453dc944f2) reports the role, mutation, source or destination field, path form and count for unresolved Process Monitor events in both reducer modes. The coverage blocker remains in force. The previously unresolved live row remains unidentified because only the earlier redacted summary was retained.
+- [Exact-source P4 CI #43459702082](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43459702082) passed all three jobs: 206 Python tests, 78 Node checks, TypeScript/Vite, 13 Chromium cases and the synthetic Windows fixture. The focused local suite passed 45 tests. The new regression checks that unknown paths still block coverage and raw path and process names are omitted.
+- **Next:** The [runbook](../qa/p4_native/N12_TRACE.md#diagnose-blocked-process-monitor-coverage) records the continuity evidence required for the file source used by N12. ETW loss counters are a candidate for a separately validated file-I/O collector. A repeat of the same Process Monitor fixture alone cannot establish capture completeness or the meaning of exit code 1. The live workflow remains disabled. R02/N12 remains partial and P4 stays active.
+
 ## 13 November 2026 | N12 live fixture markers observed
 
 - The owner approved one new disposable hosted Windows collector run. [Run #43458458941](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43458458941) at [`67d85f5`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/67d85f5962dbfebebbb1fc54f7f5764eba59c71c) verified Sysmon 15.22 and Process Monitor 4.13 and completed the generated fixture. The quiet stop command returned successfully. The capture process exited with code 1. The backing file (90,356,359 bytes) and exported CSV (40,407,638 bytes) were closed and readable, and the reducer produced a redacted summary.
