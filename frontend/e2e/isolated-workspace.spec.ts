@@ -1,5 +1,6 @@
 import {expect,test} from '@playwright/test';
 import type {BrowserContext,Route} from '@playwright/test';
+import {dragWorkspaceTab} from './p4-drag-workspace-tab.mjs';
 
 const UI_ORIGIN='http://127.0.0.1:5187';
 const API_ORIGIN='http://127.0.0.1:8000';
@@ -1432,7 +1433,7 @@ test('drag Your data onto Prepare page docks side by side without backend writes
  expect(externalDropsPrevented).toEqual([true,true]);
  await expect(page.locator('.po-secondary-pane')).toBeHidden();
  // Real Chromium drag gesture, not synthetic dispatchEvent or a preseeded dock.
- await dataTab.dragTo(primary);
+ await dragWorkspaceTab(page,dataTab,primary);
  const dock=page.locator('.po-secondary-pane');
  await expect(dock).toBeVisible();
  await expect(dock.getByRole('combobox',{name:'Docked analytical component'})).toHaveValue('understand');

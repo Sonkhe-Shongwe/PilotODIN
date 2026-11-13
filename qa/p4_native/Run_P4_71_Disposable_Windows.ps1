@@ -75,13 +75,37 @@ function Write-ScopedNetworkSnapshot([string]$stage) {
  try {
    $profileProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" |
      Where-Object { $_.CommandLine -and $_.CommandLine.Contains('com.pilotodin.p4isolatednativedev') })
-   $ownedIds = @($backend.Id, [int]$env:P4_NATIVE_QA_APP_PID) + @($profileProcesses | ForEach-Object { $_.ProcessId })
+   $roles = @{}
+   $roles[[int]$backend.Id] = 'backend'
+   $roles[[int]$env:P4_NATIVE_QA_APP_PID] = 'desktop'
+   foreach ($process in $profileProcesses) {
+     $role = 'webview'
+     if ($process.CommandLine -match '(?:^|\s)--utility-sub-type=network\.mojom\.NetworkService(?:\s|$)') {
+       $role = 'webview-network-service'
+     } elseif ($process.CommandLine -match '(?:^|\s)--type=(renderer|gpu-process|utility)(?:\s|$)') {
+       $role = "webview-$($Matches[1])"
+     }
+     $roles[[int]$process.ProcessId] = $role
+   }
    $connections = @(Get-NetTCPConnection -State Established -ErrorAction Stop |
-     Where-Object { $_.OwningProcess -in $ownedIds })
-   $loopback = @($connections | Where-Object {
-     [System.Net.IPAddress]::IsLoopback([System.Net.IPAddress]::Parse($_.RemoteAddress))
-   }).Count
-   Write-Host "N12 TCP snapshot ${stage}: processes=$($ownedIds.Count) loopback=$loopback other=$($connections.Count - $loopback)"
+     Where-Object { $roles.ContainsKey([int]$_.OwningProcess) })
+   $loopback = 0
+   $other = @(
+     foreach ($connection in $connections) {
+       $address = [System.Net.IPAddress]::Parse($connection.RemoteAddress)
+       if ($address.IsIPv4MappedToIPv6) { $address = $address.MapToIPv4() }
+       if ([System.Net.IPAddress]::IsLoopback($address)) { $loopback++; continue }
+       # Keep ownership and remote port in the evidence, without logging IPs or command lines.
+       [pscustomobject]@{
+         processId = $connection.OwningProcess
+         role = $roles[[int]$connection.OwningProcess]
+         remotePort = $connection.RemotePort
+         addressFamily = $address.AddressFamily.ToString()
+       }
+     }
+   )
+   Write-Host "N12 TCP snapshot ${stage}: processes=$($roles.Count) loopback=$loopback other=$($other.Count)"
+   Write-Host ("N12 non-loopback TCP owners ${stage}: " + (ConvertTo-Json -InputObject $other -Compress))
  } catch {
    Write-Host "N12 TCP snapshot ${stage}: unavailable"
  }
