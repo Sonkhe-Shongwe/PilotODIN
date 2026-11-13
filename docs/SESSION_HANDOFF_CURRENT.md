@@ -3,6 +3,7 @@
 ## 13 November 2026 | N12 standalone collector check
 
 - The [N12 runbook](../qa/p4_native/N12_TRACE.md#standalone-collector-calibration-on-hosted-windows) now uses `check-calibration` to verify a generated fixture against Sysmon and Procmon before a native journey. Both audit modes verify the actual rename destination and calibration executable identity. Local N12, acceptance-kit and installer-provenance suites passed 44 tests, including 20 N12 tests.
+- [P4 CI #43449514937](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43449514937) passed all three jobs at [`873e52b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/873e52b0f814387d1cabd7d5fbb5b92ea15c2da2): 205 Python tests, 78 Node checks, TypeScript/Vite, 13 Chromium cases and the synthetic Windows fixture. Live Sysmon and Procmon capture is pending.
 - **Next:** Run the fixture on disposable hosted Windows with Sysmon and Procmon configured. If the tools must be installed or the runner audit configuration changed, obtain approval for that setup. A separately approved native startup-to-exit trace follows successful live calibration. R02/N12 remains partial and the historical WebView2 port 443 connection remains unattributed.
 
 ## 13 November 2026 | N12 trace tools prepared
