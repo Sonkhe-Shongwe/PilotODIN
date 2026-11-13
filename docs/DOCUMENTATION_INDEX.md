@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November N12 ETW identity and protected writes:** [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43464663396) verified failed request handling and undeclared-writer mutations in the hosted fixture. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-etw-failed-requests-and-protected-writes)
 - **13 November N12 ETW correlation:** [Hosted Windows fixture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43462574499) verified exact mutation paths, successful completions and the second writer's cross-directory move. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-etw-fixture-mutation-correlation)
 - **13 November N12 ETW probe:** [Hosted P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43461185741) passed. ETW reported zero loss on the generated fixture trace. Path and completion correlation is pending. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-etw-fixture-feasibility)
 - **13 November N12 path diagnostics:** [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43459702082) passed. [The runbook](../qa/p4_native/N12_TRACE.md#diagnose-blocked-process-monitor-coverage) records redacted path reporting and continuity evidence requirements.
