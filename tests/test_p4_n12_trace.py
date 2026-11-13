@@ -40,6 +40,9 @@ def test_etw_failed_open_and_reused_pid_and_file_object():
     event(1, 0, lifecycle=True, ProcessID=12)
     event(16, 12, FileObject=8, Irp=11)
     event(24, 0, Irp=11, Status=0)
+    # A process already running when the trace starts can open an existing file.
+    event(12, 99, FileObject=9, Irp=13, FileName=r"D:\qa\protected\private-file")
+    event(24, 0, Irp=13, Status=0, ExtraInformation=1)
     event(12, 12, FileObject=8, Irp=11,
           FileName=r"\Device\HarddiskVolume3\qa\protected\private-file")
     event(24, 0, Irp=11, Status=0, ExtraInformation=2)
@@ -71,6 +74,14 @@ def test_etw_failed_open_and_reused_pid_and_file_object():
     report = correlate(capture, rows)
     assert report["protected_writes"] == 2
     assert report["unresolved"] == {"other:open:irp-reused-before-completion": 1}
+
+    # Overwriting through an open still requires writer attribution.
+    event(12, 99, FileObject=9, Irp=16, FileName=r"D:\qa\protected\private-file")
+    event(24, 0, Irp=16, Status=0, ExtraInformation=3)
+    report = correlate(capture, rows)
+    assert report["protected_writes"] == 3
+    assert report["operations"]["other:overwrite:protected"] == 1
+    assert report["unresolved"]["other:open:process-lifetime-missing"] == 1
 
 BASE = "2026-11-13"
 PYTHON = r"C:\Runtime\python.exe"

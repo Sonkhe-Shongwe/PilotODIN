@@ -69,13 +69,19 @@ def correlate(capture, events):
                 if tracked:
                     failed[f"{actor}:{operation}:{tracked}"] += 1
                 continue
-            if tracked and handle[1] is None:
+            # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
+            open_result = number(data.get("ExtraInformation")) if operation == "open" else None
+            mutation = operation != "open" or open_result in {0, 2, 3}
+            if tracked and operation == "open" and open_result not in {0, 1, 2, 3}:
+                unresolved[f"{actor}:open:unknown-open-result"] += 1
+            if tracked and mutation and handle[1] is None:
                 unresolved[f"{actor}:{operation}:process-lifetime-missing"] += 1
             if operation == "open":
                 if source:
                     opened[handle] = source
-                if source and number(data.get("ExtraInformation")) == 2:  # FILE_CREATED
-                    witnessed[f"{actor}:create:{source}"] += 1
+                if source and mutation:
+                    action = "create" if open_result == 2 else "overwrite"
+                    witnessed[f"{actor}:{action}:{source}"] += 1
             elif tracked and operation == "rename":
                 if source and destination:
                     witnessed[f"{actor}:rename:{source}:{destination}"] += 1
@@ -84,9 +90,7 @@ def correlate(capture, events):
                 opened[handle] = destination
             elif source:
                 witnessed[f"{actor}:{operation}:{source}"] += 1
-            if "protected" in (source, destination) and (
-                operation != "open" or number(data.get("ExtraInformation")) == 2
-            ):
+            if "protected" in (source, destination) and mutation:
                 protected_writes += 1
             continue
         if kind == 27 and irp in pending:
