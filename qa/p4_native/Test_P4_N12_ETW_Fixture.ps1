@@ -175,48 +175,38 @@ if ($LASTEXITCODE -ne 0) { throw 'The Windows ETW export failed reducer validati
 if ($PreopenedControl) {
     $controlArgs = @($manifestPath, $eventsPath, '--preopened-control')
     if ($Rundown) {
+        # Use the native ProcessTrace consumer and TDH decoder. Decoded paths
+        # are written only to the disposable runner-temp JSONL file.
         $rundownPath = Join-Path $root 'rundown.jsonl'
-        $classicFile = [guid]'90cbdc39-4a3e-11d1-84f4-0000f80464e3'
-        $rundownCounts = @{ classic_events = 0; opcode_36 = 0; decoded_names = 0 }
-        $rundownStream = [IO.StreamWriter]::new($rundownPath, $false, [Text.UTF8Encoding]::new($false))
+        $decoderSource = Join-Path $PSScriptRoot 'n12_fileio_rundown.cpp'
+        $decoderExe = Join-Path $root 'n12_fileio_rundown.exe'
+        $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+        if (-not $programFilesX86) { throw 'The Visual C++ build tools location is unavailable.' }
+        $vswhere = Join-Path $programFilesX86 'Microsoft Visual Studio\Installer\vswhere.exe'
+        if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) {
+            throw 'The Visual Studio installation locator is unavailable.'
+        }
+        $vsInstall = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        if ($LASTEXITCODE -ne 0 -or -not $vsInstall) {
+            throw 'The native ETW decoder requires the Visual C++ x64 build tools.'
+        }
+        $vcvars = Join-Path $vsInstall 'VC\Auxiliary\Build\vcvars64.bat'
+        if (-not (Test-Path -LiteralPath $vcvars -PathType Leaf)) {
+            throw 'The Visual C++ x64 environment script is unavailable.'
+        }
+        $compileCommand = 'call "{0}" >nul && cl.exe /nologo /std:c++17 /EHsc /W4 /DUNICODE /D_UNICODE "{1}" /Fe:"{2}" /link tdh.lib advapi32.lib' -f $vcvars, $decoderSource, $decoderExe
+        Push-Location $root
         try {
-            Get-WinEvent -Path (Join-Path $root 'rundown.etl') -Oldest | ForEach-Object {
-                $event = $_
-                if ($event.ProviderId -eq $classicFile) { $rundownCounts.classic_events++ }
-                if ($event.ProviderId -eq $classicFile -and $event.Opcode -eq 36) {
-                    $rundownCounts.opcode_36++
-                    $values = @($event.Properties | ForEach-Object Value)
-                    $key, $name = $null, $null
-                    if ($values.Count -eq 2 -and $values[1] -is [string]) {
-                        $key, $name = [string]$values[0], $values[1]
-                    } else {
-                        $xml = [xml]$event.ToXml()
-                        $keyNode = $xml.SelectSingleNode("//*[local-name()='Data' and @Name='FileObject']")
-                        $nameNode = $xml.SelectSingleNode("//*[local-name()='Data' and @Name='FileName']")
-                        if ($keyNode -and $nameNode) {
-                            $key, $name = $keyNode.InnerText, $nameNode.InnerText
-                        }
-                    }
-                    if ($key -and $name) {
-                        $rundownCounts.decoded_names++
-                        $rundownStream.WriteLine((@{
-                            key = $key
-                            path = $name
-                        } | ConvertTo-Json -Compress))
-                    }
-                }
-            }
+            & $env:ComSpec /d /s /c $compileCommand
+            if ($LASTEXITCODE -ne 0) { throw 'The native ProcessTrace decoder did not compile.' }
         } finally {
-            $rundownStream.Dispose()
+            Pop-Location
         }
-        Write-Host ('Windows FileIO rundown record counts: ' + ($rundownCounts | ConvertTo-Json -Compress))
-        if ($rundownCounts.opcode_36 -gt 0 -and $rundownCounts.decoded_names -eq 0) {
-            $xmlPath = Join-Path $root 'rundown.xml'
-            & (Join-Path $env:SystemRoot 'System32\tracerpt.exe') (Join-Path $root 'rundown.etl') -o $xmlPath -of XML -y | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw 'Windows trace-report decoding failed.' }
-            python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') --decode-rundown $xmlPath $rundownPath
-            if ($LASTEXITCODE -ne 0) { throw 'The Windows trace-report output could not be read.' }
+        if (-not (Test-Path -LiteralPath $decoderExe -PathType Leaf)) {
+            throw 'The native ProcessTrace decoder executable was not produced.'
         }
+        & $decoderExe (Join-Path $root 'rundown.etl') $rundownPath
+        if ($LASTEXITCODE -ne 0) { throw 'The native ProcessTrace decoder could not read the rundown trace.' }
         $controlArgs += $rundownPath
     }
     python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') @controlArgs
