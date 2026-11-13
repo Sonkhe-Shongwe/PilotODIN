@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | Focused Windows docking and TCP attribution
+
+- [Hosted Windows #43423213278](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43423213278) used one unpackaged build at `ef6bd3748eb13935ed894fd79d8eeb685a4f6172`. R04 drag-to-dock failed again with the two-move gesture. WebView2 received one drag start, two drag-overs with the workspace-tab type, zero drops and one drag end. The last drag-over was not accepted and the drag-end effect was `none`. Dock beside, close and narrow-width pause/restore passed.
+- **N12:** Both snapshots attributed one established non-loopback IPv4 TCP connection on remote port 443 to the isolated WebView2 Network Service, PID 3012. The remote host, initiating request and purpose are unknown. The WebView interceptor blocked one external font request, recorded no browser writes or other unexpected requests, and the disposable project contained no experiments. [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-focused-windows-docking-and-tcp-attribution).
+- [P4 #43423212865](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43423212865) passed all three regular CI jobs at the launch source. The one-use workflow was [disarmed](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6b1c1520a171a292cb399fcc3f756b695726b584). R04 and N12 remain open. The next R04 investigation should compare event propagation and each dock predicate at the last drag-over. The connection owner is established for this run only. Physical R03 and historical R06 disposition remain open. P4 stays active.
+
 ## 13 November 2026 | R04 drag gesture and N12 TCP attribution prepared
 
 - [`950793ce1e1c00291319015034d809653c45e4c0`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/950793ce1e1c00291319015034d809653c45e4c0) shares a two-move pointer gesture between the Chromium regression and Windows probe, following [Playwright input guidance](https://playwright.dev/docs/input#dragging-manually). The probe records whether the last matching drag-over was accepted by the page and the final drag-end effect. The prior Windows run observed one drag-over and zero drops. Its logs do not establish whether the previous gesture or application behavior caused the missing drop.
