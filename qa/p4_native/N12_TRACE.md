@@ -36,6 +36,8 @@ Exit 0 confirms both collectors recorded the declared Python parent and child, e
 
 ### Reduce combined ETW and Sysmon evidence
 
+For a standalone collector rehearsal, the disabled [one-time workflow](../../.github/workflows/p4-n12-live-calibration.yml) is staged to provision the reviewed Sysmon binary and run the generated fixture with built-in ETW. A new owner-approved launch must bind to the reviewed parent commit. The runner checks the exact file mutations and loopback events with `check-calibration-etw`, and keeps raw evidence in runner temp. This rehearsal uses generated files and does not launch PilotODIN. It is separate from the startup-to-exit audit below.
+
 ~~~powershell
 python qa/p4_native/n12_trace.py audit-etw $manifest $sysmonXml $etwJsonl $before $after $summary
 ~~~

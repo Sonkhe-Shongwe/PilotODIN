@@ -1,6 +1,6 @@
 # Run only on the approved disposable GitHub-hosted Windows image.
 [CmdletBinding()]
-param()
+param([switch]$WithEtw)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -54,7 +54,10 @@ New-Item -ItemType Directory -Path $root | Out-Null
 $channel = 'Microsoft-Windows-Sysmon/Operational'
 $clock = Get-TimeZone
 $sysmon = Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
-$procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe' 'Microsoft Corporation' 'aa0b10e936feea464348695f8a85a2dcafd2cb3dabd1d47d8a57e7594783b27b'
+$procmon = $null
+if (-not $WithEtw) {
+    $procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe' 'Microsoft Corporation' 'aa0b10e936feea464348695f8a85a2dcafd2cb3dabd1d47d8a57e7594783b27b'
+}
 $config = Join-Path $root 'sysmon-config.xml'
 $pml = Join-Path $root 'capture.pml'
 $csv = Join-Path $root 'capture.csv'
@@ -77,9 +80,13 @@ $summary = Join-Path $root 'summary.json'
 $installStarted = $false
 $capture = $null
 try {
-    if ($clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
+    if (-not $WithEtw -and $clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
     $installStarted = $true
     Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
+    if ($WithEtw) {
+        & (Join-Path $PSScriptRoot 'Test_P4_N12_ETW_Fixture.ps1') -WithSysmon
+        return
+    }
     $latest = Get-WinEvent -LogName $channel -MaxEvents 1
     $firstRecord = $latest.RecordId + 1
 
@@ -189,5 +196,5 @@ try {
         try { Start-CollectorCommand $sysmon '-u' 'Sysmon cleanup' }
         catch { Write-Warning 'Sysmon cleanup did not complete.' }
     }
-    if ($clock.Id -ne 'UTC') { Set-TimeZone -Id $clock.Id }
+    if (-not $WithEtw -and $clock.Id -ne 'UTC') { Set-TimeZone -Id $clock.Id }
 }

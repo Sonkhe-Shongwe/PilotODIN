@@ -86,14 +86,15 @@ def run_writer(code, *paths):
     return result.pid
 
 
-def probe(root):
+def probe(root, *, calibration_only=False):
     root.mkdir()
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
-    source.parent.mkdir()
-    destination.parent.mkdir()
-    source.write_bytes(b"cross-directory marker")
+    if not calibration_only:
+        source.parent.mkdir()
+        destination.parent.mkdir()
+        source.write_bytes(b"cross-directory marker")
     protected = root / "synthetic-protected"
     protected.mkdir()
     marker = protected / "transient.bin"
@@ -105,6 +106,7 @@ def probe(root):
     )
     # Names, file I/O, completion, creation, writes, and delete/rename paths.
     logman = [str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")]
+    capture_start = utc_ticks() // 10 * 10
     started = subprocess.run(
         [*logman, "create", "trace", session, "-pf", str(providers),
          "-o", str(etl), "-max", "128", "-bs", "64", "-nb", "16", "128", "-ets"],
@@ -125,22 +127,25 @@ def probe(root):
             raise RuntimeError("The generated N12 calibration failed.")
         fixture = json.loads(result.stdout)
         fixture["start_window"] = [fixture_start, utc_ticks()]
-        writer_start = utc_ticks()
-        writer_pid = run_writer(
-            "import os,sys\n"
-            "try:\n with open(sys.argv[1], 'xb'): pass\n"
-            "except FileExistsError: pass\n"
-            "else: raise RuntimeError('Exclusive create should fail')\n"
-            "os.rename(*sys.argv[1:])",
-            source, destination,
-        )
-        writer_window = [writer_start, utc_ticks()]
-        if source.exists() or destination.read_bytes() != b"cross-directory marker":
-            raise RuntimeError("The cross-directory fixture did not finish at the expected destination.")
-        run_writer("from pathlib import Path\nimport sys\n"
-                   "path = Path(sys.argv[1])\npath.write_bytes(b'generated')\npath.unlink()", marker)
-        if any(protected.iterdir()):
-            raise RuntimeError("The synthetic protected directory did not return to baseline.")
+        second_writer = None
+        if not calibration_only:
+            writer_start = utc_ticks()
+            writer_pid = run_writer(
+                "import os,sys\n"
+                "try:\n with open(sys.argv[1], 'xb'): pass\n"
+                "except FileExistsError: pass\n"
+                "else: raise RuntimeError('Exclusive create should fail')\n"
+                "os.rename(*sys.argv[1:])",
+                source, destination,
+            )
+            second_writer = {"pid": writer_pid, "source": str(source), "destination": str(destination),
+                             "start_window": [writer_start, utc_ticks()]}
+            if source.exists() or destination.read_bytes() != b"cross-directory marker":
+                raise RuntimeError("The cross-directory fixture did not finish at the expected destination.")
+            run_writer("from pathlib import Path\nimport sys\n"
+                       "path = Path(sys.argv[1])\npath.write_bytes(b'generated')\npath.unlink()", marker)
+            if any(protected.iterdir()):
+                raise RuntimeError("The synthetic protected directory did not return to baseline.")
     finally:
         try:
             counters = stop_trace(session)
@@ -151,15 +156,16 @@ def probe(root):
     if etl.stat().st_size == 0 or counters["buffers_written"] == 0:
         raise RuntimeError("ETW trace was empty.")
     return {"fixture": fixture, "counters": counters, "device": volume_device(root.drive),
-            "protected_root": str(protected), "second_writer": {
-                "pid": writer_pid, "source": str(source), "destination": str(destination),
-                "start_window": writer_window,
-            }}
+            "protected_root": str(protected), "second_writer": second_writer,
+            "start_ticks": capture_start, "end_ticks": utc_ticks() // 10 * 10}
 
 
 if __name__ == "__main__":
     try:
-        print(json.dumps(probe(local_disposable_path(Path(sys.argv[1]), runner_temp_only=True))))
+        if len(sys.argv) not in {2, 3} or sys.argv[2:] not in ([], ["--calibration-only"]):
+            raise ValueError("Unexpected probe arguments.")
+        print(json.dumps(probe(local_disposable_path(Path(sys.argv[1]), runner_temp_only=True),
+                               calibration_only=sys.argv[2:] == ["--calibration-only"])))
     except RuntimeError as exc:
         sys.exit(str(exc))
     except (IndexError, OSError, ValueError, subprocess.SubprocessError):

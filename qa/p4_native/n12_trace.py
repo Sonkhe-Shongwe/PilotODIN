@@ -444,20 +444,31 @@ def load_capture(manifest, sysmon, *, etw=False):
     return start, end, processes, connections, issues
 
 
-def check_calibration(manifest, sysmon, procmon):
+def check_calibration(manifest, sysmon, file_trace, *, etw=False):
     """Check real collector exports from a standalone generated fixture."""
-    start, end, processes, connections, issues = load_capture(manifest, sysmon)
+    start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
     root = manifest["calibration"]
     require(root["role"] == "calibration" and type(root["port"]) is int
             and 1 <= root["port"] <= 65535, "invalid calibration fixture")
     roles, bindings = bind_processes([root], processes, issues)
     permitted = {"calibration": [ntpath.dirname(windows_path(root["fixture"]))]}
-    counts, violations, file_events, path_diagnostics = inspect_files(
-        procmon, start, end, processes, roles, (), permitted, issues)
+    if etw:
+        protected = [windows_path(path) for path in manifest["protected_roots"].values()]
+        require(protected, "missing ETW calibration protected roots")
+        counts, violations, file_events, diagnostics = inspect_etw_files(
+            manifest, file_trace, start, end, processes, roles, protected, permitted, issues)
+        file_report = {"file_evidence_source": "etw", "etw_unresolved_mutations": diagnostics,
+                       "file_violations": violations}
+    else:
+        counts, violations, file_events, path_diagnostics = inspect_files(
+            file_trace, start, end, processes, roles, (), permitted, issues)
+        file_report = {"unresolved_file_paths": path_diagnostics}
     if bindings:
         calibration_window(root, bindings[0][1], processes, connections, file_events, issues)
-    if violations:
+    if any(key.startswith("outside-scope:calibration:") for key in violations):
         issues.add("calibration-writes-outside-fixture")
+    if any(key.startswith("protected:") for key in violations):
+        issues.add("calibration-protected-mutation")
     verify_connection_lifetimes(connections, processes, roles, issues)
     _, unexpected, _ = scoped_network(connections, roles, {root["port"]})
     if unexpected:
@@ -465,7 +476,7 @@ def check_calibration(manifest, sysmon, procmon):
     return {"schema_version": 1, "scope": "collector calibration only",
             "coverage": "BLOCKED" if issues else "CALIBRATED",
             "coverage_issues": sorted(issues), "file_events": counts,
-            "unresolved_file_paths": path_diagnostics,
+            **file_report,
             "native_n12_accepted": False}
 
 
@@ -694,9 +705,10 @@ def main():
     snapshot = subcommands.add_parser("snapshot")
     snapshot.add_argument("manifest", type=Path)
     snapshot.add_argument("output", type=Path)
-    calibration = subcommands.add_parser("check-calibration")
-    for argument in ("manifest", "sysmon", "procmon", "output"):
-        calibration.add_argument(argument, type=Path)
+    for mode in ("check-calibration", "check-calibration-etw"):
+        calibration = subcommands.add_parser(mode)
+        for argument in ("manifest", "sysmon", "file_trace", "output"):
+            calibration.add_argument(argument, type=Path)
     for mode in ("audit", "audit-etw"):
         report = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "etw_events" if mode == "audit-etw" else "procmon",
@@ -714,9 +726,10 @@ def main():
             result = {label: {name: fingerprint(local_disposable_path(path))
                               for name, path in manifest[key].items()}
                       for label, key in (("protected", "protected_roots"), ("observed", "observed_roots"))}
-        elif args.mode == "check-calibration":
+        elif args.mode in {"check-calibration", "check-calibration-etw"}:
             output = args.output
-            result = check_calibration(read_json(args.manifest), args.sysmon, args.procmon)
+            result = check_calibration(read_json(args.manifest), args.sysmon, args.file_trace,
+                                       etw=args.mode == "check-calibration-etw")
         else:
             output = args.output
             endpoints = [] if args.private_endpoints else None
@@ -739,7 +752,7 @@ def main():
         return 2
     if args.mode == "snapshot":
         return 0
-    if args.mode == "check-calibration":
+    if args.mode in {"check-calibration", "check-calibration-etw"}:
         print(f"N12 collector calibration: {result['coverage']}")
         return 0 if result["coverage"] == "CALIBRATED" else 2
     print(f"N12 coverage={result['coverage']} network={result['network']} filesystem={result['filesystem']}")

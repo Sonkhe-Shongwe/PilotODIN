@@ -1,9 +1,27 @@
 # A disposable fixture probe. The ETL and raw event payloads stay in runner temp.
+[CmdletBinding()]
+param([switch]$WithSysmon)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
+    $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows') {
+    throw 'The ETW fixture requires disposable GitHub-hosted Windows.'
+}
 $env:PYTHONDONTWRITEBYTECODE = '1'
 $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-etw-$([guid]::NewGuid().ToString('N'))"
-$result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') $root
+$channel = 'Microsoft-Windows-Sysmon/Operational'
+$firstRecord = $null
+$probeArgs = @($root)
+if ($WithSysmon) {
+    $log = Get-WinEvent -ListLog $channel -ErrorAction SilentlyContinue
+    if ($null -eq $log -or -not $log.IsEnabled) {
+        throw 'Combined rehearsal blocked: a configured Sysmon operational channel is required.'
+    }
+    $firstRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId + 1
+    $probeArgs += '--calibration-only'
+}
+$result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
 if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
 $capture = $result | ConvertFrom-Json
 $manifestPath = Join-Path $root 'fixture.json'
@@ -39,6 +57,46 @@ try {
     }
 } finally {
     $stream.Dispose()
+}
+if ($WithSysmon) {
+    Start-Sleep -Seconds 3
+    $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
+    $sysmonXml = Join-Path $root 'sysmon.xml'
+    $exportArgs = @{ FirstRecord = $firstRecord; LastRecord = $lastRecord; OutputFile = $sysmonXml }
+    & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') @exportArgs
+    $devices = @{}
+    $drive = [IO.Path]::GetPathRoot($root).TrimEnd('\')
+    $devices[$drive] = $capture.device
+    $startUtc = [datetime]::new([long]$capture.start_ticks, [DateTimeKind]::Utc).ToString('o')
+    $endUtc = [datetime]::new([long]$capture.end_ticks, [DateTimeKind]::Utc).ToString('o')
+    $manifest = @{
+        schema_version = 1
+        disposable = $true
+        start_utc = $startUtc
+        end_utc = $endUtc
+        sysmon_first_record = $firstRecord
+        sysmon_last_record = $lastRecord
+        calibration = $capture.fixture
+        protected_roots = @{ synthetic = $capture.protected_root }
+        etw = @{
+            schema_version = 1
+            start_utc = $startUtc
+            end_utc = $endUtc
+            events_sha256 = (Get-FileHash -LiteralPath $eventsPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            volume_devices = $devices
+            counters = $capture.counters
+        }
+    }
+    $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+    $summaryPath = Join-Path $root 'summary.json'
+    $PSNativeCommandUseErrorActionPreference = $false
+    python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $manifestPath $sysmonXml $eventsPath $summaryPath
+    $auditExit = $LASTEXITCODE
+    if (Test-Path -LiteralPath $summaryPath -PathType Leaf) {
+        Get-Content -LiteralPath $summaryPath -Raw | Write-Host
+    }
+    if ($auditExit -ne 0) { throw "Combined rehearsal did not calibrate (exit $auditExit)." }
+    return
 }
 $report = python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') $manifestPath $eventsPath
 if ($LASTEXITCODE -ne 0) { throw 'The ETW correlation did not complete.' }

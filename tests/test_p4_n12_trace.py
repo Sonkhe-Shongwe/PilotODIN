@@ -290,6 +290,28 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert result.returncode == 0, result.stderr
     assert json.loads(output.read_text(encoding="utf-8")) == clean
 
+    calibration_manifest = dict(evidence.manifest, calibration=next(
+        root for root in evidence.manifest["processes"] if root["role"] == "calibration"
+    ))
+    manifest_path.write_text(json.dumps(calibration_manifest), encoding="utf-8")
+    calibration_output = tmp_path / "calibration.json"
+    result = subprocess.run([sys.executable, str(Path(trace.__file__)), "check-calibration-etw",
+                             *map(str, (manifest_path, sysmon, etw_path, calibration_output))],
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(calibration_output.read_text(encoding="utf-8"))["coverage"] == "CALIBRATED"
+
+    mutation(29, 10, 5, 16)  # Pre-opened handle with no captured path.
+    mutation(30, 10, 6, 12, FileName=r"\Device\UnmappedVolume\private.bin", Outcome=2)
+    mutation(30, 10, 3, 17, InfoClass=4)  # Unhandled metadata operation.
+    unresolved = report()
+    assert unresolved["filesystem"] == "BLOCKED"
+    assert unresolved["etw_unresolved_mutations"] == {
+        "backend:write:path-missing": 1,
+        "backend:create:path-missing": 1,
+        "backend:unsupported-file-operation": 1,
+    }
+
     # PID 99 was already running at capture start. Its observed rename into
     # the protected root must still fail even though attribution is incomplete.
     mutation(31, 99, 9, 12, FileName=r"C:\QA\scratch\private.bin", Outcome=1)
@@ -300,6 +322,9 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert bad["file_violations"] == {"protected:other:rename": 1, "protected:other:write": 1}
     assert "etw-mutation-coverage-unresolved" in bad["coverage_issues"]
     assert "private.bin" not in json.dumps(bad)
+    calibration_manifest["etw"] = evidence.manifest["etw"]
+    rehearsal = trace.check_calibration(calibration_manifest, sysmon, etw_path, etw=True)
+    assert "calibration-protected-mutation" in rehearsal["coverage_issues"]
 
     evidence.manifest["etw"]["counters"]["events_lost"] = 1
     assert "etw-event-or-buffer-loss" in report()["coverage_issues"]
