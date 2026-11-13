@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November N12 combined live result:** The [approved fixture run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43473282610) stopped at the reducer. The [rejection diagnostics](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/650ed9a8a89d4f956e572dc3e7012521eab23337) are staged with provisioning disabled. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-combined-collector-rehearsal-blocked)
 - **13 November N12 combined rehearsal:** [Regular P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43471681900) passed and the [live run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43471682186) was skipped. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-combined-collector-rehearsal-staged)
 - **13 November N12 combined audit:** [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43470297374) verified the ETW and Sysmon audit contract. [Runbook](../qa/p4_native/N12_TRACE.md#reduce-combined-etw-and-sysmon-evidence) · [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-combined-etw-and-sysmon-audit)
 - **13 November N12 ETW identity and protected writes:** [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43464663396) verified failed request handling and undeclared-writer mutations in the hosted fixture. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-etw-failed-requests-and-protected-writes)

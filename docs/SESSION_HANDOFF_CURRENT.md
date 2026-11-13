@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 combined collector rehearsal blocked
+
+- The approved [combined fixture run #43473282610](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43473282610) used launch commit `849fd7f` from the reviewed `ad6f37f` checkpoint. The runner verified the pinned Sysmon 15.22 signature and SHA-256, installed Sysmon, and reached the reducer after exporting ETW and the bounded Sysmon XML. The reducer returned exit 2 before writing a summary. The log did not identify the failing check. Raw evidence stayed on the disposable runner. Combined collector calibration and native acceptance remain pending.
+- [Disarm commit `3427b0d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3427b0d30db36666c27e06d1f5d1e3f983d7cc8c) disables the provisioning workflow. The single approved run consumed its scope. [Diagnostic commit `650ed9a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/650ed9a8a89d4f956e572dc3e7012521eab23337) adds a fixed validation reason or the exception type and evidence stage to the reducer log. A digest mismatch and a malformed Sysmon field exercise these paths. All 47 targeted tests passed. [Regular P4 CI #43474054260](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43474054260) passed all three jobs.
+- **Next:** Review `650ed9a` for one freshly approved combined fixture run. Use its redacted result to identify the remaining calibration blocker, or verify calibration before considering a separately approved native journey. P4 stays active, N12 remains partial, and the historical WebView2 port 443 connection remains unattributed.
+
 ## 13 November 2026 | N12 combined collector rehearsal staged
 
 - [Source `017b6d8`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/017b6d8a6dd983a7d0414a2752788db03db1597e) stages the one-run combined collector rehearsal. It uses the reviewed Sysmon binary and built-in Windows ETW on a disposable hosted runner. The fixture exports the bounded Sysmon record range and ETW events, builds the capture manifest with loss counters and an export hash, and invokes `check-calibration-etw`. Raw evidence remains in runner temp.
