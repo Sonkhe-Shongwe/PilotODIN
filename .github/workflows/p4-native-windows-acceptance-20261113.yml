@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   windows-preflight:
-    if: ${{ github.run_attempt == 1 && github.event.before == '07f736cb71ee1280e6e24745498db50060825e09' }}
+    if: ${{ false }} # Approval dispatched as run 43387057193
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -32,7 +32,7 @@ jobs:
 
   windows-native-acceptance:
     needs: windows-preflight
-    if: ${{ github.run_attempt == 1 }}
+    if: ${{ false }} # Approval dispatched as run 43387057193
     name: ONE unpackaged native DEV compilation and controlled synthetic QA
     runs-on: windows-2022
     timeout-minutes: 100
