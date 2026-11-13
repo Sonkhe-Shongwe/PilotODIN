@@ -505,12 +505,7 @@ def utc_ticks(timestamp):
     return seconds * 10_000_000 + timestamp.microsecond * 10
 
 
-def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues):
-    if __package__:
-        from .n12_etw_correlate import canonical_file_path, correlate_requests
-    else:
-        from n12_etw_correlate import canonical_file_path, correlate_requests
-
+def etw_capture_contract(manifest, start, end, issues):
     capture = manifest["etw"]
     require(capture["schema_version"] == 1, "unsupported ETW evidence schema")
     capture_start, capture_end = (utc_time(capture[k]) for k in ("start_utc", "end_utc"))
@@ -531,8 +526,36 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         devices[device] = drive
     require(devices, "ETW volume mappings are missing")
 
+    return (utc_ticks(capture_start), utc_ticks(capture_end)), devices
+
+
+def etw_events(path, capture_bounds, expected_digest):
+    digest = hashlib.sha256()
+    has_events = False
+    with path.open("rb") as stream:
+        for line in stream:
+            has_events = True
+            digest.update(line)
+            event = json.loads(line)
+            require(type(event["ticks"]) is int and capture_bounds[0] <= event["ticks"] <= capture_bounds[1],
+                    "ETW event timestamp outside capture")
+            require(type(event["id"]) is int and (event["pid"] is None or type(event["pid"]) is int)
+                    and type(event["lifecycle"]) is bool and isinstance(event["data"], dict),
+                    "invalid ETW event envelope")
+            yield event
+        require(digest.hexdigest() == expected_digest, "ETW export digest mismatch")
+        require(has_events, "ETW event export is empty")
+
+
+def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues):
+    if __package__:
+        from .n12_etw_correlate import canonical_file_path, correlate_requests
+    else:
+        from n12_etw_correlate import canonical_file_path, correlate_requests
+
+    with evidence_stage("ETW capture metadata"):
+        capture_bounds, devices = etw_capture_contract(manifest, start, end, issues)
     start_ticks, end_ticks = utc_ticks(start), utc_ticks(end)
-    capture_bounds = utc_ticks(capture_start), utc_ticks(capture_end)
     lifetimes = {}
     for process in processes.values():
         lifetimes.setdefault(process.pid, []).append(process)
@@ -575,20 +598,11 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         if role == "calibration" and start_ticks <= requested <= completed <= end_ticks:
             file_events.add((identity, operation, *targets))
 
-    def read_events(stream):
-        digest = hashlib.sha256()
-        for line in stream:
-            digest.update(line)
-            event = json.loads(line)
-            require(type(event["ticks"]) is int and capture_bounds[0] <= event["ticks"] <= capture_bounds[1],
-                    "ETW event timestamp outside capture")
-            if event["ticks"] <= end_ticks:
-                yield event
-        require(digest.hexdigest() == capture["events_sha256"], "ETW export digest mismatch")
-
-    with evidence_stage("ETW event stream"), path.open("rb") as stream:
+    events = etw_events(path, capture_bounds, manifest["etw"]["events_sha256"])
+    with evidence_stage("ETW event stream"):
         unresolved = correlate_requests(
-            read_events(stream), lambda value: canonical_file_path(value, devices),
+            (event for event in events if event["ticks"] <= end_ticks),
+            lambda value: canonical_file_path(value, devices),
             classify_process, lambda value: value is not None and
             any(inside(value, root) for root in protected), record, strict=True,
         )
@@ -719,12 +733,26 @@ def read_json(path):
         return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
+def check_etw_export(manifest, path):
+    issues = set()
+    with evidence_stage("ETW capture metadata"):
+        start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
+        capture_bounds, _ = etw_capture_contract(manifest, start, end, issues)
+    with evidence_stage("ETW event stream"):
+        count = sum(1 for _ in etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
+    require(not issues, "ETW reported event or buffer loss")
+    return count
+
+
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     subcommands = cli.add_subparsers(dest="mode", required=True)
     snapshot = subcommands.add_parser("snapshot")
     snapshot.add_argument("manifest", type=Path)
     snapshot.add_argument("output", type=Path)
+    etw_export = subcommands.add_parser("check-etw-export")
+    etw_export.add_argument("manifest", type=Path)
+    etw_export.add_argument("etw_events", type=Path)
     for mode in ("check-calibration", "check-calibration-etw"):
         calibration = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "file_trace", "output"):
@@ -738,6 +766,10 @@ def main():
                             help="Optional raw endpoint report, confined to disposable Windows runner temp.")
     args = cli.parse_args()
     try:
+        if args.mode == "check-etw-export":
+            count = check_etw_export(read_json(args.manifest), args.etw_events)
+            print(f"N12 ETW export passed validation: {count} events.")
+            return 0
         if args.mode == "snapshot":
             manifest = read_json(local_disposable_path(args.manifest, runner_temp_only=True))
             require(manifest["disposable"] is True, "snapshot requires a disposable manifest")

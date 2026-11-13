@@ -96,6 +96,56 @@ def instant(second):
     return f"{BASE}T00:00:{second:02}+00:00"
 
 
+@pytest.mark.parametrize(("fault", "reason"), [
+    (None, "N12 ETW export passed validation: 1 events."),
+    ("digest", "ETW export digest mismatch"),
+    ("outside-capture", "ETW event timestamp outside capture"),
+    ("wrong-timestamp-type", "ETW event timestamp outside capture"),
+    ("wrong-envelope", "invalid ETW event envelope"),
+    ("truncated", "ETW event stream: JSONDecodeError"),
+    ("empty", "ETW event export is empty"),
+    ("lost", "ETW reported event or buffer loss"),
+    ("missing-device", "ETW volume mappings are missing"),
+])
+def test_windows_etw_export_preflight(tmp_path, fault, reason):
+    event = {"ticks": trace.utc_ticks(trace.utc_time(instant(1))),
+             "id": 24, "pid": None, "lifecycle": False, "data": {"Status": "0x0"}}
+    if fault == "outside-capture":
+        event["ticks"] = trace.utc_ticks(trace.utc_time(instant(3)))
+    if fault == "wrong-timestamp-type":
+        event["ticks"] = str(event["ticks"])
+    if fault == "wrong-envelope":
+        event["data"] = "private-event-field"
+    payload = (json.dumps(event) + "\n").encode()
+    if fault == "truncated":
+        payload = b'{"private-event-field":'
+    if fault == "empty":
+        payload = b""
+    events = tmp_path / "private-etw.jsonl"
+    events.write_bytes(payload)
+    start, end = (instant(second).replace("+00:00", ".0000000Z") for second in (0, 2))
+    manifest = {
+        "start_utc": start, "end_utc": end,
+        "etw": {"schema_version": 1, "start_utc": start, "end_utc": end,
+                "events_sha256": "0" * 64 if fault == "digest" else hashlib.sha256(payload).hexdigest(),
+                "volume_devices": {} if fault == "missing-device" else {"C:": r"\Device\HarddiskVolume3"},
+                "counters": {"events_lost": int(fault == "lost"), "log_buffers_lost": 0,
+                             "realtime_buffers_lost": 0, "buffers_written": 1}},
+    }
+    source = tmp_path / "private-manifest.json"
+    source.write_text(json.dumps(manifest), encoding="utf-8-sig")
+    result = subprocess.run([sys.executable, trace.__file__, "check-etw-export", str(source), str(events)],
+                            capture_output=True, text=True, check=False)
+    if fault is None:
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == reason
+    else:
+        assert result.returncode == 2
+        assert not result.stdout
+        assert reason in result.stderr
+        assert "private-" not in result.stderr
+
+
 class Evidence:
     def __init__(self):
         self.events = []

@@ -58,40 +58,43 @@ try {
 } finally {
     $stream.Dispose()
 }
+$drive = [IO.Path]::GetPathRoot($root).TrimEnd('\')
+$devices = @{}
+$devices[$drive] = $capture.device
+$startUtc = [datetime]::new([long]$capture.start_ticks, [DateTimeKind]::Utc).ToString('o')
+$endUtc = [datetime]::new([long]$capture.end_ticks, [DateTimeKind]::Utc).ToString('o')
+$manifest = @{
+    schema_version = 1
+    disposable = $true
+    start_utc = $startUtc
+    end_utc = $endUtc
+    calibration = $capture.fixture
+    protected_roots = @{ synthetic = $capture.protected_root }
+    etw = @{
+        schema_version = 1
+        start_utc = $startUtc
+        end_utc = $endUtc
+        events_sha256 = (Get-FileHash -LiteralPath $eventsPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        volume_devices = $devices
+        counters = $capture.counters
+    }
+}
+$reducerManifest = Join-Path $root 'capture-manifest.json'
 if ($WithSysmon) {
     Start-Sleep -Seconds 3
     $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
     $sysmonXml = Join-Path $root 'sysmon.xml'
     $exportArgs = @{ FirstRecord = $firstRecord; LastRecord = $lastRecord; OutputFile = $sysmonXml }
     & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') @exportArgs
-    $devices = @{}
-    $drive = [IO.Path]::GetPathRoot($root).TrimEnd('\')
-    $devices[$drive] = $capture.device
-    $startUtc = [datetime]::new([long]$capture.start_ticks, [DateTimeKind]::Utc).ToString('o')
-    $endUtc = [datetime]::new([long]$capture.end_ticks, [DateTimeKind]::Utc).ToString('o')
-    $manifest = @{
-        schema_version = 1
-        disposable = $true
-        start_utc = $startUtc
-        end_utc = $endUtc
-        sysmon_first_record = $firstRecord
-        sysmon_last_record = $lastRecord
-        calibration = $capture.fixture
-        protected_roots = @{ synthetic = $capture.protected_root }
-        etw = @{
-            schema_version = 1
-            start_utc = $startUtc
-            end_utc = $endUtc
-            events_sha256 = (Get-FileHash -LiteralPath $eventsPath -Algorithm SHA256).Hash.ToLowerInvariant()
-            volume_devices = $devices
-            counters = $capture.counters
-        }
-    }
-    $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+    $manifest.sysmon_first_record = $firstRecord
+    $manifest.sysmon_last_record = $lastRecord
+}
+$manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reducerManifest -Encoding utf8
+if ($WithSysmon) {
     $summaryPath = Join-Path $root 'summary.json'
     $PSNativeCommandUseErrorActionPreference = $false
     Write-Host 'Combined rehearsal exported ETW and bounded Sysmon evidence. Starting reducer.'
-    python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $manifestPath $sysmonXml $eventsPath $summaryPath
+    python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $reducerManifest $sysmonXml $eventsPath $summaryPath
     $auditExit = $LASTEXITCODE
     if (Test-Path -LiteralPath $summaryPath -PathType Leaf) {
         Get-Content -LiteralPath $summaryPath -Raw | Write-Host
@@ -99,6 +102,8 @@ if ($WithSysmon) {
     if ($auditExit -ne 0) { throw "Combined rehearsal did not calibrate (exit $auditExit)." }
     return
 }
+python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-export $reducerManifest $eventsPath
+if ($LASTEXITCODE -ne 0) { throw 'The Windows ETW export failed reducer validation.' }
 $report = python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') $manifestPath $eventsPath
 if ($LASTEXITCODE -ne 0) { throw 'The ETW correlation did not complete.' }
 $summary = @{
@@ -108,10 +113,6 @@ $summary = @{
     correlation = $report | ConvertFrom-Json -AsHashtable
 }
 $summary | ConvertTo-Json -Depth 6 | Write-Host
-if ($capture.counters.events_lost -ne 0 -or $capture.counters.log_buffers_lost -ne 0 -or
-    $capture.counters.realtime_buffers_lost -ne 0) {
-    throw 'Windows reported ETW event or buffer loss.'
-}
 $expected = @(
     'fixture:create:original', 'fixture:write:original', 'fixture:resize:original',
     'fixture:rename:original:renamed', 'fixture:delete:renamed',
