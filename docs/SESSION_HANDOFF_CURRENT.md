@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 trace tools prepared
+
+- [Trace tooling](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a7bbe4a328b05b2676c7330524d5fd473f1da2bb) adds a loopback TCP/UDP and file-mutation calibrator, record-bounded Sysmon export, independent path/content fingerprints and a redacted offline reducer. Sixteen synthetic cases cover real loopback traffic, process/PID reuse, executable hashes, external connections, write-then-delete, cross-root rename, immutable fixture changes, and missing records or calibrations. [P4 CI #43445876232](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43445876232) verified the 16 cases in the 201-test Python job and passed the synthetic Windows fixture. The Windows fixture exercised the calibration process and fingerprint CLI without starting the live collectors. The same workflow passed 78 Node checks, the frontend build and 13 Chromium cases.
+- **Next:** Follow the [N12 trace runbook](../qa/p4_native/N12_TRACE.md) to verify live Sysmon and Procmon coverage with calibration on a disposable Windows runner. Complete that check before relying on the collectors for a separately approved native journey. Correlate any repeated connection with WebView2 NetLog and review blocked-attempt evidence separately. The reducer reports scoped observations and leaves native N12 acceptance pending.
+- R02/N12 remains partial. The historical WebView2 port 443 connection remains unattributed. R03 is untested, R06 remains a historical strict failure, and P4 stays active.
+
 ## 13 November 2026 | N12 offline fonts and native evidence plan
 
 - [6a5d3d3](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6a5d3d368f5f74c8bdb062bff15665b234d27a26) replaces the Google Fonts stylesheet request with bundled Inter and Manrope assets and OFL notices. [P4 CI #43442391630](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43442391630) passed 185 Python tests, 78 Node checks, the build, 13 Chromium cases and the synthetic Windows preservation collector checks. P4-62 loaded both faces with no unexpected browser request. [P1 CI #43442391665](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43442391665) also passed.
