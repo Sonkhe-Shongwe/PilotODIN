@@ -1,6 +1,6 @@
 import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
-import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
+import { p4QualityFixture, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -57,7 +57,7 @@ function csvFor(kind){
 }
 async function create(kind){
  const form=new FormData();
- form.append('file',new Blob([csvFor(kind)],{type:'text/csv'}),'p4-71-'+kind+'-synthetic.csv');
+ form.append('file',new Blob([kind==='quality'?p4QualityFixture:csvFor(kind)],{type:'text/csv'}),'p4-71-'+kind+'-synthetic.csv');
  const resp=await fetch(API+'/projects',{method:'POST',body:form});
  if(resp.status!==201)throw Error('Synthetic project '+kind+' failed, HTTP '+resp.status);
  return (await resp.json()).id;
@@ -89,16 +89,20 @@ async function runNativeProbe(browser) {
  }
  const page=discovered.page;
  const context=page.context();
+ const ids={};
  await context.route('**/*',async route=>{
   const u=new URL(route.request().url());
-  const allowed=(u.hostname==='127.0.0.1'&&['8000','5173'].includes(u.port))
+  const method=route.request().method();
+  const qualityWrite=method==='POST'&&ids.quality&&
+   ['/proposals','/commit'].some(suffix=>u.pathname==='/api/projects/'+ids.quality+'/quality'+suffix);
+  const allowed=(u.origin===SITE&&['GET','HEAD'].includes(method))
+   ||(u.origin==='http://127.0.0.1:8000'&&(['GET','OPTIONS'].includes(method)||qualityWrite))
    ||u.hostname==='ipc.localhost'||['tauri:','data:','blob:'].includes(u.protocol);
   if(allowed)await route.continue();
   else await route.abort('blockedbyclient');
  });
  console.log('ACTUAL Tauri WebView2 reached, local URL only');
- const ids={};
- for(const kind of ['classification','regression','rare','insufficient','neutral'])ids[kind]=await create(kind);
+ for(const kind of ['classification','regression','rare','insufficient','neutral','quality'])ids[kind]=await create(kind);
  const all=Object.values(ids);
  try{
   await openP4FixtureWorkspace(page,SITE,ids.classification);
@@ -185,16 +189,12 @@ async function runNativeProbe(browser) {
   await target.selectOption('generic_measure');
   await expect(blockers).toContainText('Structurally blocked target');
   console.log('N10 unnamed outcome abstains and explains a blocked manual selection: PASS');
-  const active=await fetch(p4PreparationRequestUrl(API,ids.classification,'churn',0));
-  if(!active.ok)throw Error('Expected current Prepare version to load, got HTTP '+active.status);
-  const plan=await active.json();
-  if(plan.quality_version!==0||plan.target!=='churn')throw Error('Unexpected current Prepare plan');
-  const mismatch=await fetch(p4PreparationRequestUrl(API,ids.classification,'churn',1));
-  if(mismatch.status!==409)throw Error('Expected Quality-version conflict 409 but got HTTP '+mismatch.status);
-  console.log('N11 Prepare API version mismatch: PASS; native Quality version transition NOT TESTED');
+  if(!(await chooseNativeDialogAction(chooser,ids.quality,'Switch project')))return;
+  await verifyP4QualityTransition(page,API,ids.quality,url=>fetch(url));
+  console.log('N11 Quality approval, 409 for the previous version, Prepare refresh and WebView reload: PASS');
   await noTraining(all);
   console.log('N12 disposable projects contain no model experiments: PASS for experiment count');
-  console.log('Native probe checks completed. Quality version transition, R04 layout and R05 Prepare controls require separate evidence.');
+  console.log('Native probe checks completed. Native process relaunch, R04 layout and R05 Prepare controls still require evidence.');
  }finally{await noTraining(all);}
 }
 async function main() {

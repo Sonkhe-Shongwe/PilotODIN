@@ -3,6 +3,7 @@ import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {openP4FixtureWorkspace} from './p4-open-fixture-workspace.mjs';
 import {p4PreparationRequestUrl} from './p4-preparation-request.mjs';
+import {p4QualityFixture,verifyP4QualityTransition} from './p4-quality-version-transition.mjs';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
@@ -26,7 +27,7 @@ test.afterEach(async()=>{
  if(backend){const owned=backend;backend=null;await stopDisposableBackend(owned)}
 });
 
-async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[],extraProjectIds:string[]=[]){
+async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[],extraProjectIds:string[]=[],qualityWrites?:string[]){
  const blocked:string[]=[];
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
@@ -47,6 +48,11 @@ async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allo
   if(allowedContextWrites&&url.origin===API&&method==='POST'&&
      url.pathname===`/api/projects/${projectId}/target-business-context`){
    allowedContextWrites.push(url.pathname);
+   await route.continue();return;
+  }
+  if(qualityWrites&&url.origin===API&&method==='POST'&&
+     ['/proposals','/commit'].some(suffix=>url.pathname===`/api/projects/${projectId}/quality${suffix}`)){
+   qualityWrites.push(url.pathname);
    await route.continue();return;
   }
   blocked.push(method+' '+url.origin+url.pathname);
@@ -896,3 +902,28 @@ test('P4-79 real HTTP: reopened experiment settings are read from saved record, 
   expect(realProject.status(),await realProject.text()).toBe(200);
   expect((await realProject.json()).experiments).toEqual([]);
  });
+
+test('P4 N11 real HTTP: Quality approval refreshes Prepare and survives reopening',async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
+     process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
+    throw Error('Trusted synthetic CI only');
+
+  const uploaded=await request.post(API+'/api/projects',{multipart:{
+    file:{name:'p4_n11_disposable.csv',mimeType:'text/csv',buffer:Buffer.from(p4QualityFixture)},
+  }});
+  expect(uploaded.status(),await uploaded.text()).toBe(201);
+  const {id:projectId}=await uploaded.json();
+  const writes:string[]=[];
+  const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[],writes);
+  await page.goto('/');
+  await openP4FixtureWorkspace(page,UI,projectId);
+  await verifyP4QualityTransition(page,API+'/api',projectId,async(url:string)=>{
+    const response=await request.get(url);
+    return {status:response.status(),json:()=>response.json()};
+  });
+  expect(writes).toEqual([
+    `/api/projects/${projectId}/quality/proposals`,
+    `/api/projects/${projectId}/quality/commit`,
+  ]);
+  expect(blocked).toEqual([]);
+});
