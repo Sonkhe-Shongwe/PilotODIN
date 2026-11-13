@@ -1,7 +1,7 @@
 param([switch]$PreflightOnly, [switch]$ValidateRuntime)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$base = 'da406d9a806148c09265d52b4328ec27dfac13c3'
+$base = 'a9ccf9ebcb3fd41caa994af1eaa8a7b15942c0d1'
 $branch = 'feature/live-dev-workspace-20261023'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $frontend = Join-Path $root 'frontend'
@@ -17,9 +17,11 @@ if ($LASTEXITCODE -ne 0 -or $commitAndParents.Count -ne 2 -or $commitAndParents[
 }
 if ($env:GITHUB_RUN_ATTEMPT -ne '1') { Fail 'One-shot approval excludes re-runs' }
 $allowed = @(
- '.github/workflows/p4-native-quality-transition-20261113.yml',
- 'qa/p4_native/P4_WINDOWS_QUALITY_TRANSITION_APPROVAL_20261113.txt',
- 'qa/p4_native/Run_P4_71_Disposable_Windows.ps1'
+ '.github/workflows/p4-native-quality-relaunch-20261113.yml',
+ 'qa/p4_native/P4_WINDOWS_QUALITY_RELAUNCH_APPROVAL_20261113.txt',
+ 'qa/p4_native/Run_P4_71_Disposable_Windows.ps1',
+ 'frontend/e2e/p4-71-native-webview-qa.mjs',
+ 'frontend/e2e/p4-quality-version-transition.mjs'
 )
 $changed = @(& git -C $root diff --name-only $base $actual)
 if ($LASTEXITCODE -ne 0 -or $changed.Count -ne $allowed.Count) { Fail 'One-shot launch must contain exactly the reviewed QA setup changes' }
@@ -42,7 +44,7 @@ if ($production.identifier -ne 'com.pilotodin.studio' -or
     $production.build.beforeDevCommand -ne 'node scripts/deny-unsafe-default-tauri-dev.mjs' -or
     $production.build.beforeBuildCommand -ne 'node scripts/deny-intermediate-installer.mjs') { Fail 'Production/QA/dev identities, bundles or default-deny hooks differ from reviewed source' }
 if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_QUALITY_TRANSITION_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_QUALITY_RELAUNCH_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
 if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
 foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
  foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
@@ -63,6 +65,8 @@ $env:VITE_PILOTODIN_NATIVE_SMOKE = '1'
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9331'
 $backend = $null
 $native = $null
+$reopened = $null
+$devServer = $null
 try {
  $backend = Start-Process -FilePath 'python.exe' -ArgumentList @('-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--no-access-log') -WorkingDirectory $root -PassThru
  $ready = $false
@@ -117,9 +121,64 @@ try {
    if ($LASTEXITCODE -eq 3) { Fail 'Native project switch BLOCKED at the Windows confirmation. See the per-case probe output.' }
    if ($LASTEXITCODE -ne 0) { Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval' }
  } finally { Pop-Location }
+ $closedApp = Get-Process -Id ([int]$env:P4_NATIVE_QA_APP_PID)
+ $closedApp.Refresh()
+ if (-not [string]::Equals($closedApp.Path, $binary, [StringComparison]::OrdinalIgnoreCase) -or
+     $closedApp.MainWindowTitle -ne $isolated.app.windows[0].title -or -not $closedApp.CloseMainWindow()) {
+   Fail 'Could not request normal Windows close on the verified QA app'
+ }
+ if (-not $closedApp.WaitForExit(15000)) { Fail 'The verified QA process did not exit after the Windows close request' }
+ if ($closedApp.ExitCode -ne 0) { Fail 'The verified QA process reported an error while closing' }
+ Write-Host 'N11 isolated app accepted its Windows close request and exited normally.'
+ if (-not $native.WaitForExit(10000)) {
+   & taskkill.exe /PID $native.Id /T /F | Out-Null
+   if (-not $native.WaitForExit(5000)) { Fail 'The original development launcher did not stop' }
+ }
+ # Use the same Vite app on the same origin so the restarted WebView can read
+ # its persisted project selection. The Tauri dev launcher may have stopped Vite.
+ $ui = 'http://127.0.0.1:5173/'
+ try { $viteReady = (Invoke-WebRequest -Uri $ui -TimeoutSec 3).StatusCode -eq 200 } catch { $viteReady = $false }
+ if (-not $viteReady) {
+   $devServer = Start-Process -FilePath 'node.exe' -ArgumentList @('node_modules/vite/bin/vite.js','--host','127.0.0.1','--strictPort') -WorkingDirectory $frontend -PassThru
+   for ($i=0; $i -lt 20; $i++) {
+     if ($devServer.HasExited) { Fail 'Vite exited before the relaunch readiness check' }
+     try { $viteReady = (Invoke-WebRequest -Uri $ui -TimeoutSec 2).StatusCode -eq 200; if ($viteReady) { break } } catch { }
+     Start-Sleep -Milliseconds 500
+   }
+ }
+ if (-not $viteReady) { Fail 'Vite did not become ready for relaunch' }
+ if ((Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sha) {
+   Fail 'The app binary changed after the first launch'
+ }
+ $oldDebuggerReady = $true
+ for ($i=0; $i -lt 12; $i++) {
+   try { $oldDebuggerReady = [bool](Invoke-RestMethod -Uri 'http://127.0.0.1:9331/json/version' -TimeoutSec 1).webSocketDebuggerUrl }
+   catch { $oldDebuggerReady = $false }
+   if (-not $oldDebuggerReady) { break }
+   Start-Sleep -Milliseconds 500
+ }
+ if ($oldDebuggerReady) { Fail 'The previous WebView debugger remained reachable after closing the app' }
+ $reopened = Start-Process -FilePath $binary -WorkingDirectory (Split-Path $binary) -PassThru
+ if ($reopened.Id -eq $closedApp.Id) { Fail 'Could not establish a distinct relaunched app process' }
+ $env:P4_NATIVE_QA_APP_PID = [string]$reopened.Id
+ Write-Host 'N11 started a new Windows app process from the same verified binary.'
+ $relaunchCdp = $false
+ for ($i=0; $i -lt 25; $i++) {
+   if ($reopened.HasExited) { Fail 'The relaunched QA app exited before the WebView was ready' }
+   try { $v = Invoke-RestMethod -Uri 'http://127.0.0.1:9331/json/version' -TimeoutSec 2; if ($v.webSocketDebuggerUrl) { $relaunchCdp = $true; break } } catch { }
+   Start-Sleep -Seconds 1
+ }
+ if (-not $relaunchCdp) { Fail 'The relaunched WebView debugger did not become ready' }
+ Push-Location $frontend
+ try {
+   node e2e/p4-71-native-webview-qa.mjs --verify-relaunch
+   if ($LASTEXITCODE -ne 0) { Fail 'N11 post-relaunch version and Prepare plan were not verified' }
+ } finally { Pop-Location }
  # Do not count this hosted runner as a physical 8 GB/Qwen/offline acceptance.
  Write-Host 'R03 PHYSICAL 8GB + QWEN OFFLINE: NOT TESTED. No model fitted. No original owner files touched.'
 } finally {
+ if ($reopened -and -not $reopened.HasExited) { & taskkill.exe /PID $reopened.Id /T /F 2>$null | Out-Null }
+ if ($devServer -and -not $devServer.HasExited) { Stop-Process -Id $devServer.Id -Force -ErrorAction SilentlyContinue }
  if ($native -and -not $native.HasExited) { & taskkill.exe /PID $native.Id /T /F 2>$null | Out-Null }
  if ($backend -and -not $backend.HasExited) { Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue }
  foreach($name in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {

@@ -1,6 +1,9 @@
 import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
-import { p4QualityFixture, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
+import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
+import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -13,6 +16,9 @@ for(const [key,value] of Object.entries(required)) {
 if(!process.env.PILOTODIN_HOME?.includes('P4-71-only-home-'))throw Error('P4-71 BLOCKED: no disposable isolated test home');
 const API='http://127.0.0.1:8000/api';
 const SITE='http://127.0.0.1:5173';
+const relaunch=process.argv[2]==='--verify-relaunch';
+const receiptPath=join(process.env.PILOTODIN_HOME,'n11-quality-project.txt');
+if(process.argv.length!== (relaunch ? 3 : 2))throw Error('Unexpected QA probe arguments');
 const invokeDialog=fileURLToPath(new URL('../../qa/p4_native/Invoke_P4_Native_Project_Switch_Dialog.ps1',import.meta.url));
 const execFileAsync=promisify(execFile);
 
@@ -82,7 +88,7 @@ async function runNativeProbe(browser) {
  );
  if(discovered.status!=='FOUND'){
   // Diagnostic classes are deliberately fixed categories, never raw URLs.
-  console.log('NATIVE INTERACTIONS BLOCKED: '+discovered.status+' after '+discovered.attempts+' polls. No QA projects created.');
+  console.log('NATIVE INTERACTIONS BLOCKED: '+discovered.status+' after '+discovered.attempts+' polls.');
   if(discovered.classes)console.log('CDP target classes: '+JSON.stringify(discovered.classes)+'; count='+discovered.count);
   await reportBlockedDiscovery();
   return;
@@ -102,6 +108,12 @@ async function runNativeProbe(browser) {
   else await route.abort('blockedbyclient');
  });
  console.log('ACTUAL Tauri WebView2 reached, local URL only');
+ if(relaunch){
+  const projectId=(await readFile(receiptPath,'utf8')).trim();
+  if(!/^[0-9a-f]{32}$/.test(projectId))throw Error('Invalid synthetic Quality project ID');
+  await verifyRelaunchedQuality(page,projectId);
+  return;
+ }
  for(const kind of ['classification','regression','rare','insufficient','neutral','quality'])ids[kind]=await create(kind);
  const all=Object.values(ids);
  try{
@@ -194,8 +206,35 @@ async function runNativeProbe(browser) {
   console.log('N11 Quality approval, 409 for the previous version, Prepare refresh and WebView reload: PASS');
   await noTraining(all);
   console.log('N12 disposable projects contain no model experiments: PASS for experiment count');
-  console.log('Native probe checks completed. Native process relaunch, R04 layout and R05 Prepare controls still require evidence.');
+  // Reopen the same WebView with the verified version and no edited draft
+  // so the Windows close request can run through normal app shutdown.
+  await reloadP4SyntheticWorkspace(page);
+  await expect(chooser).toHaveValue(ids.quality);
+  await expect(section).toContainText('Current approved dataset version: 1.');
+  await expect(target).toHaveValue('');
+  await writeFile(receiptPath,ids.quality+'\n',{flag:'wx'});
+  console.log('N11 ready for native close and relaunch');
  }finally{await noTraining(all);}
+}
+async function verifyRelaunchedQuality(page,projectId) {
+ const chooser=page.getByRole('combobox',{name:'Switch project'});
+ const navigation=page.getByRole('navigation',{name:'Workspace navigation'});
+ const review=page.getByRole('region',{name:'Potential prediction opportunities'});
+ const target=page.getByLabel('TARGET VARIABLE');
+ await expect(chooser).toHaveValue(projectId,{timeout:45000});
+ await navigation.getByRole('button',{name:'Prepare',exact:true}).click();
+ await expect(review).toContainText('Current approved dataset version: 1.');
+ await expect(target).toHaveValue('');
+ const planV1=p4PreparationRequestUrl(API,projectId,'churn',1);
+ const [response]=await Promise.all([
+  page.waitForResponse(r=>r.url()===planV1&&r.request().method()==='GET',{timeout:30000}),
+  target.selectOption('churn'),
+ ]);
+ expect(response.status()).toBe(200);
+ expect(await response.json()).toMatchObject({quality_version:1,target:'churn'});
+ await expect(page.getByRole('heading',{name:'Automatic preprocessing plan'})).toBeVisible();
+ await noTraining([projectId]);
+ console.log('N11 native process relaunch restores the synthetic project and Prepare version 1: PASS');
 }
 async function main() {
  let browser;

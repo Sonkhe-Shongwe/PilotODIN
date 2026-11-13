@@ -51,14 +51,7 @@ export async function verifyP4QualityTransition(page, api, projectId, read) {
   await expect(target).toHaveValue('churn');
   await expect(planHeading).toBeVisible();
 
-  // Only the synthetic, in-memory target selection may be discarded by reload.
-  const resolveReloadPrompt = dialog => dialog.type() === 'beforeunload' ? dialog.accept() : dialog.dismiss();
-  page.on('dialog', resolveReloadPrompt);
-  try {
-    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-  } finally {
-    page.off('dialog', resolveReloadPrompt);
-  }
+  await reloadP4SyntheticWorkspace(page);
   await expect(chooser).toHaveValue(projectId);
   await expect(review).toContainText('Current approved dataset version: 1.');
   await expect(target).toHaveValue('');
@@ -69,4 +62,15 @@ export async function verifyP4QualityTransition(page, api, projectId, read) {
   expect(response.status()).toBe(200);
   expect(await response.json()).toMatchObject({ quality_version: 1, target: 'churn' });
   await expect(planHeading).toBeVisible();
+}
+
+export async function reloadP4SyntheticWorkspace(page) {
+  // Only the synthetic, in-memory target selection may be discarded by reload.
+  const resolveReloadPrompt = dialog => dialog.type() === 'beforeunload' ? dialog.accept() : dialog.dismiss();
+  page.on('dialog', resolveReloadPrompt);
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+  } finally {
+    page.off('dialog', resolveReloadPrompt);
+  }
 }
