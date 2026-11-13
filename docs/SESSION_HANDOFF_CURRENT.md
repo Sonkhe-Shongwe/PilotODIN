@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | R05 Windows acceptance rehearsal
+
+- [P4 CI #43435787562](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43435787562) passed 185 Python tests, 78 Node checks, the frontend build, 13 Chromium scenarios and the synthetic Windows preservation job at [5577cb7](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5577cb72b0e3fb7f2ebe95c35ec5f29bb5819574). The new browser case verified category examples, estimates, a fitted experiment reopened from history, and the stale Predict guard. The regular Windows job checks preservation tools on synthetic files.
+- The shared scenario is wired into the hosted WebView2 probe as `--verify-fitted-prepare`. The existing docking launch is disarmed. The [R05 acceptance scope](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026--r05-windows-acceptance-rehearsal) is ready for a fresh owner decision on one unpackaged hosted Windows build and one disposable synthetic experiment. Native R05 remains pending.
+
 ## 13 November 2026 | BE-024 fitted experiment persistence
 
 - The [synthetic backend regression](../tests/test_ml_a3_preparation_and_split_safety.py) exercised the actual training worker, SQLite and saved model artifacts on 40 generated rows. A new ASGI app lifespan reopened the completed experiment from project history and verified mean imputation, the categorical missing marker and Quality version 1. The fitted numeric statistic matched the development rows. After a Quality change advanced the project to version 2, the saved settings and results stayed pinned to version 1 and Predict returned HTTP 409.
