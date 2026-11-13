@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 combined collector rehearsal staged
+
+- [Source `017b6d8`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/017b6d8a6dd983a7d0414a2752788db03db1597e) stages the one-run combined collector rehearsal. It uses the reviewed Sysmon binary and built-in Windows ETW on a disposable hosted runner. The fixture exports the bounded Sysmon record range and ETW events, builds the capture manifest with loss counters and an export hash, and invokes `check-calibration-etw`. Raw evidence remains in runner temp.
+- [Exact-source P4 CI #43471681900](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43471681900) passed all three jobs. The local suite passed 47 tests. The synthetic reducer verifies the standalone CLI and blocks evidence with pre-opened handles lacking paths, unmapped paths and relevant unsupported operations. The separate Windows ETW fixture reported zero loss across 30 buffers. The [live combined workflow](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43471682186) was skipped under its disabled guard.
+- **Next:** Obtain fresh approval for one disposable hosted Windows run that provisions the pinned Sysmon binary and exercises the generated fixture with built-in ETW. The prior Windows runner inventory detected no Sysmon. This scope covers a collector rehearsal. Native PilotODIN startup-to-exit acceptance requires a separate decision. N12 stays partial and the historical port 443 observation remains unattributed.
+
 ## 13 November 2026 | N12 combined ETW and Sysmon audit
 
 - [Source `ae56f59`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ae56f59b9035e3fb4ad6fe36cb3d73387c0fa38c) adds `audit-etw`. It combines completed ETW file mutations, Sysmon process and network evidence, the existing write rules, and before/after snapshots. It verifies the ETW export hash and loss counters and resolves drive, DOS extended and declared NT device paths. The Process Monitor audit remains available.
