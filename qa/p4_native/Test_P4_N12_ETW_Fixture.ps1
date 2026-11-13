@@ -22,7 +22,7 @@ try {
         if ($isFileEvent) {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
         }
-        if ($isLifecycleEvent -or ($isFileEvent -and $eventId -in 12,14,16,17,18,19,24,27)) {
+        if ($isLifecycleEvent -or ($isFileEvent -and $eventId -in 12,14,16,17,18,19,23,24,27,29,34)) {
             $xml = [xml]$event.ToXml()
             $fields = @{}
             foreach ($field in $xml.SelectNodes("//*[local-name()='EventData']/*[local-name()='Data']")) {

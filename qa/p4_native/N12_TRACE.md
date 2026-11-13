@@ -34,6 +34,16 @@ Exit 0 confirms both collectors recorded the declared Python parent and child, e
 - Record stop-command, capture-process and export outcomes separately. [Run #43458458941](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43458458941) observed capture exit code 1 despite a successful stop command, readable export and matching fixture events. Keep its diagnostic disposition. [Microsoft's stop procedure](https://learn.microsoft.com/en-us/troubleshoot/windows-client/shell-experience/troubleshoot-apps-start-failure-use-process-monitor) does not establish what that exit code means.
 - Keep `procmon_loss_reviewed` false if the available evidence is a readable export and observed fixture markers. Those checks establish the presence of specific events. To evaluate a separate source for continuity, [Windows ETW exposes event and buffer loss counters](https://learn.microsoft.com/en-us/windows/desktop/ETW/event-trace-properties). A candidate file-I/O collector must demonstrate the same five mutations, process identity and path attribution, including cross-root moves and writes by other processes. Its counters describe its own trace. Require evidence for the source used in the audit before changing the coverage gate.
 
+### Reduce combined ETW and Sysmon evidence
+
+~~~powershell
+python qa/p4_native/n12_trace.py audit-etw $manifest $sysmonXml $etwJsonl $before $after $summary
+~~~
+
+The ETW input is UTF-8 JSONL in the format emitted by the synthetic Windows probe. Each row supplies `ticks` (UTC .NET ticks), `pid`, `id`, `lifecycle` and the event `data`. The manifest's `etw` section supplies `schema_version: 1`, `start_utc`, `end_utc`, `events_sha256`, `volume_devices` (drive to NT device name), and `counters` from the stopped ETW session (`events_lost`, `log_buffers_lost`, `realtime_buffers_lost`, `buffers_written`). Keep the event export and device map private. Resolve device mappings on the capture host.
+
+The audit checks ETW loss, export integrity, completion status, and both endpoints of tracked moves. It joins scoped ETW processes to Sysmon by PID and a unique birth within 10 ms, then applies the existing write rules and before/after snapshots. A detected protected mutation fails the filesystem check even if its writer was running before capture. Missing attribution and unsupported operations can also block coverage. Drive paths, DOS extended prefixes and declared NT device names are supported. Short-name aliases, reparse-point transitions, and file handles opened before capture still need specific evidence. Native collector orchestration and startup-to-exit acceptance remain pending.
+
 ## Collector requirements for the disposable Windows run
 
 1. Finish building and staging the unpackaged app before the measured window. Use one UTC day. Use the approved exact build, fresh disposable profiles, a loopback backend and generated data. Independently take the initial snapshots and record the source commit and executable SHA-256.

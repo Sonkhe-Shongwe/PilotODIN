@@ -222,6 +222,93 @@ def test_calibrated_trace_reports_scoped_results_and_keeps_history(tmp_path):
     assert report["unresolved_file_paths"] == []
 
 
+def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
+    evidence = Evidence()
+    evidence.manifest.pop("procmon_loss_reviewed")
+    sysmon, _ = evidence.save(tmp_path)
+    etw_path = tmp_path / "etw.jsonl"
+    rows = []
+    request = 0
+
+    def emit(second, pid, event_id, *, lifecycle=False, **data):
+        rows.append(dict(ticks=trace.utc_ticks(trace.utc_time(instant(second))) + len(rows),
+                         pid=pid, id=event_id, lifecycle=lifecycle, data=data))
+
+    def mutation(second, pid, obj, kind, **fields):
+        nonlocal request
+        request += 1
+        destination = fields.pop("Destination", None)
+        outcome = fields.pop("Outcome", None)
+        emit(second, pid, kind, FileObject=obj, Irp=request, **fields)
+        if destination:
+            emit(second, pid, 27, FileObject=obj, Irp=request, FilePath=destination)
+        completion = {} if outcome is None else {"ExtraInformation": outcome}
+        emit(second, 0, 24, Irp=request, Status=0, **completion)
+
+    for pid, second in ((31, 2), (41, 51)):
+        root = next(p for p in evidence.manifest["processes"] if p.get("pid") == pid - 1)
+        emit(second, 0, 1, lifecycle=True, ProcessID=pid)
+        mutation(second + 1, pid, 8, 12, FileName="\\??\\" + root["fixture"], Outcome=2)
+        mutation(second + 1, pid, 8, 16)
+        mutation(second + 1, pid, 8, 17, InfoClass=20)
+        mutation(second + 1, pid, 8, 19,
+                 Destination=r"\Device\HarddiskVolume3" + root["renamed_fixture"][2:])
+        mutation(second + 1, pid, 8, 18)
+        emit(second + 2, 0, 2, lifecycle=True, ProcessID=pid)
+
+    emit(14, 0, 1, lifecycle=True, ProcessID=10)
+    mutation(27, 10, 3, 12, FileName=r"\\?\C:\QA\home\data.sqlite", Outcome=1)
+    mutation(28, 10, 3, 16)
+    evidence.manifest["etw"] = {
+        "schema_version": 1, "start_utc": instant(0), "end_utc": instant(59),
+        "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+        "counters": {"events_lost": 0, "log_buffers_lost": 0,
+                     "realtime_buffers_lost": 0, "buffers_written": 1},
+    }
+
+    def report():
+        etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+        evidence.manifest["etw"]["events_sha256"] = hashlib.sha256(etw_path.read_bytes()).hexdigest()
+        return trace.audit(evidence.manifest, sysmon, etw_path, evidence.before, evidence.after, etw=True)
+
+    clean = report()
+    assert clean["coverage"] == "CALIBRATED"
+    assert clean["network"] == clean["filesystem"] == "PASS_SCOPED"
+    assert clean["file_events"]["backend:write"] == 1
+    assert clean["native_n12_accepted"] is False
+    cli_inputs = []
+    for name, value in (("manifest", evidence.manifest), ("before", evidence.before),
+                        ("after", evidence.after)):
+        input_path = tmp_path / f"{name}.json"
+        input_path.write_text(json.dumps(value), encoding="utf-8")
+        cli_inputs.append(input_path)
+    manifest_path, before_path, after_path = cli_inputs
+    output = tmp_path / "audit.json"
+    result = subprocess.run([sys.executable, str(Path(trace.__file__)), "audit-etw",
+                             *map(str, (manifest_path, sysmon, etw_path, before_path, after_path, output))],
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(output.read_text(encoding="utf-8")) == clean
+
+    # PID 99 was already running at capture start. Its observed rename into
+    # the protected root must still fail even though attribution is incomplete.
+    mutation(31, 99, 9, 12, FileName=r"C:\QA\scratch\private.bin", Outcome=1)
+    mutation(32, 99, 9, 19, Destination=r"\Device\HarddiskVolume3\Original\PilotODIN\private.bin")
+    mutation(33, 99, 9, 16)
+    bad = report()
+    assert bad["filesystem"] == "FAIL"
+    assert bad["file_violations"] == {"protected:other:rename": 1, "protected:other:write": 1}
+    assert "etw-mutation-coverage-unresolved" in bad["coverage_issues"]
+    assert "private.bin" not in json.dumps(bad)
+
+    evidence.manifest["etw"]["counters"]["events_lost"] = 1
+    assert "etw-event-or-buffer-loss" in report()["coverage_issues"]
+    # A valid JSONL payload with different bytes must fail the digest check.
+    etw_path.write_bytes(b" " + etw_path.read_bytes())
+    with pytest.raises(ValueError, match="ETW export digest mismatch"):
+        trace.audit(evidence.manifest, sysmon, etw_path, evidence.before, evidence.after, etw=True)
+
+
 def standalone_capture(tmp_path, evidence, **kwargs):
     sysmon, procmon = evidence.save(tmp_path, **kwargs)
     keys = ("schema_version", "disposable", "start_utc", "end_utc", "sysmon_first_record",

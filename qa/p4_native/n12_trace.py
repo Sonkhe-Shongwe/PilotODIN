@@ -429,7 +429,7 @@ def verify_snapshots(before, after, manifest, issues):
     return fingerprints, changed
 
 
-def load_capture(manifest, sysmon):
+def load_capture(manifest, sysmon, *, etw=False):
     require(manifest["schema_version"] == 1 and manifest["disposable"] is True,
             "expected a disposable N12 manifest")
     start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
@@ -437,8 +437,9 @@ def load_capture(manifest, sysmon):
     processes, connections, issues, first, last = sysmon_events(sysmon, start, end)
     if (first, last) != (manifest["sysmon_first_record"], manifest["sysmon_last_record"]) or first is None:
         issues.add("sysmon-bookend-record-mismatch")
-    if (manifest["procmon_all_events"] is not True or manifest["procmon_loss_reviewed"] is not True
-            or manifest["procmon_clock_utc"] is not True):
+    if not etw and (manifest["procmon_all_events"] is not True or
+                    manifest["procmon_loss_reviewed"] is not True or
+                    manifest["procmon_clock_utc"] is not True):
         issues.add("procmon-coverage-not-confirmed")
     return start, end, processes, connections, issues
 
@@ -468,8 +469,106 @@ def check_calibration(manifest, sysmon, procmon):
             "native_n12_accepted": False}
 
 
-def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
-    start, end, processes, connections, issues = load_capture(manifest, sysmon)
+def utc_ticks(timestamp):
+    day = timestamp.toordinal() - 1
+    seconds = (day * 24 + timestamp.hour) * 3600 + timestamp.minute * 60 + timestamp.second
+    return seconds * 10_000_000 + timestamp.microsecond * 10
+
+
+def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues):
+    if __package__:
+        from .n12_etw_correlate import canonical_file_path, correlate_requests
+    else:
+        from n12_etw_correlate import canonical_file_path, correlate_requests
+
+    capture = manifest["etw"]
+    require(capture["schema_version"] == 1, "unsupported ETW evidence schema")
+    capture_start, capture_end = (utc_time(capture[k]) for k in ("start_utc", "end_utc"))
+    require(capture_start <= start < end <= capture_end, "ETW capture does not bracket the audit")
+    require(re.fullmatch(r"[0-9a-f]{64}", capture["events_sha256"]), "invalid ETW export digest")
+    counters = capture["counters"]
+    losses = [counters[k] for k in ("events_lost", "log_buffers_lost", "realtime_buffers_lost")]
+    require(all(type(n) is int and n >= 0 for n in losses) and
+            type(counters["buffers_written"]) is int and counters["buffers_written"] > 0,
+            "invalid ETW counters")
+    if any(losses):
+        issues.add("etw-event-or-buffer-loss")
+    devices = {}
+    for drive, device in capture["volume_devices"].items():
+        drive, device = drive.casefold(), device.casefold()
+        require(re.fullmatch(r"[a-z]:", drive) and re.fullmatch(r"\\device\\[^\\]+", device)
+                and device not in devices, "invalid or ambiguous ETW volume mapping")
+        devices[device] = drive
+    require(devices, "ETW volume mappings are missing")
+
+    start_ticks, end_ticks = utc_ticks(start), utc_ticks(end)
+    capture_bounds = utc_ticks(capture_start), utc_ticks(capture_end)
+    lifetimes = {}
+    for process in processes.values():
+        lifetimes.setdefault(process.pid, []).append(process)
+    # Sysmon records millisecond UTC timestamps. Match the same PID and a
+    # unique ETW birth within 10 ms, then require the request in its lifetime.
+    tolerance = 100_000
+
+    def classify_process(pid, birth, ticks):
+        candidates = [process for process in lifetimes.get(pid, ()) if birth is not None and
+                      abs(utc_ticks(process.start) - birth) <= tolerance and
+                      (process.end is None or ticks <= utc_ticks(process.end) + tolerance)]
+        if len(candidates) == 1:
+            process = candidates[0]
+            return roles.get(process.guid, "other"), process.guid
+        # A Sysmon-scoped PID with an absent ETW birth is still a coverage gap.
+        if any(process.guid in roles and utc_ticks(process.start) - tolerance <= ticks and
+               (process.end is None or ticks <= utc_ticks(process.end) + tolerance)
+               for process in lifetimes.get(pid, ())):
+            return "unattributed", None
+        return "other", None
+
+    counts, violations, file_events = Counter(), Counter(), set()
+
+    def record(role, identity, operation, source, destination, requested, completed, success):
+        if not success or completed < start_ticks:
+            return
+        if requested < start_ticks or completed > end_ticks:
+            issues.add("etw-completion-outside-audit-window")
+        if role == "unattributed":
+            issues.add("etw-process-identity-unresolved")
+        targets = tuple(path for path in (source, destination) if path)
+        if any(inside(target, root) for target in targets for root in protected):
+            violations[f"protected:{role}:{operation}"] += 1
+        if role in {"other", "unattributed"}:
+            return
+        counts[f"{role}:{operation}"] += 1
+        if not all(any(inside(target, root) for root in permitted.get(role, ()))
+                   for target in targets):
+            violations[f"outside-scope:{role}:{operation}"] += 1
+        if role == "calibration" and start_ticks <= requested <= completed <= end_ticks:
+            file_events.add((identity, operation, *targets))
+
+    def read_events(stream):
+        digest = hashlib.sha256()
+        for line in stream:
+            digest.update(line)
+            event = json.loads(line)
+            require(type(event["ticks"]) is int and capture_bounds[0] <= event["ticks"] <= capture_bounds[1],
+                    "ETW event timestamp outside capture")
+            if event["ticks"] <= end_ticks:
+                yield event
+        require(digest.hexdigest() == capture["events_sha256"], "ETW export digest mismatch")
+
+    with path.open("rb") as stream:
+        unresolved = correlate_requests(
+            read_events(stream), lambda value: canonical_file_path(value, devices),
+            classify_process, lambda value: value is not None and
+            any(inside(value, root) for root in protected), record, strict=True,
+        )
+    if unresolved:
+        issues.add("etw-mutation-coverage-unresolved")
+    return counts, violations, file_events, dict(unresolved)
+
+
+def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False):
+    start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
             re.fullmatch(r"[0-9a-f]{64}", manifest["executable_sha256"]),
             "source and executable identities are required")
@@ -488,8 +587,16 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
                              markers["reopen"] <= apps[1].start < markers["exit"] and
                              apps[1].end and markers["exit"] <= apps[1].end):
         issues.add("app-lifecycle-does-not-match-journey")
-    file_counts, violations, file_events, path_diagnostics = inspect_files(
-        procmon, start, end, processes, roles, protected, permitted, issues)
+    etw_diagnostics = {}
+    if etw:
+        immutable = [windows_path(manifest["observed_roots"][label])
+                     for label in manifest["immutable_observed"]]
+        file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
+            manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues)
+        path_diagnostics = []
+    else:
+        file_counts, violations, file_events, path_diagnostics = inspect_files(
+            procmon, start, end, processes, roles, protected, permitted, issues)
     verify_calibrations(bindings, processes, connections, file_events, markers, issues)
     ports = manifest["loopback_ports"]
     require(ports and all(type(port) is int and 1 <= port <= 65535 for port in ports),
@@ -522,6 +629,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
         "native_n12_accepted": False,
         "filesystem": filesystem, "file_events": file_counts, "file_violations": violations,
         "unresolved_file_paths": path_diagnostics,
+        **({"file_evidence_source": "etw", "etw_unresolved_mutations": etw_diagnostics} if etw else {}),
         "snapshot_changes": snapshots, "unexpected_snapshot_changes": changed,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }
@@ -589,11 +697,13 @@ def main():
     calibration = subcommands.add_parser("check-calibration")
     for argument in ("manifest", "sysmon", "procmon", "output"):
         calibration.add_argument(argument, type=Path)
-    report = subcommands.add_parser("audit")
-    for argument in ("manifest", "sysmon", "procmon", "before", "after", "output"):
-        report.add_argument(argument, type=Path)
-    report.add_argument("--private-endpoints", type=Path,
-                        help="Optional raw endpoint report, confined to disposable Windows runner temp.")
+    for mode in ("audit", "audit-etw"):
+        report = subcommands.add_parser(mode)
+        for argument in ("manifest", "sysmon", "etw_events" if mode == "audit-etw" else "procmon",
+                         "before", "after", "output"):
+            report.add_argument(argument, type=Path)
+        report.add_argument("--private-endpoints", type=Path,
+                            help="Optional raw endpoint report, confined to disposable Windows runner temp.")
     args = cli.parse_args()
     try:
         if args.mode == "snapshot":
@@ -614,8 +724,9 @@ def main():
             if endpoints is not None:
                 private = local_disposable_path(args.private_endpoints, runner_temp_only=True)
                 require(private != output.absolute(), "public and private report paths must differ")
-            result = audit(read_json(args.manifest), args.sysmon, args.procmon,
-                           read_json(args.before), read_json(args.after), private_endpoints=endpoints)
+            etw = args.mode == "audit-etw"
+            result = audit(read_json(args.manifest), args.sysmon, args.etw_events if etw else args.procmon,
+                           read_json(args.before), read_json(args.after), private_endpoints=endpoints, etw=etw)
             if private:
                 with private.open("x", encoding="utf-8") as stream:
                     json.dump(endpoints, stream, indent=2)

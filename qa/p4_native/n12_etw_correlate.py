@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import ntpath
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -13,116 +15,176 @@ def number(value):
     return value
 
 
-def correlate(capture, events):
-    fixture, writer = capture["fixture"], capture["second_writer"]
-    paths = {}
-    for label, path in (
-        ("original", fixture["fixture"]), ("renamed", fixture["renamed_fixture"]),
-        ("source", writer["source"]), ("destination", writer["destination"]),
-    ):
-        paths[path.casefold()] = label
-        paths[(capture["device"] + path[2:]).casefold()] = label
-    protected = capture["protected_root"].casefold()
-    protected_prefixes = (protected + "\\", capture["device"].casefold() + protected[2:] + "\\")
-    declared = (
-        (fixture["child_pid"], fixture["start_window"], "fixture"),
-        (writer["pid"], writer["start_window"], "second-writer"),
-    )
-    active, lifecycles = {}, Counter()
+def canonical_file_path(value, devices):
+    """Resolve drive and explicit device aliases from the capture host."""
+    path = value.replace("/", "\\").casefold()
+    for prefix in ("\\\\?\\", "\\??\\"):
+        if path.startswith(prefix):
+            path = path[len(prefix):]
+            break
+    for device, drive in devices.items():
+        if path == device or path.startswith(device + "\\"):
+            path = drive + path[len(device):]
+            break
+    drive, tail = ntpath.splitdrive(path)
+    if re.fullmatch(r"[a-z]:", drive) and tail.startswith("\\"):
+        return ntpath.normpath(path)
+    return None
+
+
+def correlate_requests(events, resolve_path, classify_process, tracked, record, *, strict=False):
+    """Keep file paths and identities private until the report callback reduces them."""
+    active = {}
     opened, pending = {}, {}
     ambiguous_irps = set()
-    witnessed, failed, unresolved = Counter(), Counter(), Counter()
-    protected_writes = 0
+    unresolved = Counter()
+
+    def relevant(actor, operation, source, destination):
+        return tracked(source) or tracked(destination) or (
+            strict and (actor != "other" or operation == "rename" or source is None)
+        )
+
     for event in sorted(events, key=lambda record: record["ticks"]):
         kind, pid, data = event["id"], event["pid"], event["data"]
         ticks = event["ticks"]
         if event.get("lifecycle"):
             process_id = number(data["ProcessID"])
             if kind == 1:
-                actor = next((label for expected, (start, end), label in declared
-                              if process_id == expected and start <= ticks <= end), "other")
-                if actor != "other":
-                    lifecycles[actor] += 1
-                active[process_id] = (ticks, actor)
+                active[process_id] = ticks
             elif kind == 2:
                 active.pop(process_id, None)
             continue
         object_id = number(data.get("FileObject"))
         irp = number(data.get("Irp"))
-        birth, actor = active.get(pid, (None, "other"))
+        birth = active.get(pid)
+        actor, identity = classify_process(pid, birth, ticks)
         handle = (pid, birth, object_id)
-        path_text = (data.get("FileName") or data.get("FilePath") or "").casefold()
-        path = "protected" if path_text.startswith(protected_prefixes) else paths.get(path_text)
+        path = resolve_path(data.get("FileName") or data.get("FilePath") or "")
         if kind == 24:
             if irp in ambiguous_irps:
                 continue
             if not irp or irp not in pending:
                 continue
-            operation, actor, handle, source, destination = pending.pop(irp)
-            tracked = source or destination
+            operation, actor, identity, handle, source, destination, requested = pending.pop(irp)
+            in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
             if status is None:
-                if tracked:
+                if in_scope:
                     unresolved[f"{actor}:{operation}:missing-status"] += 1
                 continue
             if status & 0x80000000:
-                if tracked:
-                    failed[f"{actor}:{operation}:{tracked}"] += 1
+                if in_scope:
+                    record(actor, identity, operation, source, destination, requested, ticks, False)
                 continue
             # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
             open_result = number(data.get("ExtraInformation")) if operation == "open" else None
             mutation = operation != "open" or open_result in {0, 2, 3}
-            if tracked and operation == "open" and open_result not in {0, 1, 2, 3}:
+            if in_scope and operation == "open" and open_result not in {0, 1, 2, 3}:
                 unresolved[f"{actor}:open:unknown-open-result"] += 1
-            if tracked and mutation and handle[1] is None:
+            if in_scope and mutation and handle[1] is None:
                 unresolved[f"{actor}:{operation}:process-lifetime-missing"] += 1
             if operation == "open":
                 if source:
                     opened[handle] = source
-                if source and mutation:
-                    action = "create" if open_result == 2 else "overwrite"
-                    witnessed[f"{actor}:{action}:{source}"] += 1
-            elif tracked and operation == "rename":
-                if source and destination:
-                    witnessed[f"{actor}:rename:{source}:{destination}"] += 1
-                else:
-                    unresolved[f"{actor}:rename:path-missing"] += 1
+                operation = "create" if open_result == 2 else "overwrite"
+            elif operation == "rename":
                 opened[handle] = destination
-            elif source:
-                witnessed[f"{actor}:{operation}:{source}"] += 1
-            if "protected" in (source, destination) and mutation:
-                protected_writes += 1
+            if in_scope and mutation:
+                if operation == "unsupported":
+                    unresolved[f"{actor}:unsupported-file-operation"] += 1
+                if not source or (operation == "rename" and not destination):
+                    unresolved[f"{actor}:{operation}:path-missing"] += 1
+                if source or destination:
+                    record(actor, identity, operation, source, destination, requested, ticks, True)
             continue
         if kind == 27 and irp in pending:
-            operation, owner, obj, source, previous = pending[irp]
+            operation, owner, identity, obj, source, previous, requested = pending[irp]
             if operation == "rename" and obj == handle and path:
                 if previous and previous != path:
                     unresolved[f"{owner}:rename:destination-ambiguous"] += 1
-                pending[irp] = (operation, owner, obj, source, path)
+                pending[irp] = (operation, owner, identity, obj, source, path, requested)
+            continue
+        if strict and kind == 27 and path and relevant(actor, "rename", None, path):
+            unresolved[f"{actor}:rename:request-missing-or-ambiguous"] += 1
             continue
         if kind in {12, 14}:
             opened.pop(handle, None)
-        if kind not in {12, 16, 17, 18, 19} or not irp:
+        if kind not in {12, 16, 17, 18, 19, 23, 29, 34}:
             continue
-        operation = {12: "open", 16: "write", 18: "delete", 19: "rename"}.get(kind)
-        if kind == 17 and number(data.get("InfoClass")) == 20:  # FileEndOfFileInformation
-            operation = "resize"
+        operation = {12: "open", 16: "write", 18: "delete", 19: "rename",
+                     23: "unsupported", 29: "unsupported", 34: "unsupported"}.get(kind)
+        if operation == "unsupported" and not strict:
+            operation = None
+        if kind == 17:
+            if number(data.get("InfoClass")) == 20:  # FileEndOfFileInformation
+                operation = "resize"
+            elif strict:
+                operation = "unsupported"
         source = path if kind == 12 else opened.get(handle)
+        if not irp or not object_id:
+            if operation and relevant(actor, operation, source, None):
+                unresolved[f"{actor}:{operation}:identity-missing"] += 1
+            continue
         if irp in pending:
-            old_operation, owner, _, old_source, old_destination = pending.pop(irp)
-            if old_source or old_destination:
+            old_operation, owner, _, _, old_source, old_destination, _ = pending.pop(irp)
+            if relevant(owner, old_operation, old_source, old_destination):
                 unresolved[f"{owner}:{old_operation}:irp-reused-before-completion"] += 1
             ambiguous_irps.add(irp)
         if irp in ambiguous_irps:
-            if operation and source:
+            if operation and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:irp-ambiguous"] += 1
-        elif operation and object_id:
-            pending[irp] = (operation, actor, handle, source, None)
-    for operation, actor, _, source, destination in pending.values():
-        if source or destination:
+        elif operation:
+            pending[irp] = (operation, actor, identity, handle, source, None, ticks)
+    for operation, actor, _, _, source, destination, _ in pending.values():
+        if relevant(actor, operation, source, destination):
             unresolved[f"{actor}:{operation}:completion-missing"] += 1
+    return unresolved
+
+
+def correlate(capture, events):
+    fixture, writer = capture["fixture"], capture["second_writer"]
+    paths = {path.casefold(): label for label, path in (
+        ("original", fixture["fixture"]), ("renamed", fixture["renamed_fixture"]),
+        ("source", writer["source"]), ("destination", writer["destination"]),
+    )}
+    protected_prefix = capture["protected_root"].casefold() + "\\"
+    devices = {capture["device"].casefold(): fixture["fixture"][:2].casefold()}
+    declared = (
+        (fixture["child_pid"], fixture["start_window"], "fixture"),
+        (writer["pid"], writer["start_window"], "second-writer"),
+    )
+    witnessed, failed = Counter(), Counter()
+    lifecycles = {actor: set() for _, _, actor in declared}
+    protected_writes = 0
+
+    def resolve_path(path):
+        path = canonical_file_path(path, devices)
+        if path and path.startswith(protected_prefix):
+            return "protected"
+        return paths.get(path)
+
+    def classify_process(pid, birth, ticks):
+        for expected, (start, end), actor in declared:
+            if pid == expected and birth is not None and start <= birth <= end:
+                lifecycles[actor].add(birth)
+                return actor, None
+        return "other", None
+
+    def record(actor, identity, operation, source, destination, requested, completed, success):
+        nonlocal protected_writes
+        if not success:
+            failed[f"{actor}:{operation}:{source or destination}"] += 1
+        elif operation == "rename":
+            if source and destination:
+                witnessed[f"{actor}:rename:{source}:{destination}"] += 1
+        elif source:
+            witnessed[f"{actor}:{operation}:{source}"] += 1
+        if success and "protected" in (source, destination):
+            protected_writes += 1
+
+    unresolved = correlate_requests(events, resolve_path, classify_process, bool, record)
     for _, _, actor in declared:
-        if lifecycles[actor] != 1:
+        if len(lifecycles[actor]) != 1:
             unresolved[f"{actor}:process-start-missing-or-ambiguous"] += 1
     return {"operations": dict(witnessed), "failed": dict(failed), "unresolved": dict(unresolved),
             "protected_writes": protected_writes}
