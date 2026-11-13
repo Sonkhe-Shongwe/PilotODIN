@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November N12 shutdown and export:** [Synthetic Windows and P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43455444490) passed. The correction awaits live calibration. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-process-monitor-stop-and-export-correction)
 - **13 November N12 live calibration:** [Hosted collector run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43452047885) completed the generated fixture and stopped at Process Monitor shutdown before export. Live event coverage is unverified. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-live-collector-calibration-blocked)
 - **13 November N12 hosted collector inventory:** [Windows inventory](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43450570161) completed. Live calibration is blocked pending collector setup. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-hosted-collector-inventory)
 - **13 November N12 collector check:** The [standalone calibration command](../qa/p4_native/N12_TRACE.md#standalone-collector-calibration-on-hosted-windows) is covered by local synthetic tests. Live collector calibration is pending. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-standalone-collector-check)

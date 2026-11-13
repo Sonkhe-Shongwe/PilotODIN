@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 Process Monitor stop and export correction
+
+- [Source `371111b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/371111b05493754f4888be7b593a434990be9763) uses Process Monitor's quiet stop command and distinguishes command failures, capture-process timeouts and nonzero capture-process exit codes. It checks that the backing file and CSV are closed and nonempty. A usable export after abnormal shutdown is diagnostic evidence only. The capture-loss review requirement remains in place.
+- [Exact-source P4 CI #43455444490](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43455444490) passed all three jobs, including Windows synthetic checks for exit codes, timeout and missing, locked, empty and readable backing files. The 205 Python tests, 78 Node checks, frontend build and 13 Chromium scenarios passed. The local targeted suite passed 44 tests.
+- **Next:** Obtain fresh approval for one disposable Windows collector calibration using this correction. The live workflow is disabled and its Process Monitor stop/export behaviour remains unverified. R02/N12 remains partial and the historical port 443 connection remains unattributed.
+
 ## 13 November 2026 | N12 live collector calibration blocked
 
 - The owner approved one disposable Windows runner for Sysmon and Process Monitor provisioning and the generated N12 fixture. [First launch #43451750075](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43451750075) failed before either collector was installed or started. The workflow expected the wrong Sysmon signer. Its parallel [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43451750087) had a cancelled job after the corrected push.
