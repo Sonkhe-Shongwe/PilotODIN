@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 ETW fixture feasibility
+
+- [Source `52ea97d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/52ea97d24c7131ad27a15bd6d720dacbd398719b) adds a disposable ETW probe to P4 Windows CI. It uses built-in Windows tooling, records Kernel File events from the generated fixture, reads ETW loss counters at session stop and publishes counts and field names. Raw traces stay in runner temp.
+- [Exact-source P4 CI #43461185741](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43461185741) passed all three jobs. The hosted Windows probe decoded 4,924 Kernel File events across 14 buffers. ETW reported zero lost events, log buffers and real-time buffers. It matched fixture paths in name/open events and observed write, set-information, delete, rename and completion event IDs in the fixture child's event headers. The fixture path events contained file object, file key and IRP fields. These are feasibility observations. The probe does not pair requests with successful completions or resolve the exact rename destination. The targeted local suite passed 45 tests.
+- **Next:** Correlate fixture file objects and requests to successful completions, then verify exact source/destination paths and a cross-root mutation by a second writer. Keep the Process Monitor and ETW evidence separate. The live Process Monitor workflow remains disabled. R02/N12 remains partial and P4 stays active.
+
 ## 13 November 2026 | N12 redacted path diagnostics
 
 - [Source `6d04e81`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6d04e81b2189938849d03cdc964f4b453dc944f2) reports the role, mutation, source or destination field, path form and count for unresolved Process Monitor events in both reducer modes. The coverage blocker remains in force. The previously unresolved live row remains unidentified because only the earlier redacted summary was retained.

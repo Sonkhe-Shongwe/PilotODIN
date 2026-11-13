@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November N12 ETW probe:** [Hosted P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43461185741) passed. ETW reported zero loss on the generated fixture trace. Path and completion correlation is pending. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-etw-fixture-feasibility)
 - **13 November N12 path diagnostics:** [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43459702082) passed. [The runbook](../qa/p4_native/N12_TRACE.md#diagnose-blocked-process-monitor-coverage) records redacted path reporting and continuity evidence requirements.
 - **13 November N12 live fixture markers:** [The corrected run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43458458941) exported both captures and observed the expected fixture markers. Capture coverage remains blocked. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-live-fixture-markers-observed)
 - **13 November N12 shutdown and export:** [Synthetic Windows and P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43455444490) passed. The correction awaits live calibration. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-process-monitor-stop-and-export-correction)
