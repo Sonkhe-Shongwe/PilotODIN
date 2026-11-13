@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 ETW allocation and background write context
+
+- [Source `95037a3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/95037a392ca28613c6aeee881474fa97fb7237a9) classifies Kernel File event 17 / information class 19 as an allocation mutation. It treats QueryEA (event 34) as read-only while keeping IRP collision detection. Allocation still requires a successful completion and an attributable path, and it does not substitute for the expected resize marker.
+- The diagnostic preflight counts name context from observed NameCreate/NameDelete events when a write lacks a resolved handle path. File-key hints are diagnostic only. They cannot prove that a target was outside protected roots, and ambiguous names, renames and missing name lifetimes cannot clear a coverage blocker. All 57 targeted tests passed.
+- [Hosted Windows preflight](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43481375727/job/132078423554) classified one fixture allocation, matched all five expected fixture operations and reported no file violations. The fixture tree had zero unresolved mutations. Twenty background writes still lacked a resolved handle path and process lifetime. File-key hints pointed outside the tracked paths for 19 write requests, and one had an unseen key. These hints did not establish the write targets. Strict ETW coverage stayed blocked.
+- **Next.** Use the hosted counts to decide what source can supply reliable path and lifetime evidence for pre-existing handles. Keep unresolved writes blocking strict coverage. Combined calibration and native acceptance remain pending.
+
 ## 13 November 2026 | N12 strict ETW diagnostic preflight
 
 - [Source `41be9bb`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/41be9bb0200567e5d634c8bcf8a887525637f9df) exercises the combined reducer's strict ETW correlation against actual Windows fixture events in regular CI. It derives generated process evidence from the fixture PIDs and uniquely matched ETW starts and stops. It publishes event IDs, bounded information-class values and counts by role and reason. No file paths, process IDs or raw events are published in the diagnostic summary. All 56 targeted tests passed.
