@@ -1,7 +1,7 @@
 param([switch]$PreflightOnly, [switch]$ValidateRuntime)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$base = 'd5988d0d200dbda168414e986445e9b2ee31c126'
+$base = '0c77ad3ff8ba28f25a6fc3d8ad99acb3686e99c6'
 $branch = 'feature/live-dev-workspace-20261023'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $frontend = Join-Path $root 'frontend'
@@ -17,8 +17,8 @@ if ($LASTEXITCODE -ne 0 -or $commitAndParents.Count -ne 2 -or $commitAndParents[
 }
 if ($env:GITHUB_RUN_ATTEMPT -ne '1') { Fail 'One-shot approval excludes re-runs' }
 $allowed = @(
- '.github/workflows/p4-native-catalogue-ready-20261113.yml',
- 'qa/p4_native/P4_WINDOWS_CATALOGUE_READY_APPROVAL_20261113.txt',
+ '.github/workflows/p4-native-direct-dialog-20261113.yml',
+ 'qa/p4_native/P4_WINDOWS_DIRECT_DIALOG_APPROVAL_20261113.txt',
  'qa/p4_native/Run_P4_71_Disposable_Windows.ps1'
 )
 $changed = @(& git -C $root diff --name-only $base $actual)
@@ -42,7 +42,7 @@ if ($production.identifier -ne 'com.pilotodin.studio' -or
     $production.build.beforeDevCommand -ne 'node scripts/deny-unsafe-default-tauri-dev.mjs' -or
     $production.build.beforeBuildCommand -ne 'node scripts/deny-intermediate-installer.mjs') { Fail 'Production/QA/dev identities, bundles or default-deny hooks differ from reviewed source' }
 if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_CATALOGUE_READY_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_DIRECT_DIALOG_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
 if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
 foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
  foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
