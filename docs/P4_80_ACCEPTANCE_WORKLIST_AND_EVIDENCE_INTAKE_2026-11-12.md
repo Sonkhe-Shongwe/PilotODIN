@@ -230,6 +230,14 @@ The regular [P4 CI run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs
 
 **Wider R05 remains open.** Prepare currently shows the selected predictors’ combined encoded-width estimate. Review whether each field needs its own estimate. Real fitted-experiment persistence and reopening with the selected strategies still need evidence.
 
+## 13 November 2026 | BE-024 per-field encoded-column estimates
+
+[efcf906](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/efcf906a5ee02024edbe1d280e23f59986f7773c) adds estimated output width alongside each field's preprocessing treatment. The selected total follows exclusions, split keys and the missing-value strategy. The backend includes the missing-marker category in its labelled-row budget check, using the same one-hot cap as the training pipeline.
+
+[P4 CI #43433339512](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43433339512) verifies the capped estimates, manual and risk exclusions, split-key contribution, and rejection of an oversized missing-marker configuration before fitting. Browser evidence covers the real-HTTP Prepare flow. The Windows CI job exercised preservation tools on synthetic files.
+
+**Wider R05 remains open.** Native display of the new estimates and persistence/reopening of a fitted experiment with the selected strategies still need evidence.
+
 ## E. Practical order for the next sessions
 
 | Priority | Next deliverable | Who supplies the missing fact | Stop / done rule |

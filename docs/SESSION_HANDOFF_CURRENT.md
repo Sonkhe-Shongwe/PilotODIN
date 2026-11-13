@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | BE-024 per-field encoded-column estimates
+
+- [efcf906](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/efcf906a5ee02024edbe1d280e23f59986f7773c) shows an estimated encoded-column contribution for every Prepare audit row. Excluded fields, split keys and unusable fields contribute zero. The selected total uses the same per-field calculation. A missing-marker category contributes up to one additional column where categorical values are missing, subject to the 25-column cap. The backend uses the chosen strategy to recheck the budget on labelled rows before admitting or fitting an experiment.
+- [P4 CI #43433339512](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43433339512) verified the per-field counts, aggregate updates and the pre-fit admission boundary. The browser fixture covered both categorical imputation choices, manual exclusions and applied risk exclusions. The source tests also covered group/time split exclusions and the cap.
+- **Next:** The remaining Prepare acceptance includes saving and reopening a fitted experiment with the recorded preprocessing choices and Quality version. P4 stays active. N12 remains partial, physical R03 remains untested, and the historical R06 failure remains unresolved.
+
 ## 13 November 2026 | BE-024 Prepare category examples
 
 - [fc4ebbc](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fc4ebbc759c41b11fed395726efaafeaab5e90cb) adds the first five distinct, non-missing examples in source row order for eligible categorical predictors. Each displayed value is limited to 80 characters. Prepare explicitly hides raw examples for high-risk categorical fields. The examples come from the current version-pinned dataset and do not alter training inputs or the preprocessing configuration.
