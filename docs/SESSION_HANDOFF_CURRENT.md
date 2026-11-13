@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | R04 wait for the active Prepare route
+
+- [`878ce2b02a5d57f9d546db109a778b1c6d5414dd`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/878ce2b02a5d57f9d546db109a778b1c6d5414dd) fixes an ordering race in the docking QA setup. The previous probe clicked Your data and immediately clicked Prepare. Route navigation commits after the exit animation, so checking for a Prepare heading could succeed against the original view. The revised probe confirms each navigation button becomes current, the route animation completes, and the Prepare tab is selected before dragging.
+- The native probe also records whether drag-over reaches the pane in the bubble phase and which tab the pane identifies as active at the last drag-over. The previous failure did not capture these values, so its cause remains unconfirmed.
+- Exact-source [P1 #43424698893](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43424698893) passed 187 Node checks, TypeScript/Vite and all seven browser scenarios. The Chromium docking scenario now uses the same navigation and gesture as the native probe. [P4 #43424698745](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43424698745) passed all three regular CI jobs. No native app was built or run for this change.
+- **Next:** Use the synchronized R04 probe in the next freshly approved unpackaged Windows build. N12 still needs connection destination and purpose evidence. The earlier one-use workflow is disarmed. P4 remains active.
+
 ## 13 November 2026 | Focused Windows docking and TCP attribution
 
 - [Hosted Windows #43423213278](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43423213278) used one unpackaged build at `ef6bd3748eb13935ed894fd79d8eeb685a4f6172`. R04 drag-to-dock failed again with the two-move gesture. WebView2 received one drag start, two drag-overs with the workspace-tab type, zero drops and one drag end. The last drag-over was not accepted and the drag-end effect was `none`. Dock beside, close and narrow-width pause/restore passed.
