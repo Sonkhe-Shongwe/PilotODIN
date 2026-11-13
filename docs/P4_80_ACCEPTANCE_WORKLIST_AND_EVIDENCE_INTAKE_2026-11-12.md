@@ -224,6 +224,12 @@ The Windows close request was accepted and the original app process exited. The 
 
 The regular [P4 CI run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707627) passed 183 Python, 77 Node, TypeScript/Vite, 12 real-HTTP Chromium scenarios and the synthetic Windows job at `f9ef20b76dc42f29c0f7a866c1d1c0538c0113b1`. The recorded `9620beac3c2b1aea59bd3e55266623827b05d4ae` checkpoint is documentation. The scoped functional passes support the phase's target discovery and selection requirements. N12, physical feasibility, wider Prepare scope and the historical integrity disposition still limit closure. Explicit owner signoff is pending. P5 is unauthorised and P8 is uncertified. This review changed documentation only.
 
+## 13 November 2026 | BE-024 category example follow-up
+
+**PASS in source and browser CI.** [fc4ebbc](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fc4ebbc759c41b11fed395726efaafeaab5e90cb) adds up to five distinct observed, non-missing category values per eligible predictor, in dataset order. Values are capped at 80 characters. High-risk fields omit raw values from the response and show an explanation in the audit. [P4 CI #43430808696](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43430808696) passed all three jobs, including the version-pinned P4-62 response and UI checks. The Windows job exercised preservation tools on synthetic files.
+
+**Wider R05 remains open.** Prepare currently shows the selected predictors’ combined encoded-width estimate. Review whether each field needs its own estimate. Real fitted-experiment persistence and reopening with the selected strategies still need evidence.
+
 ## E. Practical order for the next sessions
 
 | Priority | Next deliverable | Who supplies the missing fact | Stop / done rule |

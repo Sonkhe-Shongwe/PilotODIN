@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | BE-024 Prepare category examples
+
+- [fc4ebbc](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fc4ebbc759c41b11fed395726efaafeaab5e90cb) adds the first five distinct, non-missing examples in source row order for eligible categorical predictors. Each displayed value is limited to 80 characters. Prepare explicitly hides raw examples for high-risk categorical fields. The examples come from the current version-pinned dataset and do not alter training inputs or the preprocessing configuration.
+- [P4 CI #43430808696](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43430808696) passed 184 Python tests, 77 Node checks, TypeScript/Vite, 12 real-HTTP Chromium scenarios and the synthetic Windows preservation probe at the exact source commit. P4-62 verified the examples in the HTTP response and UI, including suppression of the synthetic identifier. [P1 CI #43430808596](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43430808596) passed 187 Node checks, the frontend build and seven Chromium scenarios.
+- **Next:** Review the per-field encoded-width requirement in BE-024. Prepare currently shows the combined estimate for selected predictors. Wider R05 remains open, including fitted-experiment persistence and reopening. P4 stays active with N12 partial, R03 untested and the historical R06 failure unresolved.
+
 ## 13 November 2026 | P4 closure readiness review
 
 - [Closure review](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-p4-closure-readiness-review) reconciles the passing hosted R04 retest and R05 control evidence with the P4 exit criteria. R05 has a concrete remaining BE-024 gap: the per-field Prepare audit omits the specified category samples. Synthetic saved-strategy display has passed; real fitted-experiment persistence with the new settings remains unverified.
