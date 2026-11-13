@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 pre-opened file handle control
+
+- [Source `30a48b4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/30a48b4c536c9241e038e9726a0c13d36a31187e) opens two generated files before ETW starts, one inside the synthetic protected directory and one outside it. It checks each target with Windows GetFinalPathNameByHandle, writes distinct byte counts, and uses the write windows and completions to check for prior ETW name evidence. The report publishes only labels and outcomes. All 60 targeted tests passed.
+- [Hosted Windows control](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43486539651/job/132096376636) validated 7,781 exported ETW records, identified one successful request and the correct issuing thread for each known target, and found no preceding usable name record for either file key. Under the current provider configuration, write and thread records alone did not distinguish the protected file from the outside file. The next experiment is a bounded file-name rundown or another independent path source, checked against these same two targets.
+- This control does not change the strict reducer's acceptance criteria. Combined calibration and native acceptance remain pending.
+
 ## 13 November 2026 | N12 issuing-thread evidence preflight
 
 - [Source `8f16e34`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8f16e34e979c900a83430dc54679ef923a2a8220) adds Kernel Process thread starts and stops and Windows thread identity samples to the calibration-only ETW preflight. The reducer compares the issuing thread with the event header process and checks for an open file object under a matched thread owner. Ambiguous identities and lifecycle transitions invalidate a bookend match. The diagnostic does not use these observations to clear the strict blocker. All 59 targeted tests passed.
