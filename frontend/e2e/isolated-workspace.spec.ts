@@ -1420,6 +1420,17 @@ test('drag Your data onto Prepare page docks side by side without backend writes
  await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
  const dataTab=page.locator('.po-tab').filter({has:page.locator('#po-workspace-tab-understand')});
  await expect(dataTab).toBeVisible();
+ const externalDropsPrevented=await primary.evaluate(pane=>['file','url'].map(kind=>{
+  const dataTransfer=new DataTransfer();
+  if(kind==='file')dataTransfer.items.add(new File(['x\n1\n'],'synthetic.csv',{type:'text/csv'}));
+  else dataTransfer.setData('text/uri-list','https://example.invalid/dropped-link');
+  return ['dragover','drop'].every(type=>{
+   const event=new DragEvent(type,{bubbles:true,cancelable:true,dataTransfer});
+   return !pane.dispatchEvent(event);
+  });
+ }));
+ expect(externalDropsPrevented).toEqual([true,true]);
+ await expect(page.locator('.po-secondary-pane')).toBeHidden();
  // Real Chromium drag gesture, not synthetic dispatchEvent or a preseeded dock.
  await dataTab.dragTo(primary);
  const dock=page.locator('.po-secondary-pane');

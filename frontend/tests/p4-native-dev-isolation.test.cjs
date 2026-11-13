@@ -23,6 +23,12 @@ test("native dev uses a distinct app-local data and WebView identity", () => {
   assert.equal(dev.app?.appDirectoriesOverride, undefined);
   assert.equal(scripts["desktop:dev"], "node scripts/p4-isolated-native-dev.mjs");
 });
+test("production and isolated dev windows allow HTML workspace tab dragging on Windows", () => {
+  for (const config of [prod, dev]) {
+    const main = config.app.windows.find(window => window.label === "main");
+    assert.equal(main?.dragDropEnabled, false);
+  }
+});
 test("native dev refuses execution without separate local opt-in", () => {
   const p = spawnSync(process.execPath, ["scripts/p4-isolated-native-dev.mjs"], {
     cwd: root, encoding: "utf8",

@@ -495,6 +495,25 @@ export function UnifiedShell(){
   window.addEventListener('beforeunload',onBeforeUnload);
   return()=>window.removeEventListener('beforeunload',onBeforeUnload);
  },[projectId,workspaceReady,active,dock.secondary]);
+ // Keep dropped files and links from navigating the WebView away from the
+ // workspace. The file input can still accept files and tabs use custom types.
+ useEffect(()=>{
+  const preventDropNavigation=(event:DragEvent)=>{
+   const types=event.dataTransfer?.types;
+   const fileDrop=types?.includes('Files');
+   const fileInput=event.target instanceof HTMLInputElement&&event.target.type==='file';
+   if(fileDrop&&fileInput)return;
+   if(fileDrop||types?.includes('text/uri-list')){
+    event.preventDefault();
+   }
+  };
+  window.addEventListener('dragover',preventDropNavigation);
+  window.addEventListener('drop',preventDropNavigation);
+  return()=>{
+   window.removeEventListener('dragover',preventDropNavigation);
+   window.removeEventListener('drop',preventDropNavigation);
+  };
+ },[]);
  const confirmProjectDraftDiscard=():boolean=>{
   // A single prompt covers both forms when both are edited.
   if(editedPrimary.current?.projectId!==projectId)return confirmEditedDockDiscard('switch-project');
