@@ -38,6 +38,7 @@ on:
       - tests/test_p4_consolidated_acceptance.py
       - tests/test_p4_phase_exit_matrix.py
       - tests/test_p4_native_acceptance_kit.py
+      - tests/test_p4_n12_trace.py
       - tests/test_p4_installer_provenance.py
       - qa/p4_native/**
       - frontend/tests/p4-target-opportunities-contracts.test.cjs
@@ -115,6 +116,7 @@ jobs:
           tests/test_p4_consolidated_acceptance.py
           tests/test_p4_phase_exit_matrix.py
           tests/test_p4_native_acceptance_kit.py
+          tests/test_p4_n12_trace.py
           tests/test_p4_installer_provenance.py
       - name: Verify P4 source contracts and manual target choice
         run: >-
@@ -194,6 +196,7 @@ jobs:
             'Invoke_P4_Native_Project_Switch_Dialog.ps1',
             'Invoke_P4_Native_Project_Switch_Control.ps1',
             'Run_P4_71_Disposable_Windows.ps1',
+            'Export_P4_N12_Sysmon_Trace.ps1',
             'Test_P4_Native_Project_Switch_Automation.ps1'
           )) {
             $path = Join-Path (Resolve-Path './qa/p4_native').Path $script
@@ -210,3 +213,46 @@ jobs:
       - name: Verify close status for a Windows process opened by PID
         shell: pwsh
         run: ./qa/p4_native/Test_P4_Verified_Window_Close.ps1
+
+      - name: Python 3.11 for N12 synthetic Windows fixture
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Exercise N12 snapshot and calibration on generated files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONDONTWRITEBYTECODE = '1'
+          $fixture = Join-Path $env:RUNNER_TEMP "pilotodin-n12-fixture-$env:GITHUB_RUN_ID"
+          New-Item -ItemType Directory -Path $fixture | Out-Null
+          $original = Join-Path $fixture 'protected'
+          $observed = Join-Path $fixture 'input.csv'
+          $manifest = Join-Path $fixture 'manifest.json'
+          $before = Join-Path $fixture 'before.json'
+          $after = Join-Path $fixture 'after.json'
+          New-Item -ItemType Directory -Path $original | Out-Null
+          Set-Content -LiteralPath (Join-Path $original 'unchanged.txt') -Value 'generated'
+          Set-Content -LiteralPath $observed -Value @('id,amount','1,20')
+          @{
+            disposable = $true
+            protected_roots = @{ original = $original }
+            observed_roots = @{ input = $observed }
+            immutable_observed = @('input')
+            permitted_writes = @{ calibration = @((Join-Path $fixture 'calibration')) }
+          } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifest -Encoding utf8
+          python qa/p4_native/n12_trace.py snapshot $manifest $before
+          if ($LASTEXITCODE -ne 0) { throw 'N12 synthetic baseline failed.' }
+          $output = python qa/p4_native/n12_calibration.py (Join-Path $fixture 'calibration')
+          if ($LASTEXITCODE -ne 0) { throw 'N12 synthetic loopback/file calibration failed.' }
+          $calibration = $output | ConvertFrom-Json
+          if ($calibration.role -ne 'calibration' -or $calibration.port -le 0 -or
+              (Test-Path -LiteralPath $calibration.fixture) -or
+              (Test-Path -LiteralPath $calibration.renamed_fixture)) {
+            throw 'N12 calibration evidence inconsistent.'
+          }
+          python qa/p4_native/n12_trace.py snapshot $manifest $after
+          if ($LASTEXITCODE -ne 0 -or
+              (Get-FileHash -LiteralPath $before).Hash -ne (Get-FileHash -LiteralPath $after).Hash) {
+            throw 'N12 synthetic preservation check failed.'
+          }
+          Write-Host 'N12 synthetic Windows snapshot and loopback/file operation fixture passed.'

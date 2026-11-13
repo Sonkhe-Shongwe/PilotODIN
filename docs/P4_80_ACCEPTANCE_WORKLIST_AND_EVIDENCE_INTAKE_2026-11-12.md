@@ -264,6 +264,8 @@ The R05 interception log identified a stylesheet request from PilotODIN itself. 
 
 [P4 CI #43442391630](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43442391630) passed 185 Python tests, 78 Node checks, the TypeScript/Vite build, 13 real-HTTP Chromium cases and the synthetic Windows preservation collector checks. P4-62 verified both font faces loaded without an unexpected browser request. [P1 CI #43442391665](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43442391665) passed 187 Node checks, the build and seven Chromium cases. An unfiltered local Node discovery run found the same 50 failing assertions out of 711 tests on both the prior source and the font change.
 
+The [trace tools and runbook](../qa/p4_native/N12_TRACE.md) provide synthetic calibration, record-bounded Sysmon export, independent snapshots and offline reduction. Live collector coverage, blocked-attempt evidence and WebView NetLog attribution still need native verification.
+
 ### One disposable Windows session
 
 1. **Pin the run.** Record the source SHA, unpackaged executable SHA-256, Windows and WebView2 versions, clock in UTC, test steps and separate temporary WebView2, backend, project and evidence roots. Use generated data. Identify the protected paths using the existing runner's identity checks. Collect the starting inventory and file hashes independently of the app. Complete runner setup and downloads before the measured window, and make the expected loopback ports, writable roots and test-driver writes explicit.
