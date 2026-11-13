@@ -61,7 +61,7 @@ A **separate, future, explicitly approved** native isolation study may compare t
 
 ## D. Consolidated native acceptance is a conditional downstream task
 
-**Current state: N1–N10 passed in the direct Windows dialog run.** The later Windows run committed Quality version 1 and rejected stale version-0 reads, but Prepare failed to refresh after a project switch. Native verification of the refresh fix and relaunch, R04 layout, R05 Prepare and full N12 evidence remain open.
+**Current state: N1–N10 passed in the direct Windows dialog run.** The later Windows run committed Quality version 1 and rejected stale version-0 reads, but Prepare failed to refresh after a project switch. The Windows retest passed the refresh and WebView reload. Full native relaunch, R04 layout, R05 Prepare and full N12 evidence remain open.
 
 1. **Prerequisite:** explicit separate owner approval for any fresh unpackaged native compilation; maintain the owner's **no intermediate installers through P4–P7** directive. A new distributed EXE, MSI or NSIS is not authorised. Record any outstanding cases as **BLOCKED / NOT TESTED** until they are observed.
 2. **Preflight before any future permitted run:** freeze exact source commit and trusted native binary SHA; prove unique QA app ID, WebView profile, disposable `PILOTODIN_HOME`, no original-root paths, no inherited user data, no unintended cloud access. If any mismatch: **STOP**.
@@ -150,6 +150,12 @@ N11 stopped at HTTP 422. The harness omitted the mandatory `target` query parame
 [Windows run 43408216925, attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43408216925/job/131827825936) compiled one unpackaged app from `ba4895d94faf0c99261d03286abf3f106d2594da`. Executable SHA-256: `e4382ee708b8f6b40e2586958ec44c648137ef85c7d09d00dd23dbbad8f88b42`. The isolated WebView2 profile was present and N1–N10 passed again. On the disposable Quality fixture, the app approved the one-cell whitespace correction, displayed working version 1, and both version-0 Prepare and target-review requests returned HTTP 409. A direct version-1 Prepare request returned the expected plan. Returning to Prepare in the mounted desktop app still showed a version conflict. WebView reload and native process relaunch were not reached.
 
 The browser test had opened the Quality fixture directly. The desktop test reached it through the project selector, which hydrates the new Studio from a verified project snapshot. React Strict Mode replays mount effects in development. The cleanup invalidated the operation guard, and the handoff skipped the initial project load that would otherwise re-establish its scope. The revised mount effect re-establishes the handed-off project's scope. The browser regression now switches projects before applying the same Quality edit. The [parallel P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43408216797) passed at the native run source. The one-use workflow was disabled after dispatch. No installer or executable was transferred.
+
+### 13 November 2026 Windows Quality refresh retest
+
+[Windows run 43409810256](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43409810256/job/131833224767) compiled one unpackaged app from `4c20567c101297bea4b8b2a6a9db1997c7f0336e`, SHA-256 `1bc175ab8dc360ee552407c938bf56c4747ca0e6d98d46024a820467fc314011`. N1–N10 passed again. N11 passed through the actual Windows WebView: one-cell Quality approval, rejection of version-0 requests with HTTP 409, current Prepare version 1, and persistence after WebView reload. N12 verified the experiment count remained zero.
+
+The Windows close request was accepted and the original app process exited. The harness then reported an unsuccessful exit without logging a numeric code and stopped before starting the second process. The close check now retains the Windows process handle before posting the close request and reports the actual exit code. The corresponding synthetic Windows check covers both zero and nonzero codes. A second app process and its restored Prepare view are still unverified. The one-use workflow was disabled after dispatch.
 
 ## E. Practical order for the next sessions
 

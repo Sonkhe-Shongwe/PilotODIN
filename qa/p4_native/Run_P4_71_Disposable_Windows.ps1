@@ -63,6 +63,7 @@ $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT = 'I_APPROVE_UNPACKAGED_P4_NATIV
 $env:VITE_PILOTODIN_NATIVE_SMOKE = '1'
 # Remote debugger applies to disposable hosted WebView2 only. No other host is exposed.
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9331'
+. (Join-Path $PSScriptRoot 'Close_P4_Verified_Window.ps1')
 $backend = $null
 $native = $null
 $reopened = $null
@@ -121,14 +122,8 @@ try {
    if ($LASTEXITCODE -eq 3) { Fail 'Native project switch BLOCKED at the Windows confirmation. See the per-case probe output.' }
    if ($LASTEXITCODE -ne 0) { Fail 'Native WebView2 synthetic QA failed: preserve failure evidence, no repeat compilation under this approval' }
  } finally { Pop-Location }
- $closedApp = Get-Process -Id ([int]$env:P4_NATIVE_QA_APP_PID)
- $closedApp.Refresh()
- if (-not [string]::Equals($closedApp.Path, $binary, [StringComparison]::OrdinalIgnoreCase) -or
-     $closedApp.MainWindowTitle -ne $isolated.app.windows[0].title -or -not $closedApp.CloseMainWindow()) {
-   Fail 'Could not request normal Windows close on the verified QA app'
- }
- if (-not $closedApp.WaitForExit(15000)) { Fail 'The verified QA process did not exit after the Windows close request' }
- if ($closedApp.ExitCode -ne 0) { Fail 'The verified QA process reported an error while closing' }
+ $closedAppPid = [int]$env:P4_NATIVE_QA_APP_PID
+ Close-P4VerifiedWindow -AppProcessId $closedAppPid -ExpectedPath $binary -ExpectedTitle $isolated.app.windows[0].title
  Write-Host 'N11 isolated app accepted its Windows close request and exited normally.'
  if (-not $native.WaitForExit(10000)) {
    & taskkill.exe /PID $native.Id /T /F | Out-Null
@@ -159,7 +154,7 @@ try {
  }
  if ($oldDebuggerReady) { Fail 'The previous WebView debugger remained reachable after closing the app' }
  $reopened = Start-Process -FilePath $binary -WorkingDirectory (Split-Path $binary) -PassThru
- if ($reopened.Id -eq $closedApp.Id) { Fail 'Could not establish a distinct relaunched app process' }
+ if ($reopened.Id -eq $closedAppPid) { Fail 'Could not establish a distinct relaunched app process' }
  $env:P4_NATIVE_QA_APP_PID = [string]$reopened.Id
  Write-Host 'N11 started a new Windows app process from the same verified binary.'
  $relaunchCdp = $false

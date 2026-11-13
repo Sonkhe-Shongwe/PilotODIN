@@ -206,3 +206,6 @@ jobs:
       - name: Exercise Windows UI Automation against a synthetic dialog
         shell: powershell
         run: ./qa/p4_native/Test_P4_Native_Project_Switch_Automation.ps1
+      - name: Verify close status for a Windows process opened by PID
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_Verified_Window_Close.ps1
