@@ -1,24 +1,27 @@
 # PilotODIN | Documentation index
 
-**Current navigation:** 13 November 2026, branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence ACTIVE**. P1, P2 and P3 are closed for bounded development. P4-R02–R06 are open. Gate C is **UNVERIFIED** and required before real-world prediction use. The historical original whole-app-data integrity result is **STRICT FAIL**. P5 is not authorised and P8 is not certified.
+**Current navigation, 13 November 2026.** P4 Target Intelligence is active. R04 and R05 have scoped hosted Windows passes. N12 live Windows evidence, R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
 
 ## Current authoritative route, in reading order
 
 1. [Current session handoff](./SESSION_HANDOFF_CURRENT.md) for latest specific checkpoint and next evidence requirement (chronological history, **not** short).
 2. [Project status](./PROJECT_STATUS_CURRENT.md) for cross-phase disposition and release restrictions (chronological history).
 3. [One-primary-phase and owner closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) for governing authorisation, build freeze and acceptance decisions.
-4. [P4 owner acceptance go/no-go](./P4_23_CONSOLIDATED_WINDOWS_ACCEPTANCE_GO_NO_GO_2026-11-09.md), [P4 bounded closure proposal and owner refusal](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md), and [P4 evidence/physical native intake](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md).
+4. [Current P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) and [N12 Windows trace runbook](../qa/p4_native/N12_TRACE.md) for the outstanding evidence and next test.
 5. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and [P4 owner evidence Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9). Do not mistake a draft/CI run for final owner acceptance.
 
 ## Current phase evidence and recent checkpoints
+
+- **13 November N12 tooling:** [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43445876232) passed, including 16 new synthetic trace tests and the Windows calibration fixture. Live collector calibration is pending. [Handoff](./SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-trace-tools-prepared)
+- **13 November R05 fitted Prepare acceptance:** Scoped native Windows pass for encoded estimates, category examples, saved fitted-history reopening and the stale prediction guard. [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026--hosted-windows-r05-fitted-prepare-acceptance)
 
 - **13 November synchronized Windows docking retest:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-synchronized-windows-docking-retest). Drag-to-dock, explicit controls and responsive pause/restore passed. N12 remains partial.
 
 - **13 November remaining Windows acceptance:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-remaining-p4-windows-acceptance). Prepare resets, recorded strategy display, explicit docking and narrow-width restore passed. R04 drag produced no drop event. N12 network evidence remains partial.
 
-- **13 November consolidated Windows QA:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance). N11 same-binary relaunch passed. The tested Prepare controls passed. R04 drag-to-dock remains open after the workflow failed at that check.
+- **13 November consolidated Windows QA:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance). N11 same-binary relaunch passed. The tested Prepare controls passed. The run failed at R04 drag-to-dock. The later synchronized retest passed that case.
 
-- **13 November Windows:** [P4 Quality relaunch checkpoint](./SESSION_HANDOFF_CURRENT.md#13-november-2026--p4-quality-relaunch-checkpoint) and [native run record](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-windows-quality-refresh-retest). Hosted Windows passed the Quality edit, version guard, Prepare refresh and WebView reload. Same-binary Windows process relaunch is pending.
+- **13 November Windows:** [P4 Quality relaunch checkpoint](./SESSION_HANDOFF_CURRENT.md#13-november-2026--p4-quality-relaunch-checkpoint) and [native run record](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-windows-quality-refresh-retest). Hosted Windows passed the Quality edit, version guard, Prepare refresh and WebView reload. A later consolidated run passed the same-binary Windows process relaunch.
 - **13 November:** [Owner decision on Gate C](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c) moves real-world decision suitability to pre-use approval. The [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) tracks engineering closure against R02–R06.
 - **13 Nov owner correction (binding):** **No cold emailing or unsolicited external outreach as a requirement for progress.** P4-82 NESO outreach draft [withdrawn from the active plan](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md) and retained only as unsent history. No operator response required to continue safe in-scope technical work; R01 Gate C remains UNVERIFIED, P4 ACTIVE, no invented approval.
 - **P4-82:** [NESO Innovation team concept note and initial outreach draft, read-only research scope, methodology, dataset-rights/IP checks and explicit no-contact state](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md). Draft only, **Gate C UNVERIFIED**, no submission or training.

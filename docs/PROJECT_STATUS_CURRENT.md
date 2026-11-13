@@ -1,5 +1,20 @@
 # PilotODIN 1.0 | Current project status
 
+## 13 November 2026 | Current P4 engineering status
+
+| Item | Verified result and remaining work |
+| --- | --- |
+| **R02 / N12** | N1–N11 passed in scoped hosted Windows checks. N12 is partial. Trace tooling passed synthetic CI, including the Windows fixture. Calibrate live Sysmon and Process Monitor on disposable Windows, then collect startup-to-exit evidence in a separately approved native run. The historical WebView2 port 443 connection remains unattributed. [N12 runbook](../qa/p4_native/N12_TRACE.md) |
+| **R03** | Physical 8 GB offline coexistence remains untested. Confirm qualifying hardware and the existing pinned Qwen model and runtime, then measure generation alongside analytics and WebView2. [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) |
+| **R04** | Scoped hosted Windows docking retest passed drag-to-dock, explicit docking controls and narrow-width pause and restore. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) |
+| **R05 / BE-024** | Scoped hosted Windows acceptance passed Prepare category examples and encoded estimates, reopening a genuinely fitted experiment with saved preprocessing and Quality version, and the stale prediction guard. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563) |
+| **R06** | Historical original app-data integrity remains a strict failure with 74 file differences and an unknown writer. The earlier original EXE and backup matched, and the original project data subtree had zero file differences. Disposition remains open. [Evidence boundary](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#c-r06-non-intrusive-incident-evidence-intake) |
+| **Phase closure** | P4 stays active pending the remaining evidence and explicit owner signoff. P5 is unauthorised and P8 is uncertified. Gate C remains unverified and is required before real-world prediction use. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) |
+
+[P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43445876232) passed on [`a7bbe4a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a7bbe4a328b05b2676c7330524d5fd473f1da2bb) with 201 Python tests, 78 Node checks, the frontend build, 13 Chromium scenarios and the synthetic Windows fixture. [Current handoff](./SESSION_HANDOFF_CURRENT.md) records the next action.
+
+The dated checkpoints below preserve the evidence and decisions available at the time.
+
 ## 13 November 2026 | Owner decision on Gate C
 
 - **Gate C / R01 moves to pre-use approval.** It stays **UNVERIFIED** and applies before predictions inform a specific real-world decision. The owner removed it from P4 engineering closure. The [phase policy records the scope](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c).
