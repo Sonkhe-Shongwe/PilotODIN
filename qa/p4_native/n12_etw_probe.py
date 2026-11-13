@@ -6,7 +6,6 @@ import json
 import os
 import subprocess
 import sys
-import time
 from ctypes import wintypes
 from pathlib import Path
 from uuid import uuid4
@@ -67,7 +66,14 @@ def volume_device(drive):
 
 
 def utc_ticks():
-    return time.time_ns() // 100 + 621355968000000000
+    # Python 3.11's Windows wall clock can lag the ETW event clock by several
+    # milliseconds. Read the precise UTC FILETIME before start and after stop.
+    stamp = wintypes.FILETIME()
+    get_time = ctypes.WinDLL("kernel32").GetSystemTimePreciseAsFileTime
+    get_time.argtypes = (ctypes.POINTER(wintypes.FILETIME),)
+    get_time.restype = None
+    get_time(ctypes.byref(stamp))
+    return (stamp.dwHighDateTime << 32 | stamp.dwLowDateTime) + 504911232000000000
 
 
 def run_writer(code, *paths):
