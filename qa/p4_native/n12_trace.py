@@ -219,6 +219,25 @@ def file_mutation(row):
     return MUTATIONS.get(op)
 
 
+def unresolved_path_kind(value):
+    if value is None:
+        return "destination-field-missing"
+    path = value.strip().replace("/", "\\").casefold()
+    if not path:
+        return "empty"
+    if path.startswith(("\\device\\namedpipe\\", "\\\\.\\pipe\\", "\\\\?\\pipe\\")):
+        return "named-pipe"
+    if path.startswith(("\\\\?\\", "\\\\.\\", "\\??\\", "\\device\\")):
+        return "device-or-extended"
+    if path.startswith("\\\\"):
+        return "unc"
+    if path.startswith("\\"):
+        return "rooted-without-drive"
+    if re.match(r"^[a-z]:", path):
+        return "drive-relative"
+    return "relative-or-unrecognized"
+
+
 def inspect_files(path, start, end, processes, roles, protected, permitted, issues):
     lifetimes = {}
     for process in processes.values():
@@ -226,6 +245,7 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
     counts = Counter()
     calibration = set()
     violations = Counter()
+    unresolved = Counter()
     with path.open(encoding="utf-8-sig", newline="") as stream:
         rows = csv.DictReader(stream)
         require({"Time of Day", "PID", "Operation", "Path", "Result", "Detail",
@@ -255,6 +275,7 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
                 # audit incomplete if an owned event cannot be placed.
                 if role != "other" or operation in {"rename", "link"}:
                     issues.add("file-mutation-path-unresolved")
+                    unresolved[role, operation, "source", unresolved_path_kind(row["Path"])] += 1
                 continue
             if operation in {"rename", "link"}:
                 match = re.search(r"(?:^|,\s*)FileName: (.*)$", row["Detail"])
@@ -263,6 +284,8 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
                 except ValueError:
                     # Any process could move into a protected root.
                     issues.add("file-mutation-path-unresolved")
+                    unresolved[role, operation, "destination",
+                               unresolved_path_kind(match[1] if match else None)] += 1
             if any(inside(target, root) for target in targets for root in protected):
                 if operation == "ambiguous-create":
                     issues.add("protected-create-result-unresolved")
@@ -279,7 +302,11 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
                 violations[f"outside-scope:{role}:{operation}"] += 1
             if role == "calibration":
                 calibration.add((process.guid, operation, *targets))
-    return counts, violations, calibration
+    diagnostics = [
+        {"role": role, "operation": operation, "field": field, "kind": kind, "count": count}
+        for (role, operation, field, kind), count in sorted(unresolved.items())
+    ]
+    return counts, violations, calibration, diagnostics
 
 
 def scoped_network(connections, roles, ports):
@@ -424,7 +451,7 @@ def check_calibration(manifest, sysmon, procmon):
             and 1 <= root["port"] <= 65535, "invalid calibration fixture")
     roles, bindings = bind_processes([root], processes, issues)
     permitted = {"calibration": [ntpath.dirname(windows_path(root["fixture"]))]}
-    counts, violations, file_events = inspect_files(
+    counts, violations, file_events, path_diagnostics = inspect_files(
         procmon, start, end, processes, roles, (), permitted, issues)
     if bindings:
         calibration_window(root, bindings[0][1], processes, connections, file_events, issues)
@@ -437,6 +464,7 @@ def check_calibration(manifest, sysmon, procmon):
     return {"schema_version": 1, "scope": "collector calibration only",
             "coverage": "BLOCKED" if issues else "CALIBRATED",
             "coverage_issues": sorted(issues), "file_events": counts,
+            "unresolved_file_paths": path_diagnostics,
             "native_n12_accepted": False}
 
 
@@ -460,7 +488,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
                              markers["reopen"] <= apps[1].start < markers["exit"] and
                              apps[1].end and markers["exit"] <= apps[1].end):
         issues.add("app-lifecycle-does-not-match-journey")
-    file_counts, violations, file_events = inspect_files(
+    file_counts, violations, file_events, path_diagnostics = inspect_files(
         procmon, start, end, processes, roles, protected, permitted, issues)
     verify_calibrations(bindings, processes, connections, file_events, markers, issues)
     ports = manifest["loopback_ports"]
@@ -493,6 +521,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
         "network_scope": "Sysmon-observed TCP/UDP connections, excluding blocked attempts",
         "native_n12_accepted": False,
         "filesystem": filesystem, "file_events": file_counts, "file_violations": violations,
+        "unresolved_file_paths": path_diagnostics,
         "snapshot_changes": snapshots, "unexpected_snapshot_changes": changed,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }

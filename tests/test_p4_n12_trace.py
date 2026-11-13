@@ -150,6 +150,7 @@ def test_calibrated_trace_reports_scoped_results_and_keeps_history(tmp_path):
     assert report["native_n12_accepted"] is False
     assert report["process_roles"]["webview-network"] == 2
     assert report["file_events"]["calibration:resize"] == 2
+    assert report["unresolved_file_paths"] == []
 
 
 def standalone_capture(tmp_path, evidence, **kwargs):
@@ -160,6 +161,36 @@ def standalone_capture(tmp_path, evidence, **kwargs):
     manifest["calibration"] = next(root for root in evidence.manifest["processes"]
                                    if root["role"] == "calibration")
     return manifest, sysmon, procmon
+
+
+def test_unresolved_paths_are_counted_and_redacted_in_both_modes(tmp_path):
+    evidence = Evidence()
+    for _ in range(2):
+        evidence.write(4, 31, "WriteFile", r"\Device\NamedPipe\private-pipe")
+    evidence.write(4, 31, "WriteFile", r"\\?\Volume{private-id}\private-file")
+    evidence.write(4, 555, "SetRenameInformationFile", r"C:\QA\unknown",
+                   "ReplaceIfExists: True", exe="private-process.exe")
+    evidence.write(4, 555, "SetLinkInformationFile", r"C:\QA\unknown",
+                   r"FileName: \\private-server\private-share", exe="private-process.exe")
+    evidence.write(4, 555, "SetRenameInformationFile", r"\Device\private-volume\private-file")
+    evidence.write(4, 555, "WriteFile", r"\Device\NamedPipe\private-ignored-pipe")
+
+    expected = [
+        ("calibration", "write", "source", "device-or-extended", 1),
+        ("calibration", "write", "source", "named-pipe", 2),
+        ("other", "link", "destination", "unc", 1),
+        ("other", "rename", "destination", "destination-field-missing", 1),
+        ("other", "rename", "source", "device-or-extended", 1),
+    ]
+    for report in (trace.check_calibration(*standalone_capture(tmp_path, evidence)),
+                   evidence.report(tmp_path)):
+        assert report["coverage"] == "BLOCKED"
+        assert "file-mutation-path-unresolved" in report["coverage_issues"]
+        assert report["unresolved_file_paths"] == [
+            dict(role=role, operation=operation, field=field, kind=kind, count=count)
+            for role, operation, field, kind, count in expected
+        ]
+        assert "private-" not in json.dumps(report)
 
 
 def test_standalone_calibration_cli_requires_no_app_journey(tmp_path):

@@ -28,6 +28,12 @@ python qa/p4_native/n12_trace.py check-calibration $manifest $sysmonXml $procmon
 
 Exit 0 confirms both collectors recorded the declared Python parent and child, executable hashes, child loopback TCP and UDP, and the expected file creation, write, resize, rename destination and deletion in the fixture. Exit 2 indicates blocked or invalid evidence. The report keeps native N12 acceptance pending. Repeat the two calibration bookends during the separately approved native capture.
 
+### Diagnose blocked Process Monitor coverage
+
+- `unresolved_file_paths` groups blocking rows by process role, mutation, source or destination field, and path form. It includes counts only for those groups. Review the corresponding rows privately in runner temp before adding path handling. An unrecognised path still blocks coverage, including a rename or link that could affect a protected root.
+- Record stop-command, capture-process and export outcomes separately. [Run #43458458941](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43458458941) observed capture exit code 1 despite a successful stop command, readable export and matching fixture events. Keep its diagnostic disposition. [Microsoft's stop procedure](https://learn.microsoft.com/en-us/troubleshoot/windows-client/shell-experience/troubleshoot-apps-start-failure-use-process-monitor) does not establish what that exit code means.
+- Keep `procmon_loss_reviewed` false if the available evidence is a readable export and observed fixture markers. Those checks establish the presence of specific events. To evaluate a separate source for continuity, [Windows ETW exposes event and buffer loss counters](https://learn.microsoft.com/en-us/windows/desktop/ETW/event-trace-properties). A candidate file-I/O collector must demonstrate the same five mutations, process identity and path attribution, including cross-root moves and writes by other processes. Its counters describe its own trace. Require evidence for the source used in the audit before changing the coverage gate.
+
 ## Collector requirements for the disposable Windows run
 
 1. Finish building and staging the unpackaged app before the measured window. Use one UTC day. Use the approved exact build, fresh disposable profiles, a loopback backend and generated data. Independently take the initial snapshots and record the source commit and executable SHA-256.
