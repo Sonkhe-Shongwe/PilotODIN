@@ -238,6 +238,12 @@ The regular [P4 CI run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs
 
 **Wider R05 remains open.** Native display of the new estimates and persistence/reopening of a fitted experiment with the selected strategies still need evidence.
 
+## 13 November 2026 | BE-024 fitted experiment persistence
+
+**PASS in the disposable backend.** The [regression](../tests/test_ml_a3_preparation_and_split_safety.py) uploaded 40 generated rows, approved a Quality change, and fitted one logistic regression candidate through the normal experiment API. A fresh ASGI lifespan read the completed experiment from SQLite and reopened the fitted artifact. The record and pipeline agreed on mean imputation and the categorical missing marker. The numeric statistic used the development rows. Predict succeeded on the saved Quality version, and returned HTTP 409 when the project advanced. The historical record stayed pinned to version 1 and the source CSV bytes were preserved. The focused local backend run passed 33 tests.
+
+**Native evidence pending.** The current Prepare estimates and the fitted-record reopen still need a Windows UI check. The [P4-79 browser scenario](./P4_79_SAVED_EXPERIMENT_READ_ONLY_BROWSER_ACCEPTANCE_2026-11-12.md) uses read-only response fixtures and remains evidence for display only.
+
 ## E. Practical order for the next sessions
 
 | Priority | Next deliverable | Who supplies the missing fact | Stop / done rule |

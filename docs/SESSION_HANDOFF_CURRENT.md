@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | BE-024 fitted experiment persistence
+
+- The [synthetic backend regression](../tests/test_ml_a3_preparation_and_split_safety.py) exercised the actual training worker, SQLite and saved model artifacts on 40 generated rows. A new ASGI app lifespan reopened the completed experiment from project history and verified mean imputation, the categorical missing marker and Quality version 1. The fitted numeric statistic matched the development rows. After a Quality change advanced the project to version 2, the saved settings and results stayed pinned to version 1 and Predict returned HTTP 409.
+- The focused local backend run passed all 33 tests. The [P4-79 browser case](./P4_79_SAVED_EXPERIMENT_READ_ONLY_BROWSER_ACCEPTANCE_2026-11-12.md) separately covers Evaluate and Predict rendering from saved-shaped API responses. The fitted regression used only a temporary backend store and left the uploaded fixture bytes intact.
+- **Next:** Carry the fitted persistence evidence into R05. Current-source Windows display for the Prepare estimates and reopening a fitted record still need native evidence. N12 remains partial, physical R03 remains untested, and historical R06 remains unresolved. P4 stays active.
+
 ## 13 November 2026 | BE-024 per-field encoded-column estimates
 
 - [efcf906](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/efcf906a5ee02024edbe1d280e23f59986f7773c) shows an estimated encoded-column contribution for every Prepare audit row. Excluded fields, split keys and unusable fields contribute zero. The selected total uses the same per-field calculation. A missing-marker category contributes up to one additional column where categorical values are missing, subject to the 25-column cap. The backend uses the chosen strategy to recheck the budget on labelled rows before admitting or fitting an experiment.

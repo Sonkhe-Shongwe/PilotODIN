@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+import joblib
 import numpy as np
 import pandas as pd
 import pytest
 from fastapi import BackgroundTasks, HTTPException
+from fastapi.testclient import TestClient
 
-from backend import engine, main
+from backend import engine, main, storage
 
 
 def classification_frame():
@@ -53,6 +55,99 @@ def test_prepare_explains_every_candidate_without_preemptive_mutation():
     assert by_name["AllMissing"]["default_included"] is False
     assert by_name["Constant"]["risk"]=="review"
     assert frame.equals(before)
+
+
+def test_fitted_experiment_reopens_with_original_preprocessing_and_quality_version(tmp_path, monkeypatch):
+    """Exercise the real worker and SQLite across two isolated ASGI lifespans."""
+    home = tmp_path / "pilotodin"
+    (home / "datasets").mkdir(parents=True)
+    (home / "models").mkdir()
+    monkeypatch.setattr(storage, "HOME", home)
+    monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
+    monkeypatch.setattr(main.ai_provider, "CONFIG_PATH", home / "ai_settings.json")
+    monkeypatch.setattr(main.ai_provider, "SECRETS_PATH", home / "ai_secrets.dpapi")
+    monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
+    storage.init()
+    main.quality._init_tables()
+
+    frame = classification_frame().drop(columns=["Final_Result_After", "Constant", "AllMissing"])
+    frame.loc[frame.index % 5 == 0, "Channel"] = None
+    frame.loc[1, "Channel"] = " Retail "
+    original = frame.to_csv(index=False).encode("utf-8")
+
+    def apply_quality(client, project_url, proposal):
+        preview = client.post(project_url + "/quality/proposals", json=proposal)
+        assert preview.status_code == 200, preview.text
+        receipt = preview.json()
+        commit = client.post(project_url + "/quality/commit", json={
+            key: receipt[key] for key in ("proposal_id", "proposal_hash")
+        })
+        assert commit.status_code == 200, commit.text
+        return commit.json()["version"]
+
+    with TestClient(main.app) as client:
+        created = client.post("/api/projects", files={"file": ("synthetic.csv", original, "text/csv")})
+        assert created.status_code == 201, created.text
+        project_id = created.json()["id"]
+        project_url = f"/api/projects/{project_id}"
+        assert apply_quality(client, project_url, {"operation": "autopilot", "expected_version": 0}) == 1
+        response = client.post(project_url + "/experiments", json={
+            "target": "Flagged", "task": "classification", "models": ["logistic_regression"],
+            "excluded_features": ["CustomerID"], "acknowledge_random_split": True,
+            "expected_quality_version": 1, "numeric_imputation": "mean", "categorical_imputation": "constant",
+        })
+        assert response.status_code == 202, response.text
+        experiment_id = response.json()["id"]
+        experiment_url = f"/api/experiments/{experiment_id}"
+        completed = client.get(experiment_url).json()
+        assert completed["status"] == "completed", completed["error"]
+        assert completed["dataset_version"] == completed["current_version"] == 1
+        assert completed["is_stale"] is False
+        config = completed["config"]
+        assert {key: config[key] for key in ("numeric_imputation", "categorical_imputation", "quality_version")} == {
+            "numeric_imputation": "mean", "categorical_imputation": "constant", "quality_version": 1,
+        }
+        assert completed["results"]["features"] == ["Amount", "Channel"]
+
+    with TestClient(main.app) as reopened:
+        history = reopened.get(project_url).json()["experiments"]
+        assert [(item["id"], item["status"]) for item in history] == [(experiment_id, "completed")]
+        assert reopened.get(experiment_url).json() == completed
+
+        artifacts = home / "models" / experiment_id
+        pipe = joblib.load(artifacts / "logistic_regression.joblib")
+        holdout, _ = joblib.load(artifacts / "test_set.joblib")
+        approved, version = main.quality.current_data(project_id)
+        assert version == 1
+        development = approved.drop(index=holdout.index)
+        preprocessing = pipe.named_steps["preprocessor"].named_transformers_
+        numeric = preprocessing["numeric"].named_steps["imputer"]
+        categorical = preprocessing["categorical"].named_steps
+        assert numeric.strategy == "mean"
+        assert numeric.statistics_[0] == pytest.approx(development["Amount"].mean())
+        assert categorical["imputer"].strategy == "constant"
+        assert engine.CATEGORICAL_MISSING_MARKER in categorical["encoder"].categories_[0]
+        assert " Retail " not in categorical["encoder"].categories_[0]
+
+        selected = reopened.post(experiment_url + "/select", json={"model_key": "logistic_regression"})
+        assert selected.status_code == 200, selected.text
+        predict_url = experiment_url + "/predict"
+        payload = {"values": {"Amount": None, "Channel": None}}
+        prediction = reopened.post(predict_url, json=payload)
+        assert prediction.status_code == 200, prediction.text
+        assert prediction.json()["dataset_version"] == 1
+
+        assert apply_quality(reopened, project_url, {
+            "operation": "restore", "expected_version": 1, "target_version": 0,
+        }) == 2
+        historical = reopened.get(experiment_url).json()
+        assert historical["config"] == config
+        assert historical["results"] == completed["results"]
+        assert historical["selected_model"] == "logistic_regression"
+        assert (historical["dataset_version"], historical["current_version"], historical["is_stale"]) == (1, 2, True)
+        assert reopened.post(predict_url, json=payload).status_code == 409
+        source = storage.get_project(project_id)["dataset_path"]
+        assert (home / "datasets" / source).read_bytes() == original
 
 
 def test_train_api_refuses_unreviewed_included_risks_and_records_acknowledgement(monkeypatch):
