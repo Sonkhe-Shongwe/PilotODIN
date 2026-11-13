@@ -1,6 +1,6 @@
 # A disposable fixture probe. The ETL and raw event payloads stay in runner temp.
 [CmdletBinding()]
-param([switch]$WithSysmon)
+param([switch]$WithSysmon, [switch]$CalibrationOnly)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -19,8 +19,8 @@ if ($WithSysmon) {
         throw 'Combined rehearsal blocked: a configured Sysmon operational channel is required.'
     }
     $firstRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId + 1
-    $probeArgs += '--calibration-only'
 }
+if ($WithSysmon -or $CalibrationOnly) { $probeArgs += '--calibration-only' }
 $result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
 if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
 $capture = $result | ConvertFrom-Json
@@ -132,14 +132,20 @@ $summary = @{
 $summary | ConvertTo-Json -Depth 6 | Write-Host
 $expected = @(
     'fixture:create:original', 'fixture:write:original', 'fixture:resize:original',
-    'fixture:rename:original:renamed', 'fixture:delete:renamed',
-    'second-writer:rename:source:destination',
-    'other:create:protected', 'other:write:protected', 'other:delete:protected'
+    'fixture:rename:original:renamed', 'fixture:delete:renamed'
 )
+if (-not $CalibrationOnly) {
+    $expected += @('second-writer:rename:source:destination',
+        'other:create:protected', 'other:write:protected', 'other:delete:protected')
+    if ($summary.correlation.operations.Contains('second-writer:create:source') -or
+        -not $summary.correlation.failed.Contains('second-writer:open:source') -or
+        $summary.correlation.protected_writes -lt 1) {
+        throw 'ETW fixture failed the second-writer or protected-directory control.'
+    }
+} elseif ($summary.correlation.protected_writes -ne 0) {
+    throw 'The calibration-only fixture observed an unexpected protected-directory mutation.'
+}
 $missing = @($expected | Where-Object { -not $summary.correlation.operations.Contains($_) })
-if ($missing.Count -or $summary.correlation.unresolved.Count -or
-    $summary.correlation.operations.Contains('second-writer:create:source') -or
-    -not $summary.correlation.failed.Contains('second-writer:open:source') -or
-    $summary.correlation.protected_writes -lt 1) {
+if ($missing.Count -or $summary.correlation.unresolved.Count) {
     throw "ETW fixture correlation incomplete. Missing: $($missing -join ', ')."
 }

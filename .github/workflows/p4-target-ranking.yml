@@ -269,3 +269,7 @@ jobs:
       - name: Probe Windows ETW loss counters and generated fixture events
         shell: pwsh
         run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1
+
+      - name: Verify the combined rehearsal fixture with ETW alone
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -CalibrationOnly

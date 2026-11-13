@@ -83,6 +83,16 @@ def test_etw_failed_open_and_reused_pid_and_file_object():
     assert report["operations"]["other:overwrite:protected"] == 1
     assert report["unresolved"]["other:open:process-lifetime-missing"] == 1
 
+    # The smaller combined rehearsal fixture has no second writer.
+    capture["second_writer"] = None
+    report = correlate(capture, rows[:4])
+    assert report == {"operations": {"fixture:create:original": 1}, "failed": {},
+                      "unresolved": {}, "protected_writes": 0}
+    assert correlate(capture, rows[1:4])["unresolved"] == {
+        "fixture:process-start-missing-or-ambiguous": 1,
+        "other:open:process-lifetime-missing": 1,
+    }
+
 BASE = "2026-11-13"
 PYTHON = r"C:\Runtime\python.exe"
 APP = r"C:\Build\pilotodin-desktop.exe"

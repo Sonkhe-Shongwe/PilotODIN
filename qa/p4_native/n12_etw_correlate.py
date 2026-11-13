@@ -143,16 +143,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
 
 def correlate(capture, events):
     fixture, writer = capture["fixture"], capture["second_writer"]
-    paths = {path.casefold(): label for label, path in (
-        ("original", fixture["fixture"]), ("renamed", fixture["renamed_fixture"]),
-        ("source", writer["source"]), ("destination", writer["destination"]),
-    )}
+    paths = {fixture["fixture"].casefold(): "original", fixture["renamed_fixture"].casefold(): "renamed"}
     protected_prefix = capture["protected_root"].casefold() + "\\"
     devices = {capture["device"].casefold(): fixture["fixture"][:2].casefold()}
-    declared = (
-        (fixture["child_pid"], fixture["start_window"], "fixture"),
-        (writer["pid"], writer["start_window"], "second-writer"),
-    )
+    declared = [(fixture["child_pid"], fixture["start_window"], "fixture")]
+    if writer is not None:
+        paths.update({writer["source"].casefold(): "source", writer["destination"].casefold(): "destination"})
+        declared.append((writer["pid"], writer["start_window"], "second-writer"))
     witnessed, failed = Counter(), Counter()
     lifecycles = {actor: set() for _, _, actor in declared}
     protected_writes = 0
