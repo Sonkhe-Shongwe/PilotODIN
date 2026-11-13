@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 ETW fixture mutation correlation
+
+- [Source `741a640`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/741a640525b5b7cf51cf2de18fa95523c350bfb4) correlates Kernel File open and mutation requests by file object and IRP, checks successful completion status, and matches exact fixture paths against the resolved Windows device and drive names. Rename events must identify the expected source and destination. The fixture uses an independent second process to move a generated file across directories on the same volume.
+- [Exact-source P4 CI #43462574499](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43462574499) passed all three jobs. Hosted Windows observed one create, two writes, one resize, one exact rename and one delete from the fixture child, plus one exact cross-directory rename from the second writer. The probe reported no unresolved tracked requests and zero event or buffer losses across 15 buffers. The focused local suite passed 45 tests. Raw traces stayed in runner temp.
+- **Next:** Validate ETW path and completion correlation against failed requests, identity reuse, and protected-directory writes from processes beyond the two known fixture writers before using it in a native journey. The fixture result applies to generated files and two declared writer PIDs. N12 is partial, the native journey remains pending, and the historical Process Monitor limitations and port 443 observation retain their disposition.
+
 ## 13 November 2026 | N12 ETW fixture feasibility
 
 - [Source `52ea97d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/52ea97d24c7131ad27a15bd6d720dacbd398719b) adds a disposable ETW probe to P4 Windows CI. It uses built-in Windows tooling, records Kernel File events from the generated fixture, reads ETW loss counters at session stop and publishes counts and field names. Raw traces stay in runner temp.
