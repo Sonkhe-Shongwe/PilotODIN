@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <filesystem>
+#include <cwchar>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -20,6 +22,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace {
 constexpr ULONG kRundownOpcode = 36;
@@ -149,7 +152,7 @@ ULONG get_property(
     std::vector<BYTE>& value) {
     PROPERTY_DATA_DESCRIPTOR descriptor{};
     descriptor.PropertyName = reinterpret_cast<ULONGLONG>(propertyName);
-    descriptor.ArrayIndex = ULONG_MAX;
+    descriptor.ArrayIndex = MAXULONG;
     descriptor.Reserved = 0;
 
     ULONG size = 0;
@@ -448,7 +451,7 @@ int wmain(int argc, wchar_t* argv[]) {
     }
 
     Context context;
-    context.output.open(argv[2], std::ios::binary | std::ios::trunc);
+    context.output.open(std::filesystem::path(argv[2]), std::ios::binary | std::ios::trunc);
     if (!context.output) {
         std::cerr << "Could not create the private rundown output file.\n";
         return 2;
