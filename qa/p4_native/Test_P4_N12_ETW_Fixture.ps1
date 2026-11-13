@@ -30,6 +30,9 @@ $result | Set-Content -LiteralPath $manifestPath -Encoding utf8
 $provider = [guid]'edd08927-9cc4-4e65-b970-c2560fb5c289'
 $processProvider = [guid]'22fb2cd6-0e7b-422b-a0c7-2fad1fd0e716'
 $ids = @{}
+$captureStart = [long]$capture.start_ticks
+$captureEnd = [long]$capture.end_ticks
+$outside = @{}
 $stream = [IO.StreamWriter]::new($eventsPath, $false, [Text.UTF8Encoding]::new($false))
 try {
     Get-WinEvent -Path (Join-Path $root 'fixture.etl') -Oldest | ForEach-Object {
@@ -41,6 +44,16 @@ try {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
         }
         if ($isLifecycleEvent -or ($isFileEvent -and $eventId -in 12,14,16,17,18,19,23,24,27,29,34)) {
+            $ticks = $event.TimeCreated.ToUniversalTime().Ticks
+            if ($ticks -lt $captureStart -or $ticks -gt $captureEnd) {
+                $side = if ($ticks -lt $captureStart) { 'before' } else { 'after' }
+                $offset = if ($side -eq 'before') { $captureStart - $ticks } else { $ticks - $captureEnd }
+                $kind = if ($isLifecycleEvent) { 'process' } else { 'file' }
+                $key = "$side-$kind-$eventId"
+                if (-not $outside.ContainsKey($key)) { $outside[$key] = @{ count = 0; max_ticks = 0 } }
+                $outside[$key].count++
+                $outside[$key].max_ticks = [Math]::Max([long]$outside[$key].max_ticks, $offset)
+            }
             $xml = [xml]$event.ToXml()
             $fields = @{}
             foreach ($field in $xml.SelectNodes("//*[local-name()='EventData']/*[local-name()='Data']")) {
@@ -49,7 +62,7 @@ try {
             $stream.WriteLine((@{
                 id = $eventId
                 pid = $event.ProcessId
-                ticks = $event.TimeCreated.ToUniversalTime().Ticks
+                ticks = $ticks
                 lifecycle = $isLifecycleEvent
                 data = $fields
             } | ConvertTo-Json -Compress -Depth 4))
@@ -57,6 +70,10 @@ try {
     }
 } finally {
     $stream.Dispose()
+}
+if ($outside.Count) {
+    Write-Host ('ETW events outside capture bounds by event ID: ' +
+        ($outside | ConvertTo-Json -Compress))
 }
 $drive = [IO.Path]::GetPathRoot($root).TrimEnd('\')
 $devices = @{}
