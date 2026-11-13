@@ -1,4 +1,5 @@
 import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
+import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -96,16 +97,15 @@ async function runNativeProbe(browser) {
  for(const kind of ['classification','regression','rare','insufficient','neutral'])ids[kind]=await create(kind);
  const all=Object.values(ids);
  try{
-  await page.evaluate(id=>localStorage.setItem('pilotodin-current',id),ids.classification);
-  await page.goto(SITE+'/#/studio/prepare',{waitUntil:'domcontentloaded'});
+  await openP4FixtureWorkspace(page,SITE,ids.classification);
   const section=page.getByRole('region',{name:'Potential prediction opportunities'});
   const chooser=page.getByRole('combobox',{name:'Switch project'});
   const target=page.getByLabel('TARGET VARIABLE');
   const checkpoint=section.getByRole('group',{name:'Selected target suitability checkpoint'});
   const blockers=checkpoint.getByRole('alert',{name:'Selected target structural blockers'});
   const reviewCards=section.locator('article.model-choice');
+  await expect(chooser).toHaveValue(ids.classification,{timeout:45000});
   await expect(section).toBeVisible({timeout:45000});
-  await expect(chooser).toHaveValue(ids.classification);
   console.log('N1 actual native WebView and disposable backend: PASS');
   await expect(reviewCards).toHaveCount(3);
   await expect(section).toContainText('churn');

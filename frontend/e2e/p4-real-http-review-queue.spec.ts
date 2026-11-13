@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
+import {openP4FixtureWorkspace} from './p4-open-fixture-workspace.mjs';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
@@ -59,6 +60,14 @@ test('P4-05 real HTTP: review ordering, other targets and explicit selection onl
      process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
    throw Error('Only trusted disposable GitHub browser tests may execute');
 
+  // Match the native probe: the shell initially loads an empty catalogue.
+  const [initialCatalogue]=await Promise.all([
+   page.waitForResponse(response=>response.url()===API+'/api/projects'&&response.ok()),
+   page.goto('/'),
+  ]);
+  expect(await initialCatalogue.json()).toEqual([]);
+  await expect(page.getByRole('option',{name:'No projects imported yet'})).toBeAttached();
+
   // This pre-test fixture upload happens through Playwright's isolated API
   // client before the page's strict read-only request allowlist starts.
   const res=await request.post(API+'/api/projects',{multipart:{
@@ -75,12 +84,8 @@ test('P4-05 real HTTP: review ordering, other targets and explicit selection onl
   expect(data.other_reviewable.length).toBeGreaterThan(0);
 
   const blocked=await readOnlyBrowserGuard(context,projectId);
-  await page.addInitScript((id:string)=>{
-   localStorage.setItem('pilotodin-current',id);
-   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['prepare']));
-   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
-  },projectId);
-  await page.goto('/#/studio/prepare');
+  await openP4FixtureWorkspace(page,UI,projectId);
+  await expect(page.getByRole('combobox',{name:'Switch project'})).toHaveValue(projectId);
   const section=page.getByRole('region',{name:'Potential prediction opportunities'});
   await expect(section).toBeVisible();
   await expect(section.getByText('Review order, not an estimated business-value ranking.',{
