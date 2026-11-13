@@ -4,6 +4,7 @@ import {Buffer} from 'node:buffer';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {openP4FixtureWorkspace} from './p4-open-fixture-workspace.mjs';
+import {verifyPrepareFittedAcceptance} from './p4-prepare-fitted-acceptance.mjs';
 import {p4PreparationRequestUrl} from './p4-preparation-request.mjs';
 import {p4QualityFixture,verifyP4QualityAfterRelaunch,verifyP4QualityTransition} from './p4-quality-version-transition.mjs';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
@@ -29,7 +30,7 @@ test.afterEach(async()=>{
  if(backend){const owned=backend;backend=null;await stopDisposableBackend(owned)}
 });
 
-async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[],extraProjectIds:string[]=[],qualityWrites?:string[]){
+async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[],extraProjectIds:string[]=[],qualityWrites?:string[],extraReads:string[]=[]){
  const blocked:string[]=[];
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
@@ -44,7 +45,7 @@ async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allo
    const p=url.pathname.slice('/api'.length);
    const expected=[projectId,...extraProjectIds].some(id=>
     p===`/projects/${id}`||p.startsWith(`/projects/${id}/`))
-    ||p==='/projects'||p==='/ai/settings';
+    ||p==='/projects'||p==='/ai/settings'||extraReads.includes(p);
    if(expected){await route.continue();return}
   }
   if(allowedContextWrites&&url.origin===API&&method==='POST'&&
@@ -975,4 +976,19 @@ test('P4 N11 real HTTP: Quality approval refreshes Prepare and survives a browse
       expect((await project.json()).experiments).toEqual([]);
     }finally{await reopened.close()}
   }finally{await rm(profile,{recursive:true,force:true})}
+});
+
+test('BE-024 real HTTP: reopen a fitted synthetic experiment and block stale prediction',async({page,context})=>{
+ const projectIds:string[]=[];
+ const experimentReads:string[]=[];
+ const blocked=await readOnlyBrowserGuard(context,'',undefined,projectIds,undefined,experimentReads);
+ await page.goto('/');
+ await verifyPrepareFittedAcceptance(page,{
+  site:UI,api:API+'/api',request:fetch,requireEmptyStore:false,
+  allowRead:(path:string)=>{
+   if(path.startsWith('/projects/'))projectIds.push(path.split('/').at(-1)!);
+   else experimentReads.push(path);
+  },
+ });
+ expect(blocked).toEqual([]);
 });

@@ -3,6 +3,7 @@ import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
 import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityAfterRelaunch, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
 import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
 import { dragWorkspaceTab, prepareWorkspaceTabDrag } from './p4-drag-workspace-tab.mjs';
+import { verifyPrepareFittedAcceptance } from './p4-prepare-fitted-acceptance.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -21,9 +22,10 @@ const mode=process.argv[2];
 const relaunch=mode==='--verify-relaunch';
 const dockingOnly=mode==='--verify-docking';
 const acceptance=mode==='--verify-acceptance';
+const fittedPrepare=mode==='--verify-fitted-prepare';
 const receiptPath=join(process.env.PILOTODIN_HOME,'p4-synthetic-projects.json');
 const captureDir=join(process.env.PILOTODIN_HOME,'captures');
-if(process.argv.length!==(relaunch||dockingOnly||acceptance?3:2))throw Error('Unexpected QA probe arguments');
+if(process.argv.length!==(relaunch||dockingOnly||acceptance||fittedPrepare?3:2))throw Error('Unexpected QA probe arguments');
 const invokeDialog=fileURLToPath(new URL('../../qa/p4_native/Invoke_P4_Native_Project_Switch_Dialog.ps1',import.meta.url));
 const execFileAsync=promisify(execFile);
 
@@ -378,6 +380,15 @@ async function runNativeProbe(browser) {
   }
  });
  console.log('ACTUAL Tauri WebView2 reached, local URL only');
+ if(fittedPrepare){
+  try{
+   await verifyPrepareFittedAcceptance(page,{site:SITE,api:API,request:fetch});
+  }finally{
+   expect(writes).toEqual([]);
+   reportTraffic();
+  }
+  return;
+ }
  if(acceptance){
   ids.prepare=await create('prepare');
   ids.quality=await create('quality');
