@@ -1,7 +1,7 @@
 param([switch]$PreflightOnly, [switch]$ValidateRuntime)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$base = 'fc20659e5fced50f046fee56a3b35334caa96fa3'
+$base = '07f736cb71ee1280e6e24745498db50060825e09'
 $branch = 'feature/live-dev-workspace-20261023'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $frontend = Join-Path $root 'frontend'
@@ -10,17 +10,20 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
     $env:RUNNER_OS -ne 'Windows' -or $env:GITHUB_EVENT_NAME -ne 'push' -or
     $env:GITHUB_REF_NAME -ne $branch) { Fail 'Requires one trusted disposable GitHub-hosted Windows push run, never owner Windows' }
 $actual = (& git -C $root rev-parse HEAD).Trim()
-$parent = (& git -C $root rev-parse 'HEAD~4').Trim()
-if ($LASTEXITCODE -ne 0 -or $actual -ne $env:GITHUB_SHA -or $parent -ne $base) { Fail 'Approved exact source/parent SHA mismatch' }
+if ($LASTEXITCODE -ne 0 -or $actual -ne $env:GITHUB_SHA) { Fail 'Checked-out source differs from the workflow SHA' }
+$commitAndParents = (& git -C $root rev-list --parents -n 1 HEAD).Trim() -split ' '
+if ($LASTEXITCODE -ne 0 -or $commitAndParents.Count -ne 2 -or $commitAndParents[1] -ne $base) {
+ Fail 'One-shot run must be a direct child of the reviewed source'
+}
+if ($env:GITHUB_RUN_ATTEMPT -ne '1') { Fail 'One-shot approval excludes re-runs' }
 $allowed = @(
- '.github/workflows/p4-71-one-approved-native-dev.yml',
- 'qa/p4_native/P4_71_OWNER_APPROVED_ONE_USE_TRIGGER_20261112.txt',
- 'qa/p4_native/Run_P4_71_Disposable_Windows.ps1',
- 'frontend/e2e/p4-71-native-webview-qa.mjs'
+ '.github/workflows/p4-native-windows-acceptance-20261113.yml',
+ 'qa/p4_native/P4_WINDOWS_ACCEPTANCE_APPROVAL_20261113.txt',
+ 'qa/p4_native/Run_P4_71_Disposable_Windows.ps1'
 )
-$changed = @(& git -C $root diff --name-only 'HEAD~4' 'HEAD')
-foreach ($path in $changed) { if ($path -notin $allowed) { Fail 'Unapproved application/source change in the one-shot commit' } }
-if ($changed.Count -ne 4) { Fail 'One-shot commit must contain only four reviewed QA/trigger files' }
+$changed = @(& git -C $root diff --name-only $base $actual)
+if ($LASTEXITCODE -ne 0 -or $changed.Count -ne $allowed.Count) { Fail 'One-shot launch must contain exactly the reviewed QA setup changes' }
+foreach ($path in $changed) { if ($path -cnotin $allowed) { Fail 'Unapproved path in the one-shot launch' } }
 $production = Get-Content (Join-Path $frontend 'src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json
 $oldQA = Get-Content (Join-Path $frontend 'src-tauri/tauri.p4-native-qa.conf.json') -Raw | ConvertFrom-Json
 $isolated = Get-Content (Join-Path $frontend 'src-tauri/tauri.p4-isolated-native-dev.conf.json') -Raw | ConvertFrom-Json
@@ -39,7 +42,7 @@ if ($production.identifier -ne 'com.pilotodin.studio' -or
     $production.build.beforeDevCommand -ne 'node scripts/deny-unsafe-default-tauri-dev.mjs' -or
     $production.build.beforeBuildCommand -ne 'node scripts/deny-intermediate-installer.mjs') { Fail 'Production/QA/dev identities, bundles or default-deny hooks differ from reviewed source' }
 if (-not (Select-String -Path (Join-Path $frontend 'src-tauri/src/lib.rs') -Pattern 'app_local_data_dir' -SimpleMatch -Quiet)) { Fail 'Native backend storage derivation changed' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_71_OWNER_APPROVED_ONE_USE_TRIGGER_20261112.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'qa/p4_native/P4_WINDOWS_ACCEPTANCE_APPROVAL_20261113.txt') -PathType Leaf)) { Fail 'One-shot owner approval marker absent' }
 if ($env:PILOTODIN_HOME) { Fail 'Inherited PILOTODIN_HOME is not permitted' }
 foreach ($item in @('com.pilotodin.studio','com.pilotodin.p4nativeqa')) {
  foreach($appdata in @($env:LOCALAPPDATA,$env:APPDATA)) {
@@ -74,6 +77,7 @@ try {
  if (-not $ready) { Fail 'Disposable Python backend unavailable; compile NOT started' }
  Write-Host 'DISPOSABLE LOOPBACK BACKEND READY: 127.0.0.1:8000 (no sidecar/Qwen).'
  # Exactly one approved Tauri dev compile; do NOT retry if it fails.
+ Write-Host 'STARTING ONE APPROVED NATIVE DEVELOPER BUILD.'
  $native = Start-Process -FilePath 'cmd.exe' -ArgumentList @('/c','npm run desktop:dev') -WorkingDirectory $frontend -PassThru
  $binary = Join-Path $frontend 'src-tauri/target/debug/pilotodin-desktop.exe'
  $compiled = $false
