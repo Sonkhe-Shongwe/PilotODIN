@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 preflight catches a Windows timestamp defect
+
+- [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md) defines a reusable workflow for costly QA and applies it to N12. The [shared ETW export check](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7b1442f37bf2bec809ff225525573be824cc6c5f) runs the reducer's validation against the regular Windows fixture. All 56 targeted tests passed, including one valid export and eight injected failures.
+- [First hosted preflight](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43475632516/job/132058598888) rejected ETW timestamps beyond the declared window. [Offset diagnostics](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43476008130/job/132059893631) showed file and process events up to 7.167 ms after the declared end. [Clock correction](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/78e028e9aa6de67017c399381fb266c50e210e05) measures the bounds with the precise Windows UTC clock and keeps strict validation. [Exact-source regular P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43476298681) passed all three jobs. The Windows fixture validated 9,543 exported events across 30 buffers with zero reported loss.
+- **Next.** Review the exact source after preflight. The combined rehearsal still needs fresh approval to provision pinned Sysmon and verify the collectors together. The historical combined rejection reason remains unknown. N12 stays partial and native acceptance remains pending.
+
 ## 13 November 2026 | N12 combined collector rehearsal blocked
 
 - The approved [combined fixture run #43473282610](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43473282610) used launch commit `849fd7f` from the reviewed `ad6f37f` checkpoint. The runner verified the pinned Sysmon 15.22 signature and SHA-256, installed Sysmon, and reached the reducer after exporting ETW and the bounded Sysmon XML. The reducer returned exit 2 before writing a summary. The log did not identify the failing check. Raw evidence stayed on the disposable runner. Combined collector calibration and native acceptance remain pending.

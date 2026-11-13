@@ -9,6 +9,7 @@
 3. [One-primary-phase and owner closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) for governing authorisation, build freeze and acceptance decisions.
 4. [Current P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) and [N12 Windows trace runbook](../qa/p4_native/N12_TRACE.md) for the outstanding evidence and next test.
 5. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and [P4 owner evidence Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9). Do not mistake a draft/CI run for final owner acceptance.
+6. [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md) for planning costly or sensitive runs, with N12 as the worked example.
 
 ## Current phase evidence and recent checkpoints
 
