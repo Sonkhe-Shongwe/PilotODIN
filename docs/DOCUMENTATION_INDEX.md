@@ -12,6 +12,7 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 Nov owner correction (binding):** **No cold emailing or unsolicited external outreach as a requirement for progress.** P4-82 NESO outreach draft [withdrawn from the active plan](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md) and retained only as unsent history. No operator response required to continue safe in-scope technical work; R01 Gate C remains UNVERIFIED, P4 ACTIVE, no invented approval.
 - **P4-82:** [NESO Innovation team concept note and initial outreach draft, read-only research scope, methodology, dataset-rights/IP checks and explicit no-contact state](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md). Draft only, **Gate C UNVERIFIED**, no submission or training.
 - **P4-81:** [Independent online real-operator prospect review: NESO favoured over Eskom/TfL, with licensing, operational decision and missing Gate C requirements](./P4_81_EXTERNAL_GATE_C_CANDIDATE_NESO_ESKOM_2026-11-12.md). Candidate found, **R01/Gate C remains UNVERIFIED**, no new model fit or operator approval.
 - **P4-80:** [Practical consolidated R01–R06 worklist, Gate C independent evidence intake and safe R06/native conditional action order](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md). **Documentation only**, no new run or risk closure; latest application CI remains P4-79.

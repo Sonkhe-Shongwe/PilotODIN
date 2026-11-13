@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current project status
 
+## 13 November 2026 | Owner restriction: NO COLD OUTREACH AS A DEVELOPMENT DEPENDENCY
+
+- **Binding owner correction:** No cold emails, unsolicited partnership/innovation proposals, or external organisation replies as prerequisites for PilotODIN progress. The NESO P4-82 **unsent outreach draft is WITHDRAWN FROM THE ACTIVE ROADMAP**, preserved in history only and **must not be sent or proposed again as a next step**. No email, Big Idea submission, application or external communication occurred.
+- **Proceed independently:** use appropriately licensed **already public** evidence and its documented limits for research only; continue reproducible source-level hardening, existing synthetic/browser regressions and acceptance preparation only when a substantive risk justifies it. For native compilation, offline 8 GB physical tests, real ML fits or original-user data operations, preserve all prior approval boundaries and the intermediate installer freeze. No fabricated operator sponsorship, permission, decision utility or benchmark PASS.
+- **Truthful gate handling:** Original P4 R01/Gate C still demands independently verified, permitted operational suitability, owner/decision evidence and benefit. Public data alone, however strong, cannot satisfy that gate under its current criteria. **Mark R01 UNVERIFIED and P4 ACTIVE rather than seek unsolicited outside approvals or waive conditions silently.** No P5 authorisation; QA Issues #2/#9 remain OPEN.
+- **Next useful no-contact direction:** audit and consolidate only genuine reproducible P4 technical acceptance gaps, current-source frontend/native test readiness and original-app integrity safety *without* repeating consumed native/fit approvals. If remaining required independent evidence is unavailable under the owner's constraint, explicitly report it as **BLOCKED**, not require cold outreach or generate artificial progress.
+
+
 ## 12 November 2026 | P4-82 NESO innovation research proposal, UNSENT DRAFT
 
 - **Practical external next step without inventing an operator partnership:** [Unsent, read-only NESO forecast-assurance research concept note and introductory outreach wording](./P4_82_NESO_INNOVATION_RESEARCH_PROPOSAL_DRAFT_2026-11-12.md). Scope targets auditable as-of day-ahead forecast comparisons, whole-settlement-day/DST preservation, strictly separate cardinal-point versus half-hourly definitions, honest official-forecast vs independent non-model baselines and *conditional* independent decision-utility review. References official NESO innovation Big Idea and dataset-specific rights, plus existing P4-65/P4-70 evidence.

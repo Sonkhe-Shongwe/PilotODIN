@@ -1,5 +1,7 @@
 # PilotODIN | NESO Innovation Research Concept Note (UNSENT DRAFT v0.1)
 
+> **SUPERSEDED BY OWNER DIRECTION, 13 NOVEMBER 2026: WITHDRAWN FROM ACTIVE ROADMAP.** The user explicitly rejects cold emailing or unsolicited external outreach as a condition of making PilotODIN progress. The inquiry/email/form below are a **historical, unsent draft only** and **must not be recommended, sent or used as a development dependency**. NESO official public data may still be examined for **licence-compliant, no-contact, non-operational research**, with honest uncertainty. This note changes no original R01/Gate C criteria: it remains **UNVERIFIED**, and P4 remains **ACTIVE**. No outside message was sent.
+
 **Prepared:** 12 November 2026  
 **For potential exploratory discussion with:** National Energy System Operator (NESO), Innovation Team  
 **From:** PilotODIN independent prototype project; project lead's identity and formal affiliation **not supplied in this public draft**  
