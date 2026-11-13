@@ -139,10 +139,10 @@ def sysmon_events(path, start, end):
     return processes, connections, issues, first_record, last_record
 
 
-def bind_processes(manifest, processes, markers, issues):
+def bind_processes(declared_processes, processes, issues):
     roles = {}
     bindings = []
-    for root in manifest["processes"]:
+    for root in declared_processes:
         role = root["role"]
         require(role in ROLES, "unknown declared process role")
         image = windows_path(root["image"])
@@ -153,9 +153,6 @@ def bind_processes(manifest, processes, markers, issues):
         process = matches[0]
         roles[process.guid] = role
         bindings.append((root, process))
-    declared = Counter(root["role"] for root in manifest["processes"])
-    require(declared["app"] == 2 and declared["backend"] == 1 and declared["calibration"] == 2
-            and declared["driver"] >= 1, "expected two app launches, one backend, two calibrations and a driver")
     # Sysmon process births are read in record order. Resolve by GUID and time,
     # so an unrelated process that reuses a PID never inherits the old role.
     for process in sorted(processes.values(), key=lambda p: p.start):
@@ -175,6 +172,12 @@ def bind_processes(manifest, processes, markers, issues):
             else:
                 role = "helper"
         roles[process.guid] = role
+    if any(processes[guid].end is None for guid in roles):
+        issues.add("process-exit-missing")
+    return roles, bindings
+
+
+def verify_app_lifecycles(manifest, processes, markers, roles, bindings, issues):
     for root, app in bindings:
         if root["role"] != "app":
             continue
@@ -191,9 +194,6 @@ def bind_processes(manifest, processes, markers, issues):
                 markers["idle"] <= process.start <= markers["quality"]
                 and process.end and markers["exit"] <= process.end):
             issues.add("backend-lifecycle-does-not-cover-journey")
-    if any(processes[guid].end is None for guid in roles):
-        issues.add("process-exit-missing")
-    return roles, bindings
 
 
 def file_mutation(row):
@@ -278,7 +278,7 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
                        for target in targets):
                 violations[f"outside-scope:{role}:{operation}"] += 1
             if role == "calibration":
-                calibration.add((process.guid, targets[0], operation))
+                calibration.add((process.guid, operation, *targets))
     return counts, violations, calibration
 
 
@@ -309,28 +309,51 @@ def scoped_network(connections, roles, ports):
     return counts, external, endpoints
 
 
-def verify_calibrations(bindings, processes, connections, file_events, markers, issues):
-    calibration = [(root, process) for root, process in bindings if root["role"] == "calibration"]
-    windows = []
-    for root, process in calibration:
-        children = [p for p in processes.values() if p.parent == process.guid]
-        if len(children) != 1:
-            issues.add("calibration-child-lifecycle-missing")
+def verify_connection_lifetimes(connections, processes, roles, issues):
+    for connection in connections:
+        if connection.guid not in roles:
             continue
-        child = children[0]
-        marker = windows_path(root["fixture"])
-        renamed = windows_path(root["renamed_fixture"])
-        expected = {(child.guid, marker, "create"), (child.guid, marker, "write"),
-                    (child.guid, marker, "resize"), (child.guid, marker, "rename"),
-                    (child.guid, renamed, "delete")}
-        if not expected <= file_events:
-            issues.add("calibration-file-events-missing")
-        network = {e.protocol for e in connections if e.guid == child.guid and
-                   e.initiated and e.address.is_loopback and e.port == root["port"]}
-        if network != {"tcp", "udp"}:
-            issues.add("calibration-tcp-or-udp-missing")
-        if process.end and child.end and process.start <= child.start <= child.end <= process.end:
-            windows.append((process.start, process.end))
+        process = processes[connection.guid]
+        if connection.timestamp < process.start or (
+                process.end is not None and connection.timestamp > process.end):
+            issues.add("connection-outside-process-lifetime")
+
+
+def calibration_window(root, process, processes, connections, file_events, issues):
+    children = [p for p in processes.values() if p.parent == process.guid]
+    if len(children) != 1:
+        issues.add("calibration-child-lifecycle-missing")
+        return None
+    child = children[0]
+    if not process.sha256 or child.sha256 != process.sha256 or child.image != process.image:
+        issues.add("calibration-image-identity-missing-or-mismatched")
+    marker = windows_path(root["fixture"])
+    renamed = windows_path(root["renamed_fixture"])
+    require(marker != renamed and ntpath.dirname(marker) == ntpath.dirname(renamed),
+            "calibration markers must be distinct siblings")
+    expected = {(child.guid, "create", marker), (child.guid, "write", marker),
+                (child.guid, "resize", marker), (child.guid, "rename", marker, renamed),
+                (child.guid, "delete", renamed)}
+    if not expected <= file_events:
+        issues.add("calibration-file-events-missing")
+    if not (process.end and child.end and process.start <= child.start <= child.end <= process.end):
+        issues.add("calibration-child-lifecycle-missing")
+        return None
+    network = {e.protocol for e in connections if e.guid == child.guid and
+               child.start <= e.timestamp <= child.end and e.initiated
+               and e.address.is_loopback and e.port == root["port"]}
+    if network != {"tcp", "udp"}:
+        issues.add("calibration-tcp-or-udp-missing")
+    return process.start, process.end
+
+
+def verify_calibrations(bindings, processes, connections, file_events, markers, issues):
+    windows = []
+    for root, process in bindings:
+        if root["role"] == "calibration":
+            window = calibration_window(root, process, processes, connections, file_events, issues)
+            if window:
+                windows.append(window)
     windows.sort()
     if len(windows) != 2 or not (windows[0][1] < markers["idle"] and markers["exit"] < windows[1][0]):
         issues.add("calibration-does-not-bracket-journey")
@@ -379,11 +402,46 @@ def verify_snapshots(before, after, manifest, issues):
     return fingerprints, changed
 
 
-def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
+def load_capture(manifest, sysmon):
     require(manifest["schema_version"] == 1 and manifest["disposable"] is True,
             "expected a disposable N12 manifest")
     start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
     require(start < end and start.date() == end.date(), "capture must be ordered and inside one UTC day")
+    processes, connections, issues, first, last = sysmon_events(sysmon, start, end)
+    if (first, last) != (manifest["sysmon_first_record"], manifest["sysmon_last_record"]) or first is None:
+        issues.add("sysmon-bookend-record-mismatch")
+    if (manifest["procmon_all_events"] is not True or manifest["procmon_loss_reviewed"] is not True
+            or manifest["procmon_clock_utc"] is not True):
+        issues.add("procmon-coverage-not-confirmed")
+    return start, end, processes, connections, issues
+
+
+def check_calibration(manifest, sysmon, procmon):
+    """Check real collector exports from a standalone generated fixture."""
+    start, end, processes, connections, issues = load_capture(manifest, sysmon)
+    root = manifest["calibration"]
+    require(root["role"] == "calibration" and type(root["port"]) is int
+            and 1 <= root["port"] <= 65535, "invalid calibration fixture")
+    roles, bindings = bind_processes([root], processes, issues)
+    permitted = {"calibration": [ntpath.dirname(windows_path(root["fixture"]))]}
+    counts, violations, file_events = inspect_files(
+        procmon, start, end, processes, roles, (), permitted, issues)
+    if bindings:
+        calibration_window(root, bindings[0][1], processes, connections, file_events, issues)
+    if violations:
+        issues.add("calibration-writes-outside-fixture")
+    verify_connection_lifetimes(connections, processes, roles, issues)
+    _, unexpected, _ = scoped_network(connections, roles, {root["port"]})
+    if unexpected:
+        issues.add("calibration-unexpected-connection")
+    return {"schema_version": 1, "scope": "collector calibration only",
+            "coverage": "BLOCKED" if issues else "CALIBRATED",
+            "coverage_issues": sorted(issues), "file_events": counts,
+            "native_n12_accepted": False}
+
+
+def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
+    start, end, processes, connections, issues = load_capture(manifest, sysmon)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
             re.fullmatch(r"[0-9a-f]{64}", manifest["executable_sha256"]),
             "source and executable identities are required")
@@ -391,15 +449,11 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
     moments = [start, *markers.values(), end]
     require(all(a < b for a, b in zip(moments, moments[1:])), "missing or unordered journey markers")
     protected, permitted = scope(manifest)
-    issues = set()
-    if (manifest["procmon_all_events"] is not True or manifest["procmon_loss_reviewed"] is not True
-            or manifest["procmon_clock_utc"] is not True):
-        issues.add("procmon-coverage-not-confirmed")
-    processes, connections, sysmon_issues, first, last = sysmon_events(sysmon, start, end)
-    issues.update(sysmon_issues)
-    if (first, last) != (manifest["sysmon_first_record"], manifest["sysmon_last_record"]) or first is None:
-        issues.add("sysmon-bookend-record-mismatch")
-    roles, bindings = bind_processes(manifest, processes, markers, issues)
+    declared = Counter(root["role"] for root in manifest["processes"])
+    require(declared["app"] == 2 and declared["backend"] == 1 and declared["calibration"] == 2
+            and declared["driver"] >= 1, "expected two app launches, one backend, two calibrations and a driver")
+    roles, bindings = bind_processes(manifest["processes"], processes, issues)
+    verify_app_lifecycles(manifest, processes, markers, roles, bindings, issues)
     apps = sorted((p for _, p in bindings if roles[p.guid] == "app"), key=lambda p: p.start)
     if len(apps) != 2 or not (markers["launch"] <= apps[0].start < markers["quality"] and
                              apps[0].end and markers["close"] <= apps[0].end < markers["reopen"] and
@@ -414,13 +468,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None):
             "invalid loopback port allowlist")
     require(all(p["port"] in ports for p, _ in bindings if p["role"] == "calibration"),
             "calibration ports must be recorded in the loopback allowlist")
-    for connection in connections:
-        if connection.guid not in roles:
-            continue
-        process = processes[connection.guid]
-        if connection.timestamp < process.start or (
-                process.end is not None and connection.timestamp > process.end):
-            issues.add("connection-outside-process-lifetime")
+    verify_connection_lifetimes(connections, processes, roles, issues)
     net_counts, external, endpoints = scoped_network(connections, roles, set(ports))
     if private_endpoints is not None:
         private_endpoints.extend(endpoints)
@@ -509,6 +557,9 @@ def main():
     snapshot = subcommands.add_parser("snapshot")
     snapshot.add_argument("manifest", type=Path)
     snapshot.add_argument("output", type=Path)
+    calibration = subcommands.add_parser("check-calibration")
+    for argument in ("manifest", "sysmon", "procmon", "output"):
+        calibration.add_argument(argument, type=Path)
     report = subcommands.add_parser("audit")
     for argument in ("manifest", "sysmon", "procmon", "before", "after", "output"):
         report.add_argument(argument, type=Path)
@@ -524,6 +575,9 @@ def main():
             result = {label: {name: fingerprint(local_disposable_path(path))
                               for name, path in manifest[key].items()}
                       for label, key in (("protected", "protected_roots"), ("observed", "observed_roots"))}
+        elif args.mode == "check-calibration":
+            output = args.output
+            result = check_calibration(read_json(args.manifest), args.sysmon, args.procmon)
         else:
             output = args.output
             endpoints = [] if args.private_endpoints else None
@@ -545,6 +599,9 @@ def main():
         return 2
     if args.mode == "snapshot":
         return 0
+    if args.mode == "check-calibration":
+        print(f"N12 collector calibration: {result['coverage']}")
+        return 0 if result["coverage"] == "CALIBRATED" else 2
     print(f"N12 coverage={result['coverage']} network={result['network']} filesystem={result['filesystem']}")
     if result["coverage"] == "BLOCKED":
         return 2

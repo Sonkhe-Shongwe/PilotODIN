@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 standalone collector check
+
+- The [N12 runbook](../qa/p4_native/N12_TRACE.md#standalone-collector-calibration-on-hosted-windows) now uses `check-calibration` to verify a generated fixture against Sysmon and Procmon before a native journey. Both audit modes verify the actual rename destination and calibration executable identity. Local N12, acceptance-kit and installer-provenance suites passed 44 tests, including 20 N12 tests.
+- **Next:** Run the fixture on disposable hosted Windows with Sysmon and Procmon configured. If the tools must be installed or the runner audit configuration changed, obtain approval for that setup. A separately approved native startup-to-exit trace follows successful live calibration. R02/N12 remains partial and the historical WebView2 port 443 connection remains unattributed.
+
 ## 13 November 2026 | N12 trace tools prepared
 
 - [Trace tooling](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a7bbe4a328b05b2676c7330524d5fd473f1da2bb) adds a loopback TCP/UDP and file-mutation calibrator, record-bounded Sysmon export, independent path/content fingerprints and a redacted offline reducer. Sixteen synthetic cases cover real loopback traffic, process/PID reuse, executable hashes, external connections, write-then-delete, cross-root rename, immutable fixture changes, and missing records or calibrations. [P4 CI #43445876232](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43445876232) verified the 16 cases in the 201-test Python job and passed the synthetic Windows fixture. The Windows fixture exercised the calibration process and fingerprint CLI without starting the live collectors. The same workflow passed 78 Node checks, the frontend build and 13 Chromium cases.

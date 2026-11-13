@@ -152,6 +152,72 @@ def test_calibrated_trace_reports_scoped_results_and_keeps_history(tmp_path):
     assert report["file_events"]["calibration:resize"] == 2
 
 
+def standalone_capture(tmp_path, evidence, **kwargs):
+    sysmon, procmon = evidence.save(tmp_path, **kwargs)
+    keys = ("schema_version", "disposable", "start_utc", "end_utc", "sysmon_first_record",
+            "sysmon_last_record", "procmon_all_events", "procmon_loss_reviewed", "procmon_clock_utc")
+    manifest = {key: evidence.manifest[key] for key in keys}
+    manifest["calibration"] = next(root for root in evidence.manifest["processes"]
+                                   if root["role"] == "calibration")
+    return manifest, sysmon, procmon
+
+
+def test_standalone_calibration_cli_requires_no_app_journey(tmp_path):
+    evidence = Evidence()
+    evidence.events.clear()
+    evidence.files.clear()
+    evidence.manifest["processes"].clear()
+    evidence.calibration(1, 30, 9001)
+    manifest, sysmon, procmon = standalone_capture(tmp_path, evidence)
+    input_path = tmp_path / "calibration.json"
+    output_path = tmp_path / "summary.json"
+    input_path.write_text(json.dumps(manifest), encoding="utf-8")
+    command = [sys.executable, trace.__file__, "check-calibration",
+               *map(str, (input_path, sysmon, procmon, output_path))]
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(output_path.read_text(encoding="utf-8"))
+    assert summary["coverage"] == "CALIBRATED"
+    assert summary["file_events"]["calibration:rename"] == 1
+    assert summary["native_n12_accepted"] is False
+    assert r"C:\\QA" not in json.dumps(summary)
+    assert subprocess.run(command, capture_output=True, check=False).returncode == 2
+
+
+def test_standalone_calibration_blocks_missing_udp_and_record_gap(tmp_path):
+    evidence = Evidence()
+    evidence.events = [event for event in evidence.events if not
+                       (event[2].get("ProcessGuid") == "child30" and event[2].get("Protocol") == "udp")]
+    evidence.manifest["procmon_loss_reviewed"] = False
+    report = trace.check_calibration(*standalone_capture(tmp_path, evidence, omit_record=110))
+    assert report["coverage"] == "BLOCKED"
+    assert {"calibration-tcp-or-udp-missing", "sysmon-record-gap",
+            "procmon-coverage-not-confirmed"} <= set(report["coverage_issues"])
+
+
+def test_wrong_calibration_rename_destination_blocks_both_modes(tmp_path):
+    evidence = Evidence()
+    row = next(row for row in evidence.files if row[1] == "31" and row[2] == "SetRenameInformationFile")
+    row[5] = r"FileName: C:\QA\calibration\30\wrong"
+    standalone = trace.check_calibration(*standalone_capture(tmp_path, evidence))
+    journey = evidence.report(tmp_path)
+    for report in (standalone, journey):
+        assert report["coverage"] == "BLOCKED"
+        assert "calibration-file-events-missing" in report["coverage_issues"]
+
+
+def test_calibration_blocks_missing_executable_hash_and_out_of_scope_effects(tmp_path):
+    evidence = Evidence()
+    next(fields for _, kind, fields in evidence.events
+         if kind == 1 and fields["ProcessGuid"] == "child30").pop("Hashes")
+    evidence.write(4, 31, "WriteFile", r"C:\QA\other.txt")
+    evidence.connect(4, "child30", "203.0.113.23", 443)
+    report = trace.check_calibration(*standalone_capture(tmp_path, evidence))
+    assert report["coverage"] == "BLOCKED"
+    assert {"calibration-image-identity-missing-or-mismatched", "calibration-writes-outside-fixture",
+            "calibration-unexpected-connection"} <= set(report["coverage_issues"])
+
+
 def test_external_webview_connection_is_unattributed_and_report_is_redacted(tmp_path):
     evidence = Evidence()
     evidence.connect(40, "net2", "203.0.113.23", 443, "udp")

@@ -10,8 +10,23 @@ The scripts prepare and reduce evidence. The regular Windows P4 job exercises th
 | --- | --- |
 | n12_calibration.py | Starts one child that creates a fixture, writes in place, truncates, renames and deletes it. The child also sends one TCP and one UDP message to the parent's loopback listeners. |
 | Export_P4_N12_Sysmon_Trace.ps1 | Reads an inclusive range of event record IDs from the Sysmon operational channel into a new XML file. |
+| n12_trace.py check-calibration | Checks one generated fixture against both collectors before an app journey. The summary reports calibration coverage and omits raw paths and endpoints. |
 | n12_trace.py snapshot | Hashes protected and synthetic paths, including relative file and directory names, before and after the test. Records an absent path distinctly and rejects reparse points. |
 | n12_trace.py audit | Matches the two app launches to Sysmon image hashes, builds process lineage, checks calibration and processes the network and file records. The summary omits raw endpoints, process identifiers, command lines and file paths. |
+
+## Standalone collector calibration on hosted Windows
+
+Use a disposable hosted Windows runner with Sysmon and Process Monitor already approved and configured. Complete collector setup before starting the measured interval. Use steps 2 and 3 below for Sysmon and Procmon settings. Keep all raw output in runner temp.
+
+1. Start Procmon capture and record the UTC window start and the next Sysmon record ID from the channel. Run the fixture once and save its JSON output as the `calibration` field in the manifest. Allow time for collector flush after the fixture parent exits.
+2. Record the UTC window end and the last Sysmon record ID. Stop Procmon and export the full file-system event capture. Export the inclusive Sysmon record range using `Export_P4_N12_Sysmon_Trace.ps1`.
+3. Set `schema_version` to 1 and `disposable` to true. Record `start_utc`, `end_utc`, `sysmon_first_record`, `sysmon_last_record` and the three Procmon review flags from the manifest table. The standalone check needs only those fields and the fixture JSON.
+
+~~~powershell
+python qa/p4_native/n12_trace.py check-calibration $manifest $sysmonXml $procmonCsv $summary
+~~~
+
+Exit 0 confirms both collectors recorded the declared Python parent and child, executable hashes, child loopback TCP and UDP, and the expected file creation, write, resize, rename destination and deletion in the fixture. Exit 2 indicates blocked or invalid evidence. The report keeps native N12 acceptance pending. Repeat the two calibration bookends during the separately approved native capture.
 
 ## Collector requirements for the disposable Windows run
 
