@@ -2,7 +2,7 @@ import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-disco
 import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
 import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityAfterRelaunch, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
 import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
-import { dragWorkspaceTab } from './p4-drag-workspace-tab.mjs';
+import { dragWorkspaceTab, prepareWorkspaceTabDrag } from './p4-drag-workspace-tab.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -85,7 +85,6 @@ async function noTraining(ids){
 }
 
 async function verifyWindowsLayout(page, { captureCheckpoint = true } = {}) {
- const navigation=page.getByRole('navigation',{name:'Workspace navigation'});
  const primary=page.locator('.po-primary-pane');
  const checkpoint=primary.getByRole('group',{name:'Selected target suitability checkpoint'});
  const nativeViewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,scale:devicePixelRatio}));
@@ -105,15 +104,14 @@ async function verifyWindowsLayout(page, { captureCheckpoint = true } = {}) {
    console.log('R04 target checkpoint and archive warning at two WebView widths: PASS');
   }
   await session.send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:0,mobile:false});
-  await navigation.getByRole('button',{name:'Your data',exact:true}).click();
-  await navigation.getByRole('button',{name:'Prepare',exact:true}).click();
+  await prepareWorkspaceTabDrag(page);
   await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
   const dataTab=page.locator('.po-tab').filter({has:page.locator('#po-workspace-tab-understand')});
   await expect(dataTab).toHaveAttribute('draggable','true');
   const dock=page.getByRole('region',{name:'Docked Your data workspace'});
   await expect(dock).toBeHidden();
   const dragEvents=await page.evaluateHandle(()=>{
-   const events={start:0,over:0,drop:0,end:0,endEffect:null};
+   const events={start:0,over:0,paneBubble:0,drop:0,end:0,endEffect:null,lastOverActiveTab:null};
    let lastWorkspaceOver;
    const tab=document.getElementById('po-workspace-tab-understand')?.closest('.po-tab');
    const pane=document.getElementById('po-current-workspace');
@@ -129,8 +127,12 @@ async function verifyWindowsLayout(page, { captureCheckpoint = true } = {}) {
     if(event.dataTransfer?.types.includes('text/x-pilotodin-workspace')){
      events.over++;
      lastWorkspaceOver=event;
+     events.lastOverActiveTab=pane.getAttribute('aria-labelledby');
     }
    },options);
+   pane.addEventListener('dragover',event=>{
+    if(event.dataTransfer?.types.includes('text/x-pilotodin-workspace'))events.paneBubble++;
+   },{signal:controller.signal});
    pane.addEventListener('drop',event=>{
     if(event.dataTransfer?.types.includes('text/x-pilotodin-workspace'))events.drop++;
    },options);

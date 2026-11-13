@@ -1,6 +1,6 @@
 import {expect,test} from '@playwright/test';
 import type {BrowserContext,Route} from '@playwright/test';
-import {dragWorkspaceTab} from './p4-drag-workspace-tab.mjs';
+import {dragWorkspaceTab,prepareWorkspaceTabDrag} from './p4-drag-workspace-tab.mjs';
 
 const UI_ORIGIN='http://127.0.0.1:5187';
 const API_ORIGIN='http://127.0.0.1:8000';
@@ -1413,10 +1413,11 @@ test('drag Your data onto Prepare page docks side by side without backend writes
  await page.addInitScript((id:string)=>{
   localStorage.setItem('pilotodin-current',id);
   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,
-   JSON.stringify(['overview','understand','prepare']));
+   JSON.stringify(['overview','prepare']));
   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
  },TEST_PROJECT);
  await page.goto('/#/studio/prepare');
+ await prepareWorkspaceTabDrag(page);
  const primary=page.locator('.po-primary-pane');
  await expect(primary.getByRole('heading',{name:'Prepare',exact:true})).toBeVisible();
  const dataTab=page.locator('.po-tab').filter({has:page.locator('#po-workspace-tab-understand')});
