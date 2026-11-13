@@ -13,6 +13,7 @@ import stat
 import sys
 import xml.etree.ElementTree as ET
 from collections import Counter
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,11 +27,28 @@ MUTATIONS = {
     "SetAllocationInformationFile": "resize", "SetBasicInformationFile": "metadata",
     "SetSecurityFile": "metadata", "DeleteFile": "delete",
 }
+EVIDENCE_ERRORS = (ValueError, KeyError, OSError, TypeError, AttributeError,
+                   StopIteration, ET.ParseError, csv.Error)
+
+
+class EvidenceValidationError(ValueError):
+    """An evidence failure whose message is safe to print."""
 
 
 def require(condition, message):
     if not condition:
-        raise ValueError(message)
+        raise EvidenceValidationError(message)
+
+
+@contextmanager
+def evidence_stage(label):
+    try:
+        yield
+    except EvidenceValidationError as exc:
+        raise EvidenceValidationError(f"{label}: {exc}") from exc
+    except EVIDENCE_ERRORS as exc:
+        # Parser messages can contain raw event fields or private paths.
+        raise EvidenceValidationError(f"{label}: {type(exc).__name__}") from exc
 
 
 def windows_path(value):
@@ -434,7 +452,8 @@ def load_capture(manifest, sysmon, *, etw=False):
             "expected a disposable N12 manifest")
     start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
     require(start < end and start.date() == end.date(), "capture must be ordered and inside one UTC day")
-    processes, connections, issues, first, last = sysmon_events(sysmon, start, end)
+    with evidence_stage("Sysmon XML"):
+        processes, connections, issues, first, last = sysmon_events(sysmon, start, end)
     if (first, last) != (manifest["sysmon_first_record"], manifest["sysmon_last_record"]) or first is None:
         issues.add("sysmon-bookend-record-mismatch")
     if not etw and (manifest["procmon_all_events"] is not True or
@@ -567,7 +586,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                 yield event
         require(digest.hexdigest() == capture["events_sha256"], "ETW export digest mismatch")
 
-    with path.open("rb") as stream:
+    with evidence_stage("ETW event stream"), path.open("rb") as stream:
         unresolved = correlate_requests(
             read_events(stream), lambda value: canonical_file_path(value, devices),
             classify_process, lambda value: value is not None and
@@ -696,7 +715,8 @@ def fingerprint(path):
 
 
 def read_json(path):
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+    with evidence_stage("JSON input"):
+        return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def main():
@@ -744,11 +764,15 @@ def main():
                 with private.open("x", encoding="utf-8") as stream:
                     json.dump(endpoints, stream, indent=2)
                     stream.write("\n")
-        with output.open("x", encoding="utf-8") as stream:
+        with evidence_stage("summary output"), output.open("x", encoding="utf-8") as stream:
             json.dump(result, stream, indent=2)
             stream.write("\n")
-    except (ValueError, KeyError, OSError, TypeError, AttributeError, StopIteration, ET.ParseError, csv.Error):
-        print("N12 BLOCKED: missing, invalid or inaccessible evidence; no result emitted.", file=sys.stderr)
+    except EvidenceValidationError as exc:
+        print(f"N12 BLOCKED: {exc}.", file=sys.stderr)
+        return 2
+    except EVIDENCE_ERRORS as exc:
+        print(f"N12 BLOCKED: missing, invalid or inaccessible evidence ({type(exc).__name__}).",
+              file=sys.stderr)
         return 2
     if args.mode == "snapshot":
         return 0

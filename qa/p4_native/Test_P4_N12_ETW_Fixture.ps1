@@ -90,6 +90,7 @@ if ($WithSysmon) {
     $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -Encoding utf8
     $summaryPath = Join-Path $root 'summary.json'
     $PSNativeCommandUseErrorActionPreference = $false
+    Write-Host 'Combined rehearsal exported ETW and bounded Sysmon evidence. Starting reducer.'
     python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $manifestPath $sysmonXml $eventsPath $summaryPath
     $auditExit = $LASTEXITCODE
     if (Test-Path -LiteralPath $summaryPath -PathType Leaf) {

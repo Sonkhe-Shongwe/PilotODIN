@@ -301,6 +301,27 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert result.returncode == 0, result.stderr
     assert json.loads(calibration_output.read_text(encoding="utf-8"))["coverage"] == "CALIBRATED"
 
+    blocked_output = tmp_path / "blocked.json"
+    command = [sys.executable, trace.__file__, "check-calibration-etw",
+               *map(str, (manifest_path, sysmon, etw_path, blocked_output))]
+    saved_etw = etw_path.read_bytes()
+    etw_path.write_bytes(b" " + saved_etw)
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    assert result.returncode == 2
+    assert result.stderr.strip() == "N12 BLOCKED: ETW event stream: ETW export digest mismatch."
+    assert not blocked_output.exists()
+    etw_path.write_bytes(saved_etw)
+
+    saved_sysmon = sysmon.read_bytes()
+    sysmon_tree = ET.parse(sysmon)
+    sysmon_tree.find(f".//{trace.EVENT_NS}EventRecordID").text = "private-record"
+    sysmon_tree.write(sysmon, encoding="utf-8")
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    assert result.returncode == 2
+    assert result.stderr.strip() == "N12 BLOCKED: Sysmon XML: ValueError."
+    assert not blocked_output.exists()
+    sysmon.write_bytes(saved_sysmon)
+
     mutation(29, 10, 5, 16)  # Pre-opened handle with no captured path.
     mutation(30, 10, 6, 12, FileName=r"\Device\UnmappedVolume\private.bin", Outcome=2)
     mutation(30, 10, 3, 17, InfoClass=4)  # Unhandled metadata operation.
