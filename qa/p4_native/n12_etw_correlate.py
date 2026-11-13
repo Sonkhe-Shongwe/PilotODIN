@@ -33,9 +33,10 @@ def canonical_file_path(value, devices):
 
 
 def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
-                       strict=False, details=None, process_bookends=None):
+                       strict=False, details=None, process_bookends=None, thread_bookends=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = {}
+    thread_owners = {}
     opened, pending = {}, {}
     file_names = {}
     ambiguous_irps = set()
@@ -62,6 +63,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 active[process_id] = ticks
             elif kind == 2:
                 active.pop(process_id, None)
+            elif details is not None and kind in (3, 4):
+                tid = number(data["ThreadID"])
+                if kind == 3:
+                    thread_owners[tid] = (process_id, active.get(process_id))
+                else:
+                    thread_owners.pop(tid, None)
             continue
         if kind in {10, 11}:
             if strict and (file_key := number(data.get("FileKey"))):
@@ -152,6 +159,17 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if kind != 16 and file_key in file_names:
                 file_names[file_key] = None
             if details is not None and kind == 16 and source is None:
+                tid = number(data.get("IssuingThreadId", data.get("ThreadId")))
+                owner = thread_owners.get(tid)
+                attribution = "missing-issuing-thread" if not tid else "unmatched-thread-lifetime"
+                if owner is not None and active.get(owner[0]) == owner[1]:
+                    owner_pid, owner_birth = owner
+                    attribution = "header-agrees" if pid == owner_pid else "header-differs"
+                    if owner_birth is not None and opened.get((owner_pid, owner_birth, object_id)) is not None:
+                        details[f"{actor}:event-16:write-request:issuing-thread-handle-path"] += 1
+                elif thread_bookends is not None and tid in thread_bookends:
+                    attribution = "bookend-header-agrees" if pid == thread_bookends[tid] else "bookend-header-differs"
+                details[f"{actor}:event-16:write-request:{attribution}"] += 1
                 candidate = file_names.get(file_key)
                 context = "missing-key" if not file_key else "unseen-key"
                 if file_key in file_names:

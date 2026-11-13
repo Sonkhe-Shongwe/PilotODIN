@@ -92,7 +92,7 @@ def run_writer(code, *paths):
     return result.pid
 
 
-def probe(root, *, calibration_only=False):
+def probe(root, *, calibration_only=False, thread_context=False):
     root.mkdir()
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
@@ -107,7 +107,7 @@ def probe(root, *, calibration_only=False):
     providers = root / "providers.txt"
     providers.write_text(
         "Microsoft-Windows-Kernel-File 0x1ef0 4\n"
-        "Microsoft-Windows-Kernel-Process 0x10 4\n",
+        f"Microsoft-Windows-Kernel-Process {'0x30' if thread_context else '0x10'} 4\n",
         encoding="ascii",
     )
     # Names, file I/O, completion, creation, writes, and delete/rename paths.
@@ -168,10 +168,14 @@ def probe(root, *, calibration_only=False):
 
 if __name__ == "__main__":
     try:
-        if len(sys.argv) not in {2, 3} or sys.argv[2:] not in ([], ["--calibration-only"]):
+        options = sys.argv[2:]
+        if len(sys.argv) < 2 or options not in (
+            [], ["--calibration-only"], ["--calibration-only", "--thread-context"],
+        ):
             raise ValueError("Unexpected probe arguments.")
         print(json.dumps(probe(local_disposable_path(Path(sys.argv[1]), runner_temp_only=True),
-                               calibration_only=sys.argv[2:] == ["--calibration-only"])))
+                               calibration_only="--calibration-only" in options,
+                               thread_context="--thread-context" in options)))
     except RuntimeError as exc:
         sys.exit(str(exc))
     except (IndexError, OSError, ValueError, subprocess.SubprocessError):

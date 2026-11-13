@@ -111,13 +111,17 @@ def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
     event(34, FileObject=2, Irp=3)
     event(24, Irp=3, Status=0)
     event(10, FileKey=40, FileName=outside)
-    event(16, pid=8, FileObject=2, FileKey=40, Irp=4)
+    event(16, pid=8, FileObject=2, FileKey=40, Irp=4, IssuingThreadId=81)
     event(24, Irp=4, Status=0)
     event(10, FileKey=40, FileName=protected)
-    event(16, pid=8, FileObject=2, FileKey=40, Irp=5)
+    event(3, ProcessID=7, ThreadID=71)
+    events[-1]["lifecycle"] = True
+    event(16, pid=8, FileObject=1, FileKey=40, Irp=5, IssuingThreadId=71)
     event(24, Irp=5, Status=0)
+    event(4, ProcessID=7, ThreadID=71)
+    events[-1]["lifecycle"] = True
     event(11, FileKey=40)
-    event(16, pid=8, FileObject=2, FileKey=40, Irp=6)
+    event(16, pid=8, FileObject=2, FileKey=40, Irp=6, IssuingThreadId=71)
     event(24, Irp=6, Status=0)
     event(16, FileObject=1, Irp=7)
     event(34, FileObject=1, Irp=7)
@@ -130,7 +134,7 @@ def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
         lambda path: path == protected,
         lambda role, identity, operation, source, dest, start, end, success:
             completed.append((operation, source, success)),
-        strict=True, details=details, process_bookends={8},
+        strict=True, details=details, process_bookends={8}, thread_bookends={81: 8},
     )
     assert completed == [("allocate", protected, True)]
     assert unresolved == {"other:write:path-missing": 3, "other:write:process-lifetime-missing": 3,
@@ -138,6 +142,9 @@ def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
     for context in ("outside-tracked-paths", "ambiguous-name", "unseen-key"):
         assert details[f"other:event-16:write-request:file-key-context-{context}"] == 1
         assert details[f"other:event-16:write-request:same-process-at-bookends:{context}"] == 1
+    for reason in ("bookend-header-agrees", "header-differs", "issuing-thread-handle-path",
+                   "unmatched-thread-lifetime"):
+        assert details[f"other:event-16:write-request:{reason}"] == 1
     assert "private.txt" not in json.dumps(details)
 
 
@@ -147,6 +154,14 @@ def test_process_bookends_reject_pid_reuse_and_traced_lifetimes():
     assert trace.stable_process_bookends({"before": before, "after": after}, 20, {9}) == {7}
     with pytest.raises(ValueError, match="duplicate process bookend"):
         trace.stable_process_bookends({"before": before, "after": after + [after[0]]}, 20, {9})
+
+
+def test_thread_bookends_exclude_reused_and_ambiguous_ids():
+    before = [{"tid": tid, "pid": 7, "birth_ticks": 10} for tid in (70, 71, 72, 73, 74)]
+    after = [before[0], dict(before[1], birth_ticks=25), before[2], before[3], before[3]]
+    bookends = {"threads_before": before, "threads_after": after}
+    assert trace.stable_thread_bookends(bookends, 20, {7}, {72}) == {70: 7}
+    assert trace.stable_thread_bookends(bookends, 20, {8}, {72}) == {}
 
 
 BASE = "2026-11-13"

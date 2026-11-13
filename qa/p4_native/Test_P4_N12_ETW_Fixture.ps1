@@ -20,6 +20,26 @@ function Get-ProcessBookend {
             @{ pid = $_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks }
         }
 }
+function Get-ThreadBookend {
+    foreach ($process in [Diagnostics.Process]::GetProcesses()) {
+        try {
+            foreach ($thread in $process.Threads) {
+                try {
+                    $birth = $thread.StartTime.ToUniversalTime().Ticks
+                    if ($thread.Id -gt 0) {
+                        @{ pid = $process.Id; tid = $thread.Id; birth_ticks = $birth }
+                    }
+                } catch {
+                    # A thread can exit during enumeration or deny time queries.
+                }
+            }
+        } catch {
+            # A process can exit during enumeration.
+        } finally {
+            $process.Dispose()
+        }
+    }
+}
 if ($WithSysmon) {
     $log = Get-WinEvent -ListLog $channel -ErrorAction SilentlyContinue
     if ($null -eq $log -or -not $log.IsEnabled) {
@@ -34,13 +54,16 @@ if ($CalibrationOnly -and -not $WithSysmon) {
     # start during ETW. Collect only identity fields, never command lines.
     $bookends = Join-Path $root 'process-bookends.json'
     $before = @(Get-ProcessBookend)
+    $threadsBefore = @(Get-ThreadBookend)
+    $probeArgs += '--thread-context'
 }
 $result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
 if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
 $capture = $result | ConvertFrom-Json
 if ($bookends) {
     $after = @(Get-ProcessBookend)
-    @{ before = $before; after = $after } |
+    $threadsAfter = @(Get-ThreadBookend)
+    @{ before = $before; after = $after; threads_before = $threadsBefore; threads_after = $threadsAfter } |
         ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $bookends -Encoding utf8
 }
 $manifestPath = Join-Path $root 'fixture.json'
@@ -58,7 +81,8 @@ try {
         $event = $_
         $eventId = $event.Id
         $isFileEvent = $event.ProviderId -eq $provider
-        $isLifecycleEvent = $event.ProviderId -eq $processProvider -and $eventId -in 1,2
+        $isLifecycleEvent = $event.ProviderId -eq $processProvider -and
+            ($eventId -in 1,2 -or ($bookends -and $eventId -in 3,4))
         if ($isFileEvent) {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
         }

@@ -551,7 +551,7 @@ def etw_events(path, capture_bounds, expected_digest):
 
 
 def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *,
-                      details=None, process_bookends=None):
+                      details=None, process_bookends=None, thread_bookends=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -609,7 +609,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             lambda value: canonical_file_path(value, devices),
             classify_process, lambda value: value is not None and
             any(inside(value, root) for root in protected), record, strict=True,
-            details=details, process_bookends=process_bookends,
+            details=details, process_bookends=process_bookends, thread_bookends=thread_bookends,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -764,6 +764,25 @@ def stable_process_bookends(bookends, capture_start, lifecycle_pids):
             if birth < capture_start and after.get(pid) == birth and pid not in lifecycle_pids}
 
 
+def stable_thread_bookends(bookends, capture_start, stable_pids, lifecycle_tids):
+    snapshots = []
+    for side in ("threads_before", "threads_after"):
+        entries = {}
+        duplicates = set()
+        for entry in bookends.get(side, ()):
+            tid, pid, birth = entry["tid"], entry["pid"], entry["birth_ticks"]
+            require(all(type(value) is int for value in (tid, pid, birth))
+                    and tid > 0 and pid >= 0 and birth > 0,
+                    "invalid thread bookend identity")
+            if tid in entries:
+                duplicates.add(tid)
+            entries[tid] = (pid, birth)
+        snapshots.append({tid: identity for tid, identity in entries.items() if tid not in duplicates})
+    before, after = snapshots
+    return {tid: pid for tid, (pid, birth) in before.items() if pid in stable_pids
+            and birth < capture_start and after.get(tid) == (pid, birth) and tid not in lifecycle_tids}
+
+
 def check_etw_preflight(manifest, fixture, path, *, bookends=None):
     """Exercise strict ETW correlation using fixture PIDs and ETW lifetimes."""
     if __package__:
@@ -784,14 +803,17 @@ def check_etw_preflight(manifest, fixture, path, *, bookends=None):
     require(bounds[0] <= first < last <= bounds[1], "fixture lifetime window outside ETW capture")
     lifecycles = {(pid, kind): [] for pid in (parent_pid, child_pid) for kind in (1, 2)}
     lifecycle_pids = set()
+    lifecycle_tids = set()
     with evidence_stage("ETW fixture lifetimes"):
         for event in etw_events(path, bounds, manifest["etw"]["events_sha256"]):
-            if event["lifecycle"]:
+            if event["lifecycle"] and event["id"] in (1, 2):
                 pid = number(event["data"]["ProcessID"])
                 lifecycle_pids.add(pid)
                 key = (pid, event["id"])
                 if key in lifecycles and first <= event["ticks"] <= last:
                     lifecycles[key].append(event["ticks"])
+            elif event["lifecycle"] and event["id"] in (3, 4):
+                lifecycle_tids.add(number(event["data"]["ThreadID"]))
     require(all(len(stamps) == 1 for stamps in lifecycles.values()),
             "fixture ETW lifetimes missing or ambiguous")
     parent_start, parent_stop, child_start, child_stop = (
@@ -816,9 +838,11 @@ def check_etw_preflight(manifest, fixture, path, *, bookends=None):
     require(protected, "missing ETW calibration protected roots")
     permitted = {"calibration": [ntpath.dirname(windows_path(root["fixture"]))]}
     bookend_pids = None if bookends is None else stable_process_bookends(bookends, bounds[0], lifecycle_pids)
+    bookend_threads = None if bookends is None else stable_thread_bookends(
+        bookends, bounds[0], bookend_pids, lifecycle_tids)
     counts, violations, file_events, unresolved = inspect_etw_files(
         manifest, path, start, end, processes, roles, protected, permitted, issues,
-        details=details, process_bookends=bookend_pids)
+        details=details, process_bookends=bookend_pids, thread_bookends=bookend_threads)
     matched = calibration_file_events(root, "child") <= file_events
     return {"scope": "strict ETW diagnostic preflight with generated process evidence",
             "etw_coverage": "BLOCKED" if issues or violations or not matched else "CLEAN",
