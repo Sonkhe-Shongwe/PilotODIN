@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 issuing-thread evidence preflight
+
+- [Source `8f16e34`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8f16e34e979c900a83430dc54679ef923a2a8220) adds Kernel Process thread starts and stops and Windows thread identity samples to the calibration-only ETW preflight. The reducer compares the issuing thread with the event header process and checks for an open file object under a matched thread owner. Ambiguous identities and lifecycle transitions invalidate a bookend match. The diagnostic does not use these observations to clear the strict blocker. All 59 targeted tests passed.
+- [Windows preflight](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43485034693/job/132091098335) matched all five fixture operations with no file violations. Twenty background writes carried an issuing thread ID, but none matched an observed thread lifetime or stable thread identity. No file-object path was recovered through the issuing thread. All 20 header PIDs still had matching process bookends. Nineteen file-key hints pointed outside the tracked paths and one key was unseen.
+- **Next.** Use controlled writes through handles opened before capture, with one known protected target and one known outside target, to evaluate whether file-object rundown or another independent path source can prove both target paths. Keep unresolved writes blocking strict coverage. Combined calibration and native acceptance remain pending.
+
 ## 13 November 2026 | N12 background process identity preflight
 
 - [Source `8fcf96d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8fcf96d1066fb87db57a4da51de2716dfbb75d09) samples Windows process IDs and creation times immediately before and after the regular calibration-only trace. Equal creation times older than the capture start corroborate that the process existed across both samples. The reducer excludes PIDs with an ETW lifecycle transition and rejects duplicate entries. It joins the process context to file-key context in aggregated diagnostics. Raw identities and paths stay in runner temp. All 58 targeted tests passed.
