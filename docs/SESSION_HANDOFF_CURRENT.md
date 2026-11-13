@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 combined ETW and Sysmon audit
+
+- [Source `ae56f59`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ae56f59b9035e3fb4ad6fe36cb3d73387c0fa38c) adds `audit-etw`. It combines completed ETW file mutations, Sysmon process and network evidence, the existing write rules, and before/after snapshots. It verifies the ETW export hash and loss counters and resolves drive, DOS extended and declared NT device paths. The Process Monitor audit remains available.
+- [Exact-source P4 CI #43470297374](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43470297374) passed all three jobs. The synthetic combined audit exercises the CLI, a protected cross-directory rename and write by a process already running when capture began, nonzero ETW loss, and a changed export digest. It caught the protected mutations with identical snapshots and reported incomplete writer attribution. The local targeted suite passed 47 tests. The hosted Windows ETW fixture also passed with zero loss across 30 buffers. This run verifies that fixture and the synthetic combined-audit contract separately.
+- **Next:** Wire the ETW export and its manifest evidence into a disposable end-to-end collector rehearsal. Validate pre-opened handles, unresolved aliases and relevant unsupported operations before using the combined report for a separately approved native PilotODIN journey. R02/N12 is partial and P4 remains active. The Process Monitor workflow is disabled and the historical port 443 connection remains unattributed.
+
 ## 13 November 2026 | N12 ETW failed requests and protected writes
 
 - [Source `17f2522`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/17f2522c6230d44a8ac9315d07412fcb440c80b0) consumes Kernel Process start and stop events alongside Kernel File records. The fixture now uses bounded process-start windows and keys file objects by process lifetime. It rejects overlapping IRP reuse and distinguishes an existing-file open from creation or overwrite. The local regression exercises synthetic PID, file-object and IRP reuse, and the targeted suite passed 46 tests.
