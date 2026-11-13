@@ -1,5 +1,6 @@
 import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
+import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -184,9 +185,13 @@ async function runNativeProbe(browser) {
   await target.selectOption('generic_measure');
   await expect(blockers).toContainText('Structurally blocked target');
   console.log('N10 unnamed outcome abstains and explains a blocked manual selection: PASS');
-  const stale=await fetch(API+'/projects/'+ids.classification+'/preparation?expected_version=99999');
-  if(stale.status!==409)throw Error('Expected Quality-version 409 but got HTTP '+stale.status);
-  console.log('N11 stale Quality-version API: PASS; native stale UI transition NOT TESTED');
+  const active=await fetch(p4PreparationRequestUrl(API,ids.classification,'churn',0));
+  if(!active.ok)throw Error('Expected current Prepare version to load, got HTTP '+active.status);
+  const plan=await active.json();
+  if(plan.quality_version!==0||plan.target!=='churn')throw Error('Unexpected current Prepare plan');
+  const mismatch=await fetch(p4PreparationRequestUrl(API,ids.classification,'churn',1));
+  if(mismatch.status!==409)throw Error('Expected Quality-version conflict 409 but got HTTP '+mismatch.status);
+  console.log('N11 Prepare API version mismatch: PASS; native Quality version transition NOT TESTED');
   await noTraining(all);
   console.log('N12 disposable projects contain no model experiments: PASS for experiment count');
   console.log('Native probe checks completed. Quality version transition, R04 layout and R05 Prepare controls require separate evidence.');

@@ -2,6 +2,7 @@ import {test,expect} from '@playwright/test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {openP4FixtureWorkspace} from './p4-open-fixture-workspace.mjs';
+import {p4PreparationRequestUrl} from './p4-preparation-request.mjs';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
@@ -715,7 +716,7 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   await expect(resource).toContainText('28 estimated encoded columns');
   // P4-74: the version-pinned backend plan must agree with the visible audit
   // before and after user choices. No model fit or writable project endpoints.
-  const plan=await request.get(`${API}/api/projects/${projectId}/preparation?target=churn&expected_version=0`);
+  const plan=await request.get(p4PreparationRequestUrl(API+'/api',projectId,'churn',0));
   expect(plan.status(),await plan.text()).toBe(200);
   const planJson=await plan.json();
   expect(planJson.quality_version).toBe(0);
@@ -726,10 +727,10 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
   const adviceJson=await advice.json();
   expect(adviceJson.version).toBe(0);
   expect(adviceJson.features.find((entry:{column:string})=>entry.column==='TransactionID')?.risk).toBe('high');
-  for(const path of ['preparation','features']){
-   const stale=await request.get(`${API}/api/projects/${projectId}/${path}?target=churn&expected_version=1`);
-   expect(stale.status(),await stale.text()).toBe(409);
-  }
+  const mismatchedPlan=await request.get(p4PreparationRequestUrl(API+'/api',projectId,'churn',1));
+  expect(mismatchedPlan.status(),await mismatchedPlan.text()).toBe(409);
+  const staleAdvice=await request.get(`${API}/api/projects/${projectId}/features?target=churn&expected_version=1`);
+  expect(staleAdvice.status(),await staleAdvice.text()).toBe(409);
   const audit=page.locator('.po-ml-feature-audit tbody');
   const transactionRow=audit.locator('tr').filter({hasText:'TransactionID'});
   const eventRow=audit.locator('tr').filter({hasText:'event_type'});

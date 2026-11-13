@@ -49,6 +49,7 @@ on:
       - frontend/src-tauri/tauri.p4-isolated-native-dev.conf.json
       - frontend/tests/p4-native-dev-isolation.test.cjs
       - frontend/e2e/p4-real-http-review-queue.spec.ts
+      - frontend/e2e/p4-preparation-request.mjs
       - frontend/e2e/p4-71-native-webview-qa.mjs
       - frontend/e2e/p4-72-cdp-target-classifier.mjs
       - frontend/e2e/p4-72-cdp-target-classifier.test.mjs
