@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ false }} # One-time provisioning approval consumed by run 43473282610
+    if: ${{ github.run_attempt == 1 }} # Owner-approved single combined rehearsal
     runs-on: windows-2022
     timeout-minutes: 10
     env:
@@ -27,7 +27,7 @@ jobs:
         shell: pwsh
         run: |
           $parent = git rev-parse HEAD^
-          if ($LASTEXITCODE -ne 0 -or $parent -ne 'ad6f37f2dc32229c16439ed86430e64c1a42f229' -or
+          if ($LASTEXITCODE -ne 0 -or $parent -ne '3a423e4a6f470c8c213bd5dcd96046cd27b2dae5' -or
               $env:GITHUB_RUN_ATTEMPT -ne '1') {
             throw 'The approved collector calibration is for one run from the reviewed parent.'
           }
