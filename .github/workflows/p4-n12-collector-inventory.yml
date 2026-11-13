@@ -1,0 +1,64 @@
+name: P4 N12 Windows Collector Inventory
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-n12-collector-inventory.yml
+
+permissions: {}
+
+jobs:
+  windows-collector-inventory:
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - name: Check existing collectors without changing the runner
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows') {
+            throw 'This inventory requires a disposable GitHub-hosted Windows runner.'
+          }
+
+          $sysmonService = @(Get-Service -Name Sysmon,Sysmon64 -ErrorAction SilentlyContinue)
+          $runningSysmon = @($sysmonService | Where-Object Status -eq Running).Count -gt 0
+          $channel = Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' -ErrorAction SilentlyContinue
+          $channelEnabled = $null -ne $channel -and $channel.IsEnabled
+
+          $programDirectories = @(
+            (Join-Path $env:ProgramFiles 'Sysinternals')
+            (Join-Path $env:ProgramFiles 'SysinternalsSuite')
+            (Join-Path $env:ProgramFiles 'Process Monitor')
+            (Join-Path $env:SystemRoot 'System32')
+          )
+          $procmonFound = $false
+          foreach ($name in 'Procmon64.exe','Procmon.exe') {
+            if (Get-Command $name -CommandType Application -ErrorAction SilentlyContinue) {
+              $procmonFound = $true
+              break
+            }
+            foreach ($directory in $programDirectories) {
+              if (Test-Path -LiteralPath (Join-Path $directory $name) -PathType Leaf) {
+                $procmonFound = $true
+                break
+              }
+            }
+            if ($procmonFound) { break }
+          }
+
+          $disposition = 'BLOCKED: collector prerequisites were not detected'
+          if ($runningSysmon -and $channelEnabled -and $procmonFound) {
+            $disposition = 'AVAILABLE: live collector coverage still requires calibration'
+          }
+          $summary = @(
+            "Windows runner image: $env:ImageOS $env:ImageVersion"
+            "Sysmon service detected: $($sysmonService.Count -gt 0)"
+            "Sysmon service running: $runningSysmon"
+            "Sysmon operational channel enabled: $channelEnabled"
+            "Process Monitor found on PATH or in checked install directories: $procmonFound"
+            "Calibration readiness: $disposition"
+          )
+          $summary | Write-Host
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
