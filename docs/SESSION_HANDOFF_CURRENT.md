@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 calibration-only Windows preflight
+
+- [Source `ba11a38`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ba11a382e1cb48195f3ca9287bde5645b9e6e8e3) adds the calibration-only capture to regular P4 CI alongside the expanded ETW fixture. It uses the same generated workload, PowerShell export and ETW capture validation as the combined rehearsal. The local suite passed 56 tests. The synthetic regression exercises calibration-only correlation with a valid process start and with that start missing.
+- [Exact-source P4 CI #43477884539](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43477884539) passed all three jobs. The calibration-only Windows fixture validated 7,705 ETW events across 25 buffers, matched all five expected mutation types, and reported zero event or buffer loss, zero unresolved tracked operations and zero protected writes.
+- **Next.** Obtain approval for one disposable hosted Windows rehearsal of `ba11a38` that provisions pinned Sysmon 15.22 and verifies combined coverage. Look for contiguous Sysmon records, a uniquely attributed fixture child, loopback TCP and UDP, and all five ETW file mutations. If it blocks, use the redacted stage or coverage reason to select a local reproduction. Native acceptance remains pending.
+
 ## 13 November 2026 | N12 preflight catches a Windows timestamp defect
 
 - [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md) defines a reusable workflow for costly QA and applies it to N12. The [shared ETW export check](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7b1442f37bf2bec809ff225525573be824cc6c5f) runs the reducer's validation against the regular Windows fixture. All 56 targeted tests passed, including one valid export and eight injected failures.
