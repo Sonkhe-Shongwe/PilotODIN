@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 strict ETW diagnostic preflight
+
+- [Source `41be9bb`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/41be9bb0200567e5d634c8bcf8a887525637f9df) exercises the combined reducer's strict ETW correlation against actual Windows fixture events in regular CI. It derives generated process evidence from the fixture PIDs and uniquely matched ETW starts and stops. It publishes event IDs, bounded information-class values and counts by role and reason. No file paths, process IDs or raw events are published in the diagnostic summary. All 56 targeted tests passed.
+- [Hosted Windows preflight #43480190583](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43480190583/job/132074364531) reproduced the sole combined coverage blocker. It matched all five expected fixture mutations with no file violations and reported one fixture event 17 / information class 19, one fixture event 34 with no resolved path, and 20 background writes with neither a resolved path nor a process lifetime. Two background event 34 requests also lacked both. These counts describe the preflight trace.
+- **Next.** Use the reproduced event types to choose between specific operation handling and more complete path or lifetime evidence. The strict acceptance gate still blocks unresolved mutations. Combined calibration and native acceptance remain pending.
+
 ## 13 November 2026 | N12 combined calibration reaches strict ETW coverage check
 
 - [Approved run #43478728040](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43478728040) ran once at launch commit `a4aad25` on one disposable hosted Windows runner. The launch parent was `3a423e4`, with only documentation differences from preflight-tested `ba11a38`. The runner verified and installed pinned Sysmon 15.22 and exported bounded Sysmon XML and built-in ETW evidence. The reducer wrote a redacted summary and returned exit 2 with the sole coverage issue `etw-mutation-coverage-unresolved`.
