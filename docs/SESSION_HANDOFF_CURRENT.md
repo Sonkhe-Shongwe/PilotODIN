@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | Targeted R04 probe prepared
+
+- [`62d27aab59e06fc25e8abeff1f36a44916e93ee6`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/62d27aab59e06fc25e8abeff1f36a44916e93ee6) adds a docking-only mode to the existing hosted Windows QA runner. It uses one disposable project, observes drag start, drag over, drop and drag end, and checks the dock button and narrow-width pause/restore even if the automated drag fails. It checks for zero experiments and no browser writes to the backend during docking.
+- Exact-source [P1 #43419278218](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43419278218) and [P4 #43419278290](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43419278290) passed. P4 included the synthetic Windows job and PowerShell syntax validation. The new docking probe has yet to run in WebView2.
+- **Next:** Fresh owner approval for one unpackaged GitHub-hosted Windows build on disposable data. Pin the new launch commit and approval marker in preflight and run the docking-only probe. The previous one-use workflow remains disarmed and R04 remains open.
+
 ## 13 November 2026 | R04 Windows drag-and-drop correction
 
 - The hosted R04 failure occurred with Tauri's native drop handler enabled by default. The workspace tabs rely on HTML drag events. [Tauri v2's configuration reference](https://v2.tauri.app/reference/config/#dragdropenabled) says its native handler must be disabled for HTML drag and drop on Windows. This is a confirmed configuration mismatch. The historical run did not record which drag events WebView2 received.
