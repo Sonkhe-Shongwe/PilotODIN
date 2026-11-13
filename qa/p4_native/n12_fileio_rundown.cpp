@@ -54,7 +54,7 @@ struct Context {
     ULONGLONG undecodedRecords = 0;
     ULONGLONG invalidUtf8Records = 0;
     ULONGLONG callbackErrors = 0;
-    ULONG minimumPayload = MAXULONG;
+    ULONG minimumPayload = std::numeric_limits<ULONG>::max();
     ULONG maximumPayload = 0;
     std::map<ULONG, ULONGLONG> metadataStatuses;
     std::map<ULONG, ULONGLONG> keyStatuses;
@@ -152,7 +152,7 @@ ULONG get_property(
     std::vector<BYTE>& value) {
     PROPERTY_DATA_DESCRIPTOR descriptor{};
     descriptor.PropertyName = reinterpret_cast<ULONGLONG>(propertyName);
-    descriptor.ArrayIndex = MAXULONG;
+    descriptor.ArrayIndex = std::numeric_limits<ULONG>::max();
     descriptor.Reserved = 0;
 
     ULONG size = 0;
