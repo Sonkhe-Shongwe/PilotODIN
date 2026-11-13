@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {diagnoseDevPage,discoverUniqueDevPage,hasTauriNativeBridge} from './p4-73-cdp-target-discovery.mjs';
-const page = u=>({url:()=>u});
+const page = u=>({url:()=>u,evaluate:async()=>true});
 const wanted=page('http://127.0.0.1:5173/#/studio/prepare');
 const empty=page('about:blank');
 const unrelated=page('https://example.org/secret?token=private-data');
@@ -32,6 +32,36 @@ test('invalid source and invalid attempt count are blocked',async()=>{
   const res=await discoverUniqueDevPage(()=>null,()=>{},1);
   assert.equal(res.status,'BLOCKED_INVALID_SNAPSHOT');
   await assert.rejects(discoverUniqueDevPage(()=>[],()=>{},21),/invalid bounded/);
+});
+test('an expected page is retried until its native bridge is callable',async()=>{
+  let checks=0,waits=0;
+  const late={...wanted,evaluate:async()=>++checks===3};
+  const res=await discoverUniqueDevPage(()=>[late],()=>{waits++},4);
+  assert.equal(res.status,'FOUND');
+  assert.equal(res.page,late);
+  assert.equal(res.attempts,3);
+  assert.equal(waits,2);
+});
+test('a browser page at the expected URL stays blocked without a bridge',async()=>{
+  const noBridge={...wanted,evaluate:async()=>false};
+  const res=await discoverUniqueDevPage(()=>[noBridge],()=>{},2);
+  assert.equal(res.status,'BLOCKED_BRIDGE_UNVERIFIED');
+  assert.equal(res.page,undefined);
+  assert.equal(res.attempts,2);
+});
+test('ambiguity is refused even after a prior single page without a bridge',async()=>{
+  const noBridge={...wanted,evaluate:async()=>false};
+  let polls=0;
+  const res=await discoverUniqueDevPage(()=>++polls===1?[noBridge]:[noBridge,wanted],()=>{},3);
+  assert.equal(res.status,'BLOCKED_AMBIGUOUS');
+  assert.equal(res.page,undefined);
+});
+test('a page that leaves the approved development origin cannot be returned',async()=>{
+  let url=wanted.url();
+  const moved={url:()=>url,evaluate:async()=>{url=unrelated.url();return true;}};
+  const res=await discoverUniqueDevPage(()=>[moved],()=>{},2);
+  assert.equal(res.status,'BLOCKED_BRIDGE_UNVERIFIED');
+  assert.equal(res.page,undefined);
 });
 test('native bridge must exist and supply actual callable invoke',async()=>{
   const original=globalThis.window;

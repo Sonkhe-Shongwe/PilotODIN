@@ -5,16 +5,28 @@ export async function discoverUniqueDevPage(snapshot, wait, maxAttempts=20) {
   if(!Number.isInteger(maxAttempts)||maxAttempts<1||maxAttempts>20)
     throw Error('P4-73 blocked: invalid bounded attempt count');
   let classes=[];
+  let bridgeUnverified=false;
   for(let attempt=1;attempt<=maxAttempts;attempt++) {
     const candidates=await snapshot();
     if(!Array.isArray(candidates))return {status:'BLOCKED_INVALID_SNAPSHOT',classes:[],count:0,attempts:attempt};
     const matching=candidates.filter(p=>p&&typeof p.url==='function'&&isExpectedDevPage(p.url()));
     if(matching.length>1)return {status:'BLOCKED_AMBIGUOUS',classes:['expected-5173-root'],count:candidates.length,attempts:attempt};
-    if(matching.length===1)return {status:'FOUND',page:matching[0],attempts:attempt};
+    if(matching.length===1) {
+      const page=matching[0];
+      if(await hasTauriNativeBridge(page) && isExpectedDevPage(page.url())) {
+        return {status:'FOUND',page,attempts:attempt};
+      }
+      bridgeUnverified=true;
+    }
     classes=candidates.map(p=>p&&typeof p.url==='function'?safeTargetClass(p.url()):'unknown-target');
     if(attempt<maxAttempts)await wait();
   }
-  return {status:'BLOCKED_NO_TARGET',classes:[...new Set(classes)].sort(),count:classes.length,attempts:maxAttempts};
+  return {
+    status:bridgeUnverified?'BLOCKED_BRIDGE_UNVERIFIED':'BLOCKED_NO_TARGET',
+    classes:[...new Set(classes)].sort(),
+    count:classes.length,
+    attempts:maxAttempts,
+  };
 }
 
 // Read-only browser-context evidence before any synthetic fixture upload or

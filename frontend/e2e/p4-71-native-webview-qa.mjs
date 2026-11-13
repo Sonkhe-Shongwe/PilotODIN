@@ -1,4 +1,4 @@
-import { diagnoseDevPage, discoverUniqueDevPage, hasTauriNativeBridge } from './p4-73-cdp-target-discovery.mjs';
+import { diagnoseDevPage, discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -69,6 +69,7 @@ async function reportBlockedDiscovery() {
  console.log('NATIVE LOOPBACK DIAGNOSTICS: '+JSON.stringify(await diagnoseDevPage()));
 }
 async function runNativeProbe(browser) {
+ // Require the development page and its callable Tauri bridge before creating fixtures.
  const discovered=await discoverUniqueDevPage(
   ()=>browser.contexts().flatMap(context=>context.pages()),
   ()=>new Promise(resolve=>setTimeout(resolve,1500)),
@@ -76,19 +77,12 @@ async function runNativeProbe(browser) {
  );
  if(discovered.status!=='FOUND'){
   // Diagnostic classes are deliberately fixed categories, never raw URLs.
-  console.log('NATIVE INTERACTIONS BLOCKED: '+discovered.status);
+  console.log('NATIVE INTERACTIONS BLOCKED: '+discovered.status+' after '+discovered.attempts+' polls. No QA projects created.');
   if(discovered.classes)console.log('CDP target classes: '+JSON.stringify(discovered.classes)+'; count='+discovered.count);
   await reportBlockedDiscovery();
   return;
  }
  const page=discovered.page;
- // Even an exact loopback URL can belong to a non-Tauri browsing context.
- // Require the actual injected native bridge BEFORE creating QA projects.
- if(!(await hasTauriNativeBridge(page))){
-  console.log('NATIVE INTERACTIONS BLOCKED: no callable Tauri native IPC bridge on the selected target. No QA projects created.');
-  await reportBlockedDiscovery();
-  return;
- }
  const context=page.context();
  await context.route('**/*',async route=>{
   const u=new URL(route.request().url());

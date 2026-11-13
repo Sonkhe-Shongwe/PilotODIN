@@ -61,7 +61,7 @@ A **separate, future, explicitly approved** native isolation study may compare t
 
 ## D. Consolidated native acceptance is a conditional downstream task
 
-**Current state: N1–N5 passed in the latest isolated Windows run.** N7 remains blocked at the native consent prompt. See the project-switch follow-up below. The one-use workflows are disarmed and the build approvals have been consumed.
+**Current state: N1–N5 passed in the first 13 November project-switch follow-up.** The native-button fallback run stopped earlier because the probe could not verify the Tauri bridge. N7 remains open. The one-use workflows are disarmed and the build approvals have been consumed.
 
 1. **Prerequisite:** explicit separate owner approval for any fresh unpackaged native compilation; maintain the owner's **no intermediate installers through P4–P7** directive. A new distributed EXE, MSI or NSIS is not authorised. Record any outstanding cases as **BLOCKED / NOT TESTED** until they are observed.
 2. **Preflight before any future permitted run:** freeze exact source commit and trusted native binary SHA; prove unique QA app ID, WebView profile, disposable `PILOTODIN_HOME`, no original-root paths, no inherited user data, no unintended cloud access. If any mismatch: **STOP**.
@@ -118,6 +118,14 @@ For a future isolated Windows session, verify the native **Stay** and **Switch p
 | N12 | **PARTIAL.** Cleanup checked the five disposable projects for zero experiments, with no reported cleanup failure. The protected paths were absent on the hosted runner. Full network and write evidence remains open. |
 
 The next useful evidence is a desktop-level observation of the prompt and its buttons, or staged diagnostics that distinguish dialog discovery from button discovery for the same isolated app process. Continue N6–N11 and Prepare/layout once the switch can be exercised. The one-use workflow was disarmed at [`fa33d43`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fa33d43997143945aa7b5683a918cb214cb9c5e9).
+
+### 13 November 2026 native button fallback run
+
+[Windows run 43399799218, attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43399799218/job/131799623603) built and launched source `6824cd10e25ade9610cc34739d9f33801f648cf2` once. Executable SHA-256: `978e3dd27be1bf2a5f57862bb03f853936959f4e3d9ef30358cd53c0298cd2e6`. The isolated profile and six WebView2 processes were observed. The Vite and CDP loopback endpoints returned HTTP 200, and CDP listed one page of the expected URL class. The probe could not verify a callable Tauri bridge on its first check, so it stopped before creating any QA project. The log does not distinguish delayed initialization from a bridge that stayed unavailable.
+
+The Windows native-button fallback remains verified on the [synthetic form](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43395617425/job/131785679826). Both actual app button actions and subsequent native cases remain unobserved in the fallback run. The [parallel synthetic P4 workflow](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43399799126) passed. The fallback workflow was disarmed after dispatch.
+
+The revised probe uses the existing 20-attempt discovery loop to wait for both a unique approved loopback page and a callable Tauri bridge before creating fixtures. It now reports a distinct bridge-unverified status. Local tests cover delayed initialization, a persistently missing bridge, ambiguity and a page that leaves the approved origin. This revision awaits Windows app verification.
 
 ## E. Practical order for the next sessions
 
