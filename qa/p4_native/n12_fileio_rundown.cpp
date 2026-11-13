@@ -2,6 +2,7 @@
 // FileIo_Name opcode 36 carries the file-name key and a UTF-16 path. Raw
 // captures and decoded paths remain confined to the disposable runner temp.
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #include <evntrace.h>
 #include <evntcons.h>
