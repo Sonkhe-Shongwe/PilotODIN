@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ false }} # One-time provisioning approval consumed by run 43452047885
+    if: ${{ github.run_attempt == 1 }}
     runs-on: windows-2022
     timeout-minutes: 10
     env:
@@ -27,14 +27,14 @@ jobs:
         shell: pwsh
         run: |
           $parent = git rev-parse HEAD^
-          if ($LASTEXITCODE -ne 0 -or $parent -ne '20c83bcfb5f9d5836aa6fa3b8026f6ed1aa899b5' -or
+          if ($LASTEXITCODE -ne 0 -or $parent -ne 'e18ad8ac5fcaf9168ce56a55e58322f05dd9bc76' -or
               $env:GITHUB_RUN_ATTEMPT -ne '1') {
             throw 'The approved collector calibration is for one run from the reviewed parent.'
           }
           $changed = @(git diff-tree --no-commit-id --name-only -r HEAD)
           if ($LASTEXITCODE -ne 0 -or ($changed -join '|') -ne
-              '.github/workflows/p4-n12-live-calibration.yml|qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1') {
-            throw 'The approved launch changes only the calibration workflow and script.'
+              '.github/workflows/p4-n12-live-calibration.yml') {
+            throw 'The approved launch changes only the calibration workflow.'
           }
       - name: Use Python for the generated fixture
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
