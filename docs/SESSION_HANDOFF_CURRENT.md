@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | Remaining P4 Windows acceptance
+
+- [Hosted Windows #43420833495](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43420833495) used one unpackaged build at `258a859122f57f1c1cd2238ef2c08554bdd9c3c4`. The workflow failed at drag-to-dock. WebView2 recorded one drag start, one drag over with the workspace-tab data type, zero drops, and one drag end. The explicit Dock beside button, close, and narrow-width pause/restore passed. R04 remains open for the missing drop.
+- **R05:** The native Prepare overrides reset after a consented project switch and after Quality v0 to v1. Evaluate and Predict showed the recorded strategy choices from a read-only synthetic experiment response. Together with the earlier run, the targeted Prepare UI cases are covered. Real saved-experiment persistence and wider BE-024 scope remain outside this evidence.
+- **N12 partial:** Two intended Quality POSTs, five blocked font requests, zero experiments, and no other unexpected intercepted requests. Scoped TCP snapshots counted one established non-loopback connection before and two afterward. Their ownership within the process group, destination and purpose were not resolved. The [case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-remaining-p4-windows-acceptance) record the file counts and evidence limits.
+- Exact-source [P4 #43420833547](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43420833547) passed 183 Python, 77 Node, TypeScript/Vite, 12 real-HTTP Chromium scenarios and the synthetic Windows job. [P1 #43420833501](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43420833501) passed 187 Node, TypeScript/Vite and 7 Chromium scenarios. The one-use workflow was disarmed at [`e25bb81`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e25bb81abebbe7e0199c5dc3e5402f756ba8efbf).
+- **Next:** Diagnose why the automated Windows drag ends without a drop. Any further native compilation needs fresh approval. N12 network attribution, the physical R03 offline 8 GB run, and disposition of the historical R06 strict fail remain open. P4 stays active.
+
 ## 13 November 2026 | Targeted R04 probe prepared
 
 - [`62d27aab59e06fc25e8abeff1f36a44916e93ee6`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/62d27aab59e06fc25e8abeff1f36a44916e93ee6) adds a docking-only mode to the existing hosted Windows QA runner. It uses one disposable project, observes drag start, drag over, drop and drag end, and checks the dock button and narrow-width pause/restore even if the automated drag fails. It checks for zero experiments and no browser writes to the backend during docking.

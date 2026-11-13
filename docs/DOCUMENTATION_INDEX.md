@@ -12,6 +12,8 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November remaining Windows acceptance:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-remaining-p4-windows-acceptance). Prepare resets, recorded strategy display, explicit docking and narrow-width restore passed. R04 drag produced no drop event. N12 network evidence remains partial.
+
 - **13 November consolidated Windows QA:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance). N11 same-binary relaunch passed. The tested Prepare controls passed. R04 drag-to-dock remains open after the workflow failed at that check.
 
 - **13 November Windows:** [P4 Quality relaunch checkpoint](./SESSION_HANDOFF_CURRENT.md#13-november-2026--p4-quality-relaunch-checkpoint) and [native run record](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-windows-quality-refresh-retest). Hosted Windows passed the Quality edit, version guard, Prepare refresh and WebView reload. Same-binary Windows process relaunch is pending.
