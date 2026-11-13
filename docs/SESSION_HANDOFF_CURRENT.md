@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | N12 background process identity preflight
+
+- [Source `8fcf96d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8fcf96d1066fb87db57a4da51de2716dfbb75d09) samples Windows process IDs and creation times immediately before and after the regular calibration-only trace. Equal creation times older than the capture start corroborate that the process existed across both samples. The reducer excludes PIDs with an ETW lifecycle transition and rejects duplicate entries. It joins the process context to file-key context in aggregated diagnostics. Raw identities and paths stay in runner temp. All 58 targeted tests passed.
+- [Hosted Windows preflight](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43482981021/job/132083990069) matched all five fixture operations and reported no file violations. The 25 unresolved write requests all carried header PIDs that matched the same process creation time at both bookends. Nineteen had a file-key hint outside the tracked paths, one had ambiguous name evidence and five had unseen keys. One background delete lacked a path and lifetime, and one filesystem-control request lacked a completion. The diagnostic does not use header PIDs or file-key hints to clear coverage. Strict ETW coverage stayed blocked.
+- **Next.** Use the redacted overlap counts to decide whether Windows file-object or thread ownership evidence can establish both the target and originating process. Keep unmatched operations blocking strict coverage. Combined calibration and native acceptance remain pending.
+
 ## 13 November 2026 | N12 ETW allocation and background write context
 
 - [Source `95037a3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/95037a392ca28613c6aeee881474fa97fb7237a9) classifies Kernel File event 17 / information class 19 as an allocation mutation. It treats QueryEA (event 34) as read-only while keeping IRP collision detection. Allocation still requires a successful completion and an attributable path, and it does not substitute for the expected resize marker.
