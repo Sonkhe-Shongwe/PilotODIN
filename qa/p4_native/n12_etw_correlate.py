@@ -5,6 +5,7 @@ import json
 import ntpath
 import re
 import sys
+from xml.etree import ElementTree as ET
 from collections import Counter
 from pathlib import Path
 
@@ -323,7 +324,37 @@ def preopened_report(capture, events, rundown=None):
     return result
 
 
+def decode_rundown_report(source, target):
+    namespace = "{http://schemas.microsoft.com/win/2004/08/events/event}"
+    provider_guid = "90cbdc39-4a3e-11d1-84f4-0000f80464e3"
+    counts = Counter(opcode_36=0, decoded_names=0)
+    parser = ET.iterparse(source, events=("start", "end"))
+    _, root = next(parser)
+    with target.open("w", encoding="utf-8") as output:
+        for phase, event in parser:
+            if phase != "end" or event.tag.rsplit("}", 1)[-1] != "Event":
+                continue
+            system = event.find(f"{namespace}System")
+            if system is not None:
+                provider = system.find(f"{namespace}Provider")
+                opcode = system.findtext(f"{namespace}Opcode")
+                guid = "" if provider is None else provider.get("Guid", "").strip("{}").casefold()
+                if guid == provider_guid and opcode == "36":
+                    counts["opcode_36"] += 1
+                    fields = {node.get("Name"): node.text for node in event.findall(
+                        f"{namespace}EventData/{namespace}Data")}
+                    key, name = fields.get("FileObject"), fields.get("FileName")
+                    if key and name:
+                        output.write(json.dumps({"key": number(key), "path": name}) + "\n")
+                        counts["decoded_names"] += 1
+            root.remove(event)
+    print("Windows trace-report rundown counts: " + json.dumps(counts))
+
+
 def main():
+    if len(sys.argv) == 4 and sys.argv[1] == "--decode-rundown":
+        decode_rundown_report(*map(Path, sys.argv[2:]))
+        return 0
     capture_path, events_path = map(Path, sys.argv[1:3])
     options = sys.argv[3:]
     if options and (options[0] != "--preopened-control" or len(options) > 2):
@@ -345,5 +376,5 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, ET.ParseError, StopIteration):
         sys.exit("Kernel File correlation could not decode the captured fields.")

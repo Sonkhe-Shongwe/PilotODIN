@@ -14,7 +14,7 @@ from xml.etree import ElementTree as ET
 import pytest
 
 from qa.p4_native import n12_calibration, n12_trace as trace
-from qa.p4_native.n12_etw_correlate import correlate, correlate_requests, preopened_report
+from qa.p4_native.n12_etw_correlate import correlate, correlate_requests, decode_rundown_report, preopened_report
 
 
 def test_etw_failed_open_and_reused_pid_and_file_object():
@@ -199,6 +199,21 @@ def test_preopened_control_requires_completion_and_does_not_infer_names():
     assert report["targets"]["outside"]["rundown_name"] == "conflicting-or-different"
     assert report["targets"]["outside"]["completion"] == "unverified"
     assert "private.bin" not in json.dumps(report)
+
+
+def test_trace_report_decodes_only_classic_rundown_names(tmp_path, capsys):
+    source = tmp_path / "trace.xml"
+    source.write_text(
+        '<Events><Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">'
+        '<System><Provider Guid="{90CBDC39-4A3E-11D1-84F4-0000F80464E3}"/>'
+        '<Opcode>36</Opcode></System><EventData><Data Name="FileObject">0x28</Data>'
+        '<Data Name="FileName">private-path</Data></EventData></Event></Events>',
+        encoding="utf-8",
+    )
+    target = tmp_path / "names.jsonl"
+    decode_rundown_report(source, target)
+    assert json.loads(target.read_text(encoding="utf-8")) == {"key": 40, "path": "private-path"}
+    assert capsys.readouterr().out.endswith('{"opcode_36": 1, "decoded_names": 1}\n')
 
 
 BASE = "2026-11-13"

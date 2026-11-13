@@ -210,6 +210,13 @@ if ($PreopenedControl) {
             $rundownStream.Dispose()
         }
         Write-Host ('Windows FileIO rundown record counts: ' + ($rundownCounts | ConvertTo-Json -Compress))
+        if ($rundownCounts.opcode_36 -gt 0 -and $rundownCounts.decoded_names -eq 0) {
+            $xmlPath = Join-Path $root 'rundown.xml'
+            & (Join-Path $env:SystemRoot 'System32\tracerpt.exe') (Join-Path $root 'rundown.etl') -o $xmlPath -of XML -y | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Windows trace-report decoding failed.' }
+            python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') --decode-rundown $xmlPath $rundownPath
+            if ($LASTEXITCODE -ne 0) { throw 'The Windows trace-report output could not be read.' }
+        }
         $controlArgs += $rundownPath
     }
     python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') @controlArgs
