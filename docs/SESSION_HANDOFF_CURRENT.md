@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | R04 drag gesture and N12 TCP attribution prepared
+
+- [`950793ce1e1c00291319015034d809653c45e4c0`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/950793ce1e1c00291319015034d809653c45e4c0) shares a two-move pointer gesture between the Chromium regression and Windows probe, following [Playwright input guidance](https://playwright.dev/docs/input#dragging-manually). The probe records whether the last matching drag-over was accepted by the page and the final drag-end effect. The prior Windows run observed one drag-over and zero drops. Its logs do not establish whether the previous gesture or application behavior caused the missing drop.
+- The hosted TCP snapshots now record the owning PID, process role, remote port and address family for each established non-loopback connection, and normalize IPv4-mapped loopback addresses. They do not log raw addresses or command lines. Existing aggregate counts cannot identify the process or purpose of earlier connections.
+- Exact-source [P1 #43422468140](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43422468140) passed including the revised Chromium docking gesture. [P4 #43422468197](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43422468197) passed all three jobs, including the Windows synthetic job and PowerShell syntax validation. The revised diagnostics have yet to run against the native app.
+- **Next:** Fresh approval for one focused, unpackaged hosted Windows build to exercise R04 docking and N12 connection ownership using the isolated synthetic fixtures. The last approved workflow is disarmed. R04 and N12 remain open, alongside physical R03 and the historical R06 disposition.
+
 ## 13 November 2026 | Remaining P4 Windows acceptance
 
 - [Hosted Windows #43420833495](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43420833495) used one unpackaged build at `258a859122f57f1c1cd2238ef2c08554bdd9c3c4`. The workflow failed at drag-to-dock. WebView2 recorded one drag start, one drag over with the workspace-tab data type, zero drops, and one drag end. The explicit Dock beside button, close, and narrow-width pause/restore passed. R04 remains open for the missing drop.
