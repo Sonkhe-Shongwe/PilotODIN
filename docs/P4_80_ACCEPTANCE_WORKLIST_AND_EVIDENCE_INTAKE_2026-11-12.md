@@ -61,7 +61,7 @@ A **separate, future, explicitly approved** native isolation study may compare t
 
 ## D. Consolidated native acceptance is a conditional downstream task
 
-**Current state: N1–N5 passed in the first 13 November project-switch follow-up.** The latest run verified the Tauri bridge and then stopped during synthetic project selection. N7 remains open. The one-use workflows are disarmed and the build approvals have been consumed.
+**Current state: N1–N5 passed in the first 13 November project-switch follow-up.** The catalogue-ready run loaded the synthetic project and repeated N1–N5. N7 remains open at the native dialog. The one-use workflows are disarmed and the build approvals have been consumed.
 
 1. **Prerequisite:** explicit separate owner approval for any fresh unpackaged native compilation; maintain the owner's **no intermediate installers through P4–P7** directive. A new distributed EXE, MSI or NSIS is not authorised. Record any outstanding cases as **BLOCKED / NOT TESTED** until they are observed.
 2. **Preflight before any future permitted run:** freeze exact source commit and trusted native binary SHA; prove unique QA app ID, WebView profile, disposable `PILOTODIN_HOME`, no original-root paths, no inherited user data, no unintended cloud access. If any mismatch: **STOP**.
@@ -132,6 +132,12 @@ The revised probe uses the existing 20-attempt discovery loop to wait for both a
 [Windows run 43402454805, attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43402454805/job/131808523703) compiled and launched one unpackaged debug app from `904d773064acc402f68af9cfd8cbb854f3145a18`. Executable SHA-256: `d421fe0317f4a47a783a2fc59b4bf626ab864cf6b1d57b380a47ae177cf60205`. The isolated profile, six WebView2 processes and a callable Tauri bridge were observed. The probe created the synthetic projects, then timed out waiting for the Prepare target-review section. The WebView snapshot showed Prepare selected and the project picker still on “No projects imported yet.” Neither project-switch action ran. The [parallel P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43402454748) passed. The one-use workflow was disabled after dispatch.
 
 The probe had written the project ID into storage and navigated to a hash-only route on an already loaded shell. That navigation can retain the mounted empty catalogue. The revised harness seeds the fixture project and Prepare tab, then opens a new document so the shell fetches the catalogue again. The shared setup is exercised in real-HTTP browser CI from an initially empty catalogue. Native verification of that transition and the two dialog actions remains open.
+
+### 13 November 2026 catalogue-ready Windows run
+
+[Windows run 43404155763, attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43404155763/job/131814284211) compiled one unpackaged app from `96c17d672714c107aad32f3796144a16771397d0`. Executable SHA-256: `bb47548abaa0f2b0e04b05073c1f5c199563773995e4e83bdebc4f976287ed78`. Six isolated WebView2 processes and the callable Tauri bridge were observed. The refreshed catalogue loaded the synthetic fixture, and N1–N5 passed in the desktop app.
+
+N7 stopped at the first **Stay** action. The PowerShell dialog driver hit the 20-second process timeout without a stage diagnostic. The run did not observe the result of either button. The updated driver finds the same process-owned, exact-title dialog via native window enumeration and invokes only the requested button after both exact labels are present. It avoids the UI Automation calls that could outlast the helper's polling deadline. The revised test records whether Windows sees the app window, dialog and button handles. N6, N8–N11, R04 and R05 did not run. The [parallel P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43404155710) passed. No installer or binary artifact was produced for distribution, and the one-use workflow was disabled after dispatch.
 
 ## E. Practical order for the next sessions
 

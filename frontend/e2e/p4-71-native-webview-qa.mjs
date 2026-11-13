@@ -24,7 +24,10 @@ async function chooseNativeDialogAction(chooser, destination, action) {
   ],{timeout:20000,windowsHide:true});
   console.log(stdout.trim());
  } catch (error) {
-  const reason=error.stderr?.trim()||error.message;
+  const detail=error.stderr?.trim()||error.stdout?.trim();
+  const reason=error.killed
+   ? 'Windows dialog driver exceeded its 20-second process timeout'+(detail?'\n'+detail:'')
+   : detail||error.message;
   console.log('NATIVE PROJECT SWITCH BLOCKED: '+reason);
   process.exitCode=3;
   return false;
