@@ -1,5 +1,4 @@
 /* PilotODIN Studio: reimagined light-first application experience. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&family=Manrope:wght@500;600;650;700;750;800&display=swap');
 :root{--studio-ink:#1e2741;--studio-secondary:#77829a;--studio-accent:#7162f1;--studio-accent-hover:#5d50df;--studio-mint:#21bba8;--studio-canvas:#f7f9fd;--studio-border:#e9edf5;--studio-surface:#fff;--studio-shadow:0 12px 40px #42517309;--accent:#7162f1;--accent-hover:#5d50df;--edge:#e8ecf3;font-family:Inter,'Segoe UI',sans-serif;font-optical-sizing:auto;color:#202c45;background:#f7f9fd;font-size:14px}
 body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .studio-app{height:100dvh;min-height:0;isolation:isolate;background:var(--studio-canvas)}

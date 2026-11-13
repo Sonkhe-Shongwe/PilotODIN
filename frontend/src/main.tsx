@@ -2,6 +2,7 @@ import React, {useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop, startDesktopBackend} from './desktopBootstrap';
+import './studio-fonts.css';
 import './styles.css';
 import './studio.css';
 import './design-tokens.css';

@@ -37,10 +37,6 @@ async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allo
   if(url.origin===UI&&(method==='GET'||method==='HEAD')){
    await route.continue();return;
   }
-  if(url.origin==='https://fonts.googleapis.com'&&method==='GET'&&url.pathname==='/css2'){
-   await route.fulfill({status:200,contentType:'text/css',body:'/* CI-only */'});
-   return;
-  }
   if(url.origin===API&&method==='GET'&&url.pathname.startsWith('/api/')){
    const p=url.pathname.slice('/api'.length);
    const expected=[projectId,...extraProjectIds].some(id=>
@@ -716,6 +712,14 @@ test('P4-62 real HTTP: high-risk Prepare suggestions preview, cancel and additiv
     localStorage.setItem('pilotodin-workspace-active-v1-'+id,'prepare');
   },projectId);
   await page.goto('/#/studio/prepare');
+  const fontsLoaded=await page.evaluate(async()=>{
+    const faces=await Promise.all([
+      document.fonts.load('400 14px Inter','PilotODIN'),
+      document.fonts.load('800 20px Manrope','PilotODIN'),
+    ]);
+    return faces.every(group=>group.length>0&&group.every(face=>face.status==='loaded'));
+  });
+  expect(fontsLoaded).toBe(true);
   await page.getByLabel('TARGET VARIABLE').selectOption('churn');
   const risk=page.locator('.feature-chip').filter({hasText:'TransactionID'}).getByRole('checkbox');
   const manual=page.locator('.feature-chip').filter({hasText:'event_type'}).getByRole('checkbox');
