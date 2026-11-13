@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 13 November 2026 | Synchronized Windows docking retest
+
+- [Hosted Windows #43427707718](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) passed both jobs. One unpackaged build at `f9ef20b76dc42f29c0f7a866c1d1c0538c0113b1` verified drag-to-dock, explicit Dock beside, close and narrow-width pause/restore in the isolated WebView2 app. The final drag-over was accepted with Prepare active, one drop fired, and the drag ended with effect `move`. The synchronized retest passes the remaining hosted R04 cases. The earlier failed runs remain in the record.
+- **N12 remains partial.** The eight-process snapshots showed zero established non-loopback connections before and after the interaction. The WebView interceptor blocked one font request and recorded zero writes and zero other unexpected requests. The earlier port 443 connection remains attributed to WebView2's Network Service, with destination and purpose unknown. See [case evidence](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-synchronized-windows-docking-retest).
+- [Regular P4 CI #43427707627](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707627) passed all three jobs at the launch source: 183 Python, 77 Node, TypeScript/Vite, 12 real-HTTP Chromium scenarios and the synthetic Windows job. The [one-use workflow was disarmed](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5f1302e919716beb9decc64654a048c44a4bc2c8).
+- **Next:** Review the accumulated R04/R05 evidence against the closure scope and determine the remaining N12 evidence needed. The physical R03 offline 8 GB test, historical R06 disposition and owner P4 signoff remain open. P4 stays active.
+
 ## 13 November 2026 | R04 wait for the active Prepare route
 
 - [`878ce2b02a5d57f9d546db109a778b1c6d5414dd`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/878ce2b02a5d57f9d546db109a778b1c6d5414dd) fixes an ordering race in the docking QA setup. The previous probe clicked Your data and immediately clicked Prepare. Route navigation commits after the exit animation, so checking for a Prepare heading could succeed against the original view. The revised probe confirms each navigation button becomes current, the route animation completes, and the Prepare tab is selected before dragging.

@@ -11,9 +11,9 @@
 | Gate | Existing verifiable evidence | Specific missing proof | Next safe action / dependency | Current verdict |
 | --- | --- | --- | --- | --- |
 | **R01 / Gate C:** real-world prediction use | Deterministic target review and historical research | Independently checkable decision owner and intervention, outcome provenance, as-of inputs, suitable evaluation, baseline and measured benefit, and permitted use | Use §B when a specific real-world prediction use is proposed | **UNVERIFIED / REQUIRED BEFORE REAL USE** |
-| **R02:** native negative and Quality-version parity | N1–N11 passed earlier. [#43423213278](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43423213278) attributed the sampled non-loopback TCP connection to the WebView2 Network Service on port 443 | Establish destination and purpose, and review remaining system-level network/write evidence | Review the case results below | **N11 PASS / N12 PARTIAL** |
+| **R02:** native negative and Quality-version parity | N1–N11 passed earlier. [#43423213278](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43423213278) attributed a sampled port 443 connection to WebView2's Network Service. [#43427707718](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) observed zero established non-loopback connections in both snapshots | Earlier connection destination and purpose, and remaining network/write evidence | Review scoped evidence below | **N11 PASS / N12 PARTIAL** |
 | **R03:** offline 8 GB coexistence | Limited hosted native boot/WebView process evidence; resource estimators are not RAM measurements | Physical 8 GB Windows, actual offline local Qwen + WebView2 + backend/analytics, sustained process/RAM and workload observations | Owner-provided eligible hardware/runtime and separately approved measured test; preagree workload, duration and stop limits | **OPEN / NOT TESTED** |
-| **R04:** current native UX | Earlier target layout and archive-warning checks passed. [#43423213278](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43423213278) passed Dock beside, close and narrow-width pause/restore | Automated drag delivered two drag-overs, with final over unaccepted and no drop | Diagnose event propagation and dock predicates before another native test | **OPEN / PARTIAL** |
+| **R04:** current native UX | Earlier target layout and archive-warning checks passed. [#43427707718](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) passed drag-to-dock, Dock beside, close and narrow-width pause/restore | Review the hosted evidence at its tested source as part of P4 signoff | See the synchronized retest below | **HOSTED RETEST PASS** |
 | **R05 / BE-024:** Prepare review | Earlier native controls passed. [#43420833495](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43420833495) passed project and Quality resets plus recorded strategy display using a synthetic GET fixture | Review the required BE-024 scope. Actual saved-experiment persistence is outside the synthetic display evidence | Reconcile the case results against the acceptance scope | **TARGETED UI CASES PASS / WIDER SCOPE OPEN** |
 | **R06:** original app-data preservation | Independent preserved backup and original EXE matched; original `data/` subtree 0 file differences in owner observation; isolated runner/WebView evidence | Whole original app-data historical **STRICT FAIL**, 320 backup vs 346 observed: 30 added + 40 modified + 4 missing = 74 differences; historical writer **UNKNOWN**. Separate prospective non-interference not proven | **Non-intrusive evidence intake in §C**. Only already-existing historical attribution if available; later separately approved independent pre/post original-tree comparison | **OPEN / HISTORICAL STRICT FAIL** |
 
@@ -198,11 +198,23 @@ The Windows close request was accepted and the original app process exited. The 
 
 [Regular P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43423212865) passed at the launch source. The earlier R05 passes and native restart evidence remain on their recorded sources. No installer or executable was transferred.
 
+### 13 November 2026 synchronized Windows docking retest
+
+[Hosted Windows #43427707718, attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) passed both jobs at `f9ef20b76dc42f29c0f7a866c1d1c0538c0113b1`. One unpackaged debug build, SHA-256 `74922bf499c5a3dc0f4bf36d9a67c68852d1de8be131f3b61dafdce86028bb94`, 18,353,664 bytes. Six isolated WebView2 processes and the callable Tauri bridge were observed. [Workflow disarm](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5f1302e919716beb9decc64654a048c44a4bc2c8).
+
+| Case | Observed result |
+| --- | --- |
+| R04 synchronized drag | **PASS.** One drag start, two drag-overs, two pane bubble events, one drop and one drag end. The last drag-over was accepted with Prepare active and the final effect was `move`. The correct dock opened. |
+| R04 controls and responsive layout | **PASS.** Dock beside, close, narrow WebView pause and wide WebView restore. The initial native viewport was 1028 × 749 CSS pixels at scale 1. |
+| N12 TCP and writes | **PARTIAL.** Eight-process TCP snapshots counted 2 loopback / 0 non-loopback before and 21 loopback / 0 non-loopback after. One font request was blocked, with zero writes and zero other unexpected intercepted requests. The one disposable project passed the zero-experiment assertion. Final inventory counted 2 files in the disposable QA home and 258 in the isolated profile. Both protected identities were absent. The two snapshots cannot establish session-wide network isolation or resolve the earlier port 443 observation. |
+
+[Regular P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707627) passed at the launch source. No installer or executable was transferred. Physical offline operation (R03) and the historical original-data result (R06) remain open.
+
 ## E. Practical order for the next sessions
 
 | Priority | Next deliverable | Who supplies the missing fact | Stop / done rule |
 | --- | --- | --- | --- |
-| **Resume Windows QA** | Diagnose why the final workspace drag-over was unaccepted and follow up on the sampled WebView2 Network Service connection | Source checks and scoped native observations | Preserve earlier passing cases. Fresh approval is required for another native compilation. |
+| **Remaining Windows evidence** | Review the hosted R04/R05 passes and outstanding N12 write and network evidence | Current-source evidence and owner review | Keep the prior failed runs and report the scope of each test |
 | **R06 evidence** | Assess any already-existing incident-time writer evidence if available | Owner or existing evidence records | With current evidence, retain historical **STRICT FAIL** and writer **UNKNOWN**. |
 | **Native and physical acceptance** | One isolated current-source Windows session, plus a physical offline 8 GB check when the prerequisites are met | Suitable environment and existing authorisation requirements | Record each result. Missing prerequisites leave the applicable checks **BLOCKED / NOT TESTED**. |
 | **P4 engineering closure** | Review R02–R06 and the phase exit criteria | Owner signs off on the recorded results and any explicit risk dispositions | P4 closure requires a separate decision. |

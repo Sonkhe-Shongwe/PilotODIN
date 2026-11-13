@@ -12,6 +12,8 @@
 
 ## Current phase evidence and recent checkpoints
 
+- **13 November synchronized Windows docking retest:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-synchronized-windows-docking-retest). Drag-to-dock, explicit controls and responsive pause/restore passed. N12 remains partial.
+
 - **13 November remaining Windows acceptance:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-remaining-p4-windows-acceptance). Prepare resets, recorded strategy display, explicit docking and narrow-width restore passed. R04 drag produced no drop event. N12 network evidence remains partial.
 
 - **13 November consolidated Windows QA:** [Case results](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance). N11 same-binary relaunch passed. The tested Prepare controls passed. R04 drag-to-dock remains open after the workflow failed at that check.
