@@ -61,7 +61,7 @@ A **separate, future, explicitly approved** native isolation study may compare t
 
 ## D. Consolidated native acceptance is a conditional downstream task
 
-**Current state: partial Windows observations recorded.** The approved 13 November run reached the actual Tauri WebView2. It stopped at the first project switch with the native consent path pending. See the run record below. Both one-use workflows are disarmed and the build approvals have been consumed.
+**Current state: N1–N5 passed in the latest isolated Windows run.** N7 remains blocked at the native consent prompt. See the project-switch follow-up below. The one-use workflows are disarmed and the build approvals have been consumed.
 
 1. **Prerequisite:** explicit separate owner approval for any fresh unpackaged native compilation; maintain the owner's **no intermediate installers through P4–P7** directive. A new distributed EXE, MSI or NSIS is not authorised. Record any outstanding cases as **BLOCKED / NOT TESTED** until they are observed.
 2. **Preflight before any future permitted run:** freeze exact source commit and trusted native binary SHA; prove unique QA app ID, WebView profile, disposable `PILOTODIN_HOME`, no original-root paths, no inherited user data, no unintended cloud access. If any mismatch: **STOP**.
@@ -103,6 +103,21 @@ R03 still needs the separately approved physical offline measurement. R06 remain
 | N12 | **PARTIAL**. The probe's cleanup checked the five disposable projects for zero experiments, with no reported cleanup failure. The PowerShell postrun check verified absence of the protected hosted-runner paths. Full network and write evidence was outside this observation. |
 
 For a future isolated Windows session, verify the native **Stay** and **Switch project** actions using desktop-level input on the test machine and capture the resulting project and draft states. Keep the product consent prompt in place. [Existing source tests](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43386014036/job/131754560680) cover the asynchronous consent branches using a simulated native response. R03 and the original-device R06 comparison were outside the hosted run.
+
+### 13 November 2026 project-switch follow-up
+
+[Windows run 43392318378, attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43392318378/job/131775043386) used source `57e6ff1c54b7a8eb15e76e1fb9c359f07dc38234`. Preflight and one unpackaged build passed. Executable SHA-256 `f58f2fb4c0bdf7cf651b40cd610e7e53e42ef12ee38a61fd831831e66a8b992b`, 18,353,664 bytes. The isolated profile was present, six WebView2 processes matched it, and the probe reached actual Tauri WebView2. [Synthetic P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43392318312) passed at the same source. There was no installer or artifact transfer, and the hosted runner's protected profile paths were absent after cleanup.
+
+| Case | Follow-up observation |
+| --- | --- |
+| N1 | **PASS.** Verified build provenance, isolated profile, actual WebView2 and disposable backend. |
+| N2–N3 | **PASS.** Verified three classification review cards, additional alternatives and the specific repeated-ID count in the evidence disclosure. |
+| N4–N5 | **PASS.** Selection, defer, reselect, decline and the explicit no-objective choice behaved as expected. Defer, decline and the no-objective action cleared the target and checkpoint. |
+| N7 | **BLOCKED** at the first **Stay** action. The selector entered the pending consent state, but the driver timed out waiting for the exact dialog and both named buttons in Windows UI Automation. The combined timeout cannot distinguish an absent dialog from a different UI Automation tree or button names. Neither button outcome was observed, and this is not a reproduced project-switch defect. |
+| N6, N8–N11, R04 layout and R05 Prepare | **NOT TESTED** after the blocked switch. |
+| N12 | **PARTIAL.** Cleanup checked the five disposable projects for zero experiments, with no reported cleanup failure. The protected paths were absent on the hosted runner. Full network and write evidence remains open. |
+
+The next useful evidence is a desktop-level observation of the prompt and its buttons, or staged diagnostics that distinguish dialog discovery from button discovery for the same isolated app process. Continue N6–N11 and Prepare/layout once the switch can be exercised. The one-use workflow was disarmed at [`fa33d43`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fa33d43997143945aa7b5683a918cb214cb9c5e9).
 
 ## E. Practical order for the next sessions
 
