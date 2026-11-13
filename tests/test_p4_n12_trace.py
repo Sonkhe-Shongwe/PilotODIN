@@ -14,7 +14,7 @@ from xml.etree import ElementTree as ET
 import pytest
 
 from qa.p4_native import n12_calibration, n12_trace as trace
-from qa.p4_native.n12_etw_correlate import correlate, correlate_requests
+from qa.p4_native.n12_etw_correlate import correlate, correlate_requests, preopened_report
 
 
 def test_etw_failed_open_and_reused_pid_and_file_object():
@@ -162,6 +162,35 @@ def test_thread_bookends_exclude_reused_and_ambiguous_ids():
     bookends = {"threads_before": before, "threads_after": after}
     assert trace.stable_thread_bookends(bookends, 20, {7}, {72}) == {70: 7}
     assert trace.stable_thread_bookends(bookends, 20, {8}, {72}) == {}
+
+
+def test_preopened_control_requires_completion_and_does_not_infer_names():
+    protected, outside = r"C:\protected\private.bin", r"C:\outside.bin"
+    capture = {"device": r"\Device\HarddiskVolume3", "protected_root": r"C:\protected",
+               "preopened": {"pid": 7, "tid": 71, "writes": {
+                   "protected": {"path": protected, "size": 53, "start": 100, "end": 200},
+                   "outside": {"path": outside, "size": 79, "start": 300, "end": 400}}}}
+
+    def event(kind, ticks, **data):
+        return {"id": kind, "pid": 7, "ticks": ticks, "lifecycle": False, "data": data}
+
+    events = [
+        event(10, 90, FileKey=40, FileName=protected),
+        event(16, 150, Irp=1, FileKey=40, IOSize=53, ByteOffset=0, IssuingThreadId=71),
+        event(24, 160, Irp=1, Status=0),
+        event(16, 350, Irp=2, FileKey=41, IOSize=79, ByteOffset=0, IssuingThreadId=71),
+        event(16, 360, Irp=2, FileKey=41, IOSize=12, ByteOffset=0),
+        event(24, 370, Irp=2, Status=0),
+        event(10, 380, FileKey=41, FileName=outside),
+    ]
+    targets = preopened_report(capture, events)["targets"]
+    assert targets["protected"] == {"request_candidates": 1, "completion": "success",
+                                    "issuing_thread": "matches", "name_evidence": "matches-target"}
+    assert targets["outside"] == {"request_candidates": 1, "completion": "unverified",
+                                  "issuing_thread": "matches", "name_evidence": "unavailable"}
+    assert "private.bin" not in json.dumps(targets)
+    events.append(event(10, 91, FileKey=40, FileName=outside))
+    assert preopened_report(capture, events)["targets"]["protected"]["name_evidence"] == "conflicting-or-different"
 
 
 BASE = "2026-11-13"

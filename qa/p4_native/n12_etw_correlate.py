@@ -251,16 +251,77 @@ def correlate(capture, events):
             "protected_writes": protected_writes}
 
 
+def preopened_report(capture, events):
+    """Compare ETW path evidence to independently checked fixture handles."""
+    control = capture["preopened"]
+    devices = {capture["device"].casefold(): capture["protected_root"][:2].casefold()}
+    events = sorted(events, key=lambda event: event["ticks"])
+    outcomes = {}
+    for label in ("protected", "outside"):
+        write = control["writes"][label]
+        candidates = [
+            event for event in events if not event["lifecycle"] and event["id"] == 16
+            and event["pid"] == control["pid"]
+            and write["start"] - 100_000 <= event["ticks"] <= write["end"] + 100_000
+            and number(event["data"].get("IOSize")) == write["size"]
+            and number(event["data"].get("ByteOffset")) == 0
+        ]
+        outcome = {"request_candidates": len(candidates), "completion": "unverified",
+                   "issuing_thread": "unverified", "name_evidence": "unavailable"}
+        outcomes[label] = outcome
+        if len(candidates) != 1:
+            continue
+        request = candidates[0]
+        data = request["data"]
+        if number(data.get("IssuingThreadId", data.get("ThreadId"))) == control["tid"]:
+            outcome["issuing_thread"] = "matches"
+        irp, key = (number(data.get(field)) for field in ("Irp", "FileKey"))
+        if irp:
+            for event in events:
+                if (event["ticks"] <= request["ticks"] or event["lifecycle"]
+                        or number(event["data"].get("Irp")) != irp):
+                    continue
+                status = number(event["data"].get("Status"))
+                if event["id"] == 24 and status is not None:
+                    outcome["completion"] = "success" if status == 0 else "nonzero-status"
+                break
+        names = set()
+        if key:
+            for event in events:
+                if event["ticks"] > request["ticks"]:
+                    break
+                if event["lifecycle"] or number(event["data"].get("FileKey")) != key:
+                    continue
+                if event["id"] == 10:
+                    names.add(canonical_file_path(event["data"]["FileName"], devices))
+                elif event["id"] in (11, 18, 19, 23, 29):
+                    names.clear()
+        if names:
+            expected = canonical_file_path(write["path"], devices)
+            if expected is None:
+                raise ValueError("Invalid generated control path.")
+            outcome["name_evidence"] = (
+                "matches-target" if names == {expected} else "conflicting-or-different"
+            )
+    return {"scope": "generated writes through pre-opened handles", "targets": outcomes}
+
 def main():
-    capture_path, events_path = map(Path, sys.argv[1:])
+    capture_path, events_path = map(Path, sys.argv[1:3])
+    options = sys.argv[3:]
+    if options not in ([], ["--preopened-control"]):
+        raise ValueError("Unexpected correlation options.")
     capture = json.loads(capture_path.read_text(encoding="utf-8-sig"))
     with events_path.open(encoding="utf-8-sig") as stream:
-        report = correlate(capture, (json.loads(line) for line in stream))
+        events = (json.loads(line) for line in stream)
+        report = preopened_report(capture, events) if options else correlate(capture, events)
     print(json.dumps(report))
+    if options and any(target["completion"] != "success" for target in report["targets"].values()):
+        return 2
+    return 0
 
 
 if __name__ == "__main__":
     try:
-        main()
+        sys.exit(main())
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         sys.exit("Kernel File correlation could not decode the captured fields.")

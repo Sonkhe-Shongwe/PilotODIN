@@ -273,3 +273,7 @@ jobs:
       - name: Verify the combined rehearsal fixture with ETW alone
         shell: pwsh
         run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -CalibrationOnly
+
+      - name: Check ETW writes through handles opened before capture
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl

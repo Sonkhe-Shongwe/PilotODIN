@@ -1,6 +1,6 @@
 # A disposable fixture probe. The ETL and raw event payloads stay in runner temp.
 [CmdletBinding()]
-param([switch]$WithSysmon, [switch]$CalibrationOnly)
+param([switch]$WithSysmon, [switch]$CalibrationOnly, [switch]$PreopenedControl)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -13,6 +13,10 @@ $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-etw-$([guid]::NewGuid().ToStri
 $channel = 'Microsoft-Windows-Sysmon/Operational'
 $firstRecord = $null
 $probeArgs = @($root)
+if ($PreopenedControl -and ($WithSysmon -or $CalibrationOnly)) {
+    throw 'The pre-opened control uses its own ETW-only fixture.'
+}
+if ($PreopenedControl) { $probeArgs += '--preopened-control' }
 function Get-ProcessBookend {
     Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |
         Where-Object CreationDate |
@@ -164,6 +168,11 @@ if ($WithSysmon) {
 }
 python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-export $reducerManifest $eventsPath
 if ($LASTEXITCODE -ne 0) { throw 'The Windows ETW export failed reducer validation.' }
+if ($PreopenedControl) {
+    python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') $manifestPath $eventsPath --preopened-control
+    if ($LASTEXITCODE -ne 0) { throw 'The pre-opened control could not validate both write completions.' }
+    return
+}
 $report = python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') $manifestPath $eventsPath
 if ($LASTEXITCODE -ne 0) { throw 'The ETW correlation did not complete.' }
 $summary = @{

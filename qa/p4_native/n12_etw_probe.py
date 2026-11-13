@@ -6,8 +6,10 @@ import json
 import os
 import subprocess
 import sys
+from contextlib import ExitStack
 from ctypes import wintypes
 from pathlib import Path
+from threading import get_native_id
 from uuid import uuid4
 
 from n12_trace import local_disposable_path
@@ -94,6 +96,33 @@ def run_writer(code, *paths):
 
 def probe(root, *, calibration_only=False, thread_context=False):
     root.mkdir()
+    (root / "synthetic-protected").mkdir()
+    return capture_fixture(root, calibration_only=calibration_only, thread_context=thread_context)
+
+
+def preopened_control(root):
+    import msvcrt
+
+    root.mkdir()
+    protected = root / "synthetic-protected"
+    protected.mkdir()
+    get_path = ctypes.WinDLL("kernel32", use_last_error=True).GetFinalPathNameByHandleW
+    get_path.argtypes = (wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD)
+    get_path.restype = wintypes.DWORD
+    with ExitStack() as stack:
+        controls = {}
+        for label, path, size in (("protected", protected / "control.bin", 53),
+                                  ("outside", root / "outside.bin", 79)):
+            stream = stack.enter_context(path.open("xb", buffering=0))
+            name = ctypes.create_unicode_buffer(32768)
+            length = get_path(msvcrt.get_osfhandle(stream.fileno()), name, len(name), 0)
+            if not 0 < length < len(name) or Path(name.value.removeprefix("\\\\?\\")) != path:
+                raise RuntimeError("Windows did not confirm the generated handle target.")
+            controls[label] = (path, stream, b"x" * size)
+        return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
+
+
+def capture_fixture(root, *, calibration_only, thread_context, controls=None):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -102,7 +131,6 @@ def probe(root, *, calibration_only=False, thread_context=False):
         destination.parent.mkdir()
         source.write_bytes(b"cross-directory marker")
     protected = root / "synthetic-protected"
-    protected.mkdir()
     marker = protected / "transient.bin"
     providers = root / "providers.txt"
     providers.write_text(
@@ -121,6 +149,13 @@ def probe(root, *, calibration_only=False, thread_context=False):
     if started.returncode:
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
     try:
+        control_writes = {}
+        for label, (path, stream, payload) in (controls or {}).items():
+            first = utc_ticks()
+            if stream.write(payload) != len(payload):
+                raise RuntimeError("The generated pre-opened write was incomplete.")
+            control_writes[label] = {"path": str(path), "size": len(payload),
+                                     "start": first, "end": utc_ticks()}
         # Give the new session a separate process launch before measuring the
         # fixture. Start the calibration parent inside the trace as well.
         run_writer("pass")
@@ -161,21 +196,27 @@ def probe(root, *, calibration_only=False, thread_context=False):
             raise
     if etl.stat().st_size == 0 or counters["buffers_written"] == 0:
         raise RuntimeError("ETW trace was empty.")
-    return {"fixture": fixture, "counters": counters, "device": volume_device(root.drive),
+    capture = {"fixture": fixture, "counters": counters, "device": volume_device(root.drive),
             "protected_root": str(protected), "second_writer": second_writer,
             "start_ticks": capture_start, "end_ticks": utc_ticks() // 10 * 10}
+    if controls:
+        capture["preopened"] = {"pid": os.getpid(), "tid": get_native_id(), "writes": control_writes}
+    return capture
 
 
 if __name__ == "__main__":
     try:
         options = sys.argv[2:]
         if len(sys.argv) < 2 or options not in (
-            [], ["--calibration-only"], ["--calibration-only", "--thread-context"],
+            [], ["--calibration-only"], ["--calibration-only", "--thread-context"], ["--preopened-control"],
         ):
             raise ValueError("Unexpected probe arguments.")
-        print(json.dumps(probe(local_disposable_path(Path(sys.argv[1]), runner_temp_only=True),
-                               calibration_only="--calibration-only" in options,
-                               thread_context="--thread-context" in options)))
+        root = local_disposable_path(Path(sys.argv[1]), runner_temp_only=True)
+        if options == ["--preopened-control"]:
+            print(json.dumps(preopened_control(root)))
+        else:
+            print(json.dumps(probe(root, calibration_only="--calibration-only" in options,
+                                   thread_context="--thread-context" in options)))
     except RuntimeError as exc:
         sys.exit(str(exc))
     except (IndexError, OSError, ValueError, subprocess.SubprocessError):
