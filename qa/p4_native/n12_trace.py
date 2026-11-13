@@ -550,7 +550,8 @@ def etw_events(path, capture_bounds, expected_digest):
         require(has_events, "ETW event export is empty")
 
 
-def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *, details=None):
+def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *,
+                      details=None, process_bookends=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -607,7 +608,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             (event for event in events if event["ticks"] <= end_ticks),
             lambda value: canonical_file_path(value, devices),
             classify_process, lambda value: value is not None and
-            any(inside(value, root) for root in protected), record, strict=True, details=details,
+            any(inside(value, root) for root in protected), record, strict=True,
+            details=details, process_bookends=process_bookends,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -747,7 +749,22 @@ def check_etw_export(manifest, path):
     return count
 
 
-def check_etw_preflight(manifest, fixture, path):
+def stable_process_bookends(bookends, capture_start, lifecycle_pids):
+    snapshots = []
+    for side in ("before", "after"):
+        entries = {}
+        for entry in bookends[side]:
+            pid, birth = entry["pid"], entry["birth_ticks"]
+            require(type(pid) is int and type(birth) is int and pid >= 0 and birth > 0
+                    and pid not in entries, "invalid or duplicate process bookend identity")
+            entries[pid] = birth
+        snapshots.append(entries)
+    before, after = snapshots
+    return {pid for pid, birth in before.items()
+            if birth < capture_start and after.get(pid) == birth and pid not in lifecycle_pids}
+
+
+def check_etw_preflight(manifest, fixture, path, *, bookends=None):
     """Exercise strict ETW correlation using fixture PIDs and ETW lifetimes."""
     if __package__:
         from .n12_etw_correlate import number
@@ -766,11 +783,14 @@ def check_etw_preflight(manifest, fixture, path):
     first, last = fixture["start_window"]
     require(bounds[0] <= first < last <= bounds[1], "fixture lifetime window outside ETW capture")
     lifecycles = {(pid, kind): [] for pid in (parent_pid, child_pid) for kind in (1, 2)}
+    lifecycle_pids = set()
     with evidence_stage("ETW fixture lifetimes"):
         for event in etw_events(path, bounds, manifest["etw"]["events_sha256"]):
-            if event["lifecycle"] and first <= event["ticks"] <= last:
-                key = (number(event["data"]["ProcessID"]), event["id"])
-                if key in lifecycles:
+            if event["lifecycle"]:
+                pid = number(event["data"]["ProcessID"])
+                lifecycle_pids.add(pid)
+                key = (pid, event["id"])
+                if key in lifecycles and first <= event["ticks"] <= last:
                     lifecycles[key].append(event["ticks"])
     require(all(len(stamps) == 1 for stamps in lifecycles.values()),
             "fixture ETW lifetimes missing or ambiguous")
@@ -795,8 +815,10 @@ def check_etw_preflight(manifest, fixture, path):
     protected = [windows_path(path) for path in manifest["protected_roots"].values()]
     require(protected, "missing ETW calibration protected roots")
     permitted = {"calibration": [ntpath.dirname(windows_path(root["fixture"]))]}
+    bookend_pids = None if bookends is None else stable_process_bookends(bookends, bounds[0], lifecycle_pids)
     counts, violations, file_events, unresolved = inspect_etw_files(
-        manifest, path, start, end, processes, roles, protected, permitted, issues, details=details)
+        manifest, path, start, end, processes, roles, protected, permitted, issues,
+        details=details, process_bookends=bookend_pids)
     matched = calibration_file_events(root, "child") <= file_events
     return {"scope": "strict ETW diagnostic preflight with generated process evidence",
             "etw_coverage": "BLOCKED" if issues or violations or not matched else "CLEAN",
@@ -818,6 +840,7 @@ def main():
     etw_preflight = subcommands.add_parser("check-etw-preflight")
     for argument in ("manifest", "fixture", "etw_events"):
         etw_preflight.add_argument(argument, type=Path)
+    etw_preflight.add_argument("--process-bookends", type=Path)
     for mode in ("check-calibration", "check-calibration-etw"):
         calibration = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "file_trace", "output"):
@@ -836,8 +859,9 @@ def main():
             print(f"N12 ETW export passed validation: {count} events.")
             return 0
         if args.mode == "check-etw-preflight":
+            bookends = read_json(args.process_bookends) if args.process_bookends else None
             result = check_etw_preflight(read_json(args.manifest), read_json(args.fixture)["fixture"],
-                                         args.etw_events)
+                                         args.etw_events, bookends=bookends)
             print(json.dumps(result, indent=2, sort_keys=True))
             expected_issues = {"etw-mutation-coverage-unresolved"}
             ready = result["expected_fixture_operations_matched"] and not result["file_violations"]

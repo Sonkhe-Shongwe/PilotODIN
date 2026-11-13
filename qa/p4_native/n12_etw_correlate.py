@@ -32,7 +32,8 @@ def canonical_file_path(value, devices):
     return None
 
 
-def correlate_requests(events, resolve_path, classify_process, tracked, record, *, strict=False, details=None):
+def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
+                       strict=False, details=None, process_bookends=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = {}
     opened, pending = {}, {}
@@ -158,6 +159,14 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 if candidate is not None:
                     context = "tracked" if tracked(candidate) else "outside-tracked-paths"
                 details[f"{actor}:event-16:write-request:file-key-context-{context}"] += 1
+                if birth is None and process_bookends is not None:
+                    if pid in process_bookends:
+                        identity_context = "same-process-at-bookends"
+                    elif pid in (0, 4):
+                        identity_context = "system-header-without-bookends"
+                    else:
+                        identity_context = "missing-process-bookends"
+                    details[f"{actor}:event-16:write-request:{identity_context}:{context}"] += 1
         if not irp or not object_id:
             if operation and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1

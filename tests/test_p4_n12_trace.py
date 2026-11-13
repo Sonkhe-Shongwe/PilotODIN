@@ -130,14 +130,23 @@ def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
         lambda path: path == protected,
         lambda role, identity, operation, source, dest, start, end, success:
             completed.append((operation, source, success)),
-        strict=True, details=details,
+        strict=True, details=details, process_bookends={8},
     )
     assert completed == [("allocate", protected, True)]
     assert unresolved == {"other:write:path-missing": 3, "other:write:process-lifetime-missing": 3,
                           "calibration:write:irp-reused-before-completion": 1}
     for context in ("outside-tracked-paths", "ambiguous-name", "unseen-key"):
         assert details[f"other:event-16:write-request:file-key-context-{context}"] == 1
+        assert details[f"other:event-16:write-request:same-process-at-bookends:{context}"] == 1
     assert "private.txt" not in json.dumps(details)
+
+
+def test_process_bookends_reject_pid_reuse_and_traced_lifetimes():
+    before = [{"pid": pid, "birth_ticks": 10} for pid in (7, 8, 9, 10)]
+    after = [{"pid": 7, "birth_ticks": 10}, {"pid": 8, "birth_ticks": 30}, before[2]]
+    assert trace.stable_process_bookends({"before": before, "after": after}, 20, {9}) == {7}
+    with pytest.raises(ValueError, match="duplicate process bookend"):
+        trace.stable_process_bookends({"before": before, "after": after + [after[0]]}, 20, {9})
 
 
 BASE = "2026-11-13"

@@ -13,6 +13,13 @@ $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-etw-$([guid]::NewGuid().ToStri
 $channel = 'Microsoft-Windows-Sysmon/Operational'
 $firstRecord = $null
 $probeArgs = @($root)
+function Get-ProcessBookend {
+    Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |
+        Where-Object CreationDate |
+        ForEach-Object {
+            @{ pid = $_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks }
+        }
+}
 if ($WithSysmon) {
     $log = Get-WinEvent -ListLog $channel -ErrorAction SilentlyContinue
     if ($null -eq $log -or -not $log.IsEnabled) {
@@ -21,9 +28,21 @@ if ($WithSysmon) {
     $firstRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId + 1
 }
 if ($WithSysmon -or $CalibrationOnly) { $probeArgs += '--calibration-only' }
+$bookends = $null
+if ($CalibrationOnly -and -not $WithSysmon) {
+    # Win32_Process supplies creation time even for processes that did not
+    # start during ETW. Collect only identity fields, never command lines.
+    $bookends = Join-Path $root 'process-bookends.json'
+    $before = @(Get-ProcessBookend)
+}
 $result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
 if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
 $capture = $result | ConvertFrom-Json
+if ($bookends) {
+    $after = @(Get-ProcessBookend)
+    @{ before = $before; after = $after } |
+        ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $bookends -Encoding utf8
+}
 $manifestPath = Join-Path $root 'fixture.json'
 $eventsPath = Join-Path $root 'events.jsonl'
 $result | Set-Content -LiteralPath $manifestPath -Encoding utf8
@@ -150,6 +169,6 @@ if ($missing.Count -or $summary.correlation.unresolved.Count) {
     throw "ETW fixture correlation incomplete. Missing: $($missing -join ', ')."
 }
 if ($CalibrationOnly) {
-    python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-preflight $reducerManifest $manifestPath $eventsPath
+    python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-preflight $reducerManifest $manifestPath $eventsPath --process-bookends $bookends
     if ($LASTEXITCODE -ne 0) { throw 'The strict ETW diagnostic preflight failed.' }
 }
