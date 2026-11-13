@@ -6,6 +6,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -13,7 +14,7 @@ from xml.etree import ElementTree as ET
 import pytest
 
 from qa.p4_native import n12_calibration, n12_trace as trace
-from qa.p4_native.n12_etw_correlate import correlate
+from qa.p4_native.n12_etw_correlate import correlate, correlate_requests
 
 
 def test_etw_failed_open_and_reused_pid_and_file_object():
@@ -92,6 +93,52 @@ def test_etw_failed_open_and_reused_pid_and_file_object():
         "fixture:process-start-missing-or-ambiguous": 1,
         "other:open:process-lifetime-missing": 1,
     }
+
+def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
+    protected = r"C:\protected\private.txt"
+    outside = r"C:\outside\private.txt"
+    events = []
+
+    def event(kind, pid=7, **data):
+        events.append({"id": kind, "pid": pid, "ticks": len(events) + 1, "data": data})
+
+    event(1, ProcessID=7)
+    events[-1]["lifecycle"] = True
+    event(12, FileObject=1, Irp=1, FileName=protected)
+    event(24, Irp=1, Status=0, ExtraInformation=1)
+    event(17, FileObject=1, Irp=2, InfoClass=19)
+    event(24, Irp=2, Status=0)
+    event(34, FileObject=2, Irp=3)
+    event(24, Irp=3, Status=0)
+    event(10, FileKey=40, FileName=outside)
+    event(16, pid=8, FileObject=2, FileKey=40, Irp=4)
+    event(24, Irp=4, Status=0)
+    event(10, FileKey=40, FileName=protected)
+    event(16, pid=8, FileObject=2, FileKey=40, Irp=5)
+    event(24, Irp=5, Status=0)
+    event(11, FileKey=40)
+    event(16, pid=8, FileObject=2, FileKey=40, Irp=6)
+    event(24, Irp=6, Status=0)
+    event(16, FileObject=1, Irp=7)
+    event(34, FileObject=1, Irp=7)
+    event(24, Irp=7, Status=0)
+
+    details, completed = Counter(), []
+    unresolved = correlate_requests(
+        events, lambda value: value or None,
+        lambda pid, birth, ticks: ("calibration", "child") if pid == 7 else ("other", None),
+        lambda path: path == protected,
+        lambda role, identity, operation, source, dest, start, end, success:
+            completed.append((operation, source, success)),
+        strict=True, details=details,
+    )
+    assert completed == [("allocate", protected, True)]
+    assert unresolved == {"other:write:path-missing": 3, "other:write:process-lifetime-missing": 3,
+                          "calibration:write:irp-reused-before-completion": 1}
+    for context in ("outside-tracked-paths", "ambiguous-name", "unseen-key"):
+        assert details[f"other:event-16:write-request:file-key-context-{context}"] == 1
+    assert "private.txt" not in json.dumps(details)
+
 
 BASE = "2026-11-13"
 PYTHON = r"C:\Runtime\python.exe"

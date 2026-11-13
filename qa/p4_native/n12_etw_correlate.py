@@ -36,6 +36,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     """Keep file paths and identities private until the report callback reduces them."""
     active = {}
     opened, pending = {}, {}
+    file_names = {}
     ambiguous_irps = set()
     unresolved = Counter()
 
@@ -60,6 +61,18 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 active[process_id] = ticks
             elif kind == 2:
                 active.pop(process_id, None)
+            continue
+        if kind in {10, 11}:
+            if strict and (file_key := number(data.get("FileKey"))):
+                if kind == 10:
+                    name = resolve_path(data.get("FileName") or "")
+                    # A second distinct name can be an alias. Leave the key
+                    # unresolved until a new name lifetime can be established.
+                    file_names[file_key] = (
+                        name if file_names.get(file_key, name) == name else None
+                    )
+                else:
+                    file_names.pop(file_key, None)
             continue
         object_id = number(data.get("FileObject"))
         irp = number(data.get("Irp"))
@@ -119,16 +132,32 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         if kind not in {12, 16, 17, 18, 19, 23, 29, 34}:
             continue
         operation = {12: "open", 16: "write", 18: "delete", 19: "rename",
-                     23: "unsupported", 29: "unsupported", 34: "unsupported"}.get(kind)
+                     23: "unsupported", 29: "unsupported"}.get(kind)
         if operation == "unsupported" and not strict:
             operation = None
+        # QueryEA (34) has no mutation operation, but a reused IRP still
+        # invalidates any outstanding mutation that used the same pointer.
         info_class = number(data.get("InfoClass")) if kind == 17 else None
         if kind == 17:
             if info_class == 20:  # FileEndOfFileInformation
                 operation = "resize"
+            elif strict and info_class == 19:  # FileAllocationInformation
+                operation = "allocate"
             elif strict:
                 operation = "unsupported"
         source = path if kind == 12 else opened.get(handle)
+        if strict and kind in {16, 18, 19, 23, 29}:
+            file_key = number(data.get("FileKey"))
+            if kind != 16 and file_key in file_names:
+                file_names[file_key] = None
+            if details is not None and kind == 16 and source is None:
+                candidate = file_names.get(file_key)
+                context = "missing-key" if not file_key else "unseen-key"
+                if file_key in file_names:
+                    context = "ambiguous-name"
+                if candidate is not None:
+                    context = "tracked" if tracked(candidate) else "outside-tracked-paths"
+                details[f"{actor}:event-16:write-request:file-key-context-{context}"] += 1
         if not irp or not object_id:
             if operation and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1
