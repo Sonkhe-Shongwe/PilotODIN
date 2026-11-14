@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, History, LoaderCircle, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Download, FileSpreadsheet, X} from 'lucide-react';
 import {downloadCleanedData,get,post} from './api';
 import {resolveQualityFocus} from './qualityHandoff';
@@ -311,7 +312,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
         </div>
       </details>
     </section>
-    {pendingApproval&&<div className="quality-approval-backdrop" role="presentation">
+    {pendingApproval&&createPortal(<div className="quality-approval-backdrop" role="presentation">
       <section className="panel quality-approval-dialog" ref={approvalDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Review exact dataset change">
         <div className="panel-title"><ShieldCheck size={18}/><h2>Review before applying</h2>
           <button className="btn small" disabled={busy} onClick={()=>setPendingApproval(null)} aria-label="Cancel approval"><X size={16}/></button></div>
@@ -332,7 +333,7 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
           <button className="btn primary" disabled={busy} onClick={()=>void commitProposal()}><CheckCircle2 size={15}/>{busy?'Applying…':'Approve these changes'}</button>
         </div>
       </section>
-    </div>}
+    </div>,document.body)}
     <div className="quality-split">
       <div className="panel quality-table-panel" ref={inspectorRef}>
         <div className="panel-title"><ClipboardCheck size={18}/><h2>Dataset inspector</h2><span className="pill muted">{verifiedPreview?.total_matching_rows??0} rows</span></div>

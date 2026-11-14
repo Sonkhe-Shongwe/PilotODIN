@@ -325,8 +325,16 @@ body{overflow:hidden;background:var(--studio-canvas);color:var(--studio-ink)}
 .studio-app .brand-name span:not(.brand-pilot){color:#31218D}
 
 /* Build E: explicit, version-bound approval review. */
-.quality-approval-backdrop{position:fixed;inset:0;background:rgba(17,27,55,.56);display:flex;align-items:center;justify-content:center;padding:22px;z-index:500;}
-.quality-approval-dialog{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;box-shadow:0 20px 90px rgba(17,27,55,.28);}
+.quality-approval-backdrop{
+  position:fixed;inset:0;display:grid;place-items:center;
+  padding:clamp(10px,3vw,22px);background:rgba(17,27,55,.56);z-index:500;
+}
+.quality-approval-dialog.panel{
+  width:min(760px,100%);max-height:100%;min-height:0;overflow:auto;
+  padding:clamp(14px,3vw,27px);border:1px solid #e9edf4;border-radius:17px;
+  background:#fff;color:#273451;box-shadow:0 20px 90px rgba(17,27,55,.28);
+}
+.quality-approval-dialog .quality-action-row{flex-wrap:wrap;}
 .quality-approval-steps{max-height:140px;overflow:auto;background:#f7f8fc;border-radius:8px;padding:8px 12px;}
 .quality-approval-steps p{margin:5px 0;font-size:13px;}
 

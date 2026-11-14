@@ -179,13 +179,16 @@ test('real HTTP Quality approval, keyboard consent, undo, restore and restart pr
     .filter({hasText:'Segment'});
   await finding.click();
   const review=primary.getByRole('button',{name:'Review this correction'});
-  const dialog=primary.getByRole('dialog',{name:'Review exact dataset change'});
+  const dialog=page.getByRole('dialog',{name:'Review exact dataset change'});
   const toApprove:Proposal={operation:'approve',expected_version:0,issue_id:issueId};
   gate.allowProposal(toApprove);
   await reviewedProposal(page,pid,()=>review.click(),toApprove);
   await expect(dialog).toBeVisible();
   const cancel=dialog.getByRole('button',{name:'Cancel approval'});
   const approve=dialog.getByRole('button',{name:'Approve these changes'});
+  // The review must be actionable on open, without scrolling the workspace.
+  await expect(dialog).toBeInViewport({ratio:1});
+  await expect(approve).toBeInViewport({ratio:1});
   await expect(cancel).toBeFocused();
   await approve.focus();
   await page.keyboard.press('Tab');

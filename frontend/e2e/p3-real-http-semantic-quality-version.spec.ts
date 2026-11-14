@@ -169,7 +169,7 @@ test('P3 W5: actual Quality UI approval advances v0 to v1 without inheriting sav
   const received=await proposalResponse;
   expect(received.status(),await received.text()).toBe(200);
   const receipt=await received.json() as Receipt;
-  const modal=pane.getByRole('dialog',{name:'Review exact dataset change'});
+  const modal=page.getByRole('dialog',{name:'Review exact dataset change'});
   await expect(modal).toContainText('Working version: v0');
   await expect(modal).toContainText('Region');
   guard.allowReviewedReceipt(receipt);
