@@ -248,7 +248,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
     )
     if started.returncode:
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
-    rundown_stop_ticks = None
+    rundown_start_ticks = rundown_stop_ticks = None
     lifetime_control = None
     basic_info_control = None
     try:
@@ -317,6 +317,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         stop_aux_error = None
         try:
             if before_stop is not None:
+                rundown_start_ticks = utc_ticks() // 10 * 10
                 rundown_stop_ticks = before_stop()
         except Exception as exc:
             stop_aux_error = exc
@@ -341,6 +342,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
     if controls:
         capture["preopened"] = {"pid": os.getpid(), "tid": get_native_id(), "writes": control_writes}
     if rundown_stop_ticks is not None:
+        capture["rundown_start_ticks"] = rundown_start_ticks
         capture["rundown_stop_ticks"] = rundown_stop_ticks
     if lifetime_control is not None:
         if lifetime_path.read_bytes() != b"L" * 97:

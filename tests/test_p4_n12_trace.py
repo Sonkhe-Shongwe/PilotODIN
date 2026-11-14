@@ -457,6 +457,52 @@ def test_unresolved_write_open_evidence_does_not_change_the_audit(fault, outcome
             if name.startswith("write-gap-name-change-event:")} == expected_name_change
 
 
+def test_no_open_writes_partition_by_request_time_and_verified_process_context():
+    events = []
+
+    def emit(kind, ticks, pid=7, lifecycle=False, **data):
+        events.append({"id": kind, "ticks": ticks, "pid": pid, "lifecycle": lifecycle, "data": data})
+
+    def write(ticks, irp, pid, thread, *, status=0):
+        emit(16, ticks, pid=pid, FileObject=51, FileKey=60, Irp=irp, IssuingThreadId=thread)
+        emit(24, ticks + 1, Irp=irp, Status=status)
+
+    emit(1, 2, lifecycle=True, ProcessID=7)
+    emit(3, 3, lifecycle=True, ProcessID=7, ThreadID=81)
+    emit(1, 4, lifecycle=True, ProcessID=8)
+    write(9, 1, 4, 81)
+    write(10, 2, 7, 82)
+    write(12, 3, 8, 81)
+    emit(4, 13, lifecycle=True, ProcessID=7, ThreadID=81)
+    write(13, 4, 7, 81)
+    write(14, 5, 7, 81, status=0xC0000022)
+    emit(2, 15, lifecycle=True, ProcessID=8)
+    write(15, 6, 8, 0)
+    write(16, 7, 9, 83)
+
+    images = {7: "wpr.exe", 8: r"C:\private\unknown.exe", 9: "python.exe"}
+    details = Counter()
+    unresolved = correlate_requests(
+        events, lambda value: value or None, lambda pid, *_: ("other", images.get(pid)),
+        lambda value: False, lambda *args: None, strict=True, details=details,
+        initial_process_births={9: 0}, thread_bookends={82: 9, 83: 99},
+        rundown_window=(10, 12),
+    )
+
+    prefix = "write-gap-no-open-context:"
+    assert {key.removeprefix(prefix): count for key, count in details.items()
+            if key.startswith(prefix)} == {
+        "before-wpr-stop:header-system-context:issuer-wpr.exe": 1,
+        "during-wpr-stop:header-wpr.exe:issuer-python.exe": 1,
+        "during-wpr-stop:header-other-verified-image:issuer-wpr.exe": 1,
+        "after-wpr-stop:header-wpr.exe:issuer-unverified": 1,
+        "after-wpr-stop:header-unverified:issuer-unverified": 1,
+        "after-wpr-stop:header-python.exe:issuer-unverified": 1,
+    }
+    assert details["write-gap-open-evidence:no-observed-open"] == 6
+    assert unresolved["other:write:path-missing"] == 6
+
+
 @pytest.mark.parametrize(("metadata_status", "expected"), [(0, "PASS"), (0xC0000022, "BLOCKED")])
 def test_basic_info_control_requires_a_successful_class_4_completion(metadata_status, expected):
     path = r"c:\fixture\metadata.bin"
@@ -1346,6 +1392,9 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_mutations"]["other:resize:path-missing"] == 1
     assert report["successful_write_path_gaps"] == {"ambiguous-name": 1}
     assert report["unresolved_write_open_evidence"] == {"no-observed-open": 1}
+    assert report["unresolved_write_without_open_context"] == {
+        "unavailable:header-other-verified-image:issuer-other-verified-image": 1,
+    }
     assert report["unresolved_write_name_change_events"] == {}
     assert "other:compression:process-lifetime-missing" not in report["unrelated_unresolved_mutations"]
     assert report["unrelated_unresolved_mutations"]["other:compression:path-missing"] == 1

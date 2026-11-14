@@ -17,6 +17,12 @@ FSCTL_GET_OBJECT_ID = 0x0009009C  # Retrieves an existing object identifier; rea
 FSCTL_READ_USN_JOURNAL = 0x000900BB  # Reads USN change-journal records; read-only.
 FSCTL_SET_COMPRESSION = 0x0009C040  # Changes a file/directory compression state.
 
+WRITE_CONTEXT_IMAGES = {
+    "logman.exe", "msbuild.exe", "msmpeng.exe", "powershell.exe", "pwsh.exe",
+    "python.exe", "runner.listener.exe", "runner.worker.exe", "svchost.exe",
+    "system", "wpr.exe",
+}
+
 
 def number(value):
     if isinstance(value, str):
@@ -60,7 +66,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        strict=False, details=None, process_bookends=None, thread_bookends=None,
                        rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
                        rundown_invalidations=None, initial_process_births=None,
-                       preopened_control_file_keys=None, preopened_control_file_objects=None):
+                       preopened_control_file_keys=None, preopened_control_file_objects=None,
+                       rundown_window=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
@@ -74,6 +81,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     invalidation_reasons = {}
     ordered_events = sorted(events, key=lambda record: record["ticks"])
     name_transition_ticks = set()
+    process_transition_ticks = set()
+    thread_transition_ticks = set()
     if strict and details is not None:
         # ETW records at the same timestamp have no proven order here.
         name_transition_ticks = {
@@ -81,6 +90,16 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             for event in ordered_events if not event.get("lifecycle")
             if (key := name_transition_key(event["id"], event["data"]))
         }
+        for event in ordered_events:
+            if not event.get("lifecycle"):
+                continue
+            kind, data, ticks = event["id"], event["data"], event["ticks"]
+            if kind in (1, 2):
+                pid = number(data.get("ProcessID", data.get("ProcessId")))
+                process_transition_ticks.add((pid, ticks))
+            elif kind in (3, 4):
+                tid = number(data.get("ThreadID", data.get("TThreadId")))
+                thread_transition_ticks.add((tid, ticks))
     rundown_names = {}
     name_events = {}
     rundown_unsafe_keys = set()
@@ -190,6 +209,35 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         if details is not None and operation == "compression":
             details[f"compression-request:{outcome}"] += 1
 
+    def process_label(pid, birth, ticks, actor, identity):
+        if birth is None or birth >= ticks or (pid, ticks) in process_transition_ticks:
+            return "unverified"
+        if actor == "preopened-control":
+            return actor
+        if actor == "other" and identity:
+            return identity if identity in WRITE_CONTEXT_IMAGES else "other-verified-image"
+        return "unverified"
+
+    def write_capture_context(ticks, header_label, tid):
+        phase = "unavailable"
+        if rundown_window is not None:
+            start, stop = rundown_window
+            phase = "before-wpr-stop" if ticks < start else (
+                "during-wpr-stop" if ticks <= stop else "after-wpr-stop"
+            )
+        issuer_label = "unverified"
+        if tid and (tid, ticks) not in thread_transition_ticks:
+            owner = thread_owners.get(tid)
+            if owner is None and thread_bookends is not None and tid in thread_bookends:
+                owner_pid = thread_bookends[tid]
+                owner = (owner_pid, active.get(owner_pid))
+            if owner is not None:
+                owner_pid, owner_birth = owner
+                if owner_birth is not None and active.get(owner_pid) == owner_birth:
+                    actor, identity = classify_process(owner_pid, owner_birth, ticks)
+                    issuer_label = process_label(owner_pid, owner_birth, ticks, actor, identity)
+        return f"{phase}:header-{header_label}:issuer-{issuer_label}"
+
     for event in ordered_events:
         kind, pid, data = event["id"], event["pid"], event["data"]
         ticks = event["ticks"]
@@ -253,12 +301,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 )
                 count_compression(operation, f"successful-completion:{outcome}")
             if write_gap is not None:
-                write_request, write_name_context = write_gap
+                write_request, write_name_context, capture_context = write_gap
                 context, _, invalidation = write_name_context.partition(":")
                 details[f"write-path-gap:{context}"] += 1
                 if invalidation:
                     details[f"write-name-invalidation:{invalidation}"] += 1
-                write_gaps.append((write_request, ticks))
+                write_gaps.append((write_request, ticks, capture_context))
             # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
             open_result = number(data.get("ExtraInformation")) if operation == "open" else None
             mutation = operation != "query" and (operation != "open" or open_result in {0, 2, 3})
@@ -484,7 +532,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:irp-ambiguous"] += 1
         elif operation:
-            write_gap = (event, write_name_context) if write_name_context is not None else None
+            write_gap = None
+            if write_name_context is not None:
+                header_label = process_label(pid, birth, ticks, actor, identity)
+                if header_label == "unverified" and pid in (0, 4):
+                    header_label = "system-context"
+                capture_context = write_capture_context(ticks, header_label, tid)
+                write_gap = (event, write_name_context, capture_context)
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
                             info_class, write_gap)
     for operation, actor, _, _, source, destination, _, event_id, info_class, _ in pending.values():
@@ -494,12 +548,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     if write_gaps:
         name_change_events = Counter()
         class_4_outcomes = Counter()
+        no_open_contexts = Counter()
         evidence = summarize_write_gap_open_evidence(
             ordered_events, write_gaps, opens_with_process_lifetime, resolve_path, tracked,
-            name_change_events, class_4_outcomes,
+            name_change_events, class_4_outcomes, no_open_contexts,
         )
         for outcome, count in evidence.items():
             details[f"write-gap-open-evidence:{outcome}"] += count
+        for context, count in no_open_contexts.items():
+            details[f"write-gap-no-open-context:{context}"] += count
         for event_label, count in name_change_events.items():
             details[f"write-gap-name-change-event:{event_label}"] += count
         for outcome, count in class_4_outcomes.items():
@@ -730,7 +787,7 @@ def name_change_event_label(event):
 
 
 def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked,
-                                      name_change_events, class_4_outcomes):
+                                      name_change_events, class_4_outcomes, no_open_contexts):
     """Count evidence for unresolved writes without using it to classify them."""
     by_object, by_key, by_irp, process_transitions = (defaultdict(list) for _ in range(4))
     for event in events:
@@ -750,12 +807,13 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
         if irp:
             by_irp[irp].append(event)
 
-    def evaluate(write, completed):
+    def evaluate(write, completed, capture_context):
         data = write["data"]
         object_events = by_object[number(data.get("FileObject"))]
         prior_opens = [event for event in object_events
                        if event["id"] == 12 and event["ticks"] <= write["ticks"]]
         if not prior_opens:
+            no_open_contexts[capture_context] += 1
             return "no-observed-open"
         opened = prior_opens[-1]
         if (opened["ticks"] == write["ticks"] or
@@ -802,7 +860,7 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
                 class_4_outcomes[remaining or candidate] += 1
         return reason or candidate
 
-    return Counter(evaluate(write, completed) for write, completed in gaps)
+    return Counter(evaluate(write, completed, context) for write, completed, context in gaps)
 
 
 def file_lifetime_report(control, events, devices):

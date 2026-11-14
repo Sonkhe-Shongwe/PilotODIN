@@ -556,7 +556,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       process_bookend_births=None, process_bookend_names=None,
                       process_event_images=None,
                       rundown_recovered_keys=None, rundown_invalidations=None,
-                      preopened_control_file_keys=None, preopened_control_file_objects=None):
+                      preopened_control_file_keys=None, preopened_control_file_objects=None,
+                      rundown_window=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -646,6 +647,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             initial_process_births=initial_process_births,
             preopened_control_file_keys=preopened_control_file_keys,
             preopened_control_file_objects=preopened_control_file_objects,
+            rundown_window=rundown_window,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -991,6 +993,14 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         bounds, _ = etw_capture_contract(manifest, start, end, issues)
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, bounds, manifest["etw"]["events_sha256"]))
+    rundown_window = None
+    if "rundown_start_ticks" in capture:
+        rundown_start = capture["rundown_start_ticks"]
+        rundown_stop = capture.get("rundown_stop_ticks")
+        require(type(rundown_start) is int and type(rundown_stop) is int
+                and bounds[0] <= rundown_start <= rundown_stop <= bounds[1],
+                "invalid WPR stop window inside the companion ETW capture")
+        rundown_window = (rundown_start, rundown_stop)
     lifecycle_pids, lifecycle_tids = set(), set()
     for event in event_records:
         if not event["lifecycle"]:
@@ -1067,6 +1077,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         rundown_invalidations=invalidations,
         preopened_control_file_keys={control_keys["protected"]},
         preopened_control_file_objects={control_file_objects["protected"]},
+        rundown_window=rundown_window,
     )
     recovered_control_keys = {label for label, key in control_keys.items() if key in recovered_keys}
     unresolved_controls = {key: value for key, value in unresolved.items()
@@ -1139,6 +1150,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "unresolved_write_open_evidence": {
             key.removeprefix("write-gap-open-evidence:"): value for key, value in details.items()
             if key.startswith("write-gap-open-evidence:")
+        },
+        "unresolved_write_without_open_context": {
+            key.removeprefix("write-gap-no-open-context:"): value for key, value in details.items()
+            if key.startswith("write-gap-no-open-context:")
         },
         "unresolved_write_name_change_events": {
             key.removeprefix("write-gap-name-change-event:"): value for key, value in details.items()
