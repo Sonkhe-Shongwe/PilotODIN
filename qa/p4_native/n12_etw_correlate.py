@@ -6,7 +6,7 @@ import ntpath
 import re
 import sys
 from xml.etree import ElementTree as ET
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 
@@ -64,6 +64,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     active = dict(initial_process_births or {})
     thread_owners = {}
     opened, pending = {}, {}
+    write_gaps = []
+    opens_with_process_lifetime = set()
     file_names = {}
     invalidated_names = {}
     ambiguous_irps = set()
@@ -220,6 +222,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         object_id = number(data.get("FileObject"))
         irp = number(data.get("Irp"))
         birth = active.get(pid)
+        if strict and details is not None and kind == 12 and birth is not None and birth < ticks:
+            opens_with_process_lifetime.add(id(event))
         actor, identity = classify_process(pid, birth, ticks)
         handle = (pid, birth, object_id)
         path = resolve_path(data.get("FileName") or data.get("FilePath") or "")
@@ -229,7 +233,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if not irp or irp not in pending:
                 continue
             (operation, actor, identity, handle, source, destination, requested,
-             event_id, info_class, write_name_context) = pending.pop(irp)
+             event_id, info_class, write_gap) = pending.pop(irp)
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
             if status is None:
@@ -247,11 +251,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     "protected" if tracked(source) else "outside-protected"
                 )
                 count_compression(operation, f"successful-completion:{outcome}")
-            if write_name_context is not None:
+            if write_gap is not None:
+                write_request, write_name_context = write_gap
                 context, _, invalidation = write_name_context.partition(":")
                 details[f"write-path-gap:{context}"] += 1
                 if invalidation:
                     details[f"write-name-invalidation:{invalidation}"] += 1
+                write_gaps.append((write_request, ticks))
             # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
             open_result = number(data.get("ExtraInformation")) if operation == "open" else None
             mutation = operation != "query" and (operation != "open" or open_result in {0, 2, 3})
@@ -275,12 +281,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             continue
         if kind == 27 and irp in pending:
             (operation, owner, identity, obj, source, previous, requested,
-             event_id, info_class, write_name_context) = pending[irp]
+             event_id, info_class, write_gap) = pending[irp]
             if operation == "rename" and obj == handle and path:
                 if previous and previous != path:
                     unresolved[f"{owner}:rename:destination-ambiguous"] += 1
                 pending[irp] = (operation, owner, identity, obj, source, path, requested,
-                                event_id, info_class, write_name_context)
+                                event_id, info_class, write_gap)
             continue
         if strict and kind == 27 and path and relevant(actor, "rename", None, path):
             unresolved[f"{actor}:rename:request-missing-or-ambiguous"] += 1
@@ -477,12 +483,19 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:irp-ambiguous"] += 1
         elif operation:
+            write_gap = (event, write_name_context) if write_name_context is not None else None
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
-                            info_class, write_name_context)
+                            info_class, write_gap)
     for operation, actor, _, _, source, destination, _, event_id, info_class, _ in pending.values():
         count_compression(operation, "missing-completion")
         if operation != "query" and relevant(actor, operation, source, destination):
             flag(actor, f"{operation}:completion-missing", event_id, info_class)
+    if write_gaps:
+        evidence = summarize_write_gap_open_evidence(
+            ordered_events, write_gaps, opens_with_process_lifetime, resolve_path, tracked,
+        )
+        for outcome, count in evidence.items():
+            details[f"write-gap-open-evidence:{outcome}"] += count
     return unresolved
 
 
@@ -632,12 +645,22 @@ def check_write_object_path(events, opened, write, write_completed, expected, de
     key = number(write["data"].get("FileKey"))
     if not object_id or not key or number(opened["data"].get("FileObject")) != object_id:
         return "write-object-or-key-unverified"
-    if canonical_file_path(opened["data"].get("FileName") or "", devices) != expected:
+    def resolve_path(value):
+        return canonical_file_path(value, devices)
+
+    if resolve_path(opened["data"].get("FileName") or "") != expected:
         return "open-path-mismatch"
     open_completed = successful_completion(events, opened, write["ticks"])
     if open_completed is None:
         return "open-completion-unverified"
+    return write_object_path_conflict(events, opened, open_completed, write, write_completed,
+                                      expected, resolve_path)
 
+
+def write_object_path_conflict(events, opened, open_completed, write, write_completed,
+                               expected, resolve_path):
+    object_id = number(write["data"].get("FileObject"))
+    key = number(write["data"].get("FileKey"))
     names = set()
     for event in events:
         ticks = event["ticks"]
@@ -650,7 +673,7 @@ def check_write_object_path(events, opened, write, write_completed, expected, de
         file_object = number(data.get("FileObject"))
         same_object = file_object == object_id
         if kind == 10 and same_key:
-            names.add(canonical_file_path(data.get("FileName") or "", devices))
+            names.add(resolve_path(data.get("FileName") or ""))
             if ticks == write["ticks"]:
                 return "ambiguous-event-order"
         if kind == 11 and same_key and ticks < opened["ticks"]:
@@ -672,6 +695,65 @@ def check_write_object_path(events, opened, write, write_completed, expected, de
     if names - {expected}:
         return "conflicting-or-unmapped-name"
     return None
+
+
+def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked):
+    """Count evidence for unresolved writes without using it to classify them."""
+    by_object, by_key, by_irp, process_transitions = (defaultdict(list) for _ in range(4))
+    for event in events:
+        kind, data = event["id"], event["data"]
+        if event.get("lifecycle"):
+            if kind in {1, 2}:
+                pid = number(data.get("ProcessID", data.get("ProcessId")))
+                process_transitions[pid].append(event["ticks"])
+            continue
+        if kind not in {10, 11}:
+            by_object[number(data.get("FileObject"))].append(event)
+        if kind != 24:
+            key = name_transition_key(kind, data) or number(data.get("FileKey"))
+            if key:
+                by_key[key].append(event)
+        irp = number(data.get("Irp"))
+        if irp:
+            by_irp[irp].append(event)
+
+    def evaluate(write, completed):
+        data = write["data"]
+        object_events = by_object[number(data.get("FileObject"))]
+        prior_opens = [event for event in object_events
+                       if event["id"] == 12 and event["ticks"] <= write["ticks"]]
+        if not prior_opens:
+            return "no-observed-open"
+        opened = prior_opens[-1]
+        if (opened["ticks"] == write["ticks"] or
+                (len(prior_opens) > 1 and prior_opens[-2]["ticks"] == opened["ticks"])):
+            return "ambiguous-event-order"
+        open_completed = successful_completion(
+            by_irp[number(opened["data"].get("Irp"))], opened, write["ticks"],
+        )
+        if open_completed is None:
+            return "open-completion-unverified"
+        if (id(opened) not in opens_with_process_lifetime or any(
+            opened["ticks"] <= tick <= completed for tick in process_transitions[opened["pid"]]
+        )):
+            return "open-process-lifetime-unverified"
+        path = resolve_path(opened["data"].get("FileName") or "")
+        if path is None:
+            return "open-path-unmapped"
+        key = number(data.get("FileKey"))
+        if not key:
+            return "write-key-unverified"
+        if successful_completion(by_irp[number(data.get("Irp"))], write, completed + 1) != completed:
+            return "write-completion-unverified"
+
+        relevant_events = {id(event): event for event in object_events + by_key[key]}
+        reason = write_object_path_conflict(
+            sorted(relevant_events.values(), key=lambda event: event["ticks"]),
+            opened, open_completed, write, completed, path, resolve_path,
+        )
+        return reason or ("candidate-protected" if tracked(path) else "candidate-outside-protected")
+
+    return Counter(evaluate(write, completed) for write, completed in gaps)
 
 
 def file_lifetime_report(control, events, devices):

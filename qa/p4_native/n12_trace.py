@@ -1079,6 +1079,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         not key.startswith("compression-request:") and
         not key.startswith("write-path-gap:") and
         not key.startswith("write-name-invalidation:") and
+        not key.startswith("write-gap-open-evidence:") and
         not key.endswith(":rundown-path-recovered")
     }
     expected_control_violations = {"protected:preopened-control:write": 1}
@@ -1132,6 +1133,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "successful_write_name_invalidations": {
             key.removeprefix("write-name-invalidation:"): value for key, value in details.items()
             if key.startswith("write-name-invalidation:")
+        },
+        "unresolved_write_open_evidence": {
+            key.removeprefix("write-gap-open-evidence:"): value for key, value in details.items()
+            if key.startswith("write-gap-open-evidence:")
         },
         "protected_writer_processes": {
             key: value for key, value in details.items()

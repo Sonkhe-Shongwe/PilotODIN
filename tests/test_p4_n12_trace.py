@@ -380,6 +380,61 @@ def test_write_object_path_rejects_uncertain_evidence(fault, reason):
                                    opened, write, 9, path, {}) == reason
 
 
+@pytest.mark.parametrize(("fault", "outcome"), [
+    (None, "candidate-protected"),
+    ("outside", "candidate-outside-protected"),
+    ("no-open", "no-observed-open"),
+    ("failed-open", "open-completion-unverified"),
+    ("reused-object", "open-completion-unverified"),
+    ("ambiguous-completion", "write-completion-unverified"),
+    ("ambiguous-open", "ambiguous-event-order"),
+    ("unknown-process", "open-process-lifetime-unverified"),
+    ("process-exited", "open-process-lifetime-unverified"),
+    ("conflicting-name", "conflicting-or-unmapped-name"),
+    ("same-object-cleanup", "file-object-lifetime-changed"),
+])
+def test_unresolved_write_open_evidence_does_not_change_the_audit(fault, outcome):
+    protected = r"c:\protected\file.bin"
+    path = r"c:\outside\file.bin" if fault == "outside" else protected
+    events = []
+
+    def emit(kind, ticks, pid=7, lifecycle=False, **data):
+        events.append({"id": kind, "ticks": ticks, "pid": pid, "lifecycle": lifecycle, "data": data})
+
+    if fault != "no-open":
+        emit(12, 2, FileName=path, FileObject=51, Irp=1)
+        emit(24, 3, Irp=1, Status=0xC0000022 if fault == "failed-open" else 0, ExtraInformation=1)
+    emit(10, 4, FileKey=60, FileName=path)
+    emit(13, 5, FileKey=60, FileObject=51 if fault == "same-object-cleanup" else 50)
+    if fault == "reused-object":
+        emit(12, 6, FileObject=51, Irp=3, FileName=r"c:\outside\reused.bin")
+    if fault == "process-exited":
+        emit(2, 6, lifecycle=True, ProcessID=7)
+    if fault == "conflicting-name":
+        emit(10, 6, FileKey=60, FileName=r"c:\outside\alias.bin")
+    if fault == "ambiguous-open":
+        emit(12, 8, FileObject=51, Irp=3, FileName=path)
+    emit(16, 8, pid=4, FileObject=51, FileKey=60, Irp=2)
+    emit(24, 9, Irp=2, Status=0)
+    if fault == "ambiguous-completion":
+        emit(24, 9, Irp=2, Status=0)
+    emit(16, 10, pid=4, FileObject=51, FileKey=60, Irp=4)
+    emit(24, 11, Irp=4, Status=0xC0000022)
+    details = Counter()
+    records = []
+    unresolved = correlate_requests(
+        events, lambda value: value or None, lambda *args: ("other", None),
+        lambda value: value == protected, lambda *args: records.append(args),
+        strict=True, details=details, initial_process_births={4: 0} if fault == "unknown-process"
+        else {4: 0, 7: 0},
+    )
+    assert unresolved["other:write:path-missing"] == 1
+    assert not any(record[-1] for record in records)
+    assert {name: count for name, count in details.items() if name.startswith("write-gap-open-evidence:")} == {
+        f"write-gap-open-evidence:{outcome}": 1,
+    }
+
+
 def test_two_handle_fixture_verifies_the_second_handle_after_closing_first(tmp_path, monkeypatch):
     path = tmp_path / "generated.bin"
     handles = []
@@ -1202,6 +1257,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:rundown-context-not-in-rundown"] == 1
     assert report["unrelated_unresolved_mutations"]["other:resize:path-missing"] == 1
     assert report["successful_write_path_gaps"] == {"ambiguous-name": 1}
+    assert report["unresolved_write_open_evidence"] == {"no-observed-open": 1}
     assert "other:compression:process-lifetime-missing" not in report["unrelated_unresolved_mutations"]
     assert report["unrelated_unresolved_mutations"]["other:compression:path-missing"] == 1
     assert report["compression_request_outcomes"] == {
