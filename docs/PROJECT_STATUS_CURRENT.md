@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 stacks on the unflushed protected control
+
+The [hosted capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43607666060/job/132485722561) matched 20-frame and 19-frame System stacks to the protected paging write and EOF resize. The known application write calibration had zero accepted matches and the expanded fixture failed its strict control assertions. Application initiation remains unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Exact source, control results and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-stacks-on-the-unflushed-protected-control).
+
 ## 14 November 2026 | N12 stack calibration and protected target
 
 The [approved hosted capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43604274176/job/132475433502) calibrated both application stacks and recovered two System stacks on the unflushed outside control. The protected pair did not recur on the explicitly flushed protected control. The final strict reducer comparison failed, so the overall job failed and the earlier protected findings stand. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Calibration, comparison and next test](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-stack-calibration-and-protected-target).
