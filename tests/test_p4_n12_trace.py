@@ -392,6 +392,11 @@ def test_write_object_path_rejects_uncertain_evidence(fault, reason):
     ("process-exited", "open-process-lifetime-unverified"),
     ("conflicting-name", "conflicting-or-unmapped-name"),
     ("same-object-cleanup", "file-object-lifetime-changed"),
+    ("rename-path", "possible-name-change"),
+    ("set-information", "possible-name-change"),
+    ("unknown-information-class", "possible-name-change"),
+    ("fsctl", "possible-name-change"),
+    ("unknown-fsctl", "possible-name-change"),
 ])
 def test_unresolved_write_open_evidence_does_not_change_the_audit(fault, outcome):
     protected = r"c:\protected\file.bin"
@@ -414,6 +419,21 @@ def test_unresolved_write_open_evidence_does_not_change_the_audit(fault, outcome
         emit(10, 6, FileKey=60, FileName=r"c:\outside\alias.bin")
     if fault == "ambiguous-open":
         emit(12, 8, FileObject=51, Irp=3, FileName=path)
+    blocking_events = {
+        "rename-path": (27, {}, "event-27"),
+        "set-information": (17, {"InfoClass": "0x4"}, "event-17-info-4"),
+        "unknown-information-class": (17, {"InfoClass": 256}, "event-17-info-unknown"),
+        "fsctl": (23, {"InfoClass": "0x900C4"}, "event-23-fsctl-0x000900C4"),
+        "unknown-fsctl": (23, {}, "event-23-fsctl-unknown"),
+    }
+    expected_name_change = {}
+    if fault in blocking_events:
+        kind, fields, label = blocking_events[fault]
+        emit(kind, 6, FileObject=52, FileKey=60, Irp=5, **fields)
+        emit(24, 7, Irp=5, Status=0xC0000022)
+        # A later possible path change must not inflate the count.
+        emit(26, 7, FileObject=53, FileKey=60)
+        expected_name_change[f"write-gap-name-change-event:{label}"] = 1
     emit(16, 8, pid=4, FileObject=51, FileKey=60, Irp=2)
     emit(24, 9, Irp=2, Status=0)
     if fault == "ambiguous-completion":
@@ -433,6 +453,8 @@ def test_unresolved_write_open_evidence_does_not_change_the_audit(fault, outcome
     assert {name: count for name, count in details.items() if name.startswith("write-gap-open-evidence:")} == {
         f"write-gap-open-evidence:{outcome}": 1,
     }
+    assert {name: count for name, count in details.items()
+            if name.startswith("write-gap-name-change-event:")} == expected_name_change
 
 
 def test_two_handle_fixture_verifies_the_second_handle_after_closing_first(tmp_path, monkeypatch):
@@ -1258,6 +1280,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_mutations"]["other:resize:path-missing"] == 1
     assert report["successful_write_path_gaps"] == {"ambiguous-name": 1}
     assert report["unresolved_write_open_evidence"] == {"no-observed-open": 1}
+    assert report["unresolved_write_name_change_events"] == {}
     assert "other:compression:process-lifetime-missing" not in report["unrelated_unresolved_mutations"]
     assert report["unrelated_unresolved_mutations"]["other:compression:path-missing"] == 1
     assert report["compression_request_outcomes"] == {

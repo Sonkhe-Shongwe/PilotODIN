@@ -491,11 +491,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         if operation != "query" and relevant(actor, operation, source, destination):
             flag(actor, f"{operation}:completion-missing", event_id, info_class)
     if write_gaps:
+        name_change_events = Counter()
         evidence = summarize_write_gap_open_evidence(
             ordered_events, write_gaps, opens_with_process_lifetime, resolve_path, tracked,
+            name_change_events,
         )
         for outcome, count in evidence.items():
             details[f"write-gap-open-evidence:{outcome}"] += count
+        for event_label, count in name_change_events.items():
+            details[f"write-gap-name-change-event:{event_label}"] += count
     return unresolved
 
 
@@ -653,8 +657,9 @@ def check_write_object_path(events, opened, write, write_completed, expected, de
     open_completed = successful_completion(events, opened, write["ticks"])
     if open_completed is None:
         return "open-completion-unverified"
-    return write_object_path_conflict(events, opened, open_completed, write, write_completed,
-                                      expected, resolve_path)
+    reason, _ = write_object_path_conflict(events, opened, open_completed, write, write_completed,
+                                           expected, resolve_path)
+    return reason
 
 
 def write_object_path_conflict(events, opened, open_completed, write, write_completed,
@@ -675,7 +680,7 @@ def write_object_path_conflict(events, opened, open_completed, write, write_comp
         if kind == 10 and same_key:
             names.add(resolve_path(data.get("FileName") or ""))
             if ticks == write["ticks"]:
-                return "ambiguous-event-order"
+                return "ambiguous-event-order", event
         if kind == 11 and same_key and ticks < opened["ticks"]:
             names.clear()
         if ticks < opened["ticks"] or not (same_object or same_key):
@@ -690,14 +695,28 @@ def write_object_path_conflict(events, opened, open_completed, write, write_comp
         }
         if lifecycle_boundary or name_mutation:
             if ticks in {opened["ticks"], open_completed, write["ticks"], write_completed}:
-                return "ambiguous-event-order"
-            return "file-object-lifetime-changed" if lifecycle_boundary else "possible-name-change"
+                return "ambiguous-event-order", event
+            reason = "file-object-lifetime-changed" if lifecycle_boundary else "possible-name-change"
+            return reason, event
     if names - {expected}:
-        return "conflicting-or-unmapped-name"
-    return None
+        return "conflicting-or-unmapped-name", None
+    return None, None
 
 
-def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked):
+def name_change_event_label(event):
+    kind = event["id"]
+    label = f"event-{kind}"
+    if kind not in {17, 23}:
+        return label
+    info = number(event["data"].get("InfoClass"))
+    limit = 0xFFFFFFFF if kind == 23 else 255
+    if type(info) is not int or not 0 <= info <= limit:
+        return label + ("-fsctl-unknown" if kind == 23 else "-info-unknown")
+    return label + (f"-fsctl-0x{info:08X}" if kind == 23 else f"-info-{info}")
+
+
+def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked,
+                                      name_change_events):
     """Count evidence for unresolved writes without using it to classify them."""
     by_object, by_key, by_irp, process_transitions = (defaultdict(list) for _ in range(4))
     for event in events:
@@ -747,10 +766,12 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
             return "write-completion-unverified"
 
         relevant_events = {id(event): event for event in object_events + by_key[key]}
-        reason = write_object_path_conflict(
+        reason, event = write_object_path_conflict(
             sorted(relevant_events.values(), key=lambda event: event["ticks"]),
             opened, open_completed, write, completed, path, resolve_path,
         )
+        if reason == "possible-name-change":
+            name_change_events[name_change_event_label(event)] += 1
         return reason or ("candidate-protected" if tracked(path) else "candidate-outside-protected")
 
     return Counter(evaluate(write, completed) for write, completed in gaps)
