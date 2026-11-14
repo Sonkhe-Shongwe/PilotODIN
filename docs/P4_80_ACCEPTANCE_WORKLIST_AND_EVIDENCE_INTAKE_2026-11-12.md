@@ -96,6 +96,8 @@ The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 
 **Isolated comparison follow-up:** The [hosted Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43609421696/job/132490982398) passed with exactly two original fixture writes and 42-frame and 41-frame stacks for the known application write and EOF resize. The protected System paging write and resize both recurred during WPR stop and matched 20-frame and 19-frame stacks. The separate flushed and untouched files had zero matching successful System writes or resizes. Both protected findings remain. Function names and application initiation remain unverified. [Exact results](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-isolated-comparison-and-stack-calibration-pass).
 
+**Kernel function resolution:** The [hosted symbol run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43611212463/job/132496445287) identified the Windows Cache Manager lazy-write worker in both protected stacks. The write followed its asynchronous flush path, and the resize followed its write-behind valid-data update path. Both protected findings remain recorded. Application initiation and a causal role for WPR stop remain unverified. [Exact source, symbol coverage and limits](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-protected-cache-manager-execution-path).
+
 ## D. Consolidated native acceptance is a conditional downstream task
 
 **Current state:** N1–N11 passed in the consolidated hosted Windows run, including same-binary relaunch. R04 and R05 have partial results. N12 has scoped evidence. See the [consolidated results below](#13-november-2026-consolidated-hosted-windows-acceptance).

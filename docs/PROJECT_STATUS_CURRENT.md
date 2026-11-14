@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 protected Cache Manager execution path
+
+The [hosted symbol run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43611212463/job/132496445287) identified the Windows Cache Manager lazy-write worker in the protected paging write and EOF resize stacks. The write resolved 16/20 frames and the resize 14/19. The immediate execution path is verified for these synthetic events. Application initiation and the causal role of WPR stop remain unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Exact source and evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-protected-cache-manager-execution-path).
+
 ## 14 November 2026 | N12 isolated comparison and stack calibration pass
 
 The [hosted Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43609421696/job/132490982398) passed with exactly two original fixture writes and successful same-capture stack matching for both known application operations. The protected System paging write and EOF resize matched 20-frame and 19-frame stacks. Both violations remain recorded and the originating application action remains unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Exact source and evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-isolated-comparison-and-stack-calibration-pass).
