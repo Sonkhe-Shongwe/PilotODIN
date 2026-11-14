@@ -160,6 +160,28 @@ def write_two_handle_control(path):
                 raise RuntimeError("The generated two-handle write was incomplete.")
 
 
+def write_basic_info_control(path):
+    import msvcrt
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    set_time = kernel.SetFileTime
+    set_time.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 3
+    set_time.restype = wintypes.BOOL
+    with path.open("xb", buffering=0) as stream:
+        verify_handle_path(stream, path)
+        # Set an explicit timestamp well separated from the file's creation.
+        target_ns = 1_600_000_000_000_000_000
+        ticks = target_ns // 100 + 116444736000000000
+        timestamp = wintypes.FILETIME(ticks & 0xFFFFFFFF, ticks >> 32)
+        if not set_time(msvcrt.get_osfhandle(stream.fileno()), None, None, ctypes.byref(timestamp)):
+            raise RuntimeError("Windows did not apply the generated timestamp.")
+        verify_handle_path(stream, path)
+        if os.fstat(stream.fileno()).st_mtime_ns != target_ns:
+            raise RuntimeError("The generated timestamp was not observable through the handle.")
+        if stream.write(b"M" * 101) != 101:
+            raise RuntimeError("The generated metadata-control write was incomplete.")
+
+
 def preopened_control(root, *, rundown=False):
     root.mkdir()
     protected = root / "synthetic-protected"
@@ -228,6 +250,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
     rundown_stop_ticks = None
     lifetime_control = None
+    basic_info_control = None
     try:
         control_writes = {}
         for label, (path, stream, payload) in (controls or {}).items():
@@ -248,6 +271,17 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             )
             lifetime_control = {"pid": lifetime_pid, "path": str(lifetime_path), "size": 97,
                                 "start": lifetime_start, "end": utc_ticks(), "two_handles": True}
+            basic_info_path = root / "file-basic-info.bin"
+            basic_info_start = utc_ticks()
+            basic_info_pid = run_writer(
+                "from pathlib import Path\nimport sys\n"
+                "sys.path.insert(0, sys.argv[1])\n"
+                "from n12_etw_probe import write_basic_info_control\n"
+                "write_basic_info_control(Path(sys.argv[2]))",
+                Path(__file__).parent, basic_info_path,
+            )
+            basic_info_control = {"pid": basic_info_pid, "path": str(basic_info_path), "size": 101,
+                                  "start": basic_info_start, "end": utc_ticks(), "basic_info": True}
         # Give the new session a separate process launch before measuring the
         # fixture. Start the calibration parent inside the trace as well.
         run_writer("pass")
@@ -312,6 +346,10 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         if lifetime_path.read_bytes() != b"L" * 97:
             raise RuntimeError("The generated file lifetime control did not preserve its payload.")
         capture["file_lifetime"] = lifetime_control
+    if basic_info_control is not None:
+        if basic_info_path.read_bytes() != b"M" * 101:
+            raise RuntimeError("The generated metadata-control payload did not match.")
+        capture["basic_info_control"] = basic_info_control
     return capture
 
 

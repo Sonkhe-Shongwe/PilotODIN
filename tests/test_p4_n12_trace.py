@@ -457,6 +457,26 @@ def test_unresolved_write_open_evidence_does_not_change_the_audit(fault, outcome
             if name.startswith("write-gap-name-change-event:")} == expected_name_change
 
 
+@pytest.mark.parametrize(("metadata_status", "expected"), [(0, "PASS"), (0xC0000022, "BLOCKED")])
+def test_basic_info_control_requires_a_successful_class_4_completion(metadata_status, expected):
+    path = r"c:\fixture\metadata.bin"
+    control = {"path": path, "pid": 7, "size": 101, "start": 1, "end": 10, "basic_info": True}
+    records = [
+        (12, {"FileName": path, "FileObject": 51, "Irp": 1}),
+        (24, {"Irp": 1, "Status": 0}),
+        (17, {"InfoClass": 4, "FileObject": 51, "FileKey": 60, "Irp": 2}),
+        (24, {"Irp": 2, "Status": metadata_status}),
+        (16, {"FileObject": 51, "FileKey": 60, "Irp": 3, "IOSize": 101, "ByteOffset": 0}),
+        (24, {"Irp": 3, "Status": 0}),
+    ]
+    events = [{"id": kind, "ticks": ticks, "pid": 7, "lifecycle": False, "data": data}
+              for ticks, (kind, data) in enumerate(records, 2)]
+    report = file_lifetime_report(control, events, {})
+    assert report["timestamp_trace"] == expected
+    assert report["first_blocking_operation"] == "event-17-info-4"
+    assert report["status"] == "BLOCKED"
+
+
 def test_two_handle_fixture_verifies_the_second_handle_after_closing_first(tmp_path, monkeypatch):
     path = tmp_path / "generated.bin"
     handles = []

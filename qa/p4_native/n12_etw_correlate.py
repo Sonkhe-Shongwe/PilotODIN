@@ -625,6 +625,8 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
         result["rundown_keys"] = len(rundown_names)
     if "file_lifetime" in capture:
         result["file_lifetime"] = file_lifetime_report(capture["file_lifetime"], events, devices)
+    if "basic_info_control" in capture:
+        result["basic_info_control"] = file_lifetime_report(capture["basic_info_control"], events, devices)
     return result
 
 
@@ -850,6 +852,22 @@ def file_lifetime_report(control, events, devices):
               "open_and_write_completed": True, **end_evidence,
               "matching_name_before_write": any(event["ticks"] < write["ticks"] for event in name_events),
               "matching_name_at_or_after_write": any(event["ticks"] >= write["ticks"] for event in name_events)}
+    if control.get("basic_info"):
+        metadata = [event for event in lifetime if event["id"] == 17
+                    and event["pid"] == control["pid"]
+                    and open_completed < event["ticks"] < write["ticks"]
+                    and number(event["data"].get("InfoClass")) == 4]
+        result["timestamp_trace"] = (
+            "PASS" if len(metadata) == 1 and successful_completion(file_events, metadata[0], write["ticks"])
+            is not None else "BLOCKED"
+        )
+        reason, blocker = write_object_path_conflict(
+            file_events, opened, open_completed, write, write_completed, expected,
+            lambda value: canonical_file_path(value, devices),
+        )
+        result["first_blocking_operation"] = (
+            name_change_event_label(blocker) if reason == "possible-name-change" else reason
+        )
     if two_handles:
         second_boundary_before_completion = any(
             event["id"] in {12, 13, 14} and opened["ticks"] < event["ticks"] <= write_completed
