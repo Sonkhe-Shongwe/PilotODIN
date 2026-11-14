@@ -159,6 +159,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 suffix = f":info-{info}" if event_id == 17 else ""
             details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
 
+    def count_compression(operation, outcome):
+        if details is not None and operation == "compression":
+            details[f"compression-request:{outcome}"] += 1
+
     for event in ordered_events:
         kind, pid, data = event["id"], event["pid"], event["data"]
         ticks = event["ticks"]
@@ -202,13 +206,20 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
             if status is None:
+                count_compression(operation, "missing-status")
                 if in_scope and operation != "query":
                     unresolved[f"{actor}:{operation}:missing-status"] += 1
                 continue
             if status & 0x80000000:
+                count_compression(operation, "failed-completion")
                 if in_scope and operation != "query":
                     record(actor, identity, operation, source, destination, requested, ticks, False)
                 continue
+            if operation == "compression":
+                outcome = "unresolved-path" if source is None else (
+                    "protected" if tracked(source) else "outside-protected"
+                )
+                count_compression(operation, f"successful-completion:{outcome}")
             # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
             open_result = number(data.get("ExtraInformation")) if operation == "open" else None
             mutation = operation != "query" and (operation != "open" or open_result in {0, 2, 3})
@@ -402,21 +413,26 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                         else owner_actor
                     )
                     details[f"{actor}:event-{kind}:{operation}:issuing-thread-owner-{owner_label}"] += 1
+        count_compression(operation, "observed")
         if not irp or not object_id:
+            count_compression(operation, "missing-request-identity")
             if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1
             continue
         if irp in pending:
             old_operation, owner, _, _, old_source, old_destination, _, _, _ = pending.pop(irp)
+            count_compression(old_operation, "irp-reused-before-completion")
             if old_operation != "query" and relevant(owner, old_operation, old_source, old_destination):
                 unresolved[f"{owner}:{old_operation}:irp-reused-before-completion"] += 1
             ambiguous_irps.add(irp)
         if irp in ambiguous_irps:
+            count_compression(operation, "ambiguous-irp")
             if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:irp-ambiguous"] += 1
         elif operation:
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind, info_class)
     for operation, actor, _, _, source, destination, _, event_id, info_class in pending.values():
+        count_compression(operation, "missing-completion")
         if operation != "query" and relevant(actor, operation, source, destination):
             flag(actor, f"{operation}:completion-missing", event_id, info_class)
     return unresolved

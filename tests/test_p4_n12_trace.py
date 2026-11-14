@@ -821,6 +821,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          "decoder": "tdh+raw-schema"},
         {"key": "0x33", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\ambiguous.bin",
          "decoder": "tdh+raw-schema"},
+        {"key": "0x37", "path": r"\Device\HarddiskVolume3\QA\outside-compressed.bin",
+         "decoder": "tdh+raw-schema"},
     ]
     rundown_payload = ("".join(json.dumps(entry) + "\n" for entry in rundown_entries)).encode()
     rundown_path.write_bytes(rundown_payload)
@@ -896,6 +898,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_file_violations"] == {}
     assert report["unresolved_controls"] == {}
     assert report["unrelated_unresolved_mutations"] == {}
+    assert report["compression_request_outcomes"] == {}
     assert report["stable_process_bookends"] == 2
     assert report["stable_thread_bookends"] == 2
     assert all(target["completion"] == "success" and target["issuing_thread"] == "matches"
@@ -957,6 +960,23 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          FileName=r"\Device\HarddiskVolume99\QA\synthetic-protected\unknown-volume.bin")
     emit(10, 99, unrelated_ticks + 25, FileKey="0x35")
 
+    # Reconcile compression requests even when they fail or fall outside the protected roots.
+    for index, file_key, completion in (
+        (13, "0x36", {"Status": 0xC0000022}),
+        (14, "0x37", {"Status": 0}),
+        (15, "0x38", {"Status": 0}),
+        (16, "0x39", {}),
+        (17, "0x3a", None),
+    ):
+        ticks = unrelated_ticks + 2 * index
+        emit(23, 99, ticks, FileObject=100 + index, Irp=index, FileKey=file_key, InfoClass=0x9C040)
+        if completion is not None:
+            emit(24, 0, ticks + 1, Irp=index, **completion)
+    emit(23, 99, unrelated_ticks + 36, Irp=18, FileKey="0x3b", InfoClass=0x9C040)
+    for ticks in (unrelated_ticks + 37, unrelated_ticks + 38):
+        emit(23, 99, ticks, FileObject=119, Irp=19, FileKey="0x3c", InfoClass=0x9C040)
+    emit(24, 0, unrelated_ticks + 39, Irp=19, Status=0)
+
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -971,6 +991,19 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:rundown-context-not-in-rundown"] == 1
     assert report["unrelated_unresolved_mutations"]["other:resize:path-missing"] == 1
     assert "other:compression:process-lifetime-missing" not in report["unrelated_unresolved_mutations"]
+    assert report["unrelated_unresolved_mutations"]["other:compression:path-missing"] == 1
+    assert report["compression_request_outcomes"] == {
+        "observed": 9,
+        "successful-completion:protected": 1,
+        "successful-completion:outside-protected": 1,
+        "successful-completion:unresolved-path": 1,
+        "failed-completion": 1,
+        "missing-status": 1,
+        "missing-completion": 1,
+        "missing-request-identity": 1,
+        "irp-reused-before-completion": 1,
+        "ambiguous-irp": 1,
+    }
     assert report["unrelated_unresolved_event_types"]["other:event-17:resize:rundown-context-lifetime-invalidated"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-17:resize:rundown-invalidated-by-event-14:FileKey"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-17:resize:process-context-stable-bookend"] == 1

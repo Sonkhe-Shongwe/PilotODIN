@@ -1076,6 +1076,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
     unrelated_unresolved_event_types = {
         key: value for key, value in details.items()
         if not key.startswith("preopened-control:") and
+        not key.startswith("compression-request:") and
         not key.endswith(":rundown-path-recovered")
     }
     expected_control_violations = {"protected:preopened-control:write": 1}
@@ -1118,6 +1119,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "unresolved_controls": unresolved_controls,
         "unrelated_unresolved_mutations": unrelated_unresolved,
         "unrelated_unresolved_event_types": unrelated_unresolved_event_types,
+        "compression_request_outcomes": {
+            key.removeprefix("compression-request:"): value for key, value in details.items()
+            if key.startswith("compression-request:")
+        },
         "protected_writer_processes": {
             key: value for key, value in details.items()
             if key.startswith("protected-writer:") and not key.startswith("protected-writer-target:")

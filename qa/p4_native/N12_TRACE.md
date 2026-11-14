@@ -182,3 +182,7 @@ The generated pre-opened-control report now records the basename of each protect
 The generated protected and outside control writes now retain their FileObject identifiers in memory alongside FileKeys. For any separately classified writer whose resolved target is inside the protected root, the strict reducer compares its FileKey and FileObject against the protected control's identifiers. The report emits only match counts, never pointer values.
 
 This is request-level identity evidence, not an automatic benign classification. Completion status remains separately verified. The regression proves that a System-like writer event targeting the same protected FileKey and FileObject is reported as a match while preserving the ordinary mutation record.
+
+## 14 November 2026 | Compression request outcomes
+
+The hosted pre-opened fixture reports `compression_request_outcomes` for `FSCTL_SET_COMPRESSION`. Each observed request contributes to one outcome count. A matched completion with a successful status is counted by resolved scope: protected, outside protected roots, or unresolved path. Failed statuses and missing or ambiguous request/completion evidence have their own counts. The report contains no file paths or request identifiers for these counts. The strict audit still treats successful compression as a mutation and reports unresolved coverage and protected-root violations under the existing rules.
