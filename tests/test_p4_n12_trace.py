@@ -15,7 +15,8 @@ import pytest
 
 from qa.p4_native import n12_calibration, n12_etw_probe, n12_trace as trace
 from qa.p4_native.n12_etw_correlate import (
-    correlate, correlate_requests, decode_rundown_report, file_lifetime_report, preopened_report,
+    check_write_object_path, correlate, correlate_requests, decode_rundown_report,
+    file_lifetime_report, preopened_report,
 )
 
 
@@ -335,7 +336,48 @@ def test_two_handles_distinguish_shared_key_from_write_object(fault, reason):
             "name_transition_tied_with_write": fault == "tied-name",
             "first_invalidation_is_first_cleanup": fault != "tied-name",
         }
+    if fault in {None, "tied-name", "reused-second-object"}:
+        expected = {None: None, "tied-name": "ambiguous-event-order",
+                    "reused-second-object": "file-object-lifetime-changed"}[fault]
+        assert report["write_object_path"] == {
+            "status": "BLOCKED" if expected else "PASS", "reason": expected,
+        }
     assert "control.bin" not in json.dumps(report)
+
+
+@pytest.mark.parametrize(("fault", "reason"), [
+    ("failed-open", "open-completion-unverified"),
+    ("tied-open", "open-completion-unverified"),
+    ("conflicting-name", "conflicting-or-unmapped-name"),
+    ("rename-other-object", "possible-name-change"),
+    ("same-object-cleanup", "file-object-lifetime-changed"),
+    ("cleanup-at-open-completion", "ambiguous-event-order"),
+    ("ambiguous-cleanup-object", "file-object-lifetime-changed"),
+    ("unrelated-rename", None),
+])
+def test_write_object_path_rejects_uncertain_evidence(fault, reason):
+    path = r"c:\private\control.bin"
+
+    def event(kind, ticks, **data):
+        return {"id": kind, "ticks": ticks, "lifecycle": False, "data": data}
+
+    opened = event(12, 2, FileName=path, FileObject=51, Irp=1)
+    write = event(16, 8, FileObject=51, FileKey=60, Irp=2)
+    completion = event(24, 8 if fault == "tied-open" else 3, Irp=1,
+                       Status=0xC0000022 if fault == "failed-open" else 0)
+    extra = {
+        "conflicting-name": event(10, 4, FileKey=60, FileName=r"c:\outside\alias.bin"),
+        "rename-other-object": event(27, 5, FileKey=60, FileObject=50),
+        "same-object-cleanup": event(13, 5, FileObject=51, FileKey=60),
+        "cleanup-at-open-completion": event(13, 3, FileObject=51, FileKey=60),
+        "ambiguous-cleanup-object": event(13, 5, FileKey=60),
+        "unrelated-rename": event(27, 5, FileKey=61, FileObject=52),
+    }.get(fault)
+    events = [opened, completion, write, event(24, 9, Irp=2, Status=0)]
+    if extra:
+        events.append(extra)
+    assert check_write_object_path(sorted(events, key=lambda item: item["ticks"]),
+                                   opened, write, 9, path, {}) == reason
 
 
 def test_two_handle_fixture_verifies_the_second_handle_after_closing_first(tmp_path, monkeypatch):

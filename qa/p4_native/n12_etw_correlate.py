@@ -626,6 +626,54 @@ def successful_completion(file_events, request, before):
     return None
 
 
+def check_write_object_path(events, opened, write, write_completed, expected, devices):
+    """Check a completed open's path evidence for the controlled write."""
+    object_id = number(write["data"].get("FileObject"))
+    key = number(write["data"].get("FileKey"))
+    if not object_id or not key or number(opened["data"].get("FileObject")) != object_id:
+        return "write-object-or-key-unverified"
+    if canonical_file_path(opened["data"].get("FileName") or "", devices) != expected:
+        return "open-path-mismatch"
+    open_completed = successful_completion(events, opened, write["ticks"])
+    if open_completed is None:
+        return "open-completion-unverified"
+
+    names = set()
+    for event in events:
+        ticks = event["ticks"]
+        if ticks > write_completed:
+            break
+        if event.get("lifecycle") or event is opened:
+            continue
+        kind, data = event["id"], event["data"]
+        same_key = name_transition_key(kind, data) == key or number(data.get("FileKey")) == key
+        file_object = number(data.get("FileObject"))
+        same_object = file_object == object_id
+        if kind == 10 and same_key:
+            names.add(canonical_file_path(data.get("FileName") or "", devices))
+            if ticks == write["ticks"]:
+                return "ambiguous-event-order"
+        if kind == 11 and same_key and ticks < opened["ticks"]:
+            names.clear()
+        if ticks < opened["ticks"] or not (same_object or same_key):
+            continue
+
+        lifecycle_boundary = kind == 12 and same_object
+        lifecycle_boundary |= kind in {13, 14} and (same_object or not file_object)
+        name_mutation = kind in {11, 18, 19, 26, 27, 28, 29}
+        name_mutation |= kind == 17 and number(data.get("InfoClass")) not in {19, 20}
+        name_mutation |= kind == 23 and number(data.get("InfoClass")) not in {
+            FSCTL_GET_REPARSE_POINT, FSCTL_GET_OBJECT_ID, FSCTL_READ_USN_JOURNAL, FSCTL_SET_COMPRESSION,
+        }
+        if lifecycle_boundary or name_mutation:
+            if ticks in {opened["ticks"], open_completed, write["ticks"], write_completed}:
+                return "ambiguous-event-order"
+            return "file-object-lifetime-changed" if lifecycle_boundary else "possible-name-change"
+    if names - {expected}:
+        return "conflicting-or-unmapped-name"
+    return None
+
+
 def file_lifetime_report(control, events, devices):
     """Verify the generated in-trace open, write and handle teardown."""
     expected = canonical_file_path(control["path"], devices)
@@ -709,6 +757,8 @@ def file_lifetime_report(control, events, devices):
             file_events, first_open, opened, open_completed, write, key,
             second_boundary_before_completion, expected, devices,
         )
+        reason = check_write_object_path(file_events, opened, write, write_completed, expected, devices)
+        result["write_object_path"] = {"status": "BLOCKED" if reason else "PASS", "reason": reason}
     return result
 
 

@@ -94,7 +94,7 @@ try {
         if ($isFileEvent) {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
         }
-        if ($isLifecycleEvent -or ($isFileEvent -and $eventId -in 10,11,12,13,14,16,17,18,19,23,24,27,29,34)) {
+        if ($isLifecycleEvent -or ($isFileEvent -and $eventId -in 10,11,12,13,14,16,17,18,19,23,24,26,27,28,29,34)) {
             $ticks = $event.TimeCreated.ToUniversalTime().Ticks
             if ($ticks -lt $captureStart -or $ticks -gt $captureEnd) {
                 $side = if ($ticks -lt $captureStart) { 'before' } else { 'after' }
