@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 write path evidence from the same file object
+
+- [Source `51e11bb`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/51e11bbfecce3599a54c5483d00c65572e0a0ed3) adds a diagnostic for the two-handle control. It binds a write to a successful open on the actual write FileObject and checks the independently verified Windows path. It rejects object reuse, uncertain name-changing operations, conflicting or unmappable names, failed opens and tied event order. The hosted trace exports DeletePath and SetLinkPath. The strict audit uses its existing attribution rules.
+- **Local and focused Windows evidence.** 98 local QA checks passed. [Focused N12 #43572968573](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43572968573) passed 74 tests, decoded 457/457 rundown records and passed both strict pre-opened controls. The same-object path and overlapping-handle checks both passed on the generated file. Final Cleanup was present and matching Close was unobserved.
+- **Broader evidence.** [P4 CI #43572968577](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43572968577) passed all three jobs with 259 Python tests, 78 Node checks, TypeScript/Vite and 12 Chromium scenarios. Its Windows capture decoded 372/372 rundown records and repeated both pre-opened controls and the same-object path PASS. Final Close was unobserved. The two captures retained 148 and 109 successful writes with unresolved paths and each reported an unrelated protected write and resize.
+- **Status.** Global strict coverage remains BLOCKED and N12 PARTIAL. The proposed P4 score remains 65/100. R03 physical offline testing and R06 historical strict failure disposition remain open.
+- **Next.** Measure this evidence as a separate diagnostic for actual unresolved Event 16 writes. Determine whether those writes have an independently attributable successful open on the same FileObject, then reject any candidates with reuse, conflicting names, unknown transitions or ambiguous timing. Preserve existing audit results until the evidence supports changing them.
+
 ## 14 November 2026 | N12 overlapping handles reproduce name invalidation
 
 - [Source `ccd9b54`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ccd9b54cabb62dfb7327e9e98789fc01803312d1) opens the same generated file through two simultaneous handles, closes the first, independently verifies the second handle's target through Windows, and checks the resulting bytes after the write. The strict reducer's path classification remains as before.

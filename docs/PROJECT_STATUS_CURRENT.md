@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 same-object write path control
+
+The hosted overlapping-handle fixture verified its controlled write path through the write object's successful open after a different object's Cleanup invalidated the shared name candidate. The full lifetime check still lacks a matching Close. Global strict coverage remains **BLOCKED** and N12 **PARTIAL**. [Exact-source evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-write-path-evidence-from-the-same-file-object).
+
 ## 14 November 2026 | N12 overlapping-handle evidence
 
 Two hosted captures reproduced name invalidation from Cleanup on one FileObject while a distinct open FileObject with the same FileKey still wrote to its independently verified path. The overlap controls passed. Final Close remained unobserved and strict coverage **BLOCKED**. [Exact-source evidence and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-overlapping-handles-reproduce-name-invalidation).
