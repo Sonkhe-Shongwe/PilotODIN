@@ -549,14 +549,17 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         name_change_events = Counter()
         class_4_outcomes = Counter()
         no_open_contexts = Counter()
+        no_open_paths = Counter()
         evidence = summarize_write_gap_open_evidence(
             ordered_events, write_gaps, opens_with_process_lifetime, resolve_path, tracked,
-            name_change_events, class_4_outcomes, no_open_contexts,
+            name_change_events, class_4_outcomes, no_open_contexts, no_open_paths,
         )
         for outcome, count in evidence.items():
             details[f"write-gap-open-evidence:{outcome}"] += count
         for context, count in no_open_contexts.items():
             details[f"write-gap-no-open-context:{context}"] += count
+        for (context, outcome), count in no_open_paths.items():
+            details[f"write-gap-no-open-path:{context}:{outcome}"] += count
         for event_label, count in name_change_events.items():
             details[f"write-gap-name-change-event:{event_label}"] += count
         for outcome, count in class_4_outcomes.items():
@@ -881,7 +884,7 @@ def check_write_object_path(events, opened, write, write_completed, expected, de
     return reason
 
 
-def write_object_path_conflict(events, opened, open_completed, write, write_completed,
+def write_object_path_conflict(events, anchor, anchor_completed, write, write_completed,
                                expected, resolve_path, *, basic_info_completion=None, observe_until=None):
     object_id = number(write["data"].get("FileObject"))
     key = number(write["data"].get("FileKey"))
@@ -891,7 +894,7 @@ def write_object_path_conflict(events, opened, open_completed, write, write_comp
         ticks = event["ticks"]
         if ticks > observation_end:
             break
-        if event.get("lifecycle") or event is opened:
+        if event.get("lifecycle") or event is anchor:
             continue
         kind, data = event["id"], event["data"]
         same_key = name_transition_key(kind, data) == key or number(data.get("FileKey")) == key
@@ -901,9 +904,9 @@ def write_object_path_conflict(events, opened, open_completed, write, write_comp
             names.add(resolve_path(data.get("FileName") or ""))
             if ticks == write["ticks"]:
                 return "ambiguous-event-order", event
-        if kind == 11 and same_key and ticks < opened["ticks"]:
+        if kind == 11 and same_key and ticks < anchor["ticks"]:
             names.clear()
-        if ticks < opened["ticks"] or not (same_object or same_key):
+        if ticks < anchor["ticks"] or not (same_object or same_key):
             continue
 
         lifecycle_boundary = kind == 12 and same_object
@@ -915,14 +918,14 @@ def write_object_path_conflict(events, opened, open_completed, write, write_comp
             # FileBasicInformation sets timestamps and attributes. This trial
             # accepts only an ordered, successful operation before the write.
             if (info_class == FILE_BASIC_INFORMATION and basic_info_completion is not None
-                    and open_completed < ticks < write["ticks"]
+                    and anchor_completed < ticks < write["ticks"]
                     and basic_info_completion(event) is not None):
                 name_mutation = False
         name_mutation |= kind == 23 and number(data.get("InfoClass")) not in {
             FSCTL_GET_REPARSE_POINT, FSCTL_GET_OBJECT_ID, FSCTL_READ_USN_JOURNAL, FSCTL_SET_COMPRESSION,
         }
         if lifecycle_boundary or name_mutation:
-            if ticks in {opened["ticks"], open_completed, write["ticks"], write_completed}:
+            if ticks in {anchor["ticks"], anchor_completed, write["ticks"], write_completed}:
                 return "ambiguous-event-order", event
             reason = "file-object-lifetime-changed" if lifecycle_boundary else "possible-name-change"
             return reason, event
@@ -943,8 +946,61 @@ def name_change_event_label(event):
     return label + (f"-fsctl-0x{info:08X}" if kind == 23 else f"-info-{info}")
 
 
+def no_open_write_path_evidence(write, completed, object_events, key_events, irp_events,
+                                resolve_path, tracked):
+    """Check an observed name lifetime on the request's key without assigning a writer."""
+    ticks, data = write["ticks"], write["data"]
+    key = number(data.get("FileKey"))
+    if type(key) is not int or key <= 0:
+        return "missing-file-key"
+    if successful_completion(irp_events, write, completed + 1) != completed:
+        return "write-completion-unverified"
+
+    names = []
+    last_delete = None
+    tied_name_reset = False
+    for event in key_events:
+        if event["ticks"] > ticks:
+            break
+        if event["ticks"] == ticks and event["id"] in {10, 11}:
+            return "ambiguous-event-order"
+        if event["id"] == 11:
+            if event["ticks"] != last_delete:
+                tied_name_reset = bool(names and names[-1]["ticks"] == event["ticks"])
+            last_delete = event["ticks"]
+            names.clear()
+        elif event["id"] == 10:
+            tied_name_reset |= event["ticks"] == last_delete
+            names.append(event)
+    if tied_name_reset:
+        return "ambiguous-event-order"
+    if not names:
+        return "no-prior-name-in-lifetime"
+    paths = {resolve_path(event["data"].get("FileName") or "") for event in names}
+    if None in paths or len(paths) != 1:
+        return "conflicting-or-unmapped-name"
+
+    path = next(iter(paths))
+    anchor = names[0]
+    start = anchor["ticks"]
+    for event in object_events:
+        if start <= event["ticks"] <= completed:
+            observed_key = number(event["data"].get("FileKey"))
+            if observed_key not in {None, 0, key}:
+                return "conflicting-object-file-key"
+
+    related = {id(event): event for event in (*object_events, *key_events)
+               if start <= event["ticks"] <= completed}
+    reason, _ = write_object_path_conflict(
+        sorted(related.values(), key=lambda event: event["ticks"]), anchor, start,
+        write, completed, path, resolve_path,
+    )
+    return reason or ("candidate-protected" if tracked(path) else "candidate-outside-protected")
+
+
 def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked,
-                                      name_change_events, class_4_outcomes, no_open_contexts):
+                                      name_change_events, class_4_outcomes, no_open_contexts,
+                                      no_open_paths):
     """Count evidence for unresolved writes without using it to classify them."""
     by_object, by_key, by_irp, process_transitions = (defaultdict(list) for _ in range(4))
     for event in events:
@@ -971,6 +1027,11 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
                        if event["id"] == 12 and event["ticks"] <= write["ticks"]]
         if not prior_opens:
             no_open_contexts[capture_context] += 1
+            outcome = no_open_write_path_evidence(
+                write, completed, object_events, by_key[number(data.get("FileKey"))],
+                by_irp[number(data.get("Irp"))], resolve_path, tracked,
+            )
+            no_open_paths[(capture_context, outcome)] += 1
             return "no-observed-open"
         opened = prior_opens[-1]
         if (opened["ticks"] == write["ticks"] or

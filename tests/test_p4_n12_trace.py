@@ -503,6 +503,70 @@ def test_no_open_writes_partition_by_request_time_and_verified_process_context()
     assert unresolved["other:write:path-missing"] == 6
 
 
+@pytest.mark.parametrize(("fault", "expected"), [
+    (None, "candidate-outside-protected"),
+    ("protected", "candidate-protected"),
+    ("missing-key", "missing-file-key"),
+    ("later-name", "no-prior-name-in-lifetime"),
+    ("name-deleted", "no-prior-name-in-lifetime"),
+    ("reset-name", "candidate-outside-protected"),
+    ("tied-name-reset", "ambiguous-event-order"),
+    ("tied-write", "ambiguous-event-order"),
+    ("unmapped", "conflicting-or-unmapped-name"),
+    ("alias", "conflicting-or-unmapped-name"),
+    ("conflicting-object-key", "conflicting-object-file-key"),
+    ("same-object-cleanup", "file-object-lifetime-changed"),
+    ("other-object-cleanup", "candidate-outside-protected"),
+    ("rename-during-write", "possible-name-change"),
+    ("rename-after-completion", "candidate-outside-protected"),
+    ("tied-completion", "write-completion-unverified"),
+])
+def test_no_open_path_evidence_is_diagnostic_only(fault, expected):
+    outside, protected = r"c:\outside.bin", r"c:\protected\file.bin"
+    events = []
+
+    def emit(kind, ticks, **data):
+        events.append({"id": kind, "ticks": ticks, "pid": 7, "lifecycle": False, "data": data})
+
+    path = protected if fault == "protected" else outside
+    emit(10, 1, FileKey=60, FileName=protected if fault == "reset-name" else path)
+    emit(10, 2 if fault != "later-name" else 12, FileKey=60, FileName=path)
+    if fault == "later-name":
+        events.pop(0)
+    if fault in {"name-deleted", "reset-name", "tied-name-reset"}:
+        emit(11, 2 if fault == "tied-name-reset" else 3, FileKey=60)
+        if fault == "reset-name":
+            emit(10, 4, FileKey=60, FileName=outside)
+    if fault in {"alias", "unmapped", "tied-write"}:
+        emit(10, 8 if fault == "tied-write" else 4, FileKey=60,
+             FileName="" if fault == "unmapped" else protected)
+    if fault == "conflicting-object-key":
+        emit(14, 5, FileKey=61, FileObject=51)
+    if fault in {"same-object-cleanup", "other-object-cleanup"}:
+        emit(13, 5, FileKey=60, FileObject=51 if fault == "same-object-cleanup" else 52)
+    if fault in {"rename-during-write", "rename-after-completion"}:
+        emit(27, 9 if fault == "rename-during-write" else 12, FileKey=60, FileObject=51)
+    emit(16, 8, Irp=1, FileObject=51, FileKey=0 if fault == "missing-key" else 60)
+    emit(24, 10, Irp=1, Status=0)
+    if fault == "tied-completion":
+        emit(24, 10, Irp=1, Status=0)
+
+    details = Counter()
+    observed = []
+    unresolved = correlate_requests(
+        events, lambda value: value or None, lambda *_: ("other", None),
+        lambda value: value == protected, lambda *args: observed.append(args),
+        strict=True, details=details, rundown_window=(6, 11),
+    )
+    assert unresolved == {"other:write:path-missing": 1, "other:write:process-lifetime-missing": 1}
+    assert observed == []
+    assert details["write-gap-open-evidence:no-observed-open"] == 1
+    prefix = "write-gap-no-open-path:"
+    assert {key: count for key, count in details.items() if key.startswith(prefix)} == {
+        f"{prefix}during-wpr-stop:header-unverified:issuer-unverified:{expected}": 1,
+    }
+
+
 @pytest.mark.parametrize(("metadata_status", "expected"), [(0, "PASS"), (0xC0000022, "BLOCKED")])
 def test_basic_info_control_requires_a_successful_class_4_completion(metadata_status, expected):
     path = r"c:\fixture\metadata.bin"
@@ -1490,6 +1554,9 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unresolved_write_open_evidence"] == {"no-observed-open": 1}
     assert report["unresolved_write_without_open_context"] == {
         "unavailable:header-other-verified-image:issuer-other-verified-image": 1,
+    }
+    assert report["unresolved_write_without_open_path_evidence"] == {
+        "unavailable:header-other-verified-image:issuer-other-verified-image:conflicting-or-unmapped-name": 1,
     }
     assert report["unresolved_write_name_change_events"] == {}
     assert "other:compression:process-lifetime-missing" not in report["unrelated_unresolved_mutations"]
