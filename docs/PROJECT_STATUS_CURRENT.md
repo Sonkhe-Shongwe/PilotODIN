@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 hosted diagnostic audit blocked by Sysmon exit records
+
+The [single approved Windows follow-up](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43636532436/job/132574444473) passed unpackaged build and Sysmon setup, reached both launches and completed the final calibration command. The reducer stopped during Sysmon parsing on a duplicate exit for a known process GUID. The job **FAILED** and network and filesystem verdicts were **NOT PRODUCED**. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-diagnostic-audit-blocked-by-sysmon-exit-records).
+
 ## 14 November 2026 | Prospective R06 endpoint checks prepared
 
 The owner-device preservation procedure has a read-only, timestamped fingerprint for the original app-data tree before and after a separately approved test. Owner-device execution and continuous trace evidence remain pending. Historical R06 remains **STRICT FAIL**, writer **UNKNOWN**. **P4 ACTIVE 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--prospective-r06-endpoint-checks-prepared).

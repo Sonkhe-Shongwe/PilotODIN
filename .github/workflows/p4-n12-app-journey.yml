@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == '1' }} # One owner-approved diagnostic launch; checkout pins the reviewed parent.
+    if: ${{ false }} # The one-use diagnostic approval was consumed by run 43636532436.
     runs-on: windows-2022
     timeout-minutes: 100
     env:

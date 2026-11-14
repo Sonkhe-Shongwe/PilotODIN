@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 hosted diagnostic audit blocked by Sysmon exit records
+
+- The [approved hosted run #43636532436, job #132574444473](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43636532436/job/132574444473) ran once at launch commit `58f5559a88416463e228222b38b61b87ce2aaf20`. It checked out the reviewed parent `9c0c1242eed1bd793ce1af04cff9da21be3c6255`. The unpackaged MSVC debug build and pinned Sysmon 15.22 setup passed. Executable SHA-256 `6a212e4fc7236f1f07240a8bb42b4be8cef0f228f817ff80e5b507685b786a44`. Resolved Cargo lock SHA-256 `cb6bc6303420a49e6aa5f8b57f896872081785cbf9586c50ede2d544c11ace94`.
+- Both app launches and interaction drivers returned successfully. Initial calibration passed its live prelaunch guard, and the final calibration command returned before collector export. **Job FAILED in final audit.** The Sysmon parser stopped with `Sysmon XML: duplicate process exit` after seeing another exit for a process GUID whose lifetime already had an exit. The raw exit records stayed in runner temp. Whether the two exits agreed, which process they described and why the records were emitted remain unverified.
+- The final reducer produced no new network, filesystem, fingerprint or strict coverage verdict. NetLog attribution, ETW background process bookends and unresolved-path classifications were therefore **NOT EVALUATED** in the public audit. The [earlier run's failures](#14-november-2026--n12-hosted-app-journey-completed-with-audit-failures) remain recorded.
+- The new approval marker is kept for provenance and this workflow is disarmed. Next, model equivalent and conflicting Sysmon exit records with generated input, preserving strict handling of record order and uncertain lifetimes. A further live capture requires fresh approval. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** Physical R03 and historical and prospective R06 remain open.
+
 ## 14 November 2026 | Prospective R06 endpoint checks prepared
 
 - The [owner-device fingerprint helper](../qa/p4_native/r06_prospective_fingerprint.py) reads the production local app-data tree twice at each endpoint. It reuses the N12 file and directory digest, refuses incomplete or unstable scans, and compares ordered records from the same root. The [R06 procedure](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#prospective-r06-endpoint-capture) keeps the aggregate endpoint records private and treats continuous file-trace coverage as a separate requirement.
