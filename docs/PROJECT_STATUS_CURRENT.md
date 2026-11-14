@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | Prospective R06 endpoint checks prepared
+
+The owner-device preservation procedure has a read-only, timestamped fingerprint for the original app-data tree before and after a separately approved test. Owner-device execution and continuous trace evidence remain pending. Historical R06 remains **STRICT FAIL**, writer **UNKNOWN**. **P4 ACTIVE 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--prospective-r06-endpoint-checks-prepared).
+
 ## 14 November 2026 | N12 ETW process and path-gap evidence prepared
 
 The hosted journey can establish stable background process lifetimes from paired snapshots and show what identity fields remain available on unresolved writes. The prior native audit failures remain open. **P4 ACTIVE 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Evidence and proposed capture](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-etw-process-and-path-gap-evidence-prepared).

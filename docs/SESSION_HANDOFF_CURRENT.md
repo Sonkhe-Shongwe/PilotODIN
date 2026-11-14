@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Prospective R06 endpoint checks prepared
+
+- The [owner-device fingerprint helper](../qa/p4_native/r06_prospective_fingerprint.py) reads the production local app-data tree twice at each endpoint. It reuses the N12 file and directory digest, refuses incomplete or unstable scans, and compares ordered records from the same root. The [R06 procedure](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#prospective-r06-endpoint-capture) keeps the aggregate endpoint records private and treats continuous file-trace coverage as a separate requirement.
+- Six local generated-file tests passed and the Windows-only CLI check was skipped locally. The ordinary P4 workflow includes that check using generated files. The owner-device run awaits separate approval and a source-matched native test with a continuous trace. Historical R06 remains **STRICT FAIL**, with 74 differences and writer **UNKNOWN**. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+- The next hosted step is the [separately approved N12 diagnostic capture](#14-november-2026--n12-etw-process-and-path-gap-evidence-prepared). The paused workflow and its previously consumed approval do not permit a second run.
+
 ## 14 November 2026 | N12 ETW process and path-gap evidence prepared
 
 - The [hosted journey](../qa/p4_research/n12_app_journey.py) now takes read-only background process snapshots on both sides of ETW capture. A matching PID and creation time seeds a lifetime only for a process born before capture that has neither a Sysmon lifetime nor an ETW start/stop in the trace. The matched background identities cannot substitute for the existing application identity checks.

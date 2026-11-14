@@ -114,8 +114,8 @@ The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 
 | Session | Existing tooling and remaining preparation | Evidence to record |
 | --- | --- | --- |
-| **Hosted N12 app journey** | The [approved Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) completed the two-launch synthetic journey and reached the strict reducer. The workflow is disarmed. The [handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-app-journey-completed-with-audit-failures) records the exact reviewed source, binary digest, test scope and result. | Network and filesystem failed. Three unexpected loopback and three non-loopback connections were unattributed. The reducer reported scoped writes outside the approved paths and unresolved ETW mutation and process coverage. Hosted protected and immutable-source fingerprints matched. Prepare redacted attribution diagnostics before another live capture. |
-| **Prospective R06 on the original device** | Use an independently captured before/after fingerprint of the current original tree, a separate QA profile and home, and a file trace that spans startup through WebView2 and backend exit. The hosted `snapshot` command refuses owner-local execution. The [existing historical comparator](../qa/p4_native/Compare_P4_Original_Storage.ps1) requires the preserved pre-QA baseline and backup. Prepare an owner-local read-only capture for the prospective comparison as a separate step before seeking its approval. | Record stable original-tree fingerprints at both boundaries and confirm no original-root mutation during the measured interval. Keep the historical 74 differences and unknown writer in the record. A prospective result applies only to its measured interval. |
+| **Hosted N12 app journey** | The [approved Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) completed the two-launch synthetic journey and reached the strict reducer. The workflow is disarmed. [Redacted diagnostics](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-etw-process-and-path-gap-evidence-prepared) are ready for a separately approved run. | The previous run failed network and filesystem checks. In the next run, record categories for outside-scope writes and unexpected connections, and record which gaps still block strict coverage. |
+| **Prospective R06 on the original device** | The [endpoint helper](#prospective-r06-endpoint-capture) is prepared. Use a separate QA profile and home, and a continuous file trace that spans startup through WebView2 and backend exit. | Record stable original-tree fingerprints at both boundaries and confirm no original-root mutation during the measured interval. Keep the historical 74 differences and unknown writer in the record. A prospective result applies only to its measured interval. |
 
 1. **Prerequisite:** explicit separate owner approval for any fresh unpackaged native compilation; maintain the owner's **no intermediate installers through P4–P7** directive. A new distributed EXE, MSI or NSIS is not authorised. Record any outstanding cases as **BLOCKED / NOT TESTED** until they are observed.
 2. **Preflight before any future permitted run:** freeze exact source commit and trusted native binary SHA; prove unique QA app ID, WebView profile, disposable `PILOTODIN_HOME`, no original-root paths, no inherited user data, no unintended cloud access. If any mismatch: **STOP**.
@@ -123,6 +123,23 @@ The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 4. **Physical R03 check separately conditional:** genuine 8 GB hardware with available, permitted local Qwen + WebView2 + backend under offline conditions, agreed resource thresholds and workload. If prerequisites unavailable, it stays **NOT TESTED**, not a proxy PASS.
 5. **Prospective R06 only on distinct separate authorisation:** original baseline remains read-only and immutable; pre/post comparison is prospective, not historical explanation. Record a potential new FAIL immediately.
 6. **After observations:** attach only redacted, non-sensitive evidence references to [P4 owner Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9), confirmed defects to [QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2), update status/handoff; require a new explicit **owner P4 closure decision** before P5 could be separately authorised.
+
+### Prospective R06 endpoint capture
+
+Use only after separate approval for the owner-device run, with the reviewed checkout and existing Python 3.11 or newer. Set `$evidenceDir` to a fresh private evidence directory outside PilotODIN app data and installations. Keep the original app closed. Start the approved continuous file collector before the first scan and keep it active through the second scan. From the repository root, run:
+
+```powershell
+$before = Join-Path $evidenceDir 'before.json'
+$after = Join-Path $evidenceDir 'after.json'
+$endpoint = $before
+$record = py -3 -B -m qa.p4_native.r06_prospective_fingerprint capture
+if ($LASTEXITCODE -ne 0) { throw 'R06 endpoint capture blocked' }
+$record | Out-File -LiteralPath $endpoint -Encoding utf8 -NoClobber
+```
+
+After the isolated QA app, backend and WebView have fully exited, set `$endpoint = $after` and repeat the capture and output commands. Stop the trace after this scan and run `py -3 -B -m qa.p4_native.r06_prospective_fingerprint compare $before $after` against those two files. Exit 0 reports matching endpoint fingerprints. Exit 1 reports a difference. Exit 2 reports blocked or invalid evidence. Record the comparison outcome, verified test binary and trace coverage. Keep the timestamped digests and raw trace private.
+
+Each sequential scan includes ordinary file contents, relative paths and empty directories under `%LOCALAPPDATA%\com.pilotodin.studio`. A match establishes agreement at the two endpoints. A fully attributed continuous trace is required to assess writes that happened and were undone between scans, and metadata activity outside the fingerprint's scope. Use the [historical comparator](../qa/p4_native/Compare_P4_Original_Storage.ps1) with the preserved P4-22 baseline and independent backup for historical evidence.
 
 ### Current-source Windows checklist, 13 November 2026
 
