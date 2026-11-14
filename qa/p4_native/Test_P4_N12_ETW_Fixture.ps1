@@ -205,12 +205,57 @@ if ($PreopenedControl) {
         if (-not (Test-Path -LiteralPath $decoderExe -PathType Leaf)) {
             throw 'The native ProcessTrace decoder executable was not produced.'
         }
-        & $decoderExe (Join-Path $root 'rundown.etl') $rundownPath
-        if ($LASTEXITCODE -ne 0) { throw 'The native ProcessTrace decoder could not read the rundown trace.' }
+        $decoderOutput = @(& $decoderExe (Join-Path $root 'rundown.etl') $rundownPath)
+        $decoderExit = $LASTEXITCODE
+        if ($decoderExit -ne 0) {
+            foreach ($line in $decoderOutput) { Write-Host $line }
+            throw 'The native ProcessTrace decoder could not read the rundown trace.'
+        }
+        $decoderText = ($decoderOutput -join "`n").Trim()
+        try {
+            $decoderSummary = $decoderText | ConvertFrom-Json -ErrorAction Stop
+        } catch {
+            throw 'The native ProcessTrace decoder did not return a valid diagnostic summary.'
+        }
+        Write-Host ('Native ProcessTrace decoder summary: ' + ($decoderSummary | ConvertTo-Json -Compress))
+        if ([long]$decoderSummary.rundown_opcode_36 -le 0) {
+            throw 'The native decoder observed no classic FileIO rundown records.'
+        }
+        $decodedRecords = [long]$decoderSummary.tdh_records_written + [long]$decoderSummary.raw_schema_records_written
+        if ($decodedRecords -le 0) {
+            throw 'The native decoder observed rundown records but recovered no file names.'
+        }
+        if ([long]$decoderSummary.callback_errors -gt 0) {
+            throw 'The native decoder reported callback output errors.'
+        }
         $controlArgs += $rundownPath
     }
-    python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') @controlArgs
-    if ($LASTEXITCODE -ne 0) { throw 'The pre-opened control could not validate both write completions.' }
+    $controlOutput = @(python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') @controlArgs)
+    $controlExit = $LASTEXITCODE
+    if ($controlExit -ne 0) {
+        foreach ($line in $controlOutput) { Write-Host $line }
+        throw 'The pre-opened control could not validate both write completions.'
+    }
+    $controlText = ($controlOutput -join "`n").Trim()
+    try {
+        $controlReport = $controlText | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw 'The pre-opened control did not return a valid redacted report.'
+    }
+    Write-Host ('Pre-opened control summary: ' + ($controlReport | ConvertTo-Json -Compress))
+    if ($Rundown) {
+        if ([long]$controlReport.rundown_keys -le 0) {
+            throw 'The native rundown did not produce any file-key mappings.'
+        }
+        foreach ($label in @('protected', 'outside')) {
+            $target = $controlReport.targets.PSObject.Properties[$label].Value
+            if ($null -eq $target -or $target.request_candidates -ne 1 -or
+                $target.completion -ne 'success' -or $target.issuing_thread -ne 'matches' -or
+                $target.rundown_name -ne 'matches-target') {
+                throw "Native rundown did not independently establish the $label control target."
+            }
+        }
+    }
     return
 }
 $report = python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') $manifestPath $eventsPath
