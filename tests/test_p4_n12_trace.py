@@ -839,15 +839,6 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
             capture_output=True, text=True, check=False,
         )
 
-    # This FileKey has protected and outside NameCreate candidates; neither path may be chosen.
-    emit(10, 99, unrelated_ticks + 20, FileKey="0x33",
-         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\ambiguous.bin")
-    emit(10, 99, unrelated_ticks + 21, FileKey="0x33",
-         FileName=r"\Device\HarddiskVolume3\QA\synthetic-outside\ambiguous.bin")
-    emit(16, 99, unrelated_ticks + 22, FileObject=111, Irp=12, FileKey="0x33",
-         IOSize=9, ByteOffset=0, IssuingThreadId=88)
-    emit(24, 0, unrelated_ticks + 23, Irp=12, Status=0)
-
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -908,6 +899,15 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     emit(16, 98, unrelated_ticks + 18, FileObject=110, Irp=11, FileKey="0x32",
          IOSize=22, ByteOffset=0, IssuingThreadId=98)
     emit(24, 0, unrelated_ticks + 19, Irp=11, Status=0)
+
+    # This FileKey has protected and outside NameCreate candidates; neither path may be chosen.
+    emit(10, 99, unrelated_ticks + 20, FileKey="0x33",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\ambiguous.bin")
+    emit(10, 99, unrelated_ticks + 21, FileKey="0x33",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-outside\ambiguous.bin")
+    emit(16, 99, unrelated_ticks + 22, FileObject=111, Irp=12, FileKey="0x33",
+         IOSize=9, ByteOffset=0, IssuingThreadId=88)
+    emit(24, 0, unrelated_ticks + 23, Irp=12, Status=0)
 
     result = run()
     assert result.returncode == 0, result.stderr
