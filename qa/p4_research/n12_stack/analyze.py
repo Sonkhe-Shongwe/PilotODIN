@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "p4_native"))
-from n12_etw_correlate import canonical_file_path, number, preopened_report, successful_completion
+from n12_etw_correlate import (
+    canonical_file_path, number, preopened_report, successful_completion,
+    timing_comparison_identity,
+)
 
 
 class Request(NamedTuple):
@@ -107,7 +110,54 @@ def module_frames(frames, pid, qpc, images):
     return dict(counts)
 
 
-def report(root, known, decoder):
+def comparison_identities(capture, comparisons, events, devices, names, primary, by_irp):
+    control = capture["preopened"]
+    result = {}
+    flushed = comparisons["flushed"]
+    start, end = flushed["write_window"]
+    flush_start, flush_end = flushed["flush_window"]
+    if not (capture["start_ticks"] <= start <= end <= flush_start <= flush_end
+            <= capture["rundown_start_ticks"]):
+        raise ValueError("Invalid flushed-control windows.")
+
+    def completed_request(row, event_id, begin, finish):
+        data = row["data"]
+        return (row["id"] == event_id and begin <= row["ticks"] <= finish
+                and row["pid"] == control["pid"]
+                and number(data.get("IssuingThreadId", data.get("ThreadId"))) == control["tid"]
+                and successful_completion(by_irp.get(number(data.get("Irp")), ()), row, finish + 1)
+                is not None)
+
+    def identity(row):
+        return tuple(number(row["data"].get(name)) for name in ("FileKey", "FileObject"))
+
+    expected = canonical_file_path(flushed["path"], devices)
+    writes = [row for row in events if not row["lifecycle"]
+              and completed_request(row, 16, start, end)
+              and number(row["data"].get("IOSize")) == flushed["size"]
+              and number(row["data"].get("ByteOffset")) == 0
+              and all(identity(row)) and expected is not None
+              and names.get(identity(row)[0]) == {expected}]
+    flushed_identity = identity(writes[0]) if len(writes) == 1 else None
+    if flushed_identity is not None and any(
+        flushed_identity[0] == key or flushed_identity[1] == obj for key, obj in primary.values()
+    ):
+        flushed_identity = None
+    flushes = [row for row in events if flushed_identity is not None and not row["lifecycle"]
+               and identity(row) == flushed_identity and completed_request(row, 21, flush_start, flush_end)]
+    result["flushed"] = {"identity": flushed_identity, "explicit_flush": len(flushes) == 1}
+    comparison_capture = {**capture, "preopened": {**control, "untouched": comparisons["untouched"]}}
+    established = {**primary}
+    if flushed_identity is not None:
+        established["flushed"] = flushed_identity
+    untouched_identity, evidence = timing_comparison_identity(
+        comparison_capture, events, devices, names, established, by_irp,
+    )
+    result["untouched"] = {"identity": untouched_identity, "evidence": evidence}
+    return result
+
+
+def report(root, known, decoder, comparisons):
     capture = json_file(root / "fixture.json")
     events = sorted(json_rows(root / "events.jsonl"), key=lambda row: row["ticks"])
     rundown = json_rows(root / "rundown.jsonl")
@@ -154,6 +204,25 @@ def report(root, known, decoder):
         if not row["lifecycle"] and (irp := number(row["data"].get("Irp"))):
             companion_irps[irp].append(row)
 
+    primary = {}
+    for label, evidence in companion["targets"].items():
+        if (label in keys and label in objects and evidence["request_candidates"] == 1
+                and evidence["completion"] == "success" and evidence["issuing_thread"] == "matches"
+                and evidence["rundown_name"] == "matches-target"):
+            primary[label] = (keys[label], objects[label])
+    rundown_names = defaultdict(set)
+    for entry in rundown:
+        rundown_names[number(entry["key"])].add(canonical_file_path(entry["path"], devices))
+    comparison = comparison_identities(capture, comparisons, events, devices, rundown_names,
+                                       primary, companion_irps)
+
+    def phase(ticks):
+        if ticks < capture["rundown_start_ticks"]:
+            return "before-wpr-stop"
+        if ticks <= capture["rundown_stop_ticks"]:
+            return "during-wpr-stop"
+        return "after-wpr-stop"
+
     def matches(row, opcode, pid, issuing, identity):
         data = row["data"]
         return (row["pid"] == pid and number(data.get("IssuingThreadId", data.get("ThreadId"))) == issuing
@@ -197,42 +266,66 @@ def report(root, known, decoder):
     calibrated = all(item.get("stack_frames", 0) for item in calibrations.values())
 
     systems = {}
-    for label in ("protected", "outside", "untouched"):
-        if label == "untouched":
-            expected = canonical_file_path(capture["preopened"]["untouched"]["path"], devices)
-            expected_keys = {key for key, paths in names.items() if paths == {expected}}
-            identity = None
-        else:
-            expected = canonical_file_path(capture["preopened"]["writes"][label]["path"], devices)
-            identity = (keys.get(label), objects.get(label))
-            expected_keys = {identity[0]} if all(identity) and names[identity[0]] == {expected} else set()
-        targets = [row for row in requests if row.key in expected_keys and (identity is None or
-                   (row.key, row.obj) == identity) and row.pid in (4, 0xFFFFFFFF) and
-                   (row.opcode == 68 or row.opcode == 69 and row.detail == 20)]
-        result = {"classic_name_keys": len(expected_keys), "write": [], "resize": []}
-        for row in targets:
-            matching = [item for item in companion_irps[row.irp]
-                        if matches(item, row.opcode, 4, row.issuing, (row.key, row.obj))
-                        and (row.opcode != 68 or number(item["data"].get("IOFlags")) == row.flags)]
-            if len(matching) != 1:
-                continue
-            outcome = assess(row, 4, row.issuing)
-            if row.opcode == 68:
-                outcome["paging_flag"] = bool(row.flags & 2)
-            result["write" if row.opcode == 68 else "resize"].append(outcome)
+    for label in ("protected", "outside", "flushed", "untouched"):
+        control = capture["preopened"]["writes"].get(label, comparisons.get(label))
+        expected = canonical_file_path(control["path"], devices)
+        evidence = comparison.get(label, {})
+        identity = primary.get(label, evidence.get("identity"))
+        name_agrees = identity is not None and names[identity[0]] == {expected}
+        result = {"identity": "confirmed" if name_agrees else "unverified", "write": [], "resize": [],
+                  "companion_successful": {"write": 0, "resize": 0},
+                  "unmatched_companion_operations": 0}
+        result.update({key: value for key, value in evidence.items() if key != "identity"})
+        if label == "flushed":
+            result["explicit_flush"] = bool(name_agrees and evidence["explicit_flush"])
+        if identity is not None:
+            observed = [row for row in events if not row["lifecycle"] and row["pid"] == 4
+                        and row["id"] in (16, 17)
+                        and (row["id"] != 17 or number(row["data"].get("InfoClass")) == 20)
+                        and (number(row["data"].get("FileKey")), number(row["data"].get("FileObject"))) == identity]
+            for item in observed:
+                data = item["data"]
+                irp = number(data.get("Irp"))
+                issuing = number(data.get("IssuingThreadId", data.get("ThreadId")))
+                operation, opcode = ("write", 68) if item["id"] == 16 else ("resize", 69)
+                completed_ticks = successful_completion(companion_irps[irp], item, capture["end_ticks"] + 1)
+                if completed_ticks is None:
+                    continue
+                result["companion_successful"][operation] += 1
+                candidates = [row for row in requests
+                              if name_agrees and row.irp == irp and row.opcode == opcode
+                              and (row.key, row.obj) == identity and row.issuing == issuing
+                              and row.pid in (4, 0xFFFFFFFF)
+                              and (opcode != 68 or (
+                                  row.flags == number(data.get("IOFlags"))
+                                  and row.detail == number(data.get("IOSize"))
+                                  and row.offset == number(data.get("ByteOffset"))))
+                              and (opcode != 69 or row.detail == 20)]
+                matching = [other for other in companion_irps[irp]
+                            if matches(other, opcode, 4, issuing, identity)]
+                if len(candidates) != 1 or len(matching) != 1:
+                    result["unmatched_companion_operations"] += 1
+                    continue
+                row = candidates[0]
+                outcome = assess(row, 4, issuing)
+                outcome.update(request_phase=phase(item["ticks"]), completion_phase=phase(completed_ticks))
+                if opcode == 68:
+                    outcome["paging_flag"] = bool(row.flags & 2)
+                result[operation].append(outcome)
         systems[label] = result
 
     return {"loss_and_decode_checks_pass": integrity, "classic_stack_records": len(classic["stack"]),
             "classic_stack_references": len(classic["reference"]), "classic_file_requests": len(requests),
             "known_application_controls": calibrations, "calibrated": calibrated,
-            "system_context": systems, "companion_control_timing": companion["control_write_timing"],
+            "system_context": systems,
             "function_symbols": "not-resolved", "application_initiator": "unverified"}
 
 
 if __name__ == "__main__":
     try:
         metadata = json_file(Path(sys.argv[1]))
-        result = report(Path(metadata["root"]), metadata["known"], json.loads(sys.argv[2]))
+        result = report(Path(metadata["root"]), metadata["known"], json.loads(sys.argv[2]),
+                        metadata["comparisons"])
         print("N12 stack correlation: " + json.dumps(result), flush=True)
     except (KeyError, OSError, ValueError, IndexError, TypeError):
         sys.exit("The N12 stack correlation could not validate the captured evidence.")

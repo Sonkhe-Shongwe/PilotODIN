@@ -29,17 +29,29 @@ try {
     Pop-Location
 }
 
-# Change only the probe entry point in a temporary copy. The standard
-# PowerShell ETW export, rundown and companion timing validations run as-is.
+# Use the original strict workload and reducer. Include comparison read
+# and flush records in the temporary exporter alongside the original events.
 $fixture = Join-Path $native 'Test_P4_N12_ETW_Fixture.ps1'
 $original = Get-Content -LiteralPath $fixture -Raw
 $probeEntry = 'python (Join-Path $PSScriptRoot ''n12_etw_probe.py'') @probeArgs'
-if ([regex]::Matches($original, [regex]::Escape($probeEntry)).Count -ne 1) {
-    throw 'The strict fixture probe entry point changed.'
+$timingFilter = '($SystemTiming -and $eventId -in 15,21)'
+if ([regex]::Matches($original, [regex]::Escape($probeEntry)).Count -ne 1 -or
+    [regex]::Matches($original, [regex]::Escape($timingFilter)).Count -ne 1) {
+    throw 'The strict fixture probe entry point or comparison event filter changed.'
 }
-$original.Replace($probeEntry, 'python $env:PILOTODIN_N12_STACK_CAPTURE @probeArgs') |
+$exportScript = $original.Replace($probeEntry, 'python $env:PILOTODIN_N12_STACK_CAPTURE @probeArgs')
+$exportScript.Replace($timingFilter, '($eventId -in 15,21)') |
     Set-Content -LiteralPath $fixture -Encoding utf8
-& $fixture -PreopenedControl -Rundown -SystemTiming
+$fixtureFailure = $false
+try {
+    & $fixture -PreopenedControl -Rundown
+} catch {
+    $fixtureFailure = $true
+    Write-Host 'The strict fixture failed. Checking whether the stack evidence can still be decoded.'
+}
+if (-not (Test-Path -LiteralPath $env:PILOTODIN_N12_STACK_META -PathType Leaf)) {
+    throw 'The capture did not produce stack fixture metadata.'
+}
 
 $metadata = Get-Content -LiteralPath $env:PILOTODIN_N12_STACK_META -Raw | ConvertFrom-Json
 $root = $metadata.root
@@ -51,15 +63,4 @@ Write-Host "N12 stack decoder: $decoderResult"
 python (Join-Path $PSScriptRoot 'analyze.py') $env:PILOTODIN_N12_STACK_META $decoderResult
 if ($LASTEXITCODE -ne 0) { throw 'The stack correlation report failed.' }
 
-$strictOutput = @(python (Join-Path $native 'n12_trace.py') check-etw-preopened-rundown (Join-Path $root 'capture-manifest.json') (Join-Path $root 'fixture.json') (Join-Path $root 'events.jsonl') --rundown (Join-Path $root 'rundown.jsonl') --process-bookends (Join-Path $root 'process-bookends.json'))
-$strictExit = $LASTEXITCODE
-$strictText = ($strictOutput -join "`n").Trim()
-if (-not $strictText) { throw "The strict comparison produced no report (exit $strictExit)." }
-$strict = $strictText | ConvertFrom-Json
-Write-Host ('N12 stack strict comparison: ' + ($strict | ConvertTo-Json -Compress -Depth 8))
-if ($strictExit -ne 0) { throw "The strict comparison did not classify the generated controls (exit $strictExit)." }
-if ($strict.control_status -ne 'PASS' -or $strict.strict_coverage -ne 'BLOCKED' -or
-    $strict.protected_control_classification -ne 'PROTECTED_WRITE_DETECTED' -or
-    $strict.outside_control_classification -ne 'OUTSIDE_PROTECTED_ROOTS') {
-    throw 'The strict comparison did not preserve the control distinction.'
-}
+if ($fixtureFailure) { throw 'The strict fixture did not pass its original control assertions.' }
