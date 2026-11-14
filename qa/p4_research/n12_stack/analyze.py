@@ -325,8 +325,8 @@ def staggered_candidates(events, companion_irps, rundown_names, event_names, ope
         if row["id"] == 17 and number(data.get("InfoClass")) != 20:
             continue
         key, obj = (number(data.get(field)) for field in ("FileKey", "FileObject"))
-        key_matches = key == identity[0]
-        object_matches = obj == identity[1]
+        key_matches = identity is not None and key == identity[0]
+        object_matches = identity is not None and obj == identity[1]
         if key_matches and object_matches:
             relation = "exact-pair"
         elif key_matches:
@@ -532,15 +532,16 @@ def report(root, known, decoder, comparisons, symbol_targets):
         result.update({key: value for key, value in evidence.items() if key not in {"identity", "writes"}})
         if label == "flushed":
             result["explicit_flush"] = bool(name_agrees and evidence["explicit_flush"])
+        if label in staggered:
+            observed, counts = staggered_candidates(
+                events, companion_irps, rundown_names, event_names, open_names, expected, identity,
+                comparisons["staggered"]["pid"], capture["end_ticks"], phase,
+            )
+            result["companion_candidate_counts"] = counts
+            result["stack_join_counts"] = {}
         if identity is not None:
             join_counts = Counter()
-            if label in staggered:
-                observed, counts = staggered_candidates(
-                    events, companion_irps, rundown_names, event_names, open_names, expected, identity,
-                    comparisons["staggered"]["pid"], capture["end_ticks"], phase,
-                )
-                result["companion_candidate_counts"] = counts
-            else:
+            if label not in staggered:
                 observed = [(row, completed_companion(row)) for row in events
                             if not row["lifecycle"] and row["id"] in (16, 17) and row["pid"] == 4
                             and (row["id"] != 17 or number(row["data"].get("InfoClass")) == 20)

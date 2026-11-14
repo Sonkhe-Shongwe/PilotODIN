@@ -140,6 +140,49 @@ def test_classic_candidates_report_rejection_by_stage():
         [], {"classic-name-unverified": 1})
 
 
+def test_report_keeps_path_candidates_when_staggered_reference_pair_is_absent(tmp_path, monkeypatch):
+    fixture, experiment, _, _ = comparison_evidence()
+    fixture.update(
+        device=DEVICE, end_ticks=90_000_000, rundown_stop_ticks=81_000_000,
+        counters={"events_lost": 0, "log_buffers_lost": 0, "realtime_buffers_lost": 0},
+    )
+    fixture["preopened"]["writes"] = {
+        "protected": {"path": PROTECTED + r"\control.bin"},
+        "outside": {"path": r"C:\qa\outside.bin"},
+    }
+    target = experiment["files"]["staggered-protected"]["path"]
+    comparisons = {"staggered": experiment, "flushed": {"path": r"C:\qa\flushed.bin"},
+                   "untouched": {"path": r"C:\qa\untouched.bin"}}
+    events = [
+        {"id": 12, "pid": 4, "ticks": 10, "lifecycle": False,
+         "data": {"FileObject": 130, "FileName": target}},
+        {"id": 16, "pid": 4, "ticks": 110, "lifecycle": False,
+         "data": {"Irp": 1, "FileKey": 30, "FileObject": 130, "IOFlags": 2}},
+        {"id": 24, "pid": 0, "ticks": 111, "lifecycle": False, "data": {"Irp": 1, "Status": 0}},
+    ]
+    (tmp_path / "fixture.json").write_text(json.dumps(fixture))
+    (tmp_path / "events.jsonl").write_text("\n".join(map(json.dumps, events)))
+    (tmp_path / "rundown.jsonl").write_text("")
+    (tmp_path / "stack-rows.tsv").write_text("")
+    monkeypatch.setattr(analyze, "preopened_report", lambda *args, **kwargs: {"targets": {}})
+    monkeypatch.setattr(analyze, "comparison_identities", lambda *args: {
+        "flushed": {"identity": None, "explicit_flush": False}, "untouched": {"identity": None},
+    })
+    known = {"path": r"C:\qa\stack-control.bin", "write": [120, 130], "resize": [140, 150]}
+    decoder = {"pointer_size": 8, "events_lost": 0, "header_events_lost": 0,
+               "buffers_lost": 0, "decode_errors": 0}
+    symbols = []
+    result = analyze.report(tmp_path, known, decoder, comparisons, symbols)
+
+    protected = result["system_context"]["staggered-protected"]
+    assert protected["identity"] == "unverified"
+    assert protected["companion_candidate_counts"] == {
+        "write:before-wpr-stop:open-path-candidate-only:system:success:set": 1,
+    }
+    assert protected["stack_join_counts"] == {} and protected["write"] == [] and symbols == []
+    assert target.casefold() not in json.dumps(result).casefold()
+
+
 def test_cli_refuses_staggered_writes_outside_the_hosted_runner(tmp_path):
     (tmp_path / "synthetic-protected").mkdir()
     env = {**os.environ, "GITHUB_ACTIONS": "false"}

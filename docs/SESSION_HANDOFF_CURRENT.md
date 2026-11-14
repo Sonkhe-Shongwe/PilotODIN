@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 fallback reporting and app journey readiness
+
+- The [staggered trace analyser](../qa/p4_research/n12_stack/analyze.py) now emits name and open-path candidate counts when the declared reference pair is missing. These diagnostic-only candidates cannot enter the stack join or produce byte-range findings. The exact attribution gate and strict reducer are unchanged.
+- Local verification passed 160 N12 tests, including a report-level regression for the missing reference pair, and Python compilation. No hosted capture ran for this change. The previous calibration failure and unverified byte ranges stand.
+- The [next Windows sessions](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#next-windows-sessions) identify the missing hosted integration between the unpackaged runner and the existing collectors, plus the separate owner-local fingerprint requirement. Next, prepare the hosted journey entry point and test its evidence contract locally before seeking run approval. **N12 PARTIAL / strict coverage BLOCKED / P4 ACTIVE at 65/100.** Historical R06 and physical 8 GB offline inference remain open.
+
 ## 14 November 2026 | N12 trace match diagnostics Windows result
 
 - The one approved [Windows capture #43618940069, job #132520025163](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43618940069/job/132520025163) ran on attempt 1 at workflow head `0bf84a7dead6605f7533fdfbb3b4bec60d2d1439`, checking out `ef4cd8474318ca4dd967d366c33f8653322768e0`. The generated handle pairs passed the Windows volume and file ID checks, and the native decoder recovered 403/403 rundown names. The stack decoder processed 28,001 stack records with zero reported loss or decoding errors. The original strict reducer passed its two-write control assertions and again reported two System paging writes and two EOF resizes on the generated protected staggered file.
