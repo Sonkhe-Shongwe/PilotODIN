@@ -1,0 +1,31 @@
+# PilotODIN P4-76 | Numeric median/mean preprocessing choice, enforced by fold pipelines
+
+**Date:** 12 November 2026. **Scope:** first narrow, real configurable preprocessing alternative for BE-024. **No training, full native execution, installer, original app/data access, risk waiver, P5, or P8 approval.** All tests use in-memory synthetic fixtures or CI-only disposable read-only HTTP state.
+
+## Confirmed gap and design
+
+Prepare's per-feature explanation previously described only median imputation, and there was no user-selectable preprocessing method reaching the Python training pipeline. The engine builds fold-local `SimpleImputer(strategy="median")` for numeric fields and keeps categorical `most_frequent` + capped OHE. The selected strategy needs to be threaded from the UI through a validated API request into persisted experiment provenance and each actual fold-fitted pipeline, including the baseline. A display-only option is insufficient.
+
+**Bounded support:** a project/target/Quality-version-reset **numeric** choice between **median (unchanged default)** and **mean** for *all currently included numeric predictors*. No categorical alternative, per-field individual override, automated target selection, model training, inference, user-original-data access or extra ML library. The UI notes the outlier sensitivity of mean and the fit-within-training-fold rule.
+
+## Implementation contracts
+
+- `frontend/src/App.tsx`: explicit Prepare selector, dirty-draft notification, reset to median when target/project/Quality version changes, matching numeric audit and transformation descriptions, and `numeric_imputation` forwarded with the experiment request and local experiment configuration.
+- `backend/main.py`: Pydantic `Literal['median','mean']` rejects any unsupported value with validation error before project/fit admission; old clients default to median. The value is persisted in experiment config and forwarded by `train_background` with `config.get(...,'median')` for legacy configurations.
+- `backend/engine.py`: `validate_numeric_imputation` allowlist and `make_pipeline(..., numeric_imputation='median')`. Both baseline and all candidate-model `make_pipeline` paths in `run_training` use the same strategy. Each imputer is inside the existing fold-fitted ColumnTransformer, never applied to complete original data or before CV. Training results carry `numeric_imputation` for audit. Categorical mode/OHE, quality-version gates, high-risk acknowledgement, split leakage safeguards, resource limits and historical experiments remain unchanged.
+- `frontend/src/api.ts`: backwards-compatible optional strategy in model experiment and results type.
+- `tests/test_p4_consolidated_acceptance.py`: tests inspect **unfitted** genuine sklearn pipeline step configuration, both allowed values and invalid-value rejection, and stub the background worker to assert persisted setting reaches the engine. The deliberate sentinel prevents any model fit or project storage writes.
+- `frontend/tests/ml-a3-feature-preparation.test.cjs`: source contract for UI, request, backend persistence and baseline/candidate reuse. Existing disposable P4-62 real-HTTP browser case toggles median → mean → median, verifies live per-field audit/plan text, manual/additive exclusions, version pinning and **no experiments**.
+
+**Evidence threshold:** source and CI results must be observed separately; a green build does **not** demonstrate a full fitted model or its predictive impact. This is a genuinely configured *global numeric* alternative, not completion of all per-column preprocessing controls under BE-024. Do **not** run even a synthetic fit just to generate evidence without renewed owner approval.
+
+## Exact-source CI chronology and acceptance
+
+- **P4 feature source `ad14665fb2b17900f65830ebd45d9b6fa1b4e5d2`:** [P4 Actions #43290217988](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43290217988) **COMPLETED SUCCESS, 3/3 jobs**. **183 Python tests PASS**, including two new zero-fit configuration/worker-stub cases; **58 P4 Node PASS**; TypeScript/Vite build PASS; **10/10 disposable real-HTTP Chromium PASS**, including actual Prepare median → mean → median display switching. Synthetic Windows PowerShell app-storage/WebView tests PASS. P2 report and eight other naturally triggered P1/P2/P3 workflows also succeeded at this source, except the separate P1 described below. No native compilation and no model fit.
+- **Preserved first P1 failure:** [P1 #43290217868](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43290217868) **COMPLETED FAILURE**, **159/161 discovered Node tests passed**, 2 source extraction test modules failed because they used the literal pre-P4-76 `useEffect(()=>{if(!project||!target)` boundary around `loadProject`, which changed when Prepare's numeric selector reset was added. No evidence of an actual app project-switch failure.
+- **Focused test-contract repair `84ab6acd3684398d032e7dcc5b5e4303e43ff3ba`:** changed only `frontend/tests/p1-primary-project-load-approval.test.cjs` and `frontend/tests/p1-project-switch-generation.test.cjs` to locate the first `useEffect` after the complete `loadProject` body. [P1 #43290515869](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43290515869) **COMPLETED SUCCESS**, **187/187 Node PASS**, TypeScript/Vite build PASS and **7/7 disposable Chromium PASS**. No product code changed in the repair.
+- **Scope:** these results validate the allowlisted wiring and no-fit pipeline construction, not an observed fitted-model score, trained artifact, data cleanliness, original app data safety at historical incident time, latest native acceptance, business Gate C or P4 closure. Both historic P1 results remain recorded with their original outcomes.
+
+## Acceptance and governance
+
+P4 ACTIVE, R01–R06 OPEN. R01 independent real-world business Gate C UNVERIFIED; R02/R04/R05 newest-source native interactions NOT TESTED; R03 physical offline 8 GB/Qwen NOT TESTED; R06 historical entire original app-local-data STRICT FAIL (320 baseline files vs 346 observed, 74 differences, historical writer UNKNOWN). Earlier one-use native/model-fit approvals consumed; P5 NOT AUTHORISED; P8 NOT CERTIFIED. No installer or owner application data access.

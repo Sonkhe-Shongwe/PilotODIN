@@ -21,7 +21,7 @@ import re
 from typing import Protocol
 
 try:
-    from . import storage, bundled_inference
+    from . import storage, bundled_inference, resource_policy, resource_policy
 except ImportError:
     import storage, bundled_inference
 
@@ -340,6 +340,13 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
         nonlocal local_failed
         if not cfg.get('local_model_enabled',True):
             local_failed='disabled';return None
+        # No local Ollama/bundled request or model load occurs when the user
+        # explicitly chose Low-memory and current free RAM is insufficient.
+        # Other routing, consent and deterministic-calculation rules remain.
+        admission=resource_policy.admit_new_work('local_inference')
+        if admission['decision']=='defer':
+            local_failed='resource_limited'
+            return None
         model=cfg['local_model']
         try:
             if os.environ.get('PILOTODIN_DESKTOP_SESSION'):
@@ -367,14 +374,20 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
     fallback['local_status']=local_failed
     # An explicit local-only model choice must NEVER fall back to cloud.
     if selected=='ollama' or mode=='local':
-        fallback['reason']=f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used'
+        fallback['reason']=('Low-memory mode deferred local AI; verified deterministic analysis used'
+                            if local_failed=='resource_limited' else
+                            f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used')
         return fallback
     if not cloud_allowed:
         if not prefer_local and cfg.get('local_model_enabled',True):
             local_result=local_try()
             if local_result:return local_result
             fallback['local_status']=local_failed
-        fallback['reason']=(f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used' if local_failed not in ('not_requested','disabled') else 'Cloud disabled or consent not granted; verified deterministic analysis used')
+        fallback['reason']=('Low-memory mode deferred local AI; verified deterministic analysis used'
+                            if local_failed=='resource_limited' else
+                            f'Local model did not generate an answer ({local_failed}); verified deterministic analysis used'
+                            if local_failed not in ('not_requested','disabled') else
+                            'Cloud disabled or consent not granted; verified deterministic analysis used')
         return fallback
 
     order=list(cfg['provider_order'])

@@ -1,0 +1,3 @@
+13 November 2026. Owner approved a single consolidated hosted Windows run for remaining P4 acceptance.
+Reviewed source: f2174a5372e3ad5b27606d72025ad4d1f18e457b.
+Scope: one unpackaged build, R04 docking, R05 Prepare resets and synthetic read-only experiment display, and scoped N12 evidence on disposable hosted Windows. No installer, executable transfer, owner PC access, original data, Qwen, training, or repeat compilation.

@@ -1,0 +1,211 @@
+name: P4-16 Source-Matched Windows Native QA Build
+
+# One owner-approved, source-matched GitHub CI build on 10 Nov 2026 following direct QA build approval request.
+# P4 still active; NO owner install, release, P5 or operational acceptance is authorised.
+# 11 Nov 2026 P4-33: OWNER EXPRESSLY AUTHORISED exactly one GitHub Actions
+# isolated current-source Windows QA build and source/compiled/CI-installed EXE
+# hash provenance verification. Build approval is NOT owner-PC installation,
+# a release, original-data modification, risk waiver, P4 closure, or P5 approval.
+# This comment-only GitHub push records that one-time approval and triggers
+# the already-existing push-filtered CI packaging workflow exactly once.
+
+
+# Only this P4 milestone job packages a full Windows installer. This is NOT
+# a release or an owner's installed-app verification. No owner PC is touched.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-native-windows-milestone.yml
+      - frontend/src-tauri/tauri.p4-native-qa.conf.json
+      - tests/test_p4_native_windows_milestone_source.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p4-16-windows-qa-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-p4-qa-package:
+    # Owner's 11 Nov 2026 freeze: no intermediate PilotODIN installer or
+    # installer-verification runs through P4-P7, even on manual dispatch.
+    # At final P8, remove only with separate explicit owner approval.
+    if: ${{ false }}
+    name: Build exact-source side-by-side Windows QA installer and identity proof
+    runs-on: windows-2022
+    timeout-minutes: 160
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout the exact trusted commit without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Pin build evidence to the exact checkout
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $actual = (git rev-parse HEAD).Trim()
+          if ($actual -ne $env:GITHUB_SHA) { throw 'Checked-out source SHA differs from Actions event SHA' }
+          if ($env:GITHUB_REF_NAME -ne 'feature/live-dev-workspace-20261023') { throw 'Refusing unexpected branch' }
+          $config = Get-Content 'frontend/src-tauri/tauri.p4-native-qa.conf.json' -Raw | ConvertFrom-Json
+          $base = Get-Content 'frontend/src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json
+          if ($config.identifier -ne 'com.pilotodin.p4nativeqa' -or
+              $config.productName -ne 'pilotODIN-P4-Native-QA' -or
+              $base.identifier -ne 'com.pilotodin.studio' -or
+              $config.identifier -eq $base.identifier -or
+              $config.bundle.active -ne $true -or
+              @($config.bundle.targets) -notcontains 'nsis') {
+            throw 'P4 side-by-side QA app identity is not safely isolated'
+          }
+          Write-Host "Source SHA PINNED: $actual"
+          Write-Host 'Distinct QA app identity verified; not the existing installed PilotODIN.'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri -> target
+      - name: Self-check P4 QA workflow and isolation rules with stdlib Python
+        shell: pwsh
+        run: |
+          python -c "import runpy; m=runpy.run_path('tests/test_p4_native_windows_milestone_source.py'); tests=[fn for name,fn in m.items() if name.startswith('test_')]; assert len(tests)==4; [fn() for fn in tests]; print('4/4 isolated P4 build-source/clock contracts passed')"
+          if ($LASTEXITCODE -ne 0) { throw 'P4 isolated QA source self-check failed' }
+      - name: Stage independently pinned offline AI and complete redistributable notices
+        shell: pwsh
+        run: ./desktop/Stage_Pinned_Offline_AI.ps1
+      - name: Check a real authenticated local Qwen3 completion on the build runner
+        shell: pwsh
+        run: |
+          python desktop/verify_live_bundled_inference.py
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned offline AI cannot generate on Windows runner' }
+      - name: Build and launch verified frozen Python analytical engine
+        shell: pwsh
+        run: ./desktop/Build_Python_Sidecar.ps1
+      - name: Build source-matched QA frontend and Tauri NSIS installer, distinct app identity
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Locked frontend dependency installation failed' }
+          npx tauri build --config src-tauri/tauri.p4-native-qa.conf.json --no-binary-patching
+          if ($LASTEXITCODE -ne 0) { throw 'Source-matched Windows NSIS build failed' }
+      - name: Confirm compiled frontend includes Satin Chronograph before accepting QA packaging
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $assetRoot = 'frontend/dist/assets'
+          if (-not (Test-Path -LiteralPath $assetRoot -PathType Container)) {
+            throw 'Missing bundled frontend assets; refuse QA package.'
+          }
+          $files = @(Get-ChildItem -LiteralPath $assetRoot -Recurse -File |
+            Where-Object { $_.Extension -in @('.js','.css') })
+          if ($files.Count -lt 1) { throw 'No built frontend scripts or styles.' }
+          $found = $false
+          foreach ($file in $files) {
+            if (Select-String -LiteralPath $file.FullName -Pattern 'po-shell-clock-time' -SimpleMatch -Quiet) {
+              $found = $true
+              break
+            }
+          }
+          if (-not $found) {
+            throw 'Satin Chronograph class missing from built frontend; refuse acceptance.'
+          }
+          Write-Host 'Built frontend contains Satin Chronograph UI; not owner-native visual validation.'
+      - name: Verify installed payload on disposable CI runner, never owner PC
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $candidates = @(Get-ChildItem 'frontend/src-tauri/target/release/bundle/nsis' -File -Filter '*.exe')
+          if ($candidates.Count -ne 1) { throw "Expected one P4 native QA installer; got $($candidates.Count)" }
+          if ($candidates[0].Name -notmatch 'pilotODIN-P4-Native-QA') {
+            throw 'Installer does not clearly carry the isolated P4 QA product name'
+          }
+          if ($candidates[0].Length -lt 100MB) { throw 'Installer too small for full offline components' }
+          ./desktop/Verify_Installed_PilotODIN.ps1 -InstallerPath $candidates[0].FullName
+          $installed = @(Get-ChildItem (Join-Path $env:RUNNER_TEMP 'PilotODIN-CI-NSIS-Install') -Recurse -File |
+            Where-Object { $_.Name -ieq 'pilotodin-desktop.exe' })
+          $source = Join-Path $PWD 'frontend/src-tauri/target/release/pilotodin-desktop.exe'
+          if ($installed.Count -ne 1 -or -not (Test-Path -LiteralPath $source)) {
+            throw 'Cannot establish compiled-vs-installed Windows EXE identity'
+          }
+          $installedHash = (Get-FileHash $installed[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $compiledHash = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host ("Compiled EXE: {0} bytes, SHA256={1}" -f (Get-Item $source).Length, $compiledHash)
+          Write-Host ("CI installed EXE: {0} bytes, SHA256={1}" -f $installed[0].Length, $installedHash)
+          if ($installedHash -ne $compiledHash) {
+            throw 'Installed QA EXE differs from the source-matched compiled EXE; fail closed.'
+          }
+          Write-Host 'Source-matched compiled and CI-installed Windows EXE SHA256: MATCH'
+      - name: Emit SHA256 manifest for exact source and built/installed QA artifact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = @(Get-ChildItem 'frontend/src-tauri/target/release/bundle/nsis' -File -Filter '*.exe')
+          if ($installer.Count -ne 1) { throw 'QA installer identity is ambiguous' }
+          $exe = 'frontend/src-tauri/target/release/pilotodin-desktop.exe'
+          $engine = 'frontend/src-tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe'
+          $ai = 'frontend/src-tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe'
+          foreach ($f in @($exe,$engine,$ai)) {
+            if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { throw "Missing binary: $f" }
+          }
+          $result = Get-Content 'build/installed-engine-smoke-result.json' -Raw | ConvertFrom-Json
+          if ($result.passed -ne $true -or $result.auth_required -ne $true -or
+              $result.wrong_origin_rejected -ne $true -or $result.model_started -ne $false) {
+            throw 'The installed engine has not passed expected isolation checks'
+          }
+          $manifest = [ordered]@{
+            schema_version = 1
+            purpose = 'P4-16 SOURCE-MATCHED SYNTHETIC WINDOWS QA BUILD; NOT A RELEASE'
+            source_commit = $env:GITHUB_SHA
+            github_run_id = $env:GITHUB_RUN_ID
+            github_run_attempt = $env:GITHUB_RUN_ATTEMPT
+            github_ref = $env:GITHUB_REF
+            runner_os = $env:RUNNER_OS
+            qa_identifier = 'com.pilotodin.p4nativeqa'
+            existing_product_identifier = 'com.pilotodin.studio'
+            installed_on_owner_windows = $false
+            native_owner_acceptance = 'NOT_TESTED'
+            business_acceptance = 'UNVERIFIED'
+            release_certified = $false
+            installer = [ordered]@{
+              name = $installer[0].Name
+              bytes = $installer[0].Length
+              sha256 = (Get-FileHash $installer[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            compiled_desktop_exe_sha256 = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+            frozen_engine_sha256 = (Get-FileHash $engine -Algorithm SHA256).Hash.ToLowerInvariant()
+            pinned_inference_binary_sha256 = (Get-FileHash $ai -Algorithm SHA256).Hash.ToLowerInvariant()
+            disposable_ci_install_engine_smoke_passed = $true
+            compiled_exe_matches_disposable_ci_installed_exe = $true
+          }
+          New-Item -ItemType Directory 'build/p4-16-provenance' -Force | Out-Null
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content 'build/p4-16-provenance/source-and-windows-artifact.json' -Encoding utf8
+          Write-Host 'Exact SHA/source-to-compiled-to-installed QA identity verified; human Windows owner test still NOT TESTED.'
+      - name: Publish short-lived provenance file for independent review
+        uses: actions/upload-artifact@v4
+        with:
+          name: PilotODIN-P4-16-Source-Provenance-NOT-OWNER-ACCEPTANCE
+          path: build/p4-16-provenance/source-and-windows-artifact.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Publish development QA installer separately, never a Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: PilotODIN-P4-16-EXPERIMENTAL-Windows-NSIS-DO-NOT-INSTALL-YET
+          path: frontend/src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 3
+          if-no-files-found: error

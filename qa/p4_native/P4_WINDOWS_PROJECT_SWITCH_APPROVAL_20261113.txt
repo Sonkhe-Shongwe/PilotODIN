@@ -1,0 +1,3 @@
+13 November 2026. Owner approved one unpackaged Windows developer build and synthetic QA on a disposable Windows runner.
+Reviewed source: 7a534805afa85e8755c2498d417ca014afed922f.
+Includes the native Stay and Switch project actions. Excludes installers, executable transfer, owner PC access, original data, Qwen, model fitting, and repeat native builds.

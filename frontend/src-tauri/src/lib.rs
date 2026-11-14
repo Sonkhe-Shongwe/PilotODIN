@@ -3,12 +3,14 @@
 //! AI has no arbitrary process- or filesystem-execution capability.
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 use std::net::TcpListener;
 use std::sync::Mutex;
 use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, RunEvent, State};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, State};
 use tauri_plugin_shell::{process::{CommandChild, CommandEvent}, ShellExt};
+use tauri_plugin_dialog::DialogExt;
 
 #[derive(Clone, Serialize)]
 struct BackendConnection {
@@ -36,6 +38,167 @@ struct DesktopState {
     backend: Mutex<Option<ActiveBackend>>,
     inference: Mutex<Option<ActiveInference>>,
     inference_settings: Mutex<Option<InferenceSettings>>,
+}
+
+// A native CloseRequested event is not a browser beforeunload navigation.
+// Always block OS close until the live Studio explicitly approves this ticket.
+// Tickets hold no project identifiers or form values.
+#[derive(Default)]
+struct NativeCloseState {
+    pending: Mutex<Option<String>>,
+}
+
+#[derive(Clone, Serialize)]
+struct NativeCloseRequest {
+    token: String,
+}
+
+fn consume_native_close_ticket(pending: &mut Option<String>, provided: &str) -> bool {
+    if pending.as_deref() != Some(provided) { return false; }
+    *pending = None;
+    true
+}
+
+#[tauri::command]
+fn resolve_native_close_request(
+    window: tauri::WebviewWindow,
+    state: State<'_, NativeCloseState>,
+    token: String,
+    approve: bool,
+) -> Result<(), String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let mut pending = state.pending.lock()
+        .map_err(|_| "Native close state unavailable".to_string())?;
+    if !consume_native_close_ticket(&mut pending, &token) {
+        return Err("Native close request expired or was not issued".into());
+    }
+    drop(pending);
+    if approve {
+        // close() would re-enter CloseRequested and loop. destroy() is only
+        // reachable with a one-use ticket issued by an actual OS close event.
+        window.destroy().map_err(|e| format!("Could not close window: {e}"))?;
+    }
+    Ok(())
+}
+
+// QA-only deterministic exit for the *specific* native W5 dev page.
+// The original environment/identifier checks could disagree with Tauri dev
+// configuration merging. The loaded WebView URL is a stronger, independently
+// observable QA-scope boundary: a debug build serving only this exact page
+// on the one-use loopback test port. This command is inaccessible to normal
+// 5173 development and production tauri:// or https:// application windows.
+fn eligible_p3_w5_qa_exit(debug: bool, page_url: &str) -> bool {
+    if !debug { return false; }
+    let without_fragment = page_url.split('#').next().unwrap_or_default();
+    without_fragment == "http://127.0.0.1:5178/p3_native_quality_w5_qa.html"
+}
+
+#[tauri::command]
+fn finish_p3_w5_synthetic_qa(window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let page_url = window.url()
+        .map_err(|_| "W5 QA finish refused: cannot determine WebView page origin".to_string())?;
+    if !eligible_p3_w5_qa_exit(cfg!(debug_assertions), page_url.as_str()) {
+        let reason = if !cfg!(debug_assertions) {
+            "W5 QA finish refused: this is not a debug build"
+        } else {
+            "W5 QA finish refused: not the exact isolated W5 local page"
+        };
+        // Never emit raw URL, environment, source path, tokens or data here.
+        eprintln!("[PilotODIN W5 QA] {reason}");
+        return Err(reason.into());
+    }
+    // A synchronous destroy can discard the WebView before Tauri's invoke
+    // response reaches JS. A rejected invoke with no Error/string then looks
+    // like a QA failure despite the reviewed version being valid. Acknowledge
+    // the command first; close only this already scope-checked QA window from
+    // the UI thread, after a short bounded interval. Production CloseRequested
+    // and unsaved-work veto remain entirely unchanged.
+    let app = window.app_handle().clone();
+    let qa_window = window.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(350));
+        if app.run_on_main_thread(move || {
+            if qa_window.destroy().is_err() {
+                eprintln!("[PilotODIN W5 QA] delayed native window destroy failed");
+            }
+        }).is_err() {
+            eprintln!("[PilotODIN W5 QA] delayed native window dispatch failed");
+        }
+    });
+    Ok(())
+}
+
+// This is intentionally a Rust-side dialog. The Tauri dialog plugin may
+// replace browser window.confirm with an asynchronous IPC function, so the
+// native close handshake must never assume a synchronous browser boolean.
+#[tauri::command]
+async fn confirm_native_close(
+    window: tauri::WebviewWindow,
+    state: State<'_, NativeCloseState>,
+    token: String,
+) -> Result<bool, String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    {
+        let guard = state.pending.lock()
+            .map_err(|_| "Native close state unavailable".to_string())?;
+        if guard.as_deref() != Some(token.as_str()) {
+            return Err("Native close request expired or was not issued".into());
+        }
+    }
+    // A blocking system dialog must NOT run on the WebView/UI thread.
+    // Only an explicit click on Close allows the existing ticket resolver
+    // to destroy the window. Cancellation leaves the form and window intact.
+    let prompt = window.dialog()
+        .message("You have unsaved changes in the workspace. Closing this window will discard those changes.")
+        .title("PilotODIN - Unsaved changes")
+        .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
+        .buttons(tauri_plugin_dialog::MessageDialogButtons::OkCancelCustom(
+            "Close PilotODIN".into(), "Stay".into(),
+        ))
+        .parent(&window);
+    tauri::async_runtime::spawn_blocking(move || prompt.blocking_show())
+        .await.map_err(|_| "Native confirmation could not finish".to_string())
+}
+
+// WebView2 must not use a synchronous browser confirm to discard edited inputs.
+// The native dialog has explicit Stay and Switch buttons and is owned by main.
+#[tauri::command]
+async fn confirm_native_project_switch(
+    window: tauri::WebviewWindow,
+) -> Result<bool, String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let prompt = window.dialog()
+        .message("You have unsaved changes in this workspace. Switching projects may discard those edits. Continue?")
+        .title("PilotODIN - Unsaved changes")
+        .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
+        .buttons(tauri_plugin_dialog::MessageDialogButtons::OkCancelCustom(
+            "Switch project".into(), "Stay".into(),
+        ))
+        .parent(&window);
+    tauri::async_runtime::spawn_blocking(move || prompt.blocking_show())
+        .await.map_err(|_| "Native project-switch confirmation could not finish".to_string())
+}
+
+// Route changes from an edited Deliver workspace must not rely on the
+// synchronous browser confirm implementation in Windows WebView2.
+// This command only asks for consent. JS must recheck the live project, route
+// and dirty marker before performing any state transition.
+#[tauri::command]
+async fn confirm_native_deliver_exit(
+    window: tauri::WebviewWindow,
+) -> Result<bool, String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let prompt = window.dialog()
+        .message("Your Deliver report has unsaved changes. Switching workspaces will discard those edits.")
+        .title("PilotODIN - Unsaved Deliver report")
+        .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
+        .buttons(tauri_plugin_dialog::MessageDialogButtons::OkCancelCustom(
+            "Leave Deliver".into(), "Keep editing".into(),
+        ))
+        .parent(&window);
+    tauri::async_runtime::spawn_blocking(move || prompt.blocking_show())
+        .await.map_err(|_| "Native Deliver confirmation could not finish".to_string())
 }
 
 #[derive(Deserialize)]
@@ -197,11 +360,208 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
     Ok(())
 }
 
+
+const MAX_REPORT_EXPORT_BYTES: usize = 12 * 1024 * 1024;
+
+#[derive(Serialize)]
+struct NativeReportSave {
+    status: &'static str,
+    filename: Option<String>,
+}
+
+fn check_report_payload(format: &str, filename: &str, bytes: &[u8]) -> Result<(), String> {
+    // This command is deliberately NOT a general-purpose filesystem writer.
+    // It handles only previously fetched, bounded HTML/PDF report payloads.
+    let extension = match format {
+        "html" => ".html",
+        "pdf" => ".pdf",
+        _ => return Err("Choose a PDF or HTML report format".into()),
+    };
+    if filename.is_empty() || filename.len() > 180 ||
+       filename.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|')) ||
+       !filename.to_ascii_lowercase().ends_with(extension) {
+        return Err("Invalid report filename or extension".into());
+    }
+    if bytes.is_empty() || bytes.len() > MAX_REPORT_EXPORT_BYTES {
+        return Err("The report export is empty or exceeds the safe desktop size limit".into());
+    }
+    let valid_signature = if format == "pdf" {
+        bytes.starts_with(b"%PDF-")
+    } else {
+        bytes.get(..15).map(|x| x.eq_ignore_ascii_case(b"<!doctype html>"))
+            .unwrap_or(false)
+    };
+    if !valid_signature {
+        return Err("Report file content does not match its declared format".into());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_report_as(app: AppHandle, format: String, filename: String, bytes: Vec<u8>)
+    -> Result<NativeReportSave, String> {
+    check_report_payload(&format, &filename, &bytes)?;
+    // Blocking native dialogs must not run on the application's UI thread.
+    // Spawn one blocking worker, then report the exact outcome to Deliver.
+    tauri::async_runtime::spawn_blocking(move || -> Result<NativeReportSave, String> {
+        let dialog = app.dialog().file()
+            .set_title("Save PilotODIN report")
+            .set_file_name(filename);
+        let chosen = if format == "pdf" {
+            dialog.add_filter("PDF document", &["pdf"]).blocking_save_file()
+        } else {
+            dialog.add_filter("HTML document", &["html"]).blocking_save_file()
+        };
+        let path = match chosen {
+            Some(path) => path.into_path()
+                .map_err(|_| "The selected Save As location is not a local file".to_string())?,
+            None => return Ok(NativeReportSave { status: "cancelled", filename: None }),
+        };
+        // Even if a user manually edits the extension in the dialog, never
+        // write PDF bytes to an .html file, or vice versa.
+        if !path.extension().and_then(|ext| ext.to_str())
+            .map(|ext| ext.eq_ignore_ascii_case(&format)).unwrap_or(false) {
+            return Err("Save As extension differs from the report format".into());
+        }
+        // Only the OS dialog may choose the destination. Never accept a path
+        // from JavaScript. Standard Save As handles overwrite confirmation.
+        std::fs::write(&path, &bytes)
+            .map_err(|e| format!("Could not save report to the selected location: {e}"))?;
+        // Confirm the entire saved content, not only its length. A partial
+        // write or a concurrent destination change must never be reported as
+        // successfully saved to the user.
+        let stored_size = std::fs::metadata(&path)
+            .map_err(|e| format!("Could not verify the saved report: {e}"))?.len();
+        if stored_size != bytes.len() as u64 {
+            return Err("Saved report size verification failed".into());
+        }
+        let saved_hash = {
+            let mut file = File::open(&path)
+                .map_err(|e| format!("Could not read the saved report for verification: {e}"))?;
+            let mut hasher = Sha256::new();
+            let mut buffer = [0u8; 65_536];
+            loop {
+                let read = file.read(&mut buffer)
+                    .map_err(|e| format!("Could not verify saved report contents: {e}"))?;
+                if read == 0 { break; }
+                hasher.update(&buffer[..read]);
+            }
+            hasher.finalize()
+        };
+        let expected_hash = Sha256::digest(&bytes);
+        if saved_hash[..] != expected_hash[..] {
+            return Err("The saved report failed content verification".into());
+        }
+        let saved_filename = Path::new(&path).file_name()
+            .and_then(|name| name.to_str()).map(str::to_owned);
+        Ok(NativeReportSave { status: "saved", filename: saved_filename })
+    }).await.map_err(|_| "The native Save As task could not finish".to_string())?
+}
+
+#[cfg(test)]
+mod report_save_tests {
+    use super::{check_report_payload, MAX_REPORT_EXPORT_BYTES};
+
+    #[test]
+    fn native_report_writer_accepts_only_matching_report_types() {
+        assert!(check_report_payload("pdf", "pilotodin_report.pdf", b"%PDF-1.7\n%%EOF").is_ok());
+        assert!(check_report_payload("html", "pilotodin_report.html", b"<!doctype html><html></html>").is_ok());
+        assert!(check_report_payload("pdf", "pilotodin_report.html", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("html", "pilotodin_report.html", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("txt", "report.txt", b"hello").is_err());
+        assert!(check_report_payload("pdf", "..\\elsewhere.pdf", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("pdf", "report.pdf", b"").is_err());
+        assert!(check_report_payload("pdf", "report.html", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("pdf", "bad:name.pdf", b"%PDF-1.7").is_err());
+        assert!(check_report_payload("html", "bad<name>.html", b"<!doctype html>").is_err());
+        assert!(check_report_payload("pdf", "report.pdf", &vec![0u8; MAX_REPORT_EXPORT_BYTES + 1]).is_err());
+    }
+}
+
+
+#[cfg(test)]
+mod native_close_ticket_tests {
+    use super::{consume_native_close_ticket, eligible_p3_w5_qa_exit};
+
+    #[test]
+    fn synthetic_w5_finish_is_not_a_general_native_close_bypass() {
+        let w5 = "http://127.0.0.1:5178/p3_native_quality_w5_qa.html";
+        assert!(eligible_p3_w5_qa_exit(true, w5));
+        assert!(eligible_p3_w5_qa_exit(
+            true, "http://127.0.0.1:5178/p3_native_quality_w5_qa.html#/studio/quality"
+        ));
+        assert!(!eligible_p3_w5_qa_exit(false, w5));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "http://127.0.0.1:5173/"
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "http://localhost:5178/p3_native_quality_w5_qa.html"
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "http://127.0.0.1:5178/p3_native_semantic_qa.html"
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "http://127.0.0.1:5178/p3_native_quality_w5_qa.html?unsafe=1"
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "tauri://localhost/p3_native_quality_w5_qa.html"
+        ));
+        assert!(!eligible_p3_w5_qa_exit(
+            true, "https://example.com/p3_native_quality_w5_qa.html"
+        ));
+    }
+
+    #[test]
+    fn only_current_ticket_can_authorize_one_native_close_resolution() {
+        let mut pending = Some("current".to_string());
+        assert!(!consume_native_close_ticket(&mut pending, "stale"));
+        assert_eq!(pending.as_deref(), Some("current"));
+        assert!(consume_native_close_ticket(&mut pending, "current"));
+        assert!(pending.is_none());
+        assert!(!consume_native_close_ticket(&mut pending, "current"));
+        assert!(!consume_native_close_ticket(&mut pending, ""));
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(DesktopState::default())
-        .invoke_handler(tauri::generate_handler![launch_backend, launch_bundled_ai])
+        .manage(NativeCloseState::default())
+        .invoke_handler(tauri::generate_handler![
+            launch_backend, launch_bundled_ai, save_report_as,
+            resolve_native_close_request, confirm_native_close, confirm_native_project_switch,
+            finish_p3_w5_synthetic_qa, confirm_native_deliver_exit
+        ])
+        .on_window_event(|window, event| {
+            if window.label() != "main" { return; }
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                // Synchronous veto first. If the frontend has not registered
+                // or cannot reply, native close stays blocked, never silent.
+                api.prevent_close();
+                let state = window.state::<NativeCloseState>();
+                let token = {
+                    let Ok(mut guard) = state.pending.lock() else {
+                        eprintln!("Native close blocked: state unavailable");
+                        return;
+                    };
+                    if guard.is_some() { return; } // Prevent duplicate prompts.
+                    let token = uuid::Uuid::new_v4().simple().to_string();
+                    *guard = Some(token.clone());
+                    token
+                };
+                if let Err(error) = window.emit(
+                    "pilotodin:native-close-requested",
+                    NativeCloseRequest { token: token.clone() }
+                ) {
+                    if let Ok(mut guard) = state.pending.lock() {
+                        if guard.as_deref() == Some(token.as_str()) { *guard = None; }
+                    }
+                    eprintln!("Native close blocked: could not dispatch request: {error}");
+                }
+            }
+        })
         .build(tauri::generate_context!())
         .expect("Could not initialise PilotODIN desktop")
         .run(|app, event| {

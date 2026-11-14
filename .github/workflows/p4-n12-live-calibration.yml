@@ -1,0 +1,45 @@
+name: P4 N12 Live Collector Calibration
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-n12-live-calibration.yml
+
+permissions:
+  contents: read
+
+jobs:
+  calibration:
+    if: ${{ false }} # One-time provisioning approval consumed by run 43478728040
+    runs-on: windows-2022
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout calibration source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify this is the approved one-time run
+        shell: pwsh
+        run: |
+          $parent = git rev-parse HEAD^
+          if ($LASTEXITCODE -ne 0 -or $parent -ne '3a423e4a6f470c8c213bd5dcd96046cd27b2dae5' -or
+              $env:GITHUB_RUN_ATTEMPT -ne '1') {
+            throw 'The approved collector calibration is for one run from the reviewed parent.'
+          }
+          $changed = @(git diff-tree --no-commit-id --name-only -r HEAD)
+          if ($LASTEXITCODE -ne 0 -or ($changed -join '|') -ne
+              '.github/workflows/p4-n12-live-calibration.yml') {
+            throw 'The approved launch changes only the calibration workflow.'
+          }
+      - name: Use Python for the generated fixture
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: Rehearse the combined ETW and Sysmon capture on generated files
+        shell: pwsh
+        run: ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WithEtw
