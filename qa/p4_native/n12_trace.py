@@ -615,6 +615,9 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             if details is not None and role in {"other", "unattributed"}:
                 label = identity if role == "other" and identity else "scoped-unattributed"
                 details[f"protected-writer:{label}:{operation}"] += 1
+                for target in protected_targets:
+                    basename = ntpath.basename(target).casefold() or "unknown"
+                    details[f"protected-writer-target:{label}:{operation}:{basename}"] += 1
         if role in {"other", "unattributed"}:
             return
         counts[f"{role}:{operation}"] += 1
@@ -1105,7 +1108,11 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "unrelated_unresolved_mutations": unrelated_unresolved,
         "unrelated_unresolved_event_types": unrelated_unresolved_event_types,
         "protected_writer_processes": {
-            key: value for key, value in details.items() if key.startswith("protected-writer:")
+            key: value for key, value in details.items()
+            if key.startswith("protected-writer:") and not key.startswith("protected-writer-target:")
+        },
+        "protected_writer_targets": {
+            key: value for key, value in details.items() if key.startswith("protected-writer-target:")
         },
         "other_process_image_events": {
             key: value for key, value in details.items()

@@ -946,6 +946,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["protected_writer_processes"]["protected-writer:other-writer.exe:write"] == 1
     assert report["protected_writer_processes"]["protected-writer:other-writer.exe:compression"] == 1
     assert report["protected_writer_processes"]["protected-writer:etw-writer.exe:write"] == 1
+    assert report["protected_writer_targets"]["protected-writer-target:other-writer.exe:write:unrelated.bin"] == 1
+    assert report["protected_writer_targets"]["protected-writer-target:etw-writer.exe:write:etw-started.bin"] == 1
     assert report["other_process_image_events"]["other:event-16:process-image-etw-writer.exe"] == 1
     assert report["issuing_thread_owner_images"]["other:event-16:write:issuing-thread-owner-etw-writer.exe"] == 1
     assert report["rundown_invalidation_events"]["other:event-17:resize:rundown-invalidated-by-event-14:FileKey"] == 1

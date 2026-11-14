@@ -170,3 +170,8 @@ The fixture currently maps the volume containing its temporary capture root. An 
 The hosted ETW probe now enumerates Windows logical drives and maps every removable, fixed or RAM-disk volume with `QueryDosDeviceW`, rather than mapping only the drive containing the temporary capture root. Network and optical drives are not included. The capture manifest retains the original root-drive device field for compatibility and adds the complete `volume_devices` map. The PowerShell fixture copies that map into the ETW manifest.
 
 The redacted NameCreate diagnostic also reports the unmapped device token (for example, a `HarddiskVolumeN` identifier), but never a full path. The unit test injects a logical-drive mask and confirms that local volumes are mapped while remote and optical drives are excluded.
+
+
+## 14 November 2026 | Protected-root writer target labels
+
+The generated pre-opened-control report now records the basename of each protected-root target associated with an unscoped writer, alongside the writer process basename and operation. This is restricted to the disposable synthetic pre-opened fixture report; it does not emit full paths. The regression verifies the known synthetic targets `unrelated.bin` and `etw-started.bin`. The labels are diagnostic evidence and do not turn a System or other writer into an approved actor.
