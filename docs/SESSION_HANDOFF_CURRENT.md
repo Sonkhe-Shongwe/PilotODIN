@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 context for writes without an observed open
+
+- [Source `3a6581e`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3a6581ee968ce1ee8f02ecc91aa0cb86255380e5) partitions successful unresolved Event 16 writes with no observed same-FileObject open by request time relative to WPR stop and export, ETW header context, and verified issuing-thread owner. The counters use fixed labels and leave strict verdicts in force. All 123 local QA checks passed.
+- **Focused [N12 #43576932914](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43576932914).** 99 focused tests passed and 371/371 rundown records decoded. Eight of 52 successful unresolved writes had no observed open. All eight were requested during WPR stop and export. Three had verified `svchost.exe` header and issuing-thread process contexts. Five had a System header and an unverified issuing-thread owner.
+- **Broader [P4 #43576932825](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43576932825).** All three jobs passed with 284 Python tests, 78 Node checks, the TypeScript/Vite build and 12 Chromium scenarios. Its Windows fixture decoded 343/343 rundown records and had zero no-open cases among 40 successful unresolved writes. The earlier 4,047-case spike was unobserved in these captures and remains unattributed.
+- **Status.** Both pre-opened controls passed in both captures. Each also recorded one System-context write and one resize with FileKey and FileObject matching the protected control. The originating operations remain unverified. Strict coverage is **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. R03 physical offline testing, R06 historical disposition and Gate C remain open.
+- **Next.** Measure the ordering of the recurring System-context write and resize against a disposable control's application write, explicit flush and WPR stop window. Include an untouched pre-opened comparison handle to test whether the same event pattern occurs without a control write. Keep strict coverage and protected-root findings in force while collecting independent origin evidence.
+
 ## 14 November 2026 | N12 FileBasicInformation candidate trial
 
 - [Source `a6f1088`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a6f10885e276cbdfab26fe82baac2f45e6d0413e) compares the existing same-FileObject diagnostic against a class 4 exception on the same captured writes. The exception requires a uniquely matched successful completion strictly after open completion and before the write. Baseline and strict audit path, actor and mutation verdicts are preserved.

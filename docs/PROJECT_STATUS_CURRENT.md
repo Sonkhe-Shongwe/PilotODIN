@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 context for writes without an observed open
+
+The focused Windows capture found eight successful unresolved writes without an observed open. All eight occurred during WPR stop and export. The broader fixture found zero. Both captured a System-context write and resize on the protected control with unresolved origin. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-context-for-writes-without-an-observed-open).
+
 ## 14 November 2026 | N12 FileBasicInformation candidate trial
 
 Across two hosted Windows captures, 99 of 142 writes initially blocked by class 4 passed the remaining diagnostic checks. All 99 had candidate paths outside protected roots. The strict audit retains unresolved paths, metadata mutations and protected-root violations. N12 remains **PARTIAL** and strict coverage **BLOCKED**. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-filebasicinformation-candidate-trial).
