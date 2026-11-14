@@ -23,6 +23,10 @@
 
 The [approved comparison](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) completed on hosted Windows. Peak worker resident RAM and exact structured scores were Qwen3 1.7B **2,055.8 MiB / 2 of 4**, Qwen3 0.6B **934.9 MiB / 2 of 4**, and SmolLM2 360M **420.0 MiB / 1 of 4**. Every model failed the unknown-cause case. No model cleared the four-case screen. Physical R03 remains **BLOCKED at preflight / NOT TESTED**, and P4 remains **ACTIVE at 65/100**. [Case details and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-offline-analytics-model-comparison).
 
+**R03 bounded follow-up selection.** The [Windows harness](../desktop/verify_live_bundled_inference.py) now supports `--wording-eval`. It evaluates eight synthetic questions across the previous four scenarios. The harness owns the verified summary and two approved follow-ups. The model receives the question and the two follow-ups and may return only a single choice, A or B. A response that is incomplete, unavailable or contains extra text leaves the verified summary alone. A valid choice appends only the corresponding approved follow-up. The score counts question-to-follow-up matches separately from fallbacks. An always-A or always-B selection scores 4 of 8. The harness also reports per-request latency and resident and committed memory peaks.
+
+Local synthetic verification covered the response boundary and the four harness modes. This checks a constrained follow-up selector using fixed synthetic facts. Real model usefulness, Windows memory for this task, and physical R03 are unmeasured. The next evidence step is one separately approved hosted run of SmolLM2 360M, the only previous candidate with a hosted peak below the laptop's 545 MiB snapshot. Keep the current 2.00 GiB admission floor and evaluate the hosted results before considering desktop integration.
+
 ### Rules for interpreting the matrix
 
 - **PASS** applies only to the tested *modality and exact source*, never to a different Windows build or business use. Use **UNVERIFIED**, **NOT TESTED**, **BLOCKED** and **FAIL** distinctly.

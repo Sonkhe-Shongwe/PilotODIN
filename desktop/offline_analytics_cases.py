@@ -53,6 +53,58 @@ CASES = (
     ),
 )
 
+# The benchmark owns the summary and both applicable follow-ups. The worker
+# sees only the question and may choose which follow-up to show first.
+WORDING_SYSTEM = (
+    'Select the follow-up that directly answers the question. '
+    'Return only its letter, A or B. Do not write any facts or explanation.'
+)
+
+WORDING_SCENARIOS = (
+    (
+        'dataset_overview',
+        'The dataset has 80 rows, 5 columns, 0 missing cells and 0 exact duplicate rows.',
+        ('Check column types and ranges before interpreting the data.',
+         'Check for near-duplicate records using the fields that identify a record.'),
+        ('How should I check whether the columns contain usable values?',
+         'How can I check for duplicates with small differences?'),
+    ),
+    (
+        'rate_with_denominator',
+        '12 of 60 labelled rows are positive (20%). The dataset has 80 rows in total.',
+        ('Use the labelled-row count as the denominator when reporting the positive rate.',
+         'Check whether unlabelled rows differ from labelled rows before generalising the rate.'),
+        ('Which denominator belongs in my positive-rate report?',
+         'What should I check before generalising this rate to all rows?'),
+    ),
+    (
+        'unknown_cause',
+        'Premium is missing in 7 rows. The cause is unknown.',
+        ('Compare missingness across relevant groups to see whether it clusters.',
+         'Check the source-system logs or ask the data owner how the values were collected.'),
+        ('How can I check if the missing values are concentrated in some groups?',
+         'Where should I look for evidence about the cause?'),
+    ),
+    (
+        'no_training_claim',
+        'The target was reviewed. Training has not started and no validation score is available.',
+        ('Review the target and validation plan before starting training.',
+         'Wait for a completed validation result before reporting model performance.'),
+        ('What should I review before starting a training run?',
+         'When can I report model performance?'),
+    ),
+)
+
+
+def wording_result(summary: str, follow_ups: tuple[str, str], content: str | None,
+                   finish_reason: str | None) -> tuple[str, str | None]:
+    choice = content.strip() if isinstance(content, str) and finish_reason == 'stop' else ''
+    if choice == 'A':
+        return f'{summary}\n\n{follow_ups[0]}', choice
+    if choice == 'B':
+        return f'{summary}\n\n{follow_ups[1]}', choice
+    return summary, None
+
 
 def verified_candidate(name: str, file: Path) -> Path:
     _, size, expected_hash = CANDIDATES[name]

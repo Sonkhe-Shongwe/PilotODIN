@@ -21,7 +21,10 @@ import time
 import urllib.error
 import urllib.request
 
-from offline_analytics_cases import CANDIDATES, CASES, SYSTEM, score_answer, verified_candidate
+from offline_analytics_cases import (
+    CANDIDATES, CASES, SYSTEM, WORDING_SCENARIOS, WORDING_SYSTEM, score_answer,
+    verified_candidate, wording_result,
+)
 from verify_inference_assets import verify
 
 
@@ -91,21 +94,58 @@ def worker_memory(pid: int) -> dict[str, float | int]:
     }
 
 
+def evaluate_wording(base: str, token: str, model_alias: str, pid: int) -> list[dict]:
+    results = []
+    for case_name, summary, follow_ups, questions in WORDING_SCENARIOS:
+        for expected, question in zip(('A', 'B'), questions):
+            started = time.monotonic()
+            request = {
+                'model': model_alias,
+                'messages': [
+                    {'role': 'system', 'content': WORDING_SYSTEM},
+                    {'role': 'user', 'content': f'{question}\nA: {follow_ups[0]}\nB: {follow_ups[1]}'},
+                ],
+                'max_tokens': 8, 'temperature': 0, 'stream': False,
+                'chat_template_kwargs': {'enable_thinking': False},
+            }
+            try:
+                status, result = send(base + '/v1/chat/completions', token, request, timeout=60)
+            except (OSError, ValueError):
+                status, result = None, None
+            elapsed = round(time.monotonic() - started, 3)
+            choices = result.get('choices') if status == 200 and isinstance(result, dict) else None
+            choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+            message = choice.get('message')
+            content = message.get('content') if isinstance(message, dict) else None
+            answer, selected = wording_result(summary, follow_ups, content, choice.get('finish_reason'))
+            results.append({
+                'case': case_name, 'expected': expected, 'selected': selected,
+                'matched': selected == expected, 'fallback': selected is None,
+                'http_status': status, 'finish_reason': choice.get('finish_reason'),
+                'answer': answer, 'seconds': elapsed, **worker_memory(pid),
+            })
+    return results
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--memory-profile', action='store_true',
                         help='Report worker memory at model readiness and after completion.')
-    parser.add_argument('--analytics-eval', action='store_true',
-                        help='Score four synthetic analytics questions and report worker memory.')
+    evaluation = parser.add_mutually_exclusive_group()
+    evaluation.add_argument('--analytics-eval', action='store_true',
+                            help='Score four synthetic analytics questions and report worker memory.')
+    evaluation.add_argument('--wording-eval', action='store_true',
+                            help='Score follow-up selection while keeping verified summaries fixed.')
     parser.add_argument('--candidate', choices=CANDIDATES,
                         help='Use a pinned alternate GGUF for the analytics evaluation only.')
     parser.add_argument('--candidate-file', type=Path, help='Local path to the pinned alternate GGUF.')
     options = parser.parse_args()
-    if (options.memory_profile or options.analytics_eval) and os.name != 'nt':
+    evaluating = options.analytics_eval or options.wording_eval
+    if (options.memory_profile or evaluating) and os.name != 'nt':
         parser.error('Worker profiling requires Windows')
-    if bool(options.candidate) != bool(options.candidate_file) or (options.candidate and not options.analytics_eval):
-        parser.error('--candidate and --candidate-file must be used together with --analytics-eval')
-    profile_memory = options.memory_profile or options.analytics_eval
+    if bool(options.candidate) != bool(options.candidate_file) or (options.candidate and not evaluating):
+        parser.error('--candidate and --candidate-file must be used together in an evaluation mode')
+    profile_memory = options.memory_profile or evaluating
 
     root = Path(__file__).resolve().parents[1]
     verify(root)
@@ -161,6 +201,16 @@ def main() -> int:
         }
         if send(base + '/v1/chat/completions', body=unauthenticated_probe, timeout=5)[0] != 401:
             raise RuntimeError('Local inference API failed to reject unauthenticated generation')
+        if options.wording_eval:
+            results = evaluate_wording(base, token, model_alias, proc.pid)
+            print('OFFLINE WORDING EVALUATION: ' + json.dumps({
+                'model': model_name,
+                'model_ready': {'elapsed_seconds': load_seconds, **ready_memory},
+                'matched': sum(case['matched'] for case in results),
+                'fallbacks': sum(case['fallback'] for case in results),
+                'cases': results,
+            }, sort_keys=True))
+            return 0
         if options.analytics_eval:
             results = []
             for case_name, facts, question, expected in CASES:
