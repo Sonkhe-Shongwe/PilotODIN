@@ -1094,6 +1094,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         not key.startswith("write-gap-no-open-path:") and
         not key.startswith("write-gap-name-change-event:") and
         not key.startswith("write-gap-class-4-trial:") and
+        not key.startswith("protected-system-write-paging:") and
         not key.endswith(":rundown-path-recovered")
     }
     expected_control_violations = {"protected:preopened-control:write": 1}
@@ -1177,6 +1178,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         },
         "protected_writer_control_correlations": {
             key: value for key, value in details.items() if ":preopened-control-file" in key
+        },
+        "protected_system_write_paging_flags": {
+            key.removeprefix("protected-system-write-paging:"): value
+            for key, value in details.items() if key.startswith("protected-system-write-paging:")
         },
         "other_process_image_events": {
             key: value for key, value in details.items()

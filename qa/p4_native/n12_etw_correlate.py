@@ -220,13 +220,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             return identity if identity in WRITE_CONTEXT_IMAGES else "other-verified-image"
         return "unverified"
 
+    def capture_phase(ticks):
+        if rundown_window is None:
+            return "unavailable"
+        start, stop = rundown_window
+        return "before-wpr-stop" if ticks < start else (
+            "during-wpr-stop" if ticks <= stop else "after-wpr-stop"
+        )
+
     def write_capture_context(ticks, header_label, tid):
-        phase = "unavailable"
-        if rundown_window is not None:
-            start, stop = rundown_window
-            phase = "before-wpr-stop" if ticks < start else (
-                "during-wpr-stop" if ticks <= stop else "after-wpr-stop"
-            )
         issuer_label = "unverified"
         if tid and (tid, ticks) not in thread_transition_ticks:
             owner = thread_owners.get(tid)
@@ -238,7 +240,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 if owner_birth is not None and active.get(owner_pid) == owner_birth:
                     actor, identity = classify_process(owner_pid, owner_birth, ticks)
                     issuer_label = process_label(owner_pid, owner_birth, ticks, actor, identity)
-        return f"{phase}:header-{header_label}:issuer-{issuer_label}"
+        return f"{capture_phase(ticks)}:header-{header_label}:issuer-{issuer_label}"
 
     for event in ordered_events:
         kind, pid, data = event["id"], event["pid"], event["data"]
@@ -284,7 +286,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if not irp or irp not in pending:
                 continue
             (operation, actor, identity, handle, source, destination, requested,
-             event_id, info_class, write_gap) = pending.pop(irp)
+             event_id, info_class, write_gap, protected_system_write) = pending.pop(irp)
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
             if status is None:
@@ -329,15 +331,17 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     flag(actor, f"{operation}:path-missing", event_id, info_class)
                 if source or destination:
                     record(actor, identity, operation, source, destination, requested, ticks, True)
+                    if protected_system_write is not None:
+                        details[f"protected-system-write-paging:{protected_system_write}"] += 1
             continue
         if kind == 27 and irp in pending:
             (operation, owner, identity, obj, source, previous, requested,
-             event_id, info_class, write_gap) = pending[irp]
+             event_id, info_class, write_gap, protected_system_write) = pending[irp]
             if operation == "rename" and obj == handle and path:
                 if previous and previous != path:
                     unresolved[f"{owner}:rename:destination-ambiguous"] += 1
                 pending[irp] = (operation, owner, identity, obj, source, path, requested,
-                                event_id, info_class, write_gap)
+                                event_id, info_class, write_gap, protected_system_write)
             continue
         if strict and kind == 27 and path and relevant(actor, "rename", None, path):
             unresolved[f"{actor}:rename:request-missing-or-ambiguous"] += 1
@@ -541,9 +545,16 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     header_label = "system-context"
                 capture_context = write_capture_context(ticks, header_label, tid)
                 write_gap = (event, write_name_context, capture_context)
+            protected_system_write = None
+            if (strict and details is not None and preopened_control_file_keys
+                    and preopened_control_file_objects and kind == 16 and pid == 4 and tracked(source)):
+                key_matches = number(data.get("FileKey")) in preopened_control_file_keys
+                object_matches = object_id in preopened_control_file_objects
+                target = "control-key-and-object" if key_matches and object_matches else "other-protected-identity"
+                protected_system_write = f"{target}:{capture_phase(ticks)}:{write_paging_flag(data)}"
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
-                            info_class, write_gap)
-    for operation, actor, _, _, source, destination, _, event_id, info_class, _ in pending.values():
+                            info_class, write_gap, protected_system_write)
+    for operation, actor, _, _, source, destination, _, event_id, info_class, *_ in pending.values():
         count_compression(operation, "missing-completion")
         if operation != "query" and relevant(actor, operation, source, destination):
             flag(actor, f"{operation}:completion-missing", event_id, info_class)

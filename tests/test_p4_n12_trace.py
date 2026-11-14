@@ -1507,6 +1507,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["file_events"]["preopened-control:write"] == 2
     assert report["file_violations"] == {"protected:preopened-control:write": 1}
     assert report["unrelated_file_violations"] == {}
+    assert report["protected_system_write_paging_flags"] == {}
     assert report["unresolved_controls"] == {}
     assert report["unrelated_unresolved_mutations"] == {}
     assert report["compression_request_outcomes"] == {}
@@ -1655,6 +1656,33 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert not any("fsctl-0x0009009C" in key for key in report["unrelated_unresolved_event_types"])
     assert not any("fsctl-0x000900BB" in key for key in report["unrelated_unresolved_event_types"])
     assert report["unresolved_controls"] == {}
+
+    # The strict report retains the violations and describes only successful
+    # protected writes with a System header. A resize has no IOFlags field.
+    stop_start = base_ticks + 180_000_000
+    capture.update(rundown_start_ticks=stop_start, rundown_stop_ticks=base_ticks + 190_000_000)
+    for offset, pid, key, obj, status, fields in (
+        (0, 4, "0x28", 100, 0, {"IOFlags": "0x203"}),
+        (2, 4, "0x2b", 102, 0, {}),
+        (4, 4, "0x28", 100, 0xC0000022, {"IOFlags": 0}),
+        (6, 4, "0x29", 101, 0, {"IOFlags": "0x203"}),
+        (8, 99, "0x28", 100, 0, {"IOFlags": "0x203"}),
+    ):
+        irp = 40 + offset
+        emit(16, pid, stop_start + offset, FileKey=key, FileObject=obj, Irp=irp, **fields)
+        emit(24, 0, stop_start + offset + 1, Irp=irp, Status=status)
+    emit(17, 4, stop_start + 10, FileKey="0x28", FileObject=100, Irp=50, InfoClass=20)
+    emit(24, 0, stop_start + 11, Irp=50, Status=0)
+    result = run()
+    assert result.returncode == 0, result.stderr
+    paging_report = json.loads(result.stdout)
+    assert paging_report["protected_system_write_paging_flags"] == {
+        "control-key-and-object:during-wpr-stop:set": 1,
+        "other-protected-identity:during-wpr-stop:unavailable": 1,
+    }
+    assert paging_report["file_violations"]["protected:other:write"] == 5
+    assert paging_report["file_violations"]["protected:other:resize"] == 1
+    assert paging_report["strict_coverage"] == "BLOCKED"
 
     # A conflicting NameCreate cannot override the digest-pinned rundown.
     late_transition_ticks = base_ticks + 195_000_000
