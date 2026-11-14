@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 follow-up blocked at initial Sysmon calibration
+
+- The [approved hosted run #43639741630, job #132584422304](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43639741630/job/132584422304) ran on attempt 1 at launch commit `4173c9af5002405b0361ea89993d97eaef6ad9cb`, pinned to `6dbe0664be49cbdbe8d174c582d547c8c18d656b`. The unpackaged Windows build and pinned Sysmon 15.22 setup passed. Executable SHA-256 `a66fd221f0d406dcb268feb23c41db7eb402a976c75f54823076af7fc37b0372`. Resolved Cargo lock SHA-256 `cb6bc6303420a49e6aa5f8b57f896872081785cbf9586c50ede2d544c11ace94`.
+- The file collector started and the initial generated fixture ran. The prelaunch gate reported `initial Sysmon calibration blocked: process-root-missing-or-ambiguous`. The public log does not distinguish an absent process birth from competing or mismatched candidates. The raw evidence was private to the runner. **Job FAILED before app startup.** Both app launches, the final calibration and the final audit were **NOT RUN**. The change to process-exit handling has generated test evidence only for this scenario, and the earlier network and filesystem failures remain recorded.
+- The workflow is disarmed and the one-use approval marker is retained. Next review fixture process binding, event delivery and timestamp boundaries with generated evidence. Preserve the independent prelaunch guard. Any new live capture needs fresh approval. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** R03 physical offline acceptance and R06 preservation remain open.
+
 ## 14 November 2026 | Sysmon identical exit records can be replayed
 
 - The N12 audit accepts a repeat of the same Event ID 5 payload under a new, ascending channel record ID. The exit must match the known process and its recorded exit time. The audit reports an aggregate repeat count. Conflicting payloads or timestamps, mismatched process identity, repeated fields and invalid record order still block coverage. No change was made to the network or filesystem audit rules.

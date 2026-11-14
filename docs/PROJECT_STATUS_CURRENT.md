@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 follow-up blocked at initial Sysmon calibration
+
+The [single approved follow-up](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43639741630/job/132584422304) passed the unpackaged build and pinned Sysmon provisioning. Initial calibration stopped on a missing or ambiguous fixture process binding before app launch. The job **FAILED** and produced no new audit verdicts. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-follow-up-blocked-at-initial-sysmon-calibration).
+
 ## 14 November 2026 | Sysmon identical exit records can be replayed
 
 The N12 parser accepts identical exit payloads on distinct ascending channel records and blocks conflicting process evidence. Generated checks passed. The prior hosted result remains failed and the follow-up diagnostics remain unverified. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--sysmon-identical-exit-records-can-be-replayed).
