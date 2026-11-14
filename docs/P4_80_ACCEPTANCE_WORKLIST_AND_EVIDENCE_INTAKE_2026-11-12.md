@@ -57,6 +57,10 @@ This conservative baseline beats the hosted SmolLM2 attempt on the original ques
 
 ## C. R06 non-intrusive incident evidence intake
 
+**14 November read-only review at `e4354fd`.** The repository and QA Issues #2 and #9 contain no supplied incident-time record linking an original-file write to a process. The historical writer is **unrecoverable from the reviewed evidence**. Availability of such a record elsewhere remains unknown. The owner comparator found 30 added, 40 modified and 4 missing files, with zero detected file differences under the original project-store `data/` subtree. All 74 differences were classified by path patterns. See the [owner comparator](./P4_24_STORAGE_DRIFT_ISOLATION_SOURCE_VERIFICATION_2026-11-11.md#new-owner-windows-evidence--11-november-2026).
+
+The later [owner WebView2 observation](./P4_25_WEBVIEW_PROFILE_PROCESS_OBSERVATION_2026-11-11.md) classified six process flags under the QA root and zero under the original root at the time of observation. The [latest N12 controls](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-pre-opened-handle-path-validation) verified generated write-handle paths in an isolated hosted fixture. Strict trace coverage remained blocked. Neither observation covers the historical incident window. **R06 stays open, with the historical strict failure retained.** Reopen attribution only if an independent incident-time record becomes available. A separately approved, source-matched prospective test can establish isolation for its own window using trusted before/after fingerprints and attributable writes. Carry that evidence to an explicit owner disposition of R06.
+
 **Known reference, do not change:** original backup MATCH; old production EXE MATCH; original `data/` subtree scoped file comparison 0 difference; entire original app-data tree **FAIL** (320 reference files, 346 observed, 74 file differences), observed 74 path-pattern-based WebView/cache *candidates*, historical writer **UNKNOWN**. None of the folder names proves harmlessness or writer identity.
 
 **Only optional owner evidence already created at the time of the incident:**
