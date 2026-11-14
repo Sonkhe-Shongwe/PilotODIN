@@ -339,13 +339,24 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if kind in {16, 17, 18, 19, 23, 29}:
                 tid = number(data.get("IssuingThreadId", data.get("ThreadId")))
                 owner = thread_owners.get(tid)
+                owner_pid, owner_birth = None, None
                 if owner is not None and active.get(owner[0]) == owner[1]:
-                    thread_context = "lifecycle-owner-header-agrees" if pid == owner[0] else "lifecycle-owner-header-differs"
+                    owner_pid, owner_birth = owner
+                    thread_context = "lifecycle-owner-header-agrees" if pid == owner_pid else "lifecycle-owner-header-differs"
                 elif thread_bookends is not None and tid in thread_bookends:
-                    thread_context = "bookend-owner-header-agrees" if pid == thread_bookends[tid] else "bookend-owner-header-differs"
+                    owner_pid = thread_bookends[tid]
+                    owner_birth = active.get(owner_pid)
+                    thread_context = "bookend-owner-header-agrees" if pid == owner_pid else "bookend-owner-header-differs"
                 else:
                     thread_context = "missing-thread-id" if not tid else "thread-owner-unavailable"
                 details[f"{actor}:event-{kind}:{operation}:thread-context-{thread_context}"] += 1
+                if owner_pid is not None:
+                    owner_actor, owner_identity = classify_process(owner_pid, owner_birth, ticks)
+                    owner_label = (
+                        owner_identity if owner_actor == "other" and owner_identity
+                        else owner_actor
+                    )
+                    details[f"{actor}:event-{kind}:{operation}:issuing-thread-owner-{owner_label}"] += 1
         if not irp or not object_id:
             if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1

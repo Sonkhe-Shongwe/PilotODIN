@@ -773,6 +773,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          "decoder": "tdh+raw-schema"},
         {"key": "0x31", "path": r"\\Device\\HarddiskVolume3\\QA\\synthetic-protected\\resized.bin",
          "decoder": "tdh+raw-schema"},
+        {"key": "0x32", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\etw-started.bin",
+         "decoder": "tdh+raw-schema"},
     ]
     rundown_payload = ("".join(json.dumps(entry) + "\n" for entry in rundown_entries)).encode()
     rundown_path.write_bytes(rundown_payload)
@@ -883,6 +885,19 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     # FSCTL_READ_USN_JOURNAL is a documented read-only query, even without a rundown path.
     emit(23, 99, unrelated_ticks + 11, FileObject=108, Irp=9, FileKey="0x30", InfoClass=0x900BB)
     emit(24, 0, unrelated_ticks + 12, Irp=9, Status=0)
+    # Kernel ProcessStart header context can be the parent. Use ProcessID/ImageFileName in event data.
+    rows.append({
+        "id": 1, "pid": 10, "ticks": unrelated_ticks + 16, "lifecycle": True,
+        "data": {"ProcessID": 98, "ImageFileName": r"C:\Windows\System32\etw-writer.exe"},
+    })
+    rows.append({
+        "id": 3, "pid": 10, "ticks": unrelated_ticks + 17, "lifecycle": True,
+        "data": {"ProcessID": 98, "ThreadID": 98},
+    })
+    emit(16, 98, unrelated_ticks + 18, FileObject=110, Irp=11, FileKey="0x32",
+         IOSize=22, ByteOffset=0, IssuingThreadId=98)
+    emit(24, 0, unrelated_ticks + 19, Irp=11, Status=0)
+
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -902,9 +917,15 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_event_types"]["other:event-17:resize:process-context-stable-bookend"] == 1
     assert report["protected_writer_processes"]["protected-writer:other-writer.exe:write"] == 1
     assert report["protected_writer_processes"]["protected-writer:other-writer.exe:compression"] == 1
-    assert report["unrelated_file_violations"]["protected:other:write"] == 1
+    assert report["protected_writer_processes"]["protected-writer:etw-writer.exe:write"] == 1
+    assert report["other_process_image_events"]["other:event-16:process-image-etw-writer.exe"] == 1
+    assert report["issuing_thread_owner_images"]["other:event-16:write:issuing-thread-owner-etw-writer.exe"] == 1
+    assert report["rundown_invalidation_events"]["other:event-17:resize:rundown-invalidated-by-event-14:FileKey"] == 1
+    assert report["unrelated_file_violations"]["protected:other:write"] == 2
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
     assert "other-writer.exe" in json.dumps(report["protected_writer_processes"])
+    assert "etw-writer.exe" in json.dumps(report["protected_writer_processes"])
+    assert "Windows" not in result.stdout
     assert "synthetic-protected" not in result.stdout
     assert not any("fsctl-0x000900A8" in key for key in report["unrelated_unresolved_event_types"])
     assert not any("fsctl-0x0009009C" in key for key in report["unrelated_unresolved_event_types"])

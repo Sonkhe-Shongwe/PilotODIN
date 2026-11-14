@@ -554,6 +554,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       details=None, process_bookends=None, thread_bookends=None, rundown=None,
                       synthetic_process_roles=None, synthetic_process_births=None,
                       process_bookend_births=None, process_bookend_names=None,
+                      process_event_images=None,
                       rundown_recovered_keys=None, rundown_invalidations=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
@@ -582,6 +583,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             process = candidates[0]
             role = roles.get(process.guid, "other")
             identity = process.guid if role != "other" else (
+                (process_event_images or {}).get((pid, birth)) or
                 (process_bookend_names or {}).get(pid) or ntpath.basename(process.image).casefold()
             )
             return role, identity
@@ -590,7 +592,9 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                (process.end is None or ticks <= utc_ticks(process.end) + tolerance)
                for process in lifetimes.get(pid, ())):
             return "unattributed", None
-        return "other", (process_bookend_names or {}).get(pid)
+        return "other", (
+            (process_event_images or {}).get((pid, birth)) or (process_bookend_names or {}).get(pid)
+        )
 
     initial_process_births = dict(process_bookend_births or {})
     initial_process_births.update(synthetic_process_births or {})
@@ -987,12 +991,12 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
             continue
         data = event["data"]
         if event["id"] in (1, 2):
-            process_id = number(data.get("ProcessID"))
+            process_id = number(data.get("ProcessID", data.get("ProcessId")))
             lifecycle_pids.add(process_id)
             if process_id == pid:
                 raise EvidenceValidationError("pre-opened control process has an in-capture lifecycle transition")
         if event["id"] in (3, 4):
-            thread_id = number(data.get("ThreadID"))
+            thread_id = number(data.get("ThreadID", data.get("TThreadId")))
             lifecycle_tids.add(thread_id)
             if thread_id == tid:
                 raise EvidenceValidationError("pre-opened control thread has an in-capture lifecycle transition")
@@ -1007,6 +1011,17 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
     bookend_names = {process_id: item["name"]
                      for process_id, item in stable_processes.items()
                      if process_id != pid and item["name"]}
+    process_event_images = {}
+    for event in event_records:
+        if not event["lifecycle"] or event["id"] != 1:
+            continue
+        data = event["data"]
+        process_id = number(data.get("ProcessID", data.get("ProcessId")))
+        image = data.get("ImageFileName") or data.get("ImageName")
+        if type(process_id) is int and process_id >= 0 and isinstance(image, str) and image.strip():
+            basename = ntpath.basename(image.strip()).casefold()
+            if basename:
+                process_event_images[(process_id, event["ticks"])] = basename
 
     control_keys = {}
     target_report = preopened_report(capture, event_records, rundown, file_keys=control_keys)
@@ -1035,6 +1050,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         thread_bookends=stable_threads,
         process_bookend_births=bookend_births,
         process_bookend_names=bookend_names,
+        process_event_images=process_event_images,
         rundown_recovered_keys=recovered_keys,
         rundown_invalidations=invalidations,
     )
@@ -1090,6 +1106,16 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "unrelated_unresolved_event_types": unrelated_unresolved_event_types,
         "protected_writer_processes": {
             key: value for key, value in details.items() if key.startswith("protected-writer:")
+        },
+        "other_process_image_events": {
+            key: value for key, value in details.items()
+            if key.startswith("other:") and ":process-image-" in key
+        },
+        "issuing_thread_owner_images": {
+            key: value for key, value in details.items() if ":issuing-thread-owner-" in key
+        },
+        "rundown_invalidation_events": {
+            key: value for key, value in details.items() if ":rundown-invalidated-by-" in key
         },
         "stable_process_bookends": len(stable_process_pids or ()),
         "stable_thread_bookends": len(stable_threads or {}),
