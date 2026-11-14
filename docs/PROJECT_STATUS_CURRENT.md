@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 file lifetime evidence
+
+Two hosted captures matched the generated in-trace open, write and Cleanup on the same FileObject. A matching Close was unobserved in both, so the lifetime control remains **BLOCKED**. Among 42 successful writes with unresolved paths per capture, 27 and 29 respectively followed a name invalidation from Cleanup on a different FileObject sharing the FileKey. Both pre-opened controls passed and global strict coverage remains **BLOCKED**. [Exact-source results and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-file-lifetime-controls-and-name-invalidations).
+
 ## 14 November 2026 | N12 write path evidence
 
 Two hosted Windows fixtures classified the available request-time evidence for 120 and 69 successful writes with unresolved paths. Invalidated names accounted for 107 and 44 respectively. Both fixtures passed the pre-opened controls and retained unrelated protected-root write and resize violations. Global strict coverage remains **BLOCKED** and N12 **PARTIAL**. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-successful-writes-with-unresolved-paths)
