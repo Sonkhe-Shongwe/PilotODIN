@@ -474,7 +474,53 @@ def test_basic_info_control_requires_a_successful_class_4_completion(metadata_st
     report = file_lifetime_report(control, events, {})
     assert report["timestamp_trace"] == expected
     assert report["first_blocking_operation"] == "event-17-info-4"
+    assert report["class_4_path_trial"] == {
+        "status": expected, "reason": None if expected == "PASS" else "possible-name-change",
+    }
     assert report["status"] == "BLOCKED"
+
+
+@pytest.mark.parametrize(("later_event", "trial_outcome"), [
+    (None, "candidate-protected"),
+    ("rename", "event-27"),
+    ("name-conflict", "conflicting-or-unmapped-name"),
+    ("cleanup", "file-object-lifetime-changed"),
+    ("tied-completion", "event-17-info-4"),
+    ("failed-completion", "event-17-info-4"),
+])
+def test_class_4_trial_keeps_strict_metadata_and_write_accounting(later_event, trial_outcome):
+    path = r"c:\fixture\metadata.bin"
+    events = []
+
+    def emit(kind, ticks, pid=7, **data):
+        events.append({"id": kind, "ticks": ticks, "pid": pid, "lifecycle": False, "data": data})
+
+    emit(12, 2, FileName=path, FileObject=51, Irp=1)
+    emit(24, 3, Irp=1, Status=0, ExtraInformation=1)
+    emit(17, 4, InfoClass=4, FileObject=51, FileKey=60, Irp=2)
+    emit(24, 8 if later_event == "tied-completion" else 5, Irp=2,
+         Status=0xC0000022 if later_event == "failed-completion" else 0)
+    if later_event == "rename":
+        emit(27, 6, FileObject=52, FileKey=60)
+    if later_event == "name-conflict":
+        emit(10, 6, FileKey=60, FileName=r"c:\other\different.bin")
+    if later_event == "cleanup":
+        emit(13, 6, FileObject=51, FileKey=60)
+    emit(16, 8, pid=4, FileObject=51, FileKey=60, Irp=3)
+    emit(24, 9, Irp=3, Status=0)
+    details = Counter()
+    records = []
+    unresolved = correlate_requests(
+        events, lambda value: value or None, lambda *args: ("other", None),
+        lambda value: value == path, lambda *args: records.append(args),
+        strict=True, details=details, initial_process_births={4: 0, 7: 0},
+    )
+    assert unresolved["other:write:path-missing"] == 1
+    assert details["write-gap-name-change-event:event-17-info-4"] == 1
+    assert details[f"write-gap-class-4-trial:{trial_outcome}"] == 1
+    assert [record[2] for record in records if record[-1]] == (
+        [] if later_event == "failed-completion" else ["unsupported"]
+    )
 
 
 def test_two_handle_fixture_verifies_the_second_handle_after_closing_first(tmp_path, monkeypatch):

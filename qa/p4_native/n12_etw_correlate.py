@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 # Microsoft FSCTL codes observed in the Kernel-File Event 23 InfoClass field.
+FILE_BASIC_INFORMATION = 4
 FSCTL_GET_REPARSE_POINT = 0x000900A8  # Retrieves reparse-point data; read-only.
 FSCTL_GET_OBJECT_ID = 0x0009009C  # Retrieves an existing object identifier; read-only.
 FSCTL_READ_USN_JOURNAL = 0x000900BB  # Reads USN change-journal records; read-only.
@@ -492,14 +493,17 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             flag(actor, f"{operation}:completion-missing", event_id, info_class)
     if write_gaps:
         name_change_events = Counter()
+        class_4_outcomes = Counter()
         evidence = summarize_write_gap_open_evidence(
             ordered_events, write_gaps, opens_with_process_lifetime, resolve_path, tracked,
-            name_change_events,
+            name_change_events, class_4_outcomes,
         )
         for outcome, count in evidence.items():
             details[f"write-gap-open-evidence:{outcome}"] += count
         for event_label, count in name_change_events.items():
             details[f"write-gap-name-change-event:{event_label}"] += count
+        for outcome, count in class_4_outcomes.items():
+            details[f"write-gap-class-4-trial:{outcome}"] += count
     return unresolved
 
 
@@ -665,7 +669,7 @@ def check_write_object_path(events, opened, write, write_completed, expected, de
 
 
 def write_object_path_conflict(events, opened, open_completed, write, write_completed,
-                               expected, resolve_path):
+                               expected, resolve_path, *, basic_info_completion=None):
     object_id = number(write["data"].get("FileObject"))
     key = number(write["data"].get("FileKey"))
     names = set()
@@ -691,7 +695,15 @@ def write_object_path_conflict(events, opened, open_completed, write, write_comp
         lifecycle_boundary = kind == 12 and same_object
         lifecycle_boundary |= kind in {13, 14} and (same_object or not file_object)
         name_mutation = kind in {11, 18, 19, 26, 27, 28, 29}
-        name_mutation |= kind == 17 and number(data.get("InfoClass")) not in {19, 20}
+        if kind == 17:
+            info_class = number(data.get("InfoClass"))
+            name_mutation = info_class not in {19, 20}
+            # FileBasicInformation sets timestamps and attributes. This trial
+            # accepts only an ordered, successful operation before the write.
+            if (info_class == FILE_BASIC_INFORMATION and basic_info_completion is not None
+                    and open_completed < ticks < write["ticks"]
+                    and basic_info_completion(event) is not None):
+                name_mutation = False
         name_mutation |= kind == 23 and number(data.get("InfoClass")) not in {
             FSCTL_GET_REPARSE_POINT, FSCTL_GET_OBJECT_ID, FSCTL_READ_USN_JOURNAL, FSCTL_SET_COMPRESSION,
         }
@@ -718,7 +730,7 @@ def name_change_event_label(event):
 
 
 def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked,
-                                      name_change_events):
+                                      name_change_events, class_4_outcomes):
     """Count evidence for unresolved writes without using it to classify them."""
     by_object, by_key, by_irp, process_transitions = (defaultdict(list) for _ in range(4))
     for event in events:
@@ -768,13 +780,27 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
             return "write-completion-unverified"
 
         relevant_events = {id(event): event for event in object_events + by_key[key]}
+        related = sorted(relevant_events.values(), key=lambda event: event["ticks"])
+        candidate = "candidate-protected" if tracked(path) else "candidate-outside-protected"
         reason, event = write_object_path_conflict(
-            sorted(relevant_events.values(), key=lambda event: event["ticks"]),
-            opened, open_completed, write, completed, path, resolve_path,
+            related, opened, open_completed, write, completed, path, resolve_path,
         )
         if reason == "possible-name-change":
             name_change_events[name_change_event_label(event)] += 1
-        return reason or ("candidate-protected" if tracked(path) else "candidate-outside-protected")
+            if event["id"] == 17 and number(event["data"].get("InfoClass")) == FILE_BASIC_INFORMATION:
+                def completion(request):
+                    return successful_completion(
+                        by_irp[number(request["data"].get("Irp"))], request, write["ticks"],
+                    )
+
+                remaining, blocker = write_object_path_conflict(
+                    related, opened, open_completed, write, completed, path, resolve_path,
+                    basic_info_completion=completion,
+                )
+                if remaining == "possible-name-change":
+                    remaining = name_change_event_label(blocker)
+                class_4_outcomes[remaining or candidate] += 1
+        return reason or candidate
 
     return Counter(evaluate(write, completed) for write, completed in gaps)
 
@@ -856,10 +882,12 @@ def file_lifetime_report(control, events, devices):
         metadata = [event for event in lifetime if event["id"] == 17
                     and event["pid"] == control["pid"]
                     and open_completed < event["ticks"] < write["ticks"]
-                    and number(event["data"].get("InfoClass")) == 4]
+                    and number(event["data"].get("InfoClass")) == FILE_BASIC_INFORMATION]
+        def completion(request):
+            return successful_completion(file_events, request, write["ticks"])
+
         result["timestamp_trace"] = (
-            "PASS" if len(metadata) == 1 and successful_completion(file_events, metadata[0], write["ticks"])
-            is not None else "BLOCKED"
+            "PASS" if len(metadata) == 1 and completion(metadata[0]) is not None else "BLOCKED"
         )
         reason, blocker = write_object_path_conflict(
             file_events, opened, open_completed, write, write_completed, expected,
@@ -868,6 +896,11 @@ def file_lifetime_report(control, events, devices):
         result["first_blocking_operation"] = (
             name_change_event_label(blocker) if reason == "possible-name-change" else reason
         )
+        remaining, _ = write_object_path_conflict(
+            file_events, opened, open_completed, write, write_completed, expected,
+            lambda value: canonical_file_path(value, devices), basic_info_completion=completion,
+        )
+        result["class_4_path_trial"] = {"status": "BLOCKED" if remaining else "PASS", "reason": remaining}
     if two_handles:
         second_boundary_before_completion = any(
             event["id"] in {12, 13, 14} and opened["ticks"] < event["ticks"] <= write_completed

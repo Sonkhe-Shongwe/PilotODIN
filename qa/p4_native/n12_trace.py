@@ -1081,6 +1081,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         not key.startswith("write-name-invalidation:") and
         not key.startswith("write-gap-open-evidence:") and
         not key.startswith("write-gap-name-change-event:") and
+        not key.startswith("write-gap-class-4-trial:") and
         not key.endswith(":rundown-path-recovered")
     }
     expected_control_violations = {"protected:preopened-control:write": 1}
@@ -1142,6 +1143,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "unresolved_write_name_change_events": {
             key.removeprefix("write-gap-name-change-event:"): value for key, value in details.items()
             if key.startswith("write-gap-name-change-event:")
+        },
+        "unresolved_write_class_4_trial": {
+            key.removeprefix("write-gap-class-4-trial:"): value for key, value in details.items()
+            if key.startswith("write-gap-class-4-trial:")
         },
         "protected_writer_processes": {
             key: value for key, value in details.items()
