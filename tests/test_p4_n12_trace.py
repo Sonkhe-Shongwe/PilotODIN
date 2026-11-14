@@ -2001,7 +2001,9 @@ def test_missing_records_and_calibration_block_a_clean_result(tmp_path):
 
 def test_missing_exit_blocks_coverage(tmp_path):
     evidence = Evidence()
-    evidence.events.remove((48, 5, {"ProcessGuid": "app2"}))
+    exit_event = next(event for event in evidence.events
+                      if event[1] == 5 and event[2]["ProcessGuid"] == "app2")
+    evidence.events.remove(exit_event)
     report = evidence.report(tmp_path)
     assert "process-exit-missing" in report["coverage_issues"]
     assert "app-lifecycle-does-not-match-journey" in report["coverage_issues"]
