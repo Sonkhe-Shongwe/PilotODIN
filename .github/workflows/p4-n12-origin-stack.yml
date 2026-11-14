@@ -12,7 +12,8 @@ permissions:
 
 jobs:
   origin-stack:
-    if: github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): run approved N12 origin stack capture'
+    if: >-
+      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): run approved N12 origin stack capture'
     name: Capture generated N12 write and resize stacks
     runs-on: windows-latest
     timeout-minutes: 15
