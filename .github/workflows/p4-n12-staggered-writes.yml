@@ -13,7 +13,7 @@ permissions:
 jobs:
   staggered-writes:
     if: >-
-      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): run one approved N12 staggered capture'
+      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): run approved N12 trace match diagnostics'
     name: Compare generated staggered writes on hosted Windows
     runs-on: windows-latest
     timeout-minutes: 15
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout the approved capture source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 45380b6da3239cef01385d1072fc46deebef4573
+          ref: ef4cd8474318ca4dd967d366c33f8653322768e0
           persist-credentials: false
 
       - name: Capture generated writes and compare paging ranges
