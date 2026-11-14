@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 unresolved-write open evidence
+
+Neither hosted capture produced a same-object open candidate that passed every check. The diagnostic counted 49 and 50 successful unresolved writes. Possible name changes blocked 42 and 36 respectively. Strict coverage remains **BLOCKED** and N12 **PARTIAL**. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-same-object-evidence-for-unresolved-writes).
+
 ## 14 November 2026 | N12 same-object write path control
 
 The hosted overlapping-handle fixture verified its controlled write path through the write object's successful open after a different object's Cleanup invalidated the shared name candidate. The full lifetime check still lacks a matching Close. Global strict coverage remains **BLOCKED** and N12 **PARTIAL**. [Exact-source evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-write-path-evidence-from-the-same-file-object).
