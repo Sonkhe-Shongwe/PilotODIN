@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 basic file information path evidence
+
+The first-operation counts identified Event 17 class 4 as the only possible path-change blocker in two hosted captures. A separate Windows timestamp control reproduced class 4 on the write's FileObject and verified the same handle path before and after SetFileTime. The existing path guard remains in force, strict coverage **BLOCKED** and N12 **PARTIAL**. [Exact-source results](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-basic-file-information-path-control).
+
 ## 14 November 2026 | N12 unresolved-write open evidence
 
 Neither hosted capture produced a same-object open candidate that passed every check. The diagnostic counted 49 and 50 successful unresolved writes. Possible name changes blocked 42 and 36 respectively. Strict coverage remains **BLOCKED** and N12 **PARTIAL**. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-same-object-evidence-for-unresolved-writes).
