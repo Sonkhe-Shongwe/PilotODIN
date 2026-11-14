@@ -997,15 +997,24 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
                            if key.startswith("preopened-control:")}
     unrelated_unresolved = {key: value for key, value in unresolved.items()
                             if not key.startswith("preopened-control:")}
-    expected_violations = {"protected:preopened-control:write": 1}
+    expected_control_violations = {"protected:preopened-control:write": 1}
+    control_violations = {
+        key: value for key, value in violations.items()
+        if key.startswith("protected:preopened-control:") or
+        key.startswith("outside-scope:preopened-control:")
+    }
+    unrelated_file_violations = {
+        key: value for key, value in violations.items()
+        if key not in expected_control_violations
+    }
     non_mutation_issues = set(issues) - {"etw-mutation-coverage-unresolved"}
     control_failures = []
     if recovered_control_keys != {"protected", "outside"}:
         control_failures.append("strict-rundown-key-not-recovered")
     if unresolved_controls:
         control_failures.append("preopened-control-unresolved")
-    if violations != expected_violations:
-        control_failures.append("protected-outside-classification-mismatch")
+    if control_violations != expected_control_violations:
+        control_failures.append("protected-outside-control-classification-mismatch")
     if counts.get("preopened-control:write") != 2:
         control_failures.append("preopened-write-count-mismatch")
     if non_mutation_issues:
@@ -1024,6 +1033,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
         "coverage_issues": sorted(issues),
         "file_events": dict(counts),
         "file_violations": dict(violations),
+        "unrelated_file_violations": unrelated_file_violations,
         "unresolved_controls": unresolved_controls,
         "unrelated_unresolved_mutations": unrelated_unresolved,
         "rundown_control_keys_recovered": len(recovered_control_keys),

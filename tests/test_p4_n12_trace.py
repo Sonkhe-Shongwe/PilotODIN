@@ -763,6 +763,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          "decoder": "tdh+raw-schema"},
         {"key": "0x29", "path": r"\Device\HarddiskVolume3\QA\outside.bin",
          "decoder": "tdh+raw-schema"},
+        {"key": "0x2b", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\unrelated.bin",
+         "decoder": "tdh+raw-schema"},
     ]
     rundown_payload = ("".join(json.dumps(entry) + "\n" for entry in rundown_entries)).encode()
     rundown_path.write_bytes(rundown_payload)
@@ -815,6 +817,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["rundown_control_keys_recovered"] == 2
     assert report["file_events"]["preopened-control:write"] == 2
     assert report["file_violations"] == {"protected:preopened-control:write": 1}
+    assert report["unrelated_file_violations"] == {}
     assert report["unresolved_controls"] == {}
     assert report["unrelated_unresolved_mutations"] == {}
     assert all(target["completion"] == "success" and target["issuing_thread"] == "matches"
@@ -822,10 +825,17 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
                for target in report["targets"].values())
     assert protected_path not in result.stdout and outside_path not in result.stdout
 
-    # A separate unresolved unsupported mutation remains a global strict blocker.
+    # An unrelated protected write and an unsupported mutation remain global blockers.
+    unrelated_name_ticks = base_ticks + 55_000_000
+    unrelated_write_ticks = base_ticks + 56_000_000
+    emit(10, 99, unrelated_name_ticks, FileKey="0x2b",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\unrelated.bin")
+    emit(16, 99, unrelated_write_ticks, FileObject=102, Irp=3, FileKey="0x2b",
+         IOSize=31, ByteOffset=0, IssuingThreadId=88)
+    emit(24, 0, unrelated_write_ticks + 1, Irp=3, Status=0)
     unrelated_ticks = base_ticks + 60_000_000
-    emit(17, 99, unrelated_ticks, FileObject=102, Irp=3, FileKey="0x2a", InfoClass=4)
-    emit(24, 0, unrelated_ticks + 1, Irp=3, Status=0)
+    emit(17, 99, unrelated_ticks, FileObject=103, Irp=4, FileKey="0x2a", InfoClass=4)
+    emit(24, 0, unrelated_ticks + 1, Irp=4, Status=0)
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -833,6 +843,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["strict_coverage"] == "BLOCKED"
     assert "etw-mutation-coverage-unresolved" in report["coverage_issues"]
     assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 1
+    assert report["unrelated_file_violations"]["protected:other:write"] == 1
     assert report["unresolved_controls"] == {}
 
     # A conflicting NameCreate cannot override the digest-pinned rundown.
