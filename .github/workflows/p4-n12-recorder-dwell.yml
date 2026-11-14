@@ -1,0 +1,30 @@
+name: P4 N12 Recorder Stop Timing Comparison
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-n12-recorder-dwell.yml
+
+permissions:
+  contents: read
+
+jobs:
+  recorder-dwell:
+    if: >-
+      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): observe N12 lazy writes before recorder stop'
+    name: Observe generated controls while the recorder stays active
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact capture source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Run calibrated generated-file recorder comparison
+        shell: pwsh
+        env:
+          PILOTODIN_N12_STOP_DWELL: '1'
+        run: ./qa/p4_research/n12_stack/Run.ps1

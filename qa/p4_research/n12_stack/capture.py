@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from contextlib import ExitStack
 from pathlib import Path
 from queue import Empty, Queue
@@ -18,6 +19,7 @@ RETAIN = 83
 FLUSHED_PAYLOAD = b"F" * 127
 STACKS = {"FileWrite", "FileSetInformation", "FileFlush"}
 KEYWORDS = {"ProcessThread", "Loader"}
+STOP_DWELL_SECONDS = 20
 
 
 def calibration(path):
@@ -199,8 +201,11 @@ def capture_with_handles(root, metadata_path, handles):
         def calibrate_and_stop():
             try:
                 calibrate()
+                if os.environ.get("PILOTODIN_N12_STOP_DWELL") == "1":
+                    start = probe.utc_ticks()
+                    time.sleep(STOP_DWELL_SECONDS)
+                    comparisons["stop_dwell_start"] = start
             finally:
-                # Record WPR's actual stop boundary after calibration.
                 comparisons["wpr_stop_start"] = probe.utc_ticks() // 10 * 10
                 stopped = stop()
             return stopped

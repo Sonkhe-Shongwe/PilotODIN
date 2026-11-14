@@ -289,8 +289,15 @@ def report(root, known, decoder, comparisons, symbol_targets):
     comparison = comparison_identities(capture, comparisons, events, devices, rundown_names,
                                        primary, companion_irps)
 
+    stop_start = capture["rundown_start_ticks"]
+    dwell_start = comparisons.get("stop_dwell_start")
+    writes = capture["preopened"]["writes"]
+    if dwell_start is not None and not (max(item["end"] for item in writes.values())
+                                        < dwell_start < stop_start):
+        raise ValueError("Invalid pre-stop dwell window.")
+
     def phase(ticks):
-        if ticks < capture["rundown_start_ticks"]:
+        if ticks < stop_start:
             return "before-wpr-stop"
         if ticks <= capture["rundown_stop_ticks"]:
             return "during-wpr-stop"
@@ -383,11 +390,24 @@ def report(root, known, decoder, comparisons, symbol_targets):
                 row = candidates[0]
                 symbol_frames = []
                 outcome = assess(row, 4, issuing, symbol_frames)
-                if label in {"protected", "outside"} and symbol_frames:
+                request_phase = phase(item["ticks"])
+                completion_phase = phase(completed_ticks)
+                outcome.update(request_phase=request_phase, completion_phase=completion_phase)
+                if dwell_start is not None:
+                    outcome.update(
+                        request_ms_from_stop=round((item["ticks"] - stop_start) / 10_000, 3),
+                        completion_ms_from_stop=round((completed_ticks - stop_start) / 10_000, 3),
+                    )
+                    if label in writes:
+                        outcome["request_ms_after_fixture_write_return"] = round(
+                            (item["ticks"] - writes[label]["end"]) / 10_000, 3,
+                        )
+                if label in writes and symbol_frames:
                     symbol_targets.append({"control": label, "operation": operation,
+                                           "request_phase": request_phase,
+                                           "completion_phase": completion_phase,
                                            "stack_frames": outcome["stack_frames"],
                                            "frames": symbol_frames})
-                outcome.update(request_phase=phase(item["ticks"]), completion_phase=phase(completed_ticks))
                 if opcode == 68:
                     outcome["paging_flag"] = bool(row.flags & 2)
                 result[operation].append(outcome)
@@ -411,6 +431,8 @@ def report(root, known, decoder, comparisons, symbol_targets):
             "classic_stack_references": len(classic["reference"]), "classic_file_requests": len(requests),
             "known_application_controls": calibrations, "calibrated": calibrated,
             "system_context": systems, "fixture_process_successful_writes": dict(fixture_writes),
+            "pre_stop_dwell_ms": (round((stop_start - dwell_start) / 10_000, 3)
+                                  if dwell_start is not None else None),
             "function_symbols": "not-resolved", "application_initiator": "unverified"}
 
 

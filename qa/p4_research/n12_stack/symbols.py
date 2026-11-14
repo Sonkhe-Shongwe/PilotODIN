@@ -249,6 +249,7 @@ def report(targets, work):
                 names.append({"frame": frame["frame"],
                               "functions": [f"{module}!{name}" for name in aliases]})
         stacks.append({"control": target["control"], "operation": target["operation"],
+                       "request_phase": target["request_phase"], "completion_phase": target["completion_phase"],
                        "stack_frames": target["stack_frames"], "resolved_frames": len(names),
                        "functions": names})
     return {"modules": statuses, "stacks": stacks}
