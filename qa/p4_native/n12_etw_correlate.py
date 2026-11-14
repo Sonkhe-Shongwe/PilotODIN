@@ -13,6 +13,7 @@ from pathlib import Path
 # Microsoft FSCTL codes observed in the Kernel-File Event 23 InfoClass field.
 FSCTL_GET_REPARSE_POINT = 0x000900A8  # Retrieves reparse-point data; read-only.
 FSCTL_GET_OBJECT_ID = 0x0009009C  # Retrieves an existing object identifier; read-only.
+FSCTL_READ_USN_JOURNAL = 0x000900BB  # Reads USN change-journal records; read-only.
 FSCTL_SET_COMPRESSION = 0x0009C040  # Changes a file/directory compression state.
 
 
@@ -224,7 +225,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         if kind == 23:
             if not strict:
                 operation = None
-            elif info_class in {FSCTL_GET_REPARSE_POINT, FSCTL_GET_OBJECT_ID}:
+            elif info_class in {FSCTL_GET_REPARSE_POINT, FSCTL_GET_OBJECT_ID, FSCTL_READ_USN_JOURNAL}:
                 operation = "query"
             elif info_class == FSCTL_SET_COMPRESSION:
                 operation = "compression"

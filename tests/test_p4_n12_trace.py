@@ -838,7 +838,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     unrelated_ticks = base_ticks + 60_000_000
     emit(17, 99, unrelated_ticks, FileObject=103, Irp=4, FileKey="0x2a", InfoClass=4)
     emit(24, 0, unrelated_ticks + 1, Irp=4, Status=0)
-    emit(23, 99, unrelated_ticks + 2, FileObject=104, Irp=5, FileKey="0x2c", InfoClass=0x900BB)
+    emit(23, 99, unrelated_ticks + 2, FileObject=104, Irp=5, FileKey="0x2c", InfoClass=0xDEADBEEF)
     emit(24, 0, unrelated_ticks + 3, Irp=5, Status=0)
     emit(23, 99, unrelated_ticks + 4, FileObject=105, Irp=6, FileKey="0x2d", InfoClass=0x9C040)
     emit(24, 0, unrelated_ticks + 5, Irp=6, Status=0)
@@ -848,6 +848,9 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     emit(24, 0, unrelated_ticks + 8, Irp=7, Status=0)
     emit(23, 99, unrelated_ticks + 9, FileObject=107, Irp=8, FileKey="0x2f", InfoClass=0x9009C)
     emit(24, 0, unrelated_ticks + 10, Irp=8, Status=0)
+    # FSCTL_READ_USN_JOURNAL is a documented read-only query, even without a rundown path.
+    emit(23, 99, unrelated_ticks + 11, FileObject=108, Irp=9, FileKey="0x30", InfoClass=0x900BB)
+    emit(24, 0, unrelated_ticks + 12, Irp=9, Status=0)
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -857,14 +860,15 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 2
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported-file-operation"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported:path-missing"] == 1
-    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:unsupported-file-operation"] == 1
-    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:unsupported:path-missing"] == 1
-    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:rundown-context-not-in-rundown"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:unsupported-file-operation"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:unsupported:path-missing"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:rundown-context-not-in-rundown"] == 1
     assert report["unrelated_unresolved_mutations"]["other:compression:process-lifetime-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 1
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
     assert not any("fsctl-0x000900A8" in key for key in report["unrelated_unresolved_event_types"])
     assert not any("fsctl-0x0009009C" in key for key in report["unrelated_unresolved_event_types"])
+    assert not any("fsctl-0x000900BB" in key for key in report["unrelated_unresolved_event_types"])
     assert report["unresolved_controls"] == {}
 
     # A conflicting NameCreate cannot override the digest-pinned rundown.

@@ -50,6 +50,16 @@ The audit checks ETW loss, export integrity, completion status, and both endpoin
 
 ### Strict file-key rundown input
 
+#### Event 23 FSCTL classification
+
+Kernel-File Event 23 exposes the FSCTL control code in `InfoClass`. The strict reducer uses a narrow, explicit classification:
+
+- `FSCTL_GET_REPARSE_POINT (0x000900A8)`, `FSCTL_GET_OBJECT_ID (0x0009009C)`, and `FSCTL_READ_USN_JOURNAL (0x000900BB)` are read-only queries and are excluded from mutation coverage.
+- `FSCTL_SET_COMPRESSION (0x0009C040)` is treated as a mutation.
+- Unknown FSCTL codes remain unsupported and keep strict coverage blocked. Do not add an allowlist entry without checking the documented operation semantics and adding a regression.
+
+Microsoft documents `FSCTL_READ_USN_JOURNAL` as retrieving USN change-journal records, rather than modifying the target file: [Win32 FSCTL_READ_USN_JOURNAL](https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_read_usn_journal). The control code is `0x000900BB`. The reducer still treats other unrecognised codes as unresolved.
+
 A full strict audit may supply the native stop-time FileIO rundown as a separate JSONL file. Keep the WPR ETL and decoded paths in the disposable runner's private temp directory. Run the native consumer against that ETL:
 
 ~~~powershell
