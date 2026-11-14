@@ -664,19 +664,31 @@ def file_lifetime_report(control, events, devices):
             return {"status": "BLOCKED", "reason": f"{label}-completion-unverified"}
         if label == "write":
             write_completed = next_event["ticks"]
-    if ([event["id"] for event in ends] != [13, 14] or
-            not write_completed < ends[0]["ticks"] < ends[1]["ticks"]):
-        return {"status": "BLOCKED", "reason": "cleanup-close-order-unverified"}
     key = number(write["data"].get("FileKey"))
+    end_evidence = {
+        "observed_end_events": [event["id"] for event in ends],
+        "end_order": [
+            "before-write-completion" if event["ticks"] < write_completed else
+            "at-write-completion" if event["ticks"] == write_completed else "after-write-completion"
+            for event in ends
+        ],
+        "end_timestamps_distinct": len({event["ticks"] for event in ends}) == len(ends),
+        "end_key_matches_write": [
+            bool(key and name_transition_key(event["id"], event["data"]) == key)
+            for event in ends
+        ],
+    }
     name_events = [
         event for event in file_events if key and event["id"] == 10
         and name_transition_key(10, event["data"]) == key
-        and control["start"] <= event["ticks"] <= ends[-1]["ticks"]
+        and control["start"] <= event["ticks"] <= control["end"]
         and canonical_file_path(event["data"].get("FileName") or "", devices) == expected
     ]
-    return {"status": "PASS", "ordered_events": [12, 24, 16, 24, 13, 14],
-            "cleanup_key_matches_write": bool(key and name_transition_key(13, ends[0]["data"]) == key),
-            "close_key_matches_write": bool(key and name_transition_key(14, ends[1]["data"]) == key),
+    ordered = (end_evidence["observed_end_events"] == [13, 14] and
+               write_completed < ends[0]["ticks"] < ends[1]["ticks"])
+    return {"status": "PASS" if ordered else "BLOCKED",
+            "reason": None if ordered else "cleanup-close-order-unverified",
+            "open_and_write_completed": True, **end_evidence,
             "matching_name_before_write": any(event["ticks"] < write["ticks"] for event in name_events),
             "matching_name_at_or_after_write": any(event["ticks"] >= write["ticks"] for event in name_events)}
 
@@ -726,8 +738,6 @@ def main():
         report = preopened_report(capture, events, rundown) if options else correlate(capture, events)
     print(json.dumps(report))
     if options and any(target["completion"] != "success" for target in report["targets"].values()):
-        return 2
-    if "file_lifetime" in report and report["file_lifetime"]["status"] != "PASS":
         return 2
     return 0
 

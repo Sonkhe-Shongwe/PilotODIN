@@ -249,6 +249,7 @@ def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names()
     (None, None),
     ("reused-object", "write-missing-or-ambiguous"),
     ("cleanup-other-object", "cleanup-close-order-unverified"),
+    ("tied-end-events", "cleanup-close-order-unverified"),
     ("tied-open-completion", "open-completion-unverified"),
     ("failed-write", "write-completion-unverified"),
 ])
@@ -268,15 +269,23 @@ def test_generated_file_lifetime_requires_ordered_same_object_evidence(fault, re
     event(10, 6, FileName=path, FileKey=60)
     event(24, 7, Irp=2, Status=0xC0000022 if fault == "failed-write" else 0)
     event(13, 8, FileObject=51 if fault == "cleanup-other-object" else 50, FileKey=60)
-    event(14, 9, FileObject=50, FileKey=60)
+    event(14, 8 if fault == "tied-end-events" else 9, FileObject=50, FileKey=60)
 
     report = file_lifetime_report(control, events, {})
     if reason:
-        assert report == {"status": "BLOCKED", "reason": reason}
+        assert report["status"] == "BLOCKED"
+        assert report["reason"] == reason
+        if fault == "cleanup-other-object":
+            assert report["observed_end_events"] == [14]
+        if fault == "tied-end-events":
+            assert report["observed_end_events"] == [13, 14]
+            assert not report["end_timestamps_distinct"]
     else:
         assert report == {
-            "status": "PASS", "ordered_events": [12, 24, 16, 24, 13, 14],
-            "cleanup_key_matches_write": True, "close_key_matches_write": True,
+            "status": "PASS", "reason": None, "open_and_write_completed": True,
+            "observed_end_events": [13, 14],
+            "end_order": ["after-write-completion", "after-write-completion"],
+            "end_timestamps_distinct": True, "end_key_matches_write": [True, True],
             "matching_name_before_write": False, "matching_name_at_or_after_write": True,
         }
     assert "control.bin" not in json.dumps(report)
