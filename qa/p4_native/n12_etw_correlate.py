@@ -624,7 +624,7 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
             key = number(entry["key"])
             path = canonical_file_path(entry["path"], devices)
             rundown_names.setdefault(key, set()).add(path)
-    outcomes, identities = {}, {}
+    outcomes, identities, control_requests = {}, {}, {}
     for label in ("protected", "outside"):
         write = control["writes"][label]
         candidates = [
@@ -642,6 +642,7 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
         if len(candidates) != 1:
             continue
         request = candidates[0]
+        control_requests[label] = request
         data = request["data"]
         if number(data.get("IssuingThreadId", data.get("ThreadId"))) == control["tid"]:
             outcome["issuing_thread"] = "matches"
@@ -688,6 +689,9 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
     result = {"scope": "generated writes through pre-opened handles", "targets": outcomes}
     if rundown is not None:
         result["rundown_keys"] = len(rundown_names)
+        result["preopened_path_validation"] = preopened_path_validation(
+            events, devices, control_requests, outcomes, control["writes"],
+        )
     if rundown is not None and "untouched" in control:
         result["control_write_timing"] = control_write_timing(
             capture, events, devices, rundown_names, identities, outcomes,
@@ -947,7 +951,7 @@ def name_change_event_label(event):
 
 
 def no_open_write_path_evidence(write, completed, object_events, key_events, irp_events,
-                                resolve_path, tracked):
+                                resolve_path, classify_path):
     """Check an observed name lifetime on the request's key without assigning a writer."""
     ticks, data = write["ticks"], write["data"]
     key = number(data.get("FileKey"))
@@ -995,7 +999,52 @@ def no_open_write_path_evidence(write, completed, object_events, key_events, irp
         sorted(related.values(), key=lambda event: event["ticks"]), anchor, start,
         write, completed, path, resolve_path,
     )
-    return reason or ("candidate-protected" if tracked(path) else "candidate-outside-protected")
+    return reason or classify_path(path)
+
+
+def preopened_path_validation(events, devices, requests, outcomes, writes):
+    """Compare request-time candidates with exact fixture paths verified by Windows."""
+    file_events = [event for event in events if not event["lifecycle"]]
+
+    def resolve_path(value):
+        return canonical_file_path(value, devices)
+
+    report = {}
+    for label, outcome in outcomes.items():
+        if (outcome["issuing_thread"], outcome["completion"], outcome["rundown_name"]) != (
+            "matches", "success", "matches-target",
+        ):
+            report[label] = "control-request-unverified"
+            continue
+        request = requests[label]
+        data, ticks = request["data"], request["ticks"]
+        object_id, key = number(data.get("FileObject")), number(data.get("FileKey"))
+        if type(object_id) is not int or object_id <= 0:
+            report[label] = "control-object-unverified"
+            continue
+        object_events = [
+            event for event in file_events if event["id"] not in {10, 11}
+            and number(event["data"].get("FileObject")) == object_id
+        ]
+        if any(event["id"] == 12 and event["ticks"] <= ticks for event in object_events):
+            report[label] = "same-object-open-observed"
+            continue
+        irp = number(data.get("Irp"))
+        irp_events = [event for event in file_events if number(event["data"].get("Irp")) == irp]
+        completed = successful_completion(irp_events, request, file_events[-1]["ticks"] + 1)
+        if completed is None:
+            report[label] = "write-completion-unverified"
+            continue
+        key_events = [
+            event for event in file_events if event["id"] != 24
+            and (name_transition_key(event["id"], event["data"]) or number(event["data"].get("FileKey"))) == key
+        ]
+        expected = resolve_path(writes[label]["path"])
+        report[label] = no_open_write_path_evidence(
+            request, completed, object_events, key_events, irp_events, resolve_path,
+            lambda path: "matches-handle-path" if path == expected else "different-from-handle-path",
+        )
+    return report
 
 
 def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked,
@@ -1029,7 +1078,8 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
             no_open_contexts[capture_context] += 1
             outcome = no_open_write_path_evidence(
                 write, completed, object_events, by_key[number(data.get("FileKey"))],
-                by_irp[number(data.get("Irp"))], resolve_path, tracked,
+                by_irp[number(data.get("Irp"))], resolve_path,
+                lambda path: "candidate-protected" if tracked(path) else "candidate-outside-protected",
             )
             no_open_paths[(capture_context, outcome)] += 1
             return "no-observed-open"

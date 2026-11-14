@@ -290,6 +290,8 @@ if ($PreopenedControl) {
                 throw "Native rundown did not independently establish the $label control target."
             }
         }
+        Write-Host ('Pre-opened path validation: ' +
+            ($controlReport.preopened_path_validation | ConvertTo-Json -Compress))
         if ($SystemTiming) {
             $timing = $controlReport.control_write_timing
             if ($timing.protected.identity -ne 'file-key-and-object' -or

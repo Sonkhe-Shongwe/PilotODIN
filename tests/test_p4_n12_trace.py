@@ -879,6 +879,42 @@ def test_system_control_timing_tracks_only_matching_successful_requests(fault, i
         assert preopened_report(capture, events, without_comparison_name)["control_write_timing"] == result
 
 
+@pytest.mark.parametrize(("fault", "expected"), [
+    (None, "matches-handle-path"),
+    ("wrong-path", "different-from-handle-path"),
+    ("no-name", "no-prior-name-in-lifetime"),
+    ("same-object-open", "same-object-open-observed"),
+    ("tied-completion", "write-completion-unverified"),
+])
+def test_preopened_path_validation_compares_exact_paths(fault, expected):
+    protected, outside = r"C:\protected\private.bin", r"C:\outside.bin"
+    capture = {"device": r"\Device\HarddiskVolume3", "protected_root": r"C:\protected",
+               "preopened": {"pid": 7, "tid": 71, "writes": {
+                   "protected": {"path": protected, "size": 53, "start": 100, "end": 200},
+                   "outside": {"path": outside, "size": 79, "start": 300, "end": 400},
+               }}}
+    events = []
+
+    def emit(kind, ticks, **data):
+        events.append({"id": kind, "ticks": ticks, "pid": 7, "lifecycle": False, "data": data})
+
+    emit(12, 20, FileObject=41 if fault == "same-object-open" else 90, FileName=protected)
+    if fault != "no-name":
+        emit(10, 30, FileKey=40, FileName=r"C:\protected\alias.bin" if fault == "wrong-path" else protected)
+    emit(10, 31, FileKey=50, FileName=outside)
+    emit(16, 150, Irp=1, FileKey=40, FileObject=41, IOSize=53, ByteOffset=0, IssuingThreadId=71)
+    emit(24, 160, Irp=1, Status=0)
+    if fault == "tied-completion":
+        emit(24, 160, Irp=1, Status=0)
+    emit(16, 350, Irp=2, FileKey=50, FileObject=51, IOSize=79, ByteOffset=0, IssuingThreadId=71)
+    emit(24, 370, Irp=2, Status=0)
+    rundown = [{"key": 40, "path": protected}, {"key": 50, "path": outside}]
+
+    report = preopened_report(capture, events, rundown)
+    assert report["preopened_path_validation"] == {"protected": expected, "outside": "matches-handle-path"}
+    assert "private.bin" not in json.dumps(report)
+
+
 def test_preopened_control_requires_completion_and_does_not_infer_names():
     protected, outside = r"C:\protected\private.bin", r"C:\outside.bin"
     capture = {"device": r"\Device\HarddiskVolume3", "protected_root": r"C:\protected",

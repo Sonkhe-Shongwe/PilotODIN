@@ -207,6 +207,12 @@ def preopened_control(root, *, rundown=False, system_timing=False):
 
             def open_comparison():
                 nonlocal comparison_stream
+                # Open separate read-only handles while ETW is active. The
+                # write controls still use their original pre-capture handles.
+                for path, stream, _ in controls.values():
+                    verify_handle_path(stream, path)
+                    named_handle = stack.enter_context(path.open("rb", buffering=0))
+                    verify_handle_path(named_handle, path)
                 first = utc_ticks()
                 comparison_stream = stack.enter_context(comparison.open("rb", buffering=0))
                 open_window = [first, utc_ticks()]
@@ -242,6 +248,11 @@ def preopened_control(root, *, rundown=False, system_timing=False):
                                       controls=controls, before_stop=stop_wpr,
                                       open_comparison=open_comparison)
             if comparison_stream is not None:
+                for path, stream, payload in controls.values():
+                    verify_handle_path(stream, path)
+                    with path.open("rb", buffering=0) as reader:
+                        if reader.read() != payload:
+                            raise RuntimeError("The generated pre-opened write payload did not match.")
                 comparison_stream.seek(0)
                 if comparison_stream.read() != comparison_payload:
                     raise RuntimeError("The untouched comparison payload changed.")
