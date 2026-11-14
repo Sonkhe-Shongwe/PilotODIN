@@ -38,9 +38,14 @@ on:
       - tests/test_p4_consolidated_acceptance.py
       - tests/test_p4_phase_exit_matrix.py
       - tests/test_p4_native_acceptance_kit.py
+      - tests/test_p4_n12_app_build.py
+      - tests/test_p4_n12_app_journey.py
       - tests/test_p4_n12_trace.py
       - tests/test_p4_installer_provenance.py
       - qa/p4_native/**
+      - qa/p4_research/n12_app_build.py
+      - qa/p4_research/n12_app_journey.py
+      - qa/p4_research/Invoke_N12_Journey_Evidence.ps1
       - frontend/tests/p4-target-opportunities-contracts.test.cjs
       - frontend/package.json
       - frontend/scripts/p4-isolated-native-dev.mjs
@@ -54,6 +59,8 @@ on:
       - frontend/e2e/p4-preparation-request.mjs
       - frontend/e2e/p4-quality-version-transition.mjs
       - frontend/e2e/p4-71-native-webview-qa.mjs
+      - frontend/e2e/p4-n12-native-cases.mjs
+      - frontend/e2e/p4-n12-native-cases.test.mjs
       - frontend/e2e/p4-72-cdp-target-classifier.mjs
       - frontend/e2e/p4-72-cdp-target-classifier.test.mjs
       - frontend/e2e/p4-73-cdp-target-discovery.mjs
@@ -117,6 +124,8 @@ jobs:
           tests/test_p4_phase_exit_matrix.py
           tests/test_p4_native_acceptance_kit.py
           tests/test_p4_n12_trace.py
+          tests/test_p4_n12_app_build.py
+          tests/test_p4_n12_app_journey.py
           tests/test_p4_installer_provenance.py
       - name: Verify P4 source contracts and manual target choice
         run: >-
@@ -132,6 +141,7 @@ jobs:
           frontend/tests/p4-native-dev-isolation.test.cjs
           frontend/e2e/p4-72-cdp-target-classifier.test.mjs
           frontend/e2e/p4-73-cdp-target-discovery.test.mjs
+          frontend/e2e/p4-n12-native-cases.test.mjs
       - name: Build actual TypeScript and Vite bundle
         run: npm run build --prefix frontend
 

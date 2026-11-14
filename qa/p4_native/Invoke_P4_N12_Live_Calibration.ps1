@@ -1,6 +1,11 @@
 # Run only on the approved disposable GitHub-hosted Windows image.
 [CmdletBinding()]
-param([switch]$WithEtw)
+param(
+    [switch]$WithEtw,
+    [switch]$AppJourney,
+    [string]$SourceSha,
+    [string]$ExecutableSha256
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -9,6 +14,19 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows' -or
     $env:GITHUB_RUN_ATTEMPT -ne '1') {
     throw 'Live calibration requires the first run on disposable hosted Windows.'
+}
+
+if ($AppJourney) {
+    if (-not $WithEtw -or $env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or
+        $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV' -or
+        $SourceSha -cnotmatch '^[0-9a-f]{40}$' -or $SourceSha -cne $env:PILOTODIN_N12_APPROVED_SOURCE -or
+        $ExecutableSha256 -cnotmatch '^[0-9a-f]{64}$') {
+        throw 'The app journey requires its separate approval and staged binary identity.'
+    }
+    python -B -m qa.p4_research.n12_app_build verify --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+    if ($LASTEXITCODE -ne 0) { throw 'Staged build verification failed before Sysmon provisioning.' }
+} elseif ($SourceSha -or $ExecutableSha256) {
+    throw 'A staged build identity is only accepted in app journey mode.'
 }
 
 . (Join-Path $PSScriptRoot 'P4_N12_Collector_Process.ps1')
@@ -83,6 +101,11 @@ try {
     if (-not $WithEtw -and $clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
     $installStarted = $true
     Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
+    if ($AppJourney) {
+        python -B -m qa.p4_research.n12_app_journey --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        if ($LASTEXITCODE -ne 0) { throw 'The hosted app journey failed or returned blocked coverage.' }
+        return
+    }
     if ($WithEtw) {
         & (Join-Path $PSScriptRoot 'Test_P4_N12_ETW_Fixture.ps1') -WithSysmon
         return

@@ -17,6 +17,8 @@ TARGET = "x86_64-pc-windows-msvc"
 EXE = "pilotodin-desktop.exe"
 BRANCH = "feature/live-dev-workspace-20261023"
 QA_ID = "com.pilotodin.p4isolatednativedev"
+PEER_URL = "http://127.0.0.1:5173/index.html?n12-peer=1#/studio/overview"
+PEER_LABEL = "n12peer"
 PROTECTED_IDS = ("com.pilotodin.studio", "com.pilotodin.p4nativeqa")
 CONSENT = "I_APPROVE_UNPACKAGED_P4_NATIVE_DEV"
 
@@ -62,6 +64,16 @@ def isolated_config():
     require(not any((CRATE / name).exists() for name in (
         "tauri.windows.conf.json", "tauri.windows.conf.json5", "Tauri.windows.toml",
     )), "unexpected platform configuration override")
+    windows = isolated["app"]["windows"]
+    require(len(windows) == 1 and windows[0]["label"] == "main", "expected one reviewed main window")
+    windows.append({"label": PEER_LABEL, "title": "PilotODIN N12 lifecycle peer", "url": PEER_URL,
+                    "width": 780, "height": 620, "visible": False})
+    # Only the synthetic peer needs to close itself through IPC. Preserve the
+    # production main window's existing capabilities and native close handshake.
+    isolated["app"]["security"] = {"capabilities": ["default", {
+        "identifier": "n12-peer-close", "windows": [PEER_LABEL],
+        "permissions": ["core:window:allow-close"],
+    }]}
     return json.dumps(isolated, separators=(",", ":"))
 
 

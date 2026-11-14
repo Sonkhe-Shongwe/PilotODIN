@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {openP4FixtureWorkspace} from './p4-open-fixture-workspace.mjs';
 import {verifyPrepareFittedAcceptance} from './p4-prepare-fitted-acceptance.mjs';
 import {p4PreparationRequestUrl} from './p4-preparation-request.mjs';
+import {approveCompactQuality,matchesN12LifecycleRequest,verifyN12ArchiveDraft} from './p4-n12-native-cases.mjs';
 import {p4QualityFixture,verifyP4QualityAfterRelaunch,verifyP4QualityTransition} from './p4-quality-version-transition.mjs';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
@@ -30,7 +31,7 @@ test.afterEach(async()=>{
  if(backend){const owned=backend;backend=null;await stopDisposableBackend(owned)}
 });
 
-async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[],extraProjectIds:string[]=[],qualityWrites?:string[],extraReads:string[]=[]){
+async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allowedContextWrites?:string[],extraProjectIds:string[]=[],qualityWrites?:string[],extraReads:string[]=[],allowLifecycle?:(route:Route)=>boolean){
  const blocked:string[]=[];
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
@@ -54,6 +55,7 @@ async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allo
    qualityWrites.push(url.pathname);
    await route.continue();return;
   }
+  if(allowLifecycle?.(route)){await route.continue();return}
   blocked.push(method+' '+url.origin+url.pathname);
   await route.abort('blockedbyclient');
  });
@@ -925,7 +927,7 @@ test('P4-79 real HTTP: reopened experiment settings are read from saved record, 
   expect((await realProject.json()).experiments).toEqual([]);
  });
 
-test('P4 N11 real HTTP: Quality approval refreshes Prepare and survives a browser restart',async({playwright,request})=>{
+test('P4 N11 real HTTP: compact Quality approval refreshes Prepare, survives peer archive and browser restart',async({playwright,request})=>{
   if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
      process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
     throw Error('Trusted synthetic CI only');
@@ -948,18 +950,37 @@ test('P4 N11 real HTTP: Quality approval refreshes Prepare and survives a browse
   try{
     const context=await launch();
     try{
-      const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[initialId],writes);
       const [page]=context.pages();
+      const peer=await context.newPage();
+      let permit:{id:string;action:string;revision:number}|null=null;
+      const lifecycleWrites:string[]=[];
+      const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[initialId],writes,['/projects/manage'],route=>{
+        const outgoing=route.request();
+        if(!permit||!matchesN12LifecycleRequest(outgoing,API+'/api',permit)||outgoing.frame().page()!==peer)
+          return false;
+        lifecycleWrites.push(permit.action);
+        permit=null;
+        return true;
+      });
       await page.goto('/');
       await openP4FixtureWorkspace(page,UI,initialId);
       const chooser=page.getByRole('combobox',{name:'Switch project'});
       await expect(chooser).toHaveValue(initialId);
       await expect(page.getByRole('region',{name:'Potential prediction opportunities'})).toContainText('churn');
       await chooser.selectOption(projectId);
-      await verifyP4QualityTransition(page,API+'/api',projectId,async(url:string)=>{
+      await peer.goto('/index.html?n12-peer=1#/studio/overview');
+      const read=async(url:string)=>{
         const response=await request.get(url);
         return {status:response.status(),json:()=>response.json()};
+      };
+      await verifyP4QualityTransition(page,API+'/api',projectId,read,{reviewApproval:approveCompactQuality});
+      await verifyN12ArchiveDraft(page,peer,API+'/api',projectId,read,(approved:{id:string;action:string;revision:number})=>{
+        expect(permit).toBeNull();
+        permit=approved;
       });
+      expect(permit).toBeNull();
+      expect(lifecycleWrites).toEqual(['archive','restore']);
+      await peer.close();
       expect(writes).toEqual([
         `/api/projects/${projectId}/quality/proposals`,
         `/api/projects/${projectId}/quality/commit`,

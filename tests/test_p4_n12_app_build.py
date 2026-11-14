@@ -42,6 +42,14 @@ def test_staging_compiles_once_and_writes_provenance_for_the_same_binary(staged_
         config = json.loads(env["TAURI_CONFIG"])
         assert config["identifier"] == build.QA_ID
         assert config["bundle"] == {"active": False, "externalBin": [], "resources": []}
+        main, peer = config["app"]["windows"]
+        assert main["label"] == "main"
+        assert peer["label"] == build.PEER_LABEL and peer["url"] == build.PEER_URL
+        assert peer["visible"] is False
+        assert config["app"]["security"]["capabilities"] == ["default", {
+            "identifier": "n12-peer-close", "windows": [build.PEER_LABEL],
+            "permissions": ["core:window:allow-close"],
+        }]
         target_dir = Path(env["CARGO_TARGET_DIR"])
         binary = target_dir / build.TARGET / "debug" / build.EXE
         binary.parent.mkdir(parents=True)

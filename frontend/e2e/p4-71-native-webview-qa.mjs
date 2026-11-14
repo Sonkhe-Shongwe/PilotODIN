@@ -3,6 +3,7 @@ import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
 import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityAfterRelaunch, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
 import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
 import { dragWorkspaceTab, prepareWorkspaceTabDrag } from './p4-drag-workspace-tab.mjs';
+import { approveCompactQuality, closeN12Peer, findN12Peer, isN12Peer, matchesN12LifecycleRequest, verifyN12ArchiveDraft } from './p4-n12-native-cases.mjs';
 import { verifyPrepareFittedAcceptance } from './p4-prepare-fitted-acceptance.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -20,6 +21,7 @@ const API='http://127.0.0.1:8000/api';
 const SITE='http://127.0.0.1:5173';
 const mode=process.argv[2];
 const relaunch=mode==='--verify-relaunch';
+const n12Journey=process.env.PILOTODIN_N12_APP_JOURNEY_CONSENT==='I_APPROVE_ONE_N12_APP_JOURNEY';
 const dockingOnly=mode==='--verify-docking';
 const acceptance=mode==='--verify-acceptance';
 const fittedPrepare=mode==='--verify-fitted-prepare';
@@ -27,6 +29,7 @@ const receiptPath=join(process.env.PILOTODIN_HOME,'p4-synthetic-projects.json');
 const captureDir=join(process.env.PILOTODIN_HOME,'captures');
 if(process.argv.length!==(relaunch||dockingOnly||acceptance||fittedPrepare?3:2))throw Error('Unexpected QA probe arguments');
 const invokeDialog=fileURLToPath(new URL('../../qa/p4_native/Invoke_P4_Native_Project_Switch_Dialog.ps1',import.meta.url));
+const invokeStagedDialog=fileURLToPath(new URL('../../qa/p4_research/Invoke_N12_Journey_Evidence.ps1',import.meta.url));
 const execFileAsync=promisify(execFile);
 
 async function chooseNativeDialogAction(chooser, destination, action) {
@@ -34,7 +37,9 @@ async function chooseNativeDialogAction(chooser, destination, action) {
  await expect(chooser).toBeDisabled();
  try {
   const {stdout}=await execFileAsync('powershell.exe',[
-   '-NoProfile','-NonInteractive','-STA','-File',invokeDialog,'-Action',action,
+   '-NoProfile','-NonInteractive','-STA','-File',
+   ...(n12Journey?[invokeStagedDialog,'project-switch','-AppProcessId',process.env.P4_NATIVE_QA_APP_PID]:[invokeDialog]),
+   '-Action',action,
   ],{timeout:20000,windowsHide:true});
   console.log(stdout.trim());
  } catch (error) {
@@ -346,7 +351,7 @@ async function reportBlockedDiscovery() {
 async function runNativeProbe(browser) {
  // Require the development page and its callable Tauri bridge before creating fixtures.
  const discovered=await discoverUniqueDevPage(
-  ()=>browser.contexts().flatMap(context=>context.pages()),
+  ()=>browser.contexts().flatMap(context=>context.pages()).filter(page=>!n12Journey||!isN12Peer(page)),
   ()=>new Promise(resolve=>setTimeout(resolve,1500)),
   20
  );
@@ -361,6 +366,12 @@ async function runNativeProbe(browser) {
  const context=page.context();
  const ids={};
  const writes=[];
+ let lifecyclePermit=null;
+ const peer=n12Journey?await findN12Peer(context):null;
+ const permitLifecycleOnce=permit=>{
+  if(lifecyclePermit)throw Error('The preceding synthetic lifecycle request was not observed');
+  lifecyclePermit=permit;
+ };
  const blocked={external:0,unexpectedLocal:0,font:0};
  const reportTraffic=()=>{
   console.log('N12 intercepted WebView traffic '+JSON.stringify({writes,blocked}));
@@ -372,8 +383,14 @@ async function runNativeProbe(browser) {
   const method=route.request().method();
   const qualityWrite=method==='POST'&&ids.quality&&
    ['/proposals','/commit'].some(suffix=>u.pathname==='/api/projects/'+ids.quality+'/quality'+suffix);
+  const lifecycleWrite=peer&&matchesN12LifecycleRequest(route.request(),API,lifecyclePermit)
+   &&route.request().frame().page()===peer;
+  if(lifecycleWrite){
+   writes.push(lifecyclePermit.action);
+   lifecyclePermit=null;
+  }
   const allowed=(u.origin===SITE&&['GET','HEAD'].includes(method))
-   ||(u.origin==='http://127.0.0.1:8000'&&(['GET','OPTIONS'].includes(method)||qualityWrite))
+   ||(u.origin==='http://127.0.0.1:8000'&&(['GET','OPTIONS'].includes(method)||qualityWrite||lifecycleWrite))
    ||u.hostname==='ipc.localhost'||['tauri:','data:','blob:'].includes(u.protocol);
   if(qualityWrite)writes.push(u.pathname.split('/').at(-1));
   if(allowed)await route.continue();
@@ -424,6 +441,7 @@ async function runNativeProbe(browser) {
   if(Object.keys(saved).length!==7||Object.values(saved).some(id=>typeof id!=='string'||!/^[0-9a-f]{32}$/.test(id)))throw Error('Invalid synthetic project receipt');
   const failures=[];
   try{
+   if(peer)await closeN12Peer(peer);
    await verifyP4QualityAfterRelaunch(page,API,saved.quality);
    console.log('N11 native process relaunch restores the synthetic project and Prepare version 1: PASS');
    try{await verifyWindowsLayout(page)}catch(error){failures.push('R04');console.error('R04 check stopped:',error.message)}
@@ -434,6 +452,7 @@ async function runNativeProbe(browser) {
    reportTraffic();
   }
   if(failures.length)throw Error('Hosted Windows checks failed: '+failures.join(', '));
+  if(peer)await reloadP4SyntheticWorkspace(page);
   return;
  }
  for(const kind of ['classification','regression','rare','insufficient','neutral','quality','prepare'])ids[kind]=await create(kind);
@@ -524,7 +543,12 @@ async function runNativeProbe(browser) {
   await expect(blockers).toContainText('Structurally blocked target');
   console.log('N10 unnamed outcome abstains and explains a blocked manual selection: PASS');
   if(!(await chooseNativeDialogAction(chooser,ids.quality,'Switch project')))return;
-  await verifyP4QualityTransition(page,API,ids.quality,url=>fetch(url));
+  await verifyP4QualityTransition(page,API,ids.quality,url=>fetch(url),
+   peer?{reviewApproval:approveCompactQuality}:undefined);
+  if(peer){
+   await verifyN12ArchiveDraft(page,peer,API,ids.quality,fetch,permitLifecycleOnce);
+   await closeN12Peer(peer);
+  }
   console.log('N11 Quality approval, 409 for the previous version, Prepare refresh and WebView reload: PASS');
   await noTraining(all);
   console.log('N12 disposable projects contain no model experiments: PASS for experiment count');
@@ -534,7 +558,8 @@ async function runNativeProbe(browser) {
   await expect(chooser).toHaveValue(ids.quality);
   await expect(section).toContainText('Current approved dataset version: 1.');
   await expect(target).toHaveValue('');
-  expect(writes).toEqual(['proposals','commit']);
+  expect(writes).toEqual(peer?['proposals','commit','archive','restore']:['proposals','commit']);
+  expect(lifecyclePermit).toBeNull();
   await writeFile(receiptPath,JSON.stringify(ids),{flag:'wx'});
   console.log('N11 ready for native close and relaunch');
  }finally{await noTraining(all);reportTraffic();}

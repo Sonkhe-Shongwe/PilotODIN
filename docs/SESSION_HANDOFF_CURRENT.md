@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 hosted workflow and native cases prepared
+
+- The [single-use workflow](../.github/workflows/p4-n12-app-journey.yml) is disarmed. A future owner-approved direct-child push must only activate this workflow and add a fresh marker pinning the reviewed parent. The job checks out that parent, stages one unpackaged executable, and reuses the existing Microsoft signature and SHA-256 checks for Sysmon before capturing the journey. It rejects retries and uploads no raw captures or binaries.
+- The [N12 cases](../frontend/e2e/p4-n12-native-cases.mjs) exercise the Quality approval at 730 × 540 CSS pixels and use a second native WebView to submit revision-bound archive and restore requests through the real lifecycle API. The test checks the other window's mounted Prepare pane, unsaved target and unchanged Quality history. The peer uses the real lifecycle signal. This covers the receiving window's behaviour and the API round trip, with the archive request initiated by the test driver. The native project-switch helper now verifies the staged runner-temp binary before using its PID.
+- Source verification covers workflow guards, request matching and the shared Chromium real-HTTP scenario. The Windows app journey awaits a separate one-use approval covering one debug build, one pinned Sysmon installation and one synthetic capture. No owner files or models are in scope. The separate prospective R06 owner-device check remains pending. **N12 PARTIAL / strict coverage BLOCKED / P4 ACTIVE at 65/100.**
+
 ## 14 November 2026 | N12 hosted app-journey wiring
 
 - The [hosted journey entry point](../qa/p4_research/n12_app_journey.py) requires a source-pinned unpackaged build, separate one-run journey consent and an enabled Sysmon channel. It starts file ETW before the first calibration, checks the fixture's live Sysmon lifetimes and loopback TCP/UDP before launch, and checks the same binary hash before both launches. It records idle, launch, Quality, close, reopen and final exit, waits for the isolated WebView profile to stop after each close, then calibrates again and calls the existing strict reducer with both exports and fingerprints. The Quality import uses the fingerprinted generated CSV.

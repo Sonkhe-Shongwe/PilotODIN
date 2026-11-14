@@ -10,7 +10,7 @@ export const p4QualityFixture = [
   ].join(',')),
 ].join('\n') + '\n';
 
-export async function verifyP4QualityTransition(page, api, projectId, read, { beforeEdit, afterEdit } = {}) {
+export async function verifyP4QualityTransition(page, api, projectId, read, { beforeEdit, afterEdit, reviewApproval = approveQualityChange } = {}) {
   const navigation = page.getByRole('navigation', { name: 'Workspace navigation' });
   const review = page.getByRole('region', { name: 'Potential prediction opportunities' });
   const target = page.getByLabel('TARGET VARIABLE');
@@ -31,14 +31,7 @@ export async function verifyP4QualityTransition(page, api, projectId, read, { be
 
   await navigation.getByRole('button', { name: 'Quality', exact: true }).click();
   await expect(page.getByText('WORKING VERSION 0', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Review 1 safe fixes', exact: true }).click();
-  const approval = page.getByRole('dialog', { name: 'Review exact dataset change' });
-  await expect(approval).toContainText('Working version: v0');
-  await expect(approval).toContainText('Changed cells: 1');
-  await expect(approval).toContainText('trim_whitespace');
-  await expect(approval.getByRole('cell', { name: 'segment', exact: true })).toBeVisible();
-  await approval.getByRole('button', { name: 'Approve these changes' }).click();
-  await expect(approval).toHaveCount(0);
+  await reviewApproval(page);
   await expect(page.getByText('WORKING VERSION 1', { exact: true })).toBeVisible();
 
   expect((await read(planV0)).status).toBe(409);
@@ -64,6 +57,19 @@ export async function verifyP4QualityTransition(page, api, projectId, read, { be
   expect(response.status()).toBe(200);
   expect(await response.json()).toMatchObject({ quality_version: 1, target: 'churn' });
   await expect(planHeading).toBeVisible();
+}
+
+export async function approveQualityChange(page, inspect = async () => {}) {
+  await page.getByRole('button', { name: 'Review 1 safe fixes', exact: true }).click();
+  const approval = page.getByRole('dialog', { name: 'Review exact dataset change' });
+  await expect(approval).toContainText('Working version: v0');
+  await expect(approval).toContainText('Changed cells: 1');
+  await expect(approval).toContainText('trim_whitespace');
+  await expect(approval.getByRole('cell', { name: 'segment', exact: true })).toBeVisible();
+  const approve = approval.getByRole('button', { name: 'Approve these changes' });
+  await inspect(approval, approve);
+  await approve.click();
+  await expect(approval).toHaveCount(0);
 }
 
 export async function reloadP4SyntheticWorkspace(page) {
