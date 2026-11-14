@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 System write and resize timing
+
+The isolated Windows timing fixture verified the explicit flush and observed a System-context write and resize on the outside control during WPR stop and export. The untouched comparison remained inconclusive because its trace identity was unverified. The original strict fixtures passed their controls and retained protected-root findings. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results, initial failure and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-system-write-and-resize-timing).
+
 ## 14 November 2026 | N12 context for writes without an observed open
 
 The focused Windows capture found eight successful unresolved writes without an observed open. All eight occurred during WPR stop and export. The broader fixture found zero. Both captured a System-context write and resize on the protected control with unresolved origin. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-context-for-writes-without-an-observed-open).

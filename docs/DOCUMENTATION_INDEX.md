@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. The latest N12 checkpoint measures the timing and process context of successful unresolved writes without an observed open. See the [current handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-context-for-writes-without-an-observed-open) for exact-source evidence. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
+**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. The latest N12 checkpoint measures System-context writes and resizes around a controlled Windows flush and WPR stop. See the [current handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-system-write-and-resize-timing) for exact-source evidence. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
 
 ## Current authoritative route, in reading order
 
