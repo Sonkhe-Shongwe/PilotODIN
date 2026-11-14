@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == '1' }} # One owner-approved launch; checkout pins the reviewed parent.
+    if: ${{ false }} # One-use approval consumed by run 43629894863.
     runs-on: windows-2022
     timeout-minutes: 100
     env:

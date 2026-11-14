@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 hosted app journey completed with audit failures
+
+The [approved Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) completed both launches and the strict audit. The job failed on the network and filesystem results, with unresolved ETW path and process coverage. All four hosted protected fingerprints and the immutable fixture fingerprint matched. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** The one-use approval is consumed. [Evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-app-journey-completed-with-audit-failures).
+
 ## 14 November 2026 | N12 hosted workflow and native cases prepared
 
 The single-use hosted workflow and compact Quality and peer archive/restore checks are staged in source. The workflow is disarmed pending one-time owner approval. The live app journey and owner-device preservation check remain unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-workflow-and-native-cases-prepared).
