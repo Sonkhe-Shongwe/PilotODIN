@@ -43,7 +43,8 @@ def canonical_file_path(value, devices):
 def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
                        strict=False, details=None, process_bookends=None, thread_bookends=None,
                        rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
-                       rundown_invalidations=None, initial_process_births=None):
+                       rundown_invalidations=None, initial_process_births=None,
+                       preopened_control_file_keys=None, preopened_control_file_objects=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
@@ -332,6 +333,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                         rundown_recovered_keys.add(rundown_key)
                     if details is not None:
                         details[f"{actor}:event-{kind}:rundown-path-recovered"] += 1
+        if (details is not None and operation and source is not None
+                and actor in {"other", "unattributed"} and tracked(source)):
+            file_key = number(data.get("FileKey"))
+            if file_key in (preopened_control_file_keys or set()):
+                details[f"{actor}:event-{kind}:{operation}:preopened-control-filekey-match"] += 1
+            if object_id in (preopened_control_file_objects or set()):
+                details[f"{actor}:event-{kind}:{operation}:preopened-control-fileobject-match"] += 1
         if strict and kind in {16, 18, 19, 23, 29}:
             file_key = number(data.get("FileKey"))
             if kind in {18, 19, 29} and file_key in file_names:
@@ -460,7 +468,7 @@ def correlate(capture, events):
             "protected_writes": protected_writes}
 
 
-def preopened_report(capture, events, rundown=None, *, file_keys=None):
+def preopened_report(capture, events, rundown=None, *, file_keys=None, file_objects=None):
     """Compare ETW path evidence to independently checked fixture handles."""
     control = capture["preopened"]
     devices = {capture["device"].casefold(): capture["protected_root"][:2].casefold()}
@@ -495,6 +503,9 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None):
         irp, key = (number(data.get(field)) for field in ("Irp", "FileKey"))
         if file_keys is not None and type(key) is int and key > 0:
             file_keys[label] = key
+        file_object = number(data.get("FileObject"))
+        if file_objects is not None and type(file_object) is int and file_object > 0:
+            file_objects[label] = file_object
         expected = canonical_file_path(write["path"], devices)
         if expected is None:
             raise ValueError("Invalid generated control path.")

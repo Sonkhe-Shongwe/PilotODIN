@@ -107,6 +107,34 @@ def test_etw_failed_open_and_reused_pid_and_file_object():
         "other:open:process-lifetime-missing": 1,
     }
 
+def test_strict_reducer_correlates_protected_writer_to_preopened_control_identity():
+    details = Counter()
+    records = []
+    path = r"C:\protected\control.bin"
+    events = [
+        {"id": 16, "pid": 4, "tid": 88, "ticks": 110, "lifecycle": False,
+         "data": {"FileKey": 40, "FileObject": 400, "Irp": 7, "IOSize": 8,
+                  "ByteOffset": 0, "IssuingThreadId": 88}},
+        {"id": 24, "pid": 0, "tid": 0, "ticks": 120, "lifecycle": False,
+         "data": {"Irp": 7, "Status": 0}},
+    ]
+    unresolved = correlate_requests(
+        events, lambda value: value,
+        lambda pid, birth, ticks: ("other", "system"),
+        lambda value: value.casefold().startswith(r"c:\protected"),
+        lambda *args: records.append(args),
+        strict=True, details=details,
+        rundown=[{"key": 40, "path": path}],
+        initial_process_births={4: 100},
+        preopened_control_file_keys={40},
+        preopened_control_file_objects={400},
+    )
+    assert unresolved == {}
+    assert len(records) == 1
+    assert details["other:event-16:write:preopened-control-filekey-match"] == 1
+    assert details["other:event-16:write:preopened-control-fileobject-match"] == 1
+
+
 def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
     protected = r"C:\protected\private.txt"
     outside = r"C:\outside\private.txt"
@@ -304,14 +332,17 @@ def test_preopened_control_requires_completion_and_does_not_infer_names():
 
     events = [
         event(10, 90, FileKey=40, FileName=protected),
-        event(16, 150, Irp=1, FileKey=40, IOSize=53, ByteOffset=0, IssuingThreadId=71),
+        event(16, 150, Irp=1, FileKey=40, FileObject=400, IOSize=53, ByteOffset=0, IssuingThreadId=71),
         event(24, 160, Irp=1, Status=0),
-        event(16, 350, Irp=2, FileKey=41, IOSize=79, ByteOffset=0, IssuingThreadId=71),
+        event(16, 350, Irp=2, FileKey=41, FileObject=410, IOSize=79, ByteOffset=0, IssuingThreadId=71),
         event(16, 360, Irp=2, FileKey=41, IOSize=12, ByteOffset=0),
         event(24, 370, Irp=2, Status=0),
         event(10, 380, FileKey=41, FileName=outside),
     ]
-    targets = preopened_report(capture, events)["targets"]
+    file_keys, file_objects = {}, {}
+    targets = preopened_report(capture, events, file_keys=file_keys, file_objects=file_objects)["targets"]
+    assert file_keys == {"protected": 40, "outside": 41}
+    assert file_objects == {"protected": 400, "outside": 410}
     assert targets["protected"] == {"request_candidates": 1, "completion": "success",
                                     "issuing_thread": "matches", "name_evidence": "matches-target"}
     assert targets["outside"] == {"request_candidates": 1, "completion": "unverified",

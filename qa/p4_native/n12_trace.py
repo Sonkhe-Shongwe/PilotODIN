@@ -555,7 +555,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       synthetic_process_roles=None, synthetic_process_births=None,
                       process_bookend_births=None, process_bookend_names=None,
                       process_event_images=None,
-                      rundown_recovered_keys=None, rundown_invalidations=None):
+                      rundown_recovered_keys=None, rundown_invalidations=None,
+                      preopened_control_file_keys=None, preopened_control_file_objects=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -643,6 +644,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             rundown_recovered_keys=rundown_recovered_keys,
             rundown_invalidations=rundown_invalidations,
             initial_process_births=initial_process_births,
+            preopened_control_file_keys=preopened_control_file_keys,
+            preopened_control_file_objects=preopened_control_file_objects,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -1027,7 +1030,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
                 process_event_images[(process_id, event["ticks"])] = basename
 
     control_keys = {}
-    target_report = preopened_report(capture, event_records, rundown, file_keys=control_keys)
+    control_file_objects = {}
+    target_report = preopened_report(
+        capture, event_records, rundown, file_keys=control_keys, file_objects=control_file_objects
+    )
     for label in ("protected", "outside"):
         target = target_report["targets"].get(label, {})
         require(target.get("request_candidates") == 1 and target.get("completion") == "success"
@@ -1037,6 +1043,9 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
     require(set(control_keys) == {"protected", "outside"} and
             len(set(control_keys.values())) == 2,
             "pre-opened control file keys are missing or ambiguous")
+    require(set(control_file_objects) == {"protected", "outside"} and
+            all(type(value) is int and value > 0 for value in control_file_objects.values()),
+            "pre-opened control FileObjects are missing or invalid")
 
     synthetic_birth = utc_ticks(start) - 1
     recovered_keys = set()
@@ -1056,6 +1065,8 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         process_event_images=process_event_images,
         rundown_recovered_keys=recovered_keys,
         rundown_invalidations=invalidations,
+        preopened_control_file_keys={control_keys["protected"]},
+        preopened_control_file_objects={control_file_objects["protected"]},
     )
     recovered_control_keys = {label for label, key in control_keys.items() if key in recovered_keys}
     unresolved_controls = {key: value for key, value in unresolved.items()
@@ -1113,6 +1124,9 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         },
         "protected_writer_targets": {
             key: value for key, value in details.items() if key.startswith("protected-writer-target:")
+        },
+        "protected_writer_control_correlations": {
+            key: value for key, value in details.items() if ":preopened-control-file" in key
         },
         "other_process_image_events": {
             key: value for key, value in details.items()

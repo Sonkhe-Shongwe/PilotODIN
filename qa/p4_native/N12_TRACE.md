@@ -175,3 +175,10 @@ The redacted NameCreate diagnostic also reports the unmapped device token (for e
 ## 14 November 2026 | Protected-root writer target labels
 
 The generated pre-opened-control report now records the basename of each protected-root target associated with an unscoped writer, alongside the writer process basename and operation. This is restricted to the disposable synthetic pre-opened fixture report; it does not emit full paths. The regression verifies the known synthetic targets `unrelated.bin` and `etw-started.bin`. The labels are diagnostic evidence and do not turn a System or other writer into an approved actor.
+
+
+## 14 November 2026 | Protected writer to pre-opened control correlation
+
+The generated protected and outside control writes now retain their FileObject identifiers in memory alongside FileKeys. For any separately classified writer whose resolved target is inside the protected root, the strict reducer compares its FileKey and FileObject against the protected control's identifiers. The report emits only match counts, never pointer values.
+
+This is request-level identity evidence, not an automatic benign classification. Completion status remains separately verified. The regression proves that a System-like writer event targeting the same protected FileKey and FileObject is reported as a match while preserving the ordinary mutation record.
