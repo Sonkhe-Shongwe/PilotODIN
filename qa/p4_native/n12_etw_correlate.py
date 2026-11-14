@@ -62,12 +62,25 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         # The rundown is a stop-time snapshot. A key is eligible only when no
         # observed in-window event could have changed or reused its name/object.
         guard_events = ordered_events if rundown_guard_events is None else rundown_guard_events
-        invalidating_kinds = {10, 11, 12, 14, 18, 19, 23, 27, 29}
+        name_events = {}
+        invalidating_kinds = {11, 12, 14, 18, 19, 23, 27, 29}
         for guarded in guard_events:
             if guarded.get("lifecycle"):
                 continue
             kind = guarded.get("id")
             data = guarded.get("data", {})
+            if kind == 10:
+                # NameCreate is a name association, not by itself a lifetime
+                # break. It may corroborate the stop-time rundown only when
+                # the observed canonical name is unique and exactly agrees.
+                try:
+                    name_key = number(data.get("FileKey", data.get("FileObject")))
+                except (TypeError, ValueError):
+                    name_key = None
+                if type(name_key) is int and name_key > 0:
+                    name = resolve_path(data.get("FileName") or "")
+                    name_events.setdefault(name_key, set()).add(name)
+                continue
             invalidates = kind in invalidating_kinds
             if kind == 17:
                 try:
@@ -86,6 +99,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     rundown_unsafe_keys.add(key)
                     if rundown_invalidations is not None:
                         rundown_invalidations.setdefault(key, Counter())[f"event-{kind}:{field}"] += 1
+
+        for key, names in name_events.items():
+            rundown_paths = rundown_names.get(key)
+            if len(names) == 1 and None not in names and rundown_paths is not None and names == rundown_paths:
+                continue
+            reason = "event-10:NameAmbiguous" if len(names) != 1 or None in names else "event-10:NameMismatch"
+            rundown_unsafe_keys.add(key)
+            if rundown_invalidations is not None:
+                rundown_invalidations.setdefault(key, Counter())[reason] += 1
 
     def relevant(actor, operation, source, destination):
         return tracked(source) or tracked(destination) or (

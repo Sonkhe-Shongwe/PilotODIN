@@ -746,9 +746,13 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     emit(16, 10, protected_ticks, FileObject=100, Irp=1, FileKey="0x28",
          IOSize=53, ByteOffset=0, IssuingThreadId=77)
     emit(24, 0, protected_ticks + 1, Irp=1, Status=0)
+    emit(10, 99, protected_ticks + 2, FileKey="0x28",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\control.bin")
     emit(16, 10, outside_ticks, FileObject=101, Irp=2, FileKey="0x29",
          IOSize=79, ByteOffset=0, IssuingThreadId=77)
     emit(24, 0, outside_ticks + 1, Irp=2, Status=0)
+    emit(10, 99, outside_ticks + 2, FileKey="0x29",
+         FileName=r"\Device\HarddiskVolume3\QA\outside.bin")
 
     events_path = tmp_path / "preopened-etw.jsonl"
     rundown_path = tmp_path / "native-rundown.jsonl"
@@ -831,16 +835,27 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 1
     assert report["unresolved_controls"] == {}
 
-    # A post-rundown name transition must invalidate the stop-time mapping.
+    # A conflicting NameCreate cannot override the digest-pinned rundown.
     late_transition_ticks = base_ticks + 195_000_000
     emit(10, 99, late_transition_ticks, FileKey="0x28",
-         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\control.bin")
+         FileName=r"\Device\HarddiskVolume3\QA\renamed-control.bin")
     result = run()
     assert result.returncode == 2
     failed_report = json.loads(result.stdout)
     assert failed_report["control_status"] == "FAIL"
     assert failed_report["rundown_control_keys_recovered"] == 1
-    assert failed_report["rundown_control_key_invalidations"]["protected"]["event-10:FileKey"] == 1
+    assert failed_report["rundown_control_key_invalidations"]["protected"]["event-10:NameMismatch"] == 1
+    assert protected_path not in result.stdout and outside_path not in result.stdout
+
+    # A post-rundown NameDelete still invalidates the stop-time mapping.
+    rows.pop()
+    emit(11, 99, late_transition_ticks + 1, FileKey="0x28")
+    result = run()
+    assert result.returncode == 2
+    failed_report = json.loads(result.stdout)
+    assert failed_report["control_status"] == "FAIL"
+    assert failed_report["rundown_control_keys_recovered"] == 1
+    assert failed_report["rundown_control_key_invalidations"]["protected"]["event-11:FileKey"] == 1
     assert protected_path not in result.stdout and outside_path not in result.stdout
 
 
