@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # Disarmed until the owner approves one exact source.
+    if: ${{ github.run_attempt == '1' }} # One owner-approved launch; checkout pins the reviewed parent.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
