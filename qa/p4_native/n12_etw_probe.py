@@ -196,7 +196,7 @@ def preopened_control(root, *, rundown=False, system_timing=False):
             controls[label] = (path, stream, b"x" * size)
         if not rundown:
             return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
-        open_comparison = None
+        open_comparison = comparison_stream = None
         if system_timing:
             comparison = protected / "untouched.bin"
             comparison_payload = b"pre-capture comparison"
@@ -204,7 +204,6 @@ def preopened_control(root, *, rundown=False, system_timing=False):
                 if seed.write(comparison_payload) != len(comparison_payload):
                     raise RuntimeError("The pre-capture comparison write was incomplete.")
                 os.fsync(seed.fileno())
-            comparison_stream = None
 
             def open_comparison():
                 nonlocal comparison_stream
