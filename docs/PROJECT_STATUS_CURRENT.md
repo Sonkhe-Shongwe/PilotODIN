@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 paging flag on strict protected writes
+
+Both [focused](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209773) and [broader](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209775) strict Windows captures confirmed a paging-flagged System-header write matching the protected control. One occurred before WPR stop and the other during stop/export. Both retained the protected write and resize violations. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Evidence and limits](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-paging-flag-on-strict-protected-writes).
+
 ## 14 November 2026 | N12 paging flag on a System-context write
 
 The [hosted timing fixture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43598887022) observed a paging-I/O flag on one successful System-context write to the unflushed outside control. The original strict captures still found a protected System-context write and resize with origin unresolved. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Full evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-paging-flag-on-a-system-context-write).

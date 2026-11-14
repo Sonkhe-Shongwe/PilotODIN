@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 paging flag on strict protected writes
+
+- Source `9b2a519b68861496294c692685ab0547450adda7` reports the paging flag by request phase for successfully completed System-header writes that the strict reducer resolves to a protected path. It checks both control identifiers and retains the strict violations. 143 local checks passed.
+- [Focused N12](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209773) passed 139 tests and decoded 375/375 strict and 256/256 timing records. The strict protected write matched both control identifiers and carried the flag before WPR stop. The isolated timing fixture confirmed the explicit protected flush and recorded one paging-flagged write and one resize on the unflushed outside control before WPR stop. No matching System operations appeared on the flushed protected or untouched controls in that isolated capture.
+- [Broader P4](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209775) passed all three jobs with 324 Python tests, 78 Node checks, TypeScript/Vite, 12 Chromium scenarios and 361/361 strict rundown records. Its strict protected write matched both control identifiers and carried the flag during WPR stop/export. Both strict captures retained the protected write and resize violations. The paging flag describes the write request. The original initiator and the resize origin remain unknown.
+- **N12 PARTIAL / strict coverage BLOCKED / P4 ACTIVE at 65/100.** A stronger next test needs independent origin evidence, such as a separately authorised, calibrated capture that can correlate the initiating operation with the protected write and resize. R03 physical offline acceptance and R06 historical disposition remain open.
+
 ## 14 November 2026 | N12 paging flag on a System-context write
 
 - Source `f63489de9802fa22fad4d3dc380443e28ab40dee` adds redacted paging-I/O flag counts to successful System-header Event 16 writes on independently located timing controls. 143 local tests passed, including malformed fields and failed or ambiguous completion exclusions.
