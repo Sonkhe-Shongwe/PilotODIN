@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Quality approval dialog and browser walkthrough
+
+- [Product source 9bb73db](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9bb73dba4e139da7ab73a66c297c9cc9e8ca0cfb) centers the Quality review dialog in the browser viewport. The original dialog could open with the approval buttons below the viewport. The fixed dialog stays in view at 1440 × 900 and 800 × 530. Escape restored focus to the review button.
+- A disposable browser and local backend imported the 80-row, three-column synthetic churn fixture, approved one whitespace correction to create working version 1, rejected stale version 0 preparation, and prepared the explicitly selected churn classification target using segment and amount. No training was started.
+- [P1 frontend](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43613608272) and [P3 real HTTP](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43613608212) passed. [P1 real HTTP](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43613608214) passed on attempt 2. Attempt 1 passed both Quality checks and timed out on the project selector during cross-window archive. A focused disposable-browser check reproduced an intermittent archive failure on both the parent and fixed source. Cross-window archive reliability remains open.
+- **P4 ACTIVE at 65/100.** The dialog correction is verified in the browser. Windows desktop acceptance of the fix, physical R03 offline acceptance, N12 strict coverage and historical R06 attribution remain open.
+
 ## 14 November 2026 | N12 Cache Manager operations before recorder stop
 
 - [Hosted Windows run 43612214016, job 132499495498](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43612214016/job/132499495498) passed attempt 1 at `51ed5fc6ec481336260cb1efc63e56377fd428ea`. I added a 20-second wait after calibration and before requesting WPR stop, with the generated comparison handles still open. The measured wait was 20,000.416 ms. The companion export validated 66,597 events, the rundown recovered 632/632 names, both known application stack controls passed, and the decoders reported no loss or decoding errors. The 139 local N12 regressions passed.
