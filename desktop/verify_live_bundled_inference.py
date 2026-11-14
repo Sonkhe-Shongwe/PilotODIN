@@ -1,11 +1,15 @@
-"""Run the real pinned Windows llama.cpp/Qwen3 runtime without any network access.
+"""Run the pinned Windows llama.cpp/Qwen3 runtime over localhost.
 
-This check is invoked only on the Windows release builder after asset staging.
-It validates the localhost API, session authentication, model load and a real
-chat completion. It does NOT certify long-session use or 8 GB performance.
+Run after staging the verified runtime and model. This check validates the
+localhost API, session authentication, model load and a real chat completion.
+The optional memory profile describes this worker on this host. Physical 8 GB
+coexistence and long-session use require their own verification.
 """
 from __future__ import annotations
 
+import argparse
+import ctypes
+from ctypes import wintypes
 import json
 import os
 from pathlib import Path
@@ -40,7 +44,59 @@ def send(url: str, token: str | None = None, body: dict | None = None, timeout: 
         return err.code, json.loads(err.read(256 * 1024))
 
 
+def worker_memory(pid: int) -> dict[str, float | int]:
+    """Read Windows' cumulative peak and current resident RAM for one worker."""
+    class ProcessMemoryCounters(ctypes.Structure):
+        _fields_ = [
+            ('cb', wintypes.DWORD),
+            ('page_fault_count', wintypes.DWORD),
+            ('peak_working_set', ctypes.c_size_t),
+            ('working_set', ctypes.c_size_t),
+            ('peak_paged_pool', ctypes.c_size_t),
+            ('paged_pool', ctypes.c_size_t),
+            ('peak_nonpaged_pool', ctypes.c_size_t),
+            ('nonpaged_pool', ctypes.c_size_t),
+            ('commit', ctypes.c_size_t),
+            ('peak_commit', ctypes.c_size_t),
+        ]
+
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
+    kernel.CloseHandle.restype = wintypes.BOOL
+    kernel.K32GetProcessMemoryInfo.argtypes = (
+        wintypes.HANDLE, ctypes.POINTER(ProcessMemoryCounters), wintypes.DWORD,
+    )
+    kernel.K32GetProcessMemoryInfo.restype = wintypes.BOOL
+    query_limited_information = 0x1000
+    handle = kernel.OpenProcess(query_limited_information, False, pid)
+    if not handle:
+        raise ctypes.WinError(ctypes.get_last_error())
+    counters = ProcessMemoryCounters(cb=ctypes.sizeof(ProcessMemoryCounters))
+    try:
+        if not kernel.K32GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
+            raise ctypes.WinError(ctypes.get_last_error())
+    finally:
+        kernel.CloseHandle(handle)
+
+    mib = 1024 ** 2
+    return {
+        'working_set_mib': round(counters.working_set / mib, 1),
+        'cumulative_peak_working_set_mib': round(counters.peak_working_set / mib, 1),
+        'commit_mib': round(counters.commit / mib, 1),
+        'cumulative_peak_commit_mib': round(counters.peak_commit / mib, 1),
+    }
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--memory-profile', action='store_true',
+                        help='Report worker memory at model readiness and after completion.')
+    options = parser.parse_args()
+    if options.memory_profile and os.name != 'nt':
+        parser.error('--memory-profile requires Windows')
+
     root = Path(__file__).resolve().parents[1]
     verify(root)
     tauri = root / 'frontend' / 'src-tauri'
@@ -62,6 +118,7 @@ def main() -> int:
     log_path = root / 'build' / 'offline-inference-startup.log'
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open('wb') as log:
+        startup_begin = time.monotonic()
         proc = subprocess.Popen(args, cwd=dlls, env=env, stdin=subprocess.DEVNULL,
                                 stdout=log, stderr=subprocess.STDOUT,
                                 creationflags=flags)
@@ -80,6 +137,9 @@ def main() -> int:
             time.sleep(0.6)
         else:
             raise RuntimeError('Local GGUF did not become healthy within 150 seconds')
+        if options.memory_profile:
+            load_seconds = round(time.monotonic() - startup_begin, 3)
+            ready_memory = worker_memory(proc.pid)
         unauthenticated_probe = {
             'model': 'pilotodin-qwen3-1.7b',
             'messages': [{'role': 'user', 'content': 'Ping'}],
@@ -87,12 +147,23 @@ def main() -> int:
         }
         if send(base + '/v1/chat/completions', body=unauthenticated_probe, timeout=5)[0] != 401:
             raise RuntimeError('Local inference API failed to reject unauthenticated generation')
+        generation_begin = time.monotonic()
         status, result = send(base + '/v1/chat/completions', token,
                               {'model': 'pilotodin-qwen3-1.7b',
                                'messages': [{'role': 'user', 'content': 'Respond with READY.'}],
                                'max_tokens': 24, 'temperature': 0, 'stream': False}, timeout=110)
         if status != 200 or not isinstance(result, dict) or not result.get('choices'):
             raise RuntimeError(f'Bundled Qwen3 failed authenticated text generation: HTTP {status}')
+        if options.memory_profile:
+            generation_seconds = round(time.monotonic() - generation_begin, 3)
+            profile = {
+                'scope': 'standalone_windows_worker_short_smoke',
+                'model_ready': {'elapsed_seconds': load_seconds, **ready_memory},
+                'after_completion': {
+                    'request_seconds': generation_seconds, **worker_memory(proc.pid),
+                },
+            }
+            print('OFFLINE AI WORKER MEMORY: ' + json.dumps(profile, sort_keys=True))
         print('LIVE OFFLINE AI CHECK PASSED: Qwen3 GGUF loaded, llama.cpp served locally, authentication enforced, completion returned')
         return 0
     except (OSError, ValueError, RuntimeError) as exc:
