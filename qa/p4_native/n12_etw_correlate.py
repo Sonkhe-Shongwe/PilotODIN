@@ -182,7 +182,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 continue
             # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
             open_result = number(data.get("ExtraInformation")) if operation == "open" else None
-            mutation = operation != "open" or open_result in {0, 2, 3}
+            mutation = operation != "query" and (operation != "open" or open_result in {0, 2, 3})
             if in_scope and operation == "open" and open_result not in {0, 1, 2, 3}:
                 unresolved[f"{actor}:open:unknown-open-result"] += 1
             if in_scope and mutation and handle[1] is None:
