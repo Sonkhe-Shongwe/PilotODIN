@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | R03 stopped at the memory preflight
+
+- The owner approved one bounded offline Qwen request using the verified separate QA build and a new synthetic project. The owner created the 80-row CSV and measured 1.20 GiB available with PilotODIN closed. The post-restart Task Manager Memory screenshot showed 612 MB available on the 8 GB Windows laptop, below the installed build's 2.0 GiB Low-memory threshold for admitting a local AI request. The restart screenshots show startup activity and are point-in-time readings.
+- **Result: BLOCKED at preflight.** The CSV was prepared, but no import, offline Qwen request or concurrent analytics run was reported for this attempt. Offline performance and the in-app admission response remain **NOT TESTED**. These readings do not measure Qwen's memory requirement. P4 stays **ACTIVE at 65/100** on the proposed scorecard, with R02/N12 and the historical R06 failure still open.
+- **Next:** If the owner wants another memory reading, let startup settle and quit unused user apps such as Teams and Steam. The approved request remains pending until enough memory is available and the isolated QA workspace is verified. Recheck available RAM with that workspace open before requesting Qwen. Keep Low-memory mode enabled.
+
 ## 14 November 2026 | R03 physical offline readiness
 
 - The owner confirmed the separate QA app launched and closed on the physical Windows laptop. Task Manager showed 8.0 GB installed, 7.8 GB usable and 1.2 GB available at the inventory snapshot. The owner then shared read-only PowerShell output with all four checks true. The QA desktop SHA-256 matches the [known Windows build at `0c7a2b4`](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42730585801), the Qwen3 1.7B Q4_K_M GGUF matches the pinned SHA-256, the inference executable matches its installed manifest and the analytics executable is present.

@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | R03 stopped at the memory preflight
+
+The owner approved one offline Qwen test and prepared its synthetic CSV. The laptop showed 1.20 GiB available before restart and 612 MB in the post-restart Memory view, below the 2.0 GiB Low-memory threshold. This attempt was **BLOCKED at preflight**. Offline inference and concurrent analytics remain **NOT TESTED**. P4 remains **ACTIVE at 65/100** on the proposed scorecard. [Readings and retry condition](./SESSION_HANDOFF_CURRENT.md#14-november-2026--r03-stopped-at-the-memory-preflight).
+
 ## 14 November 2026 | R03 physical offline readiness
 
 Owner-side preflight confirmed 8 GB installed, a launch of the separate QA app and all four installed-file checks. Available RAM was 1.2 GB at the snapshot. The measured physical offline Qwen and concurrent analytics run remains **NOT TESTED** and awaits explicit scope approval. P4 remains **ACTIVE** at **65/100** on the proposed scorecard. [Preflight and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--r03-physical-offline-readiness).
