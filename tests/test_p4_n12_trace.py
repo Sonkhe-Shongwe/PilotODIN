@@ -186,7 +186,53 @@ def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
     for reason in ("bookend-header-agrees", "header-differs", "issuing-thread-handle-path",
                    "unmatched-thread-lifetime"):
         assert details[f"other:event-16:write-request:{reason}"] == 1
+    for context in ("outside-tracked-paths", "issuing-thread-handle-candidate", "unseen-key"):
+        assert details[f"write-path-gap:{context}"] == 1
     assert "private.txt" not in json.dumps(details)
+
+
+def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names():
+    protected = r"C:\protected\private.txt"
+    outside = r"C:\outside\private.txt"
+    events = []
+
+    def event(kind, ticks, **data):
+        events.append({"id": kind, "pid": 7, "ticks": ticks, "data": data})
+
+    event(10, 1, FileKey=40, FileName=outside)
+    event(16, 2, FileObject=9, FileKey=40, Irp=1)
+    event(10, 3, FileKey=40, FileName=protected)
+    event(24, 4, Irp=1, Status=0)
+    event(16, 5, FileObject=9, FileKey=41, Irp=2)
+    event(10, 6, FileKey=41, FileName=protected)
+    event(24, 7, Irp=2, Status=0)
+    event(14, 8, FileObject=9, FileKey=41)
+    event(16, 9, FileObject=9, FileKey=41, Irp=3)
+    event(24, 10, Irp=3, Status=0)
+    event(16, 11, FileObject=9, FileKey=42, Irp=4)
+    event(10, 11, FileKey=42, FileName=outside)
+    event(24, 12, Irp=4, Status=0)
+    event(16, 13, FileObject=9, FileKey=42, Irp=5)
+    event(24, 14, Irp=5, Status=0xC0000022)
+    event(16, 15, FileObject=9, FileKey=42, Irp=6)
+    event(16, 16, FileObject=9, FileKey=42, Irp=7)
+    event(16, 17, FileObject=10, FileKey=43, Irp=7)
+    event(24, 18, Irp=7, Status=0)
+    details = Counter()
+
+    unresolved = correlate_requests(
+        events, lambda value: value or None,
+        lambda pid, birth, ticks: ("other", None), lambda path: path == protected,
+        lambda *args: None, strict=True, details=details, initial_process_births={7: 0},
+    )
+
+    assert unresolved["other:write:path-missing"] == 4
+    assert {key: count for key, count in details.items() if key.startswith("write-path-gap:")} == {
+        "write-path-gap:outside-tracked-paths": 1,
+        "write-path-gap:unseen-key": 1,
+        "write-path-gap:invalidated-name": 1,
+        "write-path-gap:same-timestamp-name-transition": 1,
+    }
 
 
 def test_strict_etw_recovers_preopened_write_from_unique_stable_rundown():
@@ -899,6 +945,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unresolved_controls"] == {}
     assert report["unrelated_unresolved_mutations"] == {}
     assert report["compression_request_outcomes"] == {}
+    assert report["successful_write_path_gaps"] == {}
     assert report["stable_process_bookends"] == 2
     assert report["stable_thread_bookends"] == 2
     assert all(target["completion"] == "success" and target["issuing_thread"] == "matches"
@@ -990,6 +1037,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:unsupported:path-missing"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:rundown-context-not-in-rundown"] == 1
     assert report["unrelated_unresolved_mutations"]["other:resize:path-missing"] == 1
+    assert report["successful_write_path_gaps"] == {"ambiguous-name": 1}
     assert "other:compression:process-lifetime-missing" not in report["unrelated_unresolved_mutations"]
     assert report["unrelated_unresolved_mutations"]["other:compression:path-missing"] == 1
     assert report["compression_request_outcomes"] == {

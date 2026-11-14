@@ -186,3 +186,9 @@ This is request-level identity evidence, not an automatic benign classification.
 ## 14 November 2026 | Compression request outcomes
 
 The hosted pre-opened fixture reports `compression_request_outcomes` for `FSCTL_SET_COMPRESSION`. Each observed request contributes to one outcome count. A matched completion with a successful status is counted by resolved scope: protected, outside protected roots, or unresolved path. Failed statuses and missing or ambiguous request/completion evidence have their own counts. The report contains no file paths or request identifiers for these counts. The strict audit still treats successful compression as a mutation and reports unresolved coverage and protected-root violations under the existing rules.
+
+## Successful writes with unresolved paths
+
+The hosted pre-opened fixture reports `successful_write_path_gaps` for Event 16 requests whose path is unresolved by the strict reducer and whose matched Event 24 completion reports success. Each contributes one count based on evidence available at request time. A name transition at the same timestamp takes precedence because its order relative to the request is unknown. The remaining cases distinguish a completed open path under the issuing thread's observed process lifetime, a single prior name candidate inside or outside protected roots, an invalidated or ambiguous name, or absent key/name evidence. A name observed after the request cannot change its category. Failed, missing and ambiguous completions are excluded from these counts.
+
+The summary contains category counts only. Candidate evidence does not resolve a mutation or change process attribution, and the strict audit continues to report the path gaps. See [Microsoft's FileIO write schema](https://learn.microsoft.com/en-us/windows/win32/etw/fileio-readwrite) for the separate roles of `FileObject` and `FileKey`.

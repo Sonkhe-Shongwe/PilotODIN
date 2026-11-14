@@ -1,7 +1,7 @@
 name: P4 Target Review Queue and Transparent Ranking
 
-# Synthetic data and local test services only. The BE-024 browser case fits one
-# small generated fixture; no owner datasets, model downloads or installers.
+# Synthetic data and local test services only. Run the fitted BE-024 browser
+# case through its separately approved, one-use Windows workflow.
 on:
   push:
     branches:
@@ -168,7 +168,9 @@ jobs:
         run: npx --no-install playwright install --only-shell chromium
       - name: Test actual P4 review queue against disposable real HTTP backend
         working-directory: frontend
-        run: npx --no-install playwright test --config=playwright.p4-real-http.config.ts
+        run: >-
+          npx --no-install playwright test --config=playwright.p4-real-http.config.ts
+          --grep-invert 'BE-024 real HTTP: reopen a fitted synthetic experiment'
 
 
   p4-readonly-windows-probe:
