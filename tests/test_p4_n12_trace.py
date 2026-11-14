@@ -836,15 +836,19 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     unrelated_ticks = base_ticks + 60_000_000
     emit(17, 99, unrelated_ticks, FileObject=103, Irp=4, FileKey="0x2a", InfoClass=4)
     emit(24, 0, unrelated_ticks + 1, Irp=4, Status=0)
+    emit(23, 99, unrelated_ticks + 2, FileObject=104, Irp=5, FileKey="0x2c", InfoClass=4660)
+    emit(24, 0, unrelated_ticks + 3, Irp=5, Status=0)
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
     assert report["control_status"] == "PASS"
     assert report["strict_coverage"] == "BLOCKED"
     assert "etw-mutation-coverage-unresolved" in report["coverage_issues"]
-    assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 1
+    assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 2
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported-file-operation"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported:path-missing"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:info-4660:unsupported-file-operation"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:info-4660:unsupported:path-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 1
     assert report["unresolved_controls"] == {}
 

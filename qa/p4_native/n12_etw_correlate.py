@@ -118,7 +118,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         unresolved[f"{actor}:{reason}"] += 1
         if details is not None:
             info = info_class if type(info_class) is int and 0 <= info_class <= 255 else "unknown"
-            suffix = f":info-{info}" if event_id == 17 else ""
+            suffix = f":info-{info}" if event_id in {17, 23} else ""
             details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
 
     for event in ordered_events:
@@ -212,7 +212,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             operation = None
         # QueryEA (34) has no mutation operation, but a reused IRP still
         # invalidates any outstanding mutation that used the same pointer.
-        info_class = number(data.get("InfoClass")) if kind == 17 else None
+        info_class = number(data.get("InfoClass")) if kind in {17, 23} else None
         if kind == 17:
             if info_class == 20:  # FileEndOfFileInformation
                 operation = "resize"
