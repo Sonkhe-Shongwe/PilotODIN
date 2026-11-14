@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 untouched comparison identity verified
+
+A hosted Windows timing fixture verified the untouched comparison by its successful in-trace open and read and observed zero matching System-context writes or resizes on it. Both original strict fixtures passed their controls and retained the protected write and resize. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results, initial failure and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-untouched-comparison-identity-verified).
+
 ## 14 November 2026 | N12 System write and resize timing
 
 The isolated Windows timing fixture verified the explicit flush and observed a System-context write and resize on the outside control during WPR stop and export. The untouched comparison remained inconclusive because its trace identity was unverified. The original strict fixtures passed their controls and retained protected-root findings. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results, initial failure and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-system-write-and-resize-timing).
