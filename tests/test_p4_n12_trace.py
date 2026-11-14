@@ -765,6 +765,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          "decoder": "tdh+raw-schema"},
         {"key": "0x2b", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\unrelated.bin",
          "decoder": "tdh+raw-schema"},
+        {"key": "0x2d", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\compressed.bin",
+         "decoder": "tdh+raw-schema"},
     ]
     rundown_payload = ("".join(json.dumps(entry) + "\n" for entry in rundown_entries)).encode()
     rundown_path.write_bytes(rundown_payload)
@@ -836,8 +838,14 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     unrelated_ticks = base_ticks + 60_000_000
     emit(17, 99, unrelated_ticks, FileObject=103, Irp=4, FileKey="0x2a", InfoClass=4)
     emit(24, 0, unrelated_ticks + 1, Irp=4, Status=0)
-    emit(23, 99, unrelated_ticks + 2, FileObject=104, Irp=5, FileKey="0x2c", InfoClass=4660)
+    emit(23, 99, unrelated_ticks + 2, FileObject=104, Irp=5, FileKey="0x2c", InfoClass=0x900BB)
     emit(24, 0, unrelated_ticks + 3, Irp=5, Status=0)
+    emit(23, 99, unrelated_ticks + 4, FileObject=105, Irp=6, FileKey="0x2d", InfoClass=0x9C040)
+    emit(24, 0, unrelated_ticks + 5, Irp=6, Status=0)
+    emit(10, 99, unrelated_ticks + 6, FileKey="0x2d",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\compressed.bin")
+    emit(23, 99, unrelated_ticks + 7, FileObject=106, Irp=7, FileKey="0x2e", InfoClass=0x900A8)
+    emit(24, 0, unrelated_ticks + 8, Irp=7, Status=0)
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -847,9 +855,12 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 2
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported-file-operation"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported:path-missing"] == 1
-    assert report["unrelated_unresolved_event_types"]["other:event-23:info-4660:unsupported-file-operation"] == 1
-    assert report["unrelated_unresolved_event_types"]["other:event-23:info-4660:unsupported:path-missing"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:unsupported-file-operation"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:unsupported:path-missing"] == 1
+    assert report["unrelated_unresolved_mutations"]["other:compression:process-lifetime-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 1
+    assert report["unrelated_file_violations"]["protected:other:compression"] == 1
+    assert not any("fsctl-0x000900A8" in key for key in report["unrelated_unresolved_event_types"])
     assert report["unresolved_controls"] == {}
 
     # A conflicting NameCreate cannot override the digest-pinned rundown.

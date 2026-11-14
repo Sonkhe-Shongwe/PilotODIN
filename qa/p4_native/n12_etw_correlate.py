@@ -10,6 +10,11 @@ from collections import Counter
 from pathlib import Path
 
 
+# Microsoft FSCTL codes observed in the Kernel-File Event 23 InfoClass field.
+FSCTL_GET_REPARSE_POINT = 0x000900A8  # Retrieves reparse-point data; read-only.
+FSCTL_SET_COMPRESSION = 0x0009C040  # Changes a file/directory compression state.
+
+
 def number(value):
     if isinstance(value, str):
         return int(value, 16 if value.lower().startswith("0x") else 10)
@@ -63,7 +68,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         # observed in-window event could have changed or reused its name/object.
         guard_events = ordered_events if rundown_guard_events is None else rundown_guard_events
         name_events = {}
-        invalidating_kinds = {11, 12, 14, 18, 19, 23, 27, 29}
+        invalidating_kinds = {11, 12, 14, 18, 19, 27, 29}
         for guarded in guard_events:
             if guarded.get("lifecycle"):
                 continue
@@ -119,7 +124,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         if details is not None:
             max_info = 0xFFFFFFFF if event_id == 23 else 255
             info = info_class if type(info_class) is int and 0 <= info_class <= max_info else "unknown"
-            suffix = f":info-{info}" if event_id in {17, 23} else ""
+            if event_id == 23:
+                suffix = f":fsctl-0x{info:08X}" if type(info) is int else ":fsctl-unknown"
+            else:
+                suffix = f":info-{info}" if event_id == 17 else ""
             details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
 
     for event in ordered_events:
@@ -165,11 +173,11 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
             if status is None:
-                if in_scope:
+                if in_scope and operation != "query":
                     unresolved[f"{actor}:{operation}:missing-status"] += 1
                 continue
             if status & 0x80000000:
-                if in_scope:
+                if in_scope and operation != "query":
                     record(actor, identity, operation, source, destination, requested, ticks, False)
                 continue
             # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
@@ -207,13 +215,22 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             opened.pop(handle, None)
         if kind not in {12, 16, 17, 18, 19, 23, 29, 34}:
             continue
+        # Event 23 carries the FSCTL code in the provider's InfoClass field.
+        # Keep unknown codes unsupported; classify only documented operations.
+        info_class = number(data.get("InfoClass")) if kind in {17, 23} else None
         operation = {12: "open", 16: "write", 18: "delete", 19: "rename",
                      23: "unsupported", 29: "unsupported"}.get(kind)
+        if kind == 23:
+            if not strict:
+                operation = None
+            elif info_class == FSCTL_GET_REPARSE_POINT:
+                operation = "query"
+            elif info_class == FSCTL_SET_COMPRESSION:
+                operation = "compression"
         if operation == "unsupported" and not strict:
             operation = None
         # QueryEA (34) has no mutation operation, but a reused IRP still
         # invalidates any outstanding mutation that used the same pointer.
-        info_class = number(data.get("InfoClass")) if kind in {17, 23} else None
         if kind == 17:
             if info_class == 20:  # FileEndOfFileInformation
                 operation = "resize"
@@ -222,12 +239,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             elif strict:
                 operation = "unsupported"
         source = path if kind == 12 else opened.get(handle)
-        if strict and source is None and kind in {16, 17}:
+        if strict and source is None and kind in {16, 17, 23}:
             # Write requests expose FileKey. Set-information events can expose
             # only FileObject. Never substitute a stop-time name for an
             # ambiguous key or a key whose lifetime changed during the trace.
             raw_key = data.get("FileKey")
-            if kind == 17 and raw_key is None:
+            if kind in {17, 23} and raw_key is None:
                 raw_key = data.get("FileObject")
             try:
                 rundown_key = number(raw_key)
@@ -246,7 +263,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                         details[f"{actor}:event-{kind}:rundown-path-recovered"] += 1
         if strict and kind in {16, 18, 19, 23, 29}:
             file_key = number(data.get("FileKey"))
-            if kind != 16 and file_key in file_names:
+            if kind in {18, 19, 29} and file_key in file_names:
                 file_names[file_key] = None
             if details is not None and kind == 16 and source is None:
                 tid = number(data.get("IssuingThreadId", data.get("ThreadId")))
@@ -276,21 +293,21 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                         identity_context = "missing-process-bookends"
                     details[f"{actor}:event-16:write-request:{identity_context}:{context}"] += 1
         if not irp or not object_id:
-            if operation and relevant(actor, operation, source, None):
+            if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1
             continue
         if irp in pending:
             old_operation, owner, _, _, old_source, old_destination, _, _, _ = pending.pop(irp)
-            if relevant(owner, old_operation, old_source, old_destination):
+            if old_operation != "query" and relevant(owner, old_operation, old_source, old_destination):
                 unresolved[f"{owner}:{old_operation}:irp-reused-before-completion"] += 1
             ambiguous_irps.add(irp)
         if irp in ambiguous_irps:
-            if operation and relevant(actor, operation, source, None):
+            if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:irp-ambiguous"] += 1
         elif operation:
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind, info_class)
     for operation, actor, _, _, source, destination, _, event_id, info_class in pending.values():
-        if relevant(actor, operation, source, destination):
+        if operation != "query" and relevant(actor, operation, source, destination):
             flag(actor, f"{operation}:completion-missing", event_id, info_class)
     return unresolved
 
