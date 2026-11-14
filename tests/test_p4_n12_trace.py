@@ -844,7 +844,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     failed_report = json.loads(result.stdout)
     assert failed_report["control_status"] == "FAIL"
     assert failed_report["rundown_control_keys_recovered"] == 1
-    assert failed_report["rundown_control_key_invalidations"]["protected"]["event-10:NameMismatch"] == 1
+    assert failed_report["rundown_control_key_invalidations"]["protected"]["event-10:NameAmbiguous"] == 1
     assert protected_path not in result.stdout and outside_path not in result.stdout
 
     # A post-rundown NameDelete still invalidates the stop-time mapping.
