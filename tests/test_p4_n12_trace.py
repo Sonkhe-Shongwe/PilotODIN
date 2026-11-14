@@ -626,6 +626,31 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert preflight["coverage_issues"] == ["etw-mutation-coverage-unresolved"]
     assert preflight["etw_unresolved_event_types"]["calibration:event-17:info-4:unsupported-file-operation"] == 1
     assert r"C:\QA" not in json.dumps(preflight)
+
+    # Exercise the optional digest-pinned rundown path through the preflight CLI.
+    preflight_rundown_path = tmp_path / "preflight-rundown.jsonl"
+    preflight_entry = {"key": "0x28", "path": r"\Device\HarddiskVolume3\QA\home\cache.sqlite",
+                       "decoder": "tdh+raw-schema"}
+    preflight_payload = (json.dumps(preflight_entry) + "\n").encode("utf-8")
+    preflight_rundown_path.write_bytes(preflight_payload)
+    preflight_manifest = dict(
+        calibration_manifest,
+        etw=dict(calibration_manifest["etw"],
+                 rundown_sha256=hashlib.sha256(preflight_payload).hexdigest()),
+    )
+    preflight_manifest_path = tmp_path / "preflight-manifest.json"
+    preflight_manifest_path.write_text(json.dumps(preflight_manifest), encoding="utf-8")
+    preflight_fixture_path = tmp_path / "preflight-fixture.json"
+    preflight_fixture_path.write_text(json.dumps({"fixture": fixture}), encoding="utf-8")
+    preflight_cli = subprocess.run(
+        [sys.executable, str(Path(trace.__file__)), "check-etw-preflight",
+         str(preflight_manifest_path), str(preflight_fixture_path), str(etw_path),
+         "--rundown", str(preflight_rundown_path)],
+        capture_output=True, text=True, check=False,
+    )
+    assert preflight_cli.returncode == 0, preflight_cli.stderr
+    assert json.loads(preflight_cli.stdout)["file_key_rundown_records"] == 1
+
     del rows[-4:]
     report()
 
