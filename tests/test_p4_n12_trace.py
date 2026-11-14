@@ -1109,7 +1109,9 @@ class Evidence:
                                         "Hashes": "SHA256=" + "E" * 64}))
 
     def end(self, second, guid):
-        self.events.append((second, 5, {"ProcessGuid": guid}))
+        birth = next(fields for _, kind, fields in self.events
+                     if kind == 1 and fields["ProcessGuid"] == guid)
+        self.events.append((second, 5, {key: birth[key] for key in ("ProcessGuid", "ProcessId", "Image")}))
 
     def connect(self, second, guid, ip, port, protocol="tcp", initiated=True):
         self.events.append((second, 3, {"ProcessGuid": guid, "Protocol": protocol,
@@ -1173,6 +1175,71 @@ def test_calibrated_trace_reports_scoped_results_and_keeps_history(tmp_path):
     assert report["process_roles"]["webview-network"] == 2
     assert report["file_events"]["calibration:resize"] == 2
     assert report["unresolved_file_paths"] == []
+
+
+def test_identical_sysmon_exit_payloads_preserve_the_audit(tmp_path):
+    evidence = Evidence()
+    baseline = evidence.report(tmp_path)
+    evidence.end(33, "app1")
+    evidence.end(46, "net2")
+    sysmon, procmon = evidence.save(tmp_path)
+    tree = ET.parse(sysmon)
+    replay = [event for event in tree.getroot() if
+              event.findtext(f"{trace.EVENT_NS}System/{trace.EVENT_NS}EventID") == "5" and
+              event.findtext(f"{trace.EVENT_NS}EventData/{trace.EVENT_NS}Data[@Name='ProcessGuid']") == "app1"]
+    replay[-1].find(f"{trace.EVENT_NS}System/{trace.EVENT_NS}TimeCreated").set("SystemTime", instant(34))
+    tree.write(sysmon, encoding="utf-8")
+    report = trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after)
+    assert report == dict(baseline, sysmon_repeated_process_exits=2)
+
+
+@pytest.mark.parametrize(("field", "value", "message"), [
+    ("UtcTime", f"{BASE} 00:00:34.001", "conflicting process exit timestamps"),
+    ("ProcessId", "999", "process exit PID disagrees with birth"),
+    ("Image", r"C:\Private\another.exe", "process exit image disagrees with birth"),
+    ("User", r"PRIVATE\account", "conflicting process exit payloads"),
+])
+def test_conflicting_sysmon_exit_payloads_still_block_audit(tmp_path, field, value, message):
+    evidence = Evidence()
+    evidence.end(33, "app1")
+    evidence.events[-1][2][field] = value
+    with pytest.raises(trace.EvidenceValidationError, match=f"^Sysmon XML: {message}$"):
+        evidence.report(tmp_path)
+
+
+def test_identical_sysmon_exit_cannot_reuse_a_channel_record_id(tmp_path):
+    evidence = Evidence()
+    evidence.end(33, "app1")
+    sysmon, procmon = evidence.save(tmp_path)
+    tree = ET.parse(sysmon)
+    first, repeated = [event.find(f"{trace.EVENT_NS}System/{trace.EVENT_NS}EventRecordID")
+                       for event in tree.getroot()
+                       if event.findtext(f"{trace.EVENT_NS}System/{trace.EVENT_NS}EventID") == "5" and
+                       event.findtext(f"{trace.EVENT_NS}EventData/{trace.EVENT_NS}Data[@Name='ProcessGuid']") == "app1"]
+    repeated.text = first.text
+    tree.write(sysmon, encoding="utf-8")
+    with pytest.raises(trace.EvidenceValidationError, match="Sysmon export must be in ascending record order"):
+        trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after)
+
+
+def test_sysmon_exit_cannot_precede_birth(tmp_path):
+    evidence = Evidence()
+    evidence.end(33, "app1")
+    evidence.events[-1][2]["UtcTime"] = f"{BASE} 00:00:17.999"
+    with pytest.raises(trace.EvidenceValidationError, match="process exit precedes birth"):
+        evidence.report(tmp_path)
+
+
+def test_sysmon_exit_with_repeated_payload_field_is_blocked(tmp_path):
+    evidence = Evidence()
+    sysmon, procmon = evidence.save(tmp_path)
+    tree = ET.parse(sysmon)
+    exit_data = next(event.find(trace.EVENT_NS + "EventData") for event in tree.getroot()
+                     if event.findtext(f"{trace.EVENT_NS}System/{trace.EVENT_NS}EventID") == "5")
+    ET.SubElement(exit_data, trace.EVENT_NS + "Data", Name="ProcessId").text = "999"
+    tree.write(sysmon, encoding="utf-8")
+    with pytest.raises(trace.EvidenceValidationError, match="ambiguous process exit fields"):
+        trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after)
 
 
 def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):

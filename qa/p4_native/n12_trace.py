@@ -85,6 +85,7 @@ class Process:
     start: datetime
     command: str
     end: datetime | None = None
+    repeated_exits: int = 0
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,7 @@ def sysmon_sha256(hashes):
 
 def sysmon_events(path, start, end):
     processes = {}
+    exits = {}
     connections = []
     issues = set()
     first_record = last_record = None
@@ -123,8 +125,10 @@ def sysmon_events(path, start, end):
         first_record = record if first_record is None else first_record
         last_record = record
         kind = int(system.findtext(EVENT_NS + "EventID"))
-        fields = {item.get("Name"): item.text or "" for item in
-                  event.findall(f"{EVENT_NS}EventData/{EVENT_NS}Data")}
+        data = event.findall(f"{EVENT_NS}EventData/{EVENT_NS}Data")
+        fields = {item.get("Name"): item.text or "" for item in data}
+        if kind == 5:
+            require(None not in fields and len(fields) == len(data), "ambiguous process exit fields")
         if kind in {1, 3, 5}:
             # UtcTime is when the process/network event happened. SystemTime
             # can be later if Windows wrote the event to the channel afterward.
@@ -140,8 +144,20 @@ def sysmon_events(path, start, end):
                                           sysmon_sha256(fields.get("Hashes", "")), stamp,
                                           fields.get("CommandLine", ""))
             elif kind == 5 and (guid := fields["ProcessGuid"].casefold()) in processes:
-                require(processes[guid].end is None, "duplicate process exit")
-                processes[guid].end = stamp
+                process = processes[guid]
+                require(int(fields["ProcessId"]) == process.pid, "process exit PID disagrees with birth")
+                if "Image" in fields:
+                    require(windows_path(fields["Image"]) == process.image,
+                            "process exit image disagrees with birth")
+                require(process.start <= stamp, "process exit precedes birth")
+                if guid in exits:
+                    # Channel metadata may differ, but the full exit payload must agree.
+                    require(process.end == stamp, "conflicting process exit timestamps")
+                    require(fields == exits[guid], "conflicting process exit payloads")
+                    process.repeated_exits += 1
+                else:
+                    exits[guid] = fields
+                    process.end = stamp
             elif kind == 3:
                 address = ipaddress.ip_address(fields["DestinationIp"])
                 if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
@@ -754,6 +770,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         "executable_sha256": manifest["executable_sha256"],
         "coverage": "BLOCKED" if issues else "CALIBRATED",
         "coverage_issues": sorted(issues), "process_roles": dict(Counter(roles.values())),
+        "sysmon_repeated_process_exits": sum(process.repeated_exits for process in processes.values()),
         "network": network, "connections": net_counts, "unexpected_connections": external,
         "network_scope": "Sysmon-observed TCP/UDP connections, excluding blocked attempts",
         "native_n12_accepted": False,

@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Sysmon identical exit records can be replayed
+
+- The N12 audit accepts a repeat of the same Event ID 5 payload under a new, ascending channel record ID. The exit must match the known process and its recorded exit time. The audit reports an aggregate repeat count. Conflicting payloads or timestamps, mismatched process identity, repeated fields and invalid record order still block coverage. No change was made to the network or filesystem audit rules.
+- Nine local parser checks passed with generated XML. The regular P4 and N12 rundown workflows exercise the new regressions. The raw records from the failed hosted run are unavailable, so equivalence in that run remains unverified. The hosted app-journey workflow is disarmed. A further capture requires fresh approval and a fresh source-pinned one-use marker. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 14 November 2026 | N12 hosted diagnostic audit blocked by Sysmon exit records
 
 - The [approved hosted run #43636532436, job #132574444473](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43636532436/job/132574444473) ran once at launch commit `58f5559a88416463e228222b38b61b87ce2aaf20`. It checked out the reviewed parent `9c0c1242eed1bd793ce1af04cff9da21be3c6255`. The unpackaged MSVC debug build and pinned Sysmon 15.22 setup passed. Executable SHA-256 `6a212e4fc7236f1f07240a8bb42b4be8cef0f228f817ff80e5b507685b786a44`. Resolved Cargo lock SHA-256 `cb6bc6303420a49e6aa5f8b57f896872081785cbf9586c50ede2d544c11ace94`.
