@@ -82,7 +82,8 @@ test('UnifiedShell gates both late success and late error before altering projec
  assert.match(s,/import \{createProjectCatalogRequestGuard\} from '\.\/projectCatalogRequestGuard'/);
  assert.match(s,/const catalogRequests=useRef\(createProjectCatalogRequestGuard\(\)\)/);
  assert.match(s,/const requestId=catalogRequests\.current\.begin\(\)/);
- assert.match(s,/const rows=await get<ProjectListItem\[\]>\('\/projects'\);\s+if\(!catalogRequests\.current\.accepts\(requestId\)\)return;\s+setProjects\(rows\)/);
+ assert.match(s,/let rows=await get<ProjectListItem\[\]>\('\/projects'\);\s+if\(!catalogRequests\.current\.accepts\(requestId\)\)return;/);
+ assert.match(s,/const managed=await get<ManagedProject\[\]>\('\/projects\/manage'\);\s+if\(!catalogRequests\.current\.accepts\(requestId\)\|\|currentProjectRef\.current!==checkedId\)return;/);
  assert.match(s,/catch\(e\)\{\s+if\(!catalogRequests\.current\.accepts\(requestId\)\)return;/);
  assert.match(s,/useEffect\(\(\)=>\(\)=>catalogRequests\.current\.invalidate\(\),\[\]\)/);
  assert.match(s,/shouldClearUnavailableProject\(selectedAtRequestStart,latest,rows\)/);

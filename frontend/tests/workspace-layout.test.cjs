@@ -87,7 +87,8 @@ test('project-dependent views wait for catalogue validation and expose retry on 
  const shell=fs.readFileSync(path.join(__dirname,'../src/UnifiedShell.tsx'),'utf8');
  assert.match(shell,/catalogState,setCatalogState/);
  assert.match(shell,/setCatalogState\('ready'\)/);
- assert.match(shell,/catalogState==='ready'\?\(active==='investigate'/);
+ assert.match(shell,/const workspaceReady=isProjectWorkspaceRestored\(projectId,restoredFor,catalogState\)/);
+ assert.match(shell,/workspaceReady\?\(active==='investigate'/);
  assert.match(shell,/Checking that the saved project belongs to this local workspace/);
  assert.match(shell,/catalogState==='failed'&&<button[^>]+onClick=/);
  assert.match(shell,/setCatalogState\(previous=>previous==='ready'\?'ready':'failed'\)/);

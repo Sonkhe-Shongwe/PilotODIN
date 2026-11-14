@@ -240,6 +240,8 @@ test('real HTTP reversible project management preserves mounted work on cross-wi
  await expect(selector.locator('option[value="'+pid+'"]')).toHaveText(initialName);
  const firstPane=page.locator('.po-primary-pane .po-pane-content');
  await expect(firstPane).toBeVisible();
+ const target=page.getByLabel('TARGET VARIABLE');
+ await target.selectOption('Status');
  // Keep a reference to the mounted pane, not a persisted dataset or draft.
  await page.evaluate(()=>{
   (window as Window&{__p1ArchivePane?:Element|null}).__p1ArchivePane=
@@ -251,9 +253,11 @@ test('real HTTP reversible project management preserves mounted work on cross-wi
  await expect(other.getByRole('combobox',{name:'Switch project'})).toHaveValue(pid);
  // Before the real archive, forged/future notifications cannot override the
  // actual backend state or spuriously unmount a loaded Studio.
+ const forgedCheck=page.waitForResponse(response=>response.url()===API+'/api/projects/manage');
  await other.evaluate(({key,id})=>{
   localStorage.setItem(key,JSON.stringify({id,revision:99,archived:true}));
  },{key:signalKey,id:pid});
+ expect((await forgedCheck).status()).toBe(200);
  await expect(selector).toHaveValue(pid);
  await expect(page.locator('.po-shell-warning')).toHaveCount(0);
 
@@ -271,16 +275,23 @@ test('real HTTP reversible project management preserves mounted work on cross-wi
   expect((await denied.json()).detail).toContain('archived');
  }
 
- // Only a versioned identity hint crosses pages. The receiver verifies
- // current backend metadata; no source, history or draft is transmitted.
- await other.evaluate(({key,id})=>{
-  localStorage.setItem(key,JSON.stringify({id,revision:1,archived:true}));
- },{key:signalKey,id:pid});
+ // Reproduce the race by making the active catalogue refresh before the
+ // other window publishes its archive notification.
+ await page.evaluate(()=>window.dispatchEvent(new Event('pilotodin:project-changed')));
  await expect(page.locator('.po-shell-warning')).toContainText(
   'This project was archived in another window.');
  await expect(selector).toHaveValue(pid);
  await expect(selector.locator('option[value="'+pid+'"]')).toContainText(
   'Archived in another window');
+ await expect(target).toHaveValue('Status');
+
+ // Only a versioned identity hint crosses pages. The receiver verifies
+ // current backend metadata; no source, history or draft is transmitted.
+ const archiveCheck=page.waitForResponse(response=>response.url()===API+'/api/projects/manage');
+ await other.evaluate(({key,id})=>{
+  localStorage.setItem(key,JSON.stringify({id,revision:1,archived:true}));
+ },{key:signalKey,id:pid});
+ expect((await archiveCheck).status()).toBe(200);
  const samePane=await page.evaluate(()=>{
   const win=window as Window&{__p1ArchivePane?:Element|null};
   return !!win.__p1ArchivePane&&
@@ -300,6 +311,8 @@ test('real HTTP reversible project management preserves mounted work on cross-wi
   localStorage.setItem(key,JSON.stringify({id,revision:2,archived:false}));
  },{key:signalKey,id:pid});
  await expect(selector.locator('option[value="'+pid+'"]')).toHaveText(initialName);
+ await expect(selector).toHaveValue(pid);
+ await expect(target).toHaveValue('Status');
  await expect(page.locator('.po-shell-warning')).toHaveCount(0);
  expect(await page.evaluate(()=>{
   const win=window as Window&{__p1ArchivePane?:Element|null};

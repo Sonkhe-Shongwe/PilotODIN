@@ -99,6 +99,7 @@ export function UnifiedShell(){
  // Do not mount data-fetching workspaces until the saved project ID is checked
  // against this environment's catalogue. Live dev intentionally has isolated data.
  const [catalogState,setCatalogState]=useState<'loading'|'ready'|'failed'>('loading');
+ const catalogReadyRef=useRef(false);
  // A verified archive in another window is not permission to discard local drafts.
  const [heldArchivedId,setHeldArchivedId]=useState('');
  const heldArchivedRef=useRef('');
@@ -153,9 +154,23 @@ export function UnifiedShell(){
   const requestId=catalogRequests.current.begin();
   const selectedAtRequestStart=localStorage.getItem('pilotodin-current')||'';
   try{
-   const rows=await get<ProjectListItem[]>('/projects');
+   let rows=await get<ProjectListItem[]>('/projects');
    if(!catalogRequests.current.accepts(requestId))return;
+   const checkedId=currentProjectRef.current;
+   if(catalogReadyRef.current&&checkedId&&!rows.some(item=>item.id===checkedId)&&heldArchivedRef.current!==checkedId){
+    // The active list omits archived projects. It can arrive before the
+    // other window's archive notification or its verification response.
+    const managed=await get<ManagedProject[]>('/projects/manage');
+    if(!catalogRequests.current.accepts(requestId)||currentProjectRef.current!==checkedId)return;
+    const row=managed.find(item=>item.id===checkedId);
+    if(row?.archived_at){
+     heldArchivedRef.current=checkedId;
+     setHeldArchivedId(checkedId);
+    }
+    rows=managed.filter(item=>item.archived_at===null);
+   }
    setProjects(rows);
+   catalogReadyRef.current=true;
    setCatalogState('ready');
    const latest=localStorage.getItem('pilotodin-current')||'';
    if(heldArchivedRef.current&&rows.some(item=>item.id===heldArchivedRef.current)){
@@ -871,6 +886,9 @@ export function UnifiedShell(){
   if(!separate)editedDock.current=null;
  },[separate,projectId,dock.secondary]);
  const paneStyle={'--po-secondary-fraction':`${Math.round(clampFraction(dock.fraction)*10000)/100}%`} as CSSProperties;
+ const archivedSelection=isCurrentProjectHeldArchived(projectId,heldArchivedId)&&!selectorLabels.has(projectId);
+ const projectOptions=projects.map(p=><option key={p.id} value={p.id}>{selectorLabels.get(p.id)??p.name}</option>);
+ if(archivedSelection)projectOptions.push(<option key={projectId} value={projectId} disabled>Archived in another window (restore to continue)</option>);
  return <div className="po-unified-shell">
   <header className="po-shell-title">
    <div className="po-shell-brand"><img className="po-brand-symbol" src="/pilotodin-symbol.svg" alt="" aria-hidden="true"/><span className="po-brand-wordmark"><span className="po-pilot">pilot</span><b>ODIN</b></span></div>
@@ -881,8 +899,7 @@ export function UnifiedShell(){
     <Database className="po-project-switcher-icon" size={16} aria-hidden="true"/>
     <select aria-label="Switch project" title={selectorLabels.get(projectId)??(projects.length?'Switch between imported projects':'Import another dataset to switch between projects')} value={projectId} disabled={nativeProjectSwitchWaiting} onChange={e=>chooseProject(e.target.value)}>
      <option value="" disabled>{projects.length?"Select an imported project":"No projects imported yet"}</option>
-     {heldArchivedId===projectId&&!!projectId&&!projects.some(p=>p.id===projectId)&&<option value={projectId} disabled>Archived in another window (restore to continue)</option>}
-     {projects.map(p=><option key={p.id} value={p.id}>{selectorLabels.get(p.id)??p.name}</option>)}
+     {projectOptions}
     </select>
     <ChevronDown className="po-project-switcher-arrow" size={16} aria-hidden="true"/>
    </div>
