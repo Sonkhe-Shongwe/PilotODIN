@@ -1,0 +1,28 @@
+name: P4 N12 Kernel Stack Symbol Resolution
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-n12-kernel-symbols.yml
+
+permissions:
+  contents: read
+
+jobs:
+  kernel-symbols:
+    if: >-
+      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): resolve N12 protected kernel stack symbols'
+    name: Resolve matched Windows kernel stack frames
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact capture source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Verify generated controls and resolve matched frames
+        shell: pwsh
+        run: ./qa/p4_research/n12_stack/Run.ps1

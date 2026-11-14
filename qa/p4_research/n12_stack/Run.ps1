@@ -25,6 +25,10 @@ Push-Location $work
 try {
     & $env:ComSpec /d /s /c $compile
     if ($LASTEXITCODE -ne 0) { throw 'The stack decoder did not compile.' }
+    $resolver = Join-Path $work 'symbols.exe'
+    $compileSymbols = 'call "{0}" >nul && cl.exe /nologo /std:c++17 /EHsc /W4 "{1}" /Fe:"{2}" /link dbghelp.lib' -f $vcvars, (Join-Path $PSScriptRoot 'symbols.cpp'), $resolver
+    & $env:ComSpec /d /s /c $compileSymbols
+    if ($LASTEXITCODE -ne 0) { throw 'The symbol resolver did not compile.' }
 } finally {
     Pop-Location
 }
@@ -64,3 +68,6 @@ python (Join-Path $PSScriptRoot 'analyze.py') $env:PILOTODIN_N12_STACK_META $dec
 if ($LASTEXITCODE -ne 0) { throw 'The stack correlation report failed.' }
 
 if ($fixtureFailure) { throw 'The strict fixture did not pass its original control assertions.' }
+
+python (Join-Path $PSScriptRoot 'symbols.py') (Join-Path $root 'symbol-targets.json') (Join-Path $work 'symbols') $resolver
+if ($LASTEXITCODE -ne 0) { throw 'The kernel symbol report failed.' }

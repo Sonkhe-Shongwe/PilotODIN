@@ -13,6 +13,17 @@ from n12_etw_correlate import (
 )
 
 
+class Image(NamedTuple):
+    stamp: int
+    opcode: int
+    pid: int
+    base: int
+    size: int
+    checksum: int
+    timestamp: int
+    name: str
+
+
 class Request(NamedTuple):
     qpc: int
     opcode: int
@@ -45,7 +56,7 @@ def read_classic(path, devices):
             if tag == "name":
                 names[int(fields[0])].add(canonical_file_path(fields[1], devices))
             elif tag == "image":
-                data[tag].append((*map(int, fields[:-1]), ntpath.basename(fields[-1]).casefold()))
+                data[tag].append(Image(*map(int, fields[:-1]), ntpath.basename(fields[-1]).casefold()))
             else:
                 data[tag].append(tuple(map(int, fields)))
     return data, names
@@ -87,26 +98,35 @@ def stack_frames(identity, stacks, refs, definitions):
     return tuple(frame for group in groups for frame in next(iter(group)))
 
 
-def module_frames(frames, pid, qpc, images):
+def frame_image(address, pid, qpc, images):
+    loaded = defaultdict(list)
+    kernel = address >= 0xFFFF000000000000
+    for item in images:
+        eligible = item.pid in (0, 4) if kernel else item.pid == pid
+        if eligible and item.base <= address < item.base + item.size:
+            identity = (item.base, item.size, item.checksum, item.timestamp, item.name)
+            loaded[identity].append((item.stamp, 1 if item.opcode == 10 else item.opcode))
+    matches = [key for key, records in loaded.items() if lifecycle(records, qpc, preexisting=True)]
+    return matches[0] if len(matches) == 1 else None
+
+
+def module_frames(frames, pid, qpc, images, symbol_frames=None):
     counts = Counter()
-    for address in frames:
-        loaded = defaultdict(list)
-        for stamp, opcode, owner, base, size, name in images:
-            kernel = address >= 0xFFFF000000000000
-            eligible = owner in (0, 4) if kernel else owner == pid
-            if eligible and base <= address < base + size:
-                loaded[owner, base, name].append((stamp, 1 if opcode == 10 else opcode))
-        names = {name for (_, _, name), records in loaded.items() if lifecycle(records, qpc, preexisting=True)}
-        if len(names) == 1:
-            name = names.pop()
-            public = {"ntoskrnl.exe", "ntkrnlmp.exe", "ntfs.sys", "fltmgr.sys",
-                      "ntdll.dll", "kernelbase.dll", "kernel32.dll"}
-            if name.startswith("python") and name.endswith((".exe", ".dll")):
-                counts["python"] += 1
-            else:
-                counts[name if name in public else "other-module"] += 1
-        else:
+    for index, address in enumerate(frames):
+        image = frame_image(address, pid, qpc, images)
+        if image is None:
             counts["unresolved"] += 1
+            continue
+        base, size, checksum, timestamp, name = image
+        public = {"ntoskrnl.exe", "ntkrnlmp.exe", "ntfs.sys", "fltmgr.sys",
+                  "ntdll.dll", "kernelbase.dll", "kernel32.dll"}
+        if name.startswith("python") and name.endswith((".exe", ".dll")):
+            counts["python"] += 1
+        else:
+            counts[name if name in public else "other-module"] += 1
+        if symbol_frames is not None and name in {"ntoskrnl.exe", "ntkrnlmp.exe", "ntfs.sys", "fltmgr.sys"}:
+            symbol_frames.append({"frame": index, "module": name, "rva": address - base,
+                                  "size": size, "checksum": checksum, "timestamp": timestamp})
     return dict(counts)
 
 
@@ -210,7 +230,7 @@ def calibration_candidates(requests, names, companion_irps, known, label, opcode
             counts["companion-match-missing" if not completed else "companion-match-ambiguous"] += 1
     return selected, dict(counts)
 
-def report(root, known, decoder, comparisons):
+def report(root, known, decoder, comparisons, symbol_targets):
     capture = json_file(root / "fixture.json")
     events = sorted(json_rows(root / "events.jsonl"), key=lambda row: row["ticks"])
     rundown = json_rows(root / "rundown.jsonl")
@@ -285,7 +305,7 @@ def report(root, known, decoder, comparisons):
                 and successful_completion(companion_irps[number(data.get("Irp"))], row, capture["end_ticks"] + 1)
                 is not None)
 
-    def assess(row, pid, issuing):
+    def assess(row, pid, issuing, symbol_frames=None):
         result = {"classic_success": bool(completed(row))}
         identity = stack_identity(row, pid, issuing, processes, threads)
         result["lifetime"] = "confirmed" if identity is not None else "unverified"
@@ -304,7 +324,7 @@ def report(root, known, decoder, comparisons):
             frames = stack_frames(identity, stacks, refs, definitions)
         result["stack_status"] = "matched" if frames else status
         result["stack_frames"] = len(frames)
-        result["modules"] = module_frames(frames, pid, row.qpc, classic["image"])
+        result["modules"] = module_frames(frames, pid, row.qpc, classic["image"], symbol_frames)
         return result
 
     calibrations = {}
@@ -361,7 +381,12 @@ def report(root, known, decoder, comparisons):
                     result["unmatched_companion_operations"] += 1
                     continue
                 row = candidates[0]
-                outcome = assess(row, 4, issuing)
+                symbol_frames = []
+                outcome = assess(row, 4, issuing, symbol_frames)
+                if label in {"protected", "outside"} and symbol_frames:
+                    symbol_targets.append({"control": label, "operation": operation,
+                                           "stack_frames": outcome["stack_frames"],
+                                           "frames": symbol_frames})
                 outcome.update(request_phase=phase(item["ticks"]), completion_phase=phase(completed_ticks))
                 if opcode == 68:
                     outcome["paging_flag"] = bool(row.flags & 2)
@@ -392,8 +417,11 @@ def report(root, known, decoder, comparisons):
 if __name__ == "__main__":
     try:
         metadata = json_file(Path(sys.argv[1]))
-        result = report(Path(metadata["root"]), metadata["known"], json.loads(sys.argv[2]),
-                        metadata["comparisons"])
+        root = Path(metadata["root"])
+        symbol_targets = []
+        result = report(root, metadata["known"], json.loads(sys.argv[2]),
+                        metadata["comparisons"], symbol_targets)
+        (root / "symbol-targets.json").write_text(json.dumps(symbol_targets), encoding="utf-8")
         print("N12 stack correlation: " + json.dumps(result), flush=True)
         controls = result["system_context"]
         if (not result["calibrated"] or not controls["flushed"]["explicit_flush"]

@@ -164,7 +164,9 @@ void WINAPI event_callback(PEVENT_RECORD record) {
             const auto pid = field<std::uint32_t>(*record, 16);
             if (!path.empty() && base && size) {
                 rows << "image\t" << stamp << '\t' << static_cast<unsigned>(opcode) << '\t'
-                     << pid << '\t' << base << '\t' << size << '\t' << path << '\n';
+                     << pid << '\t' << base << '\t' << size << '\t'
+                     << field<std::uint32_t>(*record, 20) << '\t'
+                     << field<std::uint32_t>(*record, 24) << '\t' << path << '\n';
             }
         }
     } catch (const std::exception&) {
