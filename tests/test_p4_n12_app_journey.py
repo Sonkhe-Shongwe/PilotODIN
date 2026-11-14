@@ -135,7 +135,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         else:
             pytest.fail(f"unexpected PowerShell call {args[0]}")
 
-    def reduce(m, sysmon, file_trace, before, after, *, etw, private_endpoints):
+    def reduce(m, sysmon, file_trace, before, after, *, etw, private_endpoints,
+               record_outside_scope, private_app_launches):
         events.append("reducer")
         assert sysmon.read_bytes() == b"record-bounded evidence"
         assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
@@ -144,7 +145,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert list(m["markers"].values()) == sorted(m["markers"].values())
         assert before != after
         assert [p["role"] for p in m["processes"]].count("app") == 2
-        private_endpoints.append({"raw": "private-value"})
+        private_endpoints.append({"role": "backend", "raw": "private-value"})
+        record_outside_scope("driver", "write", (r"c:\private\driver.bin",))
         return {"coverage": "BLOCKED", "network": "BLOCKED", "filesystem": "BLOCKED"}
 
     monkeypatch.setattr(journey, "calibrate", calibrate)
@@ -158,6 +160,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "powershell", powershell)
     monkeypatch.setattr(journey, "export_sysmon", lambda first, last, path: path.write_bytes(b"record-bounded evidence"))
     monkeypatch.setattr(journey.trace, "audit", reduce)
+    monkeypatch.setattr(journey, "diagnostic_paths", lambda *args: journey.OutsidePaths([]))
 
     if fault:
         with pytest.raises(journey.trace.EvidenceValidationError, match={
@@ -179,4 +182,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                           "cleanup-driver-first", "cleanup-app-first", "cleanup-vite", "cleanup-backend",
                           "calibration-last", "etw-stop", "drain", "etw-export", "reducer"]
         assert "private-value" not in (root / "audit.json").read_text()
-        assert json.loads((root / "private-endpoints.json").read_text()) == [{"raw": "private-value"}]
+        assert json.loads((root / "private-endpoints.json").read_text()) == [{"role": "backend", "raw": "private-value"}]
+        assert report["journey_diagnostics"]["outside_scope_paths"] == [
+            {"role": "driver", "operation": "write", "path_categories": ["other-path"], "count": 1},
+        ]

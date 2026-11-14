@@ -557,7 +557,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       process_event_images=None,
                       rundown_recovered_keys=None, rundown_invalidations=None,
                       preopened_control_file_keys=None, preopened_control_file_objects=None,
-                      rundown_window=None):
+                      rundown_window=None, record_outside_scope=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -623,9 +623,12 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         if role in {"other", "unattributed"}:
             return
         counts[f"{role}:{operation}"] += 1
-        if not all(any(inside(target, root) for root in permitted.get(role, ()))
-                   for target in targets):
+        outside = tuple(target for target in targets
+                        if not any(inside(target, root) for root in permitted.get(role, ())))
+        if outside:
             violations[f"outside-scope:{role}:{operation}"] += 1
+            if record_outside_scope is not None:
+                record_outside_scope(role, operation, outside)
         if role == "calibration" and start_ticks <= requested <= completed <= end_ticks:
             file_events.add((identity, operation, *targets))
 
@@ -655,7 +658,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
 
 def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
-          rundown=None):
+          rundown=None, record_outside_scope=None, private_app_launches=None):
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
     start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
@@ -671,10 +674,13 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
     roles, bindings = bind_processes(manifest["processes"], processes, issues)
     verify_app_lifecycles(manifest, processes, markers, roles, bindings, issues)
     apps = sorted((p for _, p in bindings if roles[p.guid] == "app"), key=lambda p: p.start)
-    if len(apps) != 2 or not (markers["launch"] <= apps[0].start < markers["quality"] and
-                             apps[0].end and markers["close"] <= apps[0].end < markers["reopen"] and
-                             markers["reopen"] <= apps[1].start < markers["exit"] and
-                             apps[1].end and markers["exit"] <= apps[1].end):
+    app_lifecycles_match = len(apps) == 2 and (
+        markers["launch"] <= apps[0].start < markers["quality"]
+        and apps[0].end and markers["close"] <= apps[0].end < markers["reopen"]
+        and markers["reopen"] <= apps[1].start < markers["exit"]
+        and apps[1].end and markers["exit"] <= apps[1].end
+    )
+    if not app_lifecycles_match:
         issues.add("app-lifecycle-does-not-match-journey")
     etw_diagnostics = {}
     if etw:
@@ -682,7 +688,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
                      for label in manifest["immutable_observed"]]
         file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
             manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues,
-            rundown=rundown)
+            rundown=rundown, record_outside_scope=record_outside_scope)
         path_diagnostics = []
     else:
         file_counts, violations, file_events, path_diagnostics = inspect_files(
@@ -697,6 +703,17 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
     net_counts, external, endpoints = scoped_network(connections, roles, set(ports))
     if private_endpoints is not None:
         private_endpoints.extend(endpoints)
+    if (private_app_launches is not None and app_lifecycles_match
+            and all(app.sha256 == manifest["executable_sha256"] for app in apps)):
+        app_launches = {app.guid: label for app, label in zip(apps, ("first", "relaunch"))}
+        # Follow validated Sysmon ancestry, not the time or order of a socket event.
+        for process in sorted(processes.values(), key=lambda process: process.start):
+            parent = processes.get(process.parent)
+            if (process.guid in roles and process.parent in app_launches and parent
+                    and parent.start <= process.start and (not parent.end or process.start <= parent.end)):
+                app_launches.setdefault(process.guid, app_launches[process.parent])
+        private_app_launches.update({guid: label for guid, label in app_launches.items()
+                                     if roles[guid] == "webview-network" and processes[guid].end})
     snapshots, changed = verify_snapshots(before, after, manifest, issues)
     network = "PASS_SCOPED"
     if any(e["kind"] == "non-loopback" for e in external):

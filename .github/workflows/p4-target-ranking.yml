@@ -40,11 +40,13 @@ on:
       - tests/test_p4_native_acceptance_kit.py
       - tests/test_p4_n12_app_build.py
       - tests/test_p4_n12_app_journey.py
+      - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_trace.py
       - tests/test_p4_installer_provenance.py
       - qa/p4_native/**
       - qa/p4_research/n12_app_build.py
       - qa/p4_research/n12_app_journey.py
+      - qa/p4_research/n12_journey_diagnostics.py
       - qa/p4_research/Invoke_N12_Journey_Evidence.ps1
       - frontend/tests/p4-target-opportunities-contracts.test.cjs
       - frontend/package.json
@@ -126,6 +128,7 @@ jobs:
           tests/test_p4_n12_trace.py
           tests/test_p4_n12_app_build.py
           tests/test_p4_n12_app_journey.py
+          tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_installer_provenance.py
       - name: Verify P4 source contracts and manual target choice
         run: >-

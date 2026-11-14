@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 redacted audit diagnostics prepared
+
+The hosted journey can report fixed categories for writes outside the allowed paths and try to correlate Sysmon-observed WebView connections with private NetLog socket and request evidence. Synthetic checks passed. The audit failures in the earlier live run remain open. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-redacted-audit-diagnostics-prepared).
+
 ## 14 November 2026 | N12 hosted app journey completed with audit failures
 
 The [approved Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) completed both launches and the strict audit. The job failed on the network and filesystem results, with unresolved ETW path and process coverage. All four hosted protected fingerprints and the immutable fixture fingerprint matched. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** The one-use approval is consumed. [Evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-app-journey-completed-with-audit-failures).

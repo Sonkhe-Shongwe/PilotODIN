@@ -17,6 +17,7 @@ from uuid import uuid4
 from qa.p4_native import n12_etw_probe as etw
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
+from qa.p4_research.n12_journey_diagnostics import OutsidePaths, network_summary
 
 
 NATIVE = build.REPO / "qa" / "p4_native"
@@ -232,6 +233,25 @@ def prepare_journey(root, source, expected_hash):
     return manifest, home, profile, source_fixture, calibration
 
 
+def diagnostic_paths(root, staged, manifest):
+    roots = [
+        ("qa-home", manifest["observed_roots"]["qa-home"]),
+        ("qa-webview-profile", manifest["observed_roots"]["qa-webview"]),
+        ("qa-local-profile", manifest["observed_roots"]["qa-local"]),
+        ("qa-roaming-profile", manifest["observed_roots"]["qa-roaming"]),
+        ("frontend-vite-cache", FRONTEND / "node_modules" / ".vite"),
+        ("frontend-dependencies", FRONTEND / "node_modules"),
+        ("source-checkout", build.REPO),
+        ("staged-build", staged),
+        ("capture-workspace", root),
+    ]
+    roots.extend((label, os.environ[key]) for label, key in (
+        ("runner-temp", "RUNNER_TEMP"), ("user-temp", "TEMP"), ("user-local", "LOCALAPPDATA"),
+        ("user-roaming", "APPDATA"), ("windows-system", "SystemRoot"),
+    ) if os.environ.get(key))
+    return OutsidePaths(roots)
+
+
 def capture(root, staged, source, expected_hash, node):
     manifest, home, profile, fixture, calibration = prepare_journey(root, source, expected_hash)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
@@ -300,9 +320,16 @@ def capture(root, staged, source, expected_hash, node):
                        "end_utc": capture_end.isoformat(), "counters": counters,
                        "volume_devices": devices, "events_sha256": build.digest(events)}
     report_file(root / "manifest.json", manifest)
-    endpoints = []
-    result = trace.audit(manifest, sysmon, events, before, after, etw=True, private_endpoints=endpoints)
+    endpoints, launches = [], {}
+    paths = diagnostic_paths(root, staged, manifest)
+    result = trace.audit(manifest, sysmon, events, before, after, etw=True, private_endpoints=endpoints,
+                         record_outside_scope=paths.record, private_app_launches=launches)
     report_file(root / "private-endpoints.json", endpoints)
+    log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
+    result["journey_diagnostics"] = {
+        "outside_scope_paths": paths.summary(),
+        "network": network_summary(endpoints, launches, log_paths),
+    }
     result["journey"] = "completed"
     report_file(root / "audit.json", result)
     return result

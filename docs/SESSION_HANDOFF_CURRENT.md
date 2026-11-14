@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 redacted audit diagnostics prepared
+
+- The [journey diagnostics](../qa/p4_research/n12_journey_diagnostics.py) group resolved ETW outside-scope operations by role, operation and fixed path category. A rename contributes one record even if both paths fall outside the allowed roots. No path, filename or process ID appears in this grouping. Unresolved file operations still block strict coverage.
+- The journey reads the two private Chromium-format NetLogs from runner temp. The correlator requires verified Sysmon ancestry for the launch, a unique socket interval, protocol, source port, remote address and destination port. A bounded time window accounts for Chromium's approximate UTC conversion. Only explicit NetLog links support a redacted HTTP, HTTPS or DNS request category. Missing, oversized, incomplete or ambiguous evidence can leave an observation unattributed. URLs, addresses, local ports and process identifiers stay in runner temp. The strict reducer still decides acceptance and retains the historical 443 disposition.
+- Six generated diagnostic cases and the combined ETW/Sysmon fixture integration passed locally. The prior run's raw evidence stayed on its runner, so the 611 file operations and six unexpected connections have no new attribution from this change. The workflow remains disarmed. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** Next review whether the diagnostics can answer the remaining questions in one separately approved capture, including the known ETW file-path and process-lifetime gaps.
+
 ## 14 November 2026 | N12 hosted app journey completed with audit failures
 
 - The [approved Windows run #43629894863, job #132553947362](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) reached the strict reducer on attempt 1. Launch commit `abf7b75e7b288aa855523d3373e7037a33b61533` checked out reviewed source `8142119ae208f9f9b3cd2df8164376e40fce0e53`. The one unpackaged build and pinned Sysmon 15.22 setup succeeded. Executable SHA-256 `8b43333a4efae71d4eac717f6a03544d8a01db48e1b39c48c9ce34517248a996`. Resolved Cargo lock SHA-256 `cb6bc6303420a49e6aa5f8b57f896872081785cbf9586c50ede2d544c11ace94`. The workflow is disarmed and the one-use approval is consumed.

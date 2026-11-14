@@ -1,0 +1,250 @@
+"""Redacted diagnostics for the approved disposable N12 Windows app journey."""
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from datetime import datetime
+from ipaddress import IPv6Address, ip_address
+import json
+from urllib.parse import urlsplit
+
+from qa.p4_native.n12_trace import inside, local_disposable_path, windows_path
+
+
+CONNECT_EVENTS = {"TCP_CONNECT", "TCP_CONNECT_ATTEMPT", "UDP_CONNECT"}
+LINK_EVENTS = {
+    "SOCKET_POOL_BOUND_TO_SOCKET", "SOCKET_POOL_BOUND_TO_CONNECT_JOB", "CONNECT_JOB_SET_SOCKET",
+    "HTTP_STREAM_JOB_BOUND_TO_REQUEST", "HTTP_STREAM_REQUEST_BOUND_TO_JOB",
+    "TRANSPORT_CONNECT_JOB_CONNECT_ATTEMPT", "TCP_CONNECT_JOB_CONNECTOR_CONNECT_START",
+    "DNS_TRANSACTION_ATTEMPT", "DNS_TRANSACTION_TCP_ATTEMPT",
+}
+CLOCK_TOLERANCE_MS = 1000
+REQUEST_LOOKBACK_MS = 10_000
+NETLOG_LIMIT = 64 * 1024 * 1024
+
+
+class OutsidePaths:
+    def __init__(self, roots):
+        # The caller supplies fixed categories ordered from narrow to broad.
+        self.roots = [(label, windows_path(str(path))) for label, path in roots]
+        self.counts = Counter()
+
+    def record(self, role, operation, paths):
+        labels = sorted({next((label for label, root in self.roots if inside(path, root)), "other-path")
+                         for path in paths})
+        self.counts[role, operation, tuple(labels)] += 1
+
+    def summary(self):
+        return [{"role": role, "operation": op, "path_categories": list(labels), "count": count}
+                for (role, op, labels), count in sorted(self.counts.items())]
+
+
+def address(value):
+    parsed = ip_address(value)
+    if isinstance(parsed, IPv6Address) and parsed.ipv4_mapped:
+        return parsed.ipv4_mapped
+    return parsed
+
+
+def endpoint(value):
+    if not isinstance(value, str):
+        raise ValueError("missing address")
+    host, separator, port = value.rpartition(":")
+    if not separator or not port.isascii() or not port.isdecimal() or not 1 <= int(port) <= 65535:
+        raise ValueError("invalid endpoint")
+    if host.startswith("[") and host.endswith("]"):
+        host = host[1:-1]
+    elif ":" in host:
+        raise ValueError("IPv6 endpoint must be bracketed")
+    return address(host), int(port)
+
+
+@dataclass(frozen=True)
+class SocketMatch:
+    source: tuple[int, int]
+    protocol: str
+    local_port: int
+    remote: tuple
+    start: int
+    end: int
+
+
+def source_key(source):
+    key = source["type"], source["id"]
+    if any(type(part) is not int or part <= 0 for part in key):
+        raise ValueError("invalid NetLog source")
+    return key
+
+
+def event_codes(constants, field):
+    pairs = constants[field]
+    if not isinstance(pairs, dict) or any(type(code) is not int for code in pairs.values()):
+        raise ValueError("invalid NetLog codes")
+    reverse = {code: name for name, code in pairs.items()}
+    if len(reverse) != len(pairs):
+        raise ValueError("ambiguous NetLog codes")
+    return reverse
+
+
+def socket_match(kind, source, start, end, before, after, udp_locals):
+    if end < start or "get_address_net_error" in after or any(
+        after.get(field, 0) != 0 for field in ("net_error", "os_error")
+    ):
+        return None
+    try:
+        if kind == "UDP_CONNECT":
+            remote = endpoint(before.get("address"))
+            # Separate getsockname evidence is usable only for the same source
+            # and time, with an unambiguous local endpoint.
+            locals_found = {local for stamp, local in udp_locals[source]
+                            if start <= stamp <= end + CLOCK_TOLERANCE_MS}
+            if len(locals_found) != 1:
+                return None
+            _, port = locals_found.pop()
+        else:
+            local = after.get("local_address", after.get("source_address"))
+            _, port = endpoint(local)
+            if "remote_address" in after:
+                remote = endpoint(after["remote_address"])
+            elif kind == "TCP_CONNECT_ATTEMPT":
+                remote = endpoint(before.get("address"))
+            else:
+                candidates = {endpoint(item) for item in before.get("address_list", [])}
+                if len(candidates) != 1:
+                    return None
+                remote = candidates.pop()
+    except (TypeError, ValueError):
+        return None
+    return SocketMatch(source, "udp" if kind == "UDP_CONNECT" else "tcp", port, remote, start, end)
+
+
+class NetLog:
+    def __init__(self, raw):
+        constants = raw["constants"]
+        kinds = event_codes(constants, "logEventTypes")
+        phases = event_codes(constants, "logEventPhase")
+        offset = int(constants["timeTickOffset"])
+        if not {"PHASE_BEGIN", "PHASE_END"} <= set(phases.values()) or not CONNECT_EVENTS & set(kinds.values()):
+            raise ValueError("missing NetLog event types")
+        recorded = CONNECT_EVENTS | LINK_EVENTS | {"URL_REQUEST_START_JOB", "UDP_LOCAL_ADDRESS"}
+        self.links = defaultdict(list)
+        self.requests = defaultdict(list)
+        self.sockets = defaultdict(list)
+        pending, udp_locals, completed = {}, defaultdict(list), []
+        if not isinstance(raw["events"], list) or not raw["events"]:
+            raise ValueError("missing NetLog events")
+        for event in raw["events"]:
+            kind = kinds.get(event["type"])
+            if kind not in recorded:
+                continue
+            source = source_key(event["source"])
+            phase = phases.get(event["phase"])
+            stamp = int(event["time"]) + offset
+            params = event.get("params", {})
+            if not isinstance(params, dict):
+                raise ValueError("invalid NetLog parameters")
+            key = source, kind
+            if kind in CONNECT_EVENTS:
+                if phase == "PHASE_BEGIN":
+                    pending[key] = (stamp, params) if key not in pending else None
+                elif phase == "PHASE_END":
+                    begin = pending.pop(key, None)
+                    if begin is not None:
+                        began, first = begin
+                        completed.append((kind, source, began, stamp, first, params))
+            elif kind == "UDP_LOCAL_ADDRESS":
+                try:
+                    udp_locals[source].append((stamp, endpoint(params.get("address"))))
+                except ValueError:
+                    continue
+            elif kind == "URL_REQUEST_START_JOB" and phase == "PHASE_BEGIN" and isinstance(params.get("url"), str):
+                self.requests[source].append((stamp, params["url"]))
+            elif kind in LINK_EVENTS and "source_dependency" in params:
+                linked = source_key(params["source_dependency"])
+                self.links[source].append((linked, stamp, kind))
+                self.links[linked].append((source, stamp, kind))
+        for event in completed:
+            match = socket_match(*event, udp_locals)
+            if match is not None:
+                self.sockets[match.protocol, match.local_port, match.remote].append(match)
+
+    def request_category(self, socket):
+        lower = socket.start - REQUEST_LOOKBACK_MS
+        upper = socket.end + CLOCK_TOLERANCE_MS
+        seen, pending, requests, dns_attempts = set(), [socket.source], set(), set()
+        while pending and len(seen) < 64:
+            source = pending.pop()
+            if source in seen:
+                continue
+            seen.add(source)
+            requests.update((source, url) for stamp, url in self.requests[source] if lower <= stamp <= upper)
+            for linked, stamp, kind in self.links[source]:
+                if lower <= stamp <= upper:
+                    if source == socket.source and kind in {"DNS_TRANSACTION_ATTEMPT", "DNS_TRANSACTION_TCP_ATTEMPT"}:
+                        dns_attempts.add(frozenset((source, linked)))
+                    pending.append(linked)
+        if pending or len(requests) > 1 or len(dns_attempts) > 1 or (requests and dns_attempts):
+            return "ambiguous-request"
+        if dns_attempts:
+            return "dns-transaction"
+        if not requests:
+            return "unattributed"
+        try:
+            url = urlsplit(next(iter(requests))[1])
+            if url.scheme in {"http", "https"} and url.hostname:
+                return f"{url.scheme}-request"
+        except ValueError:
+            pass
+        return "unattributed"
+
+    def match(self, observation):
+        time = datetime.fromisoformat(observation["utc"])
+        if time.utcoffset() is None or time.utcoffset().total_seconds() != 0:
+            raise ValueError("expected a UTC observation")
+        stamp = round(time.timestamp() * 1000)
+        remote = address(observation["address"]), observation["port"]
+        # A socket's TCP_CONNECT and TCP_CONNECT_ATTEMPT may describe the
+        # same successful connect. Group only overlapping records for that source.
+        key = observation["protocol"], observation["source_port"], remote
+        matches = sorted((match for match in self.sockets.get(key, ())
+                          if match.start - CLOCK_TOLERANCE_MS <= stamp <= match.end + CLOCK_TOLERANCE_MS),
+                         key=lambda match: (match.source, match.start, match.end))
+        group = []
+        for match in matches:
+            if group and (group[0].source != match.source or match.start > min(item.end for item in group)):
+                return "ambiguous-socket", "unattributed"
+            group.append(match)
+        if not group:
+            return "no-socket-match", "unattributed"
+        interval = min(group, key=lambda match: match.end - match.start)
+        return "matched-socket", self.request_category(interval)
+
+
+def read_netlog(path):
+    try:
+        approved = local_disposable_path(path, runner_temp_only=True)
+        with approved.open("rb") as stream:
+            payload = stream.read(NETLOG_LIMIT + 1)
+        if len(payload) > NETLOG_LIMIT:
+            return "size-limit", None
+        return "parsed", NetLog(json.loads(payload))
+    except FileNotFoundError:
+        return "missing", None
+    except (OSError, KeyError, TypeError, ValueError, OverflowError):
+        return "unusable", None
+
+
+def network_summary(observations, launches, paths, reader=read_netlog):
+    logs = {label: reader(path) for label, path in paths.items()}
+    result = []
+    for ordinal, observation in enumerate(observations, 1):
+        launch = launches.get(observation["process_guid"]) if observation["role"] == "webview-network" else None
+        state, purpose = "outside-webview", "unattributed"
+        if observation["role"] == "webview-network":
+            state, log = logs.get(launch, ("launch-unverified", None))
+            if log is not None:
+                try:
+                    state, purpose = log.match(observation)
+                except (OSError, KeyError, TypeError, ValueError, OverflowError):
+                    state = "observation-unusable"
+        # The ordinal refers to the existing redacted list in the audit report.
+        result.append({"observation": ordinal, "socket_status": state, "request_category": purpose})
+    return {"logs": {label: status for label, (status, _) in logs.items()}, "observations": result}

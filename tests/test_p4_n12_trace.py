@@ -1219,11 +1219,11 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
                      "realtime_buffers_lost": 0, "buffers_written": 1},
     }
 
-    def report(rundown=None):
+    def report(rundown=None, **options):
         etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
         evidence.manifest["etw"]["events_sha256"] = hashlib.sha256(etw_path.read_bytes()).hexdigest()
         return trace.audit(evidence.manifest, sysmon, etw_path, evidence.before, evidence.after,
-                           etw=True, rundown=rundown)
+                           etw=True, rundown=rundown, **options)
 
     clean = report()
     assert clean["coverage"] == "CALIBRATED"
@@ -1243,6 +1243,29 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
                             capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr
     assert json.loads(output.read_text(encoding="utf-8")) == clean
+
+    # Diagnostic hooks receive the same strict findings without changing their verdict.
+    launches = {}
+    assert report(private_app_launches=launches) == clean
+    assert launches == {"net1": "first", "net2": "relaunch"}
+    first_app = next(row for _, kind, row in evidence.events if kind == 1 and row["ProcessGuid"] == "app1")
+    first_app["Hashes"] = "SHA256=" + "D" * 64
+    evidence.save(tmp_path)
+    launches.clear()
+    mismatched = report(private_app_launches=launches)
+    assert launches == {}
+    assert "app-sha256-missing-or-mismatched" in mismatched["coverage_issues"]
+    first_app["Hashes"] = "SHA256=" + "E" * 64
+    evidence.save(tmp_path)
+    mutation(28, 10, 4, 12, FileName=r"C:\QA\outside\private-name", Outcome=1)
+    mutation(28, 10, 4, 16)
+    outside = []
+    flagged = report(record_outside_scope=lambda *row: outside.append(row))
+    assert flagged["filesystem"] == "FAIL"
+    assert flagged["file_violations"]["outside-scope:backend:write"] == 1
+    assert outside == [("backend", "write", (r"c:\qa\outside\private-name",))]
+    assert "private-name" not in json.dumps(flagged)
+    del rows[-4:]
 
     # A pre-opened backend handle has no in-capture name event. The native
     # stop-time rundown may resolve it only while its file key remains stable.
