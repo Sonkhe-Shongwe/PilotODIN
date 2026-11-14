@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 hosted app-journey wiring
+
+- The [hosted journey entry point](../qa/p4_research/n12_app_journey.py) requires a source-pinned unpackaged build, separate one-run journey consent and an enabled Sysmon channel. It starts file ETW before the first calibration, checks the fixture's live Sysmon lifetimes and loopback TCP/UDP before launch, and checks the same binary hash before both launches. It records idle, launch, Quality, close, reopen and final exit, waits for the isolated WebView profile to stop after each close, then calibrates again and calls the existing strict reducer with both exports and fingerprints. The Quality import uses the fingerprinted generated CSV.
+- Local verification passed 177 N12 Python tests, including prelaunch calibration rejection, binary replacement and lingering WebView, and 22 Node discovery and isolation tests. Raw ETL, logs, NetLogs, endpoints and snapshots are private to runner temp. Windows execution is **NOT RUN**. This entry point expects Sysmon to be configured separately. The capture path lacks WPR rundown, so missing path or identity evidence can still block the audit.
+- Next, review a disarmed single-use workflow to provision the pinned collector and run the staged entry points. Extend the native driver for compact Quality and cross-window archive/restore before seeking approval for the full worklist. The current runner exercises the existing synthetic Quality version and relaunch path. The separate prospective owner-device preservation check is still pending. **N12 PARTIAL / strict coverage BLOCKED / P4 ACTIVE at 65/100.**
+
 ## 14 November 2026 | N12 unpackaged build staging prepared
 
 - The [hosted staging entry point](../qa/p4_research/n12_app_build.py) uses the existing isolated Tauri QA configuration for one compile-only Windows debug build. It checks the approved clean checkout and isolated identities, creates a fresh runner-temp output root, and records source SHA, executable SHA-256 and resolved Cargo lock SHA-256. `stage --source <SHA>` prepares the binary. `verify --source <SHA> --expected-exe-sha256 <SHA-256>` rechecks provenance before launch and relaunch. Both commands are invoked as `python -m qa.p4_research.n12_app_build` from the repository root.

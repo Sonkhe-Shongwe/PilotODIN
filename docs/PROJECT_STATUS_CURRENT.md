@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 hosted app-journey wiring
+
+The source-pinned runner now connects both app launches to Sysmon, file ETW, before/after fingerprints and the strict reducer. Local synthetic checks passed. The Windows capture awaits a reviewed single-use workflow and separate approval. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-app-journey-wiring).
+
 ## 14 November 2026 | N12 unpackaged build staging prepared
 
 The hosted preparation entry point compiles and verifies a source-pinned debug binary separately from app launch. Local synthetic verification passed. The Windows build and collector integration remain pending. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-unpackaged-build-staging-prepared).

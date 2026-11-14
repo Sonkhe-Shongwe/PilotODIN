@@ -73,7 +73,12 @@ function csvFor(kind){
 }
 async function create(kind){
  const form=new FormData();
- form.append('file',new Blob([kind==='quality'?p4QualityFixture:csvFor(kind)],{type:'text/csv'}),'p4-71-'+kind+'-synthetic.csv');
+ let csv=kind==='quality'?p4QualityFixture:csvFor(kind);
+ if(kind==='quality'&&process.env.PILOTODIN_N12_QUALITY_FIXTURE){
+  csv=await readFile(process.env.PILOTODIN_N12_QUALITY_FIXTURE,'utf8');
+  if(csv!==p4QualityFixture)throw Error('N12 Quality input differs from the generated fixture');
+ }
+ form.append('file',new Blob([csv],{type:'text/csv'}),'p4-71-'+kind+'-synthetic.csv');
  const resp=await fetch(API+'/projects',{method:'POST',body:form});
  if(resp.status!==201)throw Error('Synthetic project '+kind+' failed, HTTP '+resp.status);
  return (await resp.json()).id;
