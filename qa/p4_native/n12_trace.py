@@ -602,12 +602,12 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         if role == "calibration" and start_ticks <= requested <= completed <= end_ticks:
             file_events.add((identity, operation, *targets))
 
-    event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
-    # Keep post-audit ETW events for rundown lifetime checks. A rename, close,
-    # or key reuse after the Sysmon audit boundary still invalidates a stop-time
-    # name for an earlier write.
-    guard_events = [event for event in event_records if event["ticks"] >= start_ticks]
     with evidence_stage("ETW event stream"):
+        event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
+        # Keep post-audit ETW events for rundown lifetime checks. A rename, close,
+        # or key reuse after the Sysmon audit boundary still invalidates a stop-time
+        # name for an earlier write.
+        guard_events = [event for event in event_records if event["ticks"] >= start_ticks]
         unresolved = correlate_requests(
             (event for event in event_records if event["ticks"] <= end_ticks),
             lambda value: canonical_file_path(value, devices),
