@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | Physical Windows Local analytics under memory pressure
+
+Physical Windows CSV import and the Ask ODIN Local analytics overview passed for the synthetic 80-row fixture. Low-memory was saved, with 0.73–0.82 GiB available in the preceding Settings snapshots. R03 remains **BLOCKED at preflight / offline Qwen NOT TESTED**. P4 remains **ACTIVE at 65/100** on the proposed scorecard. [Owner-observed result](./SESSION_HANDOFF_CURRENT.md#14-november-2026--physical-windows-local-analytics-under-memory-pressure).
+
 ## 14 November 2026 | R03 stopped at the memory preflight
 
 The owner approved one offline Qwen test and prepared its synthetic CSV. The laptop showed 1.20 GiB available before restart and 612 MB in the post-restart Memory view, below the 2.0 GiB Low-memory threshold. This attempt was **BLOCKED at preflight**. Offline inference and concurrent analytics remain **NOT TESTED**. P4 remains **ACTIVE at 65/100** on the proposed scorecard. [Readings and retry condition](./SESSION_HANDOFF_CURRENT.md#14-november-2026--r03-stopped-at-the-memory-preflight).

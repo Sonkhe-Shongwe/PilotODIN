@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Physical Windows Local analytics under memory pressure
+
+- On the physical 8 GB Windows laptop, the owner imported the [synthetic fixture](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/e18887363af8ee0337dbc644c8a2c8e19d37b66b/fixtures/P0_SYNTHETIC_UI_ML_80.csv) and asked `What is the dataset overview?` with `Local analytics` selected. The answer displayed `VERIFIED RULES · NO LLM` and reported 80 rows, 5 columns, 0 missing cells and 0 exact duplicate rows. An independent CSV read matched all four counts. **Physical CSV import and Local analytics overview: scoped PASS.**
+- The preceding Settings screenshots with the project open showed saved Low-memory mode and 0.73–0.82 GiB available. These are snapshots before the request. Elapsed time and peak RAM or paging during the request were not measured.
+- **R03 offline Qwen: BLOCKED at preflight / NOT TESTED.** The one approved Qwen request remains unused. The current build requires 2.00 GiB available to start local inference in Low-memory mode. P4 remains active at 65/100 on the proposed scorecard. Use this laptop to measure the desktop, WebView2 and analytics process footprint before changing the inference path.
+
 ## 14 November 2026 | R03 stopped at the memory preflight
 
 - The owner approved one bounded offline Qwen request using the verified separate QA build and a new synthetic project. The owner created the 80-row CSV and measured 1.20 GiB available with PilotODIN closed. The post-restart Task Manager Memory screenshot showed 612 MB available on the 8 GB Windows laptop, below the installed build's 2.0 GiB Low-memory threshold for admitting a local AI request. The restart screenshots show startup activity and are point-in-time readings.
