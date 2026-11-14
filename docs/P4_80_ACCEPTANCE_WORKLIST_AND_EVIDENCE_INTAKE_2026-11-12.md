@@ -19,6 +19,10 @@
 
 **R03 worker measurement.** The [approved standalone Windows smoke run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43592332015/job/132439503160) passed on a hosted runner with 15.99 GiB visible RAM. The pinned Qwen3 1.7B Q4_K_M CPU worker peaked at 1,992.0 MiB resident RAM and 1,037.0 MiB committed memory. The owner's earlier 545 MiB available with PilotODIN open remains below the 2.00 GiB admission threshold. **Physical R03 remains BLOCKED at preflight / NOT TESTED. P4 remains ACTIVE at 65/100** on the proposed scorecard. [Scope and measurements](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-windows-qwen-worker-memory-profile).
 
+**R03 smaller-model comparison.** The [Windows smoke harness](../desktop/verify_live_bundled_inference.py) now accepts `--analytics-eval` for the bundled Qwen3 1.7B baseline and two pinned alternate GGUFs in [the synthetic cases module](../desktop/offline_analytics_cases.py). The Qwen3 0.6B candidate is 484,220,320 bytes and the SmolLM2 360M candidate is 270,590,592 bytes. The figures describe files on disk. Each model runs alone on the same pinned CPU runtime with a 2,048-token context and identical short requests. The harness reports resident and committed peaks, time, and exact structured answers for overview counts, a labelled-rate denominator, unknown missingness cause and an unrun training status. All four cases must pass to clear this initial quality screen. It provides no broader natural-language quality or physical acceptance claim.
+
+The next hosted comparison needs a new one-run approval to stage the existing baseline and both candidates (2,037,250,176 bytes of GGUF files, plus the pinned CPU runtime). Run the models sequentially with the same runtime and preserve individual scores, timings and memory peaks. The previous single hosted approval was consumed. No model comparison has run, and R03 remains blocked on the physical laptop.
+
 ### Rules for interpreting the matrix
 
 - **PASS** applies only to the tested *modality and exact source*, never to a different Windows build or business use. Use **UNVERIFIED**, **NOT TESTED**, **BLOCKED** and **FAIL** distinctly.

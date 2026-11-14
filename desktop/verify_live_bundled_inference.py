@@ -21,6 +21,7 @@ import time
 import urllib.error
 import urllib.request
 
+from offline_analytics_cases import CANDIDATES, CASES, SYSTEM, score_answer, verified_candidate
 from verify_inference_assets import verify
 
 
@@ -38,7 +39,8 @@ def send(url: str, token: str | None = None, body: dict | None = None, timeout: 
     request = urllib.request.Request(url, data=payload, headers=headers,
                                      method='POST' if body is not None else 'GET')
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(request, timeout=timeout) as response:
             return response.status, json.loads(response.read(4 * 1024 * 1024))
     except urllib.error.HTTPError as err:
         return err.code, json.loads(err.read(256 * 1024))
@@ -93,14 +95,26 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--memory-profile', action='store_true',
                         help='Report worker memory at model readiness and after completion.')
+    parser.add_argument('--analytics-eval', action='store_true',
+                        help='Score four synthetic analytics questions and report worker memory.')
+    parser.add_argument('--candidate', choices=CANDIDATES,
+                        help='Use a pinned alternate GGUF for the analytics evaluation only.')
+    parser.add_argument('--candidate-file', type=Path, help='Local path to the pinned alternate GGUF.')
     options = parser.parse_args()
-    if options.memory_profile and os.name != 'nt':
-        parser.error('--memory-profile requires Windows')
+    if (options.memory_profile or options.analytics_eval) and os.name != 'nt':
+        parser.error('Worker profiling requires Windows')
+    if bool(options.candidate) != bool(options.candidate_file) or (options.candidate and not options.analytics_eval):
+        parser.error('--candidate and --candidate-file must be used together with --analytics-eval')
+    profile_memory = options.memory_profile or options.analytics_eval
 
     root = Path(__file__).resolve().parents[1]
     verify(root)
     tauri = root / 'frontend' / 'src-tauri'
     model = tauri / 'resources' / 'models' / 'qwen3-1.7b-q4_k_m.gguf'
+    model_name = options.candidate or 'qwen3-1.7b-q4-k-m'
+    model_alias = options.candidate or 'pilotodin-qwen3-1.7b'
+    if options.candidate:
+        model = verified_candidate(options.candidate, options.candidate_file)
     runtime = tauri / 'binaries' / 'pilotodin-inference-x86_64-pc-windows-msvc.exe'
     dlls = tauri / 'resources' / 'llama-runtime'
     listen_port = port()
@@ -108,7 +122,7 @@ def main() -> int:
     env = os.environ.copy()
     env['LLAMA_API_KEY'] = token
     env['PATH'] = os.pathsep.join((str(dlls), env.get('PATH', '')))
-    args = [str(runtime), '--model', str(model), '--alias', 'pilotodin-qwen3-1.7b',
+    args = [str(runtime), '--model', str(model), '--alias', model_alias,
             '--host', '127.0.0.1', '--port', str(listen_port), '--ctx-size', '2048',
             '--threads', '2', '--parallel', '1', '--gpu-layers', '0',
             '--no-webui', '--no-agent']
@@ -127,7 +141,7 @@ def main() -> int:
         deadline = time.monotonic() + 150
         while time.monotonic() < deadline:
             if proc.poll() is not None:
-                raise RuntimeError(f'Qwen3 server exited during model load ({proc.returncode})')
+                raise RuntimeError(f'Local inference worker exited during model load ({proc.returncode})')
             try:
                 code, result = send(base + '/health', token, timeout=3)
                 if code == 200 and isinstance(result, dict) and result.get('status') == 'ok':
@@ -137,19 +151,52 @@ def main() -> int:
             time.sleep(0.6)
         else:
             raise RuntimeError('Local GGUF did not become healthy within 150 seconds')
-        if options.memory_profile:
+        if profile_memory:
             load_seconds = round(time.monotonic() - startup_begin, 3)
             ready_memory = worker_memory(proc.pid)
         unauthenticated_probe = {
-            'model': 'pilotodin-qwen3-1.7b',
+            'model': model_alias,
             'messages': [{'role': 'user', 'content': 'Ping'}],
             'max_tokens': 1, 'stream': False,
         }
         if send(base + '/v1/chat/completions', body=unauthenticated_probe, timeout=5)[0] != 401:
             raise RuntimeError('Local inference API failed to reject unauthenticated generation')
+        if options.analytics_eval:
+            results = []
+            for case_name, facts, question, expected in CASES:
+                request_begin = time.monotonic()
+                status, result = send(base + '/v1/chat/completions', token, {
+                    'model': model_alias,
+                    'messages': [
+                        {'role': 'system', 'content': SYSTEM},
+                        {'role': 'user', 'content': json.dumps({'verified_facts': facts, 'question': question})},
+                    ],
+                    'max_tokens': 128, 'temperature': 0, 'stream': False,
+                    'chat_template_kwargs': {'enable_thinking': False},
+                }, timeout=60)
+                request_seconds = round(time.monotonic() - request_begin, 3)
+                if status != 200 or not isinstance(result, dict) or not result.get('choices'):
+                    raise RuntimeError(f'{case_name}: completion failed (HTTP {status})')
+                choice = result['choices'][0]
+                content = choice.get('message', {}).get('content')
+                complete = choice.get('finish_reason') == 'stop'
+                results.append({
+                    'case': case_name, 'passed': complete and isinstance(content, str) and score_answer(content, expected),
+                    'finish_reason': choice.get('finish_reason'),
+                    'answer': content[:512] if isinstance(content, str) else None,
+                    'seconds': request_seconds,
+                    **worker_memory(proc.pid),
+                })
+            print('OFFLINE ANALYTICS EVALUATION: ' + json.dumps({
+                'model': model_name,
+                'model_ready': {'elapsed_seconds': load_seconds, **ready_memory},
+                'passed': sum(case['passed'] for case in results),
+                'cases': results,
+            }, sort_keys=True))
+            return 0
         generation_begin = time.monotonic()
         status, result = send(base + '/v1/chat/completions', token,
-                              {'model': 'pilotodin-qwen3-1.7b',
+                              {'model': model_alias,
                                'messages': [{'role': 'user', 'content': 'Respond with READY.'}],
                                'max_tokens': 24, 'temperature': 0, 'stream': False}, timeout=110)
         if status != 200 or not isinstance(result, dict) or not result.get('choices'):
