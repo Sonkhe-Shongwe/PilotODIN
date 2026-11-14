@@ -1120,6 +1120,11 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "rundown_name_candidate_events": {
             key: value for key, value in details.items() if ":name-candidate" in key
         },
+        "name_event_path_forms": {
+            key: value for key, value in details.items()
+            if key.startswith("n12:name-event-10:path-form-")
+        },
+        "volume_device_mapping_drives": sorted(manifest["etw"]["volume_devices"].keys()),
         "stable_process_bookends": len(stable_process_pids or ()),
         "stable_thread_bookends": len(stable_threads or {}),
         "rundown_control_keys_recovered": len(recovered_control_keys),

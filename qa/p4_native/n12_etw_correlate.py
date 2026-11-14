@@ -87,8 +87,25 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 except (TypeError, ValueError):
                     name_key = None
                 if type(name_key) is int and name_key > 0:
-                    name = resolve_path(data.get("FileName") or "")
+                    raw_name = data.get("FileName")
+                    name = resolve_path(raw_name) if isinstance(raw_name, str) else None
                     name_events.setdefault(name_key, set()).add(name)
+                    if details is not None:
+                        if not isinstance(raw_name, str) or not raw_name.strip():
+                            form = "missing"
+                        else:
+                            normalized = raw_name.replace("/", "\\").casefold()
+                            if normalized.startswith("\\device\\"):
+                                form = "device-mapped" if name is not None else "device-unmapped"
+                            elif re.match(r"^[a-z]:\\", normalized):
+                                form = "drive-rooted" if name is not None else "drive-unresolved"
+                            elif normalized.startswith("\\\\"):
+                                form = "unc"
+                            elif normalized.startswith("\\"):
+                                form = "rooted-other"
+                            else:
+                                form = "relative-or-other"
+                        details[f"n12:name-event-10:path-form-{form}"] += 1
                 continue
             invalidates = kind in invalidating_kinds
             if kind == 17:

@@ -909,6 +909,10 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          IOSize=9, ByteOffset=0, IssuingThreadId=88)
     emit(24, 0, unrelated_ticks + 23, Irp=12, Status=0)
 
+    emit(10, 99, unrelated_ticks + 24, FileKey="0x34",
+         FileName=r"\Device\HarddiskVolume99\QA\synthetic-protected\unknown-volume.bin")
+    emit(10, 99, unrelated_ticks + 25, FileKey="0x35")
+
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -936,6 +940,9 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-protected"] >= 1
     assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-outside-protected"] >= 1
     assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-rundown-protected"] >= 1
+    assert report["name_event_path_forms"]["n12:name-event-10:path-form-device-unmapped"] == 1
+    assert report["name_event_path_forms"]["n12:name-event-10:path-form-missing"] == 1
+    assert report["volume_device_mapping_drives"] == ["C:"]
     assert report["unrelated_unresolved_mutations"]["other:write:path-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 2
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
