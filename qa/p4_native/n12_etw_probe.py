@@ -131,19 +131,24 @@ def preopened_control(root, *, rundown=False):
         if (status := run_wpr("-start", "FileIO")) != 0:
             raise RuntimeError(f"Windows FileIO recording did not start (exit {status}).")
         stopped = False
-        try:
-            capture = capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
+
+        def stop_wpr():
+            nonlocal stopped
             status = run_wpr("-stop", str(root / "rundown.etl"), "-skipPdbGen")
             if status:
                 raise RuntimeError(f"Windows FileIO recording did not stop cleanly (exit {status}).")
             stopped = True
-            return capture
+            return utc_ticks() // 10 * 10
+
+        try:
+            return capture_fixture(root, calibration_only=True, thread_context=True,
+                                   controls=controls, before_stop=stop_wpr)
         finally:
             if not stopped:
                 run_wpr("-cancel")
 
 
-def capture_fixture(root, *, calibration_only, thread_context, controls=None):
+def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -169,6 +174,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None):
     )
     if started.returncode:
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
+    rundown_stop_ticks = None
     try:
         control_writes = {}
         for label, (path, stream, payload) in (controls or {}).items():
@@ -209,12 +215,20 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None):
             if any(protected.iterdir()):
                 raise RuntimeError("The synthetic protected directory did not return to baseline.")
     finally:
+        stop_aux_error = None
+        try:
+            if before_stop is not None:
+                rundown_stop_ticks = before_stop()
+        except Exception as exc:
+            stop_aux_error = exc
         try:
             counters = stop_trace(session)
         except RuntimeError:
             subprocess.run([*logman, "stop", session, "-ets"], stdout=subprocess.DEVNULL,
                            stderr=subprocess.DEVNULL, timeout=20, check=False)
             raise
+        if stop_aux_error is not None:
+            raise stop_aux_error
     if etl.stat().st_size == 0 or counters["buffers_written"] == 0:
         raise RuntimeError("ETW trace was empty.")
     capture = {"fixture": fixture, "counters": counters, "device": volume_device(root.drive),
@@ -222,6 +236,8 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None):
             "start_ticks": capture_start, "end_ticks": utc_ticks() // 10 * 10}
     if controls:
         capture["preopened"] = {"pid": os.getpid(), "tid": get_native_id(), "writes": control_writes}
+    if rundown_stop_ticks is not None:
+        capture["rundown_stop_ticks"] = rundown_stop_ticks
     return capture
 
 

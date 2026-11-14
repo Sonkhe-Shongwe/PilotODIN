@@ -751,9 +751,17 @@ def read_json(path):
 def read_rundown_file(path, manifest):
     """Read native ProcessTrace FileIO names with a manifest-pinned digest."""
     with evidence_stage("FileIO rundown input"):
-        expected = manifest.get("etw", {}).get("rundown_sha256")
+        etw = manifest.get("etw")
+        require(isinstance(etw, dict), "ETW capture metadata is required for FileIO rundown")
+        expected = etw.get("rundown_sha256")
         require(isinstance(expected, str) and re.fullmatch(r"[0-9a-f]{64}", expected),
                 "FileIO rundown SHA-256 is required in the ETW manifest")
+        timestamps = (etw.get("start_utc"), etw.get("rundown_stop_utc"), etw.get("end_utc"))
+        require(all(isinstance(value, str) for value in timestamps),
+                "ETW start, rundown stop and end timestamps are required")
+        capture_start, rundown_stop, capture_end = (utc_time(value) for value in timestamps)
+        require(capture_start <= rundown_stop <= capture_end,
+                "FileIO rundown stop must be within the ETW capture window")
         digest = hashlib.sha256()
         entries = []
         with path.open("rb") as stream:

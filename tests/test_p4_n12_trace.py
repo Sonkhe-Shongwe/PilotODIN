@@ -231,12 +231,32 @@ def test_read_native_rundown_requires_manifest_digest_and_decoder(tmp_path):
              "decoder": "tdh+raw-schema"}
     payload = (json.dumps(entry) + "\n").encode("utf-8")
     rundown_path.write_bytes(payload)
-    manifest = {"etw": {"rundown_sha256": hashlib.sha256(payload).hexdigest()}}
+    manifest = {"etw": {
+        "start_utc": "2026-11-14T00:00:00Z",
+        "rundown_stop_utc": "2026-11-14T00:00:09Z",
+        "end_utc": "2026-11-14T00:00:10Z",
+        "rundown_sha256": hashlib.sha256(payload).hexdigest(),
+    }}
     assert trace.read_rundown_file(rundown_path, manifest) == [
         {"key": 40, "path": entry["path"]}
     ]
     rundown_path.write_bytes(payload.replace(b"cache.sqlite", b"changed.sqlite"))
     with pytest.raises(ValueError, match="FileIO rundown SHA-256 mismatch"):
+        trace.read_rundown_file(rundown_path, manifest)
+
+
+def test_read_native_rundown_rejects_stop_outside_etw_window(tmp_path):
+    rundown_path = tmp_path / "rundown.jsonl"
+    payload = (json.dumps({"key": "0x28", "path": r"\\Device\\HarddiskVolume3\\QA\\cache.sqlite",
+                           "decoder": "tdh+raw-schema"}) + "\\n").encode("utf-8")
+    rundown_path.write_bytes(payload)
+    manifest = {"etw": {
+        "start_utc": "2026-11-14T00:00:00Z",
+        "rundown_stop_utc": "2026-11-14T00:00:11Z",
+        "end_utc": "2026-11-14T00:00:10Z",
+        "rundown_sha256": hashlib.sha256(payload).hexdigest(),
+    }}
+    with pytest.raises(ValueError, match="within the ETW capture window"):
         trace.read_rundown_file(rundown_path, manifest)
 
 
@@ -577,6 +597,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     rundown_payload = (json.dumps(rundown_entry) + "\n").encode("utf-8")
     rundown_path.write_bytes(rundown_payload)
     evidence.manifest["etw"]["rundown_sha256"] = hashlib.sha256(rundown_payload).hexdigest()
+    evidence.manifest["etw"]["rundown_stop_utc"] = evidence.manifest["etw"]["end_utc"]
     rundown = trace.read_rundown_file(rundown_path, evidence.manifest)
     recovered = report(rundown)
     assert recovered["coverage"] == "CALIBRATED"
@@ -636,7 +657,8 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     preflight_manifest = dict(
         calibration_manifest,
         etw=dict(calibration_manifest["etw"],
-                 rundown_sha256=hashlib.sha256(preflight_payload).hexdigest()),
+                 rundown_sha256=hashlib.sha256(preflight_payload).hexdigest(),
+                 rundown_stop_utc=calibration_manifest["etw"]["end_utc"]),
     )
     preflight_manifest_path = tmp_path / "preflight-manifest.json"
     preflight_manifest_path.write_text(json.dumps(preflight_manifest), encoding="utf-8")

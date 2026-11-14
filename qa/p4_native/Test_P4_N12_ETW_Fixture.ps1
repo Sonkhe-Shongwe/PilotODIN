@@ -147,6 +147,12 @@ $manifest = @{
         counters = $capture.counters
     }
 }
+if ($null -ne $capture.rundown_stop_ticks) {
+    $manifest.etw.rundown_stop_utc = [datetime]::new([long]$capture.rundown_stop_ticks, [DateTimeKind]::Utc).ToString('o')
+}
+if ($Rundown -and $null -eq $capture.rundown_stop_ticks) {
+    throw 'The native rundown stop timestamp was not captured inside the ETW window.'
+}
 $reducerManifest = Join-Path $root 'capture-manifest.json'
 if ($WithSysmon) {
     Start-Sleep -Seconds 3
@@ -218,6 +224,8 @@ if ($PreopenedControl) {
             throw 'The native ProcessTrace decoder did not return a valid diagnostic summary.'
         }
         Write-Host ('Native ProcessTrace decoder summary: ' + ($decoderSummary | ConvertTo-Json -Compress))
+        $manifest.etw.rundown_sha256 = (Get-FileHash -LiteralPath $rundownPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reducerManifest -Encoding utf8
         if ([long]$decoderSummary.rundown_opcode_36 -le 0) {
             throw 'The native decoder observed no classic FileIO rundown records.'
         }
