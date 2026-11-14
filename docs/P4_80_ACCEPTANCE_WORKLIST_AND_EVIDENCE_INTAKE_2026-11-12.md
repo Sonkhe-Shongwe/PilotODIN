@@ -77,6 +77,21 @@ The later [owner WebView2 observation](./P4_25_WEBVIEW_PROFILE_PROCESS_OBSERVATI
 
 A **separate, future, explicitly approved** native isolation study may compare trusted independent read-only original EXE/full-tree snapshots before and after the disposable run. Any unexpected change means **STOP / FAIL**. Prospective no-change evidence can help incident disposition but **cannot** identify a writer from months earlier or justify a silent waiver.
 
+### N12 origin capture scope
+
+The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209773/job/132463134326) and [broader Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209775/job/132463134638) each report one successful System-header protected write and one protected resize. Both operations matched the protected control's FileKey and FileObject in each capture. Both writes carried the paging-I/O flag. Their request phases differed. The published logs do not include correlated call stacks, and the raw ETLs stayed in runner temp. This establishes the target and observed execution context. The original initiator remains unknown.
+
+**Proposed scope for one separately authorised hosted Windows capture.** Use built-in Windows Performance Recorder and generated disposable files only. Start with the built-in FileIO profile and verify the effective stack coverage. If needed, use a narrow custom profile for FileWrite, FileSetInformation and FileFlush, with process, thread and image metadata sufficient to interpret the stacks. Keep the existing strict fixture as the comparison. The capture does not require Sysmon provisioning, an installer, model assets or access to owner files. See [supported stack events](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/stackwalk) and [WPR profile options](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/wpr-command-line-options).
+
+| Check | Evidence required |
+| --- | --- |
+| Calibrate attribution | Use a known application write and an explicit end-of-file resize on a separate generated control. Verify each operation succeeded and changed the expected bytes or length. Recover the corresponding FileIO event and its stack, with the expected process and thread lifetime. Keep the existing flushed and untouched controls to check for false matches. |
+| Link a stack to the target | Match the original event timestamp, process and thread within the same trace, and verify the operation type, successful completion and file identity. If using a companion trace to establish the protected path, require an independently supported match on file identity and operation. Timestamp proximity alone is insufficient. Reject missing, tied, conflicting or loss-affected matches. See the [StackWalk timestamp contract](https://learn.microsoft.com/en-us/windows/win32/etw/stackwalk-event). |
+| Interpret the System events | Record whether a calibrated stack explains the immediate kernel path for the write and resize. Attribute an earlier application initiator only when independent evidence links that initiating operation to the later request. A Cache Manager stack alone can describe the execution path while leaving the initiator unknown. |
+| Record the outcome | Keep the ETL, paths, identifiers and raw stack addresses in the disposable runner. Report only calibration, coverage, and attribution verdicts with redacted counts. If a calibration stack is absent, the target events do not recur, or the linkage is ambiguous, report the corresponding result as unverified and retain the strict violations. |
+
+**Status:** Scope prepared. Capture execution and stack correlation remain pending. N12 is **PARTIAL**, strict coverage is **BLOCKED**, and P4 remains **65/100**. This prospective synthetic capture cannot attribute the historical R06 incident.
+
 ## D. Consolidated native acceptance is a conditional downstream task
 
 **Current state:** N1–N11 passed in the consolidated hosted Windows run, including same-binary relaunch. R04 and R05 have partial results. N12 has scoped evidence. See the [consolidated results below](#13-november-2026-consolidated-hosted-windows-acceptance).
