@@ -138,24 +138,38 @@ def probe(root, *, calibration_only=False, thread_context=False):
     return capture_fixture(root, calibration_only=calibration_only, thread_context=thread_context)
 
 
-def preopened_control(root, *, rundown=False):
+def verify_handle_path(stream, path):
     import msvcrt
 
-    root.mkdir()
-    protected = root / "synthetic-protected"
-    protected.mkdir()
     get_path = ctypes.WinDLL("kernel32", use_last_error=True).GetFinalPathNameByHandleW
     get_path.argtypes = (wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD)
     get_path.restype = wintypes.DWORD
+    name = ctypes.create_unicode_buffer(32768)
+    length = get_path(msvcrt.get_osfhandle(stream.fileno()), name, len(name), 0)
+    if not 0 < length < len(name) or Path(name.value.removeprefix("\\\\?\\")) != path:
+        raise RuntimeError("Windows did not confirm the generated handle target.")
+
+
+def write_two_handle_control(path):
+    with path.open("xb", buffering=0) as first:
+        verify_handle_path(first, path)
+        with path.open("r+b", buffering=0) as second:
+            first.close()
+            verify_handle_path(second, path)
+            if second.write(b"L" * 97) != 97:
+                raise RuntimeError("The generated two-handle write was incomplete.")
+
+
+def preopened_control(root, *, rundown=False):
+    root.mkdir()
+    protected = root / "synthetic-protected"
+    protected.mkdir()
     with ExitStack() as stack:
         controls = {}
         for label, path, size in (("protected", protected / "control.bin", 53),
                                   ("outside", root / "outside.bin", 79)):
             stream = stack.enter_context(path.open("xb", buffering=0))
-            name = ctypes.create_unicode_buffer(32768)
-            length = get_path(msvcrt.get_osfhandle(stream.fileno()), name, len(name), 0)
-            if not 0 < length < len(name) or Path(name.value.removeprefix("\\\\?\\")) != path:
-                raise RuntimeError("Windows did not confirm the generated handle target.")
+            verify_handle_path(stream, path)
             controls[label] = (path, stream, b"x" * size)
         if not rundown:
             return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
@@ -227,12 +241,13 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             lifetime_start = utc_ticks()
             lifetime_pid = run_writer(
                 "from pathlib import Path\nimport sys\n"
-                "with Path(sys.argv[1]).open('xb', buffering=0) as stream:\n"
-                " if stream.write(b'L' * 97) != 97: raise RuntimeError('Incomplete write')",
-                lifetime_path,
+                "sys.path.insert(0, sys.argv[1])\n"
+                "from n12_etw_probe import write_two_handle_control\n"
+                "write_two_handle_control(Path(sys.argv[2]))",
+                Path(__file__).parent, lifetime_path,
             )
             lifetime_control = {"pid": lifetime_pid, "path": str(lifetime_path), "size": 97,
-                                "start": lifetime_start, "end": utc_ticks()}
+                                "start": lifetime_start, "end": utc_ticks(), "two_handles": True}
         # Give the new session a separate process launch before measuring the
         # fixture. Start the calibration parent inside the trace as well.
         run_writer("pass")

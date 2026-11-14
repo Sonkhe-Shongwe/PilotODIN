@@ -291,6 +291,72 @@ def test_generated_file_lifetime_requires_ordered_same_object_evidence(fault, re
     assert "control.bin" not in json.dumps(report)
 
 
+@pytest.mark.parametrize(("fault", "reason"), [
+    (None, None),
+    ("same-object", "distinct-file-objects-unverified"),
+    ("wrong-key", "cleanup-and-write-shared-key-unverified"),
+    ("early-cleanup", "first-cleanup-between-second-open-and-write-unverified"),
+    ("reused-second-object", "second-object-ended-before-write-completion"),
+    ("tied-name", None),
+])
+def test_two_handles_distinguish_shared_key_from_write_object(fault, reason):
+    path = r"C:\private\control.bin"
+    control = {"path": path, "pid": 7, "size": 97, "start": 1, "end": 20, "two_handles": True}
+    events = []
+
+    def event(kind, ticks, **data):
+        events.append({"id": kind, "pid": 7, "ticks": ticks, "lifecycle": False, "data": data})
+
+    first = 51 if fault == "same-object" else 50
+    event(12, 2, FileName=path, FileObject=first, Irp=1)
+    event(24, 3, Irp=1, Status=0)
+    event(10, 4, FileName=path, FileKey=60)
+    event(12, 5, FileName=path, FileObject=51, Irp=2)
+    event(24, 6, Irp=2, Status=0)
+    if fault != "same-object":
+        event(13, 4 if fault == "early-cleanup" else 7, FileObject=first,
+              FileKey=61 if fault == "wrong-key" else 60)
+    event(16, 8, FileObject=51, FileKey=60, Irp=3, IOSize=97, ByteOffset=0)
+    if fault == "tied-name":
+        event(10, 8, FileName=path, FileKey=60)
+    if fault == "reused-second-object":
+        event(12, 9, FileName=r"C:\private\reused.bin", FileObject=51, Irp=4)
+    event(24, 10, Irp=3, Status=0)
+    event(13, 11, FileObject=51, FileKey=60)
+
+    report = file_lifetime_report(control, events, {})
+    assert report["status"] == "BLOCKED"  # Final Close is deliberately absent.
+    if reason:
+        assert report["overlap"] == {"status": "BLOCKED", "reason": reason}
+    else:
+        assert report["overlap"] == {
+            "status": "PASS", "first_cleanup_before_second_write": True,
+            "matching_name_in_key_lifetime": True, "conflicting_name_in_key_lifetime": False,
+            "name_transition_tied_with_write": fault == "tied-name",
+            "first_invalidation_is_first_cleanup": fault != "tied-name",
+        }
+    assert "control.bin" not in json.dumps(report)
+
+
+def test_two_handle_fixture_verifies_the_second_handle_after_closing_first(tmp_path, monkeypatch):
+    path = tmp_path / "generated.bin"
+    handles = []
+
+    def verify(stream, target):
+        assert target == path
+        assert not stream.closed
+        if handles:
+            assert handles[0].closed
+        handles.append(stream)
+
+    monkeypatch.setattr(n12_etw_probe, "verify_handle_path", verify)
+    n12_etw_probe.write_two_handle_control(path)
+    assert len(handles) == 2
+    assert handles[0] is not handles[1]
+    assert all(stream.closed for stream in handles)
+    assert path.read_bytes() == b"L" * 97
+
+
 def test_strict_etw_recovers_preopened_write_from_unique_stable_rundown():
     protected = r"C:\protected\private.txt"
     events = [

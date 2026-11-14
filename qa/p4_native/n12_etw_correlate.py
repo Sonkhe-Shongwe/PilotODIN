@@ -611,8 +611,23 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
     return result
 
 
+def successful_completion(file_events, request, before):
+    irp = number(request["data"].get("Irp"))
+    matches = [event for event in file_events if irp and event is not request
+               and request["ticks"] <= event["ticks"] < before
+               and number(event["data"].get("Irp")) == irp]
+    if not matches:
+        return None
+    first = matches[0]
+    if (first["id"] == 24 and first["ticks"] > request["ticks"]
+            and (len(matches) == 1 or matches[1]["ticks"] != first["ticks"])
+            and number(first["data"].get("Status")) == 0):
+        return first["ticks"]
+    return None
+
+
 def file_lifetime_report(control, events, devices):
-    """Verify the generated in-trace open/write/cleanup/close on one file object."""
+    """Verify the generated in-trace open, write and handle teardown."""
     expected = canonical_file_path(control["path"], devices)
     if expected is None:
         raise ValueError("Invalid file lifetime control path.")
@@ -624,9 +639,11 @@ def file_lifetime_report(control, events, devices):
         and canonical_file_path(event["data"].get("FileName") or "", devices) == expected
     ]
     outcome = {"status": "BLOCKED", "reason": "open-missing-or-ambiguous"}
-    if len(opened) != 1:
+    two_handles = control.get("two_handles", False)
+    if len(opened) != (2 if two_handles else 1):
         return outcome
-    opened = opened[0]
+    first_open = opened[0] if two_handles else None
+    opened = opened[-1]
     object_id = number(opened["data"].get("FileObject"))
     if not object_id:
         return {"status": "BLOCKED", "reason": "open-file-object-missing"}
@@ -649,21 +666,12 @@ def file_lifetime_report(control, events, devices):
         return {"status": "BLOCKED", "reason": "write-missing-or-ambiguous"}
     write = writes[0]
     ends = [event for event in lifetime if event["id"] in {13, 14}]
-    for request, limit, label in ((opened, write["ticks"], "open"),
-                                  (write, control["end"], "write")):
-        irp = number(request["data"].get("Irp"))
-        matches = [event for event in file_events if irp and event is not request
-                   and request["ticks"] <= event["ticks"] <= limit
-                   and number(event["data"].get("Irp")) == irp]
-        next_event = matches[0] if matches else None
-        if (next_event is None or next_event["id"] != 24 or
-                next_event["ticks"] <= request["ticks"] or
-                (len(matches) > 1 and matches[1]["ticks"] == next_event["ticks"]) or
-                number(next_event["data"].get("Status")) != 0 or
-                (label == "open" and next_event["ticks"] == limit)):
-            return {"status": "BLOCKED", "reason": f"{label}-completion-unverified"}
-        if label == "write":
-            write_completed = next_event["ticks"]
+    open_completed = successful_completion(file_events, opened, write["ticks"])
+    if open_completed is None:
+        return {"status": "BLOCKED", "reason": "open-completion-unverified"}
+    write_completed = successful_completion(file_events, write, control["end"] + 1)
+    if write_completed is None:
+        return {"status": "BLOCKED", "reason": "write-completion-unverified"}
     key = number(write["data"].get("FileKey"))
     end_evidence = {
         "observed_end_events": [event["id"] for event in ends],
@@ -686,11 +694,74 @@ def file_lifetime_report(control, events, devices):
     ]
     ordered = (end_evidence["observed_end_events"] == [13, 14] and
                write_completed < ends[0]["ticks"] < ends[1]["ticks"])
-    return {"status": "PASS" if ordered else "BLOCKED",
-            "reason": None if ordered else "cleanup-close-order-unverified",
-            "open_and_write_completed": True, **end_evidence,
-            "matching_name_before_write": any(event["ticks"] < write["ticks"] for event in name_events),
-            "matching_name_at_or_after_write": any(event["ticks"] >= write["ticks"] for event in name_events)}
+    result = {"status": "PASS" if ordered else "BLOCKED",
+              "reason": None if ordered else "cleanup-close-order-unverified",
+              "open_and_write_completed": True, **end_evidence,
+              "matching_name_before_write": any(event["ticks"] < write["ticks"] for event in name_events),
+              "matching_name_at_or_after_write": any(event["ticks"] >= write["ticks"] for event in name_events)}
+    if two_handles:
+        second_boundary_before_completion = any(
+            event["id"] in {12, 13, 14} and opened["ticks"] < event["ticks"] <= write_completed
+            and number(event["data"].get("FileObject")) == object_id
+            for event in file_events
+        )
+        result["overlap"] = overlapping_handle_report(
+            file_events, first_open, opened, open_completed, write, key,
+            second_boundary_before_completion, expected, devices,
+        )
+    return result
+
+
+def overlapping_handle_report(events, first_open, second_open, second_completed, write, key,
+                              second_ended_early, expected, devices):
+    first_object = number(first_open["data"].get("FileObject"))
+    second_object = number(second_open["data"].get("FileObject"))
+    if not first_object or first_object == second_object:
+        return {"status": "BLOCKED", "reason": "distinct-file-objects-unverified"}
+    if successful_completion(events, first_open, second_open["ticks"]) is None:
+        return {"status": "BLOCKED", "reason": "first-open-completion-unverified"}
+    if second_ended_early:
+        return {"status": "BLOCKED", "reason": "second-object-ended-before-write-completion"}
+    first_events = [
+        event for event in events if first_open["ticks"] < event["ticks"] <= write["ticks"]
+        and event["id"] in {12, 13, 14} and number(event["data"].get("FileObject")) == first_object
+    ]
+    if (not first_events or [event["id"] for event in first_events] not in ([13], [13, 14])
+            or not second_completed < first_events[0]["ticks"] < write["ticks"]):
+        return {"status": "BLOCKED", "reason": "first-cleanup-between-second-open-and-write-unverified"}
+    cleanup = first_events[0]
+    if not key or name_transition_key(13, cleanup["data"]) != key:
+        return {"status": "BLOCKED", "reason": "cleanup-and-write-shared-key-unverified"}
+
+    # Observe name evidence through the write without attributing the write
+    # by FileKey. An observed open already supplies the control's actual path.
+    names = set()
+    first_invalidation = None
+    tied_transition = False
+    for event in events:
+        if event["ticks"] > write["ticks"]:
+            break
+        if event["lifecycle"]:
+            continue
+        data = event["data"]
+        if name_transition_key(event["id"], data) != key:
+            continue
+        if event["ticks"] == write["ticks"]:
+            tied_transition = True
+            continue
+        if event["id"] == 10:
+            if first_invalidation is None:
+                names.add(canonical_file_path(data.get("FileName") or "", devices))
+        elif event["id"] == 11:
+            names.clear()
+            first_invalidation = None
+        elif len(names) == 1 and None not in names and first_invalidation is None:
+            first_invalidation = event
+    return {"status": "PASS", "first_cleanup_before_second_write": True,
+            "matching_name_in_key_lifetime": expected in names,
+            "conflicting_name_in_key_lifetime": bool(names - {expected}),
+            "name_transition_tied_with_write": tied_transition,
+            "first_invalidation_is_first_cleanup": first_invalidation is cleanup and not tied_transition}
 
 
 def decode_rundown_report(source, target):
