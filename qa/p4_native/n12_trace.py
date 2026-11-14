@@ -1117,6 +1117,9 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
         "rundown_invalidation_events": {
             key: value for key, value in details.items() if ":rundown-invalidated-by-" in key
         },
+        "rundown_name_candidate_events": {
+            key: value for key, value in details.items() if ":name-candidate" in key
+        },
         "stable_process_bookends": len(stable_process_pids or ()),
         "stable_thread_bookends": len(stable_threads or {}),
         "rundown_control_keys_recovered": len(recovered_control_keys),

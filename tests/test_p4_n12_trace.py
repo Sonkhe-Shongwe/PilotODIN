@@ -775,6 +775,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          "decoder": "tdh+raw-schema"},
         {"key": "0x32", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\etw-started.bin",
          "decoder": "tdh+raw-schema"},
+        {"key": "0x33", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\ambiguous.bin",
+         "decoder": "tdh+raw-schema"},
     ]
     rundown_payload = ("".join(json.dumps(entry) + "\n" for entry in rundown_entries)).encode()
     rundown_path.write_bytes(rundown_payload)
@@ -836,6 +838,15 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
              "--rundown", str(rundown_path), "--process-bookends", str(bookends_path)],
             capture_output=True, text=True, check=False,
         )
+
+    # This FileKey has protected and outside NameCreate candidates; neither path may be chosen.
+    emit(10, 99, unrelated_ticks + 20, FileKey="0x33",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\ambiguous.bin")
+    emit(10, 99, unrelated_ticks + 21, FileKey="0x33",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-outside\ambiguous.bin")
+    emit(16, 99, unrelated_ticks + 22, FileObject=111, Irp=12, FileKey="0x33",
+         IOSize=9, ByteOffset=0, IssuingThreadId=88)
+    emit(24, 0, unrelated_ticks + 23, Irp=12, Status=0)
 
     result = run()
     assert result.returncode == 0, result.stderr
@@ -921,6 +932,10 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["other_process_image_events"]["other:event-16:process-image-etw-writer.exe"] == 1
     assert report["issuing_thread_owner_images"]["other:event-16:write:issuing-thread-owner-etw-writer.exe"] == 1
     assert report["rundown_invalidation_events"]["other:event-17:resize:rundown-invalidated-by-event-14:FileKey"] == 1
+    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-protected"] == 1
+    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-outside-protected"] == 1
+    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-rundown-protected"] == 1
+    assert report["unrelated_unresolved_mutations"]["other:write:path-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 2
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
     assert "other-writer.exe" in json.dumps(report["protected_writer_processes"])

@@ -54,6 +54,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     invalidation_reasons = {}
     ordered_events = sorted(events, key=lambda record: record["ticks"])
     rundown_names = {}
+    name_events = {}
     rundown_unsafe_keys = set()
     if strict and rundown is not None:
         for entry in rundown:
@@ -273,6 +274,21 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if rundown_context == "lifetime-invalidated":
                 for reason in invalidation_reasons.get(context_key, {}):
                     details[f"{actor}:event-{kind}:{operation}:rundown-invalidated-by-{reason}"] += 1
+            if type(context_key) is int and context_key > 0:
+                for source_label, candidates in (
+                    ("event10", name_events.get(context_key, set())),
+                    ("rundown", rundown_names.get(context_key, set())),
+                ):
+                    if not candidates:
+                        continue
+                    details[f"{actor}:event-{kind}:{operation}:name-candidate-set-size-{source_label}-{len(candidates)}"] += 1
+                    for candidate in candidates:
+                        category = (
+                            "unresolved" if candidate is None
+                            else "protected" if tracked(candidate)
+                            else "outside-protected"
+                        )
+                        details[f"{actor}:event-{kind}:{operation}:name-candidates-{source_label}-{category}"] += 1
         if strict and source is None and kind in {16, 17, 23}:
             # Write requests expose FileKey. Set-information events can expose
             # only FileObject. Never substitute a stop-time name for an

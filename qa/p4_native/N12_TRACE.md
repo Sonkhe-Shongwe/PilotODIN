@@ -149,3 +149,10 @@ The diagnostic also resolves the issuing thread's owner against its lifecycle or
 
 
 The lifecycle reducer accepts the documented Kernel Process and Thread payload fields `ProcessId` and `TThreadId` alongside the existing normalized aliases. The synthetic regression deliberately uses these documented names while setting the event-header PID to the parent process, proving that process and thread ownership is taken from event data rather than the header. See [Microsoft Thread_V2_TypeGroup1](https://learn.microsoft.com/en-us/windows/win32/etw/thread-v2-typegroup1) and [Microsoft Thread class](https://learn.microsoft.com/en-us/windows/win32/etw/thread).
+
+
+## 14 November 2026 | FileKey candidate-path classification
+
+For writes, resize/allocate and FSCTL requests whose path cannot be safely recovered, the strict reducer now reports only the number and protected-root classification of candidate names from Event 10 NameCreate and the stop-time rundown. It distinguishes `protected`, `outside-protected` and `unresolved` candidates. Candidate strings are never included in the report.
+
+A mixed protected/outside candidate set remains unresolved. These categories are triage evidence only; they do not establish which alias the operation used and do not relax the FileKey lifetime guard. A regression supplies one protected and one outside candidate for the same key and verifies that both categories are reported while the write remains unresolved.
