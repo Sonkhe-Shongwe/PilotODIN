@@ -5,7 +5,8 @@ import subprocess
 import sys
 from contextlib import ExitStack
 from pathlib import Path
-from threading import get_native_id
+from queue import Empty, Queue
+from threading import Thread, get_native_id
 from xml.etree import ElementTree as ET
 
 NATIVE = Path(__file__).resolve().parents[2] / "p4_native"
@@ -14,6 +15,7 @@ import n12_etw_probe as probe
 
 SIZE = 173
 RETAIN = 83
+FLUSHED_PAYLOAD = b"F" * 127
 STACKS = {"FileWrite", "FileSetInformation", "FileFlush"}
 KEYWORDS = {"ProcessThread", "Loader"}
 
@@ -33,6 +35,55 @@ def calibration(path):
         raise RuntimeError("The known stack-control bytes and resize did not match.")
     return {"pid": os.getpid(), "tid": get_native_id(), "write": write, "resize": resize,
             "path": str(path), "size": SIZE, "final_size": RETAIN}
+
+
+def flushed_comparison(path):
+    with path.open("xb", buffering=0) as stream:
+        probe.verify_handle_path(stream, path)
+        first = probe.utc_ticks()
+        if stream.write(FLUSHED_PAYLOAD) != len(FLUSHED_PAYLOAD):
+            raise RuntimeError("The separate flushed comparison write was incomplete.")
+        write_window = [first, probe.utc_ticks()]
+        first = probe.utc_ticks()
+        os.fsync(stream.fileno())
+        print(json.dumps({"path": str(path), "size": len(FLUSHED_PAYLOAD),
+                          "pid": os.getpid(), "tid": get_native_id(),
+                          "write_window": write_window,
+                          "flush_window": [first, probe.utc_ticks()]}), flush=True)
+        # Keep the write handle alive through WPR rundown. The parent releases
+        # it by closing the pipe after capture, without sending any payload.
+        sys.stdin.buffer.read(1)
+
+
+def start_flushed_comparison(path, handles):
+    command = [sys.executable, "-B", __file__, "flushed", str(path)]
+    child = handles.enter_context(subprocess.Popen(
+        command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL, text=True,
+    ))
+
+    def release():
+        child.stdin.close()
+        try:
+            child.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            child.kill()
+            child.wait()
+
+    handles.callback(release)
+    lines = Queue(maxsize=1)
+    Thread(target=lambda: lines.put(child.stdout.readline()), daemon=True).start()
+    try:
+        line = lines.get(timeout=15)
+    except Empty as exc:
+        raise RuntimeError("The flushed comparison helper did not report readiness.") from exc
+    if not line:
+        raise RuntimeError("The flushed comparison helper exited before reporting readiness.")
+    evidence = json.loads(line)
+    if (evidence["pid"] != child.pid or evidence["pid"] == os.getpid()
+            or evidence["path"] != str(path) or child.poll() is not None):
+        raise RuntimeError("The flushed comparison helper identity was not established.")
+    return evidence, child
 
 
 def profile_for_capture(directory, run):
@@ -92,31 +143,20 @@ def capture_with_handles(root, metadata_path, handles):
     print("N12 stack profile preflight: " + json.dumps(coverage), file=sys.stderr, flush=True)
     known = None
     comparisons = {}
+    flushed_helper = None
     flushed_path = root / "flushed.bin"
     untouched_path = root / "untouched.bin"
-    flushed_payload = b"F" * 127
     untouched_payload = b"pre-capture comparison"
-    flushed = None
 
     def prepare_comparisons():
-        nonlocal flushed
-        flushed = handles.enter_context(flushed_path.open("xb", buffering=0))
-        probe.verify_handle_path(flushed, flushed_path)
         with untouched_path.open("xb", buffering=0) as seed:
             if seed.write(untouched_payload) != len(untouched_payload):
                 raise RuntimeError("The untouched comparison seed write was incomplete.")
             os.fsync(seed.fileno())
 
     def open_comparisons():
-        # Flush only the distinct comparison before writing the primary files.
-        first = probe.utc_ticks()
-        if flushed.write(flushed_payload) != len(flushed_payload):
-            raise RuntimeError("The separate flushed comparison write was incomplete.")
-        write_window = [first, probe.utc_ticks()]
-        first = probe.utc_ticks()
-        os.fsync(flushed.fileno())
-        comparisons["flushed"] = {"path": str(flushed_path), "size": len(flushed_payload),
-                                  "write_window": write_window, "flush_window": [first, probe.utc_ticks()]}
+        nonlocal flushed_helper
+        comparisons["flushed"], flushed_helper = start_flushed_comparison(flushed_path, handles)
         first = probe.utc_ticks()
         stream = handles.enter_context(untouched_path.open("rb", buffering=0))
         open_window = [first, probe.utc_ticks()]
@@ -177,11 +217,13 @@ def capture_with_handles(root, metadata_path, handles):
     finally:
         probe.subprocess = subprocess
         probe.capture_fixture = run_fixture
+    if flushed_helper is None or flushed_helper.poll() is not None:
+        raise RuntimeError("The flushed comparison handle did not survive capture.")
     fixture["rundown_start_ticks"] = comparisons.pop("wpr_stop_start")
     for label, expected in (("protected", b"x" * 53), ("outside", b"x" * 79)):
         if Path(fixture["preopened"]["writes"][label]["path"]).read_bytes() != expected:
             raise RuntimeError("An original strict control payload did not match.")
-    if flushed_path.read_bytes() != flushed_payload or untouched_path.read_bytes() != untouched_payload:
+    if flushed_path.read_bytes() != FLUSHED_PAYLOAD or untouched_path.read_bytes() != untouched_payload:
         raise RuntimeError("A separate comparison payload did not match.")
     metadata_path.write_text(json.dumps({"root": str(root), "known": known, "profile": coverage,
                                          "comparisons": comparisons}), encoding="utf-8")
@@ -190,10 +232,13 @@ def capture_with_handles(root, metadata_path, handles):
 
 if __name__ == "__main__":
     try:
-        if sys.argv[1] == "control":
+        if sys.argv[1] in ("control", "flushed"):
             path = Path(sys.argv[2])
             probe.local_disposable_path(path.parent, runner_temp_only=True)
-            print(json.dumps(calibration(path)))
+            if sys.argv[1] == "flushed":
+                flushed_comparison(path)
+            else:
+                print(json.dumps(calibration(path)))
         else:
             root = probe.local_disposable_path(Path(sys.argv[1]), runner_temp_only=True)
             result = capture(root, Path(os.environ["PILOTODIN_N12_STACK_META"]))

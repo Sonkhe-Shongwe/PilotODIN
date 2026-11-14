@@ -1,0 +1,28 @@
+name: P4 N12 Isolated Comparison Stack Capture
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-n12-isolated-stack.yml
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-stack:
+    if: >-
+      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): verify isolated N12 stack controls'
+    name: Verify isolated N12 comparison and application stack controls
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact capture source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Capture and compare the generated controls
+        shell: pwsh
+        run: ./qa/p4_research/n12_stack/Run.ps1

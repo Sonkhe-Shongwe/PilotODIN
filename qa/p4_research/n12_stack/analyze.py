@@ -120,11 +120,15 @@ def comparison_identities(capture, comparisons, events, devices, names, primary,
             <= capture["rundown_start_ticks"]):
         raise ValueError("Invalid flushed-control windows.")
 
+    helper_pid, helper_tid = flushed["pid"], flushed["tid"]
+    if not (helper_pid > 0 and helper_tid > 0 and helper_pid != control["pid"]):
+        raise ValueError("The flushed comparison must have a distinct process identity.")
+
     def completed_request(row, event_id, begin, finish):
         data = row["data"]
         return (row["id"] == event_id and begin <= row["ticks"] <= finish
-                and row["pid"] == control["pid"]
-                and number(data.get("IssuingThreadId", data.get("ThreadId"))) == control["tid"]
+                and row["pid"] == helper_pid
+                and number(data.get("IssuingThreadId", data.get("ThreadId"))) == helper_tid
                 and successful_completion(by_irp.get(number(data.get("Irp")), ()), row, finish + 1)
                 is not None)
 
@@ -156,6 +160,55 @@ def comparison_identities(capture, comparisons, events, devices, names, primary,
     result["untouched"] = {"identity": untouched_identity, "evidence": evidence}
     return result
 
+
+def calibration_candidates(requests, names, companion_irps, known, label, opcode, expected_path, end_ticks):
+    counts = Counter()
+    selected = []
+    start, end = known[label]
+    for row in requests:
+        if row.opcode != opcode or row.issuing != known["tid"]:
+            continue
+        counts["classic-operation-and-thread"] += 1
+        if expected_path is None or names.get(row.key) != {expected_path}:
+            counts["classic-name-unverified"] += 1
+            continue
+        if (opcode == 68 and (row.detail != known["size"] or row.offset != 0)
+                or opcode == 69 and row.detail != 20):
+            counts["classic-operation-fields-mismatch"] += 1
+            continue
+        if not (row.key and row.obj and row.irp):
+            counts["classic-file-identity-unverified"] += 1
+            continue
+
+        irp_records = companion_irps.get(row.irp, ())
+        completed = []
+        for event in irp_records:
+            data = event["data"]
+            if event["id"] != {68: 16, 69: 17}[opcode]:
+                continue
+            counts["companion-operation-and-irp"] += 1
+            if (event["pid"] != known["pid"]
+                    or number(data.get("IssuingThreadId", data.get("ThreadId"))) != known["tid"]):
+                counts["companion-process-or-thread-mismatch"] += 1
+                continue
+            if (number(data.get("FileKey")), number(data.get("FileObject"))) != (row.key, row.obj):
+                counts["companion-file-identity-mismatch"] += 1
+                continue
+            if opcode == 69 and number(data.get("InfoClass")) != 20:
+                counts["companion-operation-fields-mismatch"] += 1
+                continue
+            if not start - 10 <= event["ticks"] <= end + 10:
+                counts["companion-outside-calibration-window"] += 1
+                continue
+            if successful_completion(irp_records, event, end_ticks + 1) is None:
+                counts["companion-success-unverified"] += 1
+                continue
+            completed.append(event)
+        if len(completed) == 1:
+            selected.append(row)
+        else:
+            counts["companion-match-missing" if not completed else "companion-match-ambiguous"] += 1
+    return selected, dict(counts)
 
 def report(root, known, decoder, comparisons):
     capture = json_file(root / "fixture.json")
@@ -236,10 +289,20 @@ def report(root, known, decoder, comparisons):
         result = {"classic_success": bool(completed(row))}
         identity = stack_identity(row, pid, issuing, processes, threads)
         result["lifetime"] = "confirmed" if identity is not None else "unverified"
-        frames = stack_frames(identity, stacks, refs, definitions) if (
-            identity is not None and integrity and result["classic_success"]
-            and request_counts[row.qpc, row.pid, row.tid] == 1
-        ) else ()
+        if not integrity:
+            status = "capture-integrity-unverified"
+        elif not result["classic_success"]:
+            status = "classic-completion-unverified"
+        elif identity is None:
+            status = "process-or-thread-lifetime-unverified"
+        elif request_counts[row.qpc, row.pid, row.tid] != 1:
+            status = "classic-event-identity-ambiguous"
+        else:
+            status = "stack-unavailable-or-ambiguous"
+        frames = ()
+        if status == "stack-unavailable-or-ambiguous":
+            frames = stack_frames(identity, stacks, refs, definitions)
+        result["stack_status"] = "matched" if frames else status
         result["stack_frames"] = len(frames)
         result["modules"] = module_frames(frames, pid, row.qpc, classic["image"])
         return result
@@ -247,19 +310,10 @@ def report(root, known, decoder, comparisons):
     calibrations = {}
     expected_path = canonical_file_path(known["path"], devices)
     for label, opcode in (("write", 68), ("resize", 69)):
-        selected = []
-        for row in requests:
-            if (row.opcode != opcode or row.issuing != known["tid"] or
-                    names[row.key] != {expected_path} or
-                    (opcode == 68 and (row.detail != known["size"] or row.offset != 0)) or
-                    (opcode == 69 and row.detail != 20)):
-                continue
-            corroborating = [item for item in companion_irps[row.irp]
-                             if known[label][0] - 10 <= item["ticks"] <= known[label][1] + 10
-                             and matches(item, opcode, known["pid"], known["tid"], (row.key, row.obj))]
-            if len(corroborating) == 1:
-                selected.append(row)
-        outcome = {"candidate_count": len(selected)}
+        selected, diagnostics = calibration_candidates(
+            requests, names, companion_irps, known, label, opcode, expected_path, capture["end_ticks"],
+        )
+        outcome = {"candidate_count": len(selected), "candidate_diagnostics": diagnostics}
         if len(selected) == 1:
             outcome.update(assess(selected[0], known["pid"], known["tid"]))
         calibrations[label] = outcome
@@ -314,10 +368,24 @@ def report(root, known, decoder, comparisons):
                 result[operation].append(outcome)
         systems[label] = result
 
+    file_roles = {identity: label for label, identity in primary.items()}
+    file_roles.update({evidence["identity"]: label for label, evidence in comparison.items()
+                       if evidence["identity"] is not None})
+    fixture_writes = Counter()
+    for row in events:
+        if row["lifecycle"] or row["id"] != 16 or row["pid"] != capture["preopened"]["pid"]:
+            continue
+        data = row["data"]
+        irp = number(data.get("Irp"))
+        if successful_completion(companion_irps.get(irp, ()), row, capture["end_ticks"] + 1) is not None:
+            identity = (number(data.get("FileKey")), number(data.get("FileObject")))
+            role = file_roles.get(identity, "other-file")
+            fixture_writes[f"{role}:{phase(row['ticks'])}"] += 1
+
     return {"loss_and_decode_checks_pass": integrity, "classic_stack_records": len(classic["stack"]),
             "classic_stack_references": len(classic["reference"]), "classic_file_requests": len(requests),
             "known_application_controls": calibrations, "calibrated": calibrated,
-            "system_context": systems,
+            "system_context": systems, "fixture_process_successful_writes": dict(fixture_writes),
             "function_symbols": "not-resolved", "application_initiator": "unverified"}
 
 
@@ -327,5 +395,9 @@ if __name__ == "__main__":
         result = report(Path(metadata["root"]), metadata["known"], json.loads(sys.argv[2]),
                         metadata["comparisons"])
         print("N12 stack correlation: " + json.dumps(result), flush=True)
+        controls = result["system_context"]
+        if (not result["calibrated"] or not controls["flushed"]["explicit_flush"]
+                or controls["untouched"]["identity"] != "confirmed"):
+            sys.exit("The N12 stack calibration or comparison controls did not pass.")
     except (KeyError, OSError, ValueError, IndexError, TypeError):
         sys.exit("The N12 stack correlation could not validate the captured evidence.")
