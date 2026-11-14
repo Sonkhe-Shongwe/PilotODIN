@@ -213,6 +213,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
     if started.returncode:
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
     rundown_stop_ticks = None
+    lifetime_control = None
     try:
         control_writes = {}
         for label, (path, stream, payload) in (controls or {}).items():
@@ -221,6 +222,17 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
                 raise RuntimeError("The generated pre-opened write was incomplete.")
             control_writes[label] = {"path": str(path), "size": len(payload),
                                      "start": first, "end": utc_ticks()}
+        if before_stop is not None:
+            lifetime_path = root / "file-lifetime.bin"
+            lifetime_start = utc_ticks()
+            lifetime_pid = run_writer(
+                "from pathlib import Path\nimport sys\n"
+                "with Path(sys.argv[1]).open('xb', buffering=0) as stream:\n"
+                " if stream.write(b'L' * 97) != 97: raise RuntimeError('Incomplete write')",
+                lifetime_path,
+            )
+            lifetime_control = {"pid": lifetime_pid, "path": str(lifetime_path), "size": 97,
+                                "start": lifetime_start, "end": utc_ticks()}
         # Give the new session a separate process launch before measuring the
         # fixture. Start the calibration parent inside the trace as well.
         run_writer("pass")
@@ -281,6 +293,10 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         capture["preopened"] = {"pid": os.getpid(), "tid": get_native_id(), "writes": control_writes}
     if rundown_stop_ticks is not None:
         capture["rundown_stop_ticks"] = rundown_stop_ticks
+    if lifetime_control is not None:
+        if lifetime_path.read_bytes() != b"L" * 97:
+            raise RuntimeError("The generated file lifetime control did not preserve its payload.")
+        capture["file_lifetime"] = lifetime_control
     return capture
 
 

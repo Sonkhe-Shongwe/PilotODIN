@@ -65,7 +65,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     thread_owners = {}
     opened, pending = {}, {}
     file_names = {}
-    invalidated_name = object()
+    invalidated_names = {}
     ambiguous_irps = set()
     unresolved = Counter()
     invalidation_reasons = {}
@@ -208,11 +208,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 name = resolve_path(data.get("FileName") or "")
                 # A distinct name may be an alias. Only NameDelete resets the
                 # prior name evidence for this key.
-                file_names[key] = name if file_names.get(key, name) == name else None
+                if key not in invalidated_names:
+                    file_names[key] = name if file_names.get(key, name) == name else None
             elif kind == 11:
                 file_names.pop(key, None)
-            elif key in file_names:
-                file_names[key] = invalidated_name
+                invalidated_names.pop(key, None)
+            elif file_names.get(key) is not None:
+                invalidated_names.setdefault(key, (kind, number(data.get("FileObject"))))
         if kind in {10, 11}:
             continue
         object_id = number(data.get("FileObject"))
@@ -246,7 +248,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 )
                 count_compression(operation, f"successful-completion:{outcome}")
             if write_name_context is not None:
-                details[f"write-path-gap:{write_name_context}"] += 1
+                context, _, invalidation = write_name_context.partition(":")
+                details[f"write-path-gap:{context}"] += 1
+                if invalidation:
+                    details[f"write-name-invalidation:{invalidation}"] += 1
             # FILE_SUPERSEDED, FILE_CREATED and FILE_OVERWRITTEN mutate data.
             open_result = number(data.get("ExtraInformation")) if operation == "open" else None
             mutation = operation != "query" and (operation != "open" or open_result in {0, 2, 3})
@@ -400,7 +405,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             context = "missing-key" if not file_key else "unseen-key"
             if file_key in file_names:
                 context = "ambiguous-name"
-            if candidate is invalidated_name:
+            if file_key in invalidated_names:
                 context = "invalidated-name"
             elif candidate is not None:
                 context = "tracked" if tracked(candidate) else "outside-tracked-paths"
@@ -410,6 +415,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 write_name_context = "same-timestamp-name-transition"
             elif issuing_thread_path:
                 write_name_context = "issuing-thread-handle-candidate"
+            if write_name_context == "invalidated-name":
+                invalidating_kind, invalidating_object = invalidated_names[file_key]
+                object_relation = "missing-object"
+                if invalidating_object:
+                    object_relation = "same-object" if invalidating_object == object_id else "different-object"
+                write_name_context = f"invalidated-name:event-{invalidating_kind}:{object_relation}"
             if birth is None and process_bookends is not None:
                 if pid in process_bookends:
                     identity_context = "same-process-at-bookends"
@@ -595,7 +606,79 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
     result = {"scope": "generated writes through pre-opened handles", "targets": outcomes}
     if rundown is not None:
         result["rundown_keys"] = len(rundown_names)
+    if "file_lifetime" in capture:
+        result["file_lifetime"] = file_lifetime_report(capture["file_lifetime"], events, devices)
     return result
+
+
+def file_lifetime_report(control, events, devices):
+    """Verify the generated in-trace open/write/cleanup/close on one file object."""
+    expected = canonical_file_path(control["path"], devices)
+    if expected is None:
+        raise ValueError("Invalid file lifetime control path.")
+    file_events = sorted((event for event in events if not event["lifecycle"]),
+                         key=lambda event: event["ticks"])
+    opened = [
+        event for event in file_events if event["id"] == 12 and event["pid"] == control["pid"]
+        and control["start"] <= event["ticks"] <= control["end"]
+        and canonical_file_path(event["data"].get("FileName") or "", devices) == expected
+    ]
+    outcome = {"status": "BLOCKED", "reason": "open-missing-or-ambiguous"}
+    if len(opened) != 1:
+        return outcome
+    opened = opened[0]
+    object_id = number(opened["data"].get("FileObject"))
+    if not object_id:
+        return {"status": "BLOCKED", "reason": "open-file-object-missing"}
+    lifetime = []
+    for event in file_events:
+        if event["ticks"] <= opened["ticks"] or number(event["data"].get("FileObject")) != object_id:
+            continue
+        if event["id"] == 12:
+            break
+        lifetime.append(event)
+        if event["id"] == 14:
+            break
+    writes = [
+        event for event in lifetime if event["id"] == 16 and event["pid"] == control["pid"]
+        and event["ticks"] <= control["end"]
+        and number(event["data"].get("IOSize")) == control["size"]
+        and number(event["data"].get("ByteOffset")) == 0
+    ]
+    if len(writes) != 1:
+        return {"status": "BLOCKED", "reason": "write-missing-or-ambiguous"}
+    write = writes[0]
+    ends = [event for event in lifetime if event["id"] in {13, 14}]
+    for request, limit, label in ((opened, write["ticks"], "open"),
+                                  (write, control["end"], "write")):
+        irp = number(request["data"].get("Irp"))
+        matches = [event for event in file_events if irp and event is not request
+                   and request["ticks"] <= event["ticks"] <= limit
+                   and number(event["data"].get("Irp")) == irp]
+        next_event = matches[0] if matches else None
+        if (next_event is None or next_event["id"] != 24 or
+                next_event["ticks"] <= request["ticks"] or
+                (len(matches) > 1 and matches[1]["ticks"] == next_event["ticks"]) or
+                number(next_event["data"].get("Status")) != 0 or
+                (label == "open" and next_event["ticks"] == limit)):
+            return {"status": "BLOCKED", "reason": f"{label}-completion-unverified"}
+        if label == "write":
+            write_completed = next_event["ticks"]
+    if ([event["id"] for event in ends] != [13, 14] or
+            not write_completed < ends[0]["ticks"] < ends[1]["ticks"]):
+        return {"status": "BLOCKED", "reason": "cleanup-close-order-unverified"}
+    key = number(write["data"].get("FileKey"))
+    name_events = [
+        event for event in file_events if key and event["id"] == 10
+        and name_transition_key(10, event["data"]) == key
+        and control["start"] <= event["ticks"] <= ends[-1]["ticks"]
+        and canonical_file_path(event["data"].get("FileName") or "", devices) == expected
+    ]
+    return {"status": "PASS", "ordered_events": [12, 24, 16, 24, 13, 14],
+            "cleanup_key_matches_write": bool(key and name_transition_key(13, ends[0]["data"]) == key),
+            "close_key_matches_write": bool(key and name_transition_key(14, ends[1]["data"]) == key),
+            "matching_name_before_write": any(event["ticks"] < write["ticks"] for event in name_events),
+            "matching_name_at_or_after_write": any(event["ticks"] >= write["ticks"] for event in name_events)}
 
 
 def decode_rundown_report(source, target):
@@ -643,6 +726,8 @@ def main():
         report = preopened_report(capture, events, rundown) if options else correlate(capture, events)
     print(json.dumps(report))
     if options and any(target["completion"] != "success" for target in report["targets"].values()):
+        return 2
+    if "file_lifetime" in report and report["file_lifetime"]["status"] != "PASS":
         return 2
     return 0
 

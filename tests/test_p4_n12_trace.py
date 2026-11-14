@@ -14,7 +14,9 @@ from xml.etree import ElementTree as ET
 import pytest
 
 from qa.p4_native import n12_calibration, n12_etw_probe, n12_trace as trace
-from qa.p4_native.n12_etw_correlate import correlate, correlate_requests, decode_rundown_report, preopened_report
+from qa.p4_native.n12_etw_correlate import (
+    correlate, correlate_requests, decode_rundown_report, file_lifetime_report, preopened_report,
+)
 
 
 def test_volume_devices_maps_all_local_logical_drives_only():
@@ -218,6 +220,10 @@ def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names()
     event(16, 16, FileObject=9, FileKey=42, Irp=7)
     event(16, 17, FileObject=10, FileKey=43, Irp=7)
     event(24, 18, Irp=7, Status=0)
+    event(13, 19, FileObject=12, FileKey=42)
+    event(14, 20, FileObject=12, FileKey=42)
+    event(16, 21, FileObject=9, FileKey=42, Irp=8)
+    event(24, 22, Irp=8, Status=0)
     details = Counter()
 
     unresolved = correlate_requests(
@@ -226,13 +232,54 @@ def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names()
         lambda *args: None, strict=True, details=details, initial_process_births={7: 0},
     )
 
-    assert unresolved["other:write:path-missing"] == 4
+    assert unresolved["other:write:path-missing"] == 5
     assert {key: count for key, count in details.items() if key.startswith("write-path-gap:")} == {
         "write-path-gap:outside-tracked-paths": 1,
         "write-path-gap:unseen-key": 1,
-        "write-path-gap:invalidated-name": 1,
+        "write-path-gap:invalidated-name": 2,
         "write-path-gap:same-timestamp-name-transition": 1,
     }
+    assert {key: count for key, count in details.items() if key.startswith("write-name-invalidation:")} == {
+        "write-name-invalidation:event-14:same-object": 1,
+        "write-name-invalidation:event-13:different-object": 1,
+    }
+
+
+@pytest.mark.parametrize(("fault", "reason"), [
+    (None, None),
+    ("reused-object", "write-missing-or-ambiguous"),
+    ("cleanup-other-object", "cleanup-close-order-unverified"),
+    ("tied-open-completion", "open-completion-unverified"),
+    ("failed-write", "write-completion-unverified"),
+])
+def test_generated_file_lifetime_requires_ordered_same_object_evidence(fault, reason):
+    path = r"C:\private\control.bin"
+    control = {"path": path, "pid": 7, "size": 97, "start": 1, "end": 20}
+    events = []
+
+    def event(kind, ticks, **data):
+        events.append({"id": kind, "pid": 7, "ticks": ticks, "lifecycle": False, "data": data})
+
+    event(12, 2, FileName=path, FileObject=50, Irp=1)
+    event(24, 5 if fault == "tied-open-completion" else 3, Irp=1, Status=0)
+    if fault == "reused-object":
+        event(12, 4, FileName=r"C:\private\another.bin", FileObject=50, Irp=3)
+    event(16, 5, FileObject=50, FileKey=60, Irp=2, IOSize=97, ByteOffset=0)
+    event(10, 6, FileName=path, FileKey=60)
+    event(24, 7, Irp=2, Status=0xC0000022 if fault == "failed-write" else 0)
+    event(13, 8, FileObject=51 if fault == "cleanup-other-object" else 50, FileKey=60)
+    event(14, 9, FileObject=50, FileKey=60)
+
+    report = file_lifetime_report(control, events, {})
+    if reason:
+        assert report == {"status": "BLOCKED", "reason": reason}
+    else:
+        assert report == {
+            "status": "PASS", "ordered_events": [12, 24, 16, 24, 13, 14],
+            "cleanup_key_matches_write": True, "close_key_matches_write": True,
+            "matching_name_before_write": False, "matching_name_at_or_after_write": True,
+        }
+    assert "control.bin" not in json.dumps(report)
 
 
 def test_strict_etw_recovers_preopened_write_from_unique_stable_rundown():
