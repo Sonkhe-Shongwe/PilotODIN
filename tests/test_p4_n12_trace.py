@@ -235,7 +235,7 @@ def test_read_native_rundown_requires_manifest_digest_and_decoder(tmp_path):
     assert trace.read_rundown_file(rundown_path, manifest) == [
         {"key": 40, "path": entry["path"]}
     ]
-    rundown_path.write_bytes(payload + b" ")
+    rundown_path.write_bytes(payload.replace(b"cache.sqlite", b"changed.sqlite"))
     with pytest.raises(ValueError, match="FileIO rundown SHA-256 mismatch"):
         trace.read_rundown_file(rundown_path, manifest)
 
@@ -595,6 +595,13 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert json.loads(recovered_output.read_text(encoding="utf-8")) == recovered
+
+    # Restore the calibration-only fixture: it intentionally has no rundown
+    # input and must not inherit the extra pre-opened write from the audit test.
+    del rows[-2:]
+    evidence.manifest["etw"].pop("rundown_sha256", None)
+    etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    evidence.manifest["etw"]["events_sha256"] = hashlib.sha256(etw_path.read_bytes()).hexdigest()
 
     calibration_manifest = dict(evidence.manifest, calibration=next(
         root for root in evidence.manifest["processes"] if root["role"] == "calibration"
