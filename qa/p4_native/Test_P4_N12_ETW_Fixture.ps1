@@ -1,6 +1,7 @@
 # A disposable fixture probe. The ETL and raw event payloads stay in runner temp.
 [CmdletBinding()]
-param([switch]$WithSysmon, [switch]$CalibrationOnly, [switch]$PreopenedControl, [switch]$Rundown)
+param([switch]$WithSysmon, [switch]$CalibrationOnly, [switch]$PreopenedControl,
+    [switch]$Rundown, [switch]$SystemTiming)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -20,6 +21,10 @@ if ($PreopenedControl) { $probeArgs += '--preopened-control' }
 if ($Rundown) {
     if (-not $PreopenedControl) { throw 'Rundown requires the pre-opened control.' }
     $probeArgs += '--rundown'
+}
+if ($SystemTiming) {
+    if (-not $Rundown) { throw 'System timing requires the native rundown fixture.' }
+    $probeArgs += '--system-timing'
 }
 function Get-ProcessBookend {
     Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate,Name |
@@ -96,7 +101,7 @@ try {
         }
         if ($isLifecycleEvent -or ($isFileEvent -and
                 ($eventId -in 10,11,12,13,14,16,17,18,19,23,24,26,27,28,29,34 -or
-                    ($Rundown -and $eventId -eq 21)))) {
+                    ($SystemTiming -and $eventId -eq 21)))) {
             $ticks = $event.TimeCreated.ToUniversalTime().Ticks
             if ($ticks -lt $captureStart -or $ticks -gt $captureEnd) {
                 $side = if ($ticks -lt $captureStart) { 'before' } else { 'after' }
@@ -272,7 +277,7 @@ if ($PreopenedControl) {
     } catch {
         throw 'The pre-opened control did not return a valid redacted report.'
     }
-    Write-Host ('Pre-opened control summary: ' + ($controlReport | ConvertTo-Json -Compress))
+    Write-Host ('Pre-opened control summary: ' + ($controlReport | ConvertTo-Json -Compress -Depth 8))
     if ($Rundown) {
         if ([long]$controlReport.rundown_keys -le 0) {
             throw 'The native rundown did not produce any file-key mappings.'
@@ -284,6 +289,15 @@ if ($PreopenedControl) {
                 $target.rundown_name -ne 'matches-target') {
                 throw "Native rundown did not independently establish the $label control target."
             }
+        }
+        if ($SystemTiming) {
+            $timing = $controlReport.control_write_timing
+            if ($timing.protected.identity -ne 'file-key-and-object' -or
+                $timing.protected.explicit_flush_trace -ne 'confirmed') {
+                throw 'The System timing fixture could not verify the protected control flush.'
+            }
+            Write-Host ('System timing control summary: ' + ($timing | ConvertTo-Json -Compress -Depth 8))
+            return
         }
         $reducerOutput = @(python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-preopened-rundown $reducerManifest $manifestPath $eventsPath --rundown $rundownPath --process-bookends $bookends)
         $reducerExit = $LASTEXITCODE

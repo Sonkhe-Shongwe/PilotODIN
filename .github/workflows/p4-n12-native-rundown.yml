@@ -42,3 +42,7 @@ jobs:
       - name: Execute native Windows ProcessTrace rundown control
         shell: pwsh
         run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl -Rundown
+
+      - name: Measure System-context operations in a separate flush fixture
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl -Rundown -SystemTiming

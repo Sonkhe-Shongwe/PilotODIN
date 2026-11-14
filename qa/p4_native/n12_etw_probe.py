@@ -183,7 +183,7 @@ def write_basic_info_control(path):
             raise RuntimeError("The generated metadata-control write was incomplete.")
 
 
-def preopened_control(root, *, rundown=False):
+def preopened_control(root, *, rundown=False, system_timing=False):
     root.mkdir()
     protected = root / "synthetic-protected"
     protected.mkdir()
@@ -196,9 +196,15 @@ def preopened_control(root, *, rundown=False):
             controls[label] = (path, stream, b"x" * size)
         if not rundown:
             return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
-        comparison = protected / "untouched.bin"
-        stream = stack.enter_context(comparison.open("xb", buffering=0))
-        verify_handle_path(stream, comparison)
+        if system_timing:
+            comparison = protected / "untouched.bin"
+            comparison_payload = b"pre-capture comparison"
+            with comparison.open("xb", buffering=0) as seed:
+                if seed.write(comparison_payload) != len(comparison_payload):
+                    raise RuntimeError("The pre-capture comparison write was incomplete.")
+                os.fsync(seed.fileno())
+            comparison_stream = stack.enter_context(comparison.open("r+b", buffering=0))
+            verify_handle_path(comparison_stream, comparison)
         # Keep the control handles open through WPR's stop-time rundown.
         wpr = Path(os.environ["SystemRoot"]) / "System32" / "wpr.exe"
         instance = ["-instancename", f"PilotODIN-{uuid4().hex}"]
@@ -220,17 +226,20 @@ def preopened_control(root, *, rundown=False):
 
         try:
             capture = capture_fixture(root, calibration_only=True, thread_context=True,
-                                      controls=controls, before_stop=stop_wpr)
-            if os.fstat(stream.fileno()).st_size != 0:
-                raise RuntimeError("The untouched comparison handle did not remain empty.")
-            capture["preopened"]["untouched"] = str(comparison)
+                                      controls=controls, before_stop=stop_wpr,
+                                      system_timing=system_timing)
+            if system_timing:
+                if comparison_stream.read() != comparison_payload:
+                    raise RuntimeError("The untouched comparison payload changed.")
+                capture["preopened"]["untouched"] = str(comparison)
             return capture
         finally:
             if not stopped:
                 run_wpr("-cancel")
 
 
-def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None):
+def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None,
+                    system_timing=False):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -267,7 +276,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
                 raise RuntimeError("The generated pre-opened write was incomplete.")
             control_writes[label] = {"path": str(path), "size": len(payload),
                                      "start": first, "end": utc_ticks()}
-        if controls and before_stop is not None:
+        if system_timing:
             # Give immediate writes a separate observation interval before flushing.
             time.sleep(0.1)
             first = utc_ticks()
@@ -375,11 +384,14 @@ if __name__ == "__main__":
         if len(sys.argv) < 2 or options not in (
             [], ["--calibration-only"], ["--calibration-only", "--thread-context"],
             ["--preopened-control"], ["--preopened-control", "--rundown"],
+            ["--preopened-control", "--rundown", "--system-timing"],
         ):
             raise ValueError("Unexpected probe arguments.")
         root = local_disposable_path(Path(sys.argv[1]), runner_temp_only=True)
         if "--preopened-control" in options:
-            print(json.dumps(preopened_control(root, rundown="--rundown" in options)))
+            print(json.dumps(preopened_control(
+                root, rundown="--rundown" in options, system_timing="--system-timing" in options,
+            )))
         else:
             print(json.dumps(probe(root, calibration_only="--calibration-only" in options,
                                    thread_context="--thread-context" in options)))

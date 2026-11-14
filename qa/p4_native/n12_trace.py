@@ -1210,8 +1210,6 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
             violations.get("protected:preopened-control:write") == 1
             else "NOT_CONFIRMED"
         ),
-        **({"control_write_timing": target_report["control_write_timing"]}
-           if "control_write_timing" in target_report else {}),
         "targets": target_report["targets"],
         "native_n12_accepted": False,
     }
