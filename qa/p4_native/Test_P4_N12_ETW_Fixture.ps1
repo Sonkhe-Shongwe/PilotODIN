@@ -147,10 +147,14 @@ $manifest = @{
         counters = $capture.counters
     }
 }
-if ($null -ne $capture.rundown_stop_ticks) {
-    $manifest.etw.rundown_stop_utc = [datetime]::new([long]$capture.rundown_stop_ticks, [DateTimeKind]::Utc).ToString('o')
+$rundownStopTicks = $null
+if ($capture.PSObject.Properties.Name -contains 'rundown_stop_ticks') {
+    $rundownStopTicks = $capture.rundown_stop_ticks
 }
-if ($Rundown -and $null -eq $capture.rundown_stop_ticks) {
+if ($null -ne $rundownStopTicks) {
+    $manifest.etw.rundown_stop_utc = [datetime]::new([long]$rundownStopTicks, [DateTimeKind]::Utc).ToString('o')
+}
+if ($Rundown -and $null -eq $rundownStopTicks) {
     throw 'The native rundown stop timestamp was not captured inside the ETW window.'
 }
 $reducerManifest = Join-Path $root 'capture-manifest.json'
