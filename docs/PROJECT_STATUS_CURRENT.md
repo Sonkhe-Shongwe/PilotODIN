@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 hosted compression diagnosis
+
+Two exact-source Windows fixture runs reconciled all 859 observed `FSCTL_SET_COMPRESSION` requests. Every issuing thread resolved to Windows Performance Recorder (`wpr.exe`), and every request completed successfully outside protected roots. The protected and outside controls passed in both runs. Strict coverage remains **BLOCKED** by other mutations, including 48 and 41 write path gaps respectively. N12 remains **PARTIAL** pending full native capture and attribution. [Evidence and next investigation](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-compression-requests-reconciled)
+
 ## 14 November 2026 | P4-83 read-only USN journal correction
 
 [Source commit `dc3b742`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dc3b74202a10320da580a91a5f8ad8851936cc65) correctly classifies Event 23 `FSCTL_READ_USN_JOURNAL (0x000900BB)` as a read-only query. The exact-source [N12 Windows run #43563056277](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43563056277) passed 50 focused tests and decoded 376/376 rundown records. The [broader P4 run #43563056278](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43563056278) passed all three jobs: 235 Python tests, 78 Node checks, TypeScript/Vite build, 13 Chromium scenarios, synthetic Windows preservation checks and a second 340/340 rundown integration. Both pre-opened controls passed through the strict reducer. The prior `0x000900BB` unresolved event family disappeared, while unknown FSCTLs remain fail-closed.

@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 hosted compression requests reconciled
+
+- [Source `538017c`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/538017c9b27ac9f473b050e9d573de571cedc9ba) reports aggregate completion and path outcomes for `FSCTL_SET_COMPRESSION`. Successful compression continues to count as a mutation. The focused regression covers protected and outside successes, unknown paths, failed statuses and incomplete correlation.
+- [Dedicated N12 Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43568505207/job/132367512162) passed 52 focused tests, decoded 350 rundown records and recorded 565 successful compression requests outside protected roots. The [P4 Windows fixture job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43568505202/job/132367512224) decoded 348 rundown records and recorded another 294 successful requests outside protected roots. The issuing thread owner resolved to `wpr.exe` for every compression request in both captures. The compression question is resolved for these two hosted captures.
+- **N12 remains partial.** Both runs reported one System-context write and one System-context resize on the synthetic protected control, with matching FileKey and FileObject counters. The respective runs also reported 48 and 41 write path gaps, plus other resize, allocation or unsupported-operation gaps. Matching a control file identifies the target of those System-context events. The originating operation still needs evidence.
+- **Next.** Start with the successful Event 16 writes whose path remains unresolved. Test whether a completed open or a name record valid at request time can tie the write to the same file lifetime. Keep later or conflicting names and reused identifiers unresolved. The combined calibration and full PilotODIN startup-to-exit trace remain pending.
+
 ## 14 November 2026 | P4-83 read-only USN journal classification corrected
 
 - **Implementation:** [`dc3b742`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dc3b74202a10320da580a91a5f8ad8851936cc65) adds the explicitly documented `FSCTL_READ_USN_JOURNAL (0x000900BB)` read-only query to the strict Event 23 allowlist. The prior run had counted it as unsupported mutation. Unknown FSCTLs remain fail-closed; the synthetic unknown-code regression now uses `0xDEADBEEF`.
