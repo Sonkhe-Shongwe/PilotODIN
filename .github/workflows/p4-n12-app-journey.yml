@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # Diagnostic follow-up awaits fresh approval.
+    if: ${{ github.run_attempt == '1' }} # One owner-approved diagnostic launch; checkout pins the reviewed parent.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
