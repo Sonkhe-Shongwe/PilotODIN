@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Physical Windows PilotODIN process memory snapshots
+
+- On the owner's 8 GB Windows laptop, the first reading labelled Closed still detected the desktop process and is excluded as a closed comparison. The corrected post-exit reading showed **710 MiB** system RAM available and no matching desktop process. The earlier Open and AfterOverview readings showed **545 MiB** and **539 MiB** available respectively, 165 MiB and 171 MiB below the post-exit snapshot.
+- At both open stages, the observed desktop process tree's private working sets totalled **174.7 MiB** at displayed precision: WebView2 101.3 MiB (six processes), analytics engine 71.6 MiB (two), desktop 1.5 MiB (one), and console host 0.3 MiB (one). The total excludes shared pages. These snapshots do not measure peak request memory, establish an exact causal launch delta, or verify that every child process exited.
+- **R03 offline Qwen remains BLOCKED at preflight / NOT TESTED.** The Open snapshot was 1,503 MiB below the current 2.00 GiB admission floor. Even the post-exit snapshot was 1,338 MiB below it. Reducing the measured private footprint of the desktop stack alone would not close that gap in this session. Keep the admission guard in place and prioritise measuring the bundled inference worker's load and generation footprint before evaluating a smaller offline configuration. The physical Local analytics overview pass and the 65/100 proposed P4 score still apply.
+
 ## 14 November 2026 | Physical Windows Local analytics under memory pressure
 
 - On the physical 8 GB Windows laptop, the owner imported the [synthetic fixture](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/e18887363af8ee0337dbc644c8a2c8e19d37b66b/fixtures/P0_SYNTHETIC_UI_ML_80.csv) and asked `What is the dataset overview?` with `Local analytics` selected. The answer displayed `VERIFIED RULES · NO LLM` and reported 80 rows, 5 columns, 0 missing cells and 0 exact duplicate rows. An independent CSV read matched all four counts. **Physical CSV import and Local analytics overview: scoped PASS.**

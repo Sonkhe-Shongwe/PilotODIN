@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | Physical Windows PilotODIN process memory snapshots
+
+Owner measurements showed 710 MiB available after desktop exit, 545 MiB with the app open and 539 MiB after the Local analytics overview. Both open snapshots measured 174.7 MiB of private working set across the observed desktop process tree. R03 remains **BLOCKED at preflight / offline Qwen NOT TESTED**, and P4 stays **ACTIVE at 65/100** on the proposed scorecard. [Measurement breakdown and limits](./SESSION_HANDOFF_CURRENT.md#14-november-2026--physical-windows-pilotodin-process-memory-snapshots).
+
 ## 14 November 2026 | Physical Windows Local analytics under memory pressure
 
 Physical Windows CSV import and the Ask ODIN Local analytics overview passed for the synthetic 80-row fixture. Low-memory was saved, with 0.73–0.82 GiB available in the preceding Settings snapshots. R03 remains **BLOCKED at preflight / offline Qwen NOT TESTED**. P4 remains **ACTIVE at 65/100** on the proposed scorecard. [Owner-observed result](./SESSION_HANDOFF_CURRENT.md#14-november-2026--physical-windows-local-analytics-under-memory-pressure).
