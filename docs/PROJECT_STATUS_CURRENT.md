@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 request-time path evidence without opens
+
+Two fresh Windows captures found 22 successful unresolved writes with no observed same-object open. Fourteen had outside-protected path candidates and eight lacked a prior name. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-request-time-path-evidence-without-opens).
+
 ## 14 November 2026 | N12 untouched comparison identity verified
 
 A hosted Windows timing fixture verified the untouched comparison by its successful in-trace open and read and observed zero matching System-context writes or resizes on it. Both original strict fixtures passed their controls and retained the protected write and resize. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results, initial failure and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-untouched-comparison-identity-verified).
