@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 paging flag on a System-context write
+
+The [hosted timing fixture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43598887022) observed a paging-I/O flag on one successful System-context write to the unflushed outside control. The original strict captures still found a protected System-context write and resize with origin unresolved. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Full evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-paging-flag-on-a-system-context-write).
+
 ## 14 November 2026 | Hosted SmolLM2 follow-up evaluation
 
 The [approved SmolLM2 hosted evaluation](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43596757885/job/132452800777) completed successfully. All eight responses hit the eight-token limit, yielding **0/8 accepted choices** and **8/8 verified-summary fallbacks**. The worker peaked at **417.2 MiB resident** and **217.1 MiB committed**. Physical R03 remains **BLOCKED at preflight / NOT TESTED**, and P4 remains **ACTIVE at 65/100**. [Scope and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-smollm2-follow-up-evaluation).

@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 paging flag on a System-context write
+
+- Source `f63489de9802fa22fad4d3dc380443e28ab40dee` adds redacted paging-I/O flag counts to successful System-header Event 16 writes on independently located timing controls. 143 local tests passed, including malformed fields and failed or ambiguous completion exclusions.
+- [Focused Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43598887022) passed 139 tests and decoded 400/400 strict and 260/260 timing rundown records. The isolated timing capture verified the protected flush and untouched comparison. The unflushed outside control had one System-context write and one resize during WPR stop/export. The write carried the paging-I/O flag. The protected and untouched controls had zero matching System operations in this isolated capture.
+- [Broader P4 run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43598887029) passed all three jobs: 324 Python tests, 78 Node checks, TypeScript/Vite, 12 Chromium cases and 354/354 native rundown records. Both original strict captures passed their generated controls and retained one unattributed protected write and one resize. The isolated paging observation does not classify those strict events or their origin.
+- **N12 PARTIAL / strict coverage BLOCKED. P4 remains 65/100.** The next useful comparison is to report the same flag for the protected System-context write in the original strict fixture, keeping its violation visible. Physical R03 and the historical R06 disposition remain open.
+
 ## 14 November 2026 | Hosted SmolLM2 follow-up evaluation
 
 - [Run #43596757885, job #132452800777](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43596757885/job/132452800777) completed on attempt 1 at `a540a8bedadfa2faf4c9b4e8d9b0316b61d2424c` with harness source `04eb36e21121bdf77aaec9782174258fb976cbfb`. The hosted runner had 15.99 GiB visible RAM. The pinned assets passed verification. Only SmolLM2 360M Q4_K_M executed, using the existing pinned CPU runtime. The one-run hosted approval is consumed.
