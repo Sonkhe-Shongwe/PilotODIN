@@ -248,10 +248,13 @@ def report(targets, work):
             if aliases:
                 names.append({"frame": frame["frame"],
                               "functions": [f"{module}!{name}" for name in aliases]})
-        stacks.append({"control": target["control"], "operation": target["operation"],
-                       "request_phase": target["request_phase"], "completion_phase": target["completion_phase"],
-                       "stack_frames": target["stack_frames"], "resolved_frames": len(names),
-                       "functions": names})
+        stack = {"control": target["control"], "operation": target["operation"],
+                 "request_phase": target["request_phase"], "completion_phase": target["completion_phase"],
+                 "stack_frames": target["stack_frames"], "resolved_frames": len(names),
+                 "functions": names}
+        if "comparison_event" in target:
+            stack["comparison_event"] = target["comparison_event"]
+        stacks.append(stack)
     return {"modules": statuses, "stacks": stacks}
 
 

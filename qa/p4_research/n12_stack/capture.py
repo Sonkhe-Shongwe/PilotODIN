@@ -20,6 +20,9 @@ FLUSHED_PAYLOAD = b"F" * 127
 STACKS = {"FileWrite", "FileSetInformation", "FileFlush"}
 KEYWORDS = {"ProcessThread", "Loader"}
 STOP_DWELL_SECONDS = 20
+WRITE_GAP_SECONDS = 5
+SECOND_WRITE_OFFSET = 65_536
+STAGGERED_PAYLOADS = ((0, b"A" * 4_133), (SECOND_WRITE_OFFSET, b"B" * 4_155))
 
 
 def calibration(path):
@@ -57,8 +60,34 @@ def flushed_comparison(path):
         sys.stdin.buffer.read(1)
 
 
-def start_flushed_comparison(path, handles):
-    command = [sys.executable, "-B", __file__, "flushed", str(path)]
+def staggered_comparison(root):
+    paths = {
+        "staggered-protected": root / "synthetic-protected" / "staggered.bin",
+        "staggered-outside": root / "staggered.bin",
+    }
+    with ExitStack() as handles:
+        streams = {label: handles.enter_context(path.open("xb", buffering=0))
+                   for label, path in paths.items()}
+        evidence = {label: {"path": str(path), "writes": []} for label, path in paths.items()}
+        for label, stream in streams.items():
+            probe.verify_handle_path(stream, paths[label])
+        for index, (offset, payload) in enumerate(STAGGERED_PAYLOADS):
+            if index:
+                time.sleep(WRITE_GAP_SECONDS)
+            for label, stream in streams.items():
+                stream.seek(offset)
+                first = probe.utc_ticks()
+                if stream.write(payload) != len(payload):
+                    raise RuntimeError("A staggered comparison write was incomplete.")
+                evidence[label]["writes"].append({"offset": offset, "size": len(payload),
+                                                  "start": first, "end": probe.utc_ticks()})
+        print(json.dumps({"pid": os.getpid(), "tid": get_native_id(), "files": evidence}), flush=True)
+        # Keep the unflushed handles open through rundown.
+        sys.stdin.buffer.read(1)
+
+
+def start_comparison(mode, path, handles):
+    command = [sys.executable, "-B", __file__, mode, str(path)]
     child = handles.enter_context(subprocess.Popen(
         command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL, text=True,
@@ -78,13 +107,14 @@ def start_flushed_comparison(path, handles):
     try:
         line = lines.get(timeout=15)
     except Empty as exc:
-        raise RuntimeError("The flushed comparison helper did not report readiness.") from exc
+        raise RuntimeError("The comparison helper did not report readiness.") from exc
     if not line:
-        raise RuntimeError("The flushed comparison helper exited before reporting readiness.")
+        raise RuntimeError("The comparison helper exited before reporting readiness.")
     evidence = json.loads(line)
-    if (evidence["pid"] != child.pid or evidence["pid"] == os.getpid()
-            or evidence["path"] != str(path) or child.poll() is not None):
-        raise RuntimeError("The flushed comparison helper identity was not established.")
+    if evidence["pid"] != child.pid or evidence["pid"] == os.getpid() or child.poll() is not None:
+        raise RuntimeError("The comparison helper identity was not established.")
+    if mode == "flushed" and evidence["path"] != str(path):
+        raise RuntimeError("The flushed comparison path was not established.")
     return evidence, child
 
 
@@ -146,6 +176,7 @@ def capture_with_handles(root, metadata_path, handles):
     known = None
     comparisons = {}
     flushed_helper = None
+    staggered_helper = None
     flushed_path = root / "flushed.bin"
     untouched_path = root / "untouched.bin"
     untouched_payload = b"pre-capture comparison"
@@ -158,7 +189,7 @@ def capture_with_handles(root, metadata_path, handles):
 
     def open_comparisons():
         nonlocal flushed_helper
-        comparisons["flushed"], flushed_helper = start_flushed_comparison(flushed_path, handles)
+        comparisons["flushed"], flushed_helper = start_comparison("flushed", flushed_path, handles)
         first = probe.utc_ticks()
         stream = handles.enter_context(untouched_path.open("rb", buffering=0))
         open_window = [first, probe.utc_ticks()]
@@ -199,9 +230,13 @@ def capture_with_handles(root, metadata_path, handles):
             known = json.loads(child.stdout)
 
         def calibrate_and_stop():
+            nonlocal staggered_helper
             try:
                 calibrate()
-                if os.environ.get("PILOTODIN_N12_STOP_DWELL") == "1":
+                staggered = os.environ.get("PILOTODIN_N12_STAGGERED_WRITES") == "1"
+                if staggered:
+                    comparisons["staggered"], staggered_helper = start_comparison("staggered", root, handles)
+                if staggered or os.environ.get("PILOTODIN_N12_STOP_DWELL") == "1":
                     start = probe.utc_ticks()
                     time.sleep(STOP_DWELL_SECONDS)
                     comparisons["stop_dwell_start"] = start
@@ -230,6 +265,14 @@ def capture_with_handles(root, metadata_path, handles):
             raise RuntimeError("An original strict control payload did not match.")
     if flushed_path.read_bytes() != FLUSHED_PAYLOAD or untouched_path.read_bytes() != untouched_payload:
         raise RuntimeError("A separate comparison payload did not match.")
+    if staggered_helper is not None:
+        if staggered_helper.poll() is not None:
+            raise RuntimeError("The staggered comparison handles did not survive capture.")
+        (_, first), (offset, second) = STAGGERED_PAYLOADS
+        expected = first + bytes(offset - len(first)) + second
+        for path in (root / "synthetic-protected" / "staggered.bin", root / "staggered.bin"):
+            if path.read_bytes() != expected:
+                raise RuntimeError("A staggered comparison payload did not match.")
     metadata_path.write_text(json.dumps({"root": str(root), "known": known, "profile": coverage,
                                          "comparisons": comparisons}), encoding="utf-8")
     return fixture
@@ -237,11 +280,14 @@ def capture_with_handles(root, metadata_path, handles):
 
 if __name__ == "__main__":
     try:
-        if sys.argv[1] in ("control", "flushed"):
+        if sys.argv[1] in ("control", "flushed", "staggered"):
             path = Path(sys.argv[2])
-            probe.local_disposable_path(path.parent, runner_temp_only=True)
+            guard_path = path / "synthetic-protected" if sys.argv[1] == "staggered" else path.parent
+            probe.local_disposable_path(guard_path, runner_temp_only=True)
             if sys.argv[1] == "flushed":
                 flushed_comparison(path)
+            elif sys.argv[1] == "staggered":
+                staggered_comparison(path)
             else:
                 print(json.dumps(calibration(path)))
         else:

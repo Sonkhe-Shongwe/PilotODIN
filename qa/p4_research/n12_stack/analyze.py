@@ -11,6 +11,10 @@ from n12_etw_correlate import (
     canonical_file_path, number, preopened_report, successful_completion,
     timing_comparison_identity,
 )
+if __package__:
+    from .capture import STAGGERED_PAYLOADS, WRITE_GAP_SECONDS
+else:
+    from capture import STAGGERED_PAYLOADS, WRITE_GAP_SECONDS
 
 
 class Image(NamedTuple):
@@ -230,6 +234,84 @@ def calibration_candidates(requests, names, companion_irps, known, label, opcode
             counts["companion-match-missing" if not completed else "companion-match-ambiguous"] += 1
     return selected, dict(counts)
 
+
+def staggered_writes(capture, experiment, events, by_irp, names, devices, occupied):
+    """Verify the four declared writes independently of the strict controls."""
+    pid, tid = experiment["pid"], experiment["tid"]
+    if not (type(pid) is int and pid > 4 and pid != capture["preopened"]["pid"]
+            and type(tid) is int and tid > 0):
+        raise ValueError("Invalid staggered comparison writer identity.")
+    files = experiment["files"]
+    if set(files) != {"staggered-protected", "staggered-outside"}:
+        raise ValueError("Both staggered comparison files are required.")
+    root = canonical_file_path(capture["protected_root"], devices)
+    if root is None:
+        raise ValueError("Invalid staggered comparison root.")
+    expected_paths = {"staggered-protected": ntpath.join(root, "staggered.bin"),
+                      "staggered-outside": ntpath.join(ntpath.dirname(root), "staggered.bin")}
+    result = {}
+    for label, file in files.items():
+        expected = canonical_file_path(file["path"], devices)
+        first, second = file["writes"]
+        if (expected != expected_paths[label]
+                or not capture["start_ticks"] <= first["start"] <= first["end"] < second["start"]
+                <= second["end"] < capture["rundown_start_ticks"]
+                or second["start"] - first["end"] < WRITE_GAP_SECONDS * 10_000_000):
+            raise ValueError("Invalid staggered comparison path or timing.")
+        verified = []
+        for write, (offset, payload) in zip((first, second), STAGGERED_PAYLOADS):
+            if (write["offset"], write["size"]) != (offset, len(payload)):
+                raise ValueError("Invalid staggered comparison byte range.")
+            candidates = []
+            for row in events:
+                if (row["lifecycle"] or row["id"] != 16 or row["pid"] != pid
+                        or not write["start"] - 10 <= row["ticks"] <= write["end"] + 10):
+                    continue
+                data = row["data"]
+                if (number(data.get("IssuingThreadId", data.get("ThreadId"))) != tid
+                        or number(data.get("ByteOffset")) != offset
+                        or number(data.get("IOSize")) != len(payload)):
+                    continue
+                irp = number(data.get("Irp"))
+                identity = tuple(number(data.get(name)) for name in ("FileKey", "FileObject"))
+                completion = successful_completion(by_irp.get(irp, ()), row, capture["rundown_start_ticks"])
+                if completion is not None:
+                    candidates.append((identity, completion))
+            if len(candidates) == 1:
+                identity, completion = candidates[0]
+                if (all(value is not None and value > 0 for value in identity)
+                        and names.get(identity[0]) == {expected}):
+                    verified.append({**write, "identity": identity, "completed": completion})
+        identity = verified[0]["identity"] if len(verified) == 2 else None
+        if identity is not None and (identity != verified[1]["identity"] or any(
+            identity[0] == key or identity[1] == obj for key, obj in occupied
+        )):
+            identity = None
+        if identity is not None:
+            occupied.add(identity)
+        result[label] = {"identity": identity, "writes": verified if identity is not None else [],
+                         "verified_write_count": len(verified)}
+    return result
+
+
+def range_evidence(offset, size, ticks, writes, paging):
+    returned = [ticks > max(write["end"], write["completed"]) for write in writes]
+    result = {"range_status": "unverified", "overlaps": [], "completed_writes_at_request": sum(returned)}
+    if not paging or offset is None or size is None or offset < 0 or size <= 0:
+        return result
+    overlaps = []
+    for index, write in enumerate(writes, 1):
+        begin = max(offset, write["offset"])
+        end = min(offset + size, write["offset"] + write["size"])
+        if begin < end:
+            lag = ticks - write["end"]
+            overlaps.append({"write": index, "bytes": end - begin,
+                             "after_write_completed_and_returned": returned[index - 1],
+                             "ms_from_write_return": round(lag / 10_000, 3)})
+    return {**result, "range_status": "overlap" if overlaps else "disjoint", "overlaps": overlaps,
+            "offset": offset, "size": size}
+
+
 def report(root, known, decoder, comparisons, symbol_targets):
     capture = json_file(root / "fixture.json")
     events = sorted(json_rows(root / "events.jsonl"), key=lambda row: row["ticks"])
@@ -288,6 +370,12 @@ def report(root, known, decoder, comparisons, symbol_targets):
         rundown_names[number(entry["key"])].add(canonical_file_path(entry["path"], devices))
     comparison = comparison_identities(capture, comparisons, events, devices, rundown_names,
                                        primary, companion_irps)
+    staggered = {}
+    if "staggered" in comparisons:
+        occupied = set(primary.values()) | {value["identity"] for value in comparison.values()
+                                            if value["identity"] is not None}
+        staggered = staggered_writes(capture, comparisons["staggered"], events,
+                                     companion_irps, rundown_names, devices, occupied)
 
     stop_start = capture["rundown_start_ticks"]
     dwell_start = comparisons.get("stop_dwell_start")
@@ -347,16 +435,17 @@ def report(root, known, decoder, comparisons, symbol_targets):
     calibrated = all(item.get("stack_frames", 0) for item in calibrations.values())
 
     systems = {}
-    for label in ("protected", "outside", "flushed", "untouched"):
-        control = capture["preopened"]["writes"].get(label, comparisons.get(label))
+    for label in ("protected", "outside", "flushed", "untouched", *staggered):
+        control = (comparisons["staggered"]["files"][label] if label in staggered
+                   else capture["preopened"]["writes"].get(label, comparisons.get(label)))
         expected = canonical_file_path(control["path"], devices)
-        evidence = comparison.get(label, {})
+        evidence = comparison.get(label, staggered.get(label, {}))
         identity = primary.get(label, evidence.get("identity"))
         name_agrees = identity is not None and names[identity[0]] == {expected}
         result = {"identity": "confirmed" if name_agrees else "unverified", "write": [], "resize": [],
                   "companion_successful": {"write": 0, "resize": 0},
                   "unmatched_companion_operations": 0}
-        result.update({key: value for key, value in evidence.items() if key != "identity"})
+        result.update({key: value for key, value in evidence.items() if key not in {"identity", "writes"}})
         if label == "flushed":
             result["explicit_flush"] = bool(name_agrees and evidence["explicit_flush"])
         if identity is not None:
@@ -393,6 +482,8 @@ def report(root, known, decoder, comparisons, symbol_targets):
                 request_phase = phase(item["ticks"])
                 completion_phase = phase(completed_ticks)
                 outcome.update(request_phase=request_phase, completion_phase=completion_phase)
+                if opcode == 68:
+                    outcome["paging_flag"] = bool(row.flags & 2)
                 if dwell_start is not None:
                     outcome.update(
                         request_ms_from_stop=round((item["ticks"] - stop_start) / 10_000, 3),
@@ -402,14 +493,22 @@ def report(root, known, decoder, comparisons, symbol_targets):
                         outcome["request_ms_after_fixture_write_return"] = round(
                             (item["ticks"] - writes[label]["end"]) / 10_000, 3,
                         )
-                if label in writes and symbol_frames:
-                    symbol_targets.append({"control": label, "operation": operation,
-                                           "request_phase": request_phase,
-                                           "completion_phase": completion_phase,
-                                           "stack_frames": outcome["stack_frames"],
-                                           "frames": symbol_frames})
-                if opcode == 68:
-                    outcome["paging_flag"] = bool(row.flags & 2)
+                if label in staggered:
+                    outcome["comparison_event"] = result["companion_successful"][operation]
+                    if outcome["stack_status"] == "matched":
+                        outcome["staggered_range"] = range_evidence(
+                            row.offset, row.detail, item["ticks"], evidence["writes"],
+                            outcome.get("paging_flag", False),
+                        )
+                    else:
+                        outcome["staggered_range"] = {"range_status": "unverified", "overlaps": []}
+                if (label in writes or label in staggered) and symbol_frames:
+                    target = {"control": label, "operation": operation,
+                              "request_phase": request_phase, "completion_phase": completion_phase,
+                              "stack_frames": outcome["stack_frames"], "frames": symbol_frames}
+                    if label in staggered:
+                        target["comparison_event"] = outcome["comparison_event"]
+                    symbol_targets.append(target)
                 result[operation].append(outcome)
         systems[label] = result
 
@@ -449,5 +548,9 @@ if __name__ == "__main__":
         if (not result["calibrated"] or not controls["flushed"]["explicit_flush"]
                 or controls["untouched"]["identity"] != "confirmed"):
             sys.exit("The N12 stack calibration or comparison controls did not pass.")
+        if "staggered" in metadata["comparisons"] and any(
+            controls[label]["identity"] != "confirmed" for label in ("staggered-protected", "staggered-outside")
+        ):
+            sys.exit("The staggered comparison writes did not establish both file identities.")
     except (KeyError, OSError, ValueError, IndexError, TypeError):
         sys.exit("The N12 stack correlation could not validate the captured evidence.")

@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 staggered-write comparison prepared
+
+The generated-file harness can now compare the timing and byte ranges of later System paging writes with two independently verified application writes per file. Local synthetic verification passed. Hosted Windows execution requires separate approval. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and verification](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-comparison-prepared).
+
 ## 14 November 2026 | Cross-window archive draft protection
 
 The [workspace correction](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b496f232557f537371e28f69dc4a5a945592f5a1) preserves the open project and unsaved Prepare target when the active catalogue refreshes before another window's archive notification. Browser verification passed. Native Windows multi-window acceptance remains open. **P4 ACTIVE at 65/100.** [Source and verification](./SESSION_HANDOFF_CURRENT.md#14-november-2026--cross-window-archive-preserves-the-open-prepare-draft).

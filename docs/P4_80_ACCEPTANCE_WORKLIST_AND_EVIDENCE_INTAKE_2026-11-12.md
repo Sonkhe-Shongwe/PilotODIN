@@ -100,6 +100,8 @@ The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 
 **Recorder timing comparison:** The [hosted Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43612214016/job/132499495498) matched the protected paging write and EOF resize to their Cache Manager paths about 20.5 seconds before WPR stop. The strict controls passed and both protected findings remain recorded. Application initiation remains unverified. [Exact timing and evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-cache-manager-operations-before-recorder-stop).
 
+**Staggered-write follow-up prepared:** [Local verification](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-comparison-prepared) covers the new generated-file comparison and range analysis. A separately approved hosted run can show whether a paging request overlaps a completed first write before the second write occurs, or whether Windows reports a combined or disjoint range. N12 remains partial and strict coverage blocked.
+
 ## D. Consolidated native acceptance is a conditional downstream task
 
 **Current state:** N1–N11 passed in the consolidated hosted Windows run, including same-binary relaunch. R04 and R05 have partial results. N12 has scoped evidence. See the [consolidated results below](#13-november-2026-consolidated-hosted-windows-acceptance).

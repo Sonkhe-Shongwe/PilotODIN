@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 staggered-write comparison prepared
+
+- The [existing N12 stack harness](../qa/p4_research/n12_stack/Run.ps1) supports `PILOTODIN_N12_STAGGERED_WRITES=1` for a separately approved hosted capture. A separate helper writes two disjoint byte ranges, at least five seconds apart, to one generated protected file and one generated outside file. It keeps both unflushed handles open through rundown and the parent verifies the resulting bytes. The original strict fixture and reducer retain their two-write control expectations.
+- The [analyser](../qa/p4_research/n12_stack/analyze.py) requires unique successful companion write requests on the declared process, thread and file identity before comparing later System paging ranges. It reports overlap, whether each deliberate write completed and returned before the later request, and matching stack evidence. EOF resize is reported by timing and stack only. Range overlap and timing do not establish application initiation.
+- Local verification passed 16 new synthetic checks and all 139 existing N12 checks, plus Python compilation. The hosted Windows capture is **NOT RUN**. A new approval is required for one capture of the generated files, including the existing public Windows symbol lookup. N12 remains **PARTIAL**, strict coverage **BLOCKED**, and P4 **ACTIVE at 65/100**. R03 physical offline acceptance and R06 historical disposition remain open.
+
 ## 14 November 2026 | Cross-window archive preserves the open Prepare draft
 
 - On `feature/live-dev-workspace-20261023`, [source `b496f23`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b496f232557f537371e28f69dc4a5a945592f5a1) fixes the intermittent failure recorded in [P1 real-HTTP attempt 1](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43613608214/job/132503778676). The active list could omit the open project before the other window's archive hint was verified. The shell now checks lifecycle metadata before clearing a missing open selection. A stable selector option preserves the archived project identity and the mounted Prepare draft through archive and restore.
