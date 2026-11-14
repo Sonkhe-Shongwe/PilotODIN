@@ -239,6 +239,28 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             elif strict:
                 operation = "unsupported"
         source = path if kind == 12 else opened.get(handle)
+        if strict and source is None and kind == 23 and operation != "query" and details is not None:
+            raw_key = data.get("FileKey")
+            if raw_key is None:
+                raw_key = data.get("FileObject")
+            try:
+                context_key = number(raw_key)
+            except (TypeError, ValueError):
+                context_key = None
+            if type(context_key) is not int or context_key <= 0:
+                rundown_context = "missing-file-key"
+            elif context_key in rundown_unsafe_keys:
+                rundown_context = "lifetime-invalidated"
+            elif context_key not in rundown_names:
+                rundown_context = "not-in-rundown"
+            else:
+                context_names = rundown_names.get(context_key)
+                if context_names is None or len(context_names) != 1 or None in context_names:
+                    rundown_context = "ambiguous-rundown-name"
+                else:
+                    rundown_context = "unusable-rundown-path"
+            code_label = f"fsctl-0x{info_class:08X}" if type(info_class) is int else "fsctl-unknown"
+            details[f"{actor}:event-23:{code_label}:rundown-context-{rundown_context}"] += 1
         if strict and source is None and kind in {16, 17, 23}:
             # Write requests expose FileKey. Set-information events can expose
             # only FileObject. Never substitute a stop-time name for an

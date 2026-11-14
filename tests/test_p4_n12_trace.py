@@ -857,6 +857,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported:path-missing"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:unsupported-file-operation"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:unsupported:path-missing"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0x000900BB:rundown-context-not-in-rundown"] == 1
     assert report["unrelated_unresolved_mutations"]["other:compression:process-lifetime-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 1
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
