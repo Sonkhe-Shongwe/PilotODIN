@@ -261,8 +261,11 @@ def test_read_native_rundown_rejects_stop_outside_etw_window(tmp_path):
 
 
 def test_process_bookends_reject_pid_reuse_and_traced_lifetimes():
-    before = [{"pid": pid, "birth_ticks": 10} for pid in (7, 8, 9, 10)]
-    after = [{"pid": 7, "birth_ticks": 10}, {"pid": 8, "birth_ticks": 30}, before[2]]
+    before = [{"pid": pid, "birth_ticks": 10, "name": f"process-{pid}.exe"} for pid in (7, 8, 9, 10)]
+    after = [{"pid": 7, "birth_ticks": 10, "name": "process-7.exe"},
+             {"pid": 8, "birth_ticks": 30, "name": "process-8.exe"}, before[2]]
+    records = trace.stable_process_bookend_records({"before": before, "after": after}, 20, {9})
+    assert records == {7: {"birth_ticks": 10, "name": "process-7.exe"}}
     assert trace.stable_process_bookends({"before": before, "after": after}, 20, {9}) == {7}
     with pytest.raises(ValueError, match="duplicate process bookend"):
         trace.stable_process_bookends({"before": before, "after": after + [after[0]]}, 20, {9})
@@ -758,6 +761,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     rundown_path = tmp_path / "native-rundown.jsonl"
     manifest_path = tmp_path / "preopened-manifest.json"
     capture_path = tmp_path / "preopened-capture.json"
+    bookends_path = tmp_path / "preopened-bookends.json"
     rundown_entries = [
         {"key": "0x28", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\control.bin",
          "decoder": "tdh+raw-schema"},
@@ -766,6 +770,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
         {"key": "0x2b", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\unrelated.bin",
          "decoder": "tdh+raw-schema"},
         {"key": "0x2d", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\compressed.bin",
+         "decoder": "tdh+raw-schema"},
+        {"key": "0x31", "path": r"\\Device\\HarddiskVolume3\\QA\\synthetic-protected\\resized.bin",
          "decoder": "tdh+raw-schema"},
     ]
     rundown_payload = ("".join(json.dumps(entry) + "\n" for entry in rundown_entries)).encode()
@@ -796,6 +802,26 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
         },
     }
 
+    bookends = {
+        "before": [
+            {"pid": 10, "birth_ticks": base_ticks - 10_000, "name": "python.exe"},
+            {"pid": 99, "birth_ticks": base_ticks - 20_000, "name": "other-writer.exe"},
+        ],
+        "after": [
+            {"pid": 10, "birth_ticks": base_ticks - 10_000, "name": "python.exe"},
+            {"pid": 99, "birth_ticks": base_ticks - 20_000, "name": "other-writer.exe"},
+        ],
+        "threads_before": [
+            {"tid": 77, "pid": 10, "birth_ticks": base_ticks - 5_000},
+            {"tid": 88, "pid": 99, "birth_ticks": base_ticks - 6_000},
+        ],
+        "threads_after": [
+            {"tid": 77, "pid": 10, "birth_ticks": base_ticks - 5_000},
+            {"tid": 88, "pid": 99, "birth_ticks": base_ticks - 6_000},
+        ],
+    }
+    bookends_path.write_text(json.dumps(bookends), encoding="utf-8")
+
     def run():
         payload = ("".join(json.dumps(row) + "\n" for row in rows)).encode()
         events_path.write_bytes(payload)
@@ -805,7 +831,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
         return subprocess.run(
             [sys.executable, str(Path(trace.__file__)), "check-etw-preopened-rundown",
              str(manifest_path), str(capture_path), str(events_path),
-             "--rundown", str(rundown_path)],
+             "--rundown", str(rundown_path), "--process-bookends", str(bookends_path)],
             capture_output=True, text=True, check=False,
         )
 
@@ -822,6 +848,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_file_violations"] == {}
     assert report["unresolved_controls"] == {}
     assert report["unrelated_unresolved_mutations"] == {}
+    assert report["stable_process_bookends"] == 2
+    assert report["stable_thread_bookends"] == 2
     assert all(target["completion"] == "success" and target["issuing_thread"] == "matches"
                and target["rundown_name"] == "matches-target"
                for target in report["targets"].values())
@@ -848,6 +876,10 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     emit(24, 0, unrelated_ticks + 8, Irp=7, Status=0)
     emit(23, 99, unrelated_ticks + 9, FileObject=107, Irp=8, FileKey="0x2f", InfoClass=0x9009C)
     emit(24, 0, unrelated_ticks + 10, Irp=8, Status=0)
+    # A later close invalidates the stop-time path for this earlier resize.
+    emit(17, 99, unrelated_ticks + 11, FileObject=109, Irp=10, FileKey="0x31", InfoClass=20)
+    emit(24, 0, unrelated_ticks + 12, Irp=10, Status=0)
+    emit(14, 99, unrelated_ticks + 13, FileObject=109, FileKey="0x31")
     # FSCTL_READ_USN_JOURNAL is a documented read-only query, even without a rundown path.
     emit(23, 99, unrelated_ticks + 11, FileObject=108, Irp=9, FileKey="0x30", InfoClass=0x900BB)
     emit(24, 0, unrelated_ticks + 12, Irp=9, Status=0)
@@ -863,9 +895,17 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:unsupported-file-operation"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:unsupported:path-missing"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-23:fsctl-0xDEADBEEF:rundown-context-not-in-rundown"] == 1
-    assert report["unrelated_unresolved_mutations"]["other:compression:process-lifetime-missing"] == 1
+    assert report["unrelated_unresolved_mutations"]["other:resize:path-missing"] == 1
+    assert "other:compression:process-lifetime-missing" not in report["unrelated_unresolved_mutations"]
+    assert report["unrelated_unresolved_event_types"]["other:event-17:resize:rundown-context-lifetime-invalidated"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-17:resize:rundown-invalidated-by-event-14:FileKey"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-17:resize:process-context-stable-bookend"] == 1
+    assert report["protected_writer_processes"]["protected-writer:other-writer.exe:write"] == 1
+    assert report["protected_writer_processes"]["protected-writer:other-writer.exe:compression"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 1
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
+    assert "other-writer.exe" in json.dumps(report["protected_writer_processes"])
+    assert "synthetic-protected" not in result.stdout
     assert not any("fsctl-0x000900A8" in key for key in report["unrelated_unresolved_event_types"])
     assert not any("fsctl-0x0009009C" in key for key in report["unrelated_unresolved_event_types"])
     assert not any("fsctl-0x000900BB" in key for key in report["unrelated_unresolved_event_types"])

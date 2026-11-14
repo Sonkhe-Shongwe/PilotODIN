@@ -51,6 +51,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     file_names = {}
     ambiguous_irps = set()
     unresolved = Counter()
+    invalidation_reasons = {}
     ordered_events = sorted(events, key=lambda record: record["ticks"])
     rundown_names = {}
     rundown_unsafe_keys = set()
@@ -104,8 +105,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     key = None
                 if type(key) is int and key > 0:
                     rundown_unsafe_keys.add(key)
+                    reason = f"event-{kind}:{field}"
+                    invalidation_reasons.setdefault(key, Counter())[reason] += 1
                     if rundown_invalidations is not None:
-                        rundown_invalidations.setdefault(key, Counter())[f"event-{kind}:{field}"] += 1
+                        rundown_invalidations.setdefault(key, Counter())[reason] += 1
 
         for key, names in name_events.items():
             rundown_paths = rundown_names.get(key)
@@ -113,6 +116,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 continue
             reason = "event-10:NameAmbiguous" if len(names) != 1 or None in names else "event-10:NameMismatch"
             rundown_unsafe_keys.add(key)
+            invalidation_reasons.setdefault(key, Counter())[reason] += 1
             if rundown_invalidations is not None:
                 rundown_invalidations.setdefault(key, Counter())[reason] += 1
 
@@ -241,9 +245,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             elif strict:
                 operation = "unsupported"
         source = path if kind == 12 else opened.get(handle)
-        if strict and source is None and kind == 23 and operation != "query" and details is not None:
+        if strict and source is None and kind in {16, 17, 23} and operation != "query" and details is not None:
             raw_key = data.get("FileKey")
-            if raw_key is None:
+            if kind in {17, 23} and raw_key is None:
                 raw_key = data.get("FileObject")
             try:
                 context_key = number(raw_key)
@@ -261,8 +265,14 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     rundown_context = "ambiguous-rundown-name"
                 else:
                     rundown_context = "unusable-rundown-path"
-            code_label = f"fsctl-0x{info_class:08X}" if type(info_class) is int else "fsctl-unknown"
-            details[f"{actor}:event-23:{code_label}:rundown-context-{rundown_context}"] += 1
+            if kind == 23:
+                code_label = f"fsctl-0x{info_class:08X}" if type(info_class) is int else "fsctl-unknown"
+                details[f"{actor}:event-23:{code_label}:rundown-context-{rundown_context}"] += 1
+            else:
+                details[f"{actor}:event-{kind}:{operation}:rundown-context-{rundown_context}"] += 1
+            if rundown_context == "lifetime-invalidated":
+                for reason in invalidation_reasons.get(context_key, {}):
+                    details[f"{actor}:event-{kind}:{operation}:rundown-invalidated-by-{reason}"] += 1
         if strict and source is None and kind in {16, 17, 23}:
             # Write requests expose FileKey. Set-information events can expose
             # only FileObject. Never substitute a stop-time name for an
@@ -316,6 +326,26 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     else:
                         identity_context = "missing-process-bookends"
                     details[f"{actor}:event-16:write-request:{identity_context}:{context}"] += 1
+        if details is not None and operation and operation != "query":
+            process_context = (
+                "stable-bookend" if process_bookends is not None and pid in process_bookends
+                else "etw-lifecycle" if birth is not None
+                else "bookends-unavailable" if process_bookends is None
+                else "not-stable-at-bookends"
+            )
+            details[f"{actor}:event-{kind}:{operation}:process-context-{process_context}"] += 1
+            if actor == "other":
+                details[f"other:event-{kind}:process-image-{identity or 'unavailable'}"] += 1
+            if kind in {16, 17, 18, 19, 23, 29}:
+                tid = number(data.get("IssuingThreadId", data.get("ThreadId")))
+                owner = thread_owners.get(tid)
+                if owner is not None and active.get(owner[0]) == owner[1]:
+                    thread_context = "lifecycle-owner-header-agrees" if pid == owner[0] else "lifecycle-owner-header-differs"
+                elif thread_bookends is not None and tid in thread_bookends:
+                    thread_context = "bookend-owner-header-agrees" if pid == thread_bookends[tid] else "bookend-owner-header-differs"
+                else:
+                    thread_context = "missing-thread-id" if not tid else "thread-owner-unavailable"
+                details[f"{actor}:event-{kind}:{operation}:thread-context-{thread_context}"] += 1
         if not irp or not object_id:
             if operation and operation != "query" and relevant(actor, operation, source, None):
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1

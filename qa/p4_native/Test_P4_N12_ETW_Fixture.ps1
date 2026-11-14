@@ -22,10 +22,10 @@ if ($Rundown) {
     $probeArgs += '--rundown'
 }
 function Get-ProcessBookend {
-    Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |
+    Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate,Name |
         Where-Object CreationDate |
         ForEach-Object {
-            @{ pid = $_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks }
+            @{ pid = $_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks; name = $_.Name }
         }
 }
 function Get-ThreadBookend {
@@ -57,13 +57,13 @@ if ($WithSysmon) {
 }
 if ($WithSysmon -or $CalibrationOnly) { $probeArgs += '--calibration-only' }
 $bookends = $null
-if ($CalibrationOnly -and -not $WithSysmon) {
-    # Win32_Process supplies creation time even for processes that did not
-    # start during ETW. Collect only identity fields, never command lines.
+if (($CalibrationOnly -and -not $WithSysmon) -or $PreopenedControl) {
+    # Win32_Process and thread snapshots supply stable identity for processes
+    # that predate ETW. Collect names only, never command lines or full paths.
     $bookends = Join-Path $root 'process-bookends.json'
     $before = @(Get-ProcessBookend)
     $threadsBefore = @(Get-ThreadBookend)
-    $probeArgs += '--thread-context'
+    if ($CalibrationOnly -and -not $WithSysmon) { $probeArgs += '--thread-context' }
 }
 $result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
 if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
@@ -276,7 +276,7 @@ if ($PreopenedControl) {
                 throw "Native rundown did not independently establish the $label control target."
             }
         }
-        $reducerOutput = @(python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-preopened-rundown $reducerManifest $manifestPath $eventsPath --rundown $rundownPath)
+        $reducerOutput = @(python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-preopened-rundown $reducerManifest $manifestPath $eventsPath --rundown $rundownPath --process-bookends $bookends)
         $reducerExit = $LASTEXITCODE
         if ($reducerExit -ne 0) {
             foreach ($line in $reducerOutput) { Write-Host $line }

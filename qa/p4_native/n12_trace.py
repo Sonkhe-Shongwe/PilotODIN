@@ -553,6 +553,7 @@ def etw_events(path, capture_bounds, expected_digest):
 def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *,
                       details=None, process_bookends=None, thread_bookends=None, rundown=None,
                       synthetic_process_roles=None, synthetic_process_births=None,
+                      process_bookend_births=None, process_bookend_names=None,
                       rundown_recovered_keys=None, rundown_invalidations=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
@@ -579,14 +580,20 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       (process.end is None or ticks <= utc_ticks(process.end) + tolerance)]
         if len(candidates) == 1:
             process = candidates[0]
-            return roles.get(process.guid, "other"), process.guid
+            role = roles.get(process.guid, "other")
+            identity = process.guid if role != "other" else (
+                (process_bookend_names or {}).get(pid) or ntpath.basename(process.image).casefold()
+            )
+            return role, identity
         # A Sysmon-scoped PID with an absent ETW birth is still a coverage gap.
         if any(process.guid in roles and utc_ticks(process.start) - tolerance <= ticks and
                (process.end is None or ticks <= utc_ticks(process.end) + tolerance)
                for process in lifetimes.get(pid, ())):
             return "unattributed", None
-        return "other", None
+        return "other", (process_bookend_names or {}).get(pid)
 
+    initial_process_births = dict(process_bookend_births or {})
+    initial_process_births.update(synthetic_process_births or {})
     counts, violations, file_events = Counter(), Counter(), set()
 
     def record(role, identity, operation, source, destination, requested, completed, success):
@@ -597,8 +604,13 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         if role == "unattributed":
             issues.add("etw-process-identity-unresolved")
         targets = tuple(path for path in (source, destination) if path)
-        if any(inside(target, root) for target in targets for root in protected):
+        protected_targets = [target for target in targets
+                             if any(inside(target, root) for root in protected)]
+        if protected_targets:
             violations[f"protected:{role}:{operation}"] += 1
+            if details is not None and role in {"other", "unattributed"}:
+                label = identity if role == "other" and identity else "scoped-unattributed"
+                details[f"protected-writer:{label}:{operation}"] += 1
         if role in {"other", "unattributed"}:
             return
         counts[f"{role}:{operation}"] += 1
@@ -623,7 +635,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             rundown=rundown, rundown_guard_events=guard_events,
             rundown_recovered_keys=rundown_recovered_keys,
             rundown_invalidations=rundown_invalidations,
-            initial_process_births=synthetic_process_births,
+            initial_process_births=initial_process_births,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -811,19 +823,29 @@ def check_etw_export(manifest, path):
     return count
 
 
-def stable_process_bookends(bookends, capture_start, lifecycle_pids):
+def stable_process_bookend_records(bookends, capture_start, lifecycle_pids):
     snapshots = []
     for side in ("before", "after"):
         entries = {}
         for entry in bookends[side]:
             pid, birth = entry["pid"], entry["birth_ticks"]
+            name = entry.get("name")
             require(type(pid) is int and type(birth) is int and pid >= 0 and birth > 0
-                    and pid not in entries, "invalid or duplicate process bookend identity")
-            entries[pid] = birth
+                    and pid not in entries and (name is None or isinstance(name, str)),
+                    "invalid or duplicate process bookend identity")
+            image = ntpath.basename(name.strip()).casefold() if name else None
+            entries[pid] = (birth, image or None)
         snapshots.append(entries)
     before, after = snapshots
-    return {pid for pid, birth in before.items()
-            if birth < capture_start and after.get(pid) == birth and pid not in lifecycle_pids}
+    return {
+        pid: {"birth_ticks": birth, "name": name}
+        for pid, (birth, name) in before.items()
+        if birth < capture_start and after.get(pid) == (birth, name) and pid not in lifecycle_pids
+    }
+
+
+def stable_process_bookends(bookends, capture_start, lifecycle_pids):
+    return set(stable_process_bookend_records(bookends, capture_start, lifecycle_pids))
 
 
 def stable_thread_bookends(bookends, capture_start, stable_pids, lifecycle_tids):
@@ -917,7 +939,7 @@ def check_etw_preflight(manifest, fixture, path, *, bookends=None, rundown=None)
 
 
 
-def check_etw_preopened_rundown(manifest, capture, path, rundown):
+def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None):
     """Exercise strict reducer classification against the generated pre-opened controls."""
     if __package__:
         from .n12_etw_correlate import number, preopened_report
@@ -959,14 +981,32 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
         bounds, _ = etw_capture_contract(manifest, start, end, issues)
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, bounds, manifest["etw"]["events_sha256"]))
+    lifecycle_pids, lifecycle_tids = set(), set()
     for event in event_records:
         if not event["lifecycle"]:
             continue
         data = event["data"]
-        if event["id"] in (1, 2) and number(data.get("ProcessID")) == pid:
-            raise EvidenceValidationError("pre-opened control process has an in-capture lifecycle transition")
-        if event["id"] in (3, 4) and number(data.get("ThreadID")) == tid:
-            raise EvidenceValidationError("pre-opened control thread has an in-capture lifecycle transition")
+        if event["id"] in (1, 2):
+            process_id = number(data.get("ProcessID"))
+            lifecycle_pids.add(process_id)
+            if process_id == pid:
+                raise EvidenceValidationError("pre-opened control process has an in-capture lifecycle transition")
+        if event["id"] in (3, 4):
+            thread_id = number(data.get("ThreadID"))
+            lifecycle_tids.add(thread_id)
+            if thread_id == tid:
+                raise EvidenceValidationError("pre-opened control thread has an in-capture lifecycle transition")
+
+    stable_processes = (stable_process_bookend_records(bookends, bounds[0], lifecycle_pids)
+                        if bookends is not None else {})
+    stable_process_pids = set(stable_processes) if bookends is not None else None
+    stable_threads = (stable_thread_bookends(bookends, bounds[0], stable_process_pids, lifecycle_tids)
+                      if bookends is not None else None)
+    bookend_births = {process_id: item["birth_ticks"]
+                      for process_id, item in stable_processes.items() if process_id != pid}
+    bookend_names = {process_id: item["name"]
+                     for process_id, item in stable_processes.items()
+                     if process_id != pid and item["name"]}
 
     control_keys = {}
     target_report = preopened_report(capture, event_records, rundown, file_keys=control_keys)
@@ -991,6 +1031,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
         rundown=rundown,
         synthetic_process_roles={pid: "preopened-control"},
         synthetic_process_births={pid: synthetic_birth},
+        process_bookends=stable_process_pids,
+        thread_bookends=stable_threads,
+        process_bookend_births=bookend_births,
+        process_bookend_names=bookend_names,
         rundown_recovered_keys=recovered_keys,
         rundown_invalidations=invalidations,
     )
@@ -1044,6 +1088,11 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
         "unresolved_controls": unresolved_controls,
         "unrelated_unresolved_mutations": unrelated_unresolved,
         "unrelated_unresolved_event_types": unrelated_unresolved_event_types,
+        "protected_writer_processes": {
+            key: value for key, value in details.items() if key.startswith("protected-writer:")
+        },
+        "stable_process_bookends": len(stable_process_pids or ()),
+        "stable_thread_bookends": len(stable_threads or {}),
         "rundown_control_keys_recovered": len(recovered_control_keys),
         "rundown_control_key_invalidations": control_invalidations,
         "protected_control_classification": (
@@ -1081,6 +1130,8 @@ def main():
         preopened_rundown.add_argument(argument, type=Path)
     preopened_rundown.add_argument("--rundown", type=Path, required=True,
                                    help="Native FileIO rundown JSONL, SHA-256 pinned in the ETW manifest.")
+    preopened_rundown.add_argument("--process-bookends", type=Path,
+                                   help="Redacted process/thread identity snapshots from the disposable runner.")
     for mode in ("check-calibration", "check-calibration-etw"):
         calibration = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "file_trace", "output"):
@@ -1115,7 +1166,9 @@ def main():
             manifest = read_json(args.manifest)
             capture = read_json(args.capture)
             rundown = read_rundown_file(args.rundown, manifest)
-            result = check_etw_preopened_rundown(manifest, capture, args.etw_events, rundown)
+            bookends = read_json(args.process_bookends) if args.process_bookends else None
+            result = check_etw_preopened_rundown(manifest, capture, args.etw_events, rundown,
+                                                 bookends=bookends)
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0 if result["control_status"] == "PASS" else 2
         if args.mode == "snapshot":

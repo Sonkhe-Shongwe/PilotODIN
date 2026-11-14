@@ -132,3 +132,10 @@ python qa/p4_native/n12_trace.py audit $manifest $sysmonXml $procmonCsv $before 
 ~~~
 
 The command list shows the tool entry points. Follow the numbered sequence when collecting evidence. An audit exit of 0 means both checks passed within the reducer's scope. Exit 1 means the evidence reported a failure or an unattributed connection. Exit 2 means the evidence was malformed or coverage was incomplete. Keep the scope, historical port 443 observation and original R06 result in the continuation record even if a new run passes.
+
+
+## 14 November 2026 | Redacted writer-identity and rundown diagnostics
+
+The pre-opened control fixture captures before/after process and thread identity snapshots on the disposable runner. Stable PIDs are accepted only when the same PID and creation time exist at both bookends and that PID has no in-capture process lifecycle transition. Stable TIDs are accepted only when the same TID, owning PID and creation time exist at both bookends and the TID has no in-capture thread lifecycle transition. Verified process births are seeded only for this diagnostic fixture. Process executable basenames may appear in the redacted report; raw PIDs, TIDs, command lines and full process paths are not emitted.
+
+The strict reducer now reports process-image basenames for protected-root writes by unscoped actors, process lifetime source, issuing-thread/header agreement, and the exact event/field that invalidated a FileKey used by a write, resize or FSCTL. These diagnostics do not change strict actor classification or waive unresolved mutations. A green pre-opened control remains a control pass, not a clean global audit or N12 acceptance.
