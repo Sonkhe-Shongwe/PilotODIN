@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. The latest N12 checkpoint covers file lifetime controls and which events invalidated prior names. See the [current handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-file-lifetime-controls-and-name-invalidations) for exact-source evidence. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
+**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. The latest N12 checkpoint covers the reproduced name invalidation across overlapping Windows file handles. See the [current handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-overlapping-handles-reproduce-name-invalidation) for exact-source evidence. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
 
 ## Current authoritative route, in reading order
 
