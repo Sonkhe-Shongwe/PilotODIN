@@ -13,7 +13,7 @@ permissions:
 jobs:
   kernel-symbols:
     if: >-
-      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): resolve N12 frames from matched public PDBs'
+      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): diagnose N12 public PDB compatibility'
     name: Resolve matched Windows kernel stack frames
     runs-on: windows-latest
     timeout-minutes: 15

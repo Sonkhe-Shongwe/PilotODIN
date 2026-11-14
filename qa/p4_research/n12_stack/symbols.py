@@ -68,7 +68,7 @@ def pe_information(path):
         age, = struct.unpack_from("<I", data, raw + 20)
         pdb = data[raw + 24:raw + length].split(b"\0", 1)[0].decode("ascii").replace("\\", "/").rsplit("/", 1)[-1]
         if PDB_NAME.fullmatch(pdb):
-            pdbs.add((pdb, f"{guid.hex.upper()}{age:X}"))
+            pdbs.add((pdb, guid.hex.upper(), age))
     if len(pdbs) != 1:
         raise ValueError("missing or ambiguous CodeView record")
     ranges = []
@@ -102,7 +102,7 @@ def download_pdb(cache, name, key):
 
 
 
-def pdb_public_functions(path, key, executable):
+def pdb_public_functions(path, image_guid, image_age, executable):
     data = path.read_bytes()
     if data[:32] != b"Microsoft C/C++ MSF 7.00\r\n\x1aDS\0\0\0":
         raise ValueError("unsupported MSF header")
@@ -141,11 +141,11 @@ def pdb_public_functions(path, key, executable):
     info = stream(1)
     age, = struct.unpack_from("<I", info, 8)
     guid = UUID(bytes_le=info[12:28])
-    if f"{guid.hex.upper()}{age:X}" != key:
+    if guid.hex.upper() != image_guid or age < image_age:
         raise ValueError("PDB GUID or age differs from PE CodeView")
     dbi = stream(3)
     signature, _, dbi_age = struct.unpack_from("<iII", dbi)
-    if signature != -1 or dbi_age != age:
+    if signature != -1 or dbi_age not in (0, image_age):
         raise ValueError("unsupported DBI stream header")
     symbol_index, = struct.unpack_from("<H", dbi, 20)
     # Refuse address remapping unless the PDB uses ordinary image sections.
@@ -198,7 +198,7 @@ def resolve_frames(rvas, names, ranges):
 def resolve_module(module, identity, rvas, work):
     path = Path(os.environ["SystemRoot"]) / "System32" / MODULE_PATHS[module]
     try:
-        local, (name, key), executable, ranges = pe_information(path)
+        local, (name, guid, age), executable, ranges = pe_information(path)
     except (OSError, ValueError, struct.error):
         return "local-image-unreadable", {}
     size, checksum, timestamp = identity
@@ -209,13 +209,16 @@ def resolve_module(module, identity, rvas, work):
     if not rvas:
         return "no-executable-frame-addresses", {}
     cache = work / module
-    status = download_pdb(cache, name, key)
+    status = download_pdb(cache, name, f"{guid}{age:X}")
     if status != "downloaded":
         return status, {}
     try:
-        names = pdb_public_functions(cache / name, key, executable)
-    except (OSError, ValueError, IndexError, struct.error):
-        return "pdb-identity-or-format-rejected", {}
+        names = pdb_public_functions(cache / name, guid, age, executable)
+    except ValueError as exc:
+        # All ValueErrors emitted by the parser use fixed, redacted labels.
+        return "pdb-rejected: " + str(exc), {}
+    except (OSError, IndexError, struct.error):
+        return "pdb-unreadable-or-truncated", {}
     resolved = resolve_frames(rvas, names, ranges)
     return ("resolved" if resolved else "matching-pdb-no-resolved-frames"), resolved
 
