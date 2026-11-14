@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | R03 physical offline readiness
+
+Owner-side preflight confirmed 8 GB installed, a launch of the separate QA app and all four installed-file checks. Available RAM was 1.2 GB at the snapshot. The measured physical offline Qwen and concurrent analytics run remains **NOT TESTED** and awaits explicit scope approval. P4 remains **ACTIVE** at **65/100** on the proposed scorecard. [Preflight and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--r03-physical-offline-readiness).
+
 ## 14 November 2026 | N12 pre-opened handle path validation
 
 The isolated Windows fixture matched both no-open path candidates to independently verified write handles. Both original strict fixtures lacked prior names for those control writes and retained a protected System write and resize. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results and remaining acceptance dependencies](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-pre-opened-handle-path-validation).

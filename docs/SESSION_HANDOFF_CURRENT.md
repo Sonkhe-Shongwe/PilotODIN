@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | R03 physical offline readiness
+
+- The owner confirmed the separate QA app launched and closed on the physical Windows laptop. Task Manager showed 8.0 GB installed, 7.8 GB usable and 1.2 GB available at the inventory snapshot. The owner then shared read-only PowerShell output with all four checks true. The QA desktop SHA-256 matches the [known Windows build at `0c7a2b4`](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42730585801), the Qwen3 1.7B Q4_K_M GGUF matches the pinned SHA-256, the inference executable matches its installed manifest and the analytics executable is present.
+- **R03 remains NOT TESTED.** The launch, file checks and point-in-time memory reading are preflight evidence. The verified build's Low-memory policy defers new local AI requests below 2.0 GiB available at request time. Keep that guard enabled. No measured offline Qwen run or concurrent workload was authorised or observed in this checkpoint.
+- **Proposed next step.** After explicit approval, verify the separate QA storage/profile for the bounded run, use a new synthetic project and keep the regular app closed. Disconnect external networking, request one answer through Ask ODIN's Offline Qwen3 provider and check the reported answer source. Record elapsed time and memory/paging while the WebView and analytics backend are active. Treat a rules fallback, memory admission deferral, or an unverified isolation prerequisite as such. The earlier R06 failure and its immutable baseline remain separate.
+
 ## 14 November 2026 | N12 pre-opened handle path validation
 
 - [Source `edb3b70`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/edb3b705517af3dd5b268971c0fe1060e900afea) applies the no-open path rule to exact paths verified by Windows for the original write handles. The isolated timing fixture opens separate read-only handles during capture to provide an opportunity for request-time name records. The original pre-opened handles perform the writes. The fixture verifies their paths and checks the persisted payloads. All 154 local checks passed, including cases for exact match, same-root mismatch, missing name, observed same-object open and ambiguous completion.
