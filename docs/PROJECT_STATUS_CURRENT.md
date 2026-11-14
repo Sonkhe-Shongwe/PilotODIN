@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 staggered-write Windows result
+
+The [hosted run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43616846397) verified all four deliberate fixture writes and passed the original strict controls. The reducer located two System paging writes and two EOF resizes on the protected staggered file. The exact stack join did not match those requests, leaving the range comparison unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Evidence and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-windows-result).
+
 ## 14 November 2026 | N12 staggered-write comparison prepared
 
 The generated-file harness can now compare the timing and byte ranges of later System paging writes with two independently verified application writes per file. Local synthetic verification passed. Hosted Windows execution requires separate approval. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and verification](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-comparison-prepared).

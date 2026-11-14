@@ -102,6 +102,8 @@ The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 
 **Staggered-write follow-up prepared:** [Local verification](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-comparison-prepared) covers the new generated-file comparison and range analysis. A separately approved hosted run can show whether a paging request overlaps a completed first write before the second write occurs, or whether Windows reports a combined or disjoint range. N12 remains partial and strict coverage blocked.
 
+**Staggered-write Windows result:** The [approved capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43616846397/job/132513672415) verified the four application writes and passed the original strict controls. The reducer reported two System paging writes and two EOF resizes on the generated protected staggered file. The stack analyser found zero requests matching its exact join for that file. Byte-range comparison remains unverified, and the redacted results cannot identify which match criterion differed. [Details and follow-up](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-windows-result).
+
 ## D. Consolidated native acceptance is a conditional downstream task
 
 **Current state:** N1–N11 passed in the consolidated hosted Windows run, including same-binary relaunch. R04 and R05 have partial results. N12 has scoped evidence. See the [consolidated results below](#13-november-2026-consolidated-hosted-windows-acceptance).
