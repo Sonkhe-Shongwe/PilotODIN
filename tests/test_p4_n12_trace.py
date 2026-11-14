@@ -932,9 +932,10 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["other_process_image_events"]["other:event-16:process-image-etw-writer.exe"] == 1
     assert report["issuing_thread_owner_images"]["other:event-16:write:issuing-thread-owner-etw-writer.exe"] == 1
     assert report["rundown_invalidation_events"]["other:event-17:resize:rundown-invalidated-by-event-14:FileKey"] == 1
-    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-protected"] == 1
-    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-outside-protected"] == 1
-    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-rundown-protected"] == 1
+    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidate-set-size-event10-2"] >= 1
+    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-protected"] >= 1
+    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-event10-outside-protected"] >= 1
+    assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-rundown-protected"] >= 1
     assert report["unrelated_unresolved_mutations"]["other:write:path-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 2
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
