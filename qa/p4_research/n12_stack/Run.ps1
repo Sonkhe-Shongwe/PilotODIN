@@ -52,11 +52,14 @@ python (Join-Path $PSScriptRoot 'analyze.py') $env:PILOTODIN_N12_STACK_META $dec
 if ($LASTEXITCODE -ne 0) { throw 'The stack correlation report failed.' }
 
 $strictOutput = @(python (Join-Path $native 'n12_trace.py') check-etw-preopened-rundown (Join-Path $root 'capture-manifest.json') (Join-Path $root 'fixture.json') (Join-Path $root 'events.jsonl') --rundown (Join-Path $root 'rundown.jsonl') --process-bookends (Join-Path $root 'process-bookends.json'))
-if ($LASTEXITCODE -ne 0) { throw 'The strict comparison did not classify the generated controls.' }
-$strict = ($strictOutput -join "`n") | ConvertFrom-Json
+$strictExit = $LASTEXITCODE
+$strictText = ($strictOutput -join "`n").Trim()
+if (-not $strictText) { throw "The strict comparison produced no report (exit $strictExit)." }
+$strict = $strictText | ConvertFrom-Json
+Write-Host ('N12 stack strict comparison: ' + ($strict | ConvertTo-Json -Compress -Depth 8))
+if ($strictExit -ne 0) { throw "The strict comparison did not classify the generated controls (exit $strictExit)." }
 if ($strict.control_status -ne 'PASS' -or $strict.strict_coverage -ne 'BLOCKED' -or
     $strict.protected_control_classification -ne 'PROTECTED_WRITE_DETECTED' -or
     $strict.outside_control_classification -ne 'OUTSIDE_PROTECTED_ROOTS') {
     throw 'The strict comparison did not preserve the control distinction.'
 }
-Write-Host ('N12 stack strict comparison: ' + ($strict | ConvertTo-Json -Compress -Depth 8))

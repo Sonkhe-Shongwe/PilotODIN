@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 stack calibration and protected target
+
+The [approved hosted capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43604274176/job/132475433502) calibrated both application stacks and recovered two System stacks on the unflushed outside control. The protected pair did not recur on the explicitly flushed protected control. The final strict reducer comparison failed, so the overall job failed and the earlier protected findings stand. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Calibration, comparison and next test](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-stack-calibration-and-protected-target).
+
 ## 14 November 2026 | N12 paging flag on strict protected writes
 
 Both [focused](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209773) and [broader](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43600209775) strict Windows captures confirmed a paging-flagged System-header write matching the protected control. One occurred before WPR stop and the other during stop/export. Both retained the protected write and resize violations. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Evidence and limits](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-paging-flag-on-strict-protected-writes).
