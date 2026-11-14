@@ -16,6 +16,8 @@ FSCTL_GET_REPARSE_POINT = 0x000900A8  # Retrieves reparse-point data; read-only.
 FSCTL_GET_OBJECT_ID = 0x0009009C  # Retrieves an existing object identifier; read-only.
 FSCTL_READ_USN_JOURNAL = 0x000900BB  # Reads USN change-journal records; read-only.
 FSCTL_SET_COMPRESSION = 0x0009C040  # Changes a file/directory compression state.
+# IRP flags from the Windows Driver Kit (wdm.h). Event 16 reports IOFlags.
+IRP_PAGING_IO = 0x00000002
 
 WRITE_CONTEXT_IMAGES = {
     "logman.exe", "msbuild.exe", "msmpeng.exe", "powershell.exe", "pwsh.exe",
@@ -718,6 +720,16 @@ def successful_completion(file_events, request, before):
     return None
 
 
+def write_paging_flag(data):
+    try:
+        flags = number(data.get("IOFlags"))
+    except ValueError:
+        return "unavailable"
+    if type(flags) is not int or not 0 <= flags <= 0xFFFFFFFF:
+        return "unavailable"
+    return "set" if flags & IRP_PAGING_IO else "clear"
+
+
 def control_write_timing(capture, events, devices, rundown_names, identities, outcomes):
     """Measure successful System-context requests on independently located fixtures."""
     control = capture["preopened"]
@@ -770,6 +782,7 @@ def control_write_timing(capture, events, devices, rundown_names, identities, ou
             and outcomes[label]["rundown_name"] == "matches-target"
         ))
         observed = Counter()
+        paging_flags = Counter()
         unverified_completions = 0
         flushes = 0
         if established:
@@ -793,9 +806,13 @@ def control_write_timing(capture, events, devices, rundown_names, identities, ou
                     unverified_completions += 1
                     continue
                 operation = "write" if kind == 16 else "resize"
-                observed[f"{operation}:{phase(ticks, label)}:{phase(completed, label)}"] += 1
+                request_phase = phase(ticks, label)
+                observed[f"{operation}:{request_phase}:{phase(completed, label)}"] += 1
+                if kind == 16:
+                    paging_flags[f"{request_phase}:{write_paging_flag(data)}"] += 1
         result = {"identity": "file-key-and-object" if established else "unverified",
                   "system_successful_operations": dict(observed),
+                  "system_successful_write_paging_flags": dict(paging_flags),
                   "system_requests_without_verified_success": unverified_completions}
         if label == "protected":
             result["explicit_flush_trace"] = "confirmed" if flushes == 1 else "unverified"

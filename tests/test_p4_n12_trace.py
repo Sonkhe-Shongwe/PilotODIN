@@ -16,7 +16,7 @@ import pytest
 from qa.p4_native import n12_calibration, n12_etw_probe, n12_trace as trace
 from qa.p4_native.n12_etw_correlate import (
     check_write_object_path, correlate, correlate_requests, decode_rundown_report,
-    file_lifetime_report, preopened_report,
+    file_lifetime_report, preopened_report, write_paging_flag,
 )
 
 
@@ -783,6 +783,15 @@ def test_thread_bookends_exclude_reused_and_ambiguous_ids():
     assert trace.stable_thread_bookends(bookends, 20, {8}, {72}) == {}
 
 
+@pytest.mark.parametrize(("value", "expected"), [
+    ("0x203", "set"), ("514", "set"), (0x201, "clear"), (0, "clear"),
+    (None, "unavailable"), ("malformed", "unavailable"), (True, "unavailable"),
+    (-1, "unavailable"), (0x100000002, "unavailable"),
+])
+def test_system_write_paging_flag_only_decodes_valid_uint32_values(value, expected):
+    assert write_paging_flag({"IOFlags": value}) == expected
+
+
 @pytest.mark.parametrize(("fault", "identity_evidence"), [
     (None, "completed-open-and-read"),
     ("missing-read", "read-unverified"),
@@ -830,13 +839,15 @@ def test_system_control_timing_tracks_only_matching_successful_requests(fault, i
     request(16, 150, 160, 1, 40, 400, pid=7, IOSize=53, ByteOffset=0, IssuingThreadId=71)
     request(16, 200_000, 200_001, 2, 41, 410, pid=7, IOSize=79, ByteOffset=0, IssuingThreadId=71)
     request(21, 400_000, 500_000, 3, 40, 400, pid=7, ThreadId=71)
-    request(16, 450_000, 460_000, 4, 40, 400)
+    request(16, 450_000, 460_000, 4, 40, 400, IOFlags=0x203)
     request(17, 499_999, 500_001, 5, 40, 400, InfoClass=20)
     request(17, 480_000, 490_000, 6, 40, 400, InfoClass=4)
     request(16, 480_000, 490_000, 7, 40, 401)
-    request(16, 480_000, 490_000, 8, 40, 400, status=0xC0000022)
-    request(16, 1_500_000, 2_500_000, 9, 42, 420)
+    request(16, 480_000, 490_000, 8, 40, 400, status=0xC0000022, IOFlags=0x203)
+    request(16, 1_500_000, 2_500_000, 9, 42, 420, IOFlags=0x203)
     request(17, 2_500_001, 2_500_002, 10, 41, 410, InfoClass=20)
+    request(16, 2_500_003, 2_500_004, 13, 41, 410, IOFlags=0x201)
+    request(16, 2_500_005, 2_500_006, 14, 41, 410)
     emit(24, 460_000, Irp=4, Status=0)  # Tied completion is ambiguous.
 
     if fault == "object-reuse":
@@ -857,11 +868,15 @@ def test_system_control_timing_tracks_only_matching_successful_requests(fault, i
         "protected": {
             "identity": "file-key-and-object", "explicit_flush_trace": "confirmed",
             "system_successful_operations": {"resize:explicit-flush:after-flush-before-wpr-stop": 1},
+            "system_successful_write_paging_flags": {},
             "system_requests_without_verified_success": 2,
         },
         "outside": {
             "identity": "file-key-and-object",
-            "system_successful_operations": {"resize:after-wpr-stop:after-wpr-stop": 1},
+            "system_successful_operations": {"resize:after-wpr-stop:after-wpr-stop": 1,
+                                             "write:after-wpr-stop:after-wpr-stop": 2},
+            "system_successful_write_paging_flags": {"after-wpr-stop:clear": 1,
+                                                     "after-wpr-stop:unavailable": 1},
             "system_requests_without_verified_success": 0,
         },
         "untouched": {
@@ -869,6 +884,7 @@ def test_system_control_timing_tracks_only_matching_successful_requests(fault, i
             "identity_evidence": identity_evidence,
             "system_successful_operations": {"write:during-wpr-stop:during-wpr-stop": 1}
             if fault is None else {},
+            "system_successful_write_paging_flags": {"during-wpr-stop:set": 1} if fault is None else {},
             "system_requests_without_verified_success": 0,
         },
     }
