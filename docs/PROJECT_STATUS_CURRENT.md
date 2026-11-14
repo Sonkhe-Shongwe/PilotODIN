@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 FileBasicInformation candidate trial
+
+Across two hosted Windows captures, 99 of 142 writes initially blocked by class 4 passed the remaining diagnostic checks. All 99 had candidate paths outside protected roots. The strict audit retains unresolved paths, metadata mutations and protected-root violations. N12 remains **PARTIAL** and strict coverage **BLOCKED**. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-filebasicinformation-candidate-trial).
+
 ## 14 November 2026 | N12 basic file information path evidence
 
 The first-operation counts identified Event 17 class 4 as the only possible path-change blocker in two hosted captures. A separate Windows timestamp control reproduced class 4 on the write's FileObject and verified the same handle path before and after SetFileTime. The existing path guard remains in force, strict coverage **BLOCKED** and N12 **PARTIAL**. [Exact-source results](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-basic-file-information-path-control).

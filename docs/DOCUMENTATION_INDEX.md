@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. The latest N12 checkpoint identifies Event 17 class 4 and verifies its timestamp operation with a disposable Windows path control. See the [current handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-basic-file-information-path-control) for exact-source evidence. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
+**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. The latest N12 checkpoint measures the FileBasicInformation candidate trial in two Windows captures. See the [current handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-filebasicinformation-candidate-trial) for exact-source evidence. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
 
 ## Current authoritative route, in reading order
 
