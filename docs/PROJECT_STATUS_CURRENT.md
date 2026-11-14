@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 pre-opened handle path validation
+
+The isolated Windows fixture matched both no-open path candidates to independently verified write handles. Both original strict fixtures lacked prior names for those control writes and retained a protected System write and resize. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results and remaining acceptance dependencies](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-pre-opened-handle-path-validation).
+
 ## 14 November 2026 | N12 request-time path evidence without opens
 
 Two fresh Windows captures found 22 successful unresolved writes with no observed same-object open. Fourteen had outside-protected path candidates and eight lacked a prior name. Strict coverage remains **BLOCKED**, N12 **PARTIAL** and P4 **ACTIVE** at **65/100** on the proposed scorecard. [Exact-source results and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-request-time-path-evidence-without-opens).
