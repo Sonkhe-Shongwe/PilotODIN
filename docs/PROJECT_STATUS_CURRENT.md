@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | Hosted offline analytics model comparison
+
+The [approved comparison](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) completed on hosted Windows. Peak worker resident RAM and exact structured scores were Qwen3 1.7B **2,055.8 MiB / 2 of 4**, Qwen3 0.6B **934.9 MiB / 2 of 4**, and SmolLM2 360M **420.0 MiB / 1 of 4**. Every model failed the unknown-cause case. No model cleared the four-case screen. Physical R03 remains **BLOCKED at preflight / NOT TESTED**, and P4 remains **ACTIVE at 65/100**. [Case details](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-offline-analytics-model-comparison).
+
 ## 14 November 2026 | Hosted Windows Qwen worker memory profile
 
 The [approved standalone Windows smoke run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43592332015/job/132439503160) passed on a hosted runner with 15.99 GiB visible RAM. The pinned Qwen3 1.7B Q4_K_M CPU worker peaked at 1,992.0 MiB resident RAM and 1,037.0 MiB committed memory. The owner's earlier 545 MiB available with PilotODIN open remains below the 2.00 GiB admission threshold. **Physical R03 remains BLOCKED at preflight / NOT TESTED. P4 remains ACTIVE at 65/100** on the proposed scorecard. [Scope and measurements](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-windows-qwen-worker-memory-profile).

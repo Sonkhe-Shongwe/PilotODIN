@@ -1,5 +1,13 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Hosted offline analytics model comparison
+
+- [Run #43593329731, job #132442500969](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) completed successfully on attempt 1 at `6301ceccf073045d510123c007f5622c23c935aa`. The runner showed 15.99 GiB visible RAM. Baseline and candidate file checks passed. Models ran sequentially on pinned llama.cpp b10344 with CPU inference, 2,048-token context, and identical structured prompts capped at 128 tokens. The single hosted approval is consumed.
+- Qwen3 1.7B: **2,055.8 MiB** peak resident, **1,089.9 MiB** peak commit, 2.500 s to readiness, 1.766–5.469 s per request. **2/4** passed. It wrapped the correct overview fields in an extra object and supplied a log-status string for the unknown cause.
+- Qwen3 0.6B: **934.9 MiB** peak resident, **619.0 MiB** peak commit, 1.781 s to readiness, 0.922–1.891 s per request. **2/4** passed. It omitted the known missing-row count and the known false training status by returning null.
+- SmolLM2 360M: **420.0 MiB** peak resident, **218.6 MiB** peak commit, 0.531 s to readiness, 1.000–1.985 s per request. **1/4** passed. It used a denominator of 100 where 60 was required, supplied a cause from a field name, and returned the training result in the wrong structure.
+- SmolLM2's hosted peak is 125 MiB below the owner's earlier 545 MiB available with the desktop open. This cross-host comparison gives no physical safety margin or paging evidence. No candidate cleared the quality screen. Keep verified counts, denominators, unknowns and training status under the deterministic engine's control. A future evaluation can test whether a small model adds useful wording when those facts are fixed. The 2.00 GiB admission guard and pending physical Qwen approval are unaffected. P4 stays active at 65/100.
+
 ## 14 November 2026 | Hosted Windows Qwen worker memory profile
 
 - The owner approved one hosted Windows profile. [Run #43592332015, job #132439503160](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43592332015/job/132439503160) passed on attempt 1 at `170db88deb33f97fa4bd3d5ad0d7846b8495807d`, with [profiling code from `857454a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/857454ab6aaf406ec758929ea713a5f68abea910). The runner had 15.99 GiB visible and 13.71 GiB free at preflight. Pinned llama.cpp b10344 and Qwen3 1.7B Q4_K_M passed asset integrity verification. The standalone localhost smoke used CPU inference, a 2,048-token context and one authenticated synthetic completion capped at 24 tokens.
