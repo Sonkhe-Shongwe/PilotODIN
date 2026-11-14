@@ -25,13 +25,13 @@ test('only the exact revisioned peer mutation is eligible for the native route',
 });
 
 test('only the exact same-origin peer URL is excluded from primary discovery', () => {
-  const peer = 'http://127.0.0.1:5173/index.html?n12-peer=1#/studio/overview';
+  const peer = 'http://127.0.0.1:5173/p4_n12_lifecycle_peer.html';
   const stage = readFileSync(new URL('../../qa/p4_research/n12_app_build.py', import.meta.url), 'utf8');
   assert.ok(stage.includes(JSON.stringify(peer)));
   assert.equal(isN12Peer({ url: () => peer }), true);
   for (const other of [
     peer.replace('127.0.0.1', 'localhost'), peer.replace('5173', '5178'),
-    peer.replace('#/studio/overview', '#/studio/prepare'), 'http://127.0.0.1:5173/',
+    peer + '?other=1', 'http://127.0.0.1:5173/',
   ]) {
     assert.equal(isN12Peer({ url: () => other }), false);
   }

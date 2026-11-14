@@ -968,7 +968,7 @@ test('P4 N11 real HTTP: compact Quality approval refreshes Prepare, survives pee
       await expect(chooser).toHaveValue(initialId);
       await expect(page.getByRole('region',{name:'Potential prediction opportunities'})).toContainText('churn');
       await chooser.selectOption(projectId);
-      await peer.goto('/index.html?n12-peer=1#/studio/overview');
+      await peer.goto('/p4_n12_lifecycle_peer.html');
       const read=async(url:string)=>{
         const response=await request.get(url);
         return {status:response.status(),json:()=>response.json()};

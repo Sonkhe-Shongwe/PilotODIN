@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { hasTauriNativeBridge } from './p4-73-cdp-target-discovery.mjs';
 import { approveQualityChange } from './p4-quality-version-transition.mjs';
 
-const PEER_URL = 'http://127.0.0.1:5173/index.html?n12-peer=1#/studio/overview';
+const PEER_URL = 'http://127.0.0.1:5173/p4_n12_lifecycle_peer.html';
 
 export function isN12Peer(page) {
   return page.url() === PEER_URL;

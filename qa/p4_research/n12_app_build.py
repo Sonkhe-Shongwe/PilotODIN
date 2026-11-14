@@ -17,7 +17,7 @@ TARGET = "x86_64-pc-windows-msvc"
 EXE = "pilotodin-desktop.exe"
 BRANCH = "feature/live-dev-workspace-20261023"
 QA_ID = "com.pilotodin.p4isolatednativedev"
-PEER_URL = "http://127.0.0.1:5173/index.html?n12-peer=1#/studio/overview"
+PEER_URL = "http://127.0.0.1:5173/p4_n12_lifecycle_peer.html"
 PEER_LABEL = "n12peer"
 PROTECTED_IDS = ("com.pilotodin.studio", "com.pilotodin.p4nativeqa")
 CONSENT = "I_APPROVE_UNPACKAGED_P4_NATIVE_DEV"
