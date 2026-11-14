@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 Cache Manager operations before recorder stop
+
+The [hosted Windows comparison](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43612214016/job/132499495498) observed the protected Cache Manager paging write and EOF resize approximately 20.5 seconds before WPR stop. Both completed while recording continued. Application initiation remains unverified and both protected findings remain recorded. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Exact source and timing](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-cache-manager-operations-before-recorder-stop).
+
 ## 14 November 2026 | N12 protected Cache Manager execution path
 
 The [hosted symbol run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43611212463/job/132496445287) identified the Windows Cache Manager lazy-write worker in the protected paging write and EOF resize stacks. The write resolved 16/20 frames and the resize 14/19. The immediate execution path is verified for these synthetic events. Application initiation and the causal role of WPR stop remain unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Exact source and evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-protected-cache-manager-execution-path).
