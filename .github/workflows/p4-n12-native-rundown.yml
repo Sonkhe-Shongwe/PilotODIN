@@ -1,0 +1,42 @@
+name: P4 N12 Native FileIO Rundown
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - 'qa/p4_native/Test_P4_N12_ETW_Fixture.ps1'
+      - 'qa/p4_native/n12_fileio_rundown.cpp'
+      - 'qa/p4_native/n12_etw_correlate.py'
+      - 'tests/test_p4_n12_trace.py'
+      - '.github/workflows/p4-n12-native-rundown.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-rundown:
+    name: Native ProcessTrace rundown and path correlation
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout exact branch source
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install focused test runner
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Run N12 synthetic regression suite
+        run: python -m pytest -q tests/test_p4_n12_trace.py
+
+      - name: Execute native Windows ProcessTrace rundown control
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl -Rundown
