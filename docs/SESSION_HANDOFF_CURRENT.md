@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Hosted SmolLM2 follow-up evaluation
+
+- [Run #43596757885, job #132452800777](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43596757885/job/132452800777) completed on attempt 1 at `a540a8bedadfa2faf4c9b4e8d9b0316b61d2424c` with harness source `04eb36e21121bdf77aaec9782174258fb976cbfb`. The hosted runner had 15.99 GiB visible RAM. The pinned assets passed verification. Only SmolLM2 360M Q4_K_M executed, using the existing pinned CPU runtime. The one-run hosted approval is consumed.
+- **0/8 correct selections, 8/8 verified-summary fallbacks.** All eight requests returned HTTP 200 with finish reason `length`. Every displayed answer retained its benchmark-owned summary. The harness does not record the raw truncated choices, so the run does not establish whether a larger token budget or constrained decoding would produce useful choices.
+- Worker readiness took **0.563 s** at **393.1 MiB resident** and **197.4 MiB committed**. Requests took **0.219–0.359 s** each. Cumulative peaks were **417.2 MiB resident** and **217.1 MiB committed**. This is standalone hosted worker evidence. Physical laptop memory, paging and desktop coexistence were unmeasured.
+- The verified-summary fallback passed on the hosted synthetic cases. There is no evidence of useful model follow-up selection under this configuration. For the next source check, compare a model-free selector against the same questions and separate any constrained-decode or token-budget change from this recorded attempt. The existing 2.00 GiB guard and separate physical approval remain in force. P4 stays active at 65/100.
+
 ## 14 November 2026 | Hosted offline analytics model comparison
 
 - [Run #43593329731, job #132442500969](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) completed successfully on attempt 1 at `6301ceccf073045d510123c007f5622c23c935aa`. The runner showed 15.99 GiB visible RAM. Baseline and candidate file checks passed. Models ran sequentially on pinned llama.cpp b10344 with CPU inference, 2,048-token context, and identical structured prompts capped at 128 tokens. The single hosted approval is consumed.

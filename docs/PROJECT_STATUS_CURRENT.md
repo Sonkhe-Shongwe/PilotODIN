@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | Hosted SmolLM2 follow-up evaluation
+
+The [approved SmolLM2 hosted evaluation](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43596757885/job/132452800777) completed successfully. All eight responses hit the eight-token limit, yielding **0/8 accepted choices** and **8/8 verified-summary fallbacks**. The worker peaked at **417.2 MiB resident** and **217.1 MiB committed**. Physical R03 remains **BLOCKED at preflight / NOT TESTED**, and P4 remains **ACTIVE at 65/100**. [Scope and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-smollm2-follow-up-evaluation).
+
 ## 14 November 2026 | Hosted offline analytics model comparison
 
 The [approved comparison](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) completed on hosted Windows. Peak worker resident RAM and exact structured scores were Qwen3 1.7B **2,055.8 MiB / 2 of 4**, Qwen3 0.6B **934.9 MiB / 2 of 4**, and SmolLM2 360M **420.0 MiB / 1 of 4**. Every model failed the unknown-cause case. No model cleared the four-case screen. Physical R03 remains **BLOCKED at preflight / NOT TESTED**, and P4 remains **ACTIVE at 65/100**. [Case details](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-offline-analytics-model-comparison).
