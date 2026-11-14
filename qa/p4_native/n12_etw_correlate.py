@@ -117,7 +117,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     def flag(actor, reason, event_id, info_class):
         unresolved[f"{actor}:{reason}"] += 1
         if details is not None:
-            info = info_class if type(info_class) is int and 0 <= info_class <= 255 else "unknown"
+            max_info = 0xFFFFFFFF if event_id == 23 else 255
+            info = info_class if type(info_class) is int and 0 <= info_class <= max_info else "unknown"
             suffix = f":info-{info}" if event_id in {17, 23} else ""
             details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
 
