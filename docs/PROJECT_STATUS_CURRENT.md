@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | Cross-window archive draft protection
+
+The [workspace correction](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b496f232557f537371e28f69dc4a5a945592f5a1) preserves the open project and unsaved Prepare target when the active catalogue refreshes before another window's archive notification. Browser verification passed. Native Windows multi-window acceptance remains open. **P4 ACTIVE at 65/100.** [Source and verification](./SESSION_HANDOFF_CURRENT.md#14-november-2026--cross-window-archive-preserves-the-open-prepare-draft).
+
 ## 14 November 2026 | Quality approval dialog and browser walkthrough
 
 The [Quality approval correction](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9bb73dba4e139da7ab73a66c297c9cc9e8ca0cfb) passed the synthetic browser walkthrough from Import through Prepare. The [real-HTTP suite](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43613608214) passed on its second attempt. The first attempt exposed an intermittent cross-window archive failure. **P4 ACTIVE at 65/100.** [Walkthrough scope and verification](./SESSION_HANDOFF_CURRENT.md#14-november-2026--quality-approval-dialog-and-browser-walkthrough).
