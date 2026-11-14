@@ -27,6 +27,10 @@ The [approved comparison](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 
 Local synthetic verification covered the response boundary and the four harness modes. The [approved SmolLM2 hosted evaluation](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43596757885/job/132452800777) completed successfully. All eight responses hit the eight-token limit, yielding **0/8 accepted choices** and **8/8 verified-summary fallbacks**. The worker peaked at **417.2 MiB resident** and **217.1 MiB committed**. Physical R03 remains **BLOCKED at preflight / NOT TESTED**, and P4 remains **ACTIVE at 65/100**. [Scope and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-smollm2-follow-up-evaluation).
 
+**R03 model-free follow-up baseline.** Run `python desktop/evaluate_offline_follow_up_rules.py` to score a conservative word-overlap selector against the same eight hosted questions, eight new paraphrases and twelve ambiguous, vague or unrelated questions. The selector requires at least two distinct terms unique to one follow-up and none unique to the other. The benchmark reuses the verified-summary renderer. The rule chose correctly on **4/8 original** and **2/8 paraphrased** questions, abstained on the other ten, and correctly abstained on **12/12 unclear** questions. Zero wrong choices were emitted across the 28 fixtures. Local checks verified all 28 compositions, all 28 reversed-option outcomes and two edge cases.
+
+This conservative baseline beats the hosted SmolLM2 attempt on the original questions, while matching the accuracy of a fixed A or B choice on that balanced set. Its low paraphrase coverage leaves optional follow-up selection experimental. Keep the verified summary as the default and prioritise explicit follow-up actions with clear labels if this feature is pursued. Physical R03 remains blocked at preflight, and P4 remains active at 65/100.
+
 ### Rules for interpreting the matrix
 
 - **PASS** applies only to the tested *modality and exact source*, never to a different Windows build or business use. Use **UNVERIFIED**, **NOT TESTED**, **BLOCKED** and **FAIL** distinctly.
