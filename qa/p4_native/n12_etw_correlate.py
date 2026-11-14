@@ -69,12 +69,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
                        rundown_invalidations=None, initial_process_births=None,
                        preopened_control_file_keys=None, preopened_control_file_objects=None,
-                       rundown_window=None):
+                       rundown_window=None, record_path_gap=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
     opened, pending = {}, {}
     write_gaps = []
+    path_gap_context = {}
     opens_with_process_lifetime = set()
     file_names = {}
     invalidated_names = {}
@@ -251,7 +252,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 active[process_id] = ticks
             elif kind == 2:
                 active.pop(process_id, None)
-            elif details is not None and kind in (3, 4):
+            elif (details is not None or record_path_gap is not None) and kind in (3, 4):
                 tid = number(data.get("ThreadID", data.get("TThreadId")))
                 if kind == 3:
                     thread_owners[tid] = (process_id, active.get(process_id))
@@ -287,6 +288,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 continue
             (operation, actor, identity, handle, source, destination, requested,
              event_id, info_class, write_gap, protected_system_write) = pending.pop(irp)
+            gap = path_gap_context.pop(irp, None)
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
             if status is None:
@@ -329,6 +331,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     flag(actor, "unsupported-file-operation", event_id, info_class)
                 if not source or (operation == "rename" and not destination):
                     flag(actor, f"{operation}:path-missing", event_id, info_class)
+                    if gap is not None:
+                        record_path_gap(actor, event_id, operation, *gap)
                 if source or destination:
                     record(actor, identity, operation, source, destination, requested, ticks, True)
                     if protected_system_write is not None:
@@ -528,6 +532,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 unresolved[f"{actor}:{operation}:identity-missing"] += 1
             continue
         if irp in pending:
+            path_gap_context.pop(irp, None)
             old_operation, owner, _, _, old_source, old_destination, *_ = pending.pop(irp)
             count_compression(old_operation, "irp-reused-before-completion")
             if old_operation != "query" and relevant(owner, old_operation, old_source, old_destination):
@@ -554,6 +559,24 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 protected_system_write = f"{target}:{capture_phase(ticks)}:{write_paging_flag(data)}"
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
                             info_class, write_gap, protected_system_write)
+            if record_path_gap is not None and source is None and operation != "query" and kind in {16, 17, 23}:
+                try:
+                    file_key = number(data.get("FileKey"))
+                except ValueError:
+                    file_key = None
+                try:
+                    tid = number(data.get("IssuingThreadId", data.get("ThreadId")))
+                except ValueError:
+                    tid = None
+                owner = thread_owners.get(tid)
+                if owner is None or owner[1] is None or active.get(owner[0]) != owner[1]:
+                    thread = "unverified-thread" if tid else "no-thread-id"
+                else:
+                    # Header comparison is descriptive, never used for attribution.
+                    thread = "thread-header-agrees" if owner[0] == pid else "thread-header-differs"
+                path_gap_context[irp] = ("file-key" if type(file_key) is int and file_key > 0 else "no-file-key",
+                                         "header-lifetime" if birth is not None else "no-header-lifetime",
+                                         thread)
     for operation, actor, _, _, source, destination, _, event_id, info_class, *_ in pending.values():
         count_compression(operation, "missing-completion")
         if operation != "query" and relevant(actor, operation, source, destination):

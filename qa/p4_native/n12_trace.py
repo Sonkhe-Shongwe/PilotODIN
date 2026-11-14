@@ -557,11 +557,12 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       process_event_images=None,
                       rundown_recovered_keys=None, rundown_invalidations=None,
                       preopened_control_file_keys=None, preopened_control_file_objects=None,
-                      rundown_window=None, record_outside_scope=None):
+                      rundown_window=None, record_outside_scope=None, journey_bookends=None,
+                      bookend_summary=None, record_path_gap=None):
     if __package__:
-        from .n12_etw_correlate import canonical_file_path, correlate_requests
+        from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
-        from n12_etw_correlate import canonical_file_path, correlate_requests
+        from n12_etw_correlate import canonical_file_path, correlate_requests, number
 
     with evidence_stage("ETW capture metadata"):
         capture_bounds, devices = etw_capture_contract(manifest, start, end, issues)
@@ -634,6 +635,18 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
+        if journey_bookends is not None:
+            # Scoped identities still come from Sysmon joined to ETW process
+            # starts. Bookends can only seed pre-existing background processes.
+            excluded = set(lifetimes)
+            for event in event_records:
+                if event["lifecycle"] and event["id"] in (1, 2):
+                    data = event["data"]
+                    excluded.add(number(data.get("ProcessID", data.get("ProcessId"))))
+            stable = stable_process_bookend_records(journey_bookends, capture_bounds[0], excluded)
+            initial_process_births.update({pid: entry["birth_ticks"] for pid, entry in stable.items()})
+            if bookend_summary is not None:
+                bookend_summary.update(status="checked", stable_background_processes=len(stable))
         # Keep post-audit ETW events for rundown lifetime checks. A rename, close,
         # or key reuse after the Sysmon audit boundary still invalidates a stop-time
         # name for an earlier write.
@@ -650,7 +663,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             initial_process_births=initial_process_births,
             preopened_control_file_keys=preopened_control_file_keys,
             preopened_control_file_objects=preopened_control_file_objects,
-            rundown_window=rundown_window,
+            rundown_window=rundown_window, record_path_gap=record_path_gap,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -658,8 +671,10 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
 
 def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
-          rundown=None, record_outside_scope=None, private_app_launches=None):
+          rundown=None, record_outside_scope=None, private_app_launches=None, journey_bookends=None,
+          describe_path_gaps=False):
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
+    require(journey_bookends is None or etw, "process bookends require ETW audit")
     start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
             re.fullmatch(r"[0-9a-f]{64}", manifest["executable_sha256"]),
@@ -683,12 +698,20 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
     if not app_lifecycles_match:
         issues.add("app-lifecycle-does-not-match-journey")
     etw_diagnostics = {}
+    bookend_summary = {}
+    path_gap_counts = Counter()
+
+    def count_path_gap(role, event_id, operation, file_key, lifetime, thread):
+        path_gap_counts[f"{role}:event-{event_id}:{operation}:{file_key}:{lifetime}:{thread}"] += 1
+
     if etw:
         immutable = [windows_path(manifest["observed_roots"][label])
                      for label in manifest["immutable_observed"]]
         file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
             manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues,
-            rundown=rundown, record_outside_scope=record_outside_scope)
+            rundown=rundown, record_outside_scope=record_outside_scope,
+            journey_bookends=journey_bookends, bookend_summary=bookend_summary,
+            record_path_gap=count_path_gap if describe_path_gaps else None)
         path_diagnostics = []
     else:
         file_counts, violations, file_events, path_diagnostics = inspect_files(
@@ -739,6 +762,8 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         **({"file_evidence_source": "etw", "etw_unresolved_mutations": etw_diagnostics,
              **({"file_key_rundown_records": len(rundown)} if rundown is not None else {})}
            if etw else {}),
+        **({"etw_background_process_bookends": bookend_summary} if bookend_summary else {}),
+        **({"etw_path_gap_context": dict(path_gap_counts)} if etw and describe_path_gaps else {}),
         "snapshot_changes": snapshots, "unexpected_snapshot_changes": changed,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }

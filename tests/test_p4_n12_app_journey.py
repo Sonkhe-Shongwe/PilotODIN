@@ -87,7 +87,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "prepare_journey", lambda *args: (manifest, home, profile, fixture, calibrations))
     monkeypatch.setattr(journey, "quiet", lambda *a, **kw: b"churn,amount\nY,2\n")
     monkeypatch.setattr(journey, "snapshots", lambda m: {"snapshot": len(events)})
-    monkeypatch.setattr(journey, "sysmon_tail", lambda: 10 if not events else 60)
+    monkeypatch.setattr(journey, "sysmon_tail", lambda: 10 if "etw-start" not in events else 60)
     monkeypatch.setattr(journey, "start_capture", lambda *a: events.append("etw-start"))
     monkeypatch.setattr(journey.etw, "volume_devices", lambda: {"C:": r"\Device\HarddiskVolume1"})
     monkeypatch.setattr(journey.etw, "stop_trace", lambda *a: events.append("etw-stop") or {"buffers_written": 4})
@@ -124,6 +124,11 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         events.append("verify-binary")
 
     def powershell(path, *args, **kwargs):
+        if args[0] == "process-bookend":
+            assert len(args) == 1
+            label = "process-bookend-after" if "etw-stop" in events else "process-bookend-before"
+            events.append(label)
+            return b'[{"pid": 702, "birth_ticks": 170}]'
         if args[0] == "close":
             events.append("graceful-close")
         elif args[0] == "profile-active":
@@ -136,7 +141,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             pytest.fail(f"unexpected PowerShell call {args[0]}")
 
     def reduce(m, sysmon, file_trace, before, after, *, etw, private_endpoints,
-               record_outside_scope, private_app_launches):
+               record_outside_scope, private_app_launches, journey_bookends, describe_path_gaps):
         events.append("reducer")
         assert sysmon.read_bytes() == b"record-bounded evidence"
         assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
@@ -144,6 +149,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert list(m["markers"]) == list(journey.trace.MINIMUM_MARKERS)
         assert list(m["markers"].values()) == sorted(m["markers"].values())
         assert before != after
+        assert describe_path_gaps
+        assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
+                                    "after": [{"pid": 702, "birth_ticks": 170}]}
         assert [p["role"] for p in m["processes"]].count("app") == 2
         private_endpoints.append({"role": "backend", "raw": "private-value"})
         record_outside_scope("driver", "write", (r"c:\private\driver.bin",))
@@ -175,13 +183,18 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     else:
         report = journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
         assert report["coverage"] == "BLOCKED"
-        assert events == ["etw-start", "calibration-first", "sysmon-prelaunch-check", "idle-observation",
+        assert events == ["process-bookend-before", "etw-start", "calibration-first",
+                          "sysmon-prelaunch-check", "idle-observation",
                           "backend", "vite", "verify-binary", "app-first", "driver-first", "graceful-close",
                           "profile-exit", "verify-binary", "app-relaunch", "driver-relaunch", "graceful-close",
                           "profile-exit", "cleanup-driver-relaunch", "cleanup-app-relaunch",
                           "cleanup-driver-first", "cleanup-app-first", "cleanup-vite", "cleanup-backend",
-                          "calibration-last", "etw-stop", "drain", "etw-export", "reducer"]
-        assert "private-value" not in (root / "audit.json").read_text()
+                          "calibration-last", "etw-stop", "process-bookend-after", "drain", "etw-export", "reducer"]
+        public = (root / "audit.json").read_text()
+        assert "private-value" not in public and "702" not in public
+        assert json.loads((root / "private-process-bookends.json").read_text())["before"] == [
+            {"pid": 702, "birth_ticks": 170},
+        ]
         assert json.loads((root / "private-endpoints.json").read_text()) == [{"role": "backend", "raw": "private-value"}]
         assert report["journey_diagnostics"]["outside_scope_paths"] == [
             {"role": "driver", "operation": "write", "path_categories": ["other-path"], "count": 1},

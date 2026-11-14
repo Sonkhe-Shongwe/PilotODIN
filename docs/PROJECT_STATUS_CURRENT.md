@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 ETW process and path-gap evidence prepared
+
+The hosted journey can establish stable background process lifetimes from paired snapshots and show what identity fields remain available on unresolved writes. The prior native audit failures remain open. **P4 ACTIVE 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Evidence and proposed capture](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-etw-process-and-path-gap-evidence-prepared).
+
 ## 14 November 2026 | N12 redacted audit diagnostics prepared
 
 The hosted journey can report fixed categories for writes outside the allowed paths and try to correlate Sysmon-observed WebView connections with private NetLog socket and request evidence. Synthetic checks passed. The audit failures in the earlier live run remain open. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-redacted-audit-diagnostics-prepared).

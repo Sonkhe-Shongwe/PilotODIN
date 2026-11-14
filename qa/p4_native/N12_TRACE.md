@@ -48,6 +48,12 @@ The ETW input is UTF-8 JSONL in the format emitted by the synthetic Windows prob
 
 The audit checks ETW loss, export integrity, completion status, and both endpoints of tracked moves. It joins scoped ETW processes to Sysmon by PID and a unique birth within 10 ms, then applies the existing write rules and before/after snapshots. A detected protected mutation fails the filesystem check even if its writer was running before capture. Missing attribution and unsupported operations can also block coverage. Drive paths, DOS extended prefixes and declared NT device names are supported. Short-name aliases and reparse-point transitions remain unsupported. Native collector orchestration and startup-to-exit acceptance remain pending.
 
+### Hosted journey ETW gap diagnostics
+
+The hosted app journey takes read-only process snapshots immediately before ETW starts and after it stops. Only a PID with the same birth time in both snapshots, a birth before the trace, and no Sysmon lifecycle or ETW process transition in the capture can seed a background lifetime. Application, backend, driver and calibration identity still rely on the existing Sysmon and ETW join. The public report includes snapshot availability and an aggregate count. The snapshots stay in runner temp. If either snapshot is unavailable, the journey reduces the original evidence and reports the missing snapshot.
+
+For successful file mutations whose path remains unresolved, `etw_path_gap_context` groups write, set-information and FSCTL events by role, event ID, operation, FileKey availability, header lifetime and whether the issuing thread's observed owner agrees with the header. This is evidence about missing coverage. A FileKey or thread candidate alone does not resolve a path or assign a writer. Stop-time rundown remains suitable for eligible surviving file handles under the existing transition rules. It cannot supply the name of a handle that already closed before shutdown.
+
 ### Strict file-key rundown input
 
 #### Event 23 FSCTL classification

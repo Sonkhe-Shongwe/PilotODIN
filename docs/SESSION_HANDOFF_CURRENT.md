@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 ETW process and path-gap evidence prepared
+
+- The [hosted journey](../qa/p4_research/n12_app_journey.py) now takes read-only background process snapshots on both sides of ETW capture. A matching PID and creation time seeds a lifetime only for a process born before capture that has neither a Sysmon lifetime nor an ETW start/stop in the trace. The matched background identities cannot substitute for the existing application identity checks.
+- The [reducer](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics) reports aggregate context for successful writes, set-information and FSCTL events missing file paths. Counts distinguish missing FileKeys, absent header lifetimes and verified issuing-thread/header agreement. Raw process and file identities stay private. Unresolved paths still block strict coverage. The existing WPR stop-time rundown can support mappings for eligible surviving handles; it cannot identify an app handle that closed before stop.
+- Generated regression evidence shows a stable background identity reduced missing-lifetime findings while the protected write still failed the filesystem check and unverified paths still blocked coverage. The single-use workflow remains disarmed and now expects a fresh diagnostic approval marker. The consumed marker is preserved. The next proposed run is one source-pinned diagnostic capture of the same synthetic two-launch app journey using the existing collectors, these snapshots and the private NetLogs. Compare gate outcomes, then use the redacted evidence to decide whether a surviving-handle rundown would address the remaining events. **P4 ACTIVE 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 14 November 2026 | N12 redacted audit diagnostics prepared
 
 - The [journey diagnostics](../qa/p4_research/n12_journey_diagnostics.py) group resolved ETW outside-scope operations by role, operation and fixed path category. A rename contributes one record even if both paths fall outside the allowed roots. No path, filename or process ID appears in this grouping. Unresolved file operations still block strict coverage.

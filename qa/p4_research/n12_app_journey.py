@@ -252,6 +252,18 @@ def diagnostic_paths(root, staged, manifest):
     return OutsidePaths(roots)
 
 
+def process_bookend():
+    try:
+        entries = json.loads(powershell(HELPER, "process-bookend"))
+        # Validate the snapshot before passing it to the audit. One bad
+        # snapshot leaves the original audit available without bookend data.
+        trace.require(isinstance(entries, list) and entries, "process bookend is empty")
+        trace.stable_process_bookend_records({"before": entries, "after": []}, 0, set())
+        return entries
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        return None
+
+
 def capture(root, staged, source, expected_hash, node):
     manifest, home, profile, fixture, calibration = prepare_journey(root, source, expected_hash)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
@@ -269,6 +281,7 @@ def capture(root, staged, source, expected_hash, node):
     devices = etw.volume_devices()
     session = f"PilotODIN-N12-App-{uuid4().hex}"
     logman = str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")
+    first_processes = process_bookend()
     manifest["sysmon_first_record"] = sysmon_tail() + 1
     capture_start = now()
     print("N12 journey stage collector start", flush=True)
@@ -308,6 +321,11 @@ def capture(root, staged, source, expected_hash, node):
             "etw_end_utc": capture_end.isoformat(), "counters": counters, "volume_devices": devices,
         })
     print("N12 journey stage export and audit", flush=True)
+    last_processes = process_bookend()
+    bookends = ({"before": first_processes, "after": last_processes}
+                if first_processes is not None and last_processes is not None else None)
+    if bookends is not None:
+        report_file(root / "private-process-bookends.json", bookends)
     time.sleep(3)
     after = snapshots(manifest)
     report_file(root / "after.json", after)
@@ -323,11 +341,14 @@ def capture(root, staged, source, expected_hash, node):
     endpoints, launches = [], {}
     paths = diagnostic_paths(root, staged, manifest)
     result = trace.audit(manifest, sysmon, events, before, after, etw=True, private_endpoints=endpoints,
-                         record_outside_scope=paths.record, private_app_launches=launches)
+                         record_outside_scope=paths.record, private_app_launches=launches,
+                         journey_bookends=bookends, describe_path_gaps=True)
     report_file(root / "private-endpoints.json", endpoints)
     log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
     result["journey_diagnostics"] = {
         "outside_scope_paths": paths.summary(),
+        "process_bookends": {"before": "available" if first_processes is not None else "unavailable",
+                            "after": "available" if last_processes is not None else "unavailable"},
         "network": network_summary(endpoints, launches, log_paths),
     }
     result["journey"] = "completed"

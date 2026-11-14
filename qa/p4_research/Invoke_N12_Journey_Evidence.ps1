@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('sysmon-tail','etw-export','close','profile-active','project-switch')][string]$Operation,
+    [ValidateSet('sysmon-tail','etw-export','close','profile-active','project-switch','process-bookend')][string]$Operation,
     [string]$CaptureRoot,
     [int]$AppProcessId,
     [string]$AppPath,
@@ -51,6 +51,13 @@ switch ($Operation) {
             Where-Object { $_.CommandLine -and
                 $_.CommandLine.IndexOf($ProfilePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 })
         $processes.Count
+    }
+    'process-bookend' {
+        $rows = @(Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |
+            Where-Object CreationDate | ForEach-Object {
+                @{ pid = $_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks }
+            })
+        ConvertTo-Json -InputObject $rows -Compress
     }
     'etw-export' {
         $file = [IO.File]::Open((Join-Path $CaptureRoot 'etw.jsonl'), [IO.FileMode]::CreateNew,

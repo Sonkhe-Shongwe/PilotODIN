@@ -1267,6 +1267,38 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert "private-name" not in json.dumps(flagged)
     del rows[-4:]
 
+    # Background identities can come from two matching snapshots, even when
+    # there was no process-start event during the capture. Scoped app/backend
+    # identities and PIDs with a recorded lifecycle transition stay excluded.
+    emit(25, 72, 16, FileObject=711, FileKey=733, Irp=701, IssuingThreadId=88)
+    emit(25, 0, 24, Irp=701, Status=0)
+    emit(26, 73, 16, FileObject=721, FileKey=743, Irp=702, IssuingThreadId=89)
+    emit(26, 0, 24, Irp=702, Status=0)
+    emit(27, 73, 2, lifecycle=True, ProcessID=73)
+    mutation(28, 72, 7, 12, FileName=PROTECTED + r"\private-marker", Outcome=1)
+    mutation(28, 72, 7, 16)
+    rows_added = 9
+    baseline = report()
+    assert baseline["etw_unresolved_mutations"]["other:write:process-lifetime-missing"] == 3
+    before_start = trace.utc_ticks(trace.utc_time(instant(0))) - 10
+    entries = [{"pid": pid, "birth_ticks": before_start} for pid in (10, 72, 73)]
+    with_bookends = report(journey_bookends={"before": entries, "after": entries}, describe_path_gaps=True)
+    assert with_bookends["etw_background_process_bookends"] == {
+        "status": "checked", "stable_background_processes": 1,
+    }
+    assert with_bookends["etw_unresolved_mutations"]["other:write:process-lifetime-missing"] == 1
+    assert with_bookends["etw_unresolved_mutations"]["other:write:path-missing"] == 2
+    assert with_bookends["etw_path_gap_context"] == {
+        "other:event-16:write:file-key:header-lifetime:unverified-thread": 1,
+        "other:event-16:write:file-key:no-header-lifetime:unverified-thread": 1,
+    }
+    assert with_bookends["file_violations"]["protected:other:write"] == 1
+    assert with_bookends["filesystem"] == "FAIL"
+    assert with_bookends["coverage"] == "BLOCKED"
+    assert with_bookends["native_n12_accepted"] is False
+    assert "private-marker" not in json.dumps(with_bookends)
+    del rows[-rows_added:]
+
     # A pre-opened backend handle has no in-capture name event. The native
     # stop-time rundown may resolve it only while its file key remains stable.
     emit(29, 10, 16, FileObject=9, FileKey="0x28", Irp=99)
