@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 trace match diagnostics Windows result
+
+The [approved Windows capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43618940069/job/132520025163) confirmed both Windows file-ID handle pairs and passed the original strict controls. The overall job failed its stack calibration on missing name evidence. The analyser could not establish either staggered trace identity, leaving the diagnostic counts and paging range comparison unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-trace-match-diagnostics-windows-result).
+
 ## 14 November 2026 | N12 trace match diagnostics prepared
 
 The staggered-write harness now reports where candidate requests fail to match and checks two handles against the same Windows file identity. Local tests passed, and hosted Windows verification is pending. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-trace-match-diagnostics-prepared).

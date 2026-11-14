@@ -104,6 +104,8 @@ The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 
 **Staggered-write Windows result:** The [approved capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43616846397/job/132513672415) verified the four application writes and passed the original strict controls. The reducer reported two System paging writes and two EOF resizes on the generated protected staggered file. The stack analyser found zero requests matching its exact join for that file. Byte-range comparison remains unverified, and the redacted results cannot identify which match criterion differed. [Details and follow-up](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-windows-result).
 
+**Trace match diagnostics Windows result:** The [follow-up capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43618940069/job/132520025163) confirmed both Windows file-ID handle pairs and passed the original strict controls. The job failed stack calibration at the name check, and neither staggered trace identity qualified for the new candidate counts. Byte-range attribution stays unverified. The next priority is preparation for the full app journey and prospective preservation check. [Details and evidence boundary](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-trace-match-diagnostics-windows-result).
+
 ## D. Consolidated native acceptance is a conditional downstream task
 
 **Current state:** N1–N11 passed in the consolidated hosted Windows run, including same-binary relaunch. R04 and R05 have partial results. N12 has scoped evidence. See the [consolidated results below](#13-november-2026-consolidated-hosted-windows-acceptance).
