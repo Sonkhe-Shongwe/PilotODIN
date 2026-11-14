@@ -94,6 +94,8 @@ The [focused Windows log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/ru
 
 **Unflushed protected follow-up:** The [hosted Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43607666060/job/132485722561) matched the System paging write and EOF resize on the protected file to 20-frame and 19-frame stacks during WPR stop. The separate flushed and untouched controls were verified and had zero matching successful System writes or resizes. The known application write calibration and strict fixture assertions did not pass. Function symbols and application initiation remain unverified. [Exact results](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-stacks-on-the-unflushed-protected-control).
 
+**Isolated comparison follow-up:** The [hosted Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43609421696/job/132490982398) passed with exactly two original fixture writes and 42-frame and 41-frame stacks for the known application write and EOF resize. The protected System paging write and resize both recurred during WPR stop and matched 20-frame and 19-frame stacks. The separate flushed and untouched files had zero matching successful System writes or resizes. Both protected findings remain. Function names and application initiation remain unverified. [Exact results](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-isolated-comparison-and-stack-calibration-pass).
+
 ## D. Consolidated native acceptance is a conditional downstream task
 
 **Current state:** N1–N11 passed in the consolidated hosted Windows run, including same-binary relaunch. R04 and R05 have partial results. N12 has scoped evidence. See the [consolidated results below](#13-november-2026-consolidated-hosted-windows-acceptance).

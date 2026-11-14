@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 isolated comparison and stack calibration pass
+
+The [hosted Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43609421696/job/132490982398) passed with exactly two original fixture writes and successful same-capture stack matching for both known application operations. The protected System paging write and EOF resize matched 20-frame and 19-frame stacks. Both violations remain recorded and the originating application action remains unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Exact source and evidence](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-isolated-comparison-and-stack-calibration-pass).
+
 ## 14 November 2026 | N12 stacks on the unflushed protected control
 
 The [hosted capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43607666060/job/132485722561) matched 20-frame and 19-frame System stacks to the protected paging write and EOF resize. The known application write calibration had zero accepted matches and the expanded fixture failed its strict control assertions. Application initiation remains unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Exact source, control results and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-stacks-on-the-unflushed-protected-control).
