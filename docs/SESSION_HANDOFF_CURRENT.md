@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 unpackaged build staging prepared
+
+- The [hosted staging entry point](../qa/p4_research/n12_app_build.py) uses the existing isolated Tauri QA configuration for one compile-only Windows debug build. It checks the approved clean checkout and isolated identities, creates a fresh runner-temp output root, and records source SHA, executable SHA-256 and resolved Cargo lock SHA-256. `stage --source <SHA>` prepares the binary. `verify --source <SHA> --expected-exe-sha256 <SHA-256>` rechecks provenance before launch and relaunch. Both commands are invoked as `python -m qa.p4_research.n12_app_build` from the repository root.
+- Local verification passed 168 N12 Python tests and six existing Node isolation checks. Python compilation passed. The tests stub Cargo and exercise the real local refusal path. Windows compilation, launch and collector execution are **NOT RUN**. No workflow was armed.
+- Next wire the staged executable into the [hosted Windows journey](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#next-windows-sessions) with the collector calibration bookends, process lifetimes and existing audit reducer. The owner-device prospective preservation run remains separate. **N12 PARTIAL / strict coverage BLOCKED / P4 ACTIVE at 65/100.**
+
 ## 14 November 2026 | N12 fallback reporting and app journey readiness
 
 - The [staggered trace analyser](../qa/p4_research/n12_stack/analyze.py) now emits name and open-path candidate counts when the declared reference pair is missing. These diagnostic-only candidates cannot enter the stack join or produce byte-range findings. The exact attribution gate and strict reducer are unchanged.

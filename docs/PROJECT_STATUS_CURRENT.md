@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 unpackaged build staging prepared
+
+The hosted preparation entry point compiles and verifies a source-pinned debug binary separately from app launch. Local synthetic verification passed. The Windows build and collector integration remain pending. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-unpackaged-build-staging-prepared).
+
 ## 14 November 2026 | N12 fallback reporting and app journey readiness
 
 The analyser now reports path candidates when the reference pair is unverified. Local regression coverage passed. The full app journey still needs its existing runner and collectors wired together, and the owner-device preservation test needs a separate read-only fingerprint procedure. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-fallback-reporting-and-app-journey-readiness).
