@@ -36,7 +36,7 @@ def canonical_file_path(value, devices):
 def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
                        strict=False, details=None, process_bookends=None, thread_bookends=None,
                        rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
-                       initial_process_births=None):
+                       rundown_invalidations=None, initial_process_births=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
@@ -84,6 +84,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     key = None
                 if type(key) is int and key > 0:
                     rundown_unsafe_keys.add(key)
+                    if rundown_invalidations is not None:
+                        rundown_invalidations.setdefault(key, Counter())[f"event-{kind}:{field}"] += 1
 
     def relevant(actor, operation, source, destination):
         return tracked(source) or tracked(destination) or (

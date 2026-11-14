@@ -837,8 +837,11 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\control.bin")
     result = run()
     assert result.returncode == 2
-    assert "N12 BLOCKED:" in result.stderr
-    assert protected_path not in result.stderr and outside_path not in result.stderr
+    failed_report = json.loads(result.stdout)
+    assert failed_report["control_status"] == "FAIL"
+    assert failed_report["rundown_control_keys_recovered"] == 1
+    assert failed_report["rundown_control_key_invalidations"]["protected"]["event-10:FileKey"] == 1
+    assert protected_path not in result.stdout and outside_path not in result.stdout
 
 
 def standalone_capture(tmp_path, evidence, **kwargs):

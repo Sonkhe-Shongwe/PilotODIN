@@ -553,7 +553,7 @@ def etw_events(path, capture_bounds, expected_digest):
 def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *,
                       details=None, process_bookends=None, thread_bookends=None, rundown=None,
                       synthetic_process_roles=None, synthetic_process_births=None,
-                      rundown_recovered_keys=None):
+                      rundown_recovered_keys=None, rundown_invalidations=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -622,6 +622,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             details=details, process_bookends=process_bookends, thread_bookends=thread_bookends,
             rundown=rundown, rundown_guard_events=guard_events,
             rundown_recovered_keys=rundown_recovered_keys,
+            rundown_invalidations=rundown_invalidations,
             initial_process_births=synthetic_process_births,
         )
     if unresolved:
@@ -981,6 +982,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
 
     synthetic_birth = utc_ticks(start) - 1
     recovered_keys = set()
+    invalidations = {}
     permitted = {"preopened-control": [ntpath.dirname(protected_root)]}
     counts, violations, _, unresolved = inspect_etw_files(
         manifest, path, start, end, {}, {}, protected, permitted, issues,
@@ -988,35 +990,55 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
         synthetic_process_roles={pid: "preopened-control"},
         synthetic_process_births={pid: synthetic_birth},
         rundown_recovered_keys=recovered_keys,
+        rundown_invalidations=invalidations,
     )
-    require(set(control_keys.values()) <= recovered_keys,
-            "strict reducer did not use the rundown mapping for both pre-opened controls")
+    recovered_control_keys = {label for label, key in control_keys.items() if key in recovered_keys}
     unresolved_controls = {key: value for key, value in unresolved.items()
                            if key.startswith("preopened-control:")}
     unrelated_unresolved = {key: value for key, value in unresolved.items()
                             if not key.startswith("preopened-control:")}
     expected_violations = {"protected:preopened-control:write": 1}
-    require(violations == expected_violations,
-            "strict reducer did not isolate exactly the protected pre-opened write")
-    require(not unresolved_controls,
-            "strict reducer left a pre-opened control mutation unresolved")
-    require(counts.get("preopened-control:write") == 2,
-            "strict reducer did not correlate both pre-opened writes")
-    require(not (set(issues) - {"etw-mutation-coverage-unresolved"}),
-            "ETW capture has loss or invalid metadata")
+    non_mutation_issues = set(issues) - {"etw-mutation-coverage-unresolved"}
+    control_failures = []
+    if recovered_control_keys != {"protected", "outside"}:
+        control_failures.append("strict-rundown-key-not-recovered")
+    if unresolved_controls:
+        control_failures.append("preopened-control-unresolved")
+    if violations != expected_violations:
+        control_failures.append("protected-outside-classification-mismatch")
+    if counts.get("preopened-control:write") != 2:
+        control_failures.append("preopened-write-count-mismatch")
+    if non_mutation_issues:
+        control_failures.append("etw-capture-loss-or-invalid-metadata")
+    control_invalidations = {
+        label: dict(invalidations.get(key, {}))
+        for label, key in control_keys.items()
+    }
+    strict_coverage = "BLOCKED" if issues or violations or unresolved else "UNEXPECTEDLY_CLEAN"
 
     return {
         "scope": "strict ETW reducer integration with generated pre-opened handles",
-        "control_status": "PASS",
-        "strict_coverage": "BLOCKED",
+        "control_status": "PASS" if not control_failures else "FAIL",
+        "control_failures": control_failures,
+        "strict_coverage": strict_coverage,
         "coverage_issues": sorted(issues),
         "file_events": dict(counts),
         "file_violations": dict(violations),
         "unresolved_controls": unresolved_controls,
         "unrelated_unresolved_mutations": unrelated_unresolved,
-        "rundown_control_keys_recovered": len(control_keys),
-        "protected_control_classification": "PROTECTED_WRITE_DETECTED",
-        "outside_control_classification": "OUTSIDE_PROTECTED_ROOTS",
+        "rundown_control_keys_recovered": len(recovered_control_keys),
+        "rundown_control_key_invalidations": control_invalidations,
+        "protected_control_classification": (
+            "PROTECTED_WRITE_DETECTED"
+            if violations.get("protected:preopened-control:write") == 1
+            else "NOT_CONFIRMED"
+        ),
+        "outside_control_classification": (
+            "OUTSIDE_PROTECTED_ROOTS"
+            if "outside" in recovered_control_keys and
+            violations.get("protected:preopened-control:write") == 1
+            else "NOT_CONFIRMED"
+        ),
         "targets": target_report["targets"],
         "native_n12_accepted": False,
     }
