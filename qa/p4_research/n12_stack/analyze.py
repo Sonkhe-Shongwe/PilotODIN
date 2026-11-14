@@ -8,8 +8,8 @@ from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "p4_native"))
 from n12_etw_correlate import (
-    canonical_file_path, number, preopened_report, successful_completion,
-    timing_comparison_identity,
+    canonical_file_path, name_transition_key, number, preopened_report, successful_completion,
+    timing_comparison_identity, write_paging_flag,
 )
 if __package__:
     from .capture import STAGGERED_PAYLOADS, WRITE_GAP_SECONDS
@@ -290,7 +290,8 @@ def staggered_writes(capture, experiment, events, by_irp, names, devices, occupi
         if identity is not None:
             occupied.add(identity)
         result[label] = {"identity": identity, "writes": verified if identity is not None else [],
-                         "verified_write_count": len(verified)}
+                         "verified_write_count": len(verified),
+                         "same_file_distinct_handles": file.get("same_file_distinct_handles") is True}
     return result
 
 
@@ -310,6 +311,74 @@ def range_evidence(offset, size, ticks, writes, paging):
                              "ms_from_write_return": round(lag / 10_000, 3)})
     return {**result, "range_status": "overlap" if overlaps else "disjoint", "overlaps": overlaps,
             "offset": offset, "size": size}
+
+
+def staggered_candidates(events, companion_irps, rundown_names, event_names, open_names, expected, identity,
+                         writer, end_ticks, phase):
+    """Count weaker candidates without admitting them to the stack or range join."""
+    counts = Counter()
+    exact = []
+    for row in events:
+        if row["lifecycle"] or row["id"] not in (16, 17):
+            continue
+        data = row["data"]
+        if row["id"] == 17 and number(data.get("InfoClass")) != 20:
+            continue
+        key, obj = (number(data.get(field)) for field in ("FileKey", "FileObject"))
+        key_matches = key == identity[0]
+        object_matches = obj == identity[1]
+        if key_matches and object_matches:
+            relation = "exact-pair"
+        elif key_matches:
+            relation = "key-only"
+        elif object_matches:
+            relation = "object-only"
+        elif expected is not None and rundown_names.get(key) == {expected}:
+            relation = "rundown-name-only"
+        elif expected is not None and expected in event_names.get(key, ()):
+            relation = "trace-name-candidate-only"
+        elif expected is not None and expected in open_names.get(obj, ()):
+            relation = "open-path-candidate-only"
+        else:
+            continue
+        operation = "write" if row["id"] == 16 else "resize"
+        header = {4: "system", writer: "fixture-writer", 0: "zero", 0xFFFFFFFF: "sentinel"}.get(
+            row["pid"], "other",
+        )
+        irp = number(data.get("Irp"))
+        finished = successful_completion(companion_irps.get(irp, ()), row, end_ticks + 1)
+        completion = "success" if finished is not None else "unverified"
+        paging = write_paging_flag(data) if operation == "write" else "not-applicable"
+        counts[f"{operation}:{phase(row['ticks'])}:{relation}:{header}:{completion}:{paging}"] += 1
+        if relation == "exact-pair" and header == "system" and finished is not None:
+            exact.append((row, finished))
+    return exact, dict(counts)
+
+
+def classic_candidates(requests, item, opcode, identity, name_agrees):
+    """Return the original exact candidates and fixed-label rejection counts."""
+    data = item["data"]
+    irp = number(data.get("Irp"))
+    issuing = number(data.get("IssuingThreadId", data.get("ThreadId")))
+    counts = Counter()
+    candidates = []
+    for row in requests:
+        if row.irp != irp or row.opcode != opcode:
+            continue
+        if not name_agrees:
+            counts["classic-name-unverified"] += 1
+        elif (row.key, row.obj) != identity:
+            counts["classic-file-identity-mismatch"] += 1
+        elif row.issuing != issuing or row.pid not in (4, 0xFFFFFFFF):
+            counts["classic-process-or-thread-mismatch"] += 1
+        elif (opcode == 68 and (row.flags != number(data.get("IOFlags"))
+                                or row.detail != number(data.get("IOSize"))
+                                or row.offset != number(data.get("ByteOffset")))
+              or opcode == 69 and row.detail != 20):
+            counts["classic-operation-fields-mismatch"] += 1
+        else:
+            candidates.append(row)
+    return candidates, counts
 
 
 def report(root, known, decoder, comparisons, symbol_targets):
@@ -371,7 +440,19 @@ def report(root, known, decoder, comparisons, symbol_targets):
     comparison = comparison_identities(capture, comparisons, events, devices, rundown_names,
                                        primary, companion_irps)
     staggered = {}
+    event_names = defaultdict(set)
+    open_names = defaultdict(set)
     if "staggered" in comparisons:
+        for row in events:
+            data = row["data"]
+            if row["lifecycle"] or not data.get("FileName"):
+                continue
+            if row["id"] == 10:
+                key = name_transition_key(10, data)
+                if key:
+                    event_names[key].add(canonical_file_path(data["FileName"], devices))
+            elif row["id"] == 12 and (obj := number(data.get("FileObject"))):
+                open_names[obj].add(canonical_file_path(data["FileName"], devices))
         occupied = set(primary.values()) | {value["identity"] for value in comparison.values()
                                             if value["identity"] is not None}
         staggered = staggered_writes(capture, comparisons["staggered"], events,
@@ -391,14 +472,17 @@ def report(root, known, decoder, comparisons, symbol_targets):
             return "during-wpr-stop"
         return "after-wpr-stop"
 
+    def completed_companion(row):
+        irp = number(row["data"].get("Irp"))
+        return successful_completion(companion_irps.get(irp, ()), row, capture["end_ticks"] + 1)
+
     def matches(row, opcode, pid, issuing, identity):
         data = row["data"]
         return (row["pid"] == pid and number(data.get("IssuingThreadId", data.get("ThreadId"))) == issuing
                 and row["id"] == {68: 16, 69: 17, 73: 21}[opcode]
                 and (opcode != 69 or number(data.get("InfoClass")) == 20)
                 and (number(data.get("FileKey")), number(data.get("FileObject"))) == identity
-                and successful_completion(companion_irps[number(data.get("Irp"))], row, capture["end_ticks"] + 1)
-                is not None)
+                and completed_companion(row) is not None)
 
     def assess(row, pid, issuing, symbol_frames=None):
         result = {"classic_success": bool(completed(row))}
@@ -449,36 +533,44 @@ def report(root, known, decoder, comparisons, symbol_targets):
         if label == "flushed":
             result["explicit_flush"] = bool(name_agrees and evidence["explicit_flush"])
         if identity is not None:
-            observed = [row for row in events if not row["lifecycle"] and row["pid"] == 4
-                        and row["id"] in (16, 17)
-                        and (row["id"] != 17 or number(row["data"].get("InfoClass")) == 20)
-                        and (number(row["data"].get("FileKey")), number(row["data"].get("FileObject"))) == identity]
-            for item in observed:
+            join_counts = Counter()
+            if label in staggered:
+                observed, counts = staggered_candidates(
+                    events, companion_irps, rundown_names, event_names, open_names, expected, identity,
+                    comparisons["staggered"]["pid"], capture["end_ticks"], phase,
+                )
+                result["companion_candidate_counts"] = counts
+            else:
+                observed = [(row, completed_companion(row)) for row in events
+                            if not row["lifecycle"] and row["id"] in (16, 17) and row["pid"] == 4
+                            and (row["id"] != 17 or number(row["data"].get("InfoClass")) == 20)
+                            and (number(row["data"].get("FileKey")),
+                                 number(row["data"].get("FileObject"))) == identity]
+            for item, completed_ticks in observed:
                 data = item["data"]
                 irp = number(data.get("Irp"))
                 issuing = number(data.get("IssuingThreadId", data.get("ThreadId")))
                 operation, opcode = ("write", 68) if item["id"] == 16 else ("resize", 69)
-                completed_ticks = successful_completion(companion_irps[irp], item, capture["end_ticks"] + 1)
                 if completed_ticks is None:
                     continue
                 result["companion_successful"][operation] += 1
-                candidates = [row for row in requests
-                              if name_agrees and row.irp == irp and row.opcode == opcode
-                              and (row.key, row.obj) == identity and row.issuing == issuing
-                              and row.pid in (4, 0xFFFFFFFF)
-                              and (opcode != 68 or (
-                                  row.flags == number(data.get("IOFlags"))
-                                  and row.detail == number(data.get("IOSize"))
-                                  and row.offset == number(data.get("ByteOffset"))))
-                              and (opcode != 69 or row.detail == 20)]
+                candidates, rejected = classic_candidates(requests, item, opcode, identity, name_agrees)
+                join_counts.update({f"{operation}:{reason}": count for reason, count in rejected.items()})
                 matching = [other for other in companion_irps[irp]
                             if matches(other, opcode, 4, issuing, identity)]
                 if len(candidates) != 1 or len(matching) != 1:
                     result["unmatched_companion_operations"] += 1
+                    if len(candidates) != 1:
+                        status = "classic-match-missing" if not candidates else "classic-match-ambiguous"
+                        join_counts[f"{operation}:{status}"] += 1
+                    if len(matching) != 1:
+                        status = "companion-match-missing" if not matching else "companion-match-ambiguous"
+                        join_counts[f"{operation}:{status}"] += 1
                     continue
                 row = candidates[0]
                 symbol_frames = []
                 outcome = assess(row, 4, issuing, symbol_frames)
+                join_counts[f"{operation}:{outcome['stack_status']}"] += 1
                 request_phase = phase(item["ticks"])
                 completion_phase = phase(completed_ticks)
                 outcome.update(request_phase=request_phase, completion_phase=completion_phase)
@@ -510,6 +602,8 @@ def report(root, known, decoder, comparisons, symbol_targets):
                         target["comparison_event"] = outcome["comparison_event"]
                     symbol_targets.append(target)
                 result[operation].append(outcome)
+            if label in staggered:
+                result["stack_join_counts"] = dict(join_counts)
         systems[label] = result
 
     file_roles = {identity: label for label, identity in primary.items()}

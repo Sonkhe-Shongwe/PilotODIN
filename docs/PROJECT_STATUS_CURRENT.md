@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 trace match diagnostics prepared
+
+The staggered-write harness now reports where candidate requests fail to match and checks two handles against the same Windows file identity. Local tests passed, and hosted Windows verification is pending. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Scope and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-trace-match-diagnostics-prepared).
+
 ## 14 November 2026 | N12 staggered-write Windows result
 
 The [hosted run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43616846397) verified all four deliberate fixture writes and passed the original strict controls. The reducer located two System paging writes and two EOF resizes on the protected staggered file. The exact stack join did not match those requests, leaving the range comparison unverified. **N12 PARTIAL, strict coverage BLOCKED, P4 ACTIVE at 65/100.** [Evidence and next step](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-staggered-write-windows-result).

@@ -52,16 +52,19 @@ def verify(fixture, experiment, names, rows, occupied=None):
 
 def test_fixture_staggers_writes_and_verifies_distinct_payloads(tmp_path, monkeypatch, capsys):
     (tmp_path / "synthetic-protected").mkdir()
-    pauses, checked = [], []
+    pauses, checked, live_pairs = [], [], []
     monkeypatch.setattr(capture.time, "sleep", pauses.append)
     monkeypatch.setattr(capture.probe, "utc_ticks", iter(range(100, 108)).__next__)
     monkeypatch.setattr(capture.probe, "verify_handle_path", lambda stream, path: checked.append(path))
+    monkeypatch.setattr(capture, "verify_same_file", lambda writer, reader: live_pairs.append(
+        writer.fileno() != reader.fileno() and writer.name == reader.name))
     monkeypatch.setattr(capture.sys, "stdin", io.TextIOWrapper(io.BytesIO()))
     capture.staggered_comparison(tmp_path)
     report = json.loads(capsys.readouterr().out)
     assert pauses == [5]
-    assert len(checked) == 2
+    assert len(checked) == 4 and live_pairs == [True, True]
     for record, first_tick in zip(report["files"].values(), (100, 102)):
+        assert record["same_file_distinct_handles"] is True
         first, second = record["writes"]
         assert (first["start"], second["start"]) == (first_tick, first_tick + 4)
         path = next(path for path in checked if str(path) == record["path"])
@@ -69,6 +72,72 @@ def test_fixture_staggers_writes_and_verifies_distinct_payloads(tmp_path, monkey
         assert content[:first["size"]] == b"A" * first["size"]
         assert content[first["size"]:second["offset"]] == bytes(second["offset"] - first["size"])
         assert content[second["offset"]:] == b"B" * second["size"]
+
+
+@pytest.mark.parametrize("changed", ["volume", "file-id"])
+def test_handle_witness_rejects_different_volume_or_file_id(monkeypatch, changed):
+    first, second = object(), object()
+    same = (27, bytes(range(16)))
+    other = (28, same[1]) if changed == "volume" else (27, b"B" * 16)
+    monkeypatch.setattr(capture, "windows_file_identity", lambda handle: same if handle is first else other)
+    with pytest.raises(RuntimeError, match="different files"):
+        capture.verify_same_file(first, second)
+
+
+def test_companion_candidate_counts_expose_failed_join_without_certifying_partial_matches():
+    rows = []
+    by_irp = defaultdict(list)
+    for i, (key, obj, pid, status, event_id, info) in enumerate((
+        (30, 130, 4, 0, 16, None),
+        (30, 901, 4, 0, 16, None),
+        (902, 130, 4, 0, 16, None),
+        (903, 904, 4, 0, 17, 20),
+        (30, 130, 4294967295, 0, 16, None),
+        (30, 130, 21, 0, 16, None),
+        (30, 130, 4, 1, 16, None),
+        (30, 130, 4, 0, 17, 19),
+        (909, 910, 4, 0, 16, None),
+        (911, 912, 4, 0, 16, None),
+        (913, 914, 4, 0, 16, None),
+    ), 1):
+        request = {"ticks": i * 10, "id": event_id, "pid": pid, "lifecycle": False,
+                   "data": {"Irp": i, "FileKey": key, "FileObject": obj, "InfoClass": info, "IOFlags": 2}}
+        completion = {"ticks": i * 10 + 1, "id": 24, "pid": 0, "lifecycle": False,
+                      "data": {"Irp": i, "Status": status}}
+        rows.extend([request, completion])
+        by_irp[i] = [request, completion]
+    path = PROTECTED.casefold() + r"\staggered.bin"
+    exact, counts = analyze.staggered_candidates(
+        rows, by_irp, {903: {path}}, {909: {path, "unknown"}}, {914: {path}},
+        path, (30, 130), 21, 200, lambda _: "before-stop",
+    )
+    assert exact == [(rows[0], 11)]
+    assert counts == {f"{operation}:before-stop:{relation}:{header}:{outcome}:{paging}": 1
+                      for operation, relation, header, outcome, paging in (
+                          ("write", "exact-pair", "system", "success", "set"),
+                          ("write", "key-only", "system", "success", "set"),
+                          ("write", "object-only", "system", "success", "set"),
+                          ("resize", "rundown-name-only", "system", "success", "not-applicable"),
+                          ("write", "exact-pair", "sentinel", "success", "set"),
+                          ("write", "exact-pair", "fixture-writer", "success", "set"),
+                          ("write", "exact-pair", "system", "unverified", "set"),
+                          ("write", "trace-name-candidate-only", "system", "success", "set"),
+                          ("write", "open-path-candidate-only", "system", "success", "set"),
+                      )}
+
+
+def test_classic_candidates_report_rejection_by_stage():
+    original = analyze.Request(2, 68, 4, 22, 22, 10, 30, 130, 4096, 2, 0)
+    item = {"data": {"Irp": 10, "IssuingThreadId": 22, "IOFlags": 2, "IOSize": 4096, "ByteOffset": 0}}
+    candidates, counts = analyze.classic_candidates([
+        original, original._replace(obj=999), original._replace(issuing=55),
+        original._replace(offset=7), original._replace(irp=11),
+    ], item, 68, (30, 130), True)
+    assert candidates == [original]
+    assert counts == {"classic-file-identity-mismatch": 1, "classic-process-or-thread-mismatch": 1,
+                      "classic-operation-fields-mismatch": 1}
+    assert analyze.classic_candidates([original], item, 68, (30, 130), False) == (
+        [], {"classic-name-unverified": 1})
 
 
 def test_cli_refuses_staggered_writes_outside_the_hosted_runner(tmp_path):

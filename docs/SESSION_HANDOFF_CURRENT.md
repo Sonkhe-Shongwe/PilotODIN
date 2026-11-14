@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | N12 trace match diagnostics prepared
+
+- The [staggered-write analyser](../qa/p4_research/n12_stack/analyze.py) now reports redacted counts for exact-pair, key-only, object-only and name/open-path candidates by operation, recorder phase, process-header category, completion and paging flag. Exact candidates also report where classic ETW or StackWalk matching stops. Partial candidates do not feed byte-range attribution. The strict reducer is untouched.
+- The generated-file helper opens a second read-only handle after both staggered writes. It checks that both live handles have the same Windows volume serial and 128-bit file ID, retaining them through rundown. The result reports only whether the check passed. It does not associate any unmatched System operation with either handle.
+- Local verification passed 159 tests and Python compilation. The Windows file-ID call and trace diagnostics await a separately approved hosted capture. The next capture should explain the mismatch or leave byte-range attribution unverified with a specific reason. Then prioritise the full PilotODIN Windows journey and preservation evidence. **N12 PARTIAL / strict coverage BLOCKED / P4 ACTIVE at 65/100.**
+
 ## 14 November 2026 | N12 staggered-write Windows result
 
 - The single approved [hosted Windows job #132513672415](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43616846397/job/132513672415) passed on attempt 1. Workflow head `db68a483577b1464a825d63e66523a88ba0eba62` checked out capture source `45380b6da3239cef01385d1072fc46deebef4573`. The native decoder recovered 395/395 rundown names, no loss or decoding errors were reported, and the known application write and EOF resize calibrated at 42 and 41 frames. Both staggered files had confirmed identities and two independently verified deliberate writes each. The original strict fixture passed its two-write control assertions.

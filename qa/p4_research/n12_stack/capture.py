@@ -1,5 +1,6 @@
 """Run the existing strict fixture with an extra, known write and EOF resize."""
 import json
+import ctypes
 import os
 import subprocess
 import sys
@@ -60,6 +61,31 @@ def flushed_comparison(path):
         sys.stdin.buffer.read(1)
 
 
+def windows_file_identity(stream):
+    import msvcrt
+    from ctypes import wintypes
+
+    class FileIdInfo(ctypes.Structure):
+        _fields_ = [("volume_serial", ctypes.c_uint64), ("file_id", ctypes.c_ubyte * 16)]
+
+    info = FileIdInfo()
+    query = ctypes.WinDLL("kernel32", use_last_error=True).GetFileInformationByHandleEx
+    query.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.POINTER(FileIdInfo), wintypes.DWORD)
+    query.restype = wintypes.BOOL
+    file_id_info_class = 18
+    if not query(msvcrt.get_osfhandle(stream.fileno()), file_id_info_class, ctypes.byref(info), ctypes.sizeof(info)):
+        raise RuntimeError("Windows did not provide the generated file identity.")
+    file_id = bytes(info.file_id)
+    if not any(file_id):
+        raise RuntimeError("Windows returned an empty generated file identifier.")
+    return info.volume_serial, file_id
+
+
+def verify_same_file(writer, reader):
+    if windows_file_identity(writer) != windows_file_identity(reader):
+        raise RuntimeError("The two generated handles refer to different files.")
+
+
 def staggered_comparison(root):
     paths = {
         "staggered-protected": root / "synthetic-protected" / "staggered.bin",
@@ -81,6 +107,13 @@ def staggered_comparison(root):
                     raise RuntimeError("A staggered comparison write was incomplete.")
                 evidence[label]["writes"].append({"offset": offset, "size": len(payload),
                                                   "start": first, "end": probe.utc_ticks()})
+        for label, path in paths.items():
+            # Open the read-only witness after both deliberate writes. Keep the
+            # original handles unflushed and report only the comparison result.
+            reader = handles.enter_context(path.open("rb", buffering=0))
+            probe.verify_handle_path(reader, path)
+            verify_same_file(streams[label], reader)
+            evidence[label]["same_file_distinct_handles"] = True
         print(json.dumps({"pid": os.getpid(), "tid": get_native_id(), "files": evidence}), flush=True)
         # Keep the unflushed handles open through rundown.
         sys.stdin.buffer.read(1)
