@@ -719,7 +719,19 @@ def test_thread_bookends_exclude_reused_and_ambiguous_ids():
     assert trace.stable_thread_bookends(bookends, 20, {8}, {72}) == {}
 
 
-def test_system_control_timing_tracks_only_matching_successful_requests():
+@pytest.mark.parametrize(("fault", "identity_evidence"), [
+    (None, "completed-open-and-read"),
+    ("missing-read", "read-unverified"),
+    ("failed-open", "existing-file-open-completion-unverified"),
+    ("wrong-file-object", "read-unverified"),
+    ("object-reuse", "file-object-lifetime-changed"),
+    ("cleanup", "file-object-lifetime-changed"),
+    ("conflicting-key", "conflicting-file-key"),
+    ("name-delete", "possible-name-change"),
+    ("conflicting-name", "conflicting-or-unmapped-name"),
+    ("conflicting-rundown-name", "conflicting-rundown-name"),
+])
+def test_system_control_timing_tracks_only_matching_successful_requests(fault, identity_evidence):
     protected = r"C:\protected\private.bin"
     outside = r"C:\outside.bin"
     untouched = r"C:\protected\private-untouched.bin"
@@ -727,7 +739,9 @@ def test_system_control_timing_tracks_only_matching_successful_requests():
         "device": r"\Device\HarddiskVolume3", "protected_root": r"C:\protected",
         "start_ticks": 1, "end_ticks": 3_000_000,
         "rundown_start_ticks": 1_500_000, "rundown_stop_ticks": 2_500_000,
-        "preopened": {"pid": 7, "tid": 71, "untouched": untouched, "writes": {
+        "preopened": {"pid": 7, "tid": 71, "untouched": {
+            "path": untouched, "size": 22, "open_window": [10, 30], "read_window": [40, 60],
+        }, "writes": {
             "protected": {"path": protected, "size": 53, "start": 100, "end": 300,
                           "flush_window": [400_000, 500_000]},
             "outside": {"path": outside, "size": 79, "start": 150_000, "end": 250_000},
@@ -744,6 +758,11 @@ def test_system_control_timing_tracks_only_matching_successful_requests():
         emit(kind, ticks, pid, Irp=irp, FileKey=key, FileObject=obj, **data)
         emit(24, completed, Irp=irp, Status=status)
 
+    emit(12, 20, 7, Irp=11, FileObject=420, FileName=untouched, ThreadId=71)
+    emit(24, 25, Irp=11, Status=0xC0000022 if fault == "failed-open" else 0, ExtraInformation=1)
+    if fault != "missing-read":
+        request(15, 45, 50, 12, 42, 421 if fault == "wrong-file-object" else 420,
+                pid=7, IOSize=22, ByteOffset=0, IssuingThreadId=71)
     request(16, 150, 160, 1, 40, 400, pid=7, IOSize=53, ByteOffset=0, IssuingThreadId=71)
     request(16, 200_000, 200_001, 2, 41, 410, pid=7, IOSize=79, ByteOffset=0, IssuingThreadId=71)
     request(21, 400_000, 500_000, 3, 40, 400, pid=7, ThreadId=71)
@@ -755,6 +774,19 @@ def test_system_control_timing_tracks_only_matching_successful_requests():
     request(16, 1_500_000, 2_500_000, 9, 42, 420)
     request(17, 2_500_001, 2_500_002, 10, 41, 410, InfoClass=20)
     emit(24, 460_000, Irp=4, Status=0)  # Tied completion is ambiguous.
+
+    if fault == "object-reuse":
+        emit(12, 1_600_000, 8, FileObject=420, FileName=outside)
+    elif fault == "cleanup":
+        emit(13, 1_600_000, FileKey=42, FileObject=420)
+    elif fault == "conflicting-key":
+        emit(16, 1_600_000, FileKey=43, FileObject=420)
+    elif fault == "name-delete":
+        emit(11, 1_600_000, FileKey=42)
+    elif fault == "conflicting-name":
+        emit(10, 1_600_000, FileKey=42, FileName=outside)
+    elif fault == "conflicting-rundown-name":
+        rundown.append({"key": 42, "path": outside})
 
     result = preopened_report(capture, events, rundown)["control_write_timing"]
     assert result == {
@@ -769,18 +801,18 @@ def test_system_control_timing_tracks_only_matching_successful_requests():
             "system_requests_without_verified_success": 0,
         },
         "untouched": {
-            "identity": "rundown-file-key",
-            "system_successful_operations": {"write:during-wpr-stop:during-wpr-stop": 1},
+            "identity": "file-key-and-object" if fault is None else "unverified",
+            "identity_evidence": identity_evidence,
+            "system_successful_operations": {"write:during-wpr-stop:during-wpr-stop": 1}
+            if fault is None else {},
             "system_requests_without_verified_success": 0,
         },
     }
     assert "private" not in json.dumps(result)
 
-    emit(11, 1_600_000, FileKey=42)
-    assert preopened_report(capture, events, rundown)["control_write_timing"]["untouched"] == {
-        "identity": "unverified", "system_successful_operations": {},
-        "system_requests_without_verified_success": 0,
-    }
+    if fault is None:
+        without_comparison_name = [row for row in rundown if row["key"] != 42]
+        assert preopened_report(capture, events, without_comparison_name)["control_write_timing"] == result
 
 
 def test_preopened_control_requires_completion_and_does_not_infer_names():

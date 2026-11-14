@@ -196,6 +196,7 @@ def preopened_control(root, *, rundown=False, system_timing=False):
             controls[label] = (path, stream, b"x" * size)
         if not rundown:
             return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
+        open_comparison = None
         if system_timing:
             comparison = protected / "untouched.bin"
             comparison_payload = b"pre-capture comparison"
@@ -203,8 +204,21 @@ def preopened_control(root, *, rundown=False, system_timing=False):
                 if seed.write(comparison_payload) != len(comparison_payload):
                     raise RuntimeError("The pre-capture comparison write was incomplete.")
                 os.fsync(seed.fileno())
-            comparison_stream = stack.enter_context(comparison.open("r+b", buffering=0))
-            verify_handle_path(comparison_stream, comparison)
+            comparison_stream = None
+
+            def open_comparison():
+                nonlocal comparison_stream
+                first = utc_ticks()
+                comparison_stream = stack.enter_context(comparison.open("rb", buffering=0))
+                open_window = [first, utc_ticks()]
+                verify_handle_path(comparison_stream, comparison)
+                first = utc_ticks()
+                payload = comparison_stream.read(len(comparison_payload))
+                read_window = [first, utc_ticks()]
+                if payload != comparison_payload:
+                    raise RuntimeError("The comparison payload was incorrect at capture start.")
+                return {"path": str(comparison), "size": len(payload),
+                        "open_window": open_window, "read_window": read_window}
         # Keep the control handles open through WPR's stop-time rundown.
         wpr = Path(os.environ["SystemRoot"]) / "System32" / "wpr.exe"
         instance = ["-instancename", f"PilotODIN-{uuid4().hex}"]
@@ -227,11 +241,11 @@ def preopened_control(root, *, rundown=False, system_timing=False):
         try:
             capture = capture_fixture(root, calibration_only=True, thread_context=True,
                                       controls=controls, before_stop=stop_wpr,
-                                      system_timing=system_timing)
-            if system_timing:
+                                      open_comparison=open_comparison)
+            if comparison_stream is not None:
+                comparison_stream.seek(0)
                 if comparison_stream.read() != comparison_payload:
                     raise RuntimeError("The untouched comparison payload changed.")
-                capture["preopened"]["untouched"] = str(comparison)
             return capture
         finally:
             if not stopped:
@@ -239,7 +253,7 @@ def preopened_control(root, *, rundown=False, system_timing=False):
 
 
 def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None,
-                    system_timing=False):
+                    open_comparison=None):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -251,7 +265,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
     marker = protected / "transient.bin"
     providers = root / "providers.txt"
     providers.write_text(
-        "Microsoft-Windows-Kernel-File 0x1ef0 4\n"
+        f"Microsoft-Windows-Kernel-File {'0x1ff0' if open_comparison is not None else '0x1ef0'} 4\n"
         f"Microsoft-Windows-Kernel-Process {'0x30' if thread_context else '0x10'} 4\n",
         encoding="ascii",
     )
@@ -269,6 +283,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
     lifetime_control = None
     basic_info_control = None
     try:
+        comparison = open_comparison() if open_comparison is not None else None
         control_writes = {}
         for label, (path, stream, payload) in (controls or {}).items():
             first = utc_ticks()
@@ -276,7 +291,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
                 raise RuntimeError("The generated pre-opened write was incomplete.")
             control_writes[label] = {"path": str(path), "size": len(payload),
                                      "start": first, "end": utc_ticks()}
-        if system_timing:
+        if comparison is not None:
             # Give immediate writes a separate observation interval before flushing.
             time.sleep(0.1)
             first = utc_ticks()
@@ -364,6 +379,8 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             "start_ticks": capture_start, "end_ticks": utc_ticks() // 10 * 10}
     if controls:
         capture["preopened"] = {"pid": os.getpid(), "tid": get_native_id(), "writes": control_writes}
+        if comparison is not None:
+            capture["preopened"]["untouched"] = comparison
     if rundown_stop_ticks is not None:
         capture["rundown_start_ticks"] = rundown_start_ticks
         capture["rundown_stop_ticks"] = rundown_stop_ticks

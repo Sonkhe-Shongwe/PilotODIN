@@ -749,20 +749,11 @@ def control_write_timing(capture, events, devices, rundown_names, identities, ou
         return successful_completion(by_irp[number(event["data"].get("Irp"))],
                                      event, capture_end + 1)
 
-    untouched_path = canonical_file_path(control["untouched"], devices)
-    candidates = [key for key, names in rundown_names.items() if untouched_path in names]
-    if (untouched_path is not None and len(candidates) == 1 and candidates[0] > 0
-            and rundown_names[candidates[0]] == {untouched_path}
-            and all(candidates[0] != key for key, _ in identities.values())):
-        key = candidates[0]
-        if not any(
-            not event["lifecycle"] and name_transition_key(event["id"], event["data"]) == key
-            and (event["id"] == 11 or (event["id"] == 10 and canonical_file_path(
-                event["data"].get("FileName") or "", devices,
-            ) != untouched_path))
-            for event in events
-        ):
-            identities["untouched"] = (key, None)
+    comparison_identity, comparison_evidence = timing_comparison_identity(
+        capture, events, devices, rundown_names, identities, by_irp,
+    )
+    if comparison_identity is not None:
+        identities["untouched"] = comparison_identity
     results = {}
     for label in ("protected", "outside", "untouched"):
         key, file_object = identities.get(label, (None, None))
@@ -779,7 +770,7 @@ def control_write_timing(capture, events, devices, rundown_names, identities, ou
                 kind, data, ticks = event["id"], event["data"], event["ticks"]
                 if (event["lifecycle"] or kind not in {16, 17, 21}
                         or number(data.get("FileKey")) != key
-                        or (file_object is not None and number(data.get("FileObject")) != file_object)):
+                        or number(data.get("FileObject")) != file_object):
                     continue
                 if kind == 21:
                     thread = number(data.get("IssuingThreadId", data.get("ThreadId")))
@@ -796,14 +787,79 @@ def control_write_timing(capture, events, devices, rundown_names, identities, ou
                     continue
                 operation = "write" if kind == 16 else "resize"
                 observed[f"{operation}:{phase(ticks, label)}:{phase(completed, label)}"] += 1
-        result = {"identity": ("rundown-file-key" if label == "untouched" else "file-key-and-object")
-                  if established else "unverified",
+        result = {"identity": "file-key-and-object" if established else "unverified",
                   "system_successful_operations": dict(observed),
                   "system_requests_without_verified_success": unverified_completions}
         if label == "protected":
             result["explicit_flush_trace"] = "confirmed" if flushes == 1 else "unverified"
+        if label == "untouched":
+            result["identity_evidence"] = comparison_evidence
         results[label] = result
     return results
+
+
+def timing_comparison_identity(capture, events, devices, rundown_names, identities, by_irp):
+    control = capture["preopened"]
+    comparison = control["untouched"]
+    if not isinstance(comparison, dict):
+        return None, "in-trace-open-unavailable"
+    open_start, open_end = comparison["open_window"]
+    read_start, read_end = comparison["read_window"]
+    if not (capture["start_ticks"] <= open_start <= open_end <= read_start <= read_end
+            <= min(write["start"] for write in control["writes"].values())):
+        return None, "invalid-open-read-windows"
+
+    def resolve_path(value):
+        return canonical_file_path(value, devices)
+
+    def requests(kind, start, end):
+        return [
+            event for event in events if not event["lifecycle"] and event["id"] == kind
+            and event["pid"] == control["pid"] and start <= event["ticks"] <= end
+            and number(event["data"].get("IssuingThreadId", event["data"].get("ThreadId"))) == control["tid"]
+        ]
+
+    expected = resolve_path(comparison["path"])
+    opens = [event for event in requests(12, open_start, open_end)
+             if resolve_path(event["data"].get("FileName") or "") == expected]
+    if expected is None or len(opens) != 1:
+        return None, "open-unverified"
+    opened = opens[0]
+    open_irp = number(opened["data"].get("Irp"))
+    open_completed = successful_completion(by_irp[open_irp], opened, open_end + 1)
+    if open_completed is None or not any(
+        event["id"] == 24 and event["ticks"] == open_completed
+        and number(event["data"].get("ExtraInformation")) == 1 for event in by_irp[open_irp]
+    ):
+        return None, "existing-file-open-completion-unverified"
+    file_object = number(opened["data"].get("FileObject"))
+    reads = [event for event in requests(15, read_start, read_end)
+             if number(event["data"].get("FileObject")) == file_object
+             and number(event["data"].get("ByteOffset")) == 0
+             and number(event["data"].get("IOSize")) == comparison["size"]]
+    if not file_object or len(reads) != 1 or open_completed >= reads[0]["ticks"]:
+        return None, "read-unverified"
+    read = reads[0]
+    read_completed = successful_completion(by_irp[number(read["data"].get("Irp"))], read, read_end + 1)
+    key = number(read["data"].get("FileKey"))
+    if read_completed is None or not key or any(
+        key == other_key or file_object == other_object for other_key, other_object in identities.values()
+    ):
+        return None, "read-completion-or-file-identity-unverified"
+    if rundown_names.get(key, {expected}) != {expected}:
+        return None, "conflicting-rundown-name"
+    if any(
+        not event["lifecycle"] and opened["ticks"] <= event["ticks"] <= capture["end_ticks"]
+        and number(event["data"].get("FileObject")) == file_object
+        and number(event["data"].get("FileKey")) not in {None, 0, key}
+        for event in events
+    ):
+        return None, "conflicting-file-key"
+    reason, _ = write_object_path_conflict(
+        events, opened, open_completed, read, read_completed, expected, resolve_path,
+        observe_until=capture["end_ticks"],
+    )
+    return (None, reason) if reason else ((key, file_object), "completed-open-and-read")
 
 
 def check_write_object_path(events, opened, write, write_completed, expected, devices):
@@ -826,13 +882,14 @@ def check_write_object_path(events, opened, write, write_completed, expected, de
 
 
 def write_object_path_conflict(events, opened, open_completed, write, write_completed,
-                               expected, resolve_path, *, basic_info_completion=None):
+                               expected, resolve_path, *, basic_info_completion=None, observe_until=None):
     object_id = number(write["data"].get("FileObject"))
     key = number(write["data"].get("FileKey"))
     names = set()
+    observation_end = write_completed if observe_until is None else observe_until
     for event in events:
         ticks = event["ticks"]
-        if ticks > write_completed:
+        if ticks > observation_end:
             break
         if event.get("lifecycle") or event is opened:
             continue
