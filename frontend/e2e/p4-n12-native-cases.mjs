@@ -22,15 +22,25 @@ export async function approveCompactQuality(page) {
     await session.send('Emulation.setDeviceMetricsOverride', {
       width: 730, height: 540, deviceScaleFactor: 0, mobile: false,
     });
-    await approveQualityChange(page, async (dialog, approve) => {
-      await approve.scrollIntoViewIfNeeded({ timeout: 10000 });
-      await expect(approve).toBeInViewport({ ratio: 1 });
-      expect(await dialog.evaluate(element => {
-        const { left, right, top, bottom } = element.getBoundingClientRect();
-        return innerWidth === 730 && left >= 0 && right <= innerWidth && top >= 0 && bottom <= innerHeight;
-      })).toBe(true);
-    });
-    console.log('N12 compact Quality review and exact approval: PASS');
+    const navigation = page.getByRole('navigation', { name: 'Workspace navigation' });
+    const collapse = navigation.getByRole('button', { name: 'Collapse navigation sidebar' });
+    const wasExpanded = await collapse.isVisible();
+    if (wasExpanded) await collapse.click({ timeout: 10000 });
+    try {
+      await approveQualityChange(page, async (dialog, approve) => {
+        await approve.scrollIntoViewIfNeeded({ timeout: 10000 });
+        await expect(approve).toBeInViewport({ ratio: 1 });
+        expect(await dialog.evaluate(element => {
+          const { left, right, top, bottom } = element.getBoundingClientRect();
+          return innerWidth === 730 && left >= 0 && right <= innerWidth && top >= 0 && bottom <= innerHeight;
+        })).toBe(true);
+      });
+      console.log('N12 compact Quality review and exact approval: PASS');
+    } finally {
+      if (wasExpanded) {
+        await page.getByRole('button', { name: 'Expand navigation sidebar' }).click({ timeout: 10000 });
+      }
+    }
   } finally {
     await session.send('Emulation.clearDeviceMetricsOverride');
     await session.detach();
