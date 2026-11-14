@@ -1,0 +1,31 @@
+name: P4 N12 Staggered Write Comparison
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-n12-staggered-writes.yml
+
+permissions:
+  contents: read
+
+jobs:
+  staggered-writes:
+    if: >-
+      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): run one approved N12 staggered capture'
+    name: Compare generated staggered writes on hosted Windows
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout the approved capture source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 45380b6da3239cef01385d1072fc46deebef4573
+          persist-credentials: false
+
+      - name: Capture generated writes and compare paging ranges
+        shell: pwsh
+        env:
+          PILOTODIN_N12_STAGGERED_WRITES: '1'
+        run: ./qa/p4_research/n12_stack/Run.ps1
