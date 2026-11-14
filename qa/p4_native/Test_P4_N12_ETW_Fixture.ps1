@@ -276,6 +276,26 @@ if ($PreopenedControl) {
                 throw "Native rundown did not independently establish the $label control target."
             }
         }
+        $reducerOutput = @(python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-preopened-rundown $reducerManifest $manifestPath $eventsPath --rundown $rundownPath)
+        $reducerExit = $LASTEXITCODE
+        if ($reducerExit -ne 0) {
+            foreach ($line in $reducerOutput) { Write-Host $line }
+            throw 'The strict ETW reducer did not classify both pre-opened controls.'
+        }
+        $reducerText = ($reducerOutput -join [Environment]::NewLine).Trim()
+        try {
+            $reducerReport = $reducerText | ConvertFrom-Json -ErrorAction Stop
+        } catch {
+            throw 'The strict ETW reducer did not return a valid redacted report.'
+        }
+        Write-Host ('Strict reducer pre-opened rundown summary: ' + ($reducerReport | ConvertTo-Json -Compress))
+        if ($reducerReport.control_status -ne 'PASS' -or
+            $reducerReport.rundown_control_keys_recovered -ne 2 -or
+            $reducerReport.strict_coverage -ne 'BLOCKED' -or
+            $reducerReport.protected_control_classification -ne 'PROTECTED_WRITE_DETECTED' -or
+            $reducerReport.outside_control_classification -ne 'OUTSIDE_PROTECTED_ROOTS') {
+            throw 'The strict ETW reducer did not preserve the protected/outside control distinction.'
+        }
     }
     return
 }

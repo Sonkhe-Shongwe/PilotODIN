@@ -551,7 +551,9 @@ def etw_events(path, capture_bounds, expected_digest):
 
 
 def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *,
-                      details=None, process_bookends=None, thread_bookends=None, rundown=None):
+                      details=None, process_bookends=None, thread_bookends=None, rundown=None,
+                      synthetic_process_roles=None, synthetic_process_births=None,
+                      rundown_recovered_keys=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -568,6 +570,10 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
     tolerance = 100_000
 
     def classify_process(pid, birth, ticks):
+        synthetic_birth = (synthetic_process_births or {}).get(pid)
+        synthetic_role = (synthetic_process_roles or {}).get(pid)
+        if synthetic_role is not None and birth == synthetic_birth:
+            return synthetic_role, f"synthetic:{pid}"
         candidates = [process for process in lifetimes.get(pid, ()) if birth is not None and
                       abs(utc_ticks(process.start) - birth) <= tolerance and
                       (process.end is None or ticks <= utc_ticks(process.end) + tolerance)]
@@ -615,6 +621,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             any(inside(value, root) for root in protected), record, strict=True,
             details=details, process_bookends=process_bookends, thread_bookends=thread_bookends,
             rundown=rundown, rundown_guard_events=guard_events,
+            rundown_recovered_keys=rundown_recovered_keys,
+            initial_process_births=synthetic_process_births,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -907,6 +915,112 @@ def check_etw_preflight(manifest, fixture, path, *, bookends=None, rundown=None)
             **({"file_key_rundown_records": len(rundown)} if rundown is not None else {})}
 
 
+
+def check_etw_preopened_rundown(manifest, capture, path, rundown):
+    """Exercise strict reducer classification against the generated pre-opened controls."""
+    if __package__:
+        from .n12_etw_correlate import number, preopened_report
+    else:
+        from n12_etw_correlate import number, preopened_report
+
+    require(isinstance(capture, dict), "invalid pre-opened control capture")
+    control = capture.get("preopened")
+    require(isinstance(control, dict), "pre-opened control metadata is missing")
+    pid, tid = control.get("pid"), control.get("tid")
+    require(type(pid) is int and pid > 0 and type(tid) is int and tid > 0,
+            "invalid pre-opened control process or thread identity")
+    writes = control.get("writes")
+    require(isinstance(writes, dict) and {"protected", "outside"} <= set(writes),
+            "both pre-opened control writes are required")
+    require(isinstance(capture.get("device"), str) and capture["device"],
+            "pre-opened control volume identity is missing")
+    require(isinstance(capture.get("protected_root"), str),
+            "pre-opened control protected root is missing")
+    protected_root = windows_path(capture["protected_root"])
+    protected_values = manifest.get("protected_roots")
+    require(isinstance(protected_values, dict) and protected_values,
+            "strict reducer protected roots are missing")
+    protected = [windows_path(value) for value in protected_values.values()]
+    require(protected_root in protected,
+            "pre-opened control root does not match the reducer manifest")
+    require(all(isinstance(writes[label], dict) and isinstance(writes[label].get("path"), str)
+                for label in ("protected", "outside")),
+            "pre-opened control target paths are missing")
+    protected_path = windows_path(writes["protected"]["path"])
+    outside_path = windows_path(writes["outside"]["path"])
+    require(inside(protected_path, protected_root) and not inside(outside_path, protected_root),
+            "pre-opened control targets do not distinguish protected and outside paths")
+
+    start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
+    require(start < end, "ETW audit window is invalid")
+    issues = set()
+    with evidence_stage("ETW capture metadata"):
+        bounds, _ = etw_capture_contract(manifest, start, end, issues)
+    with evidence_stage("ETW event stream"):
+        event_records = list(etw_events(path, bounds, manifest["etw"]["events_sha256"]))
+    for event in event_records:
+        if not event["lifecycle"]:
+            continue
+        data = event["data"]
+        if event["id"] in (1, 2) and number(data.get("ProcessID")) == pid:
+            raise EvidenceValidationError("pre-opened control process has an in-capture lifecycle transition")
+        if event["id"] in (3, 4) and number(data.get("ThreadID")) == tid:
+            raise EvidenceValidationError("pre-opened control thread has an in-capture lifecycle transition")
+
+    control_keys = {}
+    target_report = preopened_report(capture, event_records, rundown, file_keys=control_keys)
+    for label in ("protected", "outside"):
+        target = target_report["targets"].get(label, {})
+        require(target.get("request_candidates") == 1 and target.get("completion") == "success"
+                and target.get("issuing_thread") == "matches"
+                and target.get("rundown_name") == "matches-target",
+                f"pre-opened {label} control lacks exact request, completion, thread or rundown evidence")
+    require(set(control_keys) == {"protected", "outside"} and
+            len(set(control_keys.values())) == 2,
+            "pre-opened control file keys are missing or ambiguous")
+
+    synthetic_birth = utc_ticks(start) - 1
+    recovered_keys = set()
+    permitted = {"preopened-control": [ntpath.dirname(protected_root)]}
+    counts, violations, _, unresolved = inspect_etw_files(
+        manifest, path, start, end, {}, {}, protected, permitted, issues,
+        rundown=rundown,
+        synthetic_process_roles={pid: "preopened-control"},
+        synthetic_process_births={pid: synthetic_birth},
+        rundown_recovered_keys=recovered_keys,
+    )
+    require(set(control_keys.values()) <= recovered_keys,
+            "strict reducer did not use the rundown mapping for both pre-opened controls")
+    unresolved_controls = {key: value for key, value in unresolved.items()
+                           if key.startswith("preopened-control:")}
+    unrelated_unresolved = {key: value for key, value in unresolved.items()
+                            if not key.startswith("preopened-control:")}
+    expected_violations = {"protected:preopened-control:write": 1}
+    require(violations == expected_violations,
+            "strict reducer did not isolate exactly the protected pre-opened write")
+    require(not unresolved_controls,
+            "strict reducer left a pre-opened control mutation unresolved")
+    require(counts.get("preopened-control:write") == 2,
+            "strict reducer did not correlate both pre-opened writes")
+    require(not (set(issues) - {"etw-mutation-coverage-unresolved"}),
+            "ETW capture has loss or invalid metadata")
+
+    return {
+        "scope": "strict ETW reducer integration with generated pre-opened handles",
+        "control_status": "PASS",
+        "strict_coverage": "BLOCKED",
+        "coverage_issues": sorted(issues),
+        "file_events": dict(counts),
+        "file_violations": dict(violations),
+        "unresolved_controls": unresolved_controls,
+        "unrelated_unresolved_mutations": unrelated_unresolved,
+        "rundown_control_keys_recovered": len(control_keys),
+        "protected_control_classification": "PROTECTED_WRITE_DETECTED",
+        "outside_control_classification": "OUTSIDE_PROTECTED_ROOTS",
+        "targets": target_report["targets"],
+        "native_n12_accepted": False,
+    }
+
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     subcommands = cli.add_subparsers(dest="mode", required=True)
@@ -922,6 +1036,11 @@ def main():
     etw_preflight.add_argument("--process-bookends", type=Path)
     etw_preflight.add_argument("--rundown", type=Path,
                                help="Native FileIO rundown JSONL, SHA-256 pinned in the ETW manifest.")
+    preopened_rundown = subcommands.add_parser("check-etw-preopened-rundown")
+    for argument in ("manifest", "capture", "etw_events"):
+        preopened_rundown.add_argument(argument, type=Path)
+    preopened_rundown.add_argument("--rundown", type=Path, required=True,
+                                   help="Native FileIO rundown JSONL, SHA-256 pinned in the ETW manifest.")
     for mode in ("check-calibration", "check-calibration-etw"):
         calibration = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "file_trace", "output"):
@@ -952,6 +1071,13 @@ def main():
             expected_issues = {"etw-mutation-coverage-unresolved"}
             ready = result["expected_fixture_operations_matched"] and not result["file_violations"]
             return 0 if ready and set(result["coverage_issues"]) <= expected_issues else 2
+        if args.mode == "check-etw-preopened-rundown":
+            manifest = read_json(args.manifest)
+            capture = read_json(args.capture)
+            rundown = read_rundown_file(args.rundown, manifest)
+            result = check_etw_preopened_rundown(manifest, capture, args.etw_events, rundown)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["control_status"] == "PASS" else 2
         if args.mode == "snapshot":
             manifest = read_json(local_disposable_path(args.manifest, runner_temp_only=True))
             require(manifest["disposable"] is True, "snapshot requires a disposable manifest")

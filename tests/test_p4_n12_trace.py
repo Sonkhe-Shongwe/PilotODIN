@@ -730,6 +730,117 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
         trace.audit(evidence.manifest, sysmon, etw_path, evidence.before, evidence.after, etw=True)
 
 
+def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_path):
+    start, end = instant(0), instant(20)
+    base_ticks = trace.utc_ticks(trace.utc_time(start))
+    protected_root = r"C:\QA\synthetic-protected"
+    protected_path = protected_root + r"\control.bin"
+    outside_path = r"C:\QA\outside.bin"
+    protected_ticks, outside_ticks = base_ticks + 20_000_000, base_ticks + 40_000_000
+    rows = []
+
+    def emit(event_id, pid, ticks, **data):
+        rows.append({"id": event_id, "pid": pid, "ticks": ticks,
+                     "lifecycle": False, "data": data})
+
+    emit(16, 10, protected_ticks, FileObject=100, Irp=1, FileKey="0x28",
+         IOSize=53, ByteOffset=0, IssuingThreadId=77)
+    emit(24, 0, protected_ticks + 1, Irp=1, Status=0)
+    emit(16, 10, outside_ticks, FileObject=101, Irp=2, FileKey="0x29",
+         IOSize=79, ByteOffset=0, IssuingThreadId=77)
+    emit(24, 0, outside_ticks + 1, Irp=2, Status=0)
+
+    events_path = tmp_path / "preopened-etw.jsonl"
+    rundown_path = tmp_path / "native-rundown.jsonl"
+    manifest_path = tmp_path / "preopened-manifest.json"
+    capture_path = tmp_path / "preopened-capture.json"
+    rundown_entries = [
+        {"key": "0x28", "path": r"\Device\HarddiskVolume3\QA\synthetic-protected\control.bin",
+         "decoder": "tdh+raw-schema"},
+        {"key": "0x29", "path": r"\Device\HarddiskVolume3\QA\outside.bin",
+         "decoder": "tdh+raw-schema"},
+    ]
+    rundown_payload = ("".join(json.dumps(entry) + "\n" for entry in rundown_entries)).encode()
+    rundown_path.write_bytes(rundown_payload)
+    capture = {
+        "device": r"\Device\HarddiskVolume3",
+        "protected_root": protected_root,
+        "preopened": {
+            "pid": 10, "tid": 77,
+            "writes": {
+                "protected": {"path": protected_path, "size": 53,
+                              "start": protected_ticks - 1_000, "end": protected_ticks + 1_000},
+                "outside": {"path": outside_path, "size": 79,
+                            "start": outside_ticks - 1_000, "end": outside_ticks + 1_000},
+            },
+        },
+    }
+    manifest = {
+        "start_utc": start, "end_utc": end,
+        "protected_roots": {"synthetic": protected_root},
+        "etw": {
+            "schema_version": 1, "start_utc": start, "end_utc": end,
+            "rundown_stop_utc": instant(19),
+            "events_sha256": "", "rundown_sha256": hashlib.sha256(rundown_payload).hexdigest(),
+            "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+            "counters": {"events_lost": 0, "log_buffers_lost": 0,
+                         "realtime_buffers_lost": 0, "buffers_written": 1},
+        },
+    }
+
+    def run():
+        payload = ("".join(json.dumps(row) + "\n" for row in rows)).encode()
+        events_path.write_bytes(payload)
+        manifest["etw"]["events_sha256"] = hashlib.sha256(payload).hexdigest()
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        capture_path.write_text(json.dumps(capture), encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, str(Path(trace.__file__)), "check-etw-preopened-rundown",
+             str(manifest_path), str(capture_path), str(events_path),
+             "--rundown", str(rundown_path)],
+            capture_output=True, text=True, check=False,
+        )
+
+    result = run()
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report["control_status"] == "PASS"
+    assert report["strict_coverage"] == "BLOCKED"  # the expected protected write remains a violation
+    assert report["protected_control_classification"] == "PROTECTED_WRITE_DETECTED"
+    assert report["outside_control_classification"] == "OUTSIDE_PROTECTED_ROOTS"
+    assert report["rundown_control_keys_recovered"] == 2
+    assert report["file_events"]["preopened-control:write"] == 2
+    assert report["file_violations"] == {"protected:preopened-control:write": 1}
+    assert report["unresolved_controls"] == {}
+    assert report["unrelated_unresolved_mutations"] == {}
+    assert all(target["completion"] == "success" and target["issuing_thread"] == "matches"
+               and target["rundown_name"] == "matches-target"
+               for target in report["targets"].values())
+    assert protected_path not in result.stdout and outside_path not in result.stdout
+
+    # A separate unresolved unsupported mutation remains a global strict blocker.
+    unrelated_ticks = base_ticks + 60_000_000
+    emit(17, 99, unrelated_ticks, FileObject=102, Irp=3, FileKey="0x2a", InfoClass=4)
+    emit(24, 0, unrelated_ticks + 1, Irp=3, Status=0)
+    result = run()
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report["control_status"] == "PASS"
+    assert report["strict_coverage"] == "BLOCKED"
+    assert "etw-mutation-coverage-unresolved" in report["coverage_issues"]
+    assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 1
+    assert report["unresolved_controls"] == {}
+
+    # A post-rundown name transition must invalidate the stop-time mapping.
+    late_transition_ticks = base_ticks + 195_000_000
+    emit(10, 99, late_transition_ticks, FileKey="0x28",
+         FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\control.bin")
+    result = run()
+    assert result.returncode == 2
+    assert "N12 BLOCKED:" in result.stderr
+    assert protected_path not in result.stderr and outside_path not in result.stderr
+
+
 def standalone_capture(tmp_path, evidence, **kwargs):
     sysmon, procmon = evidence.save(tmp_path, **kwargs)
     keys = ("schema_version", "disposable", "start_utc", "end_utc", "sysmon_first_record",

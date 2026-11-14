@@ -35,9 +35,10 @@ def canonical_file_path(value, devices):
 
 def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
                        strict=False, details=None, process_bookends=None, thread_bookends=None,
-                       rundown=None, rundown_guard_events=None):
+                       rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
+                       initial_process_births=None):
     """Keep file paths and identities private until the report callback reduces them."""
-    active = {}
+    active = dict(initial_process_births or {})
     thread_owners = {}
     opened, pending = {}, {}
     file_names = {}
@@ -214,6 +215,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 recovered = next(iter(names))
                 if recovered is not None:
                     source = recovered
+                    if rundown_recovered_keys is not None:
+                        rundown_recovered_keys.add(rundown_key)
                     if details is not None:
                         details[f"{actor}:event-{kind}:rundown-path-recovered"] += 1
         if strict and kind in {16, 18, 19, 23, 29}:
@@ -313,7 +316,7 @@ def correlate(capture, events):
             "protected_writes": protected_writes}
 
 
-def preopened_report(capture, events, rundown=None):
+def preopened_report(capture, events, rundown=None, *, file_keys=None):
     """Compare ETW path evidence to independently checked fixture handles."""
     control = capture["preopened"]
     devices = {capture["device"].casefold(): capture["protected_root"][:2].casefold()}
@@ -346,6 +349,8 @@ def preopened_report(capture, events, rundown=None):
         if number(data.get("IssuingThreadId", data.get("ThreadId"))) == control["tid"]:
             outcome["issuing_thread"] = "matches"
         irp, key = (number(data.get(field)) for field in ("Irp", "FileKey"))
+        if file_keys is not None and type(key) is int and key > 0:
+            file_keys[label] = key
         expected = canonical_file_path(write["path"], devices)
         if expected is None:
             raise ValueError("Invalid generated control path.")

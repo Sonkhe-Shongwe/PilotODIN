@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   native-rundown:
-    name: Native ProcessTrace rundown and path correlation
+    name: Native ProcessTrace rundown and strict reducer integration
     runs-on: windows-latest
     timeout-minutes: 25
     env:
