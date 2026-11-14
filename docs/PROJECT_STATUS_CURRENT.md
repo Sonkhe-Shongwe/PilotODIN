@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | N12 write path evidence
+
+Two hosted Windows fixtures classified the available request-time evidence for 120 and 69 successful writes with unresolved paths. Invalidated names accounted for 107 and 44 respectively. Both fixtures passed the pre-opened controls and retained unrelated protected-root write and resize violations. Global strict coverage remains **BLOCKED** and N12 **PARTIAL**. [Exact-source evidence and next action](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-successful-writes-with-unresolved-paths)
+
 ## 14 November 2026 | N12 hosted compression diagnosis
 
 Two exact-source Windows fixture runs reconciled all 859 observed `FSCTL_SET_COMPRESSION` requests. Every issuing thread resolved to Windows Performance Recorder (`wpr.exe`), and every request completed successfully outside protected roots. The protected and outside controls passed in both runs. Strict coverage remains **BLOCKED** by other mutations, including 48 and 41 write path gaps respectively. N12 remains **PARTIAL** pending full native capture and attribution. [Evidence and next investigation](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-hosted-compression-requests-reconciled)

@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. P4-83 corrects Event 23 `FSCTL_READ_USN_JOURNAL (0x000900BB)` as a read-only query. Exact-source N12 and P4 hosted workflows pass, including both pre-opened controls through the strict reducer, but global strict coverage remains blocked by unrelated protected-root writes/resizes and unresolved mutation families. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
+**Current navigation, 14 November 2026.** P4 Target Intelligence remains active. R04 and R05 have scoped hosted Windows passes. The latest N12 checkpoint covers successful Event 16 writes with unresolved paths. See the [current handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-successful-writes-with-unresolved-paths) for exact-source evidence. R03 physical offline testing, R06 disposition and owner signoff remain open. P1–P3 have bounded development closure records. Gate C remains unverified before real-world prediction use. P5 is unauthorised and P8 is uncertified.
 
 ## Current authoritative route, in reading order
 
