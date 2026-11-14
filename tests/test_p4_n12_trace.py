@@ -846,6 +846,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
          FileName=r"\Device\HarddiskVolume3\QA\synthetic-protected\compressed.bin")
     emit(23, 99, unrelated_ticks + 7, FileObject=106, Irp=7, FileKey="0x2e", InfoClass=0x900A8)
     emit(24, 0, unrelated_ticks + 8, Irp=7, Status=0)
+    emit(23, 99, unrelated_ticks + 9, FileObject=107, Irp=8, FileKey="0x2f", InfoClass=0x9009C)
+    emit(24, 0, unrelated_ticks + 10, Irp=8, Status=0)
     result = run()
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
@@ -862,6 +864,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["unrelated_file_violations"]["protected:other:write"] == 1
     assert report["unrelated_file_violations"]["protected:other:compression"] == 1
     assert not any("fsctl-0x000900A8" in key for key in report["unrelated_unresolved_event_types"])
+    assert not any("fsctl-0x0009009C" in key for key in report["unrelated_unresolved_event_types"])
     assert report["unresolved_controls"] == {}
 
     # A conflicting NameCreate cannot override the digest-pinned rundown.
