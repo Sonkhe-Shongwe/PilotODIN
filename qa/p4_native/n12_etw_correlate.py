@@ -97,6 +97,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             normalized = raw_name.replace("/", "\\").casefold()
                             if normalized.startswith("\\device\\"):
                                 form = "device-mapped" if name is not None else "device-unmapped"
+                                if name is None:
+                                    parts = normalized.split("\\")
+                                    device_token = parts[2] if len(parts) > 2 else "unknown"
+                                    details[f"n12:name-event-10:unmapped-device-{device_token}"] += 1
                             elif re.match(r"^[a-z]:\\", normalized):
                                 form = "drive-rooted" if name is not None else "drive-unresolved"
                             elif normalized.startswith("\\\\"):

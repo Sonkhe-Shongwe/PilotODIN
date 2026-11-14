@@ -163,3 +163,10 @@ A mixed protected/outside candidate set remains unresolved. These categories are
 The ETW-only fixture now reports whether a FileIO Event 10 NameCreate filename was absent, a mapped device path, an unmapped device path, a drive-rooted path, a UNC path or another rooted/relative form. It reports only category counts and the mapped drive letters; raw paths are never emitted.
 
 The fixture currently maps the volume containing its temporary capture root. An `unmapped-device` result does not prove the target is outside protected roots; it means the device prefix could not be canonicalized with the supplied volume map. Expand the map only after the observed path-form counts establish that missing volume coverage is the cause.
+
+
+## 14 November 2026 | All-local-volume device mapping
+
+The hosted ETW probe now enumerates Windows logical drives and maps every removable, fixed or RAM-disk volume with `QueryDosDeviceW`, rather than mapping only the drive containing the temporary capture root. Network and optical drives are not included. The capture manifest retains the original root-drive device field for compatibility and adds the complete `volume_devices` map. The PowerShell fixture copies that map into the ETW manifest.
+
+The redacted NameCreate diagnostic also reports the unmapped device token (for example, a `HarddiskVolumeN` identifier), but never a full path. The unit test injects a logical-drive mask and confirms that local volumes are mapped while remote and optical drives are excluded.

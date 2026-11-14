@@ -1124,6 +1124,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
             key: value for key, value in details.items()
             if key.startswith("n12:name-event-10:path-form-")
         },
+        "unmapped_name_event_devices": {
+            key: value for key, value in details.items()
+            if key.startswith("n12:name-event-10:unmapped-device-")
+        },
         "volume_device_mapping_drives": sorted(manifest["etw"]["volume_devices"].keys()),
         "stable_process_bookends": len(stable_process_pids or ()),
         "stable_thread_bookends": len(stable_threads or {}),

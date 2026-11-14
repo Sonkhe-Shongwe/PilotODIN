@@ -13,8 +13,21 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
-from qa.p4_native import n12_calibration, n12_trace as trace
+from qa.p4_native import n12_calibration, n12_etw_probe, n12_trace as trace
 from qa.p4_native.n12_etw_correlate import correlate, correlate_requests, decode_rundown_report, preopened_report
+
+
+def test_volume_devices_maps_all_local_logical_drives_only():
+    mask = sum(1 << index for index in (2, 3, 4, 5))
+    drive_types = {"C:": 3, "D:": 3, "E:": 4, "F:": 5}
+    resolved = {"C:": r"\Device\HarddiskVolume3",
+                "D:": r"\Device\HarddiskVolume4"}
+    result = n12_etw_probe.volume_devices(
+        logical_drive_mask=mask,
+        drive_type=lambda drive: drive_types[drive],
+        resolve=lambda drive: resolved[drive],
+    )
+    assert result == resolved
 
 
 def test_etw_failed_open_and_reused_pid_and_file_object():
@@ -942,6 +955,7 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["rundown_name_candidate_events"]["other:event-16:write:name-candidates-rundown-protected"] >= 1
     assert report["name_event_path_forms"]["n12:name-event-10:path-form-device-unmapped"] == 1
     assert report["name_event_path_forms"]["n12:name-event-10:path-form-missing"] == 1
+    assert report["unmapped_name_event_devices"]["n12:name-event-10:unmapped-device-harddiskvolume99"] == 1
     assert report["volume_device_mapping_drives"] == ["C:"]
     assert report["unrelated_unresolved_mutations"]["other:write:path-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 2

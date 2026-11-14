@@ -12,7 +12,10 @@ from pathlib import Path
 from threading import get_native_id
 from uuid import uuid4
 
-from n12_trace import local_disposable_path
+try:
+    from .n12_trace import local_disposable_path
+except ImportError:  # Direct execution from the QA directory.
+    from n12_trace import local_disposable_path
 
 
 class WnodeHeader(ctypes.Structure):
@@ -65,6 +68,41 @@ def volume_device(drive):
     if not query(drive, target, len(target)):
         raise RuntimeError("Could not resolve the fixture drive's device name.")
     return target.value
+
+
+def volume_devices(logical_drive_mask=None, drive_type=None, resolve=None):
+    """Map every available local logical drive to its NT device prefix."""
+    if logical_drive_mask is None:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        get_logical_drives = kernel32.GetLogicalDrives
+        get_logical_drives.argtypes = ()
+        get_logical_drives.restype = wintypes.DWORD
+        get_drive_type = kernel32.GetDriveTypeW
+        get_drive_type.argtypes = (wintypes.LPCWSTR,)
+        get_drive_type.restype = wintypes.UINT
+        logical_drive_mask = get_logical_drives()
+        if not logical_drive_mask:
+            raise RuntimeError("Could not enumerate Windows logical drives.")
+        drive_type = lambda drive: get_drive_type(drive + "\\")
+    if drive_type is None:
+        raise ValueError("A drive-type resolver is required with an injected drive mask.")
+    if resolve is None:
+        resolve = volume_device
+
+    result = {}
+    for index in range(26):
+        if not logical_drive_mask & (1 << index):
+            continue
+        drive = f"{chr(65 + index)}:"
+        if drive_type(drive) not in (2, 3, 6):  # removable, fixed, RAM disk
+            continue
+        try:
+            device = resolve(drive)
+        except RuntimeError:
+            continue
+        if isinstance(device, str) and device.casefold().startswith("\\device\\"):
+            result[drive] = device
+    return result
 
 
 def utc_ticks():
@@ -231,7 +269,12 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             raise stop_aux_error
     if etl.stat().st_size == 0 or counters["buffers_written"] == 0:
         raise RuntimeError("ETW trace was empty.")
-    capture = {"fixture": fixture, "counters": counters, "device": volume_device(root.drive),
+    mapped_devices = volume_devices()
+    root_drive = root.drive.upper()
+    if root_drive not in mapped_devices:
+        mapped_devices[root_drive] = volume_device(root_drive)
+    capture = {"fixture": fixture, "counters": counters, "device": mapped_devices[root_drive],
+            "volume_devices": mapped_devices,
             "protected_root": str(protected), "second_writer": second_writer,
             "start_ticks": capture_start, "end_ticks": utc_ticks() // 10 * 10}
     if controls:

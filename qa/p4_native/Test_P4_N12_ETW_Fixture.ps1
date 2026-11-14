@@ -128,7 +128,14 @@ if ($outside.Count) {
 }
 $drive = [IO.Path]::GetPathRoot($root).TrimEnd('\')
 $devices = @{}
-$devices[$drive] = $capture.device
+if ($capture.volume_devices) {
+    foreach ($entry in $capture.volume_devices.PSObject.Properties) {
+        $devices[$entry.Name] = $entry.Value
+    }
+}
+if (-not $devices.ContainsKey($drive)) {
+    $devices[$drive] = $capture.device
+}
 $startUtc = [datetime]::new([long]$capture.start_ticks, [DateTimeKind]::Utc).ToString('o')
 $endUtc = [datetime]::new([long]$capture.end_ticks, [DateTimeKind]::Utc).ToString('o')
 $manifest = @{
