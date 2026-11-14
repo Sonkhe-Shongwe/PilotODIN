@@ -843,8 +843,8 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert report["strict_coverage"] == "BLOCKED"
     assert "etw-mutation-coverage-unresolved" in report["coverage_issues"]
     assert report["unrelated_unresolved_mutations"]["other:unsupported-file-operation"] == 1
-    assert report["unrelated_unresolved_event_types"]["other:event-17:unsupported-file-operation"] == 1
     assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported-file-operation"] == 1
+    assert report["unrelated_unresolved_event_types"]["other:event-17:info-4:unsupported:path-missing"] == 1
     assert report["unrelated_file_violations"]["protected:other:write"] == 1
     assert report["unresolved_controls"] == {}
 
