@@ -621,7 +621,7 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
             key = number(entry["key"])
             path = canonical_file_path(entry["path"], devices)
             rundown_names.setdefault(key, set()).add(path)
-    outcomes = {}
+    outcomes, identities = {}, {}
     for label in ("protected", "outside"):
         write = control["writes"][label]
         candidates = [
@@ -646,6 +646,7 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
         if file_keys is not None and type(key) is int and key > 0:
             file_keys[label] = key
         file_object = number(data.get("FileObject"))
+        identities[label] = (key, file_object)
         if file_objects is not None and type(file_object) is int and file_object > 0:
             file_objects[label] = file_object
         expected = canonical_file_path(write["path"], devices)
@@ -684,6 +685,10 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
     result = {"scope": "generated writes through pre-opened handles", "targets": outcomes}
     if rundown is not None:
         result["rundown_keys"] = len(rundown_names)
+    if rundown is not None and "untouched" in control:
+        result["control_write_timing"] = control_write_timing(
+            capture, events, devices, rundown_names, identities, outcomes,
+        )
     if "file_lifetime" in capture:
         result["file_lifetime"] = file_lifetime_report(capture["file_lifetime"], events, devices)
     if "basic_info_control" in capture:
@@ -704,6 +709,101 @@ def successful_completion(file_events, request, before):
             and number(first["data"].get("Status")) == 0):
         return first["ticks"]
     return None
+
+
+def control_write_timing(capture, events, devices, rundown_names, identities, outcomes):
+    """Measure successful System-context requests on independently located fixtures."""
+    control = capture["preopened"]
+    stop_start, stop_end = (capture[key] for key in ("rundown_start_ticks", "rundown_stop_ticks"))
+    capture_end = capture["end_ticks"]
+    if not capture["start_ticks"] <= stop_start <= stop_end <= capture_end:
+        raise ValueError("Invalid WPR stop window.")
+    flush_start, flush_end = control["writes"]["protected"]["flush_window"]
+    if not (control["writes"]["protected"]["end"] < flush_start <= flush_end < stop_start):
+        raise ValueError("Invalid protected-control flush window.")
+
+    def phase(ticks, label):
+        if ticks > stop_end:
+            return "after-wpr-stop"
+        if ticks >= stop_start:
+            return "during-wpr-stop"
+        write = control["writes"]["outside" if label == "outside" else "protected"]
+        if ticks < write["start"]:
+            return "before-write"
+        if ticks <= write["end"]:
+            return "application-write"
+        if label == "outside":
+            return "after-write-before-wpr-stop"
+        if ticks < flush_start:
+            return "after-write-before-flush"
+        if ticks <= flush_end:
+            return "explicit-flush"
+        return "after-flush-before-wpr-stop"
+
+    by_irp = defaultdict(list)
+    for event in events:
+        if not event["lifecycle"] and (irp := number(event["data"].get("Irp"))):
+            by_irp[irp].append(event)
+
+    def completion(event):
+        return successful_completion(by_irp[number(event["data"].get("Irp"))],
+                                     event, capture_end + 1)
+
+    untouched_path = canonical_file_path(control["untouched"], devices)
+    candidates = [key for key, names in rundown_names.items() if untouched_path in names]
+    if (untouched_path is not None and len(candidates) == 1 and candidates[0] > 0
+            and rundown_names[candidates[0]] == {untouched_path}
+            and all(candidates[0] != key for key, _ in identities.values())):
+        key = candidates[0]
+        if not any(
+            not event["lifecycle"] and name_transition_key(event["id"], event["data"]) == key
+            and (event["id"] == 11 or (event["id"] == 10 and canonical_file_path(
+                event["data"].get("FileName") or "", devices,
+            ) != untouched_path))
+            for event in events
+        ):
+            identities["untouched"] = (key, None)
+    results = {}
+    for label in ("protected", "outside", "untouched"):
+        key, file_object = identities.get(label, (None, None))
+        established = (key is not None if label == "untouched" else bool(
+            key and file_object and outcomes[label]["issuing_thread"] == "matches"
+            and outcomes[label]["completion"] == "success"
+            and outcomes[label]["rundown_name"] == "matches-target"
+        ))
+        observed = Counter()
+        unverified_completions = 0
+        flushes = 0
+        if established:
+            for event in events:
+                kind, data, ticks = event["id"], event["data"], event["ticks"]
+                if (event["lifecycle"] or kind not in {16, 17, 21}
+                        or number(data.get("FileKey")) != key
+                        or (file_object is not None and number(data.get("FileObject")) != file_object)):
+                    continue
+                if kind == 21:
+                    thread = number(data.get("IssuingThreadId", data.get("ThreadId")))
+                    if (label == "protected" and event["pid"] == control["pid"]
+                            and thread == control["tid"] and flush_start <= ticks <= flush_end
+                            and (completed := completion(event)) is not None and completed <= flush_end):
+                        flushes += 1
+                    continue
+                if event["pid"] != 4 or (kind == 17 and number(data.get("InfoClass")) != 20):
+                    continue
+                completed = completion(event)
+                if completed is None:
+                    unverified_completions += 1
+                    continue
+                operation = "write" if kind == 16 else "resize"
+                observed[f"{operation}:{phase(ticks, label)}:{phase(completed, label)}"] += 1
+        result = {"identity": ("rundown-file-key" if label == "untouched" else "file-key-and-object")
+                  if established else "unverified",
+                  "system_successful_operations": dict(observed),
+                  "system_requests_without_verified_success": unverified_completions}
+        if label == "protected":
+            result["explicit_flush_trace"] = "confirmed" if flushes == 1 else "unverified"
+        results[label] = result
+    return results
 
 
 def check_write_object_path(events, opened, write, write_completed, expected, devices):

@@ -719,6 +719,70 @@ def test_thread_bookends_exclude_reused_and_ambiguous_ids():
     assert trace.stable_thread_bookends(bookends, 20, {8}, {72}) == {}
 
 
+def test_system_control_timing_tracks_only_matching_successful_requests():
+    protected = r"C:\protected\private.bin"
+    outside = r"C:\outside.bin"
+    untouched = r"C:\protected\private-untouched.bin"
+    capture = {
+        "device": r"\Device\HarddiskVolume3", "protected_root": r"C:\protected",
+        "start_ticks": 1, "end_ticks": 3_000_000,
+        "rundown_start_ticks": 1_500_000, "rundown_stop_ticks": 2_500_000,
+        "preopened": {"pid": 7, "tid": 71, "untouched": untouched, "writes": {
+            "protected": {"path": protected, "size": 53, "start": 100, "end": 300,
+                          "flush_window": [400_000, 500_000]},
+            "outside": {"path": outside, "size": 79, "start": 150_000, "end": 250_000},
+        }},
+    }
+    rundown = [{"key": key, "path": path}
+               for key, path in ((40, protected), (41, outside), (42, untouched))]
+    events = []
+
+    def emit(kind, ticks, pid=4, **data):
+        events.append({"id": kind, "ticks": ticks, "pid": pid, "lifecycle": False, "data": data})
+
+    def request(kind, ticks, completed, irp, key, obj, pid=4, status=0, **data):
+        emit(kind, ticks, pid, Irp=irp, FileKey=key, FileObject=obj, **data)
+        emit(24, completed, Irp=irp, Status=status)
+
+    request(16, 150, 160, 1, 40, 400, pid=7, IOSize=53, ByteOffset=0, IssuingThreadId=71)
+    request(16, 200_000, 200_001, 2, 41, 410, pid=7, IOSize=79, ByteOffset=0, IssuingThreadId=71)
+    request(21, 400_000, 500_000, 3, 40, 400, pid=7, ThreadId=71)
+    request(16, 450_000, 460_000, 4, 40, 400)
+    request(17, 499_999, 500_001, 5, 40, 400, InfoClass=20)
+    request(17, 480_000, 490_000, 6, 40, 400, InfoClass=4)
+    request(16, 480_000, 490_000, 7, 40, 401)
+    request(16, 480_000, 490_000, 8, 40, 400, status=0xC0000022)
+    request(16, 1_500_000, 2_500_000, 9, 42, 420)
+    request(17, 2_500_001, 2_500_002, 10, 41, 410, InfoClass=20)
+    emit(24, 460_000, Irp=4, Status=0)  # Tied completion is ambiguous.
+
+    result = preopened_report(capture, events, rundown)["control_write_timing"]
+    assert result == {
+        "protected": {
+            "identity": "file-key-and-object", "explicit_flush_trace": "confirmed",
+            "system_successful_operations": {"resize:explicit-flush:after-flush-before-wpr-stop": 1},
+            "system_requests_without_verified_success": 2,
+        },
+        "outside": {
+            "identity": "file-key-and-object",
+            "system_successful_operations": {"resize:after-wpr-stop:after-wpr-stop": 1},
+            "system_requests_without_verified_success": 0,
+        },
+        "untouched": {
+            "identity": "rundown-file-key",
+            "system_successful_operations": {"write:during-wpr-stop:during-wpr-stop": 1},
+            "system_requests_without_verified_success": 0,
+        },
+    }
+    assert "private" not in json.dumps(result)
+
+    emit(11, 1_600_000, FileKey=42)
+    assert preopened_report(capture, events, rundown)["control_write_timing"]["untouched"] == {
+        "identity": "unverified", "system_successful_operations": {},
+        "system_requests_without_verified_success": 0,
+    }
+
+
 def test_preopened_control_requires_completion_and_does_not_infer_names():
     protected, outside = r"C:\protected\private.bin", r"C:\outside.bin"
     capture = {"device": r"\Device\HarddiskVolume3", "protected_root": r"C:\protected",

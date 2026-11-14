@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from contextlib import ExitStack
 from ctypes import wintypes
 from pathlib import Path
@@ -195,6 +196,9 @@ def preopened_control(root, *, rundown=False):
             controls[label] = (path, stream, b"x" * size)
         if not rundown:
             return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
+        comparison = protected / "untouched.bin"
+        stream = stack.enter_context(comparison.open("xb", buffering=0))
+        verify_handle_path(stream, comparison)
         # Keep the control handles open through WPR's stop-time rundown.
         wpr = Path(os.environ["SystemRoot"]) / "System32" / "wpr.exe"
         instance = ["-instancename", f"PilotODIN-{uuid4().hex}"]
@@ -215,8 +219,12 @@ def preopened_control(root, *, rundown=False):
             return utc_ticks() // 10 * 10
 
         try:
-            return capture_fixture(root, calibration_only=True, thread_context=True,
-                                   controls=controls, before_stop=stop_wpr)
+            capture = capture_fixture(root, calibration_only=True, thread_context=True,
+                                      controls=controls, before_stop=stop_wpr)
+            if os.fstat(stream.fileno()).st_size != 0:
+                raise RuntimeError("The untouched comparison handle did not remain empty.")
+            capture["preopened"]["untouched"] = str(comparison)
+            return capture
         finally:
             if not stopped:
                 run_wpr("-cancel")
@@ -259,6 +267,12 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
                 raise RuntimeError("The generated pre-opened write was incomplete.")
             control_writes[label] = {"path": str(path), "size": len(payload),
                                      "start": first, "end": utc_ticks()}
+        if controls and before_stop is not None:
+            # Give immediate writes a separate observation interval before flushing.
+            time.sleep(0.1)
+            first = utc_ticks()
+            os.fsync(controls["protected"][1].fileno())
+            control_writes["protected"]["flush_window"] = [first, utc_ticks()]
         if before_stop is not None:
             lifetime_path = root / "file-lifetime.bin"
             lifetime_start = utc_ticks()
