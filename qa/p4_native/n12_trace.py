@@ -983,9 +983,11 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
     synthetic_birth = utc_ticks(start) - 1
     recovered_keys = set()
     invalidations = {}
+    details = Counter()
     permitted = {"preopened-control": [ntpath.dirname(protected_root)]}
     counts, violations, _, unresolved = inspect_etw_files(
         manifest, path, start, end, {}, {}, protected, permitted, issues,
+        details=details,
         rundown=rundown,
         synthetic_process_roles={pid: "preopened-control"},
         synthetic_process_births={pid: synthetic_birth},
@@ -997,6 +999,11 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
                            if key.startswith("preopened-control:")}
     unrelated_unresolved = {key: value for key, value in unresolved.items()
                             if not key.startswith("preopened-control:")}
+    unrelated_unresolved_event_types = {
+        key: value for key, value in details.items()
+        if not key.startswith("preopened-control:") and
+        not key.endswith(":rundown-path-recovered")
+    }
     expected_control_violations = {"protected:preopened-control:write": 1}
     control_violations = {
         key: value for key, value in violations.items()
@@ -1036,6 +1043,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown):
         "unrelated_file_violations": unrelated_file_violations,
         "unresolved_controls": unresolved_controls,
         "unrelated_unresolved_mutations": unrelated_unresolved,
+        "unrelated_unresolved_event_types": unrelated_unresolved_event_types,
         "rundown_control_keys_recovered": len(recovered_control_keys),
         "rundown_control_key_invalidations": control_invalidations,
         "protected_control_classification": (
