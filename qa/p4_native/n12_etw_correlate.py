@@ -140,13 +140,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         kind, pid, data = event["id"], event["pid"], event["data"]
         ticks = event["ticks"]
         if event.get("lifecycle"):
-            process_id = number(data["ProcessID"])
+            process_id = number(data.get("ProcessID", data.get("ProcessId")))
             if kind == 1:
                 active[process_id] = ticks
             elif kind == 2:
                 active.pop(process_id, None)
             elif details is not None and kind in (3, 4):
-                tid = number(data["ThreadID"])
+                tid = number(data.get("ThreadID", data.get("TThreadId")))
                 if kind == 3:
                     thread_owners[tid] = (process_id, active.get(process_id))
                 else:

@@ -888,11 +888,11 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     # Kernel ProcessStart header context can be the parent. Use ProcessID/ImageFileName in event data.
     rows.append({
         "id": 1, "pid": 10, "ticks": unrelated_ticks + 16, "lifecycle": True,
-        "data": {"ProcessID": 98, "ImageFileName": r"C:\Windows\System32\etw-writer.exe"},
+        "data": {"ProcessId": 98, "ImageFileName": r"C:\Windows\System32\etw-writer.exe"},
     })
     rows.append({
         "id": 3, "pid": 10, "ticks": unrelated_ticks + 17, "lifecycle": True,
-        "data": {"ProcessID": 98, "ThreadID": 98},
+        "data": {"ProcessId": 98, "TThreadId": 98},
     })
     emit(16, 98, unrelated_ticks + 18, FileObject=110, Irp=11, FileKey="0x32",
          IOSize=22, ByteOffset=0, IssuingThreadId=98)
