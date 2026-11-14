@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 14 November 2026 | Hosted Windows Qwen worker memory profile
+
+The [approved standalone Windows smoke run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43592332015/job/132439503160) passed on a hosted runner with 15.99 GiB visible RAM. The pinned Qwen3 1.7B Q4_K_M CPU worker peaked at 1,992.0 MiB resident RAM and 1,037.0 MiB committed memory. The owner's earlier 545 MiB available with PilotODIN open remains below the 2.00 GiB admission threshold. **Physical R03 remains BLOCKED at preflight / NOT TESTED. P4 remains ACTIVE at 65/100** on the proposed scorecard. [Scope and measurements](./SESSION_HANDOFF_CURRENT.md#14-november-2026--hosted-windows-qwen-worker-memory-profile).
+
 ## 14 November 2026 | Physical Windows PilotODIN process memory snapshots
 
 Owner measurements showed 710 MiB available after desktop exit, 545 MiB with the app open and 539 MiB after the Local analytics overview. Both open snapshots measured 174.7 MiB of private working set across the observed desktop process tree. R03 remains **BLOCKED at preflight / offline Qwen NOT TESTED**, and P4 stays **ACTIVE at 65/100** on the proposed scorecard. [Measurement breakdown and limits](./SESSION_HANDOFF_CURRENT.md#14-november-2026--physical-windows-pilotodin-process-memory-snapshots).

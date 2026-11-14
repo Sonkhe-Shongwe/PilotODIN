@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 14 November 2026 | Hosted Windows Qwen worker memory profile
+
+- The owner approved one hosted Windows profile. [Run #43592332015, job #132439503160](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43592332015/job/132439503160) passed on attempt 1 at `170db88deb33f97fa4bd3d5ad0d7846b8495807d`, with [profiling code from `857454a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/857454ab6aaf406ec758929ea713a5f68abea910). The runner had 15.99 GiB visible and 13.71 GiB free at preflight. Pinned llama.cpp b10344 and Qwen3 1.7B Q4_K_M passed asset integrity verification. The standalone localhost smoke used CPU inference, a 2,048-token context and one authenticated synthetic completion capped at 24 tokens.
+- At model readiness (1.860 s), the worker used **1,988.4 MiB resident** and **1,034.9 MiB committed**. After completion (1.344 s request time), current and cumulative peak readings were **1,992.0 MiB resident** and **1,037.0 MiB committed**. These counters describe one worker under a short workload on the hosted runner. The run did not measure whole-desktop RAM, paging or responsiveness on physical 8 GB hardware.
+- The owner laptop previously had 545 MiB available with the app open. The hosted peak was 1,447 MiB above that snapshot. This does not establish a minimum memory requirement under paging. Keep the current guard and physical acceptance pending. Prioritise evaluating a smaller model or quantization with a representative analytics prompt and measure quality as well as memory before considering a configuration change. The hosted approval is consumed. The separate physical request remains unused. P4 remains active at 65/100 on the proposed scorecard.
+
 ## 14 November 2026 | Physical Windows PilotODIN process memory snapshots
 
 - On the owner's 8 GB Windows laptop, the first reading labelled Closed still detected the desktop process and is excluded as a closed comparison. The corrected post-exit reading showed **710 MiB** system RAM available and no matching desktop process. The earlier Open and AfterOverview readings showed **545 MiB** and **539 MiB** available respectively, 165 MiB and 171 MiB below the post-exit snapshot.
