@@ -34,7 +34,8 @@ def canonical_file_path(value, devices):
 
 
 def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
-                       strict=False, details=None, process_bookends=None, thread_bookends=None):
+                       strict=False, details=None, process_bookends=None, thread_bookends=None,
+                       rundown=None, rundown_guard_events=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = {}
     thread_owners = {}
@@ -42,6 +43,46 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     file_names = {}
     ambiguous_irps = set()
     unresolved = Counter()
+    ordered_events = sorted(events, key=lambda record: record["ticks"])
+    rundown_names = {}
+    rundown_unsafe_keys = set()
+    if strict and rundown is not None:
+        for entry in rundown:
+            try:
+                key = number(entry.get("key"))
+            except (TypeError, ValueError):
+                continue
+            if type(key) is not int or key <= 0:
+                continue
+            raw_path = entry.get("path")
+            path = resolve_path(raw_path) if isinstance(raw_path, str) else None
+            rundown_names.setdefault(key, set()).add(path)
+
+        # The rundown is a stop-time snapshot. A key is eligible only when no
+        # observed in-window event could have changed or reused its name/object.
+        guard_events = ordered_events if rundown_guard_events is None else rundown_guard_events
+        invalidating_kinds = {10, 11, 12, 14, 18, 19, 23, 27, 29}
+        for guarded in guard_events:
+            if guarded.get("lifecycle"):
+                continue
+            kind = guarded.get("id")
+            data = guarded.get("data", {})
+            invalidates = kind in invalidating_kinds
+            if kind == 17:
+                try:
+                    info_class = number(data.get("InfoClass"))
+                except (TypeError, ValueError):
+                    info_class = None
+                invalidates = info_class not in {19, 20}
+            if not invalidates:
+                continue
+            for field in ("FileKey", "FileObject"):
+                try:
+                    key = number(data.get(field))
+                except (TypeError, ValueError):
+                    key = None
+                if type(key) is int and key > 0:
+                    rundown_unsafe_keys.add(key)
 
     def relevant(actor, operation, source, destination):
         return tracked(source) or tracked(destination) or (
@@ -55,7 +96,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             suffix = f":info-{info}" if event_id == 17 else ""
             details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
 
-    for event in sorted(events, key=lambda record: record["ticks"]):
+    for event in ordered_events:
         kind, pid, data = event["id"], event["pid"], event["data"]
         ticks = event["ticks"]
         if event.get("lifecycle"):
@@ -155,6 +196,26 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             elif strict:
                 operation = "unsupported"
         source = path if kind == 12 else opened.get(handle)
+        if strict and source is None and kind in {16, 17}:
+            # Write requests expose FileKey. Set-information events can expose
+            # only FileObject. Never substitute a stop-time name for an
+            # ambiguous key or a key whose lifetime changed during the trace.
+            raw_key = data.get("FileKey")
+            if kind == 17 and raw_key is None:
+                raw_key = data.get("FileObject")
+            try:
+                rundown_key = number(raw_key)
+            except (TypeError, ValueError):
+                rundown_key = None
+            names = rundown_names.get(rundown_key)
+            if (type(rundown_key) is int and rundown_key > 0
+                    and rundown_key not in rundown_unsafe_keys
+                    and names is not None and len(names) == 1):
+                recovered = next(iter(names))
+                if recovered is not None:
+                    source = recovered
+                    if details is not None:
+                        details[f"{actor}:event-{kind}:rundown-path-recovered"] += 1
         if strict and kind in {16, 18, 19, 23, 29}:
             file_key = number(data.get("FileKey"))
             if kind != 16 and file_key in file_names:

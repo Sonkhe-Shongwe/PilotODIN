@@ -148,6 +148,98 @@ def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
     assert "private.txt" not in json.dumps(details)
 
 
+def test_strict_etw_recovers_preopened_write_from_unique_stable_rundown():
+    protected = r"C:\protected\private.txt"
+    events = [
+        {"id": 1, "pid": 0, "ticks": 1, "lifecycle": True, "data": {"ProcessID": 7}},
+        {"id": 16, "pid": 7, "ticks": 2, "lifecycle": False,
+         "data": {"FileObject": 9, "FileKey": "0x28", "Irp": 11}},
+        {"id": 24, "pid": 0, "ticks": 3, "lifecycle": False, "data": {"Irp": 11, "Status": 0}},
+    ]
+    completed = []
+    unresolved = correlate_requests(
+        events, lambda value: value or None,
+        lambda pid, birth, ticks: ("app", "app") if pid == 7 and birth == 1 else ("other", None),
+        lambda value: value == protected,
+        lambda role, identity, operation, source, destination, requested, finished, success:
+            completed.append((operation, source, success)),
+        strict=True,
+        rundown=[{"key": "0x28", "path": protected}, {"key": 40, "path": protected}],
+    )
+    assert completed == [("write", protected, True)]
+    assert unresolved == {}
+
+
+@pytest.mark.parametrize("transition", [
+    "name-create", "name-delete", "open", "close", "rename", "delete", "unsupported",
+    "post-window-rename", "conflicting-rundown",
+])
+def test_strict_etw_rundown_fails_closed_on_ambiguous_key_lifetimes(transition):
+    protected = r"C:\protected\private.txt"
+    outside = r"C:\outside\private.txt"
+    lifecycle = {"id": 1, "pid": 0, "ticks": 1, "lifecycle": True, "data": {"ProcessID": 7}}
+    write = {"id": 16, "pid": 7, "ticks": 2, "lifecycle": False,
+             "data": {"FileObject": 9, "FileKey": 40, "Irp": 11}}
+    completion = {"id": 24, "pid": 0, "ticks": 3, "lifecycle": False,
+                  "data": {"Irp": 11, "Status": 0}}
+    events = [lifecycle, write, completion]
+    guard = list(events)
+    rundown = [{"key": 40, "path": protected}]
+    if transition == "name-create":
+        guard.append({"id": 10, "pid": 0, "ticks": 4, "lifecycle": False,
+                      "data": {"FileKey": 40, "FileName": outside}})
+    elif transition == "name-delete":
+        guard.append({"id": 11, "pid": 0, "ticks": 4, "lifecycle": False,
+                      "data": {"FileKey": 40}})
+    elif transition == "open":
+        guard.append({"id": 12, "pid": 0, "ticks": 4, "lifecycle": False,
+                      "data": {"FileObject": 40, "Irp": 12}})
+    elif transition == "close":
+        guard.append({"id": 14, "pid": 0, "ticks": 4, "lifecycle": False,
+                      "data": {"FileObject": 40}})
+    elif transition == "rename":
+        guard.append({"id": 19, "pid": 0, "ticks": 4, "lifecycle": False,
+                      "data": {"FileKey": 40, "FileObject": 40, "Irp": 12}})
+    elif transition == "delete":
+        guard.append({"id": 18, "pid": 0, "ticks": 4, "lifecycle": False,
+                      "data": {"FileKey": 40, "FileObject": 40, "Irp": 12}})
+    elif transition == "unsupported":
+        guard.append({"id": 17, "pid": 0, "ticks": 4, "lifecycle": False,
+                      "data": {"FileKey": 40, "InfoClass": 4, "Irp": 12}})
+    elif transition == "post-window-rename":
+        guard.append({"id": 19, "pid": 0, "ticks": 40, "lifecycle": False,
+                      "data": {"FileKey": 40, "FileObject": 40, "Irp": 12}})
+    elif transition == "conflicting-rundown":
+        rundown.append({"key": "0x28", "path": outside})
+
+    completed = []
+    unresolved = correlate_requests(
+        events, lambda value: value or None,
+        lambda pid, birth, ticks: ("app", "app") if pid == 7 and birth == 1 else ("other", None),
+        lambda value: value == protected,
+        lambda role, identity, operation, source, destination, requested, finished, success:
+            completed.append((operation, source, success)),
+        strict=True, rundown=rundown, rundown_guard_events=guard,
+    )
+    assert completed == []
+    assert unresolved["app:write:path-missing"] == 1
+
+
+def test_read_native_rundown_requires_manifest_digest_and_decoder(tmp_path):
+    rundown_path = tmp_path / "rundown.jsonl"
+    entry = {"key": "0x28", "path": r"\Device\HarddiskVolume3\QA\home\cache.sqlite",
+             "decoder": "tdh+raw-schema"}
+    payload = (json.dumps(entry) + "\n").encode("utf-8")
+    rundown_path.write_bytes(payload)
+    manifest = {"etw": {"rundown_sha256": hashlib.sha256(payload).hexdigest()}}
+    assert trace.read_rundown_file(rundown_path, manifest) == [
+        {"key": 40, "path": entry["path"]}
+    ]
+    rundown_path.write_bytes(payload + b" ")
+    with pytest.raises(ValueError, match="FileIO rundown SHA-256 mismatch"):
+        trace.read_rundown_file(rundown_path, manifest)
+
+
 def test_process_bookends_reject_pid_reuse_and_traced_lifetimes():
     before = [{"pid": pid, "birth_ticks": 10} for pid in (7, 8, 9, 10)]
     after = [{"pid": 7, "birth_ticks": 10}, {"pid": 8, "birth_ticks": 30}, before[2]]
@@ -449,10 +541,11 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
                      "realtime_buffers_lost": 0, "buffers_written": 1},
     }
 
-    def report():
+    def report(rundown=None):
         etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
         evidence.manifest["etw"]["events_sha256"] = hashlib.sha256(etw_path.read_bytes()).hexdigest()
-        return trace.audit(evidence.manifest, sysmon, etw_path, evidence.before, evidence.after, etw=True)
+        return trace.audit(evidence.manifest, sysmon, etw_path, evidence.before, evidence.after,
+                           etw=True, rundown=rundown)
 
     clean = report()
     assert clean["coverage"] == "CALIBRATED"
@@ -472,6 +565,36 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
                             capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr
     assert json.loads(output.read_text(encoding="utf-8")) == clean
+
+    # A pre-opened backend handle has no in-capture name event. The native
+    # stop-time rundown may resolve it only while its file key remains stable.
+    emit(29, 10, 16, FileObject=9, FileKey="0x28", Irp=99)
+    emit(29, 0, 24, Irp=99, Status=0)
+    rundown_path = tmp_path / "rundown.jsonl"
+    rundown_entry = {"key": "0x28",
+                     "path": r"\Device\HarddiskVolume3\QA\home\cache.sqlite",
+                     "decoder": "tdh+raw-schema"}
+    rundown_payload = (json.dumps(rundown_entry) + "\n").encode("utf-8")
+    rundown_path.write_bytes(rundown_payload)
+    evidence.manifest["etw"]["rundown_sha256"] = hashlib.sha256(rundown_payload).hexdigest()
+    rundown = trace.read_rundown_file(rundown_path, evidence.manifest)
+    recovered = report(rundown)
+    assert recovered["coverage"] == "CALIBRATED"
+    assert recovered["network"] == recovered["filesystem"] == "PASS_SCOPED"
+    assert recovered["file_events"]["backend:write"] == 2
+    assert recovered["file_key_rundown_records"] == 1
+
+    recovered_manifest = tmp_path / "manifest-rundown.json"
+    recovered_manifest.write_text(json.dumps(evidence.manifest), encoding="utf-8")
+    recovered_output = tmp_path / "audit-rundown.json"
+    result = subprocess.run(
+        [sys.executable, str(Path(trace.__file__)), "audit-etw",
+         *map(str, (recovered_manifest, sysmon, etw_path, before_path, after_path, recovered_output)),
+         "--rundown", str(rundown_path)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(recovered_output.read_text(encoding="utf-8")) == recovered
 
     calibration_manifest = dict(evidence.manifest, calibration=next(
         root for root in evidence.manifest["processes"] if root["role"] == "calibration"

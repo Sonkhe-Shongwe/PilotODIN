@@ -8,6 +8,7 @@ on:
       - 'qa/p4_native/Test_P4_N12_ETW_Fixture.ps1'
       - 'qa/p4_native/n12_fileio_rundown.cpp'
       - 'qa/p4_native/n12_etw_correlate.py'
+      - 'qa/p4_native/n12_trace.py'
       - 'tests/test_p4_n12_trace.py'
       - '.github/workflows/p4-n12-native-rundown.yml'
   workflow_dispatch:

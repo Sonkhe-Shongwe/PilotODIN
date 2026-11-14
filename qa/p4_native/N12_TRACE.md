@@ -13,6 +13,7 @@ The scripts prepare and reduce evidence. The regular Windows P4 job exercises th
 | n12_trace.py check-calibration | Checks one generated fixture against both collectors before an app journey. The summary reports calibration coverage and omits raw paths and endpoints. |
 | n12_trace.py snapshot | Hashes protected and synthetic paths, including relative file and directory names, before and after the test. Records an absent path distinctly and rejects reparse points. |
 | n12_trace.py audit | Matches the two app launches to Sysmon image hashes, builds process lineage, checks calibration and processes the network and file records. The summary omits raw endpoints, process identifiers, command lines and file paths. |
+| n12_fileio_rundown.exe | Uses native OpenTraceW/ProcessTrace and TDH to decode stop-time Kernel FileIO name records into private key/path JSONL. |
 
 ## Standalone collector calibration on hosted Windows
 
@@ -44,12 +45,30 @@ python qa/p4_native/n12_trace.py audit-etw $manifest $sysmonXml $etwJsonl $befor
 
 The ETW input is UTF-8 JSONL in the format emitted by the synthetic Windows probe. Each row supplies `ticks` (UTC .NET ticks), `pid`, `id`, `lifecycle` and the event `data`. The manifest's `etw` section supplies `schema_version: 1`, `start_utc`, `end_utc`, `events_sha256`, `volume_devices` (drive to NT device name), and `counters` from the stopped ETW session (`events_lost`, `log_buffers_lost`, `realtime_buffers_lost`, `buffers_written`). Keep the event export and device map private. Resolve device mappings on the capture host.
 
-The audit checks ETW loss, export integrity, completion status, and both endpoints of tracked moves. It joins scoped ETW processes to Sysmon by PID and a unique birth within 10 ms, then applies the existing write rules and before/after snapshots. A detected protected mutation fails the filesystem check even if its writer was running before capture. Missing attribution and unsupported operations can also block coverage. Drive paths, DOS extended prefixes and declared NT device names are supported. Short-name aliases, reparse-point transitions, and file handles opened before capture still need specific evidence. Native collector orchestration and startup-to-exit acceptance remain pending.
+The audit checks ETW loss, export integrity, completion status, and both endpoints of tracked moves. It joins scoped ETW processes to Sysmon by PID and a unique birth within 10 ms, then applies the existing write rules and before/after snapshots. A detected protected mutation fails the filesystem check even if its writer was running before capture. Missing attribution and unsupported operations can also block coverage. Drive paths, DOS extended prefixes and declared NT device names are supported. Short-name aliases and reparse-point transitions remain unsupported. Native collector orchestration and startup-to-exit acceptance remain pending.
+
+### Strict file-key rundown input
+
+A full strict audit may supply the native stop-time FileIO rundown as a separate JSONL file. Keep the WPR ETL and decoded paths in the disposable runner's private temp directory. Run the native consumer against that ETL:
+
+~~~powershell
+n12_fileio_rundown.exe $fileIoEtl $rundownJsonl
+~~~
+
+Record the rundown file's SHA-256 as etw.rundown_sha256 in the capture manifest, then pass the exact file to the reducer:
+
+~~~powershell
+python qa/p4_native/n12_trace.py audit-etw $manifest $sysmonXml $etwJsonl $before $after $summary --rundown $rundownJsonl
+~~~
+
+The same optional --rundown input is supported by check-etw-preflight. The reducer accepts only recognised native decoder records (tdh+raw-schema, tdh or raw-schema-v2) and verifies the manifest-pinned digest. It uses a stop-time name only when the key has one unique canonical path and no in-window name-create/delete, open/close, rename, delete or unsupported name transition. It checks all ETW events from audit start through rundown stop, including events after the Sysmon audit end, before using the mapping. Duplicate records for the same canonical path are harmless; conflicting, invalid or reused keys remain unresolved. This is path-resolution evidence only, not a native N12 acceptance pass.
 
 ## Collector requirements for the disposable Windows run
 
 1. Finish building and staging the unpackaged app before the measured window. Use one UTC day. Use the approved exact build, fresh disposable profiles, a loopback backend and generated data. Independently take the initial snapshots and record the source commit and executable SHA-256.
 2. Configure [Sysmon](https://learn.microsoft.com/en-us/windows/security/operating-system-security/sysmon/sysmon-events) to include process creation with SHA-256, process termination, TCP and UDP including loopback, and DNS if available. Keep the unfiltered sequence of operational-channel records from the initial checkpoint to the final checkpoint. A gap, in-window service/configuration change, or Sysmon error blocks clean evidence. Confirm the actual provider captures loopback TCP and UDP before relying on it.
+
+   If stop-time path recovery is required, also run a named WPR FileIO trace across the same measured window. Stop it only after the final file events, decode the ETL with n12_fileio_rundown.exe, and hash the resulting JSONL into etw.rundown_sha256. Keep raw ETL and JSONL private. A key with any observed in-window open/close, name, rename, delete or unsupported transition is deliberately ineligible for rundown fallback.
 3. Record the whole window with [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) using a backing file and All events. Keep file-system events from all writers, including other processes that might write to protected roots. Export an English UTF-8 CSV with the columns Time of Day, PID, Operation, Path, Result, Detail and Process Name. Use a Windows clock set to UTC with 24-hour time. Review capture continuity and loss indicators before setting the manifest coverage flags. Keep the backing file and export in runner temp.
 4. Run the calibration fixture twice, once before the idle marker and again after app and backend exit. Use a fresh directory for each invocation. Add its JSON result to the process manifest and its port to the loopback allowlist. If the Sysmon export lacks either loopback protocol or the Procmon export lacks any of the five file operations, treat the capture as blocked. This includes collector configurations that omit loopback UDP.
 5. Capture idle, first launch, native Quality review, close, reopen and final exit. Record each marker immediately before the action, and retain the app/backend/driver PIDs and exact executable paths. Wait for WebView descendants to terminate. For the isolated WebView2 process use the [diagnostic NetLog flags](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/webview-features-flags) with the Default capture level. Use distinct NetLog output paths for the first launch and relaunch. Retain raw files privately and compare source port, destination, time and NetLog request dependencies to attribute recurring connections. Keep a connection unattributed when the evidence cannot establish a purpose.
@@ -65,6 +84,7 @@ The audit checks ETW loss, export integrity, completion status, and both endpoin
 | markers | UTC timestamps for idle, launch, quality, close, reopen and exit, in order |
 | sysmon_first_record, sysmon_last_record | Inclusive event record IDs, recorded independently of the exported file |
 | procmon_all_events, procmon_loss_reviewed, procmon_clock_utc | Set true after reviewing the capture and clock settings |
+| etw.rundown_sha256 | Optional lowercase SHA-256 of the native rundown JSONL when --rundown is supplied |
 | processes | Entries with role, pid and image. Provide two app entries, one backend, at least one driver, and the two complete calibration JSON objects. |
 | loopback_ports | Explicit service and calibration ports |
 | protected_roots, observed_roots | Maps from short neutral labels to absolute Windows paths. Include both protected app identities and an immutable synthetic import file. |

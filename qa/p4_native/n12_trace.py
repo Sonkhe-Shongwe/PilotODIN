@@ -551,7 +551,7 @@ def etw_events(path, capture_bounds, expected_digest):
 
 
 def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *,
-                      details=None, process_bookends=None, thread_bookends=None):
+                      details=None, process_bookends=None, thread_bookends=None, rundown=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests
     else:
@@ -602,21 +602,28 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         if role == "calibration" and start_ticks <= requested <= completed <= end_ticks:
             file_events.add((identity, operation, *targets))
 
-    events = etw_events(path, capture_bounds, manifest["etw"]["events_sha256"])
+    event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
+    # Keep post-audit ETW events for rundown lifetime checks. A rename, close,
+    # or key reuse after the Sysmon audit boundary still invalidates a stop-time
+    # name for an earlier write.
+    guard_events = [event for event in event_records if event["ticks"] >= start_ticks]
     with evidence_stage("ETW event stream"):
         unresolved = correlate_requests(
-            (event for event in events if event["ticks"] <= end_ticks),
+            (event for event in event_records if event["ticks"] <= end_ticks),
             lambda value: canonical_file_path(value, devices),
             classify_process, lambda value: value is not None and
             any(inside(value, root) for root in protected), record, strict=True,
             details=details, process_bookends=process_bookends, thread_bookends=thread_bookends,
+            rundown=rundown, rundown_guard_events=guard_events,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
     return counts, violations, file_events, dict(unresolved)
 
 
-def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False):
+def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
+          rundown=None):
+    require(rundown is None or etw, "FileIO rundown requires ETW audit")
     start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
             re.fullmatch(r"[0-9a-f]{64}", manifest["executable_sha256"]),
@@ -641,7 +648,8 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         immutable = [windows_path(manifest["observed_roots"][label])
                      for label in manifest["immutable_observed"]]
         file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
-            manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues)
+            manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues,
+            rundown=rundown)
         path_diagnostics = []
     else:
         file_counts, violations, file_events, path_diagnostics = inspect_files(
@@ -678,7 +686,9 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         "native_n12_accepted": False,
         "filesystem": filesystem, "file_events": file_counts, "file_violations": violations,
         "unresolved_file_paths": path_diagnostics,
-        **({"file_evidence_source": "etw", "etw_unresolved_mutations": etw_diagnostics} if etw else {}),
+        **({"file_evidence_source": "etw", "etw_unresolved_mutations": etw_diagnostics,
+             **({"file_key_rundown_records": len(rundown)} if rundown is not None else {})}
+           if etw else {}),
         "snapshot_changes": snapshots, "unexpected_snapshot_changes": changed,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }
@@ -738,6 +748,41 @@ def read_json(path):
         return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
+def read_rundown_file(path, manifest):
+    """Read native ProcessTrace FileIO names with a manifest-pinned digest."""
+    with evidence_stage("FileIO rundown input"):
+        expected = manifest.get("etw", {}).get("rundown_sha256")
+        require(isinstance(expected, str) and re.fullmatch(r"[0-9a-f]{64}", expected),
+                "FileIO rundown SHA-256 is required in the ETW manifest")
+        digest = hashlib.sha256()
+        entries = []
+        with path.open("rb") as stream:
+            for raw_line in stream:
+                digest.update(raw_line)
+                require(bool(raw_line.strip()), "FileIO rundown contains an empty record")
+                entry = json.loads(raw_line)
+                require(isinstance(entry, dict), "invalid FileIO rundown record")
+                raw_key = entry.get("key")
+                if isinstance(raw_key, str):
+                    try:
+                        key = int(raw_key, 16 if raw_key.lower().startswith("0x") else 10)
+                    except ValueError:
+                        key = None
+                else:
+                    key = raw_key
+                require(type(key) is int and key > 0, "invalid FileIO rundown key")
+                value = entry.get("path")
+                require(isinstance(value, str) and 0 < len(value) <= 32768
+                        and not any(ord(char) < 0x20 for char in value),
+                        "invalid FileIO rundown path")
+                require(entry.get("decoder") in {"tdh+raw-schema", "tdh", "raw-schema-v2"},
+                        "FileIO rundown requires a recognised native decoder")
+                entries.append({"key": key, "path": value})
+        require(digest.hexdigest() == expected, "FileIO rundown SHA-256 mismatch")
+        require(entries, "FileIO rundown is empty")
+        return entries
+
+
 def check_etw_export(manifest, path):
     issues = set()
     with evidence_stage("ETW capture metadata"):
@@ -783,7 +828,7 @@ def stable_thread_bookends(bookends, capture_start, stable_pids, lifecycle_tids)
             and birth < capture_start and after.get(tid) == (pid, birth) and tid not in lifecycle_tids}
 
 
-def check_etw_preflight(manifest, fixture, path, *, bookends=None):
+def check_etw_preflight(manifest, fixture, path, *, bookends=None, rundown=None):
     """Exercise strict ETW correlation using fixture PIDs and ETW lifetimes."""
     if __package__:
         from .n12_etw_correlate import number
@@ -842,14 +887,16 @@ def check_etw_preflight(manifest, fixture, path, *, bookends=None):
         bookends, bounds[0], bookend_pids, lifecycle_tids)
     counts, violations, file_events, unresolved = inspect_etw_files(
         manifest, path, start, end, processes, roles, protected, permitted, issues,
-        details=details, process_bookends=bookend_pids, thread_bookends=bookend_threads)
+        details=details, process_bookends=bookend_pids, thread_bookends=bookend_threads,
+        rundown=rundown)
     matched = calibration_file_events(root, "child") <= file_events
     return {"scope": "strict ETW diagnostic preflight with generated process evidence",
             "etw_coverage": "BLOCKED" if issues or violations or not matched else "CLEAN",
             "coverage_issues": sorted(issues), "expected_fixture_operations_matched": matched,
             "file_events": counts, "file_violations": violations,
             "etw_unresolved_mutations": unresolved, "etw_unresolved_event_types": details,
-            "native_n12_accepted": False}
+            "native_n12_accepted": False,
+            **({"file_key_rundown_records": len(rundown)} if rundown is not None else {})}
 
 
 def main():
@@ -865,6 +912,8 @@ def main():
     for argument in ("manifest", "fixture", "etw_events"):
         etw_preflight.add_argument(argument, type=Path)
     etw_preflight.add_argument("--process-bookends", type=Path)
+    etw_preflight.add_argument("--rundown", type=Path,
+                               help="Native FileIO rundown JSONL, SHA-256 pinned in the ETW manifest.")
     for mode in ("check-calibration", "check-calibration-etw"):
         calibration = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "file_trace", "output"):
@@ -876,6 +925,9 @@ def main():
             report.add_argument(argument, type=Path)
         report.add_argument("--private-endpoints", type=Path,
                             help="Optional raw endpoint report, confined to disposable Windows runner temp.")
+        if mode == "audit-etw":
+            report.add_argument("--rundown", type=Path,
+                                help="Native FileIO rundown JSONL, SHA-256 pinned in the ETW manifest.")
     args = cli.parse_args()
     try:
         if args.mode == "check-etw-export":
@@ -883,9 +935,11 @@ def main():
             print(f"N12 ETW export passed validation: {count} events.")
             return 0
         if args.mode == "check-etw-preflight":
+            manifest = read_json(args.manifest)
             bookends = read_json(args.process_bookends) if args.process_bookends else None
-            result = check_etw_preflight(read_json(args.manifest), read_json(args.fixture)["fixture"],
-                                         args.etw_events, bookends=bookends)
+            rundown = read_rundown_file(args.rundown, manifest) if args.rundown else None
+            result = check_etw_preflight(manifest, read_json(args.fixture)["fixture"],
+                                         args.etw_events, bookends=bookends, rundown=rundown)
             print(json.dumps(result, indent=2, sort_keys=True))
             expected_issues = {"etw-mutation-coverage-unresolved"}
             ready = result["expected_fixture_operations_matched"] and not result["file_violations"]
@@ -910,8 +964,12 @@ def main():
                 private = local_disposable_path(args.private_endpoints, runner_temp_only=True)
                 require(private != output.absolute(), "public and private report paths must differ")
             etw = args.mode == "audit-etw"
-            result = audit(read_json(args.manifest), args.sysmon, args.etw_events if etw else args.procmon,
-                           read_json(args.before), read_json(args.after), private_endpoints=endpoints, etw=etw)
+            manifest = read_json(args.manifest)
+            rundown_path = getattr(args, "rundown", None)
+            rundown = read_rundown_file(rundown_path, manifest) if rundown_path else None
+            result = audit(manifest, args.sysmon, args.etw_events if etw else args.procmon,
+                           read_json(args.before), read_json(args.after), private_endpoints=endpoints,
+                           etw=etw, rundown=rundown)
             if private:
                 with private.open("x", encoding="utf-8") as stream:
                     json.dump(endpoints, stream, indent=2)
