@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-import type {BrowserContext,Locator,Route} from '@playwright/test';
+import type {BrowserContext,Locator,Page,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -951,12 +951,12 @@ test('P4 N11 real HTTP: compact Quality approval refreshes Prepare, survives pee
     const context=await launch();
     try{
       const [page]=context.pages();
-      const peer=await context.newPage();
+      let peer:Page|null=null;
       let permit:{id:string;action:string;revision:number}|null=null;
       const lifecycleWrites:string[]=[];
       const blocked=await readOnlyBrowserGuard(context,projectId,undefined,[initialId],writes,['/projects/manage'],route=>{
         const outgoing=route.request();
-        if(!permit||!matchesN12LifecycleRequest(outgoing,API+'/api',permit)||outgoing.frame().page()!==peer)
+        if(!peer||!permit||!matchesN12LifecycleRequest(outgoing,API+'/api',permit)||outgoing.frame().page()!==peer)
           return false;
         lifecycleWrites.push(permit.action);
         permit=null;
@@ -968,12 +968,16 @@ test('P4 N11 real HTTP: compact Quality approval refreshes Prepare, survives pee
       await expect(chooser).toHaveValue(initialId);
       await expect(page.getByRole('region',{name:'Potential prediction opportunities'})).toContainText('churn');
       await chooser.selectOption(projectId);
-      await peer.goto('/p4_n12_lifecycle_peer.html');
       const read=async(url:string)=>{
         const response=await request.get(url);
         return {status:response.status(),json:()=>response.json()};
       };
-      await verifyP4QualityTransition(page,API+'/api',projectId,read,{reviewApproval:approveCompactQuality});
+      await test.step('Approve exact Quality change at compact size and refresh Prepare',async()=>{
+        await verifyP4QualityTransition(page,API+'/api',projectId,read,{reviewApproval:approveCompactQuality});
+      });
+      peer=await context.newPage();
+      await peer.goto('/p4_n12_lifecycle_peer.html',{waitUntil:'domcontentloaded',timeout:10000});
+      await page.bringToFront();
       await verifyN12ArchiveDraft(page,peer,API+'/api',projectId,read,(approved:{id:string;action:string;revision:number})=>{
         expect(permit).toBeNull();
         permit=approved;

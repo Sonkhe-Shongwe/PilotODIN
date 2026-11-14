@@ -51,7 +51,7 @@ export async function verifyP4QualityTransition(page, api, projectId, read, { be
   await expect(review).toContainText('Current approved dataset version: 1.');
   await expect(target).toHaveValue('');
   const [response] = await Promise.all([
-    page.waitForResponse(r => r.url() === planV1 && r.request().method() === 'GET'),
+    page.waitForResponse(r => r.url() === planV1 && r.request().method() === 'GET', { timeout: 20000 }),
     target.selectOption('churn'),
   ]);
   expect(response.status()).toBe(200);
@@ -60,7 +60,7 @@ export async function verifyP4QualityTransition(page, api, projectId, read, { be
 }
 
 export async function approveQualityChange(page, inspect = async () => {}) {
-  await page.getByRole('button', { name: 'Review 1 safe fixes', exact: true }).click();
+  await page.getByRole('button', { name: 'Review 1 safe fixes', exact: true }).click({ timeout: 15000 });
   const approval = page.getByRole('dialog', { name: 'Review exact dataset change' });
   await expect(approval).toContainText('Working version: v0');
   await expect(approval).toContainText('Changed cells: 1');
@@ -68,7 +68,7 @@ export async function approveQualityChange(page, inspect = async () => {}) {
   await expect(approval.getByRole('cell', { name: 'segment', exact: true })).toBeVisible();
   const approve = approval.getByRole('button', { name: 'Approve these changes' });
   await inspect(approval, approve);
-  await approve.click();
+  await approve.click({ timeout: 15000 });
   await expect(approval).toHaveCount(0);
 }
 

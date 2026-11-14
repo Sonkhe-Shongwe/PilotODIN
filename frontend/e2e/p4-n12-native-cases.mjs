@@ -23,7 +23,7 @@ export async function approveCompactQuality(page) {
       width: 730, height: 540, deviceScaleFactor: 0, mobile: false,
     });
     await approveQualityChange(page, async (dialog, approve) => {
-      await approve.scrollIntoViewIfNeeded();
+      await approve.scrollIntoViewIfNeeded({ timeout: 10000 });
       await expect(approve).toBeInViewport({ ratio: 1 });
       expect(await dialog.evaluate(element => {
         const { left, right, top, bottom } = element.getBoundingClientRect();
@@ -59,7 +59,7 @@ export async function verifyN12ArchiveDraft(page, peer, api, projectId, read, pe
   const historyUrl = `${projectUrl}/quality/history`;
   await expect(chooser).toHaveValue(projectId);
   await expect(target).toHaveValue('churn');
-  const pane = await primary.elementHandle();
+  const pane = await primary.elementHandle({ timeout: 10000 });
   try {
     const history = await read(historyUrl);
     expect(history.status).toBe(200);
