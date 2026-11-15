@@ -28,6 +28,7 @@ PROBE = FRONTEND / "e2e" / "p4-71-native-webview-qa.mjs"
 PORTS = (5173, 8000, 9331)
 HTTP = build_opener(ProxyHandler({}))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
+INITIAL_FIXTURE_LEAD_IN_SECONDS = 0.05
 INITIAL_SYSMON_RETRYABLE = {
     "channel-window-empty", "parent-birth-missing", "child-birth-missing",
     "process-exit-missing", "child-loopback-tcp-or-udp-missing",
@@ -396,6 +397,8 @@ def capture(root, staged, source, expected_hash, node):
         raise
     try:
         manifest["start_utc"] = now().isoformat()
+        # Leave room for Sysmon's millisecond birth timestamp at the audit boundary.
+        time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
         print("N12 journey stage initial calibration", flush=True)
         record = calibrate(calibration[0], manifest)
         verify_initial_sysmon(root, manifest, record)

@@ -302,9 +302,20 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "start_capture", lambda *a: events.append("etw-start"))
     monkeypatch.setattr(journey.etw, "volume_devices", lambda: {"C:": r"\Device\HarddiskVolume1"})
     monkeypatch.setattr(journey.etw, "stop_trace", lambda *a: events.append("etw-stop") or {"buffers_written": 4})
-    monkeypatch.setattr(journey.time, "sleep", lambda seconds: events.append("drain" if "etw-stop" in events else "idle-observation"))
+    def sleep(seconds):
+        if "calibration-first" not in events:
+            assert events[-1] == "etw-start"
+            assert manifest["start_utc"] == "2026-11-14T00:00:01+00:00"
+            assert 0.001 < seconds <= 0.1
+            events.append("initial-fixture-lead-in")
+        else:
+            events.append("drain" if "etw-stop" in events else "idle-observation")
+
+    monkeypatch.setattr(journey.time, "sleep", sleep)
 
     def calibrate(directory, m):
+        if directory == calibrations[0]:
+            assert events[-1] == "initial-fixture-lead-in"
         events.append(directory.name)
         record = {"role": "calibration", "pid": len(events), "port": 20000 + len(events)}
         m["processes"].append(record)
@@ -394,7 +405,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     else:
         report = journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
         assert report["coverage"] == "BLOCKED"
-        assert events == ["process-bookend-before", "etw-start", "calibration-first",
+        assert events == ["process-bookend-before", "etw-start", "initial-fixture-lead-in", "calibration-first",
                           "sysmon-prelaunch-check", "idle-observation",
                           "backend", "vite", "verify-binary", "app-first", "driver-first", "graceful-close",
                           "profile-exit", "verify-binary", "app-relaunch", "driver-relaunch", "graceful-close",
