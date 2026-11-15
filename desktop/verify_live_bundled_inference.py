@@ -29,6 +29,9 @@ from verify_inference_assets import verify
 
 
 IDLE_SLEEP_SECONDS = 30
+MEMORY_PROFILES = {'baseline': 512, 'reduced': 128}
+CONTEXT_TOKENS = 2048
+ANALYTICS_RESPONSE_TOKENS = 128
 
 
 def port() -> int:
@@ -166,6 +169,83 @@ def evaluate_wording(base: str, token: str, model_alias: str, pid: int) -> list[
     return results
 
 
+def evaluate_analytics(base: str, token: str, model_alias: str, pid: int,
+                       *, include_long_prompt: bool = False) -> list[dict]:
+    cases = [(name, facts, question, expected, '') for name, facts, question, expected in CASES]
+    if include_long_prompt:
+        _, facts, question, expected = CASES[0]
+        padding = 'Synthetic context for the batch-size check.\n' * 100
+        cases.append(('long_context_overview', facts, question, expected, padding))
+    results = []
+    for name, facts, question, expected, padding in cases:
+        request_begin = time.monotonic()
+        status, result = send(base + '/v1/chat/completions', token, {
+            'model': model_alias,
+            'messages': [
+                {'role': 'system', 'content': SYSTEM},
+                {'role': 'user', 'content': padding + json.dumps({'verified_facts': facts, 'question': question})},
+            ],
+            'max_tokens': ANALYTICS_RESPONSE_TOKENS, 'temperature': 0, 'stream': False,
+            'chat_template_kwargs': {'enable_thinking': False},
+        }, timeout=60)
+        if status != 200 or not isinstance(result, dict) or not result.get('choices'):
+            raise RuntimeError(f'{name}: completion failed (HTTP {status})')
+        request_seconds = round(time.monotonic() - request_begin, 3)
+        choice = result['choices'][0]
+        content = choice.get('message', {}).get('content')
+        complete = choice.get('finish_reason') == 'stop'
+        record = {'case': name, 'passed': complete and isinstance(content, str) and score_answer(content, expected),
+                  'finish_reason': choice.get('finish_reason'), 'seconds': request_seconds, **worker_memory(pid)}
+        if include_long_prompt:
+            record['prompt_tokens'] = result.get('usage', {}).get('prompt_tokens')
+        else:
+            record['answer'] = content[:512] if isinstance(content, str) else None
+        results.append(record)
+    return results
+
+
+def compare_worker_profiles(baseline: dict, reduced: dict) -> dict:
+    """Recommend only an eligible candidate for physical testing."""
+    resident_key = 'cumulative_peak_working_set_mib'
+    commit_key = 'cumulative_peak_commit_mib'
+    resident_saved = round(baseline['cases'][-1][resident_key] - reduced['cases'][-1][resident_key], 1)
+    commit_saved = round(baseline['cases'][-1][commit_key] - reduced['cases'][-1][commit_key], 1)
+    inputs_match = all(
+        a['case'] == b['case'] and type(a['prompt_tokens']) is int
+        and 0 < a['prompt_tokens'] <= CONTEXT_TOKENS - ANALYTICS_RESPONSE_TOKENS
+        and a['prompt_tokens'] == b['prompt_tokens']
+        for a, b in zip(baseline['cases'], reduced['cases'], strict=True)
+    )
+    long_prompt_exercises_both = (
+        inputs_match and baseline['cases'][-1]['prompt_tokens'] > MEMORY_PROFILES['baseline']
+    )
+    quality_passed = all(case['passed'] for case in reduced['cases'])
+    eligible = long_prompt_exercises_both and quality_passed and resident_saved > 0 and commit_saved >= 0
+    return {
+        'result': 'candidate_for_physical_retest' if eligible else 'retain_current_profile',
+        'resident_mib_saved': resident_saved, 'commit_mib_saved': commit_saved,
+        'matched_prompt_tokens': inputs_match, 'long_prompt_exercises_both_profiles': long_prompt_exercises_both,
+        'answers_correct': {name: sum(case['passed'] for case in profile['cases'])
+                            for name, profile in (('baseline', baseline), ('reduced', reduced))},
+        'answer_count': len(reduced['cases']),
+    }
+
+
+def run_memory_comparison(root: Path, options: argparse.Namespace) -> int:
+    profiles = {}
+    for name, batch in MEMORY_PROFILES.items():
+        try:
+            profiles[name] = run_worker(root, options, physical_batch=batch, check_idle=name == 'baseline')
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f'OFFLINE AI WORKER PROFILE FAILED ({name}): {exc}', file=sys.stderr)
+            profiles[name] = {'physical_batch': batch, 'status': 'failed'}
+    completed = all('cases' in profile for profile in profiles.values())
+    comparison = (compare_worker_profiles(profiles['baseline'], profiles['reduced']) if completed
+                  else {'result': 'comparison_incomplete'})
+    print('OFFLINE AI WORKER COMPARISON: ' + json.dumps({**comparison, 'profiles': profiles}, sort_keys=True))
+    return 0 if completed and profiles['baseline']['idle_release']['status'] == 'passed' else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--memory-profile', action='store_true',
@@ -177,19 +257,26 @@ def main() -> int:
                             help='Score follow-up selection while keeping verified summaries fixed.')
     evaluation.add_argument('--verify-idle-release', action='store_true',
                             help='Measure RAM after idle sleep and verify an authenticated completion after waking.')
+    evaluation.add_argument('--compare-worker-memory', action='store_true',
+                            help='Measure the current and reduced physical batches on fresh workers, including idle release.')
     parser.add_argument('--candidate', choices=CANDIDATES,
                         help='Use a pinned alternate GGUF for the analytics evaluation only.')
     parser.add_argument('--candidate-file', type=Path, help='Local path to the pinned alternate GGUF.')
     options = parser.parse_args()
     evaluating = options.analytics_eval or options.wording_eval
-    if (options.memory_profile or evaluating or options.verify_idle_release) and os.name != 'nt':
+    if (options.memory_profile or evaluating or options.verify_idle_release or options.compare_worker_memory) and os.name != 'nt':
         parser.error('Worker profiling requires Windows')
     if bool(options.candidate) != bool(options.candidate_file) or (options.candidate and not evaluating):
         parser.error('--candidate and --candidate-file must be used together in an evaluation mode')
-    profile_memory = options.memory_profile or evaluating
-
     root = Path(__file__).resolve().parents[1]
     verify(root)
+    if options.compare_worker_memory:
+        return run_memory_comparison(root, options)
+    return run_worker(root, options, check_idle=options.verify_idle_release)
+
+
+def run_worker(root: Path, options: argparse.Namespace, *, physical_batch: int | None = None, check_idle: bool = False):
+    profile_memory = options.memory_profile or options.analytics_eval or options.wording_eval or physical_batch is not None
     tauri = root / 'frontend' / 'src-tauri'
     model = tauri / 'resources' / 'models' / 'qwen3-1.7b-q4_k_m.gguf'
     model_name = options.candidate or 'qwen3-1.7b-q4-k-m'
@@ -204,10 +291,12 @@ def main() -> int:
     env['LLAMA_API_KEY'] = token
     env['PATH'] = os.pathsep.join((str(dlls), env.get('PATH', '')))
     args = [str(runtime), '--model', str(model), '--alias', model_alias,
-            '--host', '127.0.0.1', '--port', str(listen_port), '--ctx-size', '2048',
+            '--host', '127.0.0.1', '--port', str(listen_port), '--ctx-size', str(CONTEXT_TOKENS),
             '--threads', '2', '--parallel', '1', '--gpu-layers', '0',
             '--no-webui', '--no-agent']
-    if options.verify_idle_release:
+    if physical_batch is not None:
+        args.extend(('--ubatch-size', str(physical_batch)))
+    if check_idle or physical_batch is not None:
         args.extend(('--sleep-idle-seconds', str(IDLE_SLEEP_SECONDS)))
     flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
     # Startup diagnostics identify missing vendor DLLs and unsupported flags.
@@ -244,6 +333,17 @@ def main() -> int:
         }
         if send(base + '/v1/chat/completions', body=unauthenticated_probe, timeout=5)[0] != 401:
             raise RuntimeError('Local inference API failed to reject unauthenticated generation')
+        if physical_batch is not None:
+            profile = {'physical_batch': physical_batch, 'model_ready': {'elapsed_seconds': load_seconds, **ready_memory},
+                       'cases': evaluate_analytics(base, token, model_alias, proc.pid, include_long_prompt=True)}
+            if check_idle:
+                try:
+                    profile['idle_release'] = {'status': 'passed', **verify_idle_release(
+                        base, token, proc.pid, model_alias, worker_memory(proc.pid))}
+                except (OSError, ValueError, RuntimeError) as exc:
+                    print(f'OFFLINE AI IDLE RELEASE FAILED: {exc}', file=sys.stderr)
+                    profile['idle_release'] = {'status': 'failed'}
+            return profile
         if options.wording_eval:
             results = evaluate_wording(base, token, model_alias, proc.pid)
             print('OFFLINE WORDING EVALUATION: ' + json.dumps({
@@ -255,31 +355,7 @@ def main() -> int:
             }, sort_keys=True))
             return 0
         if options.analytics_eval:
-            results = []
-            for case_name, facts, question, expected in CASES:
-                request_begin = time.monotonic()
-                status, result = send(base + '/v1/chat/completions', token, {
-                    'model': model_alias,
-                    'messages': [
-                        {'role': 'system', 'content': SYSTEM},
-                        {'role': 'user', 'content': json.dumps({'verified_facts': facts, 'question': question})},
-                    ],
-                    'max_tokens': 128, 'temperature': 0, 'stream': False,
-                    'chat_template_kwargs': {'enable_thinking': False},
-                }, timeout=60)
-                request_seconds = round(time.monotonic() - request_begin, 3)
-                if status != 200 or not isinstance(result, dict) or not result.get('choices'):
-                    raise RuntimeError(f'{case_name}: completion failed (HTTP {status})')
-                choice = result['choices'][0]
-                content = choice.get('message', {}).get('content')
-                complete = choice.get('finish_reason') == 'stop'
-                results.append({
-                    'case': case_name, 'passed': complete and isinstance(content, str) and score_answer(content, expected),
-                    'finish_reason': choice.get('finish_reason'),
-                    'answer': content[:512] if isinstance(content, str) else None,
-                    'seconds': request_seconds,
-                    **worker_memory(proc.pid),
-                })
+            results = evaluate_analytics(base, token, model_alias, proc.pid)
             print('OFFLINE ANALYTICS EVALUATION: ' + json.dumps({
                 'model': model_name,
                 'model_ready': {'elapsed_seconds': load_seconds, **ready_memory},
@@ -323,6 +399,8 @@ def main() -> int:
                 print('LLAMA STARTUP DIAGNOSTIC: ' + line[:320], file=sys.stderr)
         except OSError:
             print('LLAMA STARTUP DIAGNOSTIC: startup log unavailable', file=sys.stderr)
+        if physical_batch is not None:
+            raise RuntimeError(f'Worker comparison failed at physical batch {physical_batch}') from exc
         return 1
     finally:
         if os.name == 'nt' and proc.poll() is None:

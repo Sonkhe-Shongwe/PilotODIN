@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Consolidated R03 Windows worker comparison
+
+The queued idle-release check is now part of one [hosted Windows run](../.github/workflows/p4-r03-qwen-idle-release.yml) that stages the pinned Qwen3 1.7B model and llama.cpp b10344 CPU runtime once. It starts a fresh worker for each physical batch size, 512 and 128, and holds the model, 2,048-token context, threads, and request sequence constant. The report includes startup time, per-request time, peak resident and committed memory, exact-answer scores, and the baseline worker's idle release and wake-up result. Four existing synthetic questions and one longer overview prompt exercise the batch sizes. The longer prompt must exceed 512 tokens while leaving room for the full response budget.
+
+Recommend the reduced batch for physical testing only if it lowers observed peak resident memory without increasing peak commit, processes matched prompt lengths, and passes all five answer checks. Otherwise retain the current setting. The hosted comparison measures the worker alone. Physical coexistence with the desktop app and analytics remains a separate acceptance requirement. No production tuning has been applied. The run awaits approval and its marker is absent.
+
 ## 15 November 2026 | Apply offline AI settings to automatic investigations
 
 The investigation panel now reports when offline AI is disabled or Low-memory admission blocks a new plan. When these checks fail, a new run does not start and an interrupted run keeps its existing state. The backend checks again before each model call. Previously journalled evidence steps can still be recovered without a model. Manual analysis remains available.
@@ -184,7 +190,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the recorded physical RAM shortfall as the R03 baseline. Verify idle release and wake on the pinned standalone Windows worker in one separately approved run. This uses the existing b10344 runtime and bundled Qwen3 1.7B assets. The stock assets would be staged on a disposable hosted runner, followed by two synthetic localhost requests and three worker memory samples. This test needs no desktop compilation. For the separate cold-start shortfall, measure whether a smaller inference batch reduces peak memory on the same model and workload before choosing any production setting. Retest on the laptop when a source-matched build changes the workload or memory budget. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Run the consolidated Windows worker comparison in one separately approved session. Use the recorded physical RAM shortfall as the R03 baseline and retest on the laptop when a source-matched build changes the workload or memory budget. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

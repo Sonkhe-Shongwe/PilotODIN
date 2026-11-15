@@ -1,4 +1,4 @@
-name: P4 R03 Windows Qwen idle release
+name: P4 R03 Windows offline worker comparison
 
 # A new source-pinned owner approval marker is required to launch this run.
 on:
@@ -13,7 +13,7 @@ jobs:
   measure:
     if: ${{ github.run_attempt == '1' }}
     runs-on: windows-2022
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
@@ -35,7 +35,7 @@ jobs:
           }
           $approval = @(Get-Content -LiteralPath $marker)
           if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
-              $approval[1] -cne 'scope=r03-one-qwen-idle-release') {
+              $approval[1] -cne 'scope=r03-one-windows-worker-comparison') {
             throw 'The test requires a new source-pinned approval marker.'
           }
           $source = $Matches[1]
@@ -54,6 +54,6 @@ jobs:
       - name: Stage the pinned Qwen model and CPU runtime
         shell: pwsh
         run: ./desktop/Stage_Pinned_Offline_AI.ps1
-      - name: Measure idle memory release and wake-up on localhost
+      - name: Compare cold start, analytics answers and idle memory release
         shell: pwsh
-        run: python -B desktop/verify_live_bundled_inference.py --verify-idle-release
+        run: python -B desktop/verify_live_bundled_inference.py --compare-worker-memory

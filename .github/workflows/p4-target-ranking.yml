@@ -8,6 +8,9 @@ on:
       - feature/live-dev-workspace-20261023
     paths:
       - .github/workflows/p4-target-ranking.yml
+      - .github/workflows/p4-r03-qwen-idle-release.yml
+      - desktop/verify_live_bundled_inference.py
+      - tests/test_p4_r03_worker_comparison.py
       - backend/target_opportunities.py
       - backend/main.py
       - backend/engine.py
@@ -124,6 +127,7 @@ jobs:
           tests/test_p4_manual_target_inspection.py
           tests/test_p4_queue_resource_bounds.py
           tests/test_p4_consolidated_acceptance.py
+          tests/test_p4_r03_worker_comparison.py
           tests/test_build_e_autonomous_investigations.py
           tests/test_p1_resource_admission.py
           tests/test_p4_phase_exit_matrix.py
