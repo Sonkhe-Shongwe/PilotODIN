@@ -73,6 +73,8 @@ The live collector and hosted app-journey workflows are disarmed. The last one-u
 
 ## Verified source checks
 
+The fixture lead-in passed 35 focused local checks and 409 broader local Python tests with one platform skip. [P4 CI #43690121057](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690121057) passed at [`f6ad497`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f6ad497763f64d47765a419e0b4a516e449c172c). A live app journey with the lead-in was NOT RUN.
+
 The protocol diagnostic passed 30 focused cases and 409 broader local Python tests with one platform skip. At source [`60d84db`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/60d84dbe86ee5e8cf3a840565e97c78799619bde), [P4 CI #43688313628](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43688313628) and [N12 FileIO fixture CI #43688313600](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43688313600) passed. A live app journey with this diagnostic was NOT RUN.
 
 Local Python verification passed 403 tests with one platform skip. At source [`a9e18fc`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a9e18fc9f20a95c63f231ef194b7d7e11035922a), all three [P4 CI jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43687194160) and the [N12 FileIO fixture job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43687194163) passed. The approved hosted follow-up has its own tested source and outcome above.
