@@ -1028,7 +1028,7 @@ def name_change_event_label(event):
 
 
 def request_time_file_key_evidence(write, completed, object_events, key_events, irp_events,
-                                   resolve_path, classify_path):
+                                   resolve_path, classify_path, *, first_observation=None):
     """Check an observed name lifetime on the request's key without assigning a writer."""
     ticks, data = write["ticks"], write["data"]
     key = number(data.get("FileKey"))
@@ -1037,6 +1037,8 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
     if successful_completion(irp_events, write, completed + 1) != completed:
         return "write-completion-unverified"
 
+    if first_observation is not None:
+        ticks = first_observation
     names = []
     last_delete = None
     tied_name_reset = False
@@ -1269,6 +1271,29 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
     return Counter(evaluate(write, completed, context) for write, completed, context in gaps)
 
 
+def shared_fixture_write(file_events, writes, before):
+    """Identify a fixture-only request with repeated observations and one completion."""
+    if len(writes) < 2 or len({event["ticks"] for event in writes}) != len(writes):
+        return None
+    first, last = writes[0], writes[-1]
+    irp = number(first["data"].get("Irp"))
+    key = number(first["data"].get("FileKey"))
+    if not irp or not key or any(
+        number(event["data"].get("Irp")) != irp or number(event["data"].get("FileKey")) != key
+        for event in writes
+    ):
+        return None
+    completion = successful_completion(file_events, last, before)
+    if completion is None:
+        return None
+    related = [event for event in file_events if first["ticks"] <= event["ticks"] < before
+               and number(event["data"].get("Irp")) == irp]
+    if len(related) != len(writes) + 1 or any(event is not candidate
+                                            for event, candidate in zip(related, writes)):
+        return None
+    return last
+
+
 def file_lifetime_report(control, events, devices):
     """Verify the generated in-trace open, write and handle teardown."""
     expected = canonical_file_path(control["path"], devices)
@@ -1309,6 +1334,7 @@ def file_lifetime_report(control, events, devices):
         write_start, write_end = control["write_window"]
         writes = [event for event in same_offset if write_start <= event["ticks"] <= write_end
                   and write_paging_flag(event["data"]) != "set"]
+    ambiguous = None
     if len(writes) != 1:
         result = {"status": "BLOCKED", "reason": "write-missing-or-ambiguous"}
         if control.get("prior_name_control"):
@@ -1325,11 +1351,21 @@ def file_lifetime_report(control, events, devices):
                 "candidates_without_request_id": without_id,
                 "candidates_with_ordered_successful_completion": completed,
             }
-        return result
-    write = writes[0]
+            recovered = shared_fixture_write(file_events, writes, control["end"] + 1)
+            if recovered is not None:
+                ambiguous = result
+        if ambiguous is None:
+            return result
+        write = recovered
+    else:
+        write = writes[0]
+    first_write = writes[0]["ticks"]
     ends = [event for event in lifetime if event["id"] in {13, 14}]
-    open_completed = successful_completion(file_events, opened, write["ticks"])
+    open_completed = successful_completion(file_events, opened, first_write)
     if open_completed is None:
+        if ambiguous is not None:
+            ambiguous["shared_request_path_trial"] = "open-completion-unverified"
+            return ambiguous
         return {"status": "BLOCKED", "reason": "open-completion-unverified"}
     write_completed = successful_completion(file_events, write, control["end"] + 1)
     if write_completed is None:
@@ -1359,8 +1395,8 @@ def file_lifetime_report(control, events, devices):
     result = {"status": "PASS" if ordered else "BLOCKED",
               "reason": None if ordered else "cleanup-close-order-unverified",
               "open_and_write_completed": True, **end_evidence,
-              "matching_name_before_write": any(event["ticks"] < write["ticks"] for event in name_events),
-              "matching_name_at_or_after_write": any(event["ticks"] >= write["ticks"] for event in name_events)}
+              "matching_name_before_write": any(event["ticks"] < first_write for event in name_events),
+              "matching_name_at_or_after_write": any(event["ticks"] >= first_write for event in name_events)}
     if control.get("prior_name_control"):
         object_events = [
             event for event in file_events if event["id"] not in {10, 11, 24}
@@ -1374,8 +1410,18 @@ def file_lifetime_report(control, events, devices):
             write, write_completed, object_events, key_events, file_events,
             lambda value: canonical_file_path(value, devices),
             lambda path: "matches-handle-path" if path == expected else "different-from-handle-path",
+            first_observation=first_write if ambiguous is not None else None,
         )
         result["request_time_path"] = verdict
+        if ambiguous is not None:
+            if not ordered or verdict != "matches-handle-path":
+                ambiguous["shared_request_path_trial"] = verdict
+                if verdict == "different-from-handle-path":
+                    ambiguous["request_time_path"] = verdict
+                return ambiguous
+            result["write_candidates"] = ambiguous["write_candidates"]
+            result["request_relationships"] = ambiguous["request_relationships"]
+            result["shared_request_path_trial"] = verdict
     if control.get("basic_info"):
         metadata = [event for event in lifetime if event["id"] == 17
                     and event["pid"] == control["pid"]

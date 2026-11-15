@@ -366,6 +366,51 @@ def test_in_capture_name_control_counts_request_relationships(second_id, extra_c
     assert all(private not in json.dumps(result) for private in ("private", "997", "998"))
 
 
+@pytest.mark.parametrize(("scenario", "verdict"), [
+    ("shared", "matches-handle-path"),
+    ("late-name", "no-prior-name-in-lifetime"),
+    ("wrong-name", "different-from-handle-path"),
+    ("rename-between", "possible-name-change"),
+    ("rename-at-first", "possible-name-change"),
+    ("late-open-completion", "open-completion-unverified"),
+    ("other-key", None),
+    ("reuse", None),
+    ("tied-writes", None),
+    ("tied-completions", None),
+    ("completion-before-last", None),
+    ("extra-completion", None),
+])
+def test_in_capture_name_control_trials_shared_request_paths(scenario, verdict):
+    path = r"C:\private\control.bin"
+    control = {"path": path, "pid": 7, "size": 113, "start": 1, "end": 30,
+               "prior_name_control": True, "offset": 4, "write_window": [10, 15]}
+    write = {"FileObject": 50, "FileKey": 60, "IOSize": 113, "ByteOffset": 4, "Irp": 997}
+    records = [
+        (2, 12, {"FileName": path, "FileObject": 50, "Irp": 1}),
+        (11 if scenario == "late-open-completion" else 3, 24, {"Irp": 1, "Status": 0}),
+        (11 if scenario == "late-name" else 5, 10,
+         {"FileObject": 60, "FileName": r"C:\private\other.bin" if scenario == "wrong-name" else path}),
+        (10, 16, write),
+        (10 if scenario == "tied-writes" else 12, 16, dict(write, FileKey=61 if scenario == "other-key" else 60)),
+        (11 if scenario == "completion-before-last" else 17, 24, {"Irp": 997, "Status": 0}),
+        (25, 13, {"FileObject": 50, "FileKey": 60}),
+        (26, 14, {"FileObject": 50, "FileKey": 60}),
+    ]
+    if scenario in {"rename-between", "rename-at-first"}:
+        records.append((10 if scenario == "rename-at-first" else 11, 27, {"FileKey": 60, "FileObject": 50}))
+    if scenario in {"reuse", "extra-completion", "tied-completions"}:
+        records.append((17 if scenario == "tied-completions" else 20, 24, {"Irp": 997, "Status": 0}))
+    if scenario == "reuse":
+        records.append((19, 16, dict(write, IOSize=9)))
+    events = [{"id": kind, "ticks": ticks, "pid": 7, "lifecycle": False, "data": data}
+              for ticks, kind, data in records]
+    result = file_lifetime_report(control, events, {})
+    assert result["status"] == ("PASS" if scenario == "shared" else "BLOCKED")
+    assert result.get("shared_request_path_trial") == verdict
+    assert result.get("request_time_path") == (verdict if scenario in {"shared", "wrong-name"} else None)
+    assert "private" not in json.dumps(result)
+
+
 @pytest.mark.parametrize(("fault", "reason"), [
     (None, None),
     ("same-object", "distinct-file-objects-unverified"),
