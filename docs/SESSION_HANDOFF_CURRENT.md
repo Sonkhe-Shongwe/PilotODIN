@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 15 November 2026 | Redacted Sysmon birth timing diagnostics
+
+- The generated calibration parent records its creation time directly from Windows. The shared guard reports only the number of outside-window PID/image candidates, their nearest signed timestamp differences and the number in the same millisecond as that creation time. The timing comparison is diagnostic. Out-of-window candidates still cannot satisfy the gate.
+- Generated cases cover a sub-millisecond boundary, a stale reused-PID candidate and unavailable creation-time evidence. The earlier live candidate's delta and identity remain unknown. The next step is a separately approved collector-only rehearsal to measure them before changing any boundary. Both live workflows are disarmed. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 15 November 2026 | Collector rehearsal blocked by Sysmon birth timestamp
 
 - The [approved collector-only run #43670876833, job #132680403722](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43670876833/job/132680403722) ran once from launch commit `beb960845fb5136ffb5f5c7772c0ed2f3c34ea7c`, pinned to reviewed source `4fd2e5e9acd67a51e32cb0a7c0513ae5b667e419`. Pinned Sysmon 15.22 provisioning passed. The generated fixture produced a calibration record and reached the shared prelaunch guard while ETW was active.

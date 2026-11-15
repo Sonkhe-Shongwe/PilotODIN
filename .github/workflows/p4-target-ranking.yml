@@ -284,6 +284,11 @@ jobs:
               (Test-Path -LiteralPath $calibration.renamed_fixture)) {
             throw 'N12 calibration evidence inconsistent.'
           }
+          $creation = [long]$calibration.parent_created_utc_ticks
+          $now = [DateTime]::UtcNow
+          if ($creation -lt $now.AddMinutes(-1).Ticks -or $creation -gt $now.AddSeconds(1).Ticks) {
+            throw 'The generated fixture did not report a plausible Windows process creation time.'
+          }
           python qa/p4_native/n12_trace.py snapshot $manifest $after
           if ($LASTEXITCODE -ne 0 -or
               (Get-FileHash -LiteralPath $before).Hash -ne (Get-FileHash -LiteralPath $after).Hash) {

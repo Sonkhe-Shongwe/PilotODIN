@@ -71,12 +71,15 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
     ("ambiguous", "parent-birth-ambiguous", 1),
     ("early-event", "parent-birth-before-window", 1),
     ("late-event", "parent-birth-after-window", 2),
+    ("same-millisecond", "parent-birth-before-window", 1),
+    ("pid-reuse", "parent-birth-before-window", 1),
+    ("missing-creation-time", "parent-birth-before-window", 1),
     ("gap", "sysmon-record-gap", 1),
     ("regressed", "channel record ID regressed", 2),
     ("collector-change", "sysmon-restart-config-change-or-error", 2),
 ])
 def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, capsys, scenario, expected, reads):
-    start = datetime(2026, 11, 14, 0, 0, 10, tzinfo=timezone.utc)
+    start = datetime(2026, 11, 14, 0, 0, 10, 500, tzinfo=timezone.utc)
     cutoff = start + timedelta(seconds=8)
     image = r"C:\Private\python.exe"
     parent = {"ProcessGuid": "private-parent", "ParentProcessGuid": "launcher", "ProcessId": "412",
@@ -86,7 +89,10 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
     udp = {"ProcessGuid": "private-child", "Protocol": "udp", "Initiated": "true",
            "DestinationIp": "127.0.0.1", "DestinationPort": "23551", "SourcePort": "23552"}
     events = [(11, 2, 0, {})]
-    event_time = {"early-event": -1, "late-event": 9}.get(scenario, 1)
+    event_time = {"early-event": -1, "late-event": 9, "same-millisecond": 0,
+                  "pid-reuse": -2, "missing-creation-time": -1}.get(scenario, 1)
+    if scenario in {"same-millisecond", "pid-reuse"}:
+        marker["parent_created_utc_ticks"] = journey.trace.utc_ticks(start) + 1000
     if scenario == "mismatched":
         parent["Image"] = r"C:\Private\wrong.exe"
     birth_id = 13 if scenario == "gap" else 12
@@ -145,6 +151,24 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
         with pytest.raises(journey.trace.EvidenceValidationError, match=expected) as error:
             journey.verify_initial_sysmon(tmp_path, manifest, marker)
         assert "private" not in str(error.value).lower()
+        if scenario in {"same-millisecond", "pid-reuse", "missing-creation-time"}:
+            stdout = capsys.readouterr().out
+            assert "private" not in stdout.lower()
+            diagnostics = json.loads(stdout.split("birth diagnostics: ", 1)[1])
+            expected_deltas = {
+                "same-millisecond": (-5000, -6000, 1),
+                "pid-reuse": (-20_005_000, -20_006_000, 0),
+                "missing-creation-time": (-10_005_000, None, None),
+            }
+            start_delta, creation_delta, millisecond_matches = expected_deltas[scenario]
+            assert diagnostics == {
+                "outside_candidate_count": 1,
+                "nearest_event_minus_start_ticks": start_delta,
+                "nearest_event_minus_end_ticks": start_delta - 80_000_000,
+                "creation_minus_start_ticks": 1000 if creation_delta is not None else None,
+                "nearest_event_minus_creation_ticks": creation_delta,
+                "same_creation_millisecond_count": millisecond_matches,
+            }
     else:
         journey.verify_initial_sysmon(tmp_path, manifest, marker)
         assert f"passed on read {reads}" in capsys.readouterr().out

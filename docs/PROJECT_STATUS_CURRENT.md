@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 15 November 2026 | Redacted Sysmon birth timing diagnostics
+
+The shared prelaunch check records relative timing for outside-window process birth candidates. A separately approved collector-only run is needed to observe the actual timing difference. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--redacted-sysmon-birth-timing-diagnostics).
+
 ## 15 November 2026 | Collector rehearsal blocked by Sysmon birth timestamp
 
 The [collector-only run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43670876833/job/132680403722) provisioned pinned Sysmon and reached the shared guard, which rejected a matching parent birth outside the fixture window. The final combined reducer was **NOT RUN**. The workflow is disarmed. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-rehearsal-blocked-by-sysmon-birth-timestamp).

@@ -135,16 +135,34 @@ def initial_sysmon_issues(path, first, last, start, end, record):
     # An outside-window birth explains a rejection. It never enters the process map.
     image = trace.windows_path(record["image"])
     outside = set()
+    outside_ticks = []
 
     def outside_birth(stamp, fields):
         if fields.get("ProcessId") == str(record["pid"]) and trace.windows_path(fields["Image"]) == image:
             outside.add("parent-birth-before-window" if stamp < start else "parent-birth-after-window")
+            outside_ticks.append(trace.utc_ticks(stamp))
 
     with trace.evidence_stage("initial Sysmon XML"):
         processes, connections, issues, actual_first, actual_last = trace.sysmon_events(
             path, start, end, outside_birth=outside_birth,
         )
     trace.require((first, last) == (actual_first, actual_last), "initial Sysmon record boundaries differ")
+    if outside_ticks:
+        start_ticks, end_ticks = trace.utc_ticks(start), trace.utc_ticks(end)
+        created = record.get("parent_created_utc_ticks")
+        available = type(created) is int and created > 0
+        reference = created if available else start_ticks
+        nearest = min(outside_ticks, key=lambda ticks: (abs(ticks - reference), ticks))
+        same_millisecond = (sum(ticks // 10_000 == created // 10_000 for ticks in outside_ticks)
+                            if available else None)
+        print("N12 initial Sysmon calibration birth diagnostics: " + json.dumps({
+            "outside_candidate_count": len(outside_ticks),
+            "nearest_event_minus_start_ticks": nearest - start_ticks,
+            "nearest_event_minus_end_ticks": nearest - end_ticks,
+            "creation_minus_start_ticks": created - start_ticks if available else None,
+            "nearest_event_minus_creation_ticks": nearest - created if available else None,
+            "same_creation_millisecond_count": same_millisecond,
+        }), flush=True)
     candidates = [process for process in processes.values() if process.pid == record["pid"]]
     matching = [process for process in candidates if process.image == image]
     if len(matching) > 1:

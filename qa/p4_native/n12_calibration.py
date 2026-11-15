@@ -11,6 +11,28 @@ import sys
 from pathlib import Path
 
 
+def parent_creation_ticks() -> int | None:
+    if os.name != "nt":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    current = kernel.GetCurrentProcess
+    current.argtypes = ()
+    current.restype = wintypes.HANDLE
+    get_times = kernel.GetProcessTimes
+    get_times.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4
+    get_times.restype = wintypes.BOOL
+    created, exited, kernel_time, user_time = (wintypes.FILETIME() for _ in range(4))
+    if not get_times(current(), ctypes.byref(created), ctypes.byref(exited),
+                     ctypes.byref(kernel_time), ctypes.byref(user_time)):
+        return None
+    filetime = created.dwHighDateTime << 32 | created.dwLowDateTime
+    # Convert the Windows FILETIME epoch to the UTC ticks used in the capture.
+    return filetime + 504911232000000000 if filetime else None
+
+
 def calibrate_child(original: Path, renamed: Path, port: int) -> None:
     with original.open("xb") as fixture:
         fixture.write(b"n12 calibration fixture\n")
@@ -54,7 +76,8 @@ def calibrate(directory: Path) -> dict:
                 child.kill()
                 child.wait()
     return {"role": "calibration", "pid": os.getpid(), "image": sys.executable, "child_pid": child.pid,
-            "fixture": str(original), "renamed_fixture": str(renamed), "port": address[1]}
+            "fixture": str(original), "renamed_fixture": str(renamed), "port": address[1],
+            "parent_created_utc_ticks": parent_creation_ticks()}
 
 
 def main():
