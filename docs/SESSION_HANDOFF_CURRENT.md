@@ -225,7 +225,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the existing four-row CSV in one consolidated Live Dev walkthrough of the [Local analytics milestone](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md). The hosted API workload provides the baseline for a future source-matched physical Windows desktop check. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Use the [one-command Live Dev smoke check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) with the existing four-row project and record the Windows result in one session. The hosted API workload provides the baseline for a future source-matched physical Windows desktop check. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

@@ -35,8 +35,20 @@ The launcher shows elapsed startup time at five-second intervals; this is actual
 - Never put production credentials or confidential datasets in test projects. Do not copy a production `data` directory into this folder.
 - Backend binds to `127.0.0.1:8000`; frontend binds to `127.0.0.1:5173`. Browser development is intentionally **not** the authenticated Tauri production shell. Keep this developer server on your own trusted computer; do not expose it to your network.
 - Browser Vite exercises the development ODIN settings and local rules. The bundled Qwen3 path requires separately approved native evidence for Rust resource verification, model launch and session authentication. Installer-based validation is reserved for the final release stage under the phase policy.
-- Use the [Local analytics plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#milestone-acceptance-examples) for the synthetic Ask ODIN workload. Record a browser run as Live Dev evidence. Current-source physical desktop measurements require an isolated app build on the approved Windows route.
+- The [Local analytics smoke check](#local-analytics-smoke-check) reuses the synthetic Ask ODIN project in Live Dev. Current-source physical desktop measurements require an isolated app build on the approved Windows route.
 - Developer dependency installation and runtime model loading are separate operations. Live reload does not update an already-installed EXE.
+
+## Local analytics smoke check
+
+Pull the active branch, start Live Dev, and leave both launcher consoles open. In a separate PowerShell window at the checkout root, run the following against the existing four-row project at working version 0.
+
+```powershell
+py -3 .\tools\Verify_Local_Analytics_Live_Dev.py
+```
+
+If the project has a different name, pass it as one quoted argument. On systems with only the `python` command, use it in place of `py -3`. The check verifies the fixture before submitting the five questions from the [acceptance examples](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#milestone-acceptance-examples). It prints a single JSON result with pass status, round-trip milliseconds, the checkout SHA and system memory snapshots before and after the workload. It uses the existing loopback API and creates no project or output file.
+
+To observe the UI on the same run, open **Ask ODIN**, select **Local analytics**, ask for the median premium for Yes outcomes, then immediately ask **What about No?** Confirm that the first result is 30 and that the second shows one matching row and zero usable values. Record any visible lag or error alongside the JSON. These are Windows Live Dev observations. Full desktop process memory and WebView2 measurements belong to the isolated native run.
 
 ## Quick quality checks (no NSIS build)
 
