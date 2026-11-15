@@ -6,6 +6,8 @@
 
 The pre-opened fixture report now compares the ETW path at write time against the independently verified Windows handle. Stop-time rundown retains its own verdict. Previously, a missing or different rundown entry prevented the write-time comparison, including when the file was renamed after the write completed. Generated cases check renames before, during and after a write, an ordered key reset with a fresh name, conflicting names and object reuse. All 169 trace and 45 app-journey cases passed using a local standard-library harness because pytest was unavailable locally. Strict scoring was unchanged. The 366 candidates from the connection rehearsal remain unverified. [N12 runbook](../qa/p4_native/N12_TRACE.md#successful-writes-with-unresolved-paths)
 
+At [source `147e00c`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/147e00c80627e69f75669530089101d99515cc18), [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43716555460) passed all three jobs, including 420 Python tests with one skip. [FileIO CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43716555391) passed 169 trace tests and both Windows fixture steps. The baseline pre-opened controls in both workflows reported `no-prior-name-in-lifetime` for the protected and outside writes. Stop-time rundown recovered both control keys and the scoped strict control passed. The broader strict coverage blocker remained.
+
 ## 15 November 2026 | N12 connection rehearsal passed prelaunch and blocked on ETW paths
 
 The [approved hosted Windows job #132816654192](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43715705070/job/132816654192) ran on attempt 1 from launch `cef9615270de6b99b4f87e573dbd3ec21ba8e580` at reviewed source `071c5b92246306180b712378562ba7f26ce95c92`. Pinned Sysmon 15.22 and the shared prelaunch check **PASSED on read 1**. The expected child's TCP and UDP markers were observed, so the rejection diagnostics did not fire. The earlier app-journey failure did not recur in this collector-only setup. Both final reductions verified the expected fixture operations with zero reported file violations. The fixture birth precision correction was unused.
@@ -126,7 +128,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the Windows fixture's write-time handle verdicts to assess whether request-time FileKey names can support strict path attribution. Expand the controls if the capture has too few verified matches. The live image-path retest and 567-finding comparison remain open and require a separately approved app run.
+Add a positive Windows control that creates a known disposable file during capture and checks for a matching name event before a write through an independently verified handle. Keep the pre-opened controls for the no-prior-name case. The positive check must establish the key and path without using a stop-time name as a substitute. The live image-path retest and 567-finding comparison remain open and require a separately approved app run.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
