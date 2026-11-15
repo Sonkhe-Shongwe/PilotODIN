@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Protocol diagnostic journey blocked by fixture birth timing
+
+The [hosted Windows run #43689529985](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43689529985/job/132737016063) ran once from launch `8a1efbe2f077dc8b957a4f5ad8aeb0008b96914c`, checking out reviewed source `4927e819bd19006057c3de056931d131b2a92178`. Dependency and driver preflight, the unpackaged QA build, executable provenance verification and pinned Sysmon 15.22 setup passed. The executable SHA-256 was `6d5b241e96400fbc6a671cfb9ae7892d1285d7680ab773f00c65b8a9f355086e`. The resolved Cargo lock SHA-256 was `278c01520af08f34b8861fc8191f283e0e5bb2223c2458e5f99ca5d7cd7d374f`.
+
+**Job FAILED. Initial calibration BLOCKED** on read 1 with `parent-birth-before-window`. One matching Sysmon birth was 74 µs before the window start. The independent Windows process creation time was 574.9 µs inside, in the same millisecond, giving a 648.9 µs difference between sources. The child protocol diagnostic, both app launches and the final audit were **NOT RUN**. The prior missing-protocol finding still lacks protocol-specific live evidence. The one-use approval was consumed and the workflow is disarmed.
+
 ## 15 November 2026 | Protocol-specific prelaunch diagnostics
 
 When initial calibration lacks a required child loopback marker, the shared guard now prints redacted TCP and UDP counts for matching records. It distinguishes absent markers from observed records before child birth, after child exit or outside the frozen read window. The existing lifetime check and bounded retry still apply. Generated Sysmon XML tests show that absent and out-of-window records block as before, and that a valid UDP record delivered on read 2 can pass. The earlier hosted failure cannot be assigned to a protocol from its retained summary.
@@ -61,7 +67,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-The protocol-specific diagnostic is ready for the next separately approved focused hosted app journey. Use one unpackaged build at the reviewed source and one disposable two-launch run on generated files. If calibration blocks, record the protocol and marker counts before selecting a correction. If it passes, evaluate the protected fingerprint comparison, attributable writes and network verdict. The [previous completed app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) recorded matching fingerprints for all four protected roots and the immutable fixture, alongside outside-scope writes and unexpected connections.
+Prepare a small scheduling margin between opening the audit window inside the active ETW session and starting the initial generated fixture. Verify the order with generated tests. Keep the strict process-identity and TCP/UDP checks, and leave the full audit and protocol diagnostics in place. Review this correction before seeking approval for another unpackaged Windows build and app journey. The [previous completed app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) recorded matching fingerprints for all four protected roots and the immutable fixture, alongside outside-scope writes and unexpected connections.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

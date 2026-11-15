@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use protocol diagnostic journey.
+    if: ${{ false }} # The one-use protocol diagnostic journey was consumed by run 43689529985.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
