@@ -27,6 +27,10 @@ PROBE = FRONTEND / "e2e" / "p4-71-native-webview-qa.mjs"
 PORTS = (5173, 8000, 9331)
 HTTP = build_opener(ProxyHandler({}))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
+INITIAL_SYSMON_RETRYABLE = {
+    "channel-window-empty", "parent-birth-missing", "child-birth-missing",
+    "process-exit-missing", "child-loopback-tcp-or-udp-missing",
+}
 
 
 def now():
@@ -51,13 +55,13 @@ def powershell(*args, timeout=30):
     return quiet(["pwsh", "-NoProfile", "-NonInteractive", "-File", *map(str, args)], timeout=timeout)
 
 
-def sysmon_tail():
-    return int(powershell(HELPER, "sysmon-tail"))
+def sysmon_tail(*, timeout=30):
+    return int(powershell(HELPER, "sysmon-tail", timeout=timeout))
 
 
-def export_sysmon(first, last, path):
+def export_sysmon(first, last, path, *, timeout=180):
     trace.require(1 <= first <= last, "invalid Sysmon record window")
-    powershell(NATIVE / "Export_P4_N12_Sysmon_Trace.ps1", first, last, path, timeout=180)
+    powershell(NATIVE / "Export_P4_N12_Sysmon_Trace.ps1", first, last, path, timeout=timeout)
 
 
 def snapshots(manifest):
@@ -123,40 +127,82 @@ def calibrate(directory, manifest):
     return record
 
 
-def verify_initial_sysmon(root, manifest, record):
-    # A known TCP/UDP child and both process exits must reach Sysmon before the app starts.
-    # The final audit checks both bookends against the continuous ETW export as well.
-    end = now()
-    time.sleep(3)
-    last = sysmon_tail()
-    path = root / "initial-sysmon.xml"
-    first = manifest["sysmon_first_record"]
-    export_sysmon(first, last, path)
+def initial_sysmon_issues(path, first, last, start, end, record):
+    # An outside-window birth explains a rejection. It never enters the process map.
+    image = trace.windows_path(record["image"])
+    outside = set()
+
+    def outside_birth(stamp, fields):
+        if fields.get("ProcessId") == str(record["pid"]) and trace.windows_path(fields["Image"]) == image:
+            outside.add("parent-birth-before-window" if stamp < start else "parent-birth-after-window")
+
     with trace.evidence_stage("initial Sysmon XML"):
         processes, connections, issues, actual_first, actual_last = trace.sysmon_events(
-            path, trace.utc_time(manifest["start_utc"]), end,
+            path, start, end, outside_birth=outside_birth,
         )
     trace.require((first, last) == (actual_first, actual_last), "initial Sysmon record boundaries differ")
+    candidates = [process for process in processes.values() if process.pid == record["pid"]]
+    matching = [process for process in candidates if process.image == image]
+    if len(matching) > 1:
+        return issues | {"parent-birth-ambiguous"}
+    if not matching:
+        if candidates:
+            issues.add("parent-image-mismatch")
+        elif not outside:
+            issues.add("parent-birth-missing")
+        return issues | outside
+
     roles, bindings = trace.bind_processes([record], processes, issues)
-    if bindings:
-        parent = bindings[0][1]
-        children = [p for p in processes.values() if p.parent == parent.guid]
-        trace.require(len(children) == 1 and children[0].pid == record["child_pid"],
-                      "initial Sysmon calibration is missing the fixture child")
-        child = children[0]
-        trace.require(parent.sha256 and child.sha256 == parent.sha256 and child.image == parent.image
-                      and parent.end and child.end and parent.start <= child.start <= child.end <= parent.end,
-                      "initial Sysmon calibration is missing the verified fixture lifetimes")
+    parent = bindings[0][1]
+    children = [process for process in processes.values() if process.parent == parent.guid]
+    if not children:
+        return issues | {"child-birth-missing"}
+    if len(children) != 1 or children[0].pid != record["child_pid"]:
+        return issues | {"child-identity-mismatch"}
+    child = children[0]
+    if not parent.sha256 or child.sha256 != parent.sha256 or child.image != parent.image:
+        issues.add("child-image-or-hash-mismatch")
+    if parent.end and child.end:
+        if not parent.start <= child.start <= child.end <= parent.end:
+            issues.add("fixture-lifetime-inconsistent")
         protocols = {connection.protocol for connection in connections
                      if connection.guid == child.guid and connection.initiated
                      and child.start <= connection.timestamp <= child.end
                      and connection.address.is_loopback and connection.port == record["port"]}
-        trace.require(protocols == {"tcp", "udp"}, "initial Sysmon calibration is missing loopback TCP or UDP")
+        if protocols != {"tcp", "udp"}:
+            issues.add("child-loopback-tcp-or-udp-missing")
     trace.verify_connection_lifetimes(connections, processes, roles, issues)
     _, unexpected, _ = trace.scoped_network(connections, roles, {record["port"]})
     if unexpected:
         issues.add("calibration-unexpected-connection")
-    trace.require(not issues, "initial Sysmon calibration blocked: " + ", ".join(sorted(issues)))
+    return issues
+
+
+def verify_initial_sysmon(root, manifest, record):
+    # Give pending channel writes one more chance. The fixture and event window stay fixed.
+    start, end = trace.utc_time(manifest["start_utc"]), now()
+    first = manifest["sysmon_first_record"]
+    previous_last = first - 1
+    for attempt in (1, 2):
+        time.sleep(3)
+        try:
+            last = sysmon_tail(timeout=15)
+            trace.require(last >= previous_last, "initial Sysmon channel record ID regressed")
+            previous_last = last
+            issues = {"channel-window-empty"}
+            if last >= first:
+                path = root / f"initial-sysmon-{attempt}.xml"
+                export_sysmon(first, last, path, timeout=15)
+                issues = initial_sysmon_issues(path, first, last, start, end, record)
+        except subprocess.SubprocessError as exc:
+            raise trace.EvidenceValidationError("initial Sysmon channel read or export failed") from exc
+        if not issues:
+            print(f"N12 initial Sysmon calibration passed on read {attempt}", flush=True)
+            return
+        reason = ", ".join(sorted(issues))
+        if attempt == 2 or not issues <= INITIAL_SYSMON_RETRYABLE:
+            raise trace.EvidenceValidationError(f"initial Sysmon calibration blocked on read {attempt}: {reason}")
+        print("N12 initial Sysmon calibration waiting for channel evidence: " + reason, flush=True)
 
 
 def run_driver(stack, manifest, node, root, env, relaunch):

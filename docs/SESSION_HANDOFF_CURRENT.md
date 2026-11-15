@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 15 November 2026 | N12 prelaunch calibration diagnostics
+
+- The [prelaunch guard](../qa/p4_research/n12_app_journey.py) distinguishes absent parent births, wrong images, multiple matches and births outside the fixture window. One bounded reread can pick up delayed channel records from the same fixture. The event-time window and record floor stay fixed. Process identity, both exits, loopback TCP/UDP and record continuity are still required before app launch. The report emits fixed reasons and keeps the XML private.
+- The [generated tests](../tests/test_p4_n12_app_journey.py) exercise the real XML parser with immediate and delayed delivery plus malformed coverage and identity cases. The [clean combined reducer regression](../tests/test_p4_n12_trace.py) also checks that no coverage issues, unexpected connections, file violations, unresolved operations or protected fingerprint changes accompany its scoped pass.
+- Next seek a separate approval for a collector-only Windows rehearsal with generated data and no PilotODIN compilation. The purpose is to test channel delivery and binding before another app journey. The prior live failure's exact cause remains unverified. The app-journey workflow is disarmed. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 14 November 2026 | N12 follow-up blocked at initial Sysmon calibration
 
 - The [approved hosted run #43639741630, job #132584422304](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43639741630/job/132584422304) ran on attempt 1 at launch commit `4173c9af5002405b0361ea89993d97eaef6ad9cb`, pinned to `6dbe0664be49cbdbe8d174c582d547c8c18d656b`. The unpackaged Windows build and pinned Sysmon 15.22 setup passed. Executable SHA-256 `a66fd221f0d406dcb268feb23c41db7eb402a976c75f54823076af7fc37b0372`. Resolved Cargo lock SHA-256 `cb6bc6303420a49e6aa5f8b57f896872081785cbf9586c50ede2d544c11ace94`.

@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 15 November 2026 | N12 prelaunch calibration diagnostics
+
+The hosted guard can distinguish missing, out-of-window and conflicting Sysmon parent evidence. A bounded reread can pick up delayed records for the same fixture, subject to the original calibration requirements. Live validation remains pending. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--n12-prelaunch-calibration-diagnostics).
+
 ## 14 November 2026 | N12 follow-up blocked at initial Sysmon calibration
 
 The [single approved follow-up](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43639741630/job/132584422304) passed the unpackaged build and pinned Sysmon provisioning. Initial calibration stopped on a missing or ambiguous fixture process binding before app launch. The job **FAILED** and produced no new audit verdicts. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-follow-up-blocked-at-initial-sysmon-calibration).

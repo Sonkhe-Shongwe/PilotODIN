@@ -1295,6 +1295,12 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     clean = report()
     assert clean["coverage"] == "CALIBRATED"
     assert clean["network"] == clean["filesystem"] == "PASS_SCOPED"
+    assert clean["coverage_issues"] == clean["unexpected_connections"] == clean["unexpected_snapshot_changes"] == []
+    assert clean["file_violations"] == clean["etw_unresolved_mutations"] == {}
+    assert clean["process_roles"]["app"] == 2
+    assert clean["process_roles"]["calibration"] == 4
+    assert clean["snapshot_changes"]["protected:original"] is False
+    assert clean["snapshot_changes"]["observed:fixture"] is False
     assert clean["file_events"]["backend:write"] == 1
     assert clean["native_n12_accepted"] is False
     cli_inputs = []

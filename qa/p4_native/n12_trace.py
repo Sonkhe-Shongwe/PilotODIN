@@ -104,7 +104,7 @@ def sysmon_sha256(hashes):
     return match[1].lower() if match else None
 
 
-def sysmon_events(path, start, end):
+def sysmon_events(path, start, end, *, outside_birth=None):
     processes = {}
     exits = {}
     connections = []
@@ -116,7 +116,8 @@ def sysmon_events(path, start, end):
         if phase != "end" or event.tag != EVENT_NS + "Event":
             continue
         system = event.find(EVENT_NS + "System")
-        stamp = utc_time(system.find(EVENT_NS + "TimeCreated").attrib["SystemTime"])
+        logged = utc_time(system.find(EVENT_NS + "TimeCreated").attrib["SystemTime"])
+        stamp = logged
         record = int(system.findtext(EVENT_NS + "EventRecordID"))
         if last_record is not None:
             require(record > last_record, "Sysmon export must be in ascending record order")
@@ -133,6 +134,12 @@ def sysmon_events(path, start, end):
             # UtcTime is when the process/network event happened. SystemTime
             # can be later if Windows wrote the event to the channel afterward.
             stamp = utc_time(fields["UtcTime"] + "+00:00")
+        if outside_birth is not None and kind == 1 and not start <= stamp <= end:
+            outside_birth(stamp, fields)
+        # A delayed channel record that indicates collector disruption cannot
+        # let the prelaunch reread silently pass.
+        if outside_birth is not None and kind in {4, 16, 255} and logged >= start:
+            issues.add("sysmon-restart-config-change-or-error")
         if start <= stamp <= end:
             if kind in {4, 16, 255}:
                 issues.add("sysmon-restart-config-change-or-error")

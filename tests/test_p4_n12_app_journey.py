@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import sys
+from xml.etree import ElementTree as ET
 
 import pytest
 
@@ -48,16 +49,107 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
               "port": 2231, "child_pid": 14 if fault == "wrong-child" else 13}
     monkeypatch.setattr(journey, "now", lambda: stamp(6))
     monkeypatch.setattr(journey.time, "sleep", lambda seconds: None)
-    monkeypatch.setattr(journey, "sysmon_tail", lambda: 20)
-    monkeypatch.setattr(journey, "export_sysmon", lambda first, last, path: None)
-    monkeypatch.setattr(journey.trace, "sysmon_events", lambda *args: (processes, connections, issues, 11, 20))
+    monkeypatch.setattr(journey, "sysmon_tail", lambda **kw: 20)
+    monkeypatch.setattr(journey, "export_sysmon", lambda *args, **kw: None)
+    monkeypatch.setattr(journey.trace, "sysmon_events", lambda *args, **kw: (processes, connections, issues, 11, 20))
     if fault:
         with pytest.raises(journey.trace.EvidenceValidationError, match={
-            "no-udp": "loopback TCP or UDP", "wrong-child": "fixture child", "gap": "sysmon-record-gap",
+            "no-udp": "child-loopback-tcp-or-udp-missing", "wrong-child": "child-identity-mismatch",
+            "gap": "sysmon-record-gap",
         }[fault]):
             journey.verify_initial_sysmon(tmp_path, manifest, record)
     else:
         journey.verify_initial_sysmon(tmp_path, manifest, record)
+
+
+@pytest.mark.parametrize(("scenario", "expected", "reads"), [
+    ("ready", None, 1),
+    ("late", None, 2),
+    ("empty-first-read", None, 2),
+    ("missing", "parent-birth-missing", 2),
+    ("mismatched", "parent-image-mismatch", 1),
+    ("ambiguous", "parent-birth-ambiguous", 1),
+    ("early-event", "parent-birth-before-window", 1),
+    ("late-event", "parent-birth-after-window", 2),
+    ("gap", "sysmon-record-gap", 1),
+    ("regressed", "channel record ID regressed", 2),
+    ("collector-change", "sysmon-restart-config-change-or-error", 2),
+])
+def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, capsys, scenario, expected, reads):
+    start = datetime(2026, 11, 14, 0, 0, 10, tzinfo=timezone.utc)
+    cutoff = start + timedelta(seconds=8)
+    image = r"C:\Private\python.exe"
+    parent = {"ProcessGuid": "private-parent", "ParentProcessGuid": "launcher", "ProcessId": "412",
+              "Image": image, "Hashes": "SHA256=" + EXE_SHA}
+    child = dict(parent, ProcessGuid="private-child", ParentProcessGuid="private-parent", ProcessId="413")
+    marker = {"role": "calibration", "pid": 412, "child_pid": 413, "image": image, "port": 23551}
+    udp = {"ProcessGuid": "private-child", "Protocol": "udp", "Initiated": "true",
+           "DestinationIp": "127.0.0.1", "DestinationPort": "23551", "SourcePort": "23552"}
+    events = [(11, 2, 0, {})]
+    event_time = {"early-event": -1, "late-event": 9}.get(scenario, 1)
+    if scenario == "mismatched":
+        parent["Image"] = r"C:\Private\wrong.exe"
+    birth_id = 13 if scenario == "gap" else 12
+    if scenario not in {"missing", "regressed"}:
+        events.extend([
+            (birth_id, 1, event_time, parent.copy()),
+            (birth_id + 1, 1, 2, child),
+            (birth_id + 2, 3, 3, dict(udp, Protocol="tcp")),
+            (birth_id + 3, 3, 3, udp),
+            (birth_id + 4, 5, 4, {"ProcessGuid": "private-child", "ProcessId": "413"}),
+            (birth_id + 5, 5, 5, {"ProcessGuid": "private-parent", "ProcessId": "412"}),
+        ])
+    if scenario == "ambiguous":
+        events.append((18, 1, 6, dict(parent, ProcessGuid="another-parent")))
+    if scenario == "collector-change":
+        events.append((18, 16, 9, {}))
+
+    last = events[-1][0]
+    tails = {"late": [11, last], "empty-first-read": [10, last], "late-event": [11, last],
+             "collector-change": [11, last], "regressed": [11, 10]}.get(scenario, [last] * reads)
+    calls = []
+    exports = []
+
+    def tail(*, timeout):
+        assert timeout == 15
+        calls.append(tails[len(calls)])
+        return calls[-1]
+
+    def export(first, end, path, *, timeout):
+        assert first == 11 and timeout == 15
+        exports.append(path.name)
+        ns = journey.trace.EVENT_NS
+        root = ET.Element("Events")
+        for rid, kind, offset, fields in events:
+            if rid > end:
+                break
+            event = ET.SubElement(root, ns + "Event")
+            system = ET.SubElement(event, ns + "System")
+            ET.SubElement(system, ns + "EventID").text = str(kind)
+            ET.SubElement(system, ns + "EventRecordID").text = str(rid)
+            # Channel write time is after the frozen fixture window.
+            ET.SubElement(system, ns + "TimeCreated", SystemTime=(cutoff + timedelta(seconds=1)).isoformat())
+            data = ET.SubElement(event, ns + "EventData")
+            fields = dict(fields, UtcTime=(start + timedelta(seconds=offset)).strftime("%Y-%m-%d %H:%M:%S.000"))
+            for key, value in fields.items():
+                ET.SubElement(data, ns + "Data", Name=key).text = value
+        ET.ElementTree(root).write(path, encoding="utf-8")
+
+    timestamps = []
+    monkeypatch.setattr(journey, "now", lambda: timestamps.append(cutoff) or cutoff)
+    monkeypatch.setattr(journey.time, "sleep", lambda _: None)
+    monkeypatch.setattr(journey, "sysmon_tail", tail)
+    monkeypatch.setattr(journey, "export_sysmon", export)
+    manifest = {"start_utc": start.isoformat(), "sysmon_first_record": 11}
+    if expected:
+        with pytest.raises(journey.trace.EvidenceValidationError, match=expected) as error:
+            journey.verify_initial_sysmon(tmp_path, manifest, marker)
+        assert "private" not in str(error.value).lower()
+    else:
+        journey.verify_initial_sysmon(tmp_path, manifest, marker)
+        assert f"passed on read {reads}" in capsys.readouterr().out
+    assert len(calls) == reads and timestamps == [cutoff]
+    assert len(set(exports)) == len(exports)
 
 
 class Process:
