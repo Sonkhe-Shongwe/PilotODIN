@@ -6,6 +6,8 @@
 
 Resource-Aware Mode now shows whether measured RAM meets the local AI start threshold when Low-memory mode is saved. Below the threshold it shows the shortfall and points to local analytics. An unavailable reading prompts a refresh. The notice uses the existing read-only RAM status and backend threshold. The admission policy and offline acceptance requirement still apply. Local verification passed five resource settings contract tests and eight direct display cases covering the laptop's observed headroom, the threshold, unavailable measurements and the other policy modes.
 
+The [frontend workflow at `245b129`](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43724819365) passed its TypeScript/Vite build, source contracts and targeted synthetic browser suite. The notice itself was exercised by the local display cases. The physical 8 GB inference test remains blocked pending its preflight.
+
 ## 15 November 2026 | N12 identifies the shared-request rejection
 
 The fixture reports the failed eligibility check with a fixed label and omits raw identifiers. At [`b9da529`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b9da52957b408cc425da6acda378a89173590d43), [Windows CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43724259651/job/132842635979) reported `extra-or-intervening-request-events`. The two candidate timestamps were distinct, the candidates agreed on the request ID and FileKey, and the last candidate matched an ordered successful completion. The full request sequence still differed from the required candidate records followed by exactly one completion. The fixture remained **BLOCKED**, with no path verdict. The log does not identify the extra events' types or positions.
