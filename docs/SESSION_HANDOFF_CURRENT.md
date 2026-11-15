@@ -4,6 +4,7 @@
 
 - The generated calibration parent records its creation time directly from Windows. The shared guard reports only the number of outside-window PID/image candidates, their nearest signed timestamp differences and the number in the same millisecond as that creation time. The timing comparison is diagnostic. Out-of-window candidates still cannot satisfy the gate.
 - Generated cases cover a sub-millisecond boundary, a stale reused-PID candidate and unavailable creation-time evidence. The earlier live candidate's delta and identity remain unknown. The next step is a separately approved collector-only rehearsal to measure them before changing any boundary. Both live workflows are disarmed. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+- Fourteen local generated prelaunch cases passed. [P4 CI #43671308877](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43671308877) passed all three jobs at `50f95e947298665bada2d3a48116be717ff35d47`: 377 Python tests (one platform skip), 80 Node checks, TypeScript/Vite, 12 Chromium cases and Windows generated collector checks, including the actual `GetProcessTimes` fixture output. The live Sysmon rehearsal was **NOT RUN**.
 
 ## 15 November 2026 | Collector rehearsal blocked by Sysmon birth timestamp
 
