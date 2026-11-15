@@ -20,7 +20,7 @@ The live collector and hosted app-journey workflows are disarmed. The last one-u
 
 ## Verified source checks
 
-Local Python checks for the process-snapshot increment passed 403 tests with one platform skip. A local Node run passed 48 checks and could not load four test files because Playwright or TypeScript was absent from the checkout.
+Local Python checks for the process-snapshot increment passed 403 tests with one platform skip. A local Node run passed 48 checks and could not load four test files because Playwright or TypeScript was absent from the checkout. At source [`859a39a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/859a39a40c06fc592110eff6843704ef9edcb87a), [P4 CI #43684527747](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527747) passed its source, browser and Windows fixture jobs. [N12 rundown CI #43684527749](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527749) passed the Python regression suite and hosted generated ETW controls. The combined live Sysmon rehearsal was NOT RUN for this source.
 
 [P4 CI #43672531160](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531160) passed all three jobs at source `8f57d22a374f0b56043e3789b3260291fecb78ce`: 381 Python tests, one platform skip, 80 Node checks, TypeScript/Vite, 12 browser cases and Windows fixture checks. [N12 rundown #43672531159](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531159) passed 147 tests and hosted ETW controls at the same source. The live collector run above has its own source and verdict.
 
