@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use Sysmon image path journey.
+    if: ${{ false }} # The one-use Sysmon image path journey was consumed by run 43713653390.
     runs-on: windows-2022
     timeout-minutes: 100
     env:

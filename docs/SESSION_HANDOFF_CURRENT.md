@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 image-path run blocked at initial loopback calibration
+
+The [approved Windows job #132810436882](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43713653390/job/132810436882) ran once from launch `9ec403682d2b578fa9b8aac0c2d918b4903ee035` at reviewed source `11fa461761b2b8bd778f82a8efa5d1ed9a2f8ee6`. Dependency and driver preflight, the unpackaged build and provenance check, and reviewed Sysmon 15.22 setup passed. The executable SHA-256 was `2453afad97b0d0d33b9166bbaf95558f4064b418e387097a5f445ec24952c04b`. The resolved Cargo lock SHA-256 was `bec9d5bb1ab4fa30fc756bcd56677c5905005706ded3e6514af7d6429502e4d8`.
+
+The fixture completed its local exchange. Both Sysmon reads reported empty matching TCP and UDP marker categories for the expected child. Initial calibration **BLOCKED** on read 2 with `child-loopback-tcp-or-udp-missing`; the job **FAILED**. The existing diagnostic cannot distinguish absent network records from records that fail the expected child, port or endpoint filters. Both app launches and the final audit were **NOT RUN**. The previous final image-path failure remains unverified against the updated parser, and comparison against 567 driver findings remains open. No artifacts were uploaded. The one-use approval was consumed and the workflow is disarmed.
+
 ## 15 November 2026 | N12 Sysmon image-path handling
 
 The Sysmon parser now resolves explicit local DOS-drive aliases in process creation and exit records before comparing full executable paths. Generated cases cover both supported prefixes, prelaunch timing and identity mismatches. Unsupported image forms still block the audit with the event type, record number and a fixed path category. The public error omits raw paths. The hosted log did not identify the path form that failed, so recovery of that live case remains **UNVERIFIED**.
@@ -104,7 +110,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use a separately approved hosted Windows journey to verify the Sysmon parser against actual runner records. If an image form still blocks the audit, use the redacted event and path category to guide the next correction. If the audit completes, compare against the 567-finding driver baseline and review recurring backend and WebView findings.
+Use generated records to extend the redacted prelaunch diagnostic so it distinguishes channel-wide missing network records from identity, port or endpoint mismatches. Preserve the exact TCP/UDP acceptance rule. Verify the diagnostic before another separately approved hosted test. The live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
