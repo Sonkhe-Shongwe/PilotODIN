@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_APP_JOURNEY_SYSMON_EXIT_APPROVAL.txt
+      - qa/p4_research/N12_APP_JOURNEY_FOCUSED_ISOLATION_APPROVAL.txt
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # The one-use Sysmon exit follow-up was consumed by run 43639741630.
+    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use focused isolation journey.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
@@ -33,7 +33,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          $marker = 'qa/p4_research/N12_APP_JOURNEY_SYSMON_EXIT_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_APP_JOURNEY_FOCUSED_ISOLATION_APPROVAL.txt'
           $workflow = '.github/workflows/p4-n12-app-journey.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
