@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Local AI memory readiness in Settings
+
+Resource-Aware Mode now shows whether measured RAM meets the local AI start threshold when Low-memory mode is saved. Below the threshold it shows the shortfall and points to local analytics. An unavailable reading prompts a refresh. The notice uses the existing read-only RAM status and backend threshold. The admission policy and offline acceptance requirement still apply. Local verification passed five resource settings contract tests and eight direct display cases covering the laptop's observed headroom, the threshold, unavailable measurements and the other policy modes.
+
 ## 15 November 2026 | N12 identifies the shared-request rejection
 
 The fixture reports the failed eligibility check with a fixed label and omits raw identifiers. At [`b9da529`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b9da52957b408cc425da6acda378a89173590d43), [Windows CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43724259651/job/132842635979) reported `extra-or-intervening-request-events`. The two candidate timestamps were distinct, the candidates agreed on the request ID and FileKey, and the last candidate matched an ordered successful completion. The full request sequence still differed from the required candidate records followed by exactly one completion. The fixture remained **BLOCKED**, with no path verdict. The log does not identify the extra events' types or positions.
@@ -152,7 +156,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Report redacted types and order for the extra events sharing the fixture request ID, including whether they occur before, at or after the selected completion. Preserve the fixture's acceptance rule until the event sequence is understood. The live image-path retest and 567-finding comparison remain open and require a separately approved app run.
+Prioritise a source-matched check of the Settings readiness notice and the existing physical R03 preflight in an isolated QA instance. If the laptop still falls below the threshold, measure which components hold RAM with the app open before attempting inference. Pause the shared-request ETW investigation. Resume N12 work when an evidence plan can test whether the collector can verify protected writes or support a startup-to-exit app audit. The 397 path gaps, live image-path retest and 567-finding comparison remain open. Any new live capture or app build still requires its applicable approval.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

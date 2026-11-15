@@ -16,6 +16,18 @@ const DESCRIPTIONS:Record<ResourceMode,string>={
  performance:'Retains existing resource and data-integrity limits. Advanced task scheduling is not enabled.',
 };
 
+function localAIHeadroom(status:ResourceStatus){
+ if(status.policy.mode!=='low_memory')return null;
+ const {memory,low_memory_local_inference_min_free_gib:minimum}=status;
+ const available=memory.available_gib;
+ if(memory.status!=='observed'||available===null)
+  return 'Low-memory mode defers new local AI requests when available RAM can’t be measured. Refresh memory to check again.';
+ if(available>=minimum)
+  return 'Available RAM meets the Low-memory threshold to start local AI. Generation can still require more memory.';
+ const shortfall=(minimum-available).toFixed(3);
+ return `New local AI requests need ${shortfall} GiB more available RAM in Low-memory mode. Free up RAM, then refresh memory. Local analytics are still available.`;
+}
+
 export function ResourceSettings(){
  const [status,setStatus]=useState<ResourceStatus|null>(null);
  const [draft,setDraft]=useState<ResourceMode>('adaptive');
@@ -50,6 +62,7 @@ export function ResourceSettings(){
   finally{setBusy('')}
  }
  const memory=status?.memory;
+ const headroom=status&&!busy&&!error?localAIHeadroom(status):null;
  return <section className="panel ai-settings-panel" aria-labelledby="resource-settings-heading">
   <div className="panel-title"><Gauge size={19}/><h2 id="resource-settings-heading">Resource-Aware Mode</h2></div>
   <p className="body-muted">Read-only memory status and a saved preference for this device. Low-memory screens new training and local AI requests against current free RAM. It never starts Qwen, alters saved work, or replaces existing ML safeguards. Other modes retain existing operation limits; durable scheduling is not implemented.</p>
@@ -73,8 +86,9 @@ export function ResourceSettings(){
   <div className="ai-settings-actions">
    <div role="status" aria-live="polite" className="body-muted">
     {busy==='load'?'Measuring local memory…':memory?.status==='observed'&&memory.total_gib!==null&&memory.available_gib!==null
-      ?<><strong>Available RAM: {memory.available_gib.toFixed(2)} GiB</strong> of {memory.total_gib.toFixed(2)} GiB physical RAM.</>
+      ?<><strong>Available RAM: {memory.available_gib.toFixed(3)} GiB</strong> of {memory.total_gib.toFixed(2)} GiB physical RAM.</>
       :'RAM reading unavailable. No capacity is assumed.'}
+    {headroom&&<p>{headroom}</p>}
    </div>
    <button type="button" className="btn" disabled={Boolean(busy)} onClick={()=>void refresh()}>
     <RefreshCw size={14}/> {busy==='refresh'?'Refreshing…':'Refresh memory'}
