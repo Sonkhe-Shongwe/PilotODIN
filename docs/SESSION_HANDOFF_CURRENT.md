@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Skip unnecessary Qwen startup for dataset insights
+
+Ask ODIN and other dataset insight requests now check saved AI settings before starting the desktop worker. If offline inference is disabled or the effective provider is Local analytics, the authenticated preflight skips startup and sends the original insight request for normal processing. An explicit provider selection retains precedence over workspace and global defaults. Enabled offline requests still pass through the existing memory admission. This change covers dataset insights. Investigation autonomy continues to use its own execution path.
+
+The focused local frontend and API checks passed, including an allowed launch request, a RAM defer and the deterministic answer after a settings skip. These checks use simulated launches. Physical Windows memory acceptance remains open. The prepared one-run idle-release workflow still targets its separately reviewed source.
+
 ## 15 November 2026 | Release bundled Qwen memory when idle
 
 The desktop launcher now asks the existing pinned llama.cpp b10344 worker to sleep after 30 seconds of inactivity. The pinned server's sleep mode releases the model and inference cache and reloads them on the next inference request. Settings explains the reload delay. No model, context window, routing or admission floor changed. This targets RAM held between requests. It does not resolve the cold-start shortfall on the physical laptop.

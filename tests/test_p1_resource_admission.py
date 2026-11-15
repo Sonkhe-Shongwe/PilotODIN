@@ -175,3 +175,32 @@ def test_readonly_api_preflight_uses_same_policy_as_training(isolated_policy,mon
     assert client.get("/api/resource/preflight?operation=local_inference",
                       headers={"Origin":"https://example.org"}).status_code==403
     assert resource_policy.read_policy()==before
+
+
+def test_insight_preflight_respects_settings_and_provider_precedence(isolated_policy, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    settings = {**ai_provider.DEFAULTS, 'preferred_provider': 'local',
+                'workspace_preferences': {'assistant': 'auto'}}
+    monkeypatch.setattr(ai_provider, '_read_config', lambda: settings)
+    resource_policy.save_policy('low_memory')
+    memory(monkeypatch, 2.5)
+    client = TestClient(main.app)
+    endpoint = '/api/resource/preflight'
+
+    assert client.get(endpoint, params={'insight_context': 'assistant'}).json()['decision'] == 'allow'
+    assert client.get(endpoint, params={'insight_context': 'quality'}).json() == {
+        'decision': 'skip', 'code': 'rules_only',
+    }
+    offline = {'insight_context': 'quality', 'selected_provider': 'ollama'}
+    assert client.get(endpoint, params=offline).json()['decision'] == 'allow'
+
+    settings['local_model_enabled'] = False
+    assert client.get(endpoint, params=offline).json() == {
+        'decision': 'skip', 'code': 'local_model_disabled',
+    }
+    assert client.get(endpoint, params={'insight_context': 'assistant'}).json() == {
+        'decision': 'skip', 'code': 'local_model_disabled',
+    }
+    assert client.get(endpoint).json()['decision'] == 'allow'
+    assert client.get(endpoint, params={**offline, 'operation': 'training'}).json()['decision'] == 'allow'

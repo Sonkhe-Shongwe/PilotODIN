@@ -1148,8 +1148,14 @@ def resource_status(request: Request):
 
 @app.get('/api/resource/preflight')
 def resource_preflight(request: Request,
-                       operation: Literal["training", "local_inference"] = "local_inference"):
+                       operation: Literal["training", "local_inference"] = "local_inference",
+                       insight_context: str | None = None,
+                       selected_provider: str | None = None):
     _local_request(request)
+    if operation == 'local_inference' and insight_context is not None:
+        skip = ai_provider.insight_bundled_launch_skip(insight_context, selected_provider)
+        if skip:
+            return {'decision': 'skip', 'code': skip}
     # Read-only status. The decision is re-checked server-side before new
     # training/model generation; a client report is never authorization.
     return resource_policy.admit_new_work(operation)

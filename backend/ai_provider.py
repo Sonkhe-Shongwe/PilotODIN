@@ -21,9 +21,9 @@ import re
 from typing import Protocol
 
 try:
-    from . import storage, bundled_inference, resource_policy, resource_policy
+    from . import storage, bundled_inference, resource_policy
 except ImportError:
-    import storage, bundled_inference
+    import storage, bundled_inference, resource_policy
 
 PROVIDERS = ('gemini', 'groq', 'openrouter')
 MODELS = {
@@ -294,13 +294,28 @@ SYSTEM = ("You are ODIN, an evidence-grounded data science adviser. Use ONLY the
           "No personal data or row samples have been supplied.")
 
 
+def _resolve_provider(cfg:dict, task:str, selected_provider:str|None)->str:
+    selected = (selected_provider or cfg.get('workspace_preferences', {}).get(task)
+                or cfg.get('preferred_provider', 'auto'))
+    return selected if selected in (*PROVIDERS, 'auto', 'local', 'ollama') else 'auto'
+
+
+def insight_bundled_launch_skip(task:str, selected_provider:str|None)->str|None:
+    """Return a reason when this insight cannot use the bundled worker."""
+    cfg = _read_config()
+    if _resolve_provider(cfg, task, selected_provider) == 'local':
+        return 'rules_only'
+    if not cfg.get('local_model_enabled', True):
+        return 'local_model_disabled'
+    return None
+
+
 def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,selected_provider:str|None=None,
             continuation_text:str|None=None)->dict:
     """Local-first hybrid. Cloud use is always gated by explicit saved consent."""
     cfg=_read_config()
     mode=cfg.get('intelligence_mode','hybrid')
-    selected=selected_provider or cfg.get('workspace_preferences',{}).get(task) or cfg.get('preferred_provider','auto')
-    if selected not in (*PROVIDERS,'auto','local','ollama'): selected='auto'
+    selected=_resolve_provider(cfg,task,selected_provider)
     fallback={'answer':local_answer,'source':'local_computed_rules','provider':'local','model':'deterministic',
               'fallback':True,'reason':'Deterministic local analysis used','attempts':[],
               'incomplete':False,'finish_reason':'local','intelligence_mode':mode,'local_status':'not_requested'}
