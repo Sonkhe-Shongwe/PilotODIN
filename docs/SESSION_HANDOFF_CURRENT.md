@@ -2,6 +2,20 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Live collector process-snapshot comparison
+
+The [approved Windows collector job #132723162580](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684880159/job/132723162580) ran once from launch `ecf3a43485d02fccbdb1f8c6e353a168387a6643` and checked out reviewed source `0ca097f0c346b3a4ebe231a7acccc3a29fc081ce`. Sysmon 15.22 verified against its pinned hash and prelaunch passed on read 1. The fixture birth precision rule was exercised: the Sysmon birth was 2 µs before the fixture window and the independent Windows creation time was 495.5 µs inside it, in the same millisecond. Both final summaries reported `fixture_birth_adjusted=true`, the expected fixture operations, and zero protected-file violations.
+
+| Evidence from one capture | Without snapshots | With snapshots |
+| --- | ---: | ---: |
+| Background writes missing a process lifetime | 305 | 0 |
+| Background resizes missing a process lifetime | 45 | 0 |
+| Background writes missing a file path | 305 | 305 |
+| Background resizes missing a file path | 45 | 45 |
+| Writes without a matched completion | 2 | 2 |
+
+The reducer verified 133 stable background processes. All 350 successful operations with a missing path had a FileKey and an observed header lifetime after the comparison. Issuing-thread identity remained unverified. **Job FAILED, strict coverage BLOCKED** on `etw-mutation-coverage-unresolved`. No PilotODIN compilation or launch occurred. The one-use approval was consumed and the workflow is disarmed.
+
 ## 15 November 2026 | Collector process snapshots integrated
 
 The collector rehearsal now reduces the same capture with and without before-and-after process snapshots. Generated CLI evidence resolved one write, one resize and one rename lifetime gap for the stable background process. All five missing-path findings and the protected rename violation still blocked coverage. Reused PIDs, observed lifecycle transitions and the scoped calibration process could not seed a lifetime. An empty snapshot failed closed. The comparison emits aggregate counts. [N12 runbook](../qa/p4_native/N12_TRACE.md#reduce-combined-etw-and-sysmon-evidence).
@@ -14,13 +28,13 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-After separate owner approval, run one collector-only rehearsal on disposable GitHub-hosted Windows from the reviewed source. Compare both reductions of the same capture. Record how many lifetime gaps the snapshots resolve, the remaining write and resize path gaps, and any protected mutations. Use the residual path evidence to select the next diagnostic. Strict coverage stays blocked while real operations remain unresolved.
+Prepare redacted FileKey diagnostics in the combined reducer with generated evidence. Reuse the existing request-time name and rundown guards to count which write and resize gaps have eligible path candidates. Check whether unmatched write requests cluster near the capture boundary. Keep ambiguous, reused and missing paths or completions blocking strict coverage. A later Windows capture requires its own approval.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Verified source checks
 
-Local Python checks for the process-snapshot increment passed 403 tests with one platform skip. A local Node run passed 48 checks and could not load four test files because Playwright or TypeScript was absent from the checkout. At source [`859a39a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/859a39a40c06fc592110eff6843704ef9edcb87a), [P4 CI #43684527747](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527747) passed its source, browser and Windows fixture jobs. [N12 rundown CI #43684527749](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527749) passed the Python regression suite and hosted generated ETW controls. The combined live Sysmon rehearsal was NOT RUN for this source.
+Local Python checks for the process-snapshot increment passed 403 tests with one platform skip. A local Node run passed 48 checks and could not load four test files because Playwright or TypeScript was absent from the checkout. At source [`859a39a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/859a39a40c06fc592110eff6843704ef9edcb87a), [P4 CI #43684527747](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527747) passed its source, browser and Windows fixture jobs. [N12 rundown CI #43684527749](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527749) passed the Python regression suite and hosted generated ETW controls. The live comparison used its own reviewed source and verdict above.
 
 [P4 CI #43672531160](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531160) passed all three jobs at source `8f57d22a374f0b56043e3789b3260291fecb78ce`: 381 Python tests, one platform skip, 80 Node checks, TypeScript/Vite, 12 browser cases and Windows fixture checks. [N12 rundown #43672531159](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531159) passed 147 tests and hosted ETW controls at the same source. The live collector run above has its own source and verdict.
 
