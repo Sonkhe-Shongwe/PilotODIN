@@ -19,6 +19,7 @@ on:
       - backend/verified_answers.py
       - frontend/src/AssistantWorkspace.tsx
       - tests/test_p4_r03_verified_answers.py
+      - qa/p4_research/measure_local_answers.py
       - backend/engine.py
       - backend/target_timing_review.py
       - frontend/src/TargetOpportunities.tsx
@@ -202,6 +203,21 @@ jobs:
           npx --no-install playwright test --config=playwright.p4-real-http.config.ts
           --grep-invert 'BE-024 real HTTP: reopen a fitted synthetic experiment'
 
+
+  p4-r03-windows-local-answers:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Install existing backend test requirements
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Measure exact local answers at simulated laptop headroom
+        run: python -B qa/p4_research/measure_local_answers.py
 
   p4-readonly-windows-probe:
     name: Exercise preservation/hash collector on synthetic Windows fixture ONLY

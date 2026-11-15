@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pandas as pd
 from fastapi.testclient import TestClient
 
-from backend import ai_context, ai_provider, main, storage
+from backend import ai_context, ai_provider, main, resource_policy, storage
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,8 +50,13 @@ class VerifiedAnswersTests(unittest.TestCase):
         )
         dataset = Path(storage.get_project(incomplete)['dataset_path'])
         before = dataset.read_bytes()
-        with (patch.object(ai_context, 'build', side_effect=AssertionError('Loaded provider context')),
+        with (patch.object(resource_policy, 'read_policy', return_value={'mode': 'low_memory'}),
+              patch.object(resource_policy, '_physical_memory_bytes', return_value=(8 * 1024**3, int(0.73 * 1024**3), 'synthetic')),
+              patch.object(ai_context, 'build', side_effect=AssertionError('Loaded provider context')),
               patch.object(ai_provider, 'respond', side_effect=AssertionError('Entered provider routing'))):
+            preflight = self.client.get('/api/resource/preflight', params={'operation': 'local_inference'})
+            self.assertEqual(preflight.status_code, 200, preflight.text)
+            self.assertEqual(preflight.json()['decision'], 'defer')
             for project, question, expected in answers:
                 with self.subTest(question=question.strip()):
                     result = self.ask(project, question)
