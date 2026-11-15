@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 15 November 2026 | Collector rehearsal measured a sub-millisecond birth difference
+
+- The [approved collector-only run #43672033519, job #132683976182](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672033519/job/132683976182) ran on attempt 1 from launch `272f8c611d3d92a3a5b9c8ac19b61fd2f1b02cf9`, pinned to reviewed source `63f61be461444903ed929bf87c038b833ff29620`. Sysmon 15.22 setup passed. The generated fixture reached the shared prelaunch guard. **The job FAILED on read 1 with `parent-birth-before-window`.** The final combined Sysmon/ETW reducer was **NOT RUN**.
+- One outside-window PID/image candidate was reported. In 100-nanosecond ticks, its event time minus window start was **−2,220** (−222.0 µs), Windows creation time minus start was **+7,587** (+758.7 µs), and event time minus Windows creation time was **−9,807** (−980.7 µs). Event time minus window end was **−2,954,570**. The count in the same creation millisecond was **1**. This is consistent with a difference in timestamp precision for this fixture. It does not prove Sysmon's rounding rule, independently establish the candidate lifetime, or explain earlier hosted failures.
+- The rehearsal performed no PilotODIN build or launch. The workflow is disarmed and the one-use marker is retained. Next test a bounded precision-aware check for the generated calibration parent, requiring independent creation time inside the original exact window and consistent process lineage. Keep stale or ambiguous candidates blocked, and verify how the final combined reducer handles the same records before proposing another live run. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 15 November 2026 | Redacted Sysmon birth timing diagnostics
 
 - The generated calibration parent records its creation time directly from Windows. The shared guard reports only the number of outside-window PID/image candidates, their nearest signed timestamp differences and the number in the same millisecond as that creation time. The timing comparison is diagnostic. Out-of-window candidates still cannot satisfy the gate.

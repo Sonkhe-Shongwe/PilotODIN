@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 15 November 2026 | Collector rehearsal measured a sub-millisecond birth difference
+
+The [collector-only run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672033519/job/132683976182) measured one same-millisecond Sysmon birth candidate 222.0 µs before the window, with Windows creation time 758.7 µs after the start. The unchanged prelaunch guard rejected the candidate. The final combined reducer was **NOT RUN**. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-rehearsal-measured-a-sub-millisecond-birth-difference).
+
 ## 15 November 2026 | Redacted Sysmon birth timing diagnostics
 
 The shared prelaunch check records relative timing for outside-window process birth candidates. A separately approved collector-only run is needed to observe the actual timing difference. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--redacted-sysmon-birth-timing-diagnostics).
