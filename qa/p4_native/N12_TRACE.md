@@ -50,7 +50,7 @@ The audit checks ETW loss, export integrity, completion status, and both endpoin
 
 ### Hosted journey ETW gap diagnostics
 
-The latest collector rehearsal cleared Sysmon prelaunch and compared both reductions of one capture. The snapshots accounted for all 350 observed process-lifetime gaps. Strict coverage still blocked on 350 missing paths and two unmatched write completions. [Exact-source result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684880159/job/132723162580) · [Next action](../../docs/SESSION_HANDOFF_CURRENT.md#next-engineering-action).
+The latest collector rehearsal cleared Sysmon prelaunch and compared both reductions of one capture. The snapshots accounted for all 821 observed process-lifetime gaps. Strict coverage remained blocked on 821 paths. Diagnostics reported 279 outside-root candidates, 530 operations with no prior name and zero unmatched writes. [Exact-source result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43686281881/job/132727321305) · [Next action](../../docs/SESSION_HANDOFF_CURRENT.md#next-engineering-action).
 
 In collector-only rehearsal mode, the guard and final combined calibration can use the fixture parent's independently recorded Windows creation time when its Sysmon birth falls just before the fixture window. The raw Sysmon time must be an exact millisecond boundary in the same millisecond as creation. Creation must be within the original fixture window, and the export must contain exactly one birth matching that PID and image. The usual declared child identity, image hash, lifetime, loopback and file-operation checks still apply. The final summary reports `fixture_birth_adjusted`. The full app-journey prelaunch and audit use the existing strict timing rules.
 

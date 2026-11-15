@@ -2,6 +2,21 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Live FileKey diagnostic rehearsal
+
+The [approved Windows job #132727321305](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43686281881/job/132727321305) ran on attempt 1 from launch `495d9c990ffea58ecff355a173c51daa04daa1a2`, checking out reviewed source `bef278bff281357da87090467c28e6a423295c14`. Pinned Sysmon 15.22 setup and prelaunch passed on read 1. Both reductions verified the expected fixture operations with zero protected-file violations. `fixture_birth_adjusted=false` for this capture. The snapshots verified 129 stable background processes and resolved all 821 observed lifetime gaps. Both reductions gave identical path and completion diagnostics.
+
+| Request-time diagnostic | Writes | Resizes | Total |
+| --- | ---: | ---: | ---: |
+| Candidate path outside protected roots | 257 | 22 | 279 |
+| No prior name in the observed lifetime | 262 | 268 | 530 |
+| File-object lifetime changed | 2 | 7 | 9 |
+| Possible name change | 0 | 1 | 1 |
+| Conflicting key on the same file object | 1 | 1 | 2 |
+| Total strict path gaps | 522 | 299 | 821 |
+
+**Job FAILED. Strict coverage BLOCKED** on `etw-mutation-coverage-unresolved`. The 279 candidates are diagnostic and all 821 strict path gaps remain. There were zero unmatched writes in this capture. The two unmatched writes in the previous capture remain recorded and their timing is unknown. No native rundown was collected and no PilotODIN compilation or launch occurred. The one-use authority was consumed and the workflow is disarmed.
+
 ## 15 November 2026 | FileKey and write-completion diagnostics
 
 The combined reducer now reports redacted request-time path-candidate counts for successful writes and resizes with missing paths, plus the distance from unmatched write requests to the end of the audit window. An optional digest-pinned FileIO rundown adds diagnostic-only counts. Generated CLI evidence distinguished protected and outside candidates, conflicting names and object keys, cleanup, late names and a completion tied with rundown stop. The same fixture retained its strict blockers and protected violation with and without rundown. A modified rundown failed its digest check. Local P4 Python checks passed 403 tests with one platform skip. [Runbook](../qa/p4_native/N12_TRACE.md#reduce-combined-etw-and-sysmon-evidence)
@@ -32,13 +47,13 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-After separate approval, run one collector-only Sysmon and ETW rehearsal on disposable hosted Windows from the reviewed source. Check the request-time path-candidate counts and unmatched-write timing on that capture. Use those results to decide whether to prepare a separately scoped companion FileIO rundown or a longer observation window. The collector-only rehearsal does not collect native rundown input. Strict coverage remains blocked while paths or completions lack evidence.
+Prepare a companion FileIO rundown comparison for the collector on generated evidence. Use the existing digest, time-window and lifetime guards. Measure how many requests with no prior name gain a guarded candidate and how many remain blocked by close, reuse or conflicting names. A live Windows capture and any native compilation in that follow-up require separate approval. Retain completion timing for future captures. This run supplies no boundary evidence for extending the window.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Verified source checks
 
-[P4 CI #43685954438](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43685954438) passed the source, browser and Windows fixture jobs at [`c5e1a9a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c5e1a9aa10925ff5c47570486f6b3985a24298a4). [N12 rundown CI #43685954469](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43685954469) passed the generated regression suite and hosted FileIO fixture controls at the same source. A live combined capture with the new diagnostics was NOT RUN.
+[P4 CI #43685954438](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43685954438) passed the source, browser and Windows fixture jobs at [`c5e1a9a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c5e1a9aa10925ff5c47570486f6b3985a24298a4). [N12 rundown CI #43685954469](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43685954469) passed the generated regression suite and hosted FileIO fixture controls at the same source. The approved live capture has its own tested source and verdict above.
 
 Local Python checks for the process-snapshot increment passed 403 tests with one platform skip. A local Node run passed 48 checks and could not load four test files because Playwright or TypeScript was absent from the checkout. At source [`859a39a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/859a39a40c06fc592110eff6843704ef9edcb87a), [P4 CI #43684527747](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527747) passed its source, browser and Windows fixture jobs. [N12 rundown CI #43684527749](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684527749) passed the Python regression suite and hosted generated ETW controls. The live comparison used its own reviewed source and verdict above.
 

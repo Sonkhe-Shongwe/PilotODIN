@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use FileKey diagnostic rehearsal.
+    if: ${{ false }} # The one-use FileKey diagnostic rehearsal was consumed by run 43686281881.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
