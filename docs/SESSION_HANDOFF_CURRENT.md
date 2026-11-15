@@ -4,6 +4,7 @@
 
 - The disarmed [collector workflow](../.github/workflows/p4-n12-live-calibration.yml) runs the same Sysmon prelaunch guard as the app journey, using one generated fixture while ETW is active. It reports the accepted read number or a fixed blocker. The final strict calibration uses the same record floor and a fresh export through a verified later checkpoint. The workflow needs a fresh marker pinning the reviewed source and uses collector-only consent.
 - The test runs without a PilotODIN build or app launch. Raw XML and ETW files stay on the disposable runner. Results can verify the prelaunch gate and collector calibration for the generated fixture. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** The live rehearsal awaits separate owner approval.
+- Exact-source [P4 CI #43670511893](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43670511893) passed all three jobs (374 Python tests, one platform skip, 80 Node checks, TypeScript/Vite, 12 Chromium cases and Windows PowerShell parse/collector fixtures). [N12 rundown #43670511522](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43670511522) passed 147 tests and hosted ETW fixture controls. Both exercised source `ac5dc4503c5eddb16419f566ad3a66c63e2e895b`. The combined live Sysmon rehearsal is **NOT RUN**.
 
 ## 15 November 2026 | N12 prelaunch calibration diagnostics
 
