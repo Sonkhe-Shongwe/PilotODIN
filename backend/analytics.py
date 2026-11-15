@@ -21,6 +21,10 @@ def dataset_counts(df: pd.DataFrame) -> dict:
             'missing_cells': int(df.isna().sum().sum()), 'exact_duplicate_rows': int(df.duplicated().sum())}
 
 
+def finite_numeric(series: pd.Series) -> pd.Series:
+    return pd.to_numeric(series, errors='coerce').replace([np.inf, -np.inf], np.nan).dropna()
+
+
 def describe(df: pd.DataFrame, version: int) -> dict:
     cols=[]
     for name in df:
@@ -30,7 +34,7 @@ def describe(df: pd.DataFrame, version: int) -> dict:
               "unique":int(s.nunique(dropna=True)),"missing":int(s.isna().sum()),
               "missing_pct":round(float(s.isna().mean())*100,2) if len(s) else 0.0}
         if numeric:
-            v=pd.to_numeric(s,errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
+            v=finite_numeric(s)
             if not v.empty:
                 info.update({"min":engine.native(v.min()),"max":engine.native(v.max()),
                              "mean":engine.native(v.mean()),"median":engine.native(v.median())})
@@ -305,7 +309,7 @@ def investigate(df:pd.DataFrame, version:int, operation:str, column:str|None=Non
         return {'operation':operation,'version':version,'findings':data['findings'][:15]}
     if operation=='numeric_distribution':
         if not column or column not in df:raise ValueError('Select an existing numeric column')
-        series=pd.to_numeric(df[column],errors='coerce').replace([np.inf,-np.inf],np.nan).dropna()
+        series=finite_numeric(df[column])
         if series.empty:raise ValueError('No numeric observations found')
         q1,q3=series.quantile([.25,.75]);lo,hi=q1-1.5*(q3-q1),q3+1.5*(q3-q1)
         count=int(((series<lo)|(series>hi)).sum())

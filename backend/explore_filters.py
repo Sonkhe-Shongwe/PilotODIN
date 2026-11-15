@@ -17,6 +17,13 @@ MAX_CATEGORIES = 24
 _IDENTIFIER = re.compile(r"(?:id|key|code|number)$", re.IGNORECASE)
 
 
+def label_matches(series: pd.Series, value: str, *, exact: bool = True) -> pd.Series:
+    labels = series.astype(str)
+    if not exact:
+        labels, value = labels.str.casefold(), value.casefold()
+    return series.notna() & labels.eq(value)
+
+
 def catalog(df: pd.DataFrame, version: int) -> dict:
     columns = []
     for name in df.columns:
@@ -59,7 +66,7 @@ def apply(df: pd.DataFrame, filters: list[dict[str, Any]]) -> pd.DataFrame:
             value = item.get("value")
             if operator != "eq" or not isinstance(value, str) or value not in spec["options"]:
                 raise ValueError("Choose an available categorical value")
-            mask &= df[name].notna() & df[name].astype(str).eq(value)
+            mask &= label_matches(df[name], value)
         elif spec["kind"] == "numeric":
             if operator != "range":
                 raise ValueError("Numeric filters require an inclusive range")

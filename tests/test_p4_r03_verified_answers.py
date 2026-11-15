@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pandas as pd
 from fastapi.testclient import TestClient
 
-from backend import ai_context, ai_provider, main, resource_policy, storage
+from backend import ai_context, ai_provider, main, quality, resource_policy, storage
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,6 +74,96 @@ class VerifiedAnswersTests(unittest.TestCase):
             result = self.ask(project, question)
             self.assertEqual(result['facts'], {})
             self.assertIn('Use an', result['answer'])
+
+    def test_grouped_missingness_and_denominators_on_owner_smoke_csv(self):
+        project = self.import_frame(pd.DataFrame({
+            'id': [1, 2, 3, 4], 'outcome': ['Yes', 'No', 'Yes', None], 'premium': [20, None, 40, 50],
+        }))
+        dataset = Path(storage.get_project(project)['dataset_path'])
+        before = dataset.read_bytes()
+        with (patch.object(ai_context, 'build', side_effect=AssertionError('Loaded provider context')),
+              patch.object(ai_provider, 'respond', side_effect=AssertionError('Entered provider routing'))):
+            result = self.ask(project, 'Which outcomes have the most missing premiums?')
+            self.assertEqual(result['analysis']['operation'], 'grouped_missingness')
+            self.assertEqual((result['analysis']['measure'], result['analysis']['group_by']), ('premium', 'outcome'))
+            self.assertEqual(result['facts']['groups'], [
+                {'group': 'No', 'matching_rows': 1, 'missing_rows': 1, 'percent': 100},
+                {'group': 'Yes', 'matching_rows': 2, 'missing_rows': 0, 'percent': 0},
+            ])
+            self.assertEqual(result['facts']['blank_group'],
+                             {'group': None, 'matching_rows': 1, 'missing_rows': 0, 'percent': 0})
+            for question, basis, denominator, percent in (
+                ('What percentage of labelled outcomes are Yes?', 'labelled', 3, 66.6667),
+                ('What percentage of all rows have a Yes outcome?', 'all_rows', 4, 50),
+            ):
+                with self.subTest(question=question):
+                    result = self.ask(project, question)
+                    self.assertEqual(result['analysis']['measure'], 'outcome')
+                    self.assertEqual(result['analysis']['filter_value'], 'Yes')
+                    self.assertEqual(result['analysis']['denominator'], basis)
+                    self.assertEqual(result['facts'], {'positives': 2, 'denominator': denominator, 'percent': percent})
+            for question, text in (
+                ('What percent of outcomes are Yes?', 'all rows or only labelled rows'),
+                ('Why are premiums missing?', 'The cause is unknown'),
+                ('Show every record in the dataset', 'could not interpret'),
+            ):
+                self.assertIn(text, self.ask(project, question)['answer'])
+        self.assertEqual(dataset.read_bytes(), before)
+        self.assertEqual(quality.current_version(project), 0)
+        self.assertEqual(storage.recent_experiments(project), [])
+
+    def test_follow_up_changes_only_one_filter_for_the_same_version(self):
+        data = pd.DataFrame({'stage': ['Opened', 'Closed', 'Opened', None], 'net_cost': [0, None, 90, 70]})
+        project = self.import_frame(data)
+        peer = self.import_frame(data)
+        first = self.ask(project, 'Calculate the median net cost for Opened stages.')
+        self.assertEqual(first['analysis']['operation'], 'median')
+        self.assertEqual(first['analysis']['measure'], 'net_cost')
+        self.assertEqual(first['analysis']['filter_column'], 'stage')
+        self.assertEqual(first['analysis']['filter_value'], 'Opened')
+        self.assertEqual(first['facts'], {'value': 45, 'matching_rows': 2, 'usable_rows': 2, 'excluded_rows': 0})
+        previous = first['follow_up']
+        follow = self.ask(project, 'How about closed?', local_follow_up=previous)
+        self.assertEqual(follow['analysis'], {**first['analysis'], 'filter_value': 'Closed'})
+        self.assertEqual(follow['facts'], {'value': None, 'matching_rows': 1, 'usable_rows': 0, 'excluded_rows': 1})
+        self.assertIsNone(follow['follow_up'])
+        self.assertEqual(quality.restore(project, target_version=0, expected_version=0)['version'], 1)
+        for target, context in ((peer, previous), (project, previous), (project, None)):
+            result = self.ask(target, 'What about Closed?', local_follow_up=context)
+            self.assertIn('Which calculation', result['answer'])
+            self.assertIsNone(result['analysis'])
+            self.assertEqual(result['facts'], {})
+
+    def test_held_out_schema_paraphrases_and_ambiguous_short_names(self):
+        project = self.import_frame(pd.DataFrame({
+            'claim status': ['In review', 'Paid', 'Paid', '(Missing)', None],
+            'insured cost': [0, 80, None, 30, 50], 'actual cost': [None, 60, 10, 20, 40],
+        }))
+        checks = (
+            ('Show missing values in "insured cost" grouped by claim status', 'grouped_missingness', 'insured cost', 'claim status'),
+            ('Show the average insured cost by "claim status"', 'mean', 'insured cost', 'claim status'),
+            ('How many records are there where "claim status" is "In review"?', 'count', None, None),
+            ('Share of all records with an "In review" claim status', 'rate', 'claim status', None),
+        )
+        answers = []
+        for question, op, measure, group in checks:
+            with self.subTest(question=question):
+                result = self.ask(project, question)
+                self.assertEqual((result['analysis']['operation'], result['analysis']['measure'],
+                                  result['analysis']['group_by']), (op, measure, group))
+                answers.append(result)
+        self.assertEqual(answers[0]['facts']['groups'][0],
+                         {'group': 'Paid', 'matching_rows': 2, 'missing_rows': 1, 'percent': 50})
+        self.assertEqual(answers[1]['facts']['blank_group']['value'], 50)
+        self.assertEqual({group['group']: group['value'] for group in answers[1]['facts']['groups']},
+                         {'In review': 0, 'Paid': 80, '(Missing)': 30})
+        self.assertEqual(answers[2]['facts']['matching_rows'], 1)
+        self.assertEqual(answers[3]['facts'], {'positives': 1, 'denominator': 5, 'percent': 20})
+        ambiguous = self.ask(project, 'Count missing costs by claim status')
+        self.assertIsNone(ambiguous['analysis'])
+        self.assertIn("Possible columns include 'insured cost', 'actual cost'", ambiguous['answer'])
+        self.assertIsNone(self.ask(project, 'Median claim status')['analysis'])
+        self.assertIsNone(self.ask(project, 'Median insured cost for Rejected claim status')['analysis'])
 
     def test_training_status_uses_execution_evidence_and_current_project_version(self):
         frame = pd.DataFrame({'id': range(4), 'value': range(4)})

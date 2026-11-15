@@ -1029,17 +1029,24 @@ test('P4 R03 real HTTP: Ask ODIN computes local answers without a model', async(
  }});
  expect(imported.status(),await imported.text()).toBe(201);
  const project=(await imported.json()).id as string;
- const route=`/api/projects/${project}/ai/insight`;
- const blocked=await readOnlyBrowserGuard(context,project,undefined,[],undefined,[],incoming=>{
+ const second=await request.post(`${API}/api/projects`,{multipart:{
+  file:{name:'other-local-answers.csv',mimeType:'text/csv',buffer:Buffer.from(fixture)},
+ }});
+ expect(second.status(),await second.text()).toBe(201);
+ const peer=(await second.json()).id as string;
+ const routes=[project,peer].map(id=>`${API}/api/projects/${id}/ai/insight`);
+ const blocked=await readOnlyBrowserGuard(context,project,undefined,[peer],undefined,[],incoming=>{
   const req=incoming.request();
-  const body=req.method()==='POST'&&req.url()===API+route?req.postDataJSON():null;
+  const body=req.method()==='POST'&&routes.includes(req.url())?req.postDataJSON():null;
   return body?.context==='assistant'&&body?.selected_provider==='local';
  });
- await page.addInitScript(id=>{
+ await page.addInitScript(([id,other])=>{
   localStorage.setItem('pilotodin-current',id);
-  localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['assistant']));
-  localStorage.setItem('pilotodin-workspace-active-v1-'+id,'assistant');
- },project);
+  for(const projectId of [id,other]){
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+projectId,JSON.stringify(['assistant']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+projectId,'assistant');
+  }
+ },[project,peer]);
  await page.goto('/#/studio/assistant');
  await page.getByLabel('Choose intelligence').selectOption('local');
 
@@ -1068,6 +1075,39 @@ test('P4 R03 real HTTP: Ask ODIN computes local answers without a model', async(
   await ask.click();
   await expect(page.locator('.chat-message.assistant').last()).toContainText(answer);
  }
- await expect(page.getByText('VERIFIED RULES · NO LLM',{exact:false})).toHaveCount(4);
+ for(const [question,answer] of [
+  ['Which outcomes have the most missing premiums?','Missing premium by outcome'],
+  ['What percentage of labelled outcomes are Yes?','2 of 3 labelled rows in outcome match Yes (66.6667%)'],
+  ['What percentage of all rows have a Yes outcome?','2 of all 4 rows in outcome match Yes (50%)'],
+  ['What is the median premium for Yes outcomes?','Median premium where outcome = Yes is 30'],
+  ['What about No?','Median premium where outcome = No is unavailable. 0 usable values from 1 matching rows.'],
+  ['What about Yes?','Which calculation should I use for this filter?'],
+  ['What percentage of outcomes are Yes?','Should I use all rows or only labelled rows'],
+ ]){
+  await page.getByRole('textbox',{name:'Dataset question'}).fill(question);
+  await page.getByRole('button',{name:'Ask',exact:true}).click();
+  const reply=page.locator('.chat-message.assistant').last();
+  await expect(reply).toContainText(answer);
+  await expect(reply).toContainText('Working dataset v0');
+  if(question.startsWith('Which outcomes')){
+   await expect(reply.getByRole('listitem')).toHaveText([
+    'No · 1 of 1 missing (100%)','Yes · 0 of 2 missing (0%)','Blank group · 0 of 1 missing (0%)',
+   ]);
+  }
+ }
+ await expect(page.getByText('VERIFIED RULES · NO LLM',{exact:false})).toHaveCount(11);
+ await page.getByRole('textbox',{name:'Dataset question'}).fill('What is the median premium for Yes outcomes?');
+ await page.getByRole('button',{name:'Ask',exact:true}).click();
+ await expect(page.locator('.chat-message.assistant').last()).toContainText('Median premium where outcome = Yes is 30');
+ await page.getByLabel('Switch project').selectOption(peer);
+ await expect(page.getByLabel('Switch project')).toHaveValue(peer);
+ await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('button',{name:'Ask ODIN',exact:true}).click();
+ await page.getByRole('textbox',{name:'Dataset question'}).fill('What about No?');
+ const [followUp]=await Promise.all([
+  page.waitForResponse(response=>response.url()===API+routes[1]&&response.request().method()==='POST'),
+  page.getByRole('button',{name:'Ask',exact:true}).click(),
+ ]);
+ expect(followUp.request().postDataJSON().local_follow_up).toBeUndefined();
+ await expect(page.locator('.chat-message.assistant').last()).toContainText('Which calculation should I use for this filter?');
  expect(blocked).toEqual([]);
 });

@@ -219,7 +219,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Implement the agreed [Local analytics milestone](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md). Start with the reproduced wrong-field missingness request, then deliver validated calculations, one filter follow-up and held-out verification in the same build. The lower-memory API workload already passed on hosted Windows. Use that evidence as the baseline for the next source-matched physical desktop check. The shared-request ETW investigation is paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+The [Local analytics milestone](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) is implemented in source. Choose **Local analytics** in Ask ODIN to check grouped missingness, labelled and all-row percentages, a filtered numeric summary and one follow-up that changes the filter value. The API verifies the resolved query and rechecks project and working version before applying the follow-up. Use the generated CSV in the plan for one consolidated Live Dev walkthrough. The hosted lower-memory API workload remains the baseline for a future source-matched physical desktop check. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
