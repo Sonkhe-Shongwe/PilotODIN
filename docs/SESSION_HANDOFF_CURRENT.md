@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 shared-request path trial
+
+The fixture now trials a shared request only when candidate timestamps are distinct, the nonzero request ID and FileKey agree, and the observed sequence contains just those candidates and one ordered successful completion. The open and prior name must precede the first observation. A name change or conflicting identity through completion blocks the path. The strict app audit does not use this trial. Locally, 61 focused cases passed with the standard-library harness because pytest was unavailable.
+
+At [`7a7aad7`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7a7aad7973ba6f66a1af0b05a64d842cf783ef89), [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43723317752) passed all three jobs with 444 Python tests and one skip. [FileIO CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43723317742) passed with 193 trace tests. The [Windows in-capture fixture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43723317752/job/132839782995) stayed **BLOCKED**. It again saw two candidates sharing one request ID and one candidate with an ordered successful completion. The trial did not reach a path verdict, and the published counts do not identify which eligibility check failed. The 397 unresolved paths remain open.
+
 ## 15 November 2026 | N12 adds a file created during capture
 
 The ETW-only Windows fixture now creates a new disposable file after tracing starts. It seeds the file, verifies the handle path, records a distinct write and reads back its payload. The diagnostic compares the exact handle path with prior file-name evidence for that write's key. The report distinguishes a match, a mismatch and insufficient evidence. The existing pre-opened controls and strict audit remain independent. Locally, 42 focused generated cases passed with a standard-library harness because pytest was unavailable.
@@ -140,7 +146,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use generated controls to test whether the uniquely completed candidate can establish a path when another record shares its request ID. Check candidate FileKey agreement, intervening completions, name changes and identifier reuse through completion. Reject conflicting or tied evidence. Keep this in the fixture until Windows confirms the behavior. The live image-path retest and 567-finding comparison remain open and require a separately approved app run.
+Report a fixed reason for shared-request trial rejection, distinguishing tied event times, different or unavailable file keys, and extra events on the same request ID. Use that evidence to decide whether a scoped Windows path check is possible. The live image-path retest and 567-finding comparison remain open and require a separately approved app run.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
