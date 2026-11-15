@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 writer breakdown run blocked during Sysmon parsing
+
+The [approved Windows job #132802635073](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43711109138/job/132802635073) ran once from launch `d4caff4631f5fb79a2b2c27f8b017c519035ac00` at reviewed source `29e8aa8697920ec43d7ef6d29ef982eae7bc7d71`. Dependency and driver preflight, the unpackaged build and its provenance check, and reviewed Sysmon 15.22 setup passed. The executable SHA-256 was `a86702b3920349912526b2764f82ea019ea8744557c032f587bd34e2dfcecdf0`. The resolved Cargo lock SHA-256 was `bec9d5bb1ab4fa30fc756bcd56677c5905005706ded3e6514af7d6429502e4d8`.
+
+Initial calibration passed on read 1. Both launches and the final calibration command completed. The final audit **BLOCKED** at `Sysmon XML: expected a drive-absolute Windows path` and the job **FAILED**. The public log does not identify the record or path form. No final writer breakdown, protected snapshot verdict, network verdict or filesystem verdict was emitted. The comparison against 567 driver findings remains **UNVERIFIED**. The one-use approval was consumed and the workflow is disarmed.
+
 ## 15 November 2026 | N12 writer breakdown prepared
 
 The [fixture lead-in audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690425867/job/132739719330) recorded 567 driver findings. Of these, 489 fell solely under user-local or user-temp and 62 were renames spanning both categories. The other 16 were four frontend-dependency operations and 12 unsupported Windows-system operations. Vite, the interaction drivers and their descendants share the driver role, so those aggregates cannot identify the executable responsible.
@@ -92,7 +98,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-On the next separately approved hosted Windows app journey, compare the driver path counts against the 567-finding baseline and inspect the new writer breakdown. Use the same generated dataset and two-launch sequence in a disposable runner. Review recurring backend and WebView writes and connections using the existing diagnostics.
+Review Sysmon process-image path parsing with generated records. Add redacted context for a blocked record and verify that ambiguous process identity still blocks the audit. Once verified, use a separately approved hosted Windows journey to compare the driver counts against the 567-finding baseline and review recurring backend and WebView findings.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
