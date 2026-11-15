@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Ask ODIN Local analytics milestone
+
+Source `d95407b926a648ae3dea7fd770b1f48343258bc1` passed all four [P4 CI jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43753907245). The suite recorded 498 Python passes, one skip, 18 passing subtests, 92 frontend checks, a successful TypeScript/Vite build and 13 disposable real-HTTP browser cases. Ask ODIN returned the expected grouped missingness, two distinct rate denominators, filtered median, one filter-changing follow-up and clarification after a project switch. API regressions covered alternate schemas, conflicting aliases and stale Quality versions. The earlier [browser run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43753524007/job/132932509110) timed out on a duplicated API prefix in the final test matcher. The corrected run passed without changing feature code.
+
+The current-source Windows API job passed the original five exact-fact checks at simulated 0.73 GiB available and measured 102.4 MiB peak resident. A separate Linux in-process API check on a generated 20,000-row, three-column fixture measured 80.0 ms for the first grouped missingness answer and 39.7 ms median over 20 repeat queries. Cumulative process peak was 114.4 MiB including imports and both fixture sizes. These measurements exclude the full desktop and WebView2. Physical 8 GB Windows acceptance is open.
+
 ## 15 November 2026 | R03 hosted Windows Local analytics measurement
 
 The [hosted Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43744796818/job/132905610069) passed all five generated Ask ODIN scenarios at source `99d36f680b50ab02ac8a4d9fa281f5a44ffa0d6c`. Simulated 0.73 GiB available RAM caused model preflight to defer, while Local analytics bypassed provider routing and returned the expected facts. The API test process peaked at 102.3 MiB resident and 180.4 MiB committed, including imports, test harness and two generated CSV imports. The workload took 0.295 seconds after setup. No scikit-learn or SciPy modules loaded. The hosted machine reported 15.995 GiB total and 13.425 GiB available before the workload. These are process-level measurements with a simulated admission reading. The desktop and WebView2 were outside the measurement.
@@ -219,7 +225,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-The [Local analytics milestone](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) is implemented in source. Choose **Local analytics** in Ask ODIN to check grouped missingness, labelled and all-row percentages, a filtered numeric summary and one follow-up that changes the filter value. The API verifies the resolved query and rechecks project and working version before applying the follow-up. Use the generated CSV in the plan for one consolidated Live Dev walkthrough. The hosted lower-memory API workload remains the baseline for a future source-matched physical desktop check. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Use the existing four-row CSV in one consolidated Live Dev walkthrough of the [Local analytics milestone](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md). The hosted API workload provides the baseline for a future source-matched physical Windows desktop check. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
