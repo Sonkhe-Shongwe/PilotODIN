@@ -4,6 +4,7 @@
 
 - The collector-only path reconciles a single millisecond-aligned Sysmon parent-birth record just before the fixture window with Windows creation time inside that window, in the same millisecond. Both the shared prelaunch guard and the final combined reducer use the same parser. The expected child PID, image and hashes, both lifetimes, loopback traffic and final ETW file operations still have to validate. The full application journey keeps its existing timing rules.
 - Generated checks replay the measured 222.0 µs boundary difference and reject stale candidates, competing records and wrong child identity. The live collector workflow remains disarmed. Next seek approval for one collector-only validation at the reviewed source, without a PilotODIN build or launch. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+- [P4 CI #43672531160](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531160) passed all three jobs at `8f57d22a374f0b56043e3789b3260291fecb78ce`: 381 Python tests (one platform skip), 80 Node checks, 12 Chromium cases, TypeScript/Vite and Windows fixture checks. [N12 rundown #43672531159](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531159) passed 147 tests and hosted ETW controls. The live Sysmon collector-only workflow was **NOT RUN**.
 
 ## 15 November 2026 | Collector rehearsal measured a sub-millisecond birth difference
 
