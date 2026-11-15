@@ -1193,6 +1193,45 @@ def test_identical_sysmon_exit_payloads_preserve_the_audit(tmp_path):
     assert report == dict(baseline, sysmon_repeated_process_exits=2)
 
 
+@pytest.mark.parametrize("prefix", ["\\\\?\\", "\\??\\"])
+def test_sysmon_drive_aliases_preserve_full_image_identity(tmp_path, prefix):
+    evidence = Evidence()
+    baseline = evidence.report(tmp_path)
+    fields = next(fields for _, kind, fields in evidence.events if kind == 1 and fields["ProcessGuid"] == "app1")
+    fields["Image"] = prefix + APP
+    assert evidence.report(tmp_path) == baseline
+
+    exit_fields = next(fields for _, kind, fields in evidence.events
+                       if kind == 5 and fields["ProcessGuid"] == "app1")
+    exit_fields["Image"] = prefix + r"C:\unrelated\pilotodin.exe"
+    with pytest.raises(trace.EvidenceValidationError, match="process exit image disagrees with birth"):
+        evidence.report(tmp_path)
+
+
+@pytest.mark.parametrize(("event_id", "image", "category"), [
+    (1, None, "missing"),
+    (1, "", "empty"),
+    (1, r"\\server\share\private.exe", "unc"),
+    (1, r"\Device\HarddiskVolume3\private.exe", "device-or-extended"),
+    (1, r"C:private.exe", "drive-relative"),
+    (1, "private.exe", "relative-or-unrecognized"),
+    (5, r"\\?\C:\private\..\private.exe", "device-or-extended"),
+    (5, r"\\?\GLOBALROOT\Device\private.exe", "device-or-extended"),
+])
+def test_invalid_sysmon_image_reports_record_and_form_without_raw_path(tmp_path, event_id, image, category):
+    evidence = Evidence()
+    events = sorted(evidence.events, key=lambda event: event[0])
+    record, fields = next((record, fields) for record, (_, kind, fields) in enumerate(events, 100)
+                          if kind == event_id and fields["ProcessGuid"] == "app1")
+    if image is None:
+        del fields["Image"]
+    else:
+        fields["Image"] = image
+    with pytest.raises(trace.EvidenceValidationError) as rejected:
+        evidence.report(tmp_path)
+    assert str(rejected.value) == f"Sysmon XML: invalid process Image (event {event_id}, record {record}, {category})"
+
+
 @pytest.mark.parametrize(("field", "value", "message"), [
     ("UtcTime", f"{BASE} 00:00:34.001", "conflicting process exit timestamps"),
     ("ProcessId", "999", "process exit PID disagrees with birth"),

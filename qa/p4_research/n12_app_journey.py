@@ -141,8 +141,9 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
     outside_ticks = []
     outside_connections = []
 
-    def outside_birth(stamp, fields):
-        if fields.get("ProcessId") == str(record["pid"]) and trace.windows_path(fields["Image"]) == image:
+    def outside_birth(stamp, fields, record_id):
+        if (fields.get("ProcessId") == str(record["pid"])
+                and trace.sysmon_image(fields.get("Image"), 1, record_id) == image):
             outside.add("parent-birth-before-window" if stamp < start else "parent-birth-after-window")
             outside_ticks.append(trace.utc_ticks(stamp))
 

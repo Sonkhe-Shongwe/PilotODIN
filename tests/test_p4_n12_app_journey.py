@@ -70,9 +70,11 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
     ("mismatched", "parent-image-mismatch", 1),
     ("ambiguous", "parent-birth-ambiguous", 1),
     ("early-event", "parent-birth-before-window", 1),
+    ("early-drive-alias", "parent-birth-before-window", 1),
     ("late-event", "parent-birth-after-window", 2),
     ("same-millisecond", "parent-birth-before-window", 1),
     ("collector-precision", None, 1),
+    ("collector-drive-alias", None, 1),
     ("collector-stale", "parent-birth-before-window", 1),
     ("collector-competing", "precision-fixture-birth-ambiguous", 1),
     ("collector-wrong-child", "child-identity-mismatch", 1),
@@ -100,7 +102,7 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
            "DestinationIp": "127.0.0.1", "DestinationPort": "23551", "SourcePort": "23552"}
     events = [(11, 2, 0, {})]
     precision = scenario.startswith("collector-") and scenario != "collector-change"
-    event_time = {"early-event": -1, "late-event": 9, "same-millisecond": 0,
+    event_time = {"early-event": -1, "early-drive-alias": -1, "late-event": 9, "same-millisecond": 0,
                   "pid-reuse": -2, "missing-creation-time": -1,
                   "collector-stale": -2}.get(scenario, 0 if precision else 1)
     if scenario in {"same-millisecond", "pid-reuse"}:
@@ -112,6 +114,8 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
         marker["child_pid"] = 414
     if scenario == "mismatched":
         parent["Image"] = r"C:\Private\wrong.exe"
+    if scenario in {"early-drive-alias", "collector-drive-alias"}:
+        parent["Image"] = "\\\\?\\" + image
     birth_id = 13 if scenario == "gap" else 12
     if scenario not in {"missing", "regressed"}:
         events.extend([

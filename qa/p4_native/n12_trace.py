@@ -118,6 +118,24 @@ def sysmon_connection(stamp, fields):
                       source_port, address, port)
 
 
+def sysmon_image(value, event_id, record):
+    """Resolve explicit DOS-drive aliases without guessing an image identity."""
+    path = value
+    if path and path.startswith(("\\\\?\\", "\\??\\")):
+        candidate = path[4:]
+        if (re.match(r"^[A-Za-z]:\\", candidate) and "/" not in candidate
+                and not {".", ".."}.intersection(candidate.split("\\"))):
+            path = candidate
+    try:
+        if path:
+            return windows_path(path)
+    except EvidenceValidationError:
+        pass
+    category = "missing" if value is None else unresolved_path_kind(value)
+    raise EvidenceValidationError(
+        f"invalid process Image (event {event_id}, record {record}, {category})")
+
+
 def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=None, precision_fixture=None):
     processes = {}
     exits = {}
@@ -164,13 +182,15 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
             # can be later if Windows wrote the event to the channel afterward.
             stamp = utc_time(fields["UtcTime"] + "+00:00")
         if outside_birth is not None and kind == 1 and not start <= stamp <= end:
-            outside_birth(stamp, fields)
+            outside_birth(stamp, fields, record)
         if outside_connection is not None and kind == 3 and not start <= stamp <= end:
             outside_connection(stamp, fields)
         adjusted = False
-        if (precision_fixture is not None and kind == 1 and
-                fields["ProcessId"] == str(precision_fixture["pid"]) and
-                windows_path(fields["Image"]) == fixture_image):
+        precision_candidate = (precision_fixture is not None and kind == 1 and
+                               fields["ProcessId"] == str(precision_fixture["pid"]))
+        image = (sysmon_image(fields.get("Image"), kind, record)
+                 if kind == 1 and (precision_candidate or start <= stamp <= end) else None)
+        if precision_candidate and image == fixture_image:
             fixture_candidates += 1
             observed = utc_ticks(stamp)
             if (type(created) is int and observed < fixture_start <= created <= fixture_end
@@ -191,14 +211,14 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
                 guid = fields["ProcessGuid"].casefold()
                 require(guid not in processes, "duplicate process birth")
                 processes[guid] = Process(guid, fields["ParentProcessGuid"].casefold(),
-                                          int(fields["ProcessId"]), windows_path(fields["Image"]),
+                                          int(fields["ProcessId"]), image,
                                           sysmon_sha256(fields.get("Hashes", "")), stamp,
                                           fields.get("CommandLine", ""), fixture_birth_adjusted=adjusted)
             elif kind == 5 and (guid := fields["ProcessGuid"].casefold()) in processes:
                 process = processes[guid]
                 require(int(fields["ProcessId"]) == process.pid, "process exit PID disagrees with birth")
                 if "Image" in fields:
-                    require(windows_path(fields["Image"]) == process.image,
+                    require(sysmon_image(fields["Image"], kind, record) == process.image,
                             "process exit image disagrees with birth")
                 require(process.start <= stamp, "process exit precedes birth")
                 if guid in exits:
