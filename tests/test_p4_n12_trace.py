@@ -325,7 +325,45 @@ def test_in_capture_name_control_measures_prior_name(name_at, wrong_name, verdic
         "status": "BLOCKED", "reason": "write-missing-or-ambiguous",
         "write_candidates": {"same_object": 2, "same_process": 2, "same_size": 2, "same_offset": 0,
                              "in_write_window_nonpaging": 0},
+        "request_relationships": {"distinct_request_ids": 0, "request_ids_shared_by_candidates": 0,
+                                  "candidates_without_request_id": 0,
+                                  "candidates_with_ordered_successful_completion": 0},
     }
+
+
+@pytest.mark.parametrize(("second_id", "extra_completions", "expected"), [
+    (997, [], (1, 1, 0, 1)),
+    (998, [], (2, 0, 0, 1)),
+    (998, [(8, 998, 0)], (2, 0, 0, 2)),
+    (998, [(8, 998, 0xC0000022)], (2, 0, 0, 1)),
+    (998, [(8, 998, 0), (8, 998, 0)], (2, 0, 0, 1)),
+    (None, [], (1, 0, 1, 1)),
+    (0, [], (1, 0, 1, 1)),
+])
+def test_in_capture_name_control_counts_request_relationships(second_id, extra_completions, expected):
+    path = r"C:\private\control.bin"
+    control = {"path": path, "pid": 7, "size": 113, "start": 1, "end": 12,
+               "prior_name_control": True, "offset": 4, "write_window": [5, 6]}
+    write = {"FileObject": 50, "FileKey": 60, "IOSize": 113, "ByteOffset": 4}
+    records = [
+        (2, 12, {"FileName": path, "FileObject": 50, "Irp": 1}),
+        (3, 24, {"Irp": 1, "Status": 0}),
+        (5, 16, dict(write, Irp=997)),
+        (6, 16, dict(write, Irp=second_id)),
+        (7, 24, {"Irp": 997, "Status": 0}),
+        *((ticks, 24, {"Irp": irp, "Status": status}) for ticks, irp, status in extra_completions),
+    ]
+    events = [{"id": kind, "ticks": ticks, "pid": 7, "lifecycle": False, "data": data}
+              for ticks, kind, data in records]
+    result = file_lifetime_report(control, events, {})
+    assert result["status"] == "BLOCKED"
+    assert result["reason"] == "write-missing-or-ambiguous"
+    assert result["request_relationships"] == dict(zip((
+        "distinct_request_ids", "request_ids_shared_by_candidates", "candidates_without_request_id",
+        "candidates_with_ordered_successful_completion",
+    ), expected))
+    assert "request_time_path" not in result
+    assert all(private not in json.dumps(result) for private in ("private", "997", "998"))
 
 
 @pytest.mark.parametrize(("fault", "reason"), [

@@ -1315,6 +1315,16 @@ def file_lifetime_report(control, events, devices):
             result["write_candidates"] = {"same_object": len(lifetime_writes), "same_process": len(same_process),
                                           "same_size": len(same_size), "same_offset": len(same_offset),
                                           "in_write_window_nonpaging": len(writes)}
+            request_ids = Counter(number(event["data"].get("Irp")) for event in writes)
+            without_id = request_ids.pop(None, 0) + request_ids.pop(0, 0)
+            completed = sum(successful_completion(file_events, event, control["end"] + 1) is not None
+                            for event in writes)
+            result["request_relationships"] = {
+                "distinct_request_ids": len(request_ids),
+                "request_ids_shared_by_candidates": sum(count > 1 for count in request_ids.values()),
+                "candidates_without_request_id": without_id,
+                "candidates_with_ordered_successful_completion": completed,
+            }
         return result
     write = writes[0]
     ends = [event for event in lifetime if event["id"] in {13, 14}]
