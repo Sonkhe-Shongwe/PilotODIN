@@ -1924,6 +1924,117 @@ def test_standalone_calibration_cli_requires_no_app_journey(tmp_path):
     assert subprocess.run(command, capture_output=True, check=False).returncode == 2
 
 
+def test_combined_calibration_cli_uses_only_stable_background_process_bookends(tmp_path):
+    evidence = Evidence()
+    evidence.events.clear()
+    evidence.manifest["processes"].clear()
+    evidence.calibration(1, 30, 9001)
+    manifest, sysmon, _ = standalone_capture(tmp_path, evidence)
+    manifest["protected_roots"] = {"synthetic": PROTECTED}
+    start = trace.utc_ticks(trace.utc_time(manifest["start_utc"]))
+    rows = []
+
+    def emit(second, pid, event_id, *, lifecycle=False, **fields):
+        rows.append(dict(ticks=start + second * 10_000_000 + len(rows),
+                         pid=pid, id=event_id, lifecycle=lifecycle, data=fields))
+
+    def mutate(pid, kind, obj, *, destination=None, **fields):
+        irp = len(rows) + 1
+        open_result = fields.pop("open_result", None)
+        emit(3, pid, kind, FileObject=obj, Irp=irp, **fields)
+        if destination:
+            emit(3, pid, 27, FileObject=obj, Irp=irp, FilePath=destination)
+        completion = {} if open_result is None else {"ExtraInformation": open_result}
+        emit(3, 0, 24, Irp=irp, Status=0, **completion)
+
+    fixture = manifest["calibration"]
+    emit(2, 0, 1, lifecycle=True, ProcessID=31)
+    mutate(31, 12, 1, FileName=fixture["fixture"], open_result=2)
+    mutate(31, 16, 1)
+    mutate(31, 17, 1, InfoClass=20)
+    mutate(31, 19, 1, destination=fixture["renamed_fixture"])
+    mutate(31, 18, 1)
+    emit(5, 0, 2, lifecycle=True, ProcessID=31)
+
+    mutate(72, 16, 2, FileKey="0x32", IssuingThreadId=83)
+    mutate(72, 17, 2, InfoClass=20)
+    mutate(72, 12, 3, FileName=PROTECTED + r"\private-target.bin", open_result=1)
+    mutate(72, 19, 3, destination=PROTECTED + r"\private-renamed.bin")
+    mutate(73, 16, 4)
+    mutate(74, 16, 5)
+    emit(4, 0, 2, lifecycle=True, ProcessID=74)
+    mutate(30, 16, 6)  # Sysmon-scoped parent with no corresponding ETW start.
+
+    etw_path = tmp_path / "events.jsonl"
+    etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    manifest["etw"] = {
+        "schema_version": 1, "start_utc": manifest["start_utc"], "end_utc": manifest["end_utc"],
+        "events_sha256": hashlib.sha256(etw_path.read_bytes()).hexdigest(),
+        "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+        "counters": dict(events_lost=0, log_buffers_lost=0, realtime_buffers_lost=0, buffers_written=1),
+    }
+    manifest_path = tmp_path / "calibration.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    entries = [{"pid": pid, "birth_ticks": start - 10, "name": "private-process.exe"}
+               for pid in (30, 31, 72, 73, 74)]
+    snapshots = {"before": entries, "after": [dict(entry) for entry in entries]}
+    snapshots["after"][3]["birth_ticks"] += 1  # PID reused between snapshots.
+    bookends_path = tmp_path / "process-bookends.json"
+    bookends_path.write_text(json.dumps(snapshots), encoding="utf-8-sig")
+    command = [sys.executable, trace.__file__, "check-calibration-etw", *map(str, (manifest_path, sysmon, etw_path))]
+
+    def report(label, *options):
+        output_path = tmp_path / f"{label}.json"
+        result = subprocess.run([*command, str(output_path), *map(str, options)],
+                                capture_output=True, text=True, check=False)
+        assert (result.returncode, result.stdout.strip(), result.stderr) == (
+            2, "N12 collector calibration: BLOCKED", "",
+        )
+        return json.loads(output_path.read_text(encoding="utf-8"))
+
+    baseline = report("baseline")
+    reduced = report("with-bookends", "--process-bookends", bookends_path)
+    assert baseline["etw_background_process_bookends"] == {"status": "unavailable"}
+    assert reduced["etw_background_process_bookends"] == {"status": "checked", "stable_background_processes": 1}
+    assert baseline["etw_unresolved_mutations"] == {
+        "other:write:process-lifetime-missing": 3,
+        "other:resize:process-lifetime-missing": 1,
+        "other:rename:process-lifetime-missing": 1,
+        "other:write:path-missing": 3,
+        "other:resize:path-missing": 1,
+        "unattributed:write:process-lifetime-missing": 1,
+        "unattributed:write:path-missing": 1,
+    }
+    assert reduced["etw_unresolved_mutations"] == {
+        "other:write:process-lifetime-missing": 2,
+        "other:write:path-missing": 3,
+        "other:resize:path-missing": 1,
+        "unattributed:write:process-lifetime-missing": 1,
+        "unattributed:write:path-missing": 1,
+    }
+    assert reduced["etw_path_gap_context"] == {
+        "other:event-16:write:file-key:header-lifetime:unverified-thread": 1,
+        "other:event-16:write:no-file-key:no-header-lifetime:no-thread-id": 2,
+        "other:event-17:resize:no-file-key:header-lifetime:no-thread-id": 1,
+        "unattributed:event-16:write:no-file-key:no-header-lifetime:no-thread-id": 1,
+    }
+    for summary in (baseline, reduced):
+        assert summary["coverage_issues"] == ["calibration-protected-mutation", "etw-mutation-coverage-unresolved"]
+        assert summary["file_violations"] == {"protected:other:rename": 1}
+        assert summary["file_events"] == {f"calibration:{operation}": 1
+                                          for operation in ("create", "write", "resize", "rename", "delete")}
+        assert summary["native_n12_accepted"] is False
+        assert "private-" not in json.dumps(summary)
+
+    bookends_path.write_text(json.dumps({"before": entries, "after": []}), encoding="utf-8")
+    output_path = tmp_path / "missing-after.json"
+    result = subprocess.run([*command, str(output_path), "--process-bookends", str(bookends_path)],
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 2
+    assert result.stderr.strip() == "N12 BLOCKED: expected two non-empty process snapshots."
+    assert not output_path.exists()
+
+
 def test_standalone_calibration_blocks_missing_udp_and_record_gap(tmp_path):
     evidence = Evidence()
     evidence.events = [event for event in evidence.events if not

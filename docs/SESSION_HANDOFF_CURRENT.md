@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Collector process snapshots integrated
+
+The collector rehearsal now reduces the same capture with and without before-and-after process snapshots. Generated CLI evidence resolved one write, one resize and one rename lifetime gap for the stable background process. All five missing-path findings and the protected rename violation still blocked coverage. Reused PIDs, observed lifecycle transitions and the scoped calibration process could not seed a lifetime. An empty snapshot failed closed. The comparison emits aggregate counts. [N12 runbook](../qa/p4_native/N12_TRACE.md#reduce-combined-etw-and-sysmon-evidence).
+
 ## 15 November 2026 | Collector prelaunch passed and final ETW coverage blocked
 
 The [approved collector-only run #43672824700](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672824700/job/132686419880) used source `9301320baf5596ede34360f530ab17f2d1a16494`. Pinned Sysmon setup and the shared prelaunch guard passed on read 1. The combined reducer observed the expected fixture file operations and reported zero file violations. `fixture_birth_adjusted=false`; live evidence did not exercise the precision rule. The job failed on `etw-mutation-coverage-unresolved`. The summary recorded 732 background writes and 522 resizes lacking both path and process-lifetime attribution, plus one rename lacking a lifetime. The path and lifetime counters overlap for writes and resizes. [Full run record](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-prelaunch-passed-and-final-etw-coverage-blocked).
@@ -10,11 +14,13 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Integrate the existing stable before-and-after process snapshots into the combined calibration reducer and exercise the integration with generated tests. Compare which lifetime gaps the snapshots resolve and which file paths remain unresolved. Use the residual path evidence to select a bounded Windows check. Strict coverage stays blocked while real operations remain unresolved.
+After separate owner approval, run one collector-only rehearsal on disposable GitHub-hosted Windows from the reviewed source. Compare both reductions of the same capture. Record how many lifetime gaps the snapshots resolve, the remaining write and resize path gaps, and any protected mutations. Use the residual path evidence to select the next diagnostic. Strict coverage stays blocked while real operations remain unresolved.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Verified source checks
+
+Local Python checks for the process-snapshot increment passed 403 tests with one platform skip. A local Node run passed 48 checks and could not load four test files because Playwright or TypeScript was absent from the checkout.
 
 [P4 CI #43672531160](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531160) passed all three jobs at source `8f57d22a374f0b56043e3789b3260291fecb78ce`: 381 Python tests, one platform skip, 80 Node checks, TypeScript/Vite, 12 browser cases and Windows fixture checks. [N12 rundown #43672531159](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531159) passed 147 tests and hosted ETW controls at the same source. The live collector run above has its own source and verdict.
 

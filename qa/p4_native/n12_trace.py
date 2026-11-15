@@ -523,8 +523,13 @@ def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None):
     return start, end, processes, connections, issues
 
 
-def check_calibration(manifest, sysmon, file_trace, *, etw=False):
+def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None):
     """Check real collector exports from a standalone generated fixture."""
+    require(bookends is None or etw, "process bookends require ETW calibration")
+    if bookends is not None:
+        require(isinstance(bookends, dict) and all(
+            isinstance(bookends.get(side), list) and bookends[side] for side in ("before", "after")
+        ), "expected two non-empty process snapshots")
     root = manifest["calibration"]
     require(root["role"] == "calibration" and type(root["port"]) is int
             and 1 <= root["port"] <= 65535, "invalid calibration fixture")
@@ -536,9 +541,15 @@ def check_calibration(manifest, sysmon, file_trace, *, etw=False):
     if etw:
         protected = [windows_path(path) for path in manifest["protected_roots"].values()]
         require(protected, "missing ETW calibration protected roots")
+        bookend_summary = {"status": "unavailable"}
+        path_gap_counts = Counter()
         counts, violations, file_events, diagnostics = inspect_etw_files(
-            manifest, file_trace, start, end, processes, roles, protected, permitted, issues)
+            manifest, file_trace, start, end, processes, roles, protected, permitted, issues,
+            background_bookends=bookends, bookend_summary=bookend_summary,
+            path_gap_counts=path_gap_counts)
         file_report = {"file_evidence_source": "etw", "etw_unresolved_mutations": diagnostics,
+                       "etw_background_process_bookends": bookend_summary,
+                       "etw_path_gap_context": dict(path_gap_counts),
                        "file_violations": violations}
     else:
         counts, violations, file_events, path_diagnostics = inspect_files(
@@ -618,8 +629,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       process_event_images=None,
                       rundown_recovered_keys=None, rundown_invalidations=None,
                       preopened_control_file_keys=None, preopened_control_file_objects=None,
-                      rundown_window=None, record_outside_scope=None, journey_bookends=None,
-                      bookend_summary=None, record_path_gap=None):
+                      rundown_window=None, record_outside_scope=None, background_bookends=None,
+                      bookend_summary=None, path_gap_counts=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -664,6 +675,9 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
     initial_process_births.update(synthetic_process_births or {})
     counts, violations, file_events = Counter(), Counter(), set()
 
+    def count_path_gap(role, event_id, operation, file_key, lifetime, thread):
+        path_gap_counts[f"{role}:event-{event_id}:{operation}:{file_key}:{lifetime}:{thread}"] += 1
+
     def record(role, identity, operation, source, destination, requested, completed, success):
         if not success or completed < start_ticks:
             return
@@ -696,7 +710,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
-        if journey_bookends is not None:
+        if background_bookends is not None:
             # Scoped identities still come from Sysmon joined to ETW process
             # starts. Bookends can only seed pre-existing background processes.
             excluded = set(lifetimes)
@@ -704,7 +718,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                 if event["lifecycle"] and event["id"] in (1, 2):
                     data = event["data"]
                     excluded.add(number(data.get("ProcessID", data.get("ProcessId"))))
-            stable = stable_process_bookend_records(journey_bookends, capture_bounds[0], excluded)
+            stable = stable_process_bookend_records(background_bookends, capture_bounds[0], excluded)
             initial_process_births.update({pid: entry["birth_ticks"] for pid, entry in stable.items()})
             if bookend_summary is not None:
                 bookend_summary.update(status="checked", stable_background_processes=len(stable))
@@ -724,7 +738,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             initial_process_births=initial_process_births,
             preopened_control_file_keys=preopened_control_file_keys,
             preopened_control_file_objects=preopened_control_file_objects,
-            rundown_window=rundown_window, record_path_gap=record_path_gap,
+            rundown_window=rundown_window,
+            record_path_gap=count_path_gap if path_gap_counts is not None else None,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -761,18 +776,14 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
     etw_diagnostics = {}
     bookend_summary = {}
     path_gap_counts = Counter()
-
-    def count_path_gap(role, event_id, operation, file_key, lifetime, thread):
-        path_gap_counts[f"{role}:event-{event_id}:{operation}:{file_key}:{lifetime}:{thread}"] += 1
-
     if etw:
         immutable = [windows_path(manifest["observed_roots"][label])
                      for label in manifest["immutable_observed"]]
         file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
             manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues,
             rundown=rundown, record_outside_scope=record_outside_scope,
-            journey_bookends=journey_bookends, bookend_summary=bookend_summary,
-            record_path_gap=count_path_gap if describe_path_gaps else None)
+            background_bookends=journey_bookends, bookend_summary=bookend_summary,
+            path_gap_counts=path_gap_counts if describe_path_gaps else None)
         path_diagnostics = []
     else:
         file_counts, violations, file_events, path_diagnostics = inspect_files(
@@ -1354,6 +1365,9 @@ def main():
         calibration = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "file_trace", "output"):
             calibration.add_argument(argument, type=Path)
+        if mode == "check-calibration-etw":
+            calibration.add_argument("--process-bookends", type=Path,
+                                     help="Private process identity snapshots from the disposable runner.")
     for mode in ("audit", "audit-etw"):
         report = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "etw_events" if mode == "audit-etw" else "procmon",
@@ -1399,8 +1413,11 @@ def main():
                       for label, key in (("protected", "protected_roots"), ("observed", "observed_roots"))}
         elif args.mode in {"check-calibration", "check-calibration-etw"}:
             output = args.output
+            bookends_path = getattr(args, "process_bookends", None)
+            bookends = read_json(bookends_path) if bookends_path else None
+            require(bookends_path is None or bookends is not None, "expected process snapshot evidence")
             result = check_calibration(read_json(args.manifest), args.sysmon, args.file_trace,
-                                       etw=args.mode == "check-calibration-etw")
+                                       etw=args.mode == "check-calibration-etw", bookends=bookends)
         else:
             output = args.output
             endpoints = [] if args.private_endpoints else None

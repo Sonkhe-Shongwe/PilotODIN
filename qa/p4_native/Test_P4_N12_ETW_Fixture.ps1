@@ -57,13 +57,16 @@ if ($WithSysmon) {
     $probeArgs += '--calibration-only'
 }
 $bookends = $null
-if (($CalibrationOnly -and -not $WithSysmon) -or $PreopenedControl) {
+$withThreadBookends = ($CalibrationOnly -and -not $WithSysmon) -or $PreopenedControl
+if ($WithSysmon -or $withThreadBookends) {
     # Win32_Process and thread snapshots supply stable identity for processes
     # that predate ETW. Collect names only, never command lines or full paths.
     $bookends = Join-Path $root 'process-bookends.json'
     $before = @(Get-ProcessBookend)
+}
+if ($withThreadBookends) {
     $threadsBefore = @(Get-ThreadBookend)
-    if ($CalibrationOnly -and -not $WithSysmon) { $probeArgs += '--thread-context' }
+    if ($CalibrationOnly) { $probeArgs += '--thread-context' }
 }
 if ($WithSysmon) {
     $PSNativeCommandUseErrorActionPreference = $false
@@ -83,9 +86,12 @@ if ($WithSysmon) {
 $capture = $result | ConvertFrom-Json
 if ($bookends) {
     $after = @(Get-ProcessBookend)
-    $threadsAfter = @(Get-ThreadBookend)
-    @{ before = $before; after = $after; threads_before = $threadsBefore; threads_after = $threadsAfter } |
-        ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $bookends -Encoding utf8
+    $snapshots = @{ before = $before; after = $after }
+    if ($withThreadBookends) {
+        $snapshots.threads_before = $threadsBefore
+        $snapshots.threads_after = @(Get-ThreadBookend)
+    }
+    $snapshots | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $bookends -Encoding utf8
 }
 $manifestPath = Join-Path $root 'fixture.json'
 $eventsPath = Join-Path $root 'events.jsonl'
@@ -103,7 +109,7 @@ try {
         $eventId = $event.Id
         $isFileEvent = $event.ProviderId -eq $provider
         $isLifecycleEvent = $event.ProviderId -eq $processProvider -and
-            ($eventId -in 1,2 -or ($bookends -and $eventId -in 3,4))
+            ($eventId -in 1,2 -or ($withThreadBookends -and $eventId -in 3,4))
         if ($isFileEvent) {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
         }
@@ -203,10 +209,18 @@ if ($WithSysmon) {
 }
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reducerManifest -Encoding utf8
 if ($WithSysmon) {
+    $baselinePath = Join-Path $root 'summary-without-bookends.json'
     $summaryPath = Join-Path $root 'summary.json'
     $PSNativeCommandUseErrorActionPreference = $false
     Write-Host 'Combined rehearsal exported ETW and bounded Sysmon evidence. Starting reducer.'
-    python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $reducerManifest $sysmonXml $eventsPath $summaryPath
+    Write-Host 'Baseline summary without process snapshots:'
+    python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $reducerManifest $sysmonXml $eventsPath $baselinePath
+    if ($LASTEXITCODE -notin 0,2 -or -not (Test-Path -LiteralPath $baselinePath -PathType Leaf)) {
+        throw 'Combined rehearsal could not produce the baseline summary.'
+    }
+    Get-Content -LiteralPath $baselinePath -Raw | Write-Host
+    Write-Host 'Summary with process snapshots from the same capture:'
+    python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $reducerManifest $sysmonXml $eventsPath $summaryPath --process-bookends $bookends
     $auditExit = $LASTEXITCODE
     if (Test-Path -LiteralPath $summaryPath -PathType Leaf) {
         Get-Content -LiteralPath $summaryPath -Raw | Write-Host
