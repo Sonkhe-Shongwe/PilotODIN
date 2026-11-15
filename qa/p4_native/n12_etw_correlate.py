@@ -1303,12 +1303,18 @@ def file_lifetime_report(control, events, devices):
     lifetime_writes = [event for event in lifetime if event["id"] == 16 and event["ticks"] <= control["end"]]
     same_process = [event for event in lifetime_writes if event["pid"] == control["pid"]]
     same_size = [event for event in same_process if number(event["data"].get("IOSize")) == control["size"]]
-    writes = [event for event in same_size if number(event["data"].get("ByteOffset")) == offset]
+    same_offset = [event for event in same_size if number(event["data"].get("ByteOffset")) == offset]
+    writes = same_offset
+    if control.get("prior_name_control"):
+        write_start, write_end = control["write_window"]
+        writes = [event for event in same_offset if write_start <= event["ticks"] <= write_end
+                  and write_paging_flag(event["data"]) != "set"]
     if len(writes) != 1:
         result = {"status": "BLOCKED", "reason": "write-missing-or-ambiguous"}
         if control.get("prior_name_control"):
             result["write_candidates"] = {"same_object": len(lifetime_writes), "same_process": len(same_process),
-                                          "same_size": len(same_size), "same_offset": len(writes)}
+                                          "same_size": len(same_size), "same_offset": len(same_offset),
+                                          "in_write_window_nonpaging": len(writes)}
         return result
     write = writes[0]
     ends = [event for event in lifetime if event["id"] in {13, 14}]
