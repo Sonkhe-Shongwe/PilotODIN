@@ -303,6 +303,13 @@ if ($PreopenedControl) {
         throw 'The pre-opened control did not return a valid redacted report.'
     }
     Write-Host ('Pre-opened control summary: ' + ($controlReport | ConvertTo-Json -Compress -Depth 8))
+    if (-not $Rundown) {
+        $named = $controlReport.in_capture_name_control
+        Write-Host ('In-capture name control: ' + ($named | ConvertTo-Json -Compress -Depth 5))
+        if ($named.open_and_write_completed -ne $true -or $named.request_time_path -eq 'different-from-handle-path') {
+            throw 'The in-capture name control could not verify its write or disagreed with the handle path.'
+        }
+    }
     if ($Rundown) {
         if ([long]$controlReport.rundown_keys -le 0) {
             throw 'The native rundown did not produce any file-key mappings.'

@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 adds a file created during capture
+
+The ETW-only Windows fixture now creates a new disposable file after tracing starts. It seeds the file, verifies the handle path, records a distinct write and reads back its payload. The diagnostic compares the exact handle path with prior file-name evidence for that write's key. The report distinguishes a match, a mismatch and insufficient evidence. The existing pre-opened controls and strict audit remain independent. Locally, 42 focused generated cases passed with a standard-library harness because pytest was unavailable.
+
 ## 15 November 2026 | N12 request-time paths checked against fixture handles
 
 The pre-opened fixture report now compares the ETW path at write time against the independently verified Windows handle. Stop-time rundown retains its own verdict. Previously, a missing or different rundown entry prevented the write-time comparison, including when the file was renamed after the write completed. Generated cases check renames before, during and after a write, an ordered key reset with a fresh name, conflicting names and object reuse. All 169 trace and 45 app-journey cases passed using a local standard-library harness because pytest was unavailable locally. Strict scoring was unchanged. The 366 candidates from the connection rehearsal remain unverified. [N12 runbook](../qa/p4_native/N12_TRACE.md#successful-writes-with-unresolved-paths)

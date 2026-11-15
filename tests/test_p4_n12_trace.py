@@ -292,6 +292,36 @@ def test_generated_file_lifetime_requires_ordered_same_object_evidence(fault, re
     assert "control.bin" not in json.dumps(report)
 
 
+@pytest.mark.parametrize(("name_at", "wrong_name", "verdict"), [
+    (4, False, "matches-handle-path"),
+    (4, True, "different-from-handle-path"),
+    (5, False, "ambiguous-event-order"),
+    (6, False, "no-prior-name-in-lifetime"),
+    (None, False, "no-prior-name-in-lifetime"),
+])
+def test_in_capture_name_control_measures_prior_name(name_at, wrong_name, verdict):
+    path = r"C:\private\control.bin"
+    control = {"path": path, "pid": 7, "size": 113, "start": 1, "end": 12,
+               "prior_name_control": True}
+    records = [
+        (2, 12, {"FileName": path, "FileObject": 50, "Irp": 1}),
+        (3, 24, {"Irp": 1, "Status": 0}),
+        (5, 16, {"FileObject": 50, "FileKey": 60, "Irp": 2, "IOSize": 113, "ByteOffset": 0}),
+        (7, 24, {"Irp": 2, "Status": 0}),
+        (8, 13, {"FileObject": 50, "FileKey": 60}),
+        (9, 14, {"FileObject": 50, "FileKey": 60}),
+    ]
+    if name_at is not None:
+        records.append((name_at, 10, {"FileObject": 60,
+                                     "FileName": r"C:\private\other.bin" if wrong_name else path}))
+    events = [{"id": kind, "ticks": ticks, "pid": 7, "lifecycle": False, "data": data}
+              for ticks, kind, data in records]
+    result = file_lifetime_report(control, events, {})
+    assert result["status"] == "PASS"
+    assert result["request_time_path"] == verdict
+    assert "private" not in json.dumps(result)
+
+
 @pytest.mark.parametrize(("fault", "reason"), [
     (None, None),
     ("same-object", "distinct-file-objects-unverified"),

@@ -758,6 +758,8 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
         )
     if "file_lifetime" in capture:
         result["file_lifetime"] = file_lifetime_report(capture["file_lifetime"], events, devices)
+    if "in_capture_name_control" in capture:
+        result["in_capture_name_control"] = file_lifetime_report(capture["in_capture_name_control"], events, devices)
     if "basic_info_control" in capture:
         result["basic_info_control"] = file_lifetime_report(capture["basic_info_control"], events, devices)
     return result
@@ -1340,6 +1342,21 @@ def file_lifetime_report(control, events, devices):
               "open_and_write_completed": True, **end_evidence,
               "matching_name_before_write": any(event["ticks"] < write["ticks"] for event in name_events),
               "matching_name_at_or_after_write": any(event["ticks"] >= write["ticks"] for event in name_events)}
+    if control.get("prior_name_control"):
+        object_events = [
+            event for event in file_events if event["id"] not in {10, 11, 24}
+            and number(event["data"].get("FileObject")) == object_id
+        ]
+        key_events = [
+            event for event in file_events if event["id"] != 24
+            and (name_transition_key(event["id"], event["data"]) or number(event["data"].get("FileKey"))) == key
+        ]
+        verdict = request_time_file_key_evidence(
+            write, write_completed, object_events, key_events, file_events,
+            lambda value: canonical_file_path(value, devices),
+            lambda path: "matches-handle-path" if path == expected else "different-from-handle-path",
+        )
+        result["request_time_path"] = verdict
     if control.get("basic_info"):
         metadata = [event for event in lifetime if event["id"] == 17
                     and event["pid"] == control["pid"]

@@ -180,6 +180,25 @@ def write_two_handle_control(path):
                 raise RuntimeError("The generated two-handle write was incomplete.")
 
 
+def write_named_control(path):
+    """Give the in-capture file a first I/O before the measured write."""
+    payload = b"N" * 113
+    start = utc_ticks() // 10 * 10
+    with path.open("x+b", buffering=0) as stream:
+        verify_handle_path(stream, path)
+        if stream.write(b"seed") != 4:
+            raise RuntimeError("The generated name-control seed was incomplete.")
+        stream.seek(0)
+        verify_handle_path(stream, path)
+        if stream.write(payload) != len(payload):
+            raise RuntimeError("The generated name-control write was incomplete.")
+        stream.seek(0)
+        if stream.read() != payload:
+            raise RuntimeError("The generated name-control payload did not match.")
+    return {"path": str(path), "pid": os.getpid(), "size": len(payload),
+            "start": start, "end": utc_ticks(), "prior_name_control": True}
+
+
 def write_basic_info_control(path):
     import msvcrt
 
@@ -310,7 +329,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         raise RuntimeError(f"ETW start failed with exit code {started.returncode}.")
     rundown_start_ticks = rundown_stop_ticks = None
     lifetime_control = None
-    basic_info_control = None
+    basic_info_control = named_control = None
     try:
         comparison = open_comparison() if open_comparison is not None else None
         control_writes = {}
@@ -320,6 +339,8 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
                 raise RuntimeError("The generated pre-opened write was incomplete.")
             control_writes[label] = {"path": str(path), "size": len(payload),
                                      "start": first, "end": utc_ticks()}
+        if controls and before_stop is None:
+            named_control = write_named_control(root / "in-capture-name.bin")
         if comparison is not None:
             # Give immediate writes a separate observation interval before flushing.
             time.sleep(0.1)
@@ -420,6 +441,8 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         if lifetime_path.read_bytes() != b"L" * 97:
             raise RuntimeError("The generated file lifetime control did not preserve its payload.")
         capture["file_lifetime"] = lifetime_control
+    if named_control is not None:
+        capture["in_capture_name_control"] = named_control
     if basic_info_control is not None:
         if basic_info_path.read_bytes() != b"M" * 101:
             raise RuntimeError("The generated metadata-control payload did not match.")
