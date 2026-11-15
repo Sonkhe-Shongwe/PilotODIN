@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {BrainCircuit, Send, ShieldCheck, Sparkles, LoaderCircle} from 'lucide-react';
 import {post} from './api';
 import {RichText} from './RichText';
@@ -8,17 +8,32 @@ type Msg={role:'user'|'assistant';content:string;source?:string;incomplete?:bool
 const starters=['What is the dataset overview?','Which columns have missing values and why does it matter?','What quality issues could distort my analysis?','What features and validation concerns should I investigate?'];
 const localQuestions=['What is the dataset overview?', 'Has training started?'];
 const localTemplates=[
-  {label:'Ask about missing values',question:'Why are values missing in "Column name"?'},
-  {label:'Calculate a labelled rate',question:'Positive rate for "Outcome column" = "Positive value"'},
+  {label:'Ask about missing values',question:'Why are values missing in "Column name"?',fields:['Column name'],
+    hint:'Replace Column name with a column from your dataset, keeping the double quotes.'},
+  {label:'Calculate a labelled rate',question:'Positive rate for "Outcome column" = "Positive value"',fields:['Outcome column','Positive value'],
+    hint:'Replace Outcome column and Positive value with the exact column and label from your dataset. Keep both pairs of double quotes.'},
 ];
 export function AssistantWorkspace({projectId,onSettings}:{projectId:string;onSettings:()=>void}){
   const [messages,setMessages]=useState<Msg[]>([{role:'assistant',content:'Choose Local analytics for facts from your working dataset and training history. Smart Auto can also use the offline model or a cloud provider you have enabled.',source:'READY'}]);
   const [question,setQuestion]=useState('');const [busy,setBusy]=useState(false);const [elapsed,setElapsed]=useState(0);
+  const [template,setTemplate]=useState<(typeof localTemplates)[number]|null>(null);
+  const questionInput=useRef<HTMLInputElement>(null);
+  const templateIncomplete=template?.fields.some(field=>question.includes(`"${field}"`))??false;
+  function fillTemplate(next:(typeof localTemplates)[number]){
+    setTemplate(next);
+    setQuestion(next.question);
+    const first=next.fields[0];
+    const start=next.question.indexOf(first);
+    requestAnimationFrame(()=>{
+      const input=questionInput.current;
+      if(input?.value===next.question){input.focus();input.setSelectionRange(start,start+first.length)}
+    });
+  }
   useEffect(()=>{if(!busy){setElapsed(0);return}const started=Date.now();const timer=window.setInterval(()=>setElapsed(Math.floor((Date.now()-started)/1000)),1000);return()=>window.clearInterval(timer)},[busy]);
   const [provider,setProvider]=useState(localStorage.getItem('pilotodin-ai-provider-assistant')??'auto');
   async function ask(q:string,continuation?:string){
     if(busy||(!q.trim()&&!continuation))return;
-    setBusy(true);if(!continuation){setQuestion('');setMessages(a=>[...a,{role:'user',content:q}])}
+    setBusy(true);if(!continuation){setQuestion('');setTemplate(null);setMessages(a=>[...a,{role:'user',content:q}])}
     try{
       const r=await post<{answer:string;provider:string;model:string;fallback:boolean;reason:string;local_status?:string;local_startup_issue?:string;incomplete?:boolean;finish_reason?:string;investigation?:MissingReport;facts?:Record<string,unknown>}>(`/projects/${projectId}/ai/insight`,
         {context:'assistant',question:q||'Continue the previous explanation.',selected_provider:provider,continuation_text:continuation??null});
@@ -48,7 +63,8 @@ export function AssistantWorkspace({projectId,onSettings}:{projectId:string;onSe
         </div></div>)}</div>
       {busy&&<div role="status" className="ai-working"><LoaderCircle size={17} className="spin"/><span><strong>{provider==='local'?'Running deterministic local rules…':'Starting local model or evaluating available providers…'}</strong><small>{elapsed}s elapsed · model loading can be slow · fallback will be labelled if used</small></span></div>}
       <div className="chat-starters">{(provider==='local'?localQuestions:starters).map(s=><button key={s} onClick={()=>void ask(s)} disabled={busy}>{s}</button>)}
-        {provider==='local'&&localTemplates.map(({label,question})=><button key={label} onClick={()=>setQuestion(question)} disabled={busy}>{label}</button>)}</div>
-      <form className="chat-form" onSubmit={e=>{e.preventDefault();void ask(question)}}><input className="input" value={question} maxLength={900} onChange={e=>setQuestion(e.target.value)} placeholder="Ask about your data, cleaning decisions, insights or modelling…" aria-label="Dataset question"/><button className="btn primary" disabled={busy||!question.trim()} type="submit"><Send size={16}/> {busy?'Thinking…':'Ask'}</button></form><p className="muted-caption"><ShieldCheck size={13}/> Only column metadata, aggregated calculations and recorded issue categories may be shared after consent. No dataset rows. <button className="text-action" onClick={onSettings}>Configure AI providers</button></p></div>
+        {provider==='local'&&localTemplates.map(next=><button key={next.label} onClick={()=>fillTemplate(next)} disabled={busy}>{next.label}</button>)}</div>
+      {templateIncomplete&&template&&<p id="assistant-template-hint" className="muted-caption" role="status">{template.hint}</p>}
+      <form className="chat-form" onSubmit={e=>{e.preventDefault();if(!templateIncomplete)void ask(question)}}><input ref={questionInput} className="input" value={question} maxLength={900} onChange={e=>{setQuestion(e.target.value);if(!e.target.value)setTemplate(null)}} placeholder="Ask about your data, cleaning decisions, insights or modelling…" aria-label="Dataset question" aria-describedby={templateIncomplete?'assistant-template-hint':undefined}/><button className="btn primary" disabled={busy||!question.trim()||templateIncomplete} type="submit"><Send size={16}/> {busy?'Thinking…':'Ask'}</button></form><p className="muted-caption"><ShieldCheck size={13}/> Only column metadata, aggregated calculations and recorded issue categories may be shared after consent. No dataset rows. <button className="text-action" onClick={onSettings}>Configure AI providers</button></p></div>
   </div>;
 }

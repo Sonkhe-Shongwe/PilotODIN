@@ -1055,9 +1055,17 @@ test('P4 R03 real HTTP: Ask ODIN computes local answers without a model', async(
   ['Calculate a labelled rate','Positive rate for "outcome" = "Yes"','2 of 3 labelled rows in outcome match Yes'],
  ]){
   await page.getByRole('button',{name:button,exact:true}).click();
-  await expect(page.getByRole('textbox',{name:'Dataset question'})).not.toHaveValue('');
-  await page.getByRole('textbox',{name:'Dataset question'}).fill(question);
-  await page.getByRole('button',{name:'Ask',exact:true}).click();
+  const input=page.getByRole('textbox',{name:'Dataset question'});
+  const ask=page.getByRole('button',{name:'Ask',exact:true});
+  await expect(input).toBeFocused();
+  await expect(input).toHaveAccessibleDescription(/Replace .*double quotes/);
+  await expect(ask).toBeDisabled();
+  if(button==='Calculate a labelled rate'){
+   await input.fill('Positive rate for "outcome" = "Positive value"');
+   await expect(ask).toBeDisabled();
+  }
+  await input.fill(question);
+  await ask.click();
   await expect(page.locator('.chat-message.assistant').last()).toContainText(answer);
  }
  await expect(page.getByText('VERIFIED RULES · NO LLM',{exact:false})).toHaveCount(4);
