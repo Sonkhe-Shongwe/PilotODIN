@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | FileKey and write-completion diagnostics
+
+The combined reducer now reports redacted request-time path-candidate counts for successful writes and resizes with missing paths, plus the distance from unmatched write requests to the end of the audit window. An optional digest-pinned FileIO rundown adds diagnostic-only counts. Generated CLI evidence distinguished protected and outside candidates, conflicting names and object keys, cleanup, late names and a completion tied with rundown stop. The same fixture retained its strict blockers and protected violation with and without rundown. A modified rundown failed its digest check. Local P4 Python checks passed 403 tests with one platform skip. [Runbook](../qa/p4_native/N12_TRACE.md#reduce-combined-etw-and-sysmon-evidence)
+
 ## 15 November 2026 | Live collector process-snapshot comparison
 
 The [approved Windows collector job #132723162580](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43684880159/job/132723162580) ran once from launch `ecf3a43485d02fccbdb1f8c6e353a168387a6643` and checked out reviewed source `0ca097f0c346b3a4ebe231a7acccc3a29fc081ce`. Sysmon 15.22 verified against its pinned hash and prelaunch passed on read 1. The fixture birth precision rule was exercised: the Sysmon birth was 2 µs before the fixture window and the independent Windows creation time was 495.5 µs inside it, in the same millisecond. Both final summaries reported `fixture_birth_adjusted=true`, the expected fixture operations, and zero protected-file violations.
@@ -28,7 +32,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Prepare redacted FileKey diagnostics in the combined reducer with generated evidence. Reuse the existing request-time name and rundown guards to count which write and resize gaps have eligible path candidates. Check whether unmatched write requests cluster near the capture boundary. Keep ambiguous, reused and missing paths or completions blocking strict coverage. A later Windows capture requires its own approval.
+After separate approval, run one collector-only Sysmon and ETW rehearsal on disposable hosted Windows from the reviewed source. Check the request-time path-candidate counts and unmatched-write timing on that capture. Use those results to decide whether to prepare a separately scoped companion FileIO rundown or a longer observation window. The collector-only rehearsal does not collect native rundown input. Strict coverage remains blocked while paths or completions lack evidence.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

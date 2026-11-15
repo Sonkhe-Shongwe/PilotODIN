@@ -1924,7 +1924,7 @@ def test_standalone_calibration_cli_requires_no_app_journey(tmp_path):
     assert subprocess.run(command, capture_output=True, check=False).returncode == 2
 
 
-def test_combined_calibration_cli_uses_only_stable_background_process_bookends(tmp_path):
+def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candidates(tmp_path):
     evidence = Evidence()
     evidence.events.clear()
     evidence.manifest["processes"].clear()
@@ -2033,6 +2033,87 @@ def test_combined_calibration_cli_uses_only_stable_background_process_bookends(t
     assert result.returncode == 2
     assert result.stderr.strip() == "N12 BLOCKED: expected two non-empty process snapshots."
     assert not output_path.exists()
+
+    protected = PROTECTED + r"\private-candidate.bin"
+    outside = r"C:\QA\outside\private-candidate.bin"
+    emit(2, 0, 10, FileKey=201, FileName=protected)
+    mutate(72, 16, 21, FileKey=201)
+    emit(2, 0, 10, FileKey=202, FileName=outside)
+    mutate(72, 17, 22, FileKey=202, InfoClass=20)
+    emit(2, 0, 10, FileKey=203, FileName=outside)
+    emit(2, 0, 10, FileKey=203, FileName=protected)
+    mutate(72, 16, 23, FileKey=203)
+    mutate(72, 17, 24, FileKey=204, InfoClass=20)
+    emit(4, 0, 10, FileKey=204, FileName=outside)  # A later name cannot prove a request-time path.
+    emit(2, 0, 10, FileKey=205, FileName=outside)
+    emit(2, 72, 13, FileObject=25, FileKey=205)
+    mutate(72, 16, 25, FileKey=205)
+    emit(2, 0, 10, FileKey=206, FileName=outside)
+    emit(2, 72, 13, FileObject=26, FileKey=207)  # Same object, conflicting key.
+    mutate(72, 16, 26, FileKey=206)
+    mutate(72, 17, 27, FileKey=208, InfoClass=20)
+    emit(3, 72, 16, FileObject=29, FileKey=209, Irp=0xabcdef)
+    end = trace.utc_ticks(trace.utc_time(manifest["end_utc"]))
+    for irp, distance in ((900, 100_000), (901, 100_001), (902, 1_000_001)):
+        rows.append(dict(ticks=end - distance, id=16, pid=72, lifecycle=False,
+                         data=dict(FileObject=29, FileKey=209, Irp=irp)))
+    mutate(72, 16, 30, FileKey=210)
+    # Let the rundown stop share the completion's timestamp for one otherwise eligible key.
+    for row in rows[-2:]:
+        row["ticks"] = start + 40_000_000 - (0 if row["id"] == 24 else 10)
+
+    etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    rundown_path = tmp_path / "rundown.jsonl"
+    rundown_path.write_text("".join(json.dumps(dict(key=key, path=path, decoder="tdh")) + "\n"
+                                    for key, path in ((201, protected), (202, outside), (203, outside),
+                                                      (204, outside), (205, outside), (206, outside),
+                                                      (208, outside), (208, protected), (210, outside))),
+                            encoding="utf-8")
+    manifest["etw"].update(events_sha256=hashlib.sha256(etw_path.read_bytes()).hexdigest(),
+                           rundown_sha256=hashlib.sha256(rundown_path.read_bytes()).hexdigest(),
+                           rundown_stop_utc=instant(4))
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    plain = report("candidate-baseline")
+    diagnosed = report("candidates", "--rundown", rundown_path)
+    assert diagnosed["etw_unresolved_mutations"] == plain["etw_unresolved_mutations"]
+    assert diagnosed["coverage_issues"] == plain["coverage_issues"]
+    assert diagnosed["file_violations"] == plain["file_violations"]
+    diagnostics = diagnosed["etw_calibration_diagnostics"]
+    assert diagnostics["unmatched_write_timing"] == {
+        "other:last-10ms": 1, "other:10-to-100ms-before-end": 1, "other:over-100ms-before-end": 2,
+    }
+    assert diagnostics["path_candidates"] == {
+        "other:write:request-time:no-prior-name-in-lifetime": 2,
+        "other:write:request-time:missing-file-key": 2,
+        "other:write:request-time:candidate-protected": 1,
+        "other:write:request-time:conflicting-or-unmapped-name": 1,
+        "other:write:request-time:file-object-lifetime-changed": 1,
+        "other:write:request-time:conflicting-object-file-key": 1,
+        "other:resize:request-time:missing-file-key": 1,
+        "other:resize:request-time:candidate-outside-protected": 1,
+        "other:resize:request-time:no-prior-name-in-lifetime": 2,
+        "unattributed:write:request-time:missing-file-key": 1,
+        "other:write:rundown:not-in-rundown": 1,
+        "other:write:rundown:missing-file-key": 2,
+        "other:write:rundown:candidate-protected": 1,
+        "other:write:rundown:lifetime-invalidated": 2,
+        "other:write:rundown:conflicting-object-file-key": 1,
+        "other:write:rundown:completion-at-or-after-rundown": 1,
+        "other:resize:rundown:missing-file-key": 1,
+        "other:resize:rundown:candidate-outside-protected": 2,
+        "other:resize:rundown:ambiguous-or-unmapped-name": 1,
+        "unattributed:write:rundown:missing-file-key": 1,
+    }
+    assert "private-" not in json.dumps(diagnosed)
+    assert "abcdef" not in json.dumps(diagnosed)
+
+    payload = rundown_path.read_bytes()
+    rundown_path.write_bytes(payload + payload.splitlines(keepends=True)[0])
+    invalid_output = tmp_path / "invalid-digest.json"
+    result = subprocess.run([*command, str(invalid_output), "--rundown", str(rundown_path)],
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 2
+    assert "FileIO rundown SHA-256 mismatch" in result.stderr and not invalid_output.exists()
 
 
 def test_standalone_calibration_blocks_missing_udp_and_record_gap(tmp_path):

@@ -69,12 +69,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
                        rundown_invalidations=None, initial_process_births=None,
                        preopened_control_file_keys=None, preopened_control_file_objects=None,
-                       rundown_window=None, record_path_gap=None):
+                       rundown_window=None, record_path_gap=None, calibration_diagnostics=None,
+                       calibration_end=None, diagnostic_rundown_stop=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
     opened, pending = {}, {}
     write_gaps = []
+    calibration_gaps = []
+    calibration_rundown = diagnostic_rundown_stop is not None
     path_gap_context = {}
     opens_with_process_lifetime = set()
     file_names = {}
@@ -123,6 +126,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         guard_events = ordered_events if rundown_guard_events is None else rundown_guard_events
         name_events = {}
         invalidating_kinds = {11, 12, 14, 18, 19, 27, 29}
+        if calibration_rundown:
+            invalidating_kinds.update({13, 26, 28})
         for guarded in guard_events:
             if guarded.get("lifecycle"):
                 continue
@@ -287,7 +292,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if not irp or irp not in pending:
                 continue
             (operation, actor, identity, handle, source, destination, requested,
-             event_id, info_class, write_gap, protected_system_write) = pending.pop(irp)
+             event_id, info_class, write_gap, protected_system_write, request) = pending.pop(irp)
             gap = path_gap_context.pop(irp, None)
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
@@ -333,6 +338,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     flag(actor, f"{operation}:path-missing", event_id, info_class)
                     if gap is not None:
                         record_path_gap(actor, event_id, operation, *gap)
+                    if calibration_diagnostics is not None and operation in {"write", "resize"}:
+                        calibration_gaps.append((actor, operation, request, ticks))
                 if source or destination:
                     record(actor, identity, operation, source, destination, requested, ticks, True)
                     if protected_system_write is not None:
@@ -340,12 +347,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             continue
         if kind == 27 and irp in pending:
             (operation, owner, identity, obj, source, previous, requested,
-             event_id, info_class, write_gap, protected_system_write) = pending[irp]
+             event_id, info_class, write_gap, protected_system_write, request) = pending[irp]
             if operation == "rename" and obj == handle and path:
                 if previous and previous != path:
                     unresolved[f"{owner}:rename:destination-ambiguous"] += 1
                 pending[irp] = (operation, owner, identity, obj, source, path, requested,
-                                event_id, info_class, write_gap, protected_system_write)
+                                event_id, info_class, write_gap, protected_system_write, request)
             continue
         if strict and kind == 27 and path and relevant(actor, "rename", None, path):
             unresolved[f"{actor}:rename:request-missing-or-ambiguous"] += 1
@@ -421,7 +428,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             else "outside-protected"
                         )
                         details[f"{actor}:event-{kind}:{operation}:name-candidates-{source_label}-{category}"] += 1
-        if strict and source is None and kind in {16, 17, 23}:
+        if strict and source is None and kind in {16, 17, 23} and not calibration_rundown:
             # Write requests expose FileKey. Set-information events can expose
             # only FileObject. Never substitute a stop-time name for an
             # ambiguous key or a key whose lifetime changed during the trace.
@@ -558,7 +565,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 target = "control-key-and-object" if key_matches and object_matches else "other-protected-identity"
                 protected_system_write = f"{target}:{capture_phase(ticks)}:{write_paging_flag(data)}"
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
-                            info_class, write_gap, protected_system_write)
+                            info_class, write_gap, protected_system_write, event)
             if record_path_gap is not None and source is None and operation != "query" and kind in {16, 17, 23}:
                 try:
                     file_key = number(data.get("FileKey"))
@@ -577,10 +584,25 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 path_gap_context[irp] = ("file-key" if type(file_key) is int and file_key > 0 else "no-file-key",
                                          "header-lifetime" if birth is not None else "no-header-lifetime",
                                          thread)
-    for operation, actor, _, _, source, destination, _, event_id, info_class, *_ in pending.values():
+    unmatched_writes = Counter()
+    for operation, actor, _, _, source, destination, requested, event_id, info_class, *_ in pending.values():
         count_compression(operation, "missing-completion")
         if operation != "query" and relevant(actor, operation, source, destination):
             flag(actor, f"{operation}:completion-missing", event_id, info_class)
+            if calibration_diagnostics is not None and operation == "write":
+                remaining = calibration_end - requested
+                bucket = ("last-10ms" if remaining <= 100_000 else
+                          "10-to-100ms-before-end" if remaining <= 1_000_000 else
+                          "over-100ms-before-end")
+                unmatched_writes[f"{actor}:{bucket}"] += 1
+    if calibration_diagnostics is not None:
+        calibration_diagnostics.update(
+            path_candidates=summarize_calibration_path_gaps(
+                ordered_events, calibration_gaps, resolve_path, tracked,
+                rundown_names, rundown_unsafe_keys, diagnostic_rundown_stop,
+            ),
+            unmatched_write_timing=dict(unmatched_writes),
+        )
     if write_gaps:
         name_change_events = Counter()
         class_4_outcomes = Counter()
@@ -1001,8 +1023,8 @@ def name_change_event_label(event):
     return label + (f"-fsctl-0x{info:08X}" if kind == 23 else f"-info-{info}")
 
 
-def no_open_write_path_evidence(write, completed, object_events, key_events, irp_events,
-                                resolve_path, classify_path):
+def request_time_file_key_evidence(write, completed, object_events, key_events, irp_events,
+                                   resolve_path, classify_path):
     """Check an observed name lifetime on the request's key without assigning a writer."""
     ticks, data = write["ticks"], write["data"]
     key = number(data.get("FileKey"))
@@ -1053,6 +1075,64 @@ def no_open_write_path_evidence(write, completed, object_events, key_events, irp
     return reason or classify_path(path)
 
 
+def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
+                                    rundown_names, rundown_unsafe_keys, rundown_stop):
+    if not gaps:
+        return {}
+    by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
+    for event in events:
+        if event.get("lifecycle"):
+            continue
+        kind, data = event["id"], event["data"]
+        if kind not in {10, 11, 24}:
+            by_object[number(data.get("FileObject"))].append(event)
+        if kind != 24:
+            key = name_transition_key(kind, data) or number(data.get("FileKey"))
+            if key:
+                by_key[key].append(event)
+        irp = number(data.get("Irp"))
+        if irp:
+            by_irp[irp].append(event)
+
+    def scope(path):
+        return "candidate-protected" if tracked(path) else "candidate-outside-protected"
+
+    counts = Counter()
+    for actor, operation, request, completed in gaps:
+        data = request["data"]
+        key = number(data.get("FileKey"))
+        object_id, irp = number(data.get("FileObject")), number(data.get("Irp"))
+        outcome = request_time_file_key_evidence(
+            request, completed, by_object[object_id], by_key[key], by_irp[irp], resolve_path, scope,
+        )
+        if outcome == "write-completion-unverified":
+            outcome = "request-completion-unverified"
+        counts[f"{actor}:{operation}:request-time:{outcome}"] += 1
+        if rundown_stop is None:
+            continue
+        names = rundown_names.get(key, set())
+        if outcome == "request-completion-unverified":
+            counts[f"{actor}:{operation}:rundown:{outcome}"] += 1
+            continue
+        if type(key) is not int or key <= 0:
+            outcome = "missing-file-key"
+        elif completed >= rundown_stop:
+            outcome = "completion-at-or-after-rundown"
+        elif not names:
+            outcome = "not-in-rundown"
+        elif any(number(event["data"].get("FileKey")) not in {None, 0, key}
+                 for event in by_object[object_id]):
+            outcome = "conflicting-object-file-key"
+        elif key in rundown_unsafe_keys or object_id in rundown_unsafe_keys:
+            outcome = "lifetime-invalidated"
+        elif len(names) != 1 or None in names:
+            outcome = "ambiguous-or-unmapped-name"
+        else:
+            outcome = scope(next(iter(names)))
+        counts[f"{actor}:{operation}:rundown:{outcome}"] += 1
+    return dict(counts)
+
+
 def preopened_path_validation(events, devices, requests, outcomes, writes):
     """Compare request-time candidates with exact fixture paths verified by Windows."""
     file_events = [event for event in events if not event["lifecycle"]]
@@ -1091,7 +1171,7 @@ def preopened_path_validation(events, devices, requests, outcomes, writes):
             and (name_transition_key(event["id"], event["data"]) or number(event["data"].get("FileKey"))) == key
         ]
         expected = resolve_path(writes[label]["path"])
-        report[label] = no_open_write_path_evidence(
+        report[label] = request_time_file_key_evidence(
             request, completed, object_events, key_events, irp_events, resolve_path,
             lambda path: "matches-handle-path" if path == expected else "different-from-handle-path",
         )
@@ -1127,7 +1207,7 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
                        if event["id"] == 12 and event["ticks"] <= write["ticks"]]
         if not prior_opens:
             no_open_contexts[capture_context] += 1
-            outcome = no_open_write_path_evidence(
+            outcome = request_time_file_key_evidence(
                 write, completed, object_events, by_key[number(data.get("FileKey"))],
                 by_irp[number(data.get("Irp"))], resolve_path,
                 lambda path: "candidate-protected" if tracked(path) else "candidate-outside-protected",

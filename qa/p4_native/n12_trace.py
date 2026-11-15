@@ -523,9 +523,10 @@ def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None):
     return start, end, processes, connections, issues
 
 
-def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None):
+def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None, rundown_path=None):
     """Check real collector exports from a standalone generated fixture."""
     require(bookends is None or etw, "process bookends require ETW calibration")
+    require(rundown_path is None or etw, "FileIO rundown requires ETW calibration")
     if bookends is not None:
         require(isinstance(bookends, dict) and all(
             isinstance(bookends.get(side), list) and bookends[side] for side in ("before", "after")
@@ -543,13 +544,17 @@ def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None)
         require(protected, "missing ETW calibration protected roots")
         bookend_summary = {"status": "unavailable"}
         path_gap_counts = Counter()
+        calibration_diagnostics = {}
+        rundown = read_rundown_file(rundown_path, manifest) if rundown_path is not None else None
         counts, violations, file_events, diagnostics = inspect_etw_files(
             manifest, file_trace, start, end, processes, roles, protected, permitted, issues,
             background_bookends=bookends, bookend_summary=bookend_summary,
-            path_gap_counts=path_gap_counts)
+            path_gap_counts=path_gap_counts, rundown=rundown,
+            calibration_diagnostics=calibration_diagnostics)
         file_report = {"file_evidence_source": "etw", "etw_unresolved_mutations": diagnostics,
                        "etw_background_process_bookends": bookend_summary,
                        "etw_path_gap_context": dict(path_gap_counts),
+                       "etw_calibration_diagnostics": calibration_diagnostics,
                        "file_violations": violations}
     else:
         counts, violations, file_events, path_diagnostics = inspect_files(
@@ -630,7 +635,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       rundown_recovered_keys=None, rundown_invalidations=None,
                       preopened_control_file_keys=None, preopened_control_file_objects=None,
                       rundown_window=None, record_outside_scope=None, background_bookends=None,
-                      bookend_summary=None, path_gap_counts=None):
+                      bookend_summary=None, path_gap_counts=None, calibration_diagnostics=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -638,6 +643,9 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
     with evidence_stage("ETW capture metadata"):
         capture_bounds, devices = etw_capture_contract(manifest, start, end, issues)
+        diagnostic_rundown_stop = None
+        if calibration_diagnostics is not None and rundown is not None:
+            diagnostic_rundown_stop = utc_ticks(utc_time(manifest["etw"]["rundown_stop_utc"]))
     start_ticks, end_ticks = utc_ticks(start), utc_ticks(end)
     lifetimes = {}
     for process in processes.values():
@@ -740,6 +748,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             preopened_control_file_objects=preopened_control_file_objects,
             rundown_window=rundown_window,
             record_path_gap=count_path_gap if path_gap_counts is not None else None,
+            calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
+            diagnostic_rundown_stop=diagnostic_rundown_stop,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -1368,6 +1378,8 @@ def main():
         if mode == "check-calibration-etw":
             calibration.add_argument("--process-bookends", type=Path,
                                      help="Private process identity snapshots from the disposable runner.")
+            calibration.add_argument("--rundown", type=Path,
+                                     help="Optional digest-pinned FileIO rundown for diagnostics.")
     for mode in ("audit", "audit-etw"):
         report = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "etw_events" if mode == "audit-etw" else "procmon",
@@ -1417,7 +1429,8 @@ def main():
             bookends = read_json(bookends_path) if bookends_path else None
             require(bookends_path is None or bookends is not None, "expected process snapshot evidence")
             result = check_calibration(read_json(args.manifest), args.sysmon, args.file_trace,
-                                       etw=args.mode == "check-calibration-etw", bookends=bookends)
+                                       etw=args.mode == "check-calibration-etw", bookends=bookends,
+                                       rundown_path=getattr(args, "rundown", None))
         else:
             output = args.output
             endpoints = [] if args.private_endpoints else None
