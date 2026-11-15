@@ -63,16 +63,16 @@ function bundledStartIssue(error:unknown):string {
 async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Promise<string|null>{
  if(!desktopEndpoint || !shouldLaunchBundledAI(path,method,body))return null;
  // The Rust command can start a memory-hungry model BEFORE Python receives
- // the AI request. Check saved insight settings and memory admission first.
- let insightQuery = '';
+ // the AI request. Check offline AI settings and memory admission first.
+ let startupQuery = '&investigation_autonomy=true';
  if(path.endsWith('/ai/insight')){
   const insight = body as {context?:unknown;selected_provider?:unknown}|null|undefined;
   const settings = new URLSearchParams({insight_context:typeof insight?.context==='string'?insight.context:'assistant'});
   if(typeof insight?.selected_provider==='string')settings.set('selected_provider',insight.selected_provider);
-  insightQuery = `&${settings}`;
+  startupQuery = `&${settings}`;
  }
  try {
-  const preflight=await check(await fetchLocal('/resource/preflight?operation=local_inference'+insightQuery,
+  const preflight=await check(await fetchLocal('/resource/preflight?operation=local_inference'+startupQuery,
    {headers:authHeaders()})) as {decision:string};
   if(preflight.decision==='skip')return null;
   if(preflight.decision!=='allow')return 'resource_limited';

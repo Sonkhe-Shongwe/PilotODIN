@@ -11,7 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from backend import autonomy, investigations, storage, quality
+from backend import ai_provider, autonomy, investigations, resource_policy, storage, quality
 
 client=TestClient(app)
 RAW=b'Region,Revenue,Profit,CustomerSegment\nNorth,100,25,Consumer\nSouth,200,80,\nNorth,300,120,Enterprise\nSouth,400,175,\n'
@@ -245,3 +245,68 @@ def test_autonomy_api_requires_authenticated_desktop_session(monkeypatch):
           'X-PilotODIN-Session':'local-secret-'+'b'*60}).status_code==403
     assert client.get(route,headers={'Origin':'http://tauri.localhost',
           'X-PilotODIN-Session':'local-secret-'+'b'*60}).status_code==200
+
+
+@pytest.mark.parametrize(('enabled', 'free_gib', 'reason'), [
+    (False, 4.0, 'Enable it in AI Settings'),
+    (True, 0.8, 'requires 2.0 GiB free'),
+    (True, None, 'could not measure available RAM'),
+])
+def test_automatic_investigation_rejects_unavailable_offline_ai(monkeypatch, enabled, free_gib, reason):
+    pid, inv_id = new_inv()
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: enabled)
+    monkeypatch.setattr(resource_policy, 'read_policy', lambda: {'mode': 'low_memory'})
+    monkeypatch.setattr(resource_policy, 'memory_status', lambda: {
+        'status': 'unavailable' if free_gib is None else 'observed', 'available_gib': free_gib,
+    })
+    route = f'/api/investigations/{inv_id}/autonomy'
+    preflight = client.get('/api/resource/preflight', params={'investigation_autonomy': 'true'})
+    assert preflight.json()['decision'] == ('defer' if enabled else 'skip')
+    monkeypatch.setattr(autonomy, '_launch', lambda *_: pytest.fail('Started an unavailable planner'))
+    blocked = client.post(f'{route}/start', json={})
+    assert blocked.status_code == 409 and reason in blocked.json()['detail']
+    assert client.get(route).json() is None
+    with monkeypatch.context() as seed:
+        seed.setattr(autonomy, '_launch', lambda *_: None)
+        run = autonomy.start(inv_id, planner=lambda _: pytest.fail('Unexpected planning'))
+    autonomy._set(run['id'], 'interrupted')
+    blocked = client.post(f'{route}/resume', json={})
+    assert blocked.status_code == 409 and reason in blocked.json()['detail']
+    assert client.get(route).json()['status'] == 'interrupted'
+    assert investigations.load(inv_id)['artifacts'] == []
+    assert storage.get_project(pid) is not None
+
+
+def test_planner_rechecks_offline_ai_before_request(monkeypatch):
+    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION', 'test-desktop-session')
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: False)
+    monkeypatch.setattr(autonomy.bundled_inference, 'generate', lambda *_a, **_kw: pytest.fail('Called disabled AI'))
+    with pytest.raises(RuntimeError, match='Enable it in AI Settings'):
+        autonomy.default_planner({})
+
+
+def test_planner_can_use_worker_when_offline_ai_and_memory_allow_it(monkeypatch):
+    import json
+
+    monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION', 'test-desktop-session')
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: True)
+    monkeypatch.setattr(resource_policy, 'read_policy', lambda: {'mode': 'low_memory'})
+    monkeypatch.setattr(resource_policy, 'memory_status', lambda: {'status': 'observed', 'available_gib': 2.0})
+    monkeypatch.setattr(autonomy.bundled_inference, 'generate',
+                        lambda *_a, **_kw: (json.dumps(propose()), False, 'stop'))
+    assert autonomy.default_planner({}) == propose()
+
+
+def test_resume_recovers_final_saved_step_with_offline_ai_disabled(monkeypatch):
+    _, inv_id = new_inv()
+    monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: False)
+    with monkeypatch.context() as setup:
+        setup.setattr(autonomy, '_launch', lambda *_: None)
+        run = autonomy.start(inv_id, max_steps=1, planner=lambda _: pytest.fail('Unexpected planning'))
+    autonomy._claim_step(run['id'], 0, propose('overview'))
+    autonomy._set(run['id'], 'interrupted')
+    r = client.post(f'/api/investigations/{inv_id}/autonomy/resume', json={})
+    assert r.status_code == 202, r.text
+    state = await_done(inv_id)
+    assert state['status'] == 'needs_review'
+    assert len(state['steps']) == 1 and state['steps'][0]['evidence_id']

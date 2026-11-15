@@ -300,6 +300,10 @@ def _resolve_provider(cfg:dict, task:str, selected_provider:str|None)->str:
     return selected if selected in (*PROVIDERS, 'auto', 'local', 'ollama') else 'auto'
 
 
+def offline_inference_enabled()->bool:
+    return bool(_read_config().get('local_model_enabled', True))
+
+
 def insight_bundled_launch_skip(task:str, selected_provider:str|None)->str|None:
     """Return a reason when this insight cannot use the bundled worker."""
     cfg = _read_config()

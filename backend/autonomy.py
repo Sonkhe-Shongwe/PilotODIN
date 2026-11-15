@@ -18,9 +18,9 @@ from typing import Any, Callable
 import pandas as pd
 
 try:
-    from . import investigations, quality, storage, bundled_inference
+    from . import ai_provider, bundled_inference, investigations, quality, resource_policy, storage
 except ImportError:
-    import investigations, quality, storage, bundled_inference
+    import ai_provider, bundled_inference, investigations, quality, resource_policy, storage
 
 MAX_STEPS = 8
 MAX_REASON = 240
@@ -147,7 +147,19 @@ def _model_context(inv: dict, prior: list[dict]) -> dict[str, Any]:
             'limits':{'remaining_steps':MAX_STEPS-len(prior)}}
 
 
+def _require_planner_admission() -> None:
+    if not ai_provider.offline_inference_enabled():
+        raise RuntimeError('Automatic investigation requires offline AI. Enable it in AI Settings or run an analysis manually.')
+    admission = resource_policy.admit_new_work('local_inference')
+    if admission['decision'] == 'defer':
+        if admission['code'] == 'memory_unavailable':
+            raise RuntimeError('Low-memory mode could not measure available RAM. Try again or run an analysis manually.')
+        raise RuntimeError(f"Low-memory mode requires {admission['required_free_gib']:.1f} GiB free for offline AI. "
+                           'Free some RAM and try again, or run an analysis manually.')
+
+
 def default_planner(context: dict[str, Any]) -> dict[str, Any]:
+    _require_planner_admission()
     payload=json.dumps(context,ensure_ascii=False,allow_nan=False)
     if os.environ.get('PILOTODIN_DESKTOP_SESSION'):
         text, incomplete, _ = bundled_inference.generate(SYSTEM_PROMPT,payload,timeout=75)
@@ -288,6 +300,8 @@ def start(investigation_id: str, *, max_steps: int=5, planner: Planner|None=None
         raise PermissionError('This objective requests a data change. Review and approve it in Quality first.')
     old=for_investigation(investigation_id)
     if old:raise RuntimeError('This investigation already has an autonomous run; resume it instead')
+    if planner is None:
+        _require_planner_admission()
     ident=storage.uid();now=storage.now()
     with storage.connect() as con:
         con.execute('INSERT INTO odin_runs VALUES (?,?,?,?,?,?,?,?,?,?)',
@@ -315,6 +329,11 @@ def resume(investigation_id: str, *, planner: Planner|None=None)->dict:
     if run['stale']:raise RuntimeError('Dataset version changed; this run cannot resume')
     if run['status'] not in ('interrupted','failed','needs_review'):
         raise RuntimeError('Only interrupted or review-required runs can resume')
+    # A journalled step can be reconciled without starting inference.
+    if planner is None and len(run['steps']) < run['max_steps'] and not any(
+        step['status'] == 'proposed' for step in run['steps']
+    ):
+        _require_planner_admission()
     _set(run['id'],'queued',only=(run['status'],))
     _launch(run['id'],planner or default_planner)
     return _row(run['id'])

@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Apply offline AI settings to automatic investigations
+
+The investigation panel now reports when offline AI is disabled or Low-memory admission blocks a new plan. When these checks fail, a new run does not start and an interrupted run keeps its existing state. The backend checks again before each model call. Previously journalled evidence steps can still be recovered without a model. Manual analysis remains available.
+
 ## 15 November 2026 | Skip unnecessary Qwen startup for dataset insights
 
 Ask ODIN and other dataset insight requests now check saved AI settings before starting the desktop worker. If offline inference is disabled or the effective provider is Local analytics, the authenticated preflight skips startup and sends the original insight request for normal processing. An explicit provider selection retains precedence over workspace and global defaults. Enabled offline requests still pass through the existing memory admission. This change covers dataset insights. Investigation autonomy continues to use its own execution path.

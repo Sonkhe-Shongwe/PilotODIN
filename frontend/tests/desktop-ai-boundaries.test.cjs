@@ -64,6 +64,29 @@ test('desktop insights consult routing and memory before launch and still post a
   assert.deepEqual(events,decision==='allow'?['preflight','launch_bundled_ai','post']:['preflight','post']);
  }
 });
+test('automatic investigation skips worker launch and reports the API reason when offline AI is disabled',async()=>{
+ const route='/investigations/id/autonomy';
+ for(const action of ['start','resume']){
+  const events=[];
+  const message='Automatic investigation requires offline AI. Enable it in AI Settings or run an analysis manually.';
+  const api=loadAPI(async()=>assert.fail('Started the disabled worker'),async (url,options)=>{
+   const requested=new URL(url);
+   if(requested.pathname==='/api/resource/preflight'){
+    events.push('preflight');
+    assert.equal(requested.searchParams.get('operation'),'local_inference');
+    assert.equal(requested.searchParams.get('investigation_autonomy'),'true');
+    return Response.json({decision:'skip',code:'local_model_disabled'});
+   }
+   events.push('post');
+   assert.equal(requested.pathname,`/api${route}/${action}`);
+   assert.equal(options.method,'POST');
+   return Response.json({detail:message},{status:409});
+  });
+  api.configureDesktopAPI({port:12345,token:'test-session'});
+  await assert.rejects(api.post(`${route}/${action}`,{}),{message});
+  assert.deepEqual(events,['preflight','post']);
+ }
+});
 test('secondary panes are barred from primary global controls',()=>{
  const app=fs.readFileSync(path.join(__dirname,'../src/App.tsx'),'utf8');
  assert.match(app,/if\(embedded && pid!==embeddedProjectId\)/);
