@@ -19,6 +19,15 @@ LINK_EVENTS = {
 CLOCK_TOLERANCE_MS = 1000
 REQUEST_LOOKBACK_MS = 10_000
 NETLOG_LIMIT = 64 * 1024 * 1024
+WRITER_CATEGORIES = {
+    "node.exe": "node",
+    "esbuild.exe": "esbuild",
+    "powershell.exe": "powershell",
+    "pwsh.exe": "powershell",
+    "python.exe": "python",
+    "pythonw.exe": "python",
+    "msedgewebview2.exe": "webview2",
+}
 
 
 class OutsidePaths:
@@ -26,15 +35,23 @@ class OutsidePaths:
         # The caller supplies fixed categories ordered from narrow to broad.
         self.roots = [(label, windows_path(str(path))) for label, path in roots]
         self.counts = Counter()
+        self.writers = Counter()
 
-    def record(self, role, operation, paths):
-        labels = sorted({next((label for label, root in self.roots if inside(path, root)), "other-path")
-                         for path in paths})
-        self.counts[role, operation, tuple(labels)] += 1
+    def record(self, role, operation, paths, image=None):
+        labels = tuple(sorted({next((label for label, root in self.roots if inside(path, root)), "other-path")
+                               for path in paths}))
+        self.counts[role, operation, labels] += 1
+        category = WRITER_CATEGORIES.get(image, "other-executable" if image else "unavailable")
+        self.writers[role, operation, labels, category] += 1
 
     def summary(self):
         return [{"role": role, "operation": op, "path_categories": list(labels), "count": count}
                 for (role, op, labels), count in sorted(self.counts.items())]
+
+    def writer_summary(self):
+        return [{"role": role, "operation": op, "path_categories": list(labels),
+                 "writer": writer, "count": count}
+                for (role, op, labels, writer), count in sorted(self.writers.items())]
 
 
 def address(value):

@@ -65,6 +65,17 @@ class JourneyDiagnosticsTests(unittest.TestCase):
         ])
         self.assertNotIn("private", json.dumps(rows))
 
+    def test_writer_breakdown_distinguishes_tools_and_redacts_unknown_images(self):
+        paths = diagnostics.OutsidePaths([("runner-temp", r"C:\private\temp")])
+        for image in ("node.exe", "esbuild.exe", "powershell.exe", "pwsh.exe", "private-helper.exe", None):
+            paths.record("driver", "write", (r"c:\private\temp\owner-file",), image)
+
+        writers = {row["writer"]: row["count"] for row in paths.writer_summary()}
+        self.assertEqual(writers, {"node": 1, "esbuild": 1, "powershell": 2,
+                                   "other-executable": 1, "unavailable": 1})
+        self.assertEqual(sum(writers.values()), paths.summary()[0]["count"])
+        self.assertNotIn("private", json.dumps(paths.writer_summary()))
+
     def test_exact_launch_socket_and_explicit_request_chain_without_sensitive_values(self):
         events = [
             event("URL_REQUEST_START_JOB", 115, REQUEST, {"url": "https://private.test/token"}, "PHASE_BEGIN"),

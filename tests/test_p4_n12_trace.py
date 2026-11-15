@@ -1334,10 +1334,14 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     mutation(28, 10, 4, 12, FileName=r"C:\QA\outside\private-name", Outcome=1)
     mutation(28, 10, 4, 16)
     outside = []
-    flagged = report(record_outside_scope=lambda *row: outside.append(row))
+    writers = []
+    flagged = report(record_outside_scope=lambda *row: outside.append(row),
+                     record_outside_writer=lambda *row: writers.append(row))
+    assert flagged == report()
     assert flagged["filesystem"] == "FAIL"
     assert flagged["file_violations"]["outside-scope:backend:write"] == 1
     assert outside == [("backend", "write", (r"c:\qa\outside\private-name",))]
+    assert writers == [(*outside[0], "python.exe")]
     assert "private-name" not in json.dumps(flagged)
     del rows[-4:]
 

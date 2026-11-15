@@ -385,7 +385,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             pytest.fail(f"unexpected PowerShell call {args[0]}")
 
     def reduce(m, sysmon, file_trace, before, after, *, etw, private_endpoints,
-               record_outside_scope, private_app_launches, journey_bookends, describe_path_gaps):
+               record_outside_writer, private_app_launches, journey_bookends, describe_path_gaps):
         events.append("reducer")
         assert sysmon.read_bytes() == b"record-bounded evidence"
         assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
@@ -398,7 +398,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                                     "after": [{"pid": 702, "birth_ticks": 170}]}
         assert [p["role"] for p in m["processes"]].count("app") == 2
         private_endpoints.append({"role": "backend", "raw": "private-value"})
-        record_outside_scope("driver", "write", (r"c:\private\driver.bin",))
+        record_outside_writer("driver", "write", (r"c:\private\driver.bin",), "node.exe")
         return {"coverage": "BLOCKED", "network": "BLOCKED", "filesystem": "BLOCKED"}
 
     monkeypatch.setattr(journey, "calibrate", calibrate)
@@ -442,4 +442,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert json.loads((root / "private-endpoints.json").read_text()) == [{"role": "backend", "raw": "private-value"}]
         assert report["journey_diagnostics"]["outside_scope_paths"] == [
             {"role": "driver", "operation": "write", "path_categories": ["other-path"], "count": 1},
+        ]
+        assert report["journey_diagnostics"]["outside_scope_writers"] == [
+            {"role": "driver", "operation": "write", "path_categories": ["other-path"],
+             "writer": "node", "count": 1},
         ]

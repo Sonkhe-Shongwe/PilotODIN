@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 writer breakdown prepared
+
+The [fixture lead-in audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690425867/job/132739719330) recorded 567 driver findings. Of these, 489 fell solely under user-local or user-temp and 62 were renames spanning both categories. The other 16 were four frontend-dependency operations and 12 unsupported Windows-system operations. Vite, the interaction drivers and their descendants share the driver role, so those aggregates cannot identify the executable responsible.
+
+The ETW audit now adds fixed writer categories to its redacted outside-scope summary. It uses the Sysmon identity already matched to each scored operation and reports Node, esbuild, PowerShell, Python, WebView2, or a generic fallback. Generated evidence confirmed that the existing counts and audit verdicts match with or without the new breakdown. Actual Windows writer counts for the new source are **NOT RUN**. [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 15 November 2026 | N12 interaction driver scratch isolation
 
 The two hosted interaction driver launches now set `TEMP` and `TMP` to a dedicated `driver-temp` directory within the disposable journey workspace. Playwright uses Node's operating-system temp directory for CDP scratch files. The backend, app, WebView and Vite retain their previous environment. The existing audit permits the new directory only for the driver role. Generated tests exercised both driver launches and verified that a write to a similarly named sibling, a write to a protected root and a backend write to the driver directory still fail. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
@@ -84,7 +90,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the completed app journey to investigate the remaining driver and helper write categories and review the backend, WebView and recurring network findings separately. Compare the driver categories on the next separately approved hosted app journey. Preserve the protected-root and network checks and the strict coverage findings.
+On the next separately approved hosted Windows app journey, compare the driver path counts against the 567-finding baseline and inspect the new writer breakdown. Use the same generated dataset and two-launch sequence in a disposable runner. Review recurring backend and WebView writes and connections using the existing diagnostics.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

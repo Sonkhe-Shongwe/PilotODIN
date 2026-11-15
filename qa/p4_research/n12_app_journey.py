@@ -454,12 +454,13 @@ def capture(root, staged, source, expected_hash, node):
     endpoints, launches = [], {}
     paths = diagnostic_paths(root, staged, manifest)
     result = trace.audit(manifest, sysmon, events, before, after, etw=True, private_endpoints=endpoints,
-                         record_outside_scope=paths.record, private_app_launches=launches,
+                         record_outside_writer=paths.record, private_app_launches=launches,
                          journey_bookends=bookends, describe_path_gaps=True)
     report_file(root / "private-endpoints.json", endpoints)
     log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
     result["journey_diagnostics"] = {
         "outside_scope_paths": paths.summary(),
+        "outside_scope_writers": paths.writer_summary(),
         "process_bookends": {"before": "available" if first_processes is not None else "unavailable",
                             "after": "available" if last_processes is not None else "unavailable"},
         "network": network_summary(endpoints, launches, log_paths),

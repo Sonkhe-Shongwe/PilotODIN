@@ -640,7 +640,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       process_event_images=None,
                       rundown_recovered_keys=None, rundown_invalidations=None,
                       preopened_control_file_keys=None, preopened_control_file_objects=None,
-                      rundown_window=None, record_outside_scope=None, background_bookends=None,
+                      rundown_window=None, record_outside_scope=None, record_outside_writer=None,
+                      background_bookends=None,
                       bookend_summary=None, path_gap_counts=None, calibration_diagnostics=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
@@ -719,6 +720,10 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             violations[f"outside-scope:{role}:{operation}"] += 1
             if record_outside_scope is not None:
                 record_outside_scope(role, operation, outside)
+            if record_outside_writer is not None:
+                process = processes.get(identity)
+                image = ntpath.basename(process.image).casefold() if process is not None else None
+                record_outside_writer(role, operation, outside, image)
         if role == "calibration" and start_ticks <= requested <= completed <= end_ticks:
             file_events.add((identity, operation, *targets))
 
@@ -764,7 +769,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
 def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
           rundown=None, record_outside_scope=None, private_app_launches=None, journey_bookends=None,
-          describe_path_gaps=False):
+          describe_path_gaps=False, record_outside_writer=None):
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
     require(journey_bookends is None or etw, "process bookends require ETW audit")
     start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
@@ -797,7 +802,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
                      for label in manifest["immutable_observed"]]
         file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
             manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues,
-            rundown=rundown, record_outside_scope=record_outside_scope,
+            rundown=rundown, record_outside_scope=record_outside_scope, record_outside_writer=record_outside_writer,
             background_bookends=journey_bookends, bookend_summary=bookend_summary,
             path_gap_counts=path_gap_counts if describe_path_gaps else None)
         path_diagnostics = []
