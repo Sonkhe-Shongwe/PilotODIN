@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 15 November 2026 | Collector rehearsal blocked by Sysmon birth timestamp
+
+The [collector-only run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43670876833/job/132680403722) provisioned pinned Sysmon and reached the shared guard, which rejected a matching parent birth outside the fixture window. The final combined reducer was **NOT RUN**. The workflow is disarmed. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-rehearsal-blocked-by-sysmon-birth-timestamp).
+
 ## 15 November 2026 | Collector-only prelaunch rehearsal staged
 
 The disarmed collector rehearsal shares the app journey's Sysmon prelaunch gate and retains the strict combined calibration. The next evidence is one separately approved disposable Windows collector run with a generated fixture. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-only-prelaunch-rehearsal-staged).

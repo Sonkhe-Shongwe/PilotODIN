@@ -1,5 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 15 November 2026 | Collector rehearsal blocked by Sysmon birth timestamp
+
+- The [approved collector-only run #43670876833, job #132680403722](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43670876833/job/132680403722) ran once from launch commit `beb960845fb5136ffb5f5c7772c0ed2f3c34ea7c`, pinned to reviewed source `4fd2e5e9acd67a51e32cb0a7c0513ae5b667e419`. Pinned Sysmon 15.22 provisioning passed. The generated fixture produced a calibration record and reached the shared prelaunch guard while ETW was active.
+- **Job FAILED on read 1:** `parent-birth-before-window`. The guard found an exported Sysmon process birth matching the fixture's declared parent PID and executable with event time before the rehearsal's lower bound. No acceptable in-window binding was established. A second read was ineligible for this reason. The logs do not record the timestamp delta or independently prove that the rejected birth was the fixture's process lifetime.
+- The final combined Sysmon/ETW reducer was **NOT RUN**. The rehearsal performed no PilotODIN build or app launch. It establishes an observed event-time boundary rejection for this fixture only. The earlier app journey's ambiguous root, repeated exit and network/filesystem findings retain their previous dispositions.
+- The workflow is disarmed and the approval marker is retained. Next reproduce precision and stale PID cases on generated inputs, compare the fixture spawn timestamp and Sysmon event-time precision, and add redacted delta and identity diagnostics before deciding whether any boundary treatment is justified. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 15 November 2026 | Collector-only prelaunch rehearsal staged
 
 - The disarmed [collector workflow](../.github/workflows/p4-n12-live-calibration.yml) runs the same Sysmon prelaunch guard as the app journey, using one generated fixture while ETW is active. It reports the accepted read number or a fixed blocker. The final strict calibration uses the same record floor and a fresh export through a verified later checkpoint. The workflow needs a fresh marker pinning the reviewed source and uses collector-only consent.

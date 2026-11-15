@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use collector-only rehearsal.
+    if: ${{ false }} # The one-use collector-only approval was consumed by run 43670876833.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
