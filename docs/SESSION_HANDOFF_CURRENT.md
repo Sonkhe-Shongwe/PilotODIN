@@ -219,9 +219,9 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Retain the current batch size. The next R03 engineering build should test a lower-memory workload against both the recorded physical RAM shortfall and the existing exact-answer cases before scheduling another laptop session. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Implement the agreed [Local analytics milestone](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md). Start with the reproduced wrong-field missingness request, then deliver validated calculations, one filter follow-up and held-out verification in the same build. The lower-memory API workload already passed on hosted Windows. Use that evidence as the baseline for the next source-matched physical desktop check. The shared-request ETW investigation is paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
-The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Verified source checks
 

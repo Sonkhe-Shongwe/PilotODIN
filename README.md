@@ -7,14 +7,15 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 ## Read this first
 - **[Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)** for the latest verified change and next task.
 - **[P0–P8 development and release status](docs/PROJECT_STATUS_CURRENT.md)**: accepted development slices and remaining limitations.
-- **[P4 acceptance worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)** for gate status and Windows evidence. **[N12 runbook](qa/p4_native/N12_TRACE.md)** for the next Windows check.
+- **[P4 acceptance worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)** for gate status and Windows evidence. **[N12 runbook](qa/p4_native/N12_TRACE.md)** for the collector and trace procedure.
+- **[Local analytics implementation plan](docs/P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md)** for the next Ask ODIN milestone.
 - **[P1 prior-phase closure matrix](docs/P1_CLOSURE_REGISTER_2026-10-28.md)**: dated historical P1 acceptance.
 - **[Phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)**: owner-approved one-primary-phase and closure criteria.
 - **[Documentation index](docs/DOCUMENTATION_INDEX.md)** for current references and historical audits.
 - **[Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)** for chronological issue/evidence discussion.
 
 ## Verified development evidence
-[P4 source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531160) passed Python, Node, TypeScript/Vite, real-HTTP browser tests and Windows fixture checks at `8f57d22`. The [separate live collector rehearsal](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672824700/job/132686419880) passed Sysmon prelaunch and reached the combined audit. Unresolved ETW background mutations blocked strict coverage. [Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)
+[P4 source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43750769076) passed source, browser, hosted Windows Local analytics and Windows fixture jobs at `98affa4`. The [live collector-only connection rehearsal](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43715705070/job/132816654192) passed Sysmon prelaunch and reached the combined audit. Strict ETW coverage remained blocked on 397 paths. [Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)
 
 Hosted Windows passed the scoped [R04 docking retest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) and [R05 fitted Prepare acceptance](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563). See the [P4 worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) for the tested source and evidence limits.
 

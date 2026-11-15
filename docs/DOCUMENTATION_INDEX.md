@@ -7,6 +7,7 @@
 3. [Phase focus and closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) for owner decisions, the installer freeze and phase boundaries.
 4. [P4 acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) for the technical gate details and owner evidence. [N12 trace runbook](../qa/p4_native/N12_TRACE.md) for the collector and audit procedure.
 5. [Master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) for dated issue and acceptance evidence.
+6. [P4 Local analytics implementation plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) for the agreed Ask ODIN milestone and its acceptance checks.
 
 ## Current development references
 
@@ -20,6 +21,7 @@
 - [Complete pre-audit documentation index](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/DOCUMENTATION_INDEX.md), including prior evidence links and legacy navigation from 4 November.
 - [Pre-audit handoff](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/SESSION_HANDOFF_CURRENT.md) and [pre-audit phase chronology](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/PROJECT_STATUS_CURRENT.md), with the original section links and evidence text.
 - [15 November repository documentation audit](./DOCUMENTATION_AUDIT_2026-11-15.md), the [4 November](./DOCUMENTATION_AUDIT_2026-11-04.md) and [12 November](./DOCUMENTATION_CLEANING_AUDIT_2026-11-12.md) audits, and the [verbatim archive files](./archive). The archive files preserve original relative links, which may require the original repository layout.
+- [Documentation audit after the Local analytics decision](./DOCUMENTATION_AUDIT_LOCAL_ANALYTICS_2026-11-15.md) records the source inventory, link check and current guidance corrections.
 
 <a name="current-phase-evidence-and-recent-checkpoints"></a>
 <a name="historical-navigation-snapshot-4-november-2026-retained-for-traceability"></a>

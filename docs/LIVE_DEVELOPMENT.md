@@ -35,6 +35,7 @@ The launcher shows elapsed startup time at five-second intervals; this is actual
 - Never put production credentials or confidential datasets in test projects. Do not copy a production `data` directory into this folder.
 - Backend binds to `127.0.0.1:8000`; frontend binds to `127.0.0.1:5173`. Browser development is intentionally **not** the authenticated Tauri production shell. Keep this developer server on your own trusted computer; do not expose it to your network.
 - Browser Vite exercises the development ODIN settings and local rules. The bundled Qwen3 path requires separately approved native evidence for Rust resource verification, model launch and session authentication. Installer-based validation is reserved for the final release stage under the phase policy.
+- Use the [Local analytics plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#milestone-acceptance-examples) for the synthetic Ask ODIN workload. Record a browser run as Live Dev evidence. Current-source physical desktop measurements require an isolated app build on the approved Windows route.
 - Developer dependency installation and runtime model loading are separate operations. Live reload does not update an already-installed EXE.
 
 ## Quick quality checks (no NSIS build)
