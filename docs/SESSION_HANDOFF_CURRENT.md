@@ -2,11 +2,28 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | R03 Windows comparison completed
+
+The [approved hosted Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43740595746/job/132892675147) completed on attempt 1. Launch commit `3d8641304edd8febb5e5b4c39f4aeded52bf5d56` checked out source `b19946e2f9e3327c71eee7371838d6ec69df6d41`. The runner reported 15.99 GiB visible and 13.64 GiB free before staging. The worker comparison used the pinned Qwen3 1.7B model and llama.cpp b10344 runtime with matching input lengths, including a 1,022-token overview prompt.
+
+| Measure | Batch 512 | Batch 128 |
+| --- | ---: | ---: |
+| Resident RAM at model readiness | 1,989.0 MiB | 1,988.0 MiB |
+| Peak resident RAM through analytics | 2,109.5 MiB | 2,068.9 MiB |
+| Peak committed memory through analytics | 1,106.9 MiB | 1,063.3 MiB |
+| Model readiness | 2.641 s | 2.359 s |
+| Long overview response | 20.719 s | 19.719 s |
+| Exact answers | 2 of 5 | 2 of 5 |
+
+Batch 128 saved 40.6 MiB peak resident RAM and 43.6 MiB peak committed memory. Both profiles passed the labelled-rate and training-status cases and failed the dataset overview, unknown missingness cause and long overview cases. The comparison verdict was `retain_current_profile`.
+
+The batch 512 worker dropped from 2,109.5 to 85.4 MiB resident after sleeping, releasing 2,024.1 MiB. Committed memory fell from 1,106.9 to 75.3 MiB. The authenticated wake request completed in 2.391 seconds, with 1,994.8 MiB resident after the answer. This verifies idle release and wake for the standalone hosted worker. Physical Windows coexistence with the desktop and analytics remains untested. The one-use approval is consumed and preserved in the launch history.
+
 ## 15 November 2026 | Consolidated R03 Windows worker comparison
 
 The queued idle-release check is now part of one [hosted Windows run](../.github/workflows/p4-r03-qwen-idle-release.yml) that stages the pinned Qwen3 1.7B model and llama.cpp b10344 CPU runtime once. It starts a fresh worker for each physical batch size, 512 and 128, and holds the model, 2,048-token context, threads, and request sequence constant. The report includes startup time, per-request time, peak resident and committed memory, exact-answer scores, and the baseline worker's idle release and wake-up result. Four existing synthetic questions and one longer overview prompt exercise the batch sizes. The longer prompt must exceed 512 tokens while leaving room for the full response budget.
 
-Recommend the reduced batch for physical testing only if it lowers observed peak resident memory without increasing peak commit, processes matched prompt lengths, and passes all five answer checks. Otherwise retain the current setting. The hosted comparison measures the worker alone. Physical coexistence with the desktop app and analytics remains a separate acceptance requirement. No production tuning has been applied. The run awaits approval and its marker is absent.
+The review criteria required lower peak resident memory without increasing peak commit, matched prompt lengths, and all five answers correct before advancing the reduced batch to physical testing. The hosted comparison measures the worker alone. Physical coexistence with the desktop app and analytics remains a separate acceptance requirement.
 
 ## 15 November 2026 | Apply offline AI settings to automatic investigations
 
@@ -190,7 +207,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Run the consolidated Windows worker comparison in one separately approved session. Use the recorded physical RAM shortfall as the R03 baseline and retest on the laptop when a source-matched build changes the workload or memory budget. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Retain the current batch size. The next R03 engineering build should test a lower-memory workload against both the recorded physical RAM shortfall and the existing exact-answer cases before scheduling another laptop session. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
