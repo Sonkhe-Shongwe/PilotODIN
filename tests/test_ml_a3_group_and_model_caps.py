@@ -19,11 +19,13 @@ def group_frame():
 
 
 def test_true_null_and_literal_group_id_never_coalesce_across_holdout_or_cv(monkeypatch):
+    from sklearn import model_selection
+
     frame=group_frame()
     unchanged=frame.copy(deep=True)
     seen={}
-    original_split=engine.GroupShuffleSplit
-    original_cv=engine.cross_val_score
+    original_split=model_selection.GroupShuffleSplit
+    original_cv=model_selection.cross_val_score
 
     class GroupSpy:
         def __init__(self,*args,**kwargs):
@@ -35,7 +37,7 @@ def test_true_null_and_literal_group_id_never_coalesce_across_holdout_or_cv(monk
 
     def audited_cross_validation(estimator,X,y,*,cv,groups=None,**kwargs):
         assert groups is not None
-        assert isinstance(cv,engine.GroupKFold)
+        assert isinstance(cv,model_selection.GroupKFold)
         assert len(groups)==len(X)
         for training,validation in cv.split(X,y,groups=groups):
             training_groups=set(pd.Series(groups).iloc[training])
@@ -44,8 +46,8 @@ def test_true_null_and_literal_group_id_never_coalesce_across_holdout_or_cv(monk
         seen["cv_calls"]=seen.get("cv_calls",0)+1
         return original_cv(estimator,X,y,cv=cv,groups=groups,**kwargs)
 
-    monkeypatch.setattr(engine,"GroupShuffleSplit",GroupSpy)
-    monkeypatch.setattr(engine,"cross_val_score",audited_cross_validation)
+    monkeypatch.setattr(model_selection,"GroupShuffleSplit",GroupSpy)
+    monkeypatch.setattr(model_selection,"cross_val_score",audited_cross_validation)
     report,_,X_test,y_test=engine.run_training(
         frame,target="Target",excluded=[],models=["linear_regression"],
         task="regression",split_strategy="group",split_column="GroupID")

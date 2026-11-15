@@ -6,12 +6,47 @@ business suitability, legal approval, model accuracy or formal phase closure.
 from __future__ import annotations
 
 import json
+from pathlib import Path
+import subprocess
+import sys
 
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
 from backend import main, storage, target_opportunities
+
+
+def test_local_analytics_does_not_load_the_modelling_stack(tmp_path, monkeypatch):
+    monkeypatch.setenv("PILOTODIN_HOME", str(tmp_path))
+    monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
+    script = """
+import sys
+from fastapi.testclient import TestClient
+from backend import main
+
+with TestClient(main.app) as client:
+    csv = "value,target\\n" + "".join(f"{i},{i % 2}\\n" for i in range(80))
+    imported = client.post("/api/projects", files={"file": ("fixture.csv", csv, "text/csv")})
+    assert imported.status_code == 201, imported.text
+    project = imported.json()
+    assert project["profile"]["rows"] == 80
+    endpoint = "/api/projects/" + project["id"]
+    overview = client.get(endpoint + "/explore/overview")
+    assert overview.is_success, overview.text
+    answer = client.post(endpoint + "/ai/insight", json={
+        "question": "What is the dataset overview?", "selected_provider": "local",
+    })
+    assert answer.is_success, answer.text
+    assert answer.json()["fallback"] is True
+    assert answer.json()["answer"]
+    assert "sklearn" not in sys.modules and "scipy" not in sys.modules
+"""
+    result = subprocess.run(
+        [sys.executable, "-B", "-c", script], cwd=Path(__file__).resolve().parents[1],
+        capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def _frame(kind: str) -> pd.DataFrame:

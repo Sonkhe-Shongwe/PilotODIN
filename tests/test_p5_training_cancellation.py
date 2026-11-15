@@ -199,6 +199,8 @@ def test_failed_artifact_write_does_not_leave_partial_files(local_home, monkeypa
 
 
 def test_engine_checkpoint_interrupt_is_not_swallowed_by_per_model_exception(local_home, monkeypatch):
+    from sklearn import model_selection
+
     frame = pd.DataFrame({
         "Metric": [float(i % 11) for i in range(70)],
         "Outcome": ["Y" if i % 2 else "N" for i in range(70)],
@@ -208,7 +210,7 @@ def test_engine_checkpoint_interrupt_is_not_swallowed_by_per_model_exception(loc
     def fast_cv(*_args, **_kwargs):
         calls.append("cv")
         return np.asarray([0.5, 0.55, 0.6])
-    monkeypatch.setattr(engine, "cross_val_score", fast_cv)
+    monkeypatch.setattr(model_selection, "cross_val_score", fast_cv)
     def stop():
         # Baseline score is 1st call, candidate CV is 2nd.
         if len(calls) >= 2:

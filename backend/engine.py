@@ -3,28 +3,13 @@ from __future__ import annotations
 
 import hashlib
 import math
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.ensemble import (ExtraTreesClassifier, ExtraTreesRegressor,
-                              GradientBoostingClassifier, GradientBoostingRegressor,
-                              HistGradientBoostingClassifier, HistGradientBoostingRegressor,
-                              RandomForestClassifier, RandomForestRegressor)
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, ElasticNet
-from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC, SVR
-from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
-                             mean_absolute_error, mean_squared_error, precision_score,
-                             r2_score, recall_score, roc_auc_score)
-from sklearn.model_selection import KFold, StratifiedKFold, TimeSeriesSplit, GroupKFold, GroupShuffleSplit, cross_val_score, train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
+if TYPE_CHECKING:
+    from sklearn.pipeline import Pipeline
 
 SEED = 42
 CLASS_MODELS = ["logistic_regression", "decision_tree", "random_forest", "extra_trees", "gradient_boosting", "hist_gradient_boosting", "knn", "svm", "naive_bayes"]
@@ -209,6 +194,18 @@ def preparation(df: pd.DataFrame, target: str) -> dict:
 
 
 def make_estimator(task: str, key: str):
+    # Import the modelling stack only on modelling paths. Explore, Quality
+    # and target review also import this module for lightweight helpers.
+    from sklearn.ensemble import (ExtraTreesClassifier, ExtraTreesRegressor,
+                                  GradientBoostingClassifier, GradientBoostingRegressor,
+                                  HistGradientBoostingClassifier, HistGradientBoostingRegressor,
+                                  RandomForestClassifier, RandomForestRegressor)
+    from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, ElasticNet
+    from sklearn.naive_bayes import GaussianNB
+    from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+    from sklearn.svm import SVC, SVR
+    from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
     if task == "classification":
         mapping = {
             "logistic_regression": LogisticRegression(max_iter=1200, random_state=SEED),
@@ -276,6 +273,11 @@ def make_pipeline(X: pd.DataFrame, task: str, model: str,
                   categorical_imputation: str = "most_frequent") -> Pipeline:
     numeric_imputation = validate_numeric_imputation(numeric_imputation)
     check_categorical_missing_marker(X, categorical_imputation)
+    from sklearn.compose import ColumnTransformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
     numeric = [c for c in X if inferred_kind(X[c]) == "numeric"]
     categorical = [c for c in X if c not in numeric]
     # Keep missing-only columns stable across folds; let imputers use safe constants.
@@ -398,6 +400,8 @@ def bounded_feature_sensitivity(model: Pipeline, X_test: pd.DataFrame, y_test: p
     truth=y_test.iloc[indices]
     if task not in ("classification","regression"):
         return {"status":"unavailable","reason":"Unknown modelling task."}
+    from sklearn.metrics import f1_score, mean_absolute_error
+
     def evaluate(frame:pd.DataFrame)->float:
         predicted=model.predict(frame)
         if task=="classification":
@@ -437,6 +441,10 @@ def bounded_feature_sensitivity(model: Pipeline, X_test: pd.DataFrame, y_test: p
 
 
 def model_report(task: str, true: pd.Series, pred: np.ndarray, prob: np.ndarray | None = None) -> dict:
+    from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
+                                 mean_absolute_error, mean_squared_error, precision_score,
+                                 r2_score, recall_score, roc_auc_score)
+
     if task == "regression":
         return {"mae":round(float(mean_absolute_error(true,pred)),5),
                 "rmse":round(float(np.sqrt(mean_squared_error(true,pred))),5),
@@ -467,6 +475,8 @@ def heldout_baseline_metric(task: str, y_test: pd.Series, training_reference: An
     """
     if len(y_test)==0:
         raise ValueError("Cannot score a baseline with an empty test set")
+    from sklearn.metrics import f1_score, mean_absolute_error
+
     prediction=np.repeat(training_reference,len(y_test))
     if task=='classification':
         return round(float(f1_score(y_test,prediction,average='macro',zero_division=0)),5)
@@ -527,6 +537,11 @@ def run_training(df: pd.DataFrame, target: str, excluded: list[str], models: lis
                                  categorical_imputation=categorical_imputation)
     check_categorical_missing_marker(X, categorical_imputation)
     if X.empty or not X.shape[1]:raise ValueError('No predictor fields after split-column exclusion')
+    from sklearn.dummy import DummyClassifier, DummyRegressor
+    from sklearn.model_selection import (GroupKFold, GroupShuffleSplit, KFold, StratifiedKFold,
+                                         TimeSeriesSplit, cross_val_score, train_test_split)
+    from sklearn.pipeline import Pipeline
+
     cv_groups=None
     if split_strategy=='group':
         # Factorization preserves actual identifiers, mixed string/numeric IDs,

@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Lower memory use before modelling
+
+The existing physical QA session already observed 0.73–0.82 GiB available with local analytics operational. That evidence establishes the R03 shortfall against the 2.0 GiB floor and does not need repeating on the same build. The backend now loads scikit-learn only on modelling paths. In a matched local Linux Python experiment, startup resident memory dropped from 150.7 to 89.3 MiB, and resident memory after an 80-row CSV import, Explore overview and Ask ODIN Local analytics dropped from 154.5 to 92.7 MiB. Both response digests matched and the lean path did not import scikit-learn or SciPy. Model catalogue construction, group and time split checks, and fitted-history reopen with prediction passed locally using a harness for the existing test functions. This is source-level Linux evidence. The Windows packaged process and physical 8 GB offline generation remain unmeasured for the change.
+
 ## 15 November 2026 | Local AI memory readiness in Settings
 
 Resource-Aware Mode now shows whether measured RAM meets the local AI start threshold when Low-memory mode is saved. Below the threshold it shows the shortfall and points to local analytics. An unavailable reading prompts a refresh. The notice uses the existing read-only RAM status and backend threshold. The admission policy and offline acceptance requirement still apply. Local verification passed five resource settings contract tests and eight direct display cases covering the laptop's observed headroom, the threshold, unavailable measurements and the other policy modes.
@@ -158,7 +162,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Prioritise a source-matched check of the Settings readiness notice and the existing physical R03 preflight in an isolated QA instance. If the laptop still falls below the threshold, measure which components hold RAM with the app open before attempting inference. Pause the shared-request ETW investigation. Resume N12 work when an evidence plan can test whether the collector can verify protected writes or support a startup-to-exit app audit. The 397 path gaps, live image-path retest and 567-finding comparison remain open. Any new live capture or app build still requires its applicable approval.
+Use the recorded physical RAM shortfall as the R03 baseline. On the engineering side, identify the next measurable memory reduction across the backend, WebView2 and inference lifecycle. Retest on the laptop when a source-matched build changes the measured workload or its memory budget. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open. Any new live capture or app build requires its applicable approval.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

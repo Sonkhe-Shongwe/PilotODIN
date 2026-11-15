@@ -248,8 +248,10 @@ def test_chronological_holdout_rejects_identical_boundary_timestamps():
 
 
 def test_time_cv_never_splits_equal_timestamps_across_any_fold(monkeypatch):
+    from sklearn import model_selection
+
     frame=time_frame(70)
-    original=engine.cross_val_score
+    original=model_selection.cross_val_score
     inspected=[]
 
     def audited_cv(estimator,X,y,*,cv,**kwargs):
@@ -263,7 +265,7 @@ def test_time_cv_never_splits_equal_timestamps_across_any_fold(monkeypatch):
             inspected.append((len(training),len(validation)))
         return original(estimator,X,y,cv=cv,**kwargs)
 
-    monkeypatch.setattr(engine,"cross_val_score",audited_cv)
+    monkeypatch.setattr(model_selection,"cross_val_score",audited_cv)
     report,pipelines,test_X,test_y=engine.run_training(
         frame,target="FutureValue",excluded=[],models=["linear_regression"],
         task="regression",split_strategy="time",split_column="ObservedAt")
