@@ -8,6 +8,8 @@ The two hosted interaction driver launches now set `TEMP` and `TMP` to a dedicat
 
 This targets a known source of temp writes. The live report grouped 551 driver findings under user-temp or user-local, so the number redirected by this change is **UNVERIFIED**. No new hosted app journey ran for this change. The previous filesystem and network failures and strict coverage blockers remain open.
 
+Local P4 regression: **431 passed, one platform skip**. At source [`e771cb3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e771cb383e265e452954a53fdc7a13d18c0377f2), all three [P4 source, browser and Windows fixture jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43710018054) and the [N12 FileIO fixture job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43710017991) passed.
+
 ## 15 November 2026 | Fixture lead-in journey reached the final audit
 
 The [approved hosted Windows job #132739719330](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690425867/job/132739719330) ran once from launch `a28959dbc10d02b8ceaf6b01e880c9fc40d21b93` at reviewed source `f8e02357f821b3483948606af23fe355a0dd8cbb`. The unpackaged build and provenance checks passed. The executable SHA-256 was `409b5374d916726827453e9ee158c8309be07eb2b97477989c8291e40f464a6b`. The resolved Cargo lock SHA-256 was `278c01520af08f34b8861fc8191f283e0e5bb2223c2458e5f99ca5d7cd7d374f`. Pinned Sysmon 15.22 provisioned successfully. Initial calibration passed on the first read with the 50 ms lead-in. Both launches, the interaction drivers, the final fixture command and the audit completed.
