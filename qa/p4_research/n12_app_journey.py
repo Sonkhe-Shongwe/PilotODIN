@@ -28,6 +28,7 @@ PROBE = FRONTEND / "e2e" / "p4-71-native-webview-qa.mjs"
 PORTS = (5173, 8000, 9331)
 HTTP = build_opener(ProxyHandler({}))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
+DRIVER_TEMP_DIR = "driver-temp"
 INITIAL_FIXTURE_LEAD_IN_SECONDS = 0.05
 INITIAL_SYSMON_RETRYABLE = {
     "channel-window-empty", "parent-birth-missing", "child-birth-missing",
@@ -268,7 +269,10 @@ def run_driver(stack, manifest, node, root, env, relaunch):
     label = "relaunch" if relaunch else "first"
     if relaunch:
         command.append("--verify-relaunch")
-    process = spawn(stack, manifest, "driver", command, env, FRONTEND, root / f"driver-{label}.log")
+    # Playwright creates CDP scratch files under Node's OS temp directory.
+    driver_temp = str(root / DRIVER_TEMP_DIR)
+    driver_env = {**env, "TEMP": driver_temp, "TMP": driver_temp}
+    process = spawn(stack, manifest, "driver", command, driver_env, FRONTEND, root / f"driver-{label}.log")
     trace.require(process.wait(timeout=240) == 0, f"{label} native interaction probe failed")
 
 
@@ -327,13 +331,15 @@ def prepare_journey(root, source, expected_hash):
         "permitted_writes": {"app": [*map(str, qa_roots), str(profile)],
                              "webview": [str(profile)], "webview-network": [str(profile)],
                              "helper": [str(profile)], "backend": [str(home)],
-                             "driver": [str(home), str(FRONTEND / "node_modules" / ".vite")],
+                             "driver": [str(home), str(FRONTEND / "node_modules" / ".vite"),
+                                        str(root / DRIVER_TEMP_DIR)],
                              "calibration": list(map(str, calibration))},
     }
     trace.scope(manifest)
     root.mkdir(exist_ok=False)
     home.mkdir()
     profile.mkdir()
+    (root / DRIVER_TEMP_DIR).mkdir()
     return manifest, home, profile, source_fixture, calibration
 
 
@@ -343,6 +349,7 @@ def diagnostic_paths(root, staged, manifest):
         ("qa-webview-profile", manifest["observed_roots"]["qa-webview"]),
         ("qa-local-profile", manifest["observed_roots"]["qa-local"]),
         ("qa-roaming-profile", manifest["observed_roots"]["qa-roaming"]),
+        ("qa-driver-temp", root / DRIVER_TEMP_DIR),
         ("frontend-vite-cache", FRONTEND / "node_modules" / ".vite"),
         ("frontend-dependencies", FRONTEND / "node_modules"),
         ("source-checkout", build.REPO),

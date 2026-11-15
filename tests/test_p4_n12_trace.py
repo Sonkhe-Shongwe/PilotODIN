@@ -2211,6 +2211,21 @@ def test_rename_destination_and_prefix_collision(tmp_path):
     }
 
 
+def test_driver_scratch_scope_does_not_allow_other_writes(tmp_path):
+    evidence = Evidence()
+    evidence.manifest["permitted_writes"]["driver"] = [r"C:\QA\capture\driver-temp"]
+    evidence.write(25, 20, "WriteFile", r"C:\QA\capture\driver-temp\playwright-artifacts\trace")
+    assert evidence.report(tmp_path)["filesystem"] == "PASS_SCOPED"
+
+    evidence.write(26, 20, "WriteFile", r"C:\QA\capture\driver-temp-other\trace")
+    evidence.write(27, 20, "WriteFile", PROTECTED + r"\trace")
+    evidence.write(28, 10, "WriteFile", r"C:\QA\capture\driver-temp\backend-file")
+    assert evidence.report(tmp_path)["file_violations"] == {
+        "outside-scope:driver:write": 2, "protected:driver:write": 1,
+        "outside-scope:backend:write": 1,
+    }
+
+
 def test_create_open_and_failed_write_are_not_mutations(tmp_path):
     evidence = Evidence()
     evidence.write(27, 10, "CreateFile", FIXTURE, "OpenResult: Opened")

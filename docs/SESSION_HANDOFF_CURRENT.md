@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 interaction driver scratch isolation
+
+The two hosted interaction driver launches now set `TEMP` and `TMP` to a dedicated `driver-temp` directory within the disposable journey workspace. Playwright uses Node's operating-system temp directory for CDP scratch files. The backend, app, WebView and Vite retain their previous environment. The existing audit permits the new directory only for the driver role. Generated tests exercised both driver launches and verified that a write to a similarly named sibling, a write to a protected root and a backend write to the driver directory still fail. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
+This targets a known source of temp writes. The live report grouped 551 driver findings under user-temp or user-local, so the number redirected by this change is **UNVERIFIED**. No new hosted app journey ran for this change. The previous filesystem and network failures and strict coverage blockers remain open.
+
 ## 15 November 2026 | Fixture lead-in journey reached the final audit
 
 The [approved hosted Windows job #132739719330](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690425867/job/132739719330) ran once from launch `a28959dbc10d02b8ceaf6b01e880c9fc40d21b93` at reviewed source `f8e02357f821b3483948606af23fe355a0dd8cbb`. The unpackaged build and provenance checks passed. The executable SHA-256 was `409b5374d916726827453e9ee158c8309be07eb2b97477989c8291e40f464a6b`. The resolved Cargo lock SHA-256 was `278c01520af08f34b8861fc8191f283e0e5bb2223c2458e5f99ca5d7cd7d374f`. Pinned Sysmon 15.22 provisioned successfully. Initial calibration passed on the first read with the 50 ms lead-in. Both launches, the interaction drivers, the final fixture command and the audit completed.
@@ -76,7 +82,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the completed app journey to investigate the driver and helper write destinations. Give confirmed QA temporary output a dedicated disposable directory where configuration allows it. Check the backend and WebView residuals and the recurring network findings separately. Exercise source corrections on generated inputs before requesting another hosted app journey. Preserve the protected-root and network checks and the strict coverage findings.
+Use the completed app journey to investigate the remaining driver and helper write categories and review the backend, WebView and recurring network findings separately. Compare the driver categories on the next separately approved hosted app journey. Preserve the protected-root and network checks and the strict coverage findings.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

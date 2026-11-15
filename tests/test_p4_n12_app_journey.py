@@ -282,6 +282,22 @@ class Process:
         return 0
 
 
+def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch):
+    root = tmp_path / "capture"
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "local"))
+    monkeypatch.setenv("APPDATA", str(tmp_path / "roaming"))
+    monkeypatch.setenv("GITHUB_RUN_ID", "123")
+    monkeypatch.setattr(journey.trace, "local_disposable_path", lambda path: path)
+    # Windows path parsing is covered by the trace reducer tests.
+    monkeypatch.setattr(journey.trace, "scope", lambda manifest: None)
+
+    manifest, *_ = journey.prepare_journey(root, SOURCE, EXE_SHA)
+
+    scratch = root / journey.DRIVER_TEMP_DIR
+    assert scratch.is_dir()
+    assert [role for role, paths in manifest["permitted_writes"].items() if str(scratch) in paths] == ["driver"]
+
+
 @pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, fault):
     events = []
@@ -289,12 +305,15 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     root.mkdir()
     staged, home, profile, fixture = [tmp_path / name for name in ("build", "home", "webview", "quality.csv")]
     calibrations = [root / "calibration-first", root / "calibration-last"]
+    user_temp = str(tmp_path / "user-temp")
     manifest = {"processes": [], "markers": {}, "source_sha": SOURCE,
                 "executable_sha256": EXE_SHA, "loopback_ports": list(journey.PORTS)}
     sample = iter(range(30))
     monkeypatch.setattr(journey, "now", lambda: datetime(2026, 11, 14, tzinfo=timezone.utc)
                         + timedelta(seconds=next(sample)))
     monkeypatch.setenv("SystemRoot", str(tmp_path))
+    monkeypatch.setenv("TEMP", user_temp)
+    monkeypatch.setenv("TMP", user_temp)
     monkeypatch.setattr(journey, "prepare_journey", lambda *args: (manifest, home, profile, fixture, calibrations))
     monkeypatch.setattr(journey, "quiet", lambda *a, **kw: b"churn,amount\nY,2\n")
     monkeypatch.setattr(journey, "snapshots", lambda m: {"snapshot": len(events)})
@@ -336,6 +355,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         if log.stem.startswith("driver-"):
             assert env["PILOTODIN_N12_QUALITY_FIXTURE"] == str(fixture)
             assert (command[-1] == "--verify-relaunch") == (log.stem == "driver-relaunch")
+            assert env["TEMP"] == env["TMP"] == str(root / journey.DRIVER_TEMP_DIR)
+        else:
+            assert env["TEMP"] == env["TMP"] == user_temp
         m["processes"].append({"role": role, "pid": process.pid, "image": str(command[0])})
         stack.callback(events.append, f"cleanup-{log.stem}")
         return process
