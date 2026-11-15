@@ -33,6 +33,8 @@ struct ActiveInference {
     token: String,
 }
 
+const INFERENCE_IDLE_SLEEP_SECONDS: &str = "30";
+
 #[derive(Default)]
 struct DesktopState {
     backend: Mutex<Option<ActiveBackend>>,
@@ -331,6 +333,7 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
                "--alias", "pilotodin-qwen3-1.7b", "--host", "127.0.0.1",
                "--port", &port.to_string(), "--ctx-size", "2048",
                "--threads", "2", "--parallel", "1", "--gpu-layers", "0",
+               "--sleep-idle-seconds", INFERENCE_IDLE_SLEEP_SECONDS,
                "--no-webui", "--no-agent"])
         .env("LLAMA_API_KEY", token.as_str())
         .env("PATH", runtime_path)

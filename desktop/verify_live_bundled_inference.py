@@ -28,6 +28,9 @@ from offline_analytics_cases import (
 from verify_inference_assets import verify
 
 
+IDLE_SLEEP_SECONDS = 30
+
+
 def port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(('127.0.0.1', 0))
@@ -94,6 +97,42 @@ def worker_memory(pid: int) -> dict[str, float | int]:
     }
 
 
+def verify_idle_release(base: str, token: str, pid: int, model_alias: str, active_memory: dict) -> dict:
+    deadline = time.monotonic() + IDLE_SLEEP_SECONDS + 20
+    while time.monotonic() < deadline:
+        status, props = send(base + '/props', token, timeout=3)
+        if status == 200 and isinstance(props, dict) and props.get('is_sleeping') is True:
+            break
+        time.sleep(0.5)
+    else:
+        raise RuntimeError('Local worker did not sleep after the idle interval')
+
+    sleeping_memory = worker_memory(pid)
+    released = round(active_memory['working_set_mib'] - sleeping_memory['working_set_mib'], 1)
+    if released <= 0:
+        raise RuntimeError('Local worker sleep did not reduce its observed resident memory')
+
+    started = time.monotonic()
+    status, result = send(base + '/v1/chat/completions', token, {
+        'model': model_alias, 'messages': [{'role': 'user', 'content': 'Respond with READY.'}],
+        'max_tokens': 24, 'temperature': 0, 'stream': False,
+    }, timeout=110)
+    if status != 200 or not completion_text(result):
+        raise RuntimeError(f'Local worker failed to return text after waking: HTTP {status}')
+    return {'before_sleep': active_memory, 'asleep': sleeping_memory,
+            'resident_mib_released': released,
+            'after_wake': {'request_seconds': round(time.monotonic() - started, 3), **worker_memory(pid)}}
+
+
+def completion_text(response) -> str:
+    choices = response.get('choices') if isinstance(response, dict) else None
+    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+        return ''
+    message = choices[0].get('message')
+    content = message.get('content') if isinstance(message, dict) else None
+    return content.strip() if isinstance(content, str) else ''
+
+
 def evaluate_wording(base: str, token: str, model_alias: str, pid: int) -> list[dict]:
     results = []
     for case_name, summary, follow_ups, questions in WORDING_SCENARIOS:
@@ -136,12 +175,14 @@ def main() -> int:
                             help='Score four synthetic analytics questions and report worker memory.')
     evaluation.add_argument('--wording-eval', action='store_true',
                             help='Score follow-up selection while keeping verified summaries fixed.')
+    evaluation.add_argument('--verify-idle-release', action='store_true',
+                            help='Measure RAM after idle sleep and verify an authenticated completion after waking.')
     parser.add_argument('--candidate', choices=CANDIDATES,
                         help='Use a pinned alternate GGUF for the analytics evaluation only.')
     parser.add_argument('--candidate-file', type=Path, help='Local path to the pinned alternate GGUF.')
     options = parser.parse_args()
     evaluating = options.analytics_eval or options.wording_eval
-    if (options.memory_profile or evaluating) and os.name != 'nt':
+    if (options.memory_profile or evaluating or options.verify_idle_release) and os.name != 'nt':
         parser.error('Worker profiling requires Windows')
     if bool(options.candidate) != bool(options.candidate_file) or (options.candidate and not evaluating):
         parser.error('--candidate and --candidate-file must be used together in an evaluation mode')
@@ -166,6 +207,8 @@ def main() -> int:
             '--host', '127.0.0.1', '--port', str(listen_port), '--ctx-size', '2048',
             '--threads', '2', '--parallel', '1', '--gpu-layers', '0',
             '--no-webui', '--no-agent']
+    if options.verify_idle_release:
+        args.extend(('--sleep-idle-seconds', str(IDLE_SLEEP_SECONDS)))
     flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
     # Startup diagnostics identify missing vendor DLLs and unsupported flags.
     # Bound and redact output; no user documents are involved in this CI check.
@@ -251,6 +294,13 @@ def main() -> int:
                                'max_tokens': 24, 'temperature': 0, 'stream': False}, timeout=110)
         if status != 200 or not isinstance(result, dict) or not result.get('choices'):
             raise RuntimeError(f'Bundled Qwen3 failed authenticated text generation: HTTP {status}')
+        if options.verify_idle_release:
+            if not completion_text(result):
+                raise RuntimeError('Local worker returned no text before sleeping')
+            print('OFFLINE AI IDLE RELEASE: ' + json.dumps(
+                verify_idle_release(base, token, proc.pid, model_alias, worker_memory(proc.pid)),
+                sort_keys=True,
+            ))
         if options.memory_profile:
             generation_seconds = round(time.monotonic() - generation_begin, 3)
             profile = {

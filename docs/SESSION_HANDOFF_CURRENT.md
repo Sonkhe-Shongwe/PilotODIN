@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Release bundled Qwen memory when idle
+
+The desktop launcher now asks the existing pinned llama.cpp b10344 worker to sleep after 30 seconds of inactivity. The pinned server's sleep mode releases the model and inference cache and reloads them on the next inference request. Settings explains the reload delay. No model, context window, routing or admission floor changed. This targets RAM held between requests. It does not resolve the cold-start shortfall on the physical laptop.
+
+The Windows verification command, `python desktop/verify_live_bundled_inference.py --verify-idle-release`, checks an authenticated completion, polls the non-waking `/props` endpoint, compares worker RAM before and during sleep, then verifies a second authenticated completion. The 11 resource/isolation source contracts and six simulated probe cases passed locally. The Windows runtime test and native compilation were **NOT RUN**. [Pinned runtime behavior](https://github.com/ggml-org/llama.cpp/blob/b10344/tools/server/README.md#sleeping-on-idle)
+
 ## 15 November 2026 | Lower memory use before modelling
 
 The existing physical QA session already observed 0.73–0.82 GiB available with local analytics operational. That evidence establishes the R03 shortfall against the 2.0 GiB floor and does not need repeating on the same build. The backend now loads scikit-learn only on modelling paths. In a matched local Linux Python experiment, startup resident memory dropped from 150.7 to 89.3 MiB, and resident memory after an 80-row CSV import, Explore overview and Ask ODIN Local analytics dropped from 154.5 to 92.7 MiB. Both response digests matched and the lean path did not import scikit-learn or SciPy. Model catalogue construction, group and time split checks, and fitted-history reopen with prediction passed locally using a harness for the existing test functions. This is source-level Linux evidence. The Windows packaged process and physical 8 GB offline generation remain unmeasured for the change.
@@ -164,7 +170,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the recorded physical RAM shortfall as the R03 baseline. On the engineering side, identify the next measurable memory reduction across the backend, WebView2 and inference lifecycle. Retest on the laptop when a source-matched build changes the measured workload or its memory budget. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open. Any new live capture or app build requires its applicable approval.
+Use the recorded physical RAM shortfall as the R03 baseline. Verify idle release and wake on the pinned standalone Windows worker in one separately approved run. This uses the existing b10344 runtime and bundled Qwen3 1.7B assets. The stock assets would be staged on a disposable hosted runner, followed by two synthetic localhost requests and three worker memory samples. This test needs no desktop compilation. For the separate cold-start shortfall, measure whether a smaller inference batch reduces peak memory on the same model and workload before choosing any production setting. Retest on the laptop when a source-matched build changes the workload or memory budget. The shared-request ETW investigation stays paused. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
