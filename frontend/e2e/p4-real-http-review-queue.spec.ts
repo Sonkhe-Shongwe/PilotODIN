@@ -62,48 +62,6 @@ async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allo
  return blocked;
 }
 
-test('P4 R03 real HTTP: Ask ODIN computes local answers without a model', async({page,context,request})=>{
- const fixture='id,outcome,premium\n1,Yes,20\n2,No,\n3,Yes,40\n4,,50\n';
- const imported=await request.post(`${API}/api/projects`,{multipart:{
-  file:{name:'local-answers.csv',mimeType:'text/csv',buffer:Buffer.from(fixture)},
- }});
- expect(imported.status(),await imported.text()).toBe(201);
- const project=(await imported.json()).id as string;
- const route=`/api/projects/${project}/ai/insight`;
- const blocked=await readOnlyBrowserGuard(context,project,undefined,[],undefined,[],incoming=>{
-  const req=incoming.request();
-  const body=req.method()==='POST'&&req.url()===API+route?req.postDataJSON():null;
-  return body?.context==='assistant'&&body?.selected_provider==='local';
- });
- await page.addInitScript(id=>{
-  localStorage.setItem('pilotodin-current',id);
-  localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['assistant']));
-  localStorage.setItem('pilotodin-workspace-active-v1-'+id,'assistant');
- },project);
- await page.goto('/#/studio/assistant');
- await page.getByLabel('Choose intelligence').selectOption('local');
-
- for(const [button,answer] of [
-  ['What is the dataset overview?','has 4 rows, 3 columns, 2 missing cells and 0 exact duplicate rows'],
-  ['Has training started?','No training start is recorded for this dataset version'],
- ]){
-  await page.getByRole('button',{name:button,exact:true}).click();
-  await expect(page.locator('.chat-message.assistant').last()).toContainText(answer);
- }
- for(const [button,question,answer] of [
-  ['Ask about missing values','Why are values missing in "premium"?','premium has 1 missing rows. The cause is unknown'],
-  ['Calculate a labelled rate','Positive rate for "outcome" = "Yes"','2 of 3 labelled rows in outcome match Yes'],
- ]){
-  await page.getByRole('button',{name:button,exact:true}).click();
-  await expect(page.getByRole('textbox',{name:'Dataset question'})).not.toHaveValue('');
-  await page.getByRole('textbox',{name:'Dataset question'}).fill(question);
-  await page.getByRole('button',{name:'Ask',exact:true}).click();
-  await expect(page.locator('.chat-message.assistant').last()).toContainText(answer);
- }
- await expect(page.getByText('VERIFIED RULES · NO LLM',{exact:false})).toHaveCount(4);
- expect(blocked).toEqual([]);
-});
-
 test('P4-05 real HTTP: review ordering, other targets and explicit selection only',
  async({page,context,request})=>{
   if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
@@ -1061,5 +1019,47 @@ test('BE-024 real HTTP: reopen a fitted synthetic experiment and block stale pre
    else experimentReads.push(path);
   },
  });
+ expect(blocked).toEqual([]);
+});
+
+test('P4 R03 real HTTP: Ask ODIN computes local answers without a model', async({page,context,request})=>{
+ const fixture='id,outcome,premium\n1,Yes,20\n2,No,\n3,Yes,40\n4,,50\n';
+ const imported=await request.post(`${API}/api/projects`,{multipart:{
+  file:{name:'local-answers.csv',mimeType:'text/csv',buffer:Buffer.from(fixture)},
+ }});
+ expect(imported.status(),await imported.text()).toBe(201);
+ const project=(await imported.json()).id as string;
+ const route=`/api/projects/${project}/ai/insight`;
+ const blocked=await readOnlyBrowserGuard(context,project,undefined,[],undefined,[],incoming=>{
+  const req=incoming.request();
+  const body=req.method()==='POST'&&req.url()===API+route?req.postDataJSON():null;
+  return body?.context==='assistant'&&body?.selected_provider==='local';
+ });
+ await page.addInitScript(id=>{
+  localStorage.setItem('pilotodin-current',id);
+  localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['assistant']));
+  localStorage.setItem('pilotodin-workspace-active-v1-'+id,'assistant');
+ },project);
+ await page.goto('/#/studio/assistant');
+ await page.getByLabel('Choose intelligence').selectOption('local');
+
+ for(const [button,answer] of [
+  ['What is the dataset overview?','has 4 rows, 3 columns, 2 missing cells and 0 exact duplicate rows'],
+  ['Has training started?','No training start is recorded for this dataset version'],
+ ]){
+  await page.getByRole('button',{name:button,exact:true}).click();
+  await expect(page.locator('.chat-message.assistant').last()).toContainText(answer);
+ }
+ for(const [button,question,answer] of [
+  ['Ask about missing values','Why are values missing in "premium"?','premium has 1 missing rows. The cause is unknown'],
+  ['Calculate a labelled rate','Positive rate for "outcome" = "Yes"','2 of 3 labelled rows in outcome match Yes'],
+ ]){
+  await page.getByRole('button',{name:button,exact:true}).click();
+  await expect(page.getByRole('textbox',{name:'Dataset question'})).not.toHaveValue('');
+  await page.getByRole('textbox',{name:'Dataset question'}).fill(question);
+  await page.getByRole('button',{name:'Ask',exact:true}).click();
+  await expect(page.locator('.chat-message.assistant').last()).toContainText(answer);
+ }
+ await expect(page.getByText('VERIFIED RULES · NO LLM',{exact:false})).toHaveCount(4);
  expect(blocked).toEqual([]);
 });
