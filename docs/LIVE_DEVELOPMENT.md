@@ -2,6 +2,8 @@
 
 **Purpose:** iteratively polish PilotODIN's fonts, colours, navigation, charts, ODIN interactions, and Python analytics without waiting for a new Windows NSIS installer after every change.
 
+For the active phase and next task, see the [current handoff](./SESSION_HANDOFF_CURRENT.md). Use disposable projects for development. The owner’s intermediate installer freeze applies through P4–P7. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+
 ## Start (one-time setup, then one click)
 
 1. In GitHub Desktop, clone PilotODIN and check out `feature/live-dev-workspace-20261023` (this work sits on the Build E offline-fix branch). Keep a separate clone from any existing installed release or older production Studio directory.
@@ -32,7 +34,7 @@ The launcher shows elapsed startup time at five-second intervals; this is actual
 - Development env `.venv-live`, cache `.pilotodin-dev-cache` and the dev data folder are gitignored.
 - Never put production credentials or confidential datasets in test projects. Do not copy a production `data` directory into this folder.
 - Backend binds to `127.0.0.1:8000`; frontend binds to `127.0.0.1:5173`. Browser development is intentionally **not** the authenticated Tauri production shell. Keep this developer server on your own trusted computer; do not expose it to your network.
-- The full **bundled Qwen3 desktop path** (Rust resource verification, model launch and session authentication) is **not** reproduced by browser Vite. Browser-only ODIN uses local rules or development Ollama/cloud settings as configured. Test packaged offline AI on a real Windows installer at milestone checkpoints.
+- Browser Vite exercises the development ODIN settings and local rules. The bundled Qwen3 path requires separately approved native evidence for Rust resource verification, model launch and session authentication. Installer-based validation is reserved for the final release stage under the phase policy.
 - Developer dependency installation and runtime model loading are separate operations. Live reload does not update an already-installed EXE.
 
 ## Quick quality checks (no NSIS build)
@@ -60,4 +62,4 @@ When a feature changes, verify the live preview first, then run regression tests
 
 ## Development rhythm
 
-**Edit -> live preview -> test -> commit -> review.** Consolidate reviewed changes before the next Windows installer. Do not rebuild the 1.5 GiB offline model package merely to try a colour, font or component layout.
+**Edit → live preview → test → commit → review.** Keep package validation for the separately approved final release stage.

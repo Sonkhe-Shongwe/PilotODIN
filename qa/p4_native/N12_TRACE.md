@@ -4,7 +4,7 @@ The trace answers two questions for a specific disposable run. Which processes m
 
 ## Status and use
 
-The scripts prepare and reduce evidence. The regular Windows P4 job exercises the fixture, but the native trace is a separate run. Its machine needs Sysmon and Process Monitor configured and calibrated before PilotODIN launches. The scripts leave audit configuration and installed software alone.
+Regular Windows P4 CI verifies generated fixtures. The separately approved hosted collector rehearsal and app journey use pinned Sysmon with Windows ETW. The live workflow provisions Sysmon on a disposable runner. The Process Monitor procedure below covers the standalone alternative. [Current collector result](../../docs/SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-prelaunch-passed-and-final-etw-coverage-blocked).
 
 | Input or tool | Purpose |
 | --- | --- |
@@ -49,6 +49,8 @@ The ETW input is UTF-8 JSONL in the format emitted by the synthetic Windows prob
 The audit checks ETW loss, export integrity, completion status, and both endpoints of tracked moves. It joins scoped ETW processes to Sysmon by PID and a unique birth within 10 ms, then applies the existing write rules and before/after snapshots. A detected protected mutation fails the filesystem check even if its writer was running before capture. Missing attribution and unsupported operations can also block coverage. Drive paths, DOS extended prefixes and declared NT device names are supported. Short-name aliases and reparse-point transitions remain unsupported. Native collector orchestration and startup-to-exit acceptance remain pending.
 
 ### Hosted journey ETW gap diagnostics
+
+The latest collector rehearsal cleared Sysmon prelaunch and reached the strict combined reducer. Background process-lifetime and path gaps still block coverage. [Exact-source result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672824700/job/132686419880) · [Next action](../../docs/SESSION_HANDOFF_CURRENT.md#next-engineering-action).
 
 In collector-only rehearsal mode, the guard and final combined calibration can use the fixture parent's independently recorded Windows creation time when its Sysmon birth falls just before the fixture window. The raw Sysmon time must be an exact millisecond boundary in the same millisecond as creation. Creation must be within the original fixture window, and the export must contain exactly one birth matching that PID and image. The usual declared child identity, image hash, lifetime, loopback and file-operation checks still apply. The final summary reports `fixture_birth_adjusted`. The full app-journey prelaunch and audit use the existing strict timing rules.
 

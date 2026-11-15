@@ -1,6 +1,6 @@
 # PilotODIN 1.0
 **Local-first Windows data investigation, analytics and predictive modelling.**  
-**Development status, 13 November 2026.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** N12 live Windows evidence, the physical 8 GB offline test, the historical storage failure and owner signoff remain open. Gate C remains unverified and applies before real-world prediction use. P5 is unauthorised and P8 release certification is pending. [Current status](docs/PROJECT_STATUS_CURRENT.md)
+**Development status, 15 November 2026.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** The [current phase ledger](docs/PROJECT_STATUS_CURRENT.md) tracks Windows acceptance, physical offline inference, preservation and owner signoff. P5 is unauthorised and P8 release certification is pending.
 
 PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytical engine, and a Tauri desktop shell. The intended 1.0 vision includes versioned data-quality approval, evidence-backed investigation, model evaluation, reports and a bundled locally functioning ODIN assistant. **Implemented foundations do not prove all future autonomy or packaging requirements are finished.**
 
@@ -10,11 +10,11 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 - **[P4 acceptance worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)** for gate status and Windows evidence. **[N12 runbook](qa/p4_native/N12_TRACE.md)** for the next Windows check.
 - **[P1 prior-phase closure matrix](docs/P1_CLOSURE_REGISTER_2026-10-28.md)**: dated historical P1 acceptance.
 - **[Phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)**: owner-approved one-primary-phase and closure criteria.
-- **[Current documentation index](docs/DOCUMENTATION_INDEX.md)** and **[12 November navigation cleaning audit](docs/DOCUMENTATION_CLEANING_AUDIT_2026-11-12.md)**; [4 November audit](docs/DOCUMENTATION_AUDIT_2026-11-04.md) is historical.
+- **[Documentation index](docs/DOCUMENTATION_INDEX.md)** for current references and historical audits.
 - **[Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)** for chronological issue/evidence discussion.
 
 ## Verified development evidence
-The [latest P4 CI run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43445876232) passed 201 Python tests, 78 Node checks, the TypeScript/Vite build, 13 Chromium scenarios and the disposable Windows fixture. The fixture exercised loopback TCP/UDP and file mutations. Live Sysmon and Process Monitor capture still needs calibration.
+[P4 source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672531160) passed Python, Node, TypeScript/Vite, real-HTTP browser tests and Windows fixture checks at `8f57d22`. The [separate live collector rehearsal](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672824700/job/132686419880) passed Sysmon prelaunch and reached the combined audit. Unresolved ETW background mutations blocked strict coverage. [Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)
 
 Hosted Windows passed the scoped [R04 docking retest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) and [R05 fitted Prepare acceptance](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563). See the [P4 worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) for the tested source and evidence limits.
 

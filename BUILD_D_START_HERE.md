@@ -1,5 +1,7 @@
 # PilotODIN Build D: Unified Studio
 
+> **Historical Build D guide.** Use the [session handoff](docs/SESSION_HANDOFF_CURRENT.md) for the active checkout and the [phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) for native testing and packaging.
+
 This is a **source-code release**, not a signed Windows installer. Build D updates Build C without replacing your saved local projects or the existing analytical engine.
 
 ## What changed
