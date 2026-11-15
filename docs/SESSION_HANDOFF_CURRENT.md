@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 connection rehearsal passed prelaunch and blocked on ETW paths
+
+The [approved hosted Windows job #132816654192](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43715705070/job/132816654192) ran on attempt 1 from launch `cef9615270de6b99b4f87e573dbd3ec21ba8e580` at reviewed source `071c5b92246306180b712378562ba7f26ce95c92`. Pinned Sysmon 15.22 and the shared prelaunch check **PASSED on read 1**. The expected child's TCP and UDP markers were observed, so the rejection diagnostics did not fire. The earlier app-journey failure did not recur in this collector-only setup. Both final reductions verified the expected fixture operations with zero reported file violations. The fixture birth precision correction was unused.
+
+Strict coverage remained **BLOCKED** on `etw-mutation-coverage-unresolved`, and the job **FAILED**. Snapshots identified 131 stable background processes and removed all 397 missing process-lifetime findings. The same 376 writes and 21 resizes still lacked strict paths. Request-time diagnostics found 366 outside-protected path candidates, 24 operations with no prior name, six file-object lifetime changes and one possible name change. There were zero unmatched writes. Candidate paths remain diagnostic. PilotODIN compilation and launch were **NOT RUN** and no artifacts were uploaded. The one-use approval was consumed and the collector workflow is disarmed.
+
 ## 15 November 2026 | N12 prelaunch connection rejection diagnostics
 
 The prelaunch log now distinguishes an export with no parseable records for a protocol from one with records rejected by the process, direction, address, port or timing criteria. It publishes counts and fixed categories only. Tests using generated XML verify missing protocols, identity and endpoint rejections, malformed out-of-window records, timing and the existing second-read recovery. All 45 journey cases passed through a local standard-library harness because pytest was unavailable locally. The nearby diagnostics and preservation unittest suites passed 13 cases with one platform skip. Live calibration with this diagnostic is **NOT RUN**. [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
@@ -116,7 +122,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the shared prelaunch gate to diagnose the missing markers with one separately approved hosted collector-only rehearsal pinned to the reviewed source. This uses one generated fixture with Sysmon and ETW and avoids compiling or launching PilotODIN. Use the counts from both reads to decide what needs fixing before another app journey. The live image-path retest and 567-finding comparison remain open.
+Use generated file controls and the existing handle-path comparison to check which request-time FileKey paths can be independently verified. Exercise reused keys and name changes before changing strict coverage. The collector-only TCP/UDP pass supports a future app journey. The live image-path retest and 567-finding comparison remain open and require a separately approved app run.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

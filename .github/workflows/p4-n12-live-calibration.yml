@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use connection diagnostic rehearsal.
+    if: ${{ false }} # The one-use connection diagnostic rehearsal was consumed by run 43715705070.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
