@@ -235,9 +235,15 @@ jobs:
         run: |
           $tokens = $null
           $parseErrors = $null
-          $source = (Resolve-Path './qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1').Path
-          [void][System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$parseErrors)
-          if ($parseErrors.Count) { throw ($parseErrors -join [Environment]::NewLine) }
+          foreach ($script in @(
+            './qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1',
+            './qa/p4_native/Test_P4_N12_ETW_Fixture.ps1',
+            './qa/p4_research/Invoke_N12_Journey_Evidence.ps1'
+          )) {
+            $source = (Resolve-Path $script).Path
+            [void][System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw ($parseErrors -join [Environment]::NewLine) }
+          }
           ./qa/p4_native/Test_P4_N12_Collector_Process.ps1
 
       - name: Python 3.11 for N12 synthetic Windows fixture

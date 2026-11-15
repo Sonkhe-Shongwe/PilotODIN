@@ -11,8 +11,6 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
 }
 $env:PYTHONDONTWRITEBYTECODE = '1'
 $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-etw-$([guid]::NewGuid().ToString('N'))"
-$channel = 'Microsoft-Windows-Sysmon/Operational'
-$firstRecord = $null
 $probeArgs = @($root)
 if ($PreopenedControl -and ($WithSysmon -or $CalibrationOnly)) {
     throw 'The pre-opened control uses its own ETW-only fixture.'
@@ -54,13 +52,10 @@ function Get-ThreadBookend {
     }
 }
 if ($WithSysmon) {
-    $log = Get-WinEvent -ListLog $channel -ErrorAction SilentlyContinue
-    if ($null -eq $log -or -not $log.IsEnabled) {
-        throw 'Combined rehearsal blocked: a configured Sysmon operational channel is required.'
-    }
-    $firstRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId + 1
+    $probeArgs += '--collector-rehearsal'
+} elseif ($CalibrationOnly) {
+    $probeArgs += '--calibration-only'
 }
-if ($WithSysmon -or $CalibrationOnly) { $probeArgs += '--calibration-only' }
 $bookends = $null
 if (($CalibrationOnly -and -not $WithSysmon) -or $PreopenedControl) {
     # Win32_Process and thread snapshots supply stable identity for processes
@@ -70,8 +65,21 @@ if (($CalibrationOnly -and -not $WithSysmon) -or $PreopenedControl) {
     $threadsBefore = @(Get-ThreadBookend)
     if ($CalibrationOnly -and -not $WithSysmon) { $probeArgs += '--thread-context' }
 }
-$result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
-if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
+if ($WithSysmon) {
+    $PSNativeCommandUseErrorActionPreference = $false
+    $output = @(python -B -m qa.p4_native.n12_etw_probe @probeArgs)
+    $probeExit = $LASTEXITCODE
+    foreach ($line in $output) {
+        if ($line.StartsWith('N12 initial Sysmon calibration ', [StringComparison]::Ordinal)) {
+            Write-Host $line
+        }
+    }
+    if ($probeExit -ne 0 -or $output.Count -eq 0) { throw 'The collector-only fixture did not complete.' }
+    $result = $output[-1]
+} else {
+    $result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
+    if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
+}
 $capture = $result | ConvertFrom-Json
 if ($bookends) {
     $after = @(Get-ProcessBookend)
@@ -183,11 +191,13 @@ if ($Rundown) {
 $reducerManifest = Join-Path $root 'capture-manifest.json'
 if ($WithSysmon) {
     Start-Sleep -Seconds 3
-    $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
+    $lastRecord = (Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -MaxEvents 1).RecordId
+    if ($lastRecord -lt $capture.sysmon.prelaunch_last_record) {
+        throw 'The Sysmon record ID regressed after the shared prelaunch check.'
+    }
     $sysmonXml = Join-Path $root 'sysmon.xml'
-    $exportArgs = @{ FirstRecord = $firstRecord; LastRecord = $lastRecord; OutputFile = $sysmonXml }
-    & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') @exportArgs
-    $manifest.sysmon_first_record = $firstRecord
+    & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') -FirstRecord $capture.sysmon.first_record -LastRecord $lastRecord -OutputFile $sysmonXml
+    $manifest.sysmon_first_record = $capture.sysmon.first_record
     $manifest.sysmon_last_record = $lastRecord
 }
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reducerManifest -Encoding utf8

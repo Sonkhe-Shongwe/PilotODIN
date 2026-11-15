@@ -33,8 +33,12 @@ INITIAL_SYSMON_RETRYABLE = {
 }
 
 
+def timestamp_from_ticks(ticks):
+    return datetime(1, 1, 1, tzinfo=timezone.utc) + timedelta(microseconds=ticks // 10)
+
+
 def now():
-    return datetime(1, 1, 1, tzinfo=timezone.utc) + timedelta(microseconds=etw.utc_ticks() // 10)
+    return timestamp_from_ticks(etw.utc_ticks())
 
 
 def mark(manifest, label):
@@ -198,7 +202,7 @@ def verify_initial_sysmon(root, manifest, record):
             raise trace.EvidenceValidationError("initial Sysmon channel read or export failed") from exc
         if not issues:
             print(f"N12 initial Sysmon calibration passed on read {attempt}", flush=True)
-            return
+            return last
         reason = ", ".join(sorted(issues))
         if attempt == 2 or not issues <= INITIAL_SYSMON_RETRYABLE:
             raise trace.EvidenceValidationError(f"initial Sysmon calibration blocked on read {attempt}: {reason}")

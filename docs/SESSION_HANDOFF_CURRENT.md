@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 15 November 2026 | Collector-only prelaunch rehearsal staged
+
+- The disarmed [collector workflow](../.github/workflows/p4-n12-live-calibration.yml) runs the same Sysmon prelaunch guard as the app journey, using one generated fixture while ETW is active. It reports the accepted read number or a fixed blocker. The final strict calibration uses the same record floor and a fresh export through a verified later checkpoint. The workflow needs a fresh marker pinning the reviewed source and uses collector-only consent.
+- The test runs without a PilotODIN build or app launch. Raw XML and ETW files stay on the disposable runner. Results can verify the prelaunch gate and collector calibration for the generated fixture. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** The live rehearsal awaits separate owner approval.
+
 ## 15 November 2026 | N12 prelaunch calibration diagnostics
 
 - The [prelaunch guard](../qa/p4_research/n12_app_journey.py) distinguishes absent parent births, wrong images, multiple matches and births outside the fixture window. One bounded reread can pick up delayed channel records from the same fixture. The event-time window and record floor stay fixed. Process identity, both exits, loopback TCP/UDP and record continuity are still required before app launch. The report emits fixed reasons and keeps the XML private.

@@ -14,9 +14,9 @@ from threading import get_native_id
 from uuid import uuid4
 
 try:
-    from .n12_trace import local_disposable_path
+    from .n12_trace import EvidenceValidationError, local_disposable_path
 except ImportError:  # Direct execution from the QA directory.
-    from n12_trace import local_disposable_path
+    from n12_trace import EvidenceValidationError, local_disposable_path
 
 
 class WnodeHeader(ctypes.Structure):
@@ -137,6 +137,25 @@ def probe(root, *, calibration_only=False, thread_context=False):
     root.mkdir()
     (root / "synthetic-protected").mkdir()
     return capture_fixture(root, calibration_only=calibration_only, thread_context=thread_context)
+
+
+def collector_rehearsal(root):
+    from qa.p4_research import n12_app_journey as journey
+
+    if (os.environ.get("GITHUB_RUN_ATTEMPT") != "1" or
+            os.environ.get("PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT") != "I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL"):
+        raise EvidenceValidationError("collector rehearsal requires separate first-run consent")
+    root.mkdir()
+    (root / "synthetic-protected").mkdir()
+    first_record = journey.sysmon_tail(timeout=15) + 1
+
+    def verify_fixture(fixture, fixture_start):
+        manifest = {"start_utc": journey.timestamp_from_ticks(fixture_start).isoformat(),
+                    "sysmon_first_record": first_record}
+        last_record = journey.verify_initial_sysmon(root, manifest, fixture)
+        return {"first_record": first_record, "prelaunch_last_record": last_record}
+
+    return capture_fixture(root, calibration_only=True, thread_context=False, verify_fixture=verify_fixture)
 
 
 def verify_handle_path(stream, path):
@@ -263,7 +282,7 @@ def preopened_control(root, *, rundown=False, system_timing=False):
 
 
 def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None,
-                    open_comparison=None):
+                    open_comparison=None, verify_fixture=None):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -342,6 +361,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             raise RuntimeError("The generated N12 calibration failed.")
         fixture = json.loads(result.stdout)
         fixture["start_window"] = [fixture_start, utc_ticks()]
+        sysmon = verify_fixture(fixture, fixture_start) if verify_fixture is not None else None
         second_writer = None
         if not calibration_only:
             writer_start = utc_ticks()
@@ -387,6 +407,8 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             "volume_devices": mapped_devices,
             "protected_root": str(protected), "second_writer": second_writer,
             "start_ticks": capture_start, "end_ticks": utc_ticks() // 10 * 10}
+    if sysmon is not None:
+        capture["sysmon"] = sysmon
     if controls:
         capture["preopened"] = {"pid": os.getpid(), "tid": get_native_id(), "writes": control_writes}
         if comparison is not None:
@@ -410,19 +432,22 @@ if __name__ == "__main__":
         options = sys.argv[2:]
         if len(sys.argv) < 2 or options not in (
             [], ["--calibration-only"], ["--calibration-only", "--thread-context"],
+            ["--collector-rehearsal"],
             ["--preopened-control"], ["--preopened-control", "--rundown"],
             ["--preopened-control", "--rundown", "--system-timing"],
         ):
             raise ValueError("Unexpected probe arguments.")
         root = local_disposable_path(Path(sys.argv[1]), runner_temp_only=True)
-        if "--preopened-control" in options:
+        if options == ["--collector-rehearsal"]:
+            print(json.dumps(collector_rehearsal(root)))
+        elif "--preopened-control" in options:
             print(json.dumps(preopened_control(
                 root, rundown="--rundown" in options, system_timing="--system-timing" in options,
             )))
         else:
             print(json.dumps(probe(root, calibration_only="--calibration-only" in options,
                                    thread_context="--thread-context" in options)))
-    except RuntimeError as exc:
+    except (RuntimeError, EvidenceValidationError) as exc:
         sys.exit(str(exc))
     except (IndexError, OSError, ValueError, subprocess.SubprocessError):
         sys.exit("ETW fixture probe failed before generating a report.")

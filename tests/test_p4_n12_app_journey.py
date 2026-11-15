@@ -152,6 +152,49 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
     assert len(set(exports)) == len(exports)
 
 
+@pytest.mark.parametrize("approved", [False, True])
+def test_collector_rehearsal_reuses_prelaunch_gate(tmp_path, monkeypatch, approved):
+    root = tmp_path / "generated-rehearsal"
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT",
+                       "I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL" if approved else "")
+    marker = {"pid": 23, "child_pid": 24, "port": 9030}
+    start = datetime(2026, 11, 15, tzinfo=timezone.utc)
+    events = []
+
+    def channel_tail(*, timeout):
+        assert timeout == 15
+        events.append("record-floor")
+        return 44
+
+    def verify(first_root, manifest, fixture):
+        assert first_root == root
+        assert manifest == {"start_utc": start.isoformat(), "sysmon_first_record": 45}
+        assert fixture is marker
+        events.append("shared-guard")
+        return 52
+
+    def fixture_capture(capture_root, *, calibration_only, thread_context, verify_fixture):
+        assert capture_root == root and calibration_only and not thread_context
+        assert (root / "synthetic-protected").is_dir()
+        events.append("fixture")
+        records = verify_fixture(marker, journey.trace.utc_ticks(start))
+        events.append("etw-stop")
+        return {"fixture": marker, "sysmon": records}
+
+    monkeypatch.setattr(journey, "sysmon_tail", channel_tail)
+    monkeypatch.setattr(journey, "verify_initial_sysmon", verify)
+    monkeypatch.setattr(journey.etw, "capture_fixture", fixture_capture)
+    if not approved:
+        with pytest.raises(journey.trace.EvidenceValidationError, match="separate first-run consent"):
+            journey.etw.collector_rehearsal(root)
+        assert not events and not root.exists()
+        return
+    capture = journey.etw.collector_rehearsal(root)
+    assert capture["sysmon"] == {"first_record": 45, "prelaunch_last_record": 52}
+    assert events == ["record-floor", "fixture", "shared-guard", "etw-stop"]
+
+
 class Process:
     def __init__(self, pid):
         self.pid = pid

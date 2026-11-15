@@ -27,6 +27,9 @@ if ($AppJourney) {
     if ($LASTEXITCODE -ne 0) { throw 'Staged build verification failed before Sysmon provisioning.' }
 } elseif ($SourceSha -or $ExecutableSha256) {
     throw 'A staged build identity is only accepted in app journey mode.'
+} elseif ($WithEtw -and
+    $env:PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT -cne 'I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL') {
+    throw 'The collector-only rehearsal requires separate approval before provisioning Sysmon.'
 }
 
 . (Join-Path $PSScriptRoot 'P4_N12_Collector_Process.ps1')

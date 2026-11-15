@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 15 November 2026 | Collector-only prelaunch rehearsal staged
+
+The disarmed collector rehearsal shares the app journey's Sysmon prelaunch gate and retains the strict combined calibration. The next evidence is one separately approved disposable Windows collector run with a generated fixture. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-only-prelaunch-rehearsal-staged).
+
 ## 15 November 2026 | N12 prelaunch calibration diagnostics
 
 The hosted guard can distinguish missing, out-of-window and conflicting Sysmon parent evidence. A bounded reread can pick up delayed records for the same fixture, subject to the original calibration requirements. Live validation remains pending. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--n12-prelaunch-calibration-diagnostics).
