@@ -1104,7 +1104,8 @@ test('P4 R03 real HTTP: Ask ODIN computes local answers without a model', async(
  await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('button',{name:'Ask ODIN',exact:true}).click();
  await page.getByRole('textbox',{name:'Dataset question'}).fill('What about No?');
  const [followUp]=await Promise.all([
-  page.waitForResponse(response=>response.url()===API+routes[1]&&response.request().method()==='POST'),
+  page.waitForResponse(response=>response.url()===routes[1]&&response.request().method()==='POST',
+   {timeout:12_000}),
   page.getByRole('button',{name:'Ask',exact:true}).click(),
  ]);
  expect(followUp.request().postDataJSON().local_follow_up).toBeUndefined();
