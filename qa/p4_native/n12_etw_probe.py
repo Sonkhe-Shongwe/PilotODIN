@@ -188,15 +188,14 @@ def write_named_control(path):
         verify_handle_path(stream, path)
         if stream.write(b"seed") != 4:
             raise RuntimeError("The generated name-control seed was incomplete.")
-        stream.seek(0)
         verify_handle_path(stream, path)
         if stream.write(payload) != len(payload):
             raise RuntimeError("The generated name-control write was incomplete.")
         stream.seek(0)
-        if stream.read() != payload:
+        if stream.read() != b"seed" + payload:
             raise RuntimeError("The generated name-control payload did not match.")
     return {"path": str(path), "pid": os.getpid(), "size": len(payload),
-            "start": start, "end": utc_ticks(), "prior_name_control": True}
+            "start": start, "end": utc_ticks(), "prior_name_control": True, "offset": 4}
 
 
 def write_basic_info_control(path):

@@ -302,11 +302,11 @@ def test_generated_file_lifetime_requires_ordered_same_object_evidence(fault, re
 def test_in_capture_name_control_measures_prior_name(name_at, wrong_name, verdict):
     path = r"C:\private\control.bin"
     control = {"path": path, "pid": 7, "size": 113, "start": 1, "end": 12,
-               "prior_name_control": True}
+               "prior_name_control": True, "offset": 4}
     records = [
         (2, 12, {"FileName": path, "FileObject": 50, "Irp": 1}),
         (3, 24, {"Irp": 1, "Status": 0}),
-        (5, 16, {"FileObject": 50, "FileKey": 60, "Irp": 2, "IOSize": 113, "ByteOffset": 0}),
+        (5, 16, {"FileObject": 50, "FileKey": 60, "Irp": 2, "IOSize": 113, "ByteOffset": 4}),
         (7, 24, {"Irp": 2, "Status": 0}),
         (8, 13, {"FileObject": 50, "FileKey": 60}),
         (9, 14, {"FileObject": 50, "FileKey": 60}),
@@ -320,6 +320,10 @@ def test_in_capture_name_control_measures_prior_name(name_at, wrong_name, verdic
     assert result["status"] == "PASS"
     assert result["request_time_path"] == verdict
     assert "private" not in json.dumps(result)
+    assert file_lifetime_report(dict(control, offset=0), events, {}) == {
+        "status": "BLOCKED", "reason": "write-missing-or-ambiguous",
+        "write_candidates": {"same_object": 1, "same_process": 1, "same_size": 1, "same_offset": 0},
+    }
 
 
 @pytest.mark.parametrize(("fault", "reason"), [

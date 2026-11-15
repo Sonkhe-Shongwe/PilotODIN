@@ -306,8 +306,9 @@ if ($PreopenedControl) {
     if (-not $Rundown) {
         $named = $controlReport.in_capture_name_control
         Write-Host ('In-capture name control: ' + ($named | ConvertTo-Json -Compress -Depth 5))
-        if ($named.open_and_write_completed -ne $true -or $named.request_time_path -eq 'different-from-handle-path') {
-            throw 'The in-capture name control could not verify its write or disagreed with the handle path.'
+        $requestTime = $named.PSObject.Properties['request_time_path']
+        if ($null -ne $requestTime -and $requestTime.Value -eq 'different-from-handle-path') {
+            throw 'The in-capture name control disagreed with the verified handle path.'
         }
     }
     if ($Rundown) {

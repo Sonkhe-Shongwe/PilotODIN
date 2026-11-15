@@ -1299,14 +1299,17 @@ def file_lifetime_report(control, events, devices):
         lifetime.append(event)
         if event["id"] == 14:
             break
-    writes = [
-        event for event in lifetime if event["id"] == 16 and event["pid"] == control["pid"]
-        and event["ticks"] <= control["end"]
-        and number(event["data"].get("IOSize")) == control["size"]
-        and number(event["data"].get("ByteOffset")) == 0
-    ]
+    offset = control.get("offset", 0)
+    lifetime_writes = [event for event in lifetime if event["id"] == 16 and event["ticks"] <= control["end"]]
+    same_process = [event for event in lifetime_writes if event["pid"] == control["pid"]]
+    same_size = [event for event in same_process if number(event["data"].get("IOSize")) == control["size"]]
+    writes = [event for event in same_size if number(event["data"].get("ByteOffset")) == offset]
     if len(writes) != 1:
-        return {"status": "BLOCKED", "reason": "write-missing-or-ambiguous"}
+        result = {"status": "BLOCKED", "reason": "write-missing-or-ambiguous"}
+        if control.get("prior_name_control"):
+            result["write_candidates"] = {"same_object": len(lifetime_writes), "same_process": len(same_process),
+                                          "same_size": len(same_size), "same_offset": len(writes)}
+        return result
     write = writes[0]
     ends = [event for event in lifetime if event["id"] in {13, 14}]
     open_completed = successful_completion(file_events, opened, write["ticks"])
