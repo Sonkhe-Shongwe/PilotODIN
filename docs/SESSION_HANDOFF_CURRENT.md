@@ -8,6 +8,8 @@ The [fixture lead-in audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/
 
 The ETW audit now adds fixed writer categories to its redacted outside-scope summary. It uses the Sysmon identity already matched to each scored operation and reports Node, esbuild, PowerShell, Python, WebView2, or a generic fallback. Generated evidence confirmed that the existing counts and audit verdicts match with or without the new breakdown. Actual Windows writer counts for the new source are **NOT RUN**. [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
+Local verification passed 192 focused tests and 432 broader P4 tests with one platform skip. All three [P4 source, browser and Windows fixture jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43710517133) and the [N12 FileIO fixture job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43710517058) passed at implementation source [`fd11e28`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fd11e28af8fc0260015e5d9cacf39dc035be8e2f).
+
 ## 15 November 2026 | N12 interaction driver scratch isolation
 
 The two hosted interaction driver launches now set `TEMP` and `TMP` to a dedicated `driver-temp` directory within the disposable journey workspace. Playwright uses Node's operating-system temp directory for CDP scratch files. The backend, app, WebView and Vite retain their previous environment. The existing audit permits the new directory only for the driver role. Generated tests exercised both driver launches and verified that a write to a similarly named sibling, a write to a protected root and a backend write to the driver directory still fail. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
