@@ -113,24 +113,24 @@ def verify_idle_release(base: str, token: str, pid: int, model_alias: str, activ
         raise RuntimeError('Local worker sleep did not reduce its observed resident memory')
 
     started = time.monotonic()
-    status, result = send(base + '/v1/chat/completions', token, {
-        'model': model_alias, 'messages': [{'role': 'user', 'content': 'Respond with READY.'}],
-        'max_tokens': 24, 'temperature': 0, 'stream': False,
-    }, timeout=110)
-    if status != 200 or not completion_text(result):
-        raise RuntimeError(f'Local worker failed to return text after waking: HTTP {status}')
+    verify_idle_probe_completion(base, token, model_alias, phase='after waking')
     return {'before_sleep': active_memory, 'asleep': sleeping_memory,
             'resident_mib_released': released,
             'after_wake': {'request_seconds': round(time.monotonic() - started, 3), **worker_memory(pid)}}
 
 
-def completion_text(response) -> str:
+def verify_idle_probe_completion(base: str, token: str, model_alias: str, *, phase: str) -> None:
+    status, response = send(base + '/v1/chat/completions', token, {
+        'model': model_alias, 'messages': [{'role': 'user', 'content': 'Respond with READY.'}],
+        'max_tokens': 24, 'temperature': 0, 'stream': False,
+        'chat_template_kwargs': {'enable_thinking': False},
+    }, timeout=110)
     choices = response.get('choices') if isinstance(response, dict) else None
-    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
-        return ''
-    message = choices[0].get('message')
+    choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+    message = choice.get('message')
     content = message.get('content') if isinstance(message, dict) else None
-    return content.strip() if isinstance(content, str) else ''
+    if status != 200 or not isinstance(content, str) or not content.strip() or choice.get('finish_reason') != 'stop':
+        raise RuntimeError(f'Local worker failed to return a complete answer {phase}: HTTP {status}')
 
 
 def evaluate_wording(base: str, token: str, model_alias: str, pid: int) -> list[dict]:
@@ -287,6 +287,14 @@ def main() -> int:
                 'cases': results,
             }, sort_keys=True))
             return 0
+        if options.verify_idle_release:
+            verify_idle_probe_completion(base, token, model_alias, phase='before sleeping')
+            print('OFFLINE AI IDLE RELEASE: ' + json.dumps(
+                verify_idle_release(base, token, proc.pid, model_alias, worker_memory(proc.pid)),
+                sort_keys=True,
+            ))
+            print('LIVE OFFLINE AI IDLE RELEASE CHECK PASSED')
+            return 0
         generation_begin = time.monotonic()
         status, result = send(base + '/v1/chat/completions', token,
                               {'model': model_alias,
@@ -294,13 +302,6 @@ def main() -> int:
                                'max_tokens': 24, 'temperature': 0, 'stream': False}, timeout=110)
         if status != 200 or not isinstance(result, dict) or not result.get('choices'):
             raise RuntimeError(f'Bundled Qwen3 failed authenticated text generation: HTTP {status}')
-        if options.verify_idle_release:
-            if not completion_text(result):
-                raise RuntimeError('Local worker returned no text before sleeping')
-            print('OFFLINE AI IDLE RELEASE: ' + json.dumps(
-                verify_idle_release(base, token, proc.pid, model_alias, worker_memory(proc.pid)),
-                sort_keys=True,
-            ))
         if options.memory_profile:
             generation_seconds = round(time.monotonic() - generation_begin, 3)
             profile = {
