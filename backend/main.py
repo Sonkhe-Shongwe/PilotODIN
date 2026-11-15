@@ -23,9 +23,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities
+    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 except ImportError:
-    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities
+    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -1206,6 +1206,14 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
     try:
         df,version=quality.current_data(project_id)
         question=body.question.strip() or ai_context.TASKS[body.context]
+        if body.context == 'assistant' and not body.continuation_text and body.selected_provider == 'local':
+            verified = verified_answers.answer(df, version, project_id, question)
+            if verified is not None:
+                answer, facts = verified
+                return {**ai_provider.local_rules_result(answer, reason='Verified local analytics selected'),
+                        'facts':facts,'dataset_version':version,'privacy':'summary_only_no_rows',
+                        'scope':body.context,'investigation':None,'investigation_steps':[],
+                        'limitations':'Facts describe the current working dataset or saved experiment evidence.'}
         context=ai_context.build(project_id,body.context,question,body.target,body.experiment_id,body.prediction)
         local=analytics.answer(df,version,question[:350])['answer'] if body.context=='assistant' else ai_context.local_advice(context,body.context)
         plan=None if body.continuation_text else analytics.plan_investigation(df,version,question,body.context)

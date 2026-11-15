@@ -625,6 +625,22 @@ def recent_experiments(pid):
     return [dict(x) for x in rows]
 
 
+def latest_version_training(pid, version):
+    """Read the latest experiment with recorded execution on this dataset version."""
+    with connect() as con:
+        row = con.execute(
+            "SELECT status, selected_model, results FROM experiments AS e "
+            "WHERE project_id=? AND COALESCE(json_extract(config, '$.quality_version'), 0)=? "
+            "AND (status IN ('running', 'completed') OR EXISTS ("
+            "SELECT 1 FROM experiment_progress_events WHERE experiment_id=e.id "
+            "AND stage IN ('loading_data','training_models','saving_artifacts'))) "
+            "ORDER BY created_at DESC, rowid DESC LIMIT 1", (pid, version),
+        ).fetchone()
+    if row is None:
+        return None
+    return {**dict(row), 'results': json.loads(row['results']) if row['results'] else None}
+
+
 def mark(eid, status, results=None, error=None):
     with connect() as con:
         con.execute("UPDATE experiments SET status=?, results=?, error=? WHERE id=?",

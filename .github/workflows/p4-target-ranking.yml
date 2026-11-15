@@ -13,6 +13,12 @@ on:
       - tests/test_p4_r03_worker_comparison.py
       - backend/target_opportunities.py
       - backend/main.py
+      - backend/analytics.py
+      - backend/ai_provider.py
+      - backend/storage.py
+      - backend/verified_answers.py
+      - frontend/src/AssistantWorkspace.tsx
+      - tests/test_p4_r03_verified_answers.py
       - backend/engine.py
       - backend/target_timing_review.py
       - frontend/src/TargetOpportunities.tsx
@@ -128,6 +134,7 @@ jobs:
           tests/test_p4_queue_resource_bounds.py
           tests/test_p4_consolidated_acceptance.py
           tests/test_p4_r03_worker_comparison.py
+          tests/test_p4_r03_verified_answers.py
           tests/test_build_e_autonomous_investigations.py
           tests/test_p1_resource_admission.py
           tests/test_p4_phase_exit_matrix.py

@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | R03 verified answers in Ask ODIN
+
+Choose Local analytics in Ask ODIN to get working-version overview counts, missing-row counts with an unknown-cause explanation, a positive rate for an explicitly named outcome and observed label, or recorded training status. The denominator excludes unlabelled rows. Training reads current-version history and reports a selected model's saved cross-validation score when available. These answers bypass provider routing and model startup. The UI offers question shortcuts and editable examples for column-specific questions.
+
+Five benchmark scenarios passed through the real API on generated datasets using the Local analytics question forms and the original expected facts. The provider benchmark used free-form prompts, including a 1,022-token context case. This check re-expresses that case as a structured overview request using the same expected facts. The Linux API test process peaked at 96.6 MiB, including fixture setup and the test harness. This evidence covers the model-free workload. Physical Windows coexistence and offline generation remain open.
+
 ## 15 November 2026 | R03 Windows comparison completed
 
 The [approved hosted Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43740595746/job/132892675147) completed on attempt 1. Launch commit `3d8641304edd8febb5e5b4c39f4aeded52bf5d56` checked out source `b19946e2f9e3327c71eee7371838d6ec69df6d41`. The runner reported 15.99 GiB visible and 13.64 GiB free before staging. The worker comparison used the pinned Qwen3 1.7B model and llama.cpp b10344 runtime with matching input lengths, including a 1,022-token overview prompt.

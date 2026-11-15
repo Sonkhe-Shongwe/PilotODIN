@@ -314,15 +314,19 @@ def insight_bundled_launch_skip(task:str, selected_provider:str|None)->str|None:
     return None
 
 
+def local_rules_result(answer: str, *, mode: str = 'local', reason: str = 'Deterministic local analysis used') -> dict:
+    return {'answer':answer,'source':'local_computed_rules','provider':'local','model':'deterministic',
+            'fallback':True,'reason':reason,'attempts':[], 'incomplete':False,'finish_reason':'local',
+            'intelligence_mode':mode,'local_status':'not_requested'}
+
+
 def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,selected_provider:str|None=None,
             continuation_text:str|None=None)->dict:
     """Local-first hybrid. Cloud use is always gated by explicit saved consent."""
     cfg=_read_config()
     mode=cfg.get('intelligence_mode','hybrid')
     selected=_resolve_provider(cfg,task,selected_provider)
-    fallback={'answer':local_answer,'source':'local_computed_rules','provider':'local','model':'deterministic',
-              'fallback':True,'reason':'Deterministic local analysis used','attempts':[],
-              'incomplete':False,'finish_reason':'local','intelligence_mode':mode,'local_status':'not_requested'}
+    fallback=local_rules_result(local_answer, mode=mode)
     if selected=='local':
         fallback['reason']='Deterministic local analysis selected'
         return fallback

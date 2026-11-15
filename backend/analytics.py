@@ -16,6 +16,11 @@ except ImportError:
     import engine
 
 
+def dataset_counts(df: pd.DataFrame) -> dict:
+    return {'rows': len(df), 'columns': len(df.columns),
+            'missing_cells': int(df.isna().sum().sum()), 'exact_duplicate_rows': int(df.duplicated().sum())}
+
+
 def describe(df: pd.DataFrame, version: int) -> dict:
     cols=[]
     for name in df:
@@ -30,9 +35,10 @@ def describe(df: pd.DataFrame, version: int) -> dict:
                 info.update({"min":engine.native(v.min()),"max":engine.native(v.max()),
                              "mean":engine.native(v.mean()),"median":engine.native(v.median())})
         cols.append(info)
-    return {"version":version,"rows":len(df),"columns":cols,
-            "missing_cells":int(df.isna().sum().sum()),
-            "exact_duplicates":int(df.duplicated().sum()),"source":"local_computed"}
+    counts = dataset_counts(df)
+    return {"version":version,"rows":counts['rows'],"columns":cols,
+            "missing_cells":counts['missing_cells'],
+            "exact_duplicates":counts['exact_duplicate_rows'],"source":"local_computed"}
 
 
 def _column(df:pd.DataFrame,name:str):
