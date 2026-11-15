@@ -901,9 +901,20 @@ def test_system_control_timing_tracks_only_matching_successful_requests(fault, i
     ("no-name", "no-prior-name-in-lifetime"),
     ("same-object-open", "same-object-open-observed"),
     ("tied-completion", "write-completion-unverified"),
+    ("wrong-thread", "control-request-unverified"),
+    ("failed-completion", "control-request-unverified"),
+    ("rundown-missing-key", "matches-handle-path"),
+    ("rename-after-completion", "matches-handle-path"),
+    ("rename-before-request", "possible-name-change"),
+    ("rename-during-request", "possible-name-change"),
+    ("key-reused-with-new-lifetime", "matches-handle-path"),
+    ("key-reused-with-conflicting-name", "conflicting-or-unmapped-name"),
+    ("key-reuse-during-request", "possible-name-change"),
+    ("same-object-key-reused", "conflicting-object-file-key"),
 ])
 def test_preopened_path_validation_compares_exact_paths(fault, expected):
     protected, outside = r"C:\protected\private.bin", r"C:\outside.bin"
+    old_path = r"C:\outside\previous-name.bin"
     capture = {"device": r"\Device\HarddiskVolume3", "protected_root": r"C:\protected",
                "preopened": {"pid": 7, "tid": 71, "writes": {
                    "protected": {"path": protected, "size": 53, "start": 100, "end": 200},
@@ -916,19 +927,41 @@ def test_preopened_path_validation_compares_exact_paths(fault, expected):
 
     emit(12, 20, FileObject=41 if fault == "same-object-open" else 90, FileName=protected)
     if fault != "no-name":
-        emit(10, 30, FileKey=40, FileName=r"C:\protected\alias.bin" if fault == "wrong-path" else protected)
+        fixture_name = r"C:\protected\alias.bin" if fault == "wrong-path" else protected
+        emit(10, 30, FileKey=40, FileName=fixture_name)
+    if fault in {"key-reused-with-new-lifetime", "key-reused-with-conflicting-name"}:
+        emit(10, 25, FileKey=40, FileName=old_path)
+        if fault == "key-reused-with-new-lifetime":
+            emit(11, 27, FileKey=40)
+    if fault == "key-reuse-during-request":
+        emit(11, 153, FileKey=40)
+        emit(10, 154, FileKey=40, FileName=old_path)
+    if fault == "same-object-key-reused":
+        emit(14, 40, FileKey=39, FileObject=41)
+    rename_ticks = {"rename-before-request": 145, "rename-during-request": 155,
+                    "rename-after-completion": 165}
+    if fault in rename_ticks:
+        emit(27, rename_ticks[fault], FileKey=40, FileObject=41)
     emit(10, 31, FileKey=50, FileName=outside)
-    emit(16, 150, Irp=1, FileKey=40, FileObject=41, IOSize=53, ByteOffset=0, IssuingThreadId=71)
-    emit(24, 160, Irp=1, Status=0)
+    emit(16, 150, Irp=1, FileKey=40, FileObject=41, IOSize=53, ByteOffset=0,
+         IssuingThreadId=72 if fault == "wrong-thread" else 71)
+    emit(24, 160, Irp=1, Status=0xC0000022 if fault == "failed-completion" else 0)
     if fault == "tied-completion":
         emit(24, 160, Irp=1, Status=0)
     emit(16, 350, Irp=2, FileKey=50, FileObject=51, IOSize=79, ByteOffset=0, IssuingThreadId=71)
     emit(24, 370, Irp=2, Status=0)
-    rundown = [{"key": 40, "path": protected}, {"key": 50, "path": outside}]
+    rundown = [{"key": 50, "path": outside}]
+    if fault != "rundown-missing-key":
+        later_path = old_path if fault == "rename-after-completion" else protected
+        rundown.append({"key": 40, "path": later_path})
 
-    report = preopened_report(capture, events, rundown)
-    assert report["preopened_path_validation"] == {"protected": expected, "outside": "matches-handle-path"}
-    assert "private.bin" not in json.dumps(report)
+    for report in (preopened_report(capture, events), preopened_report(capture, events, rundown)):
+        assert report["preopened_path_validation"] == {"protected": expected, "outside": "matches-handle-path"}
+        assert "private.bin" not in json.dumps(report)
+    if fault == "rename-after-completion":
+        assert report["targets"]["protected"]["rundown_name"] == "conflicting-or-different"
+    if fault == "rundown-missing-key":
+        assert report["targets"]["protected"]["rundown_name"] == "unavailable"
 
 
 def test_preopened_control_requires_completion_and_does_not_infer_names():

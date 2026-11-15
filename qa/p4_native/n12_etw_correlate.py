@@ -744,12 +744,14 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
             outcome["name_evidence"] = (
                 "matches-target" if names == {expected} else "conflicting-or-different"
             )
-    result = {"scope": "generated writes through pre-opened handles", "targets": outcomes}
+    result = {
+        "scope": "generated writes through pre-opened handles", "targets": outcomes,
+        "preopened_path_validation": preopened_path_validation(
+            events, devices, control_requests, outcomes, control["writes"],
+        ),
+    }
     if rundown is not None:
         result["rundown_keys"] = len(rundown_names)
-        result["preopened_path_validation"] = preopened_path_validation(
-            events, devices, control_requests, outcomes, control["writes"],
-        )
     if rundown is not None and "untouched" in control:
         result["control_write_timing"] = control_write_timing(
             capture, events, devices, rundown_names, identities, outcomes,
@@ -1145,9 +1147,9 @@ def preopened_path_validation(events, devices, requests, outcomes, writes):
 
     report = {}
     for label, outcome in outcomes.items():
-        if (outcome["issuing_thread"], outcome["completion"], outcome["rundown_name"]) != (
-            "matches", "success", "matches-target",
-        ):
+        # The fixture's verified handle supplies the reference for this comparison.
+        # The stop-time rundown measures a different point in the file's lifetime.
+        if (outcome["issuing_thread"], outcome["completion"]) != ("matches", "success"):
             report[label] = "control-request-unverified"
             continue
         request = requests[label]
