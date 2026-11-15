@@ -1,5 +1,11 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 15 November 2026 | Collector prelaunch passed and final ETW coverage blocked
+
+- The [approved collector-only run #43672824700, job #132686419880](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672824700/job/132686419880) ran on attempt 1 from launch `bf071287996748cd3e9d9df7511b6c7130353d00`, pinned to reviewed source `9301320baf5596ede34360f530ab17f2d1a16494`. Pinned Sysmon 15.22 setup passed. The fixture passed the live shared Sysmon guard on read 1 and the combined reducer ran. The final report recorded `fixture_birth_adjusted=false`. This run did not exercise the timestamp correction on live evidence.
+- **Job FAILED with strict coverage BLOCKED.** The sole final blocker was `etw-mutation-coverage-unresolved`. Verified fixture operations included create, write, resize, allocation, rename and delete. The reducer reported no file violations. It recorded 732 background writes and 522 background resizes missing both process lifetime and path attribution, plus one background rename missing process lifetime. The lifetime and path counters overlap for writes and resizes. No PilotODIN build or launch occurred.
+- The one-use approval was consumed and the workflow is disarmed. Next integrate the existing stable process-bookend evidence into the combined calibration reducer using generated tests, and use the residual path-gap evidence to select the next bounded Windows check. Preserve the unresolved-mutation blocker until those operations are accounted for. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 15 November 2026 | Collector fixture birth precision rule prepared
 
 - The collector-only path reconciles a single millisecond-aligned Sysmon parent-birth record just before the fixture window with Windows creation time inside that window, in the same millisecond. Both the shared prelaunch guard and the final combined reducer use the same parser. The expected child PID, image and hashes, both lifetimes, loopback traffic and final ETW file operations still have to validate. The full application journey keeps its existing timing rules.

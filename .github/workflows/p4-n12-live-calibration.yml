@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use collector precision validation.
+    if: ${{ false }} # The one-use precision validation was consumed by run 43672824700.
     runs-on: windows-2022
     timeout-minutes: 10
     env:

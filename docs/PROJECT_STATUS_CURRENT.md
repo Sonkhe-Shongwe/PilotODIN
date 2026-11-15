@@ -1,5 +1,9 @@
 # PilotODIN 1.0 | Current project status
 
+## 15 November 2026 | Collector prelaunch passed and final ETW coverage blocked
+
+The [collector-only run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672824700/job/132686419880) passed the Sysmon prelaunch check on the first read and verified the expected generated file operations. The final reducer blocked on unresolved background mutations. It reported no file violations. The live batch did not exercise the timestamp correction. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-prelaunch-passed-and-final-etw-coverage-blocked).
+
 ## 15 November 2026 | Collector fixture birth precision rule prepared
 
 The collector-only guard and final reducer apply the same strict fixture-specific timing check against independent Windows creation evidence. Live validation awaits a separate approval. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.** [Handoff](./SESSION_HANDOFF_CURRENT.md#15-november-2026--collector-fixture-birth-precision-rule-prepared).
