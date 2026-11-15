@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use focused isolation journey.
+    if: ${{ false }} # The one-use focused isolation journey was consumed by run 43687529172.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
