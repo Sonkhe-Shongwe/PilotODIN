@@ -151,7 +151,7 @@ def collector_rehearsal(root):
 
     def verify_fixture(fixture, fixture_start):
         manifest = {"start_utc": journey.timestamp_from_ticks(fixture_start).isoformat(),
-                    "sysmon_first_record": first_record}
+                    "sysmon_first_record": first_record, "collector_fixture_precision": True}
         last_record = journey.verify_initial_sysmon(root, manifest, fixture)
         return {"first_record": first_record, "prelaunch_last_record": last_record}
 

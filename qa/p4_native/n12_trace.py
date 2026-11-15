@@ -86,6 +86,7 @@ class Process:
     command: str
     end: datetime | None = None
     repeated_exits: int = 0
+    fixture_birth_adjusted: bool = False
 
 
 @dataclass(frozen=True)
@@ -104,11 +105,24 @@ def sysmon_sha256(hashes):
     return match[1].lower() if match else None
 
 
-def sysmon_events(path, start, end, *, outside_birth=None):
+def sysmon_events(path, start, end, *, outside_birth=None, precision_fixture=None):
     processes = {}
     exits = {}
     connections = []
     issues = set()
+    fixture_candidates = 0
+    adjusted_births = 0
+    if precision_fixture is not None:
+        fixture_start, fixture_end = precision_fixture["start_window"]
+        fixture_image = windows_path(precision_fixture["image"])
+        created = precision_fixture.get("parent_created_utc_ticks")
+        require(precision_fixture["role"] == "calibration" and
+                all(type(ticks) is int for ticks in (fixture_start, fixture_end)) and
+                type(precision_fixture.get("child_pid")) is int and precision_fixture["child_pid"] > 0 and
+                utc_ticks(start) <= fixture_start < fixture_end <= utc_ticks(end),
+                "invalid generated fixture precision window")
+    else:
+        created = None
     first_record = last_record = None
     events = ET.iterparse(path, events=("start", "end"))
     _, container = next(events)
@@ -130,12 +144,27 @@ def sysmon_events(path, start, end, *, outside_birth=None):
         fields = {item.get("Name"): item.text or "" for item in data}
         if kind == 5:
             require(None not in fields and len(fields) == len(data), "ambiguous process exit fields")
+        if kind == 1 and precision_fixture is not None:
+            require(None not in fields and len(fields) == len(data), "ambiguous fixture birth fields")
         if kind in {1, 3, 5}:
             # UtcTime is when the process/network event happened. SystemTime
             # can be later if Windows wrote the event to the channel afterward.
             stamp = utc_time(fields["UtcTime"] + "+00:00")
         if outside_birth is not None and kind == 1 and not start <= stamp <= end:
             outside_birth(stamp, fields)
+        adjusted = False
+        if (precision_fixture is not None and kind == 1 and
+                fields["ProcessId"] == str(precision_fixture["pid"]) and
+                windows_path(fields["Image"]) == fixture_image):
+            fixture_candidates += 1
+            observed = utc_ticks(stamp)
+            if (type(created) is int and observed < fixture_start <= created <= fixture_end
+                    and observed % 10_000 == 0 and observed // 10_000 == created // 10_000):
+                stamp = datetime(1, 1, 1, tzinfo=UTC) + timedelta(microseconds=created // 10)
+                adjusted = True
+                adjusted_births += 1
+            elif start <= stamp <= end and not fixture_start <= observed <= fixture_end:
+                issues.add("precision-fixture-birth-outside-window")
         # A delayed channel record that indicates collector disruption cannot
         # let the prelaunch reread silently pass.
         if outside_birth is not None and kind in {4, 16, 255} and logged >= start:
@@ -149,7 +178,7 @@ def sysmon_events(path, start, end, *, outside_birth=None):
                 processes[guid] = Process(guid, fields["ParentProcessGuid"].casefold(),
                                           int(fields["ProcessId"]), windows_path(fields["Image"]),
                                           sysmon_sha256(fields.get("Hashes", "")), stamp,
-                                          fields.get("CommandLine", ""))
+                                          fields.get("CommandLine", ""), fixture_birth_adjusted=adjusted)
             elif kind == 5 and (guid := fields["ProcessGuid"].casefold()) in processes:
                 process = processes[guid]
                 require(int(fields["ProcessId"]) == process.pid, "process exit PID disagrees with birth")
@@ -177,6 +206,8 @@ def sysmon_events(path, start, end, *, outside_birth=None):
                 connections.append(Connection(fields["ProcessGuid"].casefold(), stamp, protocol,
                                               initiated == "true", source_port, address, port))
         container.remove(event)
+    if adjusted_births and fixture_candidates != 1:
+        issues.add("precision-fixture-birth-ambiguous")
     return processes, connections, issues, first_record, last_record
 
 
@@ -403,6 +434,8 @@ def calibration_window(root, process, processes, connections, file_events, issue
         issues.add("calibration-child-lifecycle-missing")
         return None
     child = children[0]
+    if "child_pid" in root and child.pid != root["child_pid"]:
+        issues.add("calibration-child-lifecycle-missing")
     if not process.sha256 or child.sha256 != process.sha256 or child.image != process.image:
         issues.add("calibration-image-identity-missing-or-mismatched")
     if not calibration_file_events(root, child.guid) <= file_events:
@@ -473,13 +506,14 @@ def verify_snapshots(before, after, manifest, issues):
     return fingerprints, changed
 
 
-def load_capture(manifest, sysmon, *, etw=False):
+def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None):
     require(manifest["schema_version"] == 1 and manifest["disposable"] is True,
             "expected a disposable N12 manifest")
     start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
     require(start < end and start.date() == end.date(), "capture must be ordered and inside one UTC day")
     with evidence_stage("Sysmon XML"):
-        processes, connections, issues, first, last = sysmon_events(sysmon, start, end)
+        processes, connections, issues, first, last = sysmon_events(
+            sysmon, start, end, precision_fixture=precision_fixture)
     if (first, last) != (manifest["sysmon_first_record"], manifest["sysmon_last_record"]) or first is None:
         issues.add("sysmon-bookend-record-mismatch")
     if not etw and (manifest["procmon_all_events"] is not True or
@@ -491,10 +525,12 @@ def load_capture(manifest, sysmon, *, etw=False):
 
 def check_calibration(manifest, sysmon, file_trace, *, etw=False):
     """Check real collector exports from a standalone generated fixture."""
-    start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
     root = manifest["calibration"]
     require(root["role"] == "calibration" and type(root["port"]) is int
             and 1 <= root["port"] <= 65535, "invalid calibration fixture")
+    precision = etw and manifest.get("collector_fixture_precision") is True
+    start, end, processes, connections, issues = load_capture(
+        manifest, sysmon, etw=etw, precision_fixture=root if precision else None)
     roles, bindings = bind_processes([root], processes, issues)
     permitted = {"calibration": [ntpath.dirname(windows_path(root["fixture"]))]}
     if etw:
@@ -521,6 +557,8 @@ def check_calibration(manifest, sysmon, file_trace, *, etw=False):
     return {"schema_version": 1, "scope": "collector calibration only",
             "coverage": "BLOCKED" if issues else "CALIBRATED",
             "coverage_issues": sorted(issues), "file_events": counts,
+            **({"fixture_birth_adjusted": any(p.fixture_birth_adjusted for p in processes.values())}
+               if precision else {}),
             **file_report,
             "native_n12_accepted": False}
 

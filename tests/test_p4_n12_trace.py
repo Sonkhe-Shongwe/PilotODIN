@@ -1413,6 +1413,32 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     calibration_manifest = dict(evidence.manifest, calibration=next(
         root for root in evidence.manifest["processes"] if root["role"] == "calibration"
     ))
+    # Replay the measured collector boundary. The full ETW window includes
+    # the Sysmon timestamp, while the narrower fixture window starts later.
+    recorded = trace.utc_ticks(trace.utc_time(instant(1)))
+    precision_manifest = dict(calibration_manifest, collector_fixture_precision=True, calibration=dict(
+        calibration_manifest["calibration"], child_pid=31,
+        start_window=[recorded + 2220, trace.utc_ticks(trace.utc_time(instant(7)))],
+        parent_created_utc_ticks=recorded + 9807,
+    ))
+    adjusted = trace.check_calibration(precision_manifest, sysmon, etw_path, etw=True)
+    assert adjusted["coverage"] == "CALIBRATED" and adjusted["fixture_birth_adjusted"] is True
+    manifest_path.write_text(json.dumps(precision_manifest), encoding="utf-8")
+    precision_output = tmp_path / "precision-calibration.json"
+    result = subprocess.run([sys.executable, str(Path(trace.__file__)), "check-calibration-etw",
+                             *map(str, (manifest_path, sysmon, etw_path, precision_output))],
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(precision_output.read_text(encoding="utf-8")) == adjusted
+    stale_manifest = dict(precision_manifest, calibration=dict(
+        precision_manifest["calibration"], parent_created_utc_ticks=recorded + 10_000_000,
+    ))
+    stale = trace.check_calibration(stale_manifest, sysmon, etw_path, etw=True)
+    assert stale["coverage"] == "BLOCKED" and stale["fixture_birth_adjusted"] is False
+    assert "precision-fixture-birth-outside-window" in stale["coverage_issues"]
+    wrong_child = dict(precision_manifest, calibration=dict(precision_manifest["calibration"], child_pid=999))
+    assert "calibration-child-lifecycle-missing" in trace.check_calibration(
+        wrong_child, sysmon, etw_path, etw=True)["coverage_issues"]
     manifest_path.write_text(json.dumps(calibration_manifest), encoding="utf-8")
     calibration_output = tmp_path / "calibration.json"
     result = subprocess.run([sys.executable, str(Path(trace.__file__)), "check-calibration-etw",

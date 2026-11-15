@@ -1,5 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+## 15 November 2026 | Collector fixture birth precision rule prepared
+
+- The collector-only path reconciles a single millisecond-aligned Sysmon parent-birth record just before the fixture window with Windows creation time inside that window, in the same millisecond. Both the shared prelaunch guard and the final combined reducer use the same parser. The expected child PID, image and hashes, both lifetimes, loopback traffic and final ETW file operations still have to validate. The full application journey keeps its existing timing rules.
+- Generated checks replay the measured 222.0 µs boundary difference and reject stale candidates, competing records and wrong child identity. The live collector workflow remains disarmed. Next seek approval for one collector-only validation at the reviewed source, without a PilotODIN build or launch. **P4 ACTIVE at 65/100, N12 PARTIAL, strict coverage BLOCKED.**
+
 ## 15 November 2026 | Collector rehearsal measured a sub-millisecond birth difference
 
 - The [approved collector-only run #43672033519, job #132683976182](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43672033519/job/132683976182) ran on attempt 1 from launch `272f8c611d3d92a3a5b9c8ac19b61fd2f1b02cf9`, pinned to reviewed source `63f61be461444903ed929bf87c038b833ff29620`. Sysmon 15.22 setup passed. The generated fixture reached the shared prelaunch guard. **The job FAILED on read 1 with `parent-birth-before-window`.** The final combined Sysmon/ETW reducer was **NOT RUN**.

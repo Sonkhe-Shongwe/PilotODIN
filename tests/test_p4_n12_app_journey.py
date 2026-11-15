@@ -72,6 +72,10 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
     ("early-event", "parent-birth-before-window", 1),
     ("late-event", "parent-birth-after-window", 2),
     ("same-millisecond", "parent-birth-before-window", 1),
+    ("collector-precision", None, 1),
+    ("collector-stale", "parent-birth-before-window", 1),
+    ("collector-competing", "precision-fixture-birth-ambiguous", 1),
+    ("collector-wrong-child", "child-identity-mismatch", 1),
     ("pid-reuse", "parent-birth-before-window", 1),
     ("missing-creation-time", "parent-birth-before-window", 1),
     ("gap", "sysmon-record-gap", 1),
@@ -89,10 +93,17 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
     udp = {"ProcessGuid": "private-child", "Protocol": "udp", "Initiated": "true",
            "DestinationIp": "127.0.0.1", "DestinationPort": "23551", "SourcePort": "23552"}
     events = [(11, 2, 0, {})]
+    precision = scenario.startswith("collector-") and scenario != "collector-change"
     event_time = {"early-event": -1, "late-event": 9, "same-millisecond": 0,
-                  "pid-reuse": -2, "missing-creation-time": -1}.get(scenario, 1)
+                  "pid-reuse": -2, "missing-creation-time": -1,
+                  "collector-stale": -2}.get(scenario, 0 if precision else 1)
     if scenario in {"same-millisecond", "pid-reuse"}:
         marker["parent_created_utc_ticks"] = journey.trace.utc_ticks(start) + 1000
+    if precision:
+        marker["parent_created_utc_ticks"] = journey.trace.utc_ticks(start) + 1000
+        marker["start_window"] = [journey.trace.utc_ticks(start), journey.trace.utc_ticks(cutoff)]
+    if scenario == "collector-wrong-child":
+        marker["child_pid"] = 414
     if scenario == "mismatched":
         parent["Image"] = r"C:\Private\wrong.exe"
     birth_id = 13 if scenario == "gap" else 12
@@ -107,6 +118,8 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
         ])
     if scenario == "ambiguous":
         events.append((18, 1, 6, dict(parent, ProcessGuid="another-parent")))
+    if scenario == "collector-competing":
+        events.append((18, 1, -1, dict(parent, ProcessGuid="another-parent")))
     if scenario == "collector-change":
         events.append((18, 16, 9, {}))
 
@@ -147,6 +160,8 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
     monkeypatch.setattr(journey, "sysmon_tail", tail)
     monkeypatch.setattr(journey, "export_sysmon", export)
     manifest = {"start_utc": start.isoformat(), "sysmon_first_record": 11}
+    if precision:
+        manifest["collector_fixture_precision"] = True
     if expected:
         with pytest.raises(journey.trace.EvidenceValidationError, match=expected) as error:
             journey.verify_initial_sysmon(tmp_path, manifest, marker)
@@ -171,7 +186,10 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
             }
     else:
         journey.verify_initial_sysmon(tmp_path, manifest, marker)
-        assert f"passed on read {reads}" in capsys.readouterr().out
+        output = capsys.readouterr().out
+        assert f"passed on read {reads}" in output
+        if precision:
+            assert "matched fixture birth at Windows creation time" in output
     assert len(calls) == reads and timestamps == [cutoff]
     assert len(set(exports)) == len(exports)
 
@@ -193,7 +211,8 @@ def test_collector_rehearsal_reuses_prelaunch_gate(tmp_path, monkeypatch, approv
 
     def verify(first_root, manifest, fixture):
         assert first_root == root
-        assert manifest == {"start_utc": start.isoformat(), "sysmon_first_record": 45}
+        assert manifest == {"start_utc": start.isoformat(), "sysmon_first_record": 45,
+                            "collector_fixture_precision": True}
         assert fixture is marker
         events.append("shared-guard")
         return 52

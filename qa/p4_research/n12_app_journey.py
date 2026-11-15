@@ -131,7 +131,7 @@ def calibrate(directory, manifest):
     return record
 
 
-def initial_sysmon_issues(path, first, last, start, end, record):
+def initial_sysmon_issues(path, first, last, start, end, record, *, precision=False):
     # An outside-window birth explains a rejection. It never enters the process map.
     image = trace.windows_path(record["image"])
     outside = set()
@@ -145,6 +145,7 @@ def initial_sysmon_issues(path, first, last, start, end, record):
     with trace.evidence_stage("initial Sysmon XML"):
         processes, connections, issues, actual_first, actual_last = trace.sysmon_events(
             path, start, end, outside_birth=outside_birth,
+            precision_fixture=record if precision else None,
         )
     trace.require((first, last) == (actual_first, actual_last), "initial Sysmon record boundaries differ")
     if outside_ticks:
@@ -197,6 +198,8 @@ def initial_sysmon_issues(path, first, last, start, end, record):
     _, unexpected, _ = trace.scoped_network(connections, roles, {record["port"]})
     if unexpected:
         issues.add("calibration-unexpected-connection")
+    if parent.fixture_birth_adjusted and not issues:
+        print("N12 initial Sysmon calibration matched fixture birth at Windows creation time", flush=True)
     return issues
 
 
@@ -215,7 +218,8 @@ def verify_initial_sysmon(root, manifest, record):
             if last >= first:
                 path = root / f"initial-sysmon-{attempt}.xml"
                 export_sysmon(first, last, path, timeout=15)
-                issues = initial_sysmon_issues(path, first, last, start, end, record)
+                issues = initial_sysmon_issues(path, first, last, start, end, record,
+                                               precision=manifest.get("collector_fixture_precision") is True)
         except subprocess.SubprocessError as exc:
             raise trace.EvidenceValidationError("initial Sysmon channel read or export failed") from exc
         if not issues:

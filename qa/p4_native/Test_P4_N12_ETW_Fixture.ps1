@@ -199,6 +199,7 @@ if ($WithSysmon) {
     & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') -FirstRecord $capture.sysmon.first_record -LastRecord $lastRecord -OutputFile $sysmonXml
     $manifest.sysmon_first_record = $capture.sysmon.first_record
     $manifest.sysmon_last_record = $lastRecord
+    $manifest.collector_fixture_precision = $true
 }
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reducerManifest -Encoding utf8
 if ($WithSysmon) {
