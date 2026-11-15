@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | N12 prelaunch connection rejection diagnostics
+
+The prelaunch log now distinguishes an export with no parseable records for a protocol from one with records rejected by the process, direction, address, port or timing criteria. It publishes counts and fixed categories only. Tests using generated XML verify missing protocols, identity and endpoint rejections, malformed out-of-window records, timing and the existing second-read recovery. All 45 journey cases passed through a local standard-library harness because pytest was unavailable locally. The nearby diagnostics and preservation unittest suites passed 13 cases with one platform skip. Live calibration with this diagnostic is **NOT RUN**. [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 15 November 2026 | N12 image-path run blocked at initial loopback calibration
 
 The [approved Windows job #132810436882](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43713653390/job/132810436882) ran once from launch `9ec403682d2b578fa9b8aac0c2d918b4903ee035` at reviewed source `11fa461761b2b8bd778f82a8efa5d1ed9a2f8ee6`. Dependency and driver preflight, the unpackaged build and provenance check, and reviewed Sysmon 15.22 setup passed. The executable SHA-256 was `2453afad97b0d0d33b9166bbaf95558f4064b418e387097a5f445ec24952c04b`. The resolved Cargo lock SHA-256 was `bec9d5bb1ab4fa30fc756bcd56677c5905005706ded3e6514af7d6429502e4d8`.
@@ -110,7 +114,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use generated records to extend the redacted prelaunch diagnostic so it distinguishes channel-wide missing network records from identity, port or endpoint mismatches. Preserve the exact TCP/UDP acceptance rule. Verify the diagnostic before another separately approved hosted test. The live image-path retest and 567-finding comparison remain open.
+Use the shared prelaunch gate to diagnose the missing markers with one separately approved hosted collector-only rehearsal pinned to the reviewed source. This uses one generated fixture with Sysmon and ETW and avoids compiling or launching PilotODIN. Use the counts from both reads to decide what needs fixing before another app journey. The live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

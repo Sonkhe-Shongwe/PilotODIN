@@ -62,6 +62,19 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
         journey.verify_initial_sysmon(tmp_path, manifest, record)
 
 
+NETWORK_DIAGNOSTIC_CASES = {
+    "both-absent": ("child-loopback-tcp-or-udp-missing", 2, ("tcp", "udp"), {}, 0),
+    "udp-other-process": ("child-loopback-tcp-or-udp-missing", 2, ("udp",),
+                          {"other-process-at-fixture-port": 1}, 0),
+    "udp-unrelated": ("child-loopback-tcp-or-udp-missing", 2, ("udp",), {"other-process": 1}, 0),
+    "udp-not-initiated": ("child-loopback-tcp-or-udp-missing", 2, ("udp",), {"not-initiated": 1}, 0),
+    "udp-off-loopback": ("calibration-unexpected-connection", 1, ("udp",),
+                         {"non-loopback-destination": 1}, 0),
+    "udp-wrong-port": ("calibration-unexpected-connection", 1, ("udp",), {"wrong-destination-port": 1}, 0),
+    "udp-unparsed-outside": ("child-loopback-tcp-or-udp-missing", 2, ("udp",), {}, 1),
+}
+
+
 @pytest.mark.parametrize(("scenario", "expected", "reads"), [
     ("ready", None, 1),
     ("late", None, 2),
@@ -89,6 +102,7 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
     ("udp-after-exit", "connection-outside-process-lifetime", 1),
     ("udp-outside-window", "child-loopback-tcp-or-udp-missing", 2),
     ("udp-delivered-on-second-read", None, 2),
+    *((scenario, values[0], values[1]) for scenario, values in NETWORK_DIAGNOSTIC_CASES.items()),
 ])
 def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, capsys, scenario, expected, reads):
     start = datetime(2026, 11, 14, 0, 0, 10, 500, tzinfo=timezone.utc)
@@ -130,6 +144,20 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
     if scenario in {"tcp-absent", "udp-absent"}:
         events = [(rid, 2, offset, {}) if kind == 3 and fields["Protocol"] == protocol
                   else (rid, kind, offset, fields) for rid, kind, offset, fields in events]
+    if scenario == "both-absent":
+        events = [(rid, 2, offset, {}) if kind == 3 else (rid, kind, offset, fields)
+                  for rid, kind, offset, fields in events]
+    udp_changes = {
+        "udp-other-process": {"ProcessGuid": "private-unrelated"},
+        "udp-unrelated": {"ProcessGuid": "private-unrelated", "DestinationPort": "23553"},
+        "udp-not-initiated": {"Initiated": "false"},
+        "udp-off-loopback": {"DestinationIp": "192.0.2.21"},
+        "udp-wrong-port": {"DestinationPort": "23553"},
+        "udp-unparsed-outside": {"DestinationIp": "private-invalid-address"},
+    }
+    if scenario in udp_changes:
+        offset = 9 if scenario == "udp-unparsed-outside" else 3
+        events[4] = (birth_id + 3, 3, offset, {**udp, **udp_changes[scenario]})
     if scenario in {"udp-before-birth", "udp-after-exit", "udp-outside-window"}:
         offset = {"udp-before-birth": 1, "udp-after-exit": 5, "udp-outside-window": 9}[scenario]
         events[4] = (birth_id + 3, 3, offset, udp)
@@ -217,7 +245,22 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
                        for line in stdout.splitlines() if "protocol diagnostics: " in line]
             assert details == [{"missing_in_child_lifetime": [protocol],
                                 "matching_markers": {protocol: marker_state,
-                                                     counterpart: {"in-child-lifetime": 1}}}] * reads
+                                                     counterpart: {"in-child-lifetime": 1}},
+                                "rejected_records": {"tcp": {}, "udp": {}},
+                                "unparsed_outside_window": 0}] * reads
+        if scenario in NETWORK_DIAGNOSTIC_CASES:
+            _, _, missing, rejected, unparsed = NETWORK_DIAGNOSTIC_CASES[scenario]
+            stdout = capsys.readouterr().out
+            details = [json.loads(line.split("protocol diagnostics: ", 1)[1])
+                       for line in stdout.splitlines() if "protocol diagnostics: " in line]
+            assert details == [{
+                "missing_in_child_lifetime": list(missing),
+                "matching_markers": {"tcp": {} if "tcp" in missing else {"in-child-lifetime": 1}, "udp": {}},
+                "rejected_records": {"tcp": {}, "udp": rejected},
+                "unparsed_outside_window": unparsed,
+            }] * reads
+            for private_field in ("private", "23551", "23552", "23553", "127.0.0.1", "192.0.2.21", "413"):
+                assert private_field not in stdout.lower()
     else:
         journey.verify_initial_sysmon(tmp_path, manifest, marker)
         output = capsys.readouterr().out
