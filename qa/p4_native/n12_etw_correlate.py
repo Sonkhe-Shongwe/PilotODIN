@@ -1272,26 +1272,32 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
 
 
 def shared_fixture_write(file_events, writes, before):
-    """Identify a fixture-only request with repeated observations and one completion."""
-    if len(writes) < 2 or len({event["ticks"] for event in writes}) != len(writes):
-        return None
+    """Return the verified fixture request or a fixed rejection reason."""
+    if len(writes) < 2:
+        return None, "too-few-candidates"
+    if len({event["ticks"] for event in writes}) != len(writes):
+        return None, "tied-candidate-timestamps"
     first, last = writes[0], writes[-1]
-    irp = number(first["data"].get("Irp"))
-    key = number(first["data"].get("FileKey"))
-    if not irp or not key or any(
-        number(event["data"].get("Irp")) != irp or number(event["data"].get("FileKey")) != key
-        for event in writes
-    ):
-        return None
+    request_ids = {number(event["data"].get("Irp")) for event in writes}
+    if request_ids & {None, 0}:
+        return None, "candidate-request-id-unavailable"
+    if len(request_ids) != 1:
+        return None, "candidate-request-ids-differ"
+    file_keys = {number(event["data"].get("FileKey")) for event in writes}
+    if file_keys & {None, 0}:
+        return None, "candidate-file-key-unavailable"
+    if len(file_keys) != 1:
+        return None, "candidate-file-keys-differ"
+    irp = next(iter(request_ids))
     completion = successful_completion(file_events, last, before)
     if completion is None:
-        return None
+        return None, "last-candidate-completion-unverified"
     related = [event for event in file_events if first["ticks"] <= event["ticks"] < before
                and number(event["data"].get("Irp")) == irp]
     if len(related) != len(writes) + 1 or any(event is not candidate
                                             for event, candidate in zip(related, writes)):
-        return None
-    return last
+        return None, "extra-or-intervening-request-events"
+    return last, None
 
 
 def file_lifetime_report(control, events, devices):
@@ -1351,7 +1357,9 @@ def file_lifetime_report(control, events, devices):
                 "candidates_without_request_id": without_id,
                 "candidates_with_ordered_successful_completion": completed,
             }
-            recovered = shared_fixture_write(file_events, writes, control["end"] + 1)
+            recovered, rejection = shared_fixture_write(file_events, writes, control["end"] + 1)
+            if rejection is not None:
+                result["shared_request_rejection"] = rejection
             if recovered is not None:
                 ambiguous = result
         if ambiguous is None:

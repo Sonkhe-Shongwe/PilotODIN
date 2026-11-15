@@ -328,6 +328,7 @@ def test_in_capture_name_control_measures_prior_name(name_at, wrong_name, verdic
         "request_relationships": {"distinct_request_ids": 0, "request_ids_shared_by_candidates": 0,
                                   "candidates_without_request_id": 0,
                                   "candidates_with_ordered_successful_completion": 0},
+        "shared_request_rejection": "too-few-candidates",
     }
 
 
@@ -363,6 +364,11 @@ def test_in_capture_name_control_counts_request_relationships(second_id, extra_c
         "candidates_with_ordered_successful_completion",
     ), expected))
     assert "request_time_path" not in result
+    assert result.get("shared_request_rejection") == {
+        998: "candidate-request-ids-differ",
+        None: "candidate-request-id-unavailable",
+        0: "candidate-request-id-unavailable",
+    }.get(second_id)
     assert all(private not in json.dumps(result) for private in ("private", "997", "998"))
 
 
@@ -374,6 +380,7 @@ def test_in_capture_name_control_counts_request_relationships(second_id, extra_c
     ("rename-at-first", "possible-name-change"),
     ("late-open-completion", "open-completion-unverified"),
     ("other-key", None),
+    ("missing-key", None),
     ("reuse", None),
     ("tied-writes", None),
     ("tied-completions", None),
@@ -391,7 +398,8 @@ def test_in_capture_name_control_trials_shared_request_paths(scenario, verdict):
         (11 if scenario == "late-name" else 5, 10,
          {"FileObject": 60, "FileName": r"C:\private\other.bin" if scenario == "wrong-name" else path}),
         (10, 16, write),
-        (10 if scenario == "tied-writes" else 12, 16, dict(write, FileKey=61 if scenario == "other-key" else 60)),
+        (10 if scenario == "tied-writes" else 12, 16,
+         dict(write, FileKey={"other-key": 61, "missing-key": None}.get(scenario, 60))),
         (11 if scenario == "completion-before-last" else 17, 24, {"Irp": 997, "Status": 0}),
         (25, 13, {"FileObject": 50, "FileKey": 60}),
         (26, 14, {"FileObject": 50, "FileKey": 60}),
@@ -407,6 +415,15 @@ def test_in_capture_name_control_trials_shared_request_paths(scenario, verdict):
     result = file_lifetime_report(control, events, {})
     assert result["status"] == ("PASS" if scenario == "shared" else "BLOCKED")
     assert result.get("shared_request_path_trial") == verdict
+    assert result.get("shared_request_rejection") == {
+        "other-key": "candidate-file-keys-differ",
+        "missing-key": "candidate-file-key-unavailable",
+        "reuse": "extra-or-intervening-request-events",
+        "tied-writes": "tied-candidate-timestamps",
+        "tied-completions": "last-candidate-completion-unverified",
+        "completion-before-last": "last-candidate-completion-unverified",
+        "extra-completion": "extra-or-intervening-request-events",
+    }.get(scenario)
     assert result.get("request_time_path") == (verdict if scenario in {"shared", "wrong-name"} else None)
     assert "private" not in json.dumps(result)
 
