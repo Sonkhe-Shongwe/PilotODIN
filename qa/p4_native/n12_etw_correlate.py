@@ -1110,6 +1110,7 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
         counts[f"{actor}:{operation}:request-time:{outcome}"] += 1
         if rundown_stop is None:
             continue
+        missing_prior_name = outcome == "no-prior-name-in-lifetime"
         names = rundown_names.get(key, set())
         if outcome == "request-completion-unverified":
             counts[f"{actor}:{operation}:rundown:{outcome}"] += 1
@@ -1130,6 +1131,8 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
         else:
             outcome = scope(next(iter(names)))
         counts[f"{actor}:{operation}:rundown:{outcome}"] += 1
+        if missing_prior_name:
+            counts[f"{actor}:{operation}:no-prior-name-rundown:{outcome}"] += 1
     return dict(counts)
 
 

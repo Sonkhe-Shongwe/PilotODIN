@@ -820,6 +820,11 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         private_app_launches.update({guid: label for guid, label in app_launches.items()
                                      if roles[guid] == "webview-network" and processes[guid].end})
     snapshots, changed = verify_snapshots(before, after, manifest, issues)
+    protected_snapshot_comparison = "MATCH"
+    if changed:
+        protected_snapshot_comparison = "CHANGED"
+    elif "immutable-fixture-missing-at-baseline" in issues:
+        protected_snapshot_comparison = "BLOCKED"
     network = "PASS_SCOPED"
     if any(e["kind"] == "non-loopback" for e in external):
         network = "PARTIAL"
@@ -847,6 +852,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
            if etw else {}),
         **({"etw_background_process_bookends": bookend_summary} if bookend_summary else {}),
         **({"etw_path_gap_context": dict(path_gap_counts)} if etw and describe_path_gaps else {}),
+        "protected_snapshot_comparison": protected_snapshot_comparison,
         "snapshot_changes": snapshots, "unexpected_snapshot_changes": changed,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }

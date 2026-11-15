@@ -1301,6 +1301,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert clean["process_roles"]["calibration"] == 4
     assert clean["snapshot_changes"]["protected:original"] is False
     assert clean["snapshot_changes"]["observed:fixture"] is False
+    assert clean["protected_snapshot_comparison"] == "MATCH"
     assert clean["file_events"]["backend:write"] == 1
     assert clean["native_n12_accepted"] is False
     cli_inputs = []
@@ -1514,6 +1515,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     mutation(30, 10, 3, 17, InfoClass=4)  # Unhandled metadata operation.
     unresolved = report()
     assert unresolved["filesystem"] == "BLOCKED"
+    assert unresolved["protected_snapshot_comparison"] == "MATCH"
     assert unresolved["etw_unresolved_mutations"] == {
         "backend:write:path-missing": 1,
         "backend:create:path-missing": 1,
@@ -2052,6 +2054,8 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
     emit(2, 72, 13, FileObject=26, FileKey=207)  # Same object, conflicting key.
     mutate(72, 16, 26, FileKey=206)
     mutate(72, 17, 27, FileKey=208, InfoClass=20)
+    mutate(72, 17, 28, FileKey=211, InfoClass=20)
+    emit(3, 72, 13, FileObject=28, FileKey=211)
     emit(3, 72, 16, FileObject=29, FileKey=209, Irp=0xabcdef)
     end = trace.utc_ticks(trace.utc_time(manifest["end_utc"]))
     for irp, distance in ((900, 100_000), (901, 100_001), (902, 1_000_001)):
@@ -2067,7 +2071,8 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
     rundown_path.write_text("".join(json.dumps(dict(key=key, path=path, decoder="tdh")) + "\n"
                                     for key, path in ((201, protected), (202, outside), (203, outside),
                                                       (204, outside), (205, outside), (206, outside),
-                                                      (208, outside), (208, protected), (210, outside))),
+                                                      (208, outside), (208, protected), (210, outside),
+                                                      (211, outside))),
                             encoding="utf-8")
     manifest["etw"].update(events_sha256=hashlib.sha256(etw_path.read_bytes()).hexdigest(),
                            rundown_sha256=hashlib.sha256(rundown_path.read_bytes()).hexdigest(),
@@ -2091,7 +2096,7 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
         "other:write:request-time:conflicting-object-file-key": 1,
         "other:resize:request-time:missing-file-key": 1,
         "other:resize:request-time:candidate-outside-protected": 1,
-        "other:resize:request-time:no-prior-name-in-lifetime": 2,
+        "other:resize:request-time:no-prior-name-in-lifetime": 3,
         "unattributed:write:request-time:missing-file-key": 1,
         "other:write:rundown:not-in-rundown": 1,
         "other:write:rundown:missing-file-key": 2,
@@ -2099,9 +2104,15 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
         "other:write:rundown:lifetime-invalidated": 2,
         "other:write:rundown:conflicting-object-file-key": 1,
         "other:write:rundown:completion-at-or-after-rundown": 1,
+        "other:write:no-prior-name-rundown:not-in-rundown": 1,
+        "other:write:no-prior-name-rundown:completion-at-or-after-rundown": 1,
         "other:resize:rundown:missing-file-key": 1,
         "other:resize:rundown:candidate-outside-protected": 2,
         "other:resize:rundown:ambiguous-or-unmapped-name": 1,
+        "other:resize:rundown:lifetime-invalidated": 1,
+        "other:resize:no-prior-name-rundown:candidate-outside-protected": 1,
+        "other:resize:no-prior-name-rundown:ambiguous-or-unmapped-name": 1,
+        "other:resize:no-prior-name-rundown:lifetime-invalidated": 1,
         "unattributed:write:rundown:missing-file-key": 1,
     }
     assert "private-" not in json.dumps(diagnosed)
@@ -2184,6 +2195,7 @@ def test_pid_reuse_and_protected_write_from_unrelated_process(tmp_path):
     assert report["network"] == "PASS_SCOPED"
     assert report["filesystem"] == "FAIL"
     assert report["unexpected_snapshot_changes"] == []
+    assert report["protected_snapshot_comparison"] == "MATCH"
     assert report["file_violations"] == {"protected:other:write": 1, "protected:other:delete": 1}
 
 
@@ -2213,6 +2225,13 @@ def test_immutable_fixture_hash_difference_fails(tmp_path):
     report = evidence.report(tmp_path)
     assert report["filesystem"] == "FAIL"
     assert report["unexpected_snapshot_changes"] == ["observed:fixture"]
+    assert report["protected_snapshot_comparison"] == "CHANGED"
+
+    evidence.before["observed"]["fixture"]["state"] = "absent"
+    evidence.after["observed"]["fixture"] = evidence.before["observed"]["fixture"].copy()
+    missing = evidence.report(tmp_path)
+    assert missing["protected_snapshot_comparison"] == "BLOCKED"
+    assert missing["filesystem"] == "BLOCKED"
 
 
 def test_missing_records_and_calibration_block_a_clean_result(tmp_path):

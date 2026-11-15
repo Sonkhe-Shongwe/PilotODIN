@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Focused isolation evidence
+
+The app-journey audit now reports a direct comparison of the protected roots and immutable fixture fingerprints, alongside its existing filesystem and network verdicts. Generated cases show a fingerprint match alongside blocked trace coverage or a directly observed protected mutation. An unexpected fingerprint difference reports `CHANGED`, and a missing immutable fixture baseline blocks the comparison. The fingerprint result describes the observed endpoints of the test window. The collector reducer also reports what rundown contributes specifically to operations with no prior name. The generated comparison found one candidate among five such operations and preserved every strict finding. [Runbook](../qa/p4_native/N12_TRACE.md#reduce-combined-etw-and-sysmon-evidence)
+
 ## 15 November 2026 | Live FileKey diagnostic rehearsal
 
 The [approved Windows job #132727321305](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43686281881/job/132727321305) ran on attempt 1 from launch `495d9c990ffea58ecff355a173c51daa04daa1a2`, checking out reviewed source `bef278bff281357da87090467c28e6a423295c14`. Pinned Sysmon 15.22 setup and prelaunch passed on read 1. Both reductions verified the expected fixture operations with zero protected-file violations. `fixture_birth_adjusted=false` for this capture. The snapshots verified 129 stable background processes and resolved all 821 observed lifetime gaps. Both reductions gave identical path and completion diagnostics.
@@ -47,7 +51,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Prepare a companion FileIO rundown comparison for the collector on generated evidence. Use the existing digest, time-window and lifetime guards. Measure how many requests with no prior name gain a guarded candidate and how many remain blocked by close, reuse or conflicting names. A live Windows capture and any native compilation in that follow-up require separate approval. Retain completion timing for future captures. This run supplies no boundary evidence for extending the window.
+The [previous completed app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) recorded matching fingerprints for all four protected roots and the immutable fixture. Its filesystem and network checks failed on outside-scope writes and unexpected connections. Prioritise one source-matched disposable Windows app journey with the existing two-launch workflow. Verify those fingerprints again, review attributable writes from the app and its children, and check whether the unexpected network findings recur. The strict trace verdict still applies. A repeat of the collector-only rehearsal is optional if a specific app finding warrants it. The app journey requires separate approval for one unpackaged QA compilation and one hosted capture using generated files.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
