@@ -1,5 +1,6 @@
 """Capture two launches of one approved, already-staged PilotODIN Windows build."""
 import argparse
+from collections import Counter
 from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 import json
@@ -136,15 +137,27 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
     image = trace.windows_path(record["image"])
     outside = set()
     outside_ticks = []
+    outside_connections = []
 
     def outside_birth(stamp, fields):
         if fields.get("ProcessId") == str(record["pid"]) and trace.windows_path(fields["Image"]) == image:
             outside.add("parent-birth-before-window" if stamp < start else "parent-birth-after-window")
             outside_ticks.append(trace.utc_ticks(stamp))
 
+    def outside_connection(stamp, fields):
+        if fields.get("DestinationPort") != str(record["port"]):
+            return
+        try:
+            connection = trace.sysmon_connection(stamp, fields)
+        except (KeyError, ValueError, AttributeError):
+            # Out-of-window evidence stays diagnostic, even when malformed.
+            return
+        outside_connections.append(connection)
+
     with trace.evidence_stage("initial Sysmon XML"):
         processes, connections, issues, actual_first, actual_last = trace.sysmon_events(
             path, start, end, outside_birth=outside_birth,
+            outside_connection=outside_connection,
             precision_fixture=record if precision else None,
         )
     trace.require((first, last) == (actual_first, actual_last), "initial Sysmon record boundaries differ")
@@ -194,6 +207,24 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
                      and connection.address.is_loopback and connection.port == record["port"]}
         if protocols != {"tcp", "udp"}:
             issues.add("child-loopback-tcp-or-udp-missing")
+            counts = {protocol: Counter() for protocol in ("tcp", "udp")}
+            for connection in (*connections, *outside_connections):
+                if (connection.guid != child.guid or not connection.initiated
+                        or not connection.address.is_loopback or connection.port != record["port"]):
+                    continue
+                if not start <= connection.timestamp <= end:
+                    label = "outside-read-window"
+                elif connection.timestamp < child.start:
+                    label = "before-child-birth"
+                elif connection.timestamp > child.end:
+                    label = "after-child-exit"
+                else:
+                    label = "in-child-lifetime"
+                counts[connection.protocol][label] += 1
+            print("N12 initial Sysmon calibration protocol diagnostics: " + json.dumps({
+                "missing_in_child_lifetime": sorted({"tcp", "udp"} - protocols),
+                "matching_markers": counts,
+            }), flush=True)
     trace.verify_connection_lifetimes(connections, processes, roles, issues)
     _, unexpected, _ = trace.scoped_network(connections, roles, {record["port"]})
     if unexpected:

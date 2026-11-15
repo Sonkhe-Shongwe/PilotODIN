@@ -81,6 +81,12 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
     ("gap", "sysmon-record-gap", 1),
     ("regressed", "channel record ID regressed", 2),
     ("collector-change", "sysmon-restart-config-change-or-error", 2),
+    ("udp-absent", "child-loopback-tcp-or-udp-missing", 2),
+    ("tcp-absent", "child-loopback-tcp-or-udp-missing", 2),
+    ("udp-before-birth", "connection-outside-process-lifetime", 1),
+    ("udp-after-exit", "connection-outside-process-lifetime", 1),
+    ("udp-outside-window", "child-loopback-tcp-or-udp-missing", 2),
+    ("udp-delivered-on-second-read", None, 2),
 ])
 def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, capsys, scenario, expected, reads):
     start = datetime(2026, 11, 14, 0, 0, 10, 500, tzinfo=timezone.utc)
@@ -116,6 +122,16 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
             (birth_id + 4, 5, 4, {"ProcessGuid": "private-child", "ProcessId": "413"}),
             (birth_id + 5, 5, 5, {"ProcessGuid": "private-parent", "ProcessId": "412"}),
         ])
+    protocol = "tcp" if scenario == "tcp-absent" else "udp"
+    if scenario in {"tcp-absent", "udp-absent"}:
+        events = [(rid, 2, offset, {}) if kind == 3 and fields["Protocol"] == protocol
+                  else (rid, kind, offset, fields) for rid, kind, offset, fields in events]
+    if scenario in {"udp-before-birth", "udp-after-exit", "udp-outside-window"}:
+        offset = {"udp-before-birth": 1, "udp-after-exit": 5, "udp-outside-window": 9}[scenario]
+        events[4] = (birth_id + 3, 3, offset, udp)
+    if scenario == "udp-delivered-on-second-read":
+        late_udp = events.pop(4)
+        events = [(rid, *event[1:]) for rid, event in enumerate([*events, late_udp], 11)]
     if scenario == "ambiguous":
         events.append((18, 1, 6, dict(parent, ProcessGuid="another-parent")))
     if scenario == "collector-competing":
@@ -125,7 +141,8 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
 
     last = events[-1][0]
     tails = {"late": [11, last], "empty-first-read": [10, last], "late-event": [11, last],
-             "collector-change": [11, last], "regressed": [11, 10]}.get(scenario, [last] * reads)
+             "collector-change": [11, last], "regressed": [11, 10],
+             "udp-delivered-on-second-read": [last - 1, last]}.get(scenario, [last] * reads)
     calls = []
     exports = []
 
@@ -184,12 +201,28 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
                 "nearest_event_minus_creation_ticks": creation_delta,
                 "same_creation_millisecond_count": millisecond_matches,
             }
+        if scenario in {"tcp-absent", "udp-absent", "udp-before-birth", "udp-after-exit", "udp-outside-window"}:
+            marker_state = {"udp-before-birth": {"before-child-birth": 1},
+                            "udp-after-exit": {"after-child-exit": 1},
+                            "udp-outside-window": {"outside-read-window": 1}}.get(scenario, {})
+            counterpart = "udp" if protocol == "tcp" else "tcp"
+            stdout = capsys.readouterr().out
+            for private_field in ("private", "23551", "23552", "127.0.0.1", "413"):
+                assert private_field not in stdout.lower()
+            details = [json.loads(line.split("protocol diagnostics: ", 1)[1])
+                       for line in stdout.splitlines() if "protocol diagnostics: " in line]
+            assert details == [{"missing_in_child_lifetime": [protocol],
+                                "matching_markers": {protocol: marker_state,
+                                                     counterpart: {"in-child-lifetime": 1}}}] * reads
     else:
         journey.verify_initial_sysmon(tmp_path, manifest, marker)
         output = capsys.readouterr().out
         assert f"passed on read {reads}" in output
         if precision:
             assert "matched fixture birth at Windows creation time" in output
+        if scenario == "udp-delivered-on-second-read":
+            assert output.count("protocol diagnostics:") == 1
+            assert '"missing_in_child_lifetime": ["udp"]' in output
     assert len(calls) == reads and timestamps == [cutoff]
     assert len(set(exports)) == len(exports)
 

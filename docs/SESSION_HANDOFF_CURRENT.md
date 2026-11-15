@@ -2,6 +2,10 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Protocol-specific prelaunch diagnostics
+
+When initial calibration lacks a required child loopback marker, the shared guard now prints redacted TCP and UDP counts for matching records. It distinguishes absent markers from observed records before child birth, after child exit or outside the frozen read window. The existing lifetime check and bounded retry still apply. Generated Sysmon XML tests show that absent and out-of-window records block as before, and that a valid UDP record delivered on read 2 can pass. The earlier hosted failure cannot be assigned to a protocol from its retained summary.
+
 ## 15 November 2026 | Focused Windows app run blocked at initial calibration
 
 The [approved hosted Windows run #43687529172](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43687529172/job/132731018243) ran once from launch `9272850659d9e316ef96dba6d630bf5d2cc53908`, pinned to reviewed source `34557075a1e842eec47591a160441e4b934575cd`. Dependency and driver preflight, one unpackaged QA build, binary provenance verification and pinned Sysmon 15.22 setup passed. The executable SHA-256 was `2d000932ffce52ebddb0717785b829b2c67aa4e620589b2e14db3bf5d49eb424`. The resolved Cargo lock SHA-256 was `278c01520af08f34b8861fc8191f283e0e5bb2223c2458e5f99ca5d7cd7d374f`.
@@ -57,7 +61,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Prepare a generated regression and a protocol-specific diagnostic for the initial Sysmon calibration. Distinguish a missing TCP or UDP record from a record outside the accepted child lifetime, while retaining the existing evidence rule. Use that preparation to scope the next focused app journey before another unpackaged build or live capture. The [previous completed app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) recorded matching fingerprints for all four protected roots and the immutable fixture, alongside outside-scope writes and unexpected connections. The focused app comparison remains the milestone.
+The protocol-specific diagnostic is ready for the next separately approved focused hosted app journey. Use one unpackaged build at the reviewed source and one disposable two-launch run on generated files. If calibration blocks, record the protocol and marker counts before selecting a correction. If it passes, evaluate the protected fingerprint comparison, attributable writes and network verdict. The [previous completed app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) recorded matching fingerprints for all four protected roots and the immutable fixture, alongside outside-scope writes and unexpected connections.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

@@ -105,7 +105,20 @@ def sysmon_sha256(hashes):
     return match[1].lower() if match else None
 
 
-def sysmon_events(path, start, end, *, outside_birth=None, precision_fixture=None):
+def sysmon_connection(stamp, fields):
+    address = ipaddress.ip_address(fields["DestinationIp"])
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    protocol, initiated = fields["Protocol"].lower(), fields["Initiated"].lower()
+    port, source_port = (int(fields[key]) for key in ("DestinationPort", "SourcePort"))
+    require(protocol in {"tcp", "udp"} and initiated in {"true", "false"}
+            and 0 <= port <= 65535 and 0 <= source_port <= 65535,
+            "invalid Sysmon connection fields")
+    return Connection(fields["ProcessGuid"].casefold(), stamp, protocol, initiated == "true",
+                      source_port, address, port)
+
+
+def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=None, precision_fixture=None):
     processes = {}
     exits = {}
     connections = []
@@ -152,6 +165,8 @@ def sysmon_events(path, start, end, *, outside_birth=None, precision_fixture=Non
             stamp = utc_time(fields["UtcTime"] + "+00:00")
         if outside_birth is not None and kind == 1 and not start <= stamp <= end:
             outside_birth(stamp, fields)
+        if outside_connection is not None and kind == 3 and not start <= stamp <= end:
+            outside_connection(stamp, fields)
         adjusted = False
         if (precision_fixture is not None and kind == 1 and
                 fields["ProcessId"] == str(precision_fixture["pid"]) and
@@ -195,16 +210,7 @@ def sysmon_events(path, start, end, *, outside_birth=None, precision_fixture=Non
                     exits[guid] = fields
                     process.end = stamp
             elif kind == 3:
-                address = ipaddress.ip_address(fields["DestinationIp"])
-                if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
-                    address = address.ipv4_mapped
-                protocol, initiated = fields["Protocol"].lower(), fields["Initiated"].lower()
-                port, source_port = (int(fields[key]) for key in ("DestinationPort", "SourcePort"))
-                require(protocol in {"tcp", "udp"} and initiated in {"true", "false"}
-                        and 0 <= port <= 65535 and 0 <= source_port <= 65535,
-                        "invalid Sysmon connection fields")
-                connections.append(Connection(fields["ProcessGuid"].casefold(), stamp, protocol,
-                                              initiated == "true", source_port, address, port))
+                connections.append(sysmon_connection(stamp, fields))
         container.remove(event)
     if adjusted_births and fixture_candidates != 1:
         issues.add("precision-fixture-birth-ambiguous")
