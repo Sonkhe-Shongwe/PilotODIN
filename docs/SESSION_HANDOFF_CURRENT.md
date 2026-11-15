@@ -2,6 +2,15 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | Fixture lead-in journey reached the final audit
+
+The [approved hosted Windows job #132739719330](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690425867/job/132739719330) ran once from launch `a28959dbc10d02b8ceaf6b01e880c9fc40d21b93` at reviewed source `f8e02357f821b3483948606af23fe355a0dd8cbb`. The unpackaged build and provenance checks passed. The executable SHA-256 was `409b5374d916726827453e9ee158c8309be07eb2b97477989c8291e40f464a6b`. The resolved Cargo lock SHA-256 was `278c01520af08f34b8861fc8191f283e0e5bb2223c2458e5f99ca5d7cd7d374f`. Pinned Sysmon 15.22 provisioned successfully. Initial calibration passed on the first read with the 50 ms lead-in. Both launches, the interaction drivers, the final fixture command and the audit completed.
+
+- **Protected snapshot comparison MATCH.** All four protected roots and the immutable source fixture matched at the before/after endpoints. The audit reported no protected-root mutation. The comparison covers the disposable runner.
+- **Filesystem FAIL.** The audit recorded 608 outside-scope operation findings: 567 from the driver, 39 from WebView and two from the backend. Of the driver findings, 551 involved user-local or user-temp path categories.
+- **Network FAIL.** Four unexpected loopback connections and four non-loopback connections were observed. Both WebView NetLogs parsed. The audit correlated two DNS transactions, one HTTPS request and three HTTP requests. One WebView UDP/443 connection matched a socket with unattributed purpose. The backend loopback connection was outside WebView attribution.
+- **Strict coverage BLOCKED.** `calibration-tcp-or-udp-missing` and `etw-mutation-coverage-unresolved` remained. Initial calibration had passed and the final fixture file operations matched. The report did not identify the missing protocol in the full audit. ETW had 197,874 WebView network-process writes with unresolved paths. The overall job **FAILED**. The one-use approval was consumed and the workflow is disarmed.
+
 ## 15 November 2026 | Protocol diagnostic journey blocked by fixture birth timing
 
 The [hosted Windows run #43689529985](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43689529985/job/132737016063) ran once from launch `8a1efbe2f077dc8b957a4f5ad8aeb0008b96914c`, checking out reviewed source `4927e819bd19006057c3de056931d131b2a92178`. Dependency and driver preflight, the unpackaged QA build, executable provenance verification and pinned Sysmon 15.22 setup passed. The executable SHA-256 was `6d5b241e96400fbc6a671cfb9ae7892d1285d7680ab773f00c65b8a9f355086e`. The resolved Cargo lock SHA-256 was `278c01520af08f34b8861fc8191f283e0e5bb2223c2458e5f99ca5d7cd7d374f`.
@@ -67,13 +76,13 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-The hosted app journey now waits 50 ms after opening the audit window inside the active ETW session before starting the initial generated fixture. This provides scheduling margin for the observed sub-millisecond timestamp difference and preserves strict identity and TCP/UDP checks. The generated orchestration cases verified that the pause occurs after the audit start and before fixture creation, including when calibration subsequently blocks. Live Windows validation needs separate approval for one unpackaged build and one two-launch journey. The [previous completed app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43629894863/job/132553947362) recorded matching fingerprints for all four protected roots and the immutable fixture, alongside outside-scope writes and unexpected connections.
+Use the completed app journey to investigate the driver and helper write destinations. Give confirmed QA temporary output a dedicated disposable directory where configuration allows it. Check the backend and WebView residuals and the recurring network findings separately. Exercise source corrections on generated inputs before requesting another hosted app journey. Preserve the protected-root and network checks and the strict coverage findings.
 
 The live collector and hosted app-journey workflows are disarmed. The last one-use approval is consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Verified source checks
 
-The fixture lead-in passed 35 focused local checks and 409 broader local Python tests with one platform skip. [P4 CI #43690121057](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690121057) passed at [`f6ad497`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f6ad497763f64d47765a419e0b4a516e449c172c). A live app journey with the lead-in was NOT RUN.
+The fixture lead-in passed 35 focused local checks and 409 broader local Python tests with one platform skip. [P4 CI #43690121057](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690121057) passed at [`f6ad497`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f6ad497763f64d47765a419e0b4a516e449c172c). The approved live app journey with the lead-in has its own source and verdict above.
 
 The protocol diagnostic passed 30 focused cases and 409 broader local Python tests with one platform skip. At source [`60d84db`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/60d84dbe86ee5e8cf3a840565e97c78799619bde), [P4 CI #43688313628](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43688313628) and [N12 FileIO fixture CI #43688313600](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43688313600) passed. A live app journey with this diagnostic was NOT RUN.
 

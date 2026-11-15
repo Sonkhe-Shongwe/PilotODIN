@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == '1' }} # Owner-approved one-use fixture lead-in journey.
+    if: ${{ false }} # The one-use fixture lead-in journey was consumed by run 43690425867.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
