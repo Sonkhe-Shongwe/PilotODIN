@@ -2,6 +2,12 @@
 
 **15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 15 November 2026 | R03 hosted Windows Local analytics measurement
+
+The [hosted Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43744796818/job/132905610069) passed all five generated Ask ODIN scenarios at source `99d36f680b50ab02ac8a4d9fa281f5a44ffa0d6c`. Simulated 0.73 GiB available RAM caused model preflight to defer, while Local analytics bypassed provider routing and returned the expected facts. The API test process peaked at 102.3 MiB resident and 180.4 MiB committed, including imports, test harness and two generated CSV imports. The workload took 0.295 seconds after setup. No scikit-learn or SciPy modules loaded. The hosted machine reported 15.995 GiB total and 13.425 GiB available before the workload. These are process-level measurements with a simulated admission reading. The desktop and WebView2 were outside the measurement.
+
+The [first run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43744550356) returned five correct answers and measured 98.0 MiB peak resident RAM, then hit a Windows SQLite file lock during fixture cleanup. It also missed file events in the separate synthetic ETW fixture job. The harness now waits for its test process to exit before removing the temporary directory. All four jobs passed on the corrected source, including 495 Python tests with one skip, 92 frontend checks, 13 browser scenarios and the synthetic Windows preservation checks. Strict N12 and physical 8 GB Windows acceptance remain open.
+
 ## 15 November 2026 | R03 verified answers in Ask ODIN
 
 Choose Local analytics in Ask ODIN to get working-version overview counts, missing-row counts with an unknown-cause explanation, a positive rate for an explicitly named outcome and observed label, or recorded training status. The denominator excludes unlabelled rows. Training reads current-version history and reports a selected model's saved cross-validation score when available. These answers bypass provider routing and model startup. The UI offers question shortcuts and editable examples for column-specific questions.
