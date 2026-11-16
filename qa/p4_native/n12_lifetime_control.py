@@ -105,6 +105,8 @@ def redact(witnesses, records, channel_issues, expected_image):
                 "case": f"{pair}-{role}", "birth_count": len(births), "exit_count": len(exits),
                 "windows_duration_ticks": witness["exit"] - witness["birth"],
             }
+            if role == "child":
+                row["windows_birth_after_parent_ticks"] = witness["birth"] - witnesses[pair]["parent"]["birth"]
             if birth is not None:
                 if role == "parent":
                     parent_guid = birth["guid"]
@@ -127,12 +129,13 @@ def redact(witnesses, records, channel_issues, expected_image):
                     row["exit_image_matches"] = False
                     row["unsupported_exit_image"] = True
             cases.append(row)
-    return {"schema_version": 1, "channel_issues": channel_issues, "cases": cases}
+    return {"schema_version": 2, "channel_issues": channel_issues, "cases": cases}
 
 
 def replay(packet):
     """Evaluate the redacted evidence, with no dependency on Windows or raw traces."""
-    trace.require(type(packet["schema_version"]) is int and packet["schema_version"] == 1
+    version = packet["schema_version"]
+    trace.require(type(version) is int and version in (1, 2)
                   and isinstance(packet["channel_issues"], list)
                   and set(packet["channel_issues"]) <= {"record-gap", "collector-state-or-error"}
                   and [row["case"] for row in packet["cases"]] == [f"{p}-{r}" for p in PAIRS for r in ROLES],
@@ -169,34 +172,55 @@ def replay(packet):
             if row["windows_duration_ticks"] + row["exit_delta_ticks"] < row["birth_delta_ticks"]:
                 issues.add("exit-before-birth")
         findings[row["case"]] = sorted(issues)
+    if version == 2:
+        for parent, child in zip(packet["cases"][::2], packet["cases"][1::2]):
+            offset = child["windows_birth_after_parent_ticks"]
+            duration = parent["windows_duration_ticks"]
+            trace.require(type(offset) is int and 0 <= offset <= duration - child["windows_duration_ticks"],
+                          "invalid-lifetime-replay-parent-window")
+            if child["birth_count"] == 1:
+                child_birth = offset + child["birth_delta_ticks"]
+                issues = findings[child["case"]]
+                if parent["birth_count"] == 1 and child_birth < parent["birth_delta_ticks"]:
+                    issues.append("parent-start-after-child-birth")
+                if parent["exit_count"] == 1 and child_birth > duration + parent["exit_delta_ticks"]:
+                    issues.append("parent-exit-before-child-birth")
+                issues.sort()
     return {"scope": "generated-lifetime-control",
             "verdict": "BLOCKED" if packet["channel_issues"] or any(findings.values()) else "PASS",
             "channel_issues": sorted(set(packet["channel_issues"])), "findings": findings}
 
 
-def capture(root):
-    first = journey.sysmon_tail() + 1
-    witnesses = {}
-    for pair in PAIRS:
-        parent, output = run_process([sys.executable, "-B", "-m", "qa.p4_native.n12_lifetime_control", "--fixture-parent", pair])
-        child = json.loads(output)
-        trace.require(parent["birth"] <= child["birth"] <= child["exit"] <= parent["exit"],
-                      "windows-parent-child-order-invalid")
-        witnesses[pair] = {"parent": parent, "child": child}
-    pids = {w["pid"] for pair in witnesses.values() for w in pair.values()}
-    trace.require(len(pids) == len(PAIRS) * len(ROLES), "lifetime-fixture-pid-reused")
-    # Give the channel a bounded flush period after the last verified exit.
-    time.sleep(3)
-    last = journey.sysmon_tail()
-    trace.require(first <= last < first + 4096, "lifetime-record-window-invalid")
+def capture(root, source):
+    with journey.checkpoint_stage("lifetime-window-open", source, ""):
+        first = journey.sysmon_tail() + 1
+    with journey.checkpoint_stage("lifetime-fixtures", source, ""):
+        witnesses = {}
+        for pair in PAIRS:
+            parent, output = run_process([
+                sys.executable, "-B", "-m", "qa.p4_native.n12_lifetime_control", "--fixture-parent", pair,
+            ])
+            child = json.loads(output)
+            trace.require(parent["birth"] <= child["birth"] <= child["exit"] <= parent["exit"],
+                          "windows-parent-child-order-invalid")
+            witnesses[pair] = {"parent": parent, "child": child}
+        pids = {w["pid"] for pair in witnesses.values() for w in pair.values()}
+        trace.require(len(pids) == len(PAIRS) * len(ROLES), "lifetime-fixture-pid-reused")
     xml = root / "lifetime-sysmon.xml"
-    journey.export_sysmon(first, last, xml)
-    records, issues = read_records(xml, first, last, pids)
-    packet = redact(witnesses, records, issues, sys.executable)
-    result = replay(packet)
-    journey.report_file(root / "lifetime-replay.json", packet)
-    print("N12 lifetime replay " + json.dumps(packet), flush=True)
-    print("N12 lifetime verdict " + json.dumps(result), flush=True)
+    with journey.checkpoint_stage("lifetime-sysmon-export", source, ""):
+        # Give the channel a bounded flush period after the last verified exit.
+        time.sleep(3)
+        last = journey.sysmon_tail()
+        trace.require(first <= last < first + 4096, "lifetime-record-window-invalid")
+        journey.export_sysmon(first, last, xml)
+    with journey.checkpoint_stage("lifetime-reduction", source, ""):
+        records, issues = read_records(xml, first, last, pids)
+        packet = redact(witnesses, records, issues, sys.executable)
+        result = replay(packet)
+        print("N12 lifetime replay " + json.dumps(packet), flush=True)
+        print("N12 lifetime verdict " + json.dumps(result), flush=True)
+    with journey.checkpoint_stage("lifetime-local-copy", source, ""):
+        journey.report_file(root / "lifetime-replay.json", packet)
     return 0 if result["verdict"] == "PASS" else 2
 
 
@@ -226,7 +250,7 @@ def main():
         trace.require(re.fullmatch(r"[0-9a-f]{40}", source) and journey.build.git("rev-parse", "HEAD") == source,
                       "lifetime-source-mismatch")
         print(f"N12 lifetime reviewed source {source}", flush=True)
-        return capture(trace.local_disposable_path(args.capture, runner_temp_only=True))
+        return capture(trace.local_disposable_path(args.capture, runner_temp_only=True), source)
     except trace.EvidenceValidationError as exc:
         print(f"N12 lifetime control blocked: {exc}", file=sys.stderr)
     except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError, subprocess.SubprocessError) as exc:

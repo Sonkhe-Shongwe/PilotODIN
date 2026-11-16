@@ -14,6 +14,7 @@ from qa.p4_native import n12_lifetime_control as control
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = r"C:\private\Python\python.exe"
+SOURCE = "a" * 40
 BASE = datetime(2026, 11, 16, tzinfo=timezone.utc)
 BASE_TICKS = control.trace.utc_ticks(BASE)
 
@@ -112,6 +113,33 @@ def test_replay_rejects_invalid_counts_and_unknown_channel_issues():
         control.replay(packet)
 
 
+@pytest.mark.parametrize(("boundary", "finding"), [
+    ("birth", "parent-start-after-child-birth"),
+    ("exit", "parent-exit-before-child-birth"),
+])
+def test_replay_checks_parent_lifetime_even_when_individual_deltas_are_within_bound(boundary, finding):
+    witnesses, records = generated()
+    parent, child = witnesses["fast"].values()
+    parent_birth, parent_exit, child_birth, child_exit = records[:4]
+    if boundary == "birth":
+        child["birth"] = parent["birth"] + 1000
+        parent_birth["ticks"] = parent["birth"] + 5000
+        child_birth["ticks"] = child["birth"] - 5000
+    else:
+        child["birth"] = child["exit"] = parent["exit"] - 1000
+        child_birth["ticks"] = child["birth"] + 5000
+        child_exit["ticks"] = child["exit"] + 6000
+    packet = control.redact(witnesses, records, [], IMAGE)
+    result = control.replay(packet)
+    assert result["verdict"] == "BLOCKED"
+    assert result["findings"]["fast-parent"] == []
+    assert result["findings"]["fast-child"] == [finding]
+    assert control.replay({**packet, "schema_version": 1})["verdict"] == "PASS"
+    packet["cases"][1]["windows_birth_after_parent_ticks"] = -1
+    with pytest.raises(control.trace.EvidenceValidationError, match="invalid-lifetime-replay-parent-window"):
+        control.replay(packet)
+
+
 def test_collector_mode_refuses_unapproved_execution(tmp_path):
     env = {key: value for key, value in os.environ.items() if key != "PILOTODIN_N12_LIFETIME_CONTROL_CONSENT"}
     result = subprocess.run([sys.executable, "-B", "-m", control.__name__, "--capture", str(tmp_path)],
@@ -144,10 +172,55 @@ def test_capture_retains_replay_before_returning_blocked(tmp_path, monkeypatch, 
     monkeypatch.setattr(control.journey, "sysmon_tail", lambda: next(tails))
     monkeypatch.setattr(control.journey, "export_sysmon", lambda *args: None)
     monkeypatch.setattr(control, "read_records", read)
-    assert control.capture(tmp_path) == 2
+    assert control.capture(tmp_path, SOURCE) == 2
     assert collected == list(control.PAIRS)
     persisted = json.loads((tmp_path / "lifetime-replay.json").read_text(encoding="utf-8"))
-    packet_line, verdict_line = capsys.readouterr().out.splitlines()
+    packet_line, verdict_line = [line for line in capsys.readouterr().out.splitlines()
+                                 if line.startswith("N12 lifetime ")]
     assert json.loads(packet_line.removeprefix("N12 lifetime replay ")) == persisted
     assert json.loads(verdict_line.removeprefix("N12 lifetime verdict ")) == control.replay(persisted)
     assert "private" not in packet_line + verdict_line
+
+
+@pytest.mark.parametrize("failure", ["lifetime-sysmon-export", "lifetime-reduction", "lifetime-local-copy"])
+def test_capture_retains_completed_stages_and_logs_replay_before_local_write(tmp_path, monkeypatch, capsys, failure):
+    witnesses, records = generated()
+    tails = iter((10, 23))
+
+    def stage(name, result=None):
+        def run(*args):
+            if name == failure:
+                raise OSError("private path")
+            return result
+        return run
+
+    def run_fixture(command):
+        pair = witnesses[command[-1]]
+        return pair["parent"], json.dumps(pair["child"]).encode()
+
+    monkeypatch.setattr(control, "run_process", run_fixture)
+    monkeypatch.setattr(control.sys, "executable", IMAGE)
+    monkeypatch.setattr(control.time, "sleep", lambda _: None)
+    monkeypatch.setattr(control.journey, "sysmon_tail", lambda: next(tails))
+    monkeypatch.setattr(control.journey, "export_sysmon", stage("lifetime-sysmon-export"))
+    monkeypatch.setattr(control, "read_records", stage("lifetime-reduction", (records, [])))
+    monkeypatch.setattr(control.journey, "report_file", stage("lifetime-local-copy"))
+    with pytest.raises(OSError):
+        control.capture(tmp_path, SOURCE)
+    lines = capsys.readouterr().out.splitlines()
+    checkpoints = [json.loads(line.removeprefix("N12 checkpoint ")) for line in lines
+                   if line.startswith("N12 checkpoint ")]
+    assert [(row["stage"], row["status"]) for row in checkpoints[:2]] == [
+        ("lifetime-window-open", "completed"), ("lifetime-fixtures", "completed"),
+    ]
+    assert checkpoints[-1] == {"stage": failure, "status": "interrupted", "source_sha": SOURCE}
+    results = [line for line in lines if line.startswith("N12 lifetime ")]
+    if failure == "lifetime-local-copy":
+        packet_line, verdict_line = results
+        packet = json.loads(packet_line.removeprefix("N12 lifetime replay "))
+        verdict = json.loads(verdict_line.removeprefix("N12 lifetime verdict "))
+        assert lines.index(verdict_line) < len(lines) - 1
+        assert verdict == control.replay(packet)
+    else:
+        assert not results
+    assert "private" not in "\n".join(lines)
