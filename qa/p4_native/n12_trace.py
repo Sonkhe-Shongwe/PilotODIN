@@ -164,7 +164,7 @@ def sysmon_image(value, event_id, record, *, birth_image=None):
 
 
 def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=None, precision_fixture=None,
-                  rejected_exit_images=None):
+                  rejected_sysmon_exits=None):
     processes = {}
     exits = {}
     connections = []
@@ -245,21 +245,29 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
             elif kind == 5 and (guid := fields["ProcessGuid"].casefold()) in processes:
                 process = processes[guid]
                 require(int(fields["ProcessId"]) == process.pid, "process exit PID disagrees with birth")
-                require(process.start <= stamp, "process exit precedes birth")
+                ordered = process.start <= stamp
+                if not ordered:
+                    require(rejected_sysmon_exits is not None, "process exit precedes birth")
+                    issues.add("sysmon-exit-time-unverified")
+                    if len(rejected_sysmon_exits) < 8:
+                        rejected_sysmon_exits.append({
+                            "record": record, "category": "exit-before-birth",
+                            "exit_minus_birth_ticks": utc_ticks(stamp) - utc_ticks(process.start),
+                        })
                 image_verified = True
                 if "Image" in fields:
                     value = fields["Image"]
                     try:
                         exit_image = sysmon_image(value, kind, record, birth_image=process.image)
                     except InvalidSysmonImage as exc:
-                        if rejected_exit_images is None:
+                        if rejected_sysmon_exits is None:
                             raise
-                        # The recorder matched GUID, PID and ordered event time.
-                        # An unverified image cannot establish the process exit.
+                        # The recorder matched GUID and PID. An unverified
+                        # image cannot establish the process exit.
                         issues.add("sysmon-exit-image-unverified")
                         image_verified = False
-                        if len(rejected_exit_images) < 8:
-                            rejected_exit_images.append({
+                        if len(rejected_sysmon_exits) < 8:
+                            rejected_sysmon_exits.append({
                                 "record": record, "category": exc.category,
                                 "has_whitespace": any(char.isspace() for char in value),
                                 "has_control": any(ord(char) < 32 or ord(char) == 127 for char in value),
@@ -273,11 +281,11 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
                     previous_time, previous_fields = exits[guid]
                     require(previous_time == stamp, "conflicting process exit timestamps")
                     require(fields == previous_fields, "conflicting process exit payloads")
-                    if image_verified:
+                    if ordered and image_verified:
                         process.repeated_exits += 1
                 else:
                     exits[guid] = stamp, fields
-                    if image_verified:
+                    if ordered and image_verified:
                         process.end = stamp
             elif kind == 3:
                 connections.append(sysmon_connection(stamp, fields))
@@ -588,14 +596,14 @@ def compare_snapshots(before, after, manifest):
     }, issues
 
 
-def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None, rejected_exit_images=None):
+def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None, rejected_sysmon_exits=None):
     require(manifest["schema_version"] == 1 and manifest["disposable"] is True,
             "expected a disposable N12 manifest")
     start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
     require(start < end and start.date() == end.date(), "capture must be ordered and inside one UTC day")
     with evidence_stage("Sysmon XML"):
         processes, connections, issues, first, last = sysmon_events(
-            sysmon, start, end, precision_fixture=precision_fixture, rejected_exit_images=rejected_exit_images)
+            sysmon, start, end, precision_fixture=precision_fixture, rejected_sysmon_exits=rejected_sysmon_exits)
     if (first, last) != (manifest["sysmon_first_record"], manifest["sysmon_last_record"]) or first is None:
         issues.add("sysmon-bookend-record-mismatch")
     if not etw and (manifest["procmon_all_events"] is not True or
@@ -845,11 +853,11 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
 def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
           rundown=None, record_outside_scope=None, private_app_launches=None, journey_bookends=None,
-          describe_path_gaps=False, record_outside_writer=None, rejected_exit_images=None):
+          describe_path_gaps=False, record_outside_writer=None, rejected_sysmon_exits=None):
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
     require(journey_bookends is None or etw, "process bookends require ETW audit")
     start, end, processes, connections, issues = load_capture(
-        manifest, sysmon, etw=etw, rejected_exit_images=rejected_exit_images)
+        manifest, sysmon, etw=etw, rejected_sysmon_exits=rejected_sysmon_exits)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
             re.fullmatch(r"[0-9a-f]{64}", manifest["executable_sha256"]),
             "source and executable identities are required")
@@ -926,7 +934,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         "coverage": "BLOCKED" if issues else "CALIBRATED",
         "coverage_issues": sorted(issues), "process_roles": dict(Counter(roles.values())),
         **({"trace_verdict_scope": "diagnostic-only-unverified-sysmon-exit"}
-           if "sysmon-exit-image-unverified" in issues else {}),
+           if issues & {"sysmon-exit-image-unverified", "sysmon-exit-time-unverified"} else {}),
         "sysmon_repeated_process_exits": sum(process.repeated_exits for process in processes.values()),
         "network": network, "connections": net_counts, "unexpected_connections": external,
         "network_scope": "Sysmon-observed TCP/UDP connections, excluding blocked attempts",

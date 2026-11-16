@@ -489,15 +489,15 @@ def capture(root, staged, source, expected_hash, node):
     report_file(root / "manifest.json", manifest)
     endpoints, launches = [], {}
     paths = diagnostic_paths(root, staged, manifest)
-    rejected_exit_images = []
+    rejected_sysmon_exits = []
     try:
         result = trace.audit(manifest, sysmon, events, before, after, etw=True, private_endpoints=endpoints,
                              record_outside_writer=paths.record, private_app_launches=launches,
                              journey_bookends=bookends, describe_path_gaps=True,
-                             rejected_exit_images=rejected_exit_images)
+                             rejected_sysmon_exits=rejected_sysmon_exits)
     finally:
-        if rejected_exit_images:
-            print("N12 rejected Sysmon exit images " + json.dumps(rejected_exit_images), flush=True)
+        if rejected_sysmon_exits:
+            print("N12 rejected Sysmon exits " + json.dumps(rejected_sysmon_exits), flush=True)
     report_file(root / "private-endpoints.json", endpoints)
     log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
     result["journey_diagnostics"] = {

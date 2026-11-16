@@ -469,7 +469,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
 
     def reduce(m, sysmon, file_trace, before, after, *, etw, private_endpoints,
                record_outside_writer, private_app_launches, journey_bookends, describe_path_gaps,
-               rejected_exit_images):
+               rejected_sysmon_exits):
         events.append("reducer")
         assert sysmon.read_bytes() == b"record-bounded evidence"
         assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
@@ -482,7 +482,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                                     "after": [{"pid": 702, "birth_ticks": 170}]}
         assert [p["role"] for p in m["processes"]].count("app") == 2
         if fault in {"sysmon-parse", "changed-protected", "absent-fixture"}:
-            rejected_exit_images.append({"record": 159, "category": "text-placeholder"})
+            rejected_sysmon_exits.append({"record": 159, "category": "text-placeholder"})
             raise journey.trace.EvidenceValidationError("Sysmon XML: unsupported exit image form")
         private_endpoints.append({"role": "backend", "raw": "private-value"})
         record_outside_writer("driver", "write", (r"c:\private\driver.bin",), "node.exe")
@@ -549,7 +549,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         ]
 
     lines = capsys.readouterr().out.splitlines()
-    diagnostic = "N12 rejected Sysmon exit images " + json.dumps(
+    diagnostic = "N12 rejected Sysmon exits " + json.dumps(
         [{"record": 159, "category": "text-placeholder"}])
     assert (diagnostic in lines) == (fault in {"sysmon-parse", "changed-protected", "absent-fixture"})
     summary, = [line.removeprefix("N12 protected endpoint snapshots ") for line in lines

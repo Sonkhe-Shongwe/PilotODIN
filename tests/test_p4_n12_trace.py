@@ -1422,7 +1422,7 @@ def test_diagnostic_audit_keeps_an_unsupported_exit_unverified(tmp_path, later_f
     sysmon, procmon = evidence.save(tmp_path)
     rejected = []
     report = trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after,
-                         rejected_exit_images=rejected)
+                         rejected_sysmon_exits=rejected)
     assert report["coverage"] == "BLOCKED"
     assert report["trace_verdict_scope"] == "diagnostic-only-unverified-sysmon-exit"
     assert {"sysmon-exit-image-unverified", "process-exit-missing",
@@ -1446,7 +1446,7 @@ def test_diagnostic_audit_refuses_a_conflicting_retry_of_an_unsupported_exit(tmp
     sysmon, procmon = evidence.save(tmp_path)
     with pytest.raises(trace.EvidenceValidationError, match="conflicting process exit payloads"):
         trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after,
-                    rejected_exit_images=[])
+                    rejected_sysmon_exits=[])
 
 
 @pytest.mark.parametrize(("field", "value", "message"), [
@@ -1484,6 +1484,23 @@ def test_sysmon_exit_cannot_precede_birth(tmp_path):
     evidence.events[-1][2]["UtcTime"] = f"{BASE} 00:00:17.999"
     with pytest.raises(trace.EvidenceValidationError, match="process exit precedes birth"):
         evidence.report(tmp_path)
+    sysmon, procmon = evidence.save(tmp_path)
+    with pytest.raises(trace.EvidenceValidationError, match="conflicting process exit timestamps"):
+        trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after,
+                    rejected_sysmon_exits=[])
+    evidence.events.pop()
+    first_exit = next(fields for _, kind, fields in evidence.events
+                      if kind == 5 and fields["ProcessGuid"] == "app1")
+    first_exit["UtcTime"] = f"{BASE} 00:00:17.999"
+    sysmon, procmon = evidence.save(tmp_path)
+    rejected = []
+    result = trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after,
+                         rejected_sysmon_exits=rejected)
+    assert result["trace_verdict_scope"] == "diagnostic-only-unverified-sysmon-exit"
+    assert result["coverage"] == result["filesystem"] == result["network"] == "BLOCKED"
+    assert {"sysmon-exit-time-unverified", "process-exit-missing"} <= set(result["coverage_issues"])
+    assert rejected == [{"record": rejected[0]["record"], "category": "exit-before-birth",
+                         "exit_minus_birth_ticks": -10_010_000}]
 
 
 def test_sysmon_exit_with_repeated_payload_field_is_blocked(tmp_path):
@@ -1550,7 +1567,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
 
     clean = report()
     rejected = []
-    assert report(rejected_exit_images=rejected) == clean
+    assert report(rejected_sysmon_exits=rejected) == clean
     assert rejected == []
     assert clean["coverage"] == "CALIBRATED"
     assert clean["network"] == clean["filesystem"] == "PASS_SCOPED"
@@ -1609,7 +1626,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     evidence.connect(43, "net2", "127.0.0.1", 9443)
     evidence.save(tmp_path)
     rejected = []
-    partial = report(rejected_exit_images=rejected)
+    partial = report(rejected_sysmon_exits=rejected)
     assert partial["trace_verdict_scope"] == "diagnostic-only-unverified-sysmon-exit"
     assert partial["coverage"] == "BLOCKED"
     assert partial["filesystem"] == partial["network"] == "FAIL"
@@ -1617,6 +1634,18 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert partial["unexpected_connections"][0]["role"] == "webview-network"
     assert rejected[0]["category"] == "relative-or-unrecognized"
     assert "private-opaque-image" not in json.dumps([rejected, partial])
+    exit_fields["Image"] = APP
+    exit_fields["UtcTime"] = f"{BASE} 00:00:18.999"
+    evidence.save(tmp_path)
+    rejected = []
+    earlier_exit = report(rejected_sysmon_exits=rejected)
+    assert earlier_exit["coverage"] == "BLOCKED"
+    assert earlier_exit["network"] == earlier_exit["filesystem"] == "FAIL"
+    assert earlier_exit["file_violations"] == partial["file_violations"]
+    assert earlier_exit["unexpected_connections"] == partial["unexpected_connections"]
+    assert rejected == [{"record": rejected[0]["record"], "category": "exit-before-birth",
+                         "exit_minus_birth_ticks": -10_000}]
+    del exit_fields["UtcTime"]
     evidence.events.pop()
     exit_fields["Image"] = APP
     evidence.save(tmp_path)

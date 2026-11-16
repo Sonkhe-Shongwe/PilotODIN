@@ -2,6 +2,16 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Windows app journey passed both launches and blocked on exit time
+
+The [approved Windows 2022 job #133226559390](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43846107440/job/133226559390) ran once from launch `3692f4f5ab9d772a784e342636d3ed6cf5907756` at reviewed source `3d71d3e8ff7a797df69cf68cb114c954456f164d`. Build preflight and binary provenance passed. Executable SHA-256 was `1832f5cb45008f1aa7b5be7d145b031498dbfdcb7c56bd3e7de101462b7f9a33`. Cargo lock SHA-256 was `46cebbc90c1398c4dcd14a58a4bddb19026fea3b952d9600d77ae2101eab56af`.
+
+Initial Sysmon calibration passed on read 1 with the updated UDP fixture. Both same-binary launches and the final fixture completed. All four protected roots and the immutable source CSV matched at the endpoints. The job **FAILED** when the final Sysmon parser reported `process exit precedes birth`. The log supplied neither the record number nor the timestamp delta. The final filesystem and network verdicts are unavailable. No artifacts were retained. The one-use approval was consumed and the workflow is disarmed.
+
+## 16 November 2026 | Hosted audit retains findings after an invalid exit timestamp
+
+The hosted final reducer can now retain later ETW and network findings when an exit matched by process GUID and PID has a timestamp before birth. It logs the record number and signed time delta, leaves the exit unverified, and blocks both acceptance checks. Generated tests cover clean and violating traces and conflicting repeated exits. Default strict reduction and prelaunch still reject the invalid timestamp. The full hosted journey with this change is **NOT RUN**. [Reducer contract](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Collector UDP prelaunch passed and ETW coverage blocked
 
 The [approved Windows 2022 job #133223010351](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43845055284/job/133223010351) ran on attempt 1 from launch `d9141fdba1fb043886cbbc8a7001021ba743b97f` at reviewed source `54d22cf906af27a7cee544ec4f069dc9d9869773`. Pinned Sysmon 15.22 installed and the shared prelaunch guard verified the expected child’s initiated loopback TCP and UDP on read 1. The fixture birth adjustment was unused. Both final reductions reported the expected generated file operations and zero filesystem violations.
@@ -292,7 +302,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-With fresh approval, run one source-pinned unpackaged Windows 2022 app journey using the connected UDP fixture and the prepared exit-image diagnostic. Record prelaunch, both launches, and final filesystem and network results or the exact blocker. Prioritise tracing any recurring unexpected connections to the process and request that initiated them. The [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) remains the comparison baseline. The collector-only ETW coverage remains blocked and has its own workload.
+Follow the [P4 plan to reach 75%](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). With fresh approval, run one source-pinned two-launch Windows journey to collect the consolidated report. Prioritise fixing the causes of recurring unexpected connections and verifying a clean, attributable network run. The collector-only ETW coverage remains blocked on its separate workload.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
