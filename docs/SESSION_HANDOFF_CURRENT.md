@@ -2,6 +2,12 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
 
+## 16 November 2026 | N12 final audit blocked on a process exit
+
+The [approved hosted Windows job #133164634428](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43827479369/job/133164634428) ran once from launch `5a891bd761e96ef319bd3e574e1dc510299887da` at reviewed source `b74f2ba2db3c873edc3b45ec155be96476381c5a`. The dependency and driver preflight passed. The unpackaged build and provenance checks passed. The executable SHA-256 was `9085421acb0bd9af17cfc47a79d2b951ec638e69d38c96b5ef8e4bfcf7fc20a1`. The resolved Cargo lock SHA-256 was `46cebbc90c1398c4dcd14a58a4bddb19026fea3b952d9600d77ae2101eab56af`.
+
+Sysmon 15.22 setup and initial calibration passed on read 1. The first launch, same-binary relaunch and final calibration command completed. The final audit then rejected the image field on Sysmon Event ID 5, record 184, in category `relative-or-unrecognized`. The job failed before emitting the filesystem, network or protected-snapshot verdicts. The public log omits the image value and the run retained no downloadable artifacts. The exact image form and writer remain unverified. The one-use approval was consumed and the workflow is disarmed.
+
 ## 16 November 2026 | Owner Windows Live Dev checkpoint
 
 The owner reported that the Windows Live Dev check worked after starting the launcher. The first attempt received WinError 10061 before it reached the fixture. The successful follow-up is an owner attestation. The printed result, measured response times and available RAM were not supplied. Reuse this checkpoint and the existing hosted browser and Windows API evidence.
@@ -246,7 +252,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Advance the [N12 filesystem and network audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison). The last completed two-launch audit is the comparison baseline. The next hosted journey needs a final parser result, a filesystem breakdown by writer and path category, and network attribution. The 397 collector-only path gaps remain open on their own workload.
+Use generated Sysmon records to check how non-absolute process-exit images are diagnosed and keep the existing identity and ordering checks. The observed label combines several possible image forms. Narrow the diagnostic before another full hosted journey so a recurrence can guide a specific parser change. The [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) remains the baseline. The 397 collector-only path gaps remain open on their own workload.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
