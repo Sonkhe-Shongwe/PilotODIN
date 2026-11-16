@@ -18,7 +18,7 @@ COUNTERS = ("events_lost", "log_buffers_lost", "realtime_buffers_lost", "buffers
 
 
 @contextmanager
-def process_session(root, source):
+def process_session(root, source, executable_sha256=""):
     """Capture only kernel process start/stop evidence on the approved runner."""
     session = f"PilotODIN-N12-Lifetime-{uuid4().hex}"
     logman = str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")
@@ -26,27 +26,27 @@ def process_session(root, source):
                "0x10", "4", "-o", str(root / "lifetime.etl"), "-max", "16", "-ets"]
     evidence = {"start": etw.utc_ticks()}
     try:
-        with journey.checkpoint_stage("lifetime-etw-start", source, ""):
+        with journey.checkpoint_stage("lifetime-etw-start", source, executable_sha256):
             journey.quiet(command)
     except subprocess.TimeoutExpired:
-        stop_session(logman, session, source, primary_error=True)
+        stop_session(logman, session, source, executable_sha256, primary_error=True)
         raise
     try:
         yield evidence
     except BaseException:
-        stop_session(logman, session, source, primary_error=True)
+        stop_session(logman, session, source, executable_sha256, primary_error=True)
         raise
-    evidence["counters"] = stop_session(logman, session, source)
+    evidence["counters"] = stop_session(logman, session, source, executable_sha256)
     evidence["end"] = etw.utc_ticks()
 
 
-def stop_session(logman, session, source, *, primary_error=False):
+def stop_session(logman, session, source, executable_sha256, *, primary_error=False):
     try:
-        with journey.checkpoint_stage("lifetime-etw-stop", source, ""):
+        with journey.checkpoint_stage("lifetime-etw-stop", source, executable_sha256):
             return etw.stop_trace(session)
     except Exception:
         try:
-            with journey.checkpoint_stage("lifetime-etw-stop-fallback", source, ""):
+            with journey.checkpoint_stage("lifetime-etw-stop-fallback", source, executable_sha256):
                 journey.quiet([logman, "stop", session, "-ets"])
         except Exception:
             pass  # Preserve the original failure.

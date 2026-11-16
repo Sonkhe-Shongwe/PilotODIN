@@ -70,6 +70,14 @@ The hosted combined audit reports `etw_exit_corroboration` when the Sysmon reduc
 
 Each public row retains the Sysmon record number, process role, original dispute flags and signed timing deltas. A row marked `CORROBORATED_DIAGNOSTIC` describes the independently matched ETW process lifetime. The Sysmon process model and both combined acceptance checks retain the original exit blocker. Raw paths, identities and timestamps stay in the disposable runner. [App capture plan](../../docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
 
+### Single app startup and shutdown capture
+
+The [disarmed workflow](../../.github/workflows/p4-n12-app-lifetime.yml) stages one exact-source Windows 2022 unpackaged build and provisions the pinned Sysmon collector. It uses the isolated QA application identity, disposable backend home and WebView profile, and the existing read-only native bridge check. The worker starts the app once, closes the verified window and waits for the profile's processes to exit. Kernel-process ETW and bounded Sysmon cover that worker as well as the app. The app and worker are compared to their original Windows process handles. The app tree also requires agreeing parent records and complete lifetime coverage from both collectors.
+
+The job logs source and binary provenance, stage checkpoints, protected and immutable synthetic endpoint comparisons, and per-role relative timings and disputed exits. A trace gap, missing child, changed protected endpoint or unresolved dispute leaves the run blocked. A clean run establishes the observed startup and shutdown scope. The combined filesystem and network checks require their full app journey.
+
+Fresh approval must pin the reviewed source and scope `n12-one-build-one-app-lifetime`. The direct-child launch may change only the workflow gate and add `qa/p4_research/N12_APP_LIFETIME_APPROVAL.txt`. The workflow accepts only the first hosted Windows push attempt. The app lifetime run is **NOT RUN**. [Capture plan](../../docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+
 ### Hosted journey ETW gap diagnostics
 
 The combined reducer checks each scoped Sysmon connection against the recorded process GUID, PID and lifetime. A connection with an unresolved GUID that overlaps a scoped PID's lifetime blocks clean coverage. Established lifetimes for unrelated traffic outside the scoped PID's interval remain outside the app's findings. During the hosted journey, WebView TCP is expected only at the declared frontend and API on `127.0.0.1`. The driver may also use the declared debugger. Each calibration child is scoped to TCP and UDP on its own `127.0.0.1` fixture port. Final calibration starts after all attributed app, WebView, helper, backend and driver lifetimes have ended.

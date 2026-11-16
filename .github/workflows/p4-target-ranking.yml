@@ -50,6 +50,7 @@ on:
       - tests/test_p4_native_acceptance_kit.py
       - tests/test_p4_n12_app_build.py
       - tests/test_p4_n12_app_journey.py
+      - tests/test_p4_n12_app_lifetime.py
       - tests/test_p4_n12_lifetime_control.py
       - tests/test_p4_n12_lifetime_etw.py
       - tests/test_p4_n12_exit_corroboration.py
@@ -60,6 +61,9 @@ on:
       - qa/p4_native/**
       - qa/p4_research/n12_app_build.py
       - qa/p4_research/n12_app_journey.py
+      - qa/p4_research/n12_app_lifetime.py
+      - frontend/e2e/p4-n12-app-lifetime-ready.mjs
+      - .github/workflows/p4-n12-app-lifetime.yml
       - qa/p4_research/n12_journey_diagnostics.py
       - qa/p4_research/Invoke_N12_Journey_Evidence.ps1
       - frontend/tests/p4-target-opportunities-contracts.test.cjs
@@ -147,6 +151,7 @@ jobs:
           tests/test_p4_r06_prospective_fingerprint.py
           tests/test_p4_n12_app_build.py
           tests/test_p4_n12_app_journey.py
+          tests/test_p4_n12_app_lifetime.py
           tests/test_p4_n12_lifetime_control.py
           tests/test_p4_n12_lifetime_etw.py
           tests/test_p4_n12_exit_corroboration.py

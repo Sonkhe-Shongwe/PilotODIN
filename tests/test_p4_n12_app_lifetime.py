@@ -1,0 +1,140 @@
+"""Generated evidence for the single-launch N12 lifetime control."""
+from copy import deepcopy
+import json
+from pathlib import Path
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import patch
+from xml.etree import ElementTree as ET
+
+from qa.p4_native import n12_trace as trace
+from qa.p4_research import n12_app_lifetime as lifetime
+from test_p4_n12_exit_corroboration import DEVICES, ORIGIN, event, payload, stamp
+
+
+APP = r"c:\qa\build\pilotodin-desktop.exe"
+PYTHON = r"c:\qa\python\python.exe"
+WEBVIEW = r"c:\qa\msedgewebview2.exe"
+SOURCE = "a" * 40
+HASH = "b" * 64
+
+
+class AppLifetimeTests(unittest.TestCase):
+    def setUp(self):
+        temporary = TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        self.sysmon, self.etw = root / "sysmon.xml", root / "etw.jsonl"
+        self.manifest = {"schema_version": 1, "disposable": True, "source_sha": SOURCE, "executable_sha256": HASH,
+                         "start_utc": stamp(0).isoformat(), "end_utc": stamp(900_000).isoformat()}
+        self.session = {"start": ORIGIN, "end": ORIGIN + 900_000,
+                        "counters": dict.fromkeys(lifetime.etw.COUNTERS, 0) | {"buffers_written": 4}}
+        self.rows, self.events = [], []
+        self.process(700, PYTHON, 50_000, 800_000, 1)
+        self.app = self.process(701, APP, 130_000, 520_000, 700)
+        self.process(702, WEBVIEW, 210_000, 650_000, 701)
+        self.process(703, WEBVIEW, 320_000, 690_000, 702,
+                     "--utility-sub-type=network.mojom.NetworkService")
+        self.worker = {"pid": 700, "birth": ORIGIN + 50_000, "exit": ORIGIN + 800_000}
+
+    def process(self, pid, image, birth, exit, parent, command=""):
+        fields = {"ProcessId": str(pid), "ProcessGuid": f"private-{pid}", "Image": image}
+        self.rows.extend([
+            (birth, 1, {**fields, "UtcTime": payload(birth)[:-1], "ParentProcessGuid": f"private-{parent}",
+                        "Hashes": f"SHA256={HASH}", "CommandLine": command}),
+            (exit, 5, {**fields, "UtcTime": payload(exit)[:-1]}),
+        ])
+        self.events.extend([
+            event(1, pid, pid, birth, birth + 100, image, parent=parent, parent_sequence=parent),
+            event(2, pid, pid, birth, exit + 100, image, exit=exit),
+        ])
+        return {"pid": pid, "birth": ORIGIN + birth, "exit": ORIGIN + exit}
+
+    def reduce(self):
+        root = ET.Element("Events")
+        for record, (offset, kind, fields) in enumerate(sorted(self.rows), 150):
+            row = ET.SubElement(root, trace.EVENT_NS + "Event")
+            system = ET.SubElement(row, trace.EVENT_NS + "System")
+            ET.SubElement(system, trace.EVENT_NS + "EventID").text = str(kind)
+            ET.SubElement(system, trace.EVENT_NS + "EventRecordID").text = str(record)
+            ET.SubElement(system, trace.EVENT_NS + "TimeCreated", SystemTime=payload(offset + 100))
+            data = ET.SubElement(row, trace.EVENT_NS + "EventData")
+            for key, value in fields.items():
+                ET.SubElement(data, trace.EVENT_NS + "Data", Name=key).text = value
+        ET.ElementTree(root).write(self.sysmon, encoding="utf-8")
+        self.etw.write_text("".join(json.dumps(row) + "\n" for row in self.events), encoding="utf-8")
+        self.manifest.update(sysmon_first_record=150, sysmon_last_record=149 + len(self.rows),
+                             events_sha256=lifetime.build.digest(self.etw))
+        with patch.object(lifetime.sys, "executable", PYTHON):
+            return lifetime.reduction(self.manifest, self.sysmon, self.etw, DEVICES,
+                                      self.session, self.app, self.worker, APP)
+
+    def test_clean_lifetime_matches_both_original_handles(self):
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
+        self.assertEqual(report["app_roles"], {"app": 1, "webview": 1, "webview-network": 1})
+        self.assertEqual(report["disputed_exits"], [])
+        self.assertEqual(len(report["timing_comparisons"]), 4)
+        self.assertTrue(all(row["etw_minus_sysmon_exit_ticks"] == 0 for row in report["timing_comparisons"]))
+
+    def test_corroborated_app_exit_retains_blocked_sysmon_result(self):
+        exit_fields = next(fields for _, kind, fields in self.rows
+                           if kind == 5 and fields["ProcessId"] == "701")
+        exit_fields.update(Image="private-opaque-image", UtcTime=payload(110_000)[:-1])
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("sysmon-exit-image-unverified", report["issues"])
+        self.assertIn("sysmon-exit-time-unverified", report["issues"])
+        self.assertEqual(report["disputed_exits"][0]["status"], "CORROBORATED_DIAGNOSTIC")
+        self.assertEqual(report["handle_comparison"]["app"], "MATCH")
+        for private in ("private", "pilotodin-desktop", "msedgewebview2"):
+            self.assertNotIn(private, json.dumps(report))
+
+    def test_lost_events_and_disagreeing_handles_cannot_pass(self):
+        self.session["counters"]["events_lost"] = 1
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-event-or-buffer-loss", report["issues"])
+        self.session["counters"]["events_lost"] = 0
+        self.app["exit"] += 1
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-and-windows-handle-timestamps-differ", report["issues"])
+
+    def test_tree_parent_and_missing_profile_fail_closed(self):
+        original = deepcopy(self.events)
+        self.events[6]["data"]["ParentProcessSequenceNumber"] = "700"
+        self.assertIn("app-tree-etw-parent-lifetime-unverified", self.reduce()["issues"])
+        self.events = original
+        self.rows = [row for row in self.rows if row[2]["ProcessId"] != "703"]
+        self.assertIn("app-profile-lifetime-missing", self.reduce()["issues"])
+
+    def test_only_etw_observing_a_scoped_child_blocks(self):
+        self.events.extend([
+            event(1, 704, 704, 350_000, 350_100, WEBVIEW, parent=702, parent_sequence=702),
+            event(2, 704, 704, 350_000, 420_100, WEBVIEW, exit=420_000),
+        ])
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("app-tree-etw-child-missing-from-sysmon", report["issues"])
+
+    def test_cli_uses_separate_approval_and_workflow_is_disarmed(self):
+        with patch.dict(lifetime.os.environ, {"PILOTODIN_N12_APP_LIFETIME_CONSENT": "other"}):
+            run = subprocess.run([sys.executable, "-B", "-m", lifetime.__name__, "--source", SOURCE,
+                "--expected-exe-sha256", HASH, "--worker"], capture_output=True, text=True)
+        self.assertEqual(run.returncode, 2)
+        self.assertIn("separate one-run N12 app lifetime consent is required", run.stderr)
+        workflow = (lifetime.build.REPO / ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
+        self.assertIn("if: ${{ false }}", workflow)
+        self.assertIn("scope=n12-one-build-one-app-lifetime", workflow)
+        self.assertIn("-WithEtw -AppLifetime", workflow)
+        marker = lifetime.build.REPO / "qa/p4_research/N12_APP_LIFETIME_APPROVAL.txt"
+        if marker.exists():
+            self.assertIn("scope=n12-one-build-one-app-lifetime", marker.read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":
+    unittest.main()

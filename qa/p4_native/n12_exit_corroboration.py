@@ -16,7 +16,7 @@ else:
 BIRTH_TOLERANCE_TICKS = 10_000  # 1 ms, to identify matches for this diagnostic.
 SOURCE_COVERAGE_ISSUES = {
     "sysmon-record-gap", "sysmon-bookend-record-mismatch",
-    "sysmon-restart-config-change-or-error", "etw-event-or-buffer-loss",
+    "sysmon-restart-config-change-or-error", "etw-event-or-buffer-loss", "etw-no-buffers-written",
 }
 
 

@@ -3,6 +3,7 @@
 param(
     [switch]$WithEtw,
     [switch]$AppJourney,
+    [switch]$AppLifetime,
     [switch]$LifetimeControl,
     [switch]$LifetimeEtwControl,
     [string]$SourceSha,
@@ -24,14 +25,19 @@ if ($LifetimeControl -or $LifetimeEtwControl) {
     } else {
         'I_APPROVE_ONE_N12_LIFETIME_CONTROL'
     }
-    if (($LifetimeControl -and $LifetimeEtwControl) -or $AppJourney -or $WithEtw -or $SourceSha -or
+    if (($LifetimeControl -and $LifetimeEtwControl) -or $AppJourney -or $AppLifetime -or $WithEtw -or $SourceSha -or
         $ExecutableSha256 -or $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -cne $consent -or
         $env:PILOTODIN_N12_LIFETIME_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
         (git rev-parse HEAD) -cne $env:PILOTODIN_N12_LIFETIME_SOURCE) {
         throw 'The collector lifetime control requires its own source-pinned approval.'
     }
-} elseif ($AppJourney) {
-    if (-not $WithEtw -or $env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or
+} elseif ($AppJourney -or $AppLifetime) {
+    $captureApproved = if ($AppLifetime) {
+        $env:PILOTODIN_N12_APP_LIFETIME_CONSENT -ceq 'I_APPROVE_ONE_N12_APP_LIFETIME'
+    } else {
+        $env:PILOTODIN_N12_APP_JOURNEY_CONSENT -ceq 'I_APPROVE_ONE_N12_APP_JOURNEY'
+    }
+    if (($AppJourney -and $AppLifetime) -or -not $WithEtw -or -not $captureApproved -or
         $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV' -or
         $SourceSha -cnotmatch '^[0-9a-f]{40}$' -or $SourceSha -cne $env:PILOTODIN_N12_APPROVED_SOURCE -or
         $ExecutableSha256 -cnotmatch '^[0-9a-f]{64}$') {
@@ -40,7 +46,7 @@ if ($LifetimeControl -or $LifetimeEtwControl) {
     python -B -m qa.p4_research.n12_app_build verify --source $SourceSha --expected-exe-sha256 $ExecutableSha256
     if ($LASTEXITCODE -ne 0) { throw 'Staged build verification failed before Sysmon provisioning.' }
 } elseif ($SourceSha -or $ExecutableSha256) {
-    throw 'A staged build identity is only accepted in app journey mode.'
+    throw 'A staged build identity requires an approved app capture.'
 } elseif ($WithEtw -and
     $env:PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT -cne 'I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL') {
     throw 'The collector-only rehearsal requires separate approval before provisioning Sysmon.'
@@ -111,7 +117,7 @@ $definition = @'
   </EventFiltering>
 </Sysmon>
 '@
-if ($LifetimeEtwControl) {
+if ($LifetimeEtwControl -or $AppLifetime) {
     $definition = $definition.Replace('<NetworkConnect onmatch="exclude" />', '<NetworkConnect onmatch="include" />')
 }
 $definition | Set-Content -LiteralPath $config -Encoding ascii
@@ -126,6 +132,11 @@ try {
         $captureMode = if ($LifetimeEtwControl) { '--capture-etw' } else { '--capture' }
         python -B -m qa.p4_native.n12_lifetime_control $captureMode $root
         if ($LASTEXITCODE -ne 0) { throw 'The collector lifetime control did not pass.' }
+        return
+    }
+    if ($AppLifetime) {
+        python -B -m qa.p4_research.n12_app_lifetime --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        if ($LASTEXITCODE -ne 0) { throw 'The hosted app lifetime capture failed or returned blocked evidence.' }
         return
     }
     if ($AppJourney) {

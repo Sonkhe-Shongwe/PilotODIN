@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('sysmon-tail','etw-export','etw-process-export','close','profile-active','project-switch','process-bookend','backend-tcp')][string]$Operation,
+    [ValidateSet('sysmon-tail','etw-export','etw-process-export','etw-app-lifetime-export','close','profile-active','project-switch','process-bookend','backend-tcp')][string]$Operation,
     [string]$CaptureRoot,
     [int]$AppProcessId,
     [string]$AppPath,
@@ -88,11 +88,20 @@ switch ($Operation) {
             $backend.Dispose()
         }
     }
-    { $_ -in 'etw-export','etw-process-export' } {
-        $processOnly = $_ -ceq 'etw-process-export'
+    { $_ -in 'etw-export','etw-process-export','etw-app-lifetime-export' } {
+        $appLifetime = $_ -ceq 'etw-app-lifetime-export'
+        $processOnly = $_ -cne 'etw-export'
         if ($processOnly) {
-            $expected = Join-Path $env:RUNNER_TEMP "pilotodin-n12-live-$env:GITHUB_RUN_ID"
-            if (-not $lifetimeEtw -or $env:GITHUB_RUN_ID -cnotmatch '^[0-9]+$' -or
+            $expected = if ($appLifetime) {
+                Join-Path $env:RUNNER_TEMP "pilotodin-n12-build-$env:GITHUB_RUN_ID-lifetime"
+            } else {
+                Join-Path $env:RUNNER_TEMP "pilotodin-n12-live-$env:GITHUB_RUN_ID"
+            }
+            $approved = if ($appLifetime) {
+                $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
+                    $env:PILOTODIN_N12_APP_LIFETIME_CONSENT -ceq 'I_APPROVE_ONE_N12_APP_LIFETIME'
+            } else { $lifetimeEtw }
+            if (-not $approved -or $env:GITHUB_RUN_ID -cnotmatch '^[0-9]+$' -or
                 [IO.Path]::GetFullPath($CaptureRoot) -ne [IO.Path]::GetFullPath($expected)) {
                 throw 'Process-only ETW export requires its approved hosted capture root.'
             }
@@ -118,7 +127,8 @@ switch ($Operation) {
                         $name = $field.GetAttribute('Name')
                         if ($processOnly) {
                             if ($name -cnotin 'ProcessID','ProcessSequenceNumber','ParentProcessID',
-                                'ParentProcessSequenceNumber','CreateTime','ExitTime') { continue }
+                                'ParentProcessSequenceNumber','CreateTime','ExitTime' -and
+                                -not ($appLifetime -and $name -ceq 'ImageName')) { continue }
                             if ($fields.ContainsKey($name)) {
                                 throw 'Process-only ETW event fields are ambiguous.'
                             }
