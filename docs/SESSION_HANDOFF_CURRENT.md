@@ -328,7 +328,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Follow the [revised P4 plan to reach 75%](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). Prepare replayable failure evidence and the smallest applicable collector controls before requesting another unpackaged app build. The backend snapshot and WebView classifications address attribution. The combined audit also needs trustworthy process lifetimes and filesystem coverage.
+Follow the [N12 plan review](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-plan-review-and-acceptance-risks). Generated traces reproduced false passes in connection identity, role-specific loopback scope and final calibration bracketing. First correct and regress those cases and verify that a sanitised failure checkpoint survives cleanup failures. Then validate the applicable Windows collector controls before requesting another unpackaged app build.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
