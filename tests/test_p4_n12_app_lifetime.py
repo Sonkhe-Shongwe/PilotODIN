@@ -11,7 +11,7 @@ from xml.etree import ElementTree as ET
 
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_lifetime as lifetime
-from test_p4_n12_exit_corroboration import DEVICES, ORIGIN, event, payload, stamp
+from tests.test_p4_n12_exit_corroboration import DEVICES, ORIGIN, event, payload, stamp
 
 
 APP = r"c:\qa\build\pilotodin-desktop.exe"
