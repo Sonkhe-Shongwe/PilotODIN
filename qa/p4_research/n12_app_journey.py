@@ -454,8 +454,16 @@ def capture(root, staged, source, expected_hash, node):
     if bookends is not None:
         report_file(root / "private-process-bookends.json", bookends)
     time.sleep(3)
-    after = snapshots(manifest)
-    report_file(root / "after.json", after)
+    with trace.evidence_stage("protected endpoint snapshot"):
+        after = snapshots(manifest)
+        report_file(root / "after.json", after)
+        comparison, issues = trace.compare_snapshots(before, after, manifest)
+    print("N12 protected endpoint snapshots " + json.dumps({
+        "source_sha": source,
+        "executable_sha256": expected_hash,
+        **comparison,
+        "snapshot_issues": sorted(issues),
+    }), flush=True)
     manifest["sysmon_last_record"] = sysmon_tail()
     sysmon = root / "sysmon.xml"
     export_sysmon(manifest["sysmon_first_record"], manifest["sysmon_last_record"], sysmon)

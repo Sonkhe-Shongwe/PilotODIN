@@ -531,7 +531,8 @@ def scope(manifest):
     return protected, permitted
 
 
-def verify_snapshots(before, after, manifest, issues):
+def compare_snapshots(before, after, manifest):
+    issues = set()
     changed = []
     fingerprints = {}
     for label, roots in (("protected", manifest["protected_roots"]),
@@ -550,7 +551,12 @@ def verify_snapshots(before, after, manifest, issues):
                 changed.append(f"{label}:{name}")
             if name in manifest["immutable_observed"] and left[name]["state"] == "absent":
                 issues.add("immutable-fixture-missing-at-baseline")
-    return fingerprints, changed
+    verdict = "CHANGED" if changed else "BLOCKED" if issues else "MATCH"
+    return {
+        "protected_snapshot_comparison": verdict,
+        "snapshot_changes": fingerprints,
+        "unexpected_snapshot_changes": changed,
+    }, issues
 
 
 def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None):
@@ -871,18 +877,14 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
                 app_launches.setdefault(process.guid, app_launches[process.parent])
         private_app_launches.update({guid: label for guid, label in app_launches.items()
                                      if roles[guid] == "webview-network" and processes[guid].end})
-    snapshots, changed = verify_snapshots(before, after, manifest, issues)
-    protected_snapshot_comparison = "MATCH"
-    if changed:
-        protected_snapshot_comparison = "CHANGED"
-    elif "immutable-fixture-missing-at-baseline" in issues:
-        protected_snapshot_comparison = "BLOCKED"
+    snapshot_report, snapshot_issues = compare_snapshots(before, after, manifest)
+    issues.update(snapshot_issues)
     network = "PASS_SCOPED"
     if any(e["kind"] == "non-loopback" for e in external):
         network = "PARTIAL"
     if any(e["kind"] == "unexpected-loopback" for e in external):
         network = "FAIL"
-    filesystem = "FAIL" if violations or changed else "PASS_SCOPED"
+    filesystem = "FAIL" if violations or snapshot_report["unexpected_snapshot_changes"] else "PASS_SCOPED"
     if issues:
         if network == "PASS_SCOPED":
             network = "BLOCKED"
@@ -904,8 +906,7 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
            if etw else {}),
         **({"etw_background_process_bookends": bookend_summary} if bookend_summary else {}),
         **({"etw_path_gap_context": dict(path_gap_counts)} if etw and describe_path_gaps else {}),
-        "protected_snapshot_comparison": protected_snapshot_comparison,
-        "snapshot_changes": snapshots, "unexpected_snapshot_changes": changed,
+        **snapshot_report,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }
 

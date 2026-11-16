@@ -1,5 +1,6 @@
 """Exercise the N12 journey order and refusal paths without running Windows."""
 from datetime import datetime, timedelta, timezone
+import hashlib
 import ipaddress
 import json
 import os
@@ -345,8 +346,9 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
     assert [role for role, paths in manifest["permitted_writes"].items() if str(scratch) in paths] == ["driver"]
 
 
-@pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit"])
-def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, fault):
+@pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit",
+                                    "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture"])
+def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
     root.mkdir()
@@ -354,7 +356,11 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     calibrations = [root / "calibration-first", root / "calibration-last"]
     user_temp = str(tmp_path / "user-temp")
     manifest = {"processes": [], "markers": {}, "source_sha": SOURCE,
-                "executable_sha256": EXE_SHA, "loopback_ports": list(journey.PORTS)}
+                "executable_sha256": EXE_SHA, "loopback_ports": list(journey.PORTS),
+                "protected_roots": {"local-original": r"c:\private\original"},
+                "observed_roots": {"quality-source": r"c:\private\fixture.csv",
+                                   "qa-home": r"c:\private\qa-home"},
+                "immutable_observed": ["quality-source"]}
     sample = iter(range(30))
     monkeypatch.setattr(journey, "now", lambda: datetime(2026, 11, 14, tzinfo=timezone.utc)
                         + timedelta(seconds=next(sample)))
@@ -363,7 +369,18 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setenv("TMP", user_temp)
     monkeypatch.setattr(journey, "prepare_journey", lambda *args: (manifest, home, profile, fixture, calibrations))
     monkeypatch.setattr(journey, "quiet", lambda *a, **kw: b"churn,amount\nY,2\n")
-    monkeypatch.setattr(journey, "snapshots", lambda m: {"snapshot": len(events)})
+    def endpoint_snapshots(m):
+        after = "etw-stop" in events
+        states = {"quality-source": "absent" if fault == "absent-fixture" else "file",
+                  "qa-home": "directory" if after else "absent",
+                  "local-original": "directory" if after and fault == "changed-protected" else "absent"}
+        digests = {"absent": "a" * 64, "file": "b" * 64, "directory": "c" * 64}
+        return {group: {label: {"root_id": hashlib.sha256(journey.trace.windows_path(path).encode()).hexdigest(),
+                                "state": states[label], "digest": digests[states[label]]}
+                        for label, path in m[f"{group}_roots"].items()}
+                for group in ("protected", "observed")}
+
+    monkeypatch.setattr(journey, "snapshots", endpoint_snapshots)
     monkeypatch.setattr(journey, "sysmon_tail", lambda: 10 if "etw-start" not in events else 60)
     monkeypatch.setattr(journey, "start_capture", lambda *a: events.append("etw-start"))
     monkeypatch.setattr(journey.etw, "volume_devices", lambda: {"C:": r"\Device\HarddiskVolume1"})
@@ -444,6 +461,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
                                     "after": [{"pid": 702, "birth_ticks": 170}]}
         assert [p["role"] for p in m["processes"]].count("app") == 2
+        if fault in {"sysmon-parse", "changed-protected", "absent-fixture"}:
+            raise journey.trace.EvidenceValidationError("Sysmon XML: unsupported exit image form")
         private_endpoints.append({"role": "backend", "raw": "private-value"})
         record_outside_writer("driver", "write", (r"c:\private\driver.bin",), "node.exe")
         return {"coverage": "BLOCKED", "network": "BLOCKED", "filesystem": "BLOCKED"}
@@ -457,11 +476,16 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "wait_for", lambda check, seconds, message, process=None:
                         journey.trace.require(check(), message))
     monkeypatch.setattr(journey, "powershell", powershell)
-    monkeypatch.setattr(journey, "export_sysmon", lambda first, last, path: path.write_bytes(b"record-bounded evidence"))
+    def export_sysmon(first, last, path):
+        if fault == "sysmon-export":
+            raise journey.trace.EvidenceValidationError("Sysmon export failed")
+        path.write_bytes(b"record-bounded evidence")
+
+    monkeypatch.setattr(journey, "export_sysmon", export_sysmon)
     monkeypatch.setattr(journey.trace, "audit", reduce)
     monkeypatch.setattr(journey, "diagnostic_paths", lambda *args: journey.OutsidePaths([]))
 
-    if fault:
+    if fault in {"first-calibration", "changed-binary", "no-profile-exit"}:
         with pytest.raises(journey.trace.EvidenceValidationError, match={
             "first-calibration": "fixture coverage", "changed-binary": "executable changed",
             "no-profile-exit": "WebView processes did not exit",
@@ -470,6 +494,14 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert events[-1] == "etw-stop"
         assert "app-relaunch" not in events
         assert (("app-first" not in events) == (fault == "first-calibration"))
+        assert not (root / "audit.json").exists()
+        assert "N12 protected endpoint snapshots" not in capsys.readouterr().out
+        return
+
+    if fault:
+        message = "Sysmon export failed" if fault == "sysmon-export" else "unsupported exit image form"
+        with pytest.raises(journey.trace.EvidenceValidationError, match=message):
+            journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
         assert not (root / "audit.json").exists()
     else:
         report = journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
@@ -494,3 +526,17 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             {"role": "driver", "operation": "write", "path_categories": ["other-path"],
              "writer": "node", "count": 1},
         ]
+
+    lines = capsys.readouterr().out.splitlines()
+    summary, = [line.removeprefix("N12 protected endpoint snapshots ") for line in lines
+                if line.startswith("N12 protected endpoint snapshots ")]
+    assert json.loads(summary) == {
+        "source_sha": SOURCE,
+        "executable_sha256": EXE_SHA,
+        "protected_snapshot_comparison": {"changed-protected": "CHANGED", "absent-fixture": "BLOCKED"}.get(
+            fault, "MATCH"),
+        "snapshot_changes": {"protected:local-original": fault == "changed-protected",
+                             "observed:quality-source": False, "observed:qa-home": True},
+        "unexpected_snapshot_changes": ["protected:local-original"] if fault == "changed-protected" else [],
+        "snapshot_issues": ["immutable-fixture-missing-at-baseline"] if fault == "absent-fixture" else [],
+    }
