@@ -215,7 +215,7 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn("separate one-run N12 app lifetime consent is required", run.stderr)
         workflow = (lifetime.build.REPO / ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
-        marker_path = "qa/p4_research/N12_APP_LIFETIME_IMAGE_DIAGNOSTIC_APPROVAL.txt"
+        marker_path = "qa/p4_research/N12_APP_LIFETIME_VOLUME_MAP_RETEST_APPROVAL.txt"
         self.assertIn(f"      - {marker_path}", workflow)
         self.assertIn("scope=n12-one-build-one-app-lifetime", workflow)
         self.assertIn("-WithEtw -AppLifetime", workflow)
