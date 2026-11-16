@@ -58,11 +58,19 @@ Prototype components against the same fixtures before adding dependencies. Start
 
 ## Proposed physical Windows session
 
-The owner confirmed that the Live Dev check worked on 16 November. The next proposed session uses one unpackaged Tauri build from the reviewed source on the owner's 8 GB laptop. It exercises native WebView2 against an independently started, disposable loopback development backend. The [isolated native guard](./P4_44_ISOLATED_NATIVE_DEV_IDENTITY_GUARD_2026-11-12.md) requires separate approval for compilation and launch. The existing [hosted runner](../qa/p4_native/Run_P4_71_Disposable_Windows.ps1) demonstrates the startup pattern and remains restricted to hosted CI.
+The owner confirmed that the Live Dev check worked on 16 November and approved one unpackaged Tauri build and launch. The session exercises native WebView2 against an independently started, disposable loopback development backend. The [approval record](./P4_R03_OWNER_NATIVE_APPROVAL_2026-11-16.md) pins the reviewed application source. The existing [hosted runner](../qa/p4_native/Run_P4_71_Disposable_Windows.ps1) demonstrates the startup pattern and remains restricted to hosted CI.
 
 1. Record the exact source and executable SHA-256. Verify the isolated Tauri identity, disposable backend workspace and separate WebView2 profile before running the questions. Use the same four-row fixture in the disposable workspace. Keep the installed PilotODIN closed and leave its projects outside the test.
 2. Record system RAM and paging before launch, at the ready screen, during the questions and after cooldown. Attribute process readings to the native shell, its WebView2 profile and the development backend. Record sampled working sets and private bytes, elapsed response times and any visible UI stall.
-3. Run the [five-question smoke workload](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) once and observe the median and its follow-up in the native UI. Record arithmetic or interaction failures and stop if the app hangs, exits unexpectedly or the machine becomes unresponsive. Record an incomplete run at the stage it reached.
+3. Run the [five-question smoke workload](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) once through the native UI. The driver verifies the Tauri bridge, answers and filter follow-up and records click-to-verified-answer times. Record visible stalls and keep any incomplete run at the stage it reached.
+
+Pull the updated development branch and close the installed app and both Live Dev consoles to free the required loopback ports. Run this from PowerShell in the PilotODIN checkout.
+
+```powershell
+py -3 .\tools\Verify_Local_Analytics_Windows_Native.py --run-approved
+```
+
+The preflight uses the existing Live Dev dependencies and checks for Rust x64 MSVC and the C++ build tools. The runner stages native source, then compiles and launches it once. It generates its own four-row project, collects system and scoped process samples, closes the verified QA window and prints and saves `result.json` in the temporary run folder. A preflight block happens before compilation. A later failure is recorded with its stage and local logs.
 
 The result covers model-free Local analytics in an unpackaged native shell. The packaged sidecar and offline Qwen coexistence are outside this session. The installer freeze remains in force.
 

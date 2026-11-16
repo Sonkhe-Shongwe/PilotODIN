@@ -6,7 +6,7 @@
 
 The owner reported that the Windows Live Dev check worked after starting the launcher. The first attempt received WinError 10061 before it reached the fixture. The successful follow-up is an owner attestation. The printed result, measured response times and available RAM were not supplied. Reuse this checkpoint and the existing hosted browser and Windows API evidence.
 
-The next proposed observation is one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the owner's 8 GB laptop. It requires explicit approval of the isolated native compilation and launch. The session uses a disposable backend and WebView2 profile and covers model-free Local analytics. The R03 offline Qwen coexistence gate remains open.
+The owner approved one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the 8 GB laptop. The runner uses a disposable backend and WebView2 profile and covers model-free Local analytics. The physical run is pending. The R03 offline Qwen coexistence gate remains open.
 
 ## 15 November 2026 | Ask ODIN Local analytics milestone
 
@@ -231,7 +231,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Review the [proposed physical Windows session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session). The owner has confirmed that the [Live Dev check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) worked. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Run the approved [physical Windows session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the owner's laptop and record the result. The owner has confirmed that the [Live Dev check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) worked. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
