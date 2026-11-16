@@ -213,7 +213,20 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
             issues.add("child-loopback-tcp-or-udp-missing")
             counts = {protocol: Counter() for protocol in ("tcp", "udp")}
             rejected = {protocol: Counter() for protocol in ("tcp", "udp")}
+            udp_at_fixture = Counter()
+            udp_sender_port = record.get("udp_sender_port")
             for connection in (*connections, *outside_connections):
+                if (connection.protocol == "udp" and connection.port == record["port"]
+                        and connection.address.is_loopback and connection.guid != child.guid):
+                    actor = "parent" if connection.guid == parent.guid else "other-process"
+                    direction = "outbound" if connection.initiated else "inbound"
+                    if type(udp_sender_port) is not int or not 1 <= udp_sender_port <= 65535:
+                        source = "sender-port-unavailable"
+                    else:
+                        source = ("fixture-sender-port" if connection.source_port == udp_sender_port
+                                  else "different-source-port")
+                    window = "in-window" if start <= connection.timestamp <= end else "outside-window"
+                    udp_at_fixture[f"{actor}:{direction}:{source}:{window}"] += 1
                 if connection.guid != child.guid:
                     label = ("other-process-at-fixture-port" if connection.port == record["port"]
                              else "other-process")
@@ -240,6 +253,7 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
                 "matching_markers": counts,
                 "rejected_records": rejected,
                 "unparsed_outside_window": unparsed_outside_connections,
+                "udp_other_at_fixture_port": udp_at_fixture,
             }), flush=True)
     trace.verify_connection_lifetimes(connections, processes, roles, issues)
     _, unexpected, _ = trace.scoped_network(connections, roles, {record["port"]})

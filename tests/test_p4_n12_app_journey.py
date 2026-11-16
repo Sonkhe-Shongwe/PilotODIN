@@ -67,6 +67,12 @@ NETWORK_DIAGNOSTIC_CASES = {
     "both-absent": ("child-loopback-tcp-or-udp-missing", 2, ("tcp", "udp"), {}, 0),
     "udp-other-process": ("child-loopback-tcp-or-udp-missing", 2, ("udp",),
                           {"other-process-at-fixture-port": 1}, 0),
+    "udp-parent-inbound": ("child-loopback-tcp-or-udp-missing", 2, ("udp",),
+                           {"other-process-at-fixture-port": 1}, 0),
+    "udp-other-sender": ("child-loopback-tcp-or-udp-missing", 2, ("udp",),
+                         {"other-process-at-fixture-port": 1}, 0),
+    "udp-parent-inbound-outside": ("child-loopback-tcp-or-udp-missing", 2, ("udp",),
+                                   {"other-process-at-fixture-port": 1}, 0),
     "udp-unrelated": ("child-loopback-tcp-or-udp-missing", 2, ("udp",), {"other-process": 1}, 0),
     "udp-not-initiated": ("child-loopback-tcp-or-udp-missing", 2, ("udp",), {"not-initiated": 1}, 0),
     "udp-off-loopback": ("calibration-unexpected-connection", 1, ("udp",),
@@ -150,14 +156,19 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
                   for rid, kind, offset, fields in events]
     udp_changes = {
         "udp-other-process": {"ProcessGuid": "private-unrelated"},
+        "udp-parent-inbound": {"ProcessGuid": "private-parent", "Initiated": "false"},
+        "udp-other-sender": {"ProcessGuid": "private-unrelated", "SourcePort": "23553"},
+        "udp-parent-inbound-outside": {"ProcessGuid": "private-parent", "Initiated": "false"},
         "udp-unrelated": {"ProcessGuid": "private-unrelated", "DestinationPort": "23553"},
         "udp-not-initiated": {"Initiated": "false"},
         "udp-off-loopback": {"DestinationIp": "192.0.2.21"},
         "udp-wrong-port": {"DestinationPort": "23553"},
         "udp-unparsed-outside": {"DestinationIp": "private-invalid-address"},
     }
+    if scenario in {"udp-parent-inbound", "udp-other-sender", "udp-parent-inbound-outside"}:
+        marker["udp_sender_port"] = 23552
     if scenario in udp_changes:
-        offset = 9 if scenario == "udp-unparsed-outside" else 3
+        offset = 9 if scenario in {"udp-unparsed-outside", "udp-parent-inbound-outside"} else 3
         events[4] = (birth_id + 3, 3, offset, {**udp, **udp_changes[scenario]})
     if scenario in {"udp-before-birth", "udp-after-exit", "udp-outside-window"}:
         offset = {"udp-before-birth": 1, "udp-after-exit": 5, "udp-outside-window": 9}[scenario]
@@ -248,17 +259,25 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
                                 "matching_markers": {protocol: marker_state,
                                                      counterpart: {"in-child-lifetime": 1}},
                                 "rejected_records": {"tcp": {}, "udp": {}},
-                                "unparsed_outside_window": 0}] * reads
+                                "unparsed_outside_window": 0,
+                                "udp_other_at_fixture_port": {}}] * reads
         if scenario in NETWORK_DIAGNOSTIC_CASES:
             _, _, missing, rejected, unparsed = NETWORK_DIAGNOSTIC_CASES[scenario]
             stdout = capsys.readouterr().out
             details = [json.loads(line.split("protocol diagnostics: ", 1)[1])
                        for line in stdout.splitlines() if "protocol diagnostics: " in line]
+            udp_at_fixture = {
+                "udp-other-process": "other-process:outbound:sender-port-unavailable:in-window",
+                "udp-parent-inbound": "parent:inbound:fixture-sender-port:in-window",
+                "udp-other-sender": "other-process:outbound:different-source-port:in-window",
+                "udp-parent-inbound-outside": "parent:inbound:fixture-sender-port:outside-window",
+            }.get(scenario)
             assert details == [{
                 "missing_in_child_lifetime": list(missing),
                 "matching_markers": {"tcp": {} if "tcp" in missing else {"in-child-lifetime": 1}, "udp": {}},
                 "rejected_records": {"tcp": {}, "udp": rejected},
                 "unparsed_outside_window": unparsed,
+                "udp_other_at_fixture_port": {udp_at_fixture: 1} if udp_at_fixture else {},
             }] * reads
             for private_field in ("private", "23551", "23552", "23553", "127.0.0.1", "192.0.2.21", "413"):
                 assert private_field not in stdout.lower()

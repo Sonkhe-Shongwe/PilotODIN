@@ -45,7 +45,9 @@ def calibrate_child(original: Path, renamed: Path, port: int) -> None:
     with socket.create_connection(("127.0.0.1", port), timeout=5) as client:
         client.sendall(b"tcp")
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
-        client.sendto(b"udp", ("127.0.0.1", port))
+        client.connect(("127.0.0.1", port))
+        if client.send(b"udp") != 3:
+            raise RuntimeError("UDP marker was not sent in full")
 
 
 def calibrate(directory: Path) -> dict:
@@ -77,6 +79,7 @@ def calibrate(directory: Path) -> dict:
                 child.wait()
     return {"role": "calibration", "pid": os.getpid(), "image": sys.executable, "child_pid": child.pid,
             "fixture": str(original), "renamed_fixture": str(renamed), "port": address[1],
+            "udp_sender_port": sender[1],
             "parent_created_utc_ticks": parent_creation_ticks()}
 
 

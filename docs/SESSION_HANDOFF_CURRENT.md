@@ -2,6 +2,10 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Collector-only UDP marker check prepared
+
+The fixture now uses a connected UDP socket on loopback, and the receiver records the actual sender port privately. On missing protocol evidence, the prelaunch guard reports whether other loopback UDP records at the fixture port belong to the parent or another process, their direction, whether their source port matches the fixture and whether they arrived within the fixture event window. The child identity and both protocol requirements remain in force. Local tests verified the real TCP and UDP fixture exchange and replayed generated Sysmon records for parent inbound, unrelated outbound, missing markers and delayed delivery. The Windows collector-only rehearsal is **NOT RUN**. [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Hosted N12 blocked before launch on the UDP marker
 
 The [approved Windows 2022 job #133210995981](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43841494049/job/133210995981) ran once from launch `fc917a5fbbcc925784068cf2b4e40feb30956347` at reviewed source `ff8ebb412aba41091f41f253f0801bd2fab98e28`. Dependency and driver preflight, the unpackaged build, executable provenance and pinned Sysmon 15.22 setup passed. Executable SHA-256 was `f6ae582027d89ac96f6a9568519825f89805de81530c56d222da2748ecf73bcc`. Resolved Cargo lock SHA-256 was `46cebbc90c1398c4dcd14a58a4bddb19026fea3b952d9600d77ae2101eab56af`.
@@ -280,7 +284,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use generated records to distinguish a parent-side inbound UDP event at the fixture port from an outbound event by another process or an absent child marker. Inspect the fixture's UDP handshake and Sysmon delivery before proposing a targeted collector-only rehearsal. A separately approved rehearsal can exercise the same prelaunch gate without rebuilding PilotODIN. Preserve the expected child identity and both protocol requirements. The [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) remains the filesystem and network baseline. The 397 collector-only path gaps remain open on their own workload.
+With separate approval, run one source-pinned collector-only rehearsal on disposable hosted Windows 2022. Verify whether the expected child's TCP and UDP markers appear, record the accepted read or redacted rejection, and retain the final collector reduction if the prelaunch check passes. The rehearsal uses generated files and loopback traffic and requires no PilotODIN build or launch. The [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) remains the filesystem and network baseline. The 397 collector-only path gaps remain open on their own workload.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
