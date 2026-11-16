@@ -5,14 +5,14 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_COLLECTOR_LIFETIME_CONTROL_APPROVAL.txt
+      - qa/p4_research/N12_COLLECTOR_LIFETIME_ETW_CONTROL_APPROVAL.txt
 
 permissions:
   contents: read
 
 jobs:
   calibration:
-    if: ${{ false }} # One-use approval consumed by run 43912580978.
+    if: ${{ false }} # Requires fresh source-pinned lifetime ETW approval.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
@@ -29,7 +29,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           $workflow = '.github/workflows/p4-n12-lifetime-control.yml'
-          $marker = 'qa/p4_research/N12_COLLECTOR_LIFETIME_CONTROL_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_COLLECTOR_LIFETIME_ETW_CONTROL_APPROVAL.txt'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
               $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
@@ -38,7 +38,7 @@ jobs:
           }
           $approval = @(Get-Content -LiteralPath $marker)
           if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
-              $approval[1] -cne 'scope=n12-one-collector-lifetime-control') {
+              $approval[1] -cne 'scope=n12-one-collector-lifetime-etw-control') {
             throw 'A fresh source-pinned collector-only approval marker is required.'
           }
           $source = $Matches[1]
@@ -52,11 +52,11 @@ jobs:
           }
           git checkout --detach $source
           "PILOTODIN_N12_LIFETIME_SOURCE=$source" >> $env:GITHUB_ENV
-          'PILOTODIN_N12_LIFETIME_CONTROL_CONSENT=I_APPROVE_ONE_N12_LIFETIME_CONTROL' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_LIFETIME_CONTROL_CONSENT=I_APPROVE_ONE_N12_LIFETIME_ETW_CONTROL' >> $env:GITHUB_ENV
       - name: Use Python for the generated fixture
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.11'
-      - name: Compare Sysmon lifetimes with Windows process handles
+      - name: Compare kernel ETW and Sysmon with Windows process handles
         shell: pwsh
-        run: ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -LifetimeControl
+        run: ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -LifetimeEtwControl

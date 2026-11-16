@@ -2,6 +2,12 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Process-only ETW lifetime control prepared
+
+The disarmed workflow adds a kernel-process ETW session to the existing fast and paced fixtures. It matches payload process IDs, creation times and process sequence numbers where the provider supplies them, then checks parent identity, capture boundaries, event order and collection loss. It compares ETW payload creation and exit times with the same Windows handle timestamps used by Sysmon. ETW event emission times are retained as diagnostic deltas. Schema 3 replays all three sources, and the earlier Sysmon-only packet is printed before ETW export so it survives a later export failure.
+
+Local generated verification passed 13 tests, including a complete mocked capture and replay, missing and duplicate events, process and parent identity conflicts, ordering, loss and an inconclusive three-way comparison. The live Windows control is **NOT RUN** and requires fresh approval at the exact reviewed source. P4 remains **14/20 (70%)**. [Runbook](../qa/p4_native/N12_TRACE.md#process-only-etw-lifetime-corroboration)
+
 ## 16 November 2026 | Windows lifetime control blocked on three exit timestamps
 
 The [collector job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43912580978/job/133458140133) ran once on GitHub-hosted Windows 2022 (image `20261112.366.7`) from [launch `dae18d3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dae18d3cfea51a53a015866cc4f7ae7b3bf51a76) at [reviewed source `7e86b4d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7e86b4d275a45c268f01c2990f194ab466af7ea3). Pinned Sysmon 15.22, all five capture checkpoints and the runner-local replay copy completed. All four generated processes had unique births and exits, matching image and identity evidence, and valid parent and exit ordering. The bounded channel reported zero gaps or collector errors.
@@ -352,7 +358,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Prepare a process-only ETW corroboration control for the same fast and paced generated processes. Match the ETW start and stop records to the original Windows process handles and compare both with Sysmon. Preserve per-case signed timing and collection health in the redacted replay. Use generated negative cases for missing, duplicate or mismatched process records before seeking exact-source approval for hosted Windows. [Evidence and decision rules](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-lifetime-control-result-and-replay)
+Obtain explicit approval for one [process-only ETW lifetime control](../qa/p4_native/N12_TRACE.md#process-only-etw-lifetime-corroboration) at the verified branch HEAD on disposable GitHub-hosted Windows 2022. The run uses the existing generated process pairs, pinned Sysmon and the kernel-process ETW provider. Compare the redacted outcomes before choosing an app-specific follow-up or proposing another full journey.
 
 The completed lifetime control, the earlier UDP collector rehearsal and the full app journey are disarmed. All three one-use approvals were consumed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

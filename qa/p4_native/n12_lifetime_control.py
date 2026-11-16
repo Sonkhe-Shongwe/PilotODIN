@@ -13,11 +13,13 @@ import sys
 import time
 from xml.etree import ElementTree as ET
 
+from . import n12_lifetime_etw as etw
 from . import n12_trace as trace
 from qa.p4_research import n12_app_journey as journey
 
 
 CONSENT = "I_APPROVE_ONE_N12_LIFETIME_CONTROL"
+ETW_CONSENT = "I_APPROVE_ONE_N12_LIFETIME_ETW_CONTROL"
 PAIRS = ("fast", "paced")
 ROLES = ("parent", "child")
 MILLISECOND = 10_000  # UTC ticks, each 100 ns.
@@ -135,6 +137,8 @@ def redact(witnesses, records, channel_issues, expected_image):
 def replay(packet):
     """Evaluate the redacted evidence, with no dependency on Windows or raw traces."""
     version = packet["schema_version"]
+    if type(version) is int and version == 3:
+        return replay_corroboration(packet)
     trace.require(type(version) is int and version in (1, 2)
                   and isinstance(packet["channel_issues"], list)
                   and set(packet["channel_issues"]) <= {"record-gap", "collector-state-or-error"}
@@ -191,21 +195,67 @@ def replay(packet):
             "channel_issues": sorted(set(packet["channel_issues"])), "findings": findings}
 
 
-def capture(root, source):
+def replay_corroboration(packet):
+    sysmon = packet["sysmon"]
+    trace.require(type(sysmon["schema_version"]) is int and sysmon["schema_version"] == 2,
+                  "lifetime-corroboration-requires-sysmon-schema-2")
+    sysmon_result = replay(sysmon)
+    etw_issues, etw_findings = etw.findings(packet["etw"], sysmon["cases"], MILLISECOND)
+    comparisons = {}
+    for row, observed in zip(sysmon["cases"], packet["etw"]["cases"]):
+        label = row["case"]
+        if etw_issues or etw_findings[label]:
+            comparisons[label] = "etw-unverified"
+        elif sysmon_result["channel_issues"] or any(
+            item not in {"birth-time-disagrees-with-windows", "exit-time-disagrees-with-windows"}
+            for item in sysmon_result["findings"][label]
+        ):
+            comparisons[label] = "sysmon-identity-or-coverage-unverified"
+        else:
+            deltas = [(row["birth_delta_ticks"], observed["create_delta_ticks"]),
+                      (row["exit_delta_ticks"], observed["exit_delta_ticks"])]
+            disagreements = [(sysmon_delta, etw_delta) for sysmon_delta, etw_delta in deltas
+                             if abs(sysmon_delta) > MILLISECOND]
+            if disagreements:
+                comparisons[label] = ("etw-and-handles-agree-sysmon-time-differs" if all(
+                    abs(sysmon_delta - etw_delta) > MILLISECOND for sysmon_delta, etw_delta in disagreements
+                ) else "sysmon-and-etw-timing-inconclusive")
+            elif any(abs(sysmon_delta - etw_delta) > MILLISECOND for sysmon_delta, etw_delta in deltas):
+                comparisons[label] = "collectors-differ-within-handle-bound"
+            else:
+                comparisons[label] = "all-agree-within-bound"
+    return {
+        "scope": "generated-lifetime-etw-corroboration",
+        "verdict": "PASS" if all(c == "all-agree-within-bound" for c in comparisons.values()) else "BLOCKED",
+        "sysmon": sysmon_result, "etw_issues": etw_issues, "etw_findings": etw_findings, "comparisons": comparisons,
+    }
+
+
+def gather_witnesses():
+    witnesses = {}
+    for pair in PAIRS:
+        parent, output = run_process([
+            sys.executable, "-B", "-m", "qa.p4_native.n12_lifetime_control", "--fixture-parent", pair,
+        ])
+        child = json.loads(output)
+        trace.require(parent["birth"] <= child["birth"] <= child["exit"] <= parent["exit"],
+                      "windows-parent-child-order-invalid")
+        witnesses[pair] = {"parent": parent, "child": child}
+    pids = {w["pid"] for pair in witnesses.values() for w in pair.values()}
+    trace.require(len(pids) == len(PAIRS) * len(ROLES), "lifetime-fixture-pid-reused")
+    return witnesses, pids
+
+
+def capture(root, source, *, with_etw=False):
     with journey.checkpoint_stage("lifetime-window-open", source, ""):
         first = journey.sysmon_tail() + 1
-    with journey.checkpoint_stage("lifetime-fixtures", source, ""):
-        witnesses = {}
-        for pair in PAIRS:
-            parent, output = run_process([
-                sys.executable, "-B", "-m", "qa.p4_native.n12_lifetime_control", "--fixture-parent", pair,
-            ])
-            child = json.loads(output)
-            trace.require(parent["birth"] <= child["birth"] <= child["exit"] <= parent["exit"],
-                          "windows-parent-child-order-invalid")
-            witnesses[pair] = {"parent": parent, "child": child}
-        pids = {w["pid"] for pair in witnesses.values() for w in pair.values()}
-        trace.require(len(pids) == len(PAIRS) * len(ROLES), "lifetime-fixture-pid-reused")
+    if with_etw:
+        with etw.process_session(root, source) as session:
+            with journey.checkpoint_stage("lifetime-fixtures", source, ""):
+                witnesses, pids = gather_witnesses()
+    else:
+        with journey.checkpoint_stage("lifetime-fixtures", source, ""):
+            witnesses, pids = gather_witnesses()
     xml = root / "lifetime-sysmon.xml"
     with journey.checkpoint_stage("lifetime-sysmon-export", source, ""):
         # Give the channel a bounded flush period after the last verified exit.
@@ -219,6 +269,16 @@ def capture(root, source):
         result = replay(packet)
         print("N12 lifetime replay " + json.dumps(packet), flush=True)
         print("N12 lifetime verdict " + json.dumps(result), flush=True)
+    if with_etw:
+        with journey.checkpoint_stage("lifetime-etw-export", source, ""):
+            journey.powershell(journey.HELPER, "etw-process-export", root, timeout=90)
+        with journey.checkpoint_stage("lifetime-corroboration", source, ""):
+            lifecycle = etw.read_process_events(root / "lifetime-etw.jsonl", pids, session["start"], session["end"])
+            public_etw = etw.redact(witnesses, lifecycle, session["counters"], os.getpid())
+            packet = {"schema_version": 3, "sysmon": packet, "etw": public_etw}
+            result = replay(packet)
+            print("N12 lifetime ETW replay " + json.dumps(packet), flush=True)
+            print("N12 lifetime ETW verdict " + json.dumps(result), flush=True)
     with journey.checkpoint_stage("lifetime-local-copy", source, ""):
         journey.report_file(root / "lifetime-replay.json", packet)
     return 0 if result["verdict"] == "PASS" else 2
@@ -228,6 +288,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--capture", type=Path)
+    mode.add_argument("--capture-etw", type=Path)
     mode.add_argument("--fixture-parent", choices=PAIRS)
     mode.add_argument("--replay", type=Path)
     args = parser.parse_args()
@@ -236,10 +297,13 @@ def main():
             result = replay(json.loads(args.replay.read_text(encoding="utf-8")))
             print(json.dumps(result))
             return 0 if result["verdict"] == "PASS" else 2
+        consent = os.getenv("PILOTODIN_N12_LIFETIME_CONTROL_CONSENT")
+        allowed_consent = ({ETW_CONSENT} if args.capture_etw else
+                           {CONSENT, ETW_CONSENT} if args.fixture_parent else {CONSENT})
         trace.require(os.name == "nt" and os.getenv("GITHUB_ACTIONS") == "true"
                       and os.getenv("RUNNER_ENVIRONMENT") == "github-hosted"
                       and os.getenv("RUNNER_OS") == "Windows" and os.getenv("GITHUB_RUN_ATTEMPT") == "1"
-                      and os.getenv("PILOTODIN_N12_LIFETIME_CONTROL_CONSENT") == CONSENT,
+                      and consent in allowed_consent,
                       "lifetime-control-requires-approved-hosted-windows")
         if args.fixture_parent:
             code = "pass" if args.fixture_parent == "fast" else "import time; time.sleep(0.05)"
@@ -250,7 +314,8 @@ def main():
         trace.require(re.fullmatch(r"[0-9a-f]{40}", source) and journey.build.git("rev-parse", "HEAD") == source,
                       "lifetime-source-mismatch")
         print(f"N12 lifetime reviewed source {source}", flush=True)
-        return capture(trace.local_disposable_path(args.capture, runner_temp_only=True), source)
+        root = trace.local_disposable_path(args.capture_etw or args.capture, runner_temp_only=True)
+        return capture(root, source, with_etw=args.capture_etw is not None)
     except trace.EvidenceValidationError as exc:
         print(f"N12 lifetime control blocked: {exc}", file=sys.stderr)
     except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError, subprocess.SubprocessError) as exc:

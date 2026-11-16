@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('sysmon-tail','etw-export','close','profile-active','project-switch','process-bookend','backend-tcp')][string]$Operation,
+    [ValidateSet('sysmon-tail','etw-export','etw-process-export','close','profile-active','project-switch','process-bookend','backend-tcp')][string]$Operation,
     [string]$CaptureRoot,
     [int]$AppProcessId,
     [string]$AppPath,
@@ -18,10 +18,13 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows') {
     throw 'N12 journey operations require disposable hosted Windows.'
 }
+$lifetimeEtw = $Operation -cin 'sysmon-tail','etw-process-export' -and
+    $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
+    $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -ceq 'I_APPROVE_ONE_N12_LIFETIME_ETW_CONTROL'
 $rehearsalRead = $Operation -ceq 'sysmon-tail' -and $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
     ($env:PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT -ceq 'I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL' -or
      $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -ceq 'I_APPROVE_ONE_N12_LIFETIME_CONTROL')
-if (-not $rehearsalRead -and
+if (-not $rehearsalRead -and -not $lifetimeEtw -and
     $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV') {
     throw 'N12 journey operations require an approved disposable hosted Windows run.'
 }
@@ -85,30 +88,51 @@ switch ($Operation) {
             $backend.Dispose()
         }
     }
-    'etw-export' {
-        $file = [IO.File]::Open((Join-Path $CaptureRoot 'etw.jsonl'), [IO.FileMode]::CreateNew,
+    { $_ -in 'etw-export','etw-process-export' } {
+        $processOnly = $_ -ceq 'etw-process-export'
+        if ($processOnly) {
+            $expected = Join-Path $env:RUNNER_TEMP "pilotodin-n12-live-$env:GITHUB_RUN_ID"
+            if (-not $lifetimeEtw -or $env:GITHUB_RUN_ID -cnotmatch '^[0-9]+$' -or
+                [IO.Path]::GetFullPath($CaptureRoot) -ne [IO.Path]::GetFullPath($expected)) {
+                throw 'Process-only ETW export requires its approved hosted capture root.'
+            }
+        }
+        $inputFile = if ($processOnly) { 'lifetime.etl' } else { 'journey.etl' }
+        $outputFile = if ($processOnly) { 'lifetime-etw.jsonl' } else { 'etw.jsonl' }
+        $file = [IO.File]::Open((Join-Path $CaptureRoot $outputFile), [IO.FileMode]::CreateNew,
             [IO.FileAccess]::Write, [IO.FileShare]::None)
         $stream = [IO.StreamWriter]::new($file, [Text.UTF8Encoding]::new($false))
         $fileProvider = [guid]'edd08927-9cc4-4e65-b970-c2560fb5c289'
         $processProvider = [guid]'22fb2cd6-0e7b-422b-a0c7-2fad1fd0e716'
         try {
-            Get-WinEvent -Path (Join-Path $CaptureRoot 'journey.etl') -Oldest | ForEach-Object {
+            Get-WinEvent -Path (Join-Path $CaptureRoot $inputFile) -Oldest | ForEach-Object {
                 $event = $_
-                $lifecycle = $event.ProviderId -eq $processProvider -and $event.Id -in 1,2,3,4
-                if ($lifecycle -or ($event.ProviderId -eq $fileProvider -and
+                $lifecycle = $event.ProviderId -eq $processProvider -and
+                    ($event.Id -in 1,2 -or (-not $processOnly -and $event.Id -in 3,4))
+                if ($lifecycle -or (-not $processOnly -and $event.ProviderId -eq $fileProvider -and
                     $event.Id -in 10,11,12,13,14,15,16,17,18,19,21,23,24,26,27,28,29,34)) {
                     $xml = [xml]$event.ToXml()
                     $fields = @{}
                     foreach ($field in $xml.SelectNodes("//*[local-name()='EventData']/*[local-name()='Data']")) {
-                        $fields[$field.GetAttribute('Name')] = $field.InnerText
+                        $name = $field.GetAttribute('Name')
+                        if ($processOnly) {
+                            if ($name -cnotin 'ProcessID','ProcessSequenceNumber','ParentProcessID',
+                                'ParentProcessSequenceNumber','CreateTime','ExitTime') { continue }
+                            if ($fields.ContainsKey($name)) {
+                                throw 'Process-only ETW event fields are ambiguous.'
+                            }
+                        }
+                        $fields[$name] = $field.InnerText
                     }
-                    $stream.WriteLine((@{
+                    $row = @{
                         id = $event.Id
                         pid = $event.ProcessId
                         ticks = $event.TimeCreated.ToUniversalTime().Ticks
                         lifecycle = $lifecycle
                         data = $fields
-                    } | ConvertTo-Json -Compress -Depth 4))
+                    }
+                    if ($processOnly) { $row.version = $event.Version }
+                    $stream.WriteLine(($row | ConvertTo-Json -Compress -Depth 4))
                 }
             }
         } finally {

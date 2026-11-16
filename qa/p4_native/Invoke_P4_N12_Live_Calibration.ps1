@@ -4,6 +4,7 @@ param(
     [switch]$WithEtw,
     [switch]$AppJourney,
     [switch]$LifetimeControl,
+    [switch]$LifetimeEtwControl,
     [string]$SourceSha,
     [string]$ExecutableSha256
 )
@@ -17,9 +18,14 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     throw 'Live calibration requires the first run on disposable hosted Windows.'
 }
 
-if ($LifetimeControl) {
-    if ($AppJourney -or $WithEtw -or $SourceSha -or $ExecutableSha256 -or
-        $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -cne 'I_APPROVE_ONE_N12_LIFETIME_CONTROL' -or
+if ($LifetimeControl -or $LifetimeEtwControl) {
+    $consent = if ($LifetimeEtwControl) {
+        'I_APPROVE_ONE_N12_LIFETIME_ETW_CONTROL'
+    } else {
+        'I_APPROVE_ONE_N12_LIFETIME_CONTROL'
+    }
+    if (($LifetimeControl -and $LifetimeEtwControl) -or $AppJourney -or $WithEtw -or $SourceSha -or
+        $ExecutableSha256 -or $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -cne $consent -or
         $env:PILOTODIN_N12_LIFETIME_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
         (git rev-parse HEAD) -cne $env:PILOTODIN_N12_LIFETIME_SOURCE) {
         throw 'The collector lifetime control requires its own source-pinned approval.'
@@ -84,7 +90,7 @@ $channel = 'Microsoft-Windows-Sysmon/Operational'
 $clock = Get-TimeZone
 $sysmon = Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
 $procmon = $null
-if (-not $WithEtw -and -not $LifetimeControl) {
+if (-not $WithEtw -and -not $LifetimeControl -and -not $LifetimeEtwControl) {
     $procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe' 'Microsoft Corporation' 'aa0b10e936feea464348695f8a85a2dcafd2cb3dabd1d47d8a57e7594783b27b'
 }
 $config = Join-Path $root 'sysmon-config.xml'
@@ -95,7 +101,7 @@ $xml = Join-Path $root 'sysmon.xml'
 $manifest = Join-Path $root 'manifest.json'
 $summary = Join-Path $root 'summary.json'
 
-@'
+$definition = @'
 <Sysmon schemaversion="4.50">
   <HashAlgorithms>SHA256</HashAlgorithms>
   <EventFiltering>
@@ -104,7 +110,11 @@ $summary = Join-Path $root 'summary.json'
     <NetworkConnect onmatch="exclude" />
   </EventFiltering>
 </Sysmon>
-'@ | Set-Content -LiteralPath $config -Encoding ascii
+'@
+if ($LifetimeEtwControl) {
+    $definition = $definition.Replace('<NetworkConnect onmatch="exclude" />', '<NetworkConnect onmatch="include" />')
+}
+$definition | Set-Content -LiteralPath $config -Encoding ascii
 
 $installStarted = $false
 $capture = $null
@@ -112,8 +122,9 @@ try {
     if ($null -ne $procmon -and $clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
     $installStarted = $true
     Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
-    if ($LifetimeControl) {
-        python -B -m qa.p4_native.n12_lifetime_control --capture $root
+    if ($LifetimeControl -or $LifetimeEtwControl) {
+        $captureMode = if ($LifetimeEtwControl) { '--capture-etw' } else { '--capture' }
+        python -B -m qa.p4_native.n12_lifetime_control $captureMode $root
         if ($LASTEXITCODE -ne 0) { throw 'The collector lifetime control did not pass.' }
         return
     }
