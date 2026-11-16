@@ -122,21 +122,32 @@ class EtwLifetimes:
             "stop_emission_minus_exit_ticks": stop.emission - stop.exit,
         }
 
-    def handle_order_comparison(self, process, witness):
-        """Report only relative times for the unique ETW pair and original handle."""
+    def order_comparison(self, process, witness=None):
+        """Report relative times for the unique ETW pair and available original handle."""
         try:
             start, stop = self._candidate_pair(process)
         except trace.EvidenceValidationError as exc:
             return {"issue": str(exc)}
-        return {**self._order_deltas(start, stop),
-                "etw_payload_creation_minus_handle_ticks": start.creation - witness["birth"],
-                "etw_payload_exit_minus_handle_ticks": stop.exit - witness["exit"]}
-
-    def find(self, process):
-        start, stop = self._candidate_pair(process)
         deltas = self._order_deltas(start, stop)
+        if witness is not None:
+            deltas.update(etw_payload_creation_minus_handle_ticks=start.creation - witness["birth"],
+                          etw_payload_exit_minus_handle_ticks=stop.exit - witness["exit"])
+        return deltas
+
+    def find(self, process, *, handle_witness=None):
+        start, stop = self._candidate_pair(process)
+        if handle_witness is not None:
+            trace.require((start.pid, start.creation, stop.exit) ==
+                          (handle_witness["pid"], handle_witness["birth"], handle_witness["exit"]),
+                          "etw-and-windows-handle-timestamps-differ")
+        deltas = self._order_deltas(start, stop)
+        stop_emission_minus_exit = deltas.pop("stop_emission_minus_exit_ticks")
+        # The stop header can precede the actual exit. Only an original handle
+        # can independently establish that later exit for this exact lifetime.
         trace.require(all(delta >= 0 for delta in deltas.values()) and
-                      deltas["stop_emission_minus_start_emission_ticks"] > 0,
+                      deltas["stop_emission_minus_start_emission_ticks"] > 0 and
+                      (stop_emission_minus_exit >= 0 or
+                       (handle_witness is not None and start.sequence is not None and stop.exit <= self.window[1])),
                       "etw-lifetime-order-unverified")
         trace.require(not any(event is not start and start.creation <= event.creation <= stop.exit
                               for event in self.starts[start.pid]), "overlapping-etw-pid-lifetimes")

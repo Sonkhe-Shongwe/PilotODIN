@@ -126,6 +126,34 @@ class AppLifetimeTests(unittest.TestCase):
         for private in ("pilotodin-desktop", "python.exe", "private", str(ORIGIN + 50_000)):
             self.assertNotIn(private, json.dumps(report["etw_handle_order_comparison"]))
 
+    def test_exact_original_handles_corroborate_observed_early_stop_headers(self):
+        self.events[1]["ticks"] = self.worker["exit"] - 1041
+        self.events[3]["ticks"] = self.app["exit"] - 935
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
+        self.assertEqual(len(report["timing_comparisons"]), 4)
+        for role, expected in (("launcher", -1041), ("app", -935)):
+            observed = report["etw_handle_order_comparison"][role]
+            self.assertEqual(observed["stop_emission_minus_exit_ticks"], expected)
+            self.assertEqual(observed["etw_payload_exit_minus_handle_ticks"], 0)
+
+    def test_early_stop_header_for_a_child_without_an_original_handle_still_blocks(self):
+        self.events[5]["ticks"] -= 101
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-lifetime-order-unverified", report["issues"])
+        self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
+        rows = report["etw_child_order_comparisons"]
+        self.assertIn(("webview", -1), [(row["role"], row["stop_emission_minus_exit_ticks"]) for row in rows])
+
+    def test_matching_handle_exit_outside_the_capture_window_still_blocks(self):
+        self.worker["exit"] = ORIGIN + 900_010
+        self.events[1]["data"]["ExitTime"] = payload(900_010)
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-lifetime-order-unverified", report["issues"])
+
     def test_ordering_report_preserves_ambiguous_or_missing_pair_outcomes(self):
         self.events.append(deepcopy(self.events[0]))
         self.events.pop(3)
@@ -241,7 +269,7 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn("separate one-run N12 app lifetime consent is required", run.stderr)
         workflow = (lifetime.build.REPO / ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
-        marker_path = "qa/p4_research/N12_APP_LIFETIME_EVENT_ORDER_RETEST_APPROVAL.txt"
+        marker_path = "qa/p4_research/N12_APP_LIFETIME_HANDLE_CLOCK_RETEST_APPROVAL.txt"
         self.assertIn(f"      - {marker_path}", workflow)
         self.assertIn("scope=n12-one-build-one-app-lifetime", workflow)
         self.assertIn("-WithEtw -AppLifetime", workflow)

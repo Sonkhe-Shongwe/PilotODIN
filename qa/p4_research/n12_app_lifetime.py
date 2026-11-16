@@ -119,13 +119,6 @@ def launch_worker(root, source, expected_hash):
     return times, trace.read_json(root / "private-app-handle.json")
 
 
-def check_handle(lifetimes, process, witness):
-    start, stop = lifetimes.find(process)
-    trace.require((start.creation, stop.exit) == (witness["birth"], witness["exit"]),
-                  "etw-and-windows-handle-timestamps-differ")
-    return start, stop
-
-
 def reduction(manifest, sysmon, events, volume_devices, session, app_witness, worker_witness, binary):
     devices = trace.etw_device_aliases(volume_devices)
     start, end, processes, _, issues = trace.load_capture(
@@ -146,6 +139,7 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
     timing = []
     start_images = {}
     handle_order = {}
+    child_order = []
     if bindings and not issues & corroboration.SOURCE_COVERAGE_ISSUES:
         app = bindings[0][1]
         worker = processes.get(app.parent)
@@ -162,13 +156,17 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
                 by_role.setdefault(roles[guid], Counter())[lifetimes.start_image_comparison(process)] += 1
             start_images = {role: dict(sorted(counts.items())) for role, counts in sorted(by_role.items())}
             handle_order = {
-                "launcher": lifetimes.handle_order_comparison(worker, worker_witness),
-                "app": lifetimes.handle_order_comparison(app, app_witness),
+                "launcher": lifetimes.order_comparison(worker, worker_witness),
+                "app": lifetimes.order_comparison(app, app_witness),
             }
-            launcher_lifetime = check_handle(lifetimes, worker, worker_witness)
+            child_order = [
+                {"role": roles[guid], **lifetimes.order_comparison(process)}
+                for guid, process in scoped.items() if guid != app.guid
+            ]
+            launcher_lifetime = lifetimes.find(worker, handle_witness=worker_witness)
             launcher_start, launcher_stop = launcher_lifetime
             witnesses["launcher"] = "MATCH"
-            app_start, app_stop = check_handle(lifetimes, app, app_witness)
+            app_start, app_stop = lifetimes.find(app, handle_witness=app_witness)
             trace.require(app_start.parent == launcher_start.pid
                           and app_start.parent_sequence == launcher_start.sequence
                           and launcher_start.creation <= app_start.creation
@@ -213,6 +211,7 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
             "verdict": "BLOCKED" if issues else "PASS", "issues": sorted(issues),
             "app_roles": dict(sorted(counts.items())), "etw_start_image_comparisons": start_images,
             "handle_comparison": witnesses, "etw_handle_order_comparison": handle_order,
+            "etw_child_order_comparisons": child_order,
             "collector_counters": session["counters"], "timing_comparisons": timing,
             "disputed_exits": disputed}
 

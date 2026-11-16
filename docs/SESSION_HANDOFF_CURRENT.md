@@ -2,6 +2,14 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Original Windows handles matched ETW payload times
+
+The [one-use Windows Server 2022 app capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43975012187/job/133676628420) ran at reviewed source `49e16a2a57398b0d3244d5027bd522f0a0c72e29` from launch `ab821a488e5689e95a8a288d703500812743d4c1`, on image `20261112.366.7` with Sysmon 15.22. Executable SHA-256 was `eaecf237956520e6584df39077f2737c871e7f8c656d7e704ea3702cbfbaef40` and Cargo lock SHA-256 was `75fa91f9208577ffe832de96aba95239fc97d6d8a90990c144c8d157fa0cb996`. [Routine CI at launch](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43975012183)
+
+**Shutdown, protected fixture comparison and all nine executable paths PASS. Lifetime attribution BLOCKED. Workflow FAIL.** The app and isolated WebView profile exited, both traces exported and ETW reported five buffers with no loss. ETW payload creation and exit timestamps matched the original Windows handles exactly for both the launcher and app. The stop-event header preceded those independently verified exits by **104.1 µs** for the launcher and **93.5 µs** for the app. All other reported ordering relations were in bounds. The strict assertion stopped before both formal handle verdicts and child lifetime checks. The raw traces remained private to the runner and no artifacts were retained. The approval is consumed and the workflow is disarmed.
+
+The focused lifetime reducer now permits an earlier stop-event header only when the original Windows handle independently confirms the same PID and exact payload times, the ETW sequence is present and the verified exit remains inside the capture window. File and network audit rules and strict child checks remain in force. The generated regression replays the two observed differences, rejects a handle-confirmed exit outside the window and retains child timing differences for diagnosis. The new source is unverified on the live app. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | App image paths matched and ETW event order blocked
 
 The [one-use Windows Server 2022 app capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43969988146/job/133659290133) ran at reviewed source `6b942dc7012957af483b4bf83a1acef96c175a7b` from launch `7ee605f95ea078add497e42432d0e2cbd4236f5f`, on runner image `20261112.366.7` with Sysmon 15.22. Executable SHA-256 was `de3014ea04a44e7255ed1da1b8cc624371c60fcaaa3d30bc38ca4d7281dec641` and Cargo lock SHA-256 was `75fa91f9208577ffe832de96aba95239fc97d6d8a90990c144c8d157fa0cb996`. [Routine CI on launch](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43969987815)
@@ -434,7 +442,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Review CI for the [ETW event-order diagnostic](#17-november-2026--app-image-paths-matched-and-etw-event-order-blocked). A separately approved single unpackaged startup and close on disposable hosted Windows Server 2022 can determine which launcher event relation blocked the strict audit and whether ETW payload times match the original handles. A missing or contradictory pair remains blocked. Resume the full filesystem and network coverage work once app lifetime identity is verified. [Capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+Review routine CI for the [handle-backed stop-header correction](#17-november-2026--original-windows-handles-matched-etw-payload-times). A future separately approved single startup and close can validate the launcher and app verdicts and expose any remaining child-order issues. Full N12 credit still depends on the hosted filesystem and network audit.
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
