@@ -416,7 +416,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Verify routine CI for the [volume map correction](#16-november-2026--n12-capture-volume-map-correction). Prepare the existing process-only Windows control to compare ETW start images with expected DOS paths and native image paths queried from original handles. Preserve fixed path-form results, exact path comparisons, sequence and birth joins, and failure categories for ambiguous aliases and PID reuse. The smallest live control can run without building PilotODIN and requires separate approval. [Hosted evidence](#16-november-2026--hosted-n12-image-diagnostic-found-unmapped-device-paths)
+Verify the prepared process-only image comparison with routine CI. The requested disposable Windows control uses four generated processes, the original process handles, kernel-process ETW and pinned Sysmon. It compares full DOS and native executable paths, strict volume aliases and exact handle times. The app workflow remains disarmed. [Process-only control](../qa/p4_native/N12_TRACE.md#collector-lifetime-control)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

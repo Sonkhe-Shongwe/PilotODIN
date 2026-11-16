@@ -155,7 +155,8 @@ def test_capture_retains_replay_before_returning_blocked(tmp_path, monkeypatch, 
     tails = iter((10, 23))
     collected = []
 
-    def run_fixture(command):
+    def run_fixture(command, *, with_images=False):
+        assert not with_images
         pair = command[-1]
         collected.append(pair)
         return witnesses[pair]["parent"], json.dumps(witnesses[pair]["child"]).encode()
@@ -194,7 +195,8 @@ def test_capture_retains_completed_stages_and_logs_replay_before_local_write(tmp
             return result
         return run
 
-    def run_fixture(command):
+    def run_fixture(command, *, with_images=False):
+        assert not with_images
         pair = witnesses[command[-1]]
         return pair["parent"], json.dumps(pair["child"]).encode()
 

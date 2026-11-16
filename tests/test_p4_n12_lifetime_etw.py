@@ -66,6 +66,43 @@ class LifetimeEtwTests(unittest.TestCase):
         return {"schema_version": 3, "sysmon": control.redact(self.witnesses, self.sysmon, [], IMAGE),
                 "etw": etw.redact(self.witnesses, records, counters, OBSERVER)}
 
+    def image_report(self, counters=COUNTERS, devices=None):
+        native = r"\Device\HarddiskVolume3\private\Python\python.exe"
+        for group in self.witnesses.values():
+            for witness in group.values():
+                witness.update(image_dos=IMAGE, image_native=native)
+        packet = self.packet(counters)
+        pids = {w["pid"] for group in self.witnesses.values() for w in group.values()}
+        records = etw.read_process_events(self.path, pids, TICKS, TICKS + 400_000)
+        return etw.image_path_report(
+            self.witnesses, records, packet["etw"], packet["sysmon"]["cases"],
+            devices if devices is not None else {r"\device\harddiskvolume3": "c:"}, IMAGE)
+
+    def test_native_image_control_reports_matches_without_private_values(self):
+        for row in self.events:
+            row["data"]["ImageName"] = r"\Device\HarddiskVolume3\private\Python\python.exe"
+        report = self.image_report()
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(len(report["cases"]), 4)
+        for private in ("private", "7001", "9001", "HarddiskVolume", "python.exe"):
+            self.assertNotIn(private, json.dumps(report))
+
+    def test_native_image_control_blocks_wrong_paths_ambiguous_starts_and_loss(self):
+        for row in self.events:
+            row["data"]["ImageName"] = r"\Device\HarddiskVolume3\private\Python\python.exe"
+        self.assertEqual(self.image_report(devices={})["verdict"], "BLOCKED")
+        self.assertEqual(self.image_report(COUNTERS | {"events_lost": 1})["verdict"], "BLOCKED")
+        image = self.events[1]["data"]["ImageName"]
+        self.events[1]["data"]["ImageName"] = r"\Device\HarddiskVolume3\other\python.exe"
+        report = self.image_report()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertEqual(report["cases"][1]["etw_start_comparison"], "different-path-same-basename")
+        self.events[1]["data"]["ImageName"] = image
+        self.events.insert(2, self.events[1].copy())
+        report = self.image_report()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertEqual(report["cases"][1]["etw_start_comparison"], "start-missing-or-ambiguous")
+
     def test_cli_replays_exact_payload_precision_and_uses_payload_pid(self):
         self.events[2]["ticks"] += 20_000
         packet = self.packet()

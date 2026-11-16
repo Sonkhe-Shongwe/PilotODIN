@@ -92,6 +92,7 @@ switch ($Operation) {
     }
     { $_ -in 'etw-export','etw-process-export','etw-app-lifetime-export' } {
         $appLifetime = $_ -ceq 'etw-app-lifetime-export'
+        $imagePathControl = $lifetimeEtw -and $env:PILOTODIN_N12_IMAGE_PATH_CONTROL -ceq '1'
         $processOnly = $_ -cne 'etw-export'
         if ($processOnly) {
             $expected = if ($appLifetime) {
@@ -130,7 +131,7 @@ switch ($Operation) {
                         if ($processOnly) {
                             if ($name -cnotin 'ProcessID','ProcessSequenceNumber','ParentProcessID',
                                 'ParentProcessSequenceNumber','CreateTime','ExitTime' -and
-                                -not ($appLifetime -and $name -ceq 'ImageName')) { continue }
+                                -not (($appLifetime -or $imagePathControl) -and $name -ceq 'ImageName')) { continue }
                             if ($fields.ContainsKey($name)) {
                                 throw 'Process-only ETW event fields are ambiguous.'
                             }

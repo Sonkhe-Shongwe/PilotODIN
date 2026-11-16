@@ -13,6 +13,7 @@ import sys
 import time
 from xml.etree import ElementTree as ET
 
+from . import n12_etw_probe
 from . import n12_lifetime_etw as etw
 from . import n12_trace as trace
 from qa.p4_research import n12_app_journey as journey
@@ -40,16 +41,34 @@ def process_times(process):
     return {"pid": process.pid, "birth": birth, "exit": end}
 
 
-def run_process(command):
-    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as process:
+def process_images(process):
+    """Read both representations from the original handle while the fixture waits."""
+    query = ctypes.WinDLL("kernel32", use_last_error=True).QueryFullProcessImageNameW
+    query.argtypes = (wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD))
+    query.restype = wintypes.BOOL
+    images = {}
+    buffer = ctypes.create_unicode_buffer(32768)
+    for flags, key in ((0, "image_dos"), (1, "image_native")):
+        size = wintypes.DWORD(len(buffer))
+        trace.require(query(int(process._handle), flags, buffer, ctypes.byref(size)) and size.value > 0,
+                      f"windows-process-{key}-unavailable")
+        images[key] = buffer[:size.value]
+    return images
+
+
+def run_process(command, *, with_images=False):
+    # The pipe holds even the fast fixture until its executable paths are recorded.
+    stdin = subprocess.PIPE if with_images else None
+    with subprocess.Popen(command, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as process:
         try:
-            output, _ = process.communicate(timeout=20)
-        except subprocess.TimeoutExpired:
+            images = process_images(process) if with_images else {}
+            output, _ = process.communicate(input=b"1" if with_images else None, timeout=20)
+        except (trace.EvidenceValidationError, subprocess.TimeoutExpired):
             process.kill()
             process.communicate()
             raise
         trace.require(process.returncode == 0, "lifetime-fixture-process-failed")
-        return process_times(process), output
+        return process_times(process) | images, output
 
 
 def read_records(path, first, last, target_pids):
@@ -231,12 +250,12 @@ def replay_corroboration(packet):
     }
 
 
-def gather_witnesses():
+def gather_witnesses(*, with_images=False):
     witnesses = {}
     for pair in PAIRS:
         parent, output = run_process([
             sys.executable, "-B", "-m", "qa.p4_native.n12_lifetime_control", "--fixture-parent", pair,
-        ])
+        ], with_images=with_images)
         child = json.loads(output)
         trace.require(parent["birth"] <= child["birth"] <= child["exit"] <= parent["exit"],
                       "windows-parent-child-order-invalid")
@@ -247,12 +266,13 @@ def gather_witnesses():
 
 
 def capture(root, source, *, with_etw=False):
+    with_images = with_etw and os.getenv("PILOTODIN_N12_IMAGE_PATH_CONTROL") == "1"
     with journey.checkpoint_stage("lifetime-window-open", source, ""):
         first = journey.sysmon_tail() + 1
     if with_etw:
         with etw.process_session(root, source) as session:
             with journey.checkpoint_stage("lifetime-fixtures", source, ""):
-                witnesses, pids = gather_witnesses()
+                witnesses, pids = gather_witnesses(with_images=True) if with_images else gather_witnesses()
     else:
         with journey.checkpoint_stage("lifetime-fixtures", source, ""):
             witnesses, pids = gather_witnesses()
@@ -279,6 +299,12 @@ def capture(root, source, *, with_etw=False):
             result = replay(packet)
             print("N12 lifetime ETW replay " + json.dumps(packet), flush=True)
             print("N12 lifetime ETW verdict " + json.dumps(result), flush=True)
+        if with_images:
+            with journey.checkpoint_stage("lifetime-image-path-comparison", source, ""):
+                devices = trace.etw_device_aliases(n12_etw_probe.volume_devices())
+                result = etw.image_path_report(witnesses, lifecycle, public_etw, packet["sysmon"]["cases"],
+                                               devices, sys.executable)
+                print("N12 lifetime image path verdict " + json.dumps(result), flush=True)
     with journey.checkpoint_stage("lifetime-local-copy", source, ""):
         journey.report_file(root / "lifetime-replay.json", packet)
     return 0 if result["verdict"] == "PASS" else 2
@@ -307,7 +333,11 @@ def main():
                       "lifetime-control-requires-approved-hosted-windows")
         if args.fixture_parent:
             code = "pass" if args.fixture_parent == "fast" else "import time; time.sleep(0.05)"
-            witness, _ = run_process([sys.executable, "-B", "-c", code])
+            with_images = consent == ETW_CONSENT and os.getenv("PILOTODIN_N12_IMAGE_PATH_CONTROL") == "1"
+            if with_images:
+                trace.require(sys.stdin.buffer.read(1) == b"1", "fixture-start-signal-missing")
+                code = "import sys; assert sys.stdin.buffer.read(1) == b'1'; " + code
+            witness, _ = run_process([sys.executable, "-B", "-c", code], with_images=with_images)
             print(json.dumps(witness))
             return 0
         source = os.getenv("PILOTODIN_N12_LIFETIME_SOURCE", "")

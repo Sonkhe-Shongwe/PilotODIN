@@ -9,6 +9,7 @@ import subprocess
 from uuid import uuid4
 
 from . import n12_etw_probe as etw
+from .n12_exit_corroboration import compare_image_path
 from . import n12_trace as trace
 from .n12_trace import etw_payload_ticks as payload_ticks, etw_unsigned as unsigned
 from qa.p4_research import n12_app_journey as journey
@@ -80,6 +81,7 @@ def read_process_events(path, target_pids, start, end):
                       "ticks": stamp, "in_window": start <= stamp <= end,
                       "creation": payload_ticks(data["CreateTime"])}
             if kind == 1:
+                record["image"] = data.get("ImageName")
                 record["parent"] = unsigned(data["ParentProcessID"])
                 parent_sequence = data.get("ParentProcessSequenceNumber")
                 trace.require(version < 3 or parent_sequence is not None, "lifetime-etw-parent-sequence-missing")
@@ -181,3 +183,35 @@ def findings(packet, windows_cases, bound):
                     (parent["stop_count"] == 1 and child_start > duration + parent[stop])):
                 by_case[child["case"]].append(f"parent-lifetime-conflict-{start.removesuffix('_delta_ticks')}")
     return issues, {label: sorted(problems) for label, problems in by_case.items()}
+
+
+def image_path_report(witnesses, records, packet, windows_cases, devices, expected_image):
+    """Compare exact executable paths after independently verifying the ETW lifetime."""
+    issues, timing = findings(packet, windows_cases, 0)
+    expected = trace.windows_path(expected_image)
+    cases = []
+    for pair, group in witnesses.items():
+        for role, witness in group.items():
+            label = f"{pair}-{role}"
+            starts = [r for r in records if r["kind"] == 1 and r["pid"] == witness["pid"]]
+            row = {"case": label, "timing_issues": timing[label],
+                   "handle_dos_matches": trace.windows_path(witness["image_dos"]) == expected,
+                   "handle_native_comparison": compare_image_path(witness["image_native"], expected, devices),
+                   "etw_start_comparison": "start-missing-or-ambiguous",
+                   "etw_native_matches": False, "sequence_present": False}
+            if len(starts) == 1:
+                start = starts[0]
+                image = start["image"]
+                row.update(sequence_present=start["sequence"] is not None,
+                           etw_start_comparison=compare_image_path(image, expected, devices),
+                           etw_native_matches=isinstance(image, str) and
+                           image.casefold() == witness["image_native"].casefold())
+            cases.append(row)
+    passed = not issues and all(
+        not row["timing_issues"] and row["sequence_present"] and row["handle_dos_matches"]
+        and row["handle_native_comparison"] == "exact-path-match"
+        and row["etw_start_comparison"] == "exact-path-match" and row["etw_native_matches"]
+        for row in cases
+    )
+    return {"scope": "generated-process-image-path-control", "verdict": "PASS" if passed else "BLOCKED",
+            "etw_issues": issues, "collector_counters": packet["counters"], "cases": cases}
