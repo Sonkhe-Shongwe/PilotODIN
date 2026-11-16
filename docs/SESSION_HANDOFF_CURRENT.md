@@ -2,11 +2,17 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | ETW matched Windows handles and Sysmon exits differed
+
+The [hosted collector job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43917138186/job/133474222747) ran once on Windows Server 2022 (image `20261112.366.7`) from [launch `423dd3c`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/423dd3c700dd3ca3dfa93cd8e7ef493b8ba738df) at [reviewed source `f8a3c11`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f8a3c11d701bcf2cc455608d8f19ace0df31862b). Sysmon 15.22, both collectors and all nine checkpoints completed. The bounded Sysmon channel had zero reported gaps. ETW wrote four buffers with zero event or buffer loss. Process identity, image checks in Sysmon, parent linkage and ordering passed for all four generated processes.
+
+**Workflow FAIL. Three-way control BLOCKED.** All eight ETW payload timestamps matched the Windows handle creation and exit times exactly. Sysmon recorded the four exits between **1.7371 and 15.5727 ms early**. The largest difference was the fast child. The generated cases isolate a Sysmon exit-time discrepancy. The app journey's unsupported exit images and exit-before-birth records did not recur. Both logged verdicts reproduced locally. The workflow is disarmed, its one-use approval was consumed and zero artifacts were published. [Deltas, replay and follow-up criteria](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-etw-corroboration-result-and-replay)
+
 ## 16 November 2026 | Process-only ETW lifetime control prepared
 
 The disarmed workflow adds a kernel-process ETW session to the existing fast and paced fixtures. It matches payload process IDs, creation times and process sequence numbers where the provider supplies them, then checks parent identity, capture boundaries, event order and collection loss. It compares ETW payload creation and exit times with the same Windows handle timestamps used by Sysmon. ETW event emission times are retained as diagnostic deltas. Schema 3 replays all three sources, and the earlier Sysmon-only packet is printed before ETW export so it survives a later export failure.
 
-Local generated verification passed 13 tests, including a complete mocked capture and replay, missing and duplicate events, process and parent identity conflicts, ordering, loss and an inconclusive three-way comparison. The live Windows control is **NOT RUN** and requires fresh approval at the exact reviewed source. P4 remains **14/20 (70%)**. [Runbook](../qa/p4_native/N12_TRACE.md#process-only-etw-lifetime-corroboration)
+Local generated verification passed 13 tests, including a complete mocked capture and replay, missing and duplicate events, process and parent identity conflicts, ordering, loss and an inconclusive three-way comparison. The [hosted follow-up](#16-november-2026--etw-matched-windows-handles-and-sysmon-exits-differed) completed with a blocked three-way verdict. P4 remains **14/20 (70%)**. [Runbook](../qa/p4_native/N12_TRACE.md#process-only-etw-lifetime-corroboration)
 
 ## 16 November 2026 | Windows lifetime control blocked on three exit timestamps
 
@@ -358,9 +364,9 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Obtain explicit approval for one [process-only ETW lifetime control](../qa/p4_native/N12_TRACE.md#process-only-etw-lifetime-corroboration) at the verified branch HEAD on disposable GitHub-hosted Windows 2022. The run uses the existing generated process pairs, pinned Sysmon and the kernel-process ETW provider. Compare the redacted outcomes before choosing an app-specific follow-up or proposing another full journey.
+Prepare generated tests for corroborating a disputed Sysmon exit with an independently matched ETW lifetime. Require complete coverage, unique identity and valid parent and time order. Keep unsupported images, conflicting identities and missing lifecycle evidence blocked. Then define the smallest app-scoped capture needed to check the original two exit anomalies before seeking approval for another full journey. [Evidence and follow-up criteria](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-etw-corroboration-result-and-replay)
 
-The completed lifetime control, the earlier UDP collector rehearsal and the full app journey are disarmed. All three one-use approvals were consumed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Verified source checks
 

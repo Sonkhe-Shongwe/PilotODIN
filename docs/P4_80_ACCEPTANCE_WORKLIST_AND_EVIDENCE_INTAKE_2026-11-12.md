@@ -2,7 +2,7 @@
 
 **13 November 2026 scope update:** The owner moved Gate C to approval of a specific real-world prediction use. P4 engineering closure now proceeds against R02–R06 and the phase exit criteria. [Owner decision](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c).
 
-**Current evidence, 16 November 2026.** P4 is at **14 of 20 (70%)** after the scoped physical Local analytics acceptance. The latest full N12 run matched protected endpoints and failed its filesystem and network checks, with trace coverage blocked. The collector lifetime control blocked on three exit-time disagreements. The [process-only ETW control](../qa/p4_native/N12_TRACE.md#process-only-etw-lifetime-corroboration) is prepared and its live capture is pending approval. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Full audit result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) · [Collector decision](#collector-lifetime-control-decision)
+**Current evidence, 16 November 2026.** P4 is at **14 of 20 (70%)** after the scoped physical Local analytics acceptance. The latest full N12 run matched protected endpoints and failed its filesystem and network checks, with trace coverage blocked. The [process-only ETW control](#16-november-etw-corroboration-result-and-replay) isolated four early Sysmon exit timestamps on generated fixtures. App-specific corroboration is pending. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Full audit result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) · [Collector decision](#collector-lifetime-control-decision)
 
 **Binding governance:** [P4-17 owner risk-deferral refusal](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md), [P4-46 hard-stop boundary](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), [P4-50 independent evidence intake](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md), [P4-71 limited actual native boot](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md), [existing native test kit](../qa/p4_native/README.md) / [results template](../qa/p4_native/RESULTS_TEMPLATE.md), [master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2), [owner P4 evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9).
 
@@ -128,6 +128,48 @@ Save the redacted job-log packet below as JSON and run `python -B -m qa.p4_nativ
     {"case": "paced-parent", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 1947753, "birth_delta_ticks": -5820, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -3573, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false},
     {"case": "paced-child", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 684029, "windows_birth_after_parent_ticks": 1164667, "birth_delta_ticks": -487, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -24516, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false}
   ]
+}
+```
+
+##### 16 November ETW corroboration result and replay
+
+The [approved job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43917138186/job/133474222747) reported no Sysmon channel issues and zero ETW event or buffer loss. Each generated process had one matched start and stop for each collector. Differences below are the collector timestamp minus the Windows process-handle timestamp in milliseconds. ETW emission time measures when the event was recorded.
+
+| Case | Sysmon birth | Sysmon exit | ETW payload birth | ETW payload exit | ETW start emission | ETW stop emission |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Fast parent | -0.3211 | -2.4351 | +0.0000 | +0.0000 | +0.0696 | +0.0136 |
+| Fast child | -0.5708 | -15.5727 | +0.0000 | +0.0000 | +0.1017 | +0.0104 |
+| Paced parent | -0.7107 | -1.7371 | +0.0000 | +0.0000 | +0.0802 | +0.0143 |
+| Paced child | -0.8526 | -2.0392 | +0.0000 | +0.0000 | +0.0943 | +0.0131 |
+
+All four cases returned `etw-and-handles-agree-sysmon-time-differs`. The job **FAILED** with its deliberate **BLOCKED** verdict. The app audit's unreadable exit images and exits before birth remain unresolved. The collector result earns zero points toward R02.5 or R02.6.
+
+**Next evidence.** Exercise generated app-shaped records before another costly journey. Require a unique ETW start and stop with the same payload PID and process sequence where available, matching creation time, verified parent lifetime and complete collection. Preserve both collectors' original values and keep the app rules fail-closed for unresolved conflicts. Include reused PIDs, competing identities, disordered events and collector loss as negative cases. The observed 15.5727 ms maximum from four generated processes supplies a regression case. Applying a timing allowance or replacing a Sysmon timestamp in the acceptance reducer requires app-specific evidence and review. The six unexpected connections, 329 outside-scope operations and unresolved file attribution remain open.
+
+Copy the redacted packet to a JSON file and run `python -B -m qa.p4_native.n12_lifetime_control --replay <file>` at the reviewed source. The schema 3 packet and its nested schema 2 Sysmon packet both reproduced their logged verdicts locally with exit code 2.
+
+```json
+{
+  "schema_version": 3,
+  "sysmon": {
+    "schema_version": 2,
+    "channel_issues": [],
+    "cases": [
+      {"case": "fast-parent", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 2031140, "birth_delta_ticks": -3211, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -24351, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false},
+      {"case": "fast-child", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 210019, "windows_birth_after_parent_ticks": 1632497, "birth_delta_ticks": -5708, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -155727, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false},
+      {"case": "paced-parent", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 2460264, "birth_delta_ticks": -7107, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -17371, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false},
+      {"case": "paced-child", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 721866, "windows_birth_after_parent_ticks": 1591419, "birth_delta_ticks": -8526, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -20392, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false}
+    ]
+  },
+  "etw": {
+    "counters": {"events_lost": 0, "log_buffers_lost": 0, "realtime_buffers_lost": 0, "buffers_written": 4},
+    "cases": [
+      {"case": "fast-parent", "start_count": 1, "stop_count": 1, "start_event_delta_ticks": 696, "create_delta_ticks": 0, "start_in_window": true, "parent_matches": true, "stop_event_delta_ticks": 136, "exit_delta_ticks": 0, "stop_in_window": true, "identity_matches": true, "ordered": true, "sequence_unique": true},
+      {"case": "fast-child", "start_count": 1, "stop_count": 1, "start_event_delta_ticks": 1017, "create_delta_ticks": 0, "start_in_window": true, "parent_matches": true, "stop_event_delta_ticks": 104, "exit_delta_ticks": 0, "stop_in_window": true, "identity_matches": true, "ordered": true, "sequence_unique": true},
+      {"case": "paced-parent", "start_count": 1, "stop_count": 1, "start_event_delta_ticks": 802, "create_delta_ticks": 0, "start_in_window": true, "parent_matches": true, "stop_event_delta_ticks": 143, "exit_delta_ticks": 0, "stop_in_window": true, "identity_matches": true, "ordered": true, "sequence_unique": true},
+      {"case": "paced-child", "start_count": 1, "stop_count": 1, "start_event_delta_ticks": 943, "create_delta_ticks": 0, "start_in_window": true, "parent_matches": true, "stop_event_delta_ticks": 131, "exit_delta_ticks": 0, "stop_in_window": true, "identity_matches": true, "ordered": true, "sequence_unique": true}
+    ]
+  }
 }
 ```
 
