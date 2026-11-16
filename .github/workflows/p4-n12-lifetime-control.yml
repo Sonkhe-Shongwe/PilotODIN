@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ false }} # One-use approval consumed by run 43917138186.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }} # One owner-approved generated Windows image-path control.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
