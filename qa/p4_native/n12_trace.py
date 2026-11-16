@@ -93,6 +93,16 @@ class Process:
     end: datetime | None = None
     repeated_exits: int = 0
     fixture_birth_adjusted: bool = False
+    disputed_exit: DisputedExit | None = None
+
+
+@dataclass(frozen=True)
+class DisputedExit:
+    """Private original Sysmon evidence for the diagnostic ETW comparison."""
+    record: int
+    stamp: datetime
+    time_conflict: bool
+    image_unverified: bool
 
 
 @dataclass(frozen=True)
@@ -290,6 +300,8 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
                     exits[guid] = stamp, fields
                     if ordered and image_verified:
                         process.end = stamp
+                    else:
+                        process.disputed_exit = DisputedExit(record, stamp, not ordered, not image_verified)
             elif kind == 3:
                 connections.append(sysmon_connection(stamp, fields))
         container.remove(event)
@@ -697,6 +709,20 @@ def utc_ticks(timestamp):
     return seconds * 10_000_000 + timestamp.microsecond * 10
 
 
+def etw_payload_ticks(value):
+    """Keep the seventh fractional digit present in Windows FILETIME XML."""
+    match = re.fullmatch(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d{1,7}))?(?:Z|\+00:00)", value)
+    require(match is not None, "lifetime-etw-invalid-payload-time")
+    seconds, fraction = match.groups()
+    return utc_ticks(utc_time(seconds + "+00:00")) + int((fraction or "0").ljust(7, "0"))
+
+
+def etw_unsigned(value):
+    require(re.fullmatch(r"[0-9]{1,20}", value) is not None and int(value) < 2**64,
+                  "lifetime-etw-invalid-identity")
+    return int(value)
+
+
 def etw_capture_contract(manifest, start, end, issues):
     capture = manifest["etw"]
     require(capture["schema_version"] == 1, "unsupported ETW evidence schema")
@@ -749,7 +775,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       rundown_window=None, record_outside_scope=None, record_outside_writer=None,
                       background_bookends=None,
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
-                      calibration_diagnostics=None):
+                      calibration_diagnostics=None, disputed_exits=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -839,6 +865,13 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
+        if disputed_exits is not None and any(p.disputed_exit for p in processes.values()):
+            if __package__:
+                from .n12_exit_corroboration import corroborate_exits
+            else:
+                from n12_exit_corroboration import corroborate_exits
+            disputed_exits.extend(corroborate_exits(
+                event_records, processes, roles, devices, (start_ticks, end_ticks), issues))
         if background_bookends is not None:
             # Scoped identities still come from Sysmon joined to ETW process
             # starts. Bookends can only seed pre-existing background processes.
@@ -973,6 +1006,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
     issues = observed.issues.copy()
     protected, permitted = scope(manifest)
     etw_diagnostics = {}
+    disputed_exits = []
     bookend_summary = {}
     path_gap_counts = Counter()
     write_name_gap_counts = Counter()
@@ -984,7 +1018,8 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
             protected + immutable, permitted, issues, rundown=rundown, record_outside_scope=record_outside_scope,
             record_outside_writer=record_outside_writer, background_bookends=journey_bookends,
             bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None,
-            write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None)
+            write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None,
+            disputed_exits=disputed_exits)
         path_diagnostics = []
     else:
         file_counts, violations, file_events, path_diagnostics = inspect_files(
@@ -1021,6 +1056,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
         **({"file_evidence_source": "etw", "etw_unresolved_mutations": etw_diagnostics,
              **({"file_key_rundown_records": len(rundown)} if rundown is not None else {})}
            if etw else {}),
+        **({"etw_exit_corroboration": disputed_exits} if disputed_exits else {}),
         **({"etw_background_process_bookends": bookend_summary} if bookend_summary else {}),
         **({"etw_path_gap_context": dict(path_gap_counts),
              "etw_write_name_gap_context": dict(write_name_gap_counts)} if etw and describe_path_gaps else {}),

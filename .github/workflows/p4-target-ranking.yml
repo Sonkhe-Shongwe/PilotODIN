@@ -52,6 +52,7 @@ on:
       - tests/test_p4_n12_app_journey.py
       - tests/test_p4_n12_lifetime_control.py
       - tests/test_p4_n12_lifetime_etw.py
+      - tests/test_p4_n12_exit_corroboration.py
       - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_trace.py
       - tests/test_p4_r06_prospective_fingerprint.py
@@ -148,6 +149,7 @@ jobs:
           tests/test_p4_n12_app_journey.py
           tests/test_p4_n12_lifetime_control.py
           tests/test_p4_n12_lifetime_etw.py
+          tests/test_p4_n12_exit_corroboration.py
           tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_installer_provenance.py
       - name: Verify P4 source contracts and manual target choice

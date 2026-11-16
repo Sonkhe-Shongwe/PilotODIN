@@ -5,12 +5,12 @@ from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 from uuid import uuid4
 
 from . import n12_etw_probe as etw
 from . import n12_trace as trace
+from .n12_trace import etw_payload_ticks as payload_ticks, etw_unsigned as unsigned
 from qa.p4_research import n12_app_journey as journey
 
 
@@ -52,20 +52,6 @@ def stop_session(logman, session, source, *, primary_error=False):
             pass  # Preserve the original failure.
         if not primary_error:
             raise
-
-
-def payload_ticks(value):
-    """Keep the seventh fractional digit present in Windows FILETIME XML."""
-    match = re.fullmatch(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d{1,7}))?(?:Z|\+00:00)", value)
-    trace.require(match is not None, "lifetime-etw-invalid-payload-time")
-    seconds, fraction = match.groups()
-    return trace.utc_ticks(trace.utc_time(seconds + "+00:00")) + int((fraction or "0").ljust(7, "0"))
-
-
-def unsigned(value):
-    trace.require(re.fullmatch(r"[0-9]{1,20}", value) is not None and int(value) < 2**64,
-                  "lifetime-etw-invalid-identity")
-    return int(value)
 
 
 def read_process_events(path, target_pids, start, end):

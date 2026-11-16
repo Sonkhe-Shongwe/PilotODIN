@@ -2,7 +2,7 @@
 
 **13 November 2026 scope update:** The owner moved Gate C to approval of a specific real-world prediction use. P4 engineering closure now proceeds against R02–R06 and the phase exit criteria. [Owner decision](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c).
 
-**Current evidence, 16 November 2026.** P4 is at **14 of 20 (70%)** after the scoped physical Local analytics acceptance. The latest full N12 run matched protected endpoints and failed its filesystem and network checks, with trace coverage blocked. The [process-only ETW control](#16-november-etw-corroboration-result-and-replay) isolated four early Sysmon exit timestamps on generated fixtures. App-specific corroboration is pending. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Full audit result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) · [Collector decision](#collector-lifetime-control-decision)
+**Current evidence, 16 November 2026.** P4 is at **14 of 20 (70%)** after the scoped physical Local analytics acceptance. The latest full N12 run matched protected endpoints and failed its filesystem and network checks, with trace coverage blocked. The [process-only ETW control](#16-november-etw-corroboration-result-and-replay) isolated four early Sysmon exit timestamps on generated fixtures. The combined app exit diagnostic passed generated verification. [App capture plan](#16-november-app-lifetime-capture-plan) [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Full audit result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) · [Collector decision](#collector-lifetime-control-decision)
 
 **Binding governance:** [P4-17 owner risk-deferral refusal](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md), [P4-46 hard-stop boundary](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), [P4-50 independent evidence intake](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md), [P4-71 limited actual native boot](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md), [existing native test kit](../qa/p4_native/README.md) / [results template](../qa/p4_native/RESULTS_TEMPLATE.md), [master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2), [owner P4 evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9).
 
@@ -172,6 +172,13 @@ Copy the redacted packet to a JSON file and run `python -B -m qa.p4_native.n12_l
   }
 }
 ```
+
+##### 16 November app lifetime capture plan
+
+- **Question.** Can independently verified ETW lifetimes account for any unreadable or out-of-order Sysmon exits from the actual PilotODIN, WebView2 and helper tree during startup and shutdown? Historical records 155 and 177 have no retained raw trace. The capture can test for recurrence and measure a new discrepancy.
+- **Smallest workload.** Use one reviewed unpackaged Windows 2022 staging of the same commit and one generated local startup-to-ready and graceful-close sequence. Launch with isolated disposable app-data and WebView profile. Reuse the native bridge readiness signal and verified close path. Start Sysmon and kernel-process ETW before app startup, retain the app's original process handle through exit, and stop after the verified profile exits. Collect parent births before the root launches and retain their stops where needed for the diagnostic. A parent unavailable within the capture stays unverified. Check generated endpoint fingerprints and record app binary, collector and source provenance.
+- **Evidence and decision.** Preserve the original Sysmon timestamp and image category, ETW payload creation and exit, sequence and parent checks, collection counters and stage checkpoints. Log only fixed labels and signed deltas, with raw trace confined to the runner. A corroborated new dispute supports reviewing a prospective app-specific attribution rule. A clean launch or non-recurrence records the observed scope and leaves the historical findings open. A conflicting or missing join, failed control or collector gap blocks the diagnostic. The approved full two-launch filesystem and network audit is a later dependency for acceptance credit.
+- **Status.** Generated reducer tests pass. A restricted launcher and source-pinned approval record need preparation before any Windows compilation or capture.
 
 ### Rules for interpreting the matrix
 

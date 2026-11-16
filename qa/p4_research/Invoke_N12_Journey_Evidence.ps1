@@ -113,6 +113,7 @@ switch ($Operation) {
                     $event.Id -in 10,11,12,13,14,15,16,17,18,19,21,23,24,26,27,28,29,34)) {
                     $xml = [xml]$event.ToXml()
                     $fields = @{}
+                    $duplicateLifecycleField = $false
                     foreach ($field in $xml.SelectNodes("//*[local-name()='EventData']/*[local-name()='Data']")) {
                         $name = $field.GetAttribute('Name')
                         if ($processOnly) {
@@ -121,6 +122,9 @@ switch ($Operation) {
                             if ($fields.ContainsKey($name)) {
                                 throw 'Process-only ETW event fields are ambiguous.'
                             }
+                        }
+                        if ($lifecycle -and $fields.ContainsKey($name)) {
+                            $duplicateLifecycleField = $true
                         }
                         $fields[$name] = $field.InnerText
                     }
@@ -131,7 +135,10 @@ switch ($Operation) {
                         lifecycle = $lifecycle
                         data = $fields
                     }
-                    if ($processOnly) { $row.version = $event.Version }
+                    if ($lifecycle -and $event.Id -in 1,2) {
+                        $row.version = $event.Version
+                        if ($duplicateLifecycleField) { $row.lifecycle_fields_ambiguous = $true }
+                    }
                     $stream.WriteLine(($row | ConvertTo-Json -Compress -Depth 4))
                 }
             }

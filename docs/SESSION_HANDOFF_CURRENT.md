@@ -2,6 +2,10 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | N12 disputed exit diagnostic prepared
+
+The combined N12 report now compares disputed Sysmon exits with ETW process start and stop payloads from the same digest-verified export. It requires unique process identity, valid parent lifetime and complete collection before reporting `CORROBORATED_DIAGNOSTIC`. The report retains the Sysmon record number, role, dispute flags and relative timing. The original Sysmon findings and strict acceptance verdicts remain in force. Generated cases cover both historical failure types, the 15.5727 ms observed collector discrepancy, PID reuse, order, identity, loss and the combined audit gate. Twenty focused local tests passed, including the prior ETW control suite. The new diagnostic is **NOT RUN** against the native app. [Runbook](../qa/p4_native/N12_TRACE.md#app-journey-disputed-sysmon-exits)
+
 ## 16 November 2026 | ETW matched Windows handles and Sysmon exits differed
 
 The [hosted collector job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43917138186/job/133474222747) ran once on Windows Server 2022 (image `20261112.366.7`) from [launch `423dd3c`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/423dd3c700dd3ca3dfa93cd8e7ef493b8ba738df) at [reviewed source `f8a3c11`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f8a3c11d701bcf2cc455608d8f19ace0df31862b). Sysmon 15.22, both collectors and all nine checkpoints completed. The bounded Sysmon channel had zero reported gaps. ETW wrote four buffers with zero event or buffer loss. Process identity, image checks in Sysmon, parent linkage and ordering passed for all four generated processes.
@@ -364,7 +368,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Prepare generated tests for corroborating a disputed Sysmon exit with an independently matched ETW lifetime. Require complete coverage, unique identity and valid parent and time order. Keep unsupported images, conflicting identities and missing lifecycle evidence blocked. Then define the smallest app-scoped capture needed to check the original two exit anomalies before seeking approval for another full journey. [Evidence and follow-up criteria](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-etw-corroboration-result-and-replay)
+Prepare a disarmed Windows 2022 launch-and-close capture for the staged unpackaged app, WebView2 and their helpers. Use the plan's same-window Sysmon, kernel-process ETW and process-handle evidence to verify the app-specific path before seeking approval for capture or compilation. [App lifetime capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
