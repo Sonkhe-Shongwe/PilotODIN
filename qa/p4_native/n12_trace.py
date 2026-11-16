@@ -118,7 +118,28 @@ def sysmon_connection(stamp, fields):
                       source_port, address, port)
 
 
-def sysmon_image(value, event_id, record):
+def sysmon_image_kind(value, birth_image):
+    """Describe an unsupported image without exposing its value."""
+    if value is None:
+        return "missing"
+    category = unresolved_path_kind(value)
+    if category != "relative-or-unrecognized":
+        return category
+    image = value.strip().casefold()
+    if image == "-":
+        return "dash-placeholder"
+    if len(image) > 1 and image.startswith('"') and image.endswith('"'):
+        return "quoted-image"
+    if "\\" in image or "/" in image:
+        return "relative-path"
+    if birth_image is not None and image == ntpath.basename(birth_image):
+        return "basename-matches-birth"
+    if image.endswith(".exe"):
+        return "executable-basename" if birth_image is None else "basename-differs-from-birth"
+    return category
+
+
+def sysmon_image(value, event_id, record, *, birth_image=None):
     """Resolve explicit DOS-drive aliases without guessing an image identity."""
     path = value
     if path and path.startswith(("\\\\?\\", "\\??\\")):
@@ -131,7 +152,7 @@ def sysmon_image(value, event_id, record):
             return windows_path(path)
     except EvidenceValidationError:
         pass
-    category = "missing" if value is None else unresolved_path_kind(value)
+    category = sysmon_image_kind(value, birth_image)
     raise EvidenceValidationError(
         f"invalid process Image (event {event_id}, record {record}, {category})")
 
@@ -218,8 +239,8 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
                 process = processes[guid]
                 require(int(fields["ProcessId"]) == process.pid, "process exit PID disagrees with birth")
                 if "Image" in fields:
-                    require(sysmon_image(fields["Image"], kind, record) == process.image,
-                            "process exit image disagrees with birth")
+                    exit_image = sysmon_image(fields["Image"], kind, record, birth_image=process.image)
+                    require(exit_image == process.image, "process exit image disagrees with birth")
                 require(process.start <= stamp, "process exit precedes birth")
                 if guid in exits:
                     # Channel metadata may differ, but the full exit payload must agree.

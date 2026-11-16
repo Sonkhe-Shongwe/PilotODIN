@@ -8,6 +8,10 @@ The [approved hosted Windows job #133164634428](https://github.com/Sonkhe-Shongw
 
 Sysmon 15.22 setup and initial calibration passed on read 1. The first launch, same-binary relaunch and final calibration command completed. The final audit then rejected the image field on Sysmon Event ID 5, record 184, in category `relative-or-unrecognized`. The job failed before emitting the filesystem, network or protected-snapshot verdicts. The public log omits the image value and the run retained no downloadable artifacts. The exact image form and writer remain unverified. The one-use approval was consumed and the workflow is disarmed.
 
+## 16 November 2026 | N12 redacted process-exit image diagnostics
+
+The parser now distinguishes an executable basename matching the recorded birth basename, a different executable basename, a relative path, a quoted value, a dash placeholder and other unrecognised forms. All 201 generated trace cases passed locally with a standard-library harness. They confirm each unsupported image still blocks the audit. The error contains only the category, event type and record number. The process identity, event order and repeated-exit rules still apply. The live value from record 184 remains unknown. [Diagnostic contract](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Owner Windows Live Dev checkpoint
 
 The owner reported that the Windows Live Dev check worked after starting the launcher. The first attempt received WinError 10061 before it reached the fixture. The successful follow-up is an owner attestation. The printed result, measured response times and available RAM were not supplied. Reuse this checkpoint and the existing hosted browser and Windows API evidence.
@@ -252,7 +256,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use generated Sysmon records to check how non-absolute process-exit images are diagnosed and keep the existing identity and ordering checks. The observed label combines several possible image forms. Narrow the diagnostic before another full hosted journey so a recurrence can guide a specific parser change. The [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) remains the baseline. The 397 collector-only path gaps remain open on their own workload.
+Use the more specific diagnostic in the next separately approved hosted journey. If final parsing succeeds, compare the filesystem and network results against the [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison). If the same blocker recurs, use the reported image category to determine which parser change has evidence. The 397 collector-only path gaps remain open on their own workload.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
