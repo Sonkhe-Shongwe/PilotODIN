@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # One-use approval consumed by run 43846107440.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }}
     runs-on: windows-2022
     timeout-minutes: 100
     env:
