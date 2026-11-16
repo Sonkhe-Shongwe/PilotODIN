@@ -1,12 +1,14 @@
 """Generated ETW path and Chromium NetLog diagnostics. No Windows capture needed."""
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from qa.p4_research import n12_journey_diagnostics as diagnostics
+from qa.p4_native.n12_trace import utc_ticks
 
 
 OFFSET = 1_800_000_000_000
@@ -49,6 +51,44 @@ def link(kind, stamp, source, peer):
 
 
 class JourneyDiagnosticsTests(unittest.TestCase):
+    def test_backend_snapshot_requires_same_process_and_both_socket_directions(self):
+        obs = {**observation(remote="127.0.0.1", port=62000),
+               "role": "backend", "kind": "unexpected-loopback"}
+        stamp = datetime.fromisoformat(obs["utc"])
+        process = SimpleNamespace(pid=702, guid=obs["process_guid"], start=stamp - timedelta(seconds=1),
+                                  end=stamp + timedelta(seconds=5))
+        journey = SimpleNamespace(bindings=[({"role": "backend"}, process)])
+        outgoing = {"local_address": "::ffff:127.0.0.1", "local_port": obs["source_port"],
+                    "remote_address": "127.0.0.1", "remote_port": obs["port"]}
+        reverse = {"local_address": outgoing["remote_address"], "local_port": outgoing["remote_port"],
+                   "remote_address": outgoing["local_address"], "remote_port": outgoing["local_port"]}
+        snapshot = {"pid": process.pid, "birth_ticks": utc_ticks(process.start),
+                    "observed_ticks": utc_ticks(stamp + timedelta(seconds=1)), "sockets": [outgoing, reverse]}
+        match = diagnostics.backend_self_connections
+        self.assertEqual(match([obs], journey, snapshot), {1})
+        summary = diagnostics.network_summary([obs], {}, {}, backend_pairs={1})
+        self.assertEqual(summary["observations"], [{
+            "observation": 1, "socket_status": "matched-same-process-pair",
+            "request_category": "backend-internal-loopback",
+        }])
+        for hidden in ("private-guid", "51200", "62000", "127.0.0.1", "702"):
+            self.assertNotIn(hidden, json.dumps(summary))
+        for incomplete in (
+            None,
+            {**snapshot, "pid": 703},
+            {**snapshot, "birth_ticks": utc_ticks(stamp)},
+            {**snapshot, "observed_ticks": utc_ticks(stamp - timedelta(milliseconds=1))},
+            {**snapshot, "observed_ticks": utc_ticks(process.end + timedelta(milliseconds=1))},
+            {**snapshot, "sockets": [outgoing]},
+            {**snapshot, "sockets": [outgoing, reverse, reverse]},
+            {**snapshot, "sockets": [outgoing, reverse, {**outgoing, "local_address": "127.0.0.2"}]},
+        ):
+            self.assertEqual(match([obs], journey, incomplete), set())
+        self.assertEqual(match([obs, obs], journey, snapshot), set())
+        self.assertEqual(match([{**obs, "process_guid": "reused-pid"}], journey, snapshot), set())
+        process.end = None
+        self.assertEqual(match([obs], journey, snapshot), set())
+
     def test_outside_paths_are_fixed_categories_and_count_operations_once(self):
         paths = diagnostics.OutsidePaths([
             ("webview-profile", r"C:\private\owner\webview"), ("runner-temp", r"C:\private\owner"),

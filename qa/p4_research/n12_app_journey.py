@@ -18,7 +18,7 @@ from uuid import uuid4
 from qa.p4_native import n12_etw_probe as etw
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
-from qa.p4_research.n12_journey_diagnostics import OutsidePaths, network_summary
+from qa.p4_research.n12_journey_diagnostics import OutsidePaths, address, backend_self_connections, network_summary
 
 
 NATIVE = build.REPO / "qa" / "p4_native"
@@ -403,6 +403,26 @@ def process_bookend():
         return None
 
 
+def backend_socket_snapshot(backend):
+    try:
+        snapshot = json.loads(powershell(HELPER, "backend-tcp", "-BackendProcessId", backend.pid, timeout=15))
+        birth, observed = snapshot["birth_ticks"], snapshot["observed_ticks"]
+        trace.require(type(snapshot["pid"]) is int and snapshot["pid"] == backend.pid
+                      and type(birth) is int and type(observed) is int and 0 < birth <= observed,
+                      "invalid backend socket snapshot identity")
+        sockets = snapshot["sockets"]
+        trace.require(isinstance(sockets, list), "invalid backend socket snapshot")
+        for row in sockets:
+            for end in ("local", "remote"):
+                host, port = row[f"{end}_address"], row[f"{end}_port"]
+                trace.require(isinstance(host, str) and type(port) is int and 1 <= port <= 65535,
+                              "invalid backend socket endpoint")
+                address(host)
+        return snapshot
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        return None
+
+
 def capture(root, staged, source, expected_hash, node):
     manifest, home, profile, fixture, calibration = prepare_journey(root, source, expected_hash)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
@@ -448,6 +468,7 @@ def capture(root, staged, source, expected_hash, node):
             wait_for(lambda: http_ready(8000, "/api/health", lambda status:
                                        status.get("status") == "ok" and status.get("cloud_ai") is False),
                      60, "loopback backend did not become ready with cloud AI off", backend)
+            backend_snapshot = backend_socket_snapshot(backend)
             wait_for(lambda: http_ready(5173, "/"), 60, "Vite did not become ready", vite)
             run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite)
         print("N12 journey stage final calibration", flush=True)
@@ -491,8 +512,12 @@ def capture(root, staged, source, expected_hash, node):
         if rejected_sysmon_exits:
             print("N12 rejected Sysmon exits " + json.dumps(rejected_sysmon_exits), flush=True)
     report_file(root / "private-endpoints.json", endpoints)
+    if backend_snapshot is not None:
+        report_file(root / "private-backend-sockets.json", backend_snapshot)
+    backend_pairs = backend_self_connections(endpoints, observed, backend_snapshot)
     log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
-    network_diagnostics = network_summary(endpoints, launches, log_paths)
+    network_diagnostics = network_summary(endpoints, launches, log_paths, backend_pairs=backend_pairs)
+    network_diagnostics["backend_socket_snapshot"] = "available" if backend_snapshot is not None else "unavailable"
     print("N12 network observations " + json.dumps({
         "source_sha": source,
         "executable_sha256": expected_hash,

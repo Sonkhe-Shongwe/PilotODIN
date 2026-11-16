@@ -369,7 +369,7 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
 
 @pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit",
                                     "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture",
-                                    "etw-export", "etw-reduce"])
+                                    "etw-export", "etw-reduce", "backend-snapshot-unavailable"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
@@ -459,6 +459,13 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             label = "process-bookend-after" if "etw-stop" in events else "process-bookend-before"
             events.append(label)
             return b'[{"pid": 702, "birth_ticks": 170}]'
+        if args[0] == "backend-tcp":
+            assert args == ("backend-tcp", "-BackendProcessId", events.index("backend") + 1)
+            events.append("backend-snapshot")
+            if fault == "backend-snapshot-unavailable":
+                return b'{"pid": 999, "birth_ticks": 170, "observed_ticks": 200, "sockets": []}'
+            return json.dumps({"pid": args[-1], "birth_ticks": 170,
+                               "observed_ticks": 200, "sockets": []}).encode()
         if args[0] == "close":
             events.append("graceful-close")
         elif args[0] == "profile-active":
@@ -489,6 +496,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     observed = SimpleNamespace(
         issues={"sysmon-exit-time-unverified"}, network_counts={"backend:tcp:unexpected-loopback": 1},
         unexpected_connections=[{"role": "backend", "protocol": "tcp", "kind": "unexpected-loopback"}],
+        bindings=[],
     )
 
     def reduce(m, sysmon_observed, file_trace, before, after, *, etw, record_outside_writer,
@@ -538,7 +546,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert "N12 protected endpoint snapshots" not in capsys.readouterr().out
         return
 
-    if fault:
+    if fault and fault != "backend-snapshot-unavailable":
         error, message = {
             "sysmon-export": (journey.trace.EvidenceValidationError, "Sysmon export failed"),
             "etw-export": (subprocess.CalledProcessError, "etw-export"),
@@ -552,7 +560,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert report["coverage"] == "BLOCKED"
         assert events == ["process-bookend-before", "etw-start", "initial-fixture-lead-in", "calibration-first",
                           "sysmon-prelaunch-check", "idle-observation",
-                          "backend", "vite", "verify-binary", "app-first", "driver-first", "graceful-close",
+                          "backend", "vite", "backend-snapshot", "verify-binary", "app-first", "driver-first", "graceful-close",
                           "profile-exit", "verify-binary", "app-relaunch", "driver-relaunch", "graceful-close",
                           "profile-exit", "cleanup-driver-relaunch", "cleanup-app-relaunch",
                           "cleanup-driver-first", "cleanup-app-first", "cleanup-vite", "cleanup-backend",
@@ -564,6 +572,11 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             {"pid": 702, "birth_ticks": 170},
         ]
         assert json.loads((root / "private-endpoints.json").read_text()) == [{"role": "backend", "raw": "private-value"}]
+        socket_path = root / "private-backend-sockets.json"
+        if fault == "backend-snapshot-unavailable":
+            assert not socket_path.exists()
+        else:
+            assert json.loads(socket_path.read_text())["observed_ticks"] == 200
         assert report["journey_diagnostics"]["outside_scope_paths"] == [
             {"role": "driver", "operation": "write", "path_categories": ["other-path"], "count": 1},
         ]
@@ -575,7 +588,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     lines = capsys.readouterr().out.splitlines()
     network_lines = [line.removeprefix("N12 network observations ") for line in lines
                      if line.startswith("N12 network observations ")]
-    if fault in {None, "etw-export", "etw-reduce"}:
+    if fault in {None, "etw-export", "etw-reduce", "backend-snapshot-unavailable"}:
         observation, = network_lines
         assert "private-value" not in observation and "702" not in observation
         assert json.loads(observation) == {
@@ -586,6 +599,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             "unexpected_connections": observed.unexpected_connections,
             "network_diagnostics": {
                 "logs": {"first": "missing", "relaunch": "missing"},
+                "backend_socket_snapshot": "unavailable" if fault == "backend-snapshot-unavailable" else "available",
                 "observations": [{"observation": 1, "socket_status": "outside-webview",
                                   "request_category": "unattributed"}],
             },

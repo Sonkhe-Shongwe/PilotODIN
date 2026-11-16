@@ -2,12 +2,13 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('sysmon-tail','etw-export','close','profile-active','project-switch','process-bookend')][string]$Operation,
+    [ValidateSet('sysmon-tail','etw-export','close','profile-active','project-switch','process-bookend','backend-tcp')][string]$Operation,
     [string]$CaptureRoot,
     [int]$AppProcessId,
     [string]$AppPath,
     [string]$AppTitle,
     [string]$ProfilePath,
+    [int]$BackendProcessId,
     [ValidateSet('Stay','Switch project')][string]$Action
 )
 
@@ -63,6 +64,25 @@ switch ($Operation) {
                 @{ pid = $_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks }
             })
         ConvertTo-Json -InputObject $rows -Compress
+    }
+    'backend-tcp' {
+        if ($env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or
+            $BackendProcessId -le 0) { throw 'N12 backend socket evidence requires an approved journey.' }
+        $backend = Get-Process -Id $BackendProcessId
+        try {
+            $birth = $backend.StartTime.ToUniversalTime().Ticks
+            $rows = @(Get-NetTCPConnection -OwningProcess $BackendProcessId -State Established |
+                ForEach-Object {
+                    @{ local_address = $_.LocalAddress; local_port = [int]$_.LocalPort
+                       remote_address = $_.RemoteAddress; remote_port = [int]$_.RemotePort }
+                })
+            $sample = [DateTime]::UtcNow.Ticks
+            if ($backend.HasExited) { throw 'Backend exited during the socket snapshot.' }
+            ConvertTo-Json -InputObject @{ pid = $BackendProcessId; birth_ticks = $birth
+                observed_ticks = $sample; sockets = $rows } -Compress -Depth 4
+        } finally {
+            $backend.Dispose()
+        }
     }
     'etw-export' {
         $file = [IO.File]::Open((Join-Path $CaptureRoot 'etw.jsonl'), [IO.FileMode]::CreateNew,

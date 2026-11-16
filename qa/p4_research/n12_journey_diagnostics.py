@@ -6,7 +6,7 @@ from ipaddress import IPv6Address, ip_address
 import json
 from urllib.parse import urlsplit
 
-from qa.p4_native.n12_trace import inside, local_disposable_path, windows_path
+from qa.p4_native.n12_trace import inside, local_disposable_path, utc_ticks, utc_time, windows_path
 
 
 CONNECT_EVENTS = {"TCP_CONNECT", "TCP_CONNECT_ATTEMPT", "UDP_CONNECT"}
@@ -315,7 +315,41 @@ def read_netlog(path):
         return "unusable", None
 
 
-def network_summary(observations, launches, paths, reader=read_netlog):
+def backend_self_connections(observations, journey, snapshot):
+    """Correlate both ends of a live TCP pair to the declared backend lifetime."""
+    if snapshot is None:
+        return set()
+    bindings = [process for root, process in journey.bindings if root["role"] == "backend"]
+    if len(bindings) != 1:
+        return set()
+    process, = bindings
+    if (process.pid != snapshot["pid"] or process.end is None
+            or abs(utc_ticks(process.start) - snapshot["birth_ticks"]) > 100_000
+            or not utc_ticks(process.start) <= snapshot["observed_ticks"] <= utc_ticks(process.end)):
+        return set()
+    rows = [(address(row["local_address"]), row["local_port"],
+             address(row["remote_address"]), row["remote_port"]) for row in snapshot["sockets"]]
+    counts = Counter(rows)
+    matches = {}
+    for ordinal, entry in enumerate(observations, 1):
+        if (entry["role"] != "backend" or entry["protocol"] != "tcp"
+                or entry["kind"] != "unexpected-loopback" or entry["process_guid"] != process.guid
+                or not utc_ticks(process.start) <= utc_ticks(utc_time(entry["utc"])) <= snapshot["observed_ticks"]):
+            continue
+        remote = address(entry["address"])
+        candidates = [row for row in counts if row[0].is_loopback and remote.is_loopback
+                      and row[1:] == (entry["source_port"], remote, entry["port"])]
+        if len(candidates) != 1:
+            continue
+        row, = candidates
+        reverse = row[2:] + row[:2]
+        if row != reverse and counts[row] == counts[reverse] == 1:
+            matches[ordinal] = frozenset((row, reverse))
+    uses = Counter(matches.values())
+    return {ordinal for ordinal, pair in matches.items() if uses[pair] == 1}
+
+
+def network_summary(observations, launches, paths, reader=read_netlog, *, backend_pairs=()):
     logs = {label: reader(path) for label, path in paths.items()}
     result = []
     for ordinal, observation in enumerate(observations, 1):
@@ -328,6 +362,8 @@ def network_summary(observations, launches, paths, reader=read_netlog):
                     state, purpose, details = log.match_evidence(observation)
                 except (OSError, KeyError, TypeError, ValueError, OverflowError):
                     state = "observation-unusable"
+        if ordinal in backend_pairs:
+            state, purpose = "matched-same-process-pair", "backend-internal-loopback"
         # The ordinal refers to the existing redacted list in the audit report.
         result.append({"observation": ordinal, "socket_status": state, "request_category": purpose, **details})
     return {"logs": {label: status for label, (status, _) in logs.items()}, "observations": result}

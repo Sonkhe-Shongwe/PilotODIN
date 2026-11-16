@@ -2,6 +2,10 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Prepared backend loopback ownership check
+
+The hosted journey now takes one read-only snapshot of established TCP sockets owned by the declared backend after local health passes and before the app launches. The reducer can match a Sysmon observation to a unique, reciprocal pair in the same verified process lifetime. The public report gives only a diagnostic classification and snapshot availability. Missing, stale, or ambiguous evidence leaves the connection unattributed. The live socket snapshot and updated WebView categories are **NOT RUN**. The prior Sysmon exit-image, exit-time and parent-lifetime blockers have no retained raw trace and remain open. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Prepared WebView network source categories
 
 The latest retained job log matches five WebView sockets to request types but omits their destinations and initiators. The dev driver uses the local frontend and API and allows Tauri IPC. The two local HTTP/80 findings cannot be assigned to one of these routes from the retained report. Python's Windows asyncio socketpair is a plausible explanation for the backend startup TCP connection to an ephemeral local port. It still needs same-process socket evidence to establish that match.
