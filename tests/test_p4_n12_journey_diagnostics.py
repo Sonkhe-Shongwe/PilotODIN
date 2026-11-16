@@ -13,7 +13,7 @@ OFFSET = 1_800_000_000_000
 TYPES = {name: i for i, name in enumerate((
     "TCP_CONNECT", "TCP_CONNECT_ATTEMPT", "UDP_CONNECT", "UDP_LOCAL_ADDRESS",
     "URL_REQUEST_START_JOB", "SOCKET_POOL_BOUND_TO_SOCKET", "HTTP_STREAM_JOB_BOUND_TO_REQUEST",
-    "DNS_TRANSACTION_ATTEMPT",
+    "DNS_TRANSACTION_ATTEMPT", "DNS_TRANSACTION", "DNS_TRANSACTION_QUERY",
 ), 1)}
 PHASES = {"PHASE_NONE": 0, "PHASE_BEGIN": 1, "PHASE_END": 2}
 SOCKET, JOB, REQUEST = (1, 10), (2, 20), (3, 30)
@@ -78,7 +78,10 @@ class JourneyDiagnosticsTests(unittest.TestCase):
 
     def test_exact_launch_socket_and_explicit_request_chain_without_sensitive_values(self):
         events = [
-            event("URL_REQUEST_START_JOB", 115, REQUEST, {"url": "https://private.test/token"}, "PHASE_BEGIN"),
+            event("URL_REQUEST_START_JOB", 115, REQUEST, {
+                "url": "https://private.test/token?owner=private",
+                "initiator": "http://127.0.0.1:5173",
+            }, "PHASE_BEGIN"),
             *tcp(),
             link("SOCKET_POOL_BOUND_TO_SOCKET", 126, JOB, SOCKET),
             link("HTTP_STREAM_JOB_BOUND_TO_REQUEST", 127, JOB, REQUEST),
@@ -89,14 +92,15 @@ class JourneyDiagnosticsTests(unittest.TestCase):
             {"first": "first.json", "relaunch": "relaunch.json"},
             reader=lambda path: ("parsed", log) if path == "first.json" else ("missing", None))
         self.assertEqual(report, {"logs": {"first": "parsed", "relaunch": "missing"}, "observations": [
-            {"observation": 1, "socket_status": "matched-socket", "request_category": "https-request"},
+            {"observation": 1, "socket_status": "matched-socket", "request_category": "https-request",
+             "request_host_category": "other-host", "initiator_category": "qa-frontend-origin"},
         ]})
         for hidden in ("private", "192.0.2", "51200", "token"):
             self.assertNotIn(hidden, json.dumps(report))
-        self.assertEqual(log.match(observation(local=51201))[0], "no-socket-match")
-        self.assertEqual(log.match(observation(stamp=4100))[0], "no-socket-match")
-        self.assertEqual(log.match(observation(remote="192.0.2.10"))[0], "no-socket-match")
-        self.assertEqual(log.match(observation(port=80))[0], "no-socket-match")
+        self.assertEqual(log.match_evidence(observation(local=51201))[0], "no-socket-match")
+        self.assertEqual(log.match_evidence(observation(stamp=4100))[0], "no-socket-match")
+        self.assertEqual(log.match_evidence(observation(remote="192.0.2.10"))[0], "no-socket-match")
+        self.assertEqual(log.match_evidence(observation(port=80))[0], "no-socket-match")
         blocked = diagnostics.network_summary([obs, {**obs, "role": "backend"}], {},
             {"first": "first.json"}, reader=lambda path: ("parsed", log))
         self.assertEqual([x["socket_status"] for x in blocked["observations"]],
@@ -104,11 +108,11 @@ class JourneyDiagnosticsTests(unittest.TestCase):
 
     def test_failed_connect_and_conflicting_candidates_stay_unattributed(self):
         log = diagnostics.NetLog(payload(tcp(net_error=-2)))
-        self.assertEqual(log.match(observation()), ("no-socket-match", "unattributed"))
+        self.assertEqual(log.match_evidence(observation()), ("no-socket-match", "unattributed", {}))
         log = diagnostics.NetLog(payload(tcp(source_address="10.0.0.9:51200")))
-        self.assertEqual(log.match(observation()), ("no-socket-match", "unattributed"))
+        self.assertEqual(log.match_evidence(observation()), ("no-socket-match", "unattributed", {}))
         log = diagnostics.NetLog(payload(tcp() + tcp(source=(1, 11))))
-        self.assertEqual(log.match(observation()), ("ambiguous-socket", "unattributed"))
+        self.assertEqual(log.match_evidence(observation()), ("ambiguous-socket", "unattributed", {}))
         retry = [
             event("TCP_CONNECT_ATTEMPT", 121, SOCKET, {"address": "192.0.2.9:443"}, "PHASE_BEGIN"),
             event("TCP_CONNECT_ATTEMPT", 124, SOCKET, {
@@ -116,7 +120,7 @@ class JourneyDiagnosticsTests(unittest.TestCase):
             }, "PHASE_END"),
         ]
         log = diagnostics.NetLog(payload(tcp() + retry))
-        self.assertEqual(log.match(observation()), ("matched-socket", "unattributed"))
+        self.assertEqual(log.match_evidence(observation()), ("matched-socket", "unattributed", {}))
 
     def test_udp_dns_requires_local_address_and_link(self):
         events = [
@@ -125,12 +129,44 @@ class JourneyDiagnosticsTests(unittest.TestCase):
             event("UDP_CONNECT", 122, SOCKET, phase="PHASE_END"),
         ]
         obs = observation(protocol="udp", port=53)
-        self.assertEqual(diagnostics.NetLog(payload(events)).match(obs), ("matched-socket", "unattributed"))
+        self.assertEqual(diagnostics.NetLog(payload(events)).match_evidence(obs),
+                         ("matched-socket", "unattributed", {}))
         dns = link("DNS_TRANSACTION_ATTEMPT", 123, JOB, SOCKET)
-        self.assertEqual(diagnostics.NetLog(payload(events + [dns])).match(obs),
-                         ("matched-socket", "dns-transaction"))
-        self.assertEqual(diagnostics.NetLog(payload(events[::2] + [dns])).match(obs),
-                         ("no-socket-match", "unattributed"))
+        self.assertEqual(diagnostics.NetLog(payload(events + [dns])).match_evidence(obs),
+                         ("matched-socket", "dns-transaction", {"dns_host_category": "unavailable"}))
+        self.assertEqual(diagnostics.NetLog(payload(events[::2] + [dns])).match_evidence(obs),
+                         ("no-socket-match", "unattributed", {}))
+        name = event("DNS_TRANSACTION", 100, JOB, {"hostname": "wpad"}, "PHASE_BEGIN")
+        query = event("DNS_TRANSACTION_QUERY", 101, JOB, {"qname": "wpad.private.test."}, "PHASE_BEGIN")
+        later = event("DNS_TRANSACTION_QUERY", 124, JOB, {"qname": "later.private.test"}, "PHASE_BEGIN")
+        stale = event("DNS_TRANSACTION_QUERY", -15000, JOB, {"qname": "old.private.test"}, "PHASE_BEGIN")
+        unrelated = event("DNS_TRANSACTION_QUERY", 101, REQUEST, {"qname": "ipc.localhost"}, "PHASE_BEGIN")
+        named = events + [dns, name, query, later, stale, unrelated]
+        self.assertEqual(diagnostics.NetLog(payload(named)).match_evidence(obs),
+                         ("matched-socket", "dns-transaction", {"dns_host_category": "wpad-host"}))
+        other = event("DNS_TRANSACTION_QUERY", 103, JOB, {"qname": "other.private.test"}, "PHASE_BEGIN")
+        self.assertEqual(diagnostics.NetLog(payload(named + [other])).match_evidence(obs),
+                         ("matched-socket", "dns-transaction", {"dns_host_category": "ambiguous-host"}))
+        reverse = link("DNS_TRANSACTION_ATTEMPT", 123, SOCKET, JOB)
+        self.assertEqual(diagnostics.NetLog(payload(events + [reverse, query])).match_evidence(obs),
+                         ("matched-socket", "unattributed", {}))
+
+    def test_origin_categories_require_exact_documented_hosts_and_qa_origins(self):
+        cases = {
+            "http://ipc.localhost/command": "tauri-ipc-host",
+            "https://TAURI.LOCALHOST./page": "tauri-app-host",
+            "http://127.0.0.1:8000/api/projects": "qa-api-origin",
+            "http://127.0.0.2:8000/api/projects": "loopback-host",
+            "https://edge.microsoft.com/private": "documented-edge-service-host",
+            "https://edge.microsoft.com.private.test/": "other-host",
+            "http://fonts.gstatic.com/private": "google-fonts-host",
+            "http://ipc.localhost@private.test/": "unavailable",
+            "http://127.0.0.1:99999/": "unavailable",
+            "null": "unavailable",
+        }
+        for value, category in cases.items():
+            with self.subTest(value=value):
+                self.assertEqual(diagnostics.origin_category(value), category)
 
     def test_request_redirect_or_shared_socket_does_not_invent_purpose(self):
         events = tcp() + [link("SOCKET_POOL_BOUND_TO_SOCKET", 126, JOB, SOCKET),
@@ -138,8 +174,8 @@ class JourneyDiagnosticsTests(unittest.TestCase):
         for stamp in (115, 116):
             events.append(event("URL_REQUEST_START_JOB", stamp, REQUEST, {"url": f"https://private.test/{stamp}"},
                                 "PHASE_BEGIN"))
-        self.assertEqual(diagnostics.NetLog(payload(events)).match(observation()),
-                         ("matched-socket", "ambiguous-request"))
+        self.assertEqual(diagnostics.NetLog(payload(events)).match_evidence(observation()),
+                         ("matched-socket", "ambiguous-request", {}))
 
     def test_missing_truncated_or_oversized_private_log(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(

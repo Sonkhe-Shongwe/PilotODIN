@@ -10,12 +10,13 @@ from qa.p4_native.n12_trace import inside, local_disposable_path, windows_path
 
 
 CONNECT_EVENTS = {"TCP_CONNECT", "TCP_CONNECT_ATTEMPT", "UDP_CONNECT"}
+DNS_ATTEMPT_EVENTS = {"DNS_TRANSACTION_ATTEMPT", "DNS_TRANSACTION_TCP_ATTEMPT"}
+DNS_NAME_FIELDS = {"DNS_TRANSACTION": "hostname", "DNS_TRANSACTION_QUERY": "qname"}
 LINK_EVENTS = {
     "SOCKET_POOL_BOUND_TO_SOCKET", "SOCKET_POOL_BOUND_TO_CONNECT_JOB", "CONNECT_JOB_SET_SOCKET",
     "HTTP_STREAM_JOB_BOUND_TO_REQUEST", "HTTP_STREAM_REQUEST_BOUND_TO_JOB",
     "TRANSPORT_CONNECT_JOB_CONNECT_ATTEMPT", "TCP_CONNECT_JOB_CONNECTOR_CONNECT_START",
-    "DNS_TRANSACTION_ATTEMPT", "DNS_TRANSACTION_TCP_ATTEMPT",
-}
+} | DNS_ATTEMPT_EVENTS
 CLOCK_TOLERANCE_MS = 1000
 REQUEST_LOOKBACK_MS = 10_000
 NETLOG_LIMIT = 64 * 1024 * 1024
@@ -84,6 +85,48 @@ class SocketMatch:
     end: int
 
 
+def host_category(host):
+    if not isinstance(host, str) or not host.strip():
+        return "unavailable"
+    host = host.casefold().removesuffix(".")
+    if host == "ipc.localhost":
+        return "tauri-ipc-host"
+    if host == "tauri.localhost":
+        return "tauri-app-host"
+    if host in {"fonts.googleapis.com", "fonts.gstatic.com"}:
+        return "google-fonts-host"
+    if host in {"edge.microsoft.com", "config.edge.skype.com", "msedge.api.cdp.microsoft.com"}:
+        return "documented-edge-service-host"
+    if host == "wpad" or host.startswith("wpad."):
+        return "wpad-host"
+    if host == "localhost":
+        return "loopback-host"
+    try:
+        if address(host).is_loopback:
+            return "loopback-host"
+    except ValueError:
+        pass
+    return "other-host"
+
+
+def origin_category(url):
+    try:
+        parsed = urlsplit(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            return "unavailable"
+        if parsed.username is not None or parsed.password is not None:
+            return "unavailable"
+        port = parsed.port
+        if parsed.scheme == "http" and parsed.hostname == "127.0.0.1":
+            if port == 5173:
+                return "qa-frontend-origin"
+            if port == 8000:
+                return "qa-api-origin"
+        return host_category(parsed.hostname)
+    except ValueError:
+        return "unavailable"
+
+
 def source_key(source):
     key = source["type"], source["id"]
     if any(type(part) is not int or part <= 0 for part in key):
@@ -141,9 +184,13 @@ class NetLog:
         offset = int(constants["timeTickOffset"])
         if not {"PHASE_BEGIN", "PHASE_END"} <= set(phases.values()) or not CONNECT_EVENTS & set(kinds.values()):
             raise ValueError("missing NetLog event types")
-        recorded = CONNECT_EVENTS | LINK_EVENTS | {"URL_REQUEST_START_JOB", "UDP_LOCAL_ADDRESS"}
+        recorded = CONNECT_EVENTS | LINK_EVENTS | DNS_NAME_FIELDS.keys() | {
+            "URL_REQUEST_START_JOB", "UDP_LOCAL_ADDRESS",
+        }
         self.links = defaultdict(list)
         self.requests = defaultdict(list)
+        self.dns_names = defaultdict(list)
+        self.dns_attempts = defaultdict(list)
         self.sockets = defaultdict(list)
         pending, udp_locals, completed = {}, defaultdict(list), []
         if not isinstance(raw["events"], list) or not raw["events"]:
@@ -173,46 +220,64 @@ class NetLog:
                 except ValueError:
                     continue
             elif kind == "URL_REQUEST_START_JOB" and phase == "PHASE_BEGIN" and isinstance(params.get("url"), str):
-                self.requests[source].append((stamp, params["url"]))
+                initiator = params.get("initiator")
+                self.requests[source].append((stamp, params["url"], origin_category(
+                    initiator if isinstance(initiator, str) else "")))
+            elif kind in DNS_NAME_FIELDS and phase == "PHASE_BEGIN":
+                field = DNS_NAME_FIELDS[kind]
+                self.dns_names[source].append((stamp, field, params.get(field)))
             elif kind in LINK_EVENTS and "source_dependency" in params:
                 linked = source_key(params["source_dependency"])
-                self.links[source].append((linked, stamp, kind))
-                self.links[linked].append((source, stamp, kind))
+                self.links[source].append((linked, stamp))
+                self.links[linked].append((source, stamp))
+                if kind in DNS_ATTEMPT_EVENTS:
+                    self.dns_attempts[linked].append((source, stamp))
         for event in completed:
             match = socket_match(*event, udp_locals)
             if match is not None:
                 self.sockets[match.protocol, match.local_port, match.remote].append(match)
 
-    def request_category(self, socket):
+    def request_evidence(self, socket):
         lower = socket.start - REQUEST_LOOKBACK_MS
         upper = socket.end + CLOCK_TOLERANCE_MS
-        seen, pending, requests, dns_attempts = set(), [socket.source], set(), set()
+        dns_attempts = {(source, stamp) for source, stamp in self.dns_attempts[socket.source]
+                        if lower <= stamp <= upper}
+        seen, pending, requests = set(), [socket.source], set()
         while pending and len(seen) < 64:
             source = pending.pop()
             if source in seen:
                 continue
             seen.add(source)
-            requests.update((source, url) for stamp, url in self.requests[source] if lower <= stamp <= upper)
-            for linked, stamp, kind in self.links[source]:
-                if lower <= stamp <= upper:
-                    if source == socket.source and kind in {"DNS_TRANSACTION_ATTEMPT", "DNS_TRANSACTION_TCP_ATTEMPT"}:
-                        dns_attempts.add(frozenset((source, linked)))
-                    pending.append(linked)
+            requests.update((source, url, initiator) for stamp, url, initiator in self.requests[source]
+                            if lower <= stamp <= upper)
+            pending.extend(linked for linked, stamp in self.links[source] if lower <= stamp <= upper)
         if pending or len(requests) > 1 or len(dns_attempts) > 1 or (requests and dns_attempts):
-            return "ambiguous-request"
+            return "ambiguous-request", {}
         if dns_attempts:
-            return "dns-transaction"
+            dns_source, attempted_at = next(iter(dns_attempts))
+            # Query names take precedence over the original hostname, which can
+            # differ after suffix expansion. Several names in scope are ambiguous.
+            names = [(field, value) for stamp, field, value in self.dns_names[dns_source]
+                     if lower <= stamp <= attempted_at]
+            preferred = "qname" if any(field == "qname" for field, _ in names) else "hostname"
+            selected = {value.casefold().removesuffix(".") for field, value in names
+                        if field == preferred and isinstance(value, str) and value.strip()}
+            category = "ambiguous-host" if len(selected) > 1 else host_category(next(iter(selected), None))
+            return "dns-transaction", {"dns_host_category": category}
         if not requests:
-            return "unattributed"
+            return "unattributed", {}
+        _, url, initiator = next(iter(requests))
         try:
-            url = urlsplit(next(iter(requests))[1])
-            if url.scheme in {"http", "https"} and url.hostname:
-                return f"{url.scheme}-request"
+            scheme = urlsplit(url).scheme
+            destination = origin_category(url)
+            if destination != "unavailable":
+                return f"{scheme}-request", {"request_host_category": destination,
+                                             "initiator_category": initiator}
         except ValueError:
             pass
-        return "unattributed"
+        return "unattributed", {}
 
-    def match(self, observation):
+    def match_evidence(self, observation):
         time = datetime.fromisoformat(observation["utc"])
         if time.utcoffset() is None or time.utcoffset().total_seconds() != 0:
             raise ValueError("expected a UTC observation")
@@ -227,12 +292,13 @@ class NetLog:
         group = []
         for match in matches:
             if group and (group[0].source != match.source or match.start > min(item.end for item in group)):
-                return "ambiguous-socket", "unattributed"
+                return "ambiguous-socket", "unattributed", {}
             group.append(match)
         if not group:
-            return "no-socket-match", "unattributed"
+            return "no-socket-match", "unattributed", {}
         interval = min(group, key=lambda match: match.end - match.start)
-        return "matched-socket", self.request_category(interval)
+        category, details = self.request_evidence(interval)
+        return "matched-socket", category, details
 
 
 def read_netlog(path):
@@ -254,14 +320,14 @@ def network_summary(observations, launches, paths, reader=read_netlog):
     result = []
     for ordinal, observation in enumerate(observations, 1):
         launch = launches.get(observation["process_guid"]) if observation["role"] == "webview-network" else None
-        state, purpose = "outside-webview", "unattributed"
+        state, purpose, details = "outside-webview", "unattributed", {}
         if observation["role"] == "webview-network":
             state, log = logs.get(launch, ("launch-unverified", None))
             if log is not None:
                 try:
-                    state, purpose = log.match(observation)
+                    state, purpose, details = log.match_evidence(observation)
                 except (OSError, KeyError, TypeError, ValueError, OverflowError):
                     state = "observation-unusable"
         # The ordinal refers to the existing redacted list in the audit report.
-        result.append({"observation": ordinal, "socket_status": state, "request_category": purpose})
+        result.append({"observation": ordinal, "socket_status": state, "request_category": purpose, **details})
     return {"logs": {label: status for label, (status, _) in logs.items()}, "observations": result}

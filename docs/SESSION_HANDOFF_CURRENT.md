@@ -2,6 +2,12 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Prepared WebView network source categories
+
+The latest retained job log matches five WebView sockets to request types but omits their destinations and initiators. The dev driver uses the local frontend and API and allows Tauri IPC. The two local HTTP/80 findings cannot be assigned to one of these routes from the retained report. Python's Windows asyncio socketpair is a plausible explanation for the backend startup TCP connection to an ephemeral local port. It still needs same-process socket evidence to establish that match.
+
+The hosted reducer now emits fixed categories for uniquely linked WebView request destinations, initiators and DNS query names. Generated tests cover private values, lookalike hosts, unrelated DNS sources, timing and ambiguity. This prepares the next attribution pass. The live audit of this change is **NOT RUN**. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Hosted N12 completed with six unexpected connections
 
 The [approved Windows 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43860270006/job/133274942156) ran on attempt 1 from launch `e65776f5d9617c53dd8b274b14f35856f22108c3` at reviewed source `622048ce023c8a339ebc03b0327a6639e9fa7817`. Preflight, the unpackaged build and pinned Sysmon 15.22 passed. Executable SHA-256 was `11e1ec8619b12a2da498fe23cff047c9c9bcd88ded45081508a0bc0fa6d10e22`. Cargo lock SHA-256 was `46cebbc90c1398c4dcd14a58a4bddb19026fea3b952d9600d77ae2101eab56af`.
