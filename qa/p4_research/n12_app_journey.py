@@ -1,11 +1,13 @@
 """Capture two launches of one approved, already-staged PilotODIN Windows build."""
 import argparse
 from collections import Counter
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timedelta, timezone
+from ipaddress import IPv4Address
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import socket
 import subprocess
@@ -30,6 +32,7 @@ HTTP = build_opener(ProxyHandler({}))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
 DRIVER_TEMP_DIR = "driver-temp"
 INITIAL_FIXTURE_LEAD_IN_SECONDS = 0.05
+FIXTURE_ADDRESS = IPv4Address("127.0.0.1")
 INITIAL_SYSMON_RETRYABLE = {
     "channel-window-empty", "parent-birth-missing", "child-birth-missing",
     "process-exit-missing", "child-loopback-tcp-or-udp-missing",
@@ -51,6 +54,54 @@ def mark(manifest, label):
 def report_file(path, value):
     with path.open("x", encoding="utf-8") as stream:
         json.dump(value, stream, indent=2)
+
+
+def checkpoint(stage, status, source, executable_sha256):
+    row = {"stage": stage, "status": status}
+    if re.fullmatch(r"[0-9a-f]{40}", source):
+        row["source_sha"] = source
+    if re.fullmatch(r"[0-9a-f]{64}", executable_sha256):
+        row["executable_sha256"] = executable_sha256
+    print("N12 checkpoint " + json.dumps(row), flush=True)
+
+
+@contextmanager
+def checkpoint_stage(stage, source, executable_sha256):
+    try:
+        yield
+    except BaseException:
+        checkpoint(stage, "interrupted", source, executable_sha256)
+        raise
+    else:
+        checkpoint(stage, "completed", source, executable_sha256)
+
+
+@contextmanager
+def journey_processes(source, executable_sha256):
+    stack = ExitStack()
+    try:
+        yield stack
+    except BaseException:
+        try:
+            with checkpoint_stage("process-cleanup", source, executable_sha256):
+                stack.close()
+        except Exception:
+            pass  # Keep the journey error as the primary failure.
+        raise
+    else:
+        with checkpoint_stage("process-cleanup", source, executable_sha256):
+            stack.close()
+
+
+def stop_capture(root, session, manifest, capture_start, devices):
+    with checkpoint_stage("etw-stop", manifest["source_sha"], manifest["executable_sha256"]):
+        counters = etw.stop_trace(session)
+        capture_end = now()
+        report_file(root / "trace-checkpoint.json", {
+            "manifest": manifest, "etw_start_utc": capture_start.isoformat(),
+            "etw_end_utc": capture_end.isoformat(), "counters": counters, "volume_devices": devices,
+        })
+    return counters, capture_end
 
 
 def quiet(command, *, timeout=30, cwd=build.REPO, env=None):
@@ -206,9 +257,9 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
         if not parent.start <= child.start <= child.end <= parent.end:
             issues.add("fixture-lifetime-inconsistent")
         protocols = {connection.protocol for connection in connections
-                     if connection.guid == child.guid and connection.initiated
+                     if connection.guid == child.guid and connection.pid == child.pid and connection.initiated
                      and child.start <= connection.timestamp <= child.end
-                     and connection.address.is_loopback and connection.port == record["port"]}
+                     and connection.address == FIXTURE_ADDRESS and connection.port == record["port"]}
         if protocols != {"tcp", "udp"}:
             issues.add("child-loopback-tcp-or-udp-missing")
             counts = {protocol: Counter() for protocol in ("tcp", "udp")}
@@ -256,7 +307,8 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
                 "udp_other_at_fixture_port": udp_at_fixture,
             }), flush=True)
     trace.verify_connection_lifetimes(connections, processes, roles, issues)
-    _, unexpected, _ = trace.scoped_network(connections, roles, {record["port"]})
+    allowed = trace.calibration_destinations(record, parent, processes)
+    _, unexpected, _ = trace.scoped_network(connections, roles, allowed)
     if unexpected:
         issues.add("calibration-unexpected-connection")
     if parent.fixture_birth_adjusted and not issues:
@@ -332,6 +384,7 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
         wait_for(lambda: not listening(9331) and int(powershell(
             HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
         )) == 0, 25, "WebView processes did not exit for the disposable profile")
+        checkpoint(label + "-launch-and-exit", "completed", source, expected_hash)
 
 
 def prepare_journey(root, source, expected_hash):
@@ -445,21 +498,27 @@ def capture(root, staged, source, expected_hash, node):
     capture_start = now()
     print("N12 journey stage collector start", flush=True)
     try:
-        start_capture(root, session, logman)
+        with checkpoint_stage("etw-start", source, expected_hash):
+            start_capture(root, session, logman)
     except subprocess.TimeoutExpired:
         # A timed-out start can still have registered this uniquely named session.
-        quiet([logman, "stop", session, "-ets"])
+        try:
+            with checkpoint_stage("etw-start-cleanup", source, expected_hash):
+                quiet([logman, "stop", session, "-ets"])
+        except Exception:
+            pass
         raise
     try:
         manifest["start_utc"] = now().isoformat()
         # Leave room for Sysmon's millisecond birth timestamp at the audit boundary.
         time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
         print("N12 journey stage initial calibration", flush=True)
-        record = calibrate(calibration[0], manifest)
-        verify_initial_sysmon(root, manifest, record)
+        with checkpoint_stage("initial-calibration", source, expected_hash):
+            record = calibrate(calibration[0], manifest)
+            verify_initial_sysmon(root, manifest, record)
         mark(manifest, "idle")
         time.sleep(3)
-        with ExitStack() as stack:
+        with journey_processes(source, expected_hash) as stack:
             backend = spawn(stack, manifest, "backend", [sys.executable, "-B", "-m", "uvicorn",
                 "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 env, build.REPO, root / "backend.log")
@@ -470,18 +529,21 @@ def capture(root, staged, source, expected_hash, node):
                      60, "loopback backend did not become ready with cloud AI off", backend)
             backend_snapshot = backend_socket_snapshot(backend)
             wait_for(lambda: http_ready(5173, "/"), 60, "Vite did not become ready", vite)
-            run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite)
+            with checkpoint_stage("app-journey", source, expected_hash):
+                run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite)
         print("N12 journey stage final calibration", flush=True)
-        calibrate(calibration[1], manifest)
-        manifest["end_utc"] = now().isoformat()
-    finally:
-        counters = etw.stop_trace(session)
-        capture_end = now()
-        # Preserve completed checkpoints on a failed journey, without claiming a full audit.
-        report_file(root / "trace-checkpoint.json", {
-            "manifest": manifest, "etw_start_utc": capture_start.isoformat(),
-            "etw_end_utc": capture_end.isoformat(), "counters": counters, "volume_devices": devices,
-        })
+        with checkpoint_stage("final-fixture", source, expected_hash):
+            calibrate(calibration[1], manifest)
+            manifest["end_utc"] = now().isoformat()
+    except BaseException:
+        checkpoint("capture", "interrupted", source, expected_hash)
+        try:
+            stop_capture(root, session, manifest, capture_start, devices)
+        except Exception:
+            # The capture error remains primary, even when ETW cleanup also fails.
+            pass
+        raise
+    counters, capture_end = stop_capture(root, session, manifest, capture_start, devices)
     print("N12 journey stage export and audit", flush=True)
     last_processes = process_bookend()
     bookends = ({"before": first_processes, "after": last_processes}
@@ -489,7 +551,7 @@ def capture(root, staged, source, expected_hash, node):
     if bookends is not None:
         report_file(root / "private-process-bookends.json", bookends)
     time.sleep(3)
-    with trace.evidence_stage("protected endpoint snapshot"):
+    with checkpoint_stage("protected-endpoints", source, expected_hash), trace.evidence_stage("protected endpoint snapshot"):
         after = snapshots(manifest)
         report_file(root / "after.json", after)
         comparison, issues = trace.compare_snapshots(before, after, manifest)
@@ -499,15 +561,17 @@ def capture(root, staged, source, expected_hash, node):
         **comparison,
         "snapshot_issues": sorted(issues),
     }), flush=True)
-    manifest["sysmon_last_record"] = sysmon_tail()
     sysmon = root / "sysmon.xml"
-    export_sysmon(manifest["sysmon_first_record"], manifest["sysmon_last_record"], sysmon)
+    with checkpoint_stage("sysmon-export", source, expected_hash):
+        manifest["sysmon_last_record"] = sysmon_tail()
+        export_sysmon(manifest["sysmon_first_record"], manifest["sysmon_last_record"], sysmon)
     endpoints, launches = [], {}
     rejected_sysmon_exits = []
     try:
-        observed = trace.inspect_journey_sysmon(manifest, sysmon, etw=True, private_endpoints=endpoints,
-                                                private_app_launches=launches,
-                                                rejected_sysmon_exits=rejected_sysmon_exits)
+        with checkpoint_stage("sysmon-reduction", source, expected_hash):
+            observed = trace.inspect_journey_sysmon(manifest, sysmon, etw=True, private_endpoints=endpoints,
+                                                    private_app_launches=launches,
+                                                    rejected_sysmon_exits=rejected_sysmon_exits)
     finally:
         if rejected_sysmon_exits:
             print("N12 rejected Sysmon exits " + json.dumps(rejected_sysmon_exits), flush=True)
@@ -527,16 +591,18 @@ def capture(root, staged, source, expected_hash, node):
         "unexpected_connections": observed.unexpected_connections,
         "network_diagnostics": network_diagnostics,
     }), flush=True)
-    powershell(HELPER, "etw-export", "-CaptureRoot", root, timeout=600)
+    with checkpoint_stage("etw-export", source, expected_hash):
+        powershell(HELPER, "etw-export", "-CaptureRoot", root, timeout=600)
     events = root / "etw.jsonl"
     manifest["etw"] = {"schema_version": 1, "start_utc": capture_start.isoformat(),
                        "end_utc": capture_end.isoformat(), "counters": counters,
                        "volume_devices": devices, "events_sha256": build.digest(events)}
     report_file(root / "manifest.json", manifest)
     paths = diagnostic_paths(root, staged, manifest)
-    result = trace.complete_journey_audit(manifest, observed, events, before, after, etw=True,
-                                         record_outside_writer=paths.record, journey_bookends=bookends,
-                                         describe_path_gaps=True)
+    with checkpoint_stage("combined-reduction", source, expected_hash):
+        result = trace.complete_journey_audit(manifest, observed, events, before, after, etw=True,
+                                              record_outside_writer=paths.record, journey_bookends=bookends,
+                                              describe_path_gaps=True)
     result["journey_diagnostics"] = {
         "outside_scope_paths": paths.summary(),
         "outside_scope_writers": paths.writer_summary(),
@@ -555,22 +621,23 @@ def main():
     parser.add_argument("--expected-exe-sha256", required=True)
     args = parser.parse_args()
     try:
-        staged = build.stage_root(args.source)
-        trace.require(os.environ.get("PILOTODIN_N12_APP_JOURNEY_CONSENT") == CAPTURE_CONSENT,
-                      "separate one-run N12 journey consent is required")
-        trace.require(not any(value and (key.upper().startswith("WEBVIEW2_") or key.upper() in {
-            "PILOTODIN_HOME", "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_TOKEN", "TAURI_CONFIG",
-        }) for key, value in os.environ.items()), "inherited application configuration is present")
-        build.verify(staged, args.source, args.expected_exe_sha256)
-        trace.require(not any(map(listening, PORTS)), "a required loopback port is in use")
-        node = shutil.which("node.exe")
-        trace.require(node is not None, "Node is required for the existing native driver")
-        with trace.evidence_stage("configured Sysmon preflight"):
-            try:
-                trace.require(sysmon_tail() >= 1, "invalid channel record ID")
-            except subprocess.SubprocessError as exc:
-                raise trace.EvidenceValidationError("enabled operational channel required") from exc
-        root = trace.local_disposable_path(staged.with_name(f'{staged.name}-journey'), runner_temp_only=True)
+        with checkpoint_stage("preflight", args.source, args.expected_exe_sha256):
+            staged = build.stage_root(args.source)
+            trace.require(os.environ.get("PILOTODIN_N12_APP_JOURNEY_CONSENT") == CAPTURE_CONSENT,
+                          "separate one-run N12 journey consent is required")
+            trace.require(not any(value and (key.upper().startswith("WEBVIEW2_") or key.upper() in {
+                "PILOTODIN_HOME", "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_TOKEN", "TAURI_CONFIG",
+            }) for key, value in os.environ.items()), "inherited application configuration is present")
+            build.verify(staged, args.source, args.expected_exe_sha256)
+            trace.require(not any(map(listening, PORTS)), "a required loopback port is in use")
+            node = shutil.which("node.exe")
+            trace.require(node is not None, "Node is required for the existing native driver")
+            with trace.evidence_stage("configured Sysmon preflight"):
+                try:
+                    trace.require(sysmon_tail() >= 1, "invalid channel record ID")
+                except subprocess.SubprocessError as exc:
+                    raise trace.EvidenceValidationError("enabled operational channel required") from exc
+            root = trace.local_disposable_path(staged.with_name(f'{staged.name}-journey'), runner_temp_only=True)
         result = capture(root, staged, args.source, args.expected_exe_sha256, node)
         print(json.dumps(result))
         return 0 if result["network"] == result["filesystem"] == "PASS_SCOPED" else 2

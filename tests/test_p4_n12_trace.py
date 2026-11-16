@@ -1282,8 +1282,11 @@ class Evidence:
                      if kind == 1 and fields["ProcessGuid"] == guid)
         self.events.append((second, 5, {key: birth[key] for key in ("ProcessGuid", "ProcessId", "Image")}))
 
-    def connect(self, second, guid, ip, port, protocol="tcp", initiated=True):
-        self.events.append((second, 3, {"ProcessGuid": guid, "Protocol": protocol,
+    def connect(self, second, guid, ip, port, protocol="tcp", initiated=True, pid=None):
+        if pid is None:
+            pid = next(fields["ProcessId"] for _, kind, fields in self.events
+                       if kind == 1 and fields["ProcessGuid"] == guid)
+        self.events.append((second, 3, {"ProcessGuid": guid, "ProcessId": str(pid), "Protocol": protocol,
                                         "Initiated": str(initiated).lower(), "DestinationIp": ip,
                                         "DestinationPort": str(port), "SourcePort": "53000"}))
 
@@ -2510,6 +2513,48 @@ def test_loopback_wrong_port_fails_and_inbound_does_not_count_as_outbound(tmp_pa
     report = evidence.report(tmp_path)
     assert report["network"] == "FAIL"
     assert report["connections"]["backend:tcp:inbound"] == 1
+
+
+@pytest.mark.parametrize(("guid", "pid", "issue"), [
+    ("net1", 999, "connection-pid-disagrees-with-birth"),
+    ("unknown", 4, "connection-guid-unresolved-for-scoped-pid"),
+])
+def test_connection_identity_conflicts_block_a_clean_audit(tmp_path, guid, pid, issue):
+    evidence = Evidence()
+    evidence.connect(24, guid, "127.0.0.1", 8000, pid=pid)
+    report = evidence.report(tmp_path)
+    assert report["network"] == "BLOCKED"
+    assert report["coverage_issues"] == [issue]
+
+
+@pytest.mark.parametrize(("time", "guid", "address", "port", "protocol"), [
+    (24, "net1", "127.0.0.1", 9001, "tcp"),
+    (4, "child30", "127.0.0.1", 8000, "tcp"),
+    (4, "child30", "127.0.0.1", 9002, "tcp"),
+    (24, "net1", "127.0.0.1", 8000, "udp"),
+    (24, "net1", "127.0.0.2", 8000, "tcp"),
+    (24, "net1", "127.0.0.1", 9331, "tcp"),
+    (24, "backend", "127.0.0.1", 8000, "tcp"),
+])
+def test_scoped_loopback_rejects_wrong_role_protocol_or_destination(tmp_path, time, guid, address, port, protocol):
+    evidence = Evidence()
+    evidence.manifest["loopback_ports"].extend((5173, 9331))
+    evidence.connect(24, "driver", "127.0.0.1", 9331)
+    evidence.connect(time, guid, address, port, protocol)
+    report = evidence.report(tmp_path)
+    assert report["network"] == "FAIL"
+    assert len(report["unexpected_connections"]) == 1
+    assert report["unexpected_connections"][0]["port"] == port
+
+
+@pytest.mark.parametrize("guid", ["backend", "net2", "driver"])
+def test_final_calibration_requires_verified_exit_of_scoped_processes(tmp_path, guid):
+    evidence = Evidence()
+    evidence.events = [(50 if kind == 5 and fields["ProcessGuid"] == guid else second, kind, fields)
+                       for second, kind, fields in evidence.events]
+    report = evidence.report(tmp_path)
+    assert report["network"] == report["filesystem"] == "BLOCKED"
+    assert report["coverage_issues"] == ["final-calibration-before-scoped-exit"]
 
 
 def test_pid_reuse_and_protected_write_from_unrelated_process(tmp_path):

@@ -98,6 +98,7 @@ class Process:
 @dataclass(frozen=True)
 class Connection:
     guid: str
+    pid: int
     timestamp: datetime
     protocol: str
     initiated: bool
@@ -117,10 +118,11 @@ def sysmon_connection(stamp, fields):
         address = address.ipv4_mapped
     protocol, initiated = fields["Protocol"].lower(), fields["Initiated"].lower()
     port, source_port = (int(fields[key]) for key in ("DestinationPort", "SourcePort"))
+    pid = int(fields["ProcessId"])
     require(protocol in {"tcp", "udp"} and initiated in {"true", "false"}
-            and 0 <= port <= 65535 and 0 <= source_port <= 65535,
+            and pid >= 0 and 0 <= port <= 65535 and 0 <= source_port <= 65535,
             "invalid Sysmon connection fields")
-    return Connection(fields["ProcessGuid"].casefold(), stamp, protocol, initiated == "true",
+    return Connection(fields["ProcessGuid"].casefold(), pid, stamp, protocol, initiated == "true",
                       source_port, address, port)
 
 
@@ -201,8 +203,9 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
         kind = int(system.findtext(EVENT_NS + "EventID"))
         data = event.findall(f"{EVENT_NS}EventData/{EVENT_NS}Data")
         fields = {item.get("Name"): item.text or "" for item in data}
-        if kind == 5:
-            require(None not in fields and len(fields) == len(data), "ambiguous process exit fields")
+        if kind in {3, 5}:
+            require(None not in fields and len(fields) == len(data),
+                    "ambiguous connection fields" if kind == 3 else "ambiguous process exit fields")
         if kind == 1 and precision_fixture is not None:
             require(None not in fields and len(fields) == len(data), "ambiguous fixture birth fields")
         if kind in {1, 3, 5}:
@@ -465,7 +468,7 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
     return counts, violations, calibration, diagnostics
 
 
-def scoped_network(connections, roles, ports):
+def scoped_network(connections, roles, allowed):
     counts = Counter()
     external = []
     endpoints = []
@@ -477,7 +480,8 @@ def scoped_network(connections, roles, ports):
             counts[f"{role}:{connection.protocol}:inbound"] += 1
             continue
         if connection.address.is_loopback:
-            verdict = "loopback" if connection.port in ports else "unexpected-loopback"
+            endpoint = connection.protocol, connection.address, connection.port
+            verdict = "loopback" if endpoint in allowed.get(connection.guid, ()) else "unexpected-loopback"
         else:
             verdict = "non-loopback"
         counts[f"{role}:{connection.protocol}:{verdict}"] += 1
@@ -493,13 +497,29 @@ def scoped_network(connections, roles, ports):
 
 
 def verify_connection_lifetimes(connections, processes, roles, issues):
+    scoped_by_pid = {}
+    for guid in roles:
+        process = processes[guid]
+        scoped_by_pid.setdefault(process.pid, []).append(process)
     for connection in connections:
         if connection.guid not in roles:
+            if any(p.start <= connection.timestamp and (p.end is None or connection.timestamp <= p.end)
+                   for p in scoped_by_pid.get(connection.pid, ())):
+                issues.add("connection-guid-unresolved-for-scoped-pid")
             continue
         process = processes[connection.guid]
+        if connection.pid != process.pid:
+            issues.add("connection-pid-disagrees-with-birth")
         if connection.timestamp < process.start or (
                 process.end is not None and connection.timestamp > process.end):
             issues.add("connection-outside-process-lifetime")
+
+
+def calibration_destinations(root, parent, processes):
+    address = ipaddress.IPv4Address("127.0.0.1")
+    endpoints = {(protocol, address, root["port"]) for protocol in ("tcp", "udp")}
+    return {p.guid: endpoints for p in processes.values() if p.parent == parent.guid
+            and p.pid == root.get("child_pid", p.pid)}
 
 
 def calibration_file_events(root, child_guid):
@@ -527,9 +547,9 @@ def calibration_window(root, process, processes, connections, file_events, issue
     if not (process.end and child.end and process.start <= child.start <= child.end <= process.end):
         issues.add("calibration-child-lifecycle-missing")
         return None
-    network = {e.protocol for e in connections if e.guid == child.guid and
+    network = {e.protocol for e in connections if e.guid == child.guid and e.pid == child.pid and
                child.start <= e.timestamp <= child.end and e.initiated
-               and e.address.is_loopback and e.port == root["port"]}
+               and e.address == ipaddress.IPv4Address("127.0.0.1") and e.port == root["port"]}
     if network != {"tcp", "udp"}:
         issues.add("calibration-tcp-or-udp-missing")
     return process.start, process.end
@@ -545,6 +565,7 @@ def verify_calibrations(bindings, processes, connections, file_events, markers, 
     windows.sort()
     if len(windows) != 2 or not (windows[0][1] < markers["idle"] and markers["exit"] < windows[1][0]):
         issues.add("calibration-does-not-bracket-journey")
+    return windows
 
 
 def scope(manifest):
@@ -657,7 +678,8 @@ def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None,
     if any(key.startswith("protected:") for key in violations):
         issues.add("calibration-protected-mutation")
     verify_connection_lifetimes(connections, processes, roles, issues)
-    _, unexpected, _ = scoped_network(connections, roles, {root["port"]})
+    allowed = calibration_destinations(root, bindings[0][1], processes) if bindings else {}
+    _, unexpected, _ = scoped_network(connections, roles, allowed)
     if unexpected:
         issues.add("calibration-unexpected-connection")
     return {"schema_version": 1, "scope": "collector calibration only",
@@ -892,11 +914,24 @@ def inspect_journey_sysmon(manifest, sysmon, *, etw=False, private_endpoints=Non
     ports = manifest["loopback_ports"]
     require(ports and all(type(port) is int and 1 <= port <= 65535 for port in ports),
             "invalid loopback port allowlist")
-    require(all(p["port"] in ports for p, _ in bindings if p["role"] == "calibration"),
+    calibration_ports = [p["port"] for p in manifest["processes"] if p["role"] == "calibration"]
+    require(all(p in ports for p in calibration_ports),
             "calibration ports must be recorded in the loopback allowlist")
-    verify_calibrations(bindings, processes, connections, None, markers, issues)
+    windows = verify_calibrations(bindings, processes, connections, None, markers, issues)
+    scoped_exits = (processes[guid].end for guid in roles if roles[guid] != "calibration")
+    if len(windows) == 2 and any(end is None or windows[1][0] <= end for end in scoped_exits):
+        issues.add("final-calibration-before-scoped-exit")
     verify_connection_lifetimes(connections, processes, roles, issues)
-    net_counts, external, endpoints = scoped_network(connections, roles, set(ports))
+    local = ipaddress.IPv4Address("127.0.0.1")
+    service_ports = set(ports) - set(calibration_ports)
+    webview_destinations = {("tcp", local, port) for port in service_ports & {5173, 8000}}
+    driver_destinations = webview_destinations | {("tcp", local, port) for port in service_ports & {9331}}
+    allowed = {guid: webview_destinations for guid, role in roles.items() if role in {"webview", "webview-network"}}
+    allowed.update({guid: driver_destinations for guid, role in roles.items() if role == "driver"})
+    for root, process in bindings:
+        if root["role"] == "calibration":
+            allowed.update(calibration_destinations(root, process, processes))
+    net_counts, external, endpoints = scoped_network(connections, roles, allowed)
     if private_endpoints is not None:
         private_endpoints.extend(endpoints)
     if (private_app_launches is not None and app_lifecycles_match

@@ -2,6 +2,10 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | N12 reducer rejects the reproduced false passes
+
+Generated two-launch traces now reject conflicting Sysmon GUID/PID evidence, wrong-role loopback destinations and final calibration that overlaps a scoped process lifetime. Clean controls still pass, including unrelated activity after PID reuse. Redacted stage checkpoints preserve the first failure when process cleanup and ETW stop also fail. The live Windows collector and app journey with these changes are **NOT RUN**. The six network findings, 329 outside-scope operations and trace coverage gaps remain open. [Reducer and checkpoint contract](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Prepared backend loopback ownership check
 
 The hosted journey now takes one read-only snapshot of established TCP sockets owned by the declared backend after local health passes and before the app launches. The reducer can match a Sysmon observation to a unique, reciprocal pair in the same verified process lifetime. The public report gives only a diagnostic classification and snapshot availability. Missing, stale, or ambiguous evidence leaves the connection unattributed. The live socket snapshot and updated WebView categories are **NOT RUN**. The prior Sysmon exit-image, exit-time and parent-lifetime blockers have no retained raw trace and remain open. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
@@ -328,7 +332,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Follow the [N12 plan review](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-plan-review-and-acceptance-risks). Generated traces reproduced false passes in connection identity, role-specific loopback scope and final calibration bracketing. First correct and regress those cases and verify that a sanitised failure checkpoint survives cleanup failures. Then validate the applicable Windows collector controls before requesting another unpackaged app build.
+Follow the [N12 plan review](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-plan-review-and-acceptance-risks). Generated traces reproduced false passes in connection identity, role-specific loopback scope and final calibration bracketing. The corrections and cleanup checkpoints passed generated verification. Next prepare the smallest collector-only Windows control for independent process lifetime evidence and replay before requesting another unpackaged app build.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

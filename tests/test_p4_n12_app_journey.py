@@ -44,7 +44,7 @@ def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypat
         "child": journey.trace.Process("child", "parent", 13, image, EXE_SHA, stamp(2), "", stamp(4)),
     }
     connections = [
-        journey.trace.Connection("child", stamp(3), protocol, True, 2201, ipaddress.ip_address("127.0.0.1"), 2231)
+        journey.trace.Connection("child", 13, stamp(3), protocol, True, 2201, ipaddress.ip_address("127.0.0.1"), 2231)
         for protocol in ("tcp", "udp") if not (protocol == "udp" and fault == "no-udp")
     ]
     issues = {"sysmon-record-gap"} if fault == "gap" else set()
@@ -121,7 +121,7 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
               "Image": image, "Hashes": "SHA256=" + EXE_SHA}
     child = dict(parent, ProcessGuid="private-child", ParentProcessGuid="private-parent", ProcessId="413")
     marker = {"role": "calibration", "pid": 412, "child_pid": 413, "image": image, "port": 23551}
-    udp = {"ProcessGuid": "private-child", "Protocol": "udp", "Initiated": "true",
+    udp = {"ProcessGuid": "private-child", "ProcessId": "413", "Protocol": "udp", "Initiated": "true",
            "DestinationIp": "127.0.0.1", "DestinationPort": "23551", "SourcePort": "23552"}
     events = [(11, 2, 0, {})]
     precision = scenario.startswith("collector-") and scenario != "collector-change"
@@ -157,11 +157,11 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
         events = [(rid, 2, offset, {}) if kind == 3 else (rid, kind, offset, fields)
                   for rid, kind, offset, fields in events]
     udp_changes = {
-        "udp-other-process": {"ProcessGuid": "private-unrelated"},
-        "udp-parent-inbound": {"ProcessGuid": "private-parent", "Initiated": "false"},
-        "udp-other-sender": {"ProcessGuid": "private-unrelated", "SourcePort": "23553"},
-        "udp-parent-inbound-outside": {"ProcessGuid": "private-parent", "Initiated": "false"},
-        "udp-unrelated": {"ProcessGuid": "private-unrelated", "DestinationPort": "23553"},
+        "udp-other-process": {"ProcessGuid": "private-unrelated", "ProcessId": "999"},
+        "udp-parent-inbound": {"ProcessGuid": "private-parent", "ProcessId": "412", "Initiated": "false"},
+        "udp-other-sender": {"ProcessGuid": "private-unrelated", "ProcessId": "999", "SourcePort": "23553"},
+        "udp-parent-inbound-outside": {"ProcessGuid": "private-parent", "ProcessId": "412", "Initiated": "false"},
+        "udp-unrelated": {"ProcessGuid": "private-unrelated", "ProcessId": "999", "DestinationPort": "23553"},
         "udp-not-initiated": {"Initiated": "false"},
         "udp-off-loopback": {"DestinationIp": "192.0.2.21"},
         "udp-wrong-port": {"DestinationPort": "23553"},
@@ -369,7 +369,8 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
 
 @pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit",
                                     "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture",
-                                    "etw-export", "etw-reduce", "backend-snapshot-unavailable"])
+                                    "etw-export", "etw-reduce", "backend-snapshot-unavailable",
+                                    "app-and-cleanup", "etw-stop"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
@@ -406,7 +407,13 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "sysmon_tail", lambda: 10 if "etw-start" not in events else 60)
     monkeypatch.setattr(journey, "start_capture", lambda *a: events.append("etw-start"))
     monkeypatch.setattr(journey.etw, "volume_devices", lambda: {"C:": r"\Device\HarddiskVolume1"})
-    monkeypatch.setattr(journey.etw, "stop_trace", lambda *a: events.append("etw-stop") or {"buffers_written": 4})
+    def stop_trace(session):
+        events.append("etw-stop")
+        if fault in {"app-and-cleanup", "etw-stop"}:
+            raise RuntimeError("private-etw-stop-value")
+        return {"buffers_written": 4}
+
+    monkeypatch.setattr(journey.etw, "stop_trace", stop_trace)
     def sleep(seconds):
         if "calibration-first" not in events:
             assert events[-1] == "etw-start"
@@ -446,10 +453,14 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert env["TEMP"] == env["TMP"] == user_temp
         m["processes"].append({"role": role, "pid": process.pid, "image": str(command[0])})
         stack.callback(events.append, f"cleanup-{log.stem}")
+        if fault == "app-and-cleanup" and log.stem == "backend":
+            def fail_cleanup():
+                raise RuntimeError("private-process-cleanup-value")
+            stack.callback(fail_cleanup)
         return process
 
     def reverify(*args):
-        if fault == "changed-binary" and "verify-binary" in events:
+        if fault in {"changed-binary", "app-and-cleanup"} and "verify-binary" in events:
             raise journey.trace.EvidenceValidationError("executable changed")
         events.append("verify-binary")
 
@@ -533,17 +544,33 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "diagnostic_paths", lambda *args: journey.OutsidePaths([]))
     monkeypatch.setattr(n12_journey_diagnostics, "local_disposable_path", lambda path, **options: path)
 
-    if fault in {"first-calibration", "changed-binary", "no-profile-exit"}:
-        with pytest.raises(journey.trace.EvidenceValidationError, match={
-            "first-calibration": "fixture coverage", "changed-binary": "executable changed",
-            "no-profile-exit": "WebView processes did not exit",
-        }[fault]):
-            journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
+    if fault in {"first-calibration", "changed-binary", "no-profile-exit", "app-and-cleanup", "etw-stop"}:
+        if fault == "etw-stop":
+            with pytest.raises(RuntimeError, match="private-etw-stop-value"):
+                journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
+        else:
+            with pytest.raises(journey.trace.EvidenceValidationError, match={
+                "first-calibration": "fixture coverage", "changed-binary": "executable changed",
+                "no-profile-exit": "WebView processes did not exit", "app-and-cleanup": "executable changed",
+            }[fault]):
+                journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
         assert events[-1] == "etw-stop"
-        assert "app-relaunch" not in events
+        assert ("app-relaunch" in events) == (fault == "etw-stop")
         assert (("app-first" not in events) == (fault == "first-calibration"))
         assert not (root / "audit.json").exists()
-        assert "N12 protected endpoint snapshots" not in capsys.readouterr().out
+        output = capsys.readouterr().out
+        assert "N12 protected endpoint snapshots" not in output
+        assert "private-process-cleanup-value" not in output and "private-etw-stop-value" not in output
+        records = [json.loads(line.removeprefix("N12 checkpoint ")) for line in output.splitlines()
+                   if line.startswith("N12 checkpoint ")]
+        assert records[0] == {"stage": "etw-start", "status": "completed",
+                              "source_sha": SOURCE, "executable_sha256": EXE_SHA}
+        stages = [(record["stage"], record["status"]) for record in records]
+        if fault == "app-and-cleanup":
+            assert stages[-4:] == [("app-journey", "interrupted"), ("process-cleanup", "interrupted"),
+                                   ("capture", "interrupted"), ("etw-stop", "interrupted")]
+        if fault == "etw-stop":
+            assert stages[-2:] == [("final-fixture", "completed"), ("etw-stop", "interrupted")]
         return
 
     if fault and fault != "backend-snapshot-unavailable":
@@ -586,6 +613,11 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         ]
 
     lines = capsys.readouterr().out.splitlines()
+    records = [json.loads(line.removeprefix("N12 checkpoint ")) for line in lines if line.startswith("N12 checkpoint ")]
+    if fault in {"sysmon-export", "sysmon-parse", "etw-export", "etw-reduce"}:
+        stage = {"sysmon-export": "sysmon-export", "sysmon-parse": "sysmon-reduction",
+                 "etw-export": "etw-export", "etw-reduce": "combined-reduction"}[fault]
+        assert records[-1]["stage"] == stage and records[-1]["status"] == "interrupted"
     network_lines = [line.removeprefix("N12 network observations ") for line in lines
                      if line.startswith("N12 network observations ")]
     if fault in {None, "etw-export", "etw-reduce", "backend-snapshot-unavailable"}:
