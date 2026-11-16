@@ -1385,6 +1385,7 @@ def test_sysmon_drive_aliases_preserve_full_image_identity(tmp_path, prefix):
     (1, r"C:private.exe", "drive-relative"),
     (1, "private.exe", "executable-basename"),
     (5, "-", "dash-placeholder"),
+    (5, " <unknown> ", "text-placeholder"),
     (5, "  PILOTODIN-DESKTOP.EXE  ", "basename-matches-birth"),
     (5, "private.exe", "basename-differs-from-birth"),
     (5, r"private-bin\pilotodin-desktop.exe", "relative-path"),
@@ -1406,6 +1407,46 @@ def test_invalid_sysmon_image_reports_record_and_form_without_raw_path(tmp_path,
     with pytest.raises(trace.EvidenceValidationError) as rejected:
         evidence.report(tmp_path)
     assert str(rejected.value) == f"Sysmon XML: invalid process Image (event {event_id}, record {record}, {category})"
+
+
+@pytest.mark.parametrize("later_findings", [False, True])
+def test_diagnostic_audit_keeps_an_unsupported_exit_unverified(tmp_path, later_findings):
+    evidence = Evidence()
+    evidence.end(33, "app1")
+    for _, kind, fields in evidence.events:
+        if kind == 5 and fields["ProcessGuid"] == "app1":
+            fields["Image"] = "private opaque\tPILOTODIN-DESKTOP.EXE"
+    if later_findings:
+        evidence.write(42, 2, "WriteFile", PROTECTED + r"\private.csv", exe="pilotodin-desktop.exe")
+        evidence.connect(43, "net2", "127.0.0.1", 9443)
+    sysmon, procmon = evidence.save(tmp_path)
+    rejected = []
+    report = trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after,
+                         rejected_exit_images=rejected)
+    assert report["coverage"] == "BLOCKED"
+    assert report["trace_verdict_scope"] == "diagnostic-only-unverified-sysmon-exit"
+    assert {"sysmon-exit-image-unverified", "process-exit-missing",
+            "app-lifecycle-does-not-match-journey"} <= set(report["coverage_issues"])
+    assert report["sysmon_repeated_process_exits"] == 0
+    assert report["protected_snapshot_comparison"] == "MATCH"
+    assert report["native_n12_accepted"] is False
+    assert report["filesystem"] == report["network"] == ("FAIL" if later_findings else "BLOCKED")
+    assert len(rejected) == 2
+    assert all(item == {"record": item["record"], "category": "basename-differs-from-birth",
+                        "has_whitespace": True, "has_control": True,
+                        "ends_with_birth_basename": True} for item in rejected)
+
+
+def test_diagnostic_audit_refuses_a_conflicting_retry_of_an_unsupported_exit(tmp_path):
+    evidence = Evidence()
+    exit_fields = next(fields for _, kind, fields in evidence.events if kind == 5
+                       and fields["ProcessGuid"] == "app1")
+    exit_fields["Image"] = "private-opaque-value"
+    evidence.end(33, "app1")
+    sysmon, procmon = evidence.save(tmp_path)
+    with pytest.raises(trace.EvidenceValidationError, match="conflicting process exit payloads"):
+        trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after,
+                    rejected_exit_images=[])
 
 
 @pytest.mark.parametrize(("field", "value", "message"), [
@@ -1508,6 +1549,9 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
                            etw=True, rundown=rundown, **options)
 
     clean = report()
+    rejected = []
+    assert report(rejected_exit_images=rejected) == clean
+    assert rejected == []
     assert clean["coverage"] == "CALIBRATED"
     assert clean["network"] == clean["filesystem"] == "PASS_SCOPED"
     assert clean["coverage_issues"] == clean["unexpected_connections"] == clean["unexpected_snapshot_changes"] == []
@@ -1558,6 +1602,24 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert outside == [("backend", "write", (r"c:\qa\outside\private-name",))]
     assert writers == [(*outside[0], "python.exe")]
     assert "private-name" not in json.dumps(flagged)
+
+    # The hosted mode uses this same ETW path after an unsupported Sysmon exit.
+    exit_fields = next(row for _, kind, row in evidence.events if kind == 5 and row["ProcessGuid"] == "app1")
+    exit_fields["Image"] = "private-opaque-image"
+    evidence.connect(43, "net2", "127.0.0.1", 9443)
+    evidence.save(tmp_path)
+    rejected = []
+    partial = report(rejected_exit_images=rejected)
+    assert partial["trace_verdict_scope"] == "diagnostic-only-unverified-sysmon-exit"
+    assert partial["coverage"] == "BLOCKED"
+    assert partial["filesystem"] == partial["network"] == "FAIL"
+    assert partial["file_violations"] == flagged["file_violations"]
+    assert partial["unexpected_connections"][0]["role"] == "webview-network"
+    assert rejected[0]["category"] == "relative-or-unrecognized"
+    assert "private-opaque-image" not in json.dumps([rejected, partial])
+    evidence.events.pop()
+    exit_fields["Image"] = APP
+    evidence.save(tmp_path)
     del rows[-4:]
 
     # Background identities can come from two matching snapshots, even when

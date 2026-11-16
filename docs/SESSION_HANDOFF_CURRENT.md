@@ -2,6 +2,10 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Hosted N12 audit can report findings after an unsupported exit image
+
+The hosted final reducer now reports filesystem and network findings when a Sysmon exit image is unsupported and its birth GUID, PID and event order agree. The exit remains unverified, coverage is **BLOCKED**, and the findings are labelled diagnostic only. Generated Sysmon and ETW evidence reproduced the fallback image category, retained a file violation and unexpected connection after the rejected record, and kept both checks blocked in a clean trace with the same unsupported image. Conflicting exit records still stop the reduction. The log exposes only fixed categories and flags. Local focused tests passed 269 cases. The broader N12 and preservation selection passed 324 cases with one platform skip. Live hosted verification is **NOT RUN**. [Reducer contract and approval scope](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Hosted N12 endpoint match and Sysmon blocker
 
 The [approved Windows 2022 job #133182543693](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43832982495/job/133182543693) ran once from launch `9feea9d096fe9e1e3e72dbebfd5a3e7314784192` at reviewed source `7418ae2f2bc62df23c3ae2f764d6f10e62e2a1a3`. Dependency and driver preflight, the unpackaged build and executable provenance passed. Executable SHA-256 was `f54475a15a6282700ca6efb8219176a2ad23ab2a399b4681c54d82866dfc0186`. Resolved Cargo lock SHA-256 was `46cebbc90c1398c4dcd14a58a4bddb19026fea3b952d9600d77ae2101eab56af`. Initial Sysmon calibration passed on read 1. Both same-binary launches and the final calibration command completed.
@@ -268,7 +272,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use generated Sysmon records to narrow the repeat `relative-or-unrecognized` fallback. Prepare a bounded diagnostic of image shape and available birth correlation that keeps raw image values and identities private and preserves strict failure. A future capture needs to distinguish the specific image form before any parser acceptance change can be justified. The [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) still provides the filesystem and network comparison baseline. The 397 collector-only path gaps remain open on their own workload.
+With separate approval, run one source-pinned Windows 2022 app journey and record executable provenance, both launches, the endpoint comparison and the final strict verdict or diagnostic findings. Compare with the [last completed two-launch audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison). If an unsupported image recurs, use its redacted shape and the observed findings to identify a specific correction. The 397 collector-only path gaps remain open on their own workload.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

@@ -35,6 +35,12 @@ class EvidenceValidationError(ValueError):
     """An evidence failure whose message is safe to print."""
 
 
+class InvalidSysmonImage(EvidenceValidationError):
+    def __init__(self, event_id, record, category):
+        self.category = category
+        super().__init__(f"invalid process Image (event {event_id}, record {record}, {category})")
+
+
 def require(condition, message):
     if not condition:
         raise EvidenceValidationError(message)
@@ -128,6 +134,8 @@ def sysmon_image_kind(value, birth_image):
     image = value.strip().casefold()
     if image == "-":
         return "dash-placeholder"
+    if image in {"unknown", "<unknown>", "n/a", "null", "(null)"}:
+        return "text-placeholder"
     if len(image) > 1 and image.startswith('"') and image.endswith('"'):
         return "quoted-image"
     if "\\" in image or "/" in image:
@@ -152,12 +160,11 @@ def sysmon_image(value, event_id, record, *, birth_image=None):
             return windows_path(path)
     except EvidenceValidationError:
         pass
-    category = sysmon_image_kind(value, birth_image)
-    raise EvidenceValidationError(
-        f"invalid process Image (event {event_id}, record {record}, {category})")
+    raise InvalidSysmonImage(event_id, record, sysmon_image_kind(value, birth_image))
 
 
-def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=None, precision_fixture=None):
+def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=None, precision_fixture=None,
+                  rejected_exit_images=None):
     processes = {}
     exits = {}
     connections = []
@@ -238,18 +245,40 @@ def sysmon_events(path, start, end, *, outside_birth=None, outside_connection=No
             elif kind == 5 and (guid := fields["ProcessGuid"].casefold()) in processes:
                 process = processes[guid]
                 require(int(fields["ProcessId"]) == process.pid, "process exit PID disagrees with birth")
-                if "Image" in fields:
-                    exit_image = sysmon_image(fields["Image"], kind, record, birth_image=process.image)
-                    require(exit_image == process.image, "process exit image disagrees with birth")
                 require(process.start <= stamp, "process exit precedes birth")
+                image_verified = True
+                if "Image" in fields:
+                    value = fields["Image"]
+                    try:
+                        exit_image = sysmon_image(value, kind, record, birth_image=process.image)
+                    except InvalidSysmonImage as exc:
+                        if rejected_exit_images is None:
+                            raise
+                        # The recorder matched GUID, PID and ordered event time.
+                        # An unverified image cannot establish the process exit.
+                        issues.add("sysmon-exit-image-unverified")
+                        image_verified = False
+                        if len(rejected_exit_images) < 8:
+                            rejected_exit_images.append({
+                                "record": record, "category": exc.category,
+                                "has_whitespace": any(char.isspace() for char in value),
+                                "has_control": any(ord(char) < 32 or ord(char) == 127 for char in value),
+                                "ends_with_birth_basename": value.strip().casefold().endswith(
+                                    ntpath.basename(process.image)),
+                            })
+                    else:
+                        require(exit_image == process.image, "process exit image disagrees with birth")
                 if guid in exits:
                     # Channel metadata may differ, but the full exit payload must agree.
-                    require(process.end == stamp, "conflicting process exit timestamps")
-                    require(fields == exits[guid], "conflicting process exit payloads")
-                    process.repeated_exits += 1
+                    previous_time, previous_fields = exits[guid]
+                    require(previous_time == stamp, "conflicting process exit timestamps")
+                    require(fields == previous_fields, "conflicting process exit payloads")
+                    if image_verified:
+                        process.repeated_exits += 1
                 else:
-                    exits[guid] = fields
-                    process.end = stamp
+                    exits[guid] = stamp, fields
+                    if image_verified:
+                        process.end = stamp
             elif kind == 3:
                 connections.append(sysmon_connection(stamp, fields))
         container.remove(event)
@@ -559,14 +588,14 @@ def compare_snapshots(before, after, manifest):
     }, issues
 
 
-def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None):
+def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None, rejected_exit_images=None):
     require(manifest["schema_version"] == 1 and manifest["disposable"] is True,
             "expected a disposable N12 manifest")
     start, end = (utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
     require(start < end and start.date() == end.date(), "capture must be ordered and inside one UTC day")
     with evidence_stage("Sysmon XML"):
         processes, connections, issues, first, last = sysmon_events(
-            sysmon, start, end, precision_fixture=precision_fixture)
+            sysmon, start, end, precision_fixture=precision_fixture, rejected_exit_images=rejected_exit_images)
     if (first, last) != (manifest["sysmon_first_record"], manifest["sysmon_last_record"]) or first is None:
         issues.add("sysmon-bookend-record-mismatch")
     if not etw and (manifest["procmon_all_events"] is not True or
@@ -816,10 +845,11 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
 def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
           rundown=None, record_outside_scope=None, private_app_launches=None, journey_bookends=None,
-          describe_path_gaps=False, record_outside_writer=None):
+          describe_path_gaps=False, record_outside_writer=None, rejected_exit_images=None):
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
     require(journey_bookends is None or etw, "process bookends require ETW audit")
-    start, end, processes, connections, issues = load_capture(manifest, sysmon, etw=etw)
+    start, end, processes, connections, issues = load_capture(
+        manifest, sysmon, etw=etw, rejected_exit_images=rejected_exit_images)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
             re.fullmatch(r"[0-9a-f]{64}", manifest["executable_sha256"]),
             "source and executable identities are required")
@@ -895,6 +925,8 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         "executable_sha256": manifest["executable_sha256"],
         "coverage": "BLOCKED" if issues else "CALIBRATED",
         "coverage_issues": sorted(issues), "process_roles": dict(Counter(roles.values())),
+        **({"trace_verdict_scope": "diagnostic-only-unverified-sysmon-exit"}
+           if "sysmon-exit-image-unverified" in issues else {}),
         "sysmon_repeated_process_exits": sum(process.repeated_exits for process in processes.values()),
         "network": network, "connections": net_counts, "unexpected_connections": external,
         "network_scope": "Sysmon-observed TCP/UDP connections, excluding blocked attempts",
