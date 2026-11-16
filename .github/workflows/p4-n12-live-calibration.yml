@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ false }} # The one-use connection diagnostic rehearsal was consumed by run 43715705070.
+    if: ${{ github.run_attempt == '1' }} # One owner-approved UDP collector rehearsal.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
