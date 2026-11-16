@@ -2,6 +2,14 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | App shutdown passed and lifetime attribution blocked
+
+The [one-use Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43951683778/job/133595511172) ran at reviewed source `2c8c2f24ddbfe12e20f567b25fd467aa0d6b00f4` from launch `ad05b34421e53d3733614df2a57f47914c2c5049`, on runner image `20261112.366.7`. Unpackaged staging passed. Executable SHA-256 was `056962b8be9319b685054592d60d60d3f62e674659e5f87bac5ec94fd3b1988c`, Cargo lock SHA-256 was `75fa91f9208577ffe832de96aba95239fc97d6d8a90990c144c8d157fa0cb996` and Sysmon version was 15.22.
+
+**Hosted shutdown PASS.** The native close listener acknowledged registration and the hidden QA peer closed. The verified main-window close completed about 2.7 seconds after the readiness checkpoint. The app exited with status 0 and the isolated WebView profile stopped. The launcher exited, all four protected fixture roots and the immutable CSV matched, and Sysmon and kernel-process ETW exports completed. ETW reported five buffers with zero lost events or buffers.
+
+**Workflow FAIL. Lifetime attribution BLOCKED.** The reducer reported `etw-start-image-unverified` and `app-or-launcher-handle-unverified`. Sysmon bound one app, six WebView and one WebView network process. Both handle comparisons remained BLOCKED. No timing comparisons or disputed exits were emitted. The first strict image join is for the launcher and the raw trace was confined to the runner, so the observed image representation remains unverified. This diagnostic gives no new N12 acceptance credit. GitHub retained zero artifacts. The approval was consumed and the workflow is disarmed. [Routine P4 CI at the launch commit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43951683950)
+
 ## 16 November 2026 | App lifetime retest blocked after peer closed
 
 The [hosted Windows 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43944930268/job/133571962029) ran once from launch `e3b5c431b78c5cff41ae67ab312900fcaa97495b` at reviewed source `30399db4745c34a7235341678b9fc9d729867779`, on runner image `20261112.366.7`. Unpackaged staging completed. Sysmon 15.22, kernel-process ETW, isolated services, native bridge readiness and verified hidden-peer closure completed. Executable SHA-256 was `60031376bfc1ea0501350bf96ec97302f512dd041cf15faa727c14f161d38851` and Cargo lock SHA-256 was `75fa91f9208577ffe832de96aba95239fc97d6d8a90990c144c8d157fa0cb996`.
@@ -390,7 +398,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-After routine CI verification, obtain fresh exact-source approval for one unpackaged Windows 2022 build and one isolated startup and graceful-close retest. The retest requires both the hidden peer's close event and confirmation that the shell registered its native close listener. Record shutdown, endpoint and lifetime results before considering the full journey. [App lifetime capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+Prepare a redacted diagnostic for the launcher ETW start image join and exercise it with generated process records. Keep exact executable identity, PID, birth, sequence, exit and parent checks. The shutdown path now has hosted evidence, and the next collector decision depends on the image evidence. [App lifetime result](#16-november-2026--app-shutdown-passed-and-lifetime-attribution-blocked) · [Capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
