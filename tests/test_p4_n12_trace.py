@@ -225,6 +225,10 @@ def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names()
     event(14, 20, FileObject=12, FileKey=42)
     event(16, 21, FileObject=9, FileKey=42, Irp=8)
     event(24, 22, Irp=8, Status=0)
+    event(10, 23, FileKey=44, FileName=protected)
+    event(10, 24, FileKey=44, FileName=outside)
+    event(16, 25, FileObject=9, FileKey=44, Irp=9)
+    event(24, 26, Irp=9, Status=0)
     details = Counter()
 
     unresolved = correlate_requests(
@@ -233,17 +237,34 @@ def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names()
         lambda *args: None, strict=True, details=details, initial_process_births={7: 0},
     )
 
-    assert unresolved["other:write:path-missing"] == 5
+    assert unresolved["other:write:path-missing"] == 6
     assert {key: count for key, count in details.items() if key.startswith("write-path-gap:")} == {
         "write-path-gap:outside-tracked-paths": 1,
         "write-path-gap:unseen-key": 1,
         "write-path-gap:invalidated-name": 2,
         "write-path-gap:same-timestamp-name-transition": 1,
+        "write-path-gap:ambiguous-name": 1,
     }
     assert {key: count for key, count in details.items() if key.startswith("write-name-invalidation:")} == {
         "write-name-invalidation:event-14:same-object": 1,
         "write-name-invalidation:event-13:different-object": 1,
     }
+    public_counts = Counter()
+
+    def count_gap(role, thread, context):
+        public_counts[f"{role}:{thread}:{context}"] += 1
+
+    assert correlate_requests(
+        events, lambda value: value or None,
+        lambda pid, birth, ticks: ("other", None), lambda path: path == protected,
+        lambda *args: None, strict=True, initial_process_births={7: 0},
+        record_write_name_gap=count_gap,
+    ) == unresolved
+    assert public_counts == {f"other:no-thread-id:{context}": 1 for context in (
+        "outside-tracked-paths", "unseen-key", "invalidated-name:event-14:same-object",
+        "same-timestamp-name-transition", "invalidated-name:event-13:different-object", "ambiguous-name",
+    )}
+    assert "private.txt" not in json.dumps(public_counts)
 
 
 @pytest.mark.parametrize(("fault", "reason"), [
@@ -1602,6 +1623,9 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert clean["protected_snapshot_comparison"] == "MATCH"
     assert clean["file_events"]["backend:write"] == 1
     assert clean["native_n12_accepted"] is False
+    assert report(describe_path_gaps=True) == {
+        **clean, "etw_path_gap_context": {}, "etw_write_name_gap_context": {},
+    }
     cli_inputs = []
     for name, value in (("manifest", evidence.manifest), ("before", evidence.before),
                         ("after", evidence.after)):
@@ -1698,12 +1722,25 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
         "other:event-16:write:file-key:header-lifetime:unverified-thread": 1,
         "other:event-16:write:file-key:no-header-lifetime:unverified-thread": 1,
     }
+    assert with_bookends["etw_write_name_gap_context"] == {"other:unverified-thread:unseen-key": 2}
     assert with_bookends["file_violations"]["protected:other:write"] == 1
     assert with_bookends["filesystem"] == "FAIL"
     assert with_bookends["coverage"] == "BLOCKED"
     assert with_bookends["native_n12_accepted"] is False
     assert "private-marker" not in json.dumps(with_bookends)
     del rows[-rows_added:]
+
+    emit(21, 0, 1, lifecycle=True, ProcessID=4)
+    emit(22, 0, 3, lifecycle=True, ProcessId=4, TThreadId=88)
+    emit(23, 0, 10, FileKey=733, FileName=PROTECTED + r"\private-name-only.bin")
+    mutation(24, 4, 711, 16, FileKey=733, IssuingThreadId=88)
+    named = report(describe_path_gaps=True)
+    assert named["etw_write_name_gap_context"] == {"webview-network:thread-header-agrees:tracked": 1}
+    assert named["etw_unresolved_mutations"] == {"webview-network:write:path-missing": 1}
+    assert named["coverage"] == named["filesystem"] == named["network"] == "BLOCKED"
+    assert named["file_violations"] == {}
+    assert "private-name-only" not in json.dumps(named)
+    del rows[-5:]
 
     # A pre-opened backend handle has no in-capture name event. The native
     # stop-time rundown may resolve it only while its file key remains stable.

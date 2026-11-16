@@ -69,7 +69,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
                        rundown_invalidations=None, initial_process_births=None,
                        preopened_control_file_keys=None, preopened_control_file_objects=None,
-                       rundown_window=None, record_path_gap=None, calibration_diagnostics=None,
+                       rundown_window=None, record_path_gap=None, record_write_name_gap=None,
+                       calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
@@ -89,13 +90,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     name_transition_ticks = set()
     process_transition_ticks = set()
     thread_transition_ticks = set()
-    if strict and details is not None:
+    track_write_names = strict and (details is not None or record_write_name_gap is not None)
+    if track_write_names:
         # ETW records at the same timestamp have no proven order here.
         name_transition_ticks = {
             (key, event["ticks"])
             for event in ordered_events if not event.get("lifecycle")
             if (key := name_transition_key(event["id"], event["data"]))
         }
+    if strict and details is not None:
         for event in ordered_events:
             if not event.get("lifecycle"):
                 continue
@@ -257,14 +260,14 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 active[process_id] = ticks
             elif kind == 2:
                 active.pop(process_id, None)
-            elif (details is not None or record_path_gap is not None) and kind in (3, 4):
+            elif (details is not None or record_path_gap is not None or record_write_name_gap is not None) and kind in (3, 4):
                 tid = number(data.get("ThreadID", data.get("TThreadId")))
                 if kind == 3:
                     thread_owners[tid] = (process_id, active.get(process_id))
                 else:
                     thread_owners.pop(tid, None)
             continue
-        if strict and details is not None and (key := name_transition_key(kind, data)):
+        if track_write_names and (key := name_transition_key(kind, data)):
             if kind == 10:
                 name = resolve_path(data.get("FileName") or "")
                 # A distinct name may be an alias. Only NameDelete resets the
@@ -337,7 +340,11 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 if not source or (operation == "rename" and not destination):
                     flag(actor, f"{operation}:path-missing", event_id, info_class)
                     if gap is not None:
-                        record_path_gap(actor, event_id, operation, *gap)
+                        file_key, lifetime, thread, name_context = gap
+                        if record_path_gap is not None:
+                            record_path_gap(actor, event_id, operation, file_key, lifetime, thread)
+                        if record_write_name_gap is not None and name_context is not None:
+                            record_write_name_gap(actor, thread, name_context)
                     if calibration_diagnostics is not None and operation in {"write", "resize"}:
                         calibration_gaps.append((actor, operation, request, ticks))
                 if source or destination:
@@ -458,7 +465,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if object_id in (preopened_control_file_objects or set()):
                 details[f"{actor}:event-{kind}:{operation}:preopened-control-fileobject-match"] += 1
         write_name_context = None
-        if strict and details is not None and kind == 16 and source is None:
+        if track_write_names and kind == 16 and source is None:
             file_key = number(data.get("FileKey"))
             tid = number(data.get("IssuingThreadId", data.get("ThreadId")))
             owner = thread_owners.get(tid)
@@ -469,10 +476,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 attribution = "header-agrees" if pid == owner_pid else "header-differs"
                 if owner_birth is not None and opened.get((owner_pid, owner_birth, object_id)) is not None:
                     issuing_thread_path = True
-                    details[f"{actor}:event-16:write-request:issuing-thread-handle-path"] += 1
+                    if details is not None:
+                        details[f"{actor}:event-16:write-request:issuing-thread-handle-path"] += 1
             elif thread_bookends is not None and tid in thread_bookends:
                 attribution = "bookend-header-agrees" if pid == thread_bookends[tid] else "bookend-header-differs"
-            details[f"{actor}:event-16:write-request:{attribution}"] += 1
             candidate = file_names.get(file_key)
             context = "missing-key" if not file_key else "unseen-key"
             if file_key in file_names:
@@ -481,7 +488,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 context = "invalidated-name"
             elif candidate is not None:
                 context = "tracked" if tracked(candidate) else "outside-tracked-paths"
-            details[f"{actor}:event-16:write-request:file-key-context-{context}"] += 1
+            if details is not None:
+                details[f"{actor}:event-16:write-request:{attribution}"] += 1
+                details[f"{actor}:event-16:write-request:file-key-context-{context}"] += 1
             write_name_context = context
             if (file_key, ticks) in name_transition_ticks:
                 write_name_context = "same-timestamp-name-transition"
@@ -493,7 +502,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 if invalidating_object:
                     object_relation = "same-object" if invalidating_object == object_id else "different-object"
                 write_name_context = f"invalidated-name:event-{invalidating_kind}:{object_relation}"
-            if birth is None and process_bookends is not None:
+            if details is not None and birth is None and process_bookends is not None:
                 if pid in process_bookends:
                     identity_context = "same-process-at-bookends"
                 elif pid in (0, 4):
@@ -551,7 +560,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 unresolved[f"{actor}:{operation}:irp-ambiguous"] += 1
         elif operation:
             write_gap = None
-            if write_name_context is not None:
+            if details is not None and write_name_context is not None:
                 header_label = process_label(pid, birth, ticks, actor, identity)
                 if header_label == "unverified" and pid in (0, 4):
                     header_label = "system-context"
@@ -566,7 +575,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 protected_system_write = f"{target}:{capture_phase(ticks)}:{write_paging_flag(data)}"
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
                             info_class, write_gap, protected_system_write, event)
-            if record_path_gap is not None and source is None and operation != "query" and kind in {16, 17, 23}:
+            if ((record_path_gap is not None or record_write_name_gap is not None)
+                    and source is None and operation != "query" and kind in {16, 17, 23}):
                 try:
                     file_key = number(data.get("FileKey"))
                 except ValueError:
@@ -583,7 +593,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     thread = "thread-header-agrees" if owner[0] == pid else "thread-header-differs"
                 path_gap_context[irp] = ("file-key" if type(file_key) is int and file_key > 0 else "no-file-key",
                                          "header-lifetime" if birth is not None else "no-header-lifetime",
-                                         thread)
+                                         thread, write_name_context)
     unmatched_writes = Counter()
     for operation, actor, _, _, source, destination, requested, event_id, info_class, *_ in pending.values():
         count_compression(operation, "missing-completion")

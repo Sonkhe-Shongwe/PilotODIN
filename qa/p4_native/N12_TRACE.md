@@ -108,6 +108,8 @@ The hosted app journey takes read-only process snapshots immediately before ETW 
 
 For successful file mutations whose path remains unresolved, `etw_path_gap_context` groups write, set-information and FSCTL events by role, event ID, operation, FileKey availability, header lifetime and whether the issuing thread's observed owner agrees with the header. This is evidence about missing coverage. A FileKey or thread candidate alone does not resolve a path or assign a writer. Stop-time rundown remains suitable for eligible surviving file handles under the existing transition rules. It cannot supply the name of a handle that already closed before shutdown.
 
+For Event 16 writes in that report, `etw_write_name_gap_context` adds counts by role, thread context and name evidence available at request time. The same classifier used by the pre-opened control distinguishes unseen keys, ambiguous or unmapped names, same-timestamp transitions, prior protected or outside name candidates and observed issuing-thread handle candidates. Invalidated names include the first invalidating event and its FileObject relation. Each successful unresolved write contributes one count. Failed, uncompleted and ambiguous IRPs are excluded from this breakdown. Paths and raw process, thread and file identities stay private. The categories describe observations only and each unresolved write still blocks coverage.
+
 ### Strict file-key rundown input
 
 #### Event 23 FSCTL classification

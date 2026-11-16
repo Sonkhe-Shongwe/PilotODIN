@@ -748,7 +748,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       preopened_control_file_keys=None, preopened_control_file_objects=None,
                       rundown_window=None, record_outside_scope=None, record_outside_writer=None,
                       background_bookends=None,
-                      bookend_summary=None, path_gap_counts=None, calibration_diagnostics=None):
+                      bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
+                      calibration_diagnostics=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -798,6 +799,9 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
     def count_path_gap(role, event_id, operation, file_key, lifetime, thread):
         path_gap_counts[f"{role}:event-{event_id}:{operation}:{file_key}:{lifetime}:{thread}"] += 1
+
+    def count_write_name_gap(role, thread, name_context):
+        write_name_gap_counts[f"{role}:{thread}:{name_context}"] += 1
 
     def record(role, identity, operation, source, destination, requested, completed, success):
         if not success or completed < start_ticks:
@@ -865,6 +869,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             preopened_control_file_objects=preopened_control_file_objects,
             rundown_window=rundown_window,
             record_path_gap=count_path_gap if path_gap_counts is not None else None,
+            record_write_name_gap=count_write_name_gap if write_name_gap_counts is not None else None,
             calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
             diagnostic_rundown_stop=diagnostic_rundown_stop,
         )
@@ -970,6 +975,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
     etw_diagnostics = {}
     bookend_summary = {}
     path_gap_counts = Counter()
+    write_name_gap_counts = Counter()
     if etw:
         immutable = [windows_path(manifest["observed_roots"][label])
                      for label in manifest["immutable_observed"]]
@@ -977,7 +983,8 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
             manifest, procmon, observed.start, observed.end, observed.processes, observed.roles,
             protected + immutable, permitted, issues, rundown=rundown, record_outside_scope=record_outside_scope,
             record_outside_writer=record_outside_writer, background_bookends=journey_bookends,
-            bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None)
+            bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None,
+            write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None)
         path_diagnostics = []
     else:
         file_counts, violations, file_events, path_diagnostics = inspect_files(
@@ -1015,7 +1022,8 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
              **({"file_key_rundown_records": len(rundown)} if rundown is not None else {})}
            if etw else {}),
         **({"etw_background_process_bookends": bookend_summary} if bookend_summary else {}),
-        **({"etw_path_gap_context": dict(path_gap_counts)} if etw and describe_path_gaps else {}),
+        **({"etw_path_gap_context": dict(path_gap_counts),
+             "etw_write_name_gap_context": dict(write_name_gap_counts)} if etw and describe_path_gaps else {}),
         **snapshot_report,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }
