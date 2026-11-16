@@ -12,6 +12,8 @@ Initial Sysmon calibration passed on read 1 with the updated UDP fixture. Both s
 
 The hosted final reducer can now retain later ETW and network findings when an exit matched by process GUID and PID has a timestamp before birth. It logs the record number and signed time delta, leaves the exit unverified, and blocks both acceptance checks. Generated tests cover clean and violating traces and conflicting repeated exits. Default strict reduction and prelaunch still reject the invalid timestamp. The full hosted journey with this change is **NOT RUN**. [Reducer contract](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
+The local N12 and prospective preservation selection passed 299 tests with one platform skip. At [source `904d2a0`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/904d2a038b1b2b7f69c27e2f8d570d86d46034e0), [routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43848218896) and [Windows FileIO fixture CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43848219384) both passed.
+
 ## 16 November 2026 | Collector UDP prelaunch passed and ETW coverage blocked
 
 The [approved Windows 2022 job #133223010351](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43845055284/job/133223010351) ran on attempt 1 from launch `d9141fdba1fb043886cbbc8a7001021ba743b97f` at reviewed source `54d22cf906af27a7cee544ec4f069dc9d9869773`. Pinned Sysmon 15.22 installed and the shared prelaunch guard verified the expected child’s initiated loopback TCP and UDP on read 1. The fixture birth adjustment was unused. Both final reductions reported the expected generated file operations and zero filesystem violations.
