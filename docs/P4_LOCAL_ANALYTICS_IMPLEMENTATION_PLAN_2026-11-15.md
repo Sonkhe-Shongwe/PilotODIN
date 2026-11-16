@@ -70,7 +70,7 @@ Pull the updated development branch and close the installed app and both Live De
 py -3 .\tools\Verify_Local_Analytics_Windows_Native.py --run-approved
 ```
 
-The preflight uses the existing Live Dev dependencies and checks for Rust x64 MSVC and the C++ build tools. The runner stages native source, then compiles and launches it once. It generates its own four-row project, collects system and scoped process samples, closes the verified QA window and prints and saves `result.json` in the temporary run folder. A preflight block happens before compilation. A later failure is recorded with its stage and local logs.
+The preflight uses the existing Live Dev dependencies and checks for Rust x64 MSVC and the C++ build tools. The runner exports the reviewed backend, frontend and native source from Git into the temporary folder. It stages the committed QA helpers and copies the installed frontend dependencies. Local edits and untracked files can stay in the checkout. The runner compiles and launches once, generates its own four-row project, collects system and scoped process samples, closes the verified QA window and prints and saves `result.json`. A preflight block happens before compilation. A later failure is recorded with its stage and local logs.
 
 The result covers model-free Local analytics in an unpackaged native shell. The packaged sidecar and offline Qwen coexistence are outside this session. The installer freeze remains in force.
 

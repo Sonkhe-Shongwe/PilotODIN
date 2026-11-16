@@ -6,7 +6,7 @@
 
 The owner reported that the Windows Live Dev check worked after starting the launcher. The first attempt received WinError 10061 before it reached the fixture. The successful follow-up is an owner attestation. The printed result, measured response times and available RAM were not supplied. Reuse this checkpoint and the existing hosted browser and Windows API evidence.
 
-The owner approved one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the 8 GB laptop. The runner uses a disposable backend and WebView2 profile and covers model-free Local analytics. The physical run is pending. The R03 offline Qwen coexistence gate remains open.
+The owner approved one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the 8 GB laptop. The first attempt stopped before compilation because the runner rejected untracked files in the local checkout. The corrected runner exports the reviewed application commit and committed QA helpers into a temporary folder, so it can run independently of those files. The physical run is pending. The R03 offline Qwen coexistence gate remains open.
 
 ## 15 November 2026 | Ask ODIN Local analytics milestone
 

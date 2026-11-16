@@ -19,21 +19,24 @@ import time
 from urllib.error import URLError
 from urllib.request import ProxyHandler, Request, build_opener
 from uuid import uuid4
+from zipfile import ZipFile
 
-from Verify_Local_Analytics_Live_Dev import NoRedirects, ROOT, checkout, insist
+from Verify_Local_Analytics_Live_Dev import NoRedirects, ROOT, insist
 
 
 FRONTEND = ROOT / 'frontend'
-CRATE = FRONTEND / 'src-tauri'
 TARGET = 'x86_64-pc-windows-msvc'
 APP_ID = 'com.pilotodin.p4isolatednativedev'
 APP_TITLE = 'PilotODIN P4 - ISOLATED NATIVE DEV (UNVERIFIED)'
-APPROVAL = ROOT / 'docs/P4_R03_OWNER_NATIVE_APPROVAL_2026-11-16.md'
+APPROVAL = 'docs/P4_R03_OWNER_NATIVE_APPROVAL_2026-11-16.md'
 APPROVED_SCOPE = 'scope=one-unpackaged-build-and-launch-model-free-local-analytics'
 PORTS = (5173, 8000, 9331)
 READY = 'http://127.0.0.1:8000'
 HTTP = build_opener(ProxyHandler({}), NoRedirects())
 FIXTURE = b'id,outcome,premium\n1,Yes,20\n2,No,\n3,Yes,40\n4,,50\n'
+DRIVER = 'frontend/e2e/p4-r03-owner-native.mjs'
+SAMPLER = 'tools/Measure_Local_Analytics_Windows_Native.ps1'
+CLOSE_HELPER = 'qa/p4_native/Close_P4_Verified_Window.ps1'
 
 
 def plain(command, **kwargs):
@@ -42,25 +45,14 @@ def plain(command, **kwargs):
 
 def preflight():
     insist(sys.platform == 'win32', 'This check runs on the owner Windows laptop.')
-    approval = APPROVAL.read_text(encoding='utf-8').splitlines()
+    sha = plain(['git','rev-parse','HEAD'], cwd=ROOT)
+    approval = plain(['git','show',f'{sha}:{APPROVAL}'], cwd=ROOT,encoding='utf-8').splitlines()
     source = next((line.partition('=')[2] for line in approval if line.startswith('reviewed_application_source=')), '')
     insist(APPROVED_SCOPE in approval,
            'Native session approval record does not match the test scope.')
     insist(re.fullmatch(r'[0-9a-f]{40}',source), 'The approval record needs the reviewed source SHA.')
-    current = checkout()
-    # The approval and harness may change documentation and QA files only.
-    # The native executable and UI must come from the reviewed application tree.
-    changed = plain(['git','diff','--name-only',source,'HEAD','--',
-                     'backend','frontend',':(exclude)frontend/e2e',
-                     ':(exclude)frontend/tests'], cwd=ROOT)
-    insist(not current['checkout_tracked_changes'] and not changed,
-           'Use the clean checkout containing the reviewed application source.')
-    insist(not any(os.path.lexists(CRATE / name) for name in
-                   ('tauri.windows.conf.json','tauri.windows.conf.json5','Tauri.windows.toml')),
-           'Unexpected Windows Tauri configuration override.')
-    untracked = plain(['git','ls-files','--others','--exclude-standard','--','backend','frontend',
-                       ':(exclude)frontend/src-tauri/Cargo.lock'], cwd=ROOT)
-    insist(not untracked, 'Untracked files in application source would make the build ambiguous.')
+    ancestry = subprocess.run(['git','merge-base','--is-ancestor',source,sha],cwd=ROOT,timeout=20)
+    insist(ancestry.returncode == 0, 'Pull the reviewed Native QA source from the development branch.')
     python = ROOT / '.venv-live/Scripts/python.exe'
     insist(python.is_file() and (FRONTEND / 'node_modules/@playwright/test/package.json').is_file()
            and (FRONTEND / 'node_modules/vite/bin/vite.js').is_file(),
@@ -88,11 +80,14 @@ def preflight():
                 check.bind(('127.0.0.1', port))
             except OSError as exc:
                 raise ValueError(f'Loopback port {port} is in use. Close the running Live Dev or QA consoles first.') from exc
-    return python, tools, current['checkout_git_sha'], source
+    return python, tools, sha, source
 
 
-def configure():
-    production, previous, qa = [json.loads((CRATE / name).read_text(encoding='utf-8')) for name in
+def configure(crate):
+    insist(not any(os.path.lexists(crate / name) for name in
+                   ('tauri.windows.conf.json','tauri.windows.conf.json5','Tauri.windows.toml')),
+           'Unexpected Windows Tauri configuration override in the reviewed source.')
+    production, previous, qa = [json.loads((crate / name).read_text(encoding='utf-8')) for name in
         ('tauri.conf.json','tauri.p4-native-qa.conf.json','tauri.p4-isolated-native-dev.conf.json')]
     insist([production['identifier'],previous['identifier'],qa['identifier']] ==
            ['com.pilotodin.studio','com.pilotodin.p4nativeqa',APP_ID], 'Unexpected application identifiers.')
@@ -104,25 +99,37 @@ def configure():
     return qa
 
 
-def stage_crate(run):
-    # Cargo writes its resolved lockfile alongside the manifest. Keep that file
-    # and any build-script output in the disposable workspace.
-    destination = run / 'frontend/src-tauri'
-    files = subprocess.check_output(
-        ['git','ls-files','-z','--','frontend/src-tauri'],cwd=ROOT,
-    ).decode('utf-8').split('\0')
-    for name in filter(None,files):
-        source = ROOT / name
-        insist(source.is_file() and not source.is_symlink(), 'Native source file unavailable or redirected.')
-        target = destination / source.relative_to(CRATE)
-        target.parent.mkdir(parents=True,exist_ok=True)
-        shutil.copyfile(source,target)
-    return destination
+def stage_source(run, source, harness):
+    workspace = run / 'source'
+    workspace.mkdir()
+    for label, revision, paths in (
+        ('application', source, ('backend', 'frontend')),
+        ('harness', harness, (DRIVER, SAMPLER, CLOSE_HELPER)),
+    ):
+        archive = run / (label+'.zip')
+        subprocess.run(['git','archive','--format=zip','--output',str(archive),revision,'--',*paths],
+                       cwd=ROOT,check=True,timeout=90)
+        with ZipFile(archive) as snapshot:
+            for item in snapshot.infolist():
+                parts = item.filename.rstrip('/').split('/')
+                insist(all(part and part not in ('.','..') and ':' not in part and '\\' not in part
+                           for part in parts) and not stat.S_ISLNK(item.external_attr >> 16),
+                       'Unexpected path or symlink in the reviewed source.')
+                insist(item.is_dir() or not (workspace / item.filename).exists(),
+                       'The staged Git snapshots contain overlapping files.')
+            snapshot.extractall(workspace)
+        archive.unlink()
+    return workspace
 
 
-def stop(process):
+def stop(process, *, tree=False):
     if process.poll() is None:
-        process.terminate()
+        if tree and sys.platform == 'win32':
+            taskkill = Path(os.environ['SystemRoot']) / 'System32/taskkill.exe'
+            subprocess.run([str(taskkill),'/PID',str(process.pid),'/T','/F'],
+                           stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15)
+        if process.poll() is None:
+            process.terminate()
         process.wait(timeout=15)
 
 
@@ -135,7 +142,7 @@ def spawn(stack, run, role, command, directory, env):
     with (run / (role+'.log')).open('xb') as log:
         process = subprocess.Popen([str(part) for part in command], cwd=directory, env=env,
                                    stdout=log, stderr=subprocess.STDOUT)
-    stack.callback(stop, process)
+    stack.callback(stop, process, tree=role in ('backend','vite','desktop'))
     return process
 
 
@@ -151,13 +158,23 @@ def wait_http(url, process, timeout=45):
     raise ValueError('The expected service exited or did not respond on '+url)
 
 
-def require_listener(powershell, port, process):
+def require_listener(powershell, port, process, *, allow_child=False):
+    # The Windows virtual-environment Python launcher can own a Python child.
     command = (
-        f'@(Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction Stop '
-        f'| Where-Object {{ $_.LocalAddress -eq "127.0.0.1" -and $_.OwningProcess -eq {process.pid} }}).Count'
+        f'$listeners = @(Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction Stop); '
+        'if ($listeners.Count -eq 1 -and $listeners[0].LocalAddress -eq "127.0.0.1") { '
+        '$listeners[0].OwningProcess; '
+        f'if ($listeners[0].OwningProcess -ne {process.pid}) {{ '
+        '(Get-CimInstance Win32_Process -Filter ("ProcessId = " + $listeners[0].OwningProcess) '
+        '-ErrorAction Stop).ParentProcessId } }'
     )
-    insist(process.poll() is None and plain([powershell,'-NoProfile','-NonInteractive','-Command',command]) == '1',
+    ids = plain([powershell,'-NoProfile','-NonInteractive','-Command',command]).splitlines()
+    insist(process.poll() is None and (
+        ids == [str(process.pid)] or
+        (allow_child and len(ids) == 2 and ids[0].isdigit() and ids[1] == str(process.pid))
+    ),
            f'Port {port} is not owned by the expected disposable service.')
+    return int(ids[0])
 
 
 def import_fixture():
@@ -170,15 +187,13 @@ def import_fixture():
         return json.load(reply)['id']
 
 
-def memory(powershell, profile, backend=None, app=None):
-    script = Path(__file__).with_name('Measure_Local_Analytics_Windows_Native.ps1')
+def memory(powershell, script, profile, backend_id=0, app=None):
     return json.loads(plain([powershell,'-NoProfile','-NonInteractive','-File',str(script),
-                             '-ProfilePath',str(profile),'-BackendId',str(backend.pid if backend else 0),
+                             '-ProfilePath',str(profile),'-BackendId',str(backend_id),
                              '-AppId',str(app.pid if app else 0)]))
 
 
-def close_window(powershell, binary, app):
-    script = ROOT / 'qa/p4_native/Close_P4_Verified_Window.ps1'
+def close_window(powershell, script, binary, app):
     # Invoke the existing identity-checked Windows close helper.
     env = {**os.environ,'PILOTODIN_R03_CLOSE_SCRIPT':str(script),'PILOTODIN_R03_CLOSE_EXE':str(binary),
            'PILOTODIN_R03_CLOSE_PID':str(app.pid),'PILOTODIN_R03_CLOSE_TITLE':APP_TITLE}
@@ -191,11 +206,17 @@ def close_window(powershell, binary, app):
 
 
 def session(run, python, tools, report):
-    config = configure()
+    report['stage'] = 'stage_source'
+    workspace = stage_source(run,report['reviewed_application_source'],report['checkout_sha'])
+    frontend = workspace / 'frontend'
+    crate = frontend / 'src-tauri'
+    sampler = workspace / SAMPLER
+    config = configure(crate)
     profile = run / 'webview'
     target = run / 'cargo'
-    env = {key:value for key,value in os.environ.items() if not key.startswith(('PILOTODIN_','WEBVIEW2_','VITE_'))
-           and key not in ('TAURI_CONFIG','CARGO_TARGET_DIR','GEMINI_API_KEY','GROQ_API_KEY','OPENROUTER_API_KEY')}
+    env = {key:value for key,value in os.environ.items() if not key.upper().startswith(('PILOTODIN_','WEBVIEW2_','VITE_'))
+           and key.upper() not in ('TAURI_CONFIG','CARGO_TARGET_DIR','GEMINI_API_KEY','GROQ_API_KEY','OPENROUTER_API_KEY',
+                                   'PYTHONPATH','PYTHONHOME','NODE_PATH','NODE_OPTIONS')}
     env.update(PILOTODIN_HOME=str(run/'data'), PYTHONDONTWRITEBYTECODE='1', VITE_PILOTODIN_NATIVE_SMOKE='1')
     report['app_identifier'] = config['identifier']
     for key in ('LOCALAPPDATA','APPDATA'):
@@ -203,17 +224,20 @@ def session(run, python, tools, report):
 
     powershell = tools['powershell.exe']
     samples = report['memory_samples']
-    samples.append({'stage':'before_compile',**memory(powershell,profile)})
+    samples.append({'stage':'before_compile',**memory(powershell,sampler,profile)})
+    report['stage'] = 'stage_dependencies'
+    # Reuse the installed Live Dev packages, with a separate Vite cache.
+    shutil.copytree(FRONTEND/'node_modules',frontend/'node_modules',
+                    ignore=shutil.ignore_patterns('.vite','.vite-temp'))
     report['stage'] = 'compile'
     print('Compiling one unpackaged Tauri build. Keep this window open.', flush=True)
-    staged_crate = stage_crate(run)
     build_env = {**env,'TAURI_CONFIG':json.dumps(config),'CARGO_TARGET_DIR':str(target),'CARGO_BUILD_JOBS':'2'}
-    lockfile = staged_crate / 'Cargo.lock'
+    lockfile = crate / 'Cargo.lock'
     previously_locked = lockfile.exists()
     with (run/'compile.log').open('xb') as log:
         with subprocess.Popen([tools['cargo'],'build','--bin','pilotodin-desktop','--target',TARGET,
                                '--target-dir',str(target),*(('--locked',) if previously_locked else ())],
-                              cwd=staged_crate,env=build_env,stdout=log,stderr=subprocess.STDOUT) as cargo:
+                              cwd=crate,env=build_env,stdout=log,stderr=subprocess.STDOUT) as cargo:
             try:
                 started = time.monotonic()
                 while cargo.poll() is None:
@@ -231,22 +255,18 @@ def session(run, python, tools, report):
         report['executable_sha256'] = hashlib.file_digest(stream,'sha256').hexdigest()
     with lockfile.open('rb') as stream:
         report['cargo_lock_sha256'] = hashlib.file_digest(stream,'sha256').hexdigest()
-    source = checkout()
-    insist(source['checkout_git_sha'] == report['checkout_sha'] and not source['checkout_tracked_changes'],
-           'Application checkout changed during compilation.')
-
     report['stage'] = 'runtime'
-    samples.append({'stage':'before_runtime',**memory(powershell,profile)})
+    samples.append({'stage':'before_runtime',**memory(powershell,sampler,profile)})
     with ExitStack() as stack:
         backend = spawn(stack,run,'backend',[python,'-m','uvicorn','backend.main:app','--host','127.0.0.1',
-                        '--port','8000','--no-access-log'],ROOT,env)
+                        '--port','8000','--no-access-log'],workspace,env)
         wait_http(READY+'/api/health',backend)
-        require_listener(powershell,8000,backend)
+        backend_id = require_listener(powershell,8000,backend,allow_child=True)
         with HTTP.open(READY+'/api/projects',timeout=5) as response:
             insist(json.load(response) == [], 'The backend does not have an empty disposable project catalogue.')
         project = import_fixture()
-        vite = spawn(stack,run,'vite',[tools['node'],FRONTEND/'node_modules/vite/bin/vite.js',
-                     '--host','127.0.0.1','--port','5173','--strictPort'],FRONTEND,env)
+        vite = spawn(stack,run,'vite',[tools['node'],frontend/'node_modules/vite/bin/vite.js',
+                     '--host','127.0.0.1','--port','5173','--strictPort'],frontend,env)
         wait_http('http://127.0.0.1:5173/',vite)
         require_listener(powershell,5173,vite)
         report['stage'] = 'native_launch'
@@ -255,26 +275,26 @@ def session(run, python, tools, report):
                    'WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS':'--remote-debugging-port=9331 --remote-debugging-address=127.0.0.1'}
         app = spawn(stack,run,'desktop',[binary],binary.parent,app_env)
         wait_http('http://127.0.0.1:9331/json/version',app)
-        ready = memory(powershell,profile,backend,app)
+        ready = memory(powershell,sampler,profile,backend_id,app)
         require_profile_root(profile)
         insist(ready['webview']['processes'] > 0 and ready['debugger_isolated'],
                'WebView2 or its debugger could not be attributed to the disposable profile.')
         samples.append({'stage':'native_ready',**ready})
         report['stage'] = 'native_questions'
-        driver = spawn(stack,run,'driver',[tools['node'],FRONTEND/'e2e/p4-r03-owner-native.mjs'],FRONTEND,
+        driver = spawn(stack,run,'driver',[tools['node'],workspace/DRIVER],frontend,
                        {**env,'PILOTODIN_R03_NATIVE_RUN':'approved-owner-session','PILOTODIN_R03_FIXTURE_ID':project})
         deadline = time.monotonic()+160
         while driver.poll() is None:
             insist(time.monotonic() < deadline and app.poll() is None and backend.poll() is None and vite.poll() is None,
                    'The native probe stalled or an owned process exited.')
-            samples.append({'stage':'during_questions',**memory(powershell,profile,backend,app)})
+            samples.append({'stage':'during_questions',**memory(powershell,sampler,profile,backend_id,app)})
             time.sleep(.75)
         insist(driver.returncode == 0, 'Native UI assertions failed. Inspect driver.log.')
         report['ui'] = json.loads((run/'driver.log').read_text(encoding='utf-8').strip().splitlines()[-1])
         with HTTP.open(READY+'/api/projects/'+project,timeout=5) as response:
             insist(json.load(response)['experiments'] == [], 'Unexpected model experiment in disposable workspace.')
         time.sleep(3)
-        samples.append({'stage':'cooldown',**memory(powershell,profile,backend,app)})
+        samples.append({'stage':'cooldown',**memory(powershell,sampler,profile,backend_id,app)})
         active = [sample for sample in samples if sample['stage'] in ('native_ready','during_questions','cooldown')]
         insist(any(sample['stage'] == 'during_questions' for sample in active) and all(
             sample['backend']['processes'] == 1 and sample['desktop']['processes'] == 1
@@ -289,7 +309,7 @@ def session(run, python, tools, report):
             },
         }
         report['stage'] = 'native_close'
-        close_window(powershell,binary,app)
+        close_window(powershell,workspace/CLOSE_HELPER,binary,app)
     report['stage'] = 'complete'
     report['status'] = 'PASS'
 
