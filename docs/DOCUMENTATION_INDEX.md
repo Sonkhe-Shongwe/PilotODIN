@@ -14,6 +14,7 @@
 - [Live development workspace](./LIVE_DEVELOPMENT.md) and [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md).
 - [Complexity-last roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) for the intended phase sequence.
 - [P1 closure](./P1_CLOSURE_REGISTER_2026-10-28.md), [P2 closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) and [P3 closure](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md).
+- [16 November documentation audit](./DOCUMENTATION_AUDIT_2026-11-16.md) for corrected evidence, approval records and repository-wide link verification.
 - The owner-held 22 October Master Reconstruction Blueprint defines the product specification, subject to recorded owner amendments.
 
 ## Historical navigation

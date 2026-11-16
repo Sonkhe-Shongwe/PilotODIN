@@ -1,16 +1,16 @@
 # PilotODIN P4 Local analytics implementation plan
 
-**15 November 2026.** The owner agreed to improve Ask ODIN's Local analytics first and evaluate additional model components only if they improve measured results. This plan groups interpretation, execution, follow-ups and verification into one implementation milestone. See the [current P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard).
+**15–16 November 2026.** The owner agreed to improve Ask ODIN's Local analytics first and evaluate additional model components only if they improve measured results. The native median and filter-changing follow-up have scoped owner acceptance. See the [current P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard).
 
 ## Current evidence
 
 | Evidence | Result and scope |
 | --- | --- |
-| Ask ODIN on hosted Windows | The API test process returned all five expected fact sets using supported question forms at simulated 0.73 GiB available. Peak working set was 102.3 MiB. The measurement excluded the full desktop and WebView2. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43744796818/job/132905610069) |
+| Ask ODIN on hosted Windows | The expanded milestone's API test returned all five expected fact sets at simulated 0.73 GiB available and peaked at 102.4 MiB resident. The measurement covered the API process. [Milestone run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43753907245) · [Earlier 102.3 MiB baseline](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43744796818/job/132905610069) |
 | Qwen3 1.7B batch comparison | Batch 512 peaked at 2,109.5 MiB and batch 128 at 2,068.9 MiB. Both scored 2 of 5. The batch 512 worker released 2,024.1 MiB at idle and answered after waking. The comparison retained batch 512. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43740595746/job/132892675147) |
 | Smaller generative models | Qwen3 0.6B peaked at 934.9 MiB and scored 2 of 4. SmolLM2 360M peaked at 420.0 MiB and scored 1 of 4. Neither cleared the earlier structured answer screen. These worker measurements exclude PilotODIN and its dataset. [Small-model run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) |
 | Model-free wording experiment | The separate word-overlap follow-up selector got 4 of 8 original questions and 2 of 8 paraphrases right. It correctly abstained on all 12 unclear questions. This tested selection from fixed options. [Benchmark](../desktop/evaluate_offline_follow_up_rules.py) |
-| Physical 8 GB laptop | Earlier snapshots showed 0.73–0.82 GiB available with local analytics running. The offline Qwen test stopped at the 2.0 GiB application preflight. The owner later showed the overview, training status and missing-premium answers in the Windows Live Dev browser. That observation covers the browser preview. [P4 acceptance ledger](./PROJECT_STATUS_CURRENT.md#p4-acceptance) |
+| Physical 8 GB laptop | The owner accepted the native filtered median and its follow-up after reviewing screenshots. The terminal acknowledgment timed out, so the physical RAM, paging and UI timing results are unverified. Offline Qwen stopped at the 2.0 GiB memory preflight. [Native result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) · [P4 acceptance ledger](./PROJECT_STATUS_CURRENT.md#p4-acceptance) |
 
 The pre-milestone Local analytics path supported exact overview, missingness, labelled-rate and training-status requests. In a disposable real API check at `98affa4`, an ordinary-language labelled-rate question, a filtered median question and a follow-up returned the general dataset overview. The group missingness question inspected the wrong field. The expanded milestone passed the API and browser checks. [Milestone evidence](./SESSION_HANDOFF_CURRENT.md#15-november-2026--ask-odin-local-analytics-milestone)
 
@@ -56,15 +56,17 @@ Prototype components against the same fixtures before adding dependencies. Start
 - **Resource evidence.** Record cold and warm latency and process memory on representative small and larger fixtures, with repeated questions. In the physical desktop session record the app, backend and WebView2 working sets or private bytes, minimum system available RAM, paging and responsiveness across startup, workload and cooldown. Use the current baseline and agree workload-specific limits before the physical run. [Windows process memory counters](https://learn.microsoft.com/en-us/windows/win32/psapi/process-memory-usage-information)
 - **P4 disposition.** A model-free desktop pass supports Local analytics on the tested hardware and build. R03 offline Qwen generation and coexistence remain separate acceptance evidence under the existing 2.0 GiB preflight. Use the [phase ledger](./PROJECT_STATUS_CURRENT.md#p4-acceptance) for N12, preservation and signoff.
 
-## Proposed physical Windows session
+<a id="proposed-physical-windows-session"></a>
 
-The owner confirmed that the Live Dev check worked on 16 November and approved one unpackaged Tauri build and launch. The session exercises native WebView2 against an independently started, disposable loopback development backend. The [approval record](./P4_R03_OWNER_NATIVE_APPROVAL_2026-11-16.md) pins the reviewed application source. The existing [hosted runner](../qa/p4_native/Run_P4_71_Disposable_Windows.ps1) demonstrates the startup pattern and remains restricted to hosted CI.
+## Physical Windows session record
+
+The owner confirmed that the Live Dev check worked on 16 November and approved one unpackaged Tauri build and launch. The build and approved relaunch have been exercised. The commands below document that session. A future native run needs its own applicable approval. The [approval record](./P4_R03_OWNER_NATIVE_APPROVAL_2026-11-16.md) pins the reviewed application source. The existing [hosted runner](../qa/p4_native/Run_P4_71_Disposable_Windows.ps1) demonstrates the startup pattern and remains restricted to hosted CI.
 
 1. Record the exact source and executable SHA-256. Verify the isolated Tauri identity, disposable backend workspace and separate WebView2 profile before running the questions. Use the same four-row fixture in the disposable workspace. Keep the installed PilotODIN closed and leave its projects outside the test.
 2. Record system RAM and paging before launch, at the ready screen, during the questions and after cooldown. Attribute process readings to the native shell, its WebView2 profile and the development backend. Record sampled working sets and private bytes, elapsed response times and any visible UI stall.
 3. Run the [five-question smoke workload](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) once through the native UI. The driver verifies the Tauri bridge, answers and filter follow-up and records click-to-verified-answer times. Record visible stalls and keep any incomplete run at the stage it reached.
 
-Pull the updated development branch and close the installed app and both Live Dev consoles to free the required loopback ports. Run this from PowerShell in the PilotODIN checkout.
+The procedure called for pulling the development branch and closing the installed app and both Live Dev consoles to free the required loopback ports. The approved launch command was:
 
 ```powershell
 py -3 .\tools\Verify_Local_Analytics_Windows_Native.py --run-approved
@@ -76,7 +78,7 @@ The result covers model-free Local analytics in an unpackaged native shell. The 
 
 ### Resume after a WebView2 automation timeout
 
-If the reviewed runner created an executable and ended at `native_launch` while polling `9331/json/version`, retain the original run folder. To approve and perform one relaunch of that exact build from the PilotODIN checkout, run:
+The reviewed runner created an executable and ended at `native_launch` while polling `9331/json/version`. The owner retained the original run folder and used the one-time relaunch command for that exact build:
 
 ```powershell
 py -3 .\tools\Verify_Local_Analytics_Windows_Native.py --relaunch-approved pilotodin-r03-native-1v829nh2
