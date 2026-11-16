@@ -481,31 +481,43 @@ def capture(root, staged, source, expected_hash, node):
     manifest["sysmon_last_record"] = sysmon_tail()
     sysmon = root / "sysmon.xml"
     export_sysmon(manifest["sysmon_first_record"], manifest["sysmon_last_record"], sysmon)
+    endpoints, launches = [], {}
+    rejected_sysmon_exits = []
+    try:
+        observed = trace.inspect_journey_sysmon(manifest, sysmon, etw=True, private_endpoints=endpoints,
+                                                private_app_launches=launches,
+                                                rejected_sysmon_exits=rejected_sysmon_exits)
+    finally:
+        if rejected_sysmon_exits:
+            print("N12 rejected Sysmon exits " + json.dumps(rejected_sysmon_exits), flush=True)
+    report_file(root / "private-endpoints.json", endpoints)
+    log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
+    network_diagnostics = network_summary(endpoints, launches, log_paths)
+    print("N12 network observations " + json.dumps({
+        "source_sha": source,
+        "executable_sha256": expected_hash,
+        "scope": "diagnostic-only-before-combined-audit",
+        "sysmon_and_lifecycle_issues": sorted(observed.issues),
+        "connections": observed.network_counts,
+        "unexpected_connections": observed.unexpected_connections,
+        "network_diagnostics": network_diagnostics,
+    }), flush=True)
     powershell(HELPER, "etw-export", "-CaptureRoot", root, timeout=600)
     events = root / "etw.jsonl"
     manifest["etw"] = {"schema_version": 1, "start_utc": capture_start.isoformat(),
                        "end_utc": capture_end.isoformat(), "counters": counters,
                        "volume_devices": devices, "events_sha256": build.digest(events)}
     report_file(root / "manifest.json", manifest)
-    endpoints, launches = [], {}
     paths = diagnostic_paths(root, staged, manifest)
-    rejected_sysmon_exits = []
-    try:
-        result = trace.audit(manifest, sysmon, events, before, after, etw=True, private_endpoints=endpoints,
-                             record_outside_writer=paths.record, private_app_launches=launches,
-                             journey_bookends=bookends, describe_path_gaps=True,
-                             rejected_sysmon_exits=rejected_sysmon_exits)
-    finally:
-        if rejected_sysmon_exits:
-            print("N12 rejected Sysmon exits " + json.dumps(rejected_sysmon_exits), flush=True)
-    report_file(root / "private-endpoints.json", endpoints)
-    log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
+    result = trace.complete_journey_audit(manifest, observed, events, before, after, etw=True,
+                                         record_outside_writer=paths.record, journey_bookends=bookends,
+                                         describe_path_gaps=True)
     result["journey_diagnostics"] = {
         "outside_scope_paths": paths.summary(),
         "outside_scope_writers": paths.writer_summary(),
         "process_bookends": {"before": "available" if first_processes is not None else "unavailable",
                             "after": "available" if last_processes is not None else "unavailable"},
-        "network": network_summary(endpoints, launches, log_paths),
+        "network": network_diagnostics,
     }
     result["journey"] = "completed"
     report_file(root / "audit.json", result)

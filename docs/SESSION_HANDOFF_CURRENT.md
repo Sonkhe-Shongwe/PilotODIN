@@ -2,6 +2,10 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Preserve network findings before ETW processing
+
+The hosted journey now writes a redacted network observation to the job log immediately after final Sysmon reduction. It includes source and binary provenance, lifecycle and TCP/UDP calibration issues, unexpected connections by role and protocol, and attributable NetLog categories. ETW export or reduction failure still blocks the combined audit. The strict reducer consumes the same Sysmon evidence. Generated tests cover both ETW failure paths, missing UDP evidence and endpoint redaction. The prepared live retest is **NOT RUN**. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
 ## 16 November 2026 | Windows app journey passed both launches and blocked on exit time
 
 The [approved Windows 2022 job #133226559390](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43846107440/job/133226559390) ran once from launch `3692f4f5ab9d772a784e342636d3ed6cf5907756` at reviewed source `3d71d3e8ff7a797df69cf68cb114c954456f164d`. Build preflight and binary provenance passed. Executable SHA-256 was `1832f5cb45008f1aa7b5be7d145b031498dbfdcb7c56bd3e7de101462b7f9a33`. Cargo lock SHA-256 was `46cebbc90c1398c4dcd14a58a4bddb19026fea3b952d9600d77ae2101eab56af`.

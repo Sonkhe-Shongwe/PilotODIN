@@ -522,7 +522,7 @@ def calibration_window(root, process, processes, connections, file_events, issue
         issues.add("calibration-child-lifecycle-missing")
     if not process.sha256 or child.sha256 != process.sha256 or child.image != process.image:
         issues.add("calibration-image-identity-missing-or-mismatched")
-    if not calibration_file_events(root, child.guid) <= file_events:
+    if file_events is not None and not calibration_file_events(root, child.guid) <= file_events:
         issues.add("calibration-file-events-missing")
     if not (process.end and child.end and process.start <= child.start <= child.end <= process.end):
         issues.add("calibration-child-lifecycle-missing")
@@ -851,11 +851,22 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
     return counts, violations, file_events, dict(unresolved)
 
 
-def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
-          rundown=None, record_outside_scope=None, private_app_launches=None, journey_bookends=None,
-          describe_path_gaps=False, record_outside_writer=None, rejected_sysmon_exits=None):
-    require(rundown is None or etw, "FileIO rundown requires ETW audit")
-    require(journey_bookends is None or etw, "process bookends require ETW audit")
+@dataclass
+class JourneySysmon:
+    start: datetime
+    end: datetime
+    markers: dict
+    processes: dict
+    roles: dict
+    bindings: list
+    issues: set
+    connections: list
+    network_counts: Counter
+    unexpected_connections: list
+
+
+def inspect_journey_sysmon(manifest, sysmon, *, etw=False, private_endpoints=None,
+                           private_app_launches=None, rejected_sysmon_exits=None):
     start, end, processes, connections, issues = load_capture(
         manifest, sysmon, etw=etw, rejected_sysmon_exits=rejected_sysmon_exits)
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_sha"]) and
@@ -864,7 +875,6 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
     markers = {key: utc_time(manifest["markers"][key]) for key in MINIMUM_MARKERS}
     moments = [start, *markers.values(), end]
     require(all(a < b for a, b in zip(moments, moments[1:])), "missing or unordered journey markers")
-    protected, permitted = scope(manifest)
     declared = Counter(root["role"] for root in manifest["processes"])
     require(declared["app"] == 2 and declared["backend"] == 1 and declared["calibration"] == 2
             and declared["driver"] >= 1, "expected two app launches, one backend, two calibrations and a driver")
@@ -879,27 +889,12 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
     )
     if not app_lifecycles_match:
         issues.add("app-lifecycle-does-not-match-journey")
-    etw_diagnostics = {}
-    bookend_summary = {}
-    path_gap_counts = Counter()
-    if etw:
-        immutable = [windows_path(manifest["observed_roots"][label])
-                     for label in manifest["immutable_observed"]]
-        file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
-            manifest, procmon, start, end, processes, roles, protected + immutable, permitted, issues,
-            rundown=rundown, record_outside_scope=record_outside_scope, record_outside_writer=record_outside_writer,
-            background_bookends=journey_bookends, bookend_summary=bookend_summary,
-            path_gap_counts=path_gap_counts if describe_path_gaps else None)
-        path_diagnostics = []
-    else:
-        file_counts, violations, file_events, path_diagnostics = inspect_files(
-            procmon, start, end, processes, roles, protected, permitted, issues)
-    verify_calibrations(bindings, processes, connections, file_events, markers, issues)
     ports = manifest["loopback_ports"]
     require(ports and all(type(port) is int and 1 <= port <= 65535 for port in ports),
             "invalid loopback port allowlist")
     require(all(p["port"] in ports for p, _ in bindings if p["role"] == "calibration"),
             "calibration ports must be recorded in the loopback allowlist")
+    verify_calibrations(bindings, processes, connections, None, markers, issues)
     verify_connection_lifetimes(connections, processes, roles, issues)
     net_counts, external, endpoints = scoped_network(connections, roles, set(ports))
     if private_endpoints is not None:
@@ -915,8 +910,48 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
                 app_launches.setdefault(process.guid, app_launches[process.parent])
         private_app_launches.update({guid: label for guid, label in app_launches.items()
                                      if roles[guid] == "webview-network" and processes[guid].end})
+    return JourneySysmon(start, end, markers, processes, roles, bindings, issues, connections, net_counts, external)
+
+
+def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, etw=False,
+          rundown=None, record_outside_scope=None, private_app_launches=None, journey_bookends=None,
+          describe_path_gaps=False, record_outside_writer=None, rejected_sysmon_exits=None):
+    observed = inspect_journey_sysmon(manifest, sysmon, etw=etw, private_endpoints=private_endpoints,
+                                     private_app_launches=private_app_launches,
+                                     rejected_sysmon_exits=rejected_sysmon_exits)
+    return complete_journey_audit(
+        manifest, observed, procmon, before, after, etw=etw, rundown=rundown,
+        record_outside_scope=record_outside_scope, journey_bookends=journey_bookends,
+        describe_path_gaps=describe_path_gaps, record_outside_writer=record_outside_writer)
+
+
+def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=False, rundown=None,
+                           record_outside_scope=None, journey_bookends=None, describe_path_gaps=False,
+                           record_outside_writer=None):
+    require(rundown is None or etw, "FileIO rundown requires ETW audit")
+    require(journey_bookends is None or etw, "process bookends require ETW audit")
+    issues = observed.issues.copy()
+    protected, permitted = scope(manifest)
+    etw_diagnostics = {}
+    bookend_summary = {}
+    path_gap_counts = Counter()
+    if etw:
+        immutable = [windows_path(manifest["observed_roots"][label])
+                     for label in manifest["immutable_observed"]]
+        file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
+            manifest, procmon, observed.start, observed.end, observed.processes, observed.roles,
+            protected + immutable, permitted, issues, rundown=rundown, record_outside_scope=record_outside_scope,
+            record_outside_writer=record_outside_writer, background_bookends=journey_bookends,
+            bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None)
+        path_diagnostics = []
+    else:
+        file_counts, violations, file_events, path_diagnostics = inspect_files(
+            procmon, observed.start, observed.end, observed.processes, observed.roles, protected, permitted, issues)
+    verify_calibrations(observed.bindings, observed.processes, observed.connections, file_events,
+                        observed.markers, issues)
     snapshot_report, snapshot_issues = compare_snapshots(before, after, manifest)
     issues.update(snapshot_issues)
+    external = observed.unexpected_connections
     network = "PASS_SCOPED"
     if any(e["kind"] == "non-loopback" for e in external):
         network = "PARTIAL"
@@ -932,11 +967,11 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
         "schema_version": 1, "source_sha": manifest["source_sha"],
         "executable_sha256": manifest["executable_sha256"],
         "coverage": "BLOCKED" if issues else "CALIBRATED",
-        "coverage_issues": sorted(issues), "process_roles": dict(Counter(roles.values())),
+        "coverage_issues": sorted(issues), "process_roles": dict(Counter(observed.roles.values())),
         **({"trace_verdict_scope": "diagnostic-only-unverified-sysmon-exit"}
            if issues & {"sysmon-exit-image-unverified", "sysmon-exit-time-unverified"} else {}),
-        "sysmon_repeated_process_exits": sum(process.repeated_exits for process in processes.values()),
-        "network": network, "connections": net_counts, "unexpected_connections": external,
+        "sysmon_repeated_process_exits": sum(process.repeated_exits for process in observed.processes.values()),
+        "network": network, "connections": observed.network_counts, "unexpected_connections": external,
         "network_scope": "Sysmon-observed TCP/UDP connections, excluding blocked attempts",
         "native_n12_accepted": False,
         "filesystem": filesystem, "file_events": file_counts, "file_violations": violations,

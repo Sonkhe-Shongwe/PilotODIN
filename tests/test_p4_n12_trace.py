@@ -1346,6 +1346,25 @@ def test_calibrated_trace_reports_scoped_results_and_keeps_history(tmp_path):
     assert report["unresolved_file_paths"] == []
 
 
+def test_sysmon_observations_require_calibration_and_feed_combined_audit(tmp_path):
+    evidence = Evidence()
+    evidence.connect(40, "net2", "203.0.113.23", 443, "udp")
+    evidence.events = [event for event in evidence.events if not
+                       (event[2].get("ProcessGuid") == "child30" and event[2].get("Protocol") == "udp")]
+    sysmon, procmon = evidence.save(tmp_path)
+    endpoints, launches = [], {}
+    observed = trace.inspect_journey_sysmon(evidence.manifest, sysmon, private_endpoints=endpoints,
+                                            private_app_launches=launches)
+    assert observed.issues == {"calibration-tcp-or-udp-missing"}
+    assert observed.network_counts["webview-network:udp:non-loopback"] == 1
+    assert len(endpoints) == 1 and launches[endpoints[0]["process_guid"]] == "relaunch"
+    assert "203.0.113.23" not in json.dumps(observed.unexpected_connections)
+    result = trace.complete_journey_audit(evidence.manifest, observed, procmon, evidence.before, evidence.after)
+    assert result["coverage"] == "BLOCKED" and result["filesystem"] == "BLOCKED"
+    assert result["unexpected_connections"] == observed.unexpected_connections
+    assert result == trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after)
+
+
 def test_identical_sysmon_exit_payloads_preserve_the_audit(tmp_path):
     evidence = Evidence()
     baseline = evidence.report(tmp_path)

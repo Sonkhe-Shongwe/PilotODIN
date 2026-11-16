@@ -53,6 +53,8 @@ Generated evidence verifies that the hosted final reducer still reports file and
 
 The [latest app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43846107440/job/133226559390) passed the UDP gate and both launches, matched protected endpoints, and then failed on an exit timestamp before birth. The updated reducer retains diagnostic findings for that observed failure class. [Latest evidence](./SESSION_HANDOFF_CURRENT.md#16-november-2026--windows-app-journey-passed-both-launches-and-blocked-on-exit-time)
 
+The hosted journey now reports the redacted Sysmon and NetLog observations before ETW export and reduction. Compare unexpected connections against this baseline even if later ETW processing stops the job. Use the combined calibrated audit for R02.5 and R02.6 acceptance. [Current implementation and scope](./SESSION_HANDOFF_CURRENT.md#16-november-2026--preserve-network-findings-before-etw-processing)
+
 ### P4 plan to reach 75%
 
 | Milestone | Work and required evidence | Score |

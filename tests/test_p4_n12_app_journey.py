@@ -6,11 +6,13 @@ import json
 import os
 import subprocess
 import sys
+from types import SimpleNamespace
 from xml.etree import ElementTree as ET
 
 import pytest
 
 from qa.p4_research import n12_app_journey as journey
+from qa.p4_research import n12_journey_diagnostics
 
 
 SOURCE = "a" * 40
@@ -366,7 +368,8 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
 
 
 @pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit",
-                                    "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture"])
+                                    "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture",
+                                    "etw-export", "etw-reduce"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
@@ -463,28 +466,42 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             return b"1" if fault == "no-profile-exit" else b"0"
         elif args[0] == "etw-export":
             events.append("etw-export")
+            if fault == "etw-export":
+                raise subprocess.CalledProcessError(1, "etw-export")
             (root / "etw.jsonl").write_bytes(b"evidence\n")
         else:
             pytest.fail(f"unexpected PowerShell call {args[0]}")
 
-    def reduce(m, sysmon, file_trace, before, after, *, etw, private_endpoints,
-               record_outside_writer, private_app_launches, journey_bookends, describe_path_gaps,
-               rejected_sysmon_exits):
-        events.append("reducer")
+    def inspect_sysmon(m, sysmon, *, etw, private_endpoints, private_app_launches, rejected_sysmon_exits):
+        events.append("sysmon-reducer")
         assert sysmon.read_bytes() == b"record-bounded evidence"
-        assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
+        assert etw and "etw-export" not in events
         assert m["sysmon_first_record"] == 11 and m["sysmon_last_record"] == 60
         assert list(m["markers"]) == list(journey.trace.MINIMUM_MARKERS)
         assert list(m["markers"].values()) == sorted(m["markers"].values())
-        assert before != after
-        assert describe_path_gaps
-        assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
-                                    "after": [{"pid": 702, "birth_ticks": 170}]}
         assert [p["role"] for p in m["processes"]].count("app") == 2
         if fault in {"sysmon-parse", "changed-protected", "absent-fixture"}:
             rejected_sysmon_exits.append({"record": 159, "category": "text-placeholder"})
             raise journey.trace.EvidenceValidationError("Sysmon XML: unsupported exit image form")
         private_endpoints.append({"role": "backend", "raw": "private-value"})
+        return observed
+
+    observed = SimpleNamespace(
+        issues={"sysmon-exit-time-unverified"}, network_counts={"backend:tcp:unexpected-loopback": 1},
+        unexpected_connections=[{"role": "backend", "protocol": "tcp", "kind": "unexpected-loopback"}],
+    )
+
+    def reduce(m, sysmon_observed, file_trace, before, after, *, etw, record_outside_writer,
+               journey_bookends, describe_path_gaps):
+        events.append("reducer")
+        assert sysmon_observed is observed
+        assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
+        assert before != after
+        assert describe_path_gaps
+        assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
+                                    "after": [{"pid": 702, "birth_ticks": 170}]}
+        if fault == "etw-reduce":
+            raise journey.trace.EvidenceValidationError("invalid ETW evidence")
         record_outside_writer("driver", "write", (r"c:\private\driver.bin",), "node.exe")
         return {"coverage": "BLOCKED", "network": "BLOCKED", "filesystem": "BLOCKED"}
 
@@ -503,8 +520,10 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         path.write_bytes(b"record-bounded evidence")
 
     monkeypatch.setattr(journey, "export_sysmon", export_sysmon)
-    monkeypatch.setattr(journey.trace, "audit", reduce)
+    monkeypatch.setattr(journey.trace, "inspect_journey_sysmon", inspect_sysmon)
+    monkeypatch.setattr(journey.trace, "complete_journey_audit", reduce)
     monkeypatch.setattr(journey, "diagnostic_paths", lambda *args: journey.OutsidePaths([]))
+    monkeypatch.setattr(n12_journey_diagnostics, "local_disposable_path", lambda path, **options: path)
 
     if fault in {"first-calibration", "changed-binary", "no-profile-exit"}:
         with pytest.raises(journey.trace.EvidenceValidationError, match={
@@ -520,8 +539,12 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         return
 
     if fault:
-        message = "Sysmon export failed" if fault == "sysmon-export" else "unsupported exit image form"
-        with pytest.raises(journey.trace.EvidenceValidationError, match=message):
+        error, message = {
+            "sysmon-export": (journey.trace.EvidenceValidationError, "Sysmon export failed"),
+            "etw-export": (subprocess.CalledProcessError, "etw-export"),
+            "etw-reduce": (journey.trace.EvidenceValidationError, "invalid ETW evidence"),
+        }.get(fault, (journey.trace.EvidenceValidationError, "unsupported exit image form"))
+        with pytest.raises(error, match=message):
             journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
         assert not (root / "audit.json").exists()
     else:
@@ -533,7 +556,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                           "profile-exit", "verify-binary", "app-relaunch", "driver-relaunch", "graceful-close",
                           "profile-exit", "cleanup-driver-relaunch", "cleanup-app-relaunch",
                           "cleanup-driver-first", "cleanup-app-first", "cleanup-vite", "cleanup-backend",
-                          "calibration-last", "etw-stop", "process-bookend-after", "drain", "etw-export", "reducer"]
+                          "calibration-last", "etw-stop", "process-bookend-after", "drain", "sysmon-reducer",
+                          "etw-export", "reducer"]
         public = (root / "audit.json").read_text()
         assert "private-value" not in public and "702" not in public
         assert json.loads((root / "private-process-bookends.json").read_text())["before"] == [
@@ -549,6 +573,25 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         ]
 
     lines = capsys.readouterr().out.splitlines()
+    network_lines = [line.removeprefix("N12 network observations ") for line in lines
+                     if line.startswith("N12 network observations ")]
+    if fault in {None, "etw-export", "etw-reduce"}:
+        observation, = network_lines
+        assert "private-value" not in observation and "702" not in observation
+        assert json.loads(observation) == {
+            "source_sha": SOURCE, "executable_sha256": EXE_SHA,
+            "scope": "diagnostic-only-before-combined-audit",
+            "sysmon_and_lifecycle_issues": ["sysmon-exit-time-unverified"],
+            "connections": observed.network_counts,
+            "unexpected_connections": observed.unexpected_connections,
+            "network_diagnostics": {
+                "logs": {"first": "missing", "relaunch": "missing"},
+                "observations": [{"observation": 1, "socket_status": "outside-webview",
+                                  "request_category": "unattributed"}],
+            },
+        }
+    else:
+        assert not network_lines
     diagnostic = "N12 rejected Sysmon exits " + json.dumps(
         [{"record": 159, "category": "text-placeholder"}])
     assert (diagnostic in lines) == (fault in {"sysmon-parse", "changed-protected", "absent-fixture"})
