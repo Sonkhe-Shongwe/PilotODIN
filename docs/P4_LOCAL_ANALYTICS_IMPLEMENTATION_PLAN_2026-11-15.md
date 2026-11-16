@@ -1,6 +1,6 @@
 # PilotODIN P4 Local analytics implementation plan
 
-**15 November 2026.** The owner agreed to improve Ask ODIN's Local analytics first and evaluate additional model components only if they improve measured results. This plan groups interpretation, execution, follow-ups and verification into one implementation milestone. P4 is active at 65/100 on the existing scorecard.
+**15 November 2026.** The owner agreed to improve Ask ODIN's Local analytics first and evaluate additional model components only if they improve measured results. This plan groups interpretation, execution, follow-ups and verification into one implementation milestone. See the [current P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard).
 
 ## Current evidence
 

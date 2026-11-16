@@ -3,7 +3,7 @@
 ## Current authoritative route, in reading order
 
 1. [Session handoff](./SESSION_HANDOFF_CURRENT.md) for the active branch, exact-source evidence and next engineering action.
-2. [Project status](./PROJECT_STATUS_CURRENT.md) for the phase ledger, open gates and release disposition.
+2. [Project status](./PROJECT_STATUS_CURRENT.md) for the phase ledger and release disposition. The [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) shows the evidence and points per check.
 3. [Phase focus and closure policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) for owner decisions, the installer freeze and phase boundaries.
 4. [P4 acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) for the technical gate details and owner evidence. [N12 trace runbook](../qa/p4_native/N12_TRACE.md) for the collector and audit procedure.
 5. [Master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) for dated issue and acceptance evidence.

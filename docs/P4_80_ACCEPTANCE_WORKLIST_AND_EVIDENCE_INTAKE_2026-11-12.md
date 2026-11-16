@@ -8,6 +8,8 @@
 
 ## A. Single risk checklist: existing evidence is not remaining acceptance
 
+The [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) records which checks currently have evidence and their contribution to the measured baseline.
+
 | Gate | Existing verifiable evidence | Specific missing proof | Next safe action / dependency | Current verdict |
 | --- | --- | --- | --- | --- |
 | **R01 / Gate C:** real-world prediction use | Deterministic target review and historical research | Independently checkable decision owner and intervention, outcome provenance, as-of inputs, suitable evaluation, baseline and measured benefit, and permitted use | Use §B when a specific real-world prediction use is proposed | **UNVERIFIED / REQUIRED BEFORE REAL USE** |

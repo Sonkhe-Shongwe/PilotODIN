@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current project status
 
-**16 November 2026.** P4 Target Intelligence is the active engineering phase at **65/100** on the proposed scorecard. [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+**16 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Phase ledger
 
@@ -27,6 +27,36 @@
 | R05 / BE-024 · Fitted Prepare | Scoped hosted fitted-history reopen, saved preprocessing and stale prediction guard passed. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563) |
 | R06 · Original app-data preservation | Historical strict failure: 74 differences, writer unknown. Prospective owner-device preservation is open. [R06 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#c-r06-non-intrusive-incident-evidence-intake) |
 | Owner signoff | Pending separate disposition and closure of the remaining P4 engineering gates. [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) |
+
+## P4 engineering scorecard
+
+Each engineering check is worth five points once the stated result is evidenced at its stated scope. Open, blocked and failed checks earn zero. The checklist covers the core P4 behaviour and R02–R06. R01 governs real-world prediction use. Owner signoff is a separate closure requirement. The closure criteria in the [phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#exit-criteria-for-the-active-phase) still apply at any score.
+
+The earlier [65/100 estimate](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/873c91ad3b024fd92953017ce04c00e6c63544d5/docs/PROJECT_STATUS_CURRENT.md) had no recoverable per-check calculation. Applying this checklist at the end of 15 November gives **13/20 (65%)**. The hosted Local analytics API pass and the earlier N12 endpoint match were already evidenced. On 16 November, the owner accepted the separate native Local analytics check on the physical 8 GB laptop, completing **R03.2** and bringing the same checklist to **14/20 (70%)**. The repeated hosted endpoint match receives the existing R02.4 credit once. [15 November API run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43753907245) · [16 November owner result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted)
+
+| Check | Required result and scope | Evidence | Points |
+| --- | --- | --- | ---: |
+| Core 1 | Target review correctly identifies plausible classification and numerical regression outcomes on generated data. | [Consolidated P4 verification](./P4_15_CONSOLIDATED_TECHNICAL_ACCEPTANCE_AND_GAP_LEDGER_2026-11-09.md#consolidated-p4-phase-exit-evidence-matrix) | 5 |
+| Core 2 | Target review explains structural blockers, label and timing limitations, and available alternatives on generated data. | [Consolidated P4 verification](./P4_15_CONSOLIDATED_TECHNICAL_ACCEPTANCE_AND_GAP_LEDGER_2026-11-09.md#consolidated-p4-phase-exit-evidence-matrix) | 5 |
+| Core 3 | The browser/API honours manual selection and abstention, project isolation, stale version rejection and foreign-origin rejection with disposable projects. | [Consolidated P4 verification](./P4_15_CONSOLIDATED_TECHNICAL_ACCEPTANCE_AND_GAP_LEDGER_2026-11-09.md#actual-exact-source-ci-outcomes) | 5 |
+| Core 4 | The whole-queue and selected-field scan budgets block unsupported recommendations on incomplete evidence. | [Consolidated P4 verification](./P4_15_CONSOLIDATED_TECHNICAL_ACCEPTANCE_AND_GAP_LEDGER_2026-11-09.md#consolidated-p4-phase-exit-evidence-matrix) | 5 |
+| R02.1 | Hosted Windows N1–N10 pass, including target review, consented project switching and refusal cases. | [Consolidated Windows cases](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance) | 5 |
+| R02.2 | Hosted Windows N11 shows a Quality edit, stale version rejection and restoration of the working version across same-binary relaunch. | [Consolidated Windows cases](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance) | 5 |
+| R02.3 | Hosted N12 project records show zero experiments before and after the tested desktop journey. | [Consolidated Windows cases](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance) | 5 |
+| R02.4 | Hosted N12 matches all protected roots and the immutable CSV at the journey's endpoints. | [15 November completed audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43690425867/job/132739719330) · [16 November endpoint report](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43832982495/job/133182543693) | 5 |
+| R02.5 | A complete hosted N12 audit verifies calibrated file-mutation coverage and passes the filesystem checks. | **BLOCKED.** Final Sysmon parsing failed. The last completed audit reported 608 outside-scope findings and incomplete coverage. [N12 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) | 0 |
+| R02.6 | A complete hosted N12 audit passes startup-to-exit network isolation with validated process attribution. | **BLOCKED.** Final Sysmon parsing failed. The last completed audit reported eight unexpected connections. [N12 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison) | 0 |
+| R03.1 | Model-free Local analytics returns all five expected facts in the hosted Windows API test at simulated low headroom with model startup bypassed. | [Hosted milestone](./SESSION_HANDOFF_CURRENT.md#15-november-2026--ask-odin-local-analytics-milestone) | 5 |
+| R03.2 | On the physical 8 GB Windows laptop, the owner verifies the native filtered median and its filter-changing follow-up. | [Owner-accepted native result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) | 5 |
+| R03.3 | On physical 8 GB Windows, bundled Qwen starts under the current admission policy and answers an offline request. | **BLOCKED AT PREFLIGHT.** The recorded app-open reading was below the 2.0 GiB floor. [R03 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#a-single-risk-checklist-existing-evidence-is-not-remaining-acceptance) | 0 |
+| R03.4 | On physical 8 GB Windows, offline inference coexists with analytics and WebView2 within the agreed RAM, paging and responsiveness limits. | **NOT RUN.** Physical timings and in-workload resource evidence are pending. [R03 plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) | 0 |
+| R04.1 | Hosted Windows shows a usable target checkpoint without horizontal overflow and the expected archive warning behaviour on the exercised fixture and widths. | [Consolidated Windows layout evidence](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-consolidated-hosted-windows-acceptance) | 5 |
+| R04.2 | Hosted Windows passes drag-to-dock, Dock beside, close and narrow-width pause/restore. | [Windows docking retest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718/job/131893230837) | 5 |
+| R05.1 | Hosted Windows verifies Prepare's per-field evidence, strategy changes, exclusion consent and the target, project and Quality-version resets. | [Hosted Prepare controls and resets](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#13-november-2026-remaining-p4-windows-acceptance) | 5 |
+| R05.2 | Hosted Windows reopens the fitted experiment with saved preprocessing and blocks new prediction on stale data. | [Windows fitted Prepare run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563/job/131932495814) | 5 |
+| R06.1 | Evidence supports a recorded disposition of the historical original app-data incident. | **OPEN.** Historical full-tree comparison failed with 74 differences and an unknown writer. [R06 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#c-r06-non-intrusive-incident-evidence-intake) | 0 |
+| R06.2 | A separately approved owner-device test verifies original-tree preservation at both endpoints and through the measured interval. | **NOT RUN.** Hosted synthetic endpoints apply to the hosted runner. [Prospective R06 procedure](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#prospective-r06-endpoint-capture) | 0 |
+| **Total** | **14 of 20 engineering checks evidenced** | **P4 active. Owner signoff pending.** | **70/100** |
 
 ## Historical chronology
 
