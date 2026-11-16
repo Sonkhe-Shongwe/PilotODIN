@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ github.run_attempt == '1' }} # One owner-approved UDP collector rehearsal.
+    if: ${{ false }} # One-use approval consumed by run 43845055284.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
