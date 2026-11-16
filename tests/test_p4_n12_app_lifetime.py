@@ -111,7 +111,8 @@ class AppLifetimeTests(unittest.TestCase):
             (123, "invalid-image-type"),
             ("python.exe", "basename-only"),
             (r"private\python.exe", "unsupported-path-form"),
-            (r"\\?\Device\HarddiskVolume99\python.exe", "unmapped-device-path"),
+            (r"\\?\Device\HarddiskVolume99\python.exe", "unsupported-path-form"),
+            (r"\\?\GLOBALROOT\Device\HarddiskVolume99\python.exe", "unmapped-device-path"),
         )
         for image, reason in cases:
             with self.subTest(reason=reason):

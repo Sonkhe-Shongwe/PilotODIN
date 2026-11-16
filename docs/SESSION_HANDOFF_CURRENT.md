@@ -6,7 +6,7 @@
 
 The single-app reducer counts fixed ETW start-image outcomes for the launcher, app and scoped child roles before the strict join stops at its first failure. It distinguishes missing or invalid images, basename-only values, unmapped device paths, unsupported forms, and resolved paths that differ. The report keeps raw paths and process identifiers private. A path comparison alone establishes no process lifetime. The existing strict process, handle and ancestry checks still decide the verdict. [Verification cases](../tests/test_p4_n12_app_lifetime.py) · [Runbook](../qa/p4_native/N12_TRACE.md#single-app-startup-and-shutdown-capture)
 
-The last verified branch checkpoint was [`dadfa7a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dadfa7ab7fb0081e972cfe4dbac8805db3316fbc), with [four routine CI jobs passing](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43952880523). Hosted evidence for the added image counts is **NOT RUN**.
+The last verified branch checkpoint was [`dadfa7a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dadfa7ab7fb0081e972cfe4dbac8805db3316fbc), with [four routine CI jobs passing](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43952880523). [The first diagnostic CI run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43955437156/job/133608647369) at `ede2ac6e2582f57518f8f7471e6326aa1ca1a4f1` failed one new subcase. The fixture expected `\\\\?\\Device\\…` to be classified as a device path. The diagnostic now distinguishes that unsupported spelling from an explicit `GLOBALROOT` device path. Both remain blocked by the strict identity check. Hosted app evidence for the added image counts is **NOT RUN**.
 
 ## 16 November 2026 | App shutdown passed and lifetime attribution blocked
 

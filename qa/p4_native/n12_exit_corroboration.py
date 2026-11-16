@@ -67,11 +67,7 @@ def compare_image_path(image, expected_path, devices):
         return "different-executable-name"
 
     spelling = image.replace("/", "\\").casefold()
-    for prefix in ("\\\\?\\", "\\??\\"):
-        if spelling.startswith(prefix):
-            spelling = spelling[len(prefix):]
-            break
-    if spelling.startswith("\\device\\"):
+    if spelling.startswith(("\\device\\", "\\\\?\\globalroot\\device\\")):
         return "unmapped-device-path"
     if spelling and ntpath.basename(spelling) == spelling:
         return "basename-only"
