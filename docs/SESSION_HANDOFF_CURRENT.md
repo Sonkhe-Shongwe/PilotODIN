@@ -2,6 +2,14 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | App lifetime retest blocked after peer closed
+
+The [hosted Windows 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43944930268/job/133571962029) ran once from launch `e3b5c431b78c5cff41ae67ab312900fcaa97495b` at reviewed source `30399db4745c34a7235341678b9fc9d729867779`, on runner image `20261112.366.7`. Unpackaged staging completed. Sysmon 15.22, kernel-process ETW, isolated services, native bridge readiness and verified hidden-peer closure completed. Executable SHA-256 was `60031376bfc1ea0501350bf96ec97302f512dd041cf15faa727c14f161d38851` and Cargo lock SHA-256 was `75fa91f9208577ffe832de96aba95239fc97d6d8a90990c144c8d157fa0cb996`.
+
+**Workflow FAIL. App lifetime diagnostic BLOCKED.** Windows accepted the verified main-window close request. The app process did not exit within the helper's 15-second bound, recorded as `window-process-exit-timeout`. The app handle and profile exit checkpoints, trace export and lifetime reduction were **NOT RUN**. Cleanup and ETW stop completed. All four protected paths and the immutable synthetic fixture matched at the endpoints. The historical exit anomalies remain unresolved. GitHub retained zero artifacts. The approval was consumed and the workflow is disarmed. All four [routine P4 CI jobs on the launch commit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43944930246) passed.
+
+The trace verified that closing the peer alone was insufficient. The app deliberately vetoes native close until the frontend resolves a one-use close ticket. The previous probe could submit the close when the injected bridge existed but before the mounted shell registered its listener. The revised QA probe awaits the registration acknowledgement from that same listener. The cause of the earlier timeout remains unconfirmed because listener state was unavailable in the run. [Capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+
 ## 16 November 2026 | App lifetime run blocked at graceful close
 
 The [hosted job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43940489139/job/133556386951) ran once on Windows Server 2022, image `20261112.366.7`, from launch `5e5b0c8de8bfee7382e0a939a73b9e23dfa65d2c` at reviewed source `d8442d2b6fe8984647cd84fb11569d4f7c12aba6`. Unpackaged staging, local service startup, pinned Sysmon 15.22, kernel-process ETW start and native bridge readiness completed. Executable SHA-256 was `c612576fcc6fc1e253f75fc1acb5d39f539e6fab1d1fe92257be6b9aad4aac62` and Cargo lock SHA-256 was `6683c3ac1323ad707b165553f09eb16f84ea37860409b570e6479f295fb52a20`.
@@ -382,7 +390,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-After routine CI verification, obtain fresh exact-source approval for one Windows 2022 unpackaged build and one isolated startup and graceful-close retest. The revised probe confirms the hidden peer closes before requesting app shutdown. Review the fixed close categories, endpoint comparison and lifetime reduction before proposing a full journey. [App lifetime capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+After routine CI verification, obtain fresh exact-source approval for one unpackaged Windows 2022 build and one isolated startup and graceful-close retest. The retest requires both the hidden peer's close event and confirmation that the shell registered its native close listener. Record shutdown, endpoint and lifetime results before considering the full journey. [App lifetime capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

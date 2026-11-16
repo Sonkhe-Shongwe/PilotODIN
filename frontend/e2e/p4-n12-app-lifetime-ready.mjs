@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test';
+import { waitForNativeCloseRegistration } from './p4-n12-native-close-readiness.mjs';
 import { discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 import { closeN12Peer, findN12Peer } from './p4-n12-native-cases.mjs';
 
@@ -25,7 +26,8 @@ try {
   }
   const peer = await findN12Peer(result.page.context());
   await closeN12Peer(peer);
-  console.log('N12 app lifetime native bridge ready and peer closed');
+  await waitForNativeCloseRegistration(result.page);
+  console.log('N12 app lifetime native close listener ready and peer closed');
 } finally {
   await browser.close();
 }

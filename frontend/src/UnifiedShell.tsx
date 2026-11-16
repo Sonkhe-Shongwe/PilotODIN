@@ -21,7 +21,7 @@ import type {TabDropSide} from './workspaceTabReorder';
 import {planWorkspaceTabClose} from './workspaceTabCloseFocus';
 import {canRestoreDockDismissFocus,planDockDismissFocus} from './dockDismissFocus';
 import {hasUnsavedWorkspaceDraftForUnload,isEditableDockInput,needsDockInputDiscardApproval} from './dockInputDiscardGuard';
-import {isDesktop} from './desktopBootstrap';
+import {isDesktop,isNativeA4SmokeMode} from './desktopBootstrap';
 import {invoke} from '@tauri-apps/api/core';
 import {listen} from '@tauri-apps/api/event';
 import {NATIVE_CLOSE_EVENT,resolveNativeCloseRequest} from './nativeCloseConsent';
@@ -475,6 +475,7 @@ export function UnifiedShell(){
  // Rust vetoes an OS CloseRequested before sending a one-use ticket here.
  // Keep the latest project/form context without reinstalling the listener on
  // each edit. A failed/missing JS listener cannot bypass Rust's native veto.
+ const [nativeCloseRegistered,setNativeCloseRegistered]=useState(false);
  const nativeCloseContext=useRef({projectId,workspaceReady,active,secondary:dock.secondary});
  nativeCloseContext.current={projectId,workspaceReady,active,secondary:dock.secondary};
  useEffect(()=>{
@@ -493,7 +494,11 @@ export function UnifiedShell(){
     setWarning('Native close confirmation could not be completed. Your workspace remains open.');
    });
   }).then(stop=>{
-   if(disposed)stop();else unlisten=stop;
+   if(disposed)stop();
+   else {
+    unlisten=stop;
+    if(isNativeA4SmokeMode())setNativeCloseRegistered(true);
+   }
   }).catch(()=>setWarning('Native close protection could not be registered. Closing is blocked for safety.'));
   return()=>{disposed=true;unlisten?.()};
  },[]);
@@ -889,7 +894,7 @@ export function UnifiedShell(){
  const archivedSelection=isCurrentProjectHeldArchived(projectId,heldArchivedId)&&!selectorLabels.has(projectId);
  const projectOptions=projects.map(p=><option key={p.id} value={p.id}>{selectorLabels.get(p.id)??p.name}</option>);
  if(archivedSelection)projectOptions.push(<option key={projectId} value={projectId} disabled>Archived in another window (restore to continue)</option>);
- return <div className="po-unified-shell">
+ return <div className="po-unified-shell" data-native-close-ready={isNativeA4SmokeMode()&&nativeCloseRegistered?'true':undefined}>
   <header className="po-shell-title">
    <div className="po-shell-brand"><img className="po-brand-symbol" src="/pilotodin-symbol.svg" alt="" aria-hidden="true"/><span className="po-brand-wordmark"><span className="po-pilot">pilot</span><b>ODIN</b></span></div>
    <span className="po-shell-mode">LOCAL INTELLIGENCE WORKSPACE</span>

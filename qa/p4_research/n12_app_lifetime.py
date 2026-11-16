@@ -74,9 +74,9 @@ def launch_and_close(root, staged, node, source, expected_hash):
                              45, "WebView debugger did not become ready", app)
             ready = journey.quiet([node, str(READY_PROBE)], cwd=journey.FRONTEND,
                                   env={**env, "TEMP": str(root / journey.DRIVER_TEMP_DIR),
-                                       "TMP": str(root / journey.DRIVER_TEMP_DIR)}, timeout=85)
-            trace.require(ready.strip() == b"N12 app lifetime native bridge ready and peer closed",
-                          "native bridge readiness and QA peer close were not verified")
+                                       "TMP": str(root / journey.DRIVER_TEMP_DIR)}, timeout=115)
+            trace.require(ready.strip() == b"N12 app lifetime native close listener ready and peer closed",
+                          "native close listener readiness and QA peer close were not verified")
         with journey.checkpoint_stage("app-lifetime-graceful-close", source, expected_hash):
             trace.require(app.poll() is None and backend.poll() is None and vite.poll() is None,
                           "app or local service exited before verified close")
