@@ -21,7 +21,7 @@ from urllib.request import ProxyHandler, Request, build_opener
 from uuid import uuid4
 from zipfile import ZipFile
 
-from Verify_Local_Analytics_Live_Dev import NoRedirects, ROOT, insist
+from Verify_Local_Analytics_Live_Dev import NoRedirects, ROOT, insist, measure
 
 
 FRONTEND = ROOT / 'frontend'
@@ -43,7 +43,7 @@ def plain(command, **kwargs):
     return subprocess.check_output(command, text=True, timeout=20, **kwargs).strip()
 
 
-def preflight():
+def preflight(reuse=False):
     insist(sys.platform == 'win32', 'This check runs on the owner Windows laptop.')
     sha = plain(['git','rev-parse','HEAD'], cwd=ROOT)
     approval = plain(['git','show',f'{sha}:{APPROVAL}'], cwd=ROOT,encoding='utf-8').splitlines()
@@ -57,13 +57,15 @@ def preflight():
     insist(python.is_file() and (FRONTEND / 'node_modules/@playwright/test/package.json').is_file()
            and (FRONTEND / 'node_modules/vite/bin/vite.js').is_file(),
            'The existing Live Dev Python and frontend dependencies are required.')
-    tools = {program:shutil.which(program) for program in ('cargo','rustc','node','powershell.exe')}
+    required = ('node','powershell.exe') if reuse else ('cargo','rustc','node','powershell.exe')
+    tools = {program:shutil.which(program) for program in required}
     missing = [program for program,path in tools.items() if not path]
     insist(not missing, 'Missing Windows build tools: '+', '.join(missing))
-    insist(f'host: {TARGET}' in plain([tools['rustc'],'-vV']), 'Rust must use the Windows x64 MSVC toolchain.')
+    if not reuse:
+        insist(f'host: {TARGET}' in plain([tools['rustc'],'-vV']), 'Rust must use the Windows x64 MSVC toolchain.')
     insist(int(plain([tools['node'],'--version']).lstrip('v').split('.')[0]) >= 20,
            'Node.js 20 or newer is required.')
-    if not shutil.which('link.exe'):
+    if not reuse and not shutil.which('link.exe'):
         x86 = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)'))
         vswhere = x86 / 'Microsoft Visual Studio/Installer/vswhere.exe'
         insist(vswhere.is_file() and plain([str(vswhere),'-latest','-products','*','-requires',
@@ -73,7 +75,7 @@ def preflight():
     insist(plain([powershell,'-NoProfile','-NonInteractive','-Command',
                   '[bool](Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue)']) == 'True',
            'Windows TCP listener attribution is unavailable.')
-    for port in PORTS:
+    for port in (PORTS[:2] if reuse else PORTS):
         with socket.socket() as check:
             check.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
             try:
@@ -81,6 +83,33 @@ def preflight():
             except OSError as exc:
                 raise ValueError(f'Loopback port {port} is in use. Close the running Live Dev or QA consoles first.') from exc
     return python, tools, sha, source
+
+
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream,'sha256').hexdigest()
+
+
+def prior_build(temp, name, source):
+    insist(re.fullmatch(r'pilotodin-r03-native-[a-z0-9_]{8}', name), 'Use the prior run folder name printed in PowerShell.')
+    prior = temp / name
+    receipt = prior / 'result.json'
+    binary = prior / 'cargo' / TARGET / 'debug/pilotodin-desktop.exe'
+    lock = prior / 'source/frontend/src-tauri/Cargo.lock'
+    for path in (receipt,binary,lock):
+        insist(all(not part.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                   for part in (path,*path.parents) if part != temp and temp in part.parents),
+               'The previous run contains a redirected path.')
+    record = json.loads(receipt.read_text(encoding='utf-8'))
+    insist(record['status'] == 'INCOMPLETE' and record['stage'] == 'native_launch'
+           and record['scope'] == 'unpackaged_windows_webview2_with_disposable_dev_backend'
+           and record['reviewed_application_source'] == source
+           and record.get('failure','').endswith('http://127.0.0.1:9331/json/version')
+           and re.fullmatch(re.escape(APP_ID)+r'\.[0-9a-f]{32}', record['app_identifier']),
+           'The previous receipt does not match the reviewed WebView2 startup failure.')
+    insist(digest(binary) == record['executable_sha256'] and digest(lock) == record['cargo_lock_sha256'],
+           'The previous executable or Cargo lockfile no longer matches its run receipt.')
+    return binary, record
 
 
 def configure(crate):
@@ -205,7 +234,34 @@ def close_window(powershell, script, binary, app):
     insist(app.wait(timeout=5) == 0, 'The QA app did not exit normally.')
 
 
-def session(run, python, tools, report):
+def manual_check(app, backend, vite, sample):
+    import msvcrt
+
+    print('\nIn the PilotODIN window, select r03-native and open Ask ODIN. Choose Local analytics.\n'
+          'Ask: What is the median premium for Yes outcomes?\n'
+          'Expected: 30 from two usable values.\n'
+          'Immediately ask: What about No?\n'
+          'Expected: median unavailable, one matching row, zero usable values.\n'
+          'Leave the test window open. Return to this terminal and press P if both matched, or F if either failed.\n',
+          flush=True)
+    deadline = time.monotonic()+300
+    next_sample = 0
+    while time.monotonic() < deadline:
+        insist(all(proc.poll() is None for proc in (app,backend,vite)),
+               'A test process exited before the native UI observation was recorded.')
+        if time.monotonic() >= next_sample:
+            sample()
+            next_sample = time.monotonic()+3
+        if msvcrt.kbhit():
+            result = msvcrt.getwch().upper()
+            if result == 'P':
+                return
+            insist(result != 'F', 'The owner did not confirm both native UI answers.')
+        time.sleep(.2)
+    raise ValueError('No owner observation was received within five minutes.')
+
+
+def session(run, python, tools, report, previous=None):
     report['stage'] = 'stage_source'
     workspace = stage_source(run,report['reviewed_application_source'],report['checkout_sha'])
     frontend = workspace / 'frontend'
@@ -213,29 +269,43 @@ def session(run, python, tools, report):
     sampler = workspace / SAMPLER
     config = configure(crate)
     profile = run / 'webview'
-    target = run / 'cargo'
     env = {key:value for key,value in os.environ.items() if not key.upper().startswith(('PILOTODIN_','WEBVIEW2_','VITE_'))
            and key.upper() not in ('TAURI_CONFIG','CARGO_TARGET_DIR','GEMINI_API_KEY','GROQ_API_KEY','OPENROUTER_API_KEY',
                                    'PYTHONPATH','PYTHONHOME','NODE_PATH','NODE_OPTIONS')}
     env.update(PILOTODIN_HOME=str(run/'data'), PYTHONDONTWRITEBYTECODE='1', VITE_PILOTODIN_NATIVE_SMOKE='1')
-    report['app_identifier'] = config['identifier']
-    for key in ('LOCALAPPDATA','APPDATA'):
-        insist(not (Path(env[key]) / config['identifier']).exists(), 'The isolated app identity is already in use.')
+    report['app_identifier'] = previous[1]['app_identifier'] if previous else config['identifier']
+    if not previous:
+        for key in ('LOCALAPPDATA','APPDATA'):
+            insist(not (Path(env[key]) / config['identifier']).exists(), 'The isolated app identity is already in use.')
 
     powershell = tools['powershell.exe']
     samples = report['memory_samples']
-    samples.append({'stage':'before_compile',**memory(powershell,sampler,profile)})
     report['stage'] = 'stage_dependencies'
     # Reuse the installed Live Dev packages, with a separate Vite cache.
     shutil.copytree(FRONTEND/'node_modules',frontend/'node_modules',
                     ignore=shutil.ignore_patterns('.vite','.vite-temp'))
+    if previous:
+        binary, prior = previous
+        report['executable_sha256'] = prior['executable_sha256']
+        report['cargo_lock_sha256'] = prior['cargo_lock_sha256']
+        report['launch_mode'] = 'reused_executable_no_cdp'
+    else:
+        samples.append({'stage':'before_compile',**memory(powershell,sampler,profile)})
+        binary = compile_native(run, crate, config, env, tools['cargo'], report)
+    report['stage'] = 'runtime'
+    samples.append({'stage':'before_runtime',**memory(powershell,sampler,profile)})
+    run_native(run, workspace, profile, binary, python, tools, env, report, manual=previous is not None)
+
+
+def compile_native(run, crate, config, env, cargo_path, report):
+    target = run / 'cargo'
     report['stage'] = 'compile'
     print('Compiling one unpackaged Tauri build. Keep this window open.', flush=True)
     build_env = {**env,'TAURI_CONFIG':json.dumps(config),'CARGO_TARGET_DIR':str(target),'CARGO_BUILD_JOBS':'2'}
     lockfile = crate / 'Cargo.lock'
     previously_locked = lockfile.exists()
     with (run/'compile.log').open('xb') as log:
-        with subprocess.Popen([tools['cargo'],'build','--bin','pilotodin-desktop','--target',TARGET,
+        with subprocess.Popen([cargo_path,'build','--bin','pilotodin-desktop','--target',TARGET,
                                '--target-dir',str(target),*(('--locked',) if previously_locked else ())],
                               cwd=crate,env=build_env,stdout=log,stderr=subprocess.STDOUT) as cargo:
             try:
@@ -251,12 +321,16 @@ def session(run, python, tools, report):
             finally:
                 stop(cargo)
     binary = target / TARGET / 'debug/pilotodin-desktop.exe'
-    with binary.open('rb') as stream:
-        report['executable_sha256'] = hashlib.file_digest(stream,'sha256').hexdigest()
-    with lockfile.open('rb') as stream:
-        report['cargo_lock_sha256'] = hashlib.file_digest(stream,'sha256').hexdigest()
-    report['stage'] = 'runtime'
-    samples.append({'stage':'before_runtime',**memory(powershell,sampler,profile)})
+    report['executable_sha256'] = digest(binary)
+    report['cargo_lock_sha256'] = digest(lockfile)
+    return binary
+
+
+def run_native(run, workspace, profile, binary, python, tools, env, report, *, manual):
+    frontend = workspace / 'frontend'
+    sampler = workspace / SAMPLER
+    powershell = tools['powershell.exe']
+    samples = report['memory_samples']
     with ExitStack() as stack:
         backend = spawn(stack,run,'backend',[python,'-m','uvicorn','backend.main:app','--host','127.0.0.1',
                         '--port','8000','--no-access-log'],workspace,env)
@@ -271,26 +345,47 @@ def session(run, python, tools, report):
         require_listener(powershell,5173,vite)
         report['stage'] = 'native_launch'
         print('Opening the isolated native window and checking Ask ODIN.', flush=True)
-        app_env = {**env,'WEBVIEW2_USER_DATA_FOLDER':str(profile),
-                   'WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS':'--remote-debugging-port=9331 --remote-debugging-address=127.0.0.1'}
+        app_env = {**env,'WEBVIEW2_USER_DATA_FOLDER':str(profile)}
+        if not manual:
+            app_env['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = (
+                '--remote-debugging-port=9331 --remote-debugging-address=127.0.0.1'
+            )
+        insist(digest(binary) == report['executable_sha256'], 'The native executable changed before launch.')
         app = spawn(stack,run,'desktop',[binary],binary.parent,app_env)
-        wait_http('http://127.0.0.1:9331/json/version',app)
-        ready = memory(powershell,sampler,profile,backend_id,app)
+        if manual:
+            deadline = time.monotonic()+45
+            while True:
+                insist(app.poll() is None and time.monotonic() < deadline,
+                       'The app or its isolated WebView2 profile did not become ready.')
+                ready = memory(powershell,sampler,profile,backend_id,app)
+                if ready['webview']['processes'] > 0:
+                    break
+                time.sleep(.5)
+        else:
+            wait_http('http://127.0.0.1:9331/json/version',app)
+            ready = memory(powershell,sampler,profile,backend_id,app)
         require_profile_root(profile)
-        insist(ready['webview']['processes'] > 0 and ready['debugger_isolated'],
+        insist(ready['webview']['processes'] > 0 and (manual or ready['debugger_isolated']),
                'WebView2 or its debugger could not be attributed to the disposable profile.')
         samples.append({'stage':'native_ready',**ready})
         report['stage'] = 'native_questions'
-        driver = spawn(stack,run,'driver',[tools['node'],workspace/DRIVER],frontend,
-                       {**env,'PILOTODIN_R03_NATIVE_RUN':'approved-owner-session','PILOTODIN_R03_FIXTURE_ID':project})
-        deadline = time.monotonic()+160
-        while driver.poll() is None:
-            insist(time.monotonic() < deadline and app.poll() is None and backend.poll() is None and vite.poll() is None,
-                   'The native probe stalled or an owned process exited.')
+        def sample_question():
             samples.append({'stage':'during_questions',**memory(powershell,sampler,profile,backend_id,app)})
-            time.sleep(.75)
-        insist(driver.returncode == 0, 'Native UI assertions failed. Inspect driver.log.')
-        report['ui'] = json.loads((run/'driver.log').read_text(encoding='utf-8').strip().splitlines()[-1])
+        if manual:
+            report['api_checks'] = measure(HTTP,'/projects/'+project)
+            manual_check(app,backend,vite,sample_question)
+            report['ui'] = {'mode':'owner_observation','checks':['filtered_median','filter_follow_up']}
+        else:
+            driver = spawn(stack,run,'driver',[tools['node'],workspace/DRIVER],frontend,
+                           {**env,'PILOTODIN_R03_NATIVE_RUN':'approved-owner-session','PILOTODIN_R03_FIXTURE_ID':project})
+            deadline = time.monotonic()+160
+            while driver.poll() is None:
+                insist(time.monotonic() < deadline and app.poll() is None and backend.poll() is None and vite.poll() is None,
+                       'The native probe stalled or an owned process exited.')
+                sample_question()
+                time.sleep(.75)
+            insist(driver.returncode == 0, 'Native UI assertions failed. Inspect driver.log.')
+            report['ui'] = json.loads((run/'driver.log').read_text(encoding='utf-8').strip().splitlines()[-1])
         with HTTP.open(READY+'/api/projects/'+project,timeout=5) as response:
             insist(json.load(response)['experiments'] == [], 'Unexpected model experiment in disposable workspace.')
         time.sleep(3)
@@ -298,7 +393,7 @@ def session(run, python, tools, report):
         active = [sample for sample in samples if sample['stage'] in ('native_ready','during_questions','cooldown')]
         insist(any(sample['stage'] == 'during_questions' for sample in active) and all(
             sample['backend']['processes'] == 1 and sample['desktop']['processes'] == 1
-            and sample['webview']['processes'] > 0 and sample['debugger_isolated'] for sample in active
+            and sample['webview']['processes'] > 0 and (manual or sample['debugger_isolated']) for sample in active
         ), 'The physical process measurements are incomplete.')
         report['memory_summary'] = {
             'minimum_sampled_available_mib':min(sample['available_mib'] for sample in active),
@@ -311,21 +406,24 @@ def session(run, python, tools, report):
         report['stage'] = 'native_close'
         close_window(powershell,workspace/CLOSE_HELPER,binary,app)
     report['stage'] = 'complete'
-    report['status'] = 'PASS'
+    report['status'] = 'PASS_WITH_OWNER_OBSERVATION' if manual else 'PASS'
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--run-approved',action='store_true',help='Run the reviewed physical Windows session')
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--run-approved',action='store_true',help='Run the reviewed physical Windows session')
+    mode.add_argument('--relaunch-approved',metavar='PRIOR_RUN_FOLDER',
+                      help='Explicitly approve and perform one relaunch of the verified executable')
     args = parser.parse_args()
-    if not args.run_approved:
-        parser.error('Use --run-approved for the approved build and launch.')
     try:
-        python,tools,sha,source = preflight()
+        insist(not args.relaunch_approved or sys.stdin.isatty(), 'The relaunch requires an interactive owner terminal.')
+        python,tools,sha,source = preflight(reuse=bool(args.relaunch_approved))
         temp = Path(tempfile.gettempdir()).absolute()
         insist(re.fullmatch(r'[A-Za-z]:\\',temp.anchor) and not any(
             path.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT for path in (temp,*temp.parents)
         ), 'The Windows temp folder must be on a local drive without redirected folders.')
+        previous = prior_build(temp,args.relaunch_approved,source) if args.relaunch_approved else None
     except (OSError,ValueError,KeyError,subprocess.SubprocessError) as error:
         print(f'Windows native check blocked before compile: {error}',file=sys.stderr)
         return 2
@@ -334,7 +432,7 @@ def main():
               'checkout_sha':sha,'reviewed_application_source':source,'stage':'pre_runtime','memory_samples':[]}
     print(f'Private run logs: {run}',flush=True)
     try:
-        session(run,python,tools,report)
+        session(run,python,tools,report,previous)
     except KeyboardInterrupt:
         report['failure'] = 'The owner stopped the session.'
     except (OSError,ValueError,KeyError,IndexError,subprocess.SubprocessError) as error:
@@ -342,7 +440,7 @@ def main():
     with (run/'result.json').open('x',encoding='utf-8') as output:
         json.dump(report,output,indent=2)
     print(json.dumps(report,indent=2),flush=True)
-    return 0 if report['status'] == 'PASS' else 1
+    return 0 if report['status'] in ('PASS','PASS_WITH_OWNER_OBSERVATION') else 1
 
 
 if __name__ == '__main__':

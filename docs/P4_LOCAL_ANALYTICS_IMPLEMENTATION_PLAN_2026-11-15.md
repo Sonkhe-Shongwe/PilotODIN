@@ -74,6 +74,16 @@ The preflight uses the existing Live Dev dependencies and checks for Rust x64 MS
 
 The result covers model-free Local analytics in an unpackaged native shell. The packaged sidecar and offline Qwen coexistence are outside this session. The installer freeze remains in force.
 
+### Resume after a WebView2 automation timeout
+
+If the reviewed runner created an executable and ended at `native_launch` while polling `9331/json/version`, retain the original run folder. To approve and perform one relaunch of that exact build from the PilotODIN checkout, run:
+
+```powershell
+py -3 .\tools\Verify_Local_Analytics_Windows_Native.py --relaunch-approved pilotodin-r03-native-1v829nh2
+```
+
+The runner checks the prior receipt, executable hash and Cargo lockfile hash. It starts a fresh disposable backend and WebView2 profile with CDP disabled. It verifies all five responses through the API. The terminal prompts you to check the median and its follow-up inside the desktop window while RAM and paging are sampled. Press **P** in the terminal if both UI answers matched, or **F** if either failed. A successful result is recorded as `PASS_WITH_OWNER_OBSERVATION`. Click-to-render timings and a fully automated native UI pass remain unmeasured in this mode.
+
 ## Research references
 
 - NL4DV separates detected dataset fields from inferred analytical tasks. DataTone surfaces ambiguity where the user can resolve it. [NL4DV](https://nl4dv.github.io/nl4dv/index.html) · [DataTone](https://cond.org/datatone.html)

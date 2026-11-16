@@ -8,6 +8,12 @@ The owner reported that the Windows Live Dev check worked after starting the lau
 
 The owner approved one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the 8 GB laptop. The first attempt stopped before compilation because the runner rejected untracked files in the local checkout. The corrected runner exports the reviewed application commit and committed QA helpers into a temporary folder, so it can run independently of those files. The physical run is pending. The R03 offline Qwen coexistence gate remains open.
 
+## 16 November 2026 | Owner native launch and automation timeout
+
+The unpackaged build compiled and opened the isolated desktop window from application source `6381203` and runner `433f421`. The receipt ended `INCOMPLETE` at `native_launch` after the WebView2 debugging HTTP endpoint did not answer. The desktop log was empty, and the owner's Application log query returned no matching crash events. The screenshot confirms window launch. The exit cause was not independently observed. The 2,910 MiB available RAM reading preceded application launch. Native answers and in-workload measurements are pending.
+
+The [relaunch mode](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#resume-after-a-webview2-automation-timeout) reuses the hash-verified executable with a fresh disposable workspace. It verifies the five API answers and collects physical process measurements while the owner observes the median and follow-up in the native window.
+
 ## 15 November 2026 | Ask ODIN Local analytics milestone
 
 Source `d95407b926a648ae3dea7fd770b1f48343258bc1` passed all four [P4 CI jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43753907245). The suite recorded 498 Python passes, one skip, 18 passing subtests, 92 frontend checks, a successful TypeScript/Vite build and 13 disposable real-HTTP browser cases. Ask ODIN returned the expected grouped missingness, two distinct rate denominators, filtered median, one filter-changing follow-up and clarification after a project switch. API regressions covered alternate schemas, conflicting aliases and stale Quality versions. The earlier [browser run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43753524007/job/132932509110) timed out on a duplicated API prefix in the final test matcher. The corrected run passed without changing feature code.
@@ -231,7 +237,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Run the approved [physical Windows session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the owner's laptop and record the result. The owner has confirmed that the [Live Dev check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) worked. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Use the [relaunch mode](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#resume-after-a-webview2-automation-timeout) on the owner's laptop and record the result. The owner has confirmed that the [Live Dev check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) worked. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
