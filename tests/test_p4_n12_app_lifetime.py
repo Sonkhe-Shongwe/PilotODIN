@@ -74,13 +74,59 @@ class AppLifetimeTests(unittest.TestCase):
                                       self.session, self.app, self.worker, APP)
 
     def test_clean_lifetime_matches_both_original_handles(self):
+        self.events[0]["data"]["ImageName"] = r"\Device\HarddiskVolume3\qa\python\python.exe"
         report = self.reduce()
         self.assertEqual(report["verdict"], "PASS")
         self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
         self.assertEqual(report["app_roles"], {"app": 1, "webview": 1, "webview-network": 1})
         self.assertEqual(report["disputed_exits"], [])
+        self.assertEqual(report["etw_start_image_comparisons"], {
+            role: {"exact-path-match": 1} for role in ("app", "launcher", "webview", "webview-network")
+        })
         self.assertEqual(len(report["timing_comparisons"]), 4)
         self.assertTrue(all(row["etw_minus_sysmon_exit_ticks"] == 0 for row in report["timing_comparisons"]))
+
+    def test_image_failures_are_reported_by_role_after_launcher_blocks(self):
+        del self.events[0]["data"]["ImageName"]
+        self.events[2]["data"]["ImageName"] = r"\Device\HarddiskVolume99\private\pilotodin-desktop.exe"
+        self.events[4]["data"]["ImageName"] = r"c:\private\other-image.exe"
+        self.events[6]["data"]["ImageName"] = r"c:\private\msedgewebview2.exe"
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertEqual(report["handle_comparison"], {"app": "BLOCKED", "launcher": "BLOCKED"})
+        self.assertEqual(report["timing_comparisons"], [])
+        self.assertIn("etw-start-image-unverified", report["issues"])
+        self.assertEqual(report["etw_start_image_comparisons"], {
+            "launcher": {"missing-image": 1},
+            "app": {"unmapped-device-path": 1},
+            "webview": {"different-executable-name": 1},
+            "webview-network": {"different-path-same-basename": 1},
+        })
+        for private in ("private", "HarddiskVolume99", "pilotodin-desktop", "other-image", "msedgewebview2", "700"):
+            self.assertNotIn(private, json.dumps(report))
+
+    def test_basename_and_unrecognised_image_values_stay_blocked(self):
+        cases = (
+            ("", "missing-image"),
+            (123, "invalid-image-type"),
+            ("python.exe", "basename-only"),
+            (r"private\python.exe", "unsupported-path-form"),
+            (r"\\?\Device\HarddiskVolume99\python.exe", "unmapped-device-path"),
+        )
+        for image, reason in cases:
+            with self.subTest(reason=reason):
+                self.events[0]["data"]["ImageName"] = image
+                report = self.reduce()
+                self.assertEqual(report["verdict"], "BLOCKED")
+                self.assertIn("etw-start-image-unverified", report["issues"])
+                self.assertEqual(report["etw_start_image_comparisons"]["launcher"], {reason: 1})
+
+    def test_ambiguous_start_does_not_report_a_path_match(self):
+        self.events.append(deepcopy(self.events[0]))
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-start-missing-or-ambiguous", report["issues"])
+        self.assertEqual(report["etw_start_image_comparisons"]["launcher"], {"start-missing-or-ambiguous": 1})
 
     def test_corroborated_app_exit_retains_blocked_sysmon_result(self):
         exit_fields = next(fields for _, kind, fields in self.rows
@@ -100,6 +146,7 @@ class AppLifetimeTests(unittest.TestCase):
         report = self.reduce()
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertIn("etw-event-or-buffer-loss", report["issues"])
+        self.assertEqual(report["etw_start_image_comparisons"], {})
         self.session["counters"]["events_lost"] = 0
         self.app["exit"] += 1
         report = self.reduce()
@@ -142,7 +189,7 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn("separate one-run N12 app lifetime consent is required", run.stderr)
         workflow = (lifetime.build.REPO / ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
-        marker_path = "qa/p4_research/N12_APP_LIFETIME_LISTENER_RETEST_APPROVAL.txt"
+        marker_path = "qa/p4_research/N12_APP_LIFETIME_IMAGE_DIAGNOSTIC_APPROVAL.txt"
         self.assertIn(f"      - {marker_path}", workflow)
         self.assertIn("scope=n12-one-build-one-app-lifetime", workflow)
         self.assertIn("-WithEtw -AppLifetime", workflow)

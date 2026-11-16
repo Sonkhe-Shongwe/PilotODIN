@@ -143,6 +143,7 @@ def reduction(manifest, sysmon, events, devices, session, app_witness, worker_wi
     stream = list(trace.etw_events(events, (session["start"], session["end"]), manifest["events_sha256"]))
     witnesses = {"app": "BLOCKED", "launcher": "BLOCKED"}
     timing = []
+    start_images = {}
     if bindings and not issues & corroboration.SOURCE_COVERAGE_ISSUES:
         app = bindings[0][1]
         worker = processes.get(app.parent)
@@ -153,6 +154,11 @@ def reduction(manifest, sysmon, events, devices, session, app_witness, worker_wi
                           "launcher-sysmon-identity-unverified")
             with trace.evidence_stage("app lifetime ETW payload"):
                 lifetimes = corroboration.EtwLifetimes(stream, devices, window)
+            # Record each scoped comparison before the strict join stops at the first failure.
+            by_role = {"launcher": Counter({lifetimes.start_image_comparison(worker): 1})}
+            for guid, process in scoped.items():
+                by_role.setdefault(roles[guid], Counter())[lifetimes.start_image_comparison(process)] += 1
+            start_images = {role: dict(sorted(counts.items())) for role, counts in sorted(by_role.items())}
             launcher_lifetime = check_handle(lifetimes, worker, worker_witness)
             launcher_start, launcher_stop = launcher_lifetime
             witnesses["launcher"] = "MATCH"
@@ -199,7 +205,8 @@ def reduction(manifest, sysmon, events, devices, session, app_witness, worker_wi
     return {"scope": "one-native-startup-and-graceful-close", "source_sha": manifest["source_sha"],
             "executable_sha256": manifest["executable_sha256"],
             "verdict": "BLOCKED" if issues else "PASS", "issues": sorted(issues),
-            "app_roles": dict(sorted(counts.items())), "handle_comparison": witnesses,
+            "app_roles": dict(sorted(counts.items())), "etw_start_image_comparisons": start_images,
+            "handle_comparison": witnesses,
             "collector_counters": session["counters"], "timing_comparisons": timing,
             "disputed_exits": disputed}
 

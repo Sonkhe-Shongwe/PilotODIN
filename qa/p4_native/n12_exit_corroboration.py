@@ -52,6 +52,32 @@ def read_lifecycle(row):
     return Lifecycle(*common, parent=parent, parent_sequence=parent_sequence)
 
 
+def compare_image_path(image, expected_path, devices):
+    """Return a fixed label for an ETW process-start executable comparison."""
+    if image is None or image == "":
+        return "missing-image"
+    if not isinstance(image, str):
+        return "invalid-image-type"
+    path = canonical_file_path(image, devices)
+    if path is not None:
+        if path == expected_path:
+            return "exact-path-match"
+        if ntpath.basename(path) == ntpath.basename(expected_path):
+            return "different-path-same-basename"
+        return "different-executable-name"
+
+    spelling = image.replace("/", "\\").casefold()
+    for prefix in ("\\\\?\\", "\\??\\"):
+        if spelling.startswith(prefix):
+            spelling = spelling[len(prefix):]
+            break
+    if spelling.startswith("\\device\\"):
+        return "unmapped-device-path"
+    if spelling and ntpath.basename(spelling) == spelling:
+        return "basename-only"
+    return "unsupported-path-form"
+
+
 class EtwLifetimes:
     def __init__(self, events, devices, window):
         self.starts = defaultdict(list)
@@ -67,10 +93,19 @@ class EtwLifetimes:
                 if event.sequence is not None:
                     self.by_sequence[event.sequence].append(event)
 
-    def find(self, process):
+    def _start_candidates(self, process):
         birth = trace.utc_ticks(process.start)
-        candidates = [event for event in self.starts[process.pid]
-                      if abs(event.creation - birth) <= BIRTH_TOLERANCE_TICKS]
+        return [event for event in self.starts[process.pid]
+                if abs(event.creation - birth) <= BIRTH_TOLERANCE_TICKS]
+
+    def start_image_comparison(self, process):
+        candidates = self._start_candidates(process)
+        if len(candidates) != 1:
+            return "start-missing-or-ambiguous"
+        return compare_image_path(candidates[0].image, process.image, self.devices)
+
+    def find(self, process):
+        candidates = self._start_candidates(process)
         trace.require(len(candidates) == 1, "etw-start-missing-or-ambiguous")
         start = candidates[0]
         stops = [event for event in self.stops[start.pid] if event.creation == start.creation]
@@ -85,8 +120,7 @@ class EtwLifetimes:
                               for event in self.starts[start.pid]), "overlapping-etw-pid-lifetimes")
         trace.require(not any(event is not stop and event.creation < start.creation <= event.exit
                               for event in self.stops[start.pid]), "overlapping-etw-pid-lifetimes")
-        trace.require(isinstance(start.image, str)
-                      and canonical_file_path(start.image, self.devices) == process.image,
+        trace.require(compare_image_path(start.image, process.image, self.devices) == "exact-path-match",
                       "etw-start-image-unverified")
         if isinstance(stop.image, str):
             exit_path = canonical_file_path(stop.image, self.devices)
