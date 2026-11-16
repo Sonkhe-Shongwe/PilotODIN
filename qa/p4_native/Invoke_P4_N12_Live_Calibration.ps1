@@ -3,6 +3,7 @@
 param(
     [switch]$WithEtw,
     [switch]$AppJourney,
+    [switch]$LifetimeControl,
     [string]$SourceSha,
     [string]$ExecutableSha256
 )
@@ -16,7 +17,14 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     throw 'Live calibration requires the first run on disposable hosted Windows.'
 }
 
-if ($AppJourney) {
+if ($LifetimeControl) {
+    if ($AppJourney -or $WithEtw -or $SourceSha -or $ExecutableSha256 -or
+        $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -cne 'I_APPROVE_ONE_N12_LIFETIME_CONTROL' -or
+        $env:PILOTODIN_N12_LIFETIME_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
+        (git rev-parse HEAD) -cne $env:PILOTODIN_N12_LIFETIME_SOURCE) {
+        throw 'The collector lifetime control requires its own source-pinned approval.'
+    }
+} elseif ($AppJourney) {
     if (-not $WithEtw -or $env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or
         $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV' -or
         $SourceSha -cnotmatch '^[0-9a-f]{40}$' -or $SourceSha -cne $env:PILOTODIN_N12_APPROVED_SOURCE -or
@@ -76,7 +84,7 @@ $channel = 'Microsoft-Windows-Sysmon/Operational'
 $clock = Get-TimeZone
 $sysmon = Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
 $procmon = $null
-if (-not $WithEtw) {
+if (-not $WithEtw -and -not $LifetimeControl) {
     $procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe' 'Microsoft Corporation' 'aa0b10e936feea464348695f8a85a2dcafd2cb3dabd1d47d8a57e7594783b27b'
 }
 $config = Join-Path $root 'sysmon-config.xml'
@@ -101,9 +109,14 @@ $summary = Join-Path $root 'summary.json'
 $installStarted = $false
 $capture = $null
 try {
-    if (-not $WithEtw -and $clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
+    if ($null -ne $procmon -and $clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
     $installStarted = $true
     Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
+    if ($LifetimeControl) {
+        python -B -m qa.p4_native.n12_lifetime_control --capture $root
+        if ($LASTEXITCODE -ne 0) { throw 'The collector lifetime control did not pass.' }
+        return
+    }
     if ($AppJourney) {
         python -B -m qa.p4_research.n12_app_journey --source $SourceSha --expected-exe-sha256 $ExecutableSha256
         if ($LASTEXITCODE -ne 0) { throw 'The hosted app journey failed or returned blocked coverage.' }
@@ -222,5 +235,5 @@ try {
         try { Start-CollectorCommand $sysmon '-u' 'Sysmon cleanup' }
         catch { Write-Warning 'Sysmon cleanup did not complete.' }
     }
-    if (-not $WithEtw -and $clock.Id -ne 'UTC') { Set-TimeZone -Id $clock.Id }
+    if ($null -ne $procmon -and $clock.Id -ne 'UTC') { Set-TimeZone -Id $clock.Id }
 }

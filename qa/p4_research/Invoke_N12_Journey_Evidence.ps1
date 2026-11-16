@@ -19,7 +19,8 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     throw 'N12 journey operations require disposable hosted Windows.'
 }
 $rehearsalRead = $Operation -ceq 'sysmon-tail' -and $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
-    $env:PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT -ceq 'I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL'
+    ($env:PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT -ceq 'I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL' -or
+     $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -ceq 'I_APPROVE_ONE_N12_LIFETIME_CONTROL')
 if (-not $rehearsalRead -and
     $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV') {
     throw 'N12 journey operations require an approved disposable hosted Windows run.'
