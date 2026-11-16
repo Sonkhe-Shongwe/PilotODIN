@@ -180,8 +180,10 @@ class AppLifetimeTests(unittest.TestCase):
             "webview": {"different-executable-name": 1},
             "webview-network": {"different-path-same-basename": 1},
         })
-        for private in ("private", "HarddiskVolume99", "pilotodin-desktop", "other-image", "msedgewebview2", "700"):
-            self.assertNotIn(private, json.dumps(report))
+        rendered = json.dumps(report)
+        for private in ("private", "HarddiskVolume99", "pilotodin-desktop", "other-image", "msedgewebview2", '"700"'):
+            self.assertNotIn(private, rendered)
+        self.assertNotRegex(rendered, r'"(?:\w+_)?(?:pid|guid|process_id|sequence)"\s*:')
 
     def test_basename_and_unrecognised_image_values_stay_blocked(self):
         cases = (
