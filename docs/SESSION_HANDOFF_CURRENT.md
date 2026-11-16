@@ -2,13 +2,23 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | App image paths matched and ETW event order blocked
+
+The [one-use Windows Server 2022 app capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43969988146/job/133659290133) ran at reviewed source `6b942dc7012957af483b4bf83a1acef96c175a7b` from launch `7ee605f95ea078add497e42432d0e2cbd4236f5f`, on runner image `20261112.366.7` with Sysmon 15.22. Executable SHA-256 was `de3014ea04a44e7255ed1da1b8cc624371c60fcaaa3d30bc38ca4d7281dec641` and Cargo lock SHA-256 was `75fa91f9208577ffe832de96aba95239fc97d6d8a90990c144c8d157fa0cb996`. [Routine CI on launch](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43969987815)
+
+**Hosted shutdown and executable path matching PASS.** All nine ETW start images resolved to their expected full paths with the corrected device map. The count covered the launcher, PilotODIN, six WebView processes and one WebView network process. The app and isolated WebView profile exited, all four protected fixture roots and the immutable CSV matched, and both traces exported. ETW recorded five buffers with no loss.
+
+**Lifetime attribution BLOCKED. Workflow FAIL.** The unique launcher ETW record pair failed the existing event-order assertion before either lifetime handle comparison reached a result. The reducer emitted `etw-lifetime-order-unverified` and `app-or-launcher-handle-unverified`. No timing comparison rows or disputed exits were emitted. The retained log cannot identify which ordering relation failed. GitHub retained zero artifacts. The approval is consumed and the workflow is disarmed.
+
+The next-source diagnostic reports signed ETW event and payload differences, capture-boundary differences and Windows-handle differences for both the launcher and app before the strict gate. A generated negative case exercises an event emission earlier than payload creation. A separate case covers unavailable record pairs. The same order and process identity checks govern the verdict. **Hosted ordering diagnosis remains unverified.**
+
 ## 17 November 2026 | Hosted process image path control passed
 
 The [one-use Windows Server 2022 control](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43966769086/job/133648149724) ran at reviewed source `9c1522e61070c15eb4c74646c55673ab1c2848b4` from launch `07cb08bc715e932390f7b7217f48a18c72b6b052`, on runner image `20261112.366.7` with Sysmon 15.22. All four generated process starts matched the expected full DOS path, the original handle's native path and the validated volume map. ETW reported no lost events or buffers. Start and exit timestamps matched the original handles exactly for every fixture.
 
 The separate Sysmon timing verdict stayed **BLOCKED** for three early exit timestamps. Sysmon minus the Windows handle exit times were −11.5760 ms for the fast child, −4.5131 ms for the paced parent and −3.7742 ms for the paced child. The fast parent was within the existing 1 ms bound. The one-use job passed its image-path scope and retained no artifacts. The approval is consumed and the workflow is disarmed.
 
-PilotODIN and WebView identities remain unverified with the corrected mapping. R02.5 and R02.6 remain open. P4 stays at **14/20 (70%)**. [Prepared source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43966351538)
+The [later hosted app capture](#17-november-2026--app-image-paths-matched-and-etw-event-order-blocked) verified the executable paths. Full app and WebView lifetime identities remain blocked on event order. R02.5 and R02.6 remain open. P4 stays at **14/20 (70%)**. [Prepared source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43966351538)
 
 ## 16 November 2026 | N12 capture volume map correction
 
@@ -424,7 +434,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Review one unpackaged Windows Server 2022 startup-and-close capture at the corrected source after new exact-scope approval. Require exact launcher and app handle times, mapped start images for the app tree, consistent parentage, complete collector evidence and matching protected fixtures. Retain Sysmon timing conflicts separately. If image and handle identity are verified, resume the filesystem and network coverage work for the full N12 audit. [Generated process result](#17-november-2026--hosted-process-image-path-control-passed) · [Capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+Review CI for the [ETW event-order diagnostic](#17-november-2026--app-image-paths-matched-and-etw-event-order-blocked). A separately approved single unpackaged startup and close on disposable hosted Windows Server 2022 can determine which launcher event relation blocked the strict audit and whether ETW payload times match the original handles. A missing or contradictory pair remains blocked. Resume the full filesystem and network coverage work once app lifetime identity is verified. [Capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

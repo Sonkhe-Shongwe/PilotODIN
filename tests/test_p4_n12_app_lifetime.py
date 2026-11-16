@@ -111,6 +111,31 @@ class AppLifetimeTests(unittest.TestCase):
                 with self.assertRaisesRegex(trace.EvidenceValidationError, f"^{issue}$"):
                     self.reduce()
 
+    def test_ordering_report_identifies_a_launcher_clock_conflict_without_weakening_the_gate(self):
+        self.events[0]["ticks"] -= 101
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-lifetime-order-unverified", report["issues"])
+        self.assertEqual(report["handle_comparison"], {"app": "BLOCKED", "launcher": "BLOCKED"})
+        self.assertEqual(report["timing_comparisons"], [])
+        launcher = report["etw_handle_order_comparison"]["launcher"]
+        self.assertEqual(launcher["start_emission_minus_creation_ticks"], -1)
+        self.assertEqual(launcher["etw_payload_creation_minus_handle_ticks"], 0)
+        self.assertEqual(launcher["etw_payload_exit_minus_handle_ticks"], 0)
+        self.assertGreater(report["etw_handle_order_comparison"]["app"]["start_emission_minus_creation_ticks"], 0)
+        for private in ("pilotodin-desktop", "python.exe", "private", str(ORIGIN + 50_000)):
+            self.assertNotIn(private, json.dumps(report["etw_handle_order_comparison"]))
+
+    def test_ordering_report_preserves_ambiguous_or_missing_pair_outcomes(self):
+        self.events.append(deepcopy(self.events[0]))
+        self.events.pop(3)
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertEqual(report["etw_handle_order_comparison"], {
+            "launcher": {"issue": "etw-start-missing-or-ambiguous"},
+            "app": {"issue": "etw-stop-missing-or-ambiguous"},
+        })
+
     def test_image_failures_are_reported_by_role_after_launcher_blocks(self):
         del self.events[0]["data"]["ImageName"]
         self.events[2]["data"]["ImageName"] = r"\Device\HarddiskVolume99\private\pilotodin-desktop.exe"
@@ -173,6 +198,7 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertIn("etw-event-or-buffer-loss", report["issues"])
         self.assertEqual(report["etw_start_image_comparisons"], {})
+        self.assertEqual(report["etw_handle_order_comparison"], {})
         self.session["counters"]["events_lost"] = 0
         self.app["exit"] += 1
         report = self.reduce()
@@ -215,7 +241,7 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn("separate one-run N12 app lifetime consent is required", run.stderr)
         workflow = (lifetime.build.REPO / ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
-        marker_path = "qa/p4_research/N12_APP_LIFETIME_VOLUME_MAP_RETEST_APPROVAL.txt"
+        marker_path = "qa/p4_research/N12_APP_LIFETIME_EVENT_ORDER_RETEST_APPROVAL.txt"
         self.assertIn(f"      - {marker_path}", workflow)
         self.assertIn("scope=n12-one-build-one-app-lifetime", workflow)
         self.assertIn("-WithEtw -AppLifetime", workflow)

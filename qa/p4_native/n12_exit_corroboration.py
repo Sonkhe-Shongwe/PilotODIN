@@ -100,7 +100,7 @@ class EtwLifetimes:
             return "start-missing-or-ambiguous"
         return compare_image_path(candidates[0].image, process.image, self.devices)
 
-    def find(self, process):
+    def _candidate_pair(self, process):
         candidates = self._start_candidates(process)
         trace.require(len(candidates) == 1, "etw-start-missing-or-ambiguous")
         start = candidates[0]
@@ -109,9 +109,35 @@ class EtwLifetimes:
         stop = stops[0]
         trace.require(start.sequence == stop.sequence and (start.sequence is None or
                       len(self.by_sequence[start.sequence]) == 2), "etw-sequence-conflict")
+        return start, stop
+
+    def _order_deltas(self, start, stop):
         first, last = self.window
-        trace.require(first <= start.creation <= start.emission < stop.emission <= last and
-                      start.creation <= stop.exit <= stop.emission, "etw-lifetime-order-unverified")
+        return {
+            "creation_minus_window_start_ticks": start.creation - first,
+            "start_emission_minus_creation_ticks": start.emission - start.creation,
+            "stop_emission_minus_start_emission_ticks": stop.emission - start.emission,
+            "window_end_minus_stop_emission_ticks": last - stop.emission,
+            "exit_minus_creation_ticks": stop.exit - start.creation,
+            "stop_emission_minus_exit_ticks": stop.emission - stop.exit,
+        }
+
+    def handle_order_comparison(self, process, witness):
+        """Report only relative times for the unique ETW pair and original handle."""
+        try:
+            start, stop = self._candidate_pair(process)
+        except trace.EvidenceValidationError as exc:
+            return {"issue": str(exc)}
+        return {**self._order_deltas(start, stop),
+                "etw_payload_creation_minus_handle_ticks": start.creation - witness["birth"],
+                "etw_payload_exit_minus_handle_ticks": stop.exit - witness["exit"]}
+
+    def find(self, process):
+        start, stop = self._candidate_pair(process)
+        deltas = self._order_deltas(start, stop)
+        trace.require(all(delta >= 0 for delta in deltas.values()) and
+                      deltas["stop_emission_minus_start_emission_ticks"] > 0,
+                      "etw-lifetime-order-unverified")
         trace.require(not any(event is not start and start.creation <= event.creation <= stop.exit
                               for event in self.starts[start.pid]), "overlapping-etw-pid-lifetimes")
         trace.require(not any(event is not stop and event.creation < start.creation <= event.exit
