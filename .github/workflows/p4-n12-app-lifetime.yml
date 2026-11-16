@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lifetime:
-    if: ${{ false }} # Requires exact-source app lifetime approval.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }} # One owner-approved Windows app lifetime capture.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
