@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # One-use approval consumed by run 43832982495.
+    if: ${{ github.run_attempt == '1' }} # One owner-approved hosted N12 audit.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
