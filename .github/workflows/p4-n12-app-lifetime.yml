@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lifetime:
-    if: ${{ false }} # One-use approval consumed by run 43940489139.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }} # One owner-approved Windows app close retest.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
