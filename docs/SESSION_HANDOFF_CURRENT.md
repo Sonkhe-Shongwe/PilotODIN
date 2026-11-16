@@ -2,9 +2,19 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | Hosted N12 completed with six unexpected connections
+
+The [approved Windows 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43860270006/job/133274942156) ran on attempt 1 from launch `e65776f5d9617c53dd8b274b14f35856f22108c3` at reviewed source `622048ce023c8a339ebc03b0327a6639e9fa7817`. Preflight, the unpackaged build and pinned Sysmon 15.22 passed. Executable SHA-256 was `11e1ec8619b12a2da498fe23cff047c9c9bcd88ded45081508a0bc0fa6d10e22`. Cargo lock SHA-256 was `46cebbc90c1398c4dcd14a58a4bddb19026fea3b952d9600d77ae2101eab56af`.
+
+Initial TCP and UDP calibration passed on read 1. Both launches and final calibration completed. The final report observed both protocols in both calibration fixtures and matched fingerprints for all four protected roots and the immutable CSV, with zero unexpected changes. The early network line and combined report both reached the job log.
+
+**Job FAILED. Network FAIL, filesystem FAIL and strict coverage BLOCKED.** The audit observed six unexpected connections (previous completed audit eight) and 329 outside-scope operations (previously 608). WebView NetLog matched two DNS transactions, one HTTPS request and two loopback HTTP requests. The backend loopback connection remains unattributed. The earlier UDP/443 socket was not observed in this run and remains historically unattributed. The filesystem findings were 276 driver, 51 WebView and two backend operations. ETW still reported 199,123 WebView network-process writes with unresolved paths.
+
+Two Sysmon exits, records 155 and 177, had unsupported image values and timestamps 2 ms before birth. The reducer also reported inconsistent parent lifetime. These findings leave the strict attribution unverified. The one-use approval was consumed and the workflow is disarmed. No artifacts were retained. R02.5 and R02.6 remain blocked and the score is 70%. [Comparison and next action](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
+
 ## 16 November 2026 | Preserve network findings before ETW processing
 
-The hosted journey now writes a redacted network observation to the job log immediately after final Sysmon reduction. It includes source and binary provenance, lifecycle and TCP/UDP calibration issues, unexpected connections by role and protocol, and attributable NetLog categories. ETW export or reduction failure still blocks the combined audit. The strict reducer consumes the same Sysmon evidence. Generated tests cover both ETW failure paths, missing UDP evidence and endpoint redaction. The prepared live retest is **NOT RUN**. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+The hosted journey now writes a redacted network observation to the job log immediately after final Sysmon reduction. It includes source and binary provenance, lifecycle and TCP/UDP calibration issues, unexpected connections by role and protocol, and attributable NetLog categories. ETW export or reduction failure still blocks the combined audit. The strict reducer consumes the same Sysmon evidence. Generated tests cover both ETW failure paths, missing UDP evidence and endpoint redaction. The [live retest](#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) emitted the expected early network report. [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
 ## 16 November 2026 | Windows app journey passed both launches and blocked on exit time
 
@@ -14,7 +24,7 @@ Initial Sysmon calibration passed on read 1 with the updated UDP fixture. Both s
 
 ## 16 November 2026 | Hosted audit retains findings after an invalid exit timestamp
 
-The hosted final reducer can now retain later ETW and network findings when an exit matched by process GUID and PID has a timestamp before birth. It logs the record number and signed time delta, leaves the exit unverified, and blocks both acceptance checks. Generated tests cover clean and violating traces and conflicting repeated exits. Default strict reduction and prelaunch still reject the invalid timestamp. The full hosted journey with this change is **NOT RUN**. [Reducer contract](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+The hosted final reducer can now retain later ETW and network findings when an exit matched by process GUID and PID has a timestamp before birth. It logs the record number and signed time delta, leaves the exit unverified, and blocks both acceptance checks. Generated tests cover clean and violating traces and conflicting repeated exits. Default strict reduction and prelaunch still reject the invalid timestamp. The [hosted result](#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) verified that the reducer continued after two rejected exits and kept both acceptance checks blocked. [Reducer contract](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
 The local N12 and prospective preservation selection passed 299 tests with one platform skip. At [source `904d2a0`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/904d2a038b1b2b7f69c27e2f8d570d86d46034e0), [routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43848218896) and [Windows FileIO fixture CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43848219384) both passed.
 
@@ -308,7 +318,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Follow the [P4 plan to reach 75%](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). With fresh approval, run one source-pinned two-launch Windows journey to collect the consolidated report. Prioritise fixing the causes of recurring unexpected connections and verifying a clean, attributable network run. The collector-only ETW coverage remains blocked on its separate workload.
+Follow the [P4 plan to reach 75%](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). Use the completed report to trace recurring WebView DNS, HTTPS and loopback HTTP traffic and the backend loopback connection to the initiating calls. Verify suspected causes with generated checks, and recover trustworthy process lifetime evidence before another separately approved journey. The collector-only ETW coverage remains blocked on its separate workload.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
