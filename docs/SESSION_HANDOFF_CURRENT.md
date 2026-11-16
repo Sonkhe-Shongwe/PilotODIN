@@ -1,6 +1,12 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
-**15 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
+**16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 65/100** on the proposed engineering scorecard. N12 is partial and strict ETW coverage is blocked. See the [phase ledger](./PROJECT_STATUS_CURRENT.md) and [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md).
+
+## 16 November 2026 | Owner Windows Live Dev checkpoint
+
+The owner reported that the Windows Live Dev check worked after starting the launcher. The first attempt received WinError 10061 before it reached the fixture. The successful follow-up is an owner attestation. The printed result, measured response times and available RAM were not supplied. Reuse this checkpoint and the existing hosted browser and Windows API evidence.
+
+The next proposed observation is one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the owner's 8 GB laptop. It requires explicit approval of the isolated native compilation and launch. The session uses a disposable backend and WebView2 profile and covers model-free Local analytics. The R03 offline Qwen coexistence gate remains open.
 
 ## 15 November 2026 | Ask ODIN Local analytics milestone
 
@@ -225,7 +231,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the [one-command Live Dev smoke check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) with the existing four-row project and record the Windows result in one session. The hosted API workload provides the baseline for a future source-matched physical Windows desktop check. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Review the [proposed physical Windows session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session). The owner has confirmed that the [Live Dev check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) worked. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
