@@ -2,7 +2,7 @@
 
 **13 November 2026 scope update:** The owner moved Gate C to approval of a specific real-world prediction use. P4 engineering closure now proceeds against R02–R06 and the phase exit criteria. [Owner decision](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c).
 
-**Current evidence, 16 November 2026.** P4 is at **14 of 20 (70%)** after the scoped physical Local analytics acceptance. The latest full N12 run matched protected endpoints and failed its filesystem and network checks, with trace coverage blocked. The collector lifetime control is the next live test and awaits exact-source approval. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Full audit result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) · [Collector decision](#collector-lifetime-control-decision)
+**Current evidence, 16 November 2026.** P4 is at **14 of 20 (70%)** after the scoped physical Local analytics acceptance. The latest full N12 run matched protected endpoints and failed its filesystem and network checks, with trace coverage blocked. The collector lifetime control blocked on three exit-time disagreements. Process-only ETW corroboration is the next preparation. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Full audit result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) · [Collector decision](#collector-lifetime-control-decision)
 
 **Binding governance:** [P4-17 owner risk-deferral refusal](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md), [P4-46 hard-stop boundary](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), [P4-50 independent evidence intake](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md), [P4-71 limited actual native boot](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md), [existing native test kit](../qa/p4_native/README.md) / [results template](../qa/p4_native/RESULTS_TEMPLATE.md), [master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2), [owner P4 evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9).
 
@@ -93,13 +93,43 @@ On 16 November, the generated two-launch fixture was replayed through the existi
 
 #### Collector lifetime control decision
 
-Run the disarmed [collector workflow](../.github/workflows/p4-n12-lifetime-control.yml) only after explicit approval for the exact reviewed source. It provisions pinned Sysmon on disposable Windows 2022 and compares two generated parent-child pairs with Windows process-handle timestamps. The app, network and FileIO findings have their own acceptance evidence. [Collector scope and replay](../qa/p4_native/N12_TRACE.md#collector-lifetime-control)
+The [collector workflow](../.github/workflows/p4-n12-lifetime-control.yml) ran once and is disarmed. It provisioned pinned Sysmon on disposable Windows 2022 and compared two generated parent-child pairs with Windows process-handle timestamps. The app, network and FileIO findings have their own acceptance evidence. [Collector scope and replay](../qa/p4_native/N12_TRACE.md#collector-lifetime-control)
 
 | Observed lifetime-control result | Next action |
 | --- | --- |
 | Both generated pairs pass with complete channel evidence | Record the scoped result. Preserve the app-specific failures and target the affected app process roles for independent lifecycle corroboration before proposing a change to strict attribution. |
-| A lifetime contradiction, unmatched identity or unreadable image is reproduced | Replay the redacted packet and record the failing pair, signed deltas and categories. Use the smallest matching independent ETW or Windows-handle control to test the discrepancy before proposing an attribution rule. |
+| A timing disagreement, lifetime contradiction, unmatched identity or unreadable image is reproduced | Replay the redacted packet and record the failing pair, signed deltas and categories. Use the smallest matching independent ETW or Windows-handle control to test the discrepancy before proposing an attribution rule. |
 | Setup, export or parsing blocks the control | Record the job, last completed step and fixed failure reason. Address that boundary before seeking approval for another live attempt. |
+
+##### 16 November lifetime control result and replay
+
+The [approved Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43912580978/job/133458140133) completed reduction with all five checkpoints. Sysmon, the independent process handles and the bounded channel established the expected records and ordering. Three exits exceeded the 1 ms diagnostic bound. Deltas are Sysmon UTC minus process-handle UTC in milliseconds.
+
+| Case | Birth delta (ms) | Exit delta (ms) | Timing disposition |
+| --- | ---: | ---: | --- |
+| Fast parent | -0.3991 | -3.6624 | BLOCKED |
+| Fast child | -0.9816 | -1.7622 | BLOCKED |
+| Paced parent | -0.5820 | -0.3573 | PASS |
+| Paced child | -0.0487 | -2.4516 | BLOCKED |
+
+The earlier full journey's unsupported images and exits timestamped 2 ms before birth remain unresolved. This control observed a clock disagreement against independent Windows handle timestamps without reproducing either specific contradiction. It earned zero acceptance points. R02.5 and R02.6 remain blocked.
+
+**Next evidence.** Reuse the generated fast and paced pairs, original process handles and existing Windows kernel-process ETW export. Start the process-only trace before fixture launch. Check collector loss, require unique start and stop records with process and parent identity, and preserve signed deltas against the independent Windows handle times. Test missing, duplicate, out-of-order and mismatched records with generated inputs. If ETW and the handles agree on the same processes while Sysmon disagrees, treat that pattern as scoped collector evidence. If ETW is incomplete or also disagrees, keep attribution blocked. Keep the current 1 ms diagnostic bound and strict app audit rules until corroboration is reviewed.
+
+Save the redacted job-log packet below as JSON and run `python -B -m qa.p4_native.n12_lifetime_control --replay <file>` at the reviewed source. The replay returned exit code 2 with `exit-time-disagrees-with-windows` for the fast parent, fast child and paced child.
+
+```json
+{
+  "schema_version": 2,
+  "channel_issues": [],
+  "cases": [
+    {"case": "fast-parent", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 1452633, "birth_delta_ticks": -3991, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -36624, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false},
+    {"case": "fast-child", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 157806, "windows_birth_after_parent_ticks": 1155825, "birth_delta_ticks": -9816, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -17622, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false},
+    {"case": "paced-parent", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 1947753, "birth_delta_ticks": -5820, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -3573, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false},
+    {"case": "paced-child", "birth_count": 1, "exit_count": 1, "windows_duration_ticks": 684029, "windows_birth_after_parent_ticks": 1164667, "birth_delta_ticks": -487, "birth_image_matches": true, "parent_matches": true, "exit_delta_ticks": -24516, "exit_identity_matches": true, "ordered_records": true, "exit_image_matches": true, "unsupported_exit_image": false}
+  ]
+}
+```
 
 ### Rules for interpreting the matrix
 
