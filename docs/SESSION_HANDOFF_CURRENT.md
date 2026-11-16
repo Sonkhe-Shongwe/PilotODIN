@@ -2,6 +2,10 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | N12 capture volume map correction
+
+The live capture supplies a DOS-drive-to-NT-device map. The ETW image checker looks up device-to-drive aliases. The diagnostic passed the capture map directly, while its generated tests supplied an already-inverted map. The lifetime reducer now uses the same validated mapping conversion as the combined audit. Generated cases exercise the capture map and native start and stop images for all scoped roles, missing and duplicate volume mappings, and unresolved or incorrect executable paths. The exact paths from the hosted run were unavailable, so the correction's hosted effect remains **UNVERIFIED**. [Recorded hosted result and disarm](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dd7cc55e60f019510ca8167901ab03564e7ddf47)
+
 ## 16 November 2026 | Hosted N12 image diagnostic found unmapped device paths
 
 The [approved Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43960922558/job/133627767487) ran once at reviewed source `a296e87965c892bcaf0b5e9db40d7f022f5a72d5` from launch `ae39fc64d96389a67fc64c4a1e33c1ff46685400`, on image `20261112.366.7` with Sysmon 15.22. The unpackaged executable SHA-256 was `43586646aecf904e3cf0fa65b3a5a2f335780e86028f2ebde2750202a8d667b6` and the Cargo lock SHA-256 was `75fa91f9208577ffe832de96aba95239fc97d6d8a90990c144c8d157fa0cb996`.
@@ -412,7 +416,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Prepare a Windows image-path control using generated parent and child processes. Compare ETW start images, the expected DOS paths and native image paths queried from their original Windows process handles. Retain only fixed path-form and equality results linked by verified process identity and birth time. Exercise wrong-path, same-basename, ambiguous mapping and PID reuse cases before asking for a separately approved hosted control. Native app compilation is unnecessary for that control. [Hosted result](#16-november-2026--hosted-n12-image-diagnostic-found-unmapped-device-paths) · [Worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+Verify routine CI for the [volume map correction](#16-november-2026--n12-capture-volume-map-correction). Prepare the existing process-only Windows control to compare ETW start images with expected DOS paths and native image paths queried from original handles. Preserve fixed path-form results, exact path comparisons, sequence and birth joins, and failure categories for ambiguous aliases and PID reuse. The smallest live control can run without building PilotODIN and requires separate approval. [Hosted evidence](#16-november-2026--hosted-n12-image-diagnostic-found-unmapped-device-paths)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

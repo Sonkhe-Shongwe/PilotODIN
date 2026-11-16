@@ -126,7 +126,8 @@ def check_handle(lifetimes, process, witness):
     return start, stop
 
 
-def reduction(manifest, sysmon, events, devices, session, app_witness, worker_witness, binary):
+def reduction(manifest, sysmon, events, volume_devices, session, app_witness, worker_witness, binary):
+    devices = trace.etw_device_aliases(volume_devices)
     start, end, processes, _, issues = trace.load_capture(
         manifest, sysmon, etw=True, rejected_sysmon_exits=[])
     roles, bindings = trace.bind_processes([{"pid": app_witness["pid"], "role": "app",
@@ -226,7 +227,7 @@ def capture(root, staged, provenance):
     manifest, _, _, fixture, _ = journey.prepare_journey(root, source, expected_hash)
     fixture.write_text("fixture,value\nstartup-close,1\n", encoding="utf-8")
     before = journey.snapshots(manifest)
-    devices = n12_etw_probe.volume_devices()
+    volume_devices = n12_etw_probe.volume_devices()
     with journey.checkpoint_stage("app-lifetime-window-open", source, expected_hash):
         manifest["sysmon_first_record"] = journey.sysmon_tail() + 1
     try:
@@ -253,7 +254,8 @@ def capture(root, staged, provenance):
     with journey.checkpoint_stage("app-lifetime-reduction", source, expected_hash):
         events = root / "lifetime-etw.jsonl"
         manifest["events_sha256"] = build.digest(events)
-        report = reduction(manifest, sysmon, events, devices, session, app, worker, build.executable(staged))
+        report = reduction(manifest, sysmon, events, volume_devices, session, app, worker,
+                           build.executable(staged))
         report["cargo_lock_sha256"] = provenance["cargo_lock_sha256"]
         report["protected_snapshot_comparison"] = snapshot["protected_snapshot_comparison"]
         if snapshot["protected_snapshot_comparison"] != "MATCH":

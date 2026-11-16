@@ -1,6 +1,7 @@
 """Generated evidence for the single-launch N12 lifetime control."""
 from copy import deepcopy
 import json
+import ntpath
 import re
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,7 +14,7 @@ from xml.etree import ElementTree as ET
 
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_lifetime as lifetime
-from tests.test_p4_n12_exit_corroboration import DEVICES, ORIGIN, event, payload, stamp
+from tests.test_p4_n12_exit_corroboration import ORIGIN, event, payload, stamp
 
 
 APP = r"c:\qa\build\pilotodin-desktop.exe"
@@ -33,6 +34,8 @@ class AppLifetimeTests(unittest.TestCase):
                          "start_utc": stamp(0).isoformat(), "end_utc": stamp(900_000).isoformat()}
         self.session = {"start": ORIGIN, "end": ORIGIN + 900_000,
                         "counters": dict.fromkeys(lifetime.etw.COUNTERS, 0) | {"buffers_written": 4}}
+        # The capture probe supplies drive -> NT volume with its original casing.
+        self.volume_devices = {"C:": r"\Device\HarddiskVolume3"}
         self.rows, self.events = [], []
         self.process(700, PYTHON, 50_000, 800_000, 1)
         self.app = self.process(701, APP, 130_000, 520_000, 700)
@@ -70,11 +73,10 @@ class AppLifetimeTests(unittest.TestCase):
         self.manifest.update(sysmon_first_record=150, sysmon_last_record=149 + len(self.rows),
                              events_sha256=lifetime.build.digest(self.etw))
         with patch.object(lifetime.sys, "executable", PYTHON):
-            return lifetime.reduction(self.manifest, self.sysmon, self.etw, DEVICES,
+            return lifetime.reduction(self.manifest, self.sysmon, self.etw, self.volume_devices,
                                       self.session, self.app, self.worker, APP)
 
     def test_clean_lifetime_matches_both_original_handles(self):
-        self.events[0]["data"]["ImageName"] = r"\Device\HarddiskVolume3\qa\python\python.exe"
         report = self.reduce()
         self.assertEqual(report["verdict"], "PASS")
         self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
@@ -85,6 +87,29 @@ class AppLifetimeTests(unittest.TestCase):
         })
         self.assertEqual(len(report["timing_comparisons"]), 4)
         self.assertTrue(all(row["etw_minus_sysmon_exit_ticks"] == 0 for row in report["timing_comparisons"]))
+
+    def test_capture_volume_map_resolves_native_images_for_every_scoped_role(self):
+        for row in self.events:
+            drive, suffix = ntpath.splitdrive(row["data"]["ImageName"])
+            row["data"]["ImageName"] = self.volume_devices[drive.upper()] + suffix
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
+        self.assertEqual(report["etw_start_image_comparisons"], {
+            role: {"exact-path-match": 1} for role in ("app", "launcher", "webview", "webview-network")
+        })
+        self.assertEqual(len(report["timing_comparisons"]), 4)
+
+    def test_missing_and_ambiguous_capture_volume_maps_fail_closed(self):
+        volume = self.volume_devices["C:"]
+        for mapping, issue in (
+            ({}, "ETW volume mappings are missing"),
+            ({"C:": volume, "D:": volume.lower()}, "invalid or ambiguous ETW volume mapping"),
+        ):
+            with self.subTest(issue=issue):
+                self.volume_devices = mapping
+                with self.assertRaisesRegex(trace.EvidenceValidationError, f"^{issue}$"):
+                    self.reduce()
 
     def test_image_failures_are_reported_by_role_after_launcher_blocks(self):
         del self.events[0]["data"]["ImageName"]

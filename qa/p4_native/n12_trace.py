@@ -723,6 +723,18 @@ def etw_unsigned(value):
     return int(value)
 
 
+def etw_device_aliases(volume_devices):
+    """Map verified NT device prefixes to unique DOS drive aliases."""
+    devices = {}
+    for drive, device in volume_devices.items():
+        drive, device = drive.casefold(), device.casefold()
+        require(re.fullmatch(r"[a-z]:", drive) and re.fullmatch(r"\\device\\[^\\]+", device)
+                and device not in devices, "invalid or ambiguous ETW volume mapping")
+        devices[device] = drive
+    require(devices, "ETW volume mappings are missing")
+    return devices
+
+
 def etw_capture_contract(manifest, start, end, issues):
     capture = manifest["etw"]
     require(capture["schema_version"] == 1, "unsupported ETW evidence schema")
@@ -736,13 +748,7 @@ def etw_capture_contract(manifest, start, end, issues):
             "invalid ETW counters")
     if any(losses):
         issues.add("etw-event-or-buffer-loss")
-    devices = {}
-    for drive, device in capture["volume_devices"].items():
-        drive, device = drive.casefold(), device.casefold()
-        require(re.fullmatch(r"[a-z]:", drive) and re.fullmatch(r"\\device\\[^\\]+", device)
-                and device not in devices, "invalid or ambiguous ETW volume mapping")
-        devices[device] = drive
-    require(devices, "ETW volume mappings are missing")
+    devices = etw_device_aliases(capture["volume_devices"])
 
     return (utc_ticks(capture_start), utc_ticks(capture_end)), devices
 
