@@ -1,7 +1,9 @@
 """Generated evidence for the single-launch N12 lifetime control."""
 from copy import deepcopy
 import json
+import re
 from pathlib import Path
+from types import SimpleNamespace
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -121,19 +123,48 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertIn("app-tree-etw-child-missing-from-sysmon", report["issues"])
 
-    def test_cli_uses_separate_approval_and_workflow_is_disarmed(self):
+    def test_graceful_close_preserves_only_fixed_status(self):
+        app = SimpleNamespace(pid=23)
+        for raw, expected in (
+            (b"n12-close-process-timeout\r\n", "window-process-exit-timeout"),
+            (b"n12-close-identity-mismatch\r\n", "window-identity-mismatch"),
+            (b"private runner output", "window-close-helper-failed"),
+        ):
+            error = subprocess.CalledProcessError(1, "private command", output=raw)
+            with self.subTest(expected=expected), patch.object(lifetime.journey, "powershell", side_effect=error):
+                with self.assertRaisesRegex(trace.EvidenceValidationError, f"^{expected}$"):
+                    lifetime.request_graceful_close(app, APP, "PilotODIN QA")
+
+    def test_cli_and_workflow_enforce_separate_lifetime_approval(self):
         with patch.dict(lifetime.os.environ, {"PILOTODIN_N12_APP_LIFETIME_CONSENT": "other"}):
             run = subprocess.run([sys.executable, "-B", "-m", lifetime.__name__, "--source", SOURCE,
                 "--expected-exe-sha256", HASH, "--worker"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 2)
         self.assertIn("separate one-run N12 app lifetime consent is required", run.stderr)
         workflow = (lifetime.build.REPO / ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
-        self.assertIn("if: ${{ false }}", workflow)
+        marker_path = "qa/p4_research/N12_APP_LIFETIME_CLOSE_RETEST_APPROVAL.txt"
+        self.assertIn(f"      - {marker_path}", workflow)
         self.assertIn("scope=n12-one-build-one-app-lifetime", workflow)
         self.assertIn("-WithEtw -AppLifetime", workflow)
-        marker = lifetime.build.REPO / "qa/p4_research/N12_APP_LIFETIME_APPROVAL.txt"
-        if marker.exists():
-            self.assertIn("scope=n12-one-build-one-app-lifetime", marker.read_text(encoding="utf-8"))
+        self.assertIn("$parents[1] -cne $source", workflow)
+        self.assertIn("$changed.Count -ne 2", workflow)
+        self.assertIn("$added[0] -cne $marker", workflow)
+        gate = re.search(r"(?m)^    if: (.+?)(?: #.*)?$", workflow)
+        self.assertIsNotNone(gate)
+        if gate[1] == "${{ false }}":
+            return  # The consumed approval marker may be retained as evidence.
+
+        self.assertEqual(gate[1], "${{ github.run_attempt == 1 && github.event_name == 'push' }}")
+        approval = (lifetime.build.REPO / marker_path).read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(approval), 2)
+        self.assertRegex(approval[0], r"^reviewed_source=[0-9a-f]{40}$")
+        self.assertEqual(approval[1], "scope=n12-one-build-one-app-lifetime")
+        source = approval[0].split("=", 1)[1]
+        self.assertEqual(lifetime.build.git("rev-parse", "HEAD^"), source)
+        self.assertEqual(set(lifetime.build.git("diff", "--name-only", source, "HEAD").splitlines()),
+                         {marker_path, ".github/workflows/p4-n12-app-lifetime.yml"})
+        self.assertEqual(lifetime.build.git("diff", "--name-only", "--diff-filter=A", source, "HEAD", "--", marker_path),
+                         marker_path)
 
 
 if __name__ == "__main__":

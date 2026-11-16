@@ -7,6 +7,7 @@ param(
     [int]$AppProcessId,
     [string]$AppPath,
     [string]$AppTitle,
+    [switch]$ReportCloseStatus,
     [string]$ProfilePath,
     [int]$BackendProcessId,
     [ValidateSet('Stay','Switch project')][string]$Action
@@ -37,7 +38,8 @@ switch ($Operation) {
     }
     'close' {
         . (Join-Path $PSScriptRoot '../p4_native/Close_P4_Verified_Window.ps1')
-        Close-P4VerifiedWindow -AppProcessId $AppProcessId -ExpectedPath $AppPath -ExpectedTitle $AppTitle
+        Close-P4VerifiedWindow -AppProcessId $AppProcessId -ExpectedPath $AppPath -ExpectedTitle $AppTitle `
+            -ReportCloseStatus:$ReportCloseStatus
     }
     'project-switch' {
         if ($env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or

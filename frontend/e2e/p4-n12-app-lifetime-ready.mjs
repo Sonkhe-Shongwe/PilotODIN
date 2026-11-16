@@ -1,5 +1,6 @@
 import { chromium } from '@playwright/test';
 import { discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
+import { closeN12Peer, findN12Peer } from './p4-n12-native-cases.mjs';
 
 const required = {
   CI: 'true',
@@ -22,7 +23,9 @@ try {
   if (result.status !== 'FOUND') {
     throw Error('Native lifetime readiness blocked: ' + result.status);
   }
-  console.log('N12 app lifetime native bridge ready');
+  const peer = await findN12Peer(result.page.context());
+  await closeN12Peer(peer);
+  console.log('N12 app lifetime native bridge ready and peer closed');
 } finally {
   await browser.close();
 }

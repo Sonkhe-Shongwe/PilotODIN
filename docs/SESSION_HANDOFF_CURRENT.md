@@ -2,11 +2,19 @@
 
 **16 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 16 November 2026 | App lifetime run blocked at graceful close
+
+The [hosted job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43940489139/job/133556386951) ran once on Windows Server 2022, image `20261112.366.7`, from launch `5e5b0c8de8bfee7382e0a939a73b9e23dfa65d2c` at reviewed source `d8442d2b6fe8984647cd84fb11569d4f7c12aba6`. Unpackaged staging, local service startup, pinned Sysmon 15.22, kernel-process ETW start and native bridge readiness completed. Executable SHA-256 was `c612576fcc6fc1e253f75fc1acb5d39f539e6fab1d1fe92257be6b9aad4aac62` and Cargo lock SHA-256 was `6683c3ac1323ad707b165553f09eb16f84ea37860409b570e6479f295fb52a20`.
+
+**Workflow FAIL. App lifetime diagnostic BLOCKED.** The graceful-close stage recorded `CalledProcessError` after about 15.6 seconds. The log omitted the underlying PowerShell error, so the exact rejection is unverified. Cleanup and ETW stop completed and all four protected paths and the immutable synthetic fixture matched at the endpoints. Sysmon and ETW exports, reduction, and app and launcher handle comparisons were **NOT RUN**. The two historical exit disputes remain open. GitHub retained zero artifacts. The one-use approval was consumed and the workflow is disarmed.
+
+The reviewed staging always creates the hidden QA peer. The previously successful full journey explicitly closes that peer before requesting main-window shutdown. The single-startup probe now reuses that sequence and emits fixed close failure categories. The [parallel source CI failure](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43940488705/job/133556386738) came from a test that unconditionally expected a disarmed workflow on the approved launch commit. The test now verifies the disarmed state or the exact direct-child activation and its new approval marker. [Capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+
 ## 16 November 2026 | Single app lifetime capture prepared
 
 The disarmed Windows 2022 workflow stages the existing unpackaged QA build and launches PilotODIN once. A short-lived worker keeps the original app handle, checks native bridge readiness, closes the verified window and waits for the isolated WebView profile to exit. The observer retains the worker's original handle. The reducer compares both handle lifetimes with ETW, checks Sysmon and ETW coverage for the app tree, and emits redacted exit discrepancies and protected endpoint results. The existing full journey has its own gate.
 
-Six generated tests passed for the new path, covering clean and disputed exits, mismatched handles or parent identities, collection loss, an ETW-only child and the approval guard. The app lifetime capture is **NOT RUN**. [Capture and approval](../qa/p4_native/N12_TRACE.md#single-app-startup-and-shutdown-capture)
+Six generated tests passed for the new path, covering clean and disputed exits, mismatched handles or parent identities, collection loss, an ETW-only child and the approval guard. The [first hosted capture](#16-november-2026--app-lifetime-run-blocked-at-graceful-close) subsequently blocked at graceful close. [Capture and approval](../qa/p4_native/N12_TRACE.md#single-app-startup-and-shutdown-capture)
 
 ## 16 November 2026 | N12 disputed exit diagnostic prepared
 
@@ -374,7 +382,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Obtain explicit approval at the verified branch HEAD for one hosted Windows 2022 unpackaged build and one isolated startup and graceful-close capture. Review the redacted role, timing and endpoint evidence before deciding on the next full journey. [App lifetime capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
+After routine CI verification, obtain fresh exact-source approval for one Windows 2022 unpackaged build and one isolated startup and graceful-close retest. The revised probe confirms the hidden peer closes before requesting app shutdown. Review the fixed close categories, endpoint comparison and lifetime reduction before proposing a full journey. [App lifetime capture plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#16-november-app-lifetime-capture-plan)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

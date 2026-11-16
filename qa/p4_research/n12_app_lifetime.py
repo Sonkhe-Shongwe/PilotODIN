@@ -74,20 +74,36 @@ def launch_and_close(root, staged, node, source, expected_hash):
                              45, "WebView debugger did not become ready", app)
             ready = journey.quiet([node, str(READY_PROBE)], cwd=journey.FRONTEND,
                                   env={**env, "TEMP": str(root / journey.DRIVER_TEMP_DIR),
-                                       "TMP": str(root / journey.DRIVER_TEMP_DIR)}, timeout=35)
-            trace.require(ready.strip() == b"N12 app lifetime native bridge ready",
-                          "native bridge readiness was not verified")
+                                       "TMP": str(root / journey.DRIVER_TEMP_DIR)}, timeout=85)
+            trace.require(ready.strip() == b"N12 app lifetime native bridge ready and peer closed",
+                          "native bridge readiness and QA peer close were not verified")
         with journey.checkpoint_stage("app-lifetime-graceful-close", source, expected_hash):
             trace.require(app.poll() is None and backend.poll() is None and vite.poll() is None,
                           "app or local service exited before verified close")
-            journey.powershell(journey.HELPER, "close", "-AppProcessId", app.pid,
-                               "-AppPath", binary, "-AppTitle", title)
+            request_graceful_close(app, binary, title)
+        with journey.checkpoint_stage("app-lifetime-handle-exit", source, expected_hash):
             trace.require(app.wait(timeout=5) == 0, "app did not exit normally")
             app_times = process_times(app)
+        with journey.checkpoint_stage("app-lifetime-profile-exit", source, expected_hash):
             journey.wait_for(lambda: not journey.listening(9331) and int(journey.powershell(
                 journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
             )) == 0, 25, "WebView processes did not exit for the disposable profile")
     journey.report_file(root / "private-app-handle.json", app_times)
+
+
+def request_graceful_close(app, binary, title):
+    try:
+        journey.powershell(journey.HELPER, "close", "-AppProcessId", app.pid,
+                           "-AppPath", binary, "-AppTitle", title, "-ReportCloseStatus", timeout=25)
+    except subprocess.CalledProcessError as exc:
+        category = {
+            b"n12-close-handle-unavailable": "window-handle-unavailable",
+            b"n12-close-identity-mismatch": "window-identity-mismatch",
+            b"n12-close-request-rejected": "window-close-message-rejected",
+            b"n12-close-process-timeout": "window-process-exit-timeout",
+            b"n12-close-exit-nonzero": "window-process-exit-nonzero",
+        }.get((exc.stdout or b"").strip(), "window-close-helper-failed")
+        raise trace.EvidenceValidationError(category) from exc
 
 
 def launch_worker(root, source, expected_hash):
