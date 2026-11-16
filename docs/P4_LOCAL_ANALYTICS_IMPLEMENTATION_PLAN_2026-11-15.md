@@ -84,6 +84,8 @@ py -3 .\tools\Verify_Local_Analytics_Windows_Native.py --relaunch-approved pilot
 
 The runner checks the prior receipt, executable hash and Cargo lockfile hash. It starts a fresh disposable backend and WebView2 profile with CDP disabled. It verifies all five responses through the API. The terminal prompts you to check the median and its follow-up inside the desktop window while RAM and paging are sampled. Press **P** in the terminal if both UI answers matched, or **F** if either failed. A successful result is recorded as `PASS_WITH_OWNER_OBSERVATION`. Click-to-render timings and a fully automated native UI pass remain unmeasured in this mode.
 
+On 16 November 2026 the owner accepted both native answers from screenshots after the terminal acknowledgment timed out. The [scoped result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) covers the median and its filter-changing follow-up. Physical resource measurements remain unverified.
+
 ## Research references
 
 - NL4DV separates detected dataset fields from inferred analytical tasks. DataTone surfaces ambiguity where the user can resolve it. [NL4DV](https://nl4dv.github.io/nl4dv/index.html) · [DataTone](https://cond.org/datatone.html)

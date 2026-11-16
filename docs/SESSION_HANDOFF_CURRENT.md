@@ -6,11 +6,20 @@
 
 The owner reported that the Windows Live Dev check worked after starting the launcher. The first attempt received WinError 10061 before it reached the fixture. The successful follow-up is an owner attestation. The printed result, measured response times and available RAM were not supplied. Reuse this checkpoint and the existing hosted browser and Windows API evidence.
 
-The owner approved one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the 8 GB laptop. The first attempt stopped before compilation because the runner rejected untracked files in the local checkout. The corrected runner exports the reviewed application commit and committed QA helpers into a temporary folder, so it can run independently of those files. The physical run is pending. The R03 offline Qwen coexistence gate remains open.
+The owner approved one [unpackaged Windows desktop session](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#proposed-physical-windows-session) on the 8 GB laptop. The first attempt stopped before compilation because the runner rejected untracked files in the local checkout. The corrected runner exports the reviewed application commit and committed QA helpers into a temporary folder, so it can run independently of those files. See the native session results below.
+
+## 16 November 2026 | Native Local analytics answers accepted
+
+The owner relaunched the isolated Windows desktop from the reviewed application source `6381203` using runner `c3f0acc`. The relaunch reached the observation prompt after the five disposable API checks. Screenshots from Ask ODIN on the working dataset v0 in `r03-native` show two correct model-free answers.
+
+- For `outcome = Yes`, median `premium` was 30 from two usable values in two matching rows.
+- The follow-up “What about No?” reused the median and column, changed the outcome filter, and reported an unavailable median with zero usable values in one matching row.
+
+**Scoped native interaction PASS by owner acceptance.** The owner reported that the terminal prompt timed out and accepted the screenshots as the result. The runner's final receipt, in-workload physical RAM and paging figures, and UI response timings remain unverified. The check used an unpackaged desktop with a disposable development backend. Physical offline Qwen coexistence and packaged-runtime acceptance remain open.
 
 ## 16 November 2026 | Owner native launch and automation timeout
 
-The unpackaged build compiled and opened the isolated desktop window from application source `6381203` and runner `433f421`. The receipt ended `INCOMPLETE` at `native_launch` after the WebView2 debugging HTTP endpoint did not answer. The desktop log was empty, and the owner's Application log query returned no matching crash events. The screenshot confirms window launch. The exit cause was not independently observed. The 2,910 MiB available RAM reading preceded application launch. Native answers and in-workload measurements are pending.
+The unpackaged build compiled and opened the isolated desktop window from application source `6381203` and runner `433f421`. The receipt ended `INCOMPLETE` at `native_launch` after the WebView2 debugging HTTP endpoint did not answer. The desktop log was empty, and the owner's Application log query returned no matching crash events. The screenshot confirms window launch. The exit cause was unverified. The 2,910 MiB available RAM reading preceded application launch.
 
 The [relaunch mode](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#resume-after-a-webview2-automation-timeout) reuses the hash-verified executable with a fresh disposable workspace. It verifies the five API answers and collects physical process measurements while the owner observes the median and follow-up in the native window.
 
@@ -237,7 +246,7 @@ The [prior two-launch app journey](https://github.com/Sonkhe-Shongwe/PilotODIN/a
 
 ## Next engineering action
 
-Use the [relaunch mode](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#resume-after-a-webview2-automation-timeout) on the owner's laptop and record the result. The owner has confirmed that the [Live Dev check](./LIVE_DEVELOPMENT.md#local-analytics-smoke-check) worked. The 397 path gaps, live image-path retest and 567-finding comparison remain open.
+Advance the [N12 filesystem and network audit](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-final-audit-comparison). The last completed two-launch audit is the comparison baseline. The next hosted journey needs a final parser result, a filesystem breakdown by writer and path category, and network attribution. The 397 collector-only path gaps remain open on their own workload.
 
 The live collector and hosted app-journey workflows are disarmed. Their one-use approvals were consumed. Any new live capture needs separate owner approval. The intermediate installer freeze and owner-data preservation restrictions remain in force. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
