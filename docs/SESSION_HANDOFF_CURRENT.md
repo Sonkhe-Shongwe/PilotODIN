@@ -2,6 +2,19 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Collector verified 1,226 background mutation paths
+
+The [approved collector-only job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44064219314/job/133973584601) ran once on Windows Server 2022 image `20261112.366.7` with Sysmon 15.22. Launch `a4fb79687847a566b011860566bd8fa5eef6288a` pinned source `fb206da5997412403d4a5243a9ee822e32656a12`. Sysmon prelaunch **PASS** on read 1. All generated file operations were observed, no ETW loss was reported, and the decoder emitted 1,659 FileIO filename records. PilotODIN compilation and launch were **NOT RUN**. The job retained zero artifacts.
+
+| Missing paths in the same capture | Strict with process snapshots | Strict with verified rundown credit |
+| --- | ---: | ---: |
+| Background writes | 1,052 | 333 |
+| Background resizes | 564 | 57 |
+| Allocation and unsupported operation | 2 | 2 |
+| **Total** | **1,618** | **392** |
+
+The comparison verified 719 write and 507 resize paths outside the protected roots, a 75.8% reduction in missing paths for this capture. The diagnostic report preserved the original strict counts. Both strict reports flagged zero file violations. Strict coverage was **BLOCKED** on unresolved ETW mutations and the workflow **FAILED** at exit 2 from the original strict report. Of the paths still missing, 186 writes and five resizes completed at or after rundown start. The approval was consumed and the workflow is disarmed. [Decision and next control](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#n12-collector-only-strict-comparison). P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | Repeat the resize on a pre-opened handle
 
 Routine Windows CI repeats the same 96-to-37-byte resize through a handle opened before ETW. The file stays open through the native filename snapshot. The comparison checks the same captured operation in the strict reducer with and without the rundown and reports whether it recovers `known-resize.bin`. The fixture independently checks the resulting file size and retained bytes. This is a controlled file test. P4 remains **14/20 (70%)** pending broader acceptance evidence.
@@ -29,7 +42,7 @@ The first [pre-opened Windows result](https://github.com/Sonkhe-Shongwe/PilotODI
 
 The disarmed collector rehearsal can produce a fourth report from the same generated capture. It credits background writes and resizes that pass the completion check and sends their paths through the existing protected-root check. The report contains the credited counts by operation and path scope, along with the remaining strict issues. Capture loss, incomplete evidence and conflicting identities leave path gaps in place.
 
-The existing report with process snapshots still determines the rehearsal verdict. The new comparison requires a separate approved collector run. P4 remains **14/20 (70%)**.
+The original report with process snapshots determined the verdict in the [approved collector comparison](#17-november-2026--collector-verified-1226-background-mutation-paths). P4 remains **14/20 (70%)**.
 
 ## 17 November 2026 | FileIO completion check supported 193 paths
 
@@ -567,7 +580,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-The [named Windows controls](#17-november-2026--repeat-the-resize-on-a-pre-opened-handle) have passed filename attribution. The next dependency is one separately approved [collector-only strict comparison](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#next-n12-collector-only-strict-comparison). It measures which background writes and resizes can be credited in a single capture and which blockers remain. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings.
+Use a generated known-file timing control to check whether individual rundown name records can be placed on the same clock as I/O completions. Include a verified ordering case and reject ties, identity conflicts and name changes. The [collector comparison](#17-november-2026--collector-verified-1226-background-mutation-paths) leaves 191 operations unresolved on rundown timing. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings.
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
