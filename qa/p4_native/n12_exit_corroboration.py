@@ -74,6 +74,20 @@ def compare_image_path(image, expected_path, devices):
     return "unsupported-path-form"
 
 
+def compare_stop_image(image, expected_path, devices):
+    """Describe the stop field with fixed labels and no raw image values."""
+    kind = compare_image_path(image, expected_path, devices)
+    if kind != "basename-only":
+        return kind
+    basename = ntpath.basename(expected_path)
+    spelling = image.casefold()
+    if spelling == basename:
+        return "exact-basename-match"
+    if basename.startswith(spelling):
+        return "short-basename-prefix"
+    return "different-basename"
+
+
 class EtwLifetimes:
     def __init__(self, events, devices, window):
         self.starts = defaultdict(list)
@@ -110,6 +124,13 @@ class EtwLifetimes:
         trace.require(start.sequence == stop.sequence and (start.sequence is None or
                       len(self.by_sequence[start.sequence]) == 2), "etw-sequence-conflict")
         return start, stop
+
+    def stop_image_comparison(self, process):
+        try:
+            _, stop = self._candidate_pair(process)
+        except trace.EvidenceValidationError as exc:
+            return str(exc)
+        return compare_stop_image(stop.image, process.image, self.devices)
 
     def _order_deltas(self, start, stop):
         first, last = self.window
@@ -156,9 +177,8 @@ class EtwLifetimes:
         trace.require(compare_image_path(start.image, process.image, self.devices) == "exact-path-match",
                       "etw-start-image-unverified")
         if isinstance(stop.image, str):
-            exit_path = canonical_file_path(stop.image, self.devices)
-            expected = process.image if exit_path is not None else ntpath.basename(process.image)
-            trace.require((exit_path or stop.image.casefold()) == expected, "etw-stop-image-conflict")
+            trace.require(compare_stop_image(stop.image, process.image, self.devices) in
+                          {"exact-path-match", "exact-basename-match"}, "etw-stop-image-conflict")
         return start, stop
 
 

@@ -9,7 +9,7 @@ import subprocess
 from uuid import uuid4
 
 from . import n12_etw_probe as etw
-from .n12_exit_corroboration import compare_image_path
+from .n12_exit_corroboration import compare_image_path, compare_stop_image
 from . import n12_trace as trace
 from .n12_trace import etw_payload_ticks as payload_ticks, etw_unsigned as unsigned
 from qa.p4_research import n12_app_journey as journey
@@ -79,9 +79,8 @@ def read_process_events(path, target_pids, start, end):
                           "lifetime-etw-invalid-record")
             record = {"index": index, "kind": kind, "pid": pid, "sequence": seq,
                       "ticks": stamp, "in_window": start <= stamp <= end,
-                      "creation": payload_ticks(data["CreateTime"])}
+                      "creation": payload_ticks(data["CreateTime"]), "image": data.get("ImageName")}
             if kind == 1:
-                record["image"] = data.get("ImageName")
                 record["parent"] = unsigned(data["ParentProcessID"])
                 parent_sequence = data.get("ParentProcessSequenceNumber")
                 trace.require(version < 3 or parent_sequence is not None, "lifetime-etw-parent-sequence-missing")
@@ -215,3 +214,41 @@ def image_path_report(witnesses, records, packet, windows_cases, devices, expect
     )
     return {"scope": "generated-process-image-path-control", "verdict": "PASS" if passed else "BLOCKED",
             "etw_issues": issues, "collector_counters": packet["counters"], "cases": cases}
+
+
+def stop_image_report(witness, records, session, devices, expected_image):
+    """Identify the observed stop-field form for one independently witnessed fixture."""
+    counters = session["counters"]
+    issues = []
+    if any(counters[key] for key in COUNTERS[:-1]) or not counters["buffers_written"]:
+        issues.append("etw-coverage-unverified")
+    starts = [row for row in records if row["kind"] == 1 and row["pid"] == witness["pid"]]
+    stops = [row for row in records if row["kind"] == 2 and row["pid"] == witness["pid"]]
+    if len(starts) != 1 or len(stops) != 1:
+        issues.append("etw-pair-missing-or-ambiguous")
+    expected = trace.windows_path(expected_image)
+    label = "unverified-pair"
+    prefix_length = None
+    if len(starts) == len(stops) == 1:
+        start, stop = starts[0], stops[0]
+        sequence = start["sequence"]
+        if not (sequence is not None and stop["sequence"] == sequence and
+                sum(row["sequence"] == sequence for row in records) == 2 and
+                start["creation"] == stop["creation"] == witness["birth"] and stop["exit"] == witness["exit"] and
+                session["start"] <= witness["birth"] <= witness["exit"] <= session["end"] and
+                start["in_window"] and stop["in_window"] and start["index"] < stop["index"] and
+                start["ticks"] < stop["ticks"]):
+            issues.append("etw-pair-identity-or-time-unverified")
+        image = start["image"]
+        if not (trace.windows_path(witness["image_dos"]) == expected and
+                compare_image_path(witness["image_native"], expected, devices) == "exact-path-match" and
+                isinstance(image, str) and image.casefold() == witness["image_native"].casefold()):
+            issues.append("etw-start-image-or-handle-unverified")
+        label = compare_stop_image(stop["image"], expected, devices)
+        if label == "short-basename-prefix":
+            prefix_length = len(stop["image"])
+        if label in {"missing-image", "invalid-image-type"}:
+            issues.append("etw-stop-image-unavailable")
+    return {"scope": "generated-long-image-stop-field", "verdict": "BLOCKED" if issues else "PASS",
+            "issues": issues, "stop_image_form": label, "observed_prefix_length": prefix_length,
+            "collector_counters": counters}

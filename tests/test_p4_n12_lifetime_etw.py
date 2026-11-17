@@ -78,6 +78,25 @@ class LifetimeEtwTests(unittest.TestCase):
             self.witnesses, records, packet["etw"], packet["sysmon"]["cases"],
             devices if devices is not None else {r"\device\harddiskvolume3": "c:"}, IMAGE)
 
+    def test_long_image_control_reports_a_short_stop_prefix_and_rejects_other_identities(self):
+        witness = self.witnesses["fast"]["parent"]
+        witness.update(image_dos=IMAGE, image_native=r"\Device\HarddiskVolume3\private\Python\python.exe")
+        self.events[0]["data"]["ImageName"] = witness["image_native"]
+        self.events[3]["data"]["ImageName"] = "pytho"
+        self.packet()
+        records = etw.read_process_events(self.path, {witness["pid"]}, TICKS, TICKS + 400_000)
+        session = {"start": TICKS, "end": TICKS + 400_000, "counters": COUNTERS}
+        devices = {r"\device\harddiskvolume3": "c:"}
+        report = etw.stop_image_report(witness, records, session, devices, IMAGE)
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(report["stop_image_form"], "short-basename-prefix")
+        self.assertEqual(report["observed_prefix_length"], 5)
+        self.assertNotIn("pytho", json.dumps(report))
+        records[1]["sequence"] += 1
+        blocked = etw.stop_image_report(witness, records, session, devices, IMAGE)
+        self.assertEqual(blocked["verdict"], "BLOCKED")
+        self.assertIn("etw-pair-identity-or-time-unverified", blocked["issues"])
+
     def test_native_image_control_reports_matches_without_private_values(self):
         for row in self.events:
             row["data"]["ImageName"] = r"\Device\HarddiskVolume3\private\Python\python.exe"

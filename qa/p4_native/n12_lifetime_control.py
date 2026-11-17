@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -56,13 +57,13 @@ def process_images(process):
     return images
 
 
-def run_process(command, *, with_images=False):
+def run_process(command, *, with_images=False, fixture_input=b"1"):
     # The pipe holds even the fast fixture until its executable paths are recorded.
     stdin = subprocess.PIPE if with_images else None
     with subprocess.Popen(command, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as process:
         try:
             images = process_images(process) if with_images else {}
-            output, _ = process.communicate(input=b"1" if with_images else None, timeout=20)
+            output, _ = process.communicate(input=fixture_input if with_images else None, timeout=20)
         except (trace.EvidenceValidationError, subprocess.TimeoutExpired):
             process.kill()
             process.communicate()
@@ -267,12 +268,24 @@ def gather_witnesses(*, with_images=False):
 
 def capture(root, source, *, with_etw=False):
     with_images = with_etw and os.getenv("PILOTODIN_N12_IMAGE_PATH_CONTROL") == "1"
+    with_stop_image = with_images and os.getenv("PILOTODIN_N12_STOP_IMAGE_CONTROL") == "1"
+    alias = None
+    alias_witness = None
+    if with_stop_image:
+        system_cmd = Path(os.environ["SystemRoot"]) / "System32" / "cmd.exe"
+        alias = root / "pilotodin-stop-image-fixture.exe"
+        with system_cmd.open("rb") as source_file, alias.open("xb") as target:
+            shutil.copyfileobj(source_file, target)
     with journey.checkpoint_stage("lifetime-window-open", source, ""):
         first = journey.sysmon_tail() + 1
     if with_etw:
         with etw.process_session(root, source) as session:
             with journey.checkpoint_stage("lifetime-fixtures", source, ""):
                 witnesses, pids = gather_witnesses(with_images=True) if with_images else gather_witnesses()
+                if alias is not None:
+                    alias_witness, _ = run_process([str(alias), "/d", "/q"], with_images=True,
+                                                   fixture_input=b"exit /b 0\r\n")
+                    trace.require(alias_witness["pid"] not in pids, "lifetime-fixture-pid-reused")
     else:
         with journey.checkpoint_stage("lifetime-fixtures", source, ""):
             witnesses, pids = gather_witnesses()
@@ -305,6 +318,14 @@ def capture(root, source, *, with_etw=False):
                 result = etw.image_path_report(witnesses, lifecycle, public_etw, packet["sysmon"]["cases"],
                                                devices, sys.executable)
                 print("N12 lifetime image path verdict " + json.dumps(result), flush=True)
+        if alias_witness is not None:
+            with journey.checkpoint_stage("lifetime-stop-image-comparison", source, ""):
+                records = etw.read_process_events(root / "lifetime-etw.jsonl", {alias_witness["pid"]},
+                                                  session["start"], session["end"])
+                stop_image = etw.stop_image_report(alias_witness, records, session, devices, str(alias))
+                print("N12 lifetime stop-image verdict " + json.dumps(stop_image), flush=True)
+                if stop_image["verdict"] != "PASS":
+                    result = stop_image
     with journey.checkpoint_stage("lifetime-local-copy", source, ""):
         journey.report_file(root / "lifetime-replay.json", packet)
     return 0 if result["verdict"] == "PASS" else 2

@@ -138,6 +138,7 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
     witnesses = {"app": "BLOCKED", "launcher": "BLOCKED"}
     timing = []
     start_images = {}
+    stop_images = {}
     handle_order = {}
     child_order = []
     if bindings and not issues & corroboration.SOURCE_COVERAGE_ISSUES:
@@ -155,6 +156,10 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
             for guid, process in scoped.items():
                 by_role.setdefault(roles[guid], Counter())[lifetimes.start_image_comparison(process)] += 1
             start_images = {role: dict(sorted(counts.items())) for role, counts in sorted(by_role.items())}
+            stop_by_role = {"launcher": Counter({lifetimes.stop_image_comparison(worker): 1})}
+            for guid, process in scoped.items():
+                stop_by_role.setdefault(roles[guid], Counter())[lifetimes.stop_image_comparison(process)] += 1
+            stop_images = {role: dict(sorted(counts.items())) for role, counts in sorted(stop_by_role.items())}
             handle_order = {
                 "launcher": lifetimes.order_comparison(worker, worker_witness),
                 "app": lifetimes.order_comparison(app, app_witness),
@@ -210,7 +215,7 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
             "executable_sha256": manifest["executable_sha256"],
             "verdict": "BLOCKED" if issues else "PASS", "issues": sorted(issues),
             "app_roles": dict(sorted(counts.items())), "etw_start_image_comparisons": start_images,
-            "handle_comparison": witnesses, "etw_handle_order_comparison": handle_order,
+            "etw_stop_image_comparisons": stop_images, "handle_comparison": witnesses, "etw_handle_order_comparison": handle_order,
             "etw_child_order_comparisons": child_order,
             "collector_counters": session["counters"], "timing_comparisons": timing,
             "disputed_exits": disputed}

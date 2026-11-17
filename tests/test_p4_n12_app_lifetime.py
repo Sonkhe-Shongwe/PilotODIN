@@ -164,6 +164,24 @@ class AppLifetimeTests(unittest.TestCase):
             "app": {"issue": "etw-stop-missing-or-ambiguous"},
         })
 
+    def test_truncated_stop_basename_is_described_and_still_blocks(self):
+        self.events[1]["data"]["ImageName"] = "python.exe"
+        self.events[3]["data"]["ImageName"] = "pilotodin-deskt"
+        self.events[5]["data"]["ImageName"] = r"c:\other\msedgewebview2.exe"
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-stop-image-conflict", report["issues"])
+        self.assertEqual(report["handle_comparison"], {"app": "BLOCKED", "launcher": "MATCH"})
+        self.assertEqual(report["etw_stop_image_comparisons"], {
+            "launcher": {"exact-basename-match": 1},
+            "app": {"short-basename-prefix": 1},
+            "webview": {"different-path-same-basename": 1},
+            "webview-network": {"exact-path-match": 1},
+        })
+        rendered = json.dumps(report)
+        for private in ("pilotodin-deskt", "msedgewebview2.exe", "python.exe"):
+            self.assertNotIn(private, rendered)
+
     def test_image_failures_are_reported_by_role_after_launcher_blocks(self):
         del self.events[0]["data"]["ImageName"]
         self.events[2]["data"]["ImageName"] = r"\Device\HarddiskVolume99\private\pilotodin-desktop.exe"
