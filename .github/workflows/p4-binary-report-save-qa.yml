@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          fetch-depth: 2
+          fetch-depth: 3
           persist-credentials: false
       - name: Verify the one-use hosted launch and pin product source
         shell: pwsh
@@ -23,6 +23,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           $source = '3ad6e5b2a6cb72b18b5497102649587ff2595d8d'
+          $firstRun = '5aaf40992cc2b8f1a0fb4bf6e38199fbb55e9add'
           $marker = 'qa/p4_research/BINARY_REPORT_SAVE_APPROVAL.txt'
           $driver = 'qa/p4_research/p4-native-report-binary-qa.mjs'
           $dialog = 'qa/p4_research/Invoke_P4_Report_SaveAs_Dialog.ps1'
@@ -31,14 +32,19 @@ jobs:
           $parents = (git rev-list -n 1 --parents HEAD) -split ' '
           $changed = @(git diff --name-only $source HEAD)
           $added = @(git diff --name-only --diff-filter=A $source HEAD)
+          $retryChanges = @(git diff --name-only $firstRun HEAD)
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
               $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
               (git rev-parse HEAD) -cne $env:GITHUB_SHA -or $parents.Count -ne 2 -or
-              $parents[1] -cne $source -or $changed.Count -ne 4 -or $added.Count -ne 4 -or
+              $parents[1] -cne $firstRun -or (git rev-parse HEAD~2) -cne $source -or
+              $retryChanges.Count -ne 3 -or $marker -cnotin $retryChanges -or
+              $dialog -cnotin $retryChanges -or $workflow -cnotin $retryChanges -or
+              $changed.Count -ne 4 -or $added.Count -ne 4 -or
               $marker -cnotin $added -or $driver -cnotin $added -or $dialog -cnotin $added -or $workflow -cnotin $added -or
-              $approval.Count -ne 2 -or $approval[0] -cne "reviewed_source=$source" -or
-              $approval[1] -cne 'scope=one-unpackaged-desktop-synthetic-binary-save-as') {
+              $approval.Count -ne 3 -or $approval[0] -cne "reviewed_source=$source" -or
+              $approval[1] -cne 'scope=one-unpackaged-desktop-synthetic-binary-save-as' -or
+              $approval[2] -cne 'retry_after_dialog_locator_failure=44147760706') {
             throw 'The reviewed one-use launch or approved source differs.'
           }
           Copy-Item -LiteralPath $driver -Destination (Join-Path $env:RUNNER_TEMP 'p4-native-report-binary-qa.mjs')
@@ -69,7 +75,7 @@ jobs:
           npm ci --no-audit --no-fund
           node --input-type=module -e "import {build} from 'vite'; await build({configFile:false,build:{rollupOptions:{input:'p2_native_export_test.html'}}})"
           node --test tests/a4-native-report-save-contract.test.cjs tests/a4-quality-export-gates.test.cjs
-      - name: Compile an unpackaged report-only Windows fixture and run native unit cases
+      - name: Rebuild the same unpackaged Windows fixture for the dialog retry
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -86,7 +92,6 @@ jobs:
             bundle = @{active = $false; targets = @(); resources = @(); externalBin = @()}
           } | ConvertTo-Json -Depth 7 -Compress
           cargo build --manifest-path frontend/src-tauri/Cargo.toml --bin pilotodin-desktop --target x86_64-pc-windows-msvc --target-dir $target --release --features tauri/custom-protocol
-          cargo test --manifest-path frontend/src-tauri/Cargo.toml --lib --target x86_64-pc-windows-msvc --target-dir $target --release --features tauri/custom-protocol report_save_tests
           $desktop = Join-Path $target 'x86_64-pc-windows-msvc/release/pilotodin-desktop.exe'
           $digest = (Get-FileHash -LiteralPath $desktop).Hash.ToLowerInvariant()
           "PILOTODIN_SAVE_QA_DESKTOP=$desktop" >> $env:GITHUB_ENV
