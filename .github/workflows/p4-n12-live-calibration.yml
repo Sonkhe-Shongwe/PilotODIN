@@ -5,14 +5,14 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_COLLECTOR_UDP_MARKER_APPROVAL.txt
+      - qa/p4_research/N12_COLLECTOR_SOCKET_IDENTITY_APPROVAL.txt
 
 permissions:
   contents: read
 
 jobs:
   calibration:
-    if: ${{ false }} # One-use approval consumed by run 43845055284.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }} # One approved collector-only socket identity rehearsal.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
@@ -29,7 +29,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           $workflow = '.github/workflows/p4-n12-live-calibration.yml'
-          $marker = 'qa/p4_research/N12_COLLECTOR_UDP_MARKER_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_COLLECTOR_SOCKET_IDENTITY_APPROVAL.txt'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
               $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
