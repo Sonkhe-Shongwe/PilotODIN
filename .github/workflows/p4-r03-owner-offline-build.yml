@@ -1,0 +1,144 @@
+name: P4 R03 Owner Offline QA Build
+
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: [qa/p4_research/R03_OWNER_OFFLINE_APPROVAL.txt]
+
+permissions:
+  contents: read
+
+jobs:
+  unpackaged:
+    if: ${{ github.run_attempt == '1' }}
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 4
+          persist-credentials: false
+      - name: Verify the one-use launch and check out the reviewed desktop source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $source = '4f3824c2f565f33a87f0195844d2d73242cf7571'
+          $parent = 'c8d2eb2944bfb3f02f9fa2d14adcd468fcd28925'
+          $marker = 'qa/p4_research/R03_OWNER_OFFLINE_APPROVAL.txt'
+          $launcher = 'tools/Start_P4_R03_Offline_QA.ps1'
+          $workflow = '.github/workflows/p4-r03-owner-offline-build.yml'
+          $approved = @(Get-Content -LiteralPath $marker)
+          $parents = (git rev-list -n 1 --parents HEAD) -split ' '
+          $added = @(git diff --name-only --diff-filter=A $parent HEAD)
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA -or
+              $parents.Count -ne 2 -or $parents[1] -cne $parent -or
+              @(git diff --name-only $parent HEAD).Count -ne 3 -or $added.Count -ne 3 -or
+              $marker -cnotin $added -or $launcher -cnotin $added -or $workflow -cnotin $added -or
+              $approved.Count -ne 2 -or $approved[0] -cne "reviewed_source=$source" -or
+              $approved[1] -cne 'scope=r03-one-unpackaged-build-for-one-owner-offline-request') {
+            throw 'The reviewed one-use launch, branch, source or scope differs.'
+          }
+          Copy-Item -LiteralPath $launcher -Destination (Join-Path $env:RUNNER_TEMP 'Start_P4_R03_Offline_QA.ps1')
+          git checkout --detach $source
+          "PILOTODIN_R03_SOURCE=$source" >> $env:GITHUB_ENV
+          Write-Host "R03 owner build source: $source"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Preflight isolated identity, toolchain and frontend
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $identity = 'com.pilotodin.p4r03owner'
+          foreach ($root in @($env:LOCALAPPDATA,$env:APPDATA)) {
+            foreach ($name in @('com.pilotodin.studio','com.pilotodin.p4nativeqa',$identity)) {
+              if (Test-Path -LiteralPath (Join-Path $root $name)) { throw 'Expected clean disposable app data.' }
+            }
+          }
+          if ($env:PILOTODIN_HOME -or $env:TAURI_CONFIG -or $env:WEBVIEW2_USER_DATA_FOLDER -or
+              $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -or $env:VITE_PILOTODIN_NATIVE_SMOKE) {
+            throw 'Unexpected inherited app configuration.'
+          }
+          if ('x86_64-pc-windows-msvc' -cnotin @(rustup target list --installed)) {
+            throw 'The hosted image must supply the Windows x64 MSVC target.'
+          }
+          npm ci --prefix frontend --no-audit --no-fund
+          npm run build --prefix frontend
+      - name: Stage hash-verified Qwen assets and the existing Windows engine
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          ./desktop/Stage_Pinned_Offline_AI.ps1
+          ./desktop/Build_Python_Sidecar.ps1
+      - name: Compile and fingerprint one unpackaged desktop
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ((git rev-parse HEAD) -cne $env:PILOTODIN_R03_SOURCE -or
+              @(git status --porcelain --untracked-files=no).Count -ne 0) {
+            throw 'Product source differs from the approved checkout.'
+          }
+          $crate = Join-Path $PWD 'frontend/src-tauri'
+          $target = Join-Path $env:RUNNER_TEMP "pilotodin-r03-target-$env:GITHUB_RUN_ID"
+          $env:TAURI_CONFIG = @{
+            identifier = 'com.pilotodin.p4r03owner'
+            productName = 'pilotODIN-P4-R03-Owner-QA'
+            bundle = @{active = $false; targets = @()}
+          } | ConvertTo-Json -Depth 6 -Compress
+          cargo build --manifest-path (Join-Path $crate 'Cargo.toml') --bin pilotodin-desktop --target x86_64-pc-windows-msvc --target-dir $target --release --features tauri/custom-protocol
+          $layout = Join-Path $target 'x86_64-pc-windows-msvc/release'
+          foreach ($entry in @('pilotodin-desktop.exe','pilotodin-engine.exe','pilotodin-inference.exe',
+                              'models/model-manifest.json','models/qwen3-1.7b-q4_k_m.gguf','llama-runtime')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $layout $entry))) {
+              throw "Unpackaged runtime layout missing $entry."
+            }
+          }
+          $exe = Join-Path $layout 'pilotodin-desktop.exe'
+          $digest = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "PILOTODIN_R03_LAYOUT=$layout" >> $env:GITHUB_ENV
+          $lock = (Get-FileHash -LiteralPath (Join-Path $crate 'Cargo.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host "R03 unpackaged desktop SHA-256: $digest"
+          Write-Host "R03 Cargo.lock SHA-256: $lock"
+      - name: Verify the two-file desktop payload and matching local runtime contract
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $layout = $env:PILOTODIN_R03_LAYOUT
+          $kit = Join-Path $env:RUNNER_TEMP "pilotodin-r03-owner-kit-$env:GITHUB_RUN_ID"
+          $null = New-Item -ItemType Directory -Path $kit
+          foreach ($file in @('pilotodin-desktop.exe','pilotodin-engine.exe','models/model-manifest.json')) {
+            Copy-Item -LiteralPath (Join-Path $layout $file) -Destination $kit
+          }
+          $receipt = [ordered]@{
+            source_sha = $env:PILOTODIN_R03_SOURCE
+            run_id = $env:GITHUB_RUN_ID
+            app_identifier = 'com.pilotodin.p4r03owner'
+            desktop_sha256 = (Get-FileHash -LiteralPath (Join-Path $kit 'pilotodin-desktop.exe')).Hash.ToLowerInvariant()
+            engine_sha256 = (Get-FileHash -LiteralPath (Join-Path $kit 'pilotodin-engine.exe')).Hash.ToLowerInvariant()
+            model_manifest_sha256 = (Get-FileHash -LiteralPath (Join-Path $kit 'model-manifest.json')).Hash.ToLowerInvariant()
+            cargo_lock_sha256 = (Get-FileHash -LiteralPath 'frontend/src-tauri/Cargo.lock').Hash.ToLowerInvariant()
+          }
+          $receipt | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $kit 'provenance.json')
+          & (Join-Path $env:RUNNER_TEMP 'Start_P4_R03_Offline_QA.ps1') -KitDirectory $kit -RuntimeDirectory $layout -VerifyOnly
+          Write-Host ('R03 owner kit ' + ($receipt | ConvertTo-Json -Compress))
+          "PILOTODIN_R03_KIT=$kit" >> $env:GITHUB_ENV
+      - name: Publish the temporary unpackaged QA payload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: PilotODIN-P4-R03-Owner-QA
+          path: ${{ env.PILOTODIN_R03_KIT }}
+          if-no-files-found: error
+          retention-days: 3
