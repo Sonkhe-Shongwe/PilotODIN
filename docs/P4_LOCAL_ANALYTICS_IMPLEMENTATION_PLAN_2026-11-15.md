@@ -118,6 +118,17 @@ Review the candidate against the baseline and agreed paging and responsiveness l
 
 The benchmark kit uses one source-matched desktop and analytics engine for both cases. The launcher accepts `-BenchmarkProfile baseline` or `-BenchmarkProfile candidate`, with the tested commit supplied as `-ExpectedSource`. Each mode uses a fresh backend profile and WebView2 folder. Normal installs and the previous offline QA kit use their existing admission policies.
 
+Download and extract `PilotODIN-P4-R03-Headroom-QA` from the [benchmark build](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769). From the PilotODIN development checkout in Windows PowerShell, update the launcher and start the baseline:
+
+```powershell
+git pull --ff-only
+$kit = "$env:USERPROFILE\Downloads\PilotODIN-P4-R03-Headroom-QA"
+$source = '8966edc781128baa94354df044bfadc45d069984'
+& .\tools\Start_P4_R03_Offline_QA.ps1 -KitDirectory $kit -BenchmarkProfile baseline -ExpectedSource $source
+```
+
+After finishing and closing that app, run the same command with `-BenchmarkProfile candidate`. Check the cutoff displayed in Resource-Aware Mode against the chosen profile. Replace `$kit` with the actual extraction folder if needed.
+
 Run the two cases separately using the setup above. Use **Low-memory** and **Offline**, leave cloud reasoning off, set the local timeout to **120s**, and use only the supplied synthetic CSV. Start the baseline when its refreshed available RAM is at least **2.00 GiB**. Start the candidate when available RAM is near **1.50 GiB** and below **2.00 GiB**. Do not create artificial memory pressure when the desired level is unavailable. The request-time readings in the log determine the actual comparison window.
 
 For each case, submit the same question once and capture the provider label and reply or error. Note any visible stall and close the QA desktop after recording the result. The launcher prints the admission JSON lines after exit and saves Windows available memory, system commit, pages read per second and a window responsiveness indicator to CSV. Use the timestamped admission and result records for preflight-to-result time. The user-observed UI timing and responsiveness supplement these measurements.
