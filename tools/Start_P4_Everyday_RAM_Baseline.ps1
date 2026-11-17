@@ -63,6 +63,16 @@ function Initialize-QaBaseline([string]$Path, [bool]$ArchiveExisting) {
     $null = New-Item -ItemType Directory -Path $Path
 }
 
+function Test-QaHtmlExport([string]$Directory) {
+    foreach ($file in Get-ChildItem -LiteralPath $Directory -File -Filter '*.html') {
+        if ($file.Length -gt 0 -and ($file.Name -ieq 'PilotODIN-RAM-report.html' -or
+                $file.Name -match '^pilotodin_report_[0-9a-f]{12}_rev[1-9][0-9]*\.html$')) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Get-OwnedProcesses($Snapshot, $App, [string]$AppPath, [hashtable]$Seen) {
     if ($null -eq $App) { return }
     $owned = @{}
@@ -201,7 +211,6 @@ foreach ($file in $payload) {
 }
 $small = Join-Path $root 'everyday_small.csv'
 $wide = Join-Path $root 'everyday_wide.csv'
-$html = Join-Path $root 'PilotODIN-RAM-report.html'
 @('premium,outcome','10,Yes',',No','30,Yes','40,No') | Set-Content -LiteralPath $small -Encoding Ascii
 New-WideFixture $wide
 $os = Get-CimInstance -ClassName Win32_OperatingSystem -OperationTimeoutSec 4
@@ -224,7 +233,7 @@ $stages = [ordered]@{
     'quality' = 'Open Quality on everyday_wide and confirm the premium issue shows 1,000 missing values. Leave the data as imported.'
     'explore' = 'Open Explore on everyday_wide. Select a Histogram for premium and wait for the chart.'
     'local_analytics' = 'Open Ask ODIN on everyday_wide, choose Local analytics and ask What is the dataset overview? Confirm 4,000 rows.'
-    'export_html' = "In Deliver choose New report. Title it PilotODIN RAM baseline. Capture current Quality audit, select its evidence and click Save report. Click Export HTML and save to $html"
+    'export_html' = "In Deliver choose New report. Title it PilotODIN RAM baseline. Capture current Quality audit, select its evidence and click Save report. Click Export HTML and save in $root using the suggested filename."
     'cooldown' = 'Return to Home and leave the app open. Sampling will advance automatically.'
 }
 $appPath = Join-Path $root 'pilotodin-desktop.exe'
@@ -270,8 +279,8 @@ try {
                 $key = [Console]::ReadKey($true).Key
                 if ($key -eq 'Q') { $observation = 'stopped'; break }
                 if (-not $timed -and $key -eq 'P') {
-                    if ($stage -eq 'export_html' -and -not (Test-Path -LiteralPath $html -PathType Leaf)) {
-                        Write-Host "Save the export to $html before pressing P."
+                    if ($stage -eq 'export_html' -and -not (Test-QaHtmlExport $root)) {
+                        Write-Host "Export HTML to $root using the suggested filename, then press P."
                         continue
                     }
                     $observation = 'owner_observed'
