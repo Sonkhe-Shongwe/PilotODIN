@@ -2,6 +2,16 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Collector verified TCP and UDP and blocked on ETW paths
+
+The [approved collector-only Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44025358172/job/133844259296) ran once on image `20261112.366.7` with Sysmon 15.22. The launch was `fe49682ef3ca755e5262c27a9fd31b250b6d73b4` and the reviewed source was `e7509c0cf6173bb902e79d8a5267dd70af12f52f`. PilotODIN compilation and launch were **NOT RUN**. The run retained zero artifacts.
+
+**Sysmon prelaunch PASS on read 1.** The expected fixture child had both TCP and UDP markers in its verified lifetime. The final Sysmon and ETW exports reached the combined reducer, which reported no network calibration issue. The socket identity diagnostic runs when a protocol is missing. The earlier mismatch did not recur, so its cause remains unverified.
+
+**Combined calibration BLOCKED on ETW mutation coverage.** All generated file markers were observed and the reducer reported zero file violations. Process bookends verified 122 stable background lifetimes and removed 868 missing-lifetime findings. Paths remained unresolved for 533 background writes and 335 background resizes. The request-time diagnostic found 658 operations with no prior name in their lifetime and 210 candidate names outside protected roots. No unmatched write completions were reported. Candidate paths are diagnostic and the strict verdict stayed blocked. The workflow failed on that final verdict.
+
+The one-use rehearsal is disarmed. This result records a passing Sysmon prelaunch on the generated fixture. The full app filesystem follow-up and the 39 WebView and two backend operations remain open. P4 is **14/20 (70%)**.
+
 ## 17 November 2026 | Filesystem follow-up stopped at initial Sysmon calibration
 
 The [approved Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44019362148/job/133824872130) ran once on image `20261112.366.7` with Sysmon 15.22. The launch was `de7518aec37c4125e2a6422085d6d4b26c391af0` and the pinned source was `82ed8e4ee8f68641213b36b981cf989eb5c7bfe1`. The executable SHA-256 was `6e6ab9b3b94a99d706fc9e6f997dd482b413fdcf15b63140fda5190927879dd0`. The Cargo lock SHA-256 was `2c8751899657e42d7caca62f6ca1e5a9be2690eaf8ee0eef9e02fe28da0ce5ae`. The [launch preflight CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44019362067) passed.
@@ -496,7 +506,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Verify collector attribution on generated TCP and UDP markers using the new socket identity breakdown before staging another unpackaged app build. Build and ETW start passed. Initial Sysmon calibration blocked before either app launch because neither protocol could be verified for the fixture child. [Latest attempt](#17-november-2026--filesystem-follow-up-stopped-at-initial-sysmon-calibration) The remaining full-journey evidence needs the driver temp comparison, child handles, WebView request-to-completion samples and the retained WebView and backend writer categories. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
+The [collector-only rehearsal](#17-november-2026--collector-verified-tcp-and-udp-and-blocked-on-etw-paths) verified both Sysmon markers and isolated the remaining calibration issue to background file-path attribution. The 658 cases without a prior name are the largest group. Compare them with the existing pre-opened and in-capture name controls before choosing a change to the file collector. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
