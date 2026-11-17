@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   unpackaged:
+    if: ${{ false }} # Consumed by the completed Windows QA run 44144350648.
     runs-on: windows-2022
     timeout-minutes: 55
     env:
