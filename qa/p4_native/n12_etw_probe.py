@@ -282,6 +282,16 @@ def preopened_control(root, *, rundown=False, system_timing=False):
         if not rundown:
             return capture_fixture(root, calibration_only=True, thread_context=True, controls=controls)
         open_comparison = comparison_stream = None
+        preopened_resize = None
+        if not system_timing:
+            path = root / "known-resize.bin"
+            stream = stack.enter_context(path.open("x+b", buffering=0))
+            verify_handle_path(stream, path)
+            payload = b"R" * 96
+            if stream.write(payload) != len(payload):
+                raise RuntimeError("The pre-opened resize seed was incomplete.")
+            os.fsync(stream.fileno())
+            preopened_resize = (path, stream, payload)
         if system_timing:
             comparison = protected / "untouched.bin"
             comparison_payload = b"pre-capture comparison"
@@ -313,7 +323,7 @@ def preopened_control(root, *, rundown=False, system_timing=False):
         with collect_fileio_rundown(root) as stop_wpr:
             capture = capture_fixture(root, calibration_only=True, thread_context=True,
                                       controls=controls, before_stop=stop_wpr,
-                                      open_comparison=open_comparison)
+                                      open_comparison=open_comparison, preopened_resize=preopened_resize)
             if comparison_stream is not None:
                 for path, stream, payload in controls.values():
                     verify_handle_path(stream, path)
@@ -327,7 +337,7 @@ def preopened_control(root, *, rundown=False, system_timing=False):
 
 
 def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None,
-                    open_comparison=None, verify_fixture=None):
+                    open_comparison=None, verify_fixture=None, preopened_resize=None):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -366,6 +376,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
     lifetime_control = None
     basic_info_control = named_control = None
     known_write = None
+    resize_control = None
     try:
         comparison = open_comparison() if open_comparison is not None else None
         control_writes = {}
@@ -375,6 +386,15 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
                 raise RuntimeError("The generated pre-opened write was incomplete.")
             control_writes[label] = {"path": str(path), "size": len(payload),
                                      "start": first, "end": utc_ticks()}
+        if preopened_resize is not None:
+            resize_file, resize_stream, resize_seed = preopened_resize
+            before_bytes = os.fstat(resize_stream.fileno()).st_size
+            if before_bytes != len(resize_seed):
+                raise RuntimeError("The pre-opened resize seed had the wrong length.")
+            start = utc_ticks()
+            resize_stream.truncate(37)
+            resize_control = {"path": str(resize_file), "start": start, "end": utc_ticks(),
+                              "before_bytes": before_bytes}
         if controls and before_stop is None:
             known_path = root / "known-write.bin"
             known_payload = b"K" * 61
@@ -512,6 +532,12 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         capture["known_resize"] = {"path": str(resize_path), "pid": resize_pid,
                                    "start": resize_start, "end": resize_end,
                                    "before_bytes": resize_before_size, "after_bytes": len(resized)}
+    if resize_control is not None:
+        resize_stream.seek(0)
+        resized = resize_stream.read()
+        if resized != resize_seed[:37]:
+            raise RuntimeError("The pre-opened resize did not preserve the expected prefix and size.")
+        capture["known_preopened_resize"] = {**resize_control, "after_bytes": len(resized)}
     if basic_info_control is not None:
         if basic_info_path.read_bytes() != b"M" * 101:
             raise RuntimeError("The generated metadata-control payload did not match.")

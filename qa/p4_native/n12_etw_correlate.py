@@ -878,6 +878,80 @@ def known_file_result(operation, filename, blocked_reason, evidence):
             "reason": evidence if blocked_reason is None else blocked_reason}
 
 
+def preopened_resize_report(capture, events, rundown, devices, process_birth, capture_bounds, rundown_window):
+    """Compare the same known resize with and without the collector's rundown credit."""
+    filename = "known-resize.bin"
+    control = capture["known_preopened_resize"]
+    expected = validate_known_target(capture, control, devices, filename)
+    start, end = capture_bounds
+    before, after = control["before_bytes"], control["after_bytes"]
+    if type(before) is not int or type(after) is not int or not 0 <= after < before:
+        raise ValueError("Invalid generated pre-opened resize sizes.")
+
+    def report(reason, baseline="unverified"):
+        return {**known_file_result("resize", filename, reason, "completed-resize-credited-by-rundown"),
+                "before_bytes": before, "after_bytes": after, "without_rundown": baseline}
+
+    if process_birth is None or process_birth >= start:
+        return report("resize-process-lifetime-unverified")
+    if rundown_window is None or not start <= control["start"] <= control["end"] <= rundown_window[0]:
+        return report("resize-window-unverified")
+    pid = capture["preopened"]["pid"]
+    events = sorted(events, key=lambda event: event["ticks"])
+    file_events = [event for event in events if not event["lifecycle"]]
+    requests = [
+        event for event in file_events
+        if event["pid"] == pid and event["id"] == 17
+        and number(event["data"].get("InfoClass")) == 20  # FileEndOfFileInformation
+        and control["start"] - 100_000 <= event["ticks"] <= control["end"] + 100_000
+    ]
+    if len(requests) != 1:
+        return report("resize-missing-or-ambiguous")
+    request = requests[0]
+    completed = successful_completion(file_events, request, rundown_window[0])
+    if completed is None:
+        return report("resize-completion-unverified-before-rundown")
+    def compare(rundown=None):
+        matches = []
+        diagnostics = {}
+
+        def record(_actor, identity, operation, source, _destination, request_ticks, completion_ticks, success):
+            if (identity == pid and operation == "resize" and success
+                    and request_ticks == request["ticks"] and completion_ticks == completed):
+                matches.append(source)
+
+        def classify_process(owner, birth, ticks):
+            if owner == pid and birth is not None and ticks == request["ticks"]:
+                return "other", owner
+            return "fixture-context", None
+
+        rundown_start, rundown_stop = rundown_window
+        correlate_requests(
+            events, lambda value: canonical_file_path(value, devices),
+            classify_process, lambda path: path == expected,
+            record, strict=True, initial_process_births={pid: process_birth},
+            rundown=rundown, calibration_diagnostics=diagnostics, calibration_end=end,
+            diagnostic_rundown_stop=rundown_stop if rundown is not None else None,
+            rundown_verification_start=rundown_start if rundown is not None else None,
+            rundown_credit={} if rundown is not None else None,
+        )
+        return matches, diagnostics["path_candidates"]
+
+    baseline, _ = compare()
+    if baseline:
+        return report("resize-already-has-path", "path-present")
+    matches, diagnostics = compare(rundown)
+    result = report(None if matches == [expected] else "resize-rundown-path-unverified", "path-unresolved")
+    prefix = "other:resize:"
+    result["path_evidence"] = {}
+    for key, count in diagnostics.items():
+        if key.startswith(prefix):
+            stage, outcome = key.removeprefix(prefix).split(":", 1)
+            outcome = outcome.replace("outside-protected", "other-file").replace("protected", "fixture-target")
+            result["path_evidence"][f"{stage}:{outcome}"] = count
+    return result
+
+
 def successful_completion(file_events, request, before):
     irp = number(request["data"].get("Irp"))
     matches = [event for event in file_events if irp and event is not request

@@ -391,6 +391,13 @@ if ($PreopenedControl) {
         Write-Host ('Strict reducer pre-opened rundown summary: ' + ($reducerReport | ConvertTo-Json -Compress))
         $known = $reducerReport.known_preopened_write
         Write-Host ('Known file opened before capture: ' + ($known | ConvertTo-Json -Compress))
+        $resize = $reducerReport.known_preopened_resize
+        Write-Host ('Known resize on a pre-opened file: ' + ($resize | ConvertTo-Json -Compress))
+        if ($resize.status -ne 'PASS' -or $resize.without_rundown -ne 'path-unresolved' -or
+            $resize.matched_file -cne 'known-resize.bin' -or
+            $resize.before_bytes -ne 96 -or $resize.after_bytes -ne 37) {
+            throw 'The pre-opened resize comparison did not verify its expected filename and size change.'
+        }
         if ($reducerReport.control_status -ne 'PASS' -or
             $known.status -ne 'PASS' -or $known.matched_file -cne 'outside.bin' -or
             $reducerReport.rundown_control_keys_recovered -ne 2 -or

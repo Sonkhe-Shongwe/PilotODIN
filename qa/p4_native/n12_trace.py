@@ -1337,9 +1337,9 @@ def check_etw_preflight(manifest, fixture, path, *, bookends=None, rundown=None)
 def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None):
     """Exercise strict reducer classification against the generated pre-opened controls."""
     if __package__:
-        from .n12_etw_correlate import known_file_result, number, preopened_report
+        from .n12_etw_correlate import known_file_result, number, preopened_report, preopened_resize_report
     else:
-        from n12_etw_correlate import known_file_result, number, preopened_report
+        from n12_etw_correlate import known_file_result, number, preopened_report, preopened_resize_report
 
     require(isinstance(capture, dict), "invalid pre-opened control capture")
     control = capture.get("preopened")
@@ -1373,7 +1373,7 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
     require(start < end, "ETW audit window is invalid")
     issues = set()
     with evidence_stage("ETW capture metadata"):
-        bounds, _ = etw_capture_contract(manifest, start, end, issues)
+        bounds, devices = etw_capture_contract(manifest, start, end, issues)
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, bounds, manifest["etw"]["events_sha256"]))
     rundown_window = None
@@ -1511,6 +1511,10 @@ def check_etw_preopened_rundown(manifest, capture, path, rundown, bookends=None)
     if outside_path == ntpath.join(ntpath.dirname(protected_root), "outside.bin"):
         known_file_evidence["known_preopened_write"] = known_file_result(
             "write", "outside.bin", next(iter(control_failures), None), "strict-rundown-path-recovered",
+        )
+    if "known_preopened_resize" in capture and not non_mutation_issues:
+        known_file_evidence["known_preopened_resize"] = preopened_resize_report(
+            capture, event_records, rundown, devices, synthetic_birth, bounds, rundown_window,
         )
 
     return {

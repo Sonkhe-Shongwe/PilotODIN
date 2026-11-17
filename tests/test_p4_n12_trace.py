@@ -16,7 +16,7 @@ import pytest
 from qa.p4_native import n12_calibration, n12_etw_probe, n12_trace as trace
 from qa.p4_native.n12_etw_correlate import (
     check_write_object_path, correlate, correlate_requests, decode_rundown_report,
-    file_lifetime_report, preopened_report, write_paging_flag,
+    file_lifetime_report, preopened_report, preopened_resize_report, write_paging_flag,
 )
 
 
@@ -515,6 +515,57 @@ def test_known_resize_links_only_the_completed_end_of_file_change(fault, reason)
         "status": "PASS" if fault is None else "BLOCKED", "reason": reason,
         "before_bytes": 96, "after_bytes": 37,
     }
+
+
+@pytest.mark.parametrize(("fault", "reason"), [
+    (None, "completed-resize-credited-by-rundown"),
+    ("missing-key", "resize-rundown-path-unverified"),
+    ("conflicting-name", "resize-rundown-path-unverified"),
+    ("lifetime-changed", "resize-rundown-path-unverified"),
+    ("late-completion", "resize-completion-unverified-before-rundown"),
+    ("open-in-capture", "resize-already-has-path"),
+])
+def test_preopened_resize_compares_the_same_request_against_rundown(fault, reason):
+    path = r"C:\private-fixture\known-resize.bin"
+    capture = {
+        "protected_root": r"C:\private-fixture\synthetic-protected",
+        "preopened": {"pid": 8},
+        "known_preopened_resize": {"path": path, "start": 3_000_000, "end": 3_200_000,
+                                   "before_bytes": 96, "after_bytes": 37},
+    }
+    records = [
+        (3_100_000, 17, {"FileObject": 51, "FileKey": 61, "Irp": 2, "InfoClass": 20}),
+        (8_000_000 if fault == "late-completion" else 3_150_000, 24, {"Irp": 2, "Status": 0}),
+    ]
+    if fault == "lifetime-changed":
+        records.append((6_000_000, 13, {"FileObject": 51, "FileKey": 61}))
+    if fault == "open-in-capture":
+        records.extend([
+            (2_000_000, 12, {"FileObject": 51, "FileName": path, "Irp": 1}),
+            (2_100_000, 24, {"Irp": 1, "Status": 0, "ExtraInformation": 1}),
+        ])
+    events = [{"id": kind, "ticks": ticks, "pid": 8, "lifecycle": False, "data": data}
+              for ticks, kind, data in records]
+    rundown = [] if fault == "missing-key" else [{"key": 61, "path": path}]
+    if fault == "conflicting-name":
+        rundown.append({"key": 61, "path": r"C:\different.bin"})
+    result = preopened_resize_report(capture, events, rundown, {}, 1_000_000,
+                                     (1_500_000, 10_000_000), (8_000_000, 9_000_000))
+    details = result.pop("path_evidence", {})
+    assert result == {
+        "operation": "resize", "expected_file": "known-resize.bin",
+        "matched_file": "known-resize.bin" if fault is None else None,
+        "status": "PASS" if fault is None else "BLOCKED", "reason": reason,
+        "before_bytes": 96, "after_bytes": 37,
+        "without_rundown": {"open-in-capture": "path-present", "late-completion": "unverified"}.get(
+            fault, "path-unresolved"),
+    }
+    if fault is None:
+        assert details["no-prior-name-completion-check:consistent-fixture-target-path"] == 1
+    if fault == "conflicting-name":
+        assert details["no-prior-name-completion-check:ambiguous-or-unmapped-name"] == 1
+    if fault == "lifetime-changed":
+        assert details["no-prior-name-completion-check:lifetime-invalidated"] == 1
 
 
 @pytest.mark.parametrize(("name_at", "wrong_name", "verdict"), [
