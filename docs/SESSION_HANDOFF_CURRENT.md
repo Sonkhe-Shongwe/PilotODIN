@@ -2,6 +2,14 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Separate final Sysmon verification
+
+The [last hosted audit](#17-november-2026--hosted-webview-path-audit) passed the initial Sysmon check and completed both launches. The combined report flagged missing protocol evidence, and its aggregate result did not identify which fixture or protocol failed. The initial fixture had a bounded channel recheck. The final fixture command completed and relied on a later full channel export without an independent result for that fixture.
+
+The journey now freezes a short fixture window before the final command and checks its Sysmon evidence after the trace stops and protected endpoints are recorded. It can repeat the channel read once for late records inside the same window. Its redacted final check records PASS or the specific blocker. The diagnostic does not interrupt reduction when it blocks. The full export and strict audit still run, and the export cannot move behind a record already verified by the final fixture check.
+
+Generated checks cover a delayed UDP record, missing TCP, an out-of-window UDP record, a conflicting socket identity and regression of the final export record ID. The mixed journey replay preserves the completed app, file and network evidence when the final fixture check reports BLOCKED. The reason for the historical missing protocol evidence remains unverified. The hosted app run at this source is **NOT RUN**.
+
 ## 17 November 2026 | WebView repeat-write evidence
 
 The reducer now counts eligible writes for each of up to 64 sampled file pairs and checks the first 16 eligible completions per pair. The redacted report gives individual-write counts and distinguishes blocked checks, unchecked repeats and eligible writes beyond the pair sample.
@@ -604,7 +612,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Use the [repeat-write report](#17-november-2026--webview-repeat-write-evidence) to measure the distribution and separate supported, blocked and unchecked writes on real sampled pairs in a separately approved app audit. Retain the two outside-scope samples and the identity conflict as open findings. Before another capture, review the final calibration and lifecycle blockers against the [previous audit](#17-november-2026--hosted-webview-path-audit) and preserve separate findings for both stages.
+The next separately approved app audit can compare the [separate final Sysmon check](#17-november-2026--separate-final-sysmon-verification) with the combined calibration verdict and measure supported, blocked and unchecked WebView writes with the [repeat-write report](#17-november-2026--webview-repeat-write-evidence). Retain the two outside-scope samples, the identity conflict and the other filesystem and lifecycle blockers from the previous audit as open findings.
 
 The collector-only strict comparison now reports `remaining_paths_by_reason` alongside `credited_paths`. Each still-unresolved path appears once in that breakdown. The synthetic CLI regression checks that the counts match the remaining strict path gaps, a recovered protected write still reports a violation, and trace loss prevents credit. The existing strict verdict still governs acceptance.
 

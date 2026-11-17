@@ -114,9 +114,15 @@ NETWORK_DIAGNOSTIC_CASES = {
     ("udp-after-exit", "connection-outside-process-lifetime", 1),
     ("udp-outside-window", "child-loopback-tcp-or-udp-missing", 2),
     ("udp-delivered-on-second-read", None, 2),
+    ("final-udp-delivered-on-second-read", None, 2),
+    ("final-tcp-absent", "child-loopback-tcp-or-udp-missing", 2),
+    ("final-udp-outside-window", "child-loopback-tcp-or-udp-missing", 2),
+    ("final-socket-identity-conflicts", "connection-guid-unresolved-for-scoped-pid", 1),
     *((scenario, values[0], values[1]) for scenario, values in NETWORK_DIAGNOSTIC_CASES.items()),
 ])
 def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, capsys, scenario, expected, reads):
+    phase = "final" if scenario.startswith("final-") else "initial"
+    scenario = scenario.removeprefix("final-")
     start = datetime(2026, 11, 14, 0, 0, 10, 500, tzinfo=timezone.utc)
     cutoff = start + timedelta(seconds=8)
     image = r"C:\Private\python.exe"
@@ -233,9 +239,15 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
     manifest = {"start_utc": start.isoformat(), "sysmon_first_record": 11}
     if precision:
         manifest["collector_fixture_precision"] = True
+
+    def verify():
+        if phase == "initial":
+            return journey.verify_initial_sysmon(tmp_path, manifest, marker)
+        return journey.verify_fixture_sysmon(tmp_path, 11, start, cutoff, marker, phase="final")
+
     if expected:
         with pytest.raises(journey.trace.EvidenceValidationError, match=expected) as error:
-            journey.verify_initial_sysmon(tmp_path, manifest, marker)
+            verify()
         assert "private" not in str(error.value).lower()
         if scenario == "socket-identity-conflicts":
             stdout = capsys.readouterr().out
@@ -302,16 +314,17 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
             for private_field in ("private", "23551", "23552", "23553", "127.0.0.1", "192.0.2.21", "413"):
                 assert private_field not in stdout.lower()
     else:
-        journey.verify_initial_sysmon(tmp_path, manifest, marker)
+        assert verify() == last
         output = capsys.readouterr().out
-        assert f"passed on read {reads}" in output
+        assert f"N12 {phase} Sysmon calibration passed on read {reads}" in output
         if precision:
             assert "matched fixture birth at Windows creation time" in output
         if scenario == "udp-delivered-on-second-read":
             assert output.count("protocol diagnostics:") == 1
             assert '"missing_in_child_lifetime": ["udp"]' in output
-    assert len(calls) == reads and timestamps == [cutoff]
+    assert len(calls) == reads and timestamps == ([cutoff] if phase == "initial" else [])
     assert len(set(exports)) == len(exports)
+    assert all(path.startswith(f"{phase}-sysmon-") for path in exports)
 
 
 @pytest.mark.parametrize("approved", [False, True])
@@ -402,7 +415,8 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
 @pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit",
                                     "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture",
                                     "etw-export", "etw-reduce", "backend-snapshot-unavailable",
-                                    "app-and-cleanup", "etw-stop", "driver-readiness-missing"])
+                                    "app-and-cleanup", "etw-stop", "driver-readiness-missing",
+                                    "final-calibration", "final-export-regressed"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
@@ -441,7 +455,12 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                 for group in ("protected", "observed")}
 
     monkeypatch.setattr(journey, "snapshots", endpoint_snapshots)
-    monkeypatch.setattr(journey, "sysmon_tail", lambda: 10 if "etw-start" not in events else 60)
+    def sysmon_tail():
+        if fault == "final-export-regressed" and "sysmon-final-check" in events:
+            return 59
+        return 10 if "etw-start" not in events else 60
+
+    monkeypatch.setattr(journey, "sysmon_tail", sysmon_tail)
     monkeypatch.setattr(journey, "start_capture", lambda *a: events.append("etw-start"))
     monkeypatch.setattr(journey.etw, "volume_devices", lambda: {"C:": r"\Device\HarddiskVolume1"})
     def stop_trace(session):
@@ -457,6 +476,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert manifest["start_utc"] == "2026-11-14T00:00:01+00:00"
             assert 0.001 < seconds <= 0.1
             events.append("initial-fixture-lead-in")
+        elif events[-1] == "cleanup-backend":
+            assert 0.001 < seconds <= 0.1
+            events.append("final-fixture-lead-in")
         else:
             events.append("drain" if "etw-stop" in events else "idle-observation")
 
@@ -475,6 +497,17 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         events.append("sysmon-prelaunch-check")
         if fault == "first-calibration":
             raise journey.trace.EvidenceValidationError("fixture coverage blocked")
+
+    def final_check(path, first, start, end, record, *, phase):
+        assert path == root and first == 11 and phase == "final"
+        assert events[-2:] == ["process-bookend-after", "drain"]
+        assert journey.trace.utc_time(manifest["markers"]["exit"]) < start < end
+        assert end.isoformat() == manifest["end_utc"]
+        assert record is manifest["processes"][-1] and record["role"] == "calibration"
+        events.append("sysmon-final-check")
+        if fault == "final-calibration":
+            raise journey.trace.EvidenceValidationError("final fixture TCP or UDP evidence missing")
+        return 60
 
     def spawn(stack, m, role, command, env, cwd, log):
         events.append(log.stem)
@@ -581,6 +614,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
 
     monkeypatch.setattr(journey, "calibrate", calibrate)
     monkeypatch.setattr(journey, "verify_initial_sysmon", first_check)
+    monkeypatch.setattr(journey, "verify_fixture_sysmon", final_check)
     monkeypatch.setattr(journey, "spawn", spawn)
     monkeypatch.setattr(journey.build, "verify", reverify)
     monkeypatch.setattr(journey, "http_ready", lambda *args: True)
@@ -630,9 +664,10 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert stages[-2:] == [("final-fixture", "completed"), ("etw-stop", "interrupted")]
         return
 
-    if fault and fault != "backend-snapshot-unavailable":
+    if fault and fault not in {"backend-snapshot-unavailable", "final-calibration"}:
         error, message = {
             "sysmon-export": (journey.trace.EvidenceValidationError, "Sysmon export failed"),
+            "final-export-regressed": (journey.trace.EvidenceValidationError, "record ID regressed after final fixture"),
             "etw-export": (subprocess.CalledProcessError, "etw-export"),
             "etw-reduce": (journey.trace.EvidenceValidationError, "invalid ETW evidence"),
         }.get(fault, (journey.trace.EvidenceValidationError, "unsupported exit image form"))
@@ -648,7 +683,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                           "profile-exit", "verify-binary", "app-relaunch", "driver-relaunch", "graceful-close",
                           "profile-exit", "cleanup-driver-relaunch", "cleanup-app-relaunch",
                           "cleanup-driver-first", "cleanup-app-first", "cleanup-vite", "cleanup-backend",
-                          "calibration-last", "etw-stop", "process-bookend-after", "drain", "sysmon-reducer",
+                          "final-fixture-lead-in", "calibration-last", "etw-stop", "process-bookend-after", "drain",
+                          "sysmon-final-check", "sysmon-reducer",
                           "etw-export", "reducer"]
         public = (root / "audit.json").read_text()
         assert "private-value" not in public and "702" not in public
@@ -662,6 +698,10 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         else:
             assert json.loads(socket_path.read_text())["observed_ticks"] == 200
         assert report["journey_diagnostics"]["app_lifetimes"]["launches"]["relaunch"]["handle"] == "MATCH"
+        assert report["journey_diagnostics"]["final_sysmon_calibration"] == (
+            {"status": "BLOCKED", "reason": "final fixture TCP or UDP evidence missing"}
+            if fault == "final-calibration" else {"status": "PASS"}
+        )
         assert report["journey_diagnostics"]["outside_scope_paths"] == [
             {"role": "driver", "operation": "write", "path_categories": ["other-path"], "count": 1},
         ]
@@ -672,12 +712,13 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
 
     lines = capsys.readouterr().out.splitlines()
     records = [json.loads(line.removeprefix("N12 checkpoint ")) for line in lines if line.startswith("N12 checkpoint ")]
-    if fault in {"sysmon-export", "sysmon-parse", "etw-export", "etw-reduce"}:
-        stage = {"sysmon-export": "sysmon-export", "sysmon-parse": "sysmon-reduction",
+    if fault in {"sysmon-export", "sysmon-parse", "etw-export", "etw-reduce", "final-export-regressed"}:
+        stage = {"sysmon-export": "sysmon-export", "final-export-regressed": "sysmon-export",
+                 "sysmon-parse": "sysmon-reduction",
                  "etw-export": "etw-export", "etw-reduce": "combined-reduction"}[fault]
         assert records[-1]["stage"] == stage and records[-1]["status"] == "interrupted"
     lifetime_lines = [line for line in lines if line.startswith("N12 app lifetime observations ")]
-    if fault in {None, "etw-reduce", "backend-snapshot-unavailable"}:
+    if fault in {None, "etw-reduce", "backend-snapshot-unavailable", "final-calibration"}:
         lifetime_line, = lifetime_lines
         assert "private" not in lifetime_line
         assert json.loads(lifetime_line.removeprefix("N12 app lifetime observations "))["launches"] == {
@@ -687,7 +728,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert not lifetime_lines
     network_lines = [line.removeprefix("N12 network observations ") for line in lines
                      if line.startswith("N12 network observations ")]
-    if fault in {None, "etw-export", "etw-reduce", "backend-snapshot-unavailable"}:
+    if fault in {None, "etw-export", "etw-reduce", "backend-snapshot-unavailable", "final-calibration"}:
         observation, = network_lines
         assert "private-value" not in observation and "702" not in observation
         assert json.loads(observation) == {

@@ -35,7 +35,7 @@ CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
 DRIVER_TEMP_DIR = "driver-temp"
 INITIAL_FIXTURE_LEAD_IN_SECONDS = 0.05
 FIXTURE_ADDRESS = IPv4Address("127.0.0.1")
-INITIAL_SYSMON_RETRYABLE = {
+FIXTURE_SYSMON_RETRYABLE = {
     "channel-window-empty", "parent-birth-missing", "child-birth-missing",
     "process-exit-missing", "child-loopback-tcp-or-udp-missing",
 }
@@ -187,7 +187,7 @@ def calibrate(directory, manifest):
     return record
 
 
-def initial_sysmon_issues(path, first, last, start, end, record, *, precision=False):
+def fixture_sysmon_issues(path, first, last, start, end, record, *, phase, precision=False):
     # An outside-window birth explains a rejection. It never enters the process map.
     image = trace.windows_path(record["image"])
     outside = set()
@@ -211,13 +211,14 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
             return
         outside_connections.append(connection)
 
-    with trace.evidence_stage("initial Sysmon XML"):
+    with trace.evidence_stage(f"{phase} Sysmon XML"):
         processes, connections, issues, actual_first, actual_last = trace.sysmon_events(
             path, start, end, outside_birth=outside_birth,
             outside_connection=outside_connection,
             precision_fixture=record if precision else None,
         )
-    trace.require((first, last) == (actual_first, actual_last), "initial Sysmon record boundaries differ")
+    trace.require((first, last) == (actual_first, actual_last), f"{phase} Sysmon record boundaries differ")
+    prefix = f"N12 {phase} Sysmon calibration"
     if outside_ticks:
         start_ticks, end_ticks = trace.utc_ticks(start), trace.utc_ticks(end)
         created = record.get("parent_created_utc_ticks")
@@ -226,7 +227,7 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
         nearest = min(outside_ticks, key=lambda ticks: (abs(ticks - reference), ticks))
         same_millisecond = (sum(ticks // 10_000 == created // 10_000 for ticks in outside_ticks)
                             if available else None)
-        print("N12 initial Sysmon calibration birth diagnostics: " + json.dumps({
+        print(f"{prefix} birth diagnostics: " + json.dumps({
             "outside_candidate_count": len(outside_ticks),
             "nearest_event_minus_start_ticks": nearest - start_ticks,
             "nearest_event_minus_end_ticks": nearest - end_ticks,
@@ -323,14 +324,14 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
                     counts[connection.protocol][label] += 1
                     continue
                 rejected[connection.protocol][label] += 1
-            print("N12 initial Sysmon calibration protocol diagnostics: " + json.dumps({
+            print(f"{prefix} protocol diagnostics: " + json.dumps({
                 "missing_in_child_lifetime": sorted({"tcp", "udp"} - protocols),
                 "matching_markers": counts,
                 "rejected_records": rejected,
                 "unparsed_outside_window": unparsed_outside_connections,
                 "udp_other_at_fixture_port": udp_at_fixture,
             }), flush=True)
-            print("N12 initial Sysmon calibration socket identity diagnostics: " + json.dumps(
+            print(f"{prefix} socket identity diagnostics: " + json.dumps(
                 fixture_sockets), flush=True)
     trace.verify_connection_lifetimes(connections, processes, roles, issues)
     allowed = trace.calibration_destinations(record, parent, processes)
@@ -338,36 +339,43 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
     if unexpected:
         issues.add("calibration-unexpected-connection")
     if parent.fixture_birth_adjusted and not issues:
-        print("N12 initial Sysmon calibration matched fixture birth at Windows creation time", flush=True)
+        print(f"{prefix} matched fixture birth at Windows creation time", flush=True)
     return issues
 
 
-def verify_initial_sysmon(root, manifest, record):
+def verify_fixture_sysmon(root, first, start, end, record, *, phase, precision=False):
     # Give pending channel writes one more chance. The fixture and event window stay fixed.
-    start, end = trace.utc_time(manifest["start_utc"]), now()
-    first = manifest["sysmon_first_record"]
     previous_last = first - 1
     for attempt in (1, 2):
         time.sleep(3)
         try:
-            last = sysmon_tail(timeout=15)
-            trace.require(last >= previous_last, "initial Sysmon channel record ID regressed")
+            with trace.evidence_stage(f"{phase} Sysmon channel"):
+                last = sysmon_tail(timeout=15)
+            trace.require(last >= previous_last, f"{phase} Sysmon channel record ID regressed")
             previous_last = last
             issues = {"channel-window-empty"}
             if last >= first:
-                path = root / f"initial-sysmon-{attempt}.xml"
-                export_sysmon(first, last, path, timeout=15)
-                issues = initial_sysmon_issues(path, first, last, start, end, record,
-                                               precision=manifest.get("collector_fixture_precision") is True)
+                path = root / f"{phase}-sysmon-{attempt}.xml"
+                with trace.evidence_stage(f"{phase} Sysmon export"):
+                    export_sysmon(first, last, path, timeout=15)
+                issues = fixture_sysmon_issues(path, first, last, start, end, record,
+                                               phase=phase, precision=precision)
         except subprocess.SubprocessError as exc:
-            raise trace.EvidenceValidationError("initial Sysmon channel read or export failed") from exc
+            raise trace.EvidenceValidationError(f"{phase} Sysmon channel read or export failed") from exc
         if not issues:
-            print(f"N12 initial Sysmon calibration passed on read {attempt}", flush=True)
+            print(f"N12 {phase} Sysmon calibration passed on read {attempt}", flush=True)
             return last
         reason = ", ".join(sorted(issues))
-        if attempt == 2 or not issues <= INITIAL_SYSMON_RETRYABLE:
-            raise trace.EvidenceValidationError(f"initial Sysmon calibration blocked on read {attempt}: {reason}")
-        print("N12 initial Sysmon calibration waiting for channel evidence: " + reason, flush=True)
+        if attempt == 2 or not issues <= FIXTURE_SYSMON_RETRYABLE:
+            raise trace.EvidenceValidationError(f"{phase} Sysmon calibration blocked on read {attempt}: {reason}")
+        print(f"N12 {phase} Sysmon calibration waiting for channel evidence: {reason}", flush=True)
+
+
+def verify_initial_sysmon(root, manifest, record):
+    return verify_fixture_sysmon(
+        root, manifest["sysmon_first_record"], trace.utc_time(manifest["start_utc"]), now(), record,
+        phase="initial", precision=manifest.get("collector_fixture_precision") is True,
+    )
 
 
 def request_graceful_close(app, binary, title):
@@ -642,8 +650,11 @@ def capture(root, staged, source, expected_hash, node):
                                          env, profile, backend, vite)
         print("N12 journey stage final calibration", flush=True)
         with checkpoint_stage("final-fixture", source, expected_hash):
-            calibrate(calibration[1], manifest)
-            manifest["end_utc"] = now().isoformat()
+            final_start = now()
+            time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
+            final_record = calibrate(calibration[1], manifest)
+            final_end = now()
+            manifest["end_utc"] = final_end.isoformat()
     except BaseException:
         checkpoint("capture", "interrupted", source, expected_hash)
         try:
@@ -670,9 +681,21 @@ def capture(root, staged, source, expected_hash, node):
         **comparison,
         "snapshot_issues": sorted(issues),
     }), flush=True)
+    final_verified_through = None
+    try:
+        final_verified_through = verify_fixture_sysmon(
+            root, manifest["sysmon_first_record"], final_start, final_end, final_record, phase="final",
+        )
+        final_calibration = {"status": "PASS"}
+    except trace.EvidenceValidationError as exc:
+        # Keep the app evidence available when the final fixture check is blocked.
+        final_calibration = {"status": "BLOCKED", "reason": str(exc)}
+    print("N12 final Sysmon fixture check " + json.dumps(final_calibration), flush=True)
     sysmon = root / "sysmon.xml"
     with checkpoint_stage("sysmon-export", source, expected_hash):
         manifest["sysmon_last_record"] = sysmon_tail()
+        trace.require(final_verified_through is None or manifest["sysmon_last_record"] >= final_verified_through,
+                      "Sysmon channel record ID regressed after final fixture verification")
         export_sysmon(manifest["sysmon_first_record"], manifest["sysmon_last_record"], sysmon)
     endpoints, launches = [], {}
     rejected_sysmon_exits = []
@@ -725,6 +748,7 @@ def capture(root, staged, source, expected_hash, node):
         "app_lifetimes": app_lifetimes,
         "outside_scope_paths": paths.summary(),
         "outside_scope_writers": paths.writer_summary(),
+        "final_sysmon_calibration": final_calibration,
         "process_bookends": {"before": "available" if first_processes is not None else "unavailable",
                             "after": "available" if last_processes is not None else "unavailable"},
         "network": network_diagnostics,
