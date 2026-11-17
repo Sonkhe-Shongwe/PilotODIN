@@ -88,6 +88,24 @@ The runner checks the prior receipt, executable hash and Cargo lockfile hash. It
 
 On 16 November 2026 the owner accepted both native answers from screenshots after the terminal acknowledgment timed out. The [scoped result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) covers the median and its filter-changing follow-up. Physical resource measurements remain unverified.
 
+## Owner offline Qwen retest
+
+Use [the one-use build's GitHub Actions page](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44095354691) to download `PilotODIN-P4-R03-Owner-QA` once the handoff records its successful publication. Extract it to its own folder. The kit contains the corrected desktop, the source-matched analytics engine and checksums. The [launcher](../tools/Start_P4_R03_Offline_QA.ps1) uses Qwen files already present in the separate `pilotODIN-P4-Native-QA` installation. It copies only the verified worker, GGUF and listed DLL files. The new app uses its own data identity and temporary WebView2 profile.
+
+From the current development branch of the PilotODIN repository, run the launcher in PowerShell. Substitute your actual extracted folder if it differs from the example.
+
+```powershell
+& .\tools\Start_P4_R03_Offline_QA.ps1 -KitDirectory "$env:USERPROFILE\Downloads\PilotODIN-P4-R03-Owner-QA"
+```
+
+1. Import the generated CSV at the path printed as `Import this synthetic CSV`.
+2. In Settings, select **Low-memory** and save the resource preference. Set **Operating mode** to **Offline**, enable model inference, set **Local timeout** to **120s**, keep cloud reasoning off, and save AI settings.
+3. Disconnect the laptop from Wi-Fi and wired internet. With the desktop open, refresh the available RAM reading. Proceed when it shows at least **2.00 GiB**.
+4. In Ask ODIN, select **Offline Qwen3 (desktop) / Ollama (dev)**. Ask once, “In one sentence, explain why I should check for missing values before training a model on this dataset.”
+5. Record the launcher-reported desktop SHA-256, available RAM, answer or error, its provider label and whether the app stays open. A response labelled **BUNDLED · pilotodin-qwen3-1.7b** with the app still open satisfies the narrow R03.3 retest. If the launcher, memory check or request stops, preserve the exact output and the observed stage.
+
+This test uses a generated CSV and evaluates one cold-start response. Sustained resource coexistence is assessed separately under R03.4.
+
 ## Research references
 
 - NL4DV separates detected dataset fields from inferred analytical tasks. DataTone surfaces ambiguity where the user can resolve it. [NL4DV](https://nl4dv.github.io/nl4dv/index.html) · [DataTone](https://cond.org/datatone.html)

@@ -2,6 +2,14 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Owner offline QA kit published
+
+[Windows Server 2022 run 44095354691](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44095354691/job/134080925954) passed on the first attempt. Launch `32397dc97590ba81bdd8f2edcdac9bc8e82d9362` built an unpackaged desktop and analytics engine from product source `4f3824c2f565f33a87f0195844d2d73242cf7571` with the separate app identity `com.pilotodin.p4r03owner`. The read-only launcher check verified 34 file hashes against the staged Windows runtime and kit. Desktop launch was outside this build step.
+
+Artifact [PilotODIN-P4-R03-Owner-QA](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44095354691/artifacts/14334835195) contains the two executables and two checksum records. The ZIP is 112,064,317 bytes, SHA-256 `f7fcd9c71848394fb1a73221989be237263b9310e2b55f72578fb1695957f071`, and expires 20 November at 15:50 SAST. Desktop SHA-256 is `dbc872308e240c18a5a661f5f5e4f0384ac698d1d73e8dd310e876bffd21a5ad`. The launcher verifies and copies the pinned model, worker and DLLs from the separate prior QA installation. The one-use build workflow is disarmed.
+
+**Physical retest NOT RUN.** Follow the [owner offline Qwen retest](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#owner-offline-qwen-retest) on the physical 8 GB laptop. A bundled answer after disconnection is the remaining R03.3 evidence. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | Hosted desktop Qwen startup passed
 
 The [approved Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44092929524/job/134072493587) passed on its first attempt. Launch `2089b3bbcf981d997761443e258e2e65f3a99dfb` checked out product source `4f3824c2f565f33a87f0195844d2d73242cf7571`. The one unpackaged desktop executable had SHA-256 `58a421eef6d5b44ac41a4e90925a072be1191afa8225ba145593df7e3c56c92f`. Cargo.lock SHA-256 was `2c8751899657e42d7caca62f6ca1e5a9be2690eaf8ee0eef9e02fe28da0ce5ae`.
@@ -626,7 +634,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-For R03.3, use the [hosted desktop pass](#17-november-2026--hosted-desktop-qwen-startup-passed) to scope one separately approved, source-matched unpackaged QA build and retest on the physical 8 GB Windows laptop. Use a disposable app profile and generated CSV. Verify the executable digest, confirm Low-memory mode and at least 2.00 GiB available with the desktop open, disconnect, and submit the same Ask ODIN prompt once. Record the provider, answer or startup error, elapsed time and whether the desktop remains open. A successful physical bundled answer earns five points.
+For R03.3, the [verified unpackaged QA kit](#17-november-2026--owner-offline-qa-kit-published) is ready for the [physical 8 GB Windows retest](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#owner-offline-qwen-retest). With the disposable desktop open, confirm Low-memory mode and at least 2.00 GiB available, disconnect, and submit the synthetic Ask ODIN prompt once. Record the provider, answer or startup error and whether the desktop remains open. A successful physical bundled answer earns five points.
 
 The next separately approved app audit can compare the [separate final Sysmon check](#17-november-2026--separate-final-sysmon-verification) with the combined calibration verdict and measure supported, blocked and unchecked WebView writes with the [repeat-write report](#17-november-2026--webview-repeat-write-evidence). Retain the two outside-scope samples, the identity conflict and the other filesystem and lifecycle blockers from the previous audit as open findings.
 
