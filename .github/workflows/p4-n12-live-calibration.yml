@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_COLLECTOR_FILEIO_NAME_RUNDOWN_APPROVAL.txt
+      - qa/p4_research/N12_COLLECTOR_FILEIO_COMPLETION_APPROVAL.txt
 
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           $workflow = '.github/workflows/p4-n12-live-calibration.yml'
-          $marker = 'qa/p4_research/N12_COLLECTOR_FILEIO_NAME_RUNDOWN_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_COLLECTOR_FILEIO_COMPLETION_APPROVAL.txt'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
               $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or

@@ -244,6 +244,54 @@ def test_webview_write_path_replay_is_bounded_and_preserves_strict_coverage():
     assert "private" not in json.dumps(result)
 
 
+@pytest.mark.parametrize(("case", "expected"), [
+    ("outside", "consistent-outside-protected-path"),
+    ("protected", "consistent-protected-path"),
+    ("completion-at-start", "completion-at-or-after-rundown-start"),
+    ("process-exit", "process-lifetime-unverified-at-completion"),
+    ("completion-object", "completion-file-identity-conflict"),
+    ("late-object-reuse", "object-key-association-unverified"),
+    ("late-rename", "lifetime-invalidated"),
+    ("ambiguous-name", "ambiguous-or-unmapped-name"),
+    ("missing-key", "not-in-rundown"),
+])
+def test_background_rundown_checks_the_identity_at_completion(case, expected):
+    private_path = r"C:\QA\private-protected.bin"
+    outside = r"C:\elsewhere\private-outside.bin"
+    events = [
+        {"id": 16, "pid": 7, "ticks": 3, "data": {"FileObject": 9, "FileKey": 40, "Irp": 1}},
+        {"id": 24, "pid": 0, "ticks": 5, "data": {"Irp": 1, "Status": 0}},
+    ]
+    guards = list(events)
+    names = [{"key": 40, "path": private_path if case == "protected" else outside}]
+    if case == "process-exit":
+        events.insert(1, {"id": 2, "pid": 7, "ticks": 4, "lifecycle": True, "data": {"ProcessID": 7}})
+    if case == "completion-object":
+        events[-1]["data"]["FileObject"] = 99
+    if case == "late-object-reuse":
+        guards.append({"id": 16, "pid": 7, "ticks": 14, "data": {"FileObject": 9, "FileKey": 41}})
+    if case == "late-rename":
+        guards.append({"id": 19, "pid": 7, "ticks": 14, "data": {"FileObject": 9, "FileKey": 40}})
+    if case == "ambiguous-name":
+        names.append({"key": 40, "path": private_path})
+    if case == "missing-key":
+        names.clear()
+
+    diagnostics = {}
+    credited = []
+    unresolved = correlate_requests(
+        events, lambda value: value or None, lambda *_: ("other", "private-owner"),
+        lambda path: path == private_path, lambda *args: credited.append(args),
+        strict=True, initial_process_births={7: 1}, rundown=names, rundown_guard_events=guards,
+        calibration_diagnostics=diagnostics, calibration_end=8, diagnostic_rundown_stop=12,
+        rundown_verification_start=5 if case == "completion-at-start" else 10,
+    )
+    assert diagnostics["path_candidates"][f"other:write:no-prior-name-completion-check:{expected}"] == 1
+    assert unresolved == {"other:write:path-missing": 1}
+    assert credited == []
+    assert "private" not in json.dumps(diagnostics)
+
+
 def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names():
     protected = r"C:\protected\private.txt"
     outside = r"C:\outside\private.txt"
@@ -2537,6 +2585,19 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
     }
     assert "private-" not in json.dumps(diagnosed)
     assert "abcdef" not in json.dumps(diagnosed)
+
+    manifest["etw"]["rundown_start_utc"] = instant(4)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    bookends_path.write_text(json.dumps(snapshots), encoding="utf-8-sig")
+    verification_baseline = report("verification-baseline", "--process-bookends", bookends_path)
+    verified = report("completion-check", "--process-bookends", bookends_path, "--rundown", rundown_path)
+    assert verified["etw_unresolved_mutations"] == verification_baseline["etw_unresolved_mutations"]
+    assert verified["file_violations"] == verification_baseline["file_violations"]
+    assert verified["coverage_issues"] == verification_baseline["coverage_issues"]
+    outcomes = verified["etw_calibration_diagnostics"]["path_candidates"]
+    assert outcomes["other:resize:no-prior-name-completion-check:consistent-outside-protected-path"] == 1
+    assert outcomes["other:resize:no-prior-name-completion-check:lifetime-invalidated"] == 1
+    assert "private-" not in json.dumps(verified)
 
     payload = rundown_path.read_bytes()
     rundown_path.write_bytes(payload + payload.splitlines(keepends=True)[0])

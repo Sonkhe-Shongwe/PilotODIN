@@ -791,8 +791,17 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
     with evidence_stage("ETW capture metadata"):
         capture_bounds, devices = etw_capture_contract(manifest, start, end, issues)
         diagnostic_rundown_stop = None
+        rundown_verification_start = None
         if calibration_diagnostics is not None and rundown is not None:
-            diagnostic_rundown_stop = utc_ticks(utc_time(manifest["etw"]["rundown_stop_utc"]))
+            capture = manifest["etw"]
+            diagnostic_rundown_stop = utc_ticks(utc_time(capture["rundown_stop_utc"]))
+            if "rundown_start_utc" in capture:
+                require(isinstance(capture["rundown_start_utc"], str), "invalid FileIO rundown start timestamp")
+                rundown_start = utc_ticks(utc_time(capture["rundown_start_utc"]))
+                require(capture_bounds[0] <= rundown_start <= diagnostic_rundown_stop <= capture_bounds[1],
+                        "FileIO rundown timestamps are outside the ETW observation window")
+                if "etw-event-or-buffer-loss" not in issues:
+                    rundown_verification_start = rundown_start
     start_ticks, end_ticks = utc_ticks(start), utc_ticks(end)
     lifetimes = {}
     for process in processes.values():
@@ -903,7 +912,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         # Keep post-audit ETW events for rundown lifetime checks. A rename, close,
         # or key reuse after the Sysmon audit boundary still invalidates a stop-time
         # name for an earlier write.
-        guard_events = [event for event in event_records if event["ticks"] >= start_ticks]
+        guard_events = (event_records if rundown_verification_start is not None else
+                        [event for event in event_records if event["ticks"] >= start_ticks])
         unresolved = correlate_requests(
             (event for event in event_records if event["ticks"] <= end_ticks),
             lambda value: canonical_file_path(value, devices),
@@ -922,6 +932,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             webview_write_candidates=webview_write_candidates, classify_webview_path=classify_webview_path,
             calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
             diagnostic_rundown_stop=diagnostic_rundown_stop,
+            rundown_verification_start=rundown_verification_start,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")

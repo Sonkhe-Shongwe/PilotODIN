@@ -244,12 +244,17 @@ if ($Rundown -and $null -eq $rundownStopTicks) {
     throw 'The native rundown stop timestamp was not captured inside the ETW window.'
 }
 if ($Rundown) {
+    if ($capture.PSObject.Properties.Name -notcontains 'rundown_start_ticks') {
+        throw 'The native rundown start timestamp was not captured inside the ETW window.'
+    }
+    $rundownStart = [datetime]::new([long]$capture.rundown_start_ticks, [DateTimeKind]::Utc)
     $rundownStop = [datetime]::Parse($manifest.etw.rundown_stop_utc).ToUniversalTime()
     $captureStart = [datetime]::Parse($startUtc).ToUniversalTime()
     $captureEnd = [datetime]::Parse($endUtc).ToUniversalTime()
-    if ($rundownStop -lt $captureStart -or $rundownStop -gt $captureEnd) {
-        throw 'The native rundown stop timestamp falls outside the companion ETW capture window.'
+    if ($rundownStart -lt $captureStart -or $rundownStop -lt $rundownStart -or $rundownStop -gt $captureEnd) {
+        throw 'The native rundown timestamps fall outside the companion ETW capture window.'
     }
+    $manifest.etw.rundown_start_utc = $rundownStart.ToString('o')
     Write-Host 'Native rundown stop timestamp is inside the companion ETW capture window.'
 }
 $reducerManifest = Join-Path $root 'capture-manifest.json'

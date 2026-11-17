@@ -2,6 +2,12 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | FileIO filename completion check prepared
+
+The paired rehearsal found filename candidates for 777 of 792 operations with no prior name. The next disarmed collector run records when the native rundown starts as well as when it ends. Its second report checks that each missing-name candidate comes from a successful, unambiguous completion before rundown begins, with a known process lifetime through completion and a compatible file object and key across the observed ETW capture. Any identity evidence on the completion event must agree. Late object reuse, rename or name conflicts and missing keys leave the candidate unconfirmed. Capture loss prevents the additional check.
+
+Generated cases verify the new decisions and preserve the original coverage and violation results. The live completion comparison is **NOT RUN**. Its counts will show what fraction of candidates can meet the stronger rule. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | FileIO rundown found 777 candidate paths
 
 The [approved collector-only Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44040207157/job/133892656260) ran once on image `20261112.366.7` with Sysmon 15.22. The launch was `8beaddaaca829ad59fe087e37483f59c9c0901dd` and the reviewed source was `8b9087bb31a3d9e6b58a5d2a530bf2ac0b51607a`. PilotODIN compilation and launch were **NOT RUN**. No artifacts were retained.

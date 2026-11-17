@@ -72,13 +72,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        rundown_window=None, record_path_gap=None, record_write_name_gap=None,
                        webview_write_candidates=None, classify_webview_path=None,
                        calibration_diagnostics=None,
-                       calibration_end=None, diagnostic_rundown_stop=None):
+                       calibration_end=None, diagnostic_rundown_stop=None,
+                       rundown_verification_start=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
     opened, pending = {}, {}
     write_gaps = []
     calibration_gaps = []
+    completion_checks = {}
     webview_gaps = []
     sampled_webview_objects = set()
     webview_gaps_seen = 0
@@ -103,7 +105,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             for event in ordered_events if not event.get("lifecycle")
             if (key := name_transition_key(event["id"], event["data"]))
         }
-    if strict and details is not None:
+    if strict and (details is not None or rundown_verification_start is not None):
         for event in ordered_events:
             if not event.get("lifecycle"):
                 continue
@@ -117,6 +119,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     rundown_names = {}
     name_events = {}
     rundown_unsafe_keys = set()
+    rundown_object_keys = defaultdict(set)
     if strict and rundown is not None:
         for entry in rundown:
             try:
@@ -141,6 +144,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 continue
             kind = guarded.get("id")
             data = guarded.get("data", {})
+            if rundown_verification_start is not None and kind not in {10, 11, 24}:
+                obj, key = (number(data.get(field)) for field in ("FileObject", "FileKey"))
+                if type(obj) is int and obj > 0 and type(key) is int and key > 0:
+                    rundown_object_keys[obj].add(key)
             if kind == 10:
                 # NameCreate is a name association, not by itself a lifetime
                 # break. It may corroborate the stop-time rundown only when
@@ -362,6 +369,16 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                                     webview_gaps.append((actor, operation, request, ticks))
                     if calibration_diagnostics is not None and operation in {"write", "resize"}:
                         calibration_gaps.append((actor, operation, request, ticks))
+                        if rundown_verification_start is not None:
+                            owner_pid, owner_birth, _ = handle
+                            if (owner_birth is None or not owner_birth < requested < ticks
+                                    or active.get(owner_pid) != owner_birth or actor == "unattributed"
+                                    or (owner_pid, requested) in process_transition_ticks
+                                    or (owner_pid, ticks) in process_transition_ticks):
+                                completion_checks[id(request)] = "process-lifetime-unverified-at-completion"
+                            elif any(number(data.get(field)) not in {None, 0, number(request["data"].get(field))}
+                                     for field in ("FileObject", "FileKey")):
+                                completion_checks[id(request)] = "completion-file-identity-conflict"
                 if source or destination:
                     record(actor, identity, operation, source, destination, requested, ticks, True)
                     if protected_system_write is not None:
@@ -634,6 +651,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             path_candidates=summarize_calibration_path_gaps(
                 ordered_events, calibration_gaps, resolve_path, tracked,
                 rundown_names, rundown_unsafe_keys, diagnostic_rundown_stop,
+                rundown_verification_start=rundown_verification_start,
+                completion_checks=completion_checks,
+                rundown_object_keys=rundown_object_keys,
             ),
             unmatched_write_timing=dict(unmatched_writes),
         )
@@ -1116,7 +1136,9 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
 
 
 def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
-                                    rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None):
+                                    rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None,
+                                    rundown_verification_start=None, completion_checks=None,
+                                    rundown_object_keys=None):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
@@ -1178,6 +1200,19 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
         counts[f"{actor}:{operation}:rundown:{outcome}"] += 1
         if missing_prior_name:
             counts[f"{actor}:{operation}:no-prior-name-rundown:{outcome}"] += 1
+            if rundown_verification_start is not None:
+                if outcome not in {"candidate-protected", "candidate-outside-protected"}:
+                    verification = outcome
+                elif completed >= rundown_verification_start:
+                    verification = "completion-at-or-after-rundown-start"
+                elif id(request) in completion_checks:
+                    verification = completion_checks[id(request)]
+                elif rundown_object_keys.get(object_id, set()) != {key}:
+                    verification = "object-key-association-unverified"
+                else:
+                    verification = ("consistent-protected-path" if outcome == "candidate-protected"
+                                    else "consistent-outside-protected-path")
+                counts[f"{actor}:{operation}:no-prior-name-completion-check:{verification}"] += 1
     return dict(counts)
 
 
