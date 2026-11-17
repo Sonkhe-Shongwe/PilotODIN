@@ -40,6 +40,20 @@ The first run's median combined WebView2 working set was **471 MiB** at ready id
 
 The shell mounts the active workspace and any docked workspace. It can retain an edited docked form during a narrow-window pause and retains the prior project while the next project's data is verified. [Workspace lifetime](../frontend/src/UnifiedShell.tsx)
 
+### Updated build retest on the 8 GB laptop
+
+Download the [PilotODIN-P4-Everyday-RAM-QA kit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44159138354/artifacts/14362668152) and extract it to `Downloads/PilotODIN-P4-Everyday-RAM-QA`. The 112 MB ZIP is available through 24 November 2026 at 21:37 SAST. Pull the active branch in the existing PilotODIN checkout. Close any open PilotODIN desktop or Live Dev sessions. Open PowerShell in the repository and run:
+
+```powershell
+& .\tools\Start_P4_Everyday_RAM_Baseline.ps1 -Build Updated -KitDirectory "$env:USERPROFILE\Downloads\PilotODIN-P4-Everyday-RAM-QA" -ArchiveExistingQaBaseline
+```
+
+The launcher pins both executables to the GitHub Actions output for `1cfeb94`. It uses the same synthetic projects, stages, collector, disposable app identity and fresh WebView2 profile as the first run. The archive switch preserves the previous disposable profile. Follow the prompts through Deliver and save the HTML to the folder PowerShell prints. Keep the suggested filename. The launcher checks the report identifies the newly generated dataset and shows its 4,000 rows and 1,000 missing premiums before advancing to the 20-second cooldown. Upload the resulting `PilotODIN-Everyday-RAM-Evidence.zip`. It contains measurements and a digest of the export, with the report itself kept on the laptop. [Hosted build and startup verification](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44159138354/job/134307916329)
+
+Hosted Windows proved the production UI could start its authenticated analytics engine. Both frozen engine processes stopped after normal desktop close in 93 ms with exit code 1. Both stopped with exit code 0 within 1,470 ms when only the desktop process was terminated. ZIP SHA-256 is `b966f5251410c283b3e1742552ead1d495181854db4aa48ac14e0b2ecf7d4812`.
+
+The physical comparison is pending. Compare the same stages, with the other Windows apps in their usual state. The earlier export wait contributed 153 samples and ended before cooldown. Compare stage medians and peaks with that sampling difference in mind. The new build includes binary report transfer and the frozen engine shutdown fix, so a whole-app difference measures their combined effect under this workload. A repeatable 1 GiB result still needs comparable physical runs and complete process coverage.
+
 ### Deliver binary Save As
 
 Native Save As now sends an `ArrayBuffer` and separate filename and format headers. Rust validates the raw buffer or Tauri's byte-array fallback before opening the native dialog. The selected file is still checked for length and SHA-256 after writing. [Frontend transport](../frontend/src/api.ts) · [Native command](../frontend/src-tauri/src/lib.rs)

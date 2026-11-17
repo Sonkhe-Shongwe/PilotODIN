@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   owner-kit:
+    if: ${{ false }} # Consumed by Windows run 44159138354.
     runs-on: windows-2022
     timeout-minutes: 45
     env:

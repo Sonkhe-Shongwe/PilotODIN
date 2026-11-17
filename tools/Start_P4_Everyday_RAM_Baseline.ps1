@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$KitDirectory,
+    [ValidateSet('Baseline', 'Updated')][string]$Build = 'Baseline',
     [switch]$ArchiveExistingQaBaseline,
     [switch]$VerifyOnly
 )
@@ -9,14 +10,25 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-function Get-VerifiedPayload([string]$Directory) {
+function Get-QaKitSpec([string]$BuildName) {
+    $source = '8966edc781128baa94354df044bfadc45d069984'
+    $desktop = 'c9aac50c3299d280cb7ce4211db5b7e32402d7949a03fcf98d01e738d2c57fbf'
+    $engine = 'b85b7a39bb863ef340a2ea420166cfa93fed1d8427b57229e75dc3724dca4f6b'
+    if ($BuildName -eq 'Updated') {
+        $source = '1cfeb9421a3986ec75c97d8dd9b88f831596c9eb'
+        $desktop = '1284a5299219d7e448ab01a5e74aec506178c02f97bb6e8455bc53876a4bdb6b'
+        $engine = 'f0e052766ee90d7ff858efec349a371386466e4dd27913591b761a5458fc6116'
+    }
+    [pscustomobject]@{
+        SourceSha = $source
+        Files = [ordered]@{ 'pilotodin-desktop.exe' = $desktop; 'pilotodin-engine.exe' = $engine }
+    }
+}
+
+function Get-VerifiedPayload([string]$Directory, [System.Collections.IDictionary]$Expected) {
     $kit = Get-Item -LiteralPath $Directory
     if (-not $kit.PSIsContainer -or ($kit.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-        throw 'Use the ordinary folder containing the extracted headroom kit.'
-    }
-    $expected = [ordered]@{
-        'pilotodin-desktop.exe' = 'c9aac50c3299d280cb7ce4211db5b7e32402d7949a03fcf98d01e738d2c57fbf'
-        'pilotodin-engine.exe' = 'b85b7a39bb863ef340a2ea420166cfa93fed1d8427b57229e75dc3724dca4f6b'
+        throw 'Use the ordinary folder containing the extracted Windows kit.'
     }
     $payload = foreach ($entry in $expected.GetEnumerator()) {
         $file = Get-Item -LiteralPath (Join-Path $kit.FullName $entry.Key)
@@ -63,14 +75,29 @@ function Initialize-QaBaseline([string]$Path, [bool]$ArchiveExisting) {
     $null = New-Item -ItemType Directory -Path $Path
 }
 
-function Test-QaHtmlExport([string]$Directory) {
+function Get-VerifiedQaHtmlExport([string]$Directory, [string]$ExpectedDataHash) {
     foreach ($file in Get-ChildItem -LiteralPath $Directory -File -Filter '*.html') {
-        if ($file.Length -gt 0 -and ($file.Name -ieq 'PilotODIN-RAM-report.html' -or
-                $file.Name -match '^pilotodin_report_[0-9a-f]{12}_rev[1-9][0-9]*\.html$')) {
-            return $true
+        if ($file.Length -le 0 -or $file.Length -gt 12MB -or
+            ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+            ($file.Name -ine 'PilotODIN-RAM-report.html' -and
+                $file.Name -notmatch '^pilotodin_report_[0-9a-f]{12}_rev[1-9][0-9]*\.html$')) { continue }
+
+        $html = [IO.File]::ReadAllText($file.FullName)
+        if ($html -notmatch '^<!doctype html>' -or $html -notmatch '</html>\s*\z' -or
+            -not $html.Contains('<title>PilotODIN RAM baseline</title>') -or
+            -not $html.Contains('<tr><td>Rows in approved dataset</td><td>4000</td></tr>') -or
+            -not $html.Contains("<tr><td>Source original SHA-256</td><td>$ExpectedDataHash</td></tr>") -or
+            $html -notmatch '<tr><td>Missing or blank values</td><td>[^<]+\| Column: premium \| Affected rows: 1000 \|[^<]+</td></tr>') { continue }
+
+        return [pscustomobject][ordered]@{
+            format = 'html'
+            size_bytes = $file.Length
+            sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            fixture_sha256 = $ExpectedDataHash
+            verified_rows = 4000
+            verified_missing_premium = 1000
         }
     }
-    return $false
 }
 
 function Get-OwnedProcesses($Snapshot, $App, [string]$AppPath, [hashtable]$Seen) {
@@ -171,9 +198,10 @@ function Write-Stage([string]$Name, [string]$Event, [string]$Observation) {
     })
 }
 
-$payload = @(Get-VerifiedPayload $KitDirectory)
+$kitSpec = Get-QaKitSpec $Build
+$payload = @(Get-VerifiedPayload $KitDirectory $kitSpec.Files)
 if ($VerifyOnly) {
-    Write-Host 'Both QA executables match the pinned SHA-256 values.'
+    Write-Host "Both $Build QA executables match the pinned SHA-256 values for source $($kitSpec.SourceSha)."
     return
 }
 if ($env:OS -ne 'Windows_NT' -or [Console]::IsInputRedirected) {
@@ -213,9 +241,11 @@ $small = Join-Path $root 'everyday_small.csv'
 $wide = Join-Path $root 'everyday_wide.csv'
 @('premium,outcome','10,Yes',',No','30,Yes','40,No') | Set-Content -LiteralPath $small -Encoding Ascii
 New-WideFixture $wide
+$wideHash = (Get-FileHash -LiteralPath $wide -Algorithm SHA256).Hash.ToLowerInvariant()
 $os = Get-CimInstance -ClassName Win32_OperatingSystem -OperationTimeoutSec 4
 [ordered]@{
-    source_sha = '8966edc781128baa94354df044bfadc45d069984'
+    source_sha = $kitSpec.SourceSha
+    benchmark_build = $Build
     windows_version = $os.Version; physical_memory_mib = [Math]::Round($os.TotalVisibleMemorySize / 1024, 1)
     desktop_sha256 = $payload[0].Sha256; engine_sha256 = $payload[1].Sha256
     profile = 'com.pilotodin.p4r03benchmark/data/baseline'
@@ -279,9 +309,14 @@ try {
                 $key = [Console]::ReadKey($true).Key
                 if ($key -eq 'Q') { $observation = 'stopped'; break }
                 if (-not $timed -and $key -eq 'P') {
-                    if ($stage -eq 'export_html' -and -not (Test-QaHtmlExport $root)) {
-                        Write-Host "Export HTML to $root using the suggested filename, then press P."
-                        continue
+                    if ($stage -eq 'export_html') {
+                        $export = Get-VerifiedQaHtmlExport $root $wideHash
+                        if ($null -eq $export) {
+                            Write-Host "Save the HTML report with the current Quality audit in $root, then press P."
+                            continue
+                        }
+                        $export | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $result 'export.json') -Encoding UTF8
+                        Write-Host 'Verified the HTML export, the dataset digest and the 1,000 missing premiums.'
                     }
                     $observation = 'owner_observed'
                     break

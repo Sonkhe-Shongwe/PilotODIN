@@ -4,7 +4,7 @@
 
 ## 17 November 2026 | Deliver report transfer optimized
 
-Deliver sends report bytes directly to WebView2 IPC on the normal Windows path. A 1 MiB synthetic payload used **75% less transfer space** than its former JSON representation. Hosted Windows verified exact PDF and HTML writes through the production writer and genuine Save As cancellation. Full confirmation through the Save button and a physical before-and-after RAM comparison remain open. The first physical everyday baseline observed **706.35 MiB** as the highest sampled combined working set. The next physical run should use the same workload through cooldown and check the exported file. [Resource results and limits](./RESOURCE_AWARE_MODE_DESIGN.md#deliver-binary-save-as)
+Deliver sends report bytes directly to WebView2 IPC on the normal Windows path. A 1 MiB synthetic payload used **75% less transfer space** than its former JSON representation. Hosted Windows verified exact PDF and HTML writes through the production writer and genuine Save As cancellation. Full confirmation through the Save button and a physical before-and-after RAM comparison remain open. The first physical everyday baseline observed **706.35 MiB** as the highest sampled combined working set. A [hash-pinned Windows kit and launcher](./RESOURCE_AWARE_MODE_DESIGN.md#updated-build-retest-on-the-8-gb-laptop) are ready for the same workload through cooldown with a verified HTML export. [Resource results and limits](./RESOURCE_AWARE_MODE_DESIGN.md#deliver-binary-save-as)
 
 ## 17 November 2026 | Physical R03 candidate deferred
 
