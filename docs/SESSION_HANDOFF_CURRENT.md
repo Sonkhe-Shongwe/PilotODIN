@@ -6,6 +6,15 @@
 
 Routine Windows CI repeats the same 96-to-37-byte resize through a handle opened before ETW. The file stays open through the native filename snapshot. The comparison checks the same captured operation in the strict reducer with and without the rundown and reports whether it recovers `known-resize.bin`. The fixture independently checks the resulting file size and retained bytes. This is a controlled file test. P4 remains **14/20 (70%)** pending broader acceptance evidence.
 
+At [reviewed source `5e5ee7d`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5e5ee7d67fd9a31335bf696c2ab858748215e727), [routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44061177913) passed all four jobs and the [native rundown job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44061178012/job/133963157401) passed its 255 synthetic checks and both Windows fixture steps. The [Windows fixture log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44061177913/job/133963157118) confirms these outcomes.
+
+| Generated operation | Verified outcome |
+| --- | --- |
+| Open and write `known-write.bin` during ETW | **PASS** through write completion. Cleanup and close ordering was separately **BLOCKED**. The teardown report saw Cleanup (13) without Close (14). |
+| Write to a pre-opened `outside.bin` | **PASS**. The strict reducer recovered the matching filename from rundown. |
+| Open and resize `known-resize.bin` during ETW | **PASS**. The completed resize matched the opened file and the fixture measured 96 to 37 bytes. |
+| Resize a pre-opened `known-resize.bin` | **PASS**. The same completed operation was unresolved in the baseline and credited to the expected filename with rundown. The fixture measured 96 to 37 bytes. |
+
 ## 17 November 2026 | One named file resize
 
 The routine Windows fixture seeds `known-resize.bin` at 96 bytes before recording. A dedicated child opens that file during recording and truncates it once to 37 bytes. The probe verifies the remaining bytes after capture. The report requires one completed FileEndOfFileInformation request on the same file object as the observed open and shows the expected and matched filenames and both measured lengths. This is the during-capture open case. It leaves the historical background resize counts and the P4 score at their recorded values.
@@ -558,7 +567,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Verify the [two named control files](#17-november-2026--known-filenames-first) before another approved collector comparison. Keep the 78 writes that overlap rundown unresolved unless independent timestamp evidence establishes the order for their individual names. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
+The [named Windows controls](#17-november-2026--repeat-the-resize-on-a-pre-opened-handle) have passed filename attribution. The next dependency is one separately approved [collector-only strict comparison](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#next-n12-collector-only-strict-comparison). It measures which background writes and resizes can be credited in a single capture and which blockers remain. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings.
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
