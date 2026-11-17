@@ -19,6 +19,7 @@ def test_engine_smoke_contract_uses_real_running_backend():
     assert result == {
         'passed': True, 'auth_required': True, 'wrong_origin_rejected': True,
         'user_storage_isolated': True, 'model_started': False,
+        'owner_disconnect_stops_engine': True,
     }
 
 

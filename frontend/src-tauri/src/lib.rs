@@ -250,6 +250,7 @@ fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<Back
         .env("PILOTODIN_HOME", data_dir.to_string_lossy().to_string())
         .env("PILOTODIN_DESKTOP_PORT", port.to_string())
         .env("PILOTODIN_DESKTOP_SESSION", token.as_str())
+        .env("PILOTODIN_DESKTOP_WATCH_STDIN", "1")
         .env("PILOTODIN_BUNDLED_LLM_PORT", inference_port.to_string())
         .env("PILOTODIN_BUNDLED_LLM_TOKEN", inference_token.as_str())
         .env("PILOTODIN_DESKTOP_ALLOW_DEV", if cfg!(debug_assertions) { "1" } else { "0" })

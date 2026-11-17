@@ -1,6 +1,6 @@
 # Resource-Aware Mode — approved design and staged implementation
 
-**Current checkpoint, 17 November 2026.** Settings displays available physical RAM and saves the resource policy. Low-memory mode screens new training at 0.75 GiB and new local inference at 2.00 GiB under the current normal policy. The isolated 1.50 GiB QA candidate deferred local inference on the physical laptop and returned local rules. The observations cover admission and fallback. Whole-app peak RAM and physical offline generation and coexistence remain unverified. The October sections below preserve the evidence available at each increment. [Current handoff](./SESSION_HANDOFF_CURRENT.md)
+**Current checkpoint, 17 November 2026.** Settings displays available physical RAM and saves the resource policy. Low-memory mode screens new training at 0.75 GiB and new local inference at 2.00 GiB under the current normal policy. The isolated 1.50 GiB QA candidate deferred local inference on the physical laptop and returned local rules. The everyday Local analytics workflow has a first [physical RAM baseline](#first-physical-baseline-result). Physical offline generation and coexistence remain unverified. [Current handoff](./SESSION_HANDOFF_CURRENT.md)
 
 ## Proposed 1 GiB everyday RAM target
 
@@ -14,7 +14,7 @@
 
 Use [the current Windows sampler](../tools/Measure_Local_Analytics_Windows_Native.ps1) to start evaluating process attribution. Match each PilotODIN-owned PID to its creation time and relevant app/profile or launched-child identity. Report private resident memory where available, summed working-set upper bound with its shared-page duplication, and private bytes as commit. If shared pages make the target ambiguous, collect a more precise trace before awarding a pass. Capture system available RAM and paging against idle for context. Compare time to a visible result and UI responsiveness alongside the measurements so paging and stalls are visible even if resident RAM decreases.
 
-The 1.50 GiB experiment still tests the headroom needed to attempt Qwen startup. Preserve its JSONL and CSV before any rerun. The existing model and inference configuration stay fixed for a like-for-like comparison when that exercise resumes. The everyday RAM target has no measured baseline yet. [Physical R03 procedure and evidence](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available)
+The 1.50 GiB experiment still tests the headroom needed to attempt Qwen startup. Preserve its JSONL and CSV before any rerun. The existing model and inference configuration stay fixed for a like-for-like comparison when that exercise resumes. [Physical R03 procedure and evidence](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available)
 
 ### First physical everyday RAM session
 
@@ -29,6 +29,12 @@ Use the actual extracted folder containing both executables if it differs. Close
 Follow the prompts in the console. Press **P** after seeing the expected result, **F** to record a failure or **Q** to stop. Keep other applications in their usual state and note any visible lag or error. The timed idle and cooldown steps advance on their own. After the run, the console prints the path of `PilotODIN-Everyday-RAM-Evidence.zip`. The archive contains the build receipt, step markers, per-process rows and system/aggregate samples. It excludes app data, CSV contents and the exported report.
 
 The first run is a diagnostic baseline. Treat missing roles or counters as gaps. Compare private resident memory as a lower bound and summed working sets as an upper bound for the observed process tree. A one-second wait between polls plus collection time can miss short peaks, and the console markers reflect owner-observed outcomes rather than precise click-to-render timing. Repeat the controlled workload before using it to assess an optimisation or the 1 GiB target.
+
+### First physical baseline result
+
+The owner ran the isolated build from source `8966edc` on the 8 GB laptop. The highest sampled combined working set was **706.35 MiB** during Deliver, including **487.93 MiB** in the app's WebView2 processes. Private resident memory peaked at **340 MiB** during Quality. The desktop reported responsive at all **257 app samples**, about two seconds apart. The HTML export contained the expected Quality finding. The earlier export filename check prevented the cooldown stage. This run used Local analytics with the model unloaded. [Filename verification](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44140150015/job/134240418592)
+
+Two engine processes from an earlier QA installation were still present before the run. The startup and shutdown work starts with desktop ownership of the engine. The desktop now opts into monitoring the pipe it owns, and the backend asks Uvicorn to shut down when that pipe closes. The smoke test checks that the engine exits cleanly and that its loopback port stops accepting connections. Verify this path on a rebuilt frozen Windows engine before attributing it to the installed app, then profile the WebView2 footprint during project switching and Deliver. [Engine smoke test](../desktop/verify_packaged_engine.py)
 
 ## P1 first slice — SOURCE IMPLEMENTED, NOT YET OWNER-TESTED (25 October 2026)
 

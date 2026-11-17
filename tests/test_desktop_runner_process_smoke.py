@@ -31,6 +31,7 @@ def test_desktop_runner_process_local_token_and_isolated_storage(tmp_path):
            'PILOTODIN_DESKTOP_PORT': str(port), 'PILOTODIN_DESKTOP_ALLOW_DEV': '0'}
     env.pop('PILOTODIN_BUNDLED_LLM_PORT', None)
     env.pop('PILOTODIN_BUNDLED_LLM_TOKEN', None)
+    env.pop('PILOTODIN_DESKTOP_WATCH_STDIN', None)
     process = subprocess.Popen([sys.executable, '-m', 'backend.desktop_runner'],
                                cwd=root, env=env, stdout=subprocess.DEVNULL,
                                stderr=subprocess.PIPE)

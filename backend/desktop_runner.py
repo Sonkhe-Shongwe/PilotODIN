@@ -7,6 +7,23 @@ from __future__ import annotations
 
 import os
 import sys
+from threading import Thread
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from uvicorn import Server
+
+
+def _watch_desktop_pipe(server: Server, descriptor: int) -> None:
+    # The desktop holds the only write end. EOF also arrives if Windows
+    # terminates the desktop before it can run the normal exit callback.
+    try:
+        while os.read(descriptor, 4096):
+            pass
+    except OSError:
+        # An unreadable ownership channel cannot establish a live owner.
+        pass
+    server.should_exit = True
 
 
 def main() -> int:
@@ -23,13 +40,29 @@ def main() -> int:
     if not 1024 <= port <= 65535:
         print("Desktop port is outside the supported range.", file=sys.stderr)
         return 2
+    owner_stdin = None
+    if os.environ.get("PILOTODIN_DESKTOP_WATCH_STDIN") == "1":
+        try:
+            owner_stdin = sys.stdin.fileno()
+        except (AttributeError, ValueError, OSError):
+            print("Desktop ownership pipe is missing; refusing to start.", file=sys.stderr)
+            return 2
     # Import only after confirming PILOTODIN_HOME so storage cannot accidentally
     # initialise a database inside the installed application directory.
     import uvicorn
     from backend.main import app
 
-    uvicorn.run(app, host="127.0.0.1", port=port, access_log=False,
-                log_level="warning", server_header=False)
+    options = dict(host="127.0.0.1", port=port, access_log=False,
+                   log_level="warning", server_header=False)
+    if owner_stdin is None:
+        uvicorn.run(app, **options)
+    else:
+        server = uvicorn.Server(uvicorn.Config(app, **options))
+        Thread(target=_watch_desktop_pipe, args=(server, owner_stdin),
+               name="pilotodin-desktop-owner", daemon=True).start()
+        server.run()
+        if not server.started:
+            return 3  # Uvicorn's startup-failure exit status.
     return 0
 
 
