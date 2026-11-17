@@ -2,6 +2,12 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Physical R03 attempt deferred by resource policy
+
+The owner supplied screenshots from the disposable `r03_synthetic` project. Ask ODIN stayed open and showed `Desktop startup: resource_limited` and `VERIFIED RULES · NO LLM`. The fallback reported one missing premium out of four rows. The desktop deferred Qwen before launch. The screenshots do not establish the request-time available RAM or whether the memory reading was unavailable. Physical generation remains unverified. P4 is **14/20 (70%)**.
+
+The owner proposed **around 1.50 GiB available RAM** as a practical target. The [comparison plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) records how to test that target against the current floor. No runtime policy change or additional physical attempt has occurred.
+
 ## 17 November 2026 | Owner offline QA kit published
 
 [Windows Server 2022 run 44095354691](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44095354691/job/134080925954) passed on the first attempt. Launch `32397dc97590ba81bdd8f2edcdac9bc8e82d9362` built an unpackaged desktop and analytics engine from product source `4f3824c2f565f33a87f0195844d2d73242cf7571` with the separate app identity `com.pilotodin.p4r03owner`. The read-only launcher check verified 34 file hashes against the staged Windows runtime and kit. Desktop launch was outside this build step.
@@ -634,7 +640,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-For R03.3, the [verified unpackaged QA kit](#17-november-2026--owner-offline-qa-kit-published) is ready for the [physical 8 GB Windows retest](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#owner-offline-qwen-retest). With the disposable desktop open, confirm Low-memory mode and at least 2.00 GiB available, disconnect, and submit the synthetic Ask ODIN prompt once. Record the provider, answer or startup error and whether the desktop remains open. A successful physical bundled answer earns five points.
+For R03.3, use the [1.50 GiB comparison plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) to prepare an isolated QA candidate and a source-matched comparison under the current 2.00 GiB floor. Keep the same bundled runtime and fixture, and record the actual admission sample and application behaviour. Any new owner-device run requires the applicable approval. Review physical results before adopting a lower floor.
 
 The next separately approved app audit can compare the [separate final Sysmon check](#17-november-2026--separate-final-sysmon-verification) with the combined calibration verdict and measure supported, blocked and unchecked WebView writes with the [repeat-write report](#17-november-2026--webview-repeat-write-evidence). Retain the two outside-scope samples, the identity conflict and the other filesystem and lifecycle blockers from the previous audit as open findings.
 

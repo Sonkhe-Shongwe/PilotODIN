@@ -106,6 +106,16 @@ From the current development branch of the PilotODIN repository, run the launche
 
 This test uses a generated CSV and evaluates one cold-start response. Sustained resource coexistence is assessed separately under R03.4.
 
+### R03 candidate at 1.50 GiB available
+
+The owner proposed benchmarking Qwen at about **1.50 GiB available system RAM** on the 8 GB laptop. The current **2.00 GiB** floor checks available RAM immediately before startup and the backend checks admission again before generation. The latest physical screenshot showed a memory deferral and the expected local-rules fallback. It did not capture the specific admission code or memory sample. [Physical result](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-attempt-deferred-by-resource-policy)
+
+The existing Windows worker comparison measured approximately **2.06 GiB peak resident RAM** and **1.08 GiB peak committed memory** for the normal profile. These are worker-only measurements on the hosted machine and measure different things from pre-launch system availability. The comparison gives no proven minimum startup headroom on the laptop. [Worker evidence](./SESSION_HANDOFF_CURRENT.md#15-november-2026--r03-windows-comparison-completed)
+
+Compare the current 2.00 GiB floor with a separately approved, isolated QA build using a candidate 1.50 GiB floor. Keep the exact Qwen3 model, inference arguments, generated CSV, question, timeout and offline setup fixed. Exercise one cold question per case on the physical 8 GB laptop with measured starting headroom near the floor. Capture both real admission decisions and memory readings, the answer source, click-to-answer time, lowest available RAM, paging activity, and whether Ask ODIN and the app remain responsive. A simulated RAM reading can check policy branching only. If admission defers or the attempt fails, record the stage and diagnostic before a repeat.
+
+Review the candidate against the baseline and agreed paging and responsiveness limits before changing the default. The target is a usable bundled answer under ordinary laptop conditions. Longer coexistence remains the R03.4 workload.
+
 ## Research references
 
 - NL4DV separates detected dataset fields from inferred analytical tasks. DataTone surfaces ambiguity where the user can resolve it. [NL4DV](https://nl4dv.github.io/nl4dv/index.html) · [DataTone](https://cond.org/datatone.html)
