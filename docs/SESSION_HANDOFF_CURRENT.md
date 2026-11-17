@@ -2,6 +2,12 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | FileIO filename comparison prepared
+
+The previous rehearsal observed both Sysmon markers and left 868 background mutations without verified paths. Of those, 328 writes and 330 resizes had no earlier filename in the observed lifetime. The existing native Windows fixture proved that stop-time FileIO rundown can resolve the generated pre-opened file keys under the reducer's identity and transition checks.
+
+The disarmed collector workflow now captures a native FileIO rundown in the same generated run as Sysmon and ETW. It records the strict result with process snapshots first, then runs the diagnostic against the same inputs with the digest-checked rundown. The comparison reports the disposition of operations without earlier filenames, including candidate paths, absent or ambiguous names and invalidated mappings. The original strict verdict governs the rehearsal. No PilotODIN build or launch is required. The combined live comparison is **NOT RUN**. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | Collector verified TCP and UDP and blocked on ETW paths
 
 The [approved collector-only Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44025358172/job/133844259296) ran once on image `20261112.366.7` with Sysmon 15.22. The launch was `fe49682ef3ca755e5262c27a9fd31b250b6d73b4` and the reviewed source was `e7509c0cf6173bb902e79d8a5267dd70af12f52f`. PilotODIN compilation and launch were **NOT RUN**. The run retained zero artifacts.

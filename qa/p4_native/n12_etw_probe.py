@@ -7,7 +7,7 @@ import os
 import subprocess
 import sys
 import time
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from ctypes import wintypes
 from pathlib import Path
 from threading import get_native_id
@@ -139,7 +139,7 @@ def probe(root, *, calibration_only=False, thread_context=False):
     return capture_fixture(root, calibration_only=calibration_only, thread_context=thread_context)
 
 
-def collector_rehearsal(root):
+def collector_rehearsal(root, *, rundown=False):
     from qa.p4_research import n12_app_journey as journey
 
     if (os.environ.get("GITHUB_RUN_ATTEMPT") != "1" or
@@ -155,6 +155,10 @@ def collector_rehearsal(root):
         last_record = journey.verify_initial_sysmon(root, manifest, fixture)
         return {"first_record": first_record, "prelaunch_last_record": last_record}
 
+    if rundown:
+        with collect_fileio_rundown(root) as stop_wpr:
+            return capture_fixture(root, calibration_only=True, thread_context=False,
+                                   before_stop=stop_wpr, verify_fixture=verify_fixture)
     return capture_fixture(root, calibration_only=True, thread_context=False, verify_fixture=verify_fixture)
 
 
@@ -223,6 +227,34 @@ def write_basic_info_control(path):
             raise RuntimeError("The generated metadata-control write was incomplete.")
 
 
+@contextmanager
+def collect_fileio_rundown(root):
+    wpr = Path(os.environ["SystemRoot"]) / "System32" / "wpr.exe"
+    instance = ["-instancename", f"PilotODIN-{uuid4().hex}"]
+
+    def run_wpr(*arguments):
+        return subprocess.run([str(wpr), *arguments, *instance], timeout=60,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+
+    if (status := run_wpr("-start", "FileIO")) != 0:
+        raise RuntimeError(f"Windows FileIO recording did not start (exit {status}).")
+    stopped = False
+
+    def stop_wpr():
+        nonlocal stopped
+        status = run_wpr("-stop", str(root / "rundown.etl"), "-skipPdbGen")
+        if status:
+            raise RuntimeError(f"Windows FileIO recording did not stop cleanly (exit {status}).")
+        stopped = True
+        return utc_ticks() // 10 * 10
+
+    try:
+        yield stop_wpr
+    finally:
+        if not stopped:
+            run_wpr("-cancel")
+
+
 def preopened_control(root, *, rundown=False, system_timing=False):
     root.mkdir()
     protected = root / "synthetic-protected"
@@ -264,26 +296,8 @@ def preopened_control(root, *, rundown=False, system_timing=False):
                     raise RuntimeError("The comparison payload was incorrect at capture start.")
                 return {"path": str(comparison), "size": len(payload),
                         "open_window": open_window, "read_window": read_window}
-        # Keep the control handles open through WPR's stop-time rundown.
-        wpr = Path(os.environ["SystemRoot"]) / "System32" / "wpr.exe"
-        instance = ["-instancename", f"PilotODIN-{uuid4().hex}"]
-        def run_wpr(*arguments):
-            return subprocess.run([str(wpr), *arguments, *instance], timeout=60,
-                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
-
-        if (status := run_wpr("-start", "FileIO")) != 0:
-            raise RuntimeError(f"Windows FileIO recording did not start (exit {status}).")
-        stopped = False
-
-        def stop_wpr():
-            nonlocal stopped
-            status = run_wpr("-stop", str(root / "rundown.etl"), "-skipPdbGen")
-            if status:
-                raise RuntimeError(f"Windows FileIO recording did not stop cleanly (exit {status}).")
-            stopped = True
-            return utc_ticks() // 10 * 10
-
-        try:
+        # Keep the control handles open through the stop-time rundown.
+        with collect_fileio_rundown(root) as stop_wpr:
             capture = capture_fixture(root, calibration_only=True, thread_context=True,
                                       controls=controls, before_stop=stop_wpr,
                                       open_comparison=open_comparison)
@@ -297,9 +311,6 @@ def preopened_control(root, *, rundown=False, system_timing=False):
                 if comparison_stream.read() != comparison_payload:
                     raise RuntimeError("The untouched comparison payload changed.")
             return capture
-        finally:
-            if not stopped:
-                run_wpr("-cancel")
 
 
 def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None,
@@ -349,7 +360,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             first = utc_ticks()
             os.fsync(controls["protected"][1].fileno())
             control_writes["protected"]["flush_window"] = [first, utc_ticks()]
-        if before_stop is not None:
+        if before_stop is not None and controls:
             lifetime_path = root / "file-lifetime.bin"
             lifetime_start = utc_ticks()
             lifetime_pid = run_writer(
@@ -457,14 +468,14 @@ if __name__ == "__main__":
         options = sys.argv[2:]
         if len(sys.argv) < 2 or options not in (
             [], ["--calibration-only"], ["--calibration-only", "--thread-context"],
-            ["--collector-rehearsal"],
+            ["--collector-rehearsal"], ["--collector-rehearsal", "--rundown"],
             ["--preopened-control"], ["--preopened-control", "--rundown"],
             ["--preopened-control", "--rundown", "--system-timing"],
         ):
             raise ValueError("Unexpected probe arguments.")
         root = local_disposable_path(Path(sys.argv[1]), runner_temp_only=True)
-        if options == ["--collector-rehearsal"]:
-            print(json.dumps(collector_rehearsal(root)))
+        if "--collector-rehearsal" in options:
+            print(json.dumps(collector_rehearsal(root, rundown="--rundown" in options)))
         elif "--preopened-control" in options:
             print(json.dumps(preopened_control(
                 root, rundown="--rundown" in options, system_timing="--system-timing" in options,

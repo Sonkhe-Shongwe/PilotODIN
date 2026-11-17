@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param(
     [switch]$WithEtw,
+    [switch]$CollectorRundown,
     [switch]$AppJourney,
     [switch]$AppLifetime,
     [switch]$LifetimeControl,
@@ -17,6 +18,10 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows' -or
     $env:GITHUB_RUN_ATTEMPT -ne '1') {
     throw 'Live calibration requires the first run on disposable hosted Windows.'
+}
+
+if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or $LifetimeEtwControl)) {
+    throw 'The FileIO rundown comparison requires the collector-only ETW rehearsal.'
 }
 
 if ($LifetimeControl -or $LifetimeEtwControl) {
@@ -145,7 +150,7 @@ try {
         return
     }
     if ($WithEtw) {
-        & (Join-Path $PSScriptRoot 'Test_P4_N12_ETW_Fixture.ps1') -WithSysmon
+        & (Join-Path $PSScriptRoot 'Test_P4_N12_ETW_Fixture.ps1') -WithSysmon -Rundown:$CollectorRundown
         return
     }
     $latest = Get-WinEvent -LogName $channel -MaxEvents 1

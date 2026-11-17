@@ -1,4 +1,5 @@
 """Exercise the N12 journey order and refusal paths without running Windows."""
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import hashlib
 import ipaddress
@@ -314,7 +315,8 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
 
 
 @pytest.mark.parametrize("approved", [False, True])
-def test_collector_rehearsal_reuses_prelaunch_gate(tmp_path, monkeypatch, approved):
+@pytest.mark.parametrize("rundown", [False, True])
+def test_collector_rehearsal_reuses_prelaunch_gate(tmp_path, monkeypatch, approved, rundown):
     root = tmp_path / "generated-rehearsal"
     monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
     monkeypatch.setenv("PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT",
@@ -336,25 +338,38 @@ def test_collector_rehearsal_reuses_prelaunch_gate(tmp_path, monkeypatch, approv
         events.append("shared-guard")
         return 52
 
-    def fixture_capture(capture_root, *, calibration_only, thread_context, verify_fixture):
+    @contextmanager
+    def fileio_rundown(capture_root):
+        assert capture_root == root
+        events.append("rundown-start")
+        yield lambda: events.append("rundown-stop")
+
+    def fixture_capture(capture_root, *, calibration_only, thread_context, verify_fixture, before_stop=None):
         assert capture_root == root and calibration_only and not thread_context
         assert (root / "synthetic-protected").is_dir()
         events.append("fixture")
         records = verify_fixture(marker, journey.trace.utc_ticks(start))
+        if before_stop is not None:
+            before_stop()
         events.append("etw-stop")
         return {"fixture": marker, "sysmon": records}
 
     monkeypatch.setattr(journey, "sysmon_tail", channel_tail)
     monkeypatch.setattr(journey, "verify_initial_sysmon", verify)
     monkeypatch.setattr(journey.etw, "capture_fixture", fixture_capture)
+    monkeypatch.setattr(journey.etw, "collect_fileio_rundown", fileio_rundown)
     if not approved:
         with pytest.raises(journey.trace.EvidenceValidationError, match="separate first-run consent"):
-            journey.etw.collector_rehearsal(root)
+            journey.etw.collector_rehearsal(root, rundown=rundown)
         assert not events and not root.exists()
         return
-    capture = journey.etw.collector_rehearsal(root)
+    capture = journey.etw.collector_rehearsal(root, rundown=rundown)
     assert capture["sysmon"] == {"first_record": 45, "prelaunch_last_record": 52}
-    assert events == ["record-floor", "fixture", "shared-guard", "etw-stop"]
+    expected = ["record-floor", "fixture", "shared-guard", "etw-stop"]
+    if rundown:
+        expected[1:1] = ["rundown-start"]
+        expected[-1:-1] = ["rundown-stop"]
+    assert events == expected
 
 
 class Process:
