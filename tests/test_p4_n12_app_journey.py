@@ -108,6 +108,7 @@ NETWORK_DIAGNOSTIC_CASES = {
     ("collector-change", "sysmon-restart-config-change-or-error", 2),
     ("udp-absent", "child-loopback-tcp-or-udp-missing", 2),
     ("tcp-absent", "child-loopback-tcp-or-udp-missing", 2),
+    ("socket-identity-conflicts", "connection-guid-unresolved-for-scoped-pid", 1),
     ("udp-before-birth", "connection-outside-process-lifetime", 1),
     ("udp-after-exit", "connection-outside-process-lifetime", 1),
     ("udp-outside-window", "child-loopback-tcp-or-udp-missing", 2),
@@ -157,6 +158,11 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
     if scenario == "both-absent":
         events = [(rid, 2, offset, {}) if kind == 3 else (rid, kind, offset, fields)
                   for rid, kind, offset, fields in events]
+    if scenario == "socket-identity-conflicts":
+        marker.update(tcp_sender_port=23553, udp_sender_port=23552)
+        events[3] = (birth_id + 2, 3, 3, dict(udp, Protocol="tcp", SourcePort="23553",
+                                              ProcessGuid="private-system-guid", ProcessId="4"))
+        events[4] = (birth_id + 3, 3, 3, dict(udp, ProcessGuid="private-unrelated"))
     udp_changes = {
         "udp-other-process": {"ProcessGuid": "private-unrelated", "ProcessId": "999"},
         "udp-parent-inbound": {"ProcessGuid": "private-parent", "ProcessId": "412", "Initiated": "false"},
@@ -230,6 +236,16 @@ def test_prelaunch_reports_sysmon_delivery_and_identity(tmp_path, monkeypatch, c
         with pytest.raises(journey.trace.EvidenceValidationError, match=expected) as error:
             journey.verify_initial_sysmon(tmp_path, manifest, marker)
         assert "private" not in str(error.value).lower()
+        if scenario == "socket-identity-conflicts":
+            stdout = capsys.readouterr().out
+            details = [json.loads(line.split("socket identity diagnostics: ", 1)[1])
+                       for line in stdout.splitlines() if "socket identity diagnostics: " in line]
+            assert details == [{
+                "tcp": {"guid-other:pid-system:outbound:in-child-lifetime": 1},
+                "udp": {"guid-other:pid-child:outbound:in-child-lifetime": 1},
+            }]
+            for private_field in ("private", "23551", "23552", "23553", "127.0.0.1", "413"):
+                assert private_field not in stdout.lower()
         if scenario in {"same-millisecond", "pid-reuse", "missing-creation-time"}:
             stdout = capsys.readouterr().out
             assert "private" not in stdout.lower()

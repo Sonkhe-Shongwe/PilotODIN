@@ -2761,6 +2761,7 @@ def test_calibration_sends_actual_tcp_udp_and_leaves_no_files(monkeypatch, tmp_p
     directory = tmp_path / "calibration"
     outcome = n12_calibration.calibrate(directory)
     assert outcome["port"] > 0
+    assert 1 <= outcome["tcp_sender_port"] <= 65535
     assert 1 <= outcome["udp_sender_port"] <= 65535
     assert outcome["child_pid"] > 0 and outcome["child_pid"] != outcome["pid"]
     assert outcome["role"] == "calibration"

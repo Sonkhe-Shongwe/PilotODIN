@@ -267,8 +267,30 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
             counts = {protocol: Counter() for protocol in ("tcp", "udp")}
             rejected = {protocol: Counter() for protocol in ("tcp", "udp")}
             udp_at_fixture = Counter()
-            udp_sender_port = record.get("udp_sender_port")
+            fixture_sockets = {protocol: Counter() for protocol in ("tcp", "udp")}
+            sender_ports = {protocol: record.get(f"{protocol}_sender_port") for protocol in fixture_sockets}
+            fixture_guids = {parent.guid: "parent", child.guid: "child"}
+            fixture_pids = {parent.pid: "parent", child.pid: "child", 0: "zero", 4: "system"}
+            udp_sender_port = sender_ports["udp"]
             for connection in (*connections, *outside_connections):
+                source_port = sender_ports[connection.protocol]
+                if (type(source_port) is int and 1 <= source_port <= 65535
+                        and connection.source_port == source_port and connection.address == FIXTURE_ADDRESS
+                        and connection.port == record["port"]):
+                    guid_role = fixture_guids.get(connection.guid, "other")
+                    pid_role = fixture_pids.get(connection.pid, "other")
+                    direction = "outbound" if connection.initiated else "inbound"
+                    if not start <= connection.timestamp <= end:
+                        timing = "outside-window"
+                    elif connection.timestamp < child.start:
+                        timing = "before-child"
+                    elif connection.timestamp > child.end:
+                        timing = "after-child"
+                    else:
+                        timing = "in-child-lifetime"
+                    fixture_sockets[connection.protocol][
+                        f"guid-{guid_role}:pid-{pid_role}:{direction}:{timing}"
+                    ] += 1
                 if (connection.protocol == "udp" and connection.port == record["port"]
                         and connection.address.is_loopback and connection.guid != child.guid):
                     actor = "parent" if connection.guid == parent.guid else "other-process"
@@ -308,6 +330,8 @@ def initial_sysmon_issues(path, first, last, start, end, record, *, precision=Fa
                 "unparsed_outside_window": unparsed_outside_connections,
                 "udp_other_at_fixture_port": udp_at_fixture,
             }), flush=True)
+            print("N12 initial Sysmon calibration socket identity diagnostics: " + json.dumps(
+                fixture_sockets), flush=True)
     trace.verify_connection_lifetimes(connections, processes, roles, issues)
     allowed = trace.calibration_destinations(record, parent, processes)
     _, unexpected, _ = trace.scoped_network(connections, roles, allowed)

@@ -2,6 +2,16 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Filesystem follow-up stopped at initial Sysmon calibration
+
+The [approved Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44019362148/job/133824872130) ran once on image `20261112.366.7` with Sysmon 15.22. The launch was `de7518aec37c4125e2a6422085d6d4b26c391af0` and the pinned source was `82ed8e4ee8f68641213b36b981cf989eb5c7bfe1`. The executable SHA-256 was `6e6ab9b3b94a99d706fc9e6f997dd482b413fdcf15b63140fda5190927879dd0`. The Cargo lock SHA-256 was `2c8751899657e42d7caca62f6ca1e5a9be2690eaf8ee0eef9e02fe28da0ce5ae`. The [launch preflight CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44019362067) passed.
+
+**Initial calibration BLOCKED on read 2.** Neither read found TCP or UDP under the expected child GUID in its lifetime. On both reads two TCP records and one UDP record at the fixture destination port carried another GUID. The UDP record was outbound and matched the fixture's observed sender port within the frozen window. The retained log did not compare the reported PID with the expected child PID or preserve the TCP sender port. The receipt of both fixture payloads is evidenced by the completed calibration command. The source of the collector's identity mismatch remains unverified.
+
+ETW stopped successfully during cleanup. Both app launches, the endpoint comparison and the filesystem and network reductions were **NOT RUN**. The earlier complete audit remains the baseline for the 39 WebView and two backend outside-scope operations and the 248 Node temp operations. No artifacts were retained. The one-use workflow is disarmed. P4 remains **14/20 (70%)**.
+
+The next calibration diagnostic records the TCP sender port privately, as it already does for UDP. On a missing protocol it reports whether socket records matching that sender port and the fixture destination agree with the child's GUID, PID and lifetime. It separates the known parent, child, zero and System PID categories from other identities. The public output contains counts with fixed labels. Both protocols still require the correct child GUID, PID, direction, endpoint and time.
+
 ## 17 November 2026 | N12 filesystem follow-up prepared
 
 The journey now sets the existing QA scratch directory as the temp directory for both Vite and the Playwright driver. The previous run classified 248 Node temp operations but did not identify the Node component. The generated Node control creates, writes and renames a file and checks the actual final path. The next app journey can measure the change in outside-scope operations.
@@ -10,7 +20,7 @@ The WebView child check opens read-only query handles before shutdown and keeps 
 
 The file reducer applies the existing request-to-completion path checks to up to 64 distinct FileKey and FileObject pairs from the dominant unresolved WebView network write category. Its redacted results distinguish path evidence inside the role's permitted roots, inside protected roots, outside the role's scope, and conflicts. A generated replay tests the sampling bound, duplicate file identities, conflicting names, name deletion, and failed or missing completions. Samples do not supply acceptance credit. Use the result to decide which storage paths or joins to correct.
 
-The updated app journey has **NOT RUN**. The previous full run below remains the live baseline. P4 is **14/20 (70%)**.
+The [follow-up audit](#17-november-2026--filesystem-follow-up-stopped-at-initial-sysmon-calibration) stopped before either app launch. The previous full run below remains the live baseline. P4 is **14/20 (70%)**.
 
 ## 17 November 2026 | Integrated N12 audit passed both app lifetime checks
 
@@ -486,7 +496,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Use the [Integrated N12 Windows audit](#17-november-2026--integrated-n12-audit-passed-both-app-lifetime-checks) to build generated replays for the outside-tracked FileKey case and the child stop-image conflict. Trace driver scratch writes to the exact process and app launch stage before changing where the harness writes. Preserve the network findings as separate cases for backend socket ownership, QA IPC, Edge service traffic and unattributed UDP/443. A later full audit needs a source change that can address a recorded blocker. [Acceptance plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
+Verify collector attribution on generated TCP and UDP markers using the new socket identity breakdown before staging another unpackaged app build. Build and ETW start passed. Initial Sysmon calibration blocked before either app launch because neither protocol could be verified for the fixture child. [Latest attempt](#17-november-2026--filesystem-follow-up-stopped-at-initial-sysmon-calibration) The remaining full-journey evidence needs the driver temp comparison, child handles, WebView request-to-completion samples and the retained WebView and backend writer categories. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

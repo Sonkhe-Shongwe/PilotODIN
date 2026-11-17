@@ -68,6 +68,7 @@ def calibrate(directory: Path) -> dict:
                 peer.settimeout(5)
                 if stream.read(3) != b"tcp":
                     raise RuntimeError("TCP marker not received")
+                tcp_sender_port = peer.getpeername()[1]
             payload, sender = udp.recvfrom(3)
             if payload != b"udp" or not ipaddress.ip_address(sender[0]).is_loopback:
                 raise RuntimeError("UDP marker not received from loopback")
@@ -79,7 +80,7 @@ def calibrate(directory: Path) -> dict:
                 child.wait()
     return {"role": "calibration", "pid": os.getpid(), "image": sys.executable, "child_pid": child.pid,
             "fixture": str(original), "renamed_fixture": str(renamed), "port": address[1],
-            "udp_sender_port": sender[1],
+            "tcp_sender_port": tcp_sender_port, "udp_sender_port": sender[1],
             "parent_created_utc_ticks": parent_creation_ticks()}
 
 
