@@ -130,9 +130,9 @@ function Write-Sample([string]$Stage, [int]$Sequence, $App, [string]$AppPath, [h
             sample = $Sequence; stage = $Stage; role = $role
             pid = $entry.ProcessId; parent_pid = $entry.ParentProcessId
             started_utc = $entry.CreationDate.ToUniversalTime().ToString('o')
-            working_set_bytes = if ($matched) { $counter.WorkingSet }
-            private_resident_bytes = if ($matched) { $counter.WorkingSetPrivate }
-            private_commit_bytes = if ($matched) { $counter.PrivateBytes }
+            working_set_bytes = $(if ($matched) { $counter.WorkingSet })
+            private_resident_bytes = $(if ($matched) { $counter.WorkingSetPrivate })
+            private_commit_bytes = $(if ($matched) { $counter.PrivateBytes })
         }
     })
     $working = @($rows | Where-Object { $null -ne $_.working_set_bytes })
@@ -149,8 +149,8 @@ function Write-Sample([string]$Stage, [int]$Sequence, $App, [string]$AppPath, [h
         pages_input_per_second = $system.PagesInputPersec
         owned_processes = $owned.Count; measured_processes = $working.Count
         core_roles_measured = $hasCore; desktop_responding = $responding
-        working_set_bytes_sum = if ($working.Count -gt 0) { ($working | Measure-Object -Property working_set_bytes -Sum).Sum }
-        private_resident_bytes_sum = if ($private.Count -gt 0) { ($private | Measure-Object -Property private_resident_bytes -Sum).Sum }
+        working_set_bytes_sum = $(if ($working.Count -gt 0) { ($working | Measure-Object -Property working_set_bytes -Sum).Sum })
+        private_resident_bytes_sum = $(if ($private.Count -gt 0) { ($private | Measure-Object -Property private_resident_bytes -Sum).Sum })
         private_resident_processes = $private.Count
     })
 }
