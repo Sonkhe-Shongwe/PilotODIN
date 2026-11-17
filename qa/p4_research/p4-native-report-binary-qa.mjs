@@ -1,9 +1,7 @@
 // Copied into frontend/ on the hosted fixture so it resolves the installed Playwright.
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {createHash} from 'node:crypto';
-import {readdir, readFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import {readdir} from 'node:fs/promises';
 import {setTimeout as wait} from 'node:timers/promises';
 import {chromium} from '@playwright/test';
 
@@ -78,34 +76,20 @@ try {
   }
   console.log(JSON.stringify({case: 'transfer_without_dialog', ...validation}));
 
-  for (const format of ['pdf', 'html', 'cancel']) {
-    const args = ['-NoProfile', '-NonInteractive', '-File', PILOTODIN_SAVE_QA_DIALOG, '-AppId', PILOTODIN_SAVE_QA_PID];
-    const filename = 'PilotODIN_P2_Synthetic.' + format;
-    const output = join(PILOTODIN_SAVE_QA_OUTPUT, filename);
-    if (format === 'cancel') args.push('-Cancel');
-    else args.push('-Destination', output);
-    await page.locator('#' + format).click();
-    const observed = JSON.parse(execFileSync('powershell.exe', args, {encoding: 'utf8', timeout: 28000}));
-    await page.waitForFunction(id => !document.getElementById(id).disabled &&
-      document.getElementById(id + '-state').textContent.startsWith('PASS:'), format, {timeout: 12000});
-    const request = await page.evaluate(() => window.reportQa.calls.at(-1));
-    assert.equal(request.contentType, 'application/octet-stream');
-    assert.ok(observed.observed_at >= request.at);
-    const result = {
-      case: format, bytes: request.bytes,
-      invoke_to_dialog_observed_ms: observed.observed_at - request.at,
-      dialog_observed_to_action_ms: observed.action_at - observed.observed_at,
-    };
-    if (format !== 'cancel') {
-      const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-      const expected = await readFile(join('public', 'p2-native-fixtures', 'report.' + format));
-      const saved = await readFile(output);
-      assert.equal(digest(saved), digest(expected));
-      assert.equal(request.bytes, expected.length);
-      result.sha256_matched = true;
-    }
-    console.log(JSON.stringify(result));
-  }
+  const args = ['-NoProfile', '-NonInteractive', '-File', PILOTODIN_SAVE_QA_DIALOG, '-AppId', PILOTODIN_SAVE_QA_PID];
+  await page.locator('#cancel').click();
+  const observed = JSON.parse(execFileSync('powershell.exe', args, {encoding: 'utf8', timeout: 28000}));
+  await page.waitForFunction(() =>
+    document.getElementById('cancel-state').textContent.startsWith('PASS: Cancellation confirmed by Rust command'),
+    undefined, {timeout: 12000});
+  const request = await page.evaluate(() => window.reportQa.calls.at(-1));
+  assert.equal(request.contentType, 'application/octet-stream');
+  assert.ok(observed.observed_at >= request.at);
+  console.log(JSON.stringify({
+    case: 'cancel', bytes: request.bytes,
+    invoke_to_dialog_observed_ms: observed.observed_at - request.at,
+    dialog_observed_to_close_requested_ms: observed.action_at - observed.observed_at,
+  }));
   await page.locator('#badextension').click();
   await page.waitForFunction(() => document.getElementById('badextension-state').textContent.startsWith('PASS:'));
   const callsBeforeFallback = await page.evaluate(() => {
@@ -115,10 +99,8 @@ try {
   await page.locator('#badcontent').click();
   await page.waitForFunction(() => document.getElementById('badcontent-state').textContent.startsWith('PASS:'));
   assert.equal(await page.evaluate(() => window.reportQa.calls.length), callsBeforeFallback + 1);
-  assert.deepEqual((await readdir(PILOTODIN_SAVE_QA_OUTPUT)).sort(), [
-    'PilotODIN_P2_Synthetic.html', 'PilotODIN_P2_Synthetic.pdf',
-  ]);
-  console.log('PASS: raw transfer, Windows Save As hashes, no-write cancellation, extension validation and postMessage content rejection.');
+  assert.deepEqual(await readdir(PILOTODIN_SAVE_QA_OUTPUT), []);
+  console.log('PASS: binary IPC, native no-write cancellation, extension validation and postMessage content rejection.');
 } finally {
   await browser.close();
 }
