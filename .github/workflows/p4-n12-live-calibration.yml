@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ false }} # Strict comparison prepared for a fresh one-use approval.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }} # One approved collector-only strict comparison.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
