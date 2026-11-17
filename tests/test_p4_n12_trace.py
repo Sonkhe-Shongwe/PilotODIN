@@ -244,6 +244,108 @@ def test_webview_write_path_replay_is_bounded_and_preserves_strict_coverage():
     assert "private" not in json.dumps(result)
 
 
+def test_webview_candidate_replay_matches_known_paths_and_rejects_conflicting_completion(tmp_path):
+    start, end = (trace.utc_time(instant(second)) for second in (0, 1))
+    origin = trace.utc_ticks(start)
+    profile = r"c:\qa\profile"
+    protected = r"c:\qa\protected"
+    outside = r"c:\qa\profile-sibling"
+    rows = []
+    pid, thread = 7, 71
+
+    def emit(kind, *, owner=pid, lifecycle=False, **data):
+        rows.append({"ticks": origin + len(rows) + 1, "id": kind, "pid": owner,
+                     "lifecycle": lifecycle, "data": data})
+
+    def complete(irp, **data):
+        emit(24, owner=0, Irp=irp, Status=0, **data)
+
+    def write(obj, key, irp):
+        emit(16, FileObject=obj, FileKey=key, Irp=irp, IssuingThreadId=thread)
+
+    emit(1, owner=0, lifecycle=True, ProcessID=pid)
+    emit(3, owner=0, lifecycle=True, ProcessID=pid, ThreadID=thread)
+    for index, root in enumerate((profile, protected, outside), 1):
+        path = root + r"\private-write.bin"
+        emit(12, FileObject=index, Irp=index, FileName=path)
+        complete(index, ExtraInformation=1)
+        write(index, index, index + 10)
+        complete(index + 10)
+
+        # Replay the same known target with a pre-opened handle and a name event.
+        emit(10, FileKey=index + 100, FileName=path)
+        write(index + 100, index + 100, index + 100)
+        complete(index + 100)
+
+    path = outside + r"\private-replay.bin"
+    emit(10, FileKey=201, FileName=path)
+    write(201, 201, 201)
+    complete(201, FileObject=999)
+
+    emit(10, FileKey=202, FileName=path)
+    write(202, 202, 202)
+    emit(19, FileObject=202, FileKey=202, Irp=302)
+    emit(27, FileObject=202, Irp=302, FilePath=protected + r"\private-rename.bin")
+    complete(302)
+    complete(202)
+
+    emit(10, FileKey=203, FileName=path)
+    write(203, 203, 203)
+    emit(12, FileObject=203, FileKey=303, Irp=303, FileName=path)
+    complete(303, ExtraInformation=1)
+    complete(203)
+
+    write(204, 204, 204)
+    emit(10, FileKey=204, FileName=path)
+    complete(204)
+
+    emit(10, FileKey=205, FileName=path)
+    write(0, 205, 205)
+    complete(205)
+
+    emit(10, FileKey=206, FileName=path)
+    write(206, 206, 206)
+    emit(2, owner=0, lifecycle=True, ProcessID=pid)
+    emit(1, owner=0, lifecycle=True, ProcessID=pid)
+    complete(206)
+
+    payload = "".join(json.dumps(row) + "\n" for row in rows).encode()
+    etw_path = tmp_path / "known-webview.jsonl"
+    etw_path.write_bytes(payload)
+    manifest = {"etw": {
+        "schema_version": 1, "start_utc": instant(0), "end_utc": instant(1),
+        "events_sha256": hashlib.sha256(payload).hexdigest(),
+        "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+        "counters": {"events_lost": 0, "log_buffers_lost": 0,
+                     "realtime_buffers_lost": 0, "buffers_written": 1},
+    }}
+    role = "webview-network"
+    processes = {"webview": trace.Process("webview", "app", pid, "msedgewebview2.exe", None, start, "")}
+    arguments = (manifest, etw_path, start, end, processes, {"webview": role}, [protected], {role: [profile]})
+    checked, baseline_issues, checked_issues = {}, set(), set()
+    baseline = trace.inspect_etw_files(*arguments, baseline_issues)
+    result = trace.inspect_etw_files(*arguments, checked_issues, webview_write_candidates=checked)
+    assert result == baseline
+    assert checked_issues == baseline_issues == {"etw-mutation-coverage-unresolved"}
+    counts, violations, _, unresolved = result
+    assert counts[f"{role}:write"] == 3
+    assert violations[f"protected:{role}:write"] == 1
+    assert violations[f"outside-scope:{role}:write"] == 2
+    assert violations[f"protected:{role}:rename"] == 1
+    assert unresolved[f"{role}:write:path-missing"] == 8
+    assert unresolved[f"{role}:write:identity-missing"] == 1
+    assert checked == {"eligible": 7, "sampled": 7, "outcomes": {
+        f"{role}:write:request-time:candidate-permitted": 1,
+        f"{role}:write:request-time:candidate-protected": 1,
+        f"{role}:write:request-time:candidate-outside-scope": 1,
+        f"{role}:write:completion-check:completion-file-identity-conflict": 1,
+        f"{role}:write:request-time:possible-name-change": 1,
+        f"{role}:write:request-time:conflicting-object-file-key": 1,
+        f"{role}:write:completion-check:process-lifetime-unverified-at-completion": 1,
+    }}
+    assert "private" not in json.dumps(checked)
+
+
 @pytest.mark.parametrize("compare_credit", [False, True])
 @pytest.mark.parametrize(("case", "expected"), [
     ("outside", "consistent-outside-protected-path"),

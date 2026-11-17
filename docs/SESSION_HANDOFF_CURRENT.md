@@ -2,6 +2,12 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | WebView request-time path replay
+
+The generated replay used the journey's filesystem reducer and its real role-specific path rules. On known targets, the diagnostic matched one permitted profile write, one protected write and one write outside WebView's scope. It rejected four cases with a conflicting completion object, an in-flight rename, a reused file object with a different key, or a reused process ID before completion. A filename first seen after the write request stayed outside the sample, and a write missing its object identity stayed unresolved.
+
+Existing open-backed controls still flagged a protected write, an outside-scope write and a rename into a protected root. The strict results agreed with and without the diagnostic. The WebView report can now sample candidates in protected roots and rejects completion identity conflicts using the collector's existing lifetime check. The 64-pair bound remains in force. This is generated replay evidence. The actual app path distribution is **NOT RUN** on this source. [Hosted follow-up criteria](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#webview-path-replay-and-hosted-follow-up)
+
 ## 17 November 2026 | Collector verified 1,226 background mutation paths
 
 The [approved collector-only job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44064219314/job/133973584601) ran once on Windows Server 2022 image `20261112.366.7` with Sysmon 15.22. Launch `a4fb79687847a566b011860566bd8fa5eef6288a` pinned source `fb206da5997412403d4a5243a9ee822e32656a12`. Sysmon prelaunch **PASS** on read 1. All generated file operations were observed, no ETW loss was reported, and the decoder emitted 1,659 FileIO filename records. PilotODIN compilation and launch were **NOT RUN**. The job retained zero artifacts.
@@ -580,7 +586,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Start with a generated replay of operations that already have a candidate name at request time. The [last capture](#17-november-2026--collector-verified-1226-background-mutation-paths) has 129 such operations, and the full app audit found the same evidence pattern for WebView writes. Check identity and path through completion for both permitted and prohibited writes. The 191 timing gaps have a separate known-file clock control. The [worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75) records the full breakdown and the evidence needed before another live run.
+The [generated WebView replay](#17-november-2026--webview-request-time-path-replay) verified the expected diagnostic outcomes. The actual path distribution needs a separately approved [hosted app journey](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#webview-path-replay-and-hosted-follow-up) using the same classifier and the existing writer and network reports. The 191 collector timing gaps have a separate known-file clock control.
 
 The collector-only strict comparison now reports `remaining_paths_by_reason` alongside `credited_paths`. Each still-unresolved path appears once in that breakdown. The synthetic CLI regression checks that the counts match the remaining strict path gaps, a recovered protected write still reports a violation, and trace loss prevents credit. The existing strict verdict still governs acceptance.
 

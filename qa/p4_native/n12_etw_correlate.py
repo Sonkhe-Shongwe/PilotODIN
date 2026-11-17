@@ -83,6 +83,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     completion_checks = {}
     credit_identities = {}
     webview_gaps = []
+    webview_gap_outcomes = Counter()
     sampled_webview_objects = set()
     webview_gaps_seen = 0
     calibration_rundown = diagnostic_rundown_stop is not None
@@ -106,7 +107,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             for event in ordered_events if not event.get("lifecycle")
             if (key := name_transition_key(event["id"], event["data"]))
         }
-    if strict and (details is not None or rundown_verification_start is not None):
+    if strict and (details is not None or rundown_verification_start is not None
+                   or webview_write_candidates is not None):
         for event in ordered_events:
             if not event.get("lifecycle"):
                 continue
@@ -228,6 +230,19 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             else:
                 suffix = f":info-{info}" if event_id == 17 else ""
             details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
+
+    def completion_identity_issue(request, completion, handle, actor):
+        owner_pid, owner_birth, _ = handle
+        requested, completed = request["ticks"], completion["ticks"]
+        if (owner_birth is None or not owner_birth < requested < completed
+                or active.get(owner_pid) != owner_birth or actor == "unattributed"
+                or (owner_pid, requested) in process_transition_ticks
+                or (owner_pid, completed) in process_transition_ticks):
+            return "process-lifetime-unverified-at-completion"
+        if any(number(completion["data"].get(field)) not in {None, 0, number(request["data"].get(field))}
+               for field in ("FileObject", "FileKey")):
+            return "completion-file-identity-conflict"
+        return None
 
     def count_compression(operation, outcome):
         if details is not None and operation == "compression":
@@ -360,28 +375,26 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             record_write_name_gap(actor, thread, name_context)
                         if (webview_write_candidates is not None and actor == "webview-network"
                                 and operation == "write" and thread == "thread-header-agrees"
-                                and name_context == "outside-tracked-paths"):
+                                and name_context in {"tracked", "outside-tracked-paths"}):
                             webview_gaps_seen += 1
-                            if len(webview_gaps) < 64:
+                            if len(sampled_webview_objects) < 64:
                                 key = number(request["data"].get("FileKey"))
                                 obj = number(request["data"].get("FileObject"))
                                 if (key, obj) not in sampled_webview_objects:
                                     sampled_webview_objects.add((key, obj))
-                                    webview_gaps.append((actor, operation, request, ticks))
+                                    issue = completion_identity_issue(request, event, handle, actor)
+                                    if issue:
+                                        webview_gap_outcomes[f"{actor}:{operation}:completion-check:{issue}"] += 1
+                                    else:
+                                        webview_gaps.append((actor, operation, request, ticks))
                     if calibration_diagnostics is not None and operation in {"write", "resize"}:
                         calibration_gaps.append((actor, operation, request, ticks))
                         if rundown_verification_start is not None:
                             if rundown_credit is not None and actor == "other":
                                 credit_identities[id(request)] = identity
-                            owner_pid, owner_birth, _ = handle
-                            if (owner_birth is None or not owner_birth < requested < ticks
-                                    or active.get(owner_pid) != owner_birth or actor == "unattributed"
-                                    or (owner_pid, requested) in process_transition_ticks
-                                    or (owner_pid, ticks) in process_transition_ticks):
-                                completion_checks[id(request)] = "process-lifetime-unverified-at-completion"
-                            elif any(number(data.get(field)) not in {None, 0, number(request["data"].get(field))}
-                                     for field in ("FileObject", "FileKey")):
-                                completion_checks[id(request)] = "completion-file-identity-conflict"
+                            issue = completion_identity_issue(request, event, handle, actor)
+                            if issue:
+                                completion_checks[id(request)] = issue
                 if source or destination:
                     record(actor, identity, operation, source, destination, requested, ticks, True)
                     if protected_system_write is not None:
@@ -642,12 +655,13 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                           "over-100ms-before-end")
                 unmatched_writes[f"{actor}:{bucket}"] += 1
     if webview_write_candidates is not None:
+        webview_gap_outcomes.update(summarize_calibration_path_gaps(
+            ordered_events, webview_gaps, resolve_path, tracked, {}, set(), None,
+            classify_path=classify_webview_path,
+        ))
         webview_write_candidates.update(
-            eligible=webview_gaps_seen, sampled=len(webview_gaps),
-            outcomes=summarize_calibration_path_gaps(
-                ordered_events, webview_gaps, resolve_path, tracked, {}, set(), None,
-                classify_path=classify_webview_path,
-            ),
+            eligible=webview_gaps_seen, sampled=len(sampled_webview_objects),
+            outcomes=dict(webview_gap_outcomes),
         )
     if calibration_diagnostics is not None:
         credited_paths = Counter()
