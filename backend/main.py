@@ -1169,7 +1169,10 @@ def resource_preflight(request: Request,
         return {'decision': 'skip', 'code': 'local_model_disabled'}
     # Read-only status. The decision is re-checked server-side before new
     # training/model generation; a client report is never authorization.
-    return resource_policy.admit_new_work(operation)
+    admission = resource_policy.admit_new_work(operation)
+    if operation == 'local_inference' and insight_context == 'assistant' and selected_provider == 'ollama':
+        resource_policy.record_r03_event('desktop_preflight', **admission)
+    return admission
 
 
 @app.put('/api/resource/policy')
@@ -1232,6 +1235,11 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
                    f"Compared the available numeric and categorical groups; see the verified investigation below. "
                    "No treatment has been applied. Observed associations do not prove the missingness mechanism.")
         result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text)
+        if body.context == 'assistant' and body.selected_provider == 'ollama':
+            resource_policy.record_r03_event(
+                'insight_result', source=result.get('source'), provider=result.get('provider'),
+                fallback=result.get('fallback'), local_status=result.get('local_status'),
+            )
         return {**result,'dataset_version':version,'privacy':'summary_only_no_rows',
                 'scope':body.context,'investigation':plan['local_report'] if plan else None,
                 'investigation_steps':plan['steps'] if plan else [],

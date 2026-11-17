@@ -232,7 +232,14 @@ fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<Back
     if port == inference_port {return Err("Port reservation collision".into());}
     let token = new_token();
     let inference_token = new_token();
-    let data_dir = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("data");
+    let mut data_dir = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("data");
+    if app.config().identifier == "com.pilotodin.p4r03benchmark" {
+        let profile = std::env::var("PILOTODIN_R03_BENCHMARK").unwrap_or_default();
+        match profile.as_str() {
+            "baseline" | "candidate" => data_dir.push(profile),
+            _ => return Err("Select a valid R03 QA benchmark profile".into()),
+        }
+    }
     std::fs::create_dir_all(&data_dir)
         .map_err(|e| format!("Could not prepare user storage: {e}"))?;
 

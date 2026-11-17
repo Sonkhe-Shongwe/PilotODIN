@@ -1,8 +1,11 @@
 """Exercise the real Local analytics route with generated data and no inference worker."""
 
 import io
+import json
+import os
 from pathlib import Path
 import sys
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
@@ -193,6 +196,66 @@ class VerifiedAnswersTests(unittest.TestCase):
             result = self.ask(project, 'What is the dataset overview?', selected_provider='ollama')
         self.assertEqual(result['answer'], 'Model answer')
         respond.assert_called_once()
+
+    def test_qa_candidate_floor_requires_the_isolated_desktop_profile(self):
+        with TemporaryDirectory() as tmp, patch.dict(os.environ, {
+            'PILOTODIN_R03_BENCHMARK': 'candidate', 'PILOTODIN_DESKTOP_SESSION': 'qa-test',
+        }), patch.object(resource_policy.sys, 'platform', 'win32'):
+            root = Path(tmp)
+            candidate = root / 'com.pilotodin.p4r03benchmark' / 'data' / 'candidate'
+            for home, floor in ((root, 2.0), (candidate, 1.5)):
+                with self.subTest(floor=floor), patch.object(storage, 'HOME', home), patch.object(
+                    resource_policy, '_physical_memory_bytes', return_value=(8 * 1024**3, 1536 * 1024**2, 'test'),
+                ):
+                    resource_policy.save_policy('low_memory')
+                    decision = resource_policy.admit_new_work('local_inference')
+                    self.assertEqual(decision['decision'], 'allow' if floor == 1.5 else 'defer')
+                    self.assertEqual(decision['required_free_gib'], floor)
+                    self.assertEqual(resource_policy.status()['low_memory_local_inference_min_free_gib'], floor)
+                    self.assertEqual(resource_policy.admit_new_work('training')['required_free_gib'], 0.75)
+                    resource_policy.record_r03_event('desktop_preflight', **decision)
+                    self.assertEqual((home / 'r03-benchmark.jsonl').exists(), floor == 1.5)
+            with patch.object(storage, 'HOME', candidate), patch.dict(os.environ, {'PILOTODIN_DESKTOP_SESSION': ''}):
+                self.assertEqual(resource_policy._minimum_free_gib('local_inference'), 2.0)
+            baseline = candidate.with_name('baseline')
+            with patch.object(storage, 'HOME', baseline), patch.dict(os.environ, {'PILOTODIN_R03_BENCHMARK': 'baseline'}):
+                self.assertEqual(resource_policy._r03_profile(), 'baseline')
+                self.assertEqual(resource_policy._minimum_free_gib('local_inference'), 2.0)
+
+    def test_qa_records_distinct_preflight_and_generation_observations(self):
+        project = self.import_frame(pd.DataFrame({'premium': [10, None, 30, 40], 'outcome': ['Yes', 'No', 'Yes', 'No']}))
+        headers = {'Origin': 'http://tauri.localhost', 'X-PilotODIN-Session': 'qa-test'}
+        prompt = 'What is the dataset overview?'
+        with TemporaryDirectory() as tmp, patch.dict(os.environ, {
+            'PILOTODIN_R03_BENCHMARK': 'candidate', 'PILOTODIN_DESKTOP_SESSION': 'qa-test',
+        }), patch.object(resource_policy.sys, 'platform', 'win32'):
+            home = Path(tmp) / 'com.pilotodin.p4r03benchmark' / 'data' / 'candidate'
+            with patch.object(storage, 'HOME', home), patch.object(
+                ai_provider, '_read_config', return_value={**ai_provider.DEFAULTS, 'intelligence_mode': 'local'},
+            ), patch.object(resource_policy, '_physical_memory_bytes', side_effect=[
+                (8 * 1024**3, 1536 * 1024**2, 'test'), (8 * 1024**3, 1400 * 1024**2, 'test'),
+            ]), patch.object(ai_provider.bundled_inference, 'generate') as generate:
+                resource_policy.save_policy('low_memory')
+                preflight = self.client.get('/api/resource/preflight', headers=headers, params={
+                    'operation': 'local_inference', 'insight_context': 'assistant', 'selected_provider': 'ollama',
+                })
+                self.assertEqual(preflight.json()['decision'], 'allow')
+                result = self.client.post(f'/api/projects/{project}/ai/insight', headers=headers, json={
+                    'question': prompt, 'selected_provider': 'ollama',
+                })
+                self.assertEqual(result.status_code, 200, result.text)
+                self.assertEqual(result.json()['local_status'], 'resource_limited')
+                generate.assert_not_called()
+            log_text = (home / 'r03-benchmark.jsonl').read_text(encoding='utf-8')
+        preflight, generation, result = map(json.loads, log_text.splitlines())
+        self.assertEqual([preflight['stage'], generation['stage'], result['stage']],
+                         ['desktop_preflight', 'before_generation', 'insight_result'])
+        self.assertEqual((preflight['decision'], preflight['available_gib']), ('allow', 1.50))
+        self.assertEqual((generation['decision'], generation['code']), ('defer', 'low_memory_headroom'))
+        self.assertLess(generation['available_gib'], generation['required_free_gib'])
+        self.assertEqual(result['provider'], 'local')
+        for private in (prompt, project, headers['X-PilotODIN-Session']):
+            self.assertNotIn(private, log_text)
 
 
 if __name__ == '__main__':

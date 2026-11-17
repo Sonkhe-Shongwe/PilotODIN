@@ -1,6 +1,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$KitDirectory,
     [string]$RuntimeDirectory = (Join-Path $env:LOCALAPPDATA 'pilotODIN-P4-Native-QA'),
+    [ValidateSet('baseline','candidate')][string]$BenchmarkProfile,
+    [ValidatePattern('^[a-f0-9]{40}$')][string]$ExpectedSource,
     [switch]$VerifyOnly
 )
 
@@ -8,6 +10,11 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $source = '4f3824c2f565f33a87f0195844d2d73242cf7571'
 $identity = 'com.pilotodin.p4r03owner'
+if ($BenchmarkProfile) {
+    if (-not $ExpectedSource) { throw 'Supply the approved benchmark source SHA.' }
+    $source = $ExpectedSource
+    $identity = 'com.pilotodin.p4r03benchmark'
+}
 $modelName = 'qwen3-1.7b-q4_k_m.gguf'
 $modelHash = 'd2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5'
 $workerHash = 'b2ace4b8aed7c60e217fcaed8541850f4998539b8478880f1c3264387a0a8d97'
@@ -63,10 +70,19 @@ if ($VerifyOnly) {
     return
 }
 
-foreach ($root in @([Environment]::GetFolderPath('LocalApplicationData'),[Environment]::GetFolderPath('ApplicationData'))) {
-    if (Test-Path -LiteralPath (Join-Path $root $identity)) { throw 'The R03 QA profile already exists. Preserve it for review.' }
+if ($BenchmarkProfile) {
+    $appRoot = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) $identity
+    if (Test-Path -LiteralPath $appRoot) { $null = Get-PlainItem $appRoot $true }
+    $dataRoot = Join-Path $appRoot 'data'
+    if (Test-Path -LiteralPath $dataRoot) { $null = Get-PlainItem $dataRoot $true }
+    $profileRoot = Join-Path $dataRoot $BenchmarkProfile
+    if (Test-Path -LiteralPath $profileRoot) { throw 'This benchmark profile already ran. Preserve its evidence.' }
+} else {
+    foreach ($root in @([Environment]::GetFolderPath('LocalApplicationData'),[Environment]::GetFolderPath('ApplicationData'))) {
+        if (Test-Path -LiteralPath (Join-Path $root $identity)) { throw 'The R03 QA profile already exists. Preserve it for review.' }
+    }
 }
-if ($env:PILOTODIN_HOME -or $env:WEBVIEW2_USER_DATA_FOLDER -or $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS) {
+if ($env:PILOTODIN_HOME -or $env:WEBVIEW2_USER_DATA_FOLDER -or $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -or $env:PILOTODIN_R03_BENCHMARK) {
     throw 'Use a fresh PowerShell window with no PilotODIN or WebView2 environment overrides.'
 }
 $temp = Get-PlainItem ([IO.Path]::GetTempPath()) $true
@@ -84,9 +100,40 @@ Write-Host "Verified source $source, GitHub run $($provenance.run_id)."
 Write-Host "Desktop SHA-256: $($provenance.desktop_sha256)"
 Write-Host "Import this synthetic CSV: $fixture"
 $env:WEBVIEW2_USER_DATA_FOLDER = Join-Path $disposable 'webview'
+if ($BenchmarkProfile) { $env:PILOTODIN_R03_BENCHMARK = $BenchmarkProfile }
 try {
     $app = Start-Process -FilePath (Join-Path $disposable 'pilotodin-desktop.exe') -WorkingDirectory $disposable -PassThru
     Write-Host "Started isolated R03 desktop (PID $($app.Id))."
 } finally {
     Remove-Item Env:WEBVIEW2_USER_DATA_FOLDER
+    if ($BenchmarkProfile) { Remove-Item Env:PILOTODIN_R03_BENCHMARK -ErrorAction SilentlyContinue }
+}
+
+if ($BenchmarkProfile) {
+    $admissionLog = Join-Path $profileRoot 'r03-benchmark.jsonl'
+    $samples = Join-Path $disposable 'r03-memory.csv'
+    Write-Host "Benchmark profile: $BenchmarkProfile"
+    Write-Host "Admission evidence: $admissionLog"
+    Write-Host "Memory samples: $samples"
+    Write-Host 'After recording the answer or deferral, close the QA desktop to finish sampling.'
+    $deadline = [DateTime]::UtcNow.AddMinutes(15)
+    try {
+        while (-not $app.HasExited -and [DateTime]::UtcNow -lt $deadline) {
+            $memory = Get-CimInstance -ClassName Win32_PerfFormattedData_PerfOS_Memory -OperationTimeoutSec 3
+            [pscustomobject][ordered]@{
+                at_utc = [DateTime]::UtcNow.ToString('o')
+                available_mib = $memory.AvailableMBytes
+                system_commit_mib = [Math]::Round([double]$memory.CommittedBytes / 1MB, 2)
+                system_pages_input_per_sec = $memory.PagesInputPersec
+                desktop_responding = $app.Responding
+            } | Export-Csv -LiteralPath $samples -Append -NoTypeInformation -Encoding UTF8
+            Start-Sleep -Seconds 1
+            $app.Refresh()
+        }
+    } catch {
+        Write-Warning "Memory sampling stopped: $($_.Exception.Message)"
+    } finally {
+        if (Test-Path -LiteralPath $admissionLog) { Get-Content -LiteralPath $admissionLog }
+        if ($app.HasExited) { Write-Host "QA desktop exit code: $($app.ExitCode)" }
+    }
 }

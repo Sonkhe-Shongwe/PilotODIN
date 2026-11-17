@@ -367,6 +367,8 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
         # explicitly chose Low-memory and current free RAM is insufficient.
         # Other routing, consent and deterministic-calculation rules remain.
         admission=resource_policy.admit_new_work('local_inference')
+        if task == 'assistant' and selected_provider == 'ollama':
+            resource_policy.record_r03_event('before_generation', **admission)
         if admission['decision']=='defer':
             local_failed='resource_limited'
             return None

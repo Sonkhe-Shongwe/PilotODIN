@@ -129,6 +129,38 @@ LOW_MEMORY_MIN_FREE_GIB = {
 }
 
 
+def _r03_profile() -> str | None:
+    profile = os.environ.get("PILOTODIN_R03_BENCHMARK")
+    home = storage.HOME
+    if (sys.platform == "win32" and profile in ("baseline", "candidate")
+            and os.environ.get("PILOTODIN_DESKTOP_SESSION")
+            and home.name == profile and home.parent.name == "data"
+            and home.parent.parent.name == "com.pilotodin.p4r03benchmark"):
+        return profile
+    return None
+
+
+def _minimum_free_gib(operation: str) -> float:
+    if operation == "local_inference" and _r03_profile() == "candidate":
+        return 1.50
+    return LOW_MEMORY_MIN_FREE_GIB[operation]
+
+
+def record_r03_event(stage: str, **fields) -> None:
+    """Record only caller-supplied measurements in the disposable QA profile."""
+    profile = _r03_profile()
+    if profile is None:
+        return
+    event = {"at_utc": datetime.now(timezone.utc).isoformat(), "profile": profile,
+             "stage": stage, **fields}
+    try:
+        with _lock, (storage.HOME / "r03-benchmark.jsonl").open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(event, separators=(",", ":")) + "\n")
+    except OSError:
+        # Measurement is optional and must not change the admission decision.
+        return
+
+
 def admit_new_work(operation: str) -> dict:
     """Bounded policy-based admission; side-effect-free and deterministic.
 
@@ -139,15 +171,15 @@ def admit_new_work(operation: str) -> dict:
     if operation not in LOW_MEMORY_MIN_FREE_GIB:
         raise ValueError("Unknown resource admission operation")
     policy = read_policy()["mode"]
+    minimum = _minimum_free_gib(operation)
     if policy != "low_memory":
         return {
             "decision": "allow", "code": "not_enforced_for_selected_mode",
             "mode": policy, "operation": operation, "available_gib": None,
-            "required_free_gib": LOW_MEMORY_MIN_FREE_GIB[operation],
+            "required_free_gib": minimum,
             "note": "Existing operation-specific hard resource and integrity limits still apply.",
         }
     observed = memory_status()
-    minimum = LOW_MEMORY_MIN_FREE_GIB[operation]
     available = observed["available_gib"]
     if observed["status"] != "observed" or available is None:
         return {
@@ -180,5 +212,5 @@ def status() -> dict:
         "policy_effect": "low_memory_new_work_preflight_only_no_scheduler",
         "offline_8gb_ai_feasibility": "NOT_TESTED",
         "low_memory_training_min_free_gib": LOW_MEMORY_MIN_FREE_GIB["training"],
-        "low_memory_local_inference_min_free_gib": LOW_MEMORY_MIN_FREE_GIB["local_inference"],
+        "low_memory_local_inference_min_free_gib": _minimum_free_gib("local_inference"),
     }
