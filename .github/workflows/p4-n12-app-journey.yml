@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }} # One owner-approved integrated N12 journey.
+    if: ${{ false }} # One-use approval consumed by run 44015546559.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
