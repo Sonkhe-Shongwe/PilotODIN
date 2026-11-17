@@ -646,10 +646,13 @@ def load_capture(manifest, sysmon, *, etw=False, precision_fixture=None, rejecte
     return start, end, processes, connections, issues
 
 
-def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None, rundown_path=None):
+def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None, rundown_path=None,
+                      credit_verified_rundown=False):
     """Check real collector exports from a standalone generated fixture."""
     require(bookends is None or etw, "process bookends require ETW calibration")
     require(rundown_path is None or etw, "FileIO rundown requires ETW calibration")
+    if credit_verified_rundown:
+        require(etw and rundown_path is not None, "verified rundown credit requires ETW and FileIO rundown")
     if bookends is not None:
         require(isinstance(bookends, dict) and all(
             isinstance(bookends.get(side), list) and bookends[side] for side in ("before", "after")
@@ -668,17 +671,23 @@ def check_calibration(manifest, sysmon, file_trace, *, etw=False, bookends=None,
         bookend_summary = {"status": "unavailable"}
         path_gap_counts = Counter()
         calibration_diagnostics = {}
+        rundown_credit = {} if credit_verified_rundown else None
         rundown = read_rundown_file(rundown_path, manifest) if rundown_path is not None else None
+        if credit_verified_rundown:
+            require(isinstance(manifest["etw"].get("rundown_start_utc"), str),
+                    "verified rundown credit requires the FileIO rundown start timestamp")
         counts, violations, file_events, diagnostics = inspect_etw_files(
             manifest, file_trace, start, end, processes, roles, protected, permitted, issues,
             background_bookends=bookends, bookend_summary=bookend_summary,
             path_gap_counts=path_gap_counts, rundown=rundown,
-            calibration_diagnostics=calibration_diagnostics)
+            calibration_diagnostics=calibration_diagnostics, rundown_credit=rundown_credit)
         file_report = {"file_evidence_source": "etw", "etw_unresolved_mutations": diagnostics,
                        "etw_background_process_bookends": bookend_summary,
                        "etw_path_gap_context": dict(path_gap_counts),
                        "etw_calibration_diagnostics": calibration_diagnostics,
                        "file_violations": violations}
+        if rundown_credit is not None:
+            file_report["etw_rundown_credit"] = rundown_credit
     else:
         counts, violations, file_events, path_diagnostics = inspect_files(
             file_trace, start, end, processes, roles, (), permitted, issues)
@@ -782,7 +791,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       background_bookends=None,
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
                       calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None,
-                      webview_write_candidates=None):
+                      webview_write_candidates=None, rundown_credit=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -802,6 +811,9 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                         "FileIO rundown timestamps are outside the ETW observation window")
                 if "etw-event-or-buffer-loss" not in issues:
                     rundown_verification_start = rundown_start
+        if rundown_credit is not None:
+            rundown_credit["status"] = ("compared" if rundown_verification_start is not None
+                                        else "blocked-etw-loss")
     start_ticks, end_ticks = utc_ticks(start), utc_ticks(end)
     lifetimes = {}
     for process in processes.values():
@@ -933,6 +945,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
             diagnostic_rundown_stop=diagnostic_rundown_stop,
             rundown_verification_start=rundown_verification_start,
+            rundown_credit=rundown_credit,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
@@ -1625,6 +1638,8 @@ def main():
                                      help="Private process identity snapshots from the disposable runner.")
             calibration.add_argument("--rundown", type=Path,
                                      help="Optional digest-pinned FileIO rundown for diagnostics.")
+            calibration.add_argument("--credit-verified-rundown", action="store_true",
+                                     help="Run a strict comparison that credits verified background paths.")
     for mode in ("audit", "audit-etw"):
         report = subcommands.add_parser(mode)
         for argument in ("manifest", "sysmon", "etw_events" if mode == "audit-etw" else "procmon",
@@ -1675,7 +1690,8 @@ def main():
             require(bookends_path is None or bookends is not None, "expected process snapshot evidence")
             result = check_calibration(read_json(args.manifest), args.sysmon, args.file_trace,
                                        etw=args.mode == "check-calibration-etw", bookends=bookends,
-                                       rundown_path=getattr(args, "rundown", None))
+                                       rundown_path=getattr(args, "rundown", None),
+                                       credit_verified_rundown=getattr(args, "credit_verified_rundown", False))
         else:
             output = args.output
             endpoints = [] if args.private_endpoints else None

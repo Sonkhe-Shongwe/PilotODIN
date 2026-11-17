@@ -2,6 +2,12 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Strict comparison credits verified background paths
+
+The disarmed collector rehearsal can produce a fourth report from the same generated capture. It credits background writes and resizes that pass the completion check and sends their paths through the existing protected-root check. The report contains the credited counts by operation and path scope, along with the remaining strict issues. Capture loss, incomplete evidence and conflicting identities leave path gaps in place.
+
+The existing report with process snapshots still determines the rehearsal verdict. The new comparison requires a separate approved collector run. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | FileIO completion check supported 193 paths
 
 The [approved collector-only Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44049804968/job/133924468701) ran once on image `20261112.366.7` with Sysmon 15.22. Launch `15968a29ff12b56c55c777b67e738c6cff4e1500` pinned reviewed source `c53f3b76bbd0866ca6f632a13afa32af63433591`. PilotODIN compilation and launch were **NOT RUN**. The run retained zero artifacts.

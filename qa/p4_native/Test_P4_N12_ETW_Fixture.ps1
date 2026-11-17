@@ -299,6 +299,14 @@ if ($WithSysmon) {
             throw 'The rundown comparison failed or disagreed with the strict calibration verdict.'
         }
         Get-Content -LiteralPath $comparisonPath -Raw | Write-Host
+
+        $creditPath = Join-Path $root 'summary-with-verified-rundown-credit.json'
+        Write-Host 'Strict comparison with verified background paths credited from the same capture:'
+        python (Join-Path $PSScriptRoot 'n12_trace.py') check-calibration-etw $reducerManifest $sysmonXml $eventsPath $creditPath --process-bookends $bookends --rundown $rundownPath --credit-verified-rundown
+        if (($LASTEXITCODE -notin 0,2) -or -not (Test-Path -LiteralPath $creditPath -PathType Leaf)) {
+            throw 'The verified rundown credit comparison failed to produce a report.'
+        }
+        Get-Content -LiteralPath $creditPath -Raw | Write-Host
     }
     if ($auditExit -ne 0) { throw "Combined rehearsal did not calibrate (exit $auditExit)." }
     return

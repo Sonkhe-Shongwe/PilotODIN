@@ -73,7 +73,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        webview_write_candidates=None, classify_webview_path=None,
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None,
-                       rundown_verification_start=None):
+                       rundown_verification_start=None, rundown_credit=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
@@ -81,6 +81,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     write_gaps = []
     calibration_gaps = []
     completion_checks = {}
+    credit_identities = {}
     webview_gaps = []
     sampled_webview_objects = set()
     webview_gaps_seen = 0
@@ -370,6 +371,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     if calibration_diagnostics is not None and operation in {"write", "resize"}:
                         calibration_gaps.append((actor, operation, request, ticks))
                         if rundown_verification_start is not None:
+                            if rundown_credit is not None and actor == "other":
+                                credit_identities[id(request)] = identity
                             owner_pid, owner_birth, _ = handle
                             if (owner_birth is None or not owner_birth < requested < ticks
                                     or active.get(owner_pid) != owner_birth or actor == "unattributed"
@@ -647,6 +650,20 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             ),
         )
     if calibration_diagnostics is not None:
+        credited_paths = Counter()
+
+        def credit_path(actor, operation, request, completed, source):
+            if id(request) not in credit_identities:
+                return
+            record(actor, credit_identities[id(request)], operation, source, None,
+                   request["ticks"], completed, True)
+            reason = f"{actor}:{operation}:path-missing"
+            unresolved[reason] -= 1
+            if unresolved[reason] == 0:
+                del unresolved[reason]
+            scope = "protected" if tracked(source) else "outside-protected"
+            credited_paths[f"{actor}:{operation}:{scope}"] += 1
+
         calibration_diagnostics.update(
             path_candidates=summarize_calibration_path_gaps(
                 ordered_events, calibration_gaps, resolve_path, tracked,
@@ -654,9 +671,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 rundown_verification_start=rundown_verification_start,
                 completion_checks=completion_checks,
                 rundown_object_keys=rundown_object_keys,
+                credit_path=credit_path if rundown_credit is not None else None,
             ),
             unmatched_write_timing=dict(unmatched_writes),
         )
+        if rundown_credit is not None:
+            rundown_credit["credited_paths"] = dict(credited_paths)
     if write_gaps:
         name_change_events = Counter()
         class_4_outcomes = Counter()
@@ -1138,7 +1158,7 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
 def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                                     rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None,
                                     rundown_verification_start=None, completion_checks=None,
-                                    rundown_object_keys=None):
+                                    rundown_object_keys=None, credit_path=None):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
@@ -1212,6 +1232,8 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                 else:
                     verification = ("consistent-protected-path" if outcome == "candidate-protected"
                                     else "consistent-outside-protected-path")
+                    if credit_path is not None:
+                        credit_path(actor, operation, request, completed, next(iter(names)))
                 counts[f"{actor}:{operation}:no-prior-name-completion-check:{verification}"] += 1
     return dict(counts)
 

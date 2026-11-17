@@ -244,6 +244,7 @@ def test_webview_write_path_replay_is_bounded_and_preserves_strict_coverage():
     assert "private" not in json.dumps(result)
 
 
+@pytest.mark.parametrize("compare_credit", [False, True])
 @pytest.mark.parametrize(("case", "expected"), [
     ("outside", "consistent-outside-protected-path"),
     ("protected", "consistent-protected-path"),
@@ -255,7 +256,7 @@ def test_webview_write_path_replay_is_bounded_and_preserves_strict_coverage():
     ("ambiguous-name", "ambiguous-or-unmapped-name"),
     ("missing-key", "not-in-rundown"),
 ])
-def test_background_rundown_checks_the_identity_at_completion(case, expected):
+def test_background_rundown_checks_the_identity_at_completion(case, expected, compare_credit):
     private_path = r"C:\QA\private-protected.bin"
     outside = r"C:\elsewhere\private-outside.bin"
     events = [
@@ -279,16 +280,27 @@ def test_background_rundown_checks_the_identity_at_completion(case, expected):
 
     diagnostics = {}
     credited = []
+    credit_summary = {} if compare_credit else None
     unresolved = correlate_requests(
         events, lambda value: value or None, lambda *_: ("other", "private-owner"),
         lambda path: path == private_path, lambda *args: credited.append(args),
         strict=True, initial_process_births={7: 1}, rundown=names, rundown_guard_events=guards,
         calibration_diagnostics=diagnostics, calibration_end=8, diagnostic_rundown_stop=12,
         rundown_verification_start=5 if case == "completion-at-start" else 10,
+        rundown_credit=credit_summary,
     )
     assert diagnostics["path_candidates"][f"other:write:no-prior-name-completion-check:{expected}"] == 1
-    assert unresolved == {"other:write:path-missing": 1}
-    assert credited == []
+    if compare_credit and case in {"outside", "protected"}:
+        path = private_path if case == "protected" else outside
+        scope = "protected" if case == "protected" else "outside-protected"
+        assert unresolved == {}
+        assert credited == [("other", "private-owner", "write", path, None, 3, 5, True)]
+        assert credit_summary == {"credited_paths": {f"other:write:{scope}": 1}}
+    else:
+        assert unresolved == {"other:write:path-missing": 1}
+        assert credited == []
+        if compare_credit:
+            assert credit_summary == {"credited_paths": {}}
     assert "private" not in json.dumps(diagnostics)
 
 
@@ -2586,7 +2598,20 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
     assert "private-" not in json.dumps(diagnosed)
     assert "abcdef" not in json.dumps(diagnosed)
 
-    manifest["etw"]["rundown_start_utc"] = instant(4)
+    missing_start = tmp_path / "missing-rundown-start.json"
+    result = subprocess.run([*command, str(missing_start), "--rundown", str(rundown_path),
+                             "--credit-verified-rundown"], capture_output=True, text=True, check=False)
+    assert result.returncode == 2
+    assert "requires the FileIO rundown start timestamp" in result.stderr
+    assert not missing_start.exists()
+
+    mutate(72, 16, 31, FileKey=212)
+    etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    with rundown_path.open("a", encoding="utf-8") as rundown_stream:
+        rundown_stream.write(json.dumps(dict(key=212, path=protected, decoder="tdh")) + "\n")
+    manifest["etw"].update(events_sha256=hashlib.sha256(etw_path.read_bytes()).hexdigest(),
+                           rundown_sha256=hashlib.sha256(rundown_path.read_bytes()).hexdigest(),
+                           rundown_start_utc=instant(4))
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     bookends_path.write_text(json.dumps(snapshots), encoding="utf-8-sig")
     verification_baseline = report("verification-baseline", "--process-bookends", bookends_path)
@@ -2598,6 +2623,30 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
     assert outcomes["other:resize:no-prior-name-completion-check:consistent-outside-protected-path"] == 1
     assert outcomes["other:resize:no-prior-name-completion-check:lifetime-invalidated"] == 1
     assert "private-" not in json.dumps(verified)
+
+    credited = report("strict-comparison", "--process-bookends", bookends_path,
+                      "--rundown", rundown_path, "--credit-verified-rundown")
+    assert credited["etw_rundown_credit"] == {
+        "status": "compared", "credited_paths": {"other:resize:outside-protected": 1, "other:write:protected": 1},
+    }
+    unresolved = verified["etw_unresolved_mutations"].copy()
+    unresolved["other:resize:path-missing"] -= 1
+    unresolved["other:write:path-missing"] -= 1
+    assert credited["etw_unresolved_mutations"] == unresolved
+    assert credited["file_violations"] == verified["file_violations"] | {"protected:other:write": 1}
+    assert credited["file_events"] == verified["file_events"]
+    assert credited["coverage_issues"] == verified["coverage_issues"]
+    assert credited["native_n12_accepted"] is False
+    assert "private-" not in json.dumps(credited)
+
+    manifest["etw"]["counters"]["events_lost"] = 1
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    lossy = report("strict-comparison-with-etw-loss", "--process-bookends", bookends_path,
+                   "--rundown", rundown_path, "--credit-verified-rundown")
+    assert lossy["etw_rundown_credit"] == {"status": "blocked-etw-loss", "credited_paths": {}}
+    assert lossy["etw_unresolved_mutations"] == verified["etw_unresolved_mutations"]
+    assert lossy["file_violations"] == verified["file_violations"]
+    assert "etw-event-or-buffer-loss" in lossy["coverage_issues"]
 
     payload = rundown_path.read_bytes()
     rundown_path.write_bytes(payload + payload.splitlines(keepends=True)[0])
