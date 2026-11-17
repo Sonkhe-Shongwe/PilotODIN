@@ -2755,12 +2755,14 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
     assert not missing_start.exists()
 
     mutate(72, 16, 31, FileKey=212)
+    mutate(72, 17, 32, FileKey=213, InfoClass=19)
+    mutate(72, 17, 33, FileKey=214, InfoClass=4)
     etw_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
     with rundown_path.open("a", encoding="utf-8") as rundown_stream:
         rundown_stream.write(json.dumps(dict(key=212, path=protected, decoder="tdh")) + "\n")
     manifest["etw"].update(events_sha256=hashlib.sha256(etw_path.read_bytes()).hexdigest(),
                            rundown_sha256=hashlib.sha256(rundown_path.read_bytes()).hexdigest(),
-                           rundown_start_utc=instant(4))
+                           rundown_start_utc=instant(4), rundown_stop_utc=instant(5))
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     bookends_path.write_text(json.dumps(snapshots), encoding="utf-8-sig")
     verification_baseline = report("verification-baseline", "--process-bookends", bookends_path)
@@ -2775,9 +2777,18 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
 
     credited = report("strict-comparison", "--process-bookends", bookends_path,
                       "--rundown", rundown_path, "--credit-verified-rundown")
-    assert credited["etw_rundown_credit"] == {
-        "status": "compared", "credited_paths": {"other:resize:outside-protected": 1, "other:write:protected": 1},
-    }
+    credit = credited["etw_rundown_credit"]
+    assert credit["status"] == "compared"
+    assert credit["credited_paths"] == {"other:resize:outside-protected": 1, "other:write:protected": 1}
+    remaining = credit["remaining_paths_by_reason"]
+    assert remaining["other:write:completion-check:completion-at-or-after-rundown-start"] == 1
+    assert remaining["other:resize:request-time:candidate-outside-protected"] == 1
+    assert remaining["other:allocate:outside-rundown-credit-scope"] == 1
+    assert remaining["other:unsupported:outside-rundown-credit-scope"] == 1
+    assert credited["etw_unresolved_mutations"]["other:unsupported-file-operation"] == 1
+    assert remaining["other:resize:completion-check:lifetime-invalidated"] == 1
+    assert sum(remaining.values()) == sum(count for label, count in credited["etw_unresolved_mutations"].items()
+                                          if label.endswith(":path-missing"))
     unresolved = verified["etw_unresolved_mutations"].copy()
     unresolved["other:resize:path-missing"] -= 1
     unresolved["other:write:path-missing"] -= 1
@@ -2792,7 +2803,12 @@ def test_combined_calibration_cli_reports_stable_processes_and_diagnostic_candid
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     lossy = report("strict-comparison-with-etw-loss", "--process-bookends", bookends_path,
                    "--rundown", rundown_path, "--credit-verified-rundown")
-    assert lossy["etw_rundown_credit"] == {"status": "blocked-etw-loss", "credited_paths": {}}
+    loss = lossy["etw_rundown_credit"]
+    assert loss["status"] == "blocked-etw-loss"
+    assert loss["credited_paths"] == {}
+    assert loss["remaining_paths_by_reason"]["other:write:rundown-verification-unavailable"] > 0
+    assert sum(loss["remaining_paths_by_reason"].values()) == sum(
+        count for label, count in lossy["etw_unresolved_mutations"].items() if label.endswith(":path-missing"))
     assert lossy["etw_unresolved_mutations"] == verified["etw_unresolved_mutations"]
     assert lossy["file_violations"] == verified["file_violations"]
     assert "etw-event-or-buffer-loss" in lossy["coverage_issues"]

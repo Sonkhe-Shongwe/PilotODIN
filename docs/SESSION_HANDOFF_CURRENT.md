@@ -580,7 +580,9 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Use a generated known-file timing control to check whether individual rundown name records can be placed on the same clock as I/O completions. Include a verified ordering case and reject ties, identity conflicts and name changes. The [collector comparison](#17-november-2026--collector-verified-1226-background-mutation-paths) leaves 191 operations unresolved on rundown timing. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings.
+Start with a generated replay of operations that already have a candidate name at request time. The [last capture](#17-november-2026--collector-verified-1226-background-mutation-paths) has 129 such operations, and the full app audit found the same evidence pattern for WebView writes. Check identity and path through completion for both permitted and prohibited writes. The 191 timing gaps have a separate known-file clock control. The [worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75) records the full breakdown and the evidence needed before another live run.
+
+The collector-only strict comparison now reports `remaining_paths_by_reason` alongside `credited_paths`. Each still-unresolved path appears once in that breakdown. The synthetic CLI regression checks that the counts match the remaining strict path gaps, a recovered protected write still reports a violation, and trace loss prevents credit. The existing strict verdict still governs acceptance.
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

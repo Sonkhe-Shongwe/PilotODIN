@@ -651,10 +651,11 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         )
     if calibration_diagnostics is not None:
         credited_paths = Counter()
+        remaining_paths = Counter() if rundown_credit is not None else None
 
         def credit_path(actor, operation, request, completed, source):
             if id(request) not in credit_identities:
-                return
+                return False
             record(actor, credit_identities[id(request)], operation, source, None,
                    request["ticks"], completed, True)
             reason = f"{actor}:{operation}:path-missing"
@@ -663,6 +664,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 del unresolved[reason]
             scope = "protected" if tracked(source) else "outside-protected"
             credited_paths[f"{actor}:{operation}:{scope}"] += 1
+            return True
 
         calibration_diagnostics.update(
             path_candidates=summarize_calibration_path_gaps(
@@ -672,11 +674,18 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 completion_checks=completion_checks,
                 rundown_object_keys=rundown_object_keys,
                 credit_path=credit_path if rundown_credit is not None else None,
+                remaining_paths=remaining_paths,
             ),
             unmatched_write_timing=dict(unmatched_writes),
         )
         if rundown_credit is not None:
+            for label, count in unresolved.items():
+                if label.endswith(":path-missing"):
+                    actor, operation, _ = label.split(":")
+                    if operation not in {"write", "resize"}:
+                        remaining_paths[f"{actor}:{operation}:outside-rundown-credit-scope"] = count
             rundown_credit["credited_paths"] = dict(credited_paths)
+            rundown_credit["remaining_paths_by_reason"] = dict(remaining_paths)
     if write_gaps:
         name_change_events = Counter()
         class_4_outcomes = Counter()
@@ -1271,7 +1280,7 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
 def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                                     rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None,
                                     rundown_verification_start=None, completion_checks=None,
-                                    rundown_object_keys=None, credit_path=None):
+                                    rundown_object_keys=None, credit_path=None, remaining_paths=None):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
@@ -1308,9 +1317,11 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
         if outcome == "write-completion-unverified":
             outcome = "request-completion-unverified"
         counts[f"{actor}:{operation}:request-time:{outcome}"] += 1
+        missing_prior_name = outcome == "no-prior-name-in-lifetime"
+        if remaining_paths is not None and not missing_prior_name:
+            remaining_paths[f"{actor}:{operation}:request-time:{outcome}"] += 1
         if rundown_stop is None:
             continue
-        missing_prior_name = outcome == "no-prior-name-in-lifetime"
         names = rundown_names.get(key, set())
         if outcome == "request-completion-unverified":
             counts[f"{actor}:{operation}:rundown:{outcome}"] += 1
@@ -1333,6 +1344,8 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
         counts[f"{actor}:{operation}:rundown:{outcome}"] += 1
         if missing_prior_name:
             counts[f"{actor}:{operation}:no-prior-name-rundown:{outcome}"] += 1
+            credited = False
+            remaining_reason = "rundown-verification-unavailable"
             if rundown_verification_start is not None:
                 if outcome not in {"candidate-protected", "candidate-outside-protected"}:
                     verification = outcome
@@ -1346,8 +1359,14 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                     verification = ("consistent-protected-path" if outcome == "candidate-protected"
                                     else "consistent-outside-protected-path")
                     if credit_path is not None:
-                        credit_path(actor, operation, request, completed, next(iter(names)))
+                        credited = credit_path(actor, operation, request, completed, next(iter(names)))
                 counts[f"{actor}:{operation}:no-prior-name-completion-check:{verification}"] += 1
+                remaining_reason = (
+                    "completion-check:role-ineligible" if verification.startswith("consistent-")
+                    else f"completion-check:{verification}"
+                )
+            if remaining_paths is not None and not credited:
+                remaining_paths[f"{actor}:{operation}:{remaining_reason}"] += 1
     return dict(counts)
 
 
