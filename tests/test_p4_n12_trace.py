@@ -215,9 +215,13 @@ def test_webview_write_path_replay_is_bounded_and_preserves_strict_coverage():
         if index == 4:
             continue  # Missing completion never enters the sample.
         event(24, Irp=400 + index, Status=0xC0000022 if index == 5 else 0)
-        if index == 0:
-            event(16, FileObject=300, FileKey=100, Irp=500, IssuingThreadId=71)
-            event(24, Irp=500, Status=0)
+    for index in range(19):
+        if index == 7:
+            event(11, FileKey=100)
+            event(10, FileKey=100, FileName=r"C:\elsewhere\private-renamed.txt")
+        event(16, FileObject=300, FileKey=100, Irp=500 + index, IssuingThreadId=71)
+        completion_identity = {"FileKey": 989} if index == 3 else {}
+        event(24, Irp=500 + index, Status=0, **completion_identity)
 
     result = {}
     completed = []
@@ -229,18 +233,29 @@ def test_webview_write_path_replay_is_bounded_and_preserves_strict_coverage():
         classify_webview_path=lambda path: ("candidate-permitted" if "profile" in path
                                            else "candidate-outside-scope"),
     )
-    assert unresolved == {"webview-network:write:path-missing": 67,
+    assert unresolved == {"webview-network:write:path-missing": 85,
                           "webview-network:write:completion-missing": 1}
     assert len(completed) == 1 and completed[0][-1] is False
-    assert result == {
-        "eligible": 67, "sampled": 64,
+    assert (result["eligible"], result["sampled"], result["eligible_outside_sample"]) == (85, 64, 2)
+    assert result["outcomes"] == {
+        "webview-network:write:request-time:candidate-permitted": 1,
+        "webview-network:write:request-time:candidate-outside-scope": 61,
+        "webview-network:write:request-time:conflicting-or-unmapped-name": 1,
+        "webview-network:write:request-time:possible-name-change": 1,
+    }
+    assert result["pairs"][0] == {
+        "eligible": 20, "checked": 16, "supported": 15, "blocked": 1, "unchecked": 4,
         "outcomes": {
-            "webview-network:write:request-time:candidate-permitted": 1,
-            "webview-network:write:request-time:candidate-outside-scope": 61,
-            "webview-network:write:request-time:conflicting-or-unmapped-name": 1,
-            "webview-network:write:request-time:possible-name-change": 1,
+            "webview-network:write:request-time:candidate-permitted": 7,
+            "webview-network:write:request-time:candidate-outside-scope": 8,
+            "webview-network:write:completion-check:completion-file-identity-conflict": 1,
         },
     }
+    pairs = result["pairs"]
+    assert len(pairs) == 64
+    assert sum(pair["eligible"] for pair in pairs) + result["eligible_outside_sample"] == result["eligible"]
+    assert all(pair["checked"] == pair["supported"] + pair["blocked"] == sum(pair["outcomes"].values())
+               and pair["eligible"] == pair["checked"] + pair["unchecked"] for pair in pairs)
     assert "private" not in json.dumps(result)
 
 
@@ -334,7 +349,8 @@ def test_webview_candidate_replay_matches_known_paths_and_rejects_conflicting_co
     assert violations[f"protected:{role}:rename"] == 1
     assert unresolved[f"{role}:write:path-missing"] == 8
     assert unresolved[f"{role}:write:identity-missing"] == 1
-    assert checked == {"eligible": 7, "sampled": 7, "outcomes": {
+    assert (checked["eligible"], checked["sampled"], checked["eligible_outside_sample"]) == (7, 7, 0)
+    assert checked["outcomes"] == {
         f"{role}:write:request-time:candidate-permitted": 1,
         f"{role}:write:request-time:candidate-protected": 1,
         f"{role}:write:request-time:candidate-outside-scope": 1,
@@ -342,7 +358,9 @@ def test_webview_candidate_replay_matches_known_paths_and_rejects_conflicting_co
         f"{role}:write:request-time:possible-name-change": 1,
         f"{role}:write:request-time:conflicting-object-file-key": 1,
         f"{role}:write:completion-check:process-lifetime-unverified-at-completion": 1,
-    }}
+    }
+    assert sum(pair["supported"] for pair in checked["pairs"]) == 3
+    assert sum(pair["blocked"] for pair in checked["pairs"]) == 4
     assert "private" not in json.dumps(checked)
 
 
@@ -1988,7 +2006,9 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert clean["native_n12_accepted"] is False
     assert report(describe_path_gaps=True) == {
         **clean, "etw_path_gap_context": {}, "etw_write_name_gap_context": {},
-        "etw_webview_write_path_candidates": {"eligible": 0, "sampled": 0, "outcomes": {}},
+        "etw_webview_write_path_candidates": {
+            "eligible": 0, "sampled": 0, "outcomes": {}, "pairs": [], "eligible_outside_sample": 0,
+        },
     }
     cli_inputs = []
     for name, value in (("manifest", evidence.manifest), ("before", evidence.before),

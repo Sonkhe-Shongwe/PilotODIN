@@ -18,6 +18,8 @@ FSCTL_READ_USN_JOURNAL = 0x000900BB  # Reads USN change-journal records; read-on
 FSCTL_SET_COMPRESSION = 0x0009C040  # Changes a file/directory compression state.
 # IRP flags from the Windows Driver Kit (wdm.h). Event 16 reports IOFlags.
 IRP_PAGING_IO = 0x00000002
+WEBVIEW_SAMPLE_PAIRS = 64
+WEBVIEW_SAMPLE_WRITES_PER_PAIR = 16
 
 WRITE_CONTEXT_IMAGES = {
     "logman.exe", "msbuild.exe", "msmpeng.exe", "powershell.exe", "pwsh.exe",
@@ -84,7 +86,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     credit_identities = {}
     webview_gaps = []
     webview_gap_outcomes = Counter()
-    sampled_webview_objects = set()
+    webview_pairs = {}
+    webview_requests = {}
     webview_gaps_seen = 0
     calibration_rundown = diagnostic_rundown_stop is not None
     path_gap_context = {}
@@ -244,6 +247,12 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             return "completion-file-identity-conflict"
         return None
 
+    def record_webview_outcome(request, label):
+        pair, first = webview_requests[id(request)]
+        pair["outcomes"][label] += 1
+        if first:
+            webview_gap_outcomes[label] += 1
+
     def count_compression(operation, outcome):
         if details is not None and operation == "compression":
             details[f"compression-request:{outcome}"] += 1
@@ -377,14 +386,19 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                                 and operation == "write" and thread == "thread-header-agrees"
                                 and name_context in {"tracked", "outside-tracked-paths"}):
                             webview_gaps_seen += 1
-                            if len(sampled_webview_objects) < 64:
-                                key = number(request["data"].get("FileKey"))
-                                obj = number(request["data"].get("FileObject"))
-                                if (key, obj) not in sampled_webview_objects:
-                                    sampled_webview_objects.add((key, obj))
+                            key = number(request["data"].get("FileKey"))
+                            obj = number(request["data"].get("FileObject"))
+                            pair = (key, obj)
+                            if pair in webview_pairs or len(webview_pairs) < WEBVIEW_SAMPLE_PAIRS:
+                                evidence = webview_pairs.get(pair)
+                                if evidence is None:
+                                    evidence = webview_pairs[pair] = {"eligible": 0, "outcomes": Counter()}
+                                evidence["eligible"] += 1
+                                if evidence["eligible"] <= WEBVIEW_SAMPLE_WRITES_PER_PAIR:
+                                    webview_requests[id(request)] = (evidence, evidence["eligible"] == 1)
                                     issue = completion_identity_issue(request, event, handle, actor)
                                     if issue:
-                                        webview_gap_outcomes[f"{actor}:{operation}:completion-check:{issue}"] += 1
+                                        record_webview_outcome(request, f"{actor}:{operation}:completion-check:{issue}")
                                     else:
                                         webview_gaps.append((actor, operation, request, ticks))
                     if calibration_diagnostics is not None and operation in {"write", "resize"}:
@@ -655,13 +669,25 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                           "over-100ms-before-end")
                 unmatched_writes[f"{actor}:{bucket}"] += 1
     if webview_write_candidates is not None:
-        webview_gap_outcomes.update(summarize_calibration_path_gaps(
+        summarize_calibration_path_gaps(
             ordered_events, webview_gaps, resolve_path, tracked, {}, set(), None,
-            classify_path=classify_webview_path,
-        ))
+            classify_path=classify_webview_path, record_request_outcome=record_webview_outcome,
+        )
+        pairs = []
+        for evidence in webview_pairs.values():
+            outcomes = evidence["outcomes"]
+            checked = sum(outcomes.values())
+            supported = sum(count for label, count in outcomes.items()
+                            if ":request-time:candidate-" in label)
+            pairs.append({
+                "eligible": evidence["eligible"], "checked": checked, "supported": supported,
+                "blocked": checked - supported, "unchecked": evidence["eligible"] - checked,
+                "outcomes": dict(outcomes),
+            })
         webview_write_candidates.update(
-            eligible=webview_gaps_seen, sampled=len(sampled_webview_objects),
-            outcomes=dict(webview_gap_outcomes),
+            eligible=webview_gaps_seen, sampled=len(pairs),
+            outcomes=dict(webview_gap_outcomes), pairs=pairs,
+            eligible_outside_sample=webview_gaps_seen - sum(pair["eligible"] for pair in pairs),
         )
     if calibration_diagnostics is not None:
         credited_paths = Counter()
@@ -1294,7 +1320,8 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
 def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                                     rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None,
                                     rundown_verification_start=None, completion_checks=None,
-                                    rundown_object_keys=None, credit_path=None, remaining_paths=None):
+                                    rundown_object_keys=None, credit_path=None, remaining_paths=None,
+                                    record_request_outcome=None):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
@@ -1330,7 +1357,10 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
         )
         if outcome == "write-completion-unverified":
             outcome = "request-completion-unverified"
-        counts[f"{actor}:{operation}:request-time:{outcome}"] += 1
+        label = f"{actor}:{operation}:request-time:{outcome}"
+        counts[label] += 1
+        if record_request_outcome is not None:
+            record_request_outcome(request, label)
         missing_prior_name = outcome == "no-prior-name-in-lifetime"
         if remaining_paths is not None and not missing_prior_name:
             remaining_paths[f"{actor}:{operation}:request-time:{outcome}"] += 1
