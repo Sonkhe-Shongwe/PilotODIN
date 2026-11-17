@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }} # One approved hosted WebView path audit.
+    if: ${{ false }} # One-use approval consumed by run 44074439993.
     runs-on: windows-2022
     timeout-minutes: 100
     env:

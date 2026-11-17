@@ -2,6 +2,18 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Hosted WebView path audit
+
+The [approved Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44074439993/job/134008729270) ran once on image `20261112.366.7` with Sysmon 15.22. Launch `6b91929bfe047823736a65a4e23f40f8d719a9a3` pinned source `36bdfb4bf51788169626b03037722bc3f797e60b`. Executable SHA-256 `994020b14d63709a82512bb7207beb3f7e278d96eb88ab33da97352d275e1c96`. Cargo lock SHA-256 `2c8751899657e42d7caca62f6ca1e5a9be2690eaf8ee0eef9e02fe28da0ce5ae`. All four [routine P4 jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44074439891) passed at the launch commit.
+
+**Journey completed.** Preflight and the unpackaged build passed. Initial Sysmon calibration passed on read 1. Both same-binary launches and exits, the final fixture command, trace export and combined reduction completed. All four protected roots and the immutable CSV matched at the endpoints. Both original app handles and 12 of 14 child lifetime checks matched. Two child stop-image conflicts remain.
+
+**Filesystem FAIL.** The completed report counted 69 outside-scope operations compared with 317 in the [previous complete audit](#17-november-2026--integrated-n12-audit-passed-both-app-lifetime-checks). Driver findings fell from 276 to 28. WebView findings were 39 and backend findings were two in both reports. The earlier 248 Node temp findings were absent. The remaining 28 driver findings included four Node operations under frontend dependencies, 18 PowerShell operations and six unsupported operations from other executables.
+
+**WebView sample.** The network-process diagnostic counted 198,462 eligible write events and sampled six distinct file-key and file-object pairs. Three sample paths were permitted, two were outside scope, and one was blocked by a conflicting object-to-key association. These are pair-level sample results. The report gives no verified event counts per pair. The strict reducer still had 198,476 unresolved WebView network-process write paths.
+
+**Network FAIL and coverage BLOCKED.** Six unexpected connections remained: one backend loopback socket pair, two DNS observations and one HTTPS connection matched to a documented Edge service host, and two WebView loopback HTTP requests matched to the Tauri IPC host. The earlier UDP/443 observation remains historical evidence. The final report raised `calibration-tcp-or-udp-missing`, `connection-guid-unresolved-for-scoped-pid`, `etw-mutation-coverage-unresolved`, `inconsistent-parent-lifetime`, `sysmon-exit-image-unverified` and `sysmon-exit-time-unverified`. A rejected Sysmon exit was 2 ms before birth and its image was unverified, so the final findings are diagnostic. The job **FAILED**, retained zero artifacts, and the one-use approval was consumed. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | WebView request-time path replay
 
 The generated replay used the journey's filesystem reducer and its real role-specific path rules. On known targets, the diagnostic matched one permitted profile write, one protected write and one write outside WebView's scope. It rejected four cases with a conflicting completion object, an in-flight rename, a reused file object with a different key, or a reused process ID before completion. A filename first seen after the write request stayed outside the sample, and a write missing its object identity stayed unresolved.
@@ -586,7 +598,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-The [generated WebView replay](#17-november-2026--webview-request-time-path-replay) verified the expected diagnostic outcomes. The actual path distribution needs a separately approved [hosted app journey](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#webview-path-replay-and-hosted-follow-up) using the same classifier and the existing writer and network reports. The 191 collector timing gaps have a separate known-file clock control.
+The [hosted WebView audit](#17-november-2026--hosted-webview-path-audit) found six sampled pairs across 198,462 eligible writes. Use generated high-repeat and reused-key cases to measure how many individual writes each pair can support through completion and how many still lack evidence. Retain the two outside-scope samples and the conflict as open findings. The [worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#webview-path-replay-and-hosted-follow-up) also tracks the final calibration and lifecycle issues.
 
 The collector-only strict comparison now reports `remaining_paths_by_reason` alongside `credited_paths`. Each still-unresolved path appears once in that breakdown. The synthetic CLI regression checks that the counts match the remaining strict path gaps, a recovered protected write still reports a violation, and trace loss prevents credit. The existing strict verdict still governs acceptance.
 
