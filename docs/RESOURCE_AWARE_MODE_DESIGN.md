@@ -38,7 +38,17 @@ Two engine processes from an earlier QA installation were still present before t
 
 The first run's median combined WebView2 working set was **471 MiB** at ready idle, **475 MiB** while switching projects and **470 MiB** during Deliver. Median private resident WebView2 memory was **212, 199 and 171 MiB** in those same stages. The median desktop process working set rose from **29 MiB** at ready idle to **71 MiB** in Deliver. The stage combined report composition, Save As and the benchmark's filename wait. One switch sequence and a missing cooldown cannot establish long-session retention or identify the operation that caused the desktop increase.
 
-The shell mounts the active workspace and any docked workspace. It can retain an edited docked form during a narrow-window pause and retains the prior project while the next project's data is verified. In Deliver, native Save As converts the report buffer to a JavaScript number array for IPC. A synthetic 1 MiB worst-case byte fixture produced 4 MiB of JSON. Measure the transfer and the native dialog separately before judging the savings of binary transfer. Preserve report revisions, consent and file-integrity validation during that comparison. [Workspace lifetime](../frontend/src/UnifiedShell.tsx) · [Native report transfer](../frontend/src/api.ts)
+The shell mounts the active workspace and any docked workspace. It can retain an edited docked form during a narrow-window pause and retains the prior project while the next project's data is verified. [Workspace lifetime](../frontend/src/UnifiedShell.tsx)
+
+### Deliver binary Save As
+
+Native Save As now sends an `ArrayBuffer` and separate filename and format headers. Rust validates the raw buffer or Tauri's byte-array fallback before opening the native dialog. The selected file is still checked for length and SHA-256 after writing. [Frontend transport](../frontend/src/api.ts) · [Native command](../frontend/src-tauri/src/lib.rs)
+
+The hosted Windows test used a 1 MiB synthetic payload filled with byte value 255. Its deliberately invalid PDF signature ended the request before Save As opened. The binary body was **1,048,576 bytes**, compared with **4,194,354 bytes** for the same fixture in the former JSON representation, a **75% reduction in transfer size** for this fixture. The three warm binary round trips, including Rust validation, took **43.8 to 71.3 ms** in the final run. The timing excludes the dialog and disk writes. [Hosted Windows measurements](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44150811473/job/134278302684)
+
+Source `da1caea` passed four Rust report tests on Windows. The production writer saved the raw PDF and fallback HTML byte for byte and rejected a wrong extension before writing. WebView2 opened the genuine Windows dialog with a valid PDF, and closing it returned cancellation without writing an export. WebView2 also passed the forced Tauri fallback validation check. Two earlier runs could not automate the filename field, so selecting a destination and clicking **Save** remain unverified in the optimized Windows build. The physical laptop's whole-app peak has yet to be measured with this change. [Final Windows verification](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44150811473/job/134278302684) · [Earlier dialog locator result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44149152932/job/134272354089)
+
+The full set of 697 frontend tests was compared with pre-change source `4070e19`. The same 47 tests fail on both sources and two report checks passed on the updated source after failing on the baseline. All 35 focused report and export checks pass.
 
 ## P1 first slice — SOURCE IMPLEMENTED, NOT YET OWNER-TESTED (25 October 2026)
 

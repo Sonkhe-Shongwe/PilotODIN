@@ -2,11 +2,15 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Deliver report transfer optimized
+
+Deliver sends report bytes directly to WebView2 IPC on the normal Windows path. A 1 MiB synthetic payload used **75% less transfer space** than its former JSON representation. Hosted Windows verified exact PDF and HTML writes through the production writer and genuine Save As cancellation. Full confirmation through the Save button and a physical before-and-after RAM comparison remain open. The first physical everyday baseline observed **706.35 MiB** as the highest sampled combined working set. The next physical run should use the same workload through cooldown and check the exported file. [Resource results and limits](./RESOURCE_AWARE_MODE_DESIGN.md#deliver-binary-save-as)
+
 ## 17 November 2026 | Physical R03 candidate deferred
 
 The owner showed the isolated candidate's Settings and Ask ODIN on the 8 GB laptop. Settings showed the 1.50 GiB cutoff and available RAM snapshots of 1.474 and 1.517 GiB. One snapshot confirmed Low-memory mode was saved. Ask ODIN reported `Desktop startup: resource_limited` and returned the verified missing-premium result using local rules. The screenshots establish a startup deferral and a usable fallback. The request-time readings, specific deferral code, paging, source digest and offline state were not independently verified. The 2.00 GiB baseline has no recorded bundled answer in the comparison. Preserve any existing `r03-benchmark.jsonl` and `r03-memory.csv` before interpreting the cause or retrying.
 
-The next resource investigation is the [whole-app RAM baseline](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target). The 1 GiB daily-workload target remains a proposal. The [documentation audit](./DOCUMENTATION_AUDIT_2026-11-17.md) reconciles the evidence and the current acceptance decisions.
+The [first physical baseline](./RESOURCE_AWARE_MODE_DESIGN.md#first-physical-baseline-result) supplies the starting point for the proposed 1 GiB daily-workload target. The [documentation audit](./DOCUMENTATION_AUDIT_2026-11-17.md) reconciles the evidence and the current acceptance decisions.
 
 ## 17 November 2026 | Isolated R03 headroom benchmark kit ready
 
