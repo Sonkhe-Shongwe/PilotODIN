@@ -184,6 +184,13 @@ def write_two_handle_control(path):
                 raise RuntimeError("The generated two-handle write was incomplete.")
 
 
+def write_known_control(path, payload):
+    with path.open("xb", buffering=0) as stream:
+        verify_handle_path(stream, path)
+        if stream.write(payload) != len(payload):
+            raise RuntimeError("The generated known-file write was incomplete.")
+
+
 def write_named_control(path):
     """Give the in-capture file a first I/O before the measured write."""
     payload = b"N" * 113
@@ -343,6 +350,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
     rundown_start_ticks = rundown_stop_ticks = None
     lifetime_control = None
     basic_info_control = named_control = None
+    known_write = None
     try:
         comparison = open_comparison() if open_comparison is not None else None
         control_writes = {}
@@ -353,6 +361,18 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             control_writes[label] = {"path": str(path), "size": len(payload),
                                      "start": first, "end": utc_ticks()}
         if controls and before_stop is None:
+            known_path = root / "known-write.bin"
+            known_payload = b"K" * 61
+            known_start = utc_ticks()
+            known_pid = run_writer(
+                "from pathlib import Path\nimport sys\n"
+                "sys.path.insert(0, sys.argv[1])\n"
+                "from n12_etw_probe import write_known_control\n"
+                "write_known_control(Path(sys.argv[2]), bytes.fromhex(sys.argv[3]))",
+                Path(__file__).parent, known_path, known_payload.hex(),
+            )
+            known_write = {"path": str(known_path), "pid": known_pid, "size": len(known_payload),
+                           "start": known_start, "end": utc_ticks()}
             named_control = write_named_control(root / "in-capture-name.bin")
         if comparison is not None:
             # Give immediate writes a separate observation interval before flushing.
@@ -456,6 +476,10 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         capture["file_lifetime"] = lifetime_control
     if named_control is not None:
         capture["in_capture_name_control"] = named_control
+    if known_write is not None:
+        if known_path.read_bytes() != known_payload:
+            raise RuntimeError("The generated known-file write did not preserve its payload.")
+        capture["known_write"] = known_write
     if basic_info_control is not None:
         if basic_info_path.read_bytes() != b"M" * 101:
             raise RuntimeError("The generated metadata-control payload did not match.")

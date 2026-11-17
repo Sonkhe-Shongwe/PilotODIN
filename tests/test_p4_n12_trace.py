@@ -423,6 +423,45 @@ def test_generated_file_lifetime_requires_ordered_same_object_evidence(fault, re
     assert "control.bin" not in json.dumps(report)
 
 
+@pytest.mark.parametrize(("fault", "reason"), [
+    (None, "completed-open-and-write"),
+    ("wrong-name", "open-missing-or-ambiguous"),
+    ("failed-write", "write-completion-unverified"),
+    ("rename", "possible-name-change"),
+])
+def test_known_file_report_only_discloses_a_verified_fixture_match(fault, reason):
+    root = r"C:\private-fixture"
+    path = root + r"\known-write.bin"
+    capture = {
+        "device": r"\Device\HarddiskVolume3",
+        "protected_root": root + r"\synthetic-protected",
+        "preopened": {"pid": 6, "tid": 7, "writes": {
+            "protected": {"start": 30, "end": 32, "size": 53},
+            "outside": {"start": 30, "end": 32, "size": 79},
+        }},
+        "known_write": {"path": path, "pid": 8, "size": 61, "start": 1, "end": 20},
+    }
+    records = [
+        (2, 12, {"FileName": root + r"\unexpected.bin" if fault == "wrong-name" else path,
+                 "FileObject": 50, "Irp": 1}),
+        (3, 24, {"Irp": 1, "Status": 0}),
+        (5, 16, {"FileObject": 50, "FileKey": 60, "Irp": 2, "IOSize": 61, "ByteOffset": 0}),
+        (7, 24, {"Irp": 2, "Status": 1 if fault == "failed-write" else 0}),
+        (8, 13, {"FileObject": 50, "FileKey": 60}),
+        (9, 14, {"FileObject": 50, "FileKey": 60}),
+    ]
+    if fault == "rename":
+        records.append((6, 19, {"FileObject": 50, "FileKey": 60}))
+    events = [{"id": kind, "ticks": ticks, "pid": 8, "lifecycle": False, "data": data}
+              for ticks, kind, data in records]
+    result = preopened_report(capture, events)["known_write"]
+    assert result == {
+        "operation": "write", "expected_file": "known-write.bin",
+        "matched_file": "known-write.bin" if fault is None else None,
+        "status": "PASS" if fault is None else "BLOCKED", "reason": reason,
+    }
+
+
 @pytest.mark.parametrize(("name_at", "wrong_name", "verdict"), [
     (4, False, "matches-handle-path"),
     (4, True, "different-from-handle-path"),
@@ -2136,6 +2175,10 @@ def test_native_rundown_flows_through_strict_reducer_for_preopened_controls(tmp_
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
     assert report["control_status"] == "PASS"
+    assert report["known_preopened_write"] == {
+        "operation": "write", "expected_file": "outside.bin", "matched_file": "outside.bin",
+        "status": "PASS", "reason": "strict-rundown-path-recovered",
+    }
     assert report["strict_coverage"] == "BLOCKED"  # the expected protected write remains a violation
     assert report["protected_control_classification"] == "PROTECTED_WRITE_DETECTED"
     assert report["outside_control_classification"] == "OUTSIDE_PROTECTED_ROOTS"

@@ -2,6 +2,10 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Known filenames first
+
+Routine Windows CI compares two named generated writes. It opens `known-write.bin` after capture starts and checks the completed open and write. In a separate capture, it writes through the pre-opened `outside.bin` handle and checks whether the strict reducer recovers its name from the Windows FileIO rundown. The log shows the expected and matched fixture filenames with a verdict and reason. The live collector stays disarmed and P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | Strict comparison credits verified background paths
 
 The disarmed collector rehearsal can produce a fourth report from the same generated capture. It credits background writes and resizes that pass the completion check and sends their paths through the existing protected-root check. The report contains the credited counts by operation and path scope, along with the remaining strict issues. Capture loss, incomplete evidence and conflicting identities leave path gaps in place.
@@ -544,7 +548,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Use the [completion check](#17-november-2026--fileio-completion-check-supported-193-paths) and the existing known-path Windows controls to evaluate how the strict reducer could credit the conservatively ordered cases. Keep the 78 writes that overlap rundown unresolved unless independent timestamp evidence establishes the order for their individual names. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
+Verify the [two named control files](#17-november-2026--known-filenames-first) before another approved collector comparison. Keep the 78 writes that overlap rundown unresolved unless independent timestamp evidence establishes the order for their individual names. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

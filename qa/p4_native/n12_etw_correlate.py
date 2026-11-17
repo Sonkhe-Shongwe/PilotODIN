@@ -836,7 +836,29 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
         result["in_capture_name_control"] = file_lifetime_report(capture["in_capture_name_control"], events, devices)
     if "basic_info_control" in capture:
         result["basic_info_control"] = file_lifetime_report(capture["basic_info_control"], events, devices)
+    if "known_write" in capture:
+        control = capture["known_write"]
+        expected = canonical_file_path(control["path"], devices)
+        fixture = ntpath.dirname(canonical_file_path(capture["protected_root"], devices))
+        if expected != ntpath.join(fixture, "known-write.bin"):
+            raise ValueError("Unexpected known-file write target.")
+        observed = file_lifetime_report(control, events, devices, verify_write_path=True)
+        if observed["status"] != "PASS":
+            reason = observed["reason"]
+        else:
+            reason = observed["write_object_path"]["reason"]
+        result["known_write"] = known_write_result(
+            "known-write.bin", reason, "completed-open-and-write",
+        )
     return result
+
+
+def known_write_result(filename, blocked_reason, evidence):
+    """Expose only the verified fixture-relative name."""
+    return {"operation": "write", "expected_file": filename,
+            "matched_file": filename if blocked_reason is None else None,
+            "status": "PASS" if blocked_reason is None else "BLOCKED",
+            "reason": evidence if blocked_reason is None else blocked_reason}
 
 
 def successful_completion(file_events, request, before):
@@ -1396,7 +1418,7 @@ def shared_fixture_write(file_events, writes, before):
     return last, None
 
 
-def file_lifetime_report(control, events, devices):
+def file_lifetime_report(control, events, devices, *, verify_write_path=False):
     """Verify the generated in-trace open, write and handle teardown."""
     expected = canonical_file_path(control["path"], devices)
     if expected is None:
@@ -1559,6 +1581,7 @@ def file_lifetime_report(control, events, devices):
             file_events, first_open, opened, open_completed, write, key,
             second_boundary_before_completion, expected, devices,
         )
+    if two_handles or verify_write_path:
         reason = check_write_object_path(file_events, opened, write, write_completed, expected, devices)
         result["write_object_path"] = {"status": "BLOCKED" if reason else "PASS", "reason": reason}
     return result

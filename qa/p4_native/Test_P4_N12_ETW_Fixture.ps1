@@ -335,6 +335,11 @@ if ($PreopenedControl) {
     }
     Write-Host ('Pre-opened control summary: ' + ($controlReport | ConvertTo-Json -Compress -Depth 8))
     if (-not $Rundown) {
+        $known = $controlReport.known_write
+        Write-Host ('Known file opened during capture: ' + ($known | ConvertTo-Json -Compress))
+        if ($known.status -ne 'PASS' -or $known.matched_file -cne 'known-write.bin') {
+            throw 'The single-write control could not verify its expected filename.'
+        }
         $named = $controlReport.in_capture_name_control
         Write-Host ('In-capture name control: ' + ($named | ConvertTo-Json -Compress -Depth 5))
         $requestTime = $named.PSObject.Properties['request_time_path']
@@ -378,7 +383,10 @@ if ($PreopenedControl) {
             throw 'The strict ETW reducer did not return a valid redacted report.'
         }
         Write-Host ('Strict reducer pre-opened rundown summary: ' + ($reducerReport | ConvertTo-Json -Compress))
+        $known = $reducerReport.known_preopened_write
+        Write-Host ('Known file opened before capture: ' + ($known | ConvertTo-Json -Compress))
         if ($reducerReport.control_status -ne 'PASS' -or
+            $known.status -ne 'PASS' -or $known.matched_file -cne 'outside.bin' -or
             $reducerReport.rundown_control_keys_recovered -ne 2 -or
             $reducerReport.strict_coverage -ne 'BLOCKED' -or
             $reducerReport.protected_control_classification -ne 'PROTECTED_WRITE_DETECTED' -or
