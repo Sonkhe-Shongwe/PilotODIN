@@ -49,6 +49,25 @@ try {
     }
     Assert-Equal $rejected $true 'reject changed executable'
 
+    $profile = Join-Path $temp 'baseline'
+    $candidate = New-Item -ItemType Directory -Path (Join-Path $temp 'candidate')
+    Initialize-QaBaseline $profile $false
+    'existing evidence' | Set-Content -LiteralPath (Join-Path $profile 'r03-benchmark.jsonl')
+    $existingHash = (Get-FileHash -LiteralPath (Join-Path $profile 'r03-benchmark.jsonl')).Hash
+    $rejected = $false
+    try {
+        Initialize-QaBaseline $profile $false
+    } catch {
+        $rejected = $_.Exception.Message -like '*QA baseline already exists*'
+    }
+    Assert-Equal $rejected $true 'require explicit archive switch'
+    Initialize-QaBaseline $profile $true
+    $archive = @(Get-ChildItem -LiteralPath $temp -Directory -Filter 'baseline-before-everyday-ram-*')
+    Assert-Equal $archive.Count 1 'one previous profile archived'
+    Assert-Equal (Get-FileHash -LiteralPath (Join-Path $archive[0].FullName 'r03-benchmark.jsonl')).Hash $existingHash 'prior evidence retained'
+    Assert-Equal @(Get-ChildItem -LiteralPath $profile).Count 0 'new profile starts empty'
+    Assert-Equal (Test-Path -LiteralPath $candidate.FullName -PathType Container) $true 'candidate profile still present'
+
     $csv = Join-Path $temp 'wide.csv'
     New-WideFixture $csv
     $fixture = @(Import-Csv -LiteralPath $csv)

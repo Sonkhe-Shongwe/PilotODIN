@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$KitDirectory,
+    [switch]$ArchiveExistingQaBaseline,
     [switch]$VerifyOnly
 )
 
@@ -44,6 +45,22 @@ function New-WideFixture([string]$Path) {
     } finally {
         $writer.Dispose()
     }
+}
+
+function Initialize-QaBaseline([string]$Path, [bool]$ArchiveExisting) {
+    if (Test-Path -LiteralPath $Path) {
+        if (-not $ArchiveExisting) {
+            throw 'This QA baseline already exists. Use -ArchiveExistingQaBaseline to retain it beside the new profile.'
+        }
+        $existing = Get-Item -LiteralPath $Path
+        if (-not $existing.PSIsContainer -or ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw 'The QA baseline path is unexpected. Leave it untouched.'
+        }
+        $name = 'baseline-before-everyday-ram-' + [Guid]::NewGuid().ToString('N')
+        Rename-Item -LiteralPath $Path -NewName $name
+        Write-Host "Existing QA baseline archived at $(Join-Path $existing.Parent.FullName $name)"
+    }
+    $null = New-Item -ItemType Directory -Path $Path
 }
 
 function Get-OwnedProcesses($Snapshot, $App, [string]$AppPath, [hashtable]$Seen) {
@@ -166,8 +183,8 @@ foreach ($parentDirectory in @($profileRoot, $profileData)) {
         }
     }
 }
-if (Test-Path -LiteralPath $baselineProfile) {
-    throw 'The isolated R03 baseline profile already exists. Leave it and its evidence untouched.'
+if ((Test-Path -LiteralPath $baselineProfile) -and -not $ArchiveExistingQaBaseline) {
+    throw 'This QA baseline already exists. Use -ArchiveExistingQaBaseline to retain it beside the new profile.'
 }
 if (Get-Process -Name 'pilotodin-desktop','pilotodin-engine','pilotodin-inference' -ErrorAction SilentlyContinue) {
     throw 'Close the existing PilotODIN windows and stop any Live Dev test you opened. Then retry.'
@@ -229,8 +246,7 @@ try {
     $stage = 'cold_launch'
     Write-Stage $stage 'start' ''
     $null = [IO.Directory]::CreateDirectory($profileData)
-    # Claim this path once, with no overwrite if another QA session created it.
-    $null = New-Item -ItemType Directory -Path $baselineProfile
+    Initialize-QaBaseline $baselineProfile $ArchiveExistingQaBaseline.IsPresent
     $env:PILOTODIN_R03_BENCHMARK = 'baseline'
     $env:WEBVIEW2_USER_DATA_FOLDER = Join-Path $root 'webview'
     try {

@@ -21,10 +21,10 @@ The 1.50 GiB experiment still tests the headroom needed to attempt Qwen startup.
 Use the extracted [PilotODIN-P4-R03-Headroom-QA kit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769/artifacts/14339122820) already used for the headroom comparison. From the updated PilotODIN checkout, open an interactive Windows PowerShell window and run:
 
 ```powershell
-& .\tools\Start_P4_Everyday_RAM_Baseline.ps1 -KitDirectory "$env:USERPROFILE\Downloads\PilotODIN-P4-R03-Headroom-QA"
+& .\tools\Start_P4_Everyday_RAM_Baseline.ps1 -KitDirectory "$env:USERPROFILE\Downloads\PilotODIN-P4-R03-Headroom-QA" -ArchiveExistingQaBaseline
 ```
 
-Use the actual extracted folder containing both executables if it differs. Close the installed app and any running QA or PilotODIN Live Dev session beforehand. The launcher pins both executable hashes to the verified build, starts a fresh WebView2 profile and generates a four-row CSV and a 4,000-row, 28-column CSV. It stages only the two executables. Its fixed disposable QA baseline profile must be fresh. If that profile already exists, keep it and return the launcher message. The candidate profile and its earlier receipts stay in place.
+Use the actual extracted folder containing both executables if it differs. Close the installed app and any running QA or PilotODIN Live Dev session beforehand. The launcher pins both executable hashes to the verified build, starts a fresh WebView2 profile and generates a four-row CSV and a 4,000-row, 28-column CSV. It stages only the two executables. With the archive switch, an existing disposable QA baseline profile is renamed to a sibling folder and its location is printed. The prior files are retained and the new baseline starts empty. The candidate profile, existing memory CSVs and the installed app's data stay in place.
 
 Follow the prompts in the console. Press **P** after seeing the expected result, **F** to record a failure or **Q** to stop. Keep other applications in their usual state and note any visible lag or error. The timed idle and cooldown steps advance on their own. After the run, the console prints the path of `PilotODIN-Everyday-RAM-Evidence.zip`. The archive contains the build receipt, step markers, per-process rows and system/aggregate samples. It excludes app data, CSV contents and the exported report.
 
