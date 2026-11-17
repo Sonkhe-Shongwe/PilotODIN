@@ -25,6 +25,11 @@ def profile(resident=2000, commit=1050, long_tokens=900, pass_answers=True):
 
 
 class WorkerComparisonTests(unittest.TestCase):
+    def test_desktop_model_verification_allocates_its_hash_buffer_on_the_heap(self):
+        desktop = (ROOT / 'frontend/src-tauri/src/lib.rs').read_text(encoding='utf-8')
+        verifier = desktop.split('fn verify_bundled_model(', 1)[1].split('\n}', 1)[0]
+        self.assertIn('let mut chunk = vec![0u8; 1024 * 1024];', verifier)
+
     def test_recommends_a_lower_peak_only_when_answer_and_prompt_checks_pass(self):
         result = probe.compare_worker_profiles(profile(), profile(resident=1850, commit=1000))
         self.assertEqual(result['result'], 'candidate_for_physical_retest')

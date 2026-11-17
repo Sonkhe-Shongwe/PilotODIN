@@ -10,6 +10,7 @@ on:
       - .github/workflows/p4-target-ranking.yml
       - .github/workflows/p4-r03-qwen-idle-release.yml
       - desktop/verify_live_bundled_inference.py
+      - frontend/src-tauri/src/lib.rs
       - tests/test_p4_r03_worker_comparison.py
       - backend/target_opportunities.py
       - backend/main.py
