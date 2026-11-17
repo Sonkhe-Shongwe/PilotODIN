@@ -469,50 +469,48 @@ async fn save_report_as(app: AppHandle, request: Request<'_>)
                 .map_err(|_| "The selected Save As location is not a local file".to_string())?,
             None => return Ok(NativeReportSave { status: "cancelled", filename: None }),
         };
-        // Even if a user manually edits the extension in the dialog, never
-        // write PDF bytes to an .html file, or vice versa.
-        if !path.extension().and_then(|ext| ext.to_str())
-            .map(|ext| ext.eq_ignore_ascii_case(&format)).unwrap_or(false) {
-            return Err("Save As extension differs from the report format".into());
-        }
         // Only the OS dialog may choose the destination. Never accept a path
         // from JavaScript. Standard Save As handles overwrite confirmation.
-        std::fs::write(&path, &bytes)
-            .map_err(|e| format!("Could not save report to the selected location: {e}"))?;
-        // Confirm the entire saved content, not only its length. A partial
-        // write or a concurrent destination change must never be reported as
-        // successfully saved to the user.
-        let stored_size = std::fs::metadata(&path)
-            .map_err(|e| format!("Could not verify the saved report: {e}"))?.len();
-        if stored_size != bytes.len() as u64 {
-            return Err("Saved report size verification failed".into());
-        }
-        let saved_hash = {
-            let mut file = File::open(&path)
-                .map_err(|e| format!("Could not read the saved report for verification: {e}"))?;
-            let mut hasher = Sha256::new();
-            let mut buffer = [0u8; 65_536];
-            loop {
-                let read = file.read(&mut buffer)
-                    .map_err(|e| format!("Could not verify saved report contents: {e}"))?;
-                if read == 0 { break; }
-                hasher.update(&buffer[..read]);
-            }
-            hasher.finalize()
-        };
-        let expected_hash = Sha256::digest(&bytes);
-        if saved_hash[..] != expected_hash[..] {
-            return Err("The saved report failed content verification".into());
-        }
-        let saved_filename = Path::new(&path).file_name()
-            .and_then(|name| name.to_str()).map(str::to_owned);
-        Ok(NativeReportSave { status: "saved", filename: saved_filename })
+        write_verified_report(&path, &format, &bytes)
     }).await.map_err(|_| "The native Save As task could not finish".to_string())?
+}
+
+fn write_verified_report(path: &Path, format: &str, bytes: &[u8])
+    -> Result<NativeReportSave, String> {
+    if !path.extension().and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case(format)).unwrap_or(false) {
+        return Err("Save As extension differs from the report format".into());
+    }
+    std::fs::write(path, bytes)
+        .map_err(|e| format!("Could not save report to the selected location: {e}"))?;
+    // Verify the saved file's length and content before reporting success.
+    let mut file = File::open(path)
+        .map_err(|e| format!("Could not read the saved report for verification: {e}"))?;
+    let stored_size = file.metadata()
+        .map_err(|e| format!("Could not verify the saved report: {e}"))?.len();
+    if stored_size != bytes.len() as u64 {
+        return Err("Saved report size verification failed".into());
+    }
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 65_536];
+    loop {
+        let read = file.read(&mut buffer)
+            .map_err(|e| format!("Could not verify saved report contents: {e}"))?;
+        if read == 0 { break; }
+        hasher.update(&buffer[..read]);
+    }
+    let saved_hash = hasher.finalize();
+    let expected_hash = Sha256::digest(bytes);
+    if saved_hash[..] != expected_hash[..] {
+        return Err("The saved report failed content verification".into());
+    }
+    let filename = path.file_name().and_then(|name| name.to_str()).map(str::to_owned);
+    Ok(NativeReportSave { status: "saved", filename })
 }
 
 #[cfg(test)]
 mod report_save_tests {
-    use super::{check_report_payload, report_save_bytes, report_save_headers, MAX_REPORT_EXPORT_BYTES};
+    use super::{check_report_payload, report_save_bytes, report_save_headers, write_verified_report, MAX_REPORT_EXPORT_BYTES};
     use std::borrow::Cow;
     use tauri::{http::HeaderMap, ipc::InvokeBody};
 
@@ -563,6 +561,35 @@ mod report_save_tests {
         assert!(check_report_payload(format, &filename, b"%PDF-").is_err());
         headers.insert("x-pilotodin-report-filename", "%ff.pdf".parse().unwrap());
         assert!(report_save_headers(&headers).is_err());
+    }
+
+    #[test]
+    fn native_writer_preserves_raw_pdf_and_fallback_html_on_disk() {
+        let root = std::env::temp_dir().join(format!("pilotodin-report-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir(&root).unwrap();
+        let result = (|| -> Result<(), String> {
+            let pdf = include_bytes!("../../public/p2-native-fixtures/report.pdf");
+            let html = include_bytes!("../../public/p2-native-fixtures/report.html");
+            for (format, original, body) in [
+                ("pdf", pdf.as_slice(), InvokeBody::Raw(pdf.to_vec())),
+                ("html", html.as_slice(), InvokeBody::Json(serde_json::json!(html.to_vec()))),
+            ] {
+                let filename = format!("synthetic.{format}");
+                let target = root.join(&filename);
+                let bytes = report_save_bytes(&body)?;
+                check_report_payload(format, &filename, &bytes)?;
+                let saved = write_verified_report(&target, format, &bytes)?;
+                assert_eq!(saved.status, "saved");
+                assert_eq!(saved.filename.as_deref(), Some(filename.as_str()));
+                assert_eq!(std::fs::read(target).unwrap(), original);
+                let wrong_extension = root.join("unwritten.txt");
+                assert!(write_verified_report(&wrong_extension, format, &bytes).is_err());
+                assert!(!wrong_extension.exists());
+            }
+            Ok(())
+        })();
+        std::fs::remove_dir_all(&root).unwrap();
+        result.unwrap();
     }
 }
 

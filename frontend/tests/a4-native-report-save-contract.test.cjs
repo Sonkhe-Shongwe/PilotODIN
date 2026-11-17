@@ -26,10 +26,10 @@ test('Native save is type-restricted and returns cancel without a write',()=>{
  assert.match(rust,/\.blocking_save_file\(\)/);
  assert.match(rust,/status:\s*"cancelled"/);
  const cancelPos=rust.indexOf('status: "cancelled"');
- const writePos=rust.indexOf('std::fs::write(&path, &bytes)');
+ const writePos=rust.indexOf('std::fs::write(path, bytes)');
  assert.ok(cancelPos > 0 && cancelPos < writePos,'Cancel must resolve before file writing');
  assert.match(rust,/Saved report size verification failed/);
- assert.match(rust,/Sha256::digest\(&bytes\)/);
+ assert.match(rust,/Sha256::digest\(bytes\)/);
  assert.match(rust,/saved_hash\[\.\.\] != expected_hash\[\.\.\]/);
 });
 
