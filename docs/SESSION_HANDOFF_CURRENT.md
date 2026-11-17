@@ -2,11 +2,21 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | FileIO rundown found 777 candidate paths
+
+The [approved collector-only Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44040207157/job/133892656260) ran once on image `20261112.366.7` with Sysmon 15.22. The launch was `8beaddaaca829ad59fe087e37483f59c9c0901dd` and the reviewed source was `8b9087bb31a3d9e6b58a5d2a530bf2ac0b51607a`. PilotODIN compilation and launch were **NOT RUN**. No artifacts were retained.
+
+**Sysmon prelaunch PASS on read 2.** Neither fixture marker was present in the bounded first read. The second read verified TCP and UDP for the fixture child in the original window. The final exports and all three reductions completed. The native decoder emitted 1,290 FileIO filename records.
+
+**777 of 792 missing-name cases had candidate paths outside protected roots.** The rundown supplied candidate names for 642 of 642 writes and 135 of 150 resizes that had no prior name in the observed lifetime. The remaining 15 resizes had 12 absent keys, two conflicting object-to-key associations and one invalidated lifetime. The counts compare the same capture with process snapshots before and after the diagnostic input was added.
+
+**Strict calibration BLOCKED.** Both reductions with process snapshots reported 930 unresolved paths: 748 writes, 180 resizes, one allocation and one unsupported operation. The unsupported operation also contributes a separate unsupported-operation flag. All generated file markers were observed, and the reducer recorded zero file violations. The diagnostic candidates leave both verdicts unchanged by design. The job failed on strict mutation coverage. The one-use workflow is disarmed and P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | FileIO filename comparison prepared
 
 The previous rehearsal observed both Sysmon markers and left 868 background mutations without verified paths. Of those, 328 writes and 330 resizes had no earlier filename in the observed lifetime. The existing native Windows fixture proved that stop-time FileIO rundown can resolve the generated pre-opened file keys under the reducer's identity and transition checks.
 
-The disarmed collector workflow now captures a native FileIO rundown in the same generated run as Sysmon and ETW. It records the strict result with process snapshots first, then runs the diagnostic against the same inputs with the digest-checked rundown. The comparison reports the disposition of operations without earlier filenames, including candidate paths, absent or ambiguous names and invalidated mappings. The original strict verdict governs the rehearsal. No PilotODIN build or launch is required. The combined live comparison is **NOT RUN**. P4 remains **14/20 (70%)**.
+The disarmed collector workflow now captures a native FileIO rundown in the same generated run as Sysmon and ETW. It records the strict result with process snapshots first, then runs the diagnostic against the same inputs with the digest-checked rundown. The comparison reports the disposition of operations without earlier filenames, including candidate paths, absent or ambiguous names and invalidated mappings. The original strict verdict governs the rehearsal. No PilotODIN build or launch is required. The [combined live comparison](#17-november-2026--fileio-rundown-found-777-candidate-paths) subsequently completed with diagnostic candidates and strict coverage blocked. P4 remains **14/20 (70%)**.
 
 ## 17 November 2026 | Collector verified TCP and UDP and blocked on ETW paths
 
@@ -512,7 +522,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-The [collector-only rehearsal](#17-november-2026--collector-verified-tcp-and-udp-and-blocked-on-etw-paths) verified both Sysmon markers and isolated the remaining calibration issue to background file-path attribution. The 658 cases without a prior name are the largest group. Compare them with the existing pre-opened and in-capture name controls before choosing a change to the file collector. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
+Use the [paired FileIO comparison](#17-november-2026--fileio-rundown-found-777-candidate-paths) to review when the existing strict rundown rules can credit a path. Prove individually verified file-key mappings through completion on generated controls and keep the 15 absent, conflicting or invalidated mappings unresolved. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
