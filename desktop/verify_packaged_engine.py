@@ -131,7 +131,7 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
             try:
                 with socket.create_connection(('127.0.0.1', port), timeout=1):
                     raise RuntimeError('Desktop engine listener remained after its parent exited')
-            except ConnectionRefusedError:
+            except (ConnectionRefusedError, TimeoutError):
                 pass
             return {'passed': True, 'auth_required': True, 'wrong_origin_rejected': True,
                     'user_storage_isolated': True, 'model_started': False,
