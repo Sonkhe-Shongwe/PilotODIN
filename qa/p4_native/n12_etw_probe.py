@@ -191,6 +191,12 @@ def write_known_control(path, payload):
             raise RuntimeError("The generated known-file write was incomplete.")
 
 
+def resize_known_control(path, size):
+    with path.open("r+b", buffering=0) as stream:
+        verify_handle_path(stream, path)
+        stream.truncate(size)
+
+
 def write_named_control(path):
     """Give the in-capture file a first I/O before the measured write."""
     payload = b"N" * 113
@@ -331,6 +337,15 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         source.write_bytes(b"cross-directory marker")
     protected = root / "synthetic-protected"
     marker = protected / "transient.bin"
+    resize_path = None
+    if controls and before_stop is None:
+        resize_path = root / "known-resize.bin"
+        resize_payload = b"R" * 96
+        resize_target_size = 37
+        resize_path.write_bytes(resize_payload)
+        resize_before_size = resize_path.stat().st_size
+        if resize_before_size != len(resize_payload):
+            raise RuntimeError("The generated resize seed had the wrong length.")
     providers = root / "providers.txt"
     providers.write_text(
         f"Microsoft-Windows-Kernel-File {'0x1ff0' if open_comparison is not None else '0x1ef0'} 4\n"
@@ -374,6 +389,16 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             known_write = {"path": str(known_path), "pid": known_pid, "size": len(known_payload),
                            "start": known_start, "end": utc_ticks()}
             named_control = write_named_control(root / "in-capture-name.bin")
+        if resize_path is not None:
+            resize_start = utc_ticks()
+            resize_pid = run_writer(
+                "from pathlib import Path\nimport sys\n"
+                "sys.path.insert(0, sys.argv[1])\n"
+                "from n12_etw_probe import resize_known_control\n"
+                "resize_known_control(Path(sys.argv[2]), int(sys.argv[3]))",
+                Path(__file__).parent, resize_path, resize_target_size,
+            )
+            resize_end = utc_ticks()
         if comparison is not None:
             # Give immediate writes a separate observation interval before flushing.
             time.sleep(0.1)
@@ -480,6 +505,13 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         if known_path.read_bytes() != known_payload:
             raise RuntimeError("The generated known-file write did not preserve its payload.")
         capture["known_write"] = known_write
+    if resize_path is not None:
+        resized = resize_path.read_bytes()
+        if resized != resize_payload[:resize_target_size]:
+            raise RuntimeError("The generated resize did not preserve the expected prefix and size.")
+        capture["known_resize"] = {"path": str(resize_path), "pid": resize_pid,
+                                   "start": resize_start, "end": resize_end,
+                                   "before_bytes": resize_before_size, "after_bytes": len(resized)}
     if basic_info_control is not None:
         if basic_info_path.read_bytes() != b"M" * 101:
             raise RuntimeError("The generated metadata-control payload did not match.")

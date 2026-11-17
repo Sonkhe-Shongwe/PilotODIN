@@ -474,6 +474,49 @@ def test_known_file_report_only_discloses_a_verified_fixture_match(fault, reason
         assert teardown == {"status": "PASS", "reason": None, "observed_events": [13, 14]}
 
 
+@pytest.mark.parametrize(("fault", "reason"), [
+    (None, "completed-open-and-resize"),
+    ("allocation", "resize-missing-or-ambiguous"),
+    ("wrong-object", "resize-missing-or-ambiguous"),
+    ("duplicate", "resize-missing-or-ambiguous"),
+    ("failed", "resize-completion-unverified"),
+    ("rename", "possible-name-change"),
+])
+def test_known_resize_links_only_the_completed_end_of_file_change(fault, reason):
+    root = r"C:\private-fixture"
+    path = root + r"\known-resize.bin"
+    capture = {
+        "device": r"\Device\HarddiskVolume3",
+        "protected_root": root + r"\synthetic-protected",
+        "preopened": {"pid": 6, "tid": 7, "writes": {
+            "protected": {"start": 30, "end": 32, "size": 53},
+            "outside": {"start": 30, "end": 32, "size": 79},
+        }},
+        "known_resize": {"path": path, "pid": 8, "start": 1, "end": 20,
+                         "before_bytes": 96, "after_bytes": 37},
+    }
+    records = [
+        (2, 12, {"FileName": path, "FileObject": 51, "Irp": 1}),
+        (3, 24, {"Irp": 1, "Status": 0}),
+        (5, 17, {"FileObject": 99 if fault == "wrong-object" else 51, "FileKey": 61, "Irp": 2,
+                 "InfoClass": 19 if fault == "allocation" else 20}),
+        (7, 24, {"Irp": 2, "Status": 1 if fault == "failed" else 0}),
+    ]
+    if fault == "rename":
+        records.append((6, 19, {"FileObject": 51, "FileKey": 61}))
+    if fault == "duplicate":
+        records.append((6, 17, {"FileObject": 51, "FileKey": 61, "Irp": 3, "InfoClass": 20}))
+    events = [{"id": kind, "ticks": ticks, "pid": 8, "lifecycle": False, "data": data}
+              for ticks, kind, data in records]
+    report = preopened_report(capture, events)["known_resize"]
+    assert report == {
+        "operation": "resize", "expected_file": "known-resize.bin",
+        "matched_file": "known-resize.bin" if fault is None else None,
+        "status": "PASS" if fault is None else "BLOCKED", "reason": reason,
+        "before_bytes": 96, "after_bytes": 37,
+    }
+
+
 @pytest.mark.parametrize(("name_at", "wrong_name", "verdict"), [
     (4, False, "matches-handle-path"),
     (4, True, "different-from-handle-path"),

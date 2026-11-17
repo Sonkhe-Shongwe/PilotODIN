@@ -2,6 +2,10 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | One named file resize
+
+The routine Windows fixture seeds `known-resize.bin` at 96 bytes before recording. A dedicated child opens that file during recording and truncates it once to 37 bytes. The probe verifies the remaining bytes after capture. The report requires one completed FileEndOfFileInformation request on the same file object as the observed open and shows the expected and matched filenames and both measured lengths. This is the during-capture open case. It leaves the historical background resize counts and the P4 score at their recorded values.
+
 ## 17 November 2026 | Known filenames first
 
 Routine Windows CI compares two named generated writes. It opens `known-write.bin` after capture starts and checks the completed open and write. In a separate capture, it writes through the pre-opened `outside.bin` handle and checks whether the strict reducer recovers its name from the Windows FileIO rundown. The log shows the expected and matched fixture filenames with a verdict and reason. The live collector stays disarmed and P4 remains **14/20 (70%)**.

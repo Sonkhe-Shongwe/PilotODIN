@@ -838,25 +838,41 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
         result["basic_info_control"] = file_lifetime_report(capture["basic_info_control"], events, devices)
     if "known_write" in capture:
         control = capture["known_write"]
-        expected = canonical_file_path(control["path"], devices)
-        fixture = ntpath.dirname(canonical_file_path(capture["protected_root"], devices))
-        if expected != ntpath.join(fixture, "known-write.bin"):
-            raise ValueError("Unexpected known-file write target.")
+        validate_known_target(capture, control, devices, "known-write.bin")
         observed = file_lifetime_report(control, events, devices, verify_write_path=True)
         path_result = observed.get("write_object_path", observed)
-        known_write = known_write_result("known-write.bin", path_result["reason"], "completed-open-and-write")
+        known_write = known_file_result("write", "known-write.bin", path_result["reason"],
+                                       "completed-open-and-write")
         if "observed_end_events" in observed:
             known_write["cleanup_close"] = {
                 "status": observed["status"], "reason": observed["reason"],
                 "observed_events": observed["observed_end_events"],
             }
         result["known_write"] = known_write
+    if "known_resize" in capture:
+        control = capture["known_resize"]
+        filename = "known-resize.bin"
+        expected = validate_known_target(capture, control, devices, filename)
+        before, after = control["before_bytes"], control["after_bytes"]
+        if type(before) is not int or type(after) is not int or not 0 <= after < before:
+            raise ValueError("Invalid generated resize sizes.")
+        reason = resize_path_reason(control, events, expected, devices)
+        result["known_resize"] = known_file_result("resize", filename, reason, "completed-open-and-resize")
+        result["known_resize"].update(before_bytes=before, after_bytes=after)
     return result
 
 
-def known_write_result(filename, blocked_reason, evidence):
+def validate_known_target(capture, control, devices, filename):
+    fixture = ntpath.dirname(canonical_file_path(capture["protected_root"], devices))
+    expected = canonical_file_path(control["path"], devices)
+    if expected != ntpath.join(fixture, filename):
+        raise ValueError("Unexpected known-file control target.")
+    return expected
+
+
+def known_file_result(operation, filename, blocked_reason, evidence):
     """Expose only the verified fixture-relative name."""
-    return {"operation": "write", "expected_file": filename,
+    return {"operation": operation, "expected_file": filename,
             "matched_file": filename if blocked_reason is None else None,
             "status": "PASS" if blocked_reason is None else "BLOCKED",
             "reason": evidence if blocked_reason is None else blocked_reason}
@@ -1043,12 +1059,12 @@ def timing_comparison_identity(capture, events, devices, rundown_names, identiti
     return (None, reason) if reason else ((key, file_object), "completed-open-and-read")
 
 
-def check_write_object_path(events, opened, write, write_completed, expected, devices):
-    """Check a completed open's path evidence for the controlled write."""
+def check_write_object_path(events, opened, write, write_completed, expected, devices, *, operation="write"):
+    """Check path continuity from a completed open to the controlled mutation."""
     object_id = number(write["data"].get("FileObject"))
     key = number(write["data"].get("FileKey"))
     if not object_id or not key or number(opened["data"].get("FileObject")) != object_id:
-        return "write-object-or-key-unverified"
+        return f"{operation}-object-or-key-unverified"
     def resolve_path(value):
         return canonical_file_path(value, devices)
 
@@ -1419,6 +1435,37 @@ def shared_fixture_write(file_events, writes, before):
     return last, None
 
 
+def control_opens(control, file_events, expected, devices):
+    return [event for event in file_events if event["id"] == 12 and event["pid"] == control["pid"]
+            and control["start"] <= event["ticks"] <= control["end"]
+            and canonical_file_path(event["data"].get("FileName") or "", devices) == expected]
+
+
+def resize_path_reason(control, events, expected, devices):
+    """Attribute the fixture's sole FileEndOfFileInformation request through completion."""
+    file_events = [event for event in events if not event["lifecycle"]]
+    opens = control_opens(control, file_events, expected, devices)
+    if len(opens) != 1:
+        return "open-missing-or-ambiguous"
+    opened = opens[0]
+    object_id = number(opened["data"].get("FileObject"))
+    if not object_id:
+        return "open-file-object-missing"
+    requests = [
+        event for event in file_events if event["id"] == 17 and event["pid"] == control["pid"]
+        and opened["ticks"] < event["ticks"] <= control["end"]
+        and number(event["data"].get("InfoClass")) == 20  # FileEndOfFileInformation
+        and number(event["data"].get("FileObject")) == object_id
+    ]
+    if len(requests) != 1:
+        return "resize-missing-or-ambiguous"
+    request = requests[0]
+    completed = successful_completion(file_events, request, control["end"] + 1)
+    if completed is None:
+        return "resize-completion-unverified"
+    return check_write_object_path(file_events, opened, request, completed, expected, devices, operation="resize")
+
+
 def file_lifetime_report(control, events, devices, *, verify_write_path=False):
     """Verify the generated in-trace open, write and handle teardown."""
     expected = canonical_file_path(control["path"], devices)
@@ -1426,11 +1473,7 @@ def file_lifetime_report(control, events, devices, *, verify_write_path=False):
         raise ValueError("Invalid file lifetime control path.")
     file_events = sorted((event for event in events if not event["lifecycle"]),
                          key=lambda event: event["ticks"])
-    opened = [
-        event for event in file_events if event["id"] == 12 and event["pid"] == control["pid"]
-        and control["start"] <= event["ticks"] <= control["end"]
-        and canonical_file_path(event["data"].get("FileName") or "", devices) == expected
-    ]
+    opened = control_opens(control, file_events, expected, devices)
     outcome = {"status": "BLOCKED", "reason": "open-missing-or-ambiguous"}
     two_handles = control.get("two_handles", False)
     if len(opened) != (2 if two_handles else 1):

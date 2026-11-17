@@ -340,6 +340,12 @@ if ($PreopenedControl) {
         if ($known.status -ne 'PASS' -or $known.matched_file -cne 'known-write.bin') {
             throw 'The single-write control could not verify its expected filename.'
         }
+        $resize = $controlReport.known_resize
+        Write-Host ('Known file resize: ' + ($resize | ConvertTo-Json -Compress))
+        if ($resize.status -ne 'PASS' -or $resize.matched_file -cne 'known-resize.bin' -or
+            $resize.before_bytes -ne 96 -or $resize.after_bytes -ne 37) {
+            throw 'The single-resize control could not verify its expected filename and size change.'
+        }
         $named = $controlReport.in_capture_name_control
         Write-Host ('In-capture name control: ' + ($named | ConvertTo-Json -Compress -Depth 5))
         $requestTime = $named.PSObject.Properties['request_time_path']
