@@ -13,14 +13,14 @@ test('A4 Tauri Save As plugin stays Rust-side behind an explicit command',()=>{
  assert.match(cargo,/tauri-plugin-dialog\s*=\s*"2"/);
  assert.match(rust,/\.plugin\(tauri_plugin_dialog::init\(\)\)/);
  assert.match(rust,/fn save_report_as\(/);
- assert.match(rust,/tauri::generate_handler!\[launch_backend, launch_bundled_ai, save_report_as\]/);
+ assert.match(rust,/tauri::generate_handler!\[\s*launch_backend, launch_bundled_ai, save_report_as\b/);
  assert.deepEqual(capabilities.permissions,['core:default']);
 });
 
 test('Native save is type-restricted and returns cancel without a write',()=>{
  const rust=native('src/lib.rs');
  assert.match(rust,/MAX_REPORT_EXPORT_BYTES:\s*usize\s*=\s*12\s*\*\s*1024\s*\*\s*1024/);
- assert.match(rust,/check_report_payload\(&format, &filename, &bytes\)/);
+ assert.match(rust,/check_report_payload\(format, &filename, &bytes\)/);
  assert.match(rust,/bytes\.starts_with\(b"%PDF-"\)/);
  assert.match(rust,/b"<!doctype html>"/);
  assert.match(rust,/\.blocking_save_file\(\)/);
@@ -40,5 +40,10 @@ test('Browser and native report export flows are explicitly distinct',()=>{
  assert.match(ui,/outcome\.status==='cancelled'/);
  assert.match(ui,/Started browser download/);
  assert.match(api,/if\(!\('__TAURI_INTERNALS__' in window\)\)/);
- assert.match(api,/invoke<NativeReportSaveStatus>\('save_report_as',\{format,filename,bytes\}\)/);
+ const transfer=api.slice(api.indexOf('export async function saveReportNative'));
+ assert.match(transfer,/const bytes=await blob\.arrayBuffer\(\)/);
+ assert.match(transfer,/invoke<NativeReportSaveStatus>\('save_report_as',bytes,\{/);
+ assert.match(transfer,/'x-pilotodin-report-filename':encodeURIComponent\(filename\)/);
+ assert.doesNotMatch(transfer,/Array\.from/);
+ assert.match(native('src/lib.rs'),/InvokeBody::Raw\(bytes\) => Ok\(Cow::Borrowed\(bytes\)\)/);
 });

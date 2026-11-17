@@ -21,7 +21,7 @@ test('A4 invalid report payload cannot be advertised as a successful download',(
  assert.match(api,/validSignature/);
  assert.match(api,/%PDF-/);
  assert.match(api,/<!doctype html>/);
- assert.match(api,/No download was started/);
+ assert.match(api,/Report export is incomplete or invalid\. No Save As dialog was opened\./);
  assert.match(api,/content-type/);
 });
 

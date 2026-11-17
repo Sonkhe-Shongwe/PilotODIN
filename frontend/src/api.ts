@@ -144,8 +144,10 @@ export async function saveReportNative(blob:Blob, filename:string, format:'html'
  if(!filename.toLowerCase().endsWith('.'+format))throw new Error('Report filename does not match its file type.');
  const maxBytes=12*1024*1024;
  if(blob.size<=0||blob.size>maxBytes)throw new Error('Report is empty or exceeds the native Save As limit.');
- const bytes=Array.from(new Uint8Array(await blob.arrayBuffer()));
- const result=await invoke<NativeReportSaveStatus>('save_report_as',{format,filename,bytes});
+ const bytes=await blob.arrayBuffer();
+ const result=await invoke<NativeReportSaveStatus>('save_report_as',bytes,{
+  headers:{'x-pilotodin-report-format':format,'x-pilotodin-report-filename':encodeURIComponent(filename)},
+ });
  if(result.status!=='saved'&&result.status!=='cancelled')throw new Error('Unexpected result from native Save As.');
  return result;
 }

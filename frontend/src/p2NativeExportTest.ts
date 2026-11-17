@@ -1,5 +1,5 @@
 import {invoke} from '@tauri-apps/api/core';
-type NativeResult={status:'saved'|'cancelled';filename:string|null};
+import {saveReportNative} from './api';
 type Format='pdf'|'html';
 
 function status(id:string,pass:boolean,detail:string){
@@ -12,13 +12,18 @@ function log(detail:string){
  const target=document.getElementById('native-note');
  if(target)target.textContent=detail;
 }
-async function fixture(format:Format):Promise<number[]>{
+async function fixture(format:Format):Promise<Blob>{
  const path=format==='pdf'?'/p2-native-fixtures/report.pdf':'/p2-native-fixtures/report.html';
  const response=await fetch(path,{cache:'no-store'});
  if(!response.ok)throw new Error('Synthetic fixture unavailable: '+path+' HTTP '+response.status);
- const data=Array.from(new Uint8Array(await response.arrayBuffer()));
- if(data.length<50)throw new Error('Synthetic fixture unexpectedly empty');
+ const data=await response.blob();
+ if(data.size<50)throw new Error('Synthetic fixture unexpectedly empty');
  return data;
+}
+function invalidSave(bytes:ArrayBuffer,filename:string){
+ return invoke('save_report_as',bytes,{
+  headers:{'x-pilotodin-report-format':'pdf','x-pilotodin-report-filename':encodeURIComponent(filename)},
+ });
 }
 function wire(id:string,task:()=>Promise<void>){
  const btn=document.getElementById(id) as HTMLButtonElement|null;
@@ -34,33 +39,26 @@ function wire(id:string,task:()=>Promise<void>){
 }
 wire('pdf',async()=>{
  const bytes=await fixture('pdf');
- const result=await invoke<NativeResult>('save_report_as',{
-  format:'pdf',filename:'PilotODIN_P2_Synthetic.pdf',bytes
- });
+ const result=await saveReportNative(bytes,'PilotODIN_P2_Synthetic.pdf','pdf');
  status('pdf',result.status==='saved'&&result.filename==='PilotODIN_P2_Synthetic.pdf',
    'Native PDF Save As '+result.status+'; '+(result.filename??'no filename'));
 });
 wire('html',async()=>{
  const bytes=await fixture('html');
- const result=await invoke<NativeResult>('save_report_as',{
-  format:'html',filename:'PilotODIN_P2_Synthetic.html',bytes
- });
+ const result=await saveReportNative(bytes,'PilotODIN_P2_Synthetic.html','html');
  status('html',result.status==='saved'&&result.filename==='PilotODIN_P2_Synthetic.html',
    'Native HTML Save As '+result.status+'; '+(result.filename??'no filename'));
 });
 wire('cancel',async()=>{
  const bytes=await fixture('pdf');
- const result=await invoke<NativeResult>('save_report_as',{
-  format:'pdf',filename:'PilotODIN_P2_Cancel.pdf',bytes
- });
+ const result=await saveReportNative(bytes,'PilotODIN_P2_Cancel.pdf','pdf');
  status('cancel',result.status==='cancelled',
    result.status==='cancelled'?'Cancellation confirmed by Rust command':'Expected Cancel, got '+result.status);
 });
 wire('badcontent',async()=>{
  let rejected=false;
  try{
-  await invoke('save_report_as',{format:'pdf',filename:'P2_Invalid_Content.pdf',
-    bytes:Array.from(new TextEncoder().encode('not a PDF document'))});
+  await invalidSave(new TextEncoder().encode('not a PDF document').buffer,'P2_Invalid_Content.pdf');
  }catch(error){
   rejected=String(error).includes('Report file content does not match its declared format');
  }
@@ -69,7 +67,7 @@ wire('badcontent',async()=>{
 wire('badextension',async()=>{
  const bytes=await fixture('pdf');
  let rejected=false;
- try{await invoke('save_report_as',{format:'pdf',filename:'P2_Invalid_Extension.html',bytes})}
+ try{await invalidSave(await bytes.arrayBuffer(),'P2_Invalid_Extension.html')}
  catch(error){rejected=String(error).includes('Invalid report filename or extension')}
  status('badextension',rejected,rejected?'Mismatched extension rejected by Rust':'Unexpected result or non-validation error');
 });

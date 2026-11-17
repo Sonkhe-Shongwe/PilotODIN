@@ -1,6 +1,7 @@
 //! PilotODIN desktop lifecycle supervisor.
 //! Python and bundled inference are separate loopback-only, per-session workers.
 //! AI has no arbitrary process- or filesystem-execution capability.
+use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -9,6 +10,7 @@ use std::sync::Mutex;
 use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State};
+use tauri::ipc::{InvokeBody, Request};
 use tauri_plugin_shell::{process::{CommandChild, CommandEvent}, ShellExt};
 use tauri_plugin_dialog::DialogExt;
 
@@ -375,6 +377,7 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
 
 
 const MAX_REPORT_EXPORT_BYTES: usize = 12 * 1024 * 1024;
+const MAX_REPORT_FILENAME_BYTES: usize = 180;
 
 #[derive(Serialize)]
 struct NativeReportSave {
@@ -390,7 +393,7 @@ fn check_report_payload(format: &str, filename: &str, bytes: &[u8]) -> Result<()
         "pdf" => ".pdf",
         _ => return Err("Choose a PDF or HTML report format".into()),
     };
-    if filename.is_empty() || filename.len() > 180 ||
+    if filename.is_empty() || filename.len() > MAX_REPORT_FILENAME_BYTES ||
        filename.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|')) ||
        !filename.to_ascii_lowercase().ends_with(extension) {
         return Err("Invalid report filename or extension".into());
@@ -410,10 +413,46 @@ fn check_report_payload(format: &str, filename: &str, bytes: &[u8]) -> Result<()
     Ok(())
 }
 
+fn report_save_headers(headers: &tauri::http::HeaderMap) -> Result<(&str, Cow<'_, str>), String> {
+    let format = headers.get("x-pilotodin-report-format")
+        .and_then(|value| value.to_str().ok())
+        .ok_or("Missing or invalid report format header")?;
+    let encoded_name = headers.get("x-pilotodin-report-filename")
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| value.len() <= 3 * MAX_REPORT_FILENAME_BYTES)
+        .ok_or("Missing or invalid report filename header")?;
+    let filename = percent_encoding::percent_decode_str(encoded_name).decode_utf8()
+        .map_err(|_| "Invalid report filename encoding")?;
+    Ok((format, filename))
+}
+
+fn report_save_bytes(body: &InvokeBody) -> Result<Cow<'_, [u8]>, String> {
+    match body {
+        InvokeBody::Raw(bytes) => Ok(Cow::Borrowed(bytes)),
+        // Tauri's postMessage fallback serializes a binary argument as an array.
+        InvokeBody::Json(serde_json::Value::Array(values)) => {
+            if values.is_empty() || values.len() > MAX_REPORT_EXPORT_BYTES {
+                return Err("The report export is empty or exceeds the safe desktop size limit".into());
+            }
+            let bytes: Result<Vec<u8>, _> = values.iter().map(|value| {
+                value.as_u64().and_then(|byte| u8::try_from(byte).ok())
+                    .ok_or("Report payload must contain only bytes")
+            }).collect();
+            Ok(Cow::Owned(bytes?))
+        }
+        InvokeBody::Json(_) => Err("Report payload must contain bytes".into()),
+    }
+}
+
 #[tauri::command]
-async fn save_report_as(app: AppHandle, format: String, filename: String, bytes: Vec<u8>)
+async fn save_report_as(app: AppHandle, request: Request<'_>)
     -> Result<NativeReportSave, String> {
-    check_report_payload(&format, &filename, &bytes)?;
+    let (format, filename, bytes) = {
+        let (format, filename) = report_save_headers(request.headers())?;
+        let bytes = report_save_bytes(request.body())?;
+        check_report_payload(format, &filename, &bytes)?;
+        (format.to_owned(), filename.into_owned(), bytes.into_owned())
+    };
     // Blocking native dialogs must not run on the application's UI thread.
     // Spawn one blocking worker, then report the exact outcome to Deliver.
     tauri::async_runtime::spawn_blocking(move || -> Result<NativeReportSave, String> {
@@ -473,7 +512,9 @@ async fn save_report_as(app: AppHandle, format: String, filename: String, bytes:
 
 #[cfg(test)]
 mod report_save_tests {
-    use super::{check_report_payload, MAX_REPORT_EXPORT_BYTES};
+    use super::{check_report_payload, report_save_bytes, report_save_headers, MAX_REPORT_EXPORT_BYTES};
+    use std::borrow::Cow;
+    use tauri::{http::HeaderMap, ipc::InvokeBody};
 
     #[test]
     fn native_report_writer_accepts_only_matching_report_types() {
@@ -488,6 +529,40 @@ mod report_save_tests {
         assert!(check_report_payload("pdf", "bad:name.pdf", b"%PDF-1.7").is_err());
         assert!(check_report_payload("html", "bad<name>.html", b"<!doctype html>").is_err());
         assert!(check_report_payload("pdf", "report.pdf", &vec![0u8; MAX_REPORT_EXPORT_BYTES + 1]).is_err());
+    }
+
+    #[test]
+    fn raw_and_fallback_report_payloads_preserve_bytes() {
+        let exact = b"%PDF-1.7\n\x00\x81\xff";
+        let raw = InvokeBody::Raw(exact.to_vec());
+        let payload = report_save_bytes(&raw).unwrap();
+        assert!(matches!(payload, Cow::Borrowed(_)));
+        assert_eq!(&*payload, exact);
+        let fallback = InvokeBody::Json(serde_json::json!(exact.to_vec()));
+        assert_eq!(&*report_save_bytes(&fallback).unwrap(), exact);
+        for invalid in [
+            serde_json::json!([]), serde_json::json!([-1]),
+            serde_json::json!([256]), serde_json::json!([1.5]),
+            serde_json::json!(["8"]), serde_json::json!({"bytes":[8]}),
+        ] {
+            assert!(report_save_bytes(&InvokeBody::Json(invalid)).is_err());
+        }
+    }
+
+    #[test]
+    fn encoded_filenames_still_pass_native_validation() {
+        let mut headers = HeaderMap::new();
+        assert!(report_save_headers(&headers).is_err());
+        headers.insert("x-pilotodin-report-format", "pdf".parse().unwrap());
+        headers.insert("x-pilotodin-report-filename", "R%C3%A9sum%C3%A9%201.pdf".parse().unwrap());
+        let (format, filename) = report_save_headers(&headers).unwrap();
+        assert_eq!(filename, "Résumé 1.pdf");
+        assert!(check_report_payload(format, &filename, b"%PDF-").is_ok());
+        headers.insert("x-pilotodin-report-filename", "folder%2Freport.pdf".parse().unwrap());
+        let (format, filename) = report_save_headers(&headers).unwrap();
+        assert!(check_report_payload(format, &filename, b"%PDF-").is_err());
+        headers.insert("x-pilotodin-report-filename", "%ff.pdf".parse().unwrap());
+        assert!(report_save_headers(&headers).is_err());
     }
 }
 
