@@ -2,11 +2,19 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Hosted desktop Qwen startup passed
+
+The [approved Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44092929524/job/134072493587) passed on its first attempt. Launch `2089b3bbcf981d997761443e258e2e65f3a99dfb` checked out product source `4f3824c2f565f33a87f0195844d2d73242cf7571`. The one unpackaged desktop executable had SHA-256 `58a421eef6d5b44ac41a4e90925a072be1191afa8225ba145593df7e3c56c92f`. Cargo.lock SHA-256 was `2c8751899657e42d7caca62f6ca1e5a9be2690eaf8ee0eef9e02fe28da0ce5ae`.
+
+**Hosted desktop PASS.** The job staged the pinned Qwen3 assets and the frozen analytics engine, used an isolated profile and imported a generated CSV. With cloud AI disabled and Low-memory mode selected, admission allowed the request. The actual Ask ODIN button sent one insight request. The API returned HTTP 200 with the bundled Qwen3 1.7B provider, and the answer appeared in the desktop after 25.202 seconds. The desktop process and Ask ODIN were still responsive after the check. The workflow is disarmed and the run retained zero artifacts.
+
+**Physical retest NOT RUN.** The hosted job did not measure the disconnected 8 GB laptop or establish its exact historical crash frame. R03.3 earns zero points until the corrected desktop answers a disconnected request on the physical laptop. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | Offline Qwen Windows crash
 
 **Settings headroom PASS. Offline Qwen exercise FAIL.** On the physical 8 GB Windows laptop, the separate QA app showed 2.48 GiB available of 7.80 GiB with Low-memory saved, after an earlier 1.67 GiB reading. The second snapshot cleared the 2.00 GiB floor. Windows Reliability Monitor then recorded an `APPCRASH` in `pilotodin-desktop.exe` at 15:11 SAST with `0xC00000FD` (stack overflow), fault offset `0x7B5107` and PE timestamp `6AF26A43`. No answer was observed. The exact final UI action, request-time RAM and faulting stack frame are unverified. [Prior QA executable provenance](./P4_16_CURRENT_SOURCE_WINDOWS_QA_BUILD_RESULT_2026-11-10.md) · [Windows exception code](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55)
 
-**Source correction.** Both the previously hash-verified QA source `0c7a2b4` and active baseline `86fd010` allocated a 1 MiB stack array in model verification before starting the inference worker. The active branch now uses the heap buffer from [the earlier Windows fix](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/d303828680d6d4e6322ef7d45f091dfefe0484d2). Manifest validation, chunk size, SHA-256 verification and admission logic are preserved. The new source regression failed on the stack allocation and passed after the fix along with all eight cases in the focused suite. The earlier hosted Qwen check called the inference executable directly and did not exercise the desktop command. Corrected Windows binary and physical retest **NOT RUN**. R03.3 earns zero points.
+**Source correction.** Both the previously hash-verified QA source `0c7a2b4` and active baseline `86fd010` allocated a 1 MiB stack array in model verification before starting the inference worker. The active branch now uses the heap buffer from [the earlier Windows fix](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/d303828680d6d4e6322ef7d45f091dfefe0484d2). Manifest validation, chunk size, SHA-256 verification and admission logic are preserved. The new source regression failed on the stack allocation and passed after the fix along with all eight cases in the focused suite. The [subsequent hosted desktop check](#17-november-2026--hosted-desktop-qwen-startup-passed) exercised the corrected desktop startup path. The earlier worker-only check called the inference executable directly.
 
 ## 17 November 2026 | Separate final Sysmon verification
 
@@ -618,7 +626,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-For R03.3, obtain separate approval for a source-pinned, unpackaged Windows QA build and an isolated synthetic Ask ODIN exercise through the desktop command with the existing pinned runtime and model. Verify the executable digest and record the app's survival, provider and answer or startup error. A hosted pass precedes the separately approved disconnected test on physical 8 GB Windows.
+For R03.3, use the [hosted desktop pass](#17-november-2026--hosted-desktop-qwen-startup-passed) to scope one separately approved, source-matched unpackaged QA build and retest on the physical 8 GB Windows laptop. Use a disposable app profile and generated CSV. Verify the executable digest, confirm Low-memory mode and at least 2.00 GiB available with the desktop open, disconnect, and submit the same Ask ODIN prompt once. Record the provider, answer or startup error, elapsed time and whether the desktop remains open. A successful physical bundled answer earns five points.
 
 The next separately approved app audit can compare the [separate final Sysmon check](#17-november-2026--separate-final-sysmon-verification) with the combined calibration verdict and measure supported, blocked and unchecked WebView writes with the [repeat-write report](#17-november-2026--webview-repeat-write-evidence). Retain the two outside-scope samples, the identity conflict and the other filesystem and lifecycle blockers from the previous audit as open findings.
 

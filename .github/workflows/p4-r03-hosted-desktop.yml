@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   desktop:
-    if: ${{ github.run_attempt == '1' }}
+    if: ${{ false }} # One-use approval launched run 44092929524.
     runs-on: windows-2022
     timeout-minutes: 90
     env:
