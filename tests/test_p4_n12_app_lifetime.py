@@ -302,7 +302,7 @@ class AppLifetimeTests(unittest.TestCase):
             error = subprocess.CalledProcessError(1, "private command", output=raw)
             with self.subTest(expected=expected), patch.object(lifetime.journey, "powershell", side_effect=error):
                 with self.assertRaisesRegex(trace.EvidenceValidationError, f"^{expected}$"):
-                    lifetime.request_graceful_close(app, APP, "PilotODIN QA")
+                    lifetime.journey.request_graceful_close(app, APP, "PilotODIN QA")
 
     def test_cli_and_workflow_enforce_separate_lifetime_approval(self):
         with patch.dict(lifetime.os.environ, {"PILOTODIN_N12_APP_LIFETIME_CONSENT": "other"}):

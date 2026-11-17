@@ -18,6 +18,7 @@ from urllib.request import ProxyHandler, build_opener
 from uuid import uuid4
 
 from qa.p4_native import n12_etw_probe as etw
+from qa.p4_native.n12_exit_corroboration import journey_lifetime_evidence
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
 from qa.p4_research.n12_journey_diagnostics import OutsidePaths, address, backend_self_connections, network_summary
@@ -344,6 +345,21 @@ def verify_initial_sysmon(root, manifest, record):
         print("N12 initial Sysmon calibration waiting for channel evidence: " + reason, flush=True)
 
 
+def request_graceful_close(app, binary, title):
+    try:
+        powershell(HELPER, "close", "-AppProcessId", app.pid,
+                           "-AppPath", binary, "-AppTitle", title, "-ReportCloseStatus", timeout=25)
+    except subprocess.CalledProcessError as exc:
+        category = {
+            b"n12-close-handle-unavailable": "window-handle-unavailable",
+            b"n12-close-identity-mismatch": "window-identity-mismatch",
+            b"n12-close-request-rejected": "window-close-message-rejected",
+            b"n12-close-process-timeout": "window-process-exit-timeout",
+            b"n12-close-exit-nonzero": "window-process-exit-nonzero",
+        }.get((exc.stdout or b"").strip(), "window-close-helper-failed")
+        raise trace.EvidenceValidationError(category) from exc
+
+
 def run_driver(stack, manifest, node, root, env, relaunch):
     command = [node, str(PROBE)]
     label = "relaunch" if relaunch else "first"
@@ -352,14 +368,21 @@ def run_driver(stack, manifest, node, root, env, relaunch):
     # Playwright creates CDP scratch files under Node's OS temp directory.
     driver_temp = str(root / DRIVER_TEMP_DIR)
     driver_env = {**env, "TEMP": driver_temp, "TMP": driver_temp}
-    process = spawn(stack, manifest, "driver", command, driver_env, FRONTEND, root / f"driver-{label}.log")
+    log = root / f"driver-{label}.log"
+    process = spawn(stack, manifest, "driver", command, driver_env, FRONTEND, log)
     trace.require(process.wait(timeout=240) == 0, f"{label} native interaction probe failed")
+    with log.open("rb") as stream:
+        ready = any(line.rstrip(b"\r\n") == b"N12 native close listener ready" for line in stream)
+    trace.require(ready, f"{label} native close listener was not verified")
 
 
 def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite):
+    from qa.p4_native.n12_lifetime_control import process_images, process_times
+
     binary = build.executable(staged)
     title = json.loads(build.isolated_config())["app"]["windows"][0]["title"]
     first_pid = None
+    witnesses = {}
     for relaunch in (False, True):
         label = "relaunch" if relaunch else "first"
         trace.require(backend.poll() is None and vite.poll() is None, "loopback service exited during journey")
@@ -379,12 +402,21 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
             mark(manifest, "quality")
         run_driver(stack, manifest, node, root, {**env, "P4_NATIVE_QA_APP_PID": str(app.pid)}, relaunch)
         mark(manifest, "exit" if relaunch else "close")
-        powershell(HELPER, "close", "-AppProcessId", app.pid, "-AppPath", binary, "-AppTitle", title)
+        try:
+            images = process_images(app)
+        except (OSError, trace.EvidenceValidationError):
+            images = None
+        request_graceful_close(app, binary, title)
         trace.require(app.wait(timeout=5) == 0, "app did not exit normally")
+        try:
+            witnesses[label] = process_times(app) | images if images is not None else None
+        except (OSError, trace.EvidenceValidationError):
+            witnesses[label] = None
         wait_for(lambda: not listening(9331) and int(powershell(
             HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
         )) == 0, 25, "WebView processes did not exit for the disposable profile")
         checkpoint(label + "-launch-and-exit", "completed", source, expected_hash)
+    return witnesses
 
 
 def prepare_journey(root, source, expected_hash):
@@ -530,7 +562,8 @@ def capture(root, staged, source, expected_hash, node):
             backend_snapshot = backend_socket_snapshot(backend)
             wait_for(lambda: http_ready(5173, "/"), 60, "Vite did not become ready", vite)
             with checkpoint_stage("app-journey", source, expected_hash):
-                run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite)
+                app_witnesses = run_apps(stack, manifest, root, staged, source, expected_hash, node,
+                                         env, profile, backend, vite)
         print("N12 journey stage final calibration", flush=True)
         with checkpoint_stage("final-fixture", source, expected_hash):
             calibrate(calibration[1], manifest)
@@ -599,11 +632,21 @@ def capture(root, staged, source, expected_hash, node):
                        "volume_devices": devices, "events_sha256": build.digest(events)}
     report_file(root / "manifest.json", manifest)
     paths = diagnostic_paths(root, staged, manifest)
+    app_lifetimes = {}
+
+    def observe_lifetimes(events, devices, window, issues):
+        app_lifetimes.update(journey_lifetime_evidence(
+            events, devices, window, observed, app_witnesses, expected_hash, issues))
+        print("N12 app lifetime observations " + json.dumps({
+            "source_sha": source, "executable_sha256": expected_hash, **app_lifetimes,
+        }), flush=True)
+
     with checkpoint_stage("combined-reduction", source, expected_hash):
         result = trace.complete_journey_audit(manifest, observed, events, before, after, etw=True,
                                               record_outside_writer=paths.record, journey_bookends=bookends,
-                                              describe_path_gaps=True)
+                                              describe_path_gaps=True, observe_lifetimes=observe_lifetimes)
     result["journey_diagnostics"] = {
+        "app_lifetimes": app_lifetimes,
         "outside_scope_paths": paths.summary(),
         "outside_scope_writers": paths.writer_summary(),
         "process_bookends": {"before": "available" if first_processes is not None else "unavailable",

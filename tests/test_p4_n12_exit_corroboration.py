@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from xml.etree import ElementTree as ET
@@ -71,6 +72,37 @@ class DisputedExitTests(unittest.TestCase):
         self.assertIsNone(self.child.end)
         for private in ("private", "msedgewebview2", "701", "HarddiskVolume", "990"):
             self.assertNotIn(private, json.dumps(row))
+
+    def test_integrated_journey_keeps_two_handle_verdicts_and_child_blocker_redacted(self):
+        roots = [self.parent, trace.Process("private-relaunch", "", 702, PARENT_IMAGE, None,
+                                            stamp(350_000), "", stamp(480_000))]
+        for process in roots:
+            process.sha256 = "b" * 64
+        self.processes[roots[1].guid] = roots[1]
+        observed = SimpleNamespace(bindings=[({"role": "app"}, process) for process in roots],
+                                   processes=self.processes, roles=self.roles)
+        self.events[2]["data"]["ImageName"] = "msedgewebview2"
+        self.events += [
+            event(1, 702, 33, 350_001, 350_100, PARENT_IMAGE),
+            event(2, 702, 33, 350_001, 480_100, "pilotodin.exe", exit=480_001),
+        ]
+        image = {"image_dos": PARENT_IMAGE, "image_native": r"\Device\HarddiskVolume3\qa\private\pilotodin.exe"}
+        witnesses = {
+            "first": {**image, "pid": 700, "birth": ORIGIN + 54_001, "exit": ORIGIN + 320_001},
+            "relaunch": {**image, "pid": 702, "birth": ORIGIN + 350_001, "exit": ORIGIN + 480_001},
+        }
+        issues = frozenset({"sysmon-exit-time-unverified"})
+        report = diagnostic.journey_lifetime_evidence(
+            self.events, DEVICES, (ORIGIN, ORIGIN + 500_000), observed, witnesses, "b" * 64, issues)
+        self.assertEqual(report["scope"], "diagnostic-only-before-file-correlation")
+        self.assertEqual(report["launches"]["first"]["handle"], "MATCH")
+        self.assertEqual(report["launches"]["relaunch"]["handle"], "MATCH")
+        self.assertEqual(report["launches"]["first"]["children"]["webview-network"]["lifetime"],
+                         {"etw-stop-image-conflict": 1})
+        self.assertEqual(report["launches"]["relaunch"]["children"], {})
+        for private in ("private", "HarddiskVolume", "pilotodin.exe", str(ORIGIN)):
+            self.assertNotIn(private, json.dumps(report))
+        self.assertEqual(issues, frozenset({"sysmon-exit-time-unverified"}))
 
     def test_accepts_distinct_later_pid_reuse(self):
         self.events += [

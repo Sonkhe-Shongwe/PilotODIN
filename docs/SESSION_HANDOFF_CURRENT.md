@@ -2,6 +2,12 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Integrated two-launch N12 audit prepared
+
+The full hosted workflow now reuses the native close-listener and verified close checks for both launches. It retains original app-handle image paths and exact process times in memory on the disposable runner and reports each launch's redacted ETW lifetime evidence before filesystem correlation. This report uses the digest-checked event stream from the combined audit. It records child image and lifetime disagreements by role and preserves the early network observations and protected endpoint comparison. The underlying filesystem, network, and coverage pass criteria are unchanged.
+
+Generated checks exercise the two launches, refusal when the driver never acknowledges close readiness, the two handle identities, redaction, continued strict child checks and retention of lifetime and network evidence when later filesystem reduction fails. The [previous full audit](#16-november-2026--hosted-n12-completed-with-six-unexpected-connections) remains the live comparison baseline. The integrated hosted audit is **NOT RUN**. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | Generated control confirmed a shortened ETW stop image
 
 The [one-use collector job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44013610374/job/133806150460) ran on Windows Server 2022 image `20261112.366.7` with Sysmon 15.22, at reviewed source `2685b6ddb1cff330e0e02766ec6beb24ee0d4a4b` from launch `3928d01498d8cc5c79d8e96e900f633fe10a0d58`. [Routine CI at launch](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44013610312)
@@ -458,7 +464,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Verify routine CI for the [original-handle stop-prefix correction](#17-november-2026--generated-control-confirmed-a-shortened-etw-stop-image). A separately approved single unpackaged app startup and close on disposable Windows Server 2022 can verify the actual app stop field, original handle paths and timings, while retaining strict child evidence. Full N12 credit still depends on the separate hosted filesystem and network audit.
+Verify routine CI for the [integrated two-launch audit](#17-november-2026--integrated-two-launch-n12-audit-prepared). A fresh exact-source approval can cover one unpackaged Windows Server 2022 build and one two-launch N12 journey with generated data. The run should produce redacted lifetime, filesystem and network evidence together. Award credit only for a passing combined-audit criterion. [Acceptance plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 

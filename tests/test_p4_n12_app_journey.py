@@ -11,6 +11,7 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
+from qa.p4_native import n12_lifetime_control
 from qa.p4_research import n12_app_journey as journey
 from qa.p4_research import n12_journey_diagnostics
 
@@ -370,7 +371,7 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
 @pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit",
                                     "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture",
                                     "etw-export", "etw-reduce", "backend-snapshot-unavailable",
-                                    "app-and-cleanup", "etw-stop"])
+                                    "app-and-cleanup", "etw-stop", "driver-readiness-missing"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
@@ -392,6 +393,11 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setenv("TMP", user_temp)
     monkeypatch.setattr(journey, "prepare_journey", lambda *args: (manifest, home, profile, fixture, calibrations))
     monkeypatch.setattr(journey, "quiet", lambda *a, **kw: b"churn,amount\nY,2\n")
+    monkeypatch.setattr(n12_lifetime_control, "process_images", lambda _: {
+        "image_dos": r"c:\private\app.exe", "image_native": r"\Device\HarddiskVolume1\private\app.exe",
+    })
+    monkeypatch.setattr(n12_lifetime_control, "process_times",
+                        lambda process: {"pid": process.pid, "birth": 170, "exit": 200})
     def endpoint_snapshots(m):
         after = "etw-stop" in events
         states = {"quality-source": "absent" if fault == "absent-fixture" else "file",
@@ -449,6 +455,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert env["PILOTODIN_N12_QUALITY_FIXTURE"] == str(fixture)
             assert (command[-1] == "--verify-relaunch") == (log.stem == "driver-relaunch")
             assert env["TEMP"] == env["TMP"] == str(root / journey.DRIVER_TEMP_DIR)
+            log.write_text("earlier probe output\n" if fault == "driver-readiness-missing"
+                           else "N12 native close listener ready\n", encoding="utf-8")
         else:
             assert env["TEMP"] == env["TMP"] == user_temp
         m["processes"].append({"role": role, "pid": process.pid, "image": str(command[0])})
@@ -478,6 +486,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             return json.dumps({"pid": args[-1], "birth_ticks": 170,
                                "observed_ticks": 200, "sockets": []}).encode()
         if args[0] == "close":
+            assert args[-1] == "-ReportCloseStatus"
             events.append("graceful-close")
         elif args[0] == "profile-active":
             events.append("profile-exit")
@@ -510,8 +519,18 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         bindings=[],
     )
 
+    def lifetime_report(etw_records, devices, window, sysmon_observed, witnesses, digest, issues):
+        assert sysmon_observed is observed and digest == EXE_SHA and isinstance(issues, frozenset)
+        assert witnesses["first"]["pid"] != witnesses["relaunch"]["pid"]
+        assert witnesses["first"]["image_dos"] == r"c:\private\app.exe"
+        return {"scope": "diagnostic-only-before-file-correlation", "launches": {
+            "first": {"handle": "MATCH"}, "relaunch": {"handle": "MATCH"},
+        }}
+
+    monkeypatch.setattr(journey, "journey_lifetime_evidence", lifetime_report)
+
     def reduce(m, sysmon_observed, file_trace, before, after, *, etw, record_outside_writer,
-               journey_bookends, describe_path_gaps):
+               journey_bookends, describe_path_gaps, observe_lifetimes):
         events.append("reducer")
         assert sysmon_observed is observed
         assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
@@ -519,6 +538,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert describe_path_gaps
         assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
                                     "after": [{"pid": 702, "birth_ticks": 170}]}
+        observe_lifetimes([], {}, (0, 1), frozenset(observed.issues))
         if fault == "etw-reduce":
             raise journey.trace.EvidenceValidationError("invalid ETW evidence")
         record_outside_writer("driver", "write", (r"c:\private\driver.bin",), "node.exe")
@@ -544,7 +564,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "diagnostic_paths", lambda *args: journey.OutsidePaths([]))
     monkeypatch.setattr(n12_journey_diagnostics, "local_disposable_path", lambda path, **options: path)
 
-    if fault in {"first-calibration", "changed-binary", "no-profile-exit", "app-and-cleanup", "etw-stop"}:
+    if fault in {"first-calibration", "changed-binary", "no-profile-exit", "app-and-cleanup", "etw-stop",
+                 "driver-readiness-missing"}:
         if fault == "etw-stop":
             with pytest.raises(RuntimeError, match="private-etw-stop-value"):
                 journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
@@ -552,6 +573,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             with pytest.raises(journey.trace.EvidenceValidationError, match={
                 "first-calibration": "fixture coverage", "changed-binary": "executable changed",
                 "no-profile-exit": "WebView processes did not exit", "app-and-cleanup": "executable changed",
+                "driver-readiness-missing": "first native close listener was not verified",
             }[fault]):
                 journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
         assert events[-1] == "etw-stop"
@@ -604,6 +626,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert not socket_path.exists()
         else:
             assert json.loads(socket_path.read_text())["observed_ticks"] == 200
+        assert report["journey_diagnostics"]["app_lifetimes"]["launches"]["relaunch"]["handle"] == "MATCH"
         assert report["journey_diagnostics"]["outside_scope_paths"] == [
             {"role": "driver", "operation": "write", "path_categories": ["other-path"], "count": 1},
         ]
@@ -618,6 +641,15 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         stage = {"sysmon-export": "sysmon-export", "sysmon-parse": "sysmon-reduction",
                  "etw-export": "etw-export", "etw-reduce": "combined-reduction"}[fault]
         assert records[-1]["stage"] == stage and records[-1]["status"] == "interrupted"
+    lifetime_lines = [line for line in lines if line.startswith("N12 app lifetime observations ")]
+    if fault in {None, "etw-reduce", "backend-snapshot-unavailable"}:
+        lifetime_line, = lifetime_lines
+        assert "private" not in lifetime_line
+        assert json.loads(lifetime_line.removeprefix("N12 app lifetime observations "))["launches"] == {
+            "first": {"handle": "MATCH"}, "relaunch": {"handle": "MATCH"},
+        }
+    else:
+        assert not lifetime_lines
     network_lines = [line.removeprefix("N12 network observations ") for line in lines
                      if line.startswith("N12 network observations ")]
     if fault in {None, "etw-export", "etw-reduce", "backend-snapshot-unavailable"}:

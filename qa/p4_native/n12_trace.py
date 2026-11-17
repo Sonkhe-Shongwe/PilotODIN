@@ -781,7 +781,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       rundown_window=None, record_outside_scope=None, record_outside_writer=None,
                       background_bookends=None,
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
-                      calibration_diagnostics=None, disputed_exits=None):
+                      calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -871,6 +871,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
+        if observe_lifetimes is not None:
+            observe_lifetimes(event_records, devices, (start_ticks, end_ticks), frozenset(issues))
         if disputed_exits is not None and any(p.disputed_exit for p in processes.values()):
             if __package__:
                 from .n12_exit_corroboration import corroborate_exits
@@ -1006,7 +1008,8 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
 
 def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=False, rundown=None,
                            record_outside_scope=None, journey_bookends=None, describe_path_gaps=False,
-                           record_outside_writer=None):
+                           record_outside_writer=None, observe_lifetimes=None):
+    require(observe_lifetimes is None or etw, "app lifetime evidence requires ETW")
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
     require(journey_bookends is None or etw, "process bookends require ETW audit")
     issues = observed.issues.copy()
@@ -1025,7 +1028,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
             record_outside_writer=record_outside_writer, background_bookends=journey_bookends,
             bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None,
             write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None,
-            disputed_exits=disputed_exits)
+            disputed_exits=disputed_exits, observe_lifetimes=observe_lifetimes)
         path_diagnostics = []
     else:
         file_counts, violations, file_events, path_diagnostics = inspect_files(

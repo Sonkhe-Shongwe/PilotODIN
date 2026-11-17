@@ -4,6 +4,7 @@ import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityAfterRelau
 import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
 import { dragWorkspaceTab, prepareWorkspaceTabDrag } from './p4-drag-workspace-tab.mjs';
 import { approveCompactQuality, closeN12Peer, findN12Peer, isN12Peer, matchesN12LifecycleRequest, verifyN12ArchiveDraft } from './p4-n12-native-cases.mjs';
+import { waitForNativeCloseRegistration } from './p4-n12-native-close-readiness.mjs';
 import { verifyPrepareFittedAcceptance } from './p4-prepare-fitted-acceptance.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -452,7 +453,11 @@ async function runNativeProbe(browser) {
    reportTraffic();
   }
   if(failures.length)throw Error('Hosted Windows checks failed: '+failures.join(', '));
-  if(peer)await reloadP4SyntheticWorkspace(page);
+  if(peer) {
+   await reloadP4SyntheticWorkspace(page);
+   await waitForNativeCloseRegistration(page);
+   console.log('N12 native close listener ready');
+  }
   return;
  }
  for(const kind of ['classification','regression','rare','insufficient','neutral','quality','prepare'])ids[kind]=await create(kind);
@@ -561,6 +566,10 @@ async function runNativeProbe(browser) {
   expect(writes).toEqual(peer?['proposals','commit','archive','restore']:['proposals','commit']);
   expect(lifecyclePermit).toBeNull();
   await writeFile(receiptPath,JSON.stringify(ids),{flag:'wx'});
+  if(peer) {
+   await waitForNativeCloseRegistration(page);
+   console.log('N12 native close listener ready');
+  }
   console.log('N11 ready for native close and relaunch');
  }finally{await noTraining(all);reportTraffic();}
 }

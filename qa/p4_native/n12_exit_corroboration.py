@@ -241,3 +241,69 @@ def corroborate_exits(events, processes, roles, devices, window, issues):
                        etw_exit_minus_sysmon_exit_ticks=stop.exit - trace.utc_ticks(original.stamp),
                        etw_duration_ticks=stop.exit - start.creation)
     return rows
+
+
+def journey_lifetime_evidence(events, devices, window, observed, witnesses, executable_sha256, issues):
+    """Report handle-backed app evidence while the combined audit keeps its own verdict."""
+    report = {"scope": "diagnostic-only-before-file-correlation", "launches": {}}
+    source_gaps = sorted(issues & SOURCE_COVERAGE_ISSUES)
+    if not source_gaps:
+        try:
+            lifetimes = EtwLifetimes(events, devices, window)
+        except (KeyError, TypeError, ValueError):
+            source_gaps = ["etw-process-payload-unverified"]
+    roots = [process for root, process in observed.bindings if root["role"] == "app"]
+    processes = sorted(observed.processes.values(), key=lambda process: process.start)
+    for label in ("first", "relaunch"):
+        row = {"handle": "BLOCKED", "issues": [], "children": {}}
+        report["launches"][label] = row
+        if source_gaps:
+            row["issues"] = source_gaps
+            continue
+        witness = witnesses.get(label)
+        if witness is None:
+            row["issues"] = ["original-app-handle-unavailable"]
+            continue
+        candidates = [root for root in roots if root.pid == witness["pid"] and root.sha256 == executable_sha256]
+        if len(candidates) != 1:
+            row["issues"] = ["app-sysmon-root-unverified"]
+            continue
+        root = candidates[0]
+        row["start_image"] = lifetimes.start_image_comparison(root)
+        row["stop_image"] = lifetimes.stop_image_comparison(root)
+        row["order"] = lifetimes.order_comparison(root, witness)
+        matched = {}
+        try:
+            start, stop = lifetimes.find(root, handle_witness=witness)
+            trace.require(start.sequence is not None, "etw-app-sequence-unverified")
+            trace.require(all(compare_image_path(witness.get(key), root.image, devices) == "exact-path-match"
+                              for key in ("image_dos", "image_native")), "app-handle-image-unverified")
+            matched[root.guid] = start, stop
+            row["handle"] = "MATCH"
+        except trace.EvidenceValidationError as exc:
+            row["issues"].append(str(exc))
+        tree = {root.guid}
+        for process in processes:
+            if process.parent not in tree:
+                continue
+            tree.add(process.guid)
+            role = observed.roles.get(process.guid, "unattributed")
+            child = row["children"].setdefault(role, {"start_images": {}, "stop_images": {}, "lifetime": {}})
+            for key, category in (("start_images", lifetimes.start_image_comparison(process)),
+                                  ("stop_images", lifetimes.stop_image_comparison(process))):
+                counts = child[key]
+                counts[category] = counts.get(category, 0) + 1
+            try:
+                start, stop = lifetimes.find(process)
+                parent = matched.get(process.parent)
+                trace.require(parent is not None and start.sequence is not None
+                              and start.parent == parent[0].pid and start.parent_sequence == parent[0].sequence
+                              and parent[0].creation <= start.creation <= parent[1].exit,
+                              "app-tree-etw-parent-lifetime-unverified")
+                matched[process.guid] = start, stop
+                category = "MATCH"
+            except trace.EvidenceValidationError as exc:
+                category = str(exc)
+            counts = child["lifetime"]
+            counts[category] = counts.get(category, 0) + 1
+    return report

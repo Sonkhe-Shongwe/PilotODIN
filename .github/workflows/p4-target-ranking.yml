@@ -66,6 +66,7 @@ on:
       - frontend/e2e/p4-n12-native-close-readiness.mjs
       - frontend/e2e/p4-n12-native-close-readiness.test.mjs
       - .github/workflows/p4-n12-app-lifetime.yml
+      - .github/workflows/p4-n12-app-journey.yml
       - .github/workflows/p4-n12-lifetime-control.yml
       - qa/p4_research/n12_journey_diagnostics.py
       - qa/p4_research/Invoke_N12_Journey_Evidence.ps1

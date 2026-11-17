@@ -81,7 +81,7 @@ def launch_and_close(root, staged, node, source, expected_hash):
             trace.require(app.poll() is None and backend.poll() is None and vite.poll() is None,
                           "app or local service exited before verified close")
             app_images = process_images(app)
-            request_graceful_close(app, binary, title)
+            journey.request_graceful_close(app, binary, title)
         with journey.checkpoint_stage("app-lifetime-handle-exit", source, expected_hash):
             trace.require(app.wait(timeout=5) == 0, "app did not exit normally")
             app_times = process_times(app) | app_images
@@ -90,21 +90,6 @@ def launch_and_close(root, staged, node, source, expected_hash):
                 journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
             )) == 0, 25, "WebView processes did not exit for the disposable profile")
     journey.report_file(root / "private-app-handle.json", app_times)
-
-
-def request_graceful_close(app, binary, title):
-    try:
-        journey.powershell(journey.HELPER, "close", "-AppProcessId", app.pid,
-                           "-AppPath", binary, "-AppTitle", title, "-ReportCloseStatus", timeout=25)
-    except subprocess.CalledProcessError as exc:
-        category = {
-            b"n12-close-handle-unavailable": "window-handle-unavailable",
-            b"n12-close-identity-mismatch": "window-identity-mismatch",
-            b"n12-close-request-rejected": "window-close-message-rejected",
-            b"n12-close-process-timeout": "window-process-exit-timeout",
-            b"n12-close-exit-nonzero": "window-process-exit-nonzero",
-        }.get((exc.stdout or b"").strip(), "window-close-helper-failed")
-        raise trace.EvidenceValidationError(category) from exc
 
 
 def launch_worker(root, source, expected_hash):
