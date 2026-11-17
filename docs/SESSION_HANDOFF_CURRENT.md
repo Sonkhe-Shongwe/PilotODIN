@@ -2,11 +2,21 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | FileIO completion check supported 193 paths
+
+The [approved collector-only Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44049804968/job/133924468701) ran once on image `20261112.366.7` with Sysmon 15.22. Launch `15968a29ff12b56c55c777b67e738c6cff4e1500` pinned reviewed source `c53f3b76bbd0866ca6f632a13afa32af63433591`. PilotODIN compilation and launch were **NOT RUN**. The run retained zero artifacts.
+
+**Sysmon prelaunch PASS on read 1.** The existing fixture precision rule matched the Sysmon birth in the same millisecond as the independently observed Windows creation time. Both TCP and UDP passed for the fixture. The native decoder emitted 736 FileIO filename records and the combined comparisons finished.
+
+**193 of 273 missing-name paths were consistent under the completion check.** They covered 187 of 267 writes and six of six resizes, all with candidate paths outside protected roots. Of the remaining 80 writes, 78 completed at or after the start of rundown, one had no matching key in rundown, and one had an invalidated lifetime. The 78 timing cases fall outside the conservative pre-rundown interval. The report provides no per-name time evidence to verify them.
+
+**Strict coverage BLOCKED.** Both reports with process snapshots retained 416 unresolved paths: 381 writes, 33 resizes, one allocation and one unsupported operation. There were also eight missing-lifetime flags and one unsupported-operation flag. The reports observed all generated file markers and recorded zero file violations. The completion check is diagnostic. The workflow failed on strict coverage, is disarmed, and P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | FileIO filename completion check prepared
 
 The paired rehearsal found filename candidates for 777 of 792 operations with no prior name. The next disarmed collector run records when the native rundown starts as well as when it ends. Its second report checks that each missing-name candidate comes from a successful, unambiguous completion before rundown begins, with a known process lifetime through completion and a compatible file object and key across the observed ETW capture. Any identity evidence on the completion event must agree. Late object reuse, rename or name conflicts and missing keys leave the candidate unconfirmed. Capture loss prevents the additional check.
 
-Generated cases verify the new decisions and preserve the original coverage and violation results. The live completion comparison is **NOT RUN**. Its counts will show what fraction of candidates can meet the stronger rule. P4 remains **14/20 (70%)**.
+Generated cases verify the new decisions and preserve the original coverage and violation results. The [live completion comparison](#17-november-2026--fileio-completion-check-supported-193-paths) measured 193 consistent paths across 273 missing-name cases. P4 remains **14/20 (70%)**.
 
 ## 17 November 2026 | FileIO rundown found 777 candidate paths
 
@@ -528,7 +538,7 @@ The [latest two-launch app journey](#17-november-2026--integrated-n12-audit-pass
 
 ## Next engineering action
 
-Use the [paired FileIO comparison](#17-november-2026--fileio-rundown-found-777-candidate-paths) to review when the existing strict rundown rules can credit a path. Prove individually verified file-key mappings through completion on generated controls and keep the 15 absent, conflicting or invalidated mappings unresolved. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
+Use the [completion check](#17-november-2026--fileio-completion-check-supported-193-paths) and the existing known-path Windows controls to evaluate how the strict reducer could credit the conservatively ordered cases. Keep the 78 writes that overlap rundown unresolved unless independent timestamp evidence establishes the order for their individual names. The full app journey still needs the driver temp comparison, child handles, WebView request-to-completion samples and the WebView and backend writer findings. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
