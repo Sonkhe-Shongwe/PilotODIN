@@ -1,0 +1,2 @@
+reviewed_source=acfc40247ceb68a8e33a9fca5f81d5d2cb68b12b
+scope=one-unpackaged-desktop-and-frozen-engine-shutdown
