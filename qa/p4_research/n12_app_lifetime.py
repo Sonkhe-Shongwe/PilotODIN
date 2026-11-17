@@ -14,7 +14,7 @@ from qa.p4_native import n12_etw_probe
 from qa.p4_native import n12_exit_corroboration as corroboration
 from qa.p4_native import n12_lifetime_etw as etw
 from qa.p4_native import n12_trace as trace
-from qa.p4_native.n12_lifetime_control import process_times
+from qa.p4_native.n12_lifetime_control import process_images, process_times
 from qa.p4_research import n12_app_build as build
 from qa.p4_research import n12_app_journey as journey
 
@@ -80,10 +80,11 @@ def launch_and_close(root, staged, node, source, expected_hash):
         with journey.checkpoint_stage("app-lifetime-graceful-close", source, expected_hash):
             trace.require(app.poll() is None and backend.poll() is None and vite.poll() is None,
                           "app or local service exited before verified close")
+            app_images = process_images(app)
             request_graceful_close(app, binary, title)
         with journey.checkpoint_stage("app-lifetime-handle-exit", source, expected_hash):
             trace.require(app.wait(timeout=5) == 0, "app did not exit normally")
-            app_times = process_times(app)
+            app_times = process_times(app) | app_images
         with journey.checkpoint_stage("app-lifetime-profile-exit", source, expected_hash):
             journey.wait_for(lambda: not journey.listening(9331) and int(journey.powershell(
                 journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,

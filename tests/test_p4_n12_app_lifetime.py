@@ -166,7 +166,7 @@ class AppLifetimeTests(unittest.TestCase):
 
     def test_truncated_stop_basename_is_described_and_still_blocks(self):
         self.events[1]["data"]["ImageName"] = "python.exe"
-        self.events[3]["data"]["ImageName"] = "pilotodin-deskt"
+        self.events[3]["data"]["ImageName"] = "pilotodin-desk"
         self.events[5]["data"]["ImageName"] = r"c:\other\msedgewebview2.exe"
         report = self.reduce()
         self.assertEqual(report["verdict"], "BLOCKED")
@@ -179,8 +179,30 @@ class AppLifetimeTests(unittest.TestCase):
             "webview-network": {"exact-path-match": 1},
         })
         rendered = json.dumps(report)
-        for private in ("pilotodin-deskt", "msedgewebview2.exe", "python.exe"):
+        for private in ("pilotodin-desk", "msedgewebview2.exe", "python.exe"):
             self.assertNotIn(private, rendered)
+
+    def test_observed_length_stop_prefix_requires_two_exact_original_handle_paths(self):
+        self.app.update(image_dos=APP, image_native=r"\Device\HarddiskVolume3\qa\build\pilotodin-desktop.exe")
+        self.events[3]["data"]["ImageName"] = "pilotodin-desk"
+        report = self.reduce()
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
+        self.assertEqual(report["etw_stop_image_comparisons"]["app"], {"short-basename-prefix": 1})
+        self.assertNotIn("pilotodin-desk", json.dumps(report))
+        for wrong_stop in ("pilotodin-deskt", "pilotodin-des", r"c:\other\pilotodin-desktop.exe"):
+            with self.subTest(wrong_stop=wrong_stop):
+                self.events[3]["data"]["ImageName"] = wrong_stop
+                self.assertIn("etw-stop-image-conflict", self.reduce()["issues"])
+        self.events[3]["data"]["ImageName"] = "pilotodin-desk"
+        self.app["image_native"] = r"\Device\HarddiskVolume3\other\pilotodin-desktop.exe"
+        self.assertIn("etw-stop-image-conflict", self.reduce()["issues"])
+
+    def test_short_stop_name_of_a_child_without_original_handle_still_blocks(self):
+        self.events[5]["data"]["ImageName"] = "msedgewebview2"
+        report = self.reduce()
+        self.assertEqual(report["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
+        self.assertIn("etw-stop-image-conflict", report["issues"])
 
     def test_image_failures_are_reported_by_role_after_launcher_blocks(self):
         del self.events[0]["data"]["ImageName"]
@@ -289,7 +311,7 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn("separate one-run N12 app lifetime consent is required", run.stderr)
         workflow = (lifetime.build.REPO / ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
-        marker_path = "qa/p4_research/N12_APP_LIFETIME_HANDLE_CLOCK_RETEST_APPROVAL.txt"
+        marker_path = "qa/p4_research/N12_APP_LIFETIME_STOP_PREFIX_RETEST_APPROVAL.txt"
         self.assertIn(f"      - {marker_path}", workflow)
         self.assertIn("scope=n12-one-build-one-app-lifetime", workflow)
         self.assertIn("-WithEtw -AppLifetime", workflow)

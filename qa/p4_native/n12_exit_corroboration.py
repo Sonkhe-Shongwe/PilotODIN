@@ -14,6 +14,7 @@ else:
 
 
 BIRTH_TOLERANCE_TICKS = 10_000  # 1 ms, to identify matches for this diagnostic.
+OBSERVED_STOP_BASENAME_PREFIX_LENGTH = 14
 SOURCE_COVERAGE_ISSUES = {
     "sysmon-record-gap", "sysmon-bookend-record-mismatch",
     "sysmon-restart-config-change-or-error", "etw-event-or-buffer-loss", "etw-no-buffers-written",
@@ -177,8 +178,18 @@ class EtwLifetimes:
         trace.require(compare_image_path(start.image, process.image, self.devices) == "exact-path-match",
                       "etw-start-image-unverified")
         if isinstance(stop.image, str):
-            trace.require(compare_stop_image(stop.image, process.image, self.devices) in
-                          {"exact-path-match", "exact-basename-match"}, "etw-stop-image-conflict")
+            stop_form = compare_stop_image(stop.image, process.image, self.devices)
+            # A prefix cannot identify an executable without both full paths
+            # from the original handle, whose PID and exact clocks matched above.
+            handle_confirms_short_name = (
+                stop_form == "short-basename-prefix" and stop.image.isascii()
+                and len(stop.image) == OBSERVED_STOP_BASENAME_PREFIX_LENGTH
+                and handle_witness is not None and start.sequence is not None
+                and all(compare_image_path(handle_witness.get(key), process.image, self.devices) == "exact-path-match"
+                        for key in ("image_dos", "image_native"))
+            )
+            trace.require(stop_form in {"exact-path-match", "exact-basename-match"} or handle_confirms_short_name,
+                          "etw-stop-image-conflict")
         return start, stop
 
 

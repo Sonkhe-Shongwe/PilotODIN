@@ -2,6 +2,14 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Generated control confirmed a shortened ETW stop image
+
+The [one-use collector job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44013610374/job/133806150460) ran on Windows Server 2022 image `20261112.366.7` with Sysmon 15.22, at reviewed source `2685b6ddb1cff330e0e02766ec6beb24ee0d4a4b` from launch `3928d01498d8cc5c79d8e96e900f633fe10a0d58`. [Routine CI at launch](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44013610312)
+
+**Stop-image control PASS.** The generated long-named process produced a 14-character ASCII basename prefix in the ETW stop field. Its full start image, ETW sequence, and creation and exit times matched the original Windows process handle evidence. The four companion image-path controls passed. ETW recorded five buffers with zero loss. The separate Sysmon timing comparison remained BLOCKED. It recorded earlier exit events for all four companion fixtures. The collector run retained no artifacts. Its approval is consumed and the workflow is disarmed.
+
+The focused app reducer now accepts the measured stop prefix only when the original handle supplies both exact full image paths, its PID and exact creation and exit times agree, and the ETW sequence and capture window checks pass. Other stop-field conflicts and shorter names without independent evidence still block. The app now records the original handle's DOS and native image paths privately before closing. The collector fixture evidence supports this source correction. The earlier app stop field was redacted, so the app-specific shape and resulting verdict remain unverified. The combined audit and child checks without original handles retain their strict rules. P4 remains **14/20 (70%)**.
+
 ## 17 November 2026 | Launcher lifetime passed and app stop image blocked
 
 The [one-use Windows Server 2022 app capture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43996565069/job/133749961083) ran at source `98cb1b251bfd7abec9f4785e2c0084305642a93e` from launch `fd345605edee4b85b09489bc74610766af622862`, on runner image `20261112.366.7` with Sysmon 15.22. The executable SHA-256 was `4e38832061b897b71b9e67a7f5270525576c44e696d858159be3c089fb46c4b5` and the Cargo lock SHA-256 was `2c8751899657e42d7caca62f6ca1e5a9be2690eaf8ee0eef9e02fe28da0ce5ae`. [Routine CI on launch](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43996565062)
@@ -450,7 +458,7 @@ The [latest two-launch app journey](#16-november-2026--hosted-n12-completed-with
 
 ## Next engineering action
 
-Verify routine CI for the [stop-image diagnostics](#17-november-2026--launcher-lifetime-passed-and-app-stop-image-blocked). A separately approved collector-only run on disposable Windows Server 2022 can test the short-name hypothesis using a generated long-named copy of the runner's command interpreter and original-handle evidence. This control requires no app build and gives no P4 acceptance credit. Use its result to choose the next app evidence step. [Trace runbook](../qa/p4_native/N12_TRACE.md#collector-lifetime-control)
+Verify routine CI for the [original-handle stop-prefix correction](#17-november-2026--generated-control-confirmed-a-shortened-etw-stop-image). A separately approved single unpackaged app startup and close on disposable Windows Server 2022 can verify the actual app stop field, original handle paths and timings, while retaining strict child evidence. Full N12 credit still depends on the separate hosted filesystem and network audit.
 
 The process-only ETW and Sysmon-only lifetime controls, earlier UDP collector rehearsal and full app journey have consumed their one-use approvals. Their workflows are disarmed. The intermediate installer freeze and owner-data preservation restrictions apply. P4 engineering closure requires separate owner signoff. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
