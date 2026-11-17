@@ -60,6 +60,7 @@ on:
       - tests/test_p4_r06_prospective_fingerprint.py
       - tests/test_p4_installer_provenance.py
       - qa/p4_native/**
+      - tools/Start_P4_Everyday_RAM_Baseline.ps1
       - qa/p4_research/n12_app_build.py
       - qa/p4_research/n12_app_journey.py
       - qa/p4_research/n12_app_lifetime.py
@@ -273,6 +274,9 @@ jobs:
           }
           ./qa/p4_native/Test_P4_Original_Storage_Compare.ps1
           ./qa/p4_native/Test_P4_WebView_Process_Evidence.ps1
+      - name: Verify the everyday RAM sampler with Windows counters and generated fixtures
+        shell: powershell
+        run: ./qa/p4_native/Test_P4_Everyday_RAM_Baseline.ps1
       - name: Exercise Windows UI Automation against a synthetic dialog
         shell: powershell
         run: ./qa/p4_native/Test_P4_Native_Project_Switch_Automation.ps1

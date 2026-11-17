@@ -16,6 +16,20 @@ Use [the current Windows sampler](../tools/Measure_Local_Analytics_Windows_Nativ
 
 The 1.50 GiB experiment still tests the headroom needed to attempt Qwen startup. Preserve its JSONL and CSV before any rerun. The existing model and inference configuration stay fixed for a like-for-like comparison when that exercise resumes. The everyday RAM target has no measured baseline yet. [Physical R03 procedure and evidence](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available)
 
+### First physical everyday RAM session
+
+Use the extracted [PilotODIN-P4-R03-Headroom-QA kit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769/artifacts/14339122820) already used for the headroom comparison. From the updated PilotODIN checkout, open an interactive Windows PowerShell window and run:
+
+```powershell
+& .\tools\Start_P4_Everyday_RAM_Baseline.ps1 -KitDirectory "$env:USERPROFILE\Downloads\PilotODIN-P4-R03-Headroom-QA"
+```
+
+Use the actual extracted folder containing both executables if it differs. Close the installed app and any running QA or PilotODIN Live Dev session beforehand. The launcher pins both executable hashes to the verified build, starts a fresh WebView2 profile and generates a four-row CSV and a 4,000-row, 28-column CSV. It stages only the two executables. Its fixed disposable QA baseline profile must be fresh. If that profile already exists, keep it and return the launcher message. The candidate profile and its earlier receipts stay in place.
+
+Follow the prompts in the console. Press **P** after seeing the expected result, **F** to record a failure or **Q** to stop. Keep other applications in their usual state and note any visible lag or error. The timed idle and cooldown steps advance on their own. After the run, the console prints the path of `PilotODIN-Everyday-RAM-Evidence.zip`. The archive contains the build receipt, step markers, per-process rows and system/aggregate samples. It excludes app data, CSV contents and the exported report.
+
+The first run is a diagnostic baseline. Treat missing roles or counters as gaps. Compare private resident memory as a lower bound and summed working sets as an upper bound for the observed process tree. A one-second wait between polls plus collection time can miss short peaks, and the console markers reflect owner-observed outcomes rather than precise click-to-render timing. Repeat the controlled workload before using it to assess an optimisation or the 1 GiB target.
+
 ## P1 first slice — SOURCE IMPLEMENTED, NOT YET OWNER-TESTED (25 October 2026)
 
 The first *read-only* UI/API implementation is now committed, but **not accepted** until its focused Windows tests pass:
