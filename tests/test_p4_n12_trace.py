@@ -425,6 +425,8 @@ def test_generated_file_lifetime_requires_ordered_same_object_evidence(fault, re
 
 @pytest.mark.parametrize(("fault", "reason"), [
     (None, "completed-open-and-write"),
+    ("missing-close", "completed-open-and-write"),
+    ("early-cleanup", "file-object-lifetime-changed"),
     ("wrong-name", "open-missing-or-ambiguous"),
     ("failed-write", "write-completion-unverified"),
     ("rename", "possible-name-change"),
@@ -447,19 +449,29 @@ def test_known_file_report_only_discloses_a_verified_fixture_match(fault, reason
         (3, 24, {"Irp": 1, "Status": 0}),
         (5, 16, {"FileObject": 50, "FileKey": 60, "Irp": 2, "IOSize": 61, "ByteOffset": 0}),
         (7, 24, {"Irp": 2, "Status": 1 if fault == "failed-write" else 0}),
-        (8, 13, {"FileObject": 50, "FileKey": 60}),
-        (9, 14, {"FileObject": 50, "FileKey": 60}),
+        (6 if fault == "early-cleanup" else 8, 13, {"FileObject": 50, "FileKey": 60}),
     ]
+    if fault != "missing-close":
+        records.append((9, 14, {"FileObject": 50, "FileKey": 60}))
     if fault == "rename":
         records.append((6, 19, {"FileObject": 50, "FileKey": 60}))
     events = [{"id": kind, "ticks": ticks, "pid": 8, "lifecycle": False, "data": data}
               for ticks, kind, data in records]
     result = preopened_report(capture, events)["known_write"]
+    teardown = result.pop("cleanup_close", None)
+    matched = fault in {None, "missing-close"}
     assert result == {
         "operation": "write", "expected_file": "known-write.bin",
-        "matched_file": "known-write.bin" if fault is None else None,
-        "status": "PASS" if fault is None else "BLOCKED", "reason": reason,
+        "matched_file": "known-write.bin" if matched else None,
+        "status": "PASS" if matched else "BLOCKED", "reason": reason,
     }
+    if fault == "missing-close":
+        assert teardown == {"status": "BLOCKED", "reason": "cleanup-close-order-unverified",
+                            "observed_events": [13]}
+    elif fault == "early-cleanup":
+        assert teardown["status"] == "BLOCKED"
+    elif fault is None:
+        assert teardown == {"status": "PASS", "reason": None, "observed_events": [13, 14]}
 
 
 @pytest.mark.parametrize(("name_at", "wrong_name", "verdict"), [

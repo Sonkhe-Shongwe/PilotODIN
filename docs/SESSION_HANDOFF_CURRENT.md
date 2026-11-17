@@ -6,6 +6,8 @@
 
 Routine Windows CI compares two named generated writes. It opens `known-write.bin` after capture starts and checks the completed open and write. In a separate capture, it writes through the pre-opened `outside.bin` handle and checks whether the strict reducer recovers its name from the Windows FileIO rundown. The log shows the expected and matched fixture filenames with a verdict and reason. The live collector stays disarmed and P4 remains **14/20 (70%)**.
 
+The first [pre-opened Windows result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44058532799/job/133954020720) verified `outside.bin`. The first [in-capture result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44058532819/job/133954021711) found the open and write completions and blocked on the cleanup and close order. The in-capture report now checks filename evidence through write completion and reports cleanup and close separately. A cleanup before write completion still blocks the match.
+
 ## 17 November 2026 | Strict comparison credits verified background paths
 
 The disarmed collector rehearsal can produce a fourth report from the same generated capture. It credits background writes and resizes that pass the completion check and sends their paths through the existing protected-root check. The report contains the credited counts by operation and path scope, along with the remaining strict issues. Capture loss, incomplete evidence and conflicting identities leave path gaps in place.

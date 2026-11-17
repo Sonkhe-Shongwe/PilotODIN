@@ -843,13 +843,14 @@ def preopened_report(capture, events, rundown=None, *, file_keys=None, file_obje
         if expected != ntpath.join(fixture, "known-write.bin"):
             raise ValueError("Unexpected known-file write target.")
         observed = file_lifetime_report(control, events, devices, verify_write_path=True)
-        if observed["status"] != "PASS":
-            reason = observed["reason"]
-        else:
-            reason = observed["write_object_path"]["reason"]
-        result["known_write"] = known_write_result(
-            "known-write.bin", reason, "completed-open-and-write",
-        )
+        path_result = observed.get("write_object_path", observed)
+        known_write = known_write_result("known-write.bin", path_result["reason"], "completed-open-and-write")
+        if "observed_end_events" in observed:
+            known_write["cleanup_close"] = {
+                "status": observed["status"], "reason": observed["reason"],
+                "observed_events": observed["observed_end_events"],
+            }
+        result["known_write"] = known_write
     return result
 
 
