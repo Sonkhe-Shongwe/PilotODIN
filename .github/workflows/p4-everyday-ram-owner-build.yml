@@ -1,0 +1,128 @@
+name: P4 Everyday RAM Owner Build
+
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: [qa/p4_research/EVERYDAY_RAM_OWNER_APPROVAL.txt]
+
+permissions:
+  contents: read
+
+jobs:
+  owner-kit:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify the one-use Windows build source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $source = '1cfeb9421a3986ec75c97d8dd9b88f831596c9eb'
+          $marker = 'qa/p4_research/EVERYDAY_RAM_OWNER_APPROVAL.txt'
+          $workflow = '.github/workflows/p4-everyday-ram-owner-build.yml'
+          $approval = @(Get-Content -LiteralPath $marker)
+          $parents = (git rev-list -n 1 --parents HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA -or $parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $marker -cnotin $changed -or $workflow -cnotin $changed -or
+              $approval.Count -ne 2 -or $approval[0] -cne "reviewed_source=$source" -or
+              $approval[1] -cne 'scope=one-unpackaged-analytics-only-everyday-ram-owner-kit') {
+            throw 'The one-use launch or pinned source differs.'
+          }
+          git checkout --detach $source
+          "PILOTODIN_RAM_SOURCE=$source" >> $env:GITHUB_ENV
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Build the production frontend and frozen Windows analytics engine
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          foreach ($root in @($env:LOCALAPPDATA,$env:APPDATA)) {
+            foreach ($identity in @('com.pilotodin.studio','com.pilotodin.p4nativeqa','com.pilotodin.p4r03benchmark')) {
+              if (Test-Path -LiteralPath (Join-Path $root $identity)) { throw 'Expected a clean QA app identity.' }
+            }
+          }
+          if ($env:PILOTODIN_HOME -or $env:PILOTODIN_R03_BENCHMARK -or $env:TAURI_CONFIG -or
+              $env:WEBVIEW2_USER_DATA_FOLDER -or $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -or $env:VITE_PILOTODIN_NATIVE_SMOKE) {
+            throw 'Unexpected inherited app configuration.'
+          }
+          if ('x86_64-pc-windows-msvc' -cnotin @(rustup target list --installed)) {
+            throw 'Expected the hosted Windows x64 MSVC toolchain.'
+          }
+          npm ci --prefix frontend --no-audit --no-fund
+          npm run build --prefix frontend
+          node --test frontend/tests/a4-native-report-save-contract.test.cjs frontend/tests/a4-quality-export-gates.test.cjs
+          ./desktop/Build_Python_Sidecar.ps1
+          $receipt = Get-Content build/engine-smoke-result.json -Raw | ConvertFrom-Json
+          if (-not $receipt.passed -or -not $receipt.owner_disconnect_stops_engine -or $receipt.model_started) {
+            throw 'The frozen analytics engine failed the smoke check.'
+          }
+      - name: Compile and launch the analytics-only QA desktop
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ((git rev-parse HEAD) -cne $env:PILOTODIN_RAM_SOURCE -or
+              @(git status --porcelain --untracked-files=no).Count -ne 0) {
+            throw 'The checkout differs from the pinned product source.'
+          }
+          $target = Join-Path $env:RUNNER_TEMP "pilotodin-everyday-ram-$env:GITHUB_RUN_ID"
+          $env:TAURI_CONFIG = @{
+            identifier = 'com.pilotodin.p4r03benchmark'
+            productName = 'pilotODIN-P4-R03-Headroom-QA'
+            bundle = @{active = $false; targets = @(); resources = @(); externalBin = @('binaries/pilotodin-engine')}
+          } | ConvertTo-Json -Depth 7 -Compress
+          cargo build --manifest-path frontend/src-tauri/Cargo.toml --bin pilotodin-desktop --target x86_64-pc-windows-msvc --target-dir $target --release --features tauri/custom-protocol
+          $layout = Join-Path $target 'x86_64-pc-windows-msvc/release'
+          $desktop = Join-Path $layout 'pilotodin-desktop.exe'
+          $desktopHash = (Get-FileHash -LiteralPath $desktop).Hash.ToLowerInvariant()
+          $engineHash = (Get-FileHash -LiteralPath (Join-Path $layout 'pilotodin-engine.exe')).Hash.ToLowerInvariant()
+          if ($engineHash -cne (Get-FileHash -LiteralPath 'build/py-dist/pilotodin-engine.exe').Hash.ToLowerInvariant()) {
+            throw 'The packaged analytics engine differs from the smoke-tested engine.'
+          }
+          $env:PILOTODIN_R03_BENCHMARK = 'baseline'
+          & ./qa/p4_research/Test_P4_Frozen_Engine_Lifecycle.ps1 -Desktop $desktop -ExpectedDesktopHash $desktopHash -ExpectedEngineHash $engineHash
+          Remove-Item Env:PILOTODIN_R03_BENCHMARK
+          & ./qa/p4_native/Test_P4_Everyday_RAM_Baseline.ps1
+          $kit = Join-Path $env:RUNNER_TEMP "PilotODIN-P4-Everyday-RAM-QA"
+          $null = New-Item -ItemType Directory -Path $kit
+          foreach ($filename in @('pilotodin-desktop.exe','pilotodin-engine.exe')) {
+            Copy-Item -LiteralPath (Join-Path $layout $filename) -Destination $kit
+          }
+          if ((Get-FileHash -LiteralPath (Join-Path $kit 'pilotodin-desktop.exe')).Hash -ine $desktopHash -or
+              (Get-FileHash -LiteralPath (Join-Path $kit 'pilotodin-engine.exe')).Hash -ine $engineHash) {
+            throw 'A kit file differs from the smoke-tested payload.'
+          }
+          $receipt = [ordered]@{
+            source_sha = $env:PILOTODIN_RAM_SOURCE
+            run_id = $env:GITHUB_RUN_ID
+            app_identifier = 'com.pilotodin.p4r03benchmark'
+            desktop_sha256 = $desktopHash
+            engine_sha256 = $engineHash
+            cargo_lock_sha256 = (Get-FileHash -LiteralPath 'frontend/src-tauri/Cargo.lock').Hash.ToLowerInvariant()
+          } | ConvertTo-Json -Compress
+          $receipt | Set-Content -LiteralPath (Join-Path $kit 'provenance.json') -Encoding utf8
+          Write-Host "P4_EVERYDAY_RAM_KIT $receipt"
+          "PILOTODIN_RAM_KIT=$kit" >> $env:GITHUB_ENV
+      - name: Publish the temporary analytics-only owner kit
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: PilotODIN-P4-Everyday-RAM-QA
+          path: ${{ env.PILOTODIN_RAM_KIT }}
+          if-no-files-found: error
+          retention-days: 7
