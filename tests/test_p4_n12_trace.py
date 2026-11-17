@@ -295,12 +295,18 @@ def test_background_rundown_checks_the_identity_at_completion(case, expected, co
         scope = "protected" if case == "protected" else "outside-protected"
         assert unresolved == {}
         assert credited == [("other", "private-owner", "write", path, None, 3, 5, True)]
-        assert credit_summary == {"credited_paths": {f"other:write:{scope}": 1}}
+        assert credit_summary == {
+            "credited_paths": {f"other:write:{scope}": 1},
+            "remaining_paths_by_reason": {},
+        }
     else:
         assert unresolved == {"other:write:path-missing": 1}
         assert credited == []
         if compare_credit:
-            assert credit_summary == {"credited_paths": {}}
+            assert credit_summary == {
+                "credited_paths": {},
+                "remaining_paths_by_reason": {f"other:write:completion-check:{expected}": 1},
+            }
     assert "private" not in json.dumps(diagnostics)
 
 
