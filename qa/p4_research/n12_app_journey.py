@@ -5,6 +5,7 @@ from contextlib import ExitStack, contextmanager
 from datetime import datetime, timedelta, timezone
 from ipaddress import IPv4Address
 import json
+import ntpath
 import os
 from pathlib import Path
 import re
@@ -360,20 +361,66 @@ def request_graceful_close(app, binary, title):
         raise trace.EvidenceValidationError(category) from exc
 
 
+def driver_environment(env, root):
+    # Vite and Playwright are separate Node roots in the trace. Both inherit
+    # only the existing, scoped QA scratch directory for temporary files.
+    scratch = str(root / DRIVER_TEMP_DIR)
+    return {**env, "TEMP": scratch, "TMP": scratch, "TMPDIR": scratch}
+
+
 def run_driver(stack, manifest, node, root, env, relaunch):
     command = [node, str(PROBE)]
     label = "relaunch" if relaunch else "first"
     if relaunch:
         command.append("--verify-relaunch")
-    # Playwright creates CDP scratch files under Node's OS temp directory.
-    driver_temp = str(root / DRIVER_TEMP_DIR)
-    driver_env = {**env, "TEMP": driver_temp, "TMP": driver_temp}
     log = root / f"driver-{label}.log"
-    process = spawn(stack, manifest, "driver", command, driver_env, FRONTEND, log)
+    process = spawn(stack, manifest, "driver", command, driver_environment(env, root), FRONTEND, log)
     trace.require(process.wait(timeout=240) == 0, f"{label} native interaction probe failed")
     with log.open("rb") as stream:
         ready = any(line.rstrip(b"\r\n") == b"N12 native close listener ready" for line in stream)
     trace.require(ready, f"{label} native close listener was not verified")
+
+
+def webview_child_handles(stack, app_pid):
+    from qa.p4_native.n12_lifetime_control import open_process_query_handle, process_images
+
+    try:
+        rows = json.loads(powershell(HELPER, "webview-children", "-AppProcessId", app_pid, timeout=10))
+        trace.require(isinstance(rows, list) and len(rows) <= 64, "invalid WebView child inventory")
+        identities = {row["pid"]: row["birth_ticks"] for row in rows}
+        trace.require(len(identities) == len(rows) and all(
+            type(pid) is int and pid > 0 and pid != app_pid and type(birth) is int and birth > 0
+            for pid, birth in identities.items()
+        ), "invalid WebView child identity")
+    except (KeyError, TypeError, ValueError, OSError, subprocess.SubprocessError):
+        return []
+    children = []
+    for pid, birth in identities.items():
+        try:
+            child = stack.enter_context(open_process_query_handle(pid))
+            images = process_images(child)
+            trace.require(ntpath.basename(images["image_dos"]).casefold() == "msedgewebview2.exe",
+                          "WebView child image changed")
+        except (OSError, trace.EvidenceValidationError):
+            continue
+        children.append((child, birth, images))
+    return children
+
+
+def finish_webview_child_witnesses(children):
+    from qa.p4_native.n12_lifetime_control import process_times
+
+    witnesses = {}
+    for child, observed_birth, images in children:
+        try:
+            times = process_times(child)
+            # CIM exposes microseconds. The retained handle preserves all
+            # 100 ns ticks for the later exact ETW join.
+            trace.require(abs(times["birth"] - observed_birth) < 10, "WebView child birth changed")
+        except (OSError, trace.EvidenceValidationError):
+            continue
+        witnesses[child.pid] = times | images
+    return witnesses
 
 
 def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite):
@@ -401,20 +448,24 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
         if not relaunch:
             mark(manifest, "quality")
         run_driver(stack, manifest, node, root, {**env, "P4_NATIVE_QA_APP_PID": str(app.pid)}, relaunch)
-        mark(manifest, "exit" if relaunch else "close")
-        try:
-            images = process_images(app)
-        except (OSError, trace.EvidenceValidationError):
-            images = None
-        request_graceful_close(app, binary, title)
-        trace.require(app.wait(timeout=5) == 0, "app did not exit normally")
-        try:
-            witnesses[label] = process_times(app) | images if images is not None else None
-        except (OSError, trace.EvidenceValidationError):
-            witnesses[label] = None
-        wait_for(lambda: not listening(9331) and int(powershell(
-            HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
-        )) == 0, 25, "WebView processes did not exit for the disposable profile")
+        with ExitStack() as child_stack:
+            children = webview_child_handles(child_stack, app.pid)
+            mark(manifest, "exit" if relaunch else "close")
+            try:
+                images = process_images(app)
+            except (OSError, trace.EvidenceValidationError):
+                images = None
+            request_graceful_close(app, binary, title)
+            trace.require(app.wait(timeout=5) == 0, "app did not exit normally")
+            wait_for(lambda: not listening(9331) and int(powershell(
+                HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
+            )) == 0, 25, "WebView processes did not exit for the disposable profile")
+            try:
+                witnesses[label] = process_times(app) | images if images is not None else None
+            except (OSError, trace.EvidenceValidationError):
+                witnesses[label] = None
+            if witnesses[label] is not None:
+                witnesses[label]["children"] = finish_webview_child_witnesses(children)
         checkpoint(label + "-launch-and-exit", "completed", source, expected_hash)
     return witnesses
 
@@ -555,7 +606,8 @@ def capture(root, staged, source, expected_hash, node):
                 "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 env, build.REPO, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
-                "--host", "127.0.0.1", "--port", "5173", "--strictPort"], env, FRONTEND, root / "vite.log")
+                "--host", "127.0.0.1", "--port", "5173", "--strictPort"],
+                driver_environment(env, root), FRONTEND, root / "vite.log")
             wait_for(lambda: http_ready(8000, "/api/health", lambda status:
                                        status.get("status") == "ok" and status.get("cloud_ai") is False),
                      60, "loopback backend did not become ready with cloud AI off", backend)

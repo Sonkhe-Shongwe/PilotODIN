@@ -70,6 +70,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        rundown_invalidations=None, initial_process_births=None,
                        preopened_control_file_keys=None, preopened_control_file_objects=None,
                        rundown_window=None, record_path_gap=None, record_write_name_gap=None,
+                       webview_write_candidates=None, classify_webview_path=None,
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None):
     """Keep file paths and identities private until the report callback reduces them."""
@@ -78,6 +79,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     opened, pending = {}, {}
     write_gaps = []
     calibration_gaps = []
+    webview_gaps = []
+    sampled_webview_objects = set()
+    webview_gaps_seen = 0
     calibration_rundown = diagnostic_rundown_stop is not None
     path_gap_context = {}
     opens_with_process_lifetime = set()
@@ -90,7 +94,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     name_transition_ticks = set()
     process_transition_ticks = set()
     thread_transition_ticks = set()
-    track_write_names = strict and (details is not None or record_write_name_gap is not None)
+    track_write_names = strict and (details is not None or record_write_name_gap is not None
+                                    or webview_write_candidates is not None)
     if track_write_names:
         # ETW records at the same timestamp have no proven order here.
         name_transition_ticks = {
@@ -260,7 +265,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 active[process_id] = ticks
             elif kind == 2:
                 active.pop(process_id, None)
-            elif (details is not None or record_path_gap is not None or record_write_name_gap is not None) and kind in (3, 4):
+            elif kind in (3, 4) and (details is not None or record_path_gap is not None or track_write_names):
                 tid = number(data.get("ThreadID", data.get("TThreadId")))
                 if kind == 3:
                     thread_owners[tid] = (process_id, active.get(process_id))
@@ -345,6 +350,16 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             record_path_gap(actor, event_id, operation, file_key, lifetime, thread)
                         if record_write_name_gap is not None and name_context is not None:
                             record_write_name_gap(actor, thread, name_context)
+                        if (webview_write_candidates is not None and actor == "webview-network"
+                                and operation == "write" and thread == "thread-header-agrees"
+                                and name_context == "outside-tracked-paths"):
+                            webview_gaps_seen += 1
+                            if len(webview_gaps) < 64:
+                                key = number(request["data"].get("FileKey"))
+                                obj = number(request["data"].get("FileObject"))
+                                if (key, obj) not in sampled_webview_objects:
+                                    sampled_webview_objects.add((key, obj))
+                                    webview_gaps.append((actor, operation, request, ticks))
                     if calibration_diagnostics is not None and operation in {"write", "resize"}:
                         calibration_gaps.append((actor, operation, request, ticks))
                 if source or destination:
@@ -575,7 +590,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 protected_system_write = f"{target}:{capture_phase(ticks)}:{write_paging_flag(data)}"
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
                             info_class, write_gap, protected_system_write, event)
-            if ((record_path_gap is not None or record_write_name_gap is not None)
+            if ((record_path_gap is not None or record_write_name_gap is not None
+                 or webview_write_candidates is not None)
                     and source is None and operation != "query" and kind in {16, 17, 23}):
                 try:
                     file_key = number(data.get("FileKey"))
@@ -605,6 +621,14 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                           "10-to-100ms-before-end" if remaining <= 1_000_000 else
                           "over-100ms-before-end")
                 unmatched_writes[f"{actor}:{bucket}"] += 1
+    if webview_write_candidates is not None:
+        webview_write_candidates.update(
+            eligible=webview_gaps_seen, sampled=len(webview_gaps),
+            outcomes=summarize_calibration_path_gaps(
+                ordered_events, webview_gaps, resolve_path, tracked, {}, set(), None,
+                classify_path=classify_webview_path,
+            ),
+        )
     if calibration_diagnostics is not None:
         calibration_diagnostics.update(
             path_candidates=summarize_calibration_path_gaps(
@@ -1092,25 +1116,30 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
 
 
 def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
-                                    rundown_names, rundown_unsafe_keys, rundown_stop):
+                                    rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
+    keys = {number(request["data"].get("FileKey")) for _, _, request, _ in gaps}
+    objects = {number(request["data"].get("FileObject")) for _, _, request, _ in gaps}
+    irps = {number(request["data"].get("Irp")) for _, _, request, _ in gaps}
     for event in events:
         if event.get("lifecycle"):
             continue
         kind, data = event["id"], event["data"]
-        if kind not in {10, 11, 24}:
-            by_object[number(data.get("FileObject"))].append(event)
+        if kind not in {10, 11, 24} and (obj := number(data.get("FileObject"))) in objects:
+            by_object[obj].append(event)
         if kind != 24:
             key = name_transition_key(kind, data) or number(data.get("FileKey"))
-            if key:
+            if key and key in keys:
                 by_key[key].append(event)
         irp = number(data.get("Irp"))
-        if irp:
+        if irp and irp in irps:
             by_irp[irp].append(event)
 
     def scope(path):
+        if classify_path is not None:
+            return classify_path(path)
         return "candidate-protected" if tracked(path) else "candidate-outside-protected"
 
     counts = Counter()

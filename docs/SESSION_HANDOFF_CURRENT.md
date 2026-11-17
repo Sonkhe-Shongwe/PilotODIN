@@ -2,6 +2,16 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | N12 filesystem follow-up prepared
+
+The journey now sets the existing QA scratch directory as the temp directory for both Vite and the Playwright driver. The previous run classified 248 Node temp operations but did not identify the Node component. The generated Node control creates, writes and renames a file and checks the actual final path. The next app journey can measure the change in outside-scope operations.
+
+The WebView child check opens read-only query handles before shutdown and keeps them until the app and its QA profile exit. The diagnostic compares both full image paths and the exact handle creation and exit times with ETW, then verifies parent sequence and lifetime. Children missing at sampling or with conflicting identities still need independent evidence. Generated Windows CI exercises a retained handle against the original handle of a generated child.
+
+The file reducer applies the existing request-to-completion path checks to up to 64 distinct FileKey and FileObject pairs from the dominant unresolved WebView network write category. Its redacted results distinguish path evidence inside the role's permitted roots, inside protected roots, outside the role's scope, and conflicts. A generated replay tests the sampling bound, duplicate file identities, conflicting names, name deletion, and failed or missing completions. Samples do not supply acceptance credit. Use the result to decide which storage paths or joins to correct.
+
+The updated app journey has **NOT RUN**. The previous full run below remains the live baseline. P4 is **14/20 (70%)**.
+
 ## 17 November 2026 | Integrated N12 audit passed both app lifetime checks
 
 The [approved Windows Server 2022 job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44015546559/job/133812478991) completed its only authorised attempt on runner image `20261112.366.7` with Sysmon 15.22. It ran from launch `0fad29bc61e2a32f819344ebd1ef79588f6a5907` at pinned source `94d0647060f868d1e1b58dd8e83292e41ee8d190`. The executable SHA-256 was `e810813969af4fb187cc617762b6b96df3c8908058b98b45c69f863ce1d8a960` and Cargo lock SHA-256 was `2c8751899657e42d7caca62f6ca1e5a9be2690eaf8ee0eef9e02fe28da0ce5ae`. Preflight and build passed. Both TCP and UDP showed up in each calibration fixture, with initial Sysmon calibration passing on read 2. Both app launches and shutdowns, cleanup, trace exports and final audit completed. All four protected directory fingerprints and the immutable CSV matched. The run retained zero artifacts and the workflow is disarmed.

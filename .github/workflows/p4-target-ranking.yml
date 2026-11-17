@@ -300,6 +300,8 @@ jobs:
           python-version: "3.11"
       - name: Verify prospective R06 endpoint evidence on generated files
         run: python -B -m unittest discover -s tests -p test_p4_r06_prospective_fingerprint.py
+      - name: Verify retained child handles and Node scratch on generated Windows fixtures
+        run: python -B -m unittest discover -s tests -p test_p4_n12_exit_corroboration.py
       - name: Exercise N12 snapshot and calibration on generated files
         shell: pwsh
         run: |

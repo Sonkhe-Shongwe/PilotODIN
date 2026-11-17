@@ -451,14 +451,15 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         if role == "app":
             assert env["WEBVIEW2_USER_DATA_FOLDER"] == str(profile)
             assert f"netlog-{log.stem.removeprefix('app-')}.json" in env["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"]
+        if role == "driver":
+            assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(root / journey.DRIVER_TEMP_DIR)
+        else:
+            assert env["TEMP"] == env["TMP"] == user_temp
         if log.stem.startswith("driver-"):
             assert env["PILOTODIN_N12_QUALITY_FIXTURE"] == str(fixture)
             assert (command[-1] == "--verify-relaunch") == (log.stem == "driver-relaunch")
-            assert env["TEMP"] == env["TMP"] == str(root / journey.DRIVER_TEMP_DIR)
             log.write_text("earlier probe output\n" if fault == "driver-readiness-missing"
                            else "N12 native close listener ready\n", encoding="utf-8")
-        else:
-            assert env["TEMP"] == env["TMP"] == user_temp
         m["processes"].append({"role": role, "pid": process.pid, "image": str(command[0])})
         stack.callback(events.append, f"cleanup-{log.stem}")
         if fault == "app-and-cleanup" and log.stem == "backend":
@@ -488,6 +489,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         if args[0] == "close":
             assert args[-1] == "-ReportCloseStatus"
             events.append("graceful-close")
+        elif args[0] == "webview-children":
+            assert args[1] == "-AppProcessId"
+            return b"[]"
         elif args[0] == "profile-active":
             events.append("profile-exit")
             return b"1" if fault == "no-profile-exit" else b"0"

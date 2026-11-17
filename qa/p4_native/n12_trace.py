@@ -781,7 +781,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       rundown_window=None, record_outside_scope=None, record_outside_writer=None,
                       background_bookends=None,
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
-                      calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None):
+                      calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None,
+                      webview_write_candidates=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -834,6 +835,13 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
 
     def count_write_name_gap(role, thread, name_context):
         write_name_gap_counts[f"{role}:{thread}:{name_context}"] += 1
+
+    def classify_webview_path(path):
+        if any(inside(path, root) for root in protected):
+            return "candidate-protected"
+        if any(inside(path, root) for root in permitted.get("webview-network", ())):
+            return "candidate-permitted"
+        return "candidate-outside-scope"
 
     def record(role, identity, operation, source, destination, requested, completed, success):
         if not success or completed < start_ticks:
@@ -911,6 +919,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             rundown_window=rundown_window,
             record_path_gap=count_path_gap if path_gap_counts is not None else None,
             record_write_name_gap=count_write_name_gap if write_name_gap_counts is not None else None,
+            webview_write_candidates=webview_write_candidates, classify_webview_path=classify_webview_path,
             calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
             diagnostic_rundown_stop=diagnostic_rundown_stop,
         )
@@ -1019,6 +1028,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
     bookend_summary = {}
     path_gap_counts = Counter()
     write_name_gap_counts = Counter()
+    webview_write_candidates = {}
     if etw:
         immutable = [windows_path(manifest["observed_roots"][label])
                      for label in manifest["immutable_observed"]]
@@ -1028,6 +1038,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
             record_outside_writer=record_outside_writer, background_bookends=journey_bookends,
             bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None,
             write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None,
+            webview_write_candidates=webview_write_candidates if describe_path_gaps else None,
             disputed_exits=disputed_exits, observe_lifetimes=observe_lifetimes)
         path_diagnostics = []
     else:
@@ -1068,7 +1079,8 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
         **({"etw_exit_corroboration": disputed_exits} if disputed_exits else {}),
         **({"etw_background_process_bookends": bookend_summary} if bookend_summary else {}),
         **({"etw_path_gap_context": dict(path_gap_counts),
-             "etw_write_name_gap_context": dict(write_name_gap_counts)} if etw and describe_path_gaps else {}),
+             "etw_write_name_gap_context": dict(write_name_gap_counts),
+             "etw_webview_write_path_candidates": webview_write_candidates} if etw and describe_path_gaps else {}),
         **snapshot_report,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }

@@ -3,7 +3,12 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import ntpath
+import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
@@ -11,7 +16,9 @@ from unittest.mock import patch
 from xml.etree import ElementTree as ET
 
 from qa.p4_native import n12_exit_corroboration as diagnostic
+from qa.p4_native import n12_lifetime_control as controls
 from qa.p4_native import n12_trace as trace
+from qa.p4_research.n12_app_journey import DRIVER_TEMP_DIR, driver_environment
 
 
 BASE = datetime(2026, 11, 16, tzinfo=timezone.utc)
@@ -23,6 +30,53 @@ DEVICES = {r"\device\harddiskvolume3": "c:"}
 
 def stamp(offset):
     return BASE + timedelta(microseconds=offset // 10)
+
+
+@unittest.skipUnless(sys.platform == "win32", "requires Windows process handles")
+class WindowsQueryHandleTests(unittest.TestCase):
+    def test_query_handle_agrees_with_original_on_image_and_exit(self):
+        with subprocess.Popen([sys.executable, "-I", "-c", "import sys; sys.stdin.buffer.read()"],
+                              stdin=subprocess.PIPE) as child:
+            try:
+                with controls.open_process_query_handle(child.pid) as query_handle:
+                    images = controls.process_images(query_handle)
+                    self.assertEqual(images, controls.process_images(child))
+                    self.assertEqual(ntpath.basename(images["image_dos"]).casefold(),
+                                     ntpath.basename(sys.executable).casefold())
+                    child.communicate(timeout=15)
+                    self.assertEqual(child.returncode, 0)
+                    self.assertEqual(controls.process_times(query_handle), controls.process_times(child))
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait(timeout=5)
+
+
+class DriverTempTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "requires Node")
+    def test_node_create_write_and_rename_stay_in_qa_scratch(self):
+        script = (
+            "const fs = require('node:fs'); const os = require('node:os');"
+            "const path = require('node:path');"
+            "const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'n12-node-'));"
+            "const initial = path.join(scratch, 'writing.tmp');"
+            "const final = path.join(scratch, 'written.txt');"
+            "fs.writeFileSync(initial, 'generated'); fs.renameSync(initial, final);"
+            "process.stdout.write(final);"
+        )
+        with TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            scratch = root / DRIVER_TEMP_DIR
+            scratch.mkdir()
+            user_temp = root / "user-temp"
+            user_temp.mkdir()
+            env = driver_environment({"TEMP": str(user_temp), "TMP": str(user_temp)}, root)
+            result = subprocess.run([shutil.which("node"), "-e", script], capture_output=True,
+                                    env={**os.environ, **env}, check=True, timeout=15, text=True)
+            final = Path(result.stdout).resolve()
+            self.assertTrue(final.is_relative_to(scratch))
+            self.assertEqual(final.read_text(encoding="utf-8"), "generated")
+            self.assertEqual(list(user_temp.iterdir()), [])
 
 
 def payload(offset):
@@ -103,6 +157,25 @@ class DisputedExitTests(unittest.TestCase):
         for private in ("private", "HarddiskVolume", "pilotodin.exe", str(ORIGIN)):
             self.assertNotIn(private, json.dumps(report))
         self.assertEqual(issues, frozenset({"sysmon-exit-time-unverified"}))
+
+        child = {"pid": 701, "birth": ORIGIN + 115_001, "exit": ORIGIN + 245_727,
+                 "image_dos": CHILD_IMAGE,
+                 "image_native": r"\Device\HarddiskVolume3\qa\private\msedgewebview2.exe"}
+        for changes, expected in (
+            ({}, "MATCH"),
+            ({"birth": child["birth"] + 1}, "etw-and-windows-handle-timestamps-differ"),
+            ({"exit": child["exit"] + 1}, "etw-and-windows-handle-timestamps-differ"),
+            ({"image_dos": PARENT_IMAGE}, "webview-handle-image-unverified"),
+        ):
+            with self.subTest(expected=expected):
+                witnesses["first"]["children"] = {701: child | changes}
+                report = diagnostic.journey_lifetime_evidence(
+                    self.events, DEVICES, (ORIGIN, ORIGIN + 500_000), observed,
+                    witnesses, "b" * 64, issues)
+                self.assertEqual(report["launches"]["first"]["children"]["webview-network"]["lifetime"],
+                                 {expected: 1})
+                self.assertEqual(report["launches"]["relaunch"]["children"], {})
+                self.assertNotIn("private", json.dumps(report))
 
     def test_accepts_distinct_later_pid_reuse(self):
         self.events += [

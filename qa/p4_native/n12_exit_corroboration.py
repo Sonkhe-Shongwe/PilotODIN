@@ -294,7 +294,14 @@ def journey_lifetime_evidence(events, devices, window, observed, witnesses, exec
                 counts = child[key]
                 counts[category] = counts.get(category, 0) + 1
             try:
-                start, stop = lifetimes.find(process)
+                child_witness = witness.get("children", {}).get(process.pid) if role in {
+                    "webview", "webview-network",
+                } else None
+                if child_witness is not None:
+                    trace.require(all(compare_image_path(child_witness.get(key), process.image, devices)
+                                      == "exact-path-match" for key in ("image_dos", "image_native")),
+                                  "webview-handle-image-unverified")
+                start, stop = lifetimes.find(process, handle_witness=child_witness)
                 parent = matched.get(process.parent)
                 trace.require(parent is not None and start.sequence is not None
                               and start.parent == parent[0].pid and start.parent_sequence == parent[0].sequence

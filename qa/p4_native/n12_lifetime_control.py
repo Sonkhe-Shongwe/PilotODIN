@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import ctypes
 from ctypes import wintypes
 import json
@@ -12,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 from xml.etree import ElementTree as ET
 
 from . import n12_etw_probe
@@ -29,7 +31,7 @@ FILETIME_EPOCH = 504911232000000000
 
 
 def process_times(process):
-    """Use the original CPython Windows Popen handle after wait, so PID reuse is irrelevant."""
+    """Use a retained Windows process handle after exit, so PID reuse is irrelevant."""
     get_times = ctypes.WinDLL("kernel32", use_last_error=True).GetProcessTimes
     get_times.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4
     get_times.restype = wintypes.BOOL
@@ -43,7 +45,7 @@ def process_times(process):
 
 
 def process_images(process):
-    """Read both representations from the original handle while the fixture waits."""
+    """Read both image representations from the retained handle before exit."""
     query = ctypes.WinDLL("kernel32", use_last_error=True).QueryFullProcessImageNameW
     query.argtypes = (wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD))
     query.restype = wintypes.BOOL
@@ -55,6 +57,23 @@ def process_images(process):
                       f"windows-process-{key}-unavailable")
         images[key] = buffer[:size.value]
     return images
+
+
+@contextmanager
+def open_process_query_handle(pid):
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    open_process = kernel.OpenProcess
+    open_process.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    open_process.restype = wintypes.HANDLE
+    close_handle = kernel.CloseHandle
+    close_handle.argtypes = (wintypes.HANDLE,)
+    close_handle.restype = wintypes.BOOL
+    handle = open_process(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+    trace.require(handle, "windows-process-query-handle-unavailable")
+    try:
+        yield SimpleNamespace(pid=pid, _handle=handle)
+    finally:
+        close_handle(handle)
 
 
 def run_process(command, *, with_images=False, fixture_input=b"1"):

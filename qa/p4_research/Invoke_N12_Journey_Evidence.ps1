@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('sysmon-tail','etw-export','etw-process-export','etw-app-lifetime-export','close','profile-active','project-switch','process-bookend','backend-tcp')][string]$Operation,
+    [ValidateSet('sysmon-tail','etw-export','etw-process-export','etw-app-lifetime-export','close','profile-active','webview-children','project-switch','process-bookend','backend-tcp')][string]$Operation,
     [string]$CaptureRoot,
     [int]$AppProcessId,
     [string]$AppPath,
@@ -63,6 +63,19 @@ switch ($Operation) {
             Where-Object { $_.CommandLine -and
                 $_.CommandLine.IndexOf($ProfilePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 })
         $processes.Count
+    }
+    'webview-children' {
+        if ($env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or
+            $AppProcessId -le 0) { throw 'N12 child process evidence requires an approved journey.' }
+        $descendants = [System.Collections.Generic.HashSet[int]]::new()
+        [void]$descendants.Add($AppProcessId)
+        $rows = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" |
+            Where-Object CreationDate | Sort-Object CreationDate | ForEach-Object {
+                if ($descendants.Contains([int]$_.ParentProcessId) -and $descendants.Add([int]$_.ProcessId)) {
+                    @{ pid = [int]$_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks }
+                }
+            })
+        ConvertTo-Json -InputObject $rows -Compress
     }
     'process-bookend' {
         $rows = @(Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |

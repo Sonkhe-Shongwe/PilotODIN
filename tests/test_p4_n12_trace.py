@@ -194,6 +194,56 @@ def test_strict_etw_tracks_allocation_and_keeps_file_keys_diagnostic():
     assert "private.txt" not in json.dumps(details)
 
 
+def test_webview_write_path_replay_is_bounded_and_preserves_strict_coverage():
+    events = []
+
+    def event(kind, **data):
+        events.append({"id": kind, "pid": 7, "ticks": len(events) + 1, "data": data,
+                       "lifecycle": kind in {1, 3}})
+
+    event(1, ProcessID=7)
+    event(3, ProcessID=7, ThreadID=71)
+    for index in range(68):
+        key = 100 + index
+        path = r"C:\profile\private.txt" if index == 0 else r"C:\elsewhere\private.txt"
+        event(10, FileKey=key, FileName=path)
+        event(16, FileObject=300 + index, FileKey=key, Irp=400 + index, IssuingThreadId=71)
+        if index == 2:
+            event(10, FileKey=key, FileName=r"C:\another\private.txt")
+        if index == 3:
+            event(11, FileKey=key)
+        if index == 4:
+            continue  # Missing completion never enters the sample.
+        event(24, Irp=400 + index, Status=0xC0000022 if index == 5 else 0)
+        if index == 0:
+            event(16, FileObject=300, FileKey=100, Irp=500, IssuingThreadId=71)
+            event(24, Irp=500, Status=0)
+
+    result = {}
+    completed = []
+    unresolved = correlate_requests(
+        events, lambda value: value or None,
+        lambda pid, birth, ticks: ("webview-network", "private-process"),
+        lambda path: False, lambda *args: completed.append(args), strict=True,
+        webview_write_candidates=result,
+        classify_webview_path=lambda path: ("candidate-permitted" if "profile" in path
+                                           else "candidate-outside-scope"),
+    )
+    assert unresolved == {"webview-network:write:path-missing": 67,
+                          "webview-network:write:completion-missing": 1}
+    assert len(completed) == 1 and completed[0][-1] is False
+    assert result == {
+        "eligible": 67, "sampled": 64,
+        "outcomes": {
+            "webview-network:write:request-time:candidate-permitted": 1,
+            "webview-network:write:request-time:candidate-outside-scope": 61,
+            "webview-network:write:request-time:conflicting-or-unmapped-name": 1,
+            "webview-network:write:request-time:possible-name-change": 1,
+        },
+    }
+    assert "private" not in json.dumps(result)
+
+
 def test_strict_etw_counts_only_successful_write_gaps_using_request_time_names():
     protected = r"C:\protected\private.txt"
     outside = r"C:\outside\private.txt"
@@ -1625,6 +1675,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert clean["native_n12_accepted"] is False
     assert report(describe_path_gaps=True) == {
         **clean, "etw_path_gap_context": {}, "etw_write_name_gap_context": {},
+        "etw_webview_write_path_candidates": {"eligible": 0, "sampled": 0, "outcomes": {}},
     }
     cli_inputs = []
     for name, value in (("manifest", evidence.manifest), ("before", evidence.before),
