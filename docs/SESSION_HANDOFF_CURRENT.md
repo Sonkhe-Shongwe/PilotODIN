@@ -2,13 +2,19 @@
 
 **17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 17 November 2026 | Physical R03 candidate deferred
+
+The owner showed the isolated candidate's Settings and Ask ODIN on the 8 GB laptop. Settings showed the 1.50 GiB cutoff and available RAM snapshots of 1.474 and 1.517 GiB. One snapshot confirmed Low-memory mode was saved. Ask ODIN reported `Desktop startup: resource_limited` and returned the verified missing-premium result using local rules. The screenshots establish a startup deferral and a usable fallback. The request-time readings, specific deferral code, paging, source digest and offline state were not independently verified. The 2.00 GiB baseline has no recorded bundled answer in the comparison. Preserve any existing `r03-benchmark.jsonl` and `r03-memory.csv` before interpreting the cause or retrying.
+
+The next resource investigation is the [whole-app RAM baseline](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target). The 1 GiB daily-workload target remains a proposal. The [documentation audit](./DOCUMENTATION_AUDIT_2026-11-17.md) reconciles the evidence and the current acceptance decisions.
+
 ## 17 November 2026 | Isolated R03 headroom benchmark kit ready
 
 [Windows job 44106241769](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769/job/134119259831) passed on the first attempt. Launch `0a5376c6902d7a5b1b69bb01a14f200cdbb3b954` compiled source `8966edc781128baa94354df044bfadc45d069984`. The separate QA app uses one executable for both the 2.00 GiB baseline and the 1.50 GiB candidate. Its read-only Windows launcher check verified 34 file hashes. All four [P4 regression jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241787) passed, and the build trigger is disarmed.
 
 The [112 MB kit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769/artifacts/14339122820) expires on 20 November at 16:51 SAST. ZIP SHA-256 is `5fc0ab007f3d4fa8bc426177f531892d2f8f4da4fee9b541bbeb1eaf4c0a16a2`. Desktop SHA-256 is `c9aac50c3299d280cb7ce4211db5b7e32402d7949a03fcf98d01e738d2c57fbf`. Use the [physical benchmark procedure](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) to capture both admission decisions and the offline response, timing, system paging and desktop responsiveness.
 
-The physical comparison is pending. The installed app continues to use the 2.00 GiB rule and P4 remains **14/20 (70%)**.
+The kit publication did not exercise the laptop. The [subsequent candidate attempt](#17-november-2026--physical-r03-candidate-deferred) ended at resource admission. P4 remains **14/20 (70%)**.
 
 ## 17 November 2026 | Physical R03 attempt deferred by resource policy
 
@@ -648,7 +654,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-For R03.3, run the [isolated 2.00/1.50 GiB comparison](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) on the 8 GB laptop. Review the two physical results before adopting a lower floor.
+For resource work, preserve the existing candidate evidence and prepare the [whole-app measurement](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target) using the verified unpackaged build and disposable data. Prefer external sampling before changing product code. R03.3 still requires a bundled offline answer on the physical laptop under the accepted admission policy. The [headroom comparison](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) remains useful diagnostic evidence when the request-time conditions can be verified.
 
 The next separately approved app audit can compare the [separate final Sysmon check](#17-november-2026--separate-final-sysmon-verification) with the combined calibration verdict and measure supported, blocked and unchecked WebView writes with the [repeat-write report](#17-november-2026--webview-repeat-write-evidence). Retain the two outside-scope samples, the identity conflict and the other filesystem and lifecycle blockers from the previous audit as open findings.
 

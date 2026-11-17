@@ -8,13 +8,14 @@
 4. [P4 acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) for the technical gate details and owner evidence. [N12 trace runbook](../qa/p4_native/N12_TRACE.md) for the collector and audit procedure.
 5. [Master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) for dated issue and acceptance evidence.
 6. [P4 Local analytics implementation plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) for the agreed Ask ODIN milestone and its acceptance checks.
+7. [Whole-app RAM baseline plan](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target) for the proposed target, measurement method and implementation order.
 
 ## Current development references
 
 - [Live development workspace](./LIVE_DEVELOPMENT.md) and [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md).
 - [Complexity-last roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) for the intended phase sequence.
 - [P1 closure](./P1_CLOSURE_REGISTER_2026-10-28.md), [P2 closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) and [P3 closure](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md).
-- [16 November documentation audit](./DOCUMENTATION_AUDIT_2026-11-16.md) for corrected evidence, approval records and repository-wide link verification.
+- [17 November documentation audit](./DOCUMENTATION_AUDIT_2026-11-17.md) for reconciled R03 and N12 evidence, scorecard and RAM planning. The [16 November audit](./DOCUMENTATION_AUDIT_2026-11-16.md) preserves the prior checkpoint.
 - The owner-held 22 October Master Reconstruction Blueprint defines the product specification, subject to recorded owner amendments.
 
 ## Historical navigation
