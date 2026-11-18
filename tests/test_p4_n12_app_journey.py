@@ -12,7 +12,7 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
-from qa.p4_native import n12_lifetime_control
+from qa.p4_native import n12_calibration, n12_lifetime_control
 from qa.p4_research import n12_app_journey as journey
 from qa.p4_research import n12_journey_diagnostics
 
@@ -33,6 +33,32 @@ def test_linux_cli_refuses_before_collecting(tmp_path):
     assert result.returncode == 2
     assert "requires disposable hosted Windows" in result.stderr
     assert not list(tmp_path.iterdir())
+
+
+def test_calibration_existing_fixture_reports_fixed_stage_without_path(tmp_path):
+    with pytest.raises(n12_calibration.CalibrationFailure, match=r"^N12 calibration failed at fixture-directory\.$"):
+        n12_calibration.calibrate(tmp_path)
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize(("stderr", "stages"), [
+    (b"N12 calibration failed at child-fixture-writes.\r\n"
+     b"N12 calibration failed at tcp-marker.\r\n"
+     b"N12 calibration failed at tcp-marker.\r\n"
+     b"private/path\r\n", "child-fixture-writes, tcp-marker"),
+    (b"N12 calibration failed at private/path.\n", "unclassified"),
+])
+def test_calibration_subprocess_preserves_only_fixed_failure_stages(tmp_path, monkeypatch, stderr, stages):
+    def fail(command, **kwargs):
+        assert kwargs["capture_output"] and kwargs["check"]
+        raise subprocess.CalledProcessError(1, command, stderr=stderr)
+
+    monkeypatch.setattr(journey.subprocess, "run", fail)
+    manifest = {"processes": [], "loopback_ports": []}
+    with pytest.raises(journey.trace.EvidenceValidationError) as caught:
+        journey.calibrate(tmp_path / "calibration", manifest)
+    assert str(caught.value) == f"calibration fixture subprocess failed at {stages}"
+    assert manifest == {"processes": [], "loopback_ports": []}
 
 
 @pytest.mark.parametrize("fault", [None, "no-udp", "wrong-child", "gap"])

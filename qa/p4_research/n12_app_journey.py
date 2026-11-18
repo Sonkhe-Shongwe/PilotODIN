@@ -18,6 +18,7 @@ from urllib.error import URLError
 from urllib.request import ProxyHandler, build_opener
 from uuid import uuid4
 
+from qa.p4_native.n12_calibration import calibration_failure_stages
 from qa.p4_native import n12_etw_probe as etw
 from qa.p4_native.n12_exit_corroboration import journey_lifetime_evidence
 from qa.p4_native import n12_trace as trace
@@ -185,8 +186,13 @@ def calibrate(directory, manifest, *, child_hold_seconds=0):
     command = [sys.executable, "-B", str(NATIVE / "n12_calibration.py"), str(directory)]
     if child_hold_seconds:
         command.extend(("--child-hold-seconds", str(child_hold_seconds)))
-    data = quiet(command)
-    record = json.loads(data)
+    try:
+        completed = subprocess.run(command, cwd=build.REPO, capture_output=True, check=True, timeout=30)
+    except subprocess.CalledProcessError as exc:
+        stages = calibration_failure_stages(exc.stderr)
+        reason = ", ".join(stages) if stages else "unclassified"
+        raise trace.EvidenceValidationError(f"calibration fixture subprocess failed at {reason}") from None
+    record = json.loads(completed.stdout)
     manifest["processes"].append(record)
     manifest["loopback_ports"].append(record["port"])
     return record
