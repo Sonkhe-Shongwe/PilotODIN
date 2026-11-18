@@ -1,0 +1,2 @@
+reviewed_source=9446bc9982ff1784021e3fea6ee190cce2daa910
+scope=n12-one-hosted-loopback-socket-lifetime-comparison
