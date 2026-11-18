@@ -36,7 +36,7 @@ HTTP = build_opener(ProxyHandler({}))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
 DRIVER_TEMP_DIR = "driver-temp"
 INITIAL_FIXTURE_LEAD_IN_SECONDS = 0.05
-FINAL_FIXTURE_CHILD_HOLD_SECONDS = 4
+TRACED_FIXTURE_CHILD_HOLD_SECONDS = 4
 FIXTURE_ADDRESS = IPv4Address("127.0.0.1")
 FIXTURE_SYSMON_RETRYABLE = {
     "channel-window-empty", "parent-birth-missing", "child-birth-missing",
@@ -411,7 +411,9 @@ def run_initial_calibration(root, directory, manifest, source, expected_hash):
     time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
     print("N12 journey stage initial calibration", flush=True)
     with checkpoint_stage("initial-calibration", source, expected_hash):
-        record = calibrate(directory, manifest)
+        # Give Sysmon the same time as the final fixture to attribute the
+        # socket markers before the calibration child exits.
+        record = calibrate(directory, manifest, child_hold_seconds=TRACED_FIXTURE_CHILD_HOLD_SECONDS)
         verify_initial_sysmon(root, manifest, record)
 
 
@@ -732,7 +734,7 @@ def capture(root, staged, source, expected_hash, node):
             # Sysmon can associate a late socket event with the wrong GUID
             # if the short-lived final child exits before attribution.
             final_record = calibrate(
-                calibration[1], manifest, child_hold_seconds=FINAL_FIXTURE_CHILD_HOLD_SECONDS,
+                calibration[1], manifest, child_hold_seconds=TRACED_FIXTURE_CHILD_HOLD_SECONDS,
             )
             final_end = now()
             manifest["end_utc"] = final_end.isoformat()
