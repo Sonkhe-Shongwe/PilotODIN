@@ -23,6 +23,7 @@ from qa.p4_native.n12_exit_corroboration import journey_lifetime_evidence
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
 from qa.p4_research.n12_journey_diagnostics import OutsidePaths, address, backend_self_connections, network_summary
+from qa.p4_research.n12_driver_handles import DriverHandles, driver_lifetime_evidence
 
 
 NATIVE = build.REPO / "qa" / "p4_native"
@@ -404,13 +405,14 @@ def driver_environment(env, root):
     return {**env, "TEMP": scratch, "TMP": scratch, "TMPDIR": scratch}
 
 
-def run_driver(stack, manifest, node, root, env, relaunch):
+def run_driver(stack, manifest, node, root, env, relaunch, handles):
     command = [node, str(PROBE)]
     label = "relaunch" if relaunch else "first"
     if relaunch:
         command.append("--verify-relaunch")
     log = root / f"driver-{label}.log"
     process = spawn(stack, manifest, "driver", command, driver_environment(env, root), FRONTEND, log)
+    handles.watch(process, label)
     trace.require(process.wait(timeout=240) == 0, f"{label} native interaction probe failed")
     with log.open("rb") as stream:
         ready = any(line.rstrip(b"\r\n") == b"N12 native close listener ready" for line in stream)
@@ -459,7 +461,7 @@ def finish_webview_child_witnesses(children):
     return witnesses
 
 
-def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite):
+def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite, handles):
     from qa.p4_native.n12_lifetime_control import process_images, process_times
 
     binary = build.executable(staged)
@@ -483,7 +485,7 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
                  45, f"{label} WebView debugger did not become ready", app)
         if not relaunch:
             mark(manifest, "quality")
-        run_driver(stack, manifest, node, root, {**env, "P4_NATIVE_QA_APP_PID": str(app.pid)}, relaunch)
+        run_driver(stack, manifest, node, root, {**env, "P4_NATIVE_QA_APP_PID": str(app.pid)}, relaunch, handles)
         with ExitStack() as child_stack:
             children = webview_child_handles(child_stack, app.pid)
             mark(manifest, "exit" if relaunch else "close")
@@ -641,13 +643,14 @@ def capture(root, staged, source, expected_hash, node):
             verify_initial_sysmon(root, manifest, record)
         mark(manifest, "idle")
         time.sleep(3)
-        with journey_processes(source, expected_hash) as stack:
+        with DriverHandles() as driver_handles, journey_processes(source, expected_hash) as stack:
             backend = spawn(stack, manifest, "backend", [sys.executable, "-B", "-m", "uvicorn",
                 "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 env, build.REPO, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort"],
                 driver_environment(env, root), FRONTEND, root / "vite.log")
+            driver_handles.watch(vite, "vite")
             wait_for(lambda: http_ready(8000, "/api/health", lambda status:
                                        status.get("status") == "ok" and status.get("cloud_ai") is False),
                      60, "loopback backend did not become ready with cloud AI off", backend)
@@ -655,7 +658,7 @@ def capture(root, staged, source, expected_hash, node):
             wait_for(lambda: http_ready(5173, "/"), 60, "Vite did not become ready", vite)
             with checkpoint_stage("app-journey", source, expected_hash):
                 app_witnesses = run_apps(stack, manifest, root, staged, source, expected_hash, node,
-                                         env, profile, backend, vite)
+                                         env, profile, backend, vite, driver_handles)
         print("N12 journey stage final calibration", flush=True)
         with checkpoint_stage("final-fixture", source, expected_hash):
             final_start = now()
@@ -744,6 +747,7 @@ def capture(root, staged, source, expected_hash, node):
     report_file(root / "manifest.json", manifest)
     paths = diagnostic_paths(root, staged, manifest)
     app_lifetimes = {}
+    driver_lifetimes = {}
 
     def observe_lifetimes(events, devices, window, issues):
         app_lifetimes.update(journey_lifetime_evidence(
@@ -751,6 +755,8 @@ def capture(root, staged, source, expected_hash, node):
         print("N12 app lifetime observations " + json.dumps({
             "source_sha": source, "executable_sha256": expected_hash, **app_lifetimes,
         }), flush=True)
+        driver_lifetimes.update(driver_lifetime_evidence(events, devices, window, observed, driver_handles, issues))
+        print("N12 driver lifetime observations " + json.dumps(driver_lifetimes), flush=True)
 
     with checkpoint_stage("combined-reduction", source, expected_hash):
         result = trace.complete_journey_audit(manifest, observed, events, before, after, etw=True,
@@ -758,6 +764,7 @@ def capture(root, staged, source, expected_hash, node):
                                               describe_path_gaps=True, observe_lifetimes=observe_lifetimes)
     result["journey_diagnostics"] = {
         "app_lifetimes": app_lifetimes,
+        "driver_lifetimes": driver_lifetimes,
         "outside_scope_paths": paths.summary(),
         "outside_scope_writers": paths.writer_summary(),
         "backend_outside_scope_targets": paths.backend_target_summary(),

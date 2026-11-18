@@ -589,7 +589,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     observed = SimpleNamespace(
         issues={"sysmon-exit-time-unverified"}, network_counts={"backend:tcp:unexpected-loopback": 1},
         unexpected_connections=[{"role": "backend", "protocol": "tcp", "kind": "unexpected-loopback"}],
-        bindings=[],
+        bindings=[], processes={}, roles={},
     )
 
     def lifetime_report(etw_records, devices, window, sysmon_observed, witnesses, digest, issues):

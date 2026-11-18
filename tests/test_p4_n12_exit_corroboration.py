@@ -19,6 +19,7 @@ from qa.p4_native import n12_exit_corroboration as diagnostic
 from qa.p4_native import n12_lifetime_control as controls
 from qa.p4_native import n12_trace as trace
 from qa.p4_research.n12_app_journey import DRIVER_TEMP_DIR, driver_environment
+from qa.p4_research.n12_driver_handles import descendants, driver_lifetime_evidence
 
 
 BASE = datetime(2026, 11, 16, tzinfo=timezone.utc)
@@ -112,6 +113,28 @@ class DisputedExitTests(unittest.TestCase):
     def report(self, issues=()):
         return diagnostic.corroborate_exits(self.events, self.processes, self.roles, DEVICES,
                                             (ORIGIN, ORIGIN + 500_000), set(issues))[0]
+
+    def test_driver_handles_bind_disputed_exit_to_exact_parent_and_keep_report_redacted(self):
+        observed = SimpleNamespace(processes=self.processes, roles={p: "driver" for p in self.processes})
+        witness = {"pid": 701, "birth": ORIGIN + 115_001, "exit": ORIGIN + 245_727,
+                   "image_dos": CHILD_IMAGE, "image_native": self.events[1]["data"]["ImageName"],
+                   "label": "descendant", "parent_pid": 700}
+        handles = SimpleNamespace(witnesses=[witness], counts={})
+        window = ORIGIN, ORIGIN + 500_000
+        report = driver_lifetime_evidence(self.events, DEVICES, window, observed, handles, set())
+        row = report["disputed"][0]
+        self.assertEqual((row["status"], row["family"], row["parent_role"]), ("MATCH", "webview", "driver"))
+        self.assertEqual(row["order"]["etw_payload_exit_minus_handle_ticks"], 0)
+        self.assertEqual(report["retained_by_label"], {"descendant": 1})
+        self.assertNotIn("private", json.dumps(report))
+        self.assertIsNone(self.child.end)
+        self.events[1]["data"]["ParentProcessSequenceNumber"] = "12345"
+        report = driver_lifetime_evidence(self.events, DEVICES, window, observed, handles, set())
+        self.assertEqual(report["disputed"][0]["status"], "driver-etw-parent-lifetime-unverified")
+
+    def test_driver_snapshot_walk_stays_under_the_owned_roots(self):
+        rows = [(4, 3, "conhost.exe"), (6, 8, "node.exe"), (3, 2, "powershell.exe"), (2, 4, "node.exe")]
+        self.assertEqual(list(descendants(rows, {2})), [(3, 2, "powershell.exe"), (4, 3, "conhost.exe")])
 
     def test_corroborates_both_original_conflicts_without_changing_sysmon(self):
         original = self.child.disputed_exit

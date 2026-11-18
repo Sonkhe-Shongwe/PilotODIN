@@ -30,7 +30,7 @@ MILLISECOND = 10_000  # UTC ticks, each 100 ns.
 FILETIME_EPOCH = 504911232000000000
 
 
-def process_times(process):
+def process_times(process, *, allow_running=False):
     """Use a retained Windows process handle after exit, so PID reuse is irrelevant."""
     get_times = ctypes.WinDLL("kernel32", use_last_error=True).GetProcessTimes
     get_times.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4
@@ -40,6 +40,9 @@ def process_times(process):
         raise trace.EvidenceValidationError("windows-process-times-unavailable")
     birth, end = [(t.dwHighDateTime << 32 | t.dwLowDateTime) + FILETIME_EPOCH
                   for t in (created, exited)]
+    if allow_running and end == FILETIME_EPOCH:
+        trace.require(FILETIME_EPOCH < birth, "windows-process-times-invalid")
+        return {"pid": process.pid, "birth": birth, "exit": None}
     trace.require(FILETIME_EPOCH < birth <= end, "windows-process-times-invalid")
     return {"pid": process.pid, "birth": birth, "exit": end}
 
