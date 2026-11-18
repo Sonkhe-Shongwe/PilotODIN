@@ -896,14 +896,29 @@ def initial_fixture_root(source):
     return root
 
 
+def run_prebuild_fixture(source):
+    staged = build.stage_root(source)
+    trace.require(os.environ.get("PILOTODIN_N12_APP_JOURNEY_CONSENT") == CAPTURE_CONSENT,
+                  "separate one-run N12 journey consent is required")
+    directory = trace.local_disposable_path(staged.with_name(f'{staged.name}-prebuild-calibration'),
+                                           runner_temp_only=True)
+    calibrate(directory, {"processes": [], "loopback_ports": []})
+    print("N12 pre-build fixture " + json.dumps({"source_sha": source, "status": "PASS"}), flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--expected-exe-sha256")
     mode.add_argument("--initial-fixture-only", action="store_true")
+    mode.add_argument("--prebuild-fixture", action="store_true")
     args = parser.parse_args()
     try:
+        if args.prebuild_fixture:
+            with checkpoint_stage("pre-build-calibration", args.source, ""):
+                run_prebuild_fixture(args.source)
+            return 0
         if args.initial_fixture_only:
             with checkpoint_stage("fixture-preflight", args.source, ""):
                 root = initial_fixture_root(args.source)

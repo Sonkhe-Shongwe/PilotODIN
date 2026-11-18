@@ -115,6 +115,39 @@ def test_initial_fixture_control_uses_journey_gate_and_stops_etw(tmp_path, monke
     assert "executable_sha256" not in output
 
 
+@pytest.mark.parametrize("approved,helper_fails", [(False, False), (True, False), (True, True)])
+def test_prebuild_calibration_uses_separate_scratch_and_preserves_errors(
+    tmp_path, monkeypatch, capsys, approved, helper_fails,
+):
+    staged = tmp_path / "pilotodin-n12-build-123"
+    monkeypatch.setattr(journey.build, "stage_root", lambda _: staged)
+    monkeypatch.setenv("PILOTODIN_N12_APP_JOURNEY_CONSENT", journey.CAPTURE_CONSENT if approved else "")
+    checks = []
+
+    def validate_path(path, *, runner_temp_only):
+        assert runner_temp_only
+        assert path == staged.with_name(f"{staged.name}-prebuild-calibration")
+        return path
+
+    def calibrate(directory, manifest):
+        assert manifest == {"processes": [], "loopback_ports": []}
+        checks.append(directory)
+        if helper_fails:
+            raise journey.trace.EvidenceValidationError("calibration fixture subprocess failed at udp-listener")
+
+    monkeypatch.setattr(journey.trace, "local_disposable_path", validate_path)
+    monkeypatch.setattr(journey, "calibrate", calibrate)
+    if not approved or helper_fails:
+        reason = "one-run N12 journey consent" if not approved else "udp-listener"
+        with pytest.raises(journey.trace.EvidenceValidationError, match=reason):
+            journey.run_prebuild_fixture(SOURCE)
+    else:
+        journey.run_prebuild_fixture(SOURCE)
+    assert len(checks) == int(approved)
+    assert ('"status": "PASS"' in capsys.readouterr().out) == (approved and not helper_fails)
+    assert not staged.exists()
+
+
 @pytest.mark.parametrize("fault", [None, "no-udp", "wrong-child", "gap"])
 def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypatch, fault):
     start = datetime(2026, 11, 14, tzinfo=timezone.utc)
