@@ -1,8 +1,10 @@
 """Correlate successful Windows Kernel File requests for generated N12 markers."""
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 import json
 import ntpath
+from operator import itemgetter
 import re
 import sys
 from xml.etree import ElementTree as ET
@@ -1270,7 +1272,12 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
     key = number(data.get("FileKey"))
     if type(key) is not int or key <= 0:
         return "missing-file-key"
-    if successful_completion(irp_events, write, completed + 1) != completed:
+    # An IRP address can be reused for many sequential writes. Keep every
+    # event at either boundary, where a tie can invalidate the completion.
+    get_ticks = itemgetter("ticks")
+    first = bisect_left(irp_events, ticks, key=get_ticks)
+    last = bisect_right(irp_events, completed, lo=first, key=get_ticks)
+    if successful_completion(irp_events[first:last], write, completed + 1) != completed:
         return "write-completion-unverified"
 
     if first_observation is not None:
@@ -1325,19 +1332,27 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
-    keys = {number(request["data"].get("FileKey")) for _, _, request, _ in gaps}
-    objects = {number(request["data"].get("FileObject")) for _, _, request, _ in gaps}
-    irps = {number(request["data"].get("Irp")) for _, _, request, _ in gaps}
+    keys, irps = set(), set()
+    requested_keys = defaultdict(set)
+    for _, _, request, _ in gaps:
+        data = request["data"]
+        key = number(data.get("FileKey"))
+        keys.add(key)
+        requested_keys[number(data.get("FileObject"))].add(key)
+        irps.add(number(data.get("Irp")))
     for event in events:
         if event.get("lifecycle"):
             continue
         kind, data = event["id"], event["data"]
-        if kind not in {10, 11, 24} and (obj := number(data.get("FileObject"))) in objects:
-            by_object[obj].append(event)
-        if kind != 24:
-            key = name_transition_key(kind, data) or number(data.get("FileKey"))
-            if key and key in keys:
-                by_key[key].append(event)
+        key = None if kind == 24 else name_transition_key(kind, data) or number(data.get("FileKey"))
+        if kind not in {10, 11, 24} and (obj := number(data.get("FileObject"))) in requested_keys:
+            # A write changes neither the name nor the lifetime. Keep it in
+            # the object history only if it can contradict an observed key.
+            observed_keys = requested_keys[obj]
+            if kind != 16 or key not in {None, 0} and (len(observed_keys) > 1 or key not in observed_keys):
+                by_object[obj].append(event)
+        if kind != 16 and key and key in keys:
+            by_key[key].append(event)
         irp = number(data.get("Irp"))
         if irp and irp in irps:
             by_irp[irp].append(event)
