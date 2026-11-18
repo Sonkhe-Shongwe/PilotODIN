@@ -76,12 +76,15 @@ def open_process_query_handle(pid):
         close_handle(handle)
 
 
-def run_process(command, *, with_images=False, fixture_input=b"1"):
+def run_process(command, *, with_images=False, fixture_input=b"1", creationflags=0, hold_seconds=0):
     # The pipe holds even the fast fixture until its executable paths are recorded.
     stdin = subprocess.PIPE if with_images else None
-    with subprocess.Popen(command, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as process:
+    with subprocess.Popen(command, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                          creationflags=creationflags) as process:
         try:
             images = process_images(process) if with_images else {}
+            if hold_seconds:
+                time.sleep(hold_seconds)
             output, _ = process.communicate(input=fixture_input if with_images else None, timeout=20)
         except (trace.EvidenceValidationError, subprocess.TimeoutExpired):
             process.kill()
@@ -91,7 +94,7 @@ def run_process(command, *, with_images=False, fixture_input=b"1"):
         return process_times(process) | images, output
 
 
-def read_records(path, first, last, target_pids):
+def read_records(path, first, last, target_pids, *, include_descendants=False):
     """Keep only identity and time fields required for matching the generated lifetimes."""
     records = []
     channel_issues = set()
@@ -126,6 +129,16 @@ def read_records(path, first, last, target_pids):
     # Keep mismatched-PID exits with a known generated GUID. The bounded
     # channel can contain unrelated processes even on a disposable runner.
     guids = {row["guid"] for row in records if row["kind"] == 1 and row["pid"] in target_pids}
+    if include_descendants:
+        children = {}
+        for row in records:
+            if row["kind"] == 1:
+                children.setdefault(row["parent"], set()).add(row["guid"])
+        pending = list(guids)
+        while pending:
+            descendants = children.get(pending.pop(), set()) - guids
+            guids.update(descendants)
+            pending.extend(descendants)
     return [row for row in records if row["pid"] in target_pids or row["guid"] in guids], sorted(channel_issues)
 
 
@@ -385,6 +398,10 @@ def main():
                       "lifetime-source-mismatch")
         print(f"N12 lifetime reviewed source {source}", flush=True)
         root = trace.local_disposable_path(args.capture_etw or args.capture, runner_temp_only=True)
+        if args.capture_etw and os.getenv("PILOTODIN_N12_DRIVER_EXIT_CONTROL") == "1":
+            from qa.p4_research import n12_driver_exit_control
+
+            return n12_driver_exit_control.capture(root, source)
         return capture(root, source, with_etw=args.capture_etw is not None)
     except trace.EvidenceValidationError as exc:
         print(f"N12 lifetime control blocked: {exc}", file=sys.stderr)
