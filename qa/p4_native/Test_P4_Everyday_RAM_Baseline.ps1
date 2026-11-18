@@ -125,10 +125,24 @@ try {
     $found = @(Get-OwnedProcesses @($desktop, $web) $app 'C:/other/pilotodin-desktop.exe' @{})
     Assert-Equal $found.Count 0 'reject wrong desktop path without prior identity'
 
-    function Get-CimInstance([string]$ClassName, [string]$Filter, [int]$OperationTimeoutSec, [string[]]$Property) {
+    $script:systemFailuresRemaining = 0
+    $script:processSnapshotFails = $false
+    $script:systemTimeouts = [Collections.Generic.List[int]]::new()
+    function Get-CimInstance {
+        [CmdletBinding()]
+        param([string]$ClassName, [string]$Filter, [int]$OperationTimeoutSec, [string[]]$Property)
         switch ($ClassName) {
-            'Win32_Process' { return $snapshot }
+            'Win32_Process' {
+                if ($script:processSnapshotFails) { throw 'Timed out' }
+                return $snapshot
+            }
             'Win32_PerfFormattedData_PerfOS_Memory' {
+                $script:systemTimeouts.Add($OperationTimeoutSec)
+                if ($script:systemFailuresRemaining -gt 0) {
+                    $script:systemFailuresRemaining--
+                    [pscustomobject]@{ AvailableMBytes = 123; CommittedBytes = 456; PagesInputPersec = 789 }
+                    throw 'Timed out'
+                }
                 return [pscustomobject]@{ AvailableMBytes = 1400; CommittedBytes = 7000; PagesInputPersec = 98 }
             }
             'Win32_PerfFormattedData_PerfProc_Process' {
@@ -144,11 +158,15 @@ try {
             default { throw "Unexpected CIM class: $ClassName" }
         }
     }
-    Write-Sample 'system_idle' 1 $null $root @{} $temp
-    Write-Sample 'ready_idle' 2 $app $root @{} $temp
+    $retryUsed = @{}
+    $script:systemFailuresRemaining = 1
+    Write-Sample 'system_idle' 1 $null $root @{} $temp $retryUsed
+    Write-Sample 'ready_idle' 2 $app $root @{} $temp $retryUsed
     $samples = @(Import-Csv -LiteralPath (Join-Path $temp 'samples.csv'))
     Assert-Equal $samples.Count 2 'idle and active samples'
     Assert-Equal $samples[0].working_set_bytes_sum '' 'idle app usage unknown'
+    Assert-Equal $samples[0].available_mib '1400' 'cold system query recovered'
+    Assert-Equal ($script:systemTimeouts -join ',') '4,12,4' 'retry once with longer timeout and restore regular timeout'
     Assert-Equal $samples[1].working_set_bytes_sum '300' 'sum only current matching readings'
     Assert-Equal $samples[1].private_resident_bytes_sum '225' 'private resident total'
     Assert-Equal $samples[1].measured_processes '3' 'missing counter marked'
@@ -157,6 +175,25 @@ try {
     $measurements = @(Import-Csv -LiteralPath (Join-Path $temp 'processes.csv'))
     Assert-Equal $measurements.Count 4 'all identities recorded'
     Assert-Equal ($measurements | Where-Object pid -eq '103').private_commit_bytes '' 'wrong instance commit is blank'
+
+    $script:systemFailuresRemaining = 2
+    Write-Sample 'ready_idle' 3 $app $root @{} $temp $retryUsed
+    $script:processSnapshotFails = $true
+    Write-Sample 'explore' 4 $app $root @{} $temp $retryUsed
+    $script:processSnapshotFails = $false
+    Write-Sample 'cooldown' 5 $app $root @{} $temp $retryUsed
+    $samples = @(Import-Csv -LiteralPath (Join-Path $temp 'samples.csv'))
+    Assert-Equal $samples.Count 5 'collector failures do not end the walkthrough'
+    Assert-Equal $samples[2].system_memory_measured 'False' 'missing system counters flagged'
+    Assert-Equal $samples[2].available_mib '' 'partial failed query results discarded'
+    Assert-Equal $samples[2].working_set_bytes_sum '300' 'system gap retains app readings'
+    Assert-Equal $samples[3].owned_processes '' 'unavailable process evidence remains blank'
+    Assert-Equal $samples[3].core_roles_measured 'False' 'unavailable process evidence flagged'
+    Assert-Equal $samples[4].system_memory_measured 'True' 'system readings resume'
+    Assert-Equal $samples[4].core_roles_measured 'True' 'app readings resume'
+    $failures = @(Import-Csv -LiteralPath (Join-Path $temp 'collector-errors.csv'))
+    Assert-Equal ($failures.outcome -join ',') 'retry,gap,gap,retry,gap' 'retry and gap evidence recorded'
+    Assert-Equal ($failures.operation_timeout_seconds -join ',') '4,4,4,4,12' 'warm-up retry bounded independently per provider'
 } finally {
     Remove-Item -LiteralPath $temp -Recurse
 }

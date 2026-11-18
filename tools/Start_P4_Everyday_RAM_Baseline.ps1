@@ -136,17 +136,56 @@ function Add-CsvRow([string]$Path, $Rows) {
     }
 }
 
-function Write-Sample([string]$Stage, [int]$Sequence, $App, [string]$AppPath, [hashtable]$Seen, [string]$OutputRoot) {
+function Read-QaCim([hashtable]$Query, [string]$Stage, [int]$Sequence, [string]$OutputRoot, [hashtable]$RetryUsed) {
+    $class = $Query.ClassName
+    $operationTimeout = 4
+    while ($true) {
+        try {
+            # Buffer the entire result so a query that errors after emitting rows cannot be counted.
+            $items = @(Get-CimInstance @Query -OperationTimeoutSec $operationTimeout -ErrorAction Stop)
+            return $items
+        } catch {
+            $willRetry = -not $RetryUsed.ContainsKey($class)
+            Add-CsvRow (Join-Path $OutputRoot 'collector-errors.csv') ([pscustomobject][ordered]@{
+                sample = $Sequence; stage = $Stage; at_utc = [DateTime]::UtcNow.ToString('o')
+                cim_class = $class; operation_timeout_seconds = $operationTimeout
+                outcome = $(if ($willRetry) { 'retry' } else { 'gap' })
+                error_id = $_.FullyQualifiedErrorId; hresult = $_.Exception.HResult
+            })
+            if (-not $willRetry) {
+                if ($RetryUsed[$class] -ne 'gap_reported') {
+                    Write-Warning "$class is unavailable. Its missing readings will be recorded as gaps."
+                    $RetryUsed[$class] = 'gap_reported'
+                }
+                return
+            }
+            $RetryUsed[$class] = 'retry_used'
+            Write-Host "Retrying Windows memory collector query $class."
+            $operationTimeout = 12
+        }
+    }
+}
+
+function Write-Sample([string]$Stage, [int]$Sequence, $App, [string]$AppPath, [hashtable]$Seen,
+        [string]$OutputRoot, [hashtable]$RetryUsed) {
     $sampleStarted = [DateTime]::UtcNow
-    $system = Get-CimInstance -ClassName Win32_PerfFormattedData_PerfOS_Memory -OperationTimeoutSec 4
+    $system = Read-QaCim @{ ClassName = 'Win32_PerfFormattedData_PerfOS_Memory' } $Stage $Sequence $OutputRoot $RetryUsed |
+        Select-Object -First 1
     $owned = @()
     $counters = @{}
+    $snapshotAvailable = $null -eq $App
     if ($null -ne $App) {
-        $snapshot = @(Get-CimInstance -ClassName Win32_Process -OperationTimeoutSec 4 -Property ProcessId,ParentProcessId,CreationDate,Name,ExecutablePath)
+        $snapshot = @(Read-QaCim @{
+            ClassName = 'Win32_Process'
+            Property = @('ProcessId','ParentProcessId','CreationDate','Name','ExecutablePath')
+        } $Stage $Sequence $OutputRoot $RetryUsed)
+        $snapshotAvailable = $snapshot.Count -gt 0
         $owned = @(Get-OwnedProcesses $snapshot $App $AppPath $Seen)
         if ($owned.Count -gt 0) {
             $filter = ($owned | ForEach-Object { "IDProcess = $($_.ProcessId)" }) -join ' OR '
-            foreach ($counter in @(Get-CimInstance -ClassName Win32_PerfFormattedData_PerfProc_Process -Filter $filter -OperationTimeoutSec 4)) {
+            foreach ($counter in @(Read-QaCim @{
+                ClassName = 'Win32_PerfFormattedData_PerfProc_Process'; Filter = $filter
+            } $Stage $Sequence $OutputRoot $RetryUsed)) {
                 $counters[[int]$counter.IDProcess] = $counter
             }
         }
@@ -181,10 +220,12 @@ function Write-Sample([string]$Stage, [int]$Sequence, $App, [string]$AppPath, [h
     Add-CsvRow (Join-Path $OutputRoot 'samples.csv') ([pscustomobject][ordered]@{
         sample = $Sequence; stage = $Stage; at_utc = $sampleStarted.ToString('o')
         collection_ms = [int]([DateTime]::UtcNow - $sampleStarted).TotalMilliseconds
-        available_mib = $system.AvailableMBytes
-        system_commit_bytes = $system.CommittedBytes
-        pages_input_per_second = $system.PagesInputPersec
-        owned_processes = $owned.Count; measured_processes = $working.Count
+        system_memory_measured = $null -ne $system
+        available_mib = $(if ($null -ne $system) { $system.AvailableMBytes })
+        system_commit_bytes = $(if ($null -ne $system) { $system.CommittedBytes })
+        pages_input_per_second = $(if ($null -ne $system) { $system.PagesInputPersec })
+        owned_processes = $(if ($snapshotAvailable) { $owned.Count })
+        measured_processes = $working.Count
         core_roles_measured = $hasCore; desktop_responding = $responding
         working_set_bytes_sum = $(if ($working.Count -gt 0) { ($working | Measure-Object -Property working_set_bytes -Sum).Sum })
         private_resident_bytes_sum = $(if ($private.Count -gt 0) { ($private | Measure-Object -Property private_resident_bytes -Sum).Sum })
@@ -242,11 +283,13 @@ $wide = Join-Path $root 'everyday_wide.csv'
 @('premium,outcome','10,Yes',',No','30,Yes','40,No') | Set-Content -LiteralPath $small -Encoding Ascii
 New-WideFixture $wide
 $wideHash = (Get-FileHash -LiteralPath $wide -Algorithm SHA256).Hash.ToLowerInvariant()
-$os = Get-CimInstance -ClassName Win32_OperatingSystem -OperationTimeoutSec 4
+$retryUsed = @{}
+$os = Read-QaCim @{ ClassName = 'Win32_OperatingSystem' } 'setup' 0 $result $retryUsed | Select-Object -First 1
 [ordered]@{
     source_sha = $kitSpec.SourceSha
     benchmark_build = $Build
-    windows_version = $os.Version; physical_memory_mib = [Math]::Round($os.TotalVisibleMemorySize / 1024, 1)
+    windows_version = $(if ($null -ne $os) { $os.Version })
+    physical_memory_mib = $(if ($null -ne $os) { [Math]::Round($os.TotalVisibleMemorySize / 1024, 1) })
     desktop_sha256 = $payload[0].Sha256; engine_sha256 = $payload[1].Sha256
     profile = 'com.pilotodin.p4r03benchmark/data/baseline'
     inference = 'Local analytics only; model files are absent from the staged app'
@@ -277,7 +320,7 @@ try {
     Write-Host 'Collecting ten idle Windows memory samples before launch.'
     Write-Stage $stage 'start' ''
     for ($tick = 0; $tick -lt 10; $tick++) {
-        Write-Sample $stage (++$sequence) $null $appPath $seen $result
+        Write-Sample $stage (++$sequence) $null $appPath $seen $result $retryUsed
         Start-Sleep -Seconds 1
     }
     Write-Stage $stage 'end' 'timed'
@@ -303,7 +346,7 @@ try {
         $timer = [Diagnostics.Stopwatch]::StartNew()
         $observation = 'timeout'
         do {
-            Write-Sample $stage (++$sequence) $app $appPath $seen $result
+            Write-Sample $stage (++$sequence) $app $appPath $seen $result $retryUsed
             if ($app.HasExited) { $observation = 'desktop_exited'; break }
             if ([Console]::KeyAvailable) {
                 $key = [Console]::ReadKey($true).Key

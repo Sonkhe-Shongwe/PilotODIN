@@ -52,6 +52,8 @@ The launcher pins both executables to the GitHub Actions output for `1cfeb94`. I
 
 Hosted Windows proved the production UI could start its authenticated analytics engine. Both frozen engine processes stopped after normal desktop close in 93 ms with exit code 1. Both stopped with exit code 0 within 1,470 ms when only the desktop process was terminated. ZIP SHA-256 is `b966f5251410c283b3e1742552ead1d495181854db4aa48ac14e0b2ecf7d4812`.
 
+On 18 November the updated laptop run recorded a Windows CIM timeout during the 10 idle samples, before PilotODIN launched. Pull the latest launcher and use the same extracted kit. The launcher retries the first failed query of each CIM class once at 12 seconds. Unavailable readings remain blank in the samples, and `collector-errors.csv` identifies the skipped provider and stage. The remaining queries can still measure the app and the walkthrough can reach the real Save As export. Exclude gaps when comparing memory and retain the coverage flags.
+
 The physical comparison is pending. Compare the same stages, with the other Windows apps in their usual state. The earlier export wait contributed 153 samples and ended before cooldown. Compare stage medians and peaks with that sampling difference in mind. The new build includes binary report transfer and the frozen engine shutdown fix, so a whole-app difference measures their combined effect under this workload. A repeatable 1 GiB result still needs comparable physical runs and complete process coverage.
 
 ### Deliver binary Save As
