@@ -57,7 +57,7 @@ The [16 November completed reducer](https://github.com/Sonkhe-Shongwe/PilotODIN/
 
 ### P4 plan to reach 75%
 
-**18 November priority.** Advance hosted N12 coverage and isolation work while R03 is paused at ordinary laptop memory. The latest Settings reading was 0.936 GiB available. The [existing Windows synthetic N12 checks](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44210560152/job/134487508466) passed. A complete hosted N12 audit still needs to meet the applicable acceptance check to earn the next five points.
+**18 November priority.** Advance hosted N12 coverage and isolation work while R03 is paused at ordinary laptop memory. The [isolated Sysmon control](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44259756914/job/134649953625) passed all three immediate and all three retained child cases. The previous live final-calibration failure remains open. Test that sequence with concurrent ETW and generated process and file activity before another full app build. The latest Settings reading was 0.936 GiB available. The [existing Windows synthetic N12 checks](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44210560152/job/134487508466) passed. A complete hosted N12 audit still needs to meet the applicable acceptance check to earn the next five points.
 
 **17 November operating decision.** Use the [last collector capture](#n12-collector-only-strict-comparison) as a baseline for selecting tests. Its timing failures and existing name candidates need different controls. Start on the existing request-time evidence because it recurs in the full app audit. The 191 timing cases need a known-file clock check before another strict comparison can measure them.
 

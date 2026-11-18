@@ -2,6 +2,12 @@
 
 **18 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 18 November 2026 | Hosted Sysmon socket lifetime control passed all six cases
+
+The [collector-only Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44259756914/job/134649953625) used Sysmon 15.22 and source `ef29e5af119c9e306a9dd02dc61cfc5a400140e0`. The first setup attempt stopped before any cases because the channel-position helper lacked authority for the new collector-only mode. The correction grants that source-pinned mode access to the read-only channel-position operation. The app and ETW operations keep their existing checks. [First attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44259529756/job/134649208925)
+
+In three immediate-exit cases and three cases retaining the child for four seconds after both sockets closed, the strict validator matched the TCP and UDP observations to the child and accepted both process lifetimes on its first read. The test used loopback traffic and disposable marker files. The full audit's final identity mismatch did not reproduce under this isolated workload, and the results leave the value of a child hold under the full audit unverified. The workflow is disarmed. P4 is **14/20 (70%)**.
+
 ## 18 November 2026 | Hosted N12 audited both launches and reproduced blockers
 
 The [hosted Windows audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44257324687/job/134642037672) built source `1175df9feadafcf04b0f16226ab12830245f5ab4` once and exercised both desktop launches with disposable data. The executable SHA-256 was `b23afed0cfa835d840996fa39f85cdab20c5494279d141b875d338ec813edffc`. The four [routine P4 jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44257324768) passed. All four protected roots and the immutable CSV matched at the endpoints. Both original app handles matched their ETW lifetimes. Twelve of 14 child lifetimes matched and two child stop-image conflicts remain.
@@ -674,7 +680,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-Use an isolated hosted calibration fixture to test whether retaining the final child until its TCP and UDP observations are visible resolves the process-GUID and lifetime mismatch. Keep the timestamp and process-identity checks in force. Use the result before another full app build and audit. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
+The isolated child-lifetime comparison passed in both modes. For the next diagnostic, use hosted Windows and reproduce the original final-calibration sequence under generated process and file activity, including concurrent ETW collection and the original capture-stop boundary. Compare channel scope and socket identity categories under both timing variants. Keep the timestamp and process-identity checks in force. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
 
 Start with the [N12 filesystem and network audit worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). Use the generated checks and the most recent completed Windows audit to narrow the unresolved evidence. The physical offline Qwen baseline is paused at ordinary laptop headroom. [Resource decision](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#ordinary-laptop-memory-and-offline-inference)
 
