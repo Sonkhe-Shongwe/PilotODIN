@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   calibration:
+    if: ${{ false }} # One-use approval consumed by run 44356802211.
     runs-on: windows-2022
     timeout-minutes: 10
     env:

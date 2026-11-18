@@ -12,7 +12,7 @@ Use this process for work where a failed run would cost another native session, 
 
 ## Worked example for P4 / N12
 
-The next fixture-only run tests whether Sysmon can attribute both loopback messages to the initial calibration child with a four-second hold while ETW is active. It needs a nonempty ETW recording with zero reported loss and the existing process identity and lifetime checks to pass. The generated clean trace already passes both full audit reductions and the hosted CLI tests cover the passing exit status and three blocked cases. [Current handoff](./SESSION_HANDOFF_CURRENT.md#next-engineering-action) · [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+The retained-child fixture-only run passed. Sysmon attributed both loopback messages on its first read with the four-second hold, and ETW produced a nonempty recording with zero reported loss. The generated clean trace passes both full audit reductions and the hosted CLI tests cover the passing exit status and three blocked cases. The next diagnostic question is whether the strict path comparison closes the same gaps on a live app trace. [Fixture evidence](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Current handoff](./SESSION_HANDOFF_CURRENT.md#next-engineering-action)
 
 Before a full acceptance attempt, review the last completed audit and the fixes for its known failures. If a build is needed to isolate a finding, describe the question, its measurable outcome and the evidence the run should retain. Keep the actual acceptance verdict and award points only on the governed result.
 
