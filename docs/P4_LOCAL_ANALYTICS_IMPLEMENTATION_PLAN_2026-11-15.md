@@ -90,6 +90,8 @@ On 16 November 2026 the owner accepted both native answers from screenshots afte
 
 ## Owner offline Qwen retest
 
+This section records the original test procedure. See the [current decision for ordinary laptop memory](#ordinary-laptop-memory-and-offline-inference) before planning an owner run.
+
 Use [the one-use build's GitHub Actions page](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44095354691) to download `PilotODIN-P4-R03-Owner-QA` once the handoff records its successful publication. Extract it to its own folder. The kit contains the corrected desktop, the source-matched analytics engine and checksums. The [launcher](../tools/Start_P4_R03_Offline_QA.ps1) uses Qwen files already present in the separate `pilotODIN-P4-Native-QA` installation. It copies only the verified worker, GGUF and listed DLL files. The new app uses its own data identity and temporary WebView2 profile.
 
 From the current development branch of the PilotODIN repository, run the launcher in PowerShell. Substitute your actual extracted folder if it differs from the example.
@@ -106,7 +108,15 @@ From the current development branch of the PilotODIN repository, run the launche
 
 This test uses a generated CSV and evaluates one cold-start response. Sustained resource coexistence is assessed separately under R03.4.
 
-### Next physical run at the 2.00 GiB baseline
+### Ordinary laptop memory and offline inference
+
+On 18 November the owner confirmed that 2.00 GiB of available system RAM is impractical in normal use. In the open `r03-memory` project, Settings showed **0.936 GiB available of 7.80 GiB physical RAM**, Low-memory mode saved and a **2.00 GiB** local AI admission floor. The display therefore reported a **1.064 GiB** shortfall. This was a Settings reading. Request-time memory and generation were outside this observation. The older 1.50 GiB QA candidate also deferred on its separate physical attempt.
+
+Pause the current physical Qwen retest at this workload. Local analytics remains available. Before proposing another physical inference run, measure an offline option at representative system headroom around **0.9–1.0 GiB**, verify response quality, and record the app and worker memory, paging and responsiveness together. Retain the previously completed Local analytics and HTML export readings for comparison. [Everyday RAM range and results](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom)
+
+<a id="next-physical-run-at-the-200-gib-baseline"></a>
+
+### Reference procedure for the 2.00 GiB baseline
 
 Use the existing [PilotODIN-P4-R03-Headroom-QA build](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769/artifacts/14339122820) while the artifact is available. The launcher uses the bundled Qwen files from the separate `pilotODIN-P4-Native-QA` installation. Extract the kit, close PilotODIN and Live Dev windows, and pull the active branch. The normal-policy baseline uses a fresh disposable benchmark profile. The archive switch renames the previous baseline profile after staging and verifying the kit and runtime files.
 

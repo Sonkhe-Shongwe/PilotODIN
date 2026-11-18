@@ -2,6 +2,10 @@
 
 **18 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 18 November 2026 | Ordinary laptop headroom blocked the Qwen baseline
+
+With PilotODIN open, Settings showed **0.936 GiB available** and Low-memory mode required **2.00 GiB** to start local AI. The owner confirmed that level of free RAM is impractical in ordinary use. The physical Qwen retest is paused. A lower-memory option needs evidence of answer quality and coexistence before another owner run. Continue the hosted N12 isolation and coverage work as the next P4 engineering priority. The [routine Windows replay checks](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44210560152/job/134487508466) passed on generated data. A fresh focused replay run passed **332 tests and 10 subtests** for trace reduction, journey diagnostics and app-journey handling. The latest full audit still supplies the live findings. [Offline headroom decision](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#ordinary-laptop-memory-and-offline-inference)
+
 ## 18 November 2026 | Physical everyday RAM retest and HTML export completed
 
 The updated analytics-only Windows build (`1cfeb94`) completed the physical laptop walkthrough through cooldown. The launcher verified the HTML report against the generated dataset with 4,000 rows and 1,000 missing premiums. The combined working set peaked at **735.27 MiB** in cooldown. The peak across stages shared with the first run was **705.93 MiB**, versus **706.35 MiB** previously. The baseline ended before cooldown. The desktop reported responsive at all **162** app samples. P4 is **14/20 (70%)**. [Physical retest and comparison](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result)
@@ -662,7 +666,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-Start with the [physical offline Qwen baseline](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#next-physical-run-at-the-200-gib-baseline). The benchmark launcher can preserve an existing isolated baseline profile and export one ZIP with request-time admission, provider outcome and system resource readings. A verified bundled answer earns R03.3 and moves the engineering score from 14/20 to 15/20. R03.4 and the preservation and N12 gates require their own evidence.
+Start with the [N12 filesystem and network audit worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). Use the generated checks and the most recent completed Windows audit to narrow the unresolved evidence. The physical offline Qwen baseline is paused at ordinary laptop headroom. [Resource decision](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#ordinary-laptop-memory-and-offline-inference)
 
 For resource work, use the [physical whole-app measurements](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) as the reference. The owner approved a flexible **roughly 1–3 GiB planning range** for app RAM, with available Windows memory, paging and responsiveness guiding the assessment. Preserve the existing candidate evidence. R03.3 still requires a bundled offline answer on the physical laptop under the accepted admission policy. The [headroom comparison](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) remains useful diagnostic evidence when the request-time conditions can be verified.
 
