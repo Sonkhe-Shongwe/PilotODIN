@@ -8,18 +8,19 @@
 4. [P4 acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) for the technical gate details and owner evidence. [N12 trace runbook](../qa/p4_native/N12_TRACE.md) for the collector and audit procedure.
 5. [Master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) and [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) for dated issue and acceptance evidence.
 6. [P4 Local analytics implementation plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) for the agreed Ask ODIN milestone and its acceptance checks.
-7. [Whole-app RAM baseline plan](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target) for the proposed target, measurement method and implementation order.
+7. [Whole-app RAM range and measurements](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom) for the owner-approved planning range, completed samples and next measurement.
 
 ## Current development references
 
 - [Live development workspace](./LIVE_DEVELOPMENT.md) and [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md).
 - [Complexity-last roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) for the intended phase sequence.
 - [P1 closure](./P1_CLOSURE_REGISTER_2026-10-28.md), [P2 closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) and [P3 closure](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md).
-- [17 November documentation audit](./DOCUMENTATION_AUDIT_2026-11-17.md) for reconciled R03 and N12 evidence, scorecard and RAM planning. The [16 November audit](./DOCUMENTATION_AUDIT_2026-11-16.md) preserves the prior checkpoint.
+- [18 November documentation audit](./DOCUMENTATION_AUDIT_2026-11-18.md) for the current reconciliation, link inventory and archived handoff. [17 November audit](./DOCUMENTATION_AUDIT_2026-11-17.md) · [16 November audit](./DOCUMENTATION_AUDIT_2026-11-16.md)
 - The owner-held 22 October Master Reconstruction Blueprint defines the product specification, subject to recorded owner amendments.
 
 ## Historical navigation
 
+- [Complete pre-cleanup handoff](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/6e5bd7d1f01df28151ba3b97dcd82f0a941f9363/docs/SESSION_HANDOFF_CURRENT.md) with original November 15–18 run outcomes and provenance.
 - [Complete pre-audit documentation index](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/DOCUMENTATION_INDEX.md), including prior evidence links and legacy navigation from 4 November.
 - [Pre-audit handoff](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/SESSION_HANDOFF_CURRENT.md) and [pre-audit phase chronology](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/PROJECT_STATUS_CURRENT.md), with the original section links and evidence text.
 - [15 November repository documentation audit](./DOCUMENTATION_AUDIT_2026-11-15.md), the [4 November](./DOCUMENTATION_AUDIT_2026-11-04.md) and [12 November](./DOCUMENTATION_CLEANING_AUDIT_2026-11-12.md) audits, and the [verbatim archive files](./archive). The archive files preserve original relative links, which may require the original repository layout.

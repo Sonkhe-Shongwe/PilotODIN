@@ -1,6 +1,6 @@
 # PilotODIN P4 Local analytics implementation plan
 
-**15–16 November 2026.** The owner agreed to improve Ask ODIN's Local analytics first and evaluate additional model components only if they improve measured results. The native median and filter-changing follow-up have scoped owner acceptance. See the [current P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard).
+**18 November 2026 checkpoint.** The owner agreed to improve Ask ODIN's Local analytics first and evaluate additional model components only if they improve measured results. The native median and filter-changing follow-up have scoped owner acceptance. The physical offline retest remains paused under ordinary laptop conditions. [P4 scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Headroom decision](#ordinary-laptop-memory-and-offline-inference)
 
 ## Current evidence
 
@@ -10,7 +10,7 @@
 | Qwen3 1.7B batch comparison | Batch 512 peaked at 2,109.5 MiB and batch 128 at 2,068.9 MiB. Both scored 2 of 5. The batch 512 worker released 2,024.1 MiB at idle and answered after waking. The comparison retained batch 512. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43740595746/job/132892675147) |
 | Smaller generative models | Qwen3 0.6B peaked at 934.9 MiB and scored 2 of 4. SmolLM2 360M peaked at 420.0 MiB and scored 1 of 4. Neither cleared the earlier structured answer screen. These worker measurements exclude PilotODIN and its dataset. [Small-model run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) |
 | Model-free wording experiment | The separate word-overlap follow-up selector got 4 of 8 original questions and 2 of 8 paraphrases right. It correctly abstained on all 12 unclear questions. This tested selection from fixed options. [Benchmark](../desktop/evaluate_offline_follow_up_rules.py) |
-| Physical 8 GB laptop | The owner accepted the native filtered median and follow-up. The everyday Local analytics retest measured a 735.27 MiB sampled peak. bundled inference RAM and UI timings need physical evidence. The 2.00 GiB QA attempt and the isolated 1.50 GiB candidate deferred bundled Qwen. The candidate returned verified rules. [Native result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) · [Candidate result](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred) |
+| Physical 8 GB laptop | The owner accepted the native filtered median and follow-up. The everyday retest measured a 735.27 MiB sampled combined working-set peak and verified the HTML export. The 1.50 GiB candidate deferred bundled Qwen and returned local rules. A later Settings reading showed 0.936 GiB available against the 2.00 GiB floor. Request-time memory, physical offline generation and coexistence need separate evidence. [Physical measurements](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) · [Headroom decision](#ordinary-laptop-memory-and-offline-inference) |
 
 The pre-milestone Local analytics path supported exact overview, missingness, labelled-rate and training-status requests. In a disposable real API check at `98affa4`, an ordinary-language labelled-rate question, a filtered median question and a follow-up returned the general dataset overview. The group missingness question inspected the wrong field. The expanded milestone passed the API and browser checks. [Milestone evidence](./SESSION_HANDOFF_CURRENT.md#15-november-2026--ask-odin-local-analytics-milestone)
 
@@ -86,11 +86,11 @@ py -3 .\tools\Verify_Local_Analytics_Windows_Native.py --relaunch-approved pilot
 
 The runner checks the prior receipt, executable hash and Cargo lockfile hash. It starts a fresh disposable backend and WebView2 profile with CDP disabled. It verifies all five responses through the API. The terminal prompts you to check the median and its follow-up inside the desktop window while RAM and paging are sampled. Press **P** in the terminal if both UI answers matched, or **F** if either failed. A successful result is recorded as `PASS_WITH_OWNER_OBSERVATION`. Click-to-render timings and a fully automated native UI pass remain unmeasured in this mode.
 
-On 16 November 2026 the owner accepted both native answers from screenshots after the terminal acknowledgment timed out. The [scoped result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) covers the median and its filter-changing follow-up. Physical resource measurements remain unverified.
+On 16 November 2026 the owner accepted both native answers from screenshots after the terminal acknowledgment timed out. The [scoped result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) covers the median and its filter-changing follow-up. The later [everyday RAM walkthrough](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) supplies model-free resource measurements for its own workload.
 
 ## Owner offline Qwen retest
 
-This section records the original test procedure. See the [current decision for ordinary laptop memory](#ordinary-laptop-memory-and-offline-inference) before planning an owner run.
+This section records the original test procedure. The owner paused the physical baseline under ordinary laptop conditions. Review the [current decision for ordinary laptop memory](#ordinary-laptop-memory-and-offline-inference) before planning a separately approved retest.
 
 Use [the one-use build's GitHub Actions page](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44095354691) to download `PilotODIN-P4-R03-Owner-QA` once the handoff records its successful publication. Extract it to its own folder. The kit contains the corrected desktop, the source-matched analytics engine and checksums. The [launcher](../tools/Start_P4_R03_Offline_QA.ps1) uses Qwen files already present in the separate `pilotODIN-P4-Native-QA` installation. It copies only the verified worker, GGUF and listed DLL files. The new app uses its own data identity and temporary WebView2 profile.
 
@@ -131,7 +131,7 @@ R03.3 needs one verified bundled answer on the disconnected laptop. Measure proc
 
 ### R03 candidate at 1.50 GiB available
 
-The 1.50 GiB candidate was exercised on the physical 8 GB laptop. Settings showed 1.474 and 1.517 GiB on separate refreshes. The request deferred bundled startup and returned verified rules. The screenshots leave request-time headroom and the precise deferral code unverified. Preserve existing benchmark files. The next resource investigation is the [whole-app baseline](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target). The procedure below remains the reproducibility record for a later R03 comparison. [Candidate result](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred)
+The 1.50 GiB candidate was exercised on the physical 8 GB laptop. Settings showed 1.474 and 1.517 GiB on separate refreshes. The request deferred bundled startup and returned verified rules. The screenshots leave request-time headroom and the precise deferral code unverified. Preserve the benchmark files and compare against the later [whole-app Local analytics baseline](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result). The procedure below is the reproducibility record for a later separately approved R03 comparison. [Candidate result](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred)
 
 The existing Windows worker comparison measured approximately **2.06 GiB peak resident RAM** and **1.08 GiB peak committed memory** for the normal profile. These are worker-only measurements on the hosted machine and measure different things from pre-launch system availability. The comparison gives no proven minimum startup headroom on the laptop. [Worker evidence](./SESSION_HANDOFF_CURRENT.md#15-november-2026--r03-windows-comparison-completed)
 

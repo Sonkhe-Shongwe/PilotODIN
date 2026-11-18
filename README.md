@@ -1,24 +1,23 @@
 # PilotODIN 1.0
 **Local-first Windows data investigation, analytics and predictive modelling.**  
-**Development status, 17 November 2026.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active at 14 of 20 engineering checks (70%).** The [scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) records evidence and points for each check. P5 is unauthorised and P8 release certification is pending.
+**Development status, 18 November 2026.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active at 14 of 20 engineering checks (70%).** P5 is unauthorised and P8 release certification is pending. [Engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
 
-PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytical engine, and a Tauri desktop shell. The intended 1.0 vision includes versioned data-quality approval, evidence-backed investigation, model evaluation, reports and a bundled locally functioning ODIN assistant. **Implemented foundations do not prove all future autonomy or packaging requirements are finished.**
+PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytical engine, and a Tauri desktop shell. The 1.0 roadmap covers versioned data-quality approval, evidence-backed investigation, model evaluation, reports and a bundled local ODIN assistant. [Roadmap and scope](docs/PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md)
 
 ## Read this first
 - **[Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)** for the latest verified change and next task.
-- **[P0–P8 development and release status](docs/PROJECT_STATUS_CURRENT.md)**: accepted development slices and remaining limitations.
+- **[P0–P8 development and release status](docs/PROJECT_STATUS_CURRENT.md)** for accepted development slices and remaining limits.
 - **[P4 acceptance worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)** for gate status and Windows evidence. **[N12 runbook](qa/p4_native/N12_TRACE.md)** for the collector and trace procedure.
 - **[Local analytics implementation plan and acceptance evidence](docs/P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md)** for the Ask ODIN milestone and remaining resource checks.
 - **[Whole-app RAM range and measurements](docs/RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom)** for the roughly 1–3 GiB planning range and physical laptop results.
-- **[P1 prior-phase closure matrix](docs/P1_CLOSURE_REGISTER_2026-10-28.md)**: dated historical P1 acceptance.
-- **[Phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)**: owner-approved one-primary-phase and closure criteria.
+- **[Phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)** for the installer freeze, owner approvals and closure criteria.
 - **[Documentation index](docs/DOCUMENTATION_INDEX.md)** for current references and historical audits.
 - **[Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)** for chronological issue/evidence discussion.
 
 ## Verified development evidence
-All four [routine P4 CI jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241787) passed at `0a5376c`. The latest [completed hosted N12 audit](docs/SESSION_HANDOFF_CURRENT.md#17-november-2026--hosted-webview-path-audit) ran both launches and matched protected endpoint snapshots. It recorded six unexpected connections and 69 outside-scope file operations. Both acceptance checks failed, and strict trace coverage remains blocked.
+All four routine P4 jobs and the Windows FileIO integration job passed at `6e5bd7d`. The last completed N12 app audit matched protected endpoint snapshots, reported seven unexpected connections and 67 outside-scope file operations, and left both acceptance checks failed with strict coverage blocked. The later app attempt stopped at Sysmon calibration before either launch. [Routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44341573479) · [Windows FileIO CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44341573377) · [N12 evidence](docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence)
 
-The owner accepted two [native Ask ODIN Local analytics interactions](docs/SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) on the physical 8 GB laptop. The [1.50 GiB QA attempt](docs/SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred) deferred Qwen and returned verified local rules. Physical offline generation, coexistence and the proposed everyday-memory target remain unverified.
+The owner accepted two native Ask ODIN Local analytics interactions on the physical 8 GB laptop. An updated walkthrough completed with a verified HTML export and a **735.27 MiB sampled combined working-set peak** on that workload. The 1.50 GiB QA attempt deferred Qwen and returned local rules. Physical offline bundled generation and coexistence remain open. [Physical Windows evidence](docs/SESSION_HANDOFF_CURRENT.md#physical-windows-evidence)
 
 Hosted Windows passed the scoped [R04 docking retest](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) and [R05 fitted Prepare acceptance](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563). See the [P4 worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) for the tested source and evidence limits.
 

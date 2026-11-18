@@ -13,7 +13,7 @@ Measure the desktop shell, its WebView2 processes, the analytics backend and any
 | Order | Work | Evidence needed |
 | --- | --- | --- |
 | 1. Establish the baseline | Reuse a verified Windows desktop build on the owner's 8 GB class laptop with a separate QA profile and generated data. Start capture before cold launch. Measure ready idle, import, project/tab switching, Quality, Explore, Ask ODIN Local analytics, ordinary export and cooldown. Include a small fixture and a representative wider, string-heavy fixture with recorded dimensions. | Build SHA, profile, fixtures, timings, per-process and whole-app peak RAM, idle and cooldown RAM, lowest system-available RAM, commit, paging and responsiveness. Keep the raw readings and sequence for comparison. |
-| 2. Find and address the largest repeatable spike | Repeat the same sequence three times to identify the process and operation driving the peak. Check bounded previews and payloads, unnecessary retained copies, cache ownership or inactive views only where the measurements point. Change one hot path per comparison. | Same build configuration and workflow before and after, exact outcomes for the affected operation and repeatable improvement. Preserve project switch, draft, dataset version, export accuracy and privacy behaviour. |
+| 2. Find and address the largest repeatable spike | Compare existing captures first. If they leave attribution uncertain, use the smallest repeat that isolates the process and operation driving the peak. Check previews, retained copies, cache ownership or inactive views where the measurements point. Change one hot path per comparison. | Same build configuration and workload before and after, exact outcomes for the affected operation and repeatable improvement. Preserve project switch, draft, dataset version, export accuracy and privacy behaviour. |
 | 3. Check behaviour under pressure | Repeat the baseline and include a longer representative session to check for gradual growth. Inspect system-available RAM, paging and responsiveness alongside the app's measurements. Measure training and bundled inference separately and check graceful deferral while the ordinary workspace stays usable. | Physical Windows measurements for each named workload, including sustained usage and system headroom. Physical bundled generation and coexistence use their own R03 criteria. |
 
 Use [the current Windows sampler](../tools/Measure_Local_Analytics_Windows_Native.ps1) to start evaluating process attribution. Match each PilotODIN-owned PID to its creation time and relevant app/profile or launched-child identity. Report private resident memory where available, summed working-set upper bound with its shared-page duplication, and private bytes as commit. If shared pages make the target ambiguous, collect a more precise trace before awarding a pass. Capture system available RAM and paging against idle for context. Compare time to a visible result and UI responsiveness alongside the measurements so paging and stalls are visible even if resident RAM decreases.
@@ -21,6 +21,8 @@ Use [the current Windows sampler](../tools/Measure_Local_Analytics_Windows_Nativ
 The 1.50 GiB experiment still tests the headroom needed to attempt Qwen startup. Preserve its JSONL and CSV before any rerun. The existing model and inference configuration stay fixed for a like-for-like comparison when that exercise resumes. [Physical R03 procedure and evidence](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available)
 
 ### First physical everyday RAM session
+
+The instructions below document the completed baseline. Use the recorded evidence first. Plan a repeat when it would answer a specific measurement question and the applicable owner scope is approved.
 
 Use the extracted [PilotODIN-P4-R03-Headroom-QA kit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769/artifacts/14339122820) already used for the headroom comparison. From the updated PilotODIN checkout, open an interactive Windows PowerShell window and run:
 
@@ -46,7 +48,7 @@ The shell mounts the active workspace and any docked workspace. It can retain an
 
 ### Updated build retest on the 8 GB laptop
 
-Download the [PilotODIN-P4-Everyday-RAM-QA kit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44159138354/artifacts/14362668152) and extract it to `Downloads/PilotODIN-P4-Everyday-RAM-QA`. The 112 MB ZIP is available through 24 November 2026 at 21:37 SAST. Pull the active branch in the existing PilotODIN checkout. Close any open PilotODIN desktop or Live Dev sessions. Open PowerShell in the repository and run:
+The completed retest used the 112 MB [PilotODIN-P4-Everyday-RAM-QA kit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44159138354/artifacts/14362668152), originally scheduled to expire on 24 November 2026 at 21:37 SAST. The recorded procedure used the active branch, closed open PilotODIN sessions and ran the following from the repository in PowerShell:
 
 ```powershell
 & .\tools\Start_P4_Everyday_RAM_Baseline.ps1 -Build Updated -KitDirectory "$env:USERPROFILE\Downloads\PilotODIN-P4-Everyday-RAM-QA" -ArchiveExistingQaBaseline

@@ -1,26 +1,34 @@
 # PilotODIN 1.0 | P4 native Windows acceptance kit
 
+For current evidence and approvals, use the [session handoff](../../docs/SESSION_HANDOFF_CURRENT.md) and [P4 worklist](../../docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md). The current N12 work uses a [hosted fixture-only check](./N12_TRACE.md#hosted-journey-etw-gap-diagnostics). The installer freeze applies through P4–P7. The dated procedures below describe the earlier native kit and its tested scope. [Phase policy](../../docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+
 ## 11 November 2026 | P4-41 empty-directory integrity guard (source CI only)
 
 The original-data read-only comparator now rejects **added or removed empty directories** even when all files still match the historical P4-22 file-only baseline. Directory paths are compared only **in memory against the independently preserved backup** and reported as aggregate added/missing counts; no names or source paths are exported. Historical `baseline.json` v1 was not changed and did not record directories, so historic baseline-time directory layout cannot be certified. Synthetic Windows tests for this strict failure passed on **PowerShell 7 and Windows PowerShell 5.1** in [exact-source P4 CI #43093680329](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43093680329), source `817783dc`. The owner's observed **full-tree 320 vs 346 file preservation FAIL is unchanged**; 74 browser/cache items remain candidates, historical writer unknown. **No new owner command or installer is requested.** See [P4-41 focused report](../../docs/P4_41_EMPTY_DIRECTORY_PRESERVATION_FAIL_CLOSED_2026-11-11.md).
 
-## 11 November 2026 | Current P4-25 evidence (no owner command required)
+<a name="11-november-2026--current-p4-25-evidence-no-owner-command-required"></a>
+
+## 11 November 2026 | P4-25 evidence (no owner command required)
 
 The owner has executed the P4-24 read-only storage check: independent baseline backup TRUE, original EXE hash TRUE, 0 critical project-store data/ changes, 74 WebView/cache candidate differences, 0 unclassified. **Entire original-data preservation remains FAIL**, with no writer-process attribution, cache waiver, RAM/8GB certification or independent Gate C. Older acceptance notes below represent their original test dates, not current status.
 
 The optional read-only [Windows WebView2 process observer](./Observe_P4_WebView_Profile_Processes.ps1), [pure classifier](./P4_WebView_Process_Evidence.psm1) and [synthetic test](./Test_P4_WebView_Process_Evidence.ps1) passed [P4 Windows CI #43048615880](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43048615880) at c02b491. They classify CURRENT --user-data-dir launch arguments from Windows msedgewebview2.exe; private command lines and paths are not printed and no apps are launched or owner data written. **Owner native process observation has NOT occurred**. Empty process snapshots or a QA-specific launch argument cannot prove historical file-write isolation. No further owner action, installer, cleanup or baseline reset is requested now. See [P4-25 report](../../docs/P4_25_WEBVIEW_PROFILE_PROCESS_OBSERVATION_2026-11-11.md).
 
 
-## 9 November 2026 | Current evidence and P4-22 read-only collector (NO ACTION REQUIRED NOW)
+<a name="9-november-2026--current-evidence-and-p4-22-read-only-collector-no-action-required-now"></a>
+
+## 9 November 2026 | Owner evidence and P4-22 read-only collector
 
 **Actual owner-native evidence is no longer entirely UNTESTED.** The owner installed and SHA-verified a **separate** `pilotODIN-P4-Native-QA` from historical source `bca3c57b94a425cd9ef489726e721328d12c2ead`, without replacing the old `pilotODIN`; observed basic Home/Prepare, native classification, repeated-ID evidence, explicit target choice and abstention, regression and visible project-switch isolation. Those tested subcases are recorded in [P4 Issue #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9). **N8–N12, full old-data post-test hashing, 8 GB offline performance, independent business Gate C and newest source fixes are NOT owner-native verified.** The `RESULTS_TEMPLATE.md` remains an **unfilled template**, not a record of the owner's previous screenshots.
 
 A new **opt-in** [read-only Windows original-preservation and RAM evidence collector](./Measure_P4_Native_Readiness.ps1) is available for a **future separately authorised** current-source QA milestone. It was tested on disposable synthetic Windows CI files and the runner's own PowerShell process in [P4 #42699737670](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42699737670), **not run on the owner's computer**. It creates only external `baseline.json` and `verification.json`, detects changes to old EXE/data files and QA EXE hash mismatch, and labels optional RAM readings as **PARTIAL_OBSERVATION**, never as an 8 GB/offline certificate. See [P4-22 evidence and limits](../../docs/P4_22_WINDOWS_INTEGRITY_AND_RESOURCE_READINESS_2026-11-09.md). **Do not run it, build a new installer or repeat owner tests until separately approved.** P4 ACTIVE, P5 NOT AUTHORISED, P8 NOT CERTIFIED.
 
 
-## P4-16 current-source installer integrity check (new, read-only)
+<a name="p4-16-current-source-installer-integrity-check-new-read-only"></a>
 
-The original `p4-native-v1` CSV fixtures below remain applicable **only as synthetic examples**; their historical source-lineage note does not certify the new QA installation. P4-16 produced a distinct `pilotODIN-P4-Native-QA` candidate from source `bca3c57b94a425cd9ef489726e721328d12c2ead`, whose **disposable CI** provenance passed in [run #42621192759](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42621192759). Owner PC still NOT TESTED.
+## P4-16 historical installer integrity check
+
+The original `p4-native-v1` CSV fixtures below are synthetic examples. P4-16 produced a distinct `pilotODIN-P4-Native-QA` candidate from source `bca3c57b94a425cd9ef489726e721328d12c2ead`. Disposable CI verified its provenance, and the owner later ran the scoped interactions described above. [Windows workflow](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/42621192759) · [Owner evidence](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9)
 
 Before *any separately approved* owner milestone installation, obtain `source-and-windows-artifact.json` from that exact trusted GitHub workflow and the matching extracted QA NSIS file (if still available). An optional standalone, **non-executing and non-installing** integrity check is:
 

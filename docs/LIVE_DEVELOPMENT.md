@@ -2,7 +2,7 @@
 
 **Purpose:** iteratively polish PilotODIN's fonts, colours, navigation, charts, ODIN interactions, and Python analytics without waiting for a new Windows NSIS installer after every change.
 
-For the active phase and next task, see the [current handoff](./SESSION_HANDOFF_CURRENT.md). Use disposable projects for development. The owner’s intermediate installer freeze applies through P4–P7. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+For the active phase and next task, see the [current handoff](./SESSION_HANDOFF_CURRENT.md). Use disposable projects for development and reuse a prepared development environment where available. The owner’s intermediate installer freeze applies through P4–P7. [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Start (one-time setup, then one click)
 
@@ -25,7 +25,7 @@ The launcher shows elapsed startup time at five-second intervals; this is actual
 | Investigation and Ask ODIN | `frontend/src/InvestigationCanvas.tsx`, `frontend/src/AssistantWorkspace.tsx`, `frontend/src/AIWorkspace.tsx` |
 | Backend analytics and APIs | `backend/analytics.py`, `backend/main.py`, other `backend/*.py` |
 
-**Important:** the central design tokens are a starting point. Some older workspaces still have hard-coded colours and typography; consolidating those rules is part of the next UX refinement phase.
+Some older workspaces still have hard-coded colours and typography. Check the central design tokens and the affected workspace before a scoped style edit.
 
 ## Strict separation from production
 

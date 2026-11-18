@@ -6,13 +6,15 @@ Use this process for work where a failed run would cost another native session, 
 
 1. **Define the outcome and how to prove it.** Name the exact source, the environment, the existing acceptance requirement and the evidence that would close it. Decide what a partial or blocked result looks like.
 2. **Trace every handoff.** Follow inputs through setup, execution, export, validation and reporting. At each boundary ask what could be missing, malformed, late, duplicated, misattributed or written to the wrong place. Prioritise previous failures, failures that could give a false pass, and failures that would waste the run.
-3. **Test the likely failures at the cheapest realistic layer.** Exercise the happy path and inject representative failures into the same code used for acceptance. Run environment-specific checks with generated inputs where possible. Record which assumptions still need the real environment.
+3. **Prove a reachable pass at the cheapest realistic layer.** Run a known-good input through the same verdict path used for acceptance, then inject representative failures to verify the safeguards. Use generated inputs for environment-specific checks where possible. Record which assumptions still need live evidence.
 4. **Make the run diagnosable.** Give each stage a recognisable start or completion marker. Preserve enough safe information to distinguish setup failure, invalid evidence and an unmet acceptance criterion. Define the recovery for each likely blocker and follow the existing rules for raw evidence and authorisation.
 5. **Compare the result with the acceptance requirement.** Record the exact source, what passed, what remains unverified, and the next action. Turn a confirmed defect into a regression case before repeating the expensive part. Credit phase progress when the required evidence changes.
 
 ## Worked example for P4 / N12
 
-The next combined rehearsal needs one generated fixture to produce a valid summary from real ETW and bounded Sysmon evidence. A completed result must establish continuous collector evidence, identifiable fixture lifetimes, loopback TCP and UDP, and the expected file mutations. A blocked result needs either a redacted validation error or a summary with named coverage blockers. [N12 runbook](../qa/p4_native/N12_TRACE.md#reduce-combined-etw-and-sysmon-evidence)
+The next fixture-only run tests whether Sysmon can attribute both loopback messages to the initial calibration child with a four-second hold while ETW is active. It needs a nonempty ETW recording with zero reported loss and the existing process identity and lifetime checks to pass. The generated clean trace already passes both full audit reductions and the hosted CLI tests cover the passing exit status and three blocked cases. [Current handoff](./SESSION_HANDOFF_CURRENT.md#next-engineering-action) · [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+
+Before a full acceptance attempt, review the last completed audit and the fixes for its known failures. If a build is needed to isolate a finding, describe the question, its measurable outcome and the evidence the run should retain. Keep the actual acceptance verdict and award points only on the governed result.
 
 | Predicted failure | Before spending a combined Windows run | What still needs live evidence |
 | --- | --- | --- |

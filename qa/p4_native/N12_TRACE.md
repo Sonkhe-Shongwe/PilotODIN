@@ -4,7 +4,7 @@ The trace answers two questions for a specific disposable run. Which processes m
 
 ## Status and use
 
-Regular Windows P4 CI verifies generated fixtures. The hosted UDP collector rehearsal and app journey use pinned Sysmon with Windows ETW. The [integrated app journey](../../docs/SESSION_HANDOFF_CURRENT.md#17-november-2026--integrated-n12-audit-passed-both-app-lifetime-checks) verified both app handle lifetimes. Its final audit failed both acceptance checks and trace coverage was blocked. Each live workflow provisions Sysmon on a disposable runner under its own approval. The Process Monitor procedure below covers the standalone alternative.
+Regular Windows P4 CI verifies generated fixtures. Separately approved live runs use pinned Sysmon and Windows ETW on a disposable runner. The latest app attempt stopped at initial calibration on Sysmon identity mismatches. The earlier completed audit supplies the current file and network findings. Use the [current Windows audit evidence](../../docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence) for the run dispositions and the [next fixture-only check](../../docs/SESSION_HANDOFF_CURRENT.md#next-engineering-action) for the pending timing verification. The Process Monitor procedure below covers the standalone alternative.
 
 | Input or tool | Purpose |
 | --- | --- |
