@@ -25,7 +25,10 @@ $lifetimeEtw = $Operation -cin 'sysmon-tail','etw-process-export' -and
 $rehearsalRead = $Operation -ceq 'sysmon-tail' -and $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
     ($env:PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT -ceq 'I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL' -or
      $env:PILOTODIN_N12_LIFETIME_CONTROL_CONSENT -ceq 'I_APPROVE_ONE_N12_LIFETIME_CONTROL')
-if (-not $rehearsalRead -and -not $lifetimeEtw -and
+$socketLifetimeRead = $Operation -ceq 'sysmon-tail' -and $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
+    $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE -cmatch '^[0-9a-f]{40}$' -and
+    (git rev-parse HEAD) -ceq $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE
+if (-not $rehearsalRead -and -not $lifetimeEtw -and -not $socketLifetimeRead -and
     $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV') {
     throw 'N12 journey operations require an approved disposable hosted Windows run.'
 }

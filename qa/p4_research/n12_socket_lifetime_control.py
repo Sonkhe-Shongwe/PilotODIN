@@ -21,9 +21,11 @@ def compare(root: Path) -> dict:
     results = []
     for index, (name, hold_seconds) in enumerate(CASES, 1):
         phase = f"socket-control-{index}-{name}"
+        print(f"N12 socket lifetime stage {phase} channel read", flush=True)
         first = journey.sysmon_tail(timeout=15) + 1
         start = journey.now()
         time.sleep(journey.INITIAL_FIXTURE_LEAD_IN_SECONDS)
+        print(f"N12 socket lifetime stage {phase} fixture launch", flush=True)
         raw = journey.quiet(
             [sys.executable, "-B", str(journey.NATIVE / "n12_calibration.py"),
              str(root / phase), "--child-hold-seconds", str(hold_seconds)],
@@ -55,8 +57,9 @@ def main() -> int:
         root = trace.local_disposable_path(args.directory, runner_temp_only=True)
         report = compare(root)
         print("N12 socket lifetime comparison " + json.dumps(report), flush=True)
-    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError):
-        print("N12 socket lifetime comparison could not complete.", file=sys.stderr)
+    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
+        print(f"N12 socket lifetime comparison could not complete ({type(exc).__name__}).",
+              file=sys.stderr)
         return 1
     return 0
 
