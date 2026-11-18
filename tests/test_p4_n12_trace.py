@@ -832,10 +832,12 @@ def test_in_capture_name_control_trials_shared_request_paths(scenario, verdict):
 
 @pytest.mark.parametrize(("fault", "reason"), [
     (None, None),
+    ("missing-final-close", None),
     ("same-object", "distinct-file-objects-unverified"),
     ("wrong-key", "cleanup-and-write-shared-key-unverified"),
     ("early-cleanup", "first-cleanup-between-second-open-and-write-unverified"),
     ("reused-second-object", "second-object-ended-before-write-completion"),
+    ("reused-before-write", None),
     ("tied-name", None),
 ])
 def test_two_handles_distinguish_shared_key_from_write_object(fault, reason):
@@ -855,6 +857,17 @@ def test_two_handles_distinguish_shared_key_from_write_object(fault, reason):
     if fault != "same-object":
         event(13, 4 if fault == "early-cleanup" else 7, FileObject=first,
               FileKey=61 if fault == "wrong-key" else 60)
+    if fault == "reused-before-write":
+        event(13, 8, FileObject=51, FileKey=60)
+        event(14, 9, FileObject=51, FileKey=60)
+        event(12, 10, FileName=r"C:\private\reused.bin", FileObject=51, Irp=4)
+        event(24, 11, Irp=4, Status=0)
+        event(16, 12, FileObject=51, FileKey=61, Irp=3, IOSize=97, ByteOffset=0)
+        event(24, 13, Irp=3, Status=0)
+        assert file_lifetime_report(control, events, {}) == {
+            "status": "BLOCKED", "reason": "write-missing-or-ambiguous",
+        }
+        return
     event(16, 8, FileObject=51, FileKey=60, Irp=3, IOSize=97, ByteOffset=0)
     if fault == "tied-name":
         event(10, 8, FileName=path, FileKey=60)
@@ -862,9 +875,14 @@ def test_two_handles_distinguish_shared_key_from_write_object(fault, reason):
         event(12, 9, FileName=r"C:\private\reused.bin", FileObject=51, Irp=4)
     event(24, 10, Irp=3, Status=0)
     event(13, 11, FileObject=51, FileKey=60)
+    if fault != "missing-final-close":
+        event(14, 12, FileObject=51, FileKey=60)
 
     report = file_lifetime_report(control, events, {})
-    assert report["status"] == "BLOCKED"  # Final Close is deliberately absent.
+    if fault is None:
+        assert report["status"] == "PASS" and report["reason"] is None
+    elif fault == "missing-final-close":
+        assert report["status"] == "BLOCKED" and report["reason"] == "cleanup-close-order-unverified"
     if reason:
         assert report["overlap"] == {"status": "BLOCKED", "reason": reason}
     else:
@@ -874,9 +892,10 @@ def test_two_handles_distinguish_shared_key_from_write_object(fault, reason):
             "name_transition_tied_with_write": fault == "tied-name",
             "first_invalidation_is_first_cleanup": fault != "tied-name",
         }
-    if fault in {None, "tied-name", "reused-second-object"}:
-        expected = {None: None, "tied-name": "ambiguous-event-order",
-                    "reused-second-object": "file-object-lifetime-changed"}[fault]
+    path_blockers = {"tied-name": "ambiguous-event-order",
+                     "reused-second-object": "file-object-lifetime-changed"}
+    if fault in {None, "missing-final-close", *path_blockers}:
+        expected = path_blockers.get(fault)
         assert report["write_object_path"] == {
             "status": "BLOCKED" if expected else "PASS", "reason": expected,
         }

@@ -4,7 +4,7 @@
 
 ## Next engineering action
 
-The current investigation is limited to the 141 WebView network-process writes left by the strict comparison. The follow-up covers the 127 writes across four smaller FileKey and FileObject pairs on generated evidence. The 14 cleanup-invalidated writes need a separate known-file control that can distinguish a surviving handle from key or object reuse. The hosted job retained only redacted summaries. [Remaining WebView writes](#18-november-2026--remaining-webview-write-paths)
+The current investigation is limited to the 141 WebView network-process writes left by the strict comparison. For the 14 cleanup-invalidated writes, use the completed two-handle control as the basis for a diagnostic that checks for an independently matched open on each write's FileObject. The original audit retained aggregate counts, so the presence of those opens in the actual WebView trace is unverified. [Two-handle control](#18-november-2026--two-handle-cleanup-control) · [Remaining WebView writes](#18-november-2026--remaining-webview-write-paths)
 
 ## Windows audit evidence
 
@@ -14,6 +14,12 @@ The current investigation is limited to the 141 WebView network-process writes l
 | Previous app results | At `02f807b`, Sysmon identity mismatches blocked both launches. At `022df1c`, an earlier completed audit reported 67 outside-scope operations, seven unexpected connections and 200,077 unresolved WebView network-process writes. [Blocked attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44337564606/job/134918293248) · [Earlier completed audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44298639798/job/134782187614) |
 | Fixture-only coverage | With the four-second hold at `5d4b8da`, Sysmon attributed both TCP and UDP to the fixture child on its first read. ETW wrote 276 buffers with zero event or buffer loss and produced a nonempty trace. Launch `8a3d05c` consumed the one-use approval. [Retained-child pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Earlier immediate-exit pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44335300490/job/134910240433) |
 | WebView write comparison | On the live, digest-matched trace, the strict comparison attributed 199,268 paths to permitted scope, leaving 141 unresolved. Filesystem, network and coverage verdicts stayed at **FAIL**, **FAIL** and **BLOCKED**. The ordinary result governs acceptance. [Live comparison](#18-november-2026--live-webview-write-path-comparison-completed) |
+
+### 18 November 2026 | Two-handle cleanup control
+
+The current routine Windows integration at `3407325b1519544dbbb671651b76ad71a1b92794` reran the existing known-file control. In both focused captures, a successful second open preceded the first handle's Cleanup. The Cleanup shared a FileKey with the surviving handle's write and was the first event that invalidated its matching name candidate. The completed open and write on the surviving FileObject independently established the expected path (`overlap` and `write_object_path` **PASS**). Final Cleanup was observed after write completion, while final Close was absent, so the full teardown verdict was **BLOCKED**. [Windows control logs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44362875085/job/135008702856) · [Original 14 November control](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/07dbaa749fea9bf90bf4debf534246f875132395/docs/SESSION_HANDOFF_CURRENT.md#14-november-2026--n12-overlapping-handles-reproduce-name-invalidation)
+
+The generated regression now includes a complete positive sequence with final Close, the observed missing-Close case, and reuse of the old FileObject by a different file before the write. The actual 14 WebView writes remain unresolved. Their aggregate report cannot establish a successful matching open, write completion and continuous lifetime for each object. The evidence needed is a redacted count of those checks and their blockers for the affected app writes. [Fixture tests](../tests/test_p4_n12_trace.py) · [File-object evidence](../qa/p4_native/N12_TRACE.md#successful-writes-with-unresolved-paths)
 
 ### 18 November 2026 | Remaining WebView write paths
 
