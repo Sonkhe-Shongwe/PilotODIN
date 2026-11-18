@@ -2,6 +2,14 @@
 
 **18 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 18 November 2026 | ETW boundary control reproduced the final Sysmon blocker
+
+The [collector-only Windows comparison](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44261584485/job/134655957708) used source `f580f9650f49be52248aff296c699fe307b8c76a` and Sysmon 15.22. Each trial started the full audit's ETW providers, generated process and file activity, froze the final marker window, stopped ETW and read Sysmon under the existing strict identity checks. Three immediate trials each reported 15 generated file writers. Three retained trials each reported 48. All six reported zero ETW events and buffers lost.
+
+The immediate condition passed **2/3**. Its blocked trial reproduced the full audit symptom. The expected TCP and UDP sender ports appeared with the fixture child PID, another process GUID and timestamps after child exit. The independent reread returned the same verdict. The four-second hold after sending and closing the sockets passed **3/3**, each on the first read. The local journey and reducer regressions passed **332 tests and 10 subtests**.
+
+The full audit now applies the four-second hold to its final calibration child. The initial fixture and strict timestamp, GUID and lifetime checks retain their original behaviour. The focused result supports testing this change in the full hosted journey. P4 is **14/20 (70%)** at this checkpoint.
+
 ## 18 November 2026 | Hosted Sysmon socket lifetime control passed all six cases
 
 The [collector-only Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44259756914/job/134649953625) used Sysmon 15.22 and source `ef29e5af119c9e306a9dd02dc61cfc5a400140e0`. The first setup attempt stopped before any cases because the channel-position helper lacked authority for the new collector-only mode. The correction grants that source-pinned mode access to the read-only channel-position operation. The app and ETW operations keep their existing checks. [First attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44259529756/job/134649208925)
@@ -680,7 +688,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-The isolated child-lifetime comparison passed in both modes. For the next diagnostic, use hosted Windows and reproduce the original final-calibration sequence under generated process and file activity, including concurrent ETW collection and the original capture-stop boundary. Compare channel scope and socket identity categories under both timing variants. Keep the timestamp and process-identity checks in force. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
+The ETW boundary comparison reproduced the final Sysmon mismatch in an immediate-exit trial. The full hosted audit now uses the four-second hold in the final calibration fixture. Compare its final fixture verdict and strict audit coverage against the preceding full audit. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
 
 Start with the [N12 filesystem and network audit worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). Use the generated checks and the most recent completed Windows audit to narrow the unresolved evidence. The physical offline Qwen baseline is paused at ordinary laptop headroom. [Resource decision](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#ordinary-laptop-memory-and-offline-inference)
 

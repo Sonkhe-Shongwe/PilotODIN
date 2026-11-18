@@ -484,9 +484,14 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
 
     monkeypatch.setattr(journey.time, "sleep", sleep)
 
-    def calibrate(directory, m):
+    def calibrate(directory, m, *, child_hold_seconds=0):
         if directory == calibrations[0]:
             assert events[-1] == "initial-fixture-lead-in"
+            assert child_hold_seconds == 0
+        else:
+            assert directory == calibrations[1]
+            assert events[-1] == "final-fixture-lead-in"
+            assert child_hold_seconds == 4
         events.append(directory.name)
         record = {"role": "calibration", "pid": len(events), "port": 20000 + len(events)}
         m["processes"].append(record)

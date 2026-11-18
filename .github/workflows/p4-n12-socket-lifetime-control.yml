@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   calibration:
+    if: ${{ false }} # One-use ETW boundary control completed in run 44261584485.
     runs-on: windows-2022
     timeout-minutes: 10
     env:

@@ -34,6 +34,7 @@ HTTP = build_opener(ProxyHandler({}))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
 DRIVER_TEMP_DIR = "driver-temp"
 INITIAL_FIXTURE_LEAD_IN_SECONDS = 0.05
+FINAL_FIXTURE_CHILD_HOLD_SECONDS = 4
 FIXTURE_ADDRESS = IPv4Address("127.0.0.1")
 FIXTURE_SYSMON_RETRYABLE = {
     "channel-window-empty", "parent-birth-missing", "child-birth-missing",
@@ -179,8 +180,11 @@ def wait_for(check, seconds, message, process=None):
     raise trace.EvidenceValidationError(message)
 
 
-def calibrate(directory, manifest):
-    data = quiet([sys.executable, "-B", str(NATIVE / "n12_calibration.py"), str(directory)])
+def calibrate(directory, manifest, *, child_hold_seconds=0):
+    command = [sys.executable, "-B", str(NATIVE / "n12_calibration.py"), str(directory)]
+    if child_hold_seconds:
+        command.extend(("--child-hold-seconds", str(child_hold_seconds)))
+    data = quiet(command)
     record = json.loads(data)
     manifest["processes"].append(record)
     manifest["loopback_ports"].append(record["port"])
@@ -652,7 +656,11 @@ def capture(root, staged, source, expected_hash, node):
         with checkpoint_stage("final-fixture", source, expected_hash):
             final_start = now()
             time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
-            final_record = calibrate(calibration[1], manifest)
+            # Sysmon can associate a late socket event with the wrong GUID
+            # if the short-lived final child exits before attribution.
+            final_record = calibrate(
+                calibration[1], manifest, child_hold_seconds=FINAL_FIXTURE_CHILD_HOLD_SECONDS,
+            )
             final_end = now()
             manifest["end_utc"] = final_end.isoformat()
     except BaseException:
