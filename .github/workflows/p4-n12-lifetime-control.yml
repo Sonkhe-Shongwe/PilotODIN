@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   calibration:
+    if: ${{ false }} # One-use hosted driver exit control consumed by run 44276525696.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
