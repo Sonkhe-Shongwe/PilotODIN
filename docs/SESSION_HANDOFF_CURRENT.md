@@ -2,6 +2,10 @@
 
 **18 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 18 November 2026 | Dominant WebView write diagnostic prepared
+
+The hosted journey now ranks the two busiest eligible WebView2 file pairs across the capture and reports how many completions were supported, blocked or unchecked for each. Generated tests exercised the hosted diagnostic at 199,162 completions, a dominant pair outside the initial sample, three evidence limits, and the same strict verdict with the diagnostic enabled. The full generated test file ran in about four seconds on Linux. [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics) · [Generated tests](../tests/test_p4_n12_webview_replay.py)
+
 ## 18 November 2026 | Generated WebView replay checked 199162 completions
 
 The replay used the two dominant pair sizes from the latest hosted report, 121,122 and 78,040. Each generated write had a prior permitted path and an individually checked completion, including sequential reuse of the same IRP address. All **199,162** path candidates were supported in this stable fixture. The reducer now searches only the request-to-completion interval for IRP evidence and skips repeated same-key writes in its path and lifetime history. The generated tests ran in about four seconds locally. [Replay cases](../tests/test_p4_n12_webview_replay.py)

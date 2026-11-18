@@ -611,12 +611,12 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "journey_lifetime_evidence", lifetime_report)
 
     def reduce(m, sysmon_observed, file_trace, before, after, *, etw, record_outside_writer,
-               journey_bookends, describe_path_gaps, observe_lifetimes):
+               journey_bookends, describe_path_gaps, observe_lifetimes, webview_dominant_writes):
         events.append("reducer")
         assert sysmon_observed is observed
         assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
         assert before != after
-        assert describe_path_gaps
+        assert describe_path_gaps and webview_dominant_writes
         assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
                                     "after": [{"pid": 702, "birth_ticks": 170}]}
         observe_lifetimes([], {}, (0, 1), frozenset(observed.issues))

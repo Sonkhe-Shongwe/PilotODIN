@@ -22,6 +22,10 @@ FSCTL_SET_COMPRESSION = 0x0009C040  # Changes a file/directory compression state
 IRP_PAGING_IO = 0x00000002
 WEBVIEW_SAMPLE_PAIRS = 64
 WEBVIEW_SAMPLE_WRITES_PER_PAIR = 16
+WEBVIEW_DOMINANT_PAIR_LIMIT = 4096
+WEBVIEW_DOMINANT_WRITE_LIMIT = 250_000
+WEBVIEW_DOMINANT_HISTORY_LIMIT = 64
+WEBVIEW_DOMINANT_ROLE = "webview-network:write"
 
 WRITE_CONTEXT_IMAGES = {
     "logman.exe", "msbuild.exe", "msmpeng.exe", "powershell.exe", "pwsh.exe",
@@ -68,13 +72,76 @@ def name_transition_key(kind, data):
     return key if type(key) is int and key > 0 else None
 
 
+class DominantWebViewWrites:
+    """Rank eligible file pairs and retain bounded evidence for the top two."""
+
+    def __init__(self):
+        self.counts = Counter()
+        self.requests = defaultdict(list)
+        self.retained = 0
+        self.pair_limit_reached = False
+
+    def observe(self, pair, request, completed, issue):
+        if self.pair_limit_reached:
+            return
+        if pair not in self.counts and len(self.counts) >= WEBVIEW_DOMINANT_PAIR_LIMIT:
+            self.pair_limit_reached = True
+            self.counts.clear()
+            self.requests.clear()
+            return
+        self.counts[pair] += 1
+        if self.retained < WEBVIEW_DOMINANT_WRITE_LIMIT:
+            self.requests[pair].append((request, completed, issue))
+            self.retained += 1
+
+    def report(self, eligible, events, resolve_path, tracked, classify_path):
+        if self.pair_limit_reached:
+            return {"status": "pair-limit-reached", "eligible": eligible, "pairs": [],
+                    "eligible_outside_selected_pairs": None}
+
+        gaps, evidence = [], []
+        outcomes_by_request = {}
+        for pair, total in self.counts.most_common(2):
+            outcomes = Counter()
+            requests = self.requests.get(pair, ())
+            evidence.append((total, len(requests), outcomes))
+            for request, completed, issue in requests:
+                if issue:
+                    outcomes[f"{WEBVIEW_DOMINANT_ROLE}:completion-check:{issue}"] += 1
+                else:
+                    gaps.append(("webview-network", "write", request, completed))
+                    outcomes_by_request[id(request)] = outcomes
+
+        def count_outcome(request, label):
+            outcomes_by_request[id(request)][label] += 1
+
+        summarize_calibration_path_gaps(
+            events, gaps, resolve_path, tracked, {}, set(), None, classify_path=classify_path,
+            record_request_outcome=count_outcome, max_request_path_history=WEBVIEW_DOMINANT_HISTORY_LIMIT,
+        )
+        pairs = []
+        for total, retained, outcomes in evidence:
+            history_limited = outcomes.pop(f"{WEBVIEW_DOMINANT_ROLE}:request-time:path-history-limit", 0)
+            unchecked_by_reason = {reason: count for reason, count in (
+                ("retention-limit", total - retained), ("path-history-limit", history_limited),
+            ) if count}
+            checked = sum(outcomes.values())
+            supported = sum(count for label, count in outcomes.items() if ":request-time:candidate-" in label)
+            pairs.append({"eligible": total, "checked": checked, "supported": supported,
+                          "blocked": checked - supported, "unchecked": total - checked,
+                          "unchecked_by_reason": unchecked_by_reason, "outcomes": dict(outcomes)})
+        return {"status": "partial" if any(pair["unchecked"] for pair in pairs) else "complete",
+                "eligible": eligible, "pairs": pairs,
+                "eligible_outside_selected_pairs": eligible - sum(pair["eligible"] for pair in pairs)}
+
+
 def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
                        strict=False, details=None, process_bookends=None, thread_bookends=None,
                        rundown=None, rundown_guard_events=None, rundown_recovered_keys=None,
                        rundown_invalidations=None, initial_process_births=None,
                        preopened_control_file_keys=None, preopened_control_file_objects=None,
                        rundown_window=None, record_path_gap=None, record_write_name_gap=None,
-                       webview_write_candidates=None, classify_webview_path=None,
+                       webview_write_candidates=None, classify_webview_path=None, webview_dominant_writes=False,
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None,
                        rundown_verification_start=None, rundown_credit=None):
@@ -91,6 +158,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     webview_pairs = {}
     webview_requests = {}
     webview_gaps_seen = 0
+    dominant_writes = DominantWebViewWrites() if webview_dominant_writes else None
     calibration_rundown = diagnostic_rundown_stop is not None
     path_gap_context = {}
     opens_with_process_lifetime = set()
@@ -391,6 +459,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             key = number(request["data"].get("FileKey"))
                             obj = number(request["data"].get("FileObject"))
                             pair = (key, obj)
+                            if dominant_writes is not None:
+                                issue = completion_identity_issue(request, event, handle, actor)
+                                dominant_writes.observe(pair, request, ticks, issue)
                             if pair in webview_pairs or len(webview_pairs) < WEBVIEW_SAMPLE_PAIRS:
                                 evidence = webview_pairs.get(pair)
                                 if evidence is None:
@@ -398,7 +469,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                                 evidence["eligible"] += 1
                                 if evidence["eligible"] <= WEBVIEW_SAMPLE_WRITES_PER_PAIR:
                                     webview_requests[id(request)] = (evidence, evidence["eligible"] == 1)
-                                    issue = completion_identity_issue(request, event, handle, actor)
+                                    if dominant_writes is None:
+                                        issue = completion_identity_issue(request, event, handle, actor)
                                     if issue:
                                         record_webview_outcome(request, f"{actor}:{operation}:completion-check:{issue}")
                                     else:
@@ -691,6 +763,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             outcomes=dict(webview_gap_outcomes), pairs=pairs,
             eligible_outside_sample=webview_gaps_seen - sum(pair["eligible"] for pair in pairs),
         )
+        if dominant_writes is not None:
+            webview_write_candidates["dominant"] = dominant_writes.report(
+                webview_gaps_seen, ordered_events, resolve_path, tracked, classify_webview_path,
+            )
     if calibration_diagnostics is not None:
         credited_paths = Counter()
         remaining_paths = Counter() if rundown_credit is not None else None
@@ -1328,7 +1404,7 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                                     rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None,
                                     rundown_verification_start=None, completion_checks=None,
                                     rundown_object_keys=None, credit_path=None, remaining_paths=None,
-                                    record_request_outcome=None):
+                                    record_request_outcome=None, max_request_path_history=None):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
@@ -1367,9 +1443,13 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
         data = request["data"]
         key = number(data.get("FileKey"))
         object_id, irp = number(data.get("FileObject")), number(data.get("Irp"))
-        outcome = request_time_file_key_evidence(
-            request, completed, by_object[object_id], by_key[key], by_irp[irp], resolve_path, scope,
-        )
+        object_history, key_history = by_object[object_id], by_key[key]
+        if max_request_path_history is not None and len(object_history) + len(key_history) > max_request_path_history:
+            outcome = "path-history-limit"
+        else:
+            outcome = request_time_file_key_evidence(
+                request, completed, object_history, key_history, by_irp[irp], resolve_path, scope,
+            )
         if outcome == "write-completion-unverified":
             outcome = "request-completion-unverified"
         label = f"{actor}:{operation}:request-time:{outcome}"

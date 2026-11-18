@@ -791,7 +791,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       background_bookends=None,
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
                       calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None,
-                      webview_write_candidates=None, rundown_credit=None):
+                      webview_write_candidates=None, webview_dominant_writes=False, rundown_credit=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -942,6 +942,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             record_path_gap=count_path_gap if path_gap_counts is not None else None,
             record_write_name_gap=count_write_name_gap if write_name_gap_counts is not None else None,
             webview_write_candidates=webview_write_candidates, classify_webview_path=classify_webview_path,
+            webview_dominant_writes=webview_dominant_writes,
             calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
             diagnostic_rundown_stop=diagnostic_rundown_stop,
             rundown_verification_start=rundown_verification_start,
@@ -1041,10 +1042,12 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
 
 def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=False, rundown=None,
                            record_outside_scope=None, journey_bookends=None, describe_path_gaps=False,
-                           record_outside_writer=None, observe_lifetimes=None):
+                           record_outside_writer=None, observe_lifetimes=None, webview_dominant_writes=False):
     require(observe_lifetimes is None or etw, "app lifetime evidence requires ETW")
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
     require(journey_bookends is None or etw, "process bookends require ETW audit")
+    require(not webview_dominant_writes or etw and describe_path_gaps,
+            "dominant WebView write evidence requires ETW path gap diagnostics")
     issues = observed.issues.copy()
     protected, permitted = scope(manifest)
     etw_diagnostics = {}
@@ -1063,6 +1066,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
             bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None,
             write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None,
             webview_write_candidates=webview_write_candidates if describe_path_gaps else None,
+            webview_dominant_writes=webview_dominant_writes,
             disputed_exits=disputed_exits, observe_lifetimes=observe_lifetimes)
         path_diagnostics = []
     else:

@@ -787,7 +787,8 @@ def capture(root, staged, source, expected_hash, node):
     with checkpoint_stage("combined-reduction", source, expected_hash):
         result = trace.complete_journey_audit(manifest, observed, events, before, after, etw=True,
                                               record_outside_writer=paths.record, journey_bookends=bookends,
-                                              describe_path_gaps=True, observe_lifetimes=observe_lifetimes)
+                                              describe_path_gaps=True, observe_lifetimes=observe_lifetimes,
+                                              webview_dominant_writes=True)
     result["journey_diagnostics"] = {
         "app_lifetimes": app_lifetimes,
         "driver_lifetimes": driver_lifetimes,
