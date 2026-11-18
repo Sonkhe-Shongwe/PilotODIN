@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from collections import Counter
 from itertools import count
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -24,14 +25,15 @@ def event(ticks, kind, **data):
     return {"ticks": ticks, "id": kind, "pid": 7, "lifecycle": kind in {1, 3}, "data": data}
 
 
-def dominant_pair_events(pair_sizes=((100, 121_122), (200, 78_040)), *, repeat_path_evidence=False):
+def dominant_pair_events(pair_sizes, *, repeat_path_evidence=False, unnamed_key=None):
     ticks = count(1)
     yield event(next(ticks), 1, ProcessID=7)
     yield event(next(ticks), 3, ProcessID=7, ThreadID=71)
     for key, writes in pair_sizes:
-        yield event(next(ticks), 10, FileKey=key, FileName=PERMITTED_PATH)
+        if key != unnamed_key:
+            yield event(next(ticks), 10, FileKey=key, FileName=PERMITTED_PATH)
         for index in range(writes):
-            if repeat_path_evidence and index % 64 == 0:
+            if key != unnamed_key and repeat_path_evidence and index % 64 == 0:
                 yield event(next(ticks), 10, FileKey=key, FileName=PERMITTED_PATH)
                 yield event(next(ticks), 15, FileKey=key, FileObject=key + 1)
             # The same IRP is reusable once its previous write has completed.
@@ -40,29 +42,41 @@ def dominant_pair_events(pair_sizes=((100, 121_122), (200, 78_040)), *, repeat_p
 
 
 class WebViewWriteReplayTests(unittest.TestCase):
-    def reduce_pairs(self, rows):
+    def reduce_pairs(self, rows, credit=None):
         report = {}
         unresolved = reduce_io.correlate_requests(
             rows, lambda path: path or None,
             lambda *_: (ROLE, "generated-process"), lambda path: path == PROTECTED_PATH,
             lambda *_: self.fail("The diagnostic changed the strict file findings"),
             strict=True, webview_write_candidates=report, webview_dominant_writes=True,
+            credit_webview_path=credit,
             classify_webview_path=lambda path: "candidate-permitted" if path == PERMITTED_PATH
             else "candidate-outside-scope",
         )
         return report, unresolved
 
     def test_dominant_pairs_check_every_generated_completion(self):
-        checked_writes = 199_162
-        report, unresolved = self.reduce_pairs(dominant_pair_events(repeat_path_evidence=True))
-        self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": checked_writes})
+        credited = Counter()
+
+        def credit(identity, path, requested, completed):
+            self.assertEqual((identity, path), ("generated-process", PERMITTED_PATH))
+            self.assertLess(requested, completed)
+            credited[path] += 1
+            return True
+
+        pair_sizes = [(100, 121_256), (200, 78_686), (300, 121), (400, 14)]
+        report, unresolved = self.reduce_pairs(
+            dominant_pair_events(pair_sizes, repeat_path_evidence=True, unnamed_key=400), credit,
+        )
+        self.assertEqual(credited, {PERMITTED_PATH: 199_942})
+        self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": 135})
         self.assertEqual((report["eligible"], report["sampled"], report["eligible_outside_sample"]),
-                         (checked_writes, 2, 0))
-        self.assertEqual([pair["checked"] for pair in report["pairs"]], [16, 16])
+                         (200_063, 3, 0))
+        self.assertEqual([pair["checked"] for pair in report["pairs"]], [16, 16, 16])
         dominant = report["dominant"]
         self.assertEqual(dominant["status"], "complete")
-        self.assertEqual(dominant["eligible_outside_selected_pairs"], 0)
-        for pair, writes in zip(dominant["pairs"], (121_122, 78_040), strict=True):
+        self.assertEqual(dominant["eligible_outside_selected_pairs"], 121)
+        for pair, writes in zip(dominant["pairs"], (121_256, 78_686), strict=True):
             self.assertEqual(pair, {
                 "eligible": writes, "checked": writes, "supported": writes,
                 "blocked": 0, "unchecked": 0, "unchecked_by_reason": {},
@@ -111,6 +125,9 @@ class WebViewWriteReplayTests(unittest.TestCase):
             emit(15, FileKey=100, FileObject=101)
         write(100, 101, 500)
         complete(500)
+        rows.append(event(rows[-1]["ticks"] + 1, 3, ProcessID=7, ThreadID=71))
+        write(100, 101, 505)  # Issuer birth ties the write timestamp.
+        complete(505)
         write(100, 101, 500)
         write(99, 101, 501)  # Same object, conflicting key, with no known name of its own.
         complete(501)
@@ -127,6 +144,14 @@ class WebViewWriteReplayTests(unittest.TestCase):
         emit(27, FileObject=101, Irp=504, FilePath=PROTECTED_PATH)
         complete(504)
         complete(500)
+        emit(10, FileKey=400, FileName=PROTECTED_PATH)
+        write(400, 401, 406)
+        complete(406)
+        write(400, 401, 407)
+        emit(24, Irp=407, Status=0, FileObject=999)
+        write(400, 401, 408)
+        emit(24, Irp=408, Status=0xC0000022)
+        write(400, 401, 409)  # No completion observed.
 
         for key, path in ((200, PROTECTED_PATH), (300, OUTSIDE_PATH)):
             emit(12, FileObject=key + 1, Irp=key, FileName=path)
@@ -141,8 +166,22 @@ class WebViewWriteReplayTests(unittest.TestCase):
             "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
             "counters": {"events_lost": 0, "log_buffers_lost": 0,
                          "realtime_buffers_lost": 0, "buffers_written": 1},
-        }}
+        }, "source_sha": "1" * 40, "executable_sha256": "2" * 64,
+            "protected_roots": {"original": PROTECTED},
+            "observed_roots": {"fixture": r"c:\qa\source.csv"}, "immutable_observed": ["fixture"],
+            "permitted_writes": {ROLE: [PROFILE]}}
         processes = {"webview": trace.Process("webview", "app", 7, "msedgewebview2.exe", None, start, "")}
+        snapshot = {kind: {label: {"root_id": hashlib.sha256(value.encode()).hexdigest(),
+                                   "state": "file", "digest": "3" * 64}
+                           for label, value in manifest[f"{kind}_roots"].items()}
+                    for kind in ("protected", "observed")}
+        unexpected = {"role": ROLE, "kind": "unexpected-loopback", "protocol": "tcp"}
+        observed = trace.JourneySysmon(
+            start=start, end=end, markers={}, processes=processes, roles={"webview": ROLE},
+            bindings=[], issues=set(), connections=[],
+            network_counts=Counter({f"{ROLE}:tcp:unexpected-loopback": 1}),
+            unexpected_connections=[unexpected],
+        )
         report, replay_issues, baseline_issues = {}, set(), set()
         with TemporaryDirectory() as folder:
             path = Path(folder) / "generated-etw.jsonl"
@@ -151,24 +190,57 @@ class WebViewWriteReplayTests(unittest.TestCase):
             baseline = trace.inspect_etw_files(*args, baseline_issues)
             replay = trace.inspect_etw_files(*args, replay_issues, webview_write_candidates=report,
                                              webview_dominant_writes=True)
+            journey = trace.complete_journey_audit(
+                manifest, observed, path, snapshot, snapshot, etw=True, describe_path_gaps=True,
+                webview_dominant_writes=True, credit_verified_webview_writes=True,
+            )
+            manifest["etw"]["counters"]["log_buffers_lost"] = 1
+            loss = trace.complete_journey_audit(
+                manifest, observed, path, snapshot, snapshot, etw=True, describe_path_gaps=True,
+                webview_dominant_writes=True, credit_verified_webview_writes=True,
+            )
 
         self.assertEqual(replay, baseline)
         self.assertEqual(replay_issues, baseline_issues)
         self.assertEqual(replay_issues, {"etw-mutation-coverage-unresolved"})
         self.assertEqual(replay[1][f"protected:{ROLE}:write"], 1)
         self.assertEqual(replay[1][f"outside-scope:{ROLE}:write"], 2)
-        self.assertEqual(replay[3][f"{ROLE}:write:path-missing"], 6)
-        self.assertEqual(report["pairs"], [{
-            "eligible": 5, "checked": 5, "supported": 2, "blocked": 3, "unchecked": 0,
+        self.assertEqual(replay[3], {
+            f"{ROLE}:write:path-missing": 9, f"{ROLE}:write:completion-missing": 1,
+            f"{ROLE}:rename:path-missing": 1,
+        })
+        self.assertEqual(report["pairs"][0], {
+            "eligible": 6, "checked": 6, "supported": 3, "blocked": 3, "unchecked": 0,
             "outcomes": {
-                f"{ROLE}:write:request-time:candidate-permitted": 1,
+                f"{ROLE}:write:request-time:candidate-permitted": 2,
                 f"{ROLE}:write:request-time:conflicting-object-file-key": 1,
                 f"{ROLE}:write:request-time:candidate-outside-scope": 1,
                 f"{ROLE}:write:request-time:request-completion-unverified": 1,
                 f"{ROLE}:write:request-time:possible-name-change": 1,
             },
-        }])
-        self.assertEqual(report["dominant"]["pairs"], [report["pairs"][0] | {"unchecked_by_reason": {}}])
+        })
+        self.assertEqual(report["dominant"]["pairs"], [p | {"unchecked_by_reason": {}} for p in report["pairs"]])
+        self.assertEqual(journey["etw_webview_write_path_candidates"], report)
+        self.assertEqual(journey["etw_webview_write_credit"], {
+            "status": "compared", "credited_paths": {"permitted": 1, "outside-scope": 1, "protected": 1},
+            "remaining_path_gaps": 6,
+        })
+        self.assertEqual(journey["etw_unresolved_mutations"], {
+            f"{ROLE}:write:path-missing": 6, f"{ROLE}:write:completion-missing": 1,
+            f"{ROLE}:rename:path-missing": 1,
+        })
+        self.assertEqual(journey["file_violations"][f"protected:{ROLE}:write"], 2)
+        self.assertEqual(journey["file_violations"][f"outside-scope:{ROLE}:write"], 4)
+        self.assertEqual(journey["file_events"][f"{ROLE}:write"], 5)
+        self.assertEqual(journey["unexpected_connections"], [unexpected])
+        self.assertEqual((journey["filesystem"], journey["network"], journey["coverage"]), ("FAIL", "FAIL", "BLOCKED"))
+        self.assertEqual(loss["etw_webview_write_credit"], {
+            "status": "blocked-etw-loss", "credited_paths": {}, "remaining_path_gaps": 9,
+        })
+        self.assertIn("etw-event-or-buffer-loss", loss["coverage_issues"])
+        self.assertEqual(loss["etw_unresolved_mutations"], replay[3])
+        self.assertEqual(loss["file_violations"], replay[1])
+        self.assertNotIn("private-", json.dumps(journey["etw_webview_write_credit"]))
 
     def test_indexed_history_preserves_tied_events_and_lifetime_boundaries(self):
         anchor = event(10, 10, FileKey=100, FileName=PERMITTED_PATH)
@@ -202,4 +274,5 @@ class WebViewWriteReplayTests(unittest.TestCase):
                 )
                 history = reduce_io.RequestPathHistory(100, 101, object_events, key_events, resolve_path)
                 self.assertEqual(old, expected)
-                self.assertEqual(history.check(write, 50, irp_events, classify_path), old)
+                issue, path = history.resolve(write, 50, irp_events)
+                self.assertEqual(issue or classify_path(path), old)

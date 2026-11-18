@@ -791,12 +791,15 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       background_bookends=None,
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
                       calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None,
-                      webview_write_candidates=None, webview_dominant_writes=False, rundown_credit=None):
+                      webview_write_candidates=None, webview_dominant_writes=False,
+                      webview_write_credit=None, rundown_credit=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
         from n12_etw_correlate import canonical_file_path, correlate_requests, number
 
+    require(webview_write_credit is None or webview_dominant_writes and webview_write_candidates is not None,
+            "WebView write credit requires the dominant path evidence")
     with evidence_stage("ETW capture metadata"):
         capture_bounds, devices = etw_capture_contract(manifest, start, end, issues)
         diagnostic_rundown_stop = None
@@ -850,6 +853,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
     initial_process_births = dict(process_bookend_births or {})
     initial_process_births.update(synthetic_process_births or {})
     counts, violations, file_events = Counter(), Counter(), set()
+    credited_webview_paths = Counter()
+    compare_webview_writes = webview_write_credit is not None and "etw-event-or-buffer-loss" not in issues
 
     def count_path_gap(role, event_id, operation, file_key, lifetime, thread):
         path_gap_counts[f"{role}:event-{event_id}:{operation}:{file_key}:{lifetime}:{thread}"] += 1
@@ -898,6 +903,14 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         if role == "calibration" and start_ticks <= requested <= completed <= end_ticks:
             file_events.add((identity, operation, *targets))
 
+    def credit_webview_path(identity, path, requested, completed):
+        if not start_ticks <= requested < completed <= end_ticks:
+            return False
+        record("webview-network", identity, "write", path, None, requested, completed, True)
+        scope_label = classify_webview_path(path).removeprefix("candidate-")
+        credited_webview_paths[scope_label] += 1
+        return True
+
     with evidence_stage("ETW event stream"):
         event_records = list(etw_events(path, capture_bounds, manifest["etw"]["events_sha256"]))
         if observe_lifetimes is not None:
@@ -943,6 +956,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             record_write_name_gap=count_write_name_gap if write_name_gap_counts is not None else None,
             webview_write_candidates=webview_write_candidates, classify_webview_path=classify_webview_path,
             webview_dominant_writes=webview_dominant_writes,
+            credit_webview_path=credit_webview_path if compare_webview_writes else None,
             calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
             diagnostic_rundown_stop=diagnostic_rundown_stop,
             rundown_verification_start=rundown_verification_start,
@@ -950,6 +964,12 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")
+    if webview_write_credit is not None:
+        webview_write_credit.update(
+            status="compared" if compare_webview_writes else "blocked-etw-loss",
+            credited_paths=dict(credited_webview_paths),
+            remaining_path_gaps=unresolved.get("webview-network:write:path-missing", 0),
+        )
     return counts, violations, file_events, dict(unresolved)
 
 
@@ -1042,12 +1062,15 @@ def audit(manifest, sysmon, procmon, before, after, *, private_endpoints=None, e
 
 def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=False, rundown=None,
                            record_outside_scope=None, journey_bookends=None, describe_path_gaps=False,
-                           record_outside_writer=None, observe_lifetimes=None, webview_dominant_writes=False):
+                           record_outside_writer=None, observe_lifetimes=None, webview_dominant_writes=False,
+                           credit_verified_webview_writes=False):
     require(observe_lifetimes is None or etw, "app lifetime evidence requires ETW")
     require(rundown is None or etw, "FileIO rundown requires ETW audit")
     require(journey_bookends is None or etw, "process bookends require ETW audit")
     require(not webview_dominant_writes or etw and describe_path_gaps,
             "dominant WebView write evidence requires ETW path gap diagnostics")
+    require(not credit_verified_webview_writes or webview_dominant_writes,
+            "WebView write credit requires the dominant path evidence")
     issues = observed.issues.copy()
     protected, permitted = scope(manifest)
     etw_diagnostics = {}
@@ -1056,6 +1079,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
     path_gap_counts = Counter()
     write_name_gap_counts = Counter()
     webview_write_candidates = {}
+    webview_write_credit = {} if credit_verified_webview_writes else None
     if etw:
         immutable = [windows_path(manifest["observed_roots"][label])
                      for label in manifest["immutable_observed"]]
@@ -1067,6 +1091,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
             write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None,
             webview_write_candidates=webview_write_candidates if describe_path_gaps else None,
             webview_dominant_writes=webview_dominant_writes,
+            webview_write_credit=webview_write_credit,
             disputed_exits=disputed_exits, observe_lifetimes=observe_lifetimes)
         path_diagnostics = []
     else:
@@ -1109,6 +1134,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
         **({"etw_path_gap_context": dict(path_gap_counts),
              "etw_write_name_gap_context": dict(write_name_gap_counts),
              "etw_webview_write_path_candidates": webview_write_candidates} if etw and describe_path_gaps else {}),
+        **({"etw_webview_write_credit": webview_write_credit} if webview_write_credit is not None else {}),
         **snapshot_report,
         "historical_port_443_disposition": "UNATTRIBUTED",
     }

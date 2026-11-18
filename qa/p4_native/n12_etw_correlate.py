@@ -80,7 +80,7 @@ class DominantWebViewWrites:
         self.retained = 0
         self.pair_limit_reached = False
 
-    def observe(self, pair, request, completed, issue):
+    def observe(self, pair, request, completed, issue, credit_identity):
         if self.pair_limit_reached:
             return
         if pair not in self.counts and len(self.counts) >= WEBVIEW_DOMINANT_PAIR_LIMIT:
@@ -90,33 +90,39 @@ class DominantWebViewWrites:
             return
         self.counts[pair] += 1
         if self.retained < WEBVIEW_DOMINANT_WRITE_LIMIT:
-            self.requests[pair].append((request, completed, issue))
+            self.requests[pair].append((request, completed, issue, credit_identity))
             self.retained += 1
 
-    def report(self, eligible, events, resolve_path, tracked, classify_path):
+    def report(self, eligible, events, resolve_path, tracked, classify_path, credit_path=None):
         if self.pair_limit_reached:
             return {"status": "pair-limit-reached", "eligible": eligible, "pairs": [],
                     "eligible_outside_selected_pairs": None}
 
         gaps, evidence = [], []
-        outcomes_by_request = {}
+        evidence_by_request = {}
         for pair, total in self.counts.most_common(2):
             outcomes = Counter()
             requests = self.requests.get(pair, ())
             evidence.append((total, len(requests), outcomes))
-            for request, completed, issue in requests:
+            for request, completed, issue, credit_identity in requests:
                 if issue:
                     outcomes[f"{WEBVIEW_DOMINANT_ROLE}:completion-check:{issue}"] += 1
                 else:
                     gaps.append(("webview-network", "write", request, completed))
-                    outcomes_by_request[id(request)] = outcomes
+                    evidence_by_request[id(request)] = outcomes, credit_identity
 
         def count_outcome(request, label):
-            outcomes_by_request[id(request)][label] += 1
+            evidence_by_request[id(request)][0][label] += 1
+
+        def credit_verified_path(request, completed, path):
+            identity = evidence_by_request[id(request)][1]
+            if identity is not None:
+                credit_path(identity, path, request["ticks"], completed)
 
         summarize_calibration_path_gaps(
             events, gaps, resolve_path, tracked, {}, set(), None, classify_path=classify_path,
             record_request_outcome=count_outcome, index_request_paths=True,
+            record_indexed_path=credit_verified_path if credit_path is not None else None,
         )
         pairs = []
         for total, retained, outcomes in evidence:
@@ -138,6 +144,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        preopened_control_file_keys=None, preopened_control_file_objects=None,
                        rundown_window=None, record_path_gap=None, record_write_name_gap=None,
                        webview_write_candidates=None, classify_webview_path=None, webview_dominant_writes=False,
+                       credit_webview_path=None,
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None,
                        rundown_verification_start=None, rundown_credit=None):
@@ -313,6 +320,19 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             return "completion-file-identity-conflict"
         return None
 
+    def webview_credit_identity(request, completed, handle, actor, identity):
+        if identity is None:
+            return None
+        data = request["data"]
+        tid = number(data.get("IssuingThreadId", data.get("ThreadId")))
+        pid, birth, obj = handle
+        irp = number(data.get("Irp"))
+        if (type(obj) is not int or obj <= 0 or type(irp) is not int or irp <= 0
+                or (tid, request["ticks"]) in thread_transition_ticks
+                or classify_process(pid, birth, completed) != (actor, identity)):
+            return None
+        return identity
+
     def record_webview_outcome(request, label):
         pair, first = webview_requests[id(request)]
         pair["outcomes"][label] += 1
@@ -457,7 +477,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             pair = (key, obj)
                             if dominant_writes is not None:
                                 issue = completion_identity_issue(request, event, handle, actor)
-                                dominant_writes.observe(pair, request, ticks, issue)
+                                credit_identity = (webview_credit_identity(request, ticks, handle, actor, identity)
+                                                   if credit_webview_path is not None and not issue else None)
+                                dominant_writes.observe(pair, request, ticks, issue, credit_identity)
                             if pair in webview_pairs or len(webview_pairs) < WEBVIEW_SAMPLE_PAIRS:
                                 evidence = webview_pairs.get(pair)
                                 if evidence is None:
@@ -760,8 +782,16 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             eligible_outside_sample=webview_gaps_seen - sum(pair["eligible"] for pair in pairs),
         )
         if dominant_writes is not None:
+            def credit_dominant_path(identity, path, requested, completed):
+                if credit_webview_path(identity, path, requested, completed):
+                    reason = "webview-network:write:path-missing"
+                    unresolved[reason] -= 1
+                    if unresolved[reason] == 0:
+                        del unresolved[reason]
+
             webview_write_candidates["dominant"] = dominant_writes.report(
                 webview_gaps_seen, ordered_events, resolve_path, tracked, classify_webview_path,
+                credit_dominant_path if credit_webview_path is not None else None,
             )
     if calibration_diagnostics is not None:
         credited_paths = Counter()
@@ -1441,42 +1471,42 @@ class RequestPathHistory:
             self.name_ticks.append(tick)
             self.names.append((anchor, path, conflict, tied_reset))
 
-    def check(self, write, completed, irp_events, classify_path):
+    def resolve(self, write, completed, irp_events):
         if not verified_write_completion(irp_events, write, completed):
-            return "write-completion-unverified"
+            return "write-completion-unverified", None
         requested = write["ticks"]
         prior = bisect_left(self.name_ticks, requested)
         if prior < len(self.name_ticks) and self.name_ticks[prior] == requested:
-            return "ambiguous-event-order"
+            return "ambiguous-event-order", None
         if not prior:
-            return "no-prior-name-in-lifetime"
+            return "no-prior-name-in-lifetime", None
         anchor, path, conflict, tied_reset = self.names[prior - 1]
         if tied_reset:
-            return "ambiguous-event-order"
+            return "ambiguous-event-order", None
         if anchor is None:
-            return "no-prior-name-in-lifetime"
+            return "no-prior-name-in-lifetime", None
         if conflict:
-            return "conflicting-or-unmapped-name"
+            return "conflicting-or-unmapped-name", None
 
         first_conflict = bisect_left(self.conflict_ticks, anchor)
         if first_conflict < len(self.conflict_ticks) and self.conflict_ticks[first_conflict] <= completed:
-            return "conflicting-object-file-key"
+            return "conflicting-object-file-key", None
         first_transition = bisect_left(self.transition_ticks, anchor)
         if first_transition < len(self.transition_ticks) and self.transition_ticks[first_transition] <= completed:
             if self.transition_ticks[first_transition] in {anchor, requested, completed}:
-                return "ambiguous-event-order"
-            return self.transitions[first_transition]
+                return "ambiguous-event-order", None
+            return self.transitions[first_transition], None
         end = bisect_right(self.name_ticks, completed)
         if self.names[end - 1][2]:
-            return "conflicting-or-unmapped-name"
-        return classify_path(path)
+            return "conflicting-or-unmapped-name", None
+        return None, path
 
 
 def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                                     rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None,
                                     rundown_verification_start=None, completion_checks=None,
                                     rundown_object_keys=None, credit_path=None, remaining_paths=None,
-                                    record_request_outcome=None, index_request_paths=False):
+                                    record_request_outcome=None, index_request_paths=False, record_indexed_path=None):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
@@ -1520,7 +1550,10 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
             pair = (key, object_id)
             if pair not in path_histories:
                 path_histories[pair] = RequestPathHistory(key, object_id, object_history, key_history, resolve_path)
-            outcome = path_histories[pair].check(request, completed, by_irp[irp], scope)
+            issue, path = path_histories[pair].resolve(request, completed, by_irp[irp])
+            outcome = issue or scope(path)
+            if issue is None and record_indexed_path is not None:
+                record_indexed_path(request, completed, path)
         else:
             outcome = request_time_file_key_evidence(
                 request, completed, object_history, key_history, by_irp[irp], resolve_path, scope,
