@@ -35,6 +35,37 @@ def test_linux_cli_refuses_before_collecting(tmp_path):
     assert not list(tmp_path.iterdir())
 
 
+@pytest.mark.parametrize(("filesystem", "network", "comparison", "exit_code"), [
+    ("PASS_SCOPED", "PASS_SCOPED", "completed", 0),
+    ("FAIL", "PASS_SCOPED", "completed", 2),
+    ("PASS_SCOPED", "BLOCKED", "completed", 2),
+    ("PASS_SCOPED", "PASS_SCOPED", "blocked", 2),
+])
+def test_hosted_journey_exit_checks_ordinary_results_and_comparison_completion(
+    tmp_path, monkeypatch, capsys, filesystem, network, comparison, exit_code,
+):
+    staged = tmp_path / "build"
+    report = {"filesystem": filesystem, "network": network, "webview_credit_comparison": {"status": comparison}}
+    monkeypatch.setattr(sys, "argv", ["n12_app_journey", "--source", SOURCE, "--expected-exe-sha256", EXE_SHA])
+    monkeypatch.setattr(os, "environ", {"PILOTODIN_N12_APP_JOURNEY_CONSENT": journey.CAPTURE_CONSENT})
+    monkeypatch.setattr(journey.build, "stage_root", lambda _: staged)
+    monkeypatch.setattr(journey.build, "verify", lambda *_: None)
+    monkeypatch.setattr(journey, "listening", lambda _: False)
+    monkeypatch.setattr(journey.shutil, "which", lambda _: "node.exe")
+    monkeypatch.setattr(journey, "sysmon_tail", lambda: 1)
+    monkeypatch.setattr(journey.trace, "local_disposable_path", lambda path, **_: path)
+
+    def capture(root, build_root, source, executable, node):
+        assert (root, build_root, source, executable, node) == (
+            tmp_path / "build-journey", staged, SOURCE, EXE_SHA, "node.exe",
+        )
+        return report
+
+    monkeypatch.setattr(journey, "capture", capture)
+    assert journey.main() == exit_code
+    assert json.loads(capsys.readouterr().out.splitlines()[-1]) == report
+
+
 def test_calibration_existing_fixture_reports_fixed_stage_without_path(tmp_path):
     with pytest.raises(n12_calibration.CalibrationFailure, match=r"^N12 calibration failed at fixture-directory\.$"):
         n12_calibration.calibrate(tmp_path)

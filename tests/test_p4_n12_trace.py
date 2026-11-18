@@ -2010,6 +2010,24 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
             "eligible": 0, "sampled": 0, "outcomes": {}, "pairs": [], "eligible_outside_sample": 0,
         },
     }
+    observed = trace.inspect_journey_sysmon(evidence.manifest, sysmon, etw=True)
+    ordinary = trace.complete_journey_audit(
+        evidence.manifest, observed, etw_path, evidence.before, evidence.after, etw=True,
+        describe_path_gaps=True, webview_dominant_writes=True,
+    )
+    comparison = trace.complete_journey_audit(
+        evidence.manifest, observed, etw_path, evidence.before, evidence.after, etw=True,
+        describe_path_gaps=True, webview_dominant_writes=True, credit_verified_webview_writes=True,
+    )
+    assert ordinary["coverage"] == "CALIBRATED"
+    assert ordinary["filesystem"] == ordinary["network"] == "PASS_SCOPED"
+    assert ordinary["etw_unresolved_mutations"] == {}
+    assert comparison == {
+        **ordinary, "etw_webview_write_credit": {
+            "status": "compared", "credited_paths": {}, "remaining_path_gaps": 0,
+        },
+    }
+
     cli_inputs = []
     for name, value in (("manifest", evidence.manifest), ("before", evidence.before),
                         ("after", evidence.after)):
