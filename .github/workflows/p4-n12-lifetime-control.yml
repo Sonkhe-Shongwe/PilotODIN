@@ -12,7 +12,6 @@ permissions:
 
 jobs:
   calibration:
-    if: ${{ false }} # One-use hosted driver exit control prepared.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
