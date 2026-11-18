@@ -24,7 +24,6 @@ WEBVIEW_SAMPLE_PAIRS = 64
 WEBVIEW_SAMPLE_WRITES_PER_PAIR = 16
 WEBVIEW_DOMINANT_PAIR_LIMIT = 4096
 WEBVIEW_DOMINANT_WRITE_LIMIT = 250_000
-WEBVIEW_DOMINANT_HISTORY_LIMIT = 64
 WEBVIEW_DOMINANT_ROLE = "webview-network:write"
 
 WRITE_CONTEXT_IMAGES = {
@@ -117,14 +116,11 @@ class DominantWebViewWrites:
 
         summarize_calibration_path_gaps(
             events, gaps, resolve_path, tracked, {}, set(), None, classify_path=classify_path,
-            record_request_outcome=count_outcome, max_request_path_history=WEBVIEW_DOMINANT_HISTORY_LIMIT,
+            record_request_outcome=count_outcome, index_request_paths=True,
         )
         pairs = []
         for total, retained, outcomes in evidence:
-            history_limited = outcomes.pop(f"{WEBVIEW_DOMINANT_ROLE}:request-time:path-history-limit", 0)
-            unchecked_by_reason = {reason: count for reason, count in (
-                ("retention-limit", total - retained), ("path-history-limit", history_limited),
-            ) if count}
+            unchecked_by_reason = {"retention-limit": total - retained} if retained < total else {}
             checked = sum(outcomes.values())
             supported = sum(count for label, count in outcomes.items() if ":request-time:candidate-" in label)
             pairs.append({"eligible": total, "checked": checked, "supported": supported,
@@ -1304,29 +1300,40 @@ def write_object_path_conflict(events, anchor, anchor_completed, write, write_co
         if ticks < anchor["ticks"] or not (same_object or same_key):
             continue
 
-        lifecycle_boundary = kind == 12 and same_object
-        lifecycle_boundary |= kind in {13, 14} and (same_object or not file_object)
-        name_mutation = kind in {11, 18, 19, 26, 27, 28, 29}
-        if kind == 17:
-            info_class = number(data.get("InfoClass"))
-            name_mutation = info_class not in {19, 20}
-            # FileBasicInformation sets timestamps and attributes. This trial
-            # accepts only an ordered, successful operation before the write.
-            if (info_class == FILE_BASIC_INFORMATION and basic_info_completion is not None
-                    and anchor_completed < ticks < write["ticks"]
-                    and basic_info_completion(event) is not None):
-                name_mutation = False
-        name_mutation |= kind == 23 and number(data.get("InfoClass")) not in {
-            FSCTL_GET_REPARSE_POINT, FSCTL_GET_OBJECT_ID, FSCTL_READ_USN_JOURNAL, FSCTL_SET_COMPRESSION,
-        }
-        if lifecycle_boundary or name_mutation:
+        reason = path_transition_reason(kind, data, same_object, file_object)
+        # FileBasicInformation sets timestamps and attributes. The control
+        # accepts only an ordered, successful operation before the write.
+        if (kind == 17 and number(data.get("InfoClass")) == FILE_BASIC_INFORMATION
+                and basic_info_completion is not None and anchor_completed < ticks < write["ticks"]
+                and basic_info_completion(event) is not None):
+            reason = None
+        if reason:
             if ticks in {anchor["ticks"], anchor_completed, write["ticks"], write_completed}:
                 return "ambiguous-event-order", event
-            reason = "file-object-lifetime-changed" if lifecycle_boundary else "possible-name-change"
             return reason, event
     if names - {expected}:
         return "conflicting-or-unmapped-name", None
     return None, None
+
+
+def path_transition_reason(kind, data, same_object, file_object):
+    if kind == 12 and same_object or kind in {13, 14} and (same_object or not file_object):
+        return "file-object-lifetime-changed"
+    if (kind in {11, 18, 19, 26, 27, 28, 29}
+            or kind == 17 and number(data.get("InfoClass")) not in {19, 20}
+            or kind == 23 and number(data.get("InfoClass")) not in {
+                FSCTL_GET_REPARSE_POINT, FSCTL_GET_OBJECT_ID, FSCTL_READ_USN_JOURNAL, FSCTL_SET_COMPRESSION,
+            }):
+        return "possible-name-change"
+    return None
+
+
+def verified_write_completion(irp_events, write, completed):
+    # Keep every event at either boundary, where a tie can invalidate the completion.
+    get_ticks = itemgetter("ticks")
+    first = bisect_left(irp_events, write["ticks"], key=get_ticks)
+    last = bisect_right(irp_events, completed, lo=first, key=get_ticks)
+    return successful_completion(irp_events[first:last], write, completed + 1) == completed
 
 
 def name_change_event_label(event):
@@ -1348,12 +1355,7 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
     key = number(data.get("FileKey"))
     if type(key) is not int or key <= 0:
         return "missing-file-key"
-    # An IRP address can be reused for many sequential writes. Keep every
-    # event at either boundary, where a tie can invalidate the completion.
-    get_ticks = itemgetter("ticks")
-    first = bisect_left(irp_events, ticks, key=get_ticks)
-    last = bisect_right(irp_events, completed, lo=first, key=get_ticks)
-    if successful_completion(irp_events[first:last], write, completed + 1) != completed:
+    if not verified_write_completion(irp_events, write, completed):
         return "write-completion-unverified"
 
     if first_observation is not None:
@@ -1400,11 +1402,81 @@ def request_time_file_key_evidence(write, completed, object_events, key_events, 
     return reason or classify_path(path)
 
 
+class RequestPathHistory:
+    """Index the path boundaries once for a file pair with many writes."""
+
+    def __init__(self, key, obj, object_events, key_events, resolve_path):
+        self.name_ticks, self.names = [], []
+        self.conflict_ticks = [event["ticks"] for event in object_events
+                               if number(event["data"].get("FileKey")) not in {None, 0, key}]
+        self.transition_ticks, self.transitions = [], []
+        related = {id(event): event for event in (*object_events, *key_events)}
+        for event in sorted(related.values(), key=itemgetter("ticks")):
+            kind, data = event["id"], event["data"]
+            file_object = number(data.get("FileObject"))
+            reason = path_transition_reason(kind, data, file_object == obj, file_object)
+            if reason:
+                self.transition_ticks.append(event["ticks"])
+                self.transitions.append(reason)
+
+        anchor = path = last_name = last_delete = None
+        conflict = tied_reset = False
+        for event in key_events:
+            kind, tick = event["id"], event["ticks"]
+            if kind == 10:
+                tied_reset |= tick == last_delete
+                observed = resolve_path(event["data"].get("FileName") or "")
+                if anchor is None:
+                    anchor, path = tick, observed
+                conflict |= observed is None or observed != path
+                last_name = tick
+            elif kind == 11:
+                if tick != last_delete:
+                    tied_reset = anchor is not None and last_name == tick
+                last_delete = tick
+                anchor = path = None
+                conflict = False
+            else:
+                continue
+            self.name_ticks.append(tick)
+            self.names.append((anchor, path, conflict, tied_reset))
+
+    def check(self, write, completed, irp_events, classify_path):
+        if not verified_write_completion(irp_events, write, completed):
+            return "write-completion-unverified"
+        requested = write["ticks"]
+        prior = bisect_left(self.name_ticks, requested)
+        if prior < len(self.name_ticks) and self.name_ticks[prior] == requested:
+            return "ambiguous-event-order"
+        if not prior:
+            return "no-prior-name-in-lifetime"
+        anchor, path, conflict, tied_reset = self.names[prior - 1]
+        if tied_reset:
+            return "ambiguous-event-order"
+        if anchor is None:
+            return "no-prior-name-in-lifetime"
+        if conflict:
+            return "conflicting-or-unmapped-name"
+
+        first_conflict = bisect_left(self.conflict_ticks, anchor)
+        if first_conflict < len(self.conflict_ticks) and self.conflict_ticks[first_conflict] <= completed:
+            return "conflicting-object-file-key"
+        first_transition = bisect_left(self.transition_ticks, anchor)
+        if first_transition < len(self.transition_ticks) and self.transition_ticks[first_transition] <= completed:
+            if self.transition_ticks[first_transition] in {anchor, requested, completed}:
+                return "ambiguous-event-order"
+            return self.transitions[first_transition]
+        end = bisect_right(self.name_ticks, completed)
+        if self.names[end - 1][2]:
+            return "conflicting-or-unmapped-name"
+        return classify_path(path)
+
+
 def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
                                     rundown_names, rundown_unsafe_keys, rundown_stop, *, classify_path=None,
                                     rundown_verification_start=None, completion_checks=None,
                                     rundown_object_keys=None, credit_path=None, remaining_paths=None,
-                                    record_request_outcome=None, max_request_path_history=None):
+                                    record_request_outcome=None, index_request_paths=False):
     if not gaps:
         return {}
     by_object, by_key, by_irp = (defaultdict(list) for _ in range(3))
@@ -1438,14 +1510,17 @@ def summarize_calibration_path_gaps(events, gaps, resolve_path, tracked,
             return classify_path(path)
         return "candidate-protected" if tracked(path) else "candidate-outside-protected"
 
-    counts = Counter()
+    counts, path_histories = Counter(), {}
     for actor, operation, request, completed in gaps:
         data = request["data"]
         key = number(data.get("FileKey"))
         object_id, irp = number(data.get("FileObject")), number(data.get("Irp"))
         object_history, key_history = by_object[object_id], by_key[key]
-        if max_request_path_history is not None and len(object_history) + len(key_history) > max_request_path_history:
-            outcome = "path-history-limit"
+        if index_request_paths and type(key) is int and key > 0:
+            pair = (key, object_id)
+            if pair not in path_histories:
+                path_histories[pair] = RequestPathHistory(key, object_id, object_history, key_history, resolve_path)
+            outcome = path_histories[pair].check(request, completed, by_irp[irp], scope)
         else:
             outcome = request_time_file_key_evidence(
                 request, completed, object_history, key_history, by_irp[irp], resolve_path, scope,

@@ -24,13 +24,16 @@ def event(ticks, kind, **data):
     return {"ticks": ticks, "id": kind, "pid": 7, "lifecycle": kind in {1, 3}, "data": data}
 
 
-def dominant_pair_events(pair_sizes=((100, 121_122), (200, 78_040))):
+def dominant_pair_events(pair_sizes=((100, 121_122), (200, 78_040)), *, repeat_path_evidence=False):
     ticks = count(1)
     yield event(next(ticks), 1, ProcessID=7)
     yield event(next(ticks), 3, ProcessID=7, ThreadID=71)
     for key, writes in pair_sizes:
         yield event(next(ticks), 10, FileKey=key, FileName=PERMITTED_PATH)
-        for _ in range(writes):
+        for index in range(writes):
+            if repeat_path_evidence and index % 64 == 0:
+                yield event(next(ticks), 10, FileKey=key, FileName=PERMITTED_PATH)
+                yield event(next(ticks), 15, FileKey=key, FileObject=key + 1)
             # The same IRP is reusable once its previous write has completed.
             yield event(next(ticks), 16, FileKey=key, FileObject=key + 1, Irp=500, IssuingThreadId=71)
             yield event(next(ticks), 24, Irp=500, Status=0, FileKey=key, FileObject=key + 1)
@@ -51,7 +54,7 @@ class WebViewWriteReplayTests(unittest.TestCase):
 
     def test_dominant_pairs_check_every_generated_completion(self):
         checked_writes = 199_162
-        report, unresolved = self.reduce_pairs(dominant_pair_events())
+        report, unresolved = self.reduce_pairs(dominant_pair_events(repeat_path_evidence=True))
         self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": checked_writes})
         self.assertEqual((report["eligible"], report["sampled"], report["eligible_outside_sample"]),
                          (checked_writes, 2, 0))
@@ -103,6 +106,9 @@ class WebViewWriteReplayTests(unittest.TestCase):
         emit(1, ProcessID=7)
         emit(3, ProcessID=7, ThreadID=71)
         emit(10, FileKey=100, FileName=PERMITTED_PATH)
+        for _ in range(100):
+            emit(10, FileKey=100, FileName=PERMITTED_PATH)
+            emit(15, FileKey=100, FileObject=101)
         write(100, 101, 500)
         complete(500)
         write(100, 101, 500)
@@ -145,9 +151,6 @@ class WebViewWriteReplayTests(unittest.TestCase):
             baseline = trace.inspect_etw_files(*args, baseline_issues)
             replay = trace.inspect_etw_files(*args, replay_issues, webview_write_candidates=report,
                                              webview_dominant_writes=True)
-            limited = {}
-            with patch.object(reduce_io, "WEBVIEW_DOMINANT_HISTORY_LIMIT", 1):
-                trace.inspect_etw_files(*args, set(), webview_write_candidates=limited, webview_dominant_writes=True)
 
         self.assertEqual(replay, baseline)
         self.assertEqual(replay_issues, baseline_issues)
@@ -166,5 +169,37 @@ class WebViewWriteReplayTests(unittest.TestCase):
             },
         }])
         self.assertEqual(report["dominant"]["pairs"], [report["pairs"][0] | {"unchecked_by_reason": {}}])
-        self.assertEqual(limited["dominant"]["status"], "partial")
-        self.assertEqual(limited["dominant"]["pairs"][0]["unchecked_by_reason"], {"path-history-limit": 5})
+
+    def test_indexed_history_preserves_tied_events_and_lifetime_boundaries(self):
+        anchor = event(10, 10, FileKey=100, FileName=PERMITTED_PATH)
+        write = event(30, 16, FileKey=100, FileObject=101, Irp=500)
+        completion = event(50, 24, Irp=500, Status=0)
+        cases = (
+            ([event(20, 10, FileKey=100, FileName=PERMITTED_PATH)], "candidate-permitted"),
+            ([event(30, 10, FileKey=100, FileName=PERMITTED_PATH)], "ambiguous-event-order"),
+            ([event(40, 10, FileKey=100, FileName=OUTSIDE_PATH)], "conflicting-or-unmapped-name"),
+            ([event(40, 11, FileKey=100), event(40, 10, FileKey=100, FileName=OUTSIDE_PATH)],
+             "possible-name-change"),
+            ([event(40, 14, FileKey=100, FileObject=101)], "file-object-lifetime-changed"),
+            ([event(50, 14, FileKey=100, FileObject=101)], "ambiguous-event-order"),
+            ([event(20, 11, FileKey=100), event(20, 10, FileKey=100, FileName=OUTSIDE_PATH)],
+             "ambiguous-event-order"),
+        )
+        for changes, expected in cases:
+            with self.subTest(expected=expected, changes=changes):
+                key_events = [anchor, *changes]
+                object_events = [row for row in changes if row["data"].get("FileObject") == 101]
+                irp_events = [write, completion]
+
+                def resolve_path(path):
+                    return path or None
+
+                def classify_path(path):
+                    return "candidate-permitted" if path == PERMITTED_PATH else "candidate-outside-scope"
+
+                old = reduce_io.request_time_file_key_evidence(
+                    write, 50, object_events, key_events, irp_events, resolve_path, classify_path,
+                )
+                history = reduce_io.RequestPathHistory(100, 101, object_events, key_events, resolve_path)
+                self.assertEqual(old, expected)
+                self.assertEqual(history.check(write, 50, irp_events, classify_path), old)

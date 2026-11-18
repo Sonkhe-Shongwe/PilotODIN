@@ -61,6 +61,8 @@ The [16 November completed reducer](https://github.com/Sonkhe-Shongwe/PilotODIN/
 
 The [generated high-volume replay](./SESSION_HANDOFF_CURRENT.md#18-november-2026--generated-webview-replay-checked-199162-completions) checked all 199,162 writes individually for two stable file identities. The mixed replay preserved strict findings and blocked changed or ambiguous evidence. A bounded diagnostic for the dominant observed pairs is the next preparation before seeking a capture. The generated replay carries zero acceptance points and leaves the historical write paths open.
 
+The [dominant-write capture](./SESSION_HANDOFF_CURRENT.md#18-november-2026--hosted-dominant-write-result-and-indexed-fix) ranked two live pairs covering 198,803 writes, and their history length prevented all expanded checks. It confirmed the earlier 16-write samples on both pairs. The correction indexes paths and transitions and passed long-history generated replay. The capture recorded 68 outside-scope operations and seven unexpected connections, and both acceptance gates remain open.
+
 **17 November operating decision.** Use the [last collector capture](#n12-collector-only-strict-comparison) as a baseline for selecting tests. Its timing failures and existing name candidates need different controls. Start on the existing request-time evidence because it recurs in the full app audit. The 191 timing cases need a known-file clock check before another strict comparison can measure them.
 
 | Remaining path reason in the collector capture | Operations | Next test and decision |
