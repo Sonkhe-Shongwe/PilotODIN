@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from ipaddress import IPv6Address, ip_address
 import json
+import ntpath
 from urllib.parse import urlsplit
 
 from qa.p4_native.n12_trace import inside, local_disposable_path, utc_ticks, utc_time, windows_path
@@ -29,6 +30,11 @@ WRITER_CATEGORIES = {
     "pythonw.exe": "python",
     "msedgewebview2.exe": "webview2",
 }
+FILE_TYPES = {
+    ".db": "database", ".sqlite": "database", ".sqlite3": "database",
+    ".csv": "data", ".parquet": "data", ".json": "metadata",
+    ".log": "log", ".pyc": "python-bytecode", ".tmp": "temporary",
+}
 
 
 class OutsidePaths:
@@ -37,13 +43,20 @@ class OutsidePaths:
         self.roots = [(label, windows_path(str(path))) for label, path in roots]
         self.counts = Counter()
         self.writers = Counter()
+        self.backend_targets = defaultdict(Counter)
 
     def record(self, role, operation, paths, image=None):
-        labels = tuple(sorted({next((label for label, root in self.roots if inside(path, root)), "other-path")
-                               for path in paths}))
+        targets = {path: next((label for label, root in self.roots if inside(path, root)), "other-path")
+                   for path in paths}
+        labels = tuple(sorted(set(targets.values())))
         self.counts[role, operation, labels] += 1
         category = WRITER_CATEGORIES.get(image, "other-executable" if image else "unavailable")
         self.writers[role, operation, labels, category] += 1
+        if role == "backend":
+            for path, label in targets.items():
+                extension = ntpath.splitext(path)[1]
+                file_type = FILE_TYPES.get(extension, "other-extension" if extension else "no-extension")
+                self.backend_targets[operation, label, file_type][path] += 1
 
     def summary(self):
         return [{"role": role, "operation": op, "path_categories": list(labels), "count": count}
@@ -53,6 +66,12 @@ class OutsidePaths:
         return [{"role": role, "operation": op, "path_categories": list(labels),
                  "writer": writer, "count": count}
                 for (role, op, labels, writer), count in sorted(self.writers.items())]
+
+    def backend_target_summary(self):
+        return [{"operation": operation, "path_category": label, "file_type": file_type,
+                 "distinct_targets": len(targets), "target_events": sum(targets.values()),
+                 "most_events_for_one_target": max(targets.values())}
+                for (operation, label, file_type), targets in sorted(self.backend_targets.items())]
 
 
 def address(value):

@@ -545,6 +545,7 @@ def prepare_journey(root, source, expected_hash):
 
 def diagnostic_paths(root, staged, manifest):
     roots = [
+        ("backend-stdout-log", root / "backend.log"),
         ("qa-home", manifest["observed_roots"]["qa-home"]),
         ("qa-webview-profile", manifest["observed_roots"]["qa-webview"]),
         ("qa-local-profile", manifest["observed_roots"]["qa-local"]),
@@ -555,10 +556,13 @@ def diagnostic_paths(root, staged, manifest):
         ("source-checkout", build.REPO),
         ("staged-build", staged),
         ("capture-workspace", root),
+        ("python-installation", Path(sys.base_prefix)),
     ]
     roots.extend((label, os.environ[key]) for label, key in (
         ("runner-temp", "RUNNER_TEMP"), ("user-temp", "TEMP"), ("user-local", "LOCALAPPDATA"),
-        ("user-roaming", "APPDATA"), ("windows-system", "SystemRoot"),
+        ("user-roaming", "APPDATA"), ("runner-tool-cache", "RUNNER_TOOL_CACHE"),
+        ("shared-application-data", "ProgramData"), ("user-profile", "USERPROFILE"),
+        ("windows-system", "SystemRoot"),
     ) if os.environ.get(key))
     return OutsidePaths(roots)
 
@@ -756,6 +760,7 @@ def capture(root, staged, source, expected_hash, node):
         "app_lifetimes": app_lifetimes,
         "outside_scope_paths": paths.summary(),
         "outside_scope_writers": paths.writer_summary(),
+        "backend_outside_scope_targets": paths.backend_target_summary(),
         "final_sysmon_calibration": final_calibration,
         "process_bookends": {"before": "available" if first_processes is not None else "unavailable",
                             "after": "available" if last_processes is not None else "unavailable"},

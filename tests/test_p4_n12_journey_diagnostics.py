@@ -116,6 +116,28 @@ class JourneyDiagnosticsTests(unittest.TestCase):
         self.assertEqual(sum(writers.values()), paths.summary()[0]["count"])
         self.assertNotIn("private", json.dumps(paths.writer_summary()))
 
+    def test_backend_target_summary_identifies_repeated_targets_without_name_disclosure(self):
+        paths = diagnostics.OutsidePaths([
+            ("backend-stdout-log", r"C:\owner\capture\backend.log"),
+            ("capture-workspace", r"C:\owner\capture"),
+        ])
+        log = r"c:\owner\capture\backend.log"
+        first = r"d:\private\first.custom"
+        second = r"d:\private\second.custom"
+        for path in (log, log, first, first, second):
+            paths.record("backend", "write", (path,), "python.exe")
+        paths.record("driver", "write", (log,), "node.exe")
+
+        rows = paths.backend_target_summary()
+        self.assertEqual(rows, [
+            {"operation": "write", "path_category": "backend-stdout-log", "file_type": "log",
+             "distinct_targets": 1, "target_events": 2, "most_events_for_one_target": 2},
+            {"operation": "write", "path_category": "other-path", "file_type": "other-extension",
+             "distinct_targets": 2, "target_events": 3, "most_events_for_one_target": 2},
+        ])
+        for private_value in ("owner", "private", ".custom", "backend.log"):
+            self.assertNotIn(private_value, json.dumps(rows))
+
     def test_exact_launch_socket_and_explicit_request_chain_without_sensitive_values(self):
         events = [
             event("URL_REQUEST_START_JOB", 115, REQUEST, {
