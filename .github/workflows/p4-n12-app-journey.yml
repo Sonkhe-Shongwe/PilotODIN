@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   journey:
+    if: ${{ false }} # One-use hosted audit consumed by run 44287328848.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
