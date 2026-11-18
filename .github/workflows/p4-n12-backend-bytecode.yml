@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   backend-bytecode:
+    if: ${{ false }} # One-use hosted control consumed by run 44268706863.
     runs-on: windows-2022
     timeout-minutes: 10
     env:
