@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_APP_JOURNEY_PREBUILD_APPROVAL.txt
+      - qa/p4_research/N12_APP_JOURNEY_LIVE_PATH_COMPARISON_APPROVAL.txt
 
 permissions:
   contents: read
@@ -16,7 +16,6 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # One-use hosted audit consumed by run 44337564606.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
@@ -33,7 +32,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          $marker = 'qa/p4_research/N12_APP_JOURNEY_PREBUILD_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_APP_JOURNEY_LIVE_PATH_COMPARISON_APPROVAL.txt'
           $workflow = '.github/workflows/p4-n12-app-journey.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
