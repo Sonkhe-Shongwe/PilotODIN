@@ -589,6 +589,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     staged, home, profile, fixture = [tmp_path / name for name in ("build", "home", "webview", "quality.csv")]
     calibrations = [root / "calibration-first", root / "calibration-last"]
     user_temp = str(tmp_path / "user-temp")
+    user_cache = str(tmp_path / "user-cache")
     manifest = {"processes": [], "markers": {}, "source_sha": SOURCE,
                 "executable_sha256": EXE_SHA, "loopback_ports": list(journey.PORTS),
                 "protected_roots": {"local-original": r"c:\private\original"},
@@ -601,6 +602,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setenv("SystemRoot", str(tmp_path))
     monkeypatch.setenv("TEMP", user_temp)
     monkeypatch.setenv("TMP", user_temp)
+    monkeypatch.setenv("PSMODULEANALYSISCACHEPATH", user_cache)
     monkeypatch.setattr(journey, "prepare_journey", lambda *args: (manifest, home, profile, fixture, calibrations))
     monkeypatch.setattr(journey, "quiet", lambda *a, **kw: b"churn,amount\nY,2\n")
     monkeypatch.setattr(n12_lifetime_control, "process_images", lambda _: {
@@ -685,9 +687,12 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert env["WEBVIEW2_USER_DATA_FOLDER"] == str(profile)
             assert f"netlog-{log.stem.removeprefix('app-')}.json" in env["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"]
         if role == "driver":
-            assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(root / journey.DRIVER_TEMP_DIR)
+            scratch = root / journey.DRIVER_TEMP_DIR
+            assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(scratch)
+            assert env["PSMODULEANALYSISCACHEPATH"] == str(scratch / "powershell-module-analysis-cache")
         else:
             assert env["TEMP"] == env["TMP"] == user_temp
+            assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
         if log.stem.startswith("driver-"):
             assert env["PILOTODIN_N12_QUALITY_FIXTURE"] == str(fixture)
             assert (command[-1] == "--verify-relaunch") == (log.stem == "driver-relaunch")

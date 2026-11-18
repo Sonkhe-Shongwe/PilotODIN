@@ -2,7 +2,7 @@
 
 **18 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
-The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The latest live WebView comparison left 23 unresolved writes and identified 111 outside-scope writes. Both acceptance checks failed. Generated replay now distinguishes the blockers for writes with cleanup-invalidated names. [Live cleanup diagnostic](./SESSION_HANDOFF_CURRENT.md#18-november-2026--live-cleanup-write-diagnostic) · [Blocker breakdown](./SESSION_HANDOFF_CURRENT.md#18-november-2026--cleanup-write-blocker-breakdown)
+The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The latest live WebView comparison left 23 unresolved writes and identified 111 outside-scope writes. Both acceptance checks failed. The driver now redirects its PowerShell cache to disposable scratch. Live verification of the effect on outside-scope operations is **NOT RUN**. [Driver cache isolation](./SESSION_HANDOFF_CURRENT.md#18-november-2026--isolate-the-qa-driver-powershell-cache) · [Live cleanup diagnostic](./SESSION_HANDOFF_CURRENT.md#18-november-2026--live-cleanup-write-diagnostic)
 
 ## Phase ledger
 

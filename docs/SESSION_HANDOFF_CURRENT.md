@@ -4,7 +4,7 @@
 
 ## Next engineering action
 
-The current investigation is limited to the WebView network-process write paths. The latest comparison left 23 unresolved writes. Generated replay now distinguishes the event behind a file-key conflict and the reason an open completion was unverified. The live report retained only the earlier aggregates. The additional counters await live evidence from a separately approved capture. [Cleanup blocker breakdown](#18-november-2026--cleanup-write-blocker-breakdown) · [Live cleanup diagnostic](#18-november-2026--live-cleanup-write-diagnostic)
+Prioritise isolation fixes for observed outside-scope operations. The QA driver now points its PowerShell module cache at the existing disposable scratch directory. In the next separately approved app audit, compare the PowerShell write and overwrite counts under `user-local` against six of each in the last audit. The WebView comparison's 23 unresolved writes remain open. [Driver cache isolation](#18-november-2026--isolate-the-qa-driver-powershell-cache) · [Live cleanup diagnostic](#18-november-2026--live-cleanup-write-diagnostic)
 
 ## Windows audit evidence
 
@@ -14,6 +14,12 @@ The current investigation is limited to the WebView network-process write paths.
 | Previous app results | At `02f807b`, Sysmon identity mismatches blocked both launches. At `022df1c`, an earlier completed audit reported 67 outside-scope operations, seven unexpected connections and 200,077 unresolved WebView network-process writes. [Blocked attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44337564606/job/134918293248) · [Earlier completed audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44298639798/job/134782187614) |
 | Fixture-only coverage | With the four-second hold at `5d4b8da`, Sysmon attributed both TCP and UDP to the fixture child on its first read. ETW wrote 276 buffers with zero event or buffer loss and produced a nonempty trace. Launch `8a3d05c` consumed the one-use approval. [Retained-child pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Earlier immediate-exit pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44335300490/job/134910240433) |
 | WebView write comparison | On the latest digest-matched trace, the strict comparison attributed 198,111 paths to permitted scope and 111 to outside-scope violations, leaving 23 unresolved. The ordinary result governs acceptance. [Latest live comparison](#18-november-2026--live-cleanup-write-diagnostic) · [Previous comparison with 141 gaps](#18-november-2026--live-webview-write-path-comparison-completed) |
+
+### 18 November 2026 | Isolate the QA driver PowerShell cache
+
+The ordinary audit attributed six writes and six overwrites under the runner's local app data to PowerShell in the driver tree. The first-launch probe invokes Windows PowerShell six times for project-switch actions. PowerShell 5.1 defaults its module-analysis cache to local app data. The previous driver environment redirected temporary files but supplied no cache path. The audit published directory categories, so the file targets and their relationship to the cache are unverified. [Windows evidence](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44379979033/job/135069239278) · [PowerShell cache documentation](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_windows_powershell_5.1?view=powershell-5.1#module-analysis-cache)
+
+The journey now gives the driver tree a cache filename under `driver-temp`. The hosted fixture exercises inheritance through a real Node-to-Windows-PowerShell child, and the generated journey checks role scoping. The original allowlist governs the filesystem audit. Live verification of the operation counts is **NOT RUN**. [Driver fixture](../tests/test_p4_n12_exit_corroboration.py) · [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
 ### 18 November 2026 | Cleanup write blocker breakdown
 

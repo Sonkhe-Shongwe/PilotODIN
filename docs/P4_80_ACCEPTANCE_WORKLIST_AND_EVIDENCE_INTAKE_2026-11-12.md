@@ -57,6 +57,8 @@ The [16 November completed reducer](https://github.com/Sonkhe-Shongwe/PilotODIN/
 
 ### P4 plan to reach 75%
 
+**Driver isolation, 18 November.** The source supplies a disposable PowerShell cache path to the QA driver tree. Compare the last audit's six PowerShell writes and six overwrites in `user-local` with the next applicable hosted audit. The file targets were unverified in the original report. [Driver cache isolation](./SESSION_HANDOFF_CURRENT.md#18-november-2026--isolate-the-qa-driver-powershell-cache)
+
 **Current focus, 18 November.** The latest capture checked all 121 eligible writes outside the two largest pairs. It attributed 112 and retained nine conflicting joins. The cleanup diagnostic evaluated 14 additional writes and found 12 key conflicts and two unverified open completions. The previous capture's 141 gaps remain in its separate record. [Latest live diagnostic](./SESSION_HANDOFF_CURRENT.md#18-november-2026--live-cleanup-write-diagnostic) · [Previous breakdown](./SESSION_HANDOFF_CURRENT.md#18-november-2026--remaining-webview-write-paths)
 
 Generated replay now separates open-completion key conflicts from those on other events and distinguishes missing, failed and ambiguous completion evidence. All original audit checks still apply. The finer counters await live evidence. [Cleanup blocker breakdown](./SESSION_HANDOFF_CURRENT.md#18-november-2026--cleanup-write-blocker-breakdown)

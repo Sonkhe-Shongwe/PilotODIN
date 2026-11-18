@@ -79,6 +79,32 @@ class DriverTempTests(unittest.TestCase):
             self.assertEqual(final.read_text(encoding="utf-8"), "generated")
             self.assertEqual(list(user_temp.iterdir()), [])
 
+    @unittest.skipUnless(sys.platform == "win32" and shutil.which("node"), "requires Windows and Node")
+    def test_powershell_dialog_child_inherits_the_qa_cache_location(self):
+        launch = (
+            "const {execFileSync} = require('node:child_process');"
+            "const [powershell, script] = process.argv.slice(1);"
+            "process.stdout.write(execFileSync(powershell,"
+            "['-NoProfile', '-NonInteractive', '-STA', '-File', script], {timeout: 15000}));"
+        )
+        with TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            scratch = root / DRIVER_TEMP_DIR
+            scratch.mkdir()
+            probe = root / "cache-location.ps1"
+            probe.write_text(
+                "if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Expected Windows PowerShell' }\n"
+                "[Environment]::GetEnvironmentVariable('PSModuleAnalysisCachePath')\n",
+                encoding="ascii",
+            )
+            parent = {**os.environ, "PSMODULEANALYSISCACHEPATH": str(root / "parent-cache")}
+            result = subprocess.run(
+                [shutil.which("node"), "-e", launch, "powershell.exe", str(probe)],
+                env=driver_environment(parent, root), capture_output=True, check=True, timeout=20, text=True,
+            )
+            self.assertEqual(Path(result.stdout.strip()), scratch / "powershell-module-analysis-cache")
+            self.assertEqual(parent["PSMODULEANALYSISCACHEPATH"], str(root / "parent-cache"))
+
 
 def payload(offset):
     return stamp(offset).strftime("%Y-%m-%dT%H:%M:%S.%f") + str(offset % 10) + "Z"

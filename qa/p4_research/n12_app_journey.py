@@ -460,10 +460,11 @@ def request_graceful_close(app, binary, title):
 
 
 def driver_environment(env, root):
-    # Vite and Playwright are separate Node roots in the trace. Both inherit
-    # only the existing, scoped QA scratch directory for temporary files.
-    scratch = str(root / DRIVER_TEMP_DIR)
-    return {**env, "TEMP": scratch, "TMP": scratch, "TMPDIR": scratch}
+    scratch = root / DRIVER_TEMP_DIR
+    # The dialog helper inherits this environment from Node. PowerShell's
+    # module cache uses LocalAppData by default, independently of TEMP.
+    return {**env, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch),
+            "PSMODULEANALYSISCACHEPATH": str(scratch / "powershell-module-analysis-cache")}
 
 
 def driver_failure(log, label, return_code):
