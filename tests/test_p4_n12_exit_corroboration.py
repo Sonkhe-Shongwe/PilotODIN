@@ -126,12 +126,77 @@ class DisputedExitTests(unittest.TestCase):
         row = report["disputed"][0]
         self.assertEqual((row["status"], row["family"], row["parent_role"]), ("MATCH", "webview", "driver"))
         self.assertEqual(row["order"]["etw_payload_exit_minus_handle_ticks"], 0)
+        self.assertEqual(row["etw_parent_sequence"], "etw-parent-sequence-agrees")
+        self.assertEqual(row["handle_match"], "unique")
+        self.assertEqual(report["exact_handle_clock_pairs"], 1)
+        self.assertEqual(report["exact_handle_ordering_issues"], {})
         self.assertEqual(report["retained_by_label"], {"descendant": 1})
         self.assertNotIn("private", json.dumps(report))
         self.assertIsNone(self.child.end)
         self.events[1]["data"]["ParentProcessSequenceNumber"] = "12345"
         report = driver_lifetime_evidence(self.events, DEVICES, window, observed, handles, set())
         self.assertEqual(report["disputed"][0]["status"], "driver-etw-parent-lifetime-unverified")
+        self.assertEqual(report["disputed"][0]["etw_parent_sequence"], "etw-parent-sequence-conflict")
+
+    def test_driver_disputed_exit_explains_why_a_handle_cannot_be_matched(self):
+        observed = SimpleNamespace(processes=self.processes, roles={self.parent.guid: "driver"})
+        witness = {"pid": 701, "birth": ORIGIN + 115_001, "exit": ORIGIN + 245_727,
+                   "image_dos": CHILD_IMAGE, "image_native": self.events[1]["data"]["ImageName"],
+                   "label": "descendant", "parent_pid": 700}
+        handles = DriverHandles()
+        original_dispute = self.child.disputed_exit
+        cases = (
+            ([], "pid-not-retained"),
+            ([witness | {"birth": ORIGIN + 130_000}], "birth-mismatch"),
+            ([witness | {"image_dos": PARENT_IMAGE}], "image-mismatch"),
+            ([witness | {"parent_pid": 799}], "parent-mismatch"),
+            ([witness, witness | {"birth": witness["birth"] + 1}], "ambiguous"),
+        )
+        for witnesses, expected in cases:
+            with self.subTest(expected=expected):
+                handles.witnesses = witnesses
+                report = driver_lifetime_evidence(self.events, DEVICES, (ORIGIN, ORIGIN + 500_000),
+                                                  observed, handles, set())
+                row = report["disputed"][0]
+                self.assertEqual(row["status"], "handle-unavailable-or-ambiguous")
+                self.assertEqual(row["handle_match"], expected)
+                self.assertEqual(row["etw_parent_sequence"], "etw-parent-sequence-agrees")
+                self.assertEqual(report["exact_handle_clock_pairs"], 0)
+                for private in ("private", "HarddiskVolume", "701", str(ORIGIN)):
+                    self.assertNotIn(private, json.dumps(report))
+                self.assertIs(self.child.disputed_exit, original_dispute)
+                self.assertIsNone(self.child.end)
+
+        self.events[1]["data"]["ParentProcessSequenceNumber"] = "12345"
+        report = driver_lifetime_evidence(self.events, DEVICES, (ORIGIN, ORIGIN + 500_000),
+                                          observed, handles, set())
+        self.assertEqual(report["disputed"][0]["etw_parent_sequence"], "etw-parent-sequence-conflict")
+        report = driver_lifetime_evidence(self.events, DEVICES, (ORIGIN, ORIGIN + 500_000),
+                                          observed, handles, {"etw-event-or-buffer-loss"})
+        self.assertEqual(report["disputed"][0]["etw_parent_sequence"], "etw-coverage-unavailable")
+
+    def test_driver_ordering_reasons_include_nondisputed_exact_handle_pairs(self):
+        observed = SimpleNamespace(processes=self.processes, roles={p: "driver" for p in self.processes})
+        handles = DriverHandles()
+        handles.witnesses = [
+            {"pid": 700, "birth": ORIGIN + 54_001, "exit": ORIGIN + 320_001,
+             "image_dos": PARENT_IMAGE, "image_native": PARENT_IMAGE, "label": "vite", "parent_pid": None},
+            {"pid": 701, "birth": ORIGIN + 115_001, "exit": ORIGIN + 245_727,
+             "image_dos": CHILD_IMAGE, "image_native": self.events[1]["data"]["ImageName"],
+             "label": "descendant", "parent_pid": 700},
+        ]
+        self.events[0]["ticks"] = ORIGIN + 54_000
+        self.events[2]["ticks"] = self.events[1]["ticks"]
+        report = driver_lifetime_evidence(self.events, DEVICES, (ORIGIN, ORIGIN + 500_000),
+                                          observed, handles, set())
+        self.assertEqual(report["exact_handle_clock_pairs"], 2)
+        self.assertEqual(report["handle_match_counts"], {"unique": 2})
+        self.assertEqual(report["scoped_driver_dispositions"], {"etw-lifetime-order-unverified": 2})
+        self.assertEqual(report["exact_handle_ordering_issues"], {
+            "start-header-before-creation": 1, "stop-header-at-or-before-start-header": 1,
+        })
+        self.assertEqual(report["disputed"][0]["order"]["ordering_issues"],
+                         ["stop-header-at-or-before-start-header"])
 
     def test_driver_snapshot_walk_stays_under_the_owned_roots(self):
         rows = [(4, 3, "conhost.exe"), (6, 8, "node.exe"), (3, 2, "powershell.exe"), (2, 4, "node.exe")]

@@ -180,6 +180,25 @@ def family(image):
     return FAMILIES.get(ntpath.basename(image).casefold(), "other")
 
 
+def match_handle(witnesses, process, parent):
+    if not witnesses:
+        return None, "pid-not-retained"
+    birth = trace.utc_ticks(process.start)
+    at_birth = [w for w in witnesses if abs(w["birth"] - birth) <= BIRTH_TOLERANCE_TICKS]
+    if not at_birth:
+        return None, "birth-mismatch"
+    with_image = [w for w in at_birth if trace.windows_path(w["image_dos"]) == process.image]
+    if not with_image:
+        return None, "image-mismatch"
+    matching = [w for w in with_image if w["parent_pid"] is None
+                or parent is not None and w["parent_pid"] == parent.pid]
+    if not matching:
+        return None, "parent-mismatch"
+    if len(matching) != 1:
+        return None, "ambiguous"
+    return matching[0], "unique"
+
+
 def driver_lifetime_evidence(events, devices, window, observed, handles, issues):
     source_gaps = sorted(issues & SOURCE_COVERAGE_ISSUES)
     lifetimes = None
@@ -192,6 +211,9 @@ def driver_lifetime_evidence(events, devices, window, observed, handles, issues)
     for witness in handles.witnesses:
         by_pid[witness["pid"]].append(witness)
     dispositions = Counter()
+    handle_matches = Counter()
+    exact_handle_clocks = 0
+    exact_handle_ordering_issues = Counter()
     disputed = []
     for process in observed.processes.values():
         role = observed.roles.get(process.guid, "unattributed")
@@ -199,18 +221,19 @@ def driver_lifetime_evidence(events, devices, window, observed, handles, issues)
         parent_role = observed.roles.get(process.parent, "unattributed")
         if role != "driver" and parent_role != "driver":
             continue
-        matching = [w for w in by_pid[process.pid]
-                    if abs(w["birth"] - trace.utc_ticks(process.start)) <= BIRTH_TOLERANCE_TICKS
-                    and trace.windows_path(w["image_dos"]) == process.image
-                    and (w["parent_pid"] is None or parent is not None and w["parent_pid"] == parent.pid)]
+        witness, handle_match = match_handle(by_pid.get(process.pid), process, parent)
+        handle_matches[handle_match] += 1
         order = None
-        if len(matching) != 1:
+        if witness is None:
             status = "handle-unavailable-or-ambiguous"
         elif lifetimes is None:
             status = "etw-coverage-unavailable"
         else:
-            witness = matching[0]
             order = lifetimes.order_comparison(process, witness)
+            if (order.get("etw_payload_creation_minus_handle_ticks") == 0
+                    and order.get("etw_payload_exit_minus_handle_ticks") == 0):
+                exact_handle_clocks += 1
+                exact_handle_ordering_issues.update(order["ordering_issues"])
             try:
                 start, _ = lifetimes.find(process, handle_witness=witness)
                 trace.require(start.sequence is not None, "driver-etw-sequence-unverified")
@@ -227,8 +250,13 @@ def driver_lifetime_evidence(events, devices, window, observed, handles, issues)
                 status = str(exc)
         dispositions[status] += 1
         if process.disputed_exit is not None:
+            parent_sequence = (lifetimes.parent_sequence_comparison(process, parent) if lifetimes is not None
+                               else "etw-coverage-unavailable")
             disputed.append({"record": process.disputed_exit.record, "family": family(process.image),
                              "parent_family": family(parent.image) if parent is not None else "unavailable",
-                             "role": role, "parent_role": parent_role, "status": status, "order": order})
+                             "role": role, "parent_role": parent_role, "status": status, "order": order,
+                             "handle_match": handle_match, "etw_parent_sequence": parent_sequence})
     return {**handles.inventory(), "etw_source_issues": source_gaps,
+            "handle_match_counts": dict(handle_matches), "exact_handle_clock_pairs": exact_handle_clocks,
+            "exact_handle_ordering_issues": dict(exact_handle_ordering_issues),
             "scoped_driver_dispositions": dict(dispositions), "disputed": sorted(disputed, key=lambda row: row["record"])}
