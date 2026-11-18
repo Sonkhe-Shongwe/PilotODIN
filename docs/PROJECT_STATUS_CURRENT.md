@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current project status
 
-**17 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+**18 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 ## Phase ledger
 
@@ -22,7 +22,7 @@
 | --- | --- |
 | R01 / Gate C | Unverified. Required before using predictions for a specific real-world decision. [Owner decision](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c) |
 | R02 / N12 | N1–N11 scoped hosted checks passed. The latest two-launch audit completed, matched both app handles and matched the protected endpoints. The reducer recorded six unexpected connections and 69 outside-scope file operations. Both acceptance checks failed and strict trace coverage is blocked. [Latest audit](./SESSION_HANDOFF_CURRENT.md#17-november-2026--hosted-webview-path-audit) · [Next action](./SESSION_HANDOFF_CURRENT.md#next-engineering-action) |
-| R03 · Physical 8 GB Windows | Scoped native Local analytics passed. A corrected hosted build returned a bundled Qwen3 answer. The physical 1.50 GiB candidate deferred startup and returned local rules. Physical offline generation and coexistence are unverified. [Latest physical evidence](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred) · [Proposed whole-app baseline](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target) |
+| R03 · Physical 8 GB Windows | Scoped native Local analytics passed. A corrected hosted build returned a bundled Qwen3 answer. The physical 1.50 GiB candidate deferred startup and returned local rules. Physical offline generation and coexistence are unverified. [Latest physical evidence](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred) · [Everyday RAM retest and verified HTML export](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) |
 | R04 · Native UX | Scoped hosted docking and narrow-width retest passed. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43427707718) |
 | R05 / BE-024 · Fitted Prepare | Scoped hosted fitted-history reopen, saved preprocessing and stale prediction guard passed. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43439284563) |
 | R06 · Original app-data preservation | Historical strict failure: 74 differences, writer unknown. Prospective owner-device preservation is open. [R06 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#c-r06-non-intrusive-incident-evidence-intake) |

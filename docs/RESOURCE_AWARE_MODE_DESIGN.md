@@ -1,6 +1,6 @@
 # Resource-Aware Mode — approved design and staged implementation
 
-**Current checkpoint, 17 November 2026.** Settings displays available physical RAM and saves the resource policy. Low-memory mode screens new training at 0.75 GiB and new local inference at 2.00 GiB under the current normal policy. The isolated 1.50 GiB QA candidate deferred local inference on the physical laptop and returned local rules. The everyday Local analytics workflow has a first [physical RAM baseline](#first-physical-baseline-result). Physical offline generation and coexistence remain unverified. [Current handoff](./SESSION_HANDOFF_CURRENT.md)
+**Current checkpoint, 18 November 2026.** Settings displays available physical RAM and saves the resource policy. Low-memory mode screens new training at 0.75 GiB and new local inference at 2.00 GiB under the current normal policy. The isolated 1.50 GiB QA candidate deferred local inference on the physical laptop and returned local rules. The everyday Local analytics workflow completed on the updated build with [a verified HTML export and a 735.27 MiB sampled peak](#physical-everyday-ram-retest-result). Physical offline generation and coexistence remain unverified. [Current handoff](./SESSION_HANDOFF_CURRENT.md)
 
 ## Proposed 1 GiB everyday RAM target
 
@@ -54,7 +54,22 @@ Hosted Windows proved the production UI could start its authenticated analytics 
 
 On 18 November the updated laptop run recorded a Windows CIM timeout during the 10 idle samples, before PilotODIN launched. Pull the latest launcher and use the same extracted kit. The launcher retries the first failed query of each CIM class once at 12 seconds. Unavailable readings remain blank in the samples, and `collector-errors.csv` identifies the skipped provider and stage. The remaining queries can still measure the app and the walkthrough can reach the real Save As export. Exclude gaps when comparing memory and retain the coverage flags.
 
-The physical comparison is pending. Compare the same stages, with the other Windows apps in their usual state. The earlier export wait contributed 153 samples and ended before cooldown. Compare stage medians and peaks with that sampling difference in mind. The new build includes binary report transfer and the frozen engine shutdown fix, so a whole-app difference measures their combined effect under this workload. A repeatable 1 GiB result still needs comparable physical runs and complete process coverage.
+### Physical everyday RAM retest result
+
+On 18 November 2026 SAST the owner ran source `1cfeb94` on the 8 GB Windows laptop. The receipt's desktop and engine hashes match the hosted build, and all aggregate process samples reconcile with the corresponding per-process rows. The walkthrough completed every stage through cooldown. The launcher verified the **10,550-byte HTML export**, its expected dataset digest, **4,000 rows** and **1,000 missing premiums**. The owner evidence ZIP SHA-256 is `639c5186dfc1bda4d392e86e6d3230db3c3b8fcd0bb3ab92ea8c8204cda5331d`. [Hosted build receipt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44159138354/job/134307916329)
+
+| Reading | First run (`8966edc`) | Updated run (`1cfeb94`) |
+| --- | ---: | ---: |
+| Peak sampled combined working set through HTML export | 706.35 MiB | 705.93 MiB |
+| Peak sampled combined working set including cooldown | Unavailable | 735.27 MiB |
+| Median combined working set at ready idle | 619.21 MiB | 572.44 MiB |
+| Median combined working set during Deliver | 678.55 MiB | 664.87 MiB |
+| Peak sampled private resident memory | 340.00 MiB | 349.17 MiB |
+| System idle available RAM, median | 1,670 MiB | 2,080 MiB |
+
+The updated peak was **288.73 MiB below the 1,024 MiB target** for this tested workload. At that cooldown sample, WebView2 accounted for **523.45 MiB** of the summed working sets. Windows recorded system counters for all 172 samples. All 162 app samples reported a responsive desktop, and 161 covered all core roles and all then-attributed processes. The first app sample preceded full process coverage. The archive contains no reported CIM errors.
+
+The highest readings across shared stages were effectively equal. The updated run included a newly measured cooldown and had more system RAM available at idle. The first Deliver stage included 153 samples during an export-name timeout, compared with 36 in the updated run. These conditions and the engine shutdown change limit attribution of the stage differences to binary export alone. The completed run establishes a sampled result below the target in Local analytics on the isolated build. A longer or repeated run is needed for sustained usage, and Qwen and training need their own measurements.
 
 ### Deliver binary Save As
 
@@ -62,7 +77,7 @@ Native Save As now sends an `ArrayBuffer` and separate filename and format heade
 
 The hosted Windows test used a 1 MiB synthetic payload filled with byte value 255. Its deliberately invalid PDF signature ended the request before Save As opened. The binary body was **1,048,576 bytes**, compared with **4,194,354 bytes** for the same fixture in the former JSON representation, a **75% reduction in transfer size** for this fixture. The three warm binary round trips, including Rust validation, took **43.8 to 71.3 ms** in the final run. The timing excludes the dialog and disk writes. [Hosted Windows measurements](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44150811473/job/134278302684)
 
-Source `da1caea` passed four Rust report tests on Windows. The production writer saved the raw PDF and fallback HTML byte for byte and rejected a wrong extension before writing. WebView2 opened the genuine Windows dialog with a valid PDF, and closing it returned cancellation without writing an export. WebView2 also passed the forced Tauri fallback validation check. Two earlier runs could not automate the filename field, so selecting a destination and clicking **Save** remain unverified in the optimized Windows build. The physical laptop's whole-app peak has yet to be measured with this change. [Final Windows verification](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44150811473/job/134278302684) · [Earlier dialog locator result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44149152932/job/134272354089)
+Source `da1caea` passed four Rust report tests on Windows. The production writer saved the raw PDF and fallback HTML byte for byte and rejected a wrong extension before writing. WebView2 opened the genuine Windows dialog with a valid PDF, and closing it returned cancellation without writing an export. WebView2 also passed the forced Tauri fallback validation check. Two earlier hosted runs could not automate the filename field. The owner subsequently completed and verified the real HTML **Save As** on the optimized build. The [physical retest](#physical-everyday-ram-retest-result) records its whole-app memory measurements. [Final Windows verification](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44150811473/job/134278302684) · [Earlier dialog locator result](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44149152932/job/134272354089)
 
 The full set of 697 frontend tests was compared with pre-change source `4070e19`. The same 47 tests fail on both sources and two report checks passed on the updated source after failing on the baseline. All 35 focused report and export checks pass.
 

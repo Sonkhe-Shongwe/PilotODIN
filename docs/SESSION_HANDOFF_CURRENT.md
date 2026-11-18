@@ -1,10 +1,14 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
-**17 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
+**18 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
+
+## 18 November 2026 | Physical everyday RAM retest and HTML export completed
+
+The updated analytics-only Windows build (`1cfeb94`) completed the physical laptop walkthrough through cooldown. The launcher verified the HTML report against the generated dataset with 4,000 rows and 1,000 missing premiums. The combined working set peaked at **735.27 MiB** in cooldown. The peak across stages shared with the first run was **705.93 MiB**, versus **706.35 MiB** previously. The baseline ended before cooldown. The desktop reported responsive at all **162** app samples. P4 is **14/20 (70%)**. [Physical retest and comparison](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result)
 
 ## 17 November 2026 | Deliver report transfer optimized
 
-Deliver sends report bytes directly to WebView2 IPC on the normal Windows path. A 1 MiB synthetic payload used **75% less transfer space** than its former JSON representation. Hosted Windows verified exact PDF and HTML writes through the production writer and genuine Save As cancellation. Full confirmation through the Save button and a physical before-and-after RAM comparison remain open. The first physical everyday baseline observed **706.35 MiB** as the highest sampled combined working set. A [hash-pinned Windows kit and launcher](./RESOURCE_AWARE_MODE_DESIGN.md#updated-build-retest-on-the-8-gb-laptop) are ready for the same workload through cooldown with a verified HTML export. [Resource results and limits](./RESOURCE_AWARE_MODE_DESIGN.md#deliver-binary-save-as)
+Deliver sends report bytes directly to WebView2 IPC on the normal Windows path. A 1 MiB synthetic payload used **75% less transfer space** than its former JSON representation. Hosted Windows verified exact PDF and HTML writes through the production writer and genuine Save As cancellation. The first physical benchmark peaked at **706.35 MiB** and ended at the export filename check. The owner subsequently completed Save As and cooldown with the [hash-pinned Windows kit and launcher](./RESOURCE_AWARE_MODE_DESIGN.md#updated-build-retest-on-the-8-gb-laptop). [Resource results and limits](./RESOURCE_AWARE_MODE_DESIGN.md#deliver-binary-save-as)
 
 ## 17 November 2026 | Physical R03 candidate deferred
 
