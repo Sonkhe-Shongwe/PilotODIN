@@ -1154,19 +1154,32 @@ def preopened_resize_report(capture, events, rundown, devices, process_birth, ca
     return result
 
 
-def successful_completion(file_events, request, before):
+def completion_evidence(file_events, request, before):
+    """Return the uniquely ordered successful completion or a fixed blocker."""
     irp = number(request["data"].get("Irp"))
-    matches = [event for event in file_events if irp and event is not request
+    if not irp:
+        return None, "request-id-missing"
+    matches = [event for event in file_events if event is not request
                and request["ticks"] <= event["ticks"] < before
                and number(event["data"].get("Irp")) == irp]
     if not matches:
-        return None
+        return None, "missing-before-boundary"
     first = matches[0]
-    if (first["id"] == 24 and first["ticks"] > request["ticks"]
-            and (len(matches) == 1 or matches[1]["ticks"] != first["ticks"])
-            and number(first["data"].get("Status")) == 0):
-        return first["ticks"]
-    return None
+    if first["ticks"] == request["ticks"] or (len(matches) > 1 and matches[1]["ticks"] == first["ticks"]):
+        return None, "ambiguous-order"
+    if first["id"] != 24:
+        return None, "intervening-request-event"
+    status = number(first["data"].get("Status"))
+    if status is None:
+        return None, "status-missing"
+    if status != 0:
+        return None, "failed" if type(status) is int and status & 0x80000000 else "status-nonzero"
+    return first, None
+
+
+def successful_completion(file_events, request, before):
+    completion, _ = completion_evidence(file_events, request, before)
+    return completion["ticks"] if completion is not None else None
 
 
 def write_paging_flag(data):
@@ -1764,11 +1777,12 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
         if (opened["ticks"] == write["ticks"] or
                 (len(prior_opens) > 1 and prior_opens[-2]["ticks"] == opened["ticks"])):
             return "ambiguous-event-order"
-        open_completed = successful_completion(
+        open_completion, open_blocker = completion_evidence(
             by_irp[number(opened["data"].get("Irp"))], opened, write["ticks"],
         )
-        if open_completed is None:
-            return "open-completion-unverified"
+        if open_completion is None:
+            return f"open-completion-{open_blocker}" if verify_file_identity else "open-completion-unverified"
+        open_completed = open_completion["ticks"]
         if (id(opened) not in opens_with_process_lifetime or any(
             opened["ticks"] <= tick <= completed for tick in process_transitions[opened["pid"]]
         )):
@@ -1782,16 +1796,16 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
         if successful_completion(by_irp[number(data.get("Irp"))], write, completed + 1) != completed:
             return "write-completion-unverified"
         if verify_file_identity:
-            open_completion = next(event for event in by_irp[number(opened["data"].get("Irp"))]
-                                   if event["id"] == 24 and event["ticks"] == open_completed)
             if number(open_completion["data"].get("FileObject")) not in {None, 0, file_object}:
                 return "open-completion-file-identity-conflict"
-            if (number(open_completion["data"].get("FileKey")) not in {None, 0, key} or any(
+            if number(open_completion["data"].get("FileKey")) not in {None, 0, key}:
+                return "open-completion-file-key-conflict"
+            conflicting_event = next((event for event in object_events if
                 opened["ticks"] <= event["ticks"] <= completed
                 and number(event["data"].get("FileKey")) not in {None, 0, key}
-                for event in object_events
-            )):
-                return "conflicting-object-file-key"
+            ), None)
+            if conflicting_event is not None:
+                return f"same-object-file-key-conflict:event-{conflicting_event['id']}"
 
         relevant_events = {id(event): event for event in object_events + by_key[key]}
         related = sorted(relevant_events.values(), key=lambda event: event["ticks"])

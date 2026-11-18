@@ -4,7 +4,7 @@
 
 ## Next engineering action
 
-The current investigation is limited to the WebView network-process write paths. The latest comparison left 23 unresolved writes. For the 14 in the different-object Cleanup group, use generated evidence to distinguish open-completion key conflicts from other same-object key conflicts, and distinguish missing, failed and ambiguous open completions. The latest report aggregates those reasons and retained no ETW artifact for replay. [Live cleanup diagnostic](#18-november-2026--live-cleanup-write-diagnostic)
+The current investigation is limited to the WebView network-process write paths. The latest comparison left 23 unresolved writes. Generated replay now distinguishes the event behind a file-key conflict and the reason an open completion was unverified. The live report retained only the earlier aggregates. The additional counters await live evidence from a separately approved capture. [Cleanup blocker breakdown](#18-november-2026--cleanup-write-blocker-breakdown) · [Live cleanup diagnostic](#18-november-2026--live-cleanup-write-diagnostic)
 
 ## Windows audit evidence
 
@@ -14,6 +14,12 @@ The current investigation is limited to the WebView network-process write paths.
 | Previous app results | At `02f807b`, Sysmon identity mismatches blocked both launches. At `022df1c`, an earlier completed audit reported 67 outside-scope operations, seven unexpected connections and 200,077 unresolved WebView network-process writes. [Blocked attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44337564606/job/134918293248) · [Earlier completed audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44298639798/job/134782187614) |
 | Fixture-only coverage | With the four-second hold at `5d4b8da`, Sysmon attributed both TCP and UDP to the fixture child on its first read. ETW wrote 276 buffers with zero event or buffer loss and produced a nonempty trace. Launch `8a3d05c` consumed the one-use approval. [Retained-child pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Earlier immediate-exit pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44335300490/job/134910240433) |
 | WebView write comparison | On the latest digest-matched trace, the strict comparison attributed 198,111 paths to permitted scope and 111 to outside-scope violations, leaving 23 unresolved. The ordinary result governs acceptance. [Latest live comparison](#18-november-2026--live-cleanup-write-diagnostic) · [Previous comparison with 141 gaps](#18-november-2026--live-webview-write-path-comparison-completed) |
+
+### 18 November 2026 | Cleanup write blocker breakdown
+
+The cleanup diagnostic reports an open completion's conflicting FileKey separately from a mismatched key on another event for the same FileObject. The latter reports the event kind. It also distinguishes unavailable, failed or ambiguous open completions, intervening requests on the same IRP and unverifiable status. The shared completion rule still requires a unique status-zero completion in strict timestamp order before the boundary.
+
+The generated replay evaluated 22 cleanup writes with three path candidates and 19 specific blockers. The ordinary audit findings were identical with the diagnostic enabled. Live validation of the finer counts is **NOT RUN**. The 12 key conflicts and two unverified open completions from the last app run stand at their original level of detail. [Replay tests](../tests/test_p4_n12_webview_replay.py) · [Runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
 ### 18 November 2026 | Live cleanup write diagnostic
 

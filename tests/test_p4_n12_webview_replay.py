@@ -171,20 +171,33 @@ class WebViewWriteReplayTests(unittest.TestCase):
         cases = (
             ("permitted", PERMITTED_PATH), ("protected", PROTECTED_PATH), ("outside", OUTSIDE_PATH),
             ("no-open", PERMITTED_PATH), ("no-open", PERMITTED_PATH),
-            ("failed-open", PERMITTED_PATH), ("name-conflict", PERMITTED_PATH),
+            ("failed-open", PERMITTED_PATH), ("missing-open-completion", PERMITTED_PATH),
+            ("late-open-completion", PERMITTED_PATH), ("tied-open-completion", PERMITTED_PATH),
+            ("intervening-irp-event", PERMITTED_PATH), ("missing-open-irp", PERMITTED_PATH),
+            ("missing-open-status", PERMITTED_PATH), ("nonzero-open-status", PERMITTED_PATH),
+            ("name-conflict", PERMITTED_PATH),
             ("same-object-cleanup", PERMITTED_PATH), ("key-conflict", PERMITTED_PATH),
-            ("open-completion-conflict", PERMITTED_PATH), ("write-completion-conflict", PERMITTED_PATH),
+            ("open-completion-conflict", PERMITTED_PATH), ("open-key-conflict", PERMITTED_PATH),
+            ("write-completion-conflict", PERMITTED_PATH),
             ("tied-completion", PERMITTED_PATH), ("missing-thread", PERMITTED_PATH),
             ("opener-exited", PERMITTED_PATH), ("failed-write", PERMITTED_PATH),
             ("no-cleanup", PERMITTED_PATH),
         )
+        open_statuses = {"failed-open": 0xC0000022, "missing-open-status": None, "nonzero-open-status": 1}
         for key, (case, path) in enumerate(cases, start=100):
             obj = key + 1_000
+            open_irp = 0 if case == "missing-open-irp" else key + 2_000
             if case != "no-open":
                 # The opener has a separate ETW lifetime from the writer.
-                emit(12, pid=8, FileObject=obj, Irp=10, FileName=path)
-                emit(24, pid=8, Irp=10, Status=0xC0000022 if case == "failed-open" else 0,
-                     ExtraInformation=1, FileObject=999 if case == "open-completion-conflict" else obj)
+                emit(12, pid=8, FileObject=obj, Irp=open_irp, FileName=path)
+                if case == "intervening-irp-event":
+                    emit(15, pid=8, FileObject=obj + 1, Irp=open_irp)
+                if case not in {"missing-open-completion", "late-open-completion", "missing-open-irp"}:
+                    emit(24, pid=8, Irp=open_irp, Status=open_statuses.get(case, 0), ExtraInformation=1,
+                         FileObject=999 if case == "open-completion-conflict" else obj,
+                         FileKey=9_999 if case == "open-key-conflict" else key)
+                    if case == "tied-open-completion":
+                        rows.append(dict(rows[-1]))
             emit(10, FileKey=key, FileName=path)
             if case != "no-cleanup":
                 emit(13, pid=8, FileKey=key, FileObject=obj + 1_000)
@@ -198,6 +211,8 @@ class WebViewWriteReplayTests(unittest.TestCase):
                 emit(2, pid=8, ProcessID=8)
                 rows[-1]["lifecycle"] = True
             emit(16, FileObject=obj, FileKey=key, Irp=20, IssuingThreadId=0 if case == "missing-thread" else 71)
+            if case == "late-open-completion":
+                emit(24, pid=8, Irp=open_irp, Status=0, ExtraInformation=1, FileObject=obj)
             emit(24, Irp=20, Status=0xC0000022 if case == "failed-write" else 0,
                  FileObject=999 if case == "write-completion-conflict" else obj)
             if case == "tied-completion":
@@ -226,14 +241,18 @@ class WebViewWriteReplayTests(unittest.TestCase):
         self.assertEqual(observed, baseline)
         self.assertEqual(reported_issues, baseline_issues)
         self.assertEqual(observed[1], {})
-        self.assertEqual(observed[3], {f"{ROLE}:write:path-missing": 15})
+        self.assertEqual(observed[3], {f"{ROLE}:write:path-missing": 23})
         self.assertEqual(report["cleanup_open_evidence"], {
-            "status": "evaluated", "eligible": 14,
+            "status": "evaluated", "eligible": 22,
             "outcomes": {
                 "candidate-permitted": 1, "candidate-protected": 1, "candidate-outside-scope": 1,
-                "no-observed-open": 2, "open-completion-unverified": 1,
+                "no-observed-open": 2, "open-completion-failed": 1,
+                "open-completion-missing-before-boundary": 2, "open-completion-ambiguous-order": 1,
+                "open-completion-intervening-request-event": 1, "open-completion-request-id-missing": 1,
+                "open-completion-status-missing": 1, "open-completion-status-nonzero": 1,
                 "conflicting-or-unmapped-name": 1, "file-object-lifetime-changed": 1,
-                "conflicting-object-file-key": 1, "open-completion-file-identity-conflict": 1,
+                "same-object-file-key-conflict:event-15": 1, "open-completion-file-key-conflict": 1,
+                "open-completion-file-identity-conflict": 1,
                 "completion-file-identity-conflict": 1, "write-completion-unverified": 1,
                 "write-identity-unverified": 1, "open-process-lifetime-unverified": 1,
             },
