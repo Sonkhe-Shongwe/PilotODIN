@@ -101,6 +101,11 @@ class DriverHandles:
         with self.lock:
             self.roots[process.pid] = process, label
 
+    def inventory(self):
+        return {"retained_handles": len(self.witnesses), "retained_by_label": dict(Counter(
+                    w["label"] for w in self.witnesses)), "retained_families": dict(Counter(
+                    family(w["image_dos"]) for w in self.witnesses)), "monitor_counts": dict(self.counts)}
+
     def _observe(self):
         from qa.p4_native.n12_lifetime_control import open_process_query_handle, process_images, process_times
 
@@ -225,8 +230,5 @@ def driver_lifetime_evidence(events, devices, window, observed, handles, issues)
             disputed.append({"record": process.disputed_exit.record, "family": family(process.image),
                              "parent_family": family(parent.image) if parent is not None else "unavailable",
                              "role": role, "parent_role": parent_role, "status": status, "order": order})
-    return {"retained_handles": len(handles.witnesses), "retained_by_label": dict(Counter(
-                w["label"] for w in handles.witnesses)), "retained_families": dict(Counter(
-                family(w["image_dos"]) for w in handles.witnesses)),
-            "monitor_counts": dict(handles.counts), "etw_source_issues": source_gaps,
+    return {**handles.inventory(), "etw_source_issues": source_gaps,
             "scoped_driver_dispositions": dict(dispositions), "disputed": sorted(disputed, key=lambda row: row["record"])}

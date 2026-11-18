@@ -396,6 +396,14 @@ class Process:
         return 0
 
 
+def test_failed_driver_log_reports_a_fixed_checkpoint_and_category(tmp_path):
+    log = tmp_path / "driver.log"
+    log.write_bytes(b"N1 private input: PASS\nNATIVE PROJECT SWITCH BLOCKED: private path\n")
+    assert journey.driver_failure(log, "first", 3) == {
+        "launch": "first", "return_code": 3, "last_checkpoint": "N1", "failure": "native-project-switch",
+    }
+
+
 def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch):
     root = tmp_path / "capture"
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "local"))

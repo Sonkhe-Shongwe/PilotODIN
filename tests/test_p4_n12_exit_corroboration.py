@@ -19,7 +19,7 @@ from qa.p4_native import n12_exit_corroboration as diagnostic
 from qa.p4_native import n12_lifetime_control as controls
 from qa.p4_native import n12_trace as trace
 from qa.p4_research.n12_app_journey import DRIVER_TEMP_DIR, driver_environment
-from qa.p4_research.n12_driver_handles import descendants, driver_lifetime_evidence
+from qa.p4_research.n12_driver_handles import DriverHandles, descendants, driver_lifetime_evidence
 
 
 BASE = datetime(2026, 11, 16, tzinfo=timezone.utc)
@@ -119,7 +119,8 @@ class DisputedExitTests(unittest.TestCase):
         witness = {"pid": 701, "birth": ORIGIN + 115_001, "exit": ORIGIN + 245_727,
                    "image_dos": CHILD_IMAGE, "image_native": self.events[1]["data"]["ImageName"],
                    "label": "descendant", "parent_pid": 700}
-        handles = SimpleNamespace(witnesses=[witness], counts={})
+        handles = DriverHandles()
+        handles.witnesses.append(witness)
         window = ORIGIN, ORIGIN + 500_000
         report = driver_lifetime_evidence(self.events, DEVICES, window, observed, handles, set())
         row = report["disputed"][0]

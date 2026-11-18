@@ -405,6 +405,27 @@ def driver_environment(env, root):
     return {**env, "TEMP": scratch, "TMP": scratch, "TMPDIR": scratch}
 
 
+def driver_failure(log, label, return_code):
+    checkpoint = "probe-start"
+    failure = "unclassified"
+    with log.open("rb") as stream:
+        for raw in stream:
+            line = raw.strip()
+            if line == b"ACTUAL Tauri WebView2 reached, local URL only":
+                checkpoint = "webview-connected"
+            elif line == b"N12 native close listener ready":
+                checkpoint = "close-listener-ready"
+            elif line.endswith(b": PASS") and re.match(rb"^N(?:[1-9]|1[012]) ", line):
+                checkpoint = line.split(b" ", 1)[0].decode("ascii")
+            if line.startswith(b"NATIVE INTERACTIONS BLOCKED:"):
+                failure = "webview-discovery-or-connection"
+            elif line.startswith(b"NATIVE PROJECT SWITCH BLOCKED:"):
+                failure = "native-project-switch"
+            elif failure == "unclassified" and (b"TimeoutError:" in line or b"Timeout:" in line):
+                failure = "interaction-timeout"
+    return {"launch": label, "return_code": return_code, "last_checkpoint": checkpoint, "failure": failure}
+
+
 def run_driver(stack, manifest, node, root, env, relaunch, handles):
     command = [node, str(PROBE)]
     label = "relaunch" if relaunch else "first"
@@ -413,7 +434,10 @@ def run_driver(stack, manifest, node, root, env, relaunch, handles):
     log = root / f"driver-{label}.log"
     process = spawn(stack, manifest, "driver", command, driver_environment(env, root), FRONTEND, log)
     handles.watch(process, label)
-    trace.require(process.wait(timeout=240) == 0, f"{label} native interaction probe failed")
+    return_code = process.wait(timeout=240)
+    if return_code != 0:
+        print("N12 native driver failure " + json.dumps(driver_failure(log, label, return_code)), flush=True)
+        raise trace.EvidenceValidationError(f"{label} native interaction probe failed")
     with log.open("rb") as stream:
         ready = any(line.rstrip(b"\r\n") == b"N12 native close listener ready" for line in stream)
     trace.require(ready, f"{label} native close listener was not verified")
@@ -633,6 +657,7 @@ def capture(root, staged, source, expected_hash, node):
         except Exception:
             pass
         raise
+    driver_handles = DriverHandles()
     try:
         manifest["start_utc"] = now().isoformat()
         # Leave room for Sysmon's millisecond birth timestamp at the audit boundary.
@@ -643,7 +668,7 @@ def capture(root, staged, source, expected_hash, node):
             verify_initial_sysmon(root, manifest, record)
         mark(manifest, "idle")
         time.sleep(3)
-        with DriverHandles() as driver_handles, journey_processes(source, expected_hash) as stack:
+        with driver_handles, journey_processes(source, expected_hash) as stack:
             backend = spawn(stack, manifest, "backend", [sys.executable, "-B", "-m", "uvicorn",
                 "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 env, build.REPO, root / "backend.log")
@@ -672,6 +697,7 @@ def capture(root, staged, source, expected_hash, node):
             manifest["end_utc"] = final_end.isoformat()
     except BaseException:
         checkpoint("capture", "interrupted", source, expected_hash)
+        print("N12 interrupted driver handle inventory " + json.dumps(driver_handles.inventory()), flush=True)
         try:
             stop_capture(root, session, manifest, capture_start, devices)
         except Exception:
