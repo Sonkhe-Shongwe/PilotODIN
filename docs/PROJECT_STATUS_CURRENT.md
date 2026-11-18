@@ -2,7 +2,7 @@
 
 **18 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
-The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The current investigation covers the 141 WebView writes left by the live comparison. The two-handle control established the surviving write's path on a generated Windows file. The 14 cleanup-invalidated WebView writes still require individual evidence. [Two-handle control](./SESSION_HANDOFF_CURRENT.md#18-november-2026--two-handle-cleanup-control) · [Remaining WebView writes](./SESSION_HANDOFF_CURRENT.md#18-november-2026--remaining-webview-write-paths)
+The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The current investigation covers the 141 WebView writes left by the live comparison. The new report for the cleanup-invalidated group passed generated verification. Its live result is **NOT RUN**. [Cleanup write diagnostic](./SESSION_HANDOFF_CURRENT.md#18-november-2026--cleanup-write-open-evidence) · [Remaining WebView writes](./SESSION_HANDOFF_CURRENT.md#18-november-2026--remaining-webview-write-paths)
 
 ## Phase ledger
 

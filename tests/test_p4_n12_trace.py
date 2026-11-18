@@ -2027,6 +2027,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
         **clean, "etw_path_gap_context": {}, "etw_write_name_gap_context": {},
         "etw_webview_write_path_candidates": {
             "eligible": 0, "sampled": 0, "outcomes": {}, "pairs": [], "eligible_outside_sample": 0,
+            "cleanup_open_evidence": {"status": "evaluated", "eligible": 0, "outcomes": {}},
         },
     }
     observed = trace.inspect_journey_sysmon(evidence.manifest, sysmon, etw=True)
@@ -2041,8 +2042,14 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     assert ordinary["coverage"] == "CALIBRATED"
     assert ordinary["filesystem"] == ordinary["network"] == "PASS_SCOPED"
     assert ordinary["etw_unresolved_mutations"] == {}
+    ordinary_candidates = ordinary["etw_webview_write_path_candidates"]
+    assert ordinary_candidates["cleanup_open_evidence"] == {"status": "evaluated", "eligible": 0, "outcomes": {}}
     assert comparison == {
-        **ordinary, "etw_webview_write_credit": {
+        **ordinary,
+        "etw_webview_write_path_candidates": {
+            key: value for key, value in ordinary_candidates.items() if key != "cleanup_open_evidence"
+        },
+        "etw_webview_write_credit": {
             "status": "compared", "credited_paths": {}, "remaining_path_gaps": 0,
         },
     }

@@ -854,7 +854,11 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
     initial_process_births.update(synthetic_process_births or {})
     counts, violations, file_events = Counter(), Counter(), set()
     credited_webview_paths = Counter()
-    compare_webview_writes = webview_write_credit is not None and "etw-event-or-buffer-loss" not in issues
+    etw_loss = "etw-event-or-buffer-loss" in issues
+    compare_webview_writes = webview_write_credit is not None and not etw_loss
+    report_cleanup_open = webview_write_candidates is not None and webview_write_credit is None
+    if report_cleanup_open and etw_loss:
+        webview_write_candidates["cleanup_open_evidence"] = {"status": "blocked-etw-loss"}
 
     def count_path_gap(role, event_id, operation, file_key, lifetime, thread):
         path_gap_counts[f"{role}:event-{event_id}:{operation}:{file_key}:{lifetime}:{thread}"] += 1
@@ -957,6 +961,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             webview_write_candidates=webview_write_candidates, classify_webview_path=classify_webview_path,
             webview_dominant_writes=webview_dominant_writes,
             credit_webview_path=credit_webview_path if compare_webview_writes else None,
+            webview_cleanup_window=(start_ticks, end_ticks) if report_cleanup_open and not etw_loss else None,
             calibration_diagnostics=calibration_diagnostics, calibration_end=end_ticks,
             diagnostic_rundown_stop=diagnostic_rundown_stop,
             rundown_verification_start=rundown_verification_start,

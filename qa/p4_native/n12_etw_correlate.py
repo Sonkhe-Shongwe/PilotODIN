@@ -25,6 +25,7 @@ WEBVIEW_SAMPLE_WRITES_PER_PAIR = 16
 WEBVIEW_DOMINANT_PAIR_LIMIT = 4096
 WEBVIEW_DOMINANT_WRITE_LIMIT = 250_000
 WEBVIEW_DOMINANT_ROLE = "webview-network:write"
+WEBVIEW_CLEANUP_NAME_GAP = "invalidated-name:event-13:different-object"
 
 WRITE_CONTEXT_IMAGES = {
     "logman.exe", "msbuild.exe", "msmpeng.exe", "powershell.exe", "pwsh.exe",
@@ -159,7 +160,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        preopened_control_file_keys=None, preopened_control_file_objects=None,
                        rundown_window=None, record_path_gap=None, record_write_name_gap=None,
                        webview_write_candidates=None, classify_webview_path=None, webview_dominant_writes=False,
-                       credit_webview_path=None,
+                       credit_webview_path=None, webview_cleanup_window=None,
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None,
                        rundown_verification_start=None, rundown_credit=None):
@@ -176,6 +177,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     webview_pairs = {}
     webview_requests = {}
     webview_gaps_seen = 0
+    cleanup_open_gaps = []
+    cleanup_open_outcomes = Counter()
     dominant_writes = DominantWebViewWrites() if webview_dominant_writes else None
     calibration_rundown = diagnostic_rundown_stop is not None
     path_gap_context = {}
@@ -335,7 +338,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             return "completion-file-identity-conflict"
         return None
 
-    def webview_credit_identity(request, completed, handle, actor, identity):
+    def verified_webview_write_identity(request, completed, handle, actor, identity):
         if identity is None:
             return None
         data = request["data"]
@@ -422,7 +425,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         object_id = number(data.get("FileObject"))
         irp = number(data.get("Irp"))
         birth = active.get(pid)
-        if strict and details is not None and kind == 12 and birth is not None and birth < ticks:
+        if (strict and (details is not None or webview_cleanup_window is not None) and kind == 12
+                and birth is not None and birth < ticks):
             opens_with_process_lifetime.add(id(event))
         actor, identity = classify_process(pid, birth, ticks)
         handle = (pid, birth, object_id)
@@ -483,6 +487,22 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             record_path_gap(actor, event_id, operation, file_key, lifetime, thread)
                         if record_write_name_gap is not None and name_context is not None:
                             record_write_name_gap(actor, thread, name_context)
+                        if (webview_cleanup_window is not None and actor == "webview-network"
+                                and operation == "write" and name_context == WEBVIEW_CLEANUP_NAME_GAP):
+                            issue = completion_identity_issue(request, event, handle, actor)
+                            start, end = webview_cleanup_window
+                            if not issue and not start <= requested < ticks <= end:
+                                issue = "write-outside-audit-window"
+                            if not issue:
+                                verified = (thread == "thread-header-agrees" and
+                                            verified_webview_write_identity(request, ticks, handle, actor, identity)
+                                            is not None)
+                                if not verified:
+                                    issue = "write-identity-unverified"
+                            if issue:
+                                cleanup_open_outcomes[issue] += 1
+                            else:
+                                cleanup_open_gaps.append((request, ticks, None))
                         if (webview_write_candidates is not None and actor == "webview-network"
                                 and operation == "write" and thread == "thread-header-agrees"
                                 and name_context in {"tracked", "outside-tracked-paths"}):
@@ -492,8 +512,9 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             pair = (key, obj)
                             if dominant_writes is not None:
                                 issue = completion_identity_issue(request, event, handle, actor)
-                                credit_identity = (webview_credit_identity(request, ticks, handle, actor, identity)
-                                                   if credit_webview_path is not None and not issue else None)
+                                credit_identity = None
+                                if credit_webview_path is not None and not issue:
+                                    credit_identity = verified_webview_write_identity(request, ticks, handle, actor, identity)
                                 dominant_writes.observe(pair, request, ticks, issue, credit_identity)
                             if pair in webview_pairs or len(webview_pairs) < WEBVIEW_SAMPLE_PAIRS:
                                 evidence = webview_pairs.get(pair)
@@ -847,6 +868,17 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                         remaining_paths[f"{actor}:{operation}:outside-rundown-credit-scope"] = count
             rundown_credit["credited_paths"] = dict(credited_paths)
             rundown_credit["remaining_paths_by_reason"] = dict(remaining_paths)
+    if webview_cleanup_window is not None:
+        if cleanup_open_gaps:
+            cleanup_open_outcomes.update(summarize_write_gap_open_evidence(
+                ordered_events, cleanup_open_gaps, opens_with_process_lifetime, resolve_path, tracked,
+                Counter(), Counter(), Counter(), Counter(), classify_path=classify_webview_path,
+                verify_file_identity=True,
+            ))
+        webview_write_candidates["cleanup_open_evidence"] = {
+            "status": "evaluated", "eligible": sum(cleanup_open_outcomes.values()),
+            "outcomes": dict(cleanup_open_outcomes),
+        }
     if write_gaps:
         name_change_events = Counter()
         class_4_outcomes = Counter()
@@ -1681,9 +1713,12 @@ def preopened_path_validation(events, devices, requests, outcomes, writes):
 
 def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime, resolve_path, tracked,
                                       name_change_events, class_4_outcomes, no_open_contexts,
-                                      no_open_paths):
+                                      no_open_paths, *, classify_path=None, verify_file_identity=False):
     """Count evidence for unresolved writes without using it to classify them."""
     by_object, by_key, by_irp, process_transitions = (defaultdict(list) for _ in range(4))
+    objects = {number(write["data"].get("FileObject")) for write, _, _ in gaps}
+    keys = {number(write["data"].get("FileKey")) for write, _, _ in gaps}
+    related_irps = set()
     for event in events:
         kind, data = event["id"], event["data"]
         if event.get("lifecycle"):
@@ -1691,19 +1726,29 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
                 pid = number(data.get("ProcessID", data.get("ProcessId")))
                 process_transitions[pid].append(event["ticks"])
             continue
-        if kind not in {10, 11}:
-            by_object[number(data.get("FileObject"))].append(event)
-        if kind != 24:
-            key = name_transition_key(kind, data) or number(data.get("FileKey"))
-            if key:
-                by_key[key].append(event)
+        obj = number(data.get("FileObject"))
+        key = None if kind == 24 else name_transition_key(kind, data) or number(data.get("FileKey"))
+        related_object = kind not in {10, 11} and obj in objects
+        related_key = key and key in keys
+        if related_object:
+            by_object[obj].append(event)
+        if related_key:
+            by_key[key].append(event)
+        if related_object or related_key:
+            related_irps.add(number(data.get("Irp")))
+    # A related IRP may be reused by an unrelated object. Preserve its full history.
+    for event in events:
+        if event.get("lifecycle"):
+            continue
+        data = event["data"]
         irp = number(data.get("Irp"))
-        if irp:
+        if irp and irp in related_irps:
             by_irp[irp].append(event)
 
     def evaluate(write, completed, capture_context):
         data = write["data"]
-        object_events = by_object[number(data.get("FileObject"))]
+        file_object = number(data.get("FileObject"))
+        object_events = by_object[file_object]
         prior_opens = [event for event in object_events
                        if event["id"] == 12 and event["ticks"] <= write["ticks"]]
         if not prior_opens:
@@ -1732,14 +1777,28 @@ def summarize_write_gap_open_evidence(events, gaps, opens_with_process_lifetime,
         if path is None:
             return "open-path-unmapped"
         key = number(data.get("FileKey"))
-        if not key:
+        if not key or (verify_file_identity and (type(key) is not int or key < 0)):
             return "write-key-unverified"
         if successful_completion(by_irp[number(data.get("Irp"))], write, completed + 1) != completed:
             return "write-completion-unverified"
+        if verify_file_identity:
+            open_completion = next(event for event in by_irp[number(opened["data"].get("Irp"))]
+                                   if event["id"] == 24 and event["ticks"] == open_completed)
+            if number(open_completion["data"].get("FileObject")) not in {None, 0, file_object}:
+                return "open-completion-file-identity-conflict"
+            if (number(open_completion["data"].get("FileKey")) not in {None, 0, key} or any(
+                opened["ticks"] <= event["ticks"] <= completed
+                and number(event["data"].get("FileKey")) not in {None, 0, key}
+                for event in object_events
+            )):
+                return "conflicting-object-file-key"
 
         relevant_events = {id(event): event for event in object_events + by_key[key]}
         related = sorted(relevant_events.values(), key=lambda event: event["ticks"])
-        candidate = "candidate-protected" if tracked(path) else "candidate-outside-protected"
+        if classify_path is not None:
+            candidate = classify_path(path)
+        else:
+            candidate = "candidate-protected" if tracked(path) else "candidate-outside-protected"
         reason, event = write_object_path_conflict(
             related, opened, open_completed, write, completed, path, resolve_path,
         )

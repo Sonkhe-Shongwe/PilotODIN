@@ -157,6 +157,91 @@ class WebViewWriteReplayTests(unittest.TestCase):
             "eligible_outside_selected_pairs": None,
         })
 
+    def test_cleanup_name_gaps_report_open_evidence_without_changing_findings(self):
+        start, end = map(trace.utc_time, ("2026-11-18T00:00:00Z", "2026-11-18T00:00:01Z"))
+        ticks = count(trace.utc_ticks(start) + 1)
+        rows = []
+
+        def emit(kind, *, pid=7, **data):
+            rows.append(event(next(ticks), kind, **data) | {"pid": pid})
+
+        emit(1, ProcessID=7)
+        emit(3, ProcessID=7, ThreadID=71)
+        emit(1, pid=8, ProcessID=8)
+        cases = (
+            ("permitted", PERMITTED_PATH), ("protected", PROTECTED_PATH), ("outside", OUTSIDE_PATH),
+            ("no-open", PERMITTED_PATH), ("no-open", PERMITTED_PATH),
+            ("failed-open", PERMITTED_PATH), ("name-conflict", PERMITTED_PATH),
+            ("same-object-cleanup", PERMITTED_PATH), ("key-conflict", PERMITTED_PATH),
+            ("open-completion-conflict", PERMITTED_PATH), ("write-completion-conflict", PERMITTED_PATH),
+            ("tied-completion", PERMITTED_PATH), ("missing-thread", PERMITTED_PATH),
+            ("opener-exited", PERMITTED_PATH), ("failed-write", PERMITTED_PATH),
+            ("no-cleanup", PERMITTED_PATH),
+        )
+        for key, (case, path) in enumerate(cases, start=100):
+            obj = key + 1_000
+            if case != "no-open":
+                # The opener has a separate ETW lifetime from the writer.
+                emit(12, pid=8, FileObject=obj, Irp=10, FileName=path)
+                emit(24, pid=8, Irp=10, Status=0xC0000022 if case == "failed-open" else 0,
+                     ExtraInformation=1, FileObject=999 if case == "open-completion-conflict" else obj)
+            emit(10, FileKey=key, FileName=path)
+            if case != "no-cleanup":
+                emit(13, pid=8, FileKey=key, FileObject=obj + 1_000)
+            if case == "name-conflict":
+                emit(10, FileKey=key, FileName=OUTSIDE_PATH)
+            if case == "same-object-cleanup":
+                emit(13, pid=8, FileKey=key, FileObject=obj)
+            if case == "key-conflict":
+                emit(15, pid=8, FileKey=9_999, FileObject=obj)
+            if case == "opener-exited":
+                emit(2, pid=8, ProcessID=8)
+                rows[-1]["lifecycle"] = True
+            emit(16, FileObject=obj, FileKey=key, Irp=20, IssuingThreadId=0 if case == "missing-thread" else 71)
+            emit(24, Irp=20, Status=0xC0000022 if case == "failed-write" else 0,
+                 FileObject=999 if case == "write-completion-conflict" else obj)
+            if case == "tied-completion":
+                rows.append(dict(rows[-1]))
+
+        payload = "".join(json.dumps(row) + "\n" for row in rows).encode()
+        manifest = {"etw": {
+            "schema_version": 1, "start_utc": start.isoformat(), "end_utc": end.isoformat(),
+            "events_sha256": hashlib.sha256(payload).hexdigest(),
+            "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+            "counters": {"events_lost": 0, "log_buffers_lost": 0,
+                         "realtime_buffers_lost": 0, "buffers_written": 1},
+        }}
+        processes = {"webview": trace.Process("webview", "app", 7, "msedgewebview2.exe", None, start, "")}
+        report, lost = {}, {}
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "generated-etw.jsonl"
+            path.write_bytes(payload)
+            args = (manifest, path, start, end, processes, {"webview": ROLE}, [PROTECTED], {ROLE: [PROFILE]})
+            baseline_issues, reported_issues, lost_issues = set(), set(), set()
+            baseline = trace.inspect_etw_files(*args, baseline_issues)
+            observed = trace.inspect_etw_files(*args, reported_issues, webview_write_candidates=report)
+            manifest["etw"]["counters"]["log_buffers_lost"] = 1
+            trace.inspect_etw_files(*args, lost_issues, webview_write_candidates=lost)
+
+        self.assertEqual(observed, baseline)
+        self.assertEqual(reported_issues, baseline_issues)
+        self.assertEqual(observed[1], {})
+        self.assertEqual(observed[3], {f"{ROLE}:write:path-missing": 15})
+        self.assertEqual(report["cleanup_open_evidence"], {
+            "status": "evaluated", "eligible": 14,
+            "outcomes": {
+                "candidate-permitted": 1, "candidate-protected": 1, "candidate-outside-scope": 1,
+                "no-observed-open": 2, "open-completion-unverified": 1,
+                "conflicting-or-unmapped-name": 1, "file-object-lifetime-changed": 1,
+                "conflicting-object-file-key": 1, "open-completion-file-identity-conflict": 1,
+                "completion-file-identity-conflict": 1, "write-completion-unverified": 1,
+                "write-identity-unverified": 1, "open-process-lifetime-unverified": 1,
+            },
+        })
+        self.assertEqual(lost["cleanup_open_evidence"], {"status": "blocked-etw-loss"})
+        self.assertIn("etw-event-or-buffer-loss", lost_issues)
+        self.assertNotIn("private-", json.dumps(report))
+
     def test_replay_preserves_conflicts_and_strict_protected_and_outside_findings(self):
         start, end = map(trace.utc_time, ("2026-11-18T00:00:00Z", "2026-11-18T00:00:01Z"))
         ticks = count(trace.utc_ticks(start) + 1)
