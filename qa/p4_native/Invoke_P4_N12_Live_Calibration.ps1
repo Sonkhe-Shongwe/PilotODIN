@@ -7,6 +7,7 @@ param(
     [switch]$AppLifetime,
     [switch]$LifetimeControl,
     [switch]$LifetimeEtwControl,
+    [switch]$SocketLifetimeControl,
     [string]$SourceSha,
     [string]$ExecutableSha256
 )
@@ -24,7 +25,14 @@ if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $
     throw 'The FileIO rundown comparison requires the collector-only ETW rehearsal.'
 }
 
-if ($LifetimeControl -or $LifetimeEtwControl) {
+if ($SocketLifetimeControl) {
+    if ($LifetimeControl -or $LifetimeEtwControl -or $AppJourney -or $AppLifetime -or $WithEtw -or
+        $SourceSha -or $ExecutableSha256 -or
+        $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
+        (git rev-parse HEAD) -cne $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE) {
+        throw 'The socket lifetime comparison requires a source-pinned collector-only run.'
+    }
+} elseif ($LifetimeControl -or $LifetimeEtwControl) {
     $consent = if ($LifetimeEtwControl) {
         'I_APPROVE_ONE_N12_LIFETIME_ETW_CONTROL'
     } else {
@@ -101,7 +109,7 @@ $channel = 'Microsoft-Windows-Sysmon/Operational'
 $clock = Get-TimeZone
 $sysmon = Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
 $procmon = $null
-if (-not $WithEtw -and -not $LifetimeControl -and -not $LifetimeEtwControl) {
+if (-not $WithEtw -and -not $LifetimeControl -and -not $LifetimeEtwControl -and -not $SocketLifetimeControl) {
     $procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe' 'Microsoft Corporation' 'aa0b10e936feea464348695f8a85a2dcafd2cb3dabd1d47d8a57e7594783b27b'
 }
 $config = Join-Path $root 'sysmon-config.xml'
@@ -133,6 +141,11 @@ try {
     if ($null -ne $procmon -and $clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
     $installStarted = $true
     Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
+    if ($SocketLifetimeControl) {
+        python -B -m qa.p4_research.n12_socket_lifetime_control $root
+        if ($LASTEXITCODE -ne 0) { throw 'The socket lifetime comparison could not complete.' }
+        return
+    }
     if ($LifetimeControl -or $LifetimeEtwControl) {
         $captureMode = if ($LifetimeEtwControl) { '--capture-etw' } else { '--capture' }
         python -B -m qa.p4_native.n12_lifetime_control $captureMode $root
