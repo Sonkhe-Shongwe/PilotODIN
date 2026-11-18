@@ -4,7 +4,7 @@
 
 ## Next engineering action
 
-Prioritise isolation fixes for observed outside-scope operations. The QA driver now points its PowerShell module cache at the existing disposable scratch directory. In the next separately approved app audit, compare the PowerShell write and overwrite counts under `user-local` against six of each in the last audit. The WebView comparison's 23 unresolved writes remain open. [Driver cache isolation](#18-november-2026--isolate-the-qa-driver-powershell-cache) · [Live cleanup diagnostic](#18-november-2026--live-cleanup-write-diagnostic)
+Prioritise isolation fixes for observed outside-scope operations. The QA driver redirects its PowerShell module cache to disposable scratch and loads the Vite config without a temporary bundle. In the next separately approved app audit, compare the PowerShell `user-local` counts and the Node `frontend-dependencies` counts against the last audit. The WebView comparison's 23 unresolved writes remain open. [Vite config isolation](#18-november-2026--isolate-vite-config-loading-in-the-qa-driver) · [Driver cache isolation](#18-november-2026--isolate-the-qa-driver-powershell-cache)
 
 ## Windows audit evidence
 
@@ -14,6 +14,12 @@ Prioritise isolation fixes for observed outside-scope operations. The QA driver 
 | Previous app results | At `02f807b`, Sysmon identity mismatches blocked both launches. At `022df1c`, an earlier completed audit reported 67 outside-scope operations, seven unexpected connections and 200,077 unresolved WebView network-process writes. [Blocked attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44337564606/job/134918293248) · [Earlier completed audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44298639798/job/134782187614) |
 | Fixture-only coverage | With the four-second hold at `5d4b8da`, Sysmon attributed both TCP and UDP to the fixture child on its first read. ETW wrote 276 buffers with zero event or buffer loss and produced a nonempty trace. Launch `8a3d05c` consumed the one-use approval. [Retained-child pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Earlier immediate-exit pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44335300490/job/134910240433) |
 | WebView write comparison | On the latest digest-matched trace, the strict comparison attributed 198,111 paths to permitted scope and 111 to outside-scope violations, leaving 23 unresolved. The ordinary result governs acceptance. [Latest live comparison](#18-november-2026--live-cleanup-write-diagnostic) · [Previous comparison with 141 gaps](#18-november-2026--live-webview-write-path-comparison-completed) |
+
+### 18 November 2026 | Isolate Vite config loading in the QA driver
+
+The ordinary audit counted two creates, one write and one delete by driver Node in `frontend-dependencies`. The N12 launcher used Vite's default config bundler. The launcher now selects `--configLoader runner` for the QA Vite process. The filesystem allowlist still grants the driver its existing optimized dependency cache and scratch directory. [Windows evidence](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44379979033/job/135069239278) · [Vite 6 config loading](https://v6.vite.dev/config/#configuring-vite)
+
+The generated comparison loads the project's actual TypeScript config with both loaders in disposable roots. It checks the configured Cargo watcher exclusions and whether each loader creates `node_modules/.vite-temp`. The old audit retained only directory-category counts, so the identity of its individual file targets is unverified. Live verification of the four-operation count is **NOT RUN**. [Vite fixture](../frontend/e2e/p4-n12-native-cases.test.mjs)
 
 ### 18 November 2026 | Isolate the QA driver PowerShell cache
 

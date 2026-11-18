@@ -717,7 +717,7 @@ def capture(root, staged, source, expected_hash, node):
                 "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 env, build.REPO, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
-                "--host", "127.0.0.1", "--port", "5173", "--strictPort"],
+                "--host", "127.0.0.1", "--port", "5173", "--strictPort", "--configLoader", "runner"],
                 driver_environment(env, root), FRONTEND, root / "vite.log")
             driver_handles.watch(vite, "vite")
             wait_for(lambda: http_ready(8000, "/api/health", lambda status:

@@ -693,6 +693,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         else:
             assert env["TEMP"] == env["TMP"] == user_temp
             assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
+        if log.stem == "vite":
+            assert command[-2:] == ["--configLoader", "runner"]
         if log.stem.startswith("driver-"):
             assert env["PILOTODIN_N12_QUALITY_FIXTURE"] == str(fixture)
             assert (command[-1] == "--verify-relaunch") == (log.stem == "driver-relaunch")
