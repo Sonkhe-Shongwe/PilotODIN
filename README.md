@@ -9,7 +9,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 - **[P0–P8 development and release status](docs/PROJECT_STATUS_CURRENT.md)**: accepted development slices and remaining limitations.
 - **[P4 acceptance worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)** for gate status and Windows evidence. **[N12 runbook](qa/p4_native/N12_TRACE.md)** for the collector and trace procedure.
 - **[Local analytics implementation plan and acceptance evidence](docs/P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md)** for the Ask ODIN milestone and remaining resource checks.
-- **[Whole-app RAM baseline plan](docs/RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target)** for the proposed 1 GiB target and first measurement.
+- **[Whole-app RAM range and measurements](docs/RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom)** for the roughly 1–3 GiB planning range and physical laptop results.
 - **[P1 prior-phase closure matrix](docs/P1_CLOSURE_REGISTER_2026-10-28.md)**: dated historical P1 acceptance.
 - **[Phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)**: owner-approved one-primary-phase and closure criteria.
 - **[Documentation index](docs/DOCUMENTATION_INDEX.md)** for current references and historical audits.

@@ -14,7 +14,7 @@ Deliver sends report bytes directly to WebView2 IPC on the normal Windows path. 
 
 The owner showed the isolated candidate's Settings and Ask ODIN on the 8 GB laptop. Settings showed the 1.50 GiB cutoff and available RAM snapshots of 1.474 and 1.517 GiB. One snapshot confirmed Low-memory mode was saved. Ask ODIN reported `Desktop startup: resource_limited` and returned the verified missing-premium result using local rules. The screenshots establish a startup deferral and a usable fallback. The request-time readings, specific deferral code, paging, source digest and offline state were not independently verified. The 2.00 GiB baseline has no recorded bundled answer in the comparison. Preserve any existing `r03-benchmark.jsonl` and `r03-memory.csv` before interpreting the cause or retrying.
 
-The [first physical baseline](./RESOURCE_AWARE_MODE_DESIGN.md#first-physical-baseline-result) supplies the starting point for the proposed 1 GiB daily-workload target. The [documentation audit](./DOCUMENTATION_AUDIT_2026-11-17.md) reconciles the evidence and the current acceptance decisions.
+The [first physical baseline](./RESOURCE_AWARE_MODE_DESIGN.md#first-physical-baseline-result) supplies the reference measurements for the [roughly 1–3 GiB planning range](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom). The [documentation audit](./DOCUMENTATION_AUDIT_2026-11-17.md) reconciles the evidence and the current acceptance decisions.
 
 ## 17 November 2026 | Isolated R03 headroom benchmark kit ready
 
@@ -662,7 +662,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-For resource work, preserve the existing candidate evidence and prepare the [whole-app measurement](./RESOURCE_AWARE_MODE_DESIGN.md#proposed-1-gib-everyday-ram-target) using the verified unpackaged build and disposable data. Prefer external sampling before changing product code. R03.3 still requires a bundled offline answer on the physical laptop under the accepted admission policy. The [headroom comparison](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) remains useful diagnostic evidence when the request-time conditions can be verified.
+For resource work, use the [physical whole-app measurements](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) as the reference. The owner approved a flexible **roughly 1–3 GiB planning range** for app RAM, with available Windows memory, paging and responsiveness guiding the assessment. Preserve the existing candidate evidence. R03.3 still requires a bundled offline answer on the physical laptop under the accepted admission policy. The [headroom comparison](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) remains useful diagnostic evidence when the request-time conditions can be verified.
 
 The next separately approved app audit can compare the [separate final Sysmon check](#17-november-2026--separate-final-sysmon-verification) with the combined calibration verdict and measure supported, blocked and unchecked WebView writes with the [repeat-write report](#17-november-2026--webview-repeat-write-evidence). Retain the two outside-scope samples, the identity conflict and the other filesystem and lifecycle blockers from the previous audit as open findings.
 
