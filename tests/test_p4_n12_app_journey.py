@@ -424,7 +424,8 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
                                     "sysmon-export", "sysmon-parse", "changed-protected", "absent-fixture",
                                     "etw-export", "etw-reduce", "backend-snapshot-unavailable",
                                     "app-and-cleanup", "etw-stop", "driver-readiness-missing",
-                                    "final-calibration", "final-export-regressed"])
+                                    "final-calibration", "final-export-regressed",
+                                    "credit-reduce", "credit-reconcile"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
@@ -610,20 +611,43 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
 
     monkeypatch.setattr(journey, "journey_lifetime_evidence", lifetime_report)
 
-    def reduce(m, sysmon_observed, file_trace, before, after, *, etw, record_outside_writer,
-               journey_bookends, describe_path_gaps, observe_lifetimes, webview_dominant_writes):
-        events.append("reducer")
+    write_gap = "webview-network:write:path-missing"
+    unrelated_gap = "backend:write:path-missing"
+
+    def reduce(m, sysmon_observed, file_trace, before, after, *, etw, journey_bookends, describe_path_gaps,
+               webview_dominant_writes, record_outside_writer=None, observe_lifetimes=None,
+               credit_verified_webview_writes=False):
         assert sysmon_observed is observed
         assert etw and m["etw"]["events_sha256"] == journey.build.digest(file_trace)
         assert before != after
         assert describe_path_gaps and webview_dominant_writes
         assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
                                     "after": [{"pid": 702, "birth_ticks": 170}]}
+        findings = {"coverage": "BLOCKED", "network": "BLOCKED", "filesystem": "BLOCKED",
+                    "coverage_issues": ["etw-mutation-coverage-unresolved"],
+                    "file_events": {}, "file_violations": {"outside-scope:driver:write": 1},
+                    "etw_unresolved_mutations": {write_gap: 3, unrelated_gap: 1}}
+        if credit_verified_webview_writes:
+            events.append("credit-reducer")
+            assert observe_lifetimes is None and record_outside_writer is None
+            assert file_trace == root / "etw.jsonl"
+            assert json.loads((root / "audit.json").read_text())["etw_unresolved_mutations"] == {
+                write_gap: 3, unrelated_gap: 1,
+            }
+            if fault == "credit-reduce":
+                raise ValueError("private-credit-reducer-value")
+            findings["etw_unresolved_mutations"][write_gap] = 1
+            findings["etw_webview_write_credit"] = {
+                "status": "compared", "credited_paths": {"permitted": 2},
+                "remaining_path_gaps": 0 if fault == "credit-reconcile" else 1,
+            }
+            return findings
+        events.append("reducer")
         observe_lifetimes([], {}, (0, 1), frozenset(observed.issues))
         if fault == "etw-reduce":
             raise journey.trace.EvidenceValidationError("invalid ETW evidence")
         record_outside_writer("driver", "write", (r"c:\private\driver.bin",), "node.exe")
-        return {"coverage": "BLOCKED", "network": "BLOCKED", "filesystem": "BLOCKED"}
+        return findings
 
     monkeypatch.setattr(journey, "calibrate", calibrate)
     monkeypatch.setattr(journey, "verify_initial_sysmon", first_check)
@@ -677,7 +701,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert stages[-2:] == [("final-fixture", "completed"), ("etw-stop", "interrupted")]
         return
 
-    if fault and fault not in {"backend-snapshot-unavailable", "final-calibration"}:
+    comparison_faults = {"credit-reduce": "ValueError", "credit-reconcile": "EvidenceValidationError"}
+    completed_baseline = {None, "backend-snapshot-unavailable", "final-calibration", *comparison_faults}
+    if fault not in completed_baseline:
         error, message = {
             "sysmon-export": (journey.trace.EvidenceValidationError, "Sysmon export failed"),
             "final-export-regressed": (journey.trace.EvidenceValidationError, "record ID regressed after final fixture"),
@@ -698,9 +724,25 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                           "cleanup-driver-first", "cleanup-app-first", "cleanup-vite", "cleanup-backend",
                           "final-fixture-lead-in", "calibration-last", "etw-stop", "process-bookend-after", "drain",
                           "sysmon-final-check", "sysmon-reducer",
-                          "etw-export", "reducer"]
+                          "etw-export", "reducer", "credit-reducer"]
         public = (root / "audit.json").read_text()
         assert "private-value" not in public and "702" not in public
+        assert "webview_credit_comparison" not in json.loads(public)
+        assert report["etw_unresolved_mutations"] == {write_gap: 3, unrelated_gap: 1}
+        comparison = report["webview_credit_comparison"]
+        comparison_path = root / "webview-credit-comparison.json"
+        assert comparison["etw_events_sha256"] == manifest["etw"]["events_sha256"]
+        assert comparison["baseline_webview_write_path_gaps"] == 3
+        if fault in comparison_faults:
+            assert comparison["status"] == "blocked" and comparison["error"] == comparison_faults[fault]
+            assert "private-credit-reducer-value" not in json.dumps(report)
+            assert not comparison_path.exists()
+        else:
+            assert json.loads(comparison_path.read_text()) == comparison
+            assert comparison["status"] == "completed"
+            assert comparison["etw_unresolved_mutations"] == {write_gap: 1, unrelated_gap: 1}
+            assert comparison["file_violations"] == report["file_violations"]
+            assert comparison["network"] == report["network"]
         assert json.loads((root / "private-process-bookends.json").read_text())["before"] == [
             {"pid": 702, "birth_ticks": 170},
         ]
@@ -730,8 +772,18 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                  "sysmon-parse": "sysmon-reduction",
                  "etw-export": "etw-export", "etw-reduce": "combined-reduction"}[fault]
         assert records[-1]["stage"] == stage and records[-1]["status"] == "interrupted"
+    if fault in completed_baseline:
+        assert records[-1]["stage"] == "webview-credit-comparison"
+        assert records[-1]["status"] == ("interrupted" if fault in comparison_faults else "completed")
+        ordinary, = [line for line in lines if line.startswith("N12 ordinary audit ")]
+        assert json.loads(ordinary.removeprefix("N12 ordinary audit "))["etw_unresolved_mutations"] == {
+            write_gap: 3, unrelated_gap: 1,
+        }
+        assert lines.index(ordinary) < next(
+            index for index, line in enumerate(lines) if '"stage": "webview-credit-comparison"' in line
+        )
     lifetime_lines = [line for line in lines if line.startswith("N12 app lifetime observations ")]
-    if fault in {None, "etw-reduce", "backend-snapshot-unavailable", "final-calibration"}:
+    if fault in completed_baseline or fault == "etw-reduce":
         lifetime_line, = lifetime_lines
         assert "private" not in lifetime_line
         assert json.loads(lifetime_line.removeprefix("N12 app lifetime observations "))["launches"] == {
@@ -741,7 +793,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert not lifetime_lines
     network_lines = [line.removeprefix("N12 network observations ") for line in lines
                      if line.startswith("N12 network observations ")]
-    if fault in {None, "etw-export", "etw-reduce", "backend-snapshot-unavailable", "final-calibration"}:
+    if fault in completed_baseline or fault in {"etw-export", "etw-reduce"}:
         observation, = network_lines
         assert "private-value" not in observation and "702" not in observation
         assert json.loads(observation) == {

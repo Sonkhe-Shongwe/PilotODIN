@@ -802,6 +802,40 @@ def capture(root, staged, source, expected_hash, node):
     }
     result["journey"] = "completed"
     report_file(root / "audit.json", result)
+
+    # Both reductions validate the digest of this one ETW export. Record the
+    # ordinary result first so the comparison cannot replace its findings.
+    evidence_sha = manifest["etw"]["events_sha256"]
+    gap = "webview-network:write:path-missing"
+    baseline_gaps = result["etw_unresolved_mutations"].get(gap, 0)
+    print("N12 ordinary audit " + json.dumps({
+        "source_sha": source, "executable_sha256": expected_hash, "etw_events_sha256": evidence_sha,
+        **{key: result[key] for key in (
+            "coverage", "coverage_issues", "filesystem", "network", "file_violations", "etw_unresolved_mutations",
+        )},
+    }), flush=True)
+    try:
+        with checkpoint_stage("webview-credit-comparison", source, expected_hash):
+            trial = trace.complete_journey_audit(
+                manifest, observed, events, before, after, etw=True, journey_bookends=bookends,
+                describe_path_gaps=True, webview_dominant_writes=True, credit_verified_webview_writes=True,
+            )
+            credit = trial["etw_webview_write_credit"]
+            remaining = trial["etw_unresolved_mutations"].get(gap, 0)
+            trace.require(remaining == credit["remaining_path_gaps"] and
+                          baseline_gaps - remaining == sum(credit["credited_paths"].values()),
+                          "WebView credit comparison does not reconcile with the ordinary audit")
+            comparison = {"status": "completed", "etw_events_sha256": evidence_sha,
+                          "baseline_webview_write_path_gaps": baseline_gaps,
+                          **{key: trial[key] for key in (
+                              "coverage", "coverage_issues", "filesystem", "network", "file_events",
+                              "file_violations", "etw_unresolved_mutations", "etw_webview_write_credit",
+                          )}}
+            report_file(root / "webview-credit-comparison.json", comparison)
+    except (trace.EvidenceValidationError, KeyError, OSError, RuntimeError, ValueError) as exc:
+        comparison = {"status": "blocked", "etw_events_sha256": evidence_sha,
+                      "baseline_webview_write_path_gaps": baseline_gaps, "error": type(exc).__name__}
+    result["webview_credit_comparison"] = comparison
     return result
 
 
@@ -830,7 +864,8 @@ def main():
             root = trace.local_disposable_path(staged.with_name(f'{staged.name}-journey'), runner_temp_only=True)
         result = capture(root, staged, args.source, args.expected_exe_sha256, node)
         print(json.dumps(result))
-        return 0 if result["network"] == result["filesystem"] == "PASS_SCOPED" else 2
+        return 0 if (result["network"] == result["filesystem"] == "PASS_SCOPED" and
+                     result["webview_credit_comparison"]["status"] == "completed") else 2
     except trace.EvidenceValidationError as exc:
         print(f"N12 journey blocked: {exc}.", file=sys.stderr)
     except (KeyError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
