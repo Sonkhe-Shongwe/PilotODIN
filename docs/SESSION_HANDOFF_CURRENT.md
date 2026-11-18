@@ -662,6 +662,8 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
+Start with the [physical offline Qwen baseline](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#next-physical-run-at-the-200-gib-baseline). The benchmark launcher can preserve an existing isolated baseline profile and export one ZIP with request-time admission, provider outcome and system resource readings. A verified bundled answer earns R03.3 and moves the engineering score from 14/20 to 15/20. R03.4 and the preservation and N12 gates require their own evidence.
+
 For resource work, use the [physical whole-app measurements](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) as the reference. The owner approved a flexible **roughly 1–3 GiB planning range** for app RAM, with available Windows memory, paging and responsiveness guiding the assessment. Preserve the existing candidate evidence. R03.3 still requires a bundled offline answer on the physical laptop under the accepted admission policy. The [headroom comparison](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) remains useful diagnostic evidence when the request-time conditions can be verified.
 
 The next separately approved app audit can compare the [separate final Sysmon check](#17-november-2026--separate-final-sysmon-verification) with the combined calibration verdict and measure supported, blocked and unchecked WebView writes with the [repeat-write report](#17-november-2026--webview-repeat-write-evidence). Retain the two outside-scope samples, the identity conflict and the other filesystem and lifecycle blockers from the previous audit as open findings.

@@ -10,7 +10,7 @@
 | Qwen3 1.7B batch comparison | Batch 512 peaked at 2,109.5 MiB and batch 128 at 2,068.9 MiB. Both scored 2 of 5. The batch 512 worker released 2,024.1 MiB at idle and answered after waking. The comparison retained batch 512. [Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43740595746/job/132892675147) |
 | Smaller generative models | Qwen3 0.6B peaked at 934.9 MiB and scored 2 of 4. SmolLM2 360M peaked at 420.0 MiB and scored 1 of 4. Neither cleared the earlier structured answer screen. These worker measurements exclude PilotODIN and its dataset. [Small-model run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43593329731/job/132442500969) |
 | Model-free wording experiment | The separate word-overlap follow-up selector got 4 of 8 original questions and 2 of 8 paraphrases right. It correctly abstained on all 12 unclear questions. This tested selection from fixed options. [Benchmark](../desktop/evaluate_offline_follow_up_rules.py) |
-| Physical 8 GB laptop | The owner accepted the native filtered median and follow-up. Physical RAM, paging and UI timings remain unverified. The 2.00 GiB QA attempt and the isolated 1.50 GiB candidate deferred bundled Qwen. The candidate returned verified rules. [Native result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) · [Candidate result](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred) |
+| Physical 8 GB laptop | The owner accepted the native filtered median and follow-up. The everyday Local analytics retest measured a 735.27 MiB sampled peak. bundled inference RAM and UI timings need physical evidence. The 2.00 GiB QA attempt and the isolated 1.50 GiB candidate deferred bundled Qwen. The candidate returned verified rules. [Native result](./SESSION_HANDOFF_CURRENT.md#16-november-2026--native-local-analytics-answers-accepted) · [Candidate result](./SESSION_HANDOFF_CURRENT.md#17-november-2026--physical-r03-candidate-deferred) |
 
 The pre-milestone Local analytics path supported exact overview, missingness, labelled-rate and training-status requests. In a disposable real API check at `98affa4`, an ordinary-language labelled-rate question, a filtered median question and a follow-up returned the general dataset overview. The group missingness question inspected the wrong field. The expanded milestone passed the API and browser checks. [Milestone evidence](./SESSION_HANDOFF_CURRENT.md#15-november-2026--ask-odin-local-analytics-milestone)
 
@@ -105,6 +105,19 @@ From the current development branch of the PilotODIN repository, run the launche
 5. Record the launcher-reported desktop SHA-256, available RAM, answer or error, its provider label and whether the app stays open. A response labelled **BUNDLED · pilotodin-qwen3-1.7b** with the app still open satisfies the narrow R03.3 retest. If the launcher, memory check or request stops, preserve the exact output and the observed stage.
 
 This test uses a generated CSV and evaluates one cold-start response. Sustained resource coexistence is assessed separately under R03.4.
+
+### Next physical run at the 2.00 GiB baseline
+
+Use the existing [PilotODIN-P4-R03-Headroom-QA build](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44106241769/artifacts/14339122820) while the artifact is available. The launcher uses the bundled Qwen files from the separate `pilotODIN-P4-Native-QA` installation. Extract the kit, close PilotODIN and Live Dev windows, and pull the active branch. The normal-policy baseline uses a fresh disposable benchmark profile. The archive switch renames the previous baseline profile after staging and verifying the kit and runtime files.
+
+```powershell
+$kit = "$env:USERPROFILE\Downloads\PilotODIN-P4-R03-Headroom-QA"
+& .\tools\Start_P4_R03_Offline_QA.ps1 -KitDirectory $kit -BenchmarkProfile baseline -ExpectedSource '8966edc781128baa94354df044bfadc45d069984' -ArchiveExistingQaProfile
+```
+
+Import the printed synthetic CSV. In Settings select **Low-memory** and **Offline**, enable local inference, and save with a **120-second local timeout**. Disconnect Wi-Fi and any wired network. Refresh available RAM with the desktop open and run the smoke question when the reading reaches at least **2.00 GiB**. Ask ODIN once through **Offline Qwen3 (desktop) / Ollama (dev)** using “In one sentence, explain why I should check for missing values before training a model on this dataset.” Capture the visible answer and provider or the exact deferral. Close the QA desktop to finish capture, then upload the printed `PilotODIN-R03-Offline-Evidence.zip` and the result screenshot. The ZIP records the admitted or deferred request, provider and fallback outcome when available, and system RAM, paging and desktop responsiveness. A missed Windows sample is flagged and collection continues.
+
+R03.3 needs one verified bundled answer on the disconnected laptop. Measure process-attributed coexistence separately for R03.4. The [completed Local analytics RAM walkthrough](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) supplies the model-free comparison.
 
 ### R03 candidate at 1.50 GiB available
 

@@ -283,6 +283,9 @@ jobs:
       - name: Verify the everyday RAM sampler with Windows counters and generated fixtures
         shell: powershell
         run: ./qa/p4_native/Test_P4_Everyday_RAM_Baseline.ps1
+      - name: Verify offline Qwen benchmark evidence and profile preservation
+        shell: powershell
+        run: ./qa/p4_native/Test_P4_R03_Offline_Launcher.ps1
       - name: Exercise Windows UI Automation against a synthetic dialog
         shell: powershell
         run: ./qa/p4_native/Test_P4_Native_Project_Switch_Automation.ps1
