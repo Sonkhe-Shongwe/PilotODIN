@@ -72,7 +72,7 @@ def name_transition_key(kind, data):
 
 
 class DominantWebViewWrites:
-    """Rank eligible file pairs and retain bounded evidence for the top two."""
+    """Retain bounded evidence for the dominant pairs and comparison remainder."""
 
     def __init__(self):
         self.counts = Counter()
@@ -100,10 +100,18 @@ class DominantWebViewWrites:
 
         gaps, evidence = [], []
         evidence_by_request = {}
-        for pair, total in self.counts.most_common(2):
-            outcomes = Counter()
+        smaller_outcomes = Counter()
+        smaller_total = smaller_retained = smaller_credited = 0
+        pairs_to_check = self.counts.most_common(2 if credit_path is None else None)
+        for index, (pair, total) in enumerate(pairs_to_check):
             requests = self.requests.get(pair, ())
-            evidence.append((total, len(requests), outcomes))
+            if index < 2:
+                outcomes = Counter()
+                evidence.append((total, len(requests), outcomes))
+            else:
+                outcomes = smaller_outcomes
+                smaller_total += total
+                smaller_retained += len(requests)
             for request, completed, issue, credit_identity in requests:
                 if issue:
                     outcomes[f"{WEBVIEW_DOMINANT_ROLE}:completion-check:{issue}"] += 1
@@ -115,26 +123,33 @@ class DominantWebViewWrites:
             evidence_by_request[id(request)][0][label] += 1
 
         def credit_verified_path(request, completed, path):
-            identity = evidence_by_request[id(request)][1]
-            if identity is not None:
-                credit_path(identity, path, request["ticks"], completed)
+            nonlocal smaller_credited
+            outcomes, identity = evidence_by_request[id(request)]
+            if identity is not None and credit_path(identity, path, request["ticks"], completed):
+                if outcomes is smaller_outcomes:
+                    smaller_credited += 1
 
         summarize_calibration_path_gaps(
             events, gaps, resolve_path, tracked, {}, set(), None, classify_path=classify_path,
             record_request_outcome=count_outcome, index_request_paths=True,
             record_indexed_path=credit_verified_path if credit_path is not None else None,
         )
-        pairs = []
-        for total, retained, outcomes in evidence:
+        def pair_summary(total, retained, outcomes):
             unchecked_by_reason = {"retention-limit": total - retained} if retained < total else {}
             checked = sum(outcomes.values())
             supported = sum(count for label, count in outcomes.items() if ":request-time:candidate-" in label)
-            pairs.append({"eligible": total, "checked": checked, "supported": supported,
-                          "blocked": checked - supported, "unchecked": total - checked,
-                          "unchecked_by_reason": unchecked_by_reason, "outcomes": dict(outcomes)})
-        return {"status": "partial" if any(pair["unchecked"] for pair in pairs) else "complete",
-                "eligible": eligible, "pairs": pairs,
-                "eligible_outside_selected_pairs": eligible - sum(pair["eligible"] for pair in pairs)}
+            return {"eligible": total, "checked": checked, "supported": supported,
+                    "blocked": checked - supported, "unchecked": total - checked,
+                    "unchecked_by_reason": unchecked_by_reason, "outcomes": dict(outcomes)}
+
+        pairs = [pair_summary(*group) for group in evidence]
+        report = {"status": "partial" if any(pair["unchecked"] for pair in pairs) else "complete",
+                  "eligible": eligible, "pairs": pairs,
+                  "eligible_outside_selected_pairs": eligible - sum(pair["eligible"] for pair in pairs)}
+        if smaller_total:
+            report["smaller_pairs"] = pair_summary(smaller_total, smaller_retained, smaller_outcomes)
+            report["smaller_pairs"]["credited"] = smaller_credited
+        return report
 
 
 def correlate_requests(events, resolve_path, classify_process, tracked, record, *,
@@ -782,16 +797,18 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             eligible_outside_sample=webview_gaps_seen - sum(pair["eligible"] for pair in pairs),
         )
         if dominant_writes is not None:
-            def credit_dominant_path(identity, path, requested, completed):
-                if credit_webview_path(identity, path, requested, completed):
-                    reason = "webview-network:write:path-missing"
-                    unresolved[reason] -= 1
-                    if unresolved[reason] == 0:
-                        del unresolved[reason]
+            def credit_compared_path(identity, path, requested, completed):
+                if not credit_webview_path(identity, path, requested, completed):
+                    return False
+                reason = "webview-network:write:path-missing"
+                unresolved[reason] -= 1
+                if unresolved[reason] == 0:
+                    del unresolved[reason]
+                return True
 
             webview_write_candidates["dominant"] = dominant_writes.report(
                 webview_gaps_seen, ordered_events, resolve_path, tracked, classify_webview_path,
-                credit_dominant_path if credit_webview_path is not None else None,
+                credit_compared_path if credit_webview_path is not None else None,
             )
     if calibration_diagnostics is not None:
         credited_paths = Counter()

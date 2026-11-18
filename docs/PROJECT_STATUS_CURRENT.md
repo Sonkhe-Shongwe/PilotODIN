@@ -2,7 +2,7 @@
 
 **18 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
-The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The live same-trace comparison attributed 199,268 previously unresolved WebView network-process write paths to permitted scope. Combined coverage and both acceptance checks remain open. [Next engineering action](./SESSION_HANDOFF_CURRENT.md#next-engineering-action)
+The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The current investigation covers the 141 WebView writes left by the live comparison. The expanded comparison has passed generated replay and awaits live verification. [Remaining WebView writes](./SESSION_HANDOFF_CURRENT.md#18-november-2026--remaining-webview-write-paths)
 
 ## Phase ledger
 

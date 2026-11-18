@@ -4,9 +4,7 @@
 
 ## Next engineering action
 
-Use generated evidence and the published [app diagnostic](#18-november-2026--live-webview-write-path-comparison-completed) to investigate why the combined reducer reported that calibration did not bracket the journey and could not bind all process roots or exits. Both standalone calibration checks passed during the same run. Preserve the strict PID, GUID, image and lifetime requirements.
-
-Continue isolating the recurrent out-of-scope operations and unexpected connections. The same-trace comparison established live path improvements, while 141 WebView network-process write paths and other coverage issues remain. Plan acceptance once those findings have a credible path to resolution. [QA preflight](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md) · [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
+The current investigation is limited to the 141 WebView network-process writes left by the strict comparison. The follow-up covers the 127 writes across four smaller FileKey and FileObject pairs on generated evidence. The 14 cleanup-invalidated writes need a separate known-file control that can distinguish a surviving handle from key or object reuse. The hosted job retained only redacted summaries. [Remaining WebView writes](#18-november-2026--remaining-webview-write-paths)
 
 ## Windows audit evidence
 
@@ -16,6 +14,20 @@ Continue isolating the recurrent out-of-scope operations and unexpected connecti
 | Previous app results | At `02f807b`, Sysmon identity mismatches blocked both launches. At `022df1c`, an earlier completed audit reported 67 outside-scope operations, seven unexpected connections and 200,077 unresolved WebView network-process writes. [Blocked attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44337564606/job/134918293248) · [Earlier completed audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44298639798/job/134782187614) |
 | Fixture-only coverage | With the four-second hold at `5d4b8da`, Sysmon attributed both TCP and UDP to the fixture child on its first read. ETW wrote 276 buffers with zero event or buffer loss and produced a nonempty trace. Launch `8a3d05c` consumed the one-use approval. [Retained-child pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Earlier immediate-exit pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44335300490/job/134910240433) |
 | WebView write comparison | On the live, digest-matched trace, the strict comparison attributed 199,268 paths to permitted scope, leaving 141 unresolved. Filesystem, network and coverage verdicts stayed at **FAIL**, **FAIL** and **BLOCKED**. The ordinary result governs acceptance. [Live comparison](#18-november-2026--live-webview-write-path-comparison-completed) |
+
+### 18 November 2026 | Remaining WebView write paths
+
+The published [Windows report](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44358315718/job/134992378756) accounts for 141 writes, with 127 eligible writes outside the two fully checked pairs and 14 whose name evidence was invalidated by Event 13 cleanup on another file object with the same key. The run published no raw ETW artifact for further reduction.
+
+| Writes | Retained path evidence |
+| --- | --- |
+| 102 | 16 outside-scope candidates in the sample. The other 86 lacked an individual path check. |
+| 15 | 15 outside-scope candidates. |
+| 9 | 9 conflicting object-to-key associations. |
+| 1 | 1 permitted path candidate. |
+| 14 | 14 cleanup-invalidated names, excluded from pair selection. |
+
+The strict comparison now evaluates retained requests from all eligible pairs with its existing path, completion, process, thread and audit-window checks. On a generated fixture with the same 141-write breakdown, the comparison attributed 118 paths, including 117 outside scope, and retained the 9 conflicts and 14 invalidations. A generated journey verifies that recovered outside-scope paths become violations. The ordinary report still checks the top two pairs for detailed diagnostics and governs acceptance. Live verification of the expanded comparison is **NOT RUN**. [Replay tests](../tests/test_p4_n12_webview_replay.py) · [N12 runbook](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
 ### 18 November 2026 | Live WebView write-path comparison completed
 

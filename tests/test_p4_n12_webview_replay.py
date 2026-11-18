@@ -68,14 +68,19 @@ class WebViewWriteReplayTests(unittest.TestCase):
         report, unresolved = self.reduce_pairs(
             dominant_pair_events(pair_sizes, repeat_path_evidence=True, unnamed_key=400), credit,
         )
-        self.assertEqual(credited, {PERMITTED_PATH: 199_942})
-        self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": 135})
+        self.assertEqual(credited, {PERMITTED_PATH: 200_063})
+        self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": 14})
         self.assertEqual((report["eligible"], report["sampled"], report["eligible_outside_sample"]),
                          (200_063, 3, 0))
         self.assertEqual([pair["checked"] for pair in report["pairs"]], [16, 16, 16])
         dominant = report["dominant"]
         self.assertEqual(dominant["status"], "complete")
         self.assertEqual(dominant["eligible_outside_selected_pairs"], 121)
+        self.assertEqual(dominant["smaller_pairs"], {
+            "eligible": 121, "checked": 121, "supported": 121, "credited": 121,
+            "blocked": 0, "unchecked": 0, "unchecked_by_reason": {},
+            "outcomes": {f"{ROLE}:write:request-time:candidate-permitted": 121},
+        })
         for pair, writes in zip(dominant["pairs"], (121_256, 78_686), strict=True):
             self.assertEqual(pair, {
                 "eligible": writes, "checked": writes, "supported": writes,
@@ -83,6 +88,55 @@ class WebViewWriteReplayTests(unittest.TestCase):
                 "outcomes": {f"{ROLE}:write:request-time:candidate-permitted": writes},
             })
         self.assertNotIn("private-", json.dumps(report))
+
+    def test_comparison_rechecks_smaller_pairs_without_crediting_conflicts_or_invalidated_names(self):
+        ticks = count(1)
+        rows = [event(next(ticks), 1, ProcessID=7), event(next(ticks), 3, ProcessID=7, ThreadID=71)]
+        for key, writes, path in ((100, 105, PERMITTED_PATH), (200, 103, PERMITTED_PATH),
+                                  (300, 102, OUTSIDE_PATH), (400, 15, OUTSIDE_PATH),
+                                  (500, 9, PERMITTED_PATH), (600, 1, PERMITTED_PATH),
+                                  (700, 14, PERMITTED_PATH)):
+            rows.append(event(next(ticks), 10, FileKey=key, FileName=path))
+            if key == 500:
+                rows.append(event(next(ticks), 15, FileKey=501, FileObject=key + 1))
+            if key == 700:
+                rows.append(event(next(ticks), 13, FileKey=key, FileObject=key + 2))
+            for _ in range(writes):
+                rows.append(event(next(ticks), 16, FileKey=key, FileObject=key + 1, Irp=20, IssuingThreadId=71))
+                rows.append(event(next(ticks), 24, Irp=20, Status=0, FileKey=key, FileObject=key + 1))
+
+        baseline, unresolved = self.reduce_pairs(rows)
+        self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": 349})
+        self.assertEqual(baseline["dominant"]["eligible_outside_selected_pairs"], 127)
+        self.assertNotIn("smaller_pairs", baseline["dominant"])
+
+        credited = Counter()
+
+        def credit(identity, path, requested, completed):
+            credited[path] += 1
+            return True
+
+        compared, unresolved = self.reduce_pairs(rows, credit)
+        self.assertEqual(compared["dominant"]["pairs"], baseline["dominant"]["pairs"])
+        self.assertEqual(credited, {PERMITTED_PATH: 209, OUTSIDE_PATH: 117})
+        self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": 23})
+        self.assertEqual(compared["dominant"]["smaller_pairs"], {
+            "eligible": 127, "checked": 127, "supported": 118, "credited": 118,
+            "blocked": 9, "unchecked": 0, "unchecked_by_reason": {},
+            "outcomes": {
+                f"{ROLE}:write:request-time:candidate-outside-scope": 117,
+                f"{ROLE}:write:request-time:candidate-permitted": 1,
+                f"{ROLE}:write:request-time:conflicting-object-file-key": 9,
+            },
+        })
+        self.assertNotIn("private-", json.dumps(compared))
+
+        with patch.object(reduce_io, "WEBVIEW_DOMINANT_WRITE_LIMIT", 230):
+            limited, unresolved = self.reduce_pairs(rows, lambda *_: True)
+        remainder = limited["dominant"]["smaller_pairs"]
+        self.assertEqual(remainder["unchecked_by_reason"], {"retention-limit": 105})
+        self.assertEqual(remainder["credited"], 22)
+        self.assertEqual(unresolved, {f"{ROLE}:write:path-missing": 119})
 
     def test_ranks_pairs_after_the_initial_sample_and_accounts_for_retention(self):
         pair_sizes = [(key, 1) for key in range(1, 66)] + [(100, 25), (200, 30)]
@@ -152,6 +206,9 @@ class WebViewWriteReplayTests(unittest.TestCase):
         write(400, 401, 408)
         emit(24, Irp=408, Status=0xC0000022)
         write(400, 401, 409)  # No completion observed.
+        emit(10, FileKey=600, FileName=OUTSIDE_PATH)
+        write(600, 601, 610)
+        complete(610)
 
         for key, path in ((200, PROTECTED_PATH), (300, OUTSIDE_PATH)):
             emit(12, FileObject=key + 1, Irp=key, FileName=path)
@@ -206,7 +263,7 @@ class WebViewWriteReplayTests(unittest.TestCase):
         self.assertEqual(replay[1][f"protected:{ROLE}:write"], 1)
         self.assertEqual(replay[1][f"outside-scope:{ROLE}:write"], 2)
         self.assertEqual(replay[3], {
-            f"{ROLE}:write:path-missing": 9, f"{ROLE}:write:completion-missing": 1,
+            f"{ROLE}:write:path-missing": 10, f"{ROLE}:write:completion-missing": 1,
             f"{ROLE}:rename:path-missing": 1,
         })
         self.assertEqual(report["pairs"][0], {
@@ -219,23 +276,27 @@ class WebViewWriteReplayTests(unittest.TestCase):
                 f"{ROLE}:write:request-time:possible-name-change": 1,
             },
         })
-        self.assertEqual(report["dominant"]["pairs"], [p | {"unchecked_by_reason": {}} for p in report["pairs"]])
-        self.assertEqual(journey["etw_webview_write_path_candidates"], report)
+        self.assertEqual(report["dominant"]["pairs"], [p | {"unchecked_by_reason": {}} for p in report["pairs"][:2]])
+        compared_paths = journey["etw_webview_write_path_candidates"]
+        smaller = {"eligible": 1, "checked": 1, "supported": 1, "credited": 1,
+                   "blocked": 0, "unchecked": 0, "unchecked_by_reason": {},
+                   "outcomes": {f"{ROLE}:write:request-time:candidate-outside-scope": 1}}
+        self.assertEqual(compared_paths["dominant"]["smaller_pairs"], smaller)
         self.assertEqual(journey["etw_webview_write_credit"], {
-            "status": "compared", "credited_paths": {"permitted": 1, "outside-scope": 1, "protected": 1},
-            "remaining_path_gaps": 6,
+            "status": "compared", "credited_paths": {"permitted": 1, "outside-scope": 2, "protected": 1},
+            "remaining_path_gaps": 6, "smaller_pairs": smaller,
         })
         self.assertEqual(journey["etw_unresolved_mutations"], {
             f"{ROLE}:write:path-missing": 6, f"{ROLE}:write:completion-missing": 1,
             f"{ROLE}:rename:path-missing": 1,
         })
         self.assertEqual(journey["file_violations"][f"protected:{ROLE}:write"], 2)
-        self.assertEqual(journey["file_violations"][f"outside-scope:{ROLE}:write"], 4)
-        self.assertEqual(journey["file_events"][f"{ROLE}:write"], 5)
+        self.assertEqual(journey["file_violations"][f"outside-scope:{ROLE}:write"], 5)
+        self.assertEqual(journey["file_events"][f"{ROLE}:write"], 6)
         self.assertEqual(journey["unexpected_connections"], [unexpected])
         self.assertEqual((journey["filesystem"], journey["network"], journey["coverage"]), ("FAIL", "FAIL", "BLOCKED"))
         self.assertEqual(loss["etw_webview_write_credit"], {
-            "status": "blocked-etw-loss", "credited_paths": {}, "remaining_path_gaps": 9,
+            "status": "blocked-etw-loss", "credited_paths": {}, "remaining_path_gaps": 10,
         })
         self.assertIn("etw-event-or-buffer-loss", loss["coverage_issues"])
         self.assertEqual(loss["etw_unresolved_mutations"], replay[3])

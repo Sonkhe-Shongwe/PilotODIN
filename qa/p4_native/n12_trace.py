@@ -970,6 +970,9 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             credited_paths=dict(credited_webview_paths),
             remaining_path_gaps=unresolved.get("webview-network:write:path-missing", 0),
         )
+        smaller_pairs = webview_write_candidates.get("dominant", {}).get("smaller_pairs")
+        if smaller_pairs is not None:
+            webview_write_credit["smaller_pairs"] = smaller_pairs
     return counts, violations, file_events, dict(unresolved)
 
 
