@@ -12,7 +12,7 @@ Use this process for work where a failed run would cost another native session, 
 
 ## Worked example for P4 / N12
 
-The retained-child fixture-only run passed. Sysmon attributed both loopback messages on its first read with the four-second hold, and ETW produced a nonempty recording with zero reported loss. The generated clean trace passes both full audit reductions and the hosted CLI tests cover the passing exit status and three blocked cases. The next diagnostic question is whether the strict path comparison closes the same gaps on a live app trace. [Fixture evidence](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Current handoff](./SESSION_HANDOFF_CURRENT.md#next-engineering-action)
+The retained-child fixture-only run passed on the first Sysmon read with zero reported ETW loss. The generated clean trace passes both full audit reductions, and the hosted CLI tests cover the passing exit status and three blocked cases. A subsequent hosted app diagnostic completed both reductions. The strict comparison resolved 199,268 previously unknown WebView network-process write paths on that run, while the ordinary audit failed both acceptance checks. [Fixture evidence](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Live comparison](./SESSION_HANDOFF_CURRENT.md#18-november-2026--live-webview-write-path-comparison-completed)
 
 Before a full acceptance attempt, review the last completed audit and the fixes for its known failures. If a build is needed to isolate a finding, describe the question, its measurable outcome and the evidence the run should retain. Keep the actual acceptance verdict and award points only on the governed result.
 
