@@ -2,13 +2,21 @@
 
 **18 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 18 November 2026 | Retained final calibration passed in the full audit
+
+The [hosted Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44262041802/job/134657456185) built source `1d3e401510908b74e0e55631cd0f5eb6c3493e01`, executable SHA-256 `85a2635ec6ba45b9f10184ffa901af3f58343fd6b5b985e8cc84fe1a199135f7`, and completed both launches. All four protected roots and the immutable CSV matched at the endpoints. All four [routine P4 jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44262041828) passed.
+
+Both Sysmon TCP/UDP fixtures passed on the first read, including the retained final child. The combined reducer cleared the preceding `calibration-tcp-or-udp-missing` issue on this run. Full coverage remains BLOCKED with a separate final-fixture versus scoped-exit ordering issue, missing or unverified exits, inconsistent parent lifetime and unresolved ETW file mutations. Both app handles had exact creation and exit timestamps in the ETW payloads, while event-header ordering prevented the strict lifetime match.
+
+Filesystem and network returned FAIL. The report flagged **196 outside-scope file operations** (129 backend, 39 WebView and 28 driver) and **7 unexpected connections**. The preceding run reported 68 and 8, respectively. All 129 backend violations were Python writes in the redacted `other-path` category. A focused writer and destination classification is needed before diagnosing their cause. The one-use workflow is disarmed. P4 is **14/20 (70%)**.
+
 ## 18 November 2026 | ETW boundary control reproduced the final Sysmon blocker
 
 The [collector-only Windows comparison](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44261584485/job/134655957708) used source `f580f9650f49be52248aff296c699fe307b8c76a` and Sysmon 15.22. Each trial started the full audit's ETW providers, generated process and file activity, froze the final marker window, stopped ETW and read Sysmon under the existing strict identity checks. Three immediate trials each reported 15 generated file writers. Three retained trials each reported 48. All six reported zero ETW events and buffers lost.
 
 The immediate condition passed **2/3**. Its blocked trial reproduced the full audit symptom. The expected TCP and UDP sender ports appeared with the fixture child PID, another process GUID and timestamps after child exit. The independent reread returned the same verdict. The four-second hold after sending and closing the sockets passed **3/3**, each on the first read. The local journey and reducer regressions passed **332 tests and 10 subtests**.
 
-The full audit now applies the four-second hold to its final calibration child. The initial fixture and strict timestamp, GUID and lifetime checks retain their original behaviour. The focused result supports testing this change in the full hosted journey. P4 is **14/20 (70%)** at this checkpoint.
+The full audit now applies the four-second hold to its final calibration child. The initial fixture and strict timestamp, GUID and lifetime checks retain their original behaviour. The [full hosted journey](#18-november-2026--retained-final-calibration-passed-in-the-full-audit) subsequently verified the final fixture on its first read. P4 is **14/20 (70%)** at this checkpoint.
 
 ## 18 November 2026 | Hosted Sysmon socket lifetime control passed all six cases
 
@@ -688,13 +696,13 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-The ETW boundary comparison reproduced the final Sysmon mismatch in an immediate-exit trial. The full hosted audit now uses the four-second hold in the final calibration fixture. Compare its final fixture verdict and strict audit coverage against the preceding full audit. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
+The [full hosted audit](#18-november-2026--retained-final-calibration-passed-in-the-full-audit) verified the retained final Sysmon fixture. Focus the next hosted diagnostic on attributing the Python writes reported under `other-path` and reproducing scoped-exit ordering with known process handles. Keep the strict path and process identity checks in force. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
 
 Start with the [N12 filesystem and network audit worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). Use the generated checks and the most recent completed Windows audit to narrow the unresolved evidence. The physical offline Qwen baseline is paused at ordinary laptop headroom. [Resource decision](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#ordinary-laptop-memory-and-offline-inference)
 
 For resource work, use the [physical whole-app measurements](./RESOURCE_AWARE_MODE_DESIGN.md#physical-everyday-ram-retest-result) as the reference. The owner approved a flexible **roughly 1–3 GiB planning range** for app RAM, with available Windows memory, paging and responsiveness guiding the assessment. Preserve the existing candidate evidence. R03.3 still requires a bundled offline answer on the physical laptop under the accepted admission policy. The [headroom comparison](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#r03-candidate-at-150-gib-available) remains useful diagnostic evidence when the request-time conditions can be verified.
 
-The [latest hosted audit](#18-november-2026--hosted-n12-audited-both-launches-and-reproduced-blockers) exercised the separate final Sysmon check and collected the repeat-write counts. Its outside-scope findings and identity conflicts stay open in the scorecard.
+The [latest hosted audit](#18-november-2026--retained-final-calibration-passed-in-the-full-audit) passed its final Sysmon fixture and recorded the current outside-scope operations and lifetime findings.
 
 The collector-only strict comparison now reports `remaining_paths_by_reason` alongside `credited_paths`. Each still-unresolved path appears once in that breakdown. The synthetic CLI regression checks that the counts match the remaining strict path gaps, a recovered protected write still reports a violation, and trace loss prevents credit. The existing strict verdict still governs acceptance.
 
