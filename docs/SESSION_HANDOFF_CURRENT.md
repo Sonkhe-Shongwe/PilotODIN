@@ -2,6 +2,14 @@
 
 **18 November 2026.** Active branch `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active with 14 of 20 engineering checks evidenced (70%)**, up from 13 of 20 on the same checklist as of 15 November. The additional check is the owner-accepted native Local analytics exercise on the physical 8 GB laptop. The full N12 filesystem and network checks remain blocked. [P4 engineering scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [P4 worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)
 
+## 18 November 2026 | Hosted audit identified Python bytecode writes
+
+The [hosted Windows replay](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44265709341/job/134669581920) exercised both launches at source `2da75c57df30ba4be630ae091f205da81bf0fb0d`, executable SHA-256 `f8cec192658f0fe272e246bdf2400d0b3a7a371f779d6c3bfb53c6abf0bb5d63`. Both Sysmon calibration fixtures passed on read one. The four protected roots and immutable CSV matched at the endpoints. The diagnostic regression suite passed 333 tests and 10 subtests. All four [routine P4 CI jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44265709387) passed.
+
+The strict reducer flagged **70 outside-scope file operations**: 39 WebView, 28 driver and three backend. All three backend writes were to distinct `.pyc` files under the runner's Python installation. The report publishes categories and counts without absolute paths. The previous 129-write burst did not repeat. Its destinations and the origin of the three bytecode writes remain unverified. The launched backend specified `-B` and `PYTHONDONTWRITEBYTECODE=1`. The trace also recorded 312 backend writes without a resolved path. The new categories supply diagnostic evidence only.
+
+Filesystem and network returned FAIL, with seven unexpected connections. Strict coverage remains BLOCKED on unresolved ETW mutations and process identities, incomplete scoped exits and lifecycle ordering. Three driver exits carried unverified images and timestamps 7 ms before their reported births. The relaunched app's ETW payload times matched its Windows handle, while event-header ordering blocked its strict lifetime match. The one-use workflow is disarmed. P4 remains **14/20 (70%)**.
+
 ## 18 November 2026 | Retained final calibration passed in the full audit
 
 The [hosted Windows run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44262041802/job/134657456185) built source `1d3e401510908b74e0e55631cd0f5eb6c3493e01`, executable SHA-256 `85a2635ec6ba45b9f10184ffa901af3f58343fd6b5b985e8cc84fe1a199135f7`, and completed both launches. All four protected roots and the immutable CSV matched at the endpoints. All four [routine P4 jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44262041828) passed.
@@ -696,7 +704,7 @@ The [latest two-launch app journey](#17-november-2026--hosted-webview-path-audit
 
 ## Next engineering action
 
-The [full hosted audit](#18-november-2026--retained-final-calibration-passed-in-the-full-audit) verified the retained final Sysmon fixture. Focus the next hosted diagnostic on attributing the Python writes reported under `other-path` and reproducing scoped-exit ordering with known process handles. Keep the strict path and process identity checks in force. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
+The [latest hosted audit](#18-november-2026--hosted-audit-identified-python-bytecode-writes) identified three Python bytecode destinations. Use a backend-only hosted replay with the same interpreter and environment to establish which code initiates the bytecode writes. Use known process handles to reproduce the driver exit ordering in a separate collector control. Keep the strict path and process identity checks in force. Run generated and hosted checks before asking the owner to exercise a build. When physical evidence is necessary, group related checks into one walkthrough where practical, reuse a matching kit and request a single evidence ZIP.
 
 Start with the [N12 filesystem and network audit worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75). Use the generated checks and the most recent completed Windows audit to narrow the unresolved evidence. The physical offline Qwen baseline is paused at ordinary laptop headroom. [Resource decision](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#ordinary-laptop-memory-and-offline-inference)
 
