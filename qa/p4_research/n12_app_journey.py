@@ -142,6 +142,22 @@ def start_capture(root, session, logman):
            "-max", "512", "-bs", "64", "-nb", "16", "128", "-ets"])
 
 
+def start_journey_etw(root, session, source, expected_hash):
+    logman = str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")
+    print("N12 journey stage collector start", flush=True)
+    try:
+        with checkpoint_stage("etw-start", source, expected_hash):
+            start_capture(root, session, logman)
+    except subprocess.TimeoutExpired:
+        # A timed-out start can still have registered this uniquely named session.
+        try:
+            with checkpoint_stage("etw-start-cleanup", source, expected_hash):
+                quiet([logman, "stop", session, "-ets"])
+        except Exception:
+            pass
+        raise
+
+
 def cleanup_process(process):
     if process.poll() is None:
         process.kill()
@@ -387,6 +403,43 @@ def verify_initial_sysmon(root, manifest, record):
         root, manifest["sysmon_first_record"], trace.utc_time(manifest["start_utc"]), now(), record,
         phase="initial", precision=manifest.get("collector_fixture_precision") is True,
     )
+
+
+def run_initial_calibration(root, directory, manifest, source, expected_hash):
+    manifest["start_utc"] = now().isoformat()
+    # Leave room for Sysmon's millisecond birth timestamp at the audit boundary.
+    time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
+    print("N12 journey stage initial calibration", flush=True)
+    with checkpoint_stage("initial-calibration", source, expected_hash):
+        record = calibrate(directory, manifest)
+        verify_initial_sysmon(root, manifest, record)
+
+
+def capture_initial_fixture(root, source):
+    root.mkdir(exist_ok=False)
+    session = f"PilotODIN-N12-App-{uuid4().hex}"
+    manifest = {"processes": [], "loopback_ports": list(PORTS), "sysmon_first_record": sysmon_tail() + 1}
+    start_journey_etw(root, session, source, "")
+    try:
+        run_initial_calibration(root, root / "calibration-first", manifest, source, "")
+    except BaseException:
+        try:
+            with checkpoint_stage("etw-stop", source, ""):
+                etw.stop_trace(session)
+        except Exception:
+            pass  # Preserve the fixture failure; the checkpoint reports the stop failure.
+        raise
+    with checkpoint_stage("etw-stop", source, ""):
+        counters = etw.stop_trace(session)
+    print("N12 initial fixture ETW counters " + json.dumps(counters), flush=True)
+    trace.require(counters["buffers_written"] > 0 and all(counters[key] == 0 for key in (
+        "events_lost", "log_buffers_lost", "realtime_buffers_lost",
+    )), "initial fixture ETW coverage blocked by empty or lossy capture")
+    trace.require((root / "journey.etl").stat().st_size > 0, "initial fixture ETW file is empty")
+    print("N12 initial journey fixture " + json.dumps({
+        "source_sha": source, "status": "PASS", "scope": "initial-calibration-only",
+    }), flush=True)
+
 
 
 def request_graceful_close(app, binary, title):
@@ -647,31 +700,13 @@ def capture(root, staged, source, expected_hash, node):
     report_file(root / "before.json", before)
     devices = etw.volume_devices()
     session = f"PilotODIN-N12-App-{uuid4().hex}"
-    logman = str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")
     first_processes = process_bookend()
     manifest["sysmon_first_record"] = sysmon_tail() + 1
     capture_start = now()
-    print("N12 journey stage collector start", flush=True)
-    try:
-        with checkpoint_stage("etw-start", source, expected_hash):
-            start_capture(root, session, logman)
-    except subprocess.TimeoutExpired:
-        # A timed-out start can still have registered this uniquely named session.
-        try:
-            with checkpoint_stage("etw-start-cleanup", source, expected_hash):
-                quiet([logman, "stop", session, "-ets"])
-        except Exception:
-            pass
-        raise
+    start_journey_etw(root, session, source, expected_hash)
     driver_handles = DriverHandles()
     try:
-        manifest["start_utc"] = now().isoformat()
-        # Leave room for Sysmon's millisecond birth timestamp at the audit boundary.
-        time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
-        print("N12 journey stage initial calibration", flush=True)
-        with checkpoint_stage("initial-calibration", source, expected_hash):
-            record = calibrate(calibration[0], manifest)
-            verify_initial_sysmon(root, manifest, record)
+        run_initial_calibration(root, calibration[0], manifest, source, expected_hash)
         mark(manifest, "idle")
         time.sleep(3)
         with driver_handles, journey_processes(source, expected_hash) as stack:
@@ -845,12 +880,35 @@ def capture(root, staged, source, expected_hash, node):
     return result
 
 
+def initial_fixture_root(source):
+    env = os.environ
+    run_id = env.get("GITHUB_RUN_ID", "")
+    trace.require(env.get("GITHUB_EVENT_NAME") == "push" and env.get("GITHUB_REF_NAME") == build.BRANCH
+                  and env.get("GITHUB_RUN_ATTEMPT") == "1" and re.fullmatch(r"[0-9]+", run_id)
+                  and env.get("PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT") == "I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL"
+                  and re.fullmatch(r"[0-9a-f]{40}", source)
+                  and env.get("PILOTODIN_N12_INITIAL_FIXTURE_SOURCE") == source,
+                  "initial fixture requires an approved source-pinned first hosted push")
+    root = trace.local_disposable_path(Path(env["RUNNER_TEMP"]) / f"pilotodin-n12-build-{run_id}-journey",
+                                       runner_temp_only=True)
+    trace.require(build.git("rev-parse", "HEAD") == source and not build.git("status", "--porcelain", "--untracked-files=no"),
+                  "checkout differs from the approved clean source")
+    return root
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True)
-    parser.add_argument("--expected-exe-sha256", required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--expected-exe-sha256")
+    mode.add_argument("--initial-fixture-only", action="store_true")
     args = parser.parse_args()
     try:
+        if args.initial_fixture_only:
+            with checkpoint_stage("fixture-preflight", args.source, ""):
+                root = initial_fixture_root(args.source)
+            capture_initial_fixture(root, args.source)
+            return 0
         with checkpoint_stage("preflight", args.source, args.expected_exe_sha256):
             staged = build.stage_root(args.source)
             trace.require(os.environ.get("PILOTODIN_N12_APP_JOURNEY_CONSENT") == CAPTURE_CONSENT,

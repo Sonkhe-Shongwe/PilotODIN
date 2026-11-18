@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_COLLECTOR_FILEIO_STRICT_COMPARISON_APPROVAL.txt
+      - qa/p4_research/N12_INITIAL_JOURNEY_FIXTURE_APPROVAL.txt
 
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           $workflow = '.github/workflows/p4-n12-live-calibration.yml'
-          $marker = 'qa/p4_research/N12_COLLECTOR_FILEIO_STRICT_COMPARISON_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_INITIAL_JOURNEY_FIXTURE_APPROVAL.txt'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
               $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
@@ -38,7 +38,7 @@ jobs:
           }
           $approval = @(Get-Content -LiteralPath $marker)
           if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
-              $approval[1] -cne 'scope=n12-one-collector-only-rehearsal') {
+              $approval[1] -cne 'scope=n12-one-initial-journey-fixture') {
             throw 'A fresh source-pinned collector-only approval marker is required.'
           }
           $source = $Matches[1]
@@ -52,10 +52,11 @@ jobs:
           }
           git checkout --detach $source
           'PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT=I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL' >> $env:GITHUB_ENV
+          "PILOTODIN_N12_INITIAL_FIXTURE_SOURCE=$source" >> $env:GITHUB_ENV
       - name: Use Python for the generated fixture
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.11'
-      - name: Compare native FileIO rundown with the same generated Sysmon and ETW capture
+      - name: Calibrate the initial journey fixture with Sysmon and ETW
         shell: pwsh
-        run: ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WithEtw -CollectorRundown
+        run: ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WithEtw -InitialJourneyFixture

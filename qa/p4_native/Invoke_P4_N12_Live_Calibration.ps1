@@ -3,6 +3,7 @@
 param(
     [switch]$WithEtw,
     [switch]$CollectorRundown,
+    [switch]$InitialJourneyFixture,
     [switch]$AppJourney,
     [switch]$AppLifetime,
     [switch]$LifetimeControl,
@@ -23,6 +24,13 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
 
 if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl)) {
     throw 'The FileIO rundown comparison requires the collector-only ETW rehearsal.'
+}
+
+if ($InitialJourneyFixture -and (-not $WithEtw -or $CollectorRundown -or $AppJourney -or $AppLifetime -or
+        $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl -or $SourceSha -or $ExecutableSha256 -or
+        $env:PILOTODIN_N12_INITIAL_FIXTURE_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
+        (git rev-parse HEAD) -cne $env:PILOTODIN_N12_INITIAL_FIXTURE_SOURCE)) {
+    throw 'The initial journey fixture requires its own source-pinned collector-only run.'
 }
 
 if ($SocketLifetimeControl) {
@@ -162,6 +170,11 @@ try {
     if ($AppJourney) {
         python -B -m qa.p4_research.n12_app_journey --source $SourceSha --expected-exe-sha256 $ExecutableSha256
         if ($LASTEXITCODE -ne 0) { throw 'The hosted app journey failed or returned blocked coverage.' }
+        return
+    }
+    if ($InitialJourneyFixture) {
+        python -B -m qa.p4_research.n12_app_journey --initial-fixture-only --source $env:PILOTODIN_N12_INITIAL_FIXTURE_SOURCE
+        if ($LASTEXITCODE -ne 0) { throw 'The initial journey fixture was blocked.' }
         return
     }
     if ($WithEtw) {

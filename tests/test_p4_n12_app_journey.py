@@ -61,6 +61,60 @@ def test_calibration_subprocess_preserves_only_fixed_failure_stages(tmp_path, mo
     assert manifest == {"processes": [], "loopback_ports": []}
 
 
+@pytest.mark.parametrize("fault", [None, "fixture", "etw-loss"])
+def test_initial_fixture_control_uses_journey_gate_and_stops_etw(tmp_path, monkeypatch, capsys, fault):
+    root = tmp_path / "pilotodin-n12-build-123-journey"
+    started = []
+    steps = []
+    monkeypatch.setenv("SystemRoot", str(tmp_path))
+    monkeypatch.setattr(journey, "sysmon_tail", lambda: 25)
+    monkeypatch.setattr(journey, "now", lambda: datetime(2026, 11, 18, tzinfo=timezone.utc))
+    monkeypatch.setattr(journey.time, "sleep", lambda _: steps.append("lead-in"))
+
+    def start_capture(capture_root, session, _logman):
+        assert capture_root == root
+        started.append(session)
+        steps.append("etw-start")
+        (root / "journey.etl").write_bytes(b"generated ETL")
+
+    def calibrate(directory, manifest):
+        assert directory == root / "calibration-first"
+        assert manifest["sysmon_first_record"] == 26
+        steps.append("fixture")
+        if fault == "fixture":
+            raise journey.trace.EvidenceValidationError("calibration fixture subprocess failed at udp-listener")
+        return {"role": "calibration"}
+
+    def verify(capture_root, manifest, record):
+        assert capture_root == root and manifest["start_utc"] == "2026-11-18T00:00:00+00:00"
+        assert record == {"role": "calibration"}
+        steps.append("sysmon")
+
+    def stop_capture(session):
+        assert started == [session]
+        steps.append("etw-stop")
+        return {"events_lost": int(fault == "etw-loss"), "realtime_buffers_lost": 0,
+                "log_buffers_lost": 0, "buffers_written": 1}
+
+    monkeypatch.setattr(journey, "start_capture", start_capture)
+    monkeypatch.setattr(journey, "calibrate", calibrate)
+    monkeypatch.setattr(journey, "verify_initial_sysmon", verify)
+    monkeypatch.setattr(journey.etw, "stop_trace", stop_capture)
+    if fault:
+        reason = "udp-listener" if fault == "fixture" else "lossy capture"
+        with pytest.raises(journey.trace.EvidenceValidationError, match=reason):
+            journey.capture_initial_fixture(root, SOURCE)
+    else:
+        journey.capture_initial_fixture(root, SOURCE)
+    expected = ["etw-start", "lead-in", "fixture"]
+    if fault != "fixture":
+        expected.append("sysmon")
+    assert steps == [*expected, "etw-stop"]
+    output = capsys.readouterr().out
+    assert ('"status": "PASS"' in output) == (fault is None)
+    assert "executable_sha256" not in output
+
+
 @pytest.mark.parametrize("fault", [None, "no-udp", "wrong-child", "gap"])
 def test_prelaunch_gate_checks_fixture_processes_and_network(tmp_path, monkeypatch, fault):
     start = datetime(2026, 11, 14, tzinfo=timezone.utc)
