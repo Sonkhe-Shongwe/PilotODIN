@@ -21,12 +21,12 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     throw 'Live calibration requires the first run on disposable hosted Windows.'
 }
 
-if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or $LifetimeEtwControl)) {
+if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl)) {
     throw 'The FileIO rundown comparison requires the collector-only ETW rehearsal.'
 }
 
 if ($SocketLifetimeControl) {
-    if ($LifetimeControl -or $LifetimeEtwControl -or $AppJourney -or $AppLifetime -or $WithEtw -or
+    if ($LifetimeControl -or $LifetimeEtwControl -or $AppJourney -or $AppLifetime -or
         $SourceSha -or $ExecutableSha256 -or
         $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
         (git rev-parse HEAD) -cne $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE) {
@@ -142,7 +142,9 @@ try {
     $installStarted = $true
     Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
     if ($SocketLifetimeControl) {
-        python -B -m qa.p4_research.n12_socket_lifetime_control $root
+        $socketOptions = @()
+        if ($WithEtw) { $socketOptions += '--etw-boundary' }
+        python -B -m qa.p4_research.n12_socket_lifetime_control $root @socketOptions
         if ($LASTEXITCODE -ne 0) { throw 'The socket lifetime comparison could not complete.' }
         return
     }
