@@ -270,7 +270,8 @@ try {
         procmon_clock_utc = (Get-TimeZone).Id -eq 'UTC'
     }
     if ($WebViewStorage) {
-        if ($null -ne $stopError) { throw 'Process Monitor shutdown was abnormal.' }
+        # Keep the exported observations while making shutdown health part of the verdict.
+        $window.procmon_shutdown_verified = ($null -eq $stopError)
         $window | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $root 'storage-window.json') -Encoding utf8
         python -B -m qa.p4_research.n12_webview_storage_probe reduce $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256
         if ($LASTEXITCODE -ne 0) { throw 'Focused WebView storage evidence was blocked.' }

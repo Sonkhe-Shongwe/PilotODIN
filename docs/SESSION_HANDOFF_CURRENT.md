@@ -20,7 +20,13 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Keep WebView2 filesystem isolation active. The focused run completed startup and close and exported a readable Procmon CSV. Procmon's nonzero capture-process exit stopped reduction after export. Retain the shutdown blocker while making the redacted diagnostic readable after a successful export. Exercise this boundary with generated evidence before considering another live operation. [Focused result](#focused-webview2-retest-completed-app-lifetime-and-blocked-at-collector-shutdown)
+Keep WebView2 filesystem isolation active. The focused run completed startup and close and exported a readable Procmon CSV. The reporter now carries collector shutdown health into reduction and retains redacted observations when the export can be read. Use the next separately approved focused attempt to measure the writer, stage and destination family for the ambient-temp and user-local events. Decide on a storage change only from attributable evidence. [Report correction](#focused-probe-retains-observations-after-abnormal-collector-shutdown) · [Focused result](#focused-webview2-retest-completed-app-lifetime-and-blocked-at-collector-shutdown)
+
+### Focused probe retains observations after abnormal collector shutdown
+
+When both collector exports are readable, the storage workflow now runs the redacted reducer with the collector shutdown status. The reducer retains `procmon-shutdown-unverified` as a blocking issue for a failed, absent or invalid shutdown status while publishing attributable observations and both control results. Timeouts, unsafe paths and export failures preserve their existing stops. The marker is consumed and the live correction is **NOT RUN**. [Collector flow](../qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1) · [Generated cases](../tests/test_p4_n12_webview_storage.py)
+
+The targeted regression reproduced an erroneous unblocked reducer verdict when given a generated abnormal shutdown receipt. After the correction all ten focused cases passed. The broader local checks returned 58 Python passes, four Windows-only skips and four Node readiness passes. An abnormal shutdown still prevents the focused verdict from clearing. Redacted positive observations can guide attribution if both controls and process identity verify, while a missing observation has no coverage credit.
 
 ### Focused WebView2 retest completed app lifetime and blocked at collector shutdown
 

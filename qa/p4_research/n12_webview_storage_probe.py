@@ -82,6 +82,9 @@ def reduce(root, staged, manifest, sysmon, procmon):
     # This is a direct-path diagnosis. Track the existing capture-loss limitation separately.
     loss_reviewed = "procmon-coverage-not-confirmed" not in issues
     issues.discard("procmon-coverage-not-confirmed")
+    shutdown_verified = manifest.get("procmon_shutdown_verified") is True
+    if not shutdown_verified:
+        issues.add("procmon-shutdown-unverified")
     if not manifest["procmon_all_events"] or not manifest["procmon_clock_utc"]:
         issues.add("procmon-capture-configuration-unverified")
     protected, permitted = trace.scope(manifest)
@@ -154,7 +157,8 @@ def reduce(root, staged, manifest, sysmon, procmon):
     return {"scope": "one-startup-and-close-storage-diagnostic", "source_sha": manifest["source_sha"],
             "executable_sha256": manifest["executable_sha256"],
             "verdict": "BLOCKED" if issues else "REPRODUCED" if ambient_creates else "INCONCLUSIVE",
-            "issues": sorted(issues), "procmon_loss_reviewed": loss_reviewed,
+            "issues": sorted(issues), "procmon_shutdown_verified": shutdown_verified,
+            "procmon_loss_reviewed": loss_reviewed,
             "file_coverage_issues": sorted(file_coverage_issues),
             "protected_snapshot_comparison": manifest["protected_snapshot_comparison"],
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
@@ -187,6 +191,7 @@ def main():
             "schema_version", "disposable", "start_utc", "end_utc", "sysmon_first_record",
             "sysmon_last_record", "procmon_all_events", "procmon_loss_reviewed", "procmon_clock_utc",
         )})
+        manifest["procmon_shutdown_verified"] = window.get("procmon_shutdown_verified")
         with journey.checkpoint_stage("webview-storage-reduction", args.source, args.expected_exe_sha256):
             report = reduce(root, staged, manifest, base / "sysmon.xml", base / "capture-utf8.csv")
         print("N12 WebView storage " + json.dumps(report), flush=True)

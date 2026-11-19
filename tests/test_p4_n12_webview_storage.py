@@ -56,6 +56,7 @@ class StorageProbeTests(unittest.TestCase):
             "protected_roots": {"original": PROTECTED}, "observed_roots": {"quality-source": CSV},
             "immutable_observed": ["quality-source"], "permitted_writes": {"webview":[SCRATCH]},
             "protected_snapshot_comparison": "MATCH", "procmon_all_events": True, "procmon_clock_utc": True,
+            "procmon_shutdown_verified": True,
             "markers": {key:time_at(at).isoformat() for key, at in (
                 ("fixture-ready", 1), ("launch", 5), ("ready", 8), ("close", 10), ("profile-exit", 15),
             )},
@@ -98,6 +99,7 @@ class StorageProbeTests(unittest.TestCase):
              "stage":"startup", "file_type":"other-extension", "count":1},
         ])
         self.assertFalse(report["procmon_loss_reviewed"])
+        self.assertTrue(report["procmon_shutdown_verified"])
         self.assertNotIn("private", json.dumps(report))
         self.assertNotIn("distinct-user-control", json.dumps(report))
 
@@ -106,6 +108,19 @@ class StorageProbeTests(unittest.TestCase):
         report = self.reduce(rows)
         self.assertEqual(report["verdict"], "INCONCLUSIVE")
         self.assertEqual(report["ambient_temp_creates"], 0)
+
+    def test_unverified_shutdown_blocks_but_retains_corroborated_observations(self):
+        for shutdown_verified in (False, None, "true"):
+            with self.subTest(shutdown_verified=shutdown_verified):
+                self.manifest["procmon_shutdown_verified"] = shutdown_verified
+                report = self.reduce(self.controls + [row(7, 101, "msedgewebview2.exe", TARGET)])
+                self.assertEqual(report["verdict"], "BLOCKED")
+                self.assertEqual(report["issues"], ["procmon-shutdown-unverified"])
+                self.assertFalse(report["procmon_shutdown_verified"])
+                self.assertEqual(report["known_create_controls"], {"scratch":True, "user-temp":True})
+                self.assertEqual(report["ambient_temp_creates"], 1)
+                self.assertEqual(report["storage_events"][0]["component"], "renderer")
+                self.assertNotIn("private", json.dumps(report))
 
     def test_wrong_writer_or_failed_create_blocks_despite_a_reproduced_target(self):
         for invalid in (row(3, 201, "python.exe", CONTROL_SCRATCH),
