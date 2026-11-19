@@ -10,7 +10,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from .n12_trace import EvidenceValidationError, UTC, fingerprint, require, utc_time, windows_path
+from .n12_trace import (
+    EvidenceValidationError, UTC, etw_capture_contract, etw_events, etw_payload_ticks,
+    evidence_stage, fingerprint, require, utc_ticks, utc_time, windows_path,
+)
 
 SCHEMA = "pilotodin-r06-prospective-v1"
 ORIGINAL_APP_ID = "com.pilotodin.studio"
@@ -61,11 +64,33 @@ def load_capture(path: Path) -> dict:
     return record
 
 
-def compare(before_path: Path, after_path: Path) -> bool:
+def endpoint_pair(before_path: Path, after_path: Path) -> tuple[dict, dict]:
     before, after = load_capture(before_path), load_capture(after_path)
     require(before["root_id"] == after["root_id"], "endpoint roots differ")
     require(before["ended_utc"] < after["started_utc"], "endpoint captures overlap or are reversed")
+    return before, after
+
+
+def compare(before_path: Path, after_path: Path) -> bool:
+    before, after = endpoint_pair(before_path, after_path)
     return before["digest"] == after["digest"]
+
+
+def verify_etw_envelope(manifest_path: Path, events_path: Path, before: dict, after: dict) -> None:
+    """Verify the supplied trace brackets both full scans and matches its manifest."""
+    with evidence_stage("ETW envelope"):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        start, end = before["started_utc"], after["ended_utc"]
+        issues = set()
+        etw_capture_contract(manifest, start, end, issues)
+        require(not issues, "ETW reported event or buffer loss")
+        capture = manifest["etw"]
+        bounds = (etw_payload_ticks(capture["start_utc"]), etw_payload_ticks(capture["end_utc"]))
+        # The native collector's UTC timestamps can have a seventh fractional digit.
+        require(bounds[0] <= utc_ticks(start) < utc_ticks(end) <= bounds[1],
+                "ETW capture does not bracket both endpoint scans")
+        for _ in etw_events(events_path, bounds, capture["events_sha256"]):
+            pass
 
 
 def main() -> int:
@@ -75,6 +100,8 @@ def main() -> int:
     comparison = commands.add_parser("compare", help="compare two endpoint captures")
     comparison.add_argument("before", type=Path)
     comparison.add_argument("after", type=Path)
+    comparison.add_argument("--etw", nargs=2, metavar=("MANIFEST", "EVENTS"), type=Path,
+                            help="also check the ETW capture envelope against both scans")
     args = parser.parse_args()
     try:
         if args.command == "capture":
@@ -83,18 +110,33 @@ def main() -> int:
             windows_path(str(local))
             print(json.dumps(capture(local / ORIGINAL_APP_ID), indent=2))
             return 0
-        matches = compare(args.before, args.after)
+        before, after = endpoint_pair(args.before, args.after)
     except EvidenceValidationError as exc:
         print(f"R06 BLOCKED: {exc}.", file=sys.stderr)
         return 2
     except (OSError, ValueError, KeyError, RecursionError) as exc:
         print(f"R06 BLOCKED: inaccessible or invalid evidence ({type(exc).__name__}).", file=sys.stderr)
         return 2
-    print(json.dumps({
+    matches = before["digest"] == after["digest"]
+    report = {
         "endpoint_status": "MATCH" if matches else "DIFFERENT",
         "continuous_trace": "NOT_EVALUATED",
-    }))
-    return 0 if matches else 1
+    }
+    if args.etw:
+        try:
+            verify_etw_envelope(*args.etw, before, after)
+        except EvidenceValidationError as exc:
+            report["etw_envelope_status"] = "BLOCKED"
+            print(f"R06 BLOCKED: {exc}.", file=sys.stderr)
+        except RecursionError:
+            report["etw_envelope_status"] = "BLOCKED"
+            print("R06 BLOCKED: ETW evidence nesting exceeds the parser limit.", file=sys.stderr)
+        else:
+            report["etw_envelope_status"] = "VERIFIED"
+    print(json.dumps(report))
+    if not matches:
+        return 1
+    return 2 if report.get("etw_envelope_status") == "BLOCKED" else 0
 
 
 if __name__ == "__main__":

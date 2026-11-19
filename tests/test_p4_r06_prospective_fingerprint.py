@@ -1,3 +1,4 @@
+import hashlib
 import io
 import json
 import os
@@ -39,6 +40,36 @@ class ProspectiveFingerprintTests(unittest.TestCase):
             record["ended_utc"] = (start + timedelta(seconds=seconds + 1)).isoformat()
             path.write_text(json.dumps(record), encoding="utf-8-sig")
 
+    def etw_evidence(self):
+        manifest_path = self.folder / "private-etw.json"
+        events_path = self.folder / "private-events.jsonl"
+        event = {
+            "ticks": n12_trace.etw_payload_ticks("2026-11-14T00:00:11.0000001Z"),
+            "pid": 1234, "id": 12, "lifecycle": False,
+            "data": {"FileName": str(self.file)},
+        }
+        payload = (json.dumps(event) + "\n").encode()
+        events_path.write_bytes(payload)
+        manifest = {"etw": {
+            "schema_version": 1, "start_utc": "2026-11-14T00:00:00Z",
+            "end_utc": "2026-11-14T00:00:11.0000001Z",
+            "events_sha256": hashlib.sha256(payload).hexdigest(),
+            "volume_devices": {"C:": r"\Device\HarddiskVolume1"},
+            "counters": {"events_lost": 0, "log_buffers_lost": 0,
+                         "realtime_buffers_lost": 0, "buffers_written": 1},
+        }}
+        return manifest_path, events_path, manifest
+
+    def compare_with_etw(self, manifest_path, events_path):
+        output, errors = io.StringIO(), io.StringIO()
+        with patch.object(sys, "argv", [
+            "r06", "compare", str(self.before), str(self.after), "--etw", str(manifest_path), str(events_path),
+        ]), redirect_stdout(output), redirect_stderr(errors):
+            code = r06.main()
+        for private_value in (str(self.folder), self.file.name):
+            self.assertNotIn(private_value, output.getvalue() + errors.getvalue())
+        return code, json.loads(output.getvalue()), errors.getvalue()
+
     def test_matching_endpoints_and_redacted_result(self):
         first = self.capture()
         self.assertNotIn(self.file.name, json.dumps(first))
@@ -73,6 +104,45 @@ class ProspectiveFingerprintTests(unittest.TestCase):
             with patch.object(r06, "fingerprint", side_effect=mutate_after_first_read):
                 with self.assertRaisesRegex(r06.EvidenceValidationError, "changed during"):
                     r06.capture(self.root)
+
+    def test_etw_envelope_brackets_both_scans_and_checks_exact_export(self):
+        self.set_bookends(self.capture(), self.capture())
+        manifest_path, events_path, manifest = self.etw_evidence()
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8-sig")
+        code, report, errors = self.compare_with_etw(manifest_path, events_path)
+        self.assertEqual((code, errors), (0, ""))
+        self.assertEqual(report, {
+            "endpoint_status": "MATCH", "continuous_trace": "NOT_EVALUATED",
+            "etw_envelope_status": "VERIFIED",
+        })
+
+        for updates, reason in (
+            ({"start_utc": "2026-11-14T00:00:00.0000001Z"}, "does not bracket"),
+            ({"end_utc": "2026-11-14T00:00:10Z"}, "does not bracket"),
+            ({"end_utc": "2026-11-14T00:00:11Z"}, "event timestamp outside capture"),
+            ({"events_sha256": "0" * 64}, "ETW export digest mismatch"),
+            ({"counters": {**manifest["etw"]["counters"], "log_buffers_lost": 1}}, "buffer loss"),
+        ):
+            with self.subTest(reason=reason):
+                bad = {"etw": {**manifest["etw"], **updates}}
+                manifest_path.write_text(json.dumps(bad), encoding="utf-8")
+                code, report, errors = self.compare_with_etw(manifest_path, events_path)
+                self.assertEqual(code, 2)
+                self.assertEqual(report["endpoint_status"], "MATCH")
+                self.assertEqual(report["etw_envelope_status"], "BLOCKED")
+                self.assertEqual(report["continuous_trace"], "NOT_EVALUATED")
+                self.assertIn(reason, errors)
+
+    def test_endpoint_difference_is_retained_when_trace_input_is_missing(self):
+        before = self.capture()
+        self.file.write_bytes(b"mutated")
+        self.set_bookends(before, self.capture())
+        manifest_path, events_path, _ = self.etw_evidence()
+        code, report, errors = self.compare_with_etw(manifest_path, events_path)
+        self.assertEqual(code, 1)
+        self.assertEqual(report["endpoint_status"], "DIFFERENT")
+        self.assertEqual(report["etw_envelope_status"], "BLOCKED")
+        self.assertIn("FileNotFoundError", errors)
 
     def test_wrong_root_reversed_epoch_and_historical_schema_are_blocked(self):
         first = self.capture()
