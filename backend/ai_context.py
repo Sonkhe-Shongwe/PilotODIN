@@ -32,10 +32,12 @@ def _finite(v):
     except (ValueError,TypeError,OverflowError):return None
 
 
-def build(project_id:str,task:str,question:str='',target:str|None=None,experiment_id:str|None=None,prediction:dict|None=None)->dict:
+def build(project_id:str,task:str,question:str='',target:str|None=None,experiment_id:str|None=None,prediction:dict|None=None,
+          *, working_data: tuple[pd.DataFrame, int, list[dict]] | None = None) -> dict:
     if task not in TASKS:raise ValueError('Unsupported AI analysis context')
-    df,version=quality.current_data(project_id)
-    issue_data=quality.snapshot(project_id)
+    if working_data is None:
+        working_data = quality.current_data_with_findings(project_id)
+    df, version, issues = working_data
     overview=analytics.describe(df,version)
     result={'dataset_version':version,'row_count':len(df),'column_count':len(df.columns),
             'missing_cells':overview['missing_cells'],'duplicate_rows':overview['exact_duplicates'],
@@ -47,7 +49,7 @@ def build(project_id:str,task:str,question:str='',target:str|None=None,experimen
         for k in ('mean','median','min','max','std'):
             if k in c:out[k]=_finite(c[k])
         result['columns'].append(out)
-    for item in issue_data.get('issues',[])[:25]:
+    for item in issues[:25]:
         result['quality_findings'].append({'kind':item['kind'],'column':str(item.get('column') or '')[:100],
                                            'affected_rows':item['affected_rows'],
                                            'decision':item['decision'],'severity':item['severity']})

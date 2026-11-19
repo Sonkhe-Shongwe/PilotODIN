@@ -192,10 +192,34 @@ class VerifiedAnswersTests(unittest.TestCase):
 
     def test_explicit_model_requests_keep_provider_routing(self):
         project = self.import_frame(pd.DataFrame({'id': range(4), 'value': range(4)}))
-        with patch.object(ai_provider, 'respond', return_value={'answer': 'Model answer'}) as respond:
+        with (patch.object(ai_provider, 'respond', return_value={'answer': 'Model answer'}) as respond,
+              patch.object(quality, '_materialize', wraps=quality._materialize) as materialize):
             result = self.ask(project, 'What is the dataset overview?', selected_provider='ollama')
         self.assertEqual(result['answer'], 'Model answer')
         respond.assert_called_once()
+        self.assertEqual(materialize.call_count, 1, 'A provider request should materialize one working version')
+
+    def test_provider_context_keeps_its_findings_when_quality_advances(self):
+        project = self.import_frame(pd.DataFrame({'id': range(4), 'premium': [20, None, 40, 50]}))
+        issue = next(item for item in quality.snapshot(project)['issues'] if item['kind'] == 'missing')
+        original_build = ai_context.build
+
+        def build_after_imputation(*args, **kwargs):
+            quality.approve_imputation(project, 'premium', issue['id'], expected_version=0)
+            return original_build(*args, **kwargs)
+
+        with patch.object(ai_provider, 'respond', return_value={'answer': 'Model answer'}) as respond:
+            with patch.object(ai_context, 'build', side_effect=build_after_imputation):
+                result = self.ask(project, 'What is the dataset overview?', selected_provider='ollama')
+            sent = respond.call_args.args[0]
+            self.assertEqual((result['dataset_version'], sent['dataset_version'], sent['missing_cells']), (0, 0, 1))
+            self.assertIn({'kind': 'missing', 'column': 'premium', 'affected_rows': 1,
+                           'decision': 'pending', 'severity': issue['severity']}, sent['quality_findings'])
+
+            newer = self.ask(project, 'What is the dataset overview?', selected_provider='ollama')
+            sent = respond.call_args.args[0]
+            self.assertEqual((newer['dataset_version'], sent['dataset_version'], sent['missing_cells']), (1, 1, 0))
+            self.assertFalse(any(item['kind'] == 'missing' for item in sent['quality_findings']))
 
     def test_qa_candidate_floor_requires_the_isolated_desktop_profile(self):
         with TemporaryDirectory() as tmp, patch.dict(os.environ, {

@@ -385,6 +385,13 @@ def _decisions(con, pid: str) -> dict[str, str]:
         "SELECT issue_id,status FROM quality_decisions WHERE project_id=?", (pid,)).fetchall()}
 
 
+def _reviewed_issues(frame: pd.DataFrame, choices: dict[str, str]) -> list[dict]:
+    issues = _issues(frame)
+    for issue in issues:
+        issue["decision"] = choices.get(issue["id"], "pending")
+    return issues
+
+
 def _apply(df: pd.DataFrame, action: dict, *, expected_affected: int | None = None) -> tuple[pd.DataFrame,int]:
     name, kind = action["column"], action["kind"]
     if name not in df.columns:
@@ -475,10 +482,7 @@ def snapshot(pid: str, preview_limit: int = 7) -> dict:
         _ensure(con,p)
         version,ops=_state(con,pid)
         df=_materialize(con,p,ops)
-        issues=_issues(df)
-        choices=_decisions(con,pid)
-        for issue in issues:
-            issue["decision"] = choices.get(issue["id"],"pending")
+        issues=_reviewed_issues(df, _decisions(con,pid))
         actionable=[x for x in issues if x["decision"]=="pending"]
         return {"project_id":pid,"version":version,"rows":len(df),"columns":len(df.columns),
                 "summary":{"issues":len(issues),"automatic_available":sum(x["automatic"] for x in actionable),
@@ -699,6 +703,19 @@ def current_data(pid: str) -> tuple[pd.DataFrame,int]:
         _ensure(con,p)
         version,ops=_state(con,pid)
         return _materialize(con,p,ops),version
+
+
+def current_data_with_findings(pid: str) -> tuple[pd.DataFrame, int, list[dict]]:
+    """Read one working version and its reviewed findings for AI context."""
+    project = _project(pid)
+    with storage.connect() as con:
+        # Pin the version, history and decisions together while materializing.
+        con.execute("BEGIN")
+        _ensure(con, project)
+        version, actions = _state(con, pid)
+        choices = _decisions(con, pid)
+        frame = _materialize(con, project, actions)
+    return frame, version, _reviewed_issues(frame, choices)
 
 
 def data_at_version(pid: str, version: int) -> pd.DataFrame:

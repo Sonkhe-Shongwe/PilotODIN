@@ -1215,9 +1215,9 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
     if body.context not in ai_context.TASKS:
         raise HTTPException(status_code=422,detail='Unsupported workspace context')
     try:
-        df,version=quality.current_data(project_id)
         question=body.question.strip() or ai_context.TASKS[body.context]
         if body.context == 'assistant' and body.selected_provider == 'local':
+            df,version=quality.current_data(project_id)
             previous = (verified_answers.FollowUp(**body.local_follow_up.model_dump())
                         if body.local_follow_up and not body.continuation_text else None)
             verified = verified_answers.answer(df, version, project_id, question, previous)
@@ -1225,7 +1225,10 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
                     **verified, 'dataset_version':version, 'privacy':'summary_only_no_rows',
                     'scope':body.context, 'investigation':None, 'investigation_steps':[],
                     'limitations':'Facts describe the current working dataset or saved experiment evidence.'}
-        context=ai_context.build(project_id,body.context,question,body.target,body.experiment_id,body.prediction)
+        working_data = quality.current_data_with_findings(project_id)
+        df, version, _ = working_data
+        context=ai_context.build(project_id,body.context,question,body.target,body.experiment_id,body.prediction,
+                                 working_data=working_data)
         local=analytics.answer(df,version,question[:350])['answer'] if body.context=='assistant' else ai_context.local_advice(context,body.context)
         plan=None if body.continuation_text else analytics.plan_investigation(df,version,question,body.context)
         if plan:
