@@ -1,7 +1,7 @@
 # A disposable fixture probe. The ETL and raw event payloads stay in runner temp.
 [CmdletBinding()]
 param([switch]$WithSysmon, [switch]$CalibrationOnly, [switch]$PreopenedControl,
-    [switch]$Rundown, [switch]$SystemTiming, [switch]$ProtectedRestore)
+    [switch]$Rundown, [switch]$SystemTiming, [switch]$ProtectedRestore, [switch]$BackgroundThread)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -14,6 +14,10 @@ $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-etw-$([guid]::NewGuid().ToStri
 $probeArgs = @($root)
 if ($ProtectedRestore -and ($WithSysmon -or $CalibrationOnly -or $PreopenedControl -or $Rundown -or $SystemTiming)) {
     throw 'The protected write and restore uses its own approved ETW fixture.'
+}
+if ($BackgroundThread -and ($WithSysmon -or $CalibrationOnly -or $PreopenedControl -or
+        $Rundown -or $SystemTiming -or $ProtectedRestore)) {
+    throw 'The background writer uses its own approved ETW fixture.'
 }
 if ($PreopenedControl -and ($WithSysmon -or $CalibrationOnly)) {
     throw 'The pre-opened control uses its own ETW-only fixture.'
@@ -143,6 +147,9 @@ if ($WithSysmon) {
 } elseif ($ProtectedRestore) {
     $result = python -B -m qa.p4_native.n12_protected_restore capture $root
     if ($LASTEXITCODE -ne 0) { throw 'The protected write and restore fixture did not complete.' }
+} elseif ($BackgroundThread) {
+    $result = python -B -m qa.p4_native.n12_background_thread capture $root
+    if ($LASTEXITCODE -ne 0) { throw 'The background writer fixture did not complete.' }
 } else {
     $result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
     if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
@@ -173,7 +180,8 @@ try {
         $eventId = $event.Id
         $isFileEvent = $event.ProviderId -eq $provider
         $isLifecycleEvent = $event.ProviderId -eq $processProvider -and
-            ($eventId -in 1,2 -or (($withThreadBookends -or $ProtectedRestore) -and $eventId -in 3,4))
+            ($eventId -in 1,2 -or (($withThreadBookends -or $ProtectedRestore -or $BackgroundThread) -and
+                $eventId -in 3,4))
         if ($isFileEvent) {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
         }
@@ -322,6 +330,11 @@ if ($LASTEXITCODE -ne 0) { throw 'The Windows ETW export failed reducer validati
 if ($ProtectedRestore) {
     python -B -m qa.p4_native.n12_protected_restore reduce $reducerManifest $manifestPath $eventsPath
     if ($LASTEXITCODE -ne 0) { throw 'The protected write and restore evidence was blocked.' }
+    return
+}
+if ($BackgroundThread) {
+    python -B -m qa.p4_native.n12_background_thread reduce $reducerManifest $manifestPath $eventsPath
+    if ($LASTEXITCODE -ne 0) { throw 'The background thread evidence was blocked.' }
     return
 }
 if ($PreopenedControl) {

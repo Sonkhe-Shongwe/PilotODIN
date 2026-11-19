@@ -337,7 +337,8 @@ def preopened_control(root, *, rundown=False, system_timing=False):
 
 
 def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None,
-                    open_comparison=None, verify_fixture=None, preopened_resize=None, protected_restore=None):
+                    open_comparison=None, verify_fixture=None, preopened_resize=None, protected_restore=None,
+                    after_calibration=None):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -461,6 +462,8 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         fixture = json.loads(result.stdout)
         fixture["start_window"] = [fixture_start, utc_ticks()]
         sysmon = verify_fixture(fixture, fixture_start) if verify_fixture is not None else None
+        if after_calibration is not None:
+            after_calibration()
         restore_evidence = protected_restore() if protected_restore is not None else None
         second_writer = None
         if not calibration_only:

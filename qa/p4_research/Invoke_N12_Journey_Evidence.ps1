@@ -27,7 +27,12 @@ $rehearsalRead = $Operation -ceq 'sysmon-tail' -and $env:GITHUB_RUN_ATTEMPT -ceq
 $socketLifetimeRead = $Operation -ceq 'sysmon-tail' -and $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
     $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE -cmatch '^[0-9a-f]{40}$' -and
     (git rev-parse HEAD) -ceq $env:PILOTODIN_N12_SOCKET_LIFETIME_SOURCE
-if (-not $rehearsalRead -and -not $lifetimeEtw -and -not $socketLifetimeRead -and
+$backgroundThreadRead = $Operation -ceq 'process-bookend' -and $env:GITHUB_EVENT_NAME -ceq 'push' -and
+    $env:GITHUB_REF_NAME -ceq 'feature/live-dev-workspace-20261023' -and $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
+    $env:PILOTODIN_N12_BACKGROUND_THREAD_CONSENT -ceq 'I_APPROVE_ONE_N12_BACKGROUND_THREAD' -and
+    $env:PILOTODIN_N12_BACKGROUND_THREAD_SOURCE -cmatch '^[0-9a-f]{40}$' -and
+    (git rev-parse HEAD) -ceq $env:PILOTODIN_N12_BACKGROUND_THREAD_SOURCE
+if (-not $rehearsalRead -and -not $lifetimeEtw -and -not $socketLifetimeRead -and -not $backgroundThreadRead -and
     $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV') {
     throw 'N12 journey operations require an approved disposable hosted Windows run.'
 }
