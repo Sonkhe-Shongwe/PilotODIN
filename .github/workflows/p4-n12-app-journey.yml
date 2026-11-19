@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ github.run_attempt == '1' }} # One approved attempt at the reviewed source.
+    if: ${{ false }} # One-use hosted audit consumed by run 44520473493.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
