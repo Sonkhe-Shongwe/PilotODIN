@@ -6,6 +6,7 @@ param(
     [switch]$InitialJourneyFixture,
     [switch]$AppJourney,
     [switch]$AppLifetime,
+    [switch]$WebViewStorage,
     [switch]$LifetimeControl,
     [switch]$LifetimeEtwControl,
     [switch]$SocketLifetimeControl,
@@ -29,6 +30,11 @@ if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $
 
 if ($WebViewRuntimeDirectory -and -not $AppJourney) {
     throw 'A WebView2 runtime directory requires the approved app journey.'
+}
+
+if ($WebViewStorage -and ($WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or
+        $LifetimeEtwControl -or $SocketLifetimeControl -or $InitialJourneyFixture -or $CollectorRundown)) {
+    throw 'WebView storage requires its own Process Monitor capture mode.'
 }
 
 if ($InitialJourneyFixture -and (-not $WithEtw -or $CollectorRundown -or $AppJourney -or $AppLifetime -or
@@ -57,13 +63,15 @@ if ($SocketLifetimeControl) {
         (git rev-parse HEAD) -cne $env:PILOTODIN_N12_LIFETIME_SOURCE) {
         throw 'The collector lifetime control requires its own source-pinned approval.'
     }
-} elseif ($AppJourney -or $AppLifetime) {
-    $captureApproved = if ($AppLifetime) {
+} elseif ($AppJourney -or $AppLifetime -or $WebViewStorage) {
+    $captureApproved = if ($WebViewStorage) {
+        $env:PILOTODIN_N12_WEBVIEW_STORAGE_CONSENT -ceq 'I_APPROVE_ONE_N12_WEBVIEW_STORAGE'
+    } elseif ($AppLifetime) {
         $env:PILOTODIN_N12_APP_LIFETIME_CONSENT -ceq 'I_APPROVE_ONE_N12_APP_LIFETIME'
     } else {
         $env:PILOTODIN_N12_APP_JOURNEY_CONSENT -ceq 'I_APPROVE_ONE_N12_APP_JOURNEY'
     }
-    if (($AppJourney -and $AppLifetime) -or -not $WithEtw -or -not $captureApproved -or
+    if (($AppJourney -and $AppLifetime) -or (-not $WebViewStorage -and -not $WithEtw) -or -not $captureApproved -or
         $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV' -or
         $SourceSha -cnotmatch '^[0-9a-f]{40}$' -or $SourceSha -cne $env:PILOTODIN_N12_APPROVED_SOURCE -or
         $ExecutableSha256 -cnotmatch '^[0-9a-f]{64}$') {
@@ -199,9 +207,14 @@ try {
     }
 
     $start = [DateTimeOffset]::UtcNow
-    $fixtureJson = python (Join-Path $PSScriptRoot 'n12_calibration.py') (Join-Path $root 'fixture')
-    if ($LASTEXITCODE -ne 0) { throw 'Generated N12 fixture failed.' }
-    $fixture = $fixtureJson | ConvertFrom-Json
+    if ($WebViewStorage) {
+        python -B -m qa.p4_research.n12_webview_storage_probe capture $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        if ($LASTEXITCODE -ne 0) { throw 'Focused WebView storage launch or control failed.' }
+    } else {
+        $fixtureJson = python (Join-Path $PSScriptRoot 'n12_calibration.py') (Join-Path $root 'fixture')
+        if ($LASTEXITCODE -ne 0) { throw 'Generated N12 fixture failed.' }
+        $fixture = $fixtureJson | ConvertFrom-Json
+    }
     Start-Sleep -Seconds 5
     $end = [DateTimeOffset]::UtcNow
     $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
@@ -245,7 +258,7 @@ try {
     } finally { $reader.Dispose() }
 
     & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') -FirstRecord $firstRecord -LastRecord $lastRecord -OutputFile $xml
-    @{
+    $window = @{
         schema_version = 1
         disposable = $true
         start_utc = $start.ToString('o')
@@ -255,8 +268,16 @@ try {
         procmon_all_events = $true
         procmon_loss_reviewed = $false
         procmon_clock_utc = (Get-TimeZone).Id -eq 'UTC'
-        calibration = $fixture
-    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifest -Encoding utf8
+    }
+    if ($WebViewStorage) {
+        if ($null -ne $stopError) { throw 'Process Monitor shutdown was abnormal.' }
+        $window | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $root 'storage-window.json') -Encoding utf8
+        python -B -m qa.p4_research.n12_webview_storage_probe reduce $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        if ($LASTEXITCODE -ne 0) { throw 'Focused WebView storage evidence was blocked.' }
+        return
+    }
+    $window.calibration = $fixture
+    $window | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifest -Encoding utf8
 
     # Clean stop and export do not establish a collector loss review. Keep
     # that flag false and use the summary to assess the known fixture events.

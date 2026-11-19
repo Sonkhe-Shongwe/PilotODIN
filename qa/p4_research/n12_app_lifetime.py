@@ -23,9 +23,13 @@ CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
 READY_PROBE = journey.FRONTEND / "e2e" / "p4-n12-app-lifetime-ready.mjs"
 
 
-def preflight(source, expected_hash):
-    trace.require(os.environ.get("PILOTODIN_N12_APP_LIFETIME_CONSENT") == CONSENT,
-                  "separate one-run N12 app lifetime consent is required")
+def preflight(source, expected_hash, *, storage=False):
+    if storage:
+        trace.require(os.environ.get("PILOTODIN_N12_WEBVIEW_STORAGE_CONSENT") == "I_APPROVE_ONE_N12_WEBVIEW_STORAGE",
+                      "separate one-run N12 WebView storage consent is required")
+    else:
+        trace.require(os.environ.get("PILOTODIN_N12_APP_LIFETIME_CONSENT") == CONSENT,
+                      "separate one-run N12 app lifetime consent is required")
     trace.require(not any(value and (key.upper().startswith("WEBVIEW2_") or key.upper() in {
         "PILOTODIN_HOME", "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_TOKEN", "TAURI_CONFIG",
     }) for key, value in os.environ.items()), "inherited application configuration is present")
@@ -38,17 +42,18 @@ def preflight(source, expected_hash):
     return root, staged, provenance, node
 
 
-def launch_and_close(root, staged, node, source, expected_hash):
+def launch_and_close(root, staged, node, source, expected_hash, *, storage_manifest=None):
     """Run in a short-lived worker so the app parent is also captured through exit."""
-    trace.require((root / "lifetime-launch.json").is_file(), "app lifetime capture has not opened")
-    journey.report_file(root / "lifetime-worker-started.json", {"source_sha": source})
+    if storage_manifest is None:
+        trace.require((root / "lifetime-launch.json").is_file(), "app lifetime capture has not opened")
+        journey.report_file(root / "lifetime-worker-started.json", {"source_sha": source})
     home = root / f'P4-71-only-home-{os.environ["GITHUB_RUN_ID"]}'
     profile = root / "webview"
     binary = build.executable(staged)
     title = json.loads(build.isolated_config())["app"]["windows"][0]["title"]
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home),
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-    manifest = {"processes": []}
+    manifest = {"processes": []} if storage_manifest is None else storage_manifest
     with journey.journey_processes(source, expected_hash) as stack:
         with journey.checkpoint_stage("app-lifetime-services", source, expected_hash):
             backend = journey.spawn(stack, manifest, "backend", [
@@ -68,10 +73,15 @@ def launch_and_close(root, staged, node, source, expected_hash):
             build.verify(staged, source, expected_hash)
             app_env = {**env, "WEBVIEW2_USER_DATA_FOLDER": str(profile),
                        "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=9331"}
+            if storage_manifest is not None:
+                app_env = journey.app_environment(env, profile, "first")
+                journey.mark(manifest, "launch")
             app = journey.spawn(stack, manifest, "app", [binary], app_env, binary.parent, root / "app.log")
             journey.wait_for(lambda: journey.http_ready(9331, "/json/version",
                              lambda status: bool(status.get("webSocketDebuggerUrl"))),
                              45, "WebView debugger did not become ready", app)
+            if storage_manifest is not None:
+                journey.mark(manifest, "ready")
             ready = journey.quiet([node, str(READY_PROBE)], cwd=journey.FRONTEND,
                                   env={**env, "TEMP": str(root / journey.DRIVER_TEMP_DIR),
                                        "TMP": str(root / journey.DRIVER_TEMP_DIR)}, timeout=115)
@@ -81,6 +91,8 @@ def launch_and_close(root, staged, node, source, expected_hash):
             trace.require(app.poll() is None and backend.poll() is None and vite.poll() is None,
                           "app or local service exited before verified close")
             app_images = process_images(app)
+            if storage_manifest is not None:
+                journey.mark(manifest, "close")
             journey.request_graceful_close(app, binary, title)
         with journey.checkpoint_stage("app-lifetime-handle-exit", source, expected_hash):
             trace.require(app.wait(timeout=5) == 0, "app did not exit normally")
@@ -89,6 +101,8 @@ def launch_and_close(root, staged, node, source, expected_hash):
             journey.wait_for(lambda: not journey.listening(9331) and int(journey.powershell(
                 journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
             )) == 0, 25, "WebView processes did not exit for the disposable profile")
+            if storage_manifest is not None:
+                journey.mark(manifest, "profile-exit")
     journey.report_file(root / "private-app-handle.json", app_times)
 
 

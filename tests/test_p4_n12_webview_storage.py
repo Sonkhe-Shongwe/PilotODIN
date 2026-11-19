@@ -1,0 +1,150 @@
+import csv
+from datetime import datetime, timedelta, timezone
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import patch
+
+from qa.p4_native import n12_trace as trace
+from qa.p4_research import n12_webview_storage_probe as probe
+from qa.p4_research.n12_journey_diagnostics import OutsidePaths
+
+
+START = datetime(2026, 11, 19, 10, tzinfo=timezone.utc)
+APP = r"c:\fixture\pilotodin.exe"
+PYTHON = r"c:\fixture\python.exe"
+WEBVIEW = r"c:\fixture\1.2.3.4\msedgewebview2.exe"
+SCRATCH = r"c:\fixture\scratch"
+LOCAL = r"c:\private-user\local"
+USER_TEMP = LOCAL + r"\temp"
+PROTECTED = r"c:\protected-original"
+CSV = r"c:\fixture\immutable.csv"
+CONTROL_SCRATCH = SCRATCH + r"\distinct-scratch-control.tmp"
+CONTROL_TEMP = USER_TEMP + r"\distinct-user-control.tmp"
+TARGET = USER_TEMP + r"\private-filename.xyz"
+SOURCE = "1" * 40
+HASH = "2" * 64
+
+
+def time_at(seconds):
+    return START + timedelta(seconds=seconds)
+
+
+def process(guid, parent, pid, image, start, end, command="", sha=None):
+    return trace.Process(guid, parent, pid, image, sha, time_at(start), command, time_at(end))
+
+
+def row(seconds, pid, image, path, *, detail="OpenResult: Created", result="SUCCESS", op="CreateFile"):
+    return {"Time of Day":time_at(seconds).strftime("%H:%M:%S"), "PID":pid,
+            "Process Name":image, "Operation":op, "Path":path, "Result":result, "Detail":detail}
+
+
+class StorageProbeTests(unittest.TestCase):
+    def setUp(self):
+        self.processes = {item.guid: item for item in (
+            process("app", "parent", 100, APP, 5, 14, sha=HASH),
+            process("renderer", "app", 101, WEBVIEW, 6, 13, command="--type=renderer"),
+            process("control-one", "parent", 200, PYTHON, 2, 4),
+            process("control-two", "parent", 201, PYTHON, 16, 18),
+        )}
+        self.manifest = {
+            "source_sha": SOURCE, "executable_sha256": HASH,
+            "protected_roots": {"original": PROTECTED}, "observed_roots": {"quality-source": CSV},
+            "immutable_observed": ["quality-source"], "permitted_writes": {"webview":[SCRATCH]},
+            "protected_snapshot_comparison": "MATCH", "procmon_all_events": True, "procmon_clock_utc": True,
+            "markers": {key:time_at(at).isoformat() for key, at in (
+                ("fixture-ready", 1), ("launch", 5), ("ready", 8), ("close", 10), ("profile-exit", 15),
+            )},
+            "processes": [
+                {"role":"app", "pid":100, "image":APP},
+                {"role":"calibration", "pid":200, "image":PYTHON, "label":"scratch", "target":CONTROL_SCRATCH},
+                {"role":"calibration", "pid":201, "image":PYTHON, "label":"user-temp", "target":CONTROL_TEMP},
+            ],
+        }
+        self.controls = [row(3, 200, "python.exe", CONTROL_SCRATCH), row(17, 201, "python.exe", CONTROL_TEMP)]
+
+    def reduce(self, rows):
+        categories = OutsidePaths([("qa-webview-profile", SCRATCH), ("user-temp", USER_TEMP), ("user-local", LOCAL)])
+        with TemporaryDirectory() as folder, patch.object(
+            probe.trace, "load_capture",
+            return_value=(START, time_at(20), self.processes, [], {"procmon-coverage-not-confirmed"}),
+        ), patch.object(probe.journey, "diagnostic_paths", return_value=categories):
+            path = Path(folder) / "procmon.csv"
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=self.controls[0])
+                writer.writeheader()
+                writer.writerows(rows)
+            return probe.reduce(None, None, self.manifest, None, path)
+
+    def test_reproduced_rows_keep_component_and_stage_and_hide_private_values(self):
+        rows = self.controls + [
+            row(0, 101, "msedgewebview2.exe", CSV),
+            row(7, 101, "msedgewebview2.exe", TARGET),
+            row(11, 101, "msedgewebview2.exe", LOCAL + r"\Microsoft\EdgeWebView\private.xyz", op="WriteFile"),
+        ]
+        report = self.reduce(rows)
+        self.assertEqual(report["verdict"], "REPRODUCED")
+        self.assertEqual(report["known_create_controls"], {"scratch":True, "user-temp":True})
+        self.assertEqual(report["ambient_temp_creates"], 1)
+        self.assertEqual(report["webview_runtime_versions"], ["1.2.3.4"])
+        self.assertEqual(report["storage_events"], [
+            {"destination_family":"edge-webview", "operation":"write", "component":"renderer",
+             "stage":"close", "file_type":"other-extension", "count":1},
+            {"destination_family":"user-temp", "operation":"create", "component":"renderer",
+             "stage":"startup", "file_type":"other-extension", "count":1},
+        ])
+        self.assertFalse(report["procmon_loss_reviewed"])
+        self.assertNotIn("private", json.dumps(report))
+        self.assertNotIn("distinct-user-control", json.dumps(report))
+
+    def test_zero_target_events_is_inconclusive_when_both_controls_are_valid(self):
+        rows = self.controls + [row(9, 101, "msedgewebview2.exe", TARGET, detail="OpenResult: Opened")]
+        report = self.reduce(rows)
+        self.assertEqual(report["verdict"], "INCONCLUSIVE")
+        self.assertEqual(report["ambient_temp_creates"], 0)
+
+    def test_wrong_writer_or_failed_create_blocks_despite_a_reproduced_target(self):
+        for invalid in (row(3, 201, "python.exe", CONTROL_SCRATCH),
+                        row(3, 200, "python.exe", CONTROL_SCRATCH, result="ACCESS DENIED")):
+            with self.subTest(invalid=invalid):
+                report = self.reduce([invalid, self.controls[1], row(7, 101, "msedgewebview2.exe", TARGET)])
+                self.assertEqual(report["verdict"], "BLOCKED")
+                self.assertIn("known-create-controls-unverified", report["issues"])
+
+    def test_ambiguous_pid_does_not_attribute_the_create(self):
+        self.processes["overlap"] = process("overlap", "unrelated", 101, WEBVIEW, 6, 12)
+        report = self.reduce(self.controls + [row(7, 101, "msedgewebview2.exe", TARGET)])
+        self.assertEqual(report["ambient_temp_creates"], 0)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("file-event-process-ambiguous", report["file_coverage_issues"])
+
+    def test_protected_write_blocks_even_with_matching_endpoints(self):
+        report = self.reduce(self.controls + [
+            row(7, 101, "msedgewebview2.exe", TARGET),
+            row(8, 101, "msedgewebview2.exe", CSV, op="WriteFile"),
+        ])
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("protected-files-changed-or-unverified", report["issues"])
+
+    def test_wrong_app_digest_blocks(self):
+        self.processes["app"].sha256 = "3" * 64
+        report = self.reduce(self.controls + [row(7, 101, "msedgewebview2.exe", TARGET)])
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("app-source-identity-unverified", report["issues"])
+
+    def test_capture_refuses_absent_one_use_approval(self):
+        run = subprocess.run([sys.executable, "-B", "-m", probe.__name__, "capture", ".",
+                              "--source", SOURCE, "--expected-exe-sha256", HASH],
+                             env={**os.environ, "GITHUB_RUN_ATTEMPT":"1", "PILOTODIN_N12_APPROVED_SOURCE":SOURCE,
+                                  "PILOTODIN_N12_WEBVIEW_STORAGE_CONSENT":""},
+                             capture_output=True, text=True, timeout=10)
+        self.assertEqual(run.returncode, 2)
+        self.assertIn("separate one-run N12 WebView storage consent is required", run.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

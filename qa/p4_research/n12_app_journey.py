@@ -465,6 +465,14 @@ def temporary_environment(env, scratch):
     return {**env, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch)}
 
 
+def app_environment(env, profile, label):
+    return {**temporary_environment(env, profile / APP_TEMP_DIR),
+            "WEBVIEW2_USER_DATA_FOLDER": str(profile),
+            "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS":
+                '--remote-debugging-port=9331 --net-log-capture-mode=Default '
+                f'--log-net-log="{profile / f"netlog-{label}.json"}"'}
+
+
 def driver_environment(env, root):
     scratch = root / DRIVER_TEMP_DIR
     # Keep disposable driver scratch and any inherited PowerShell cache scoped.
@@ -567,11 +575,7 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
         print(f"N12 journey stage {label} launch", flush=True)
         build.verify(staged, source, expected_hash)
         mark(manifest, "reopen" if relaunch else "launch")
-        app_env = {**temporary_environment(env, profile / APP_TEMP_DIR),
-                   "WEBVIEW2_USER_DATA_FOLDER": str(profile),
-                   "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS":
-                       '--remote-debugging-port=9331 --net-log-capture-mode=Default '
-                       f'--log-net-log="{profile / f"netlog-{label}.json"}"'}
+        app_env = app_environment(env, profile, label)
         if egress_programs is not None:
             app_env["WEBVIEW2_BROWSER_EXECUTABLE_FOLDER"] = str(egress_programs["webview"].parent)
         app = spawn(stack, manifest, "app", [binary], app_env, binary.parent, root / f"app-{label}.log")

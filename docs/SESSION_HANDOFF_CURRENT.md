@@ -20,7 +20,13 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Make WebView2 filesystem isolation the active work. Prepare one focused Windows diagnostic to identify the component and destination behind the four user-temp creates. Include the twelve user-local events in the same capture so it can identify those folder families if they recur. Defer the full journey until there is a targeted correction to verify. [Focused plan](#webview2-filesystem-isolation-plan) · [Hosted result](#19-november-2026--hosted-webview-storage-and-ipc-retest)
+Make WebView2 filesystem isolation the active work. The focused startup-and-close probe is prepared. Once its exact source is approved, use one hosted Windows diagnostic to identify the component and destination behind the four user-temp creates. Capture the user-local activity in the same window. Defer the full journey until there is a targeted correction to verify. [Prepared probe](#focused-webview2-probe-prepared) · [Focused plan](#webview2-filesystem-isolation-plan) · [Hosted result](#19-november-2026--hosted-webview-storage-and-ipc-retest)
+
+### Focused WebView2 probe prepared
+
+The probe reuses the existing startup and graceful-close driver and the full journey's WebView2 environment settings. Its two generated file controls bracket the app activity. It reads the pinned Process Monitor CSV and Sysmon process records to associate successful file operations with a component, phase and path family. It records the runtime version from the verified process image path. The CSV supplies directly observed path events. It has no call stack, and any unrecognised app-data family remains unclassified. The covered result is diagnostic only. [Reducer and launch](../qa/p4_research/n12_webview_storage_probe.py) · [Generated cases](../tests/test_p4_n12_webview_storage.py)
+
+The generated cases cover a reproduced render-process create, a recognised local app-data family, no reproduction, failed or wrong-identity controls, an ambiguous PID, wrong app digest, an in-window write to the immutable CSV and missing one-use consent. The focused capture workflow is disarmed. Its proposed approval is for one GitHub-hosted Windows Server 2022 attempt at the reviewed source, one unpackaged build, one startup and graceful close, the pinned Sysmon and Process Monitor collectors, and the two disposable control writes. A successful diagnostic reports a reproduced event with writer, stage and destination. **INCONCLUSIVE** preserves the earlier full-run failure. [Disarmed workflow](../.github/workflows/p4-n12-webview-storage.yml)
 
 ### WebView2 filesystem isolation plan
 

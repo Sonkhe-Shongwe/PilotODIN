@@ -409,7 +409,7 @@ def unresolved_path_kind(value):
     return "relative-or-unrecognized"
 
 
-def inspect_files(path, start, end, processes, roles, protected, permitted, issues):
+def inspect_files(path, start, end, processes, roles, protected, permitted, issues, *, observe=None):
     lifetimes = {}
     for process in processes.values():
         lifetimes.setdefault(process.pid, []).append(process)
@@ -468,6 +468,8 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
                 issues.add("scoped-create-result-unresolved")
                 continue
             counts[f"{role}:{operation}"] += 1
+            if observe is not None:
+                observe(time, process, role, operation, targets[0])
             if not all(any(inside(target, root) for root in permitted.get(role, ()))
                        for target in targets):
                 violations[f"outside-scope:{role}:{operation}"] += 1
