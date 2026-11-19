@@ -141,6 +141,8 @@ The existing Windows worker comparison measured approximately **2.06 GiB peak re
 
 Compare the current 2.00 GiB floor with the isolated 1.50 GiB candidate while keeping the model, inference arguments, fixture, question, timeout and offline setup fixed. Exercise one cold question per case on the physical 8 GB laptop near the relevant floor. Capture the admission decisions and exact readings, answer source, time to the visible result, lowest available RAM, paging and app responsiveness. The log interval runs from preflight to the backend result. Simulated readings cover policy branches. For a deferral or failure, keep the stage and diagnostic with the result.
 
+For a kit built with exact RAM admission, read `available_bytes` on each `desktop_preflight` and `before_generation` event in the disposable benchmark log. The events can have identical rounded `available_gib` values while yielding different decisions. Use each event's recorded decision and exact reading to identify the gate reached. The earlier physical screenshots did not record those fields. [Generated request test](./SESSION_HANDOFF_CURRENT.md#exact-ram-admission-for-r03)
+
 Review the candidate against the baseline and agreed paging and responsiveness limits before changing the default. The target is a usable bundled answer under ordinary laptop conditions. Longer coexistence remains the R03.4 workload.
 
 The benchmark kit uses one source-matched desktop and analytics engine for both cases. The launcher accepts `-BenchmarkProfile baseline` or `-BenchmarkProfile candidate`, with the tested commit supplied as `-ExpectedSource`. Each mode uses a fresh backend profile and WebView2 folder. Normal installs and the previous offline QA kit use their existing admission policies.

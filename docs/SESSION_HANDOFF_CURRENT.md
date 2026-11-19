@@ -22,6 +22,12 @@ In each continuation update, show the official score, the previous and current c
 
 P4 is active across the six open engineering checks. The consolidated Windows QA patch covers launch TMP failure reasons, protected-file target attribution and the backend loopback purpose. Use the existing offline quality screen and owner-device procedure for the physical and original-data gates. [Six-check evidence plan](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#six-open-engineering-checks-and-the-next-evidence-passes)
 
+### Exact RAM admission for R03
+
+Low-memory admission compares the physical RAM byte count with the current screening floor. Settings still shows RAM in rounded GiB and uses the same exact measurement to report whether the floor is met. The disposable R03 benchmark log retains the exact reading at desktop preflight and before generation. In the generated candidate scenario, preflight sees exactly 1.50 GiB and allows startup, then the generation check sees 4,096 bytes less and returns the verified fallback. Both readings display as 1.500 GiB. [Policy](../backend/resource_policy.py) · [Generated request test](../tests/test_p4_r03_verified_answers.py)
+
+Offline 8 GB inference remains **1/3 (33%)** and official P4 remains **14/20 (70%)**. Another physical run needs a candidate that clears the existing offline quality screen and has measured memory demand at representative headroom. The 0.936 GiB Settings snapshot and the earlier candidate deferral retain their original scope. [R03 plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#ordinary-laptop-memory-and-offline-inference)
+
 ### Consolidated P4 evidence preparation
 
 - The debugger and Process Start checks return fixed failure reasons. Missing debugger type information, a missing or ambiguous field, an identity mismatch and a value mismatch can now lead to different decisions. The previous generated child completed but its raw debugger output was unavailable for reclassification. The live checks are disarmed. [Debugger fixture](../qa/p4_research/n12_tmp_debugger_fixture.py) · [Focused storage report](../qa/p4_research/n12_webview_storage_probe.py)

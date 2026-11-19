@@ -5,7 +5,7 @@ import {get,put} from './api';
 export type ResourceMode='adaptive'|'low_memory'|'performance';
 type ResourceStatus={
  policy:{mode:ResourceMode;source:'default'|'saved'|'fallback';warning:string|null};
- memory:{status:'observed'|'unavailable';total_gib:number|null;available_gib:number|null;source:string;measured_at_utc:string;note:string};
+ memory:{status:'observed'|'unavailable';total_gib:number|null;available_gib:number|null;available_bytes:number|null;source:string;measured_at_utc:string;note:string};
  policy_effect:string;offline_8gb_ai_feasibility:string;
  low_memory_training_min_free_gib:number;low_memory_local_inference_min_free_gib:number;
 };
@@ -19,12 +19,13 @@ const DESCRIPTIONS:Record<ResourceMode,string>={
 function localAIHeadroom(status:ResourceStatus){
  if(status.policy.mode!=='low_memory')return null;
  const {memory,low_memory_local_inference_min_free_gib:minimum}=status;
- const available=memory.available_gib;
- if(memory.status!=='observed'||available===null)
+ if(memory.status!=='observed'||memory.available_bytes===null)
   return 'Low-memory mode defers new local AI requests when available RAM can’t be measured. Refresh memory to check again.';
+ const available=memory.available_bytes/(1024**3);
  if(available>=minimum)
   return 'Available RAM meets the Low-memory threshold to start local AI. Generation can still require more memory.';
- const shortfall=(minimum-available).toFixed(3);
+ const missing=minimum-available;
+ const shortfall=missing<0.001?'less than 0.001':missing.toFixed(3);
  return `New local AI requests need ${shortfall} GiB more available RAM in Low-memory mode. Free up RAM, then refresh memory. Local analytics are still available.`;
 }
 

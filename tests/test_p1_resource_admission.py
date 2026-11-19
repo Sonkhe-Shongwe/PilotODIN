@@ -55,6 +55,21 @@ def test_low_memory_ai_admission(isolated_policy, monkeypatch, free, decision):
     assert report["required_free_gib"]==2.0
 
 
+@pytest.mark.parametrize("operation,floor", [("training", 0.75), ("local_inference", 2.0)])
+@pytest.mark.parametrize("offset,decision", [(-4096, "defer"), (0, "allow"), (4096, "allow")])
+def test_low_memory_admission_uses_bytes_before_rounding(
+        isolated_policy, monkeypatch, operation, floor, offset, decision):
+    resource_policy.save_policy("low_memory")
+    monkeypatch.setattr(resource_policy, "_r03_profile", lambda: None)
+    available_bytes = int(floor * 1024**3) + offset
+    monkeypatch.setattr(resource_policy, "_physical_memory_bytes",
+                        lambda: (8 * 1024**3, available_bytes, "test_fixture"))
+    report = resource_policy.admit_new_work(operation)
+    assert report["decision"] == decision
+    assert report["available_gib"] == floor
+    assert report["available_bytes"] == available_bytes
+
+
 @pytest.mark.parametrize("mode", ["adaptive","performance"])
 def test_other_policies_keep_earlier_guards_without_new_headroom_refusal(
         isolated_policy, monkeypatch, mode):

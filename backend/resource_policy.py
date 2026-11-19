@@ -22,6 +22,7 @@ except ImportError:
     import storage
 
 MODES = ("adaptive", "low_memory", "performance")
+_GIB_BYTES = 1024 ** 3
 _lock = threading.RLock()
 
 
@@ -107,14 +108,16 @@ def memory_status() -> dict:
         if total <= 0 or not 0 <= available <= total:
             raise ValueError("Invalid memory observation")
         return {
-            "status": "observed", "total_gib": round(total / (1024 ** 3), 3),
-            "available_gib": round(available / (1024 ** 3), 3),
+            "status": "observed", "total_gib": round(total / _GIB_BYTES, 3),
+            "available_gib": round(available / _GIB_BYTES, 3),
+            "available_bytes": available,
             "source": source, "measured_at_utc": observed_at,
             "note": "Instantaneous system memory; available RAM is not a model's peak budget.",
         }
     except (OSError, ValueError, KeyError, AttributeError):
         return {
             "status": "unavailable", "total_gib": None, "available_gib": None,
+            "available_bytes": None,
             "source": "unavailable", "measured_at_utc": observed_at,
             "note": "Physical memory could not be measured; no capacity is assumed.",
         }
@@ -176,22 +179,25 @@ def admit_new_work(operation: str) -> dict:
         return {
             "decision": "allow", "code": "not_enforced_for_selected_mode",
             "mode": policy, "operation": operation, "available_gib": None,
+            "available_bytes": None,
             "required_free_gib": minimum,
             "note": "Existing operation-specific hard resource and integrity limits still apply.",
         }
     observed = memory_status()
-    available = observed["available_gib"]
-    if observed["status"] != "observed" or available is None:
+    available_bytes = observed["available_bytes"]
+    if observed["status"] != "observed" or available_bytes is None:
         return {
             "decision": "defer", "code": "memory_unavailable",
             "mode": policy, "operation": operation, "available_gib": None,
+            "available_bytes": None,
             "required_free_gib": minimum,
             "note": "Cannot measure available RAM in Low-memory mode. Close unnecessary apps or retry later.",
         }
-    if available < minimum:
+    if available_bytes < minimum * _GIB_BYTES:
         return {
             "decision": "defer", "code": "low_memory_headroom",
-            "mode": policy, "operation": operation, "available_gib": available,
+            "mode": policy, "operation": operation, "available_gib": observed["available_gib"],
+            "available_bytes": available_bytes,
             "required_free_gib": minimum,
             "note": ("Low-memory mode deferred new " + operation.replace("_", " ")
                      + " because available RAM is below a conservative screening floor. "
@@ -199,7 +205,8 @@ def admit_new_work(operation: str) -> dict:
         }
     return {
         "decision": "allow", "code": "screening_floor_met",
-        "mode": policy, "operation": operation, "available_gib": available,
+        "mode": policy, "operation": operation, "available_gib": observed["available_gib"],
+        "available_bytes": available_bytes,
         "required_free_gib": minimum,
         "note": "Admission screening passed; this does not guarantee peak RAM fit or offline AI feasibility.",
     }

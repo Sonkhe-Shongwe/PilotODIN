@@ -256,9 +256,12 @@ def test_automatic_investigation_rejects_unavailable_offline_ai(monkeypatch, ena
     pid, inv_id = new_inv()
     monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: enabled)
     monkeypatch.setattr(resource_policy, 'read_policy', lambda: {'mode': 'low_memory'})
-    monkeypatch.setattr(resource_policy, 'memory_status', lambda: {
-        'status': 'unavailable' if free_gib is None else 'observed', 'available_gib': free_gib,
-    })
+    def observed_memory():
+        if free_gib is None:
+            raise OSError('Unavailable memory probe')
+        return 8 * 1024**3, int(free_gib * 1024**3), 'test_fixture'
+
+    monkeypatch.setattr(resource_policy, '_physical_memory_bytes', observed_memory)
     route = f'/api/investigations/{inv_id}/autonomy'
     preflight = client.get('/api/resource/preflight', params={'investigation_autonomy': 'true'})
     assert preflight.json()['decision'] == ('defer' if enabled else 'skip')
@@ -291,7 +294,8 @@ def test_planner_can_use_worker_when_offline_ai_and_memory_allow_it(monkeypatch)
     monkeypatch.setenv('PILOTODIN_DESKTOP_SESSION', 'test-desktop-session')
     monkeypatch.setattr(ai_provider, 'offline_inference_enabled', lambda: True)
     monkeypatch.setattr(resource_policy, 'read_policy', lambda: {'mode': 'low_memory'})
-    monkeypatch.setattr(resource_policy, 'memory_status', lambda: {'status': 'observed', 'available_gib': 2.0})
+    monkeypatch.setattr(resource_policy, '_physical_memory_bytes',
+                        lambda: (8 * 1024**3, 2 * 1024**3, 'test_fixture'))
     monkeypatch.setattr(autonomy.bundled_inference, 'generate',
                         lambda *_a, **_kw: (json.dumps(propose()), False, 'stop'))
     assert autonomy.default_planner({}) == propose()

@@ -299,7 +299,7 @@ class VerifiedAnswersTests(unittest.TestCase):
             with patch.object(storage, 'HOME', home), patch.object(
                 ai_provider, '_read_config', return_value={**ai_provider.DEFAULTS, 'intelligence_mode': 'local'},
             ), patch.object(resource_policy, '_physical_memory_bytes', side_effect=[
-                (8 * 1024**3, 1536 * 1024**2, 'test'), (8 * 1024**3, 1400 * 1024**2, 'test'),
+                (8 * 1024**3, 1536 * 1024**2, 'test'), (8 * 1024**3, 1536 * 1024**2 - 4096, 'test'),
             ]), patch.object(ai_provider.bundled_inference, 'generate') as generate:
                 resource_policy.save_policy('low_memory')
                 preflight = self.client.get('/api/resource/preflight', headers=headers, params={
@@ -318,7 +318,9 @@ class VerifiedAnswersTests(unittest.TestCase):
                          ['desktop_preflight', 'before_generation', 'insight_result'])
         self.assertEqual((preflight['decision'], preflight['available_gib']), ('allow', 1.50))
         self.assertEqual((generation['decision'], generation['code']), ('defer', 'low_memory_headroom'))
-        self.assertLess(generation['available_gib'], generation['required_free_gib'])
+        self.assertEqual(generation['available_gib'], generation['required_free_gib'])
+        self.assertEqual(preflight['available_bytes'], 1536 * 1024**2)
+        self.assertEqual(generation['available_bytes'], preflight['available_bytes'] - 4096)
         self.assertEqual(result['provider'], 'local')
         for private in (prompt, project, headers['X-PilotODIN-Session']):
             self.assertNotIn(private, log_text)
