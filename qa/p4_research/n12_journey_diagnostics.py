@@ -35,6 +35,16 @@ FILE_TYPES = {
     ".csv": "data", ".parquet": "data", ".json": "metadata",
     ".log": "log", ".pyc": "python-bytecode", ".tmp": "temporary",
 }
+WEBVIEW_ROLES = {"webview", "webview-network"}
+WEBVIEW_LOCAL_FOLDERS = (
+    ("direct3d-cache", "D3DSCache"),
+    ("edge-webview", r"Microsoft\EdgeWebView"),
+    ("edge-update", r"Microsoft\EdgeUpdate"),
+    ("edge", r"Microsoft\Edge"),
+    ("windows-internet-cache", r"Microsoft\Windows\INetCache"),
+    ("windows-web-cache", r"Microsoft\Windows\WebCache"),
+    ("crash-dumps", "CrashDumps"),
+)
 
 
 class OutsidePaths:
@@ -44,6 +54,12 @@ class OutsidePaths:
         self.counts = Counter()
         self.writers = Counter()
         self.backend_targets = defaultdict(Counter)
+        self.webview_targets = defaultdict(Counter)
+        local = next((root for label, root in self.roots if label == "user-local"), None)
+        self.webview_local_families = [
+            (label, windows_path(ntpath.join(local, directory)))
+            for label, directory in WEBVIEW_LOCAL_FOLDERS
+        ] if local is not None else []
 
     def record(self, role, operation, paths, image=None):
         targets = {path: next((label for label, root in self.roots if inside(path, root)), "other-path")
@@ -57,6 +73,15 @@ class OutsidePaths:
                 extension = ntpath.splitext(path)[1]
                 file_type = FILE_TYPES.get(extension, "other-extension" if extension else "no-extension")
                 self.backend_targets[operation, label, file_type][path] += 1
+        elif role in WEBVIEW_ROLES:
+            for path, label in targets.items():
+                if label != "user-local":
+                    continue
+                family = next((group for group, prefix in self.webview_local_families if inside(path, prefix)),
+                              "other-user-local")
+                extension = ntpath.splitext(path)[1]
+                file_type = FILE_TYPES.get(extension, "other-extension" if extension else "no-extension")
+                self.webview_targets[role, operation, category, family, file_type][path] += 1
 
     def summary(self):
         return [{"role": role, "operation": op, "path_categories": list(labels), "count": count}
@@ -72,6 +97,18 @@ class OutsidePaths:
                  "distinct_targets": len(targets), "target_events": sum(targets.values()),
                  "most_events_for_one_target": max(targets.values())}
                 for (operation, label, file_type), targets in sorted(self.backend_targets.items())]
+
+    def webview_storage_summary(self):
+        ambient_temp_creates = sum(
+            count for (role, operation, labels), count in self.counts.items()
+            if role in WEBVIEW_ROLES and operation == "create" and
+            ("user-temp" in labels or "runner-temp" in labels)
+        )
+        return {"ambient_temp_creates": ambient_temp_creates, "user_local_targets": [
+            {"role": role, "operation": operation, "writer": writer, "destination_family": family,
+             "file_type": file_type, "distinct_targets": len(targets), "target_events": sum(targets.values())}
+            for (role, operation, writer, family, file_type), targets in sorted(self.webview_targets.items())
+        ]}
 
 
 def address(value):

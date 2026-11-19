@@ -116,6 +116,41 @@ class JourneyDiagnosticsTests(unittest.TestCase):
         self.assertEqual(sum(writers.values()), paths.summary()[0]["count"])
         self.assertNotIn("private", json.dumps(paths.writer_summary()))
 
+    def test_webview_storage_reports_fixed_families_and_preserves_ordinary_counts(self):
+        local = r"c:\private\owner\appdata\local"
+        paths = diagnostics.OutsidePaths([
+            ("user-temp", local + r"\temp"),
+            ("runner-temp", r"d:\private\runner"),
+            ("user-local", local),
+        ])
+        cache = local + r"\d3dscache\private-file.bin"
+        custom = local + r"\d3dscache-other\private-file.tmp"
+        def record_webview(operation, path):
+            paths.record("webview", operation, (path,), "msedgewebview2.exe")
+
+        for _ in range(4):
+            record_webview("create", local + r"\temp\generated.tmp")
+            record_webview("create", cache)
+            record_webview("overwrite", cache)
+            record_webview("write", custom)
+        paths.record("backend", "create", (local + r"\temp\backend.tmp",), "python.exe")
+        result = paths.webview_storage_summary()
+        self.assertEqual(result["ambient_temp_creates"], 4)
+        rows = result["user_local_targets"]
+        self.assertEqual([(r["operation"], r["destination_family"], r["file_type"],
+                           r["distinct_targets"], r["target_events"]) for r in rows], [
+            ("create", "direct3d-cache", "other-extension", 1, 4),
+            ("overwrite", "direct3d-cache", "other-extension", 1, 4),
+            ("write", "other-user-local", "temporary", 1, 4),
+        ])
+        self.assertTrue(all(r["writer"] == "webview2" for r in rows))
+        self.assertEqual(sum(r["count"] for r in paths.summary() if r["path_categories"] == ["user-local"]), 12)
+        self.assertNotIn("private", json.dumps(result))
+        self.assertEqual(diagnostics.OutsidePaths([]).webview_storage_summary(),
+                         {"ambient_temp_creates": 0, "user_local_targets": []})
+        paths.record("webview-network", "create", (r"d:\private\runner\new.tmp",), "msedgewebview2.exe")
+        self.assertEqual(paths.webview_storage_summary()["ambient_temp_creates"], 5)
+
     def test_backend_target_summary_identifies_repeated_targets_without_name_disclosure(self):
         paths = diagnostics.OutsidePaths([
             ("backend-stdout-log", r"C:\owner\capture\backend.log"),

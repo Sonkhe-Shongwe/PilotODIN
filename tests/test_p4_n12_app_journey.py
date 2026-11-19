@@ -966,6 +966,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         else:
             assert json.loads(socket_path.read_text())["observed_ticks"] == 200
         assert report["journey_diagnostics"]["app_lifetimes"]["launches"]["relaunch"]["handle"] == "MATCH"
+        assert report["journey_diagnostics"]["webview_storage"] == {
+            "ambient_temp_creates": 0, "user_local_targets": [],
+        }
         assert report["journey_diagnostics"]["final_sysmon_calibration"] == (
             {"status": "BLOCKED", "reason": "final fixture TCP or UDP evidence missing"}
             if fault == "final-calibration" else {"status": "PASS"}

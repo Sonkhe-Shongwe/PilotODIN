@@ -918,6 +918,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         "driver_lifetimes": driver_lifetimes,
         "outside_scope_paths": paths.summary(),
         "outside_scope_writers": paths.writer_summary(),
+        "webview_storage": paths.webview_storage_summary(),
         "backend_outside_scope_targets": paths.backend_target_summary(),
         "final_sysmon_calibration": final_calibration,
         "process_bookends": {"before": "available" if first_processes is not None else "unavailable",
@@ -936,6 +937,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     baseline_gaps = result["etw_unresolved_mutations"].get(gap, 0)
     print("N12 ordinary audit " + json.dumps({
         "source_sha": source, "executable_sha256": expected_hash, "etw_events_sha256": evidence_sha,
+        "webview_storage": result["journey_diagnostics"]["webview_storage"],
         **{key: result[key] for key in (
             "coverage", "coverage_issues", "filesystem", "network", "file_violations", "etw_unresolved_mutations",
         )},
