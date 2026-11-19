@@ -20,7 +20,7 @@ from xml.etree import ElementTree as ET
 from qa.p4_native import n12_exit_corroboration as diagnostic
 from qa.p4_native import n12_lifetime_control as controls
 from qa.p4_native import n12_trace as trace
-from qa.p4_research.n12_app_journey import DRIVER_TEMP_DIR, driver_environment
+from qa.p4_research.n12_app_journey import APP_TEMP_DIR, DRIVER_TEMP_DIR, driver_environment, temporary_environment
 from qa.p4_research.n12_driver_handles import DriverHandles, descendants, driver_lifetime_evidence
 from qa.p4_research.n12_project_switch import press_project_switch
 
@@ -195,6 +195,31 @@ assert.throws(() => projectSwitchCommand({ n12Journey: true, pid: '123', action:
             self.assertTrue(final.is_relative_to(scratch))
             self.assertEqual(final.read_text(encoding="utf-8"), "generated")
             self.assertEqual(list(user_temp.iterdir()), [])
+
+    def test_generated_app_child_writes_to_the_profile_temp_directory(self):
+        script = (
+            "import ctypes,os,tempfile; from pathlib import Path\n"
+            "if os.name == 'nt':\n"
+            "    buffer = ctypes.create_unicode_buffer(32768)\n"
+            "    length = ctypes.windll.kernel32.GetTempPathW(len(buffer), buffer)\n"
+            "    assert 0 < length < len(buffer)\n"
+            "    temp = buffer.value\n"
+            "else:\n"
+            "    temp = tempfile.gettempdir()\n"
+            "(Path(temp) / 'generated.txt').write_text('fixture', encoding='utf-8')\n"
+        )
+        with TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            scratch = root / "webview" / APP_TEMP_DIR
+            scratch.mkdir(parents=True)
+            ambient = root / "user-temp"
+            ambient.mkdir()
+            parent = {**os.environ, **dict.fromkeys(("TMP", "TEMP", "TMPDIR"), str(ambient))}
+            subprocess.run([sys.executable, "-B", "-c", script], env=temporary_environment(parent, scratch),
+                           capture_output=True, check=True, timeout=15)
+            self.assertEqual((scratch / "generated.txt").read_text(encoding="utf-8"), "fixture")
+            self.assertEqual(list(ambient.iterdir()), [])
+            self.assertEqual(parent["TMP"], str(ambient))
 
     @unittest.skipUnless(sys.platform == "win32" and shutil.which("node"), "requires Windows and Node")
     def test_powershell_dialog_child_inherits_the_qa_cache_location(self):

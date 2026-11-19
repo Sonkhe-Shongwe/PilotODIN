@@ -560,7 +560,7 @@ def test_failed_driver_log_reports_a_fixed_checkpoint_and_category(tmp_path):
     }
 
 
-def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch):
+def test_prepare_creates_disposable_app_and_driver_scratch(tmp_path, monkeypatch):
     root = tmp_path / "capture"
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "local"))
     monkeypatch.setenv("APPDATA", str(tmp_path / "roaming"))
@@ -569,11 +569,13 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
     # Windows path parsing is covered by the trace reducer tests.
     monkeypatch.setattr(journey.trace, "scope", lambda manifest: None)
 
-    manifest, *_ = journey.prepare_journey(root, SOURCE, EXE_SHA)
+    manifest, _, profile, *_ = journey.prepare_journey(root, SOURCE, EXE_SHA)
 
     scratch = root / journey.DRIVER_TEMP_DIR
     assert scratch.is_dir()
     assert [role for role, paths in manifest["permitted_writes"].items() if str(scratch) in paths] == ["driver"]
+    assert (profile / journey.APP_TEMP_DIR).is_dir()
+    assert manifest["permitted_writes"]["webview"] == [str(profile)]
 
 
 @pytest.mark.parametrize("fault", [None, "first-calibration", "changed-binary", "no-profile-exit",
@@ -713,7 +715,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         if role == "app":
             assert env["WEBVIEW2_USER_DATA_FOLDER"] == str(profile)
             assert f"netlog-{log.stem.removeprefix('app-')}.json" in env["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"]
-        if role == "driver":
+            assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(profile / journey.APP_TEMP_DIR)
+            assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
+        elif role == "driver":
             scratch = root / journey.DRIVER_TEMP_DIR
             assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(scratch)
             assert env["PSMODULEANALYSISCACHEPATH"] == str(scratch / "powershell-module-analysis-cache")
