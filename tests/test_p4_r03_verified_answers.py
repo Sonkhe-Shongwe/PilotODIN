@@ -192,12 +192,54 @@ class VerifiedAnswersTests(unittest.TestCase):
 
     def test_explicit_model_requests_keep_provider_routing(self):
         project = self.import_frame(pd.DataFrame({'id': range(4), 'value': range(4)}))
-        with (patch.object(ai_provider, 'respond', return_value={'answer': 'Model answer'}) as respond,
+        model_result = {'answer': 'Model answer', 'fallback': False}
+        with (patch.object(ai_provider, 'respond', return_value=model_result) as respond,
+              patch.object(main.verified_answers, 'answer', side_effect=AssertionError('Computed rules after model success')),
               patch.object(quality, '_materialize', wraps=quality._materialize) as materialize):
             result = self.ask(project, 'What is the dataset overview?', selected_provider='ollama')
         self.assertEqual(result['answer'], 'Model answer')
+        self.assertFalse(result['fallback'])
+        self.assertNotIn('facts', result)
         respond.assert_called_once()
         self.assertEqual(materialize.call_count, 1, 'A provider request should materialize one working version')
+
+    def test_offline_model_deferral_preserves_the_verified_filtered_answer(self):
+        project = self.import_frame(pd.DataFrame({
+            'outcome': ['Yes', 'No', 'Yes', None], 'premium': [20, None, 40, 50],
+        }))
+        dataset = Path(storage.get_project(project)['dataset_path'])
+        before = dataset.read_bytes()
+        question = 'What is the median premium for Yes outcomes?'
+        verified = self.ask(project, question)
+        with (patch.object(resource_policy, 'read_policy', return_value={'mode': 'low_memory'}),
+              patch.object(resource_policy, '_physical_memory_bytes', return_value=(8 * 1024**3, int(0.936 * 1024**3), 'synthetic')),
+              patch.object(ai_provider, '_read_config', return_value={**ai_provider.DEFAULTS, 'intelligence_mode': 'local'}),
+              patch.object(ai_provider.bundled_inference, 'generate') as bundled,
+              patch.object(ai_provider, '_call_ollama') as ollama,
+              patch.object(ai_provider, '_call_provider') as cloud):
+            result = self.ask(project, question, selected_provider='ollama')
+            for call in (bundled, ollama, cloud):
+                call.assert_not_called()
+        self.assertTrue(result['fallback'])
+        self.assertEqual(result['local_status'], 'resource_limited')
+        self.assertEqual(result['provider'], 'local')
+        self.assertIn('Low-memory', result['reason'])
+        self.assertEqual(result['dataset_version'], 0)
+        self.assertEqual(result['answer'], verified['answer'])
+        self.assertEqual(result['facts'], {'value': 30, 'matching_rows': 2, 'usable_rows': 2, 'excluded_rows': 0})
+        self.assertEqual(result['analysis'], verified['analysis'])
+        self.assertEqual(dataset.read_bytes(), before)
+
+    def test_provider_fallback_preserves_investigations_and_unrecognised_questions(self):
+        project = self.import_frame(pd.DataFrame({'id': range(4), 'premium': [20, None, 40, 50]}))
+        with patch.object(ai_provider, '_read_config', return_value={**ai_provider.DEFAULTS, 'local_model_enabled': False}):
+            missing = self.ask(project, 'Why are premiums missing?', selected_provider='ollama')
+            general = self.ask(project, 'What features should I investigate?', selected_provider='ollama')
+        self.assertEqual(missing['investigation']['column'], 'premium')
+        self.assertTrue(missing['investigation_steps'])
+        self.assertIn('Inspected 1 missing values in premium', missing['answer'])
+        self.assertIn('Model choice depends on your confirmed target', general['answer'])
+        self.assertNotIn('facts', general)
 
     def test_provider_context_keeps_its_findings_when_quality_advances(self):
         project = self.import_frame(pd.DataFrame({'id': range(4), 'premium': [20, None, 40, 50]}))

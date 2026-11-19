@@ -1238,6 +1238,11 @@ def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
                    f"Compared the available numeric and categorical groups; see the verified investigation below. "
                    "No treatment has been applied. Observed associations do not prove the missingness mechanism.")
         result=ai_provider.respond(context,body.context,question,local,body.deep,body.selected_provider,body.continuation_text)
+        if body.context == 'assistant' and result.get('fallback') and plan is None and not body.continuation_text:
+            verified = verified_answers.answer(df, version, project_id, question)
+            if verified['analysis'] is not None:
+                result = {**result, 'answer': verified['answer'], 'facts': verified['facts'],
+                          'analysis': verified['analysis']}
         if body.context == 'assistant' and body.selected_provider == 'ollama':
             resource_policy.record_r03_event(
                 'insight_result', source=result.get('source'), provider=result.get('provider'),
