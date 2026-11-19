@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # Awaiting separate approval for the WebView storage retest.
+    if: ${{ github.run_attempt == '1' }} # One approved attempt at the reviewed source.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
