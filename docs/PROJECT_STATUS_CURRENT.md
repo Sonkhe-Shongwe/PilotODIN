@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current project status
 
-**19 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
+**19 November 2026.** P4 Target Intelligence is active with **14 of 20 engineering checks evidenced (70%)**. [P4 engineering scorecard](#p4-engineering-scorecard) · [Engineering progress and next checkpoints](./SESSION_HANDOFF_CURRENT.md#engineering-progress-and-next-checkpoints) · [Current handoff](./SESSION_HANDOFF_CURRENT.md) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md)
 
 The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The latest app audit observed zero Node operations in the target directory and 12 PowerShell operations under local app data. The WebView comparison left 15 unresolved writes and identified 114 outside-scope writes. Both acceptance checks failed. The generated dialog-helper fixture passed with every candidate file absent at both endpoints. The historical PowerShell file targets remain unverified. [Consolidated verification](./SESSION_HANDOFF_CURRENT.md#19-november-2026--consolidated-driver-isolation-verification) · [Dialog fixture](./SESSION_HANDOFF_CURRENT.md#19-november-2026--generated-powershell-dialog-helper-comparison)
 
