@@ -5,7 +5,7 @@ from datetime import datetime
 from ipaddress import IPv6Address, ip_address
 import json
 import ntpath
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from qa.p4_native.n12_trace import inside, local_disposable_path, utc_ticks, utc_time, windows_path
 
@@ -21,6 +21,12 @@ LINK_EVENTS = {
 CLOCK_TOLERANCE_MS = 1000
 REQUEST_LOOKBACK_MS = 10_000
 NETLOG_LIMIT = 64 * 1024 * 1024
+# Tauri uses encodeURIComponent(command) in the Windows IPC URL. Publish
+# only known commands exercised by the N12 journey from the Vite QA origin.
+IPC_URL_COMMANDS = {f"http://ipc.localhost/{quote(command, safe='')}": command for command in (
+    "plugin:event|listen", "plugin:event|unlisten", "plugin:window|close",
+    "confirm_native_project_switch", "confirm_native_close", "resolve_native_close_request",
+)}
 WRITER_CATEGORIES = {
     "node.exe": "node",
     "esbuild.exe": "esbuild",
@@ -276,9 +282,9 @@ class NetLog:
                 except ValueError:
                     continue
             elif kind == "URL_REQUEST_START_JOB" and phase == "PHASE_BEGIN" and isinstance(params.get("url"), str):
-                initiator = params.get("initiator")
-                self.requests[source].append((stamp, params["url"], origin_category(
-                    initiator if isinstance(initiator, str) else "")))
+                initiator, method = params.get("initiator"), params.get("method")
+                self.requests[source].append((stamp, params["url"],
+                    initiator if isinstance(initiator, str) else "", method if isinstance(method, str) else ""))
             elif kind in DNS_NAME_FIELDS and phase == "PHASE_BEGIN":
                 field = DNS_NAME_FIELDS[kind]
                 self.dns_names[source].append((stamp, field, params.get(field)))
@@ -298,13 +304,13 @@ class NetLog:
         upper = socket.end + CLOCK_TOLERANCE_MS
         dns_attempts = {(source, stamp) for source, stamp in self.dns_attempts[socket.source]
                         if lower <= stamp <= upper}
-        seen, pending, requests = set(), [socket.source], set()
+        seen, pending, requests = set(), [socket.source], []
         while pending and len(seen) < 64:
             source = pending.pop()
             if source in seen:
                 continue
             seen.add(source)
-            requests.update((source, url, initiator) for stamp, url, initiator in self.requests[source]
+            requests.extend((url, initiator, method) for stamp, url, initiator, method in self.requests[source]
                             if lower <= stamp <= upper)
             pending.extend(linked for linked, stamp in self.links[source] if lower <= stamp <= upper)
         if pending or len(requests) > 1 or len(dns_attempts) > 1 or (requests and dns_attempts):
@@ -322,13 +328,19 @@ class NetLog:
             return "dns-transaction", {"dns_host_category": category}
         if not requests:
             return "unattributed", {}
-        _, url, initiator = next(iter(requests))
+        (url, initiator, method), = requests
         try:
             scheme = urlsplit(url).scheme
             destination = origin_category(url)
             if destination != "unavailable":
-                return f"{scheme}-request", {"request_host_category": destination,
-                                             "initiator_category": initiator}
+                details = {"request_host_category": destination, "initiator_category": origin_category(initiator)}
+                command = IPC_URL_COMMANDS.get(url)
+                remote_ip, remote_port = socket.remote
+                if (command is not None and method in {"POST", "OPTIONS"}
+                        and initiator == "http://127.0.0.1:5173"
+                        and socket.protocol == "tcp" and remote_ip.is_loopback and remote_port == 80):
+                    details.update(ipc_command=command, ipc_method=method)
+                return f"{scheme}-request", details
         except ValueError:
             pass
         return "unattributed", {}

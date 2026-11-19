@@ -274,6 +274,45 @@ class JourneyDiagnosticsTests(unittest.TestCase):
         self.assertEqual(diagnostics.NetLog(payload(events)).match_evidence(observation()),
                          ("matched-socket", "ambiguous-request", {}))
 
+    def test_ipc_command_requires_the_qa_origin_and_an_exact_linked_request(self):
+        events = tcp(local_address="127.0.0.1:51200", remote_address="127.0.0.1:80") + [
+            link("SOCKET_POOL_BOUND_TO_SOCKET", 126, JOB, SOCKET),
+            link("HTTP_STREAM_JOB_BOUND_TO_REQUEST", 127, JOB, REQUEST),
+        ]
+        obs = observation(remote="127.0.0.1", port=80)
+        origin = "http://127.0.0.1:5173"
+        url = "http://ipc.localhost/plugin%3Aevent%7Clisten"
+
+        def request(url=url, method="POST", initiator=origin, stamp=115):
+            return event("URL_REQUEST_START_JOB", stamp, REQUEST,
+                         {"url": url, "method": method, "initiator": initiator}, "PHASE_BEGIN")
+
+        def match(*requests):
+            return diagnostics.NetLog(payload(events + list(requests))).match_evidence(obs)
+
+        self.assertEqual(match(request())[2], {
+            "request_host_category": "tauri-ipc-host", "initiator_category": "qa-frontend-origin",
+            "ipc_command": "plugin:event|listen", "ipc_method": "POST",
+        })
+        self.assertEqual(match(request(method="OPTIONS"))[2]["ipc_method"], "OPTIONS")
+        self.assertEqual(match(request(), request(method="OPTIONS"))[:2],
+                         ("matched-socket", "ambiguous-request"))
+        self.assertEqual(match(request(), request(stamp=116))[:2],
+                         ("matched-socket", "ambiguous-request"))
+        for invalid in (
+            request(method="GET"), request(method=None),
+            request(initiator=origin + "/unexpected"),
+            request(url="http://ipc.localhost/confirm_native_project_switch?owner-private"),
+            request(url="http://ipc.localhost/owner-private"),
+        ):
+            with self.subTest(invalid=invalid):
+                status, purpose, details = match(invalid)
+                self.assertEqual((status, purpose), ("matched-socket", "http-request"))
+                self.assertNotIn("ipc_command", details)
+                self.assertNotIn("owner-private", json.dumps(details))
+        self.assertEqual(match(request(url="http://ipc.localhost/confirm_native_project_switch"))[2]["ipc_command"],
+                         "confirm_native_project_switch")
+
     def test_missing_truncated_or_oversized_private_log(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(
                 diagnostics, "local_disposable_path", side_effect=lambda path, **kw: path):
