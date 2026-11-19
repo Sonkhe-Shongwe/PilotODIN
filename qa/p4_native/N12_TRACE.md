@@ -31,6 +31,10 @@ python qa/p4_native/n12_trace.py check-calibration $manifest $sysmonXml $procmon
 
 Exit 0 confirms both collectors recorded the declared Python parent and child, executable hashes, child loopback TCP and UDP, and the expected file creation, write, resize, rename destination and deletion in the fixture. Exit 2 indicates blocked or invalid evidence. The report keeps native N12 acceptance pending. Repeat the two calibration bookends during the separately approved native capture.
 
+### Protected write and restore
+
+The staged Windows restore control uses ETW on its own. It requires separate, source-pinned approval for one run on disposable hosted Windows Server 2022. It verifies both completed writes against the independently identified writers and handle path, plus the before, changed and restored digests. Its control result applies to this fixture. Strict coverage and N12 app acceptance retain their own verdicts. [Approval scope and expected evidence](../../docs/SESSION_HANDOFF_CURRENT.md#19-november-2026--stage-the-protected-write-and-restore-control)
+
 ### Diagnose blocked Process Monitor coverage
 
 - `unresolved_file_paths` groups blocking rows by process role, mutation, source or destination field, and path form. It includes counts only for those groups. Review the corresponding rows privately in runner temp before adding path handling. An unrecognised path still blocks coverage, including a rename or link that could affect a protected root.

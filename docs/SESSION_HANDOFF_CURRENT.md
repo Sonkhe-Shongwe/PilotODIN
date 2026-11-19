@@ -22,6 +22,12 @@ In each continuation update, show the official score, the previous and current c
 
 The protected write-and-restore control is ready for source review. A single approved ETW capture on disposable hosted Windows Server 2022 would establish whether both writes retain their writer, path and successful completion in a real capture. The app journey still needs material work on its unresolved mutations. The restore control, app journey and TCP preflight workflows are disarmed and have separate scopes. [Protected restore control](#19-november-2026--stage-the-protected-write-and-restore-control) · [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75)
 
+### 19 November 2026 | Remove the runbook-only CI trigger
+
+The routine P4 workflow excludes the exact `qa/p4_native/N12_TRACE.md` path after the broader native QA filter. The previous audit's Markdown changes launched four routine jobs through that runbook path. An ordered filter comparison over tracked paths changed only the runbook match. A simultaneous reducer, test or workflow edit still matches. [Baseline CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44486009036) · [Filter source](../.github/workflows/p4-target-ranking.yml)
+
+The mixed workflow and runbook change triggered all four routine jobs, which passed at `90bf24d7118efc3ddd796a3b4482415e7d413ff9`. This follow-up contains Markdown changes only, including the separate restore-control instructions in the runbook. N12 acceptance still requires approved live evidence. [Mixed-change CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44496580044)
+
 ### 19 November 2026 | Stage the protected write and restore control
 
 The fixture seeds a generated protected file in runner temp. Two separately launched Python writers change and then restore it. The fixture records their PIDs and bounded timing, verifies the open handle path, checks the content after each change, and checks the final digest after capture stops. The reducer requires an exact ETW process lifetime for each writer, a completed write to the known path, and one protected write classified for each stage. The public result contains fixed labels and counts. [Fixture and reduction](../qa/p4_native/n12_protected_restore.py)
