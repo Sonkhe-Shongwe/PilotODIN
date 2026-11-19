@@ -137,6 +137,32 @@ class StorageProbeTests(unittest.TestCase):
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertIn("file-event-process-ambiguous", report["file_coverage_issues"])
 
+    def test_cdp_browser_pid_attributes_events_on_both_sides_of_readiness(self):
+        browser = process("browser", "app", 102, WEBVIEW, 6, 13)
+        self.processes[browser.guid] = browser
+        self.manifest["cdp_browser_pid"] = browser.pid
+        report = self.reduce(self.controls + [row(at, browser.pid, "msedgewebview2.exe", TARGET) for at in (7, 9)])
+        self.assertTrue(report["browser_process_corroborated"])
+        self.assertEqual({item["stage"]:item["component"] for item in report["storage_events"]},
+                         {"startup":"browser", "ready-probe":"browser"})
+        self.assertNotIn("cdp_browser_pid", report)
+
+    def test_cdp_browser_pid_cannot_override_conflicting_lifetime_or_process_type(self):
+        browser = process("browser", "app", 102, WEBVIEW, 6, 13)
+        self.processes[browser.guid] = browser
+        self.manifest["cdp_browser_pid"] = browser.pid
+        self.processes["reused"] = process("reused", "unrelated", 102, PYTHON, 9, 13)
+        rows = self.controls + [row(7, browser.pid, "msedgewebview2.exe", TARGET)]
+        report = self.reduce(rows)
+        self.assertFalse(report["browser_process_corroborated"])
+        self.assertEqual(report["storage_events"][0]["component"], "unclassified")
+
+        del self.processes["reused"]
+        self.manifest["cdp_browser_pid"] = 101
+        report = self.reduce(self.controls + [row(7, 101, "msedgewebview2.exe", TARGET)])
+        self.assertFalse(report["browser_process_corroborated"])
+        self.assertEqual(report["storage_events"][0]["component"], "renderer")
+
     def test_protected_write_blocks_even_with_matching_endpoints(self):
         report = self.reduce(self.controls + [
             row(7, 101, "msedgewebview2.exe", TARGET),
@@ -144,6 +170,8 @@ class StorageProbeTests(unittest.TestCase):
         ])
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertIn("protected-files-changed-or-unverified", report["issues"])
+        self.assertEqual(report["protected_operations"], [{"role":"webview", "operation":"write", "count":1}])
+        self.assertNotIn(CSV, json.dumps(report))
 
     def test_wrong_app_digest_blocks(self):
         self.processes["app"].sha256 = "3" * 64

@@ -70,7 +70,9 @@ def capture(root, staged, node, source, expected_hash):
     journey.report_file(root / "private-storage-capture.json", manifest)
 
 
-def component(process, role):
+def component(process, role, browser_guid):
+    if process.guid == browser_guid:
+        return "browser"
     if role == "webview-network":
         return "network-service"
     matches = re.findall(r"(?:^|\s)--type=([a-z-]+)(?=\s|$)", process.command)
@@ -92,7 +94,8 @@ def reduce(root, staged, manifest, sysmon, procmon):
     declared = [item for item in manifest["processes"] if item["role"] in {"app", "calibration"}]
     roles, bindings = trace.bind_processes(declared, processes, issues)
     apps = [process for binding, process in bindings if binding["role"] == "app"]
-    if len(apps) != 1 or apps[0].sha256 != manifest["executable_sha256"]:
+    app_verified = len(apps) == 1 and apps[0].sha256 == manifest["executable_sha256"]
+    if not app_verified:
         issues.add("app-source-identity-unverified")
     webviews = [process for guid, process in processes.items() if roles.get(guid) in WEBVIEW_ROLES]
     if not webviews:
@@ -105,6 +108,17 @@ def reduce(root, staged, manifest, sysmon, procmon):
     fixture_ready = trace.utc_time(manifest["markers"]["fixture-ready"])
     trace.require(start <= fixture_ready < launch < ready <= close < exited <= end,
                   "storage probe stages out of order")
+    browser_pid = manifest.get("cdp_browser_pid")
+    browser_guid = None
+    if app_verified and type(browser_pid) is int and browser_pid > 0:
+        candidates = [p for p in processes.values() if p.pid == browser_pid and p.start <= close
+                      and (p.end is None or p.end >= ready)]
+        if len(candidates) == 1:
+            candidate = candidates[0]
+            if (roles.get(candidate.guid) == "webview" and candidate.start <= ready
+                    and candidate.end is not None and candidate.end >= close
+                    and not re.search(r"(?:^|\s)--type(?:[=\s]|$)", candidate.command)):
+                browser_guid = candidate.guid
     expected = {binding["label"]: (process.guid, trace.windows_path(binding["target"]))
                 for binding, process in bindings if binding["role"] == "calibration"}
     observed_controls = set()
@@ -134,11 +148,17 @@ def reduce(root, staged, manifest, sysmon, procmon):
                  "close" if stamp <= exited else "after-profile-exit")
         extension = ntpath.splitext(path)[1]
         file_type = FILE_TYPES.get(extension, "other-extension" if extension else "no-extension")
-        diagnostics[family, operation, component(process, role), stage, file_type] += 1
+        diagnostics[family, operation, component(process, role, browser_guid), stage, file_type] += 1
 
     file_coverage_issues = set()
-    _, violations, _, _ = trace.inspect_files(procmon, fixture_ready, end, processes, roles, protected, permitted,
-                                             file_coverage_issues, observe=observe)
+    _, violations, _, unresolved_files = trace.inspect_files(
+        procmon, fixture_ready, end, processes, roles, protected, permitted, file_coverage_issues, observe=observe,
+    )
+    protected_operations = []
+    for key, count in sorted(violations.items()):
+        if key.startswith("protected:"):
+            _, role, operation = key.split(":")
+            protected_operations.append({"role": role, "operation": operation, "count": count})
     controls = {name: name in observed_controls for name in ("scratch", "user-temp")}
     if not all(controls.values()):
         issues.add("known-create-controls-unverified")
@@ -146,7 +166,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
         issues.add("file-event-process-ambiguous")
     if (manifest["protected_snapshot_comparison"] != "MATCH" or
             "protected-create-result-unresolved" in file_coverage_issues or
-            any(k.startswith("protected:") for k in violations)):
+            protected_operations):
         issues.add("protected-files-changed-or-unverified")
     rows = [{"destination_family": family, "operation": operation, "component": kind,
              "stage": stage, "file_type": file_type, "count": count}
@@ -161,6 +181,8 @@ def reduce(root, staged, manifest, sysmon, procmon):
             "procmon_loss_reviewed": loss_reviewed,
             "file_coverage_issues": sorted(file_coverage_issues),
             "protected_snapshot_comparison": manifest["protected_snapshot_comparison"],
+            "protected_operations": protected_operations, "unresolved_file_events": unresolved_files,
+            "browser_process_corroborated": browser_guid is not None,
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
             "ambient_temp_creates": ambient_creates, "storage_events": rows}
 

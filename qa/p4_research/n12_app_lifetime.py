@@ -89,8 +89,14 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
             ready = journey.quiet(readiness_command(node, storage=storage_manifest is not None), cwd=journey.FRONTEND,
                                   env={**env, "TEMP": str(root / journey.DRIVER_TEMP_DIR),
                                        "TMP": str(root / journey.DRIVER_TEMP_DIR)}, timeout=115)
-            trace.require(ready.strip() == b"N12 app lifetime native close listener ready and peer closed",
-                          "native close listener readiness and QA peer close were not verified")
+            if storage_manifest is not None:
+                receipt = json.loads(ready)
+                trace.require(isinstance(receipt, dict) and receipt.get("closeReady") is True,
+                              "native close listener readiness and QA peer close were not verified")
+                manifest["cdp_browser_pid"] = receipt.get("browserPid")
+            else:
+                trace.require(ready.strip() == b"N12 app lifetime native close listener ready and peer closed",
+                              "native close listener readiness and QA peer close were not verified")
         with journey.checkpoint_stage("app-lifetime-graceful-close", source, expected_hash):
             trace.require(app.poll() is None and backend.poll() is None and vite.poll() is None,
                           "app or local service exited before verified close")

@@ -1,4 +1,4 @@
-import { waitForNativeCloseRegistration } from './p4-n12-native-close-readiness.mjs';
+import { readBrowserProcessId, waitForNativeCloseRegistration } from './p4-n12-native-close-readiness.mjs';
 import { discoverUniqueDevPage } from './p4-73-cdp-target-discovery.mjs';
 
 const [scope = 'lifetime', action, ...extra] = process.argv.slice(2);
@@ -36,6 +36,9 @@ async function verifyNativeReadiness() {
     const peer = await findN12Peer(result.page.context());
     await closeN12Peer(peer);
     await waitForNativeCloseRegistration(result.page);
+    if (scope === 'webview-storage') {
+      return { closeReady: true, browserPid: await readBrowserProcessId(browser) };
+    }
   } finally {
     await browser.close();
   }
@@ -44,6 +47,6 @@ async function verifyNativeReadiness() {
 if (action === '--check-consent') {
   console.log('N12 native readiness consent preflight passed');
 } else {
-  await verifyNativeReadiness();
-  console.log('N12 app lifetime native close listener ready and peer closed');
+  const receipt = await verifyNativeReadiness();
+  console.log(receipt ? JSON.stringify(receipt) : 'N12 app lifetime native close listener ready and peer closed');
 }
