@@ -24,7 +24,10 @@ from qa.p4_native.n12_exit_corroboration import journey_lifetime_evidence
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
 from qa.p4_research import n12_egress as egress
-from qa.p4_research.n12_journey_diagnostics import OutsidePaths, address, backend_self_connections, network_summary
+from qa.p4_research.n12_backend_wakeup import WITNESS_NAME
+from qa.p4_research.n12_journey_diagnostics import (
+    OutsidePaths, address, backend_self_connections, backend_wakeup_connections, network_summary,
+)
 from qa.p4_research.n12_driver_handles import DriverHandles, driver_lifetime_evidence
 
 
@@ -780,7 +783,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         with driver_handles, journey_processes(source, expected_hash) as stack:
             python = sys.executable if egress_programs is None else egress_programs["backend"]
             backend = spawn(stack, manifest, "backend", [python, "-B", "-m", "uvicorn",
-                "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
+                "qa.p4_research.n12_backend_wakeup:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 env, build.REPO, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort", "--configLoader", "runner"],
@@ -790,6 +793,10 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
                                        status.get("status") == "ok" and status.get("cloud_ai") is False),
                      60, "loopback backend did not become ready with cloud AI off", backend)
             backend_snapshot = backend_socket_snapshot(backend)
+            try:
+                backend_wakeup = trace.read_json(home / WITNESS_NAME)
+            except (OSError, ValueError):
+                backend_wakeup = None
             wait_for(lambda: http_ready(5173, "/"), 60, "Vite did not become ready", vite)
             with checkpoint_stage("app-journey", source, expected_hash):
                 app_witnesses = run_apps(stack, manifest, root, staged, source, expected_hash, node,
@@ -881,8 +888,10 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     if backend_snapshot is not None:
         report_file(root / "private-backend-sockets.json", backend_snapshot)
     backend_pairs = backend_self_connections(endpoints, observed, backend_snapshot)
+    wakeup_pairs = backend_wakeup_connections(endpoints, observed, backend_snapshot, backend_wakeup)
     log_paths = {label: profile / f"netlog-{label}.json" for label in ("first", "relaunch")}
-    network_diagnostics = network_summary(endpoints, launches, log_paths, backend_pairs=backend_pairs)
+    network_diagnostics = network_summary(endpoints, launches, log_paths,
+                                          backend_pairs=backend_pairs, backend_wakeup_pairs=wakeup_pairs)
     network_diagnostics["backend_socket_snapshot"] = "available" if backend_snapshot is not None else "unavailable"
     print("N12 network observations " + json.dumps({
         "source_sha": source,

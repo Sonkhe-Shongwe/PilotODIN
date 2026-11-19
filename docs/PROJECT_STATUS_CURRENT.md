@@ -4,6 +4,8 @@
 
 The open engineering checks cover the hosted Windows filesystem and network audits, physical offline inference and coexistence, and original-data preservation. The latest N12 retest completed both launches and both comparisons with matching protected endpoints. The ordinary audit reported 39 outside-scope WebView operations and seven unexpected connections. Scratch redirection still left four ambient-temp creates. The job failed with filesystem and network **FAIL** and coverage **BLOCKED**. [Completed retest](./SESSION_HANDOFF_CURRENT.md#19-november-2026--hosted-webview-storage-and-ipc-retest)
 
+[Evidence plan for the six open checks](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#six-open-engineering-checks-and-the-next-evidence-passes) · [Consolidated Windows QA preparation](./SESSION_HANDOFF_CURRENT.md#consolidated-p4-evidence-preparation)
+
 ## Phase ledger
 
 | Phase | Current disposition |

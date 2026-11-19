@@ -194,6 +194,7 @@ class StorageProbeTests(unittest.TestCase):
         report = self.reduce(self.controls + [scratch_start, browser_start])
         self.assertTrue(report["startup_tmp_control_verified"])
         self.assertEqual(report["browser_startup_tmp"], "ambient-temp")
+        self.assertEqual(report["startup_tmp_receipts"], {"scratch": "expected-tmp", "browser": "tmp-observed"})
         self.assertNotIn("secret-", json.dumps(report))
         self.assertNotIn("generated-browser-command", json.dumps(report))
 
@@ -203,11 +204,16 @@ class StorageProbeTests(unittest.TestCase):
 
         wrong_parent = start_row(6, browser, launcher, f" ; TMP={tmp_witness}")
         duplicate_tmp = start_row(6, browser, self.processes["app"], f" ; TMP={tmp_witness} ; Tmp={USER_TEMP}")
-        for starts in ([expected], [scratch_start, wrong_parent], [scratch_start, duplicate_tmp],
-                       [scratch_start, expected, browser_start]):
-            with self.subTest(starts=len(starts)):
+        for starts, reasons in (
+            ([expected], ("start-record-unobserved", "tmp-observed")),
+            ([scratch_start, wrong_parent], ("expected-tmp", "start-identity-mismatch")),
+            ([scratch_start, duplicate_tmp], ("expected-tmp", "tmp-ambiguous")),
+            ([scratch_start, expected, browser_start], ("expected-tmp", "start-record-ambiguous")),
+        ):
+            with self.subTest(reasons=reasons):
                 report = self.reduce(self.controls + starts)
                 self.assertEqual(report["browser_startup_tmp"], "unverified")
+                self.assertEqual(report["startup_tmp_receipts"], dict(zip(("scratch", "browser"), reasons)))
 
     def test_cdp_browser_pid_cannot_override_conflicting_lifetime_or_process_type(self):
         browser = process("browser", "app", 102, WEBVIEW, 6, 13)
@@ -229,11 +235,20 @@ class StorageProbeTests(unittest.TestCase):
         report = self.reduce(self.controls + [
             row(7, 101, "msedgewebview2.exe", TARGET),
             row(8, 101, "msedgewebview2.exe", CSV, op="WriteFile"),
+            row(8, 244, "private-background.exe", PROTECTED + r"\private-file", op="WriteFile"),
         ])
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertIn("protected-files-changed-or-unverified", report["issues"])
-        self.assertEqual(report["protected_operations"], [{"role":"webview", "operation":"write", "count":1}])
-        self.assertNotIn(CSV, json.dumps(report))
+        self.assertEqual(report["protected_operations"], [
+            {"role":"other", "operation":"write", "count":1},
+            {"role":"webview", "operation":"write", "count":1},
+        ])
+        self.assertEqual(report["protected_operation_details"], [
+            {"role":"other", "operation":"write", "target":"protected-app-data", "identity":"unmatched", "count":1},
+            {"role":"webview", "operation":"write", "target":"immutable-input", "identity":"matched", "count":1},
+        ])
+        self.assertNotIn("immutable.csv", json.dumps(report))
+        self.assertNotIn("private-background", json.dumps(report))
 
     def test_wrong_app_digest_blocks(self):
         self.processes["app"].sha256 = "3" * 64

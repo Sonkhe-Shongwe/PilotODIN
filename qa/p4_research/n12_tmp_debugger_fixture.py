@@ -15,10 +15,15 @@ from qa.p4_research import n12_app_build as build
 CONSENT = "I_APPROVE_ONE_N12_TMP_DEBUGGER_FIXTURE"
 
 
-def matches_debugger_tmp(output, expected):
+def debugger_tmp_status(output, expected):
     sections = re.split(r"^\s*Environment:[ \t]+[0-9a-f`]+[ \t]*\r?$", output, flags=re.M | re.I)
-    if len(sections) != 2:
-        return False
+    if len(sections) == 1:
+        if re.search(r"type information missing|symbols are not available|symbol file could not be found",
+                     output, re.I):
+            return "debugger-symbols-unavailable"
+        return "environment-section-unrecognized" if "environment:" in output.casefold() else "environment-section-missing"
+    if len(sections) > 2:
+        return "environment-section-ambiguous"
     values = []
     for line in sections[1].lstrip("\r\n").splitlines():
         entry = re.fullmatch(r"[ \t]+([^=]+)=(.*)", line)
@@ -26,10 +31,15 @@ def matches_debugger_tmp(output, expected):
             break
         if entry[1].casefold() == "tmp":
             values.append(entry[2])
+    if not values:
+        return "tmp-not-observed"
+    if len(values) > 1:
+        return "tmp-ambiguous"
     try:
-        return len(values) == 1 and trace.windows_path(values[0]) == trace.windows_path(str(expected))
+        observed = trace.windows_path(values[0])
     except ValueError:
-        return False
+        return "tmp-path-invalid"
+    return "expected-tmp" if observed == trace.windows_path(str(expected)) else "tmp-value-mismatch"
 
 
 def run_fixture():
@@ -67,14 +77,17 @@ def run_fixture():
         )
         trace.require(result.returncode == 0, "CDB did not complete the generated child run")
         trace.require((work / "child.completed").is_file(), "generated child did not complete")
-        trace.require(matches_debugger_tmp(result.stdout, launch_tmp), "initial breakpoint TMP did not verify")
-    return {"scope": "one-generated-child", "status": "PASS", "initial_breakpoint_tmp": "expected-tmp",
+        status = debugger_tmp_status(result.stdout, launch_tmp)
+    return {"scope": "one-generated-child", "status": "PASS" if status == "expected-tmp" else "BLOCKED",
+            "initial_breakpoint_tmp": status, "child_completed": True,
             "debugger_sha256": build.digest(debugger), "source_sha": source}
 
 
 if __name__ == "__main__":
     try:
-        print(json.dumps(run_fixture(), sort_keys=True))
+        result = run_fixture()
+        print(json.dumps(result, sort_keys=True))
+        sys.exit(0 if result["status"] == "PASS" else 2)
     except trace.EvidenceValidationError as exc:
         print(f"N12 TMP debugger fixture blocked: {exc}", file=sys.stderr)
         sys.exit(2)

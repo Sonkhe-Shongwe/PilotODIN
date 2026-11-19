@@ -88,16 +88,20 @@ def process_start_tmp(detail, process, parent):
     match = re.fullmatch(
         r"Parent PID: (\d+), Command line: (.*?), Current directory: .*?, Environment:(.*)", detail, re.S,
     )
-    if (parent is None or match is None or int(match[1]) != parent.pid
+    if match is None:
+        return "start-detail-unrecognized", None
+    if (parent is None or int(match[1]) != parent.pid
             or not process.command.strip() or match[2].strip() != process.command.strip()):
-        return None
+        return "start-identity-mismatch", None
     values = re.findall(r"(?:^| ; |\r?\n)\s*TMP=([^\r\n]*?)(?= ; |\r?\n|$)", match[3], re.I)
-    if len(values) == 1:
-        try:
-            return trace.windows_path(values[0])
-        except ValueError:
-            return None
-    return None
+    if not values:
+        return "tmp-not-observed", None
+    if len(values) > 1:
+        return "tmp-ambiguous", None
+    try:
+        return "tmp-observed", trace.windows_path(values[0])
+    except ValueError:
+        return "tmp-path-invalid", None
 
 
 def reduce(root, staged, manifest, sysmon, procmon):
@@ -111,7 +115,8 @@ def reduce(root, staged, manifest, sysmon, procmon):
     if not manifest["procmon_all_events"] or not manifest["procmon_clock_utc"]:
         issues.add("procmon-capture-configuration-unverified")
     protected, permitted = trace.scope(manifest)
-    protected.extend(trace.windows_path(manifest["observed_roots"][key]) for key in manifest["immutable_observed"])
+    immutable = [trace.windows_path(manifest["observed_roots"][key]) for key in manifest["immutable_observed"]]
+    protected.extend(immutable)
     declared = [item for item in manifest["processes"] if item["role"] in {"app", "calibration"}]
     roles, bindings = trace.bind_processes(declared, processes, issues)
     apps = [process for binding, process in bindings if binding["role"] == "app"]
@@ -161,6 +166,13 @@ def reduce(root, staged, manifest, sysmon, procmon):
             if process is not None and pid_counts[process.pid] == 1:
                 startup_candidates[str(process.pid)] = (label, process, first, last)
     startup_values = {"scratch": [], "browser": []}
+    protected_details = Counter()
+
+    def observe_protected(role, operation, targets, identity):
+        families = {"immutable-input" if any(trace.inside(target, path) for path in immutable)
+                    else "protected-app-data" for target in targets}
+        for family in families:
+            protected_details[role, operation, family, identity] += 1
 
     def observe_process_start(row):
         candidate = startup_candidates.get(row["PID"])
@@ -208,6 +220,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
     _, violations, _, unresolved_files = trace.inspect_files(
         procmon, fixture_ready, end, processes, roles, protected, permitted, file_coverage_issues, observe=observe,
         observe_process_start=observe_process_start if startup_candidates else None,
+        observe_protected=observe_protected,
     )
     protected_operations = []
     for key, count in sorted(violations.items()):
@@ -217,10 +230,26 @@ def reduce(root, staged, manifest, sysmon, procmon):
     controls = {name: name in observed_controls for name in ("scratch", "user-temp")}
     if not all(controls.values()):
         issues.add("known-create-controls-unverified")
-    tmp_control_verified = tmp_witness is not None and controls["scratch"] and startup_values["scratch"] == [tmp_witness]
+    startup_receipts = {}
+    for label, records in startup_values.items():
+        if len(records) == 1:
+            startup_receipts[label] = records[0][0]
+        elif records:
+            startup_receipts[label] = "start-record-ambiguous"
+        elif any(candidate[0] == label for candidate in startup_candidates.values()):
+            startup_receipts[label] = "start-record-unobserved"
+        else:
+            startup_receipts[label] = "start-identity-unverified"
+    scratch_record = startup_values["scratch"]
+    scratch_matches = tmp_witness is not None and scratch_record == [("tmp-observed", tmp_witness)]
+    if scratch_matches:
+        startup_receipts["scratch"] = "expected-tmp" if controls["scratch"] else "file-control-unverified"
+    elif startup_receipts["scratch"] == "tmp-observed":
+        startup_receipts["scratch"] = "tmp-value-mismatch"
+    tmp_control_verified = scratch_matches and controls["scratch"]
     browser_startup_tmp = "unverified"
     if tmp_control_verified and len(startup_values["browser"]) == 1:
-        observed = startup_values["browser"][0]
+        _, observed = startup_values["browser"][0]
         if observed is not None:
             ambient = manifest.get("probe_user_temp")
             labels = {tmp_witness: "expected-tmp", app_temp: "app-temp"}
@@ -247,8 +276,13 @@ def reduce(root, staged, manifest, sysmon, procmon):
             "file_coverage_issues": sorted(file_coverage_issues),
             "protected_snapshot_comparison": manifest["protected_snapshot_comparison"],
             "protected_operations": protected_operations, "unresolved_file_events": unresolved_files,
+            "protected_operation_details": [
+                {"role": role, "operation": operation, "target": family, "identity": identity, "count": count}
+                for (role, operation, family, identity), count in sorted(protected_details.items())
+            ],
             "startup_tmp_probe": manifest.get("startup_tmp_probe") is True,
             "startup_tmp_control_verified": tmp_control_verified,
+            "startup_tmp_receipts": startup_receipts,
             "browser_startup_tmp": browser_startup_tmp,
             "browser_process_corroborated": browser_guid is not None,
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,

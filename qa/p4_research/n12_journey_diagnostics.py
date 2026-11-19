@@ -417,7 +417,32 @@ def backend_self_connections(observations, journey, snapshot):
     return {ordinal for ordinal, pair in matches.items() if uses[pair] == 1}
 
 
-def network_summary(observations, launches, paths, reader=read_netlog, *, backend_pairs=()):
+def backend_wakeup_connections(observations, journey, snapshot, witness):
+    if snapshot is None or witness is None:
+        return set()
+    try:
+        observed = witness["observed_ticks"]
+        if (type(witness["pid"]) is not int or witness["pid"] != snapshot["pid"]
+                or type(observed) is not int or observed > snapshot["observed_ticks"]):
+            return set()
+        sockets = witness["sockets"]
+        if not isinstance(sockets, list) or len(sockets) != 2:
+            return set()
+        def endpoint(row):
+            return (address(row["local_address"]), row["local_port"],
+                    address(row["remote_address"]), row["remote_port"])
+
+        live_rows = Counter(endpoint(row) for row in snapshot["sockets"])
+        if any(live_rows[endpoint(row)] != 1 for row in sockets):
+            return set()
+        return backend_self_connections(observations, journey, {
+            **snapshot, "observed_ticks": observed, "sockets": sockets,
+        })
+    except (KeyError, TypeError, ValueError):
+        return set()
+
+
+def network_summary(observations, launches, paths, reader=read_netlog, *, backend_pairs=(), backend_wakeup_pairs=()):
     logs = {label: reader(path) for label, path in paths.items()}
     result = []
     for ordinal, observation in enumerate(observations, 1):
@@ -432,6 +457,8 @@ def network_summary(observations, launches, paths, reader=read_netlog, *, backen
                     state = "observation-unusable"
         if ordinal in backend_pairs:
             state, purpose = "matched-same-process-pair", "backend-internal-loopback"
+            if ordinal in backend_wakeup_pairs:
+                purpose = "backend-event-loop-wakeup"
         # The ordinal refers to the existing redacted list in the audit report.
         result.append({"observation": ordinal, "socket_status": state, "request_category": purpose, **details})
     return {"logs": {label: status for label, (status, _) in logs.items()}, "observations": result}

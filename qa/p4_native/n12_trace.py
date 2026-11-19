@@ -410,7 +410,7 @@ def unresolved_path_kind(value):
 
 
 def inspect_files(path, start, end, processes, roles, protected, permitted, issues, *, observe=None,
-                  observe_process_start=None):
+                  observe_process_start=None, observe_protected=None):
     lifetimes = {}
     for process in processes.values():
         lifetimes.setdefault(process.pid, []).append(process)
@@ -460,11 +460,15 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
                     issues.add("file-mutation-path-unresolved")
                     unresolved[role, operation, "destination",
                                unresolved_path_kind(match[1] if match else None)] += 1
-            if any(inside(target, root) for target in targets for root in protected):
+            protected_targets = [target for target in targets if any(inside(target, root) for root in protected)]
+            if protected_targets:
                 if operation == "ambiguous-create":
                     issues.add("protected-create-result-unresolved")
                 else:
                     violations[f"protected:{role}:{operation}"] += 1
+                if observe_protected is not None:
+                    identity = "matched" if process else "ambiguous" if processes_at_time else "unmatched"
+                    observe_protected(role, operation, protected_targets, identity)
             if role == "other":
                 continue
             if operation == "ambiguous-create":

@@ -2,12 +2,14 @@
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import socket
 import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from qa.p4_research import n12_journey_diagnostics as diagnostics
+from qa.p4_research.n12_backend_wakeup import loop_wakeup_sockets
 from qa.p4_native.n12_trace import utc_ticks
 
 
@@ -51,6 +53,19 @@ def link(kind, stamp, source, peer):
 
 
 class JourneyDiagnosticsTests(unittest.TestCase):
+    def test_wakeup_reader_reports_the_two_connected_socket_ends(self):
+        self.assertEqual(loop_wakeup_sockets(SimpleNamespace()), [])
+        with socket.socket() as listener, socket.socket() as first:
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            first.settimeout(2)
+            first.connect(listener.getsockname())
+            second, _ = listener.accept()
+            with second:
+                rows = loop_wakeup_sockets(SimpleNamespace(_ssock=first, _csock=second))
+                self.assertEqual(rows[0]["local_port"], rows[1]["remote_port"])
+                self.assertEqual(rows[0]["remote_port"], rows[1]["local_port"])
+
     def test_backend_snapshot_requires_same_process_and_both_socket_directions(self):
         obs = {**observation(remote="127.0.0.1", port=62000),
                "role": "backend", "kind": "unexpected-loopback"}
@@ -86,6 +101,19 @@ class JourneyDiagnosticsTests(unittest.TestCase):
             self.assertEqual(match([obs], journey, incomplete), set())
         self.assertEqual(match([obs, obs], journey, snapshot), set())
         self.assertEqual(match([{**obs, "process_guid": "reused-pid"}], journey, snapshot), set())
+        wakeup = diagnostics.backend_wakeup_connections
+        witness = {key: snapshot[key] for key in ("pid", "observed_ticks", "sockets")}
+        self.assertEqual(wakeup([obs], journey, snapshot, witness), {1})
+        for invalid in (
+            {**witness, "pid": process.pid + 1},
+            {**witness, "observed_ticks": snapshot["observed_ticks"] + 1},
+            {**witness, "observed_ticks": utc_ticks(stamp - timedelta(milliseconds=1))},
+            {**witness, "sockets": [{**outgoing, "local_address": "127.0.0.2"}, reverse]},
+        ):
+            self.assertEqual(wakeup([obs], journey, snapshot, invalid), set())
+        result = diagnostics.network_summary([obs], {}, {}, backend_pairs={1}, backend_wakeup_pairs={1})
+        self.assertEqual(result["observations"][0]["request_category"], "backend-event-loop-wakeup")
+        self.assertNotIn("62000", json.dumps(result))
         process.end = None
         self.assertEqual(match([obs], journey, snapshot), set())
 
