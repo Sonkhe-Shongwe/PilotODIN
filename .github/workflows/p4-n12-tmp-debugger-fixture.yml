@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   tmp-fixture:
-    if: ${{ github.run_attempt == '1' }}
+    if: ${{ false }} # Awaiting one source-pinned generated fixture approval.
     runs-on: windows-2025
     timeout-minutes: 5
     steps:
