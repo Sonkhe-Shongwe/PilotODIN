@@ -16,7 +16,7 @@ Prepare a network containment candidate and its acceptance checks from the last 
 
 The completed audit attributed six writes and six overwrites under `user-local` to PowerShell in the driver tree. The staged probe made six native project-switch calls through `powershell.exe`. The N12 route now uses the runner's existing Python and the same Win32 dialog title and exact button labels. The helper checks the staged image and process owner before sending the requested action. The other QA routes still use their established PowerShell launcher. [Native driver](../frontend/e2e/p4-71-native-webview-qa.mjs) · [Dialog control](../qa/p4_research/n12_project_switch.py)
 
-The focused regression verifies the Node command selection. Routine Windows CI uses generated native dialogs to check Stay, Switch project, image mismatch and a missing button. A full app audit is **NOT RUN** for this correction. The twelve historical file operations remain in the previous result, and hosted acceptance still needs verified file mutation and network evidence.
+All four routine P4 jobs passed at `ce61e4e1a03bb6e92df69cad32945c4fc571c7dc`. The Windows fixture passed all 19 checks, including Node command selection, both generated native button actions, image mismatch and a missing button. A full app audit is **NOT RUN** for this correction. The twelve historical file operations remain in the previous result, and hosted acceptance still needs verified file mutation and network evidence. [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44451869208) · [Windows fixture](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44451869208/job/135317523423)
 
 ### 19 November 2026 | Generated PowerShell dialog helper comparison
 
