@@ -68,6 +68,7 @@ on:
       - tools/Start_P4_Everyday_RAM_Baseline.ps1
       - qa/p4_research/n12_app_build.py
       - qa/p4_research/n12_app_journey.py
+      - qa/p4_research/n12_project_switch.py
       - qa/p4_research/n12_app_lifetime.py
       - frontend/e2e/p4-n12-app-lifetime-ready.mjs
       - frontend/e2e/p4-n12-native-close-readiness.mjs
@@ -90,6 +91,7 @@ on:
       - frontend/e2e/p4-preparation-request.mjs
       - frontend/e2e/p4-quality-version-transition.mjs
       - frontend/e2e/p4-71-native-webview-qa.mjs
+      - frontend/e2e/p4-native-project-switch-command.mjs
       - frontend/e2e/p4-n12-native-cases.mjs
       - frontend/e2e/p4-n12-native-cases.test.mjs
       - frontend/e2e/p4-72-cdp-target-classifier.mjs
@@ -316,7 +318,7 @@ jobs:
           python-version: "3.11"
       - name: Verify prospective R06 endpoint evidence on generated files
         run: python -B -m unittest discover -s tests -p test_p4_r06_prospective_fingerprint.py
-      - name: Verify retained child handles and Node scratch on generated Windows fixtures
+      - name: Verify Windows dialog actions, retained child handles and driver scratch
         run: python -B -m unittest discover -s tests -p test_p4_n12_exit_corroboration.py
       - name: Exercise N12 snapshot and calibration on generated files
         shell: pwsh

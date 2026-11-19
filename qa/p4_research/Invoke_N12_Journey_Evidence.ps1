@@ -2,15 +2,14 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('sysmon-tail','etw-export','etw-process-export','etw-app-lifetime-export','close','profile-active','webview-children','project-switch','process-bookend','backend-tcp')][string]$Operation,
+    [ValidateSet('sysmon-tail','etw-export','etw-process-export','etw-app-lifetime-export','close','profile-active','webview-children','process-bookend','backend-tcp')][string]$Operation,
     [string]$CaptureRoot,
     [int]$AppProcessId,
     [string]$AppPath,
     [string]$AppTitle,
     [switch]$ReportCloseStatus,
     [string]$ProfilePath,
-    [int]$BackendProcessId,
-    [ValidateSet('Stay','Switch project')][string]$Action
+    [int]$BackendProcessId
 )
 
 Set-StrictMode -Version Latest
@@ -43,22 +42,6 @@ switch ($Operation) {
         . (Join-Path $PSScriptRoot '../p4_native/Close_P4_Verified_Window.ps1')
         Close-P4VerifiedWindow -AppProcessId $AppProcessId -ExpectedPath $AppPath -ExpectedTitle $AppTitle `
             -ReportCloseStatus:$ReportCloseStatus
-    }
-    'project-switch' {
-        if ($env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or
-            $env:GITHUB_RUN_ID -cnotmatch '^[0-9]+$') { throw 'N12 journey approval is required.' }
-        $relative = "pilotodin-n12-build-$env:GITHUB_RUN_ID/cargo/x86_64-pc-windows-msvc/debug/pilotodin-desktop.exe"
-        $expected = (Resolve-Path -LiteralPath (Join-Path $env:RUNNER_TEMP $relative)).Path
-        $app = Get-Process -Id $AppProcessId
-        try {
-            if (-not [string]::Equals($app.Path, $expected, [StringComparison]::OrdinalIgnoreCase)) {
-                throw 'The dialog owner does not match the staged N12 executable.'
-            }
-            . (Join-Path $PSScriptRoot '../p4_native/Invoke_P4_Native_Project_Switch_Control.ps1')
-            Invoke-P4NativeProjectSwitchControl -AppProcessId $AppProcessId -Action $Action
-        } finally {
-            $app.Dispose()
-        }
     }
     'profile-active' {
         if ([string]::IsNullOrWhiteSpace($ProfilePath)) { throw 'The disposable profile path is required.' }

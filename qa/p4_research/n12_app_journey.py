@@ -461,8 +461,7 @@ def request_graceful_close(app, binary, title):
 
 def driver_environment(env, root):
     scratch = root / DRIVER_TEMP_DIR
-    # The dialog helper inherits this environment from Node. PowerShell's
-    # module cache uses LocalAppData by default, independently of TEMP.
+    # Keep disposable driver scratch and any inherited PowerShell cache scoped.
     return {**env, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch),
             "PSMODULEANALYSISCACHEPATH": str(scratch / "powershell-module-analysis-cache")}
 
@@ -494,7 +493,8 @@ def run_driver(stack, manifest, node, root, env, relaunch, handles):
     if relaunch:
         command.append("--verify-relaunch")
     log = root / f"driver-{label}.log"
-    process = spawn(stack, manifest, "driver", command, driver_environment(env, root), FRONTEND, log)
+    driver_env = driver_environment({**env, "PILOTODIN_N12_DIALOG_PYTHON": sys.executable}, root)
+    process = spawn(stack, manifest, "driver", command, driver_env, FRONTEND, log)
     handles.watch(process, label)
     return_code = process.wait(timeout=240)
     if return_code != 0:

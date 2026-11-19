@@ -5,11 +5,11 @@ import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
 import { dragWorkspaceTab, prepareWorkspaceTabDrag } from './p4-drag-workspace-tab.mjs';
 import { approveCompactQuality, closeN12Peer, findN12Peer, isN12Peer, matchesN12LifecycleRequest, verifyN12ArchiveDraft } from './p4-n12-native-cases.mjs';
 import { waitForNativeCloseRegistration } from './p4-n12-native-close-readiness.mjs';
+import { projectSwitchCommand } from './p4-native-project-switch-command.mjs';
 import { verifyPrepareFittedAcceptance } from './p4-prepare-fitted-acceptance.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 // P4-71 disposable CI only: attach to ACTUAL Tauri native WebView2, no original user data.
 import { chromium, expect } from '@playwright/test';
@@ -29,19 +29,15 @@ const fittedPrepare=mode==='--verify-fitted-prepare';
 const receiptPath=join(process.env.PILOTODIN_HOME,'p4-synthetic-projects.json');
 const captureDir=join(process.env.PILOTODIN_HOME,'captures');
 if(process.argv.length!==(relaunch||dockingOnly||acceptance||fittedPrepare?3:2))throw Error('Unexpected QA probe arguments');
-const invokeDialog=fileURLToPath(new URL('../../qa/p4_native/Invoke_P4_Native_Project_Switch_Dialog.ps1',import.meta.url));
-const invokeStagedDialog=fileURLToPath(new URL('../../qa/p4_research/Invoke_N12_Journey_Evidence.ps1',import.meta.url));
 const execFileAsync=promisify(execFile);
 
 async function chooseNativeDialogAction(chooser, destination, action) {
  await chooser.selectOption(destination);
  await expect(chooser).toBeDisabled();
  try {
-  const {stdout}=await execFileAsync('powershell.exe',[
-   '-NoProfile','-NonInteractive','-STA','-File',
-   ...(n12Journey?[invokeStagedDialog,'project-switch','-AppProcessId',process.env.P4_NATIVE_QA_APP_PID]:[invokeDialog]),
-   '-Action',action,
-  ],{timeout:20000,windowsHide:true});
+  const {file,args,cwd}=projectSwitchCommand({n12Journey,python:process.env.PILOTODIN_N12_DIALOG_PYTHON,
+   pid:process.env.P4_NATIVE_QA_APP_PID,action});
+  const {stdout}=await execFileAsync(file,args,{cwd,timeout:20000,windowsHide:true});
   console.log(stdout.trim());
  } catch (error) {
   const detail=error.stderr?.trim()||error.stdout?.trim();

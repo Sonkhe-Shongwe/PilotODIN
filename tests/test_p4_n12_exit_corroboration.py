@@ -1,5 +1,6 @@
 """Generated Windows app lifetimes for the N12 disputed-exit diagnostic."""
 from collections import Counter
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -21,6 +22,7 @@ from qa.p4_native import n12_lifetime_control as controls
 from qa.p4_native import n12_trace as trace
 from qa.p4_research.n12_app_journey import DRIVER_TEMP_DIR, driver_environment
 from qa.p4_research.n12_driver_handles import DriverHandles, descendants, driver_lifetime_evidence
+from qa.p4_research.n12_project_switch import press_project_switch
 
 
 BASE = datetime(2026, 11, 16, tzinfo=timezone.utc)
@@ -37,6 +39,26 @@ process.stdout.write(execFileSync(powershell,
   ['-NoProfile', '-NonInteractive', '-STA', '-File', script, ...args],
   {timeout: 20000, windowsHide: true}));
 """
+
+
+@contextmanager
+def windows_dialog_fixture(root, kind="both"):
+    (root / DRIVER_TEMP_DIR).mkdir(parents=True)
+    ready = root / "dialog-ready.txt"
+    command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-STA",
+               "-File", str(WINDOWS_DIALOG_FIXTURE), "-Fixture", kind, "-ReadyPath", str(ready)]
+    with subprocess.Popen(command, env=driver_environment(os.environ, root), stdin=subprocess.PIPE) as fixture:
+        try:
+            deadline = time.monotonic() + 15
+            while not ready.is_file() and fixture.poll() is None and time.monotonic() < deadline:
+                time.sleep(0.05)
+            if not ready.is_file():
+                raise AssertionError("Synthetic dialog did not open.")
+            yield fixture
+        finally:
+            if fixture.poll() is None:
+                fixture.kill()
+                fixture.wait(timeout=5)
 
 
 def candidate_file_state(path):
@@ -96,6 +118,42 @@ class WindowsQueryHandleTests(unittest.TestCase):
 
 
 class DriverTempTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "requires Node")
+    def test_staged_dialog_dispatch_uses_runner_python_without_a_powershell_fallback(self):
+        script = """
+import assert from 'node:assert/strict';
+import { projectSwitchCommand } from './frontend/e2e/p4-native-project-switch-command.mjs';
+const [python] = process.argv.slice(1);
+for (const action of ['Stay', 'Switch project']) {
+  const staged = projectSwitchCommand({ n12Journey: true, python, pid: '123', action });
+  assert.equal(staged.file, python);
+  assert.deepEqual(staged.args, ['-B', '-m', 'qa.p4_research.n12_project_switch', '--pid', '123', '--action', action]);
+  assert.equal(projectSwitchCommand({ n12Journey: false, action }).file, 'powershell.exe');
+}
+assert.throws(() => projectSwitchCommand({ n12Journey: true, pid: '123', action: 'Stay' }));
+"""
+        result = subprocess.run([shutil.which("node"), "--input-type=module", "-e", script, sys.executable],
+                                cwd=WINDOWS_DIALOG_FIXTURE.parents[2], capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    @unittest.skipUnless(sys.platform == "win32" and os.getenv("RUNNER_ENVIRONMENT") == "github-hosted",
+                         "requires the disposable GitHub-hosted Windows runner")
+    def test_python_dialog_control_delivers_both_actions_and_rejects_wrong_owner_and_missing_button(self):
+        image = Path(shutil.which("powershell.exe")).resolve(strict=True)
+        with TemporaryDirectory(dir=os.environ["RUNNER_TEMP"]) as folder:
+            root = Path(folder).resolve()
+            for action, exit_code in (("Stay", 20), ("Switch project", 21)):
+                with windows_dialog_fixture(root / f"fixture-{exit_code}") as fixture:
+                    with self.assertRaisesRegex(trace.EvidenceValidationError, "does not match"):
+                        press_project_switch(fixture.pid, action, sys.executable)
+                    press_project_switch(fixture.pid, action, image)
+                    fixture.communicate(input=b"\n", timeout=10)
+                    self.assertEqual(fixture.returncode, exit_code)
+            with windows_dialog_fixture(root / "fixture-missing", "missing") as fixture:
+                with self.assertRaisesRegex(trace.EvidenceValidationError, "DIALOG_FOUND_BUTTONS_MISSING"):
+                    press_project_switch(fixture.pid, "Stay", image, timeout=2)
+                self.assertIsNone(fixture.poll(), "the incomplete dialog was invoked")
+
     def test_candidate_file_endpoints_distinguish_absence_change_and_unreadable(self):
         with TemporaryDirectory() as folder:
             path = Path(folder) / "candidate.log"
@@ -189,30 +247,14 @@ class DriverTempTests(unittest.TestCase):
                 stdout, evidence[stage] = observe([*command, "-HelperStage", stage])
                 self.assertIn(f"N12 dialog helper stage completed: {stage}", stdout)
             for action, exit_code in (("Stay", 20), ("Switch project", 21)):
-                fixture_root = root / f"fixture-{exit_code}"
-                (fixture_root / DRIVER_TEMP_DIR).mkdir(parents=True)
-                ready = fixture_root / "dialog-ready.txt"
-                fixture_command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-STA",
-                                   "-File", str(WINDOWS_DIALOG_FIXTURE), "-Fixture", "both",
-                                   "-ReadyPath", str(ready)]
-                with subprocess.Popen(fixture_command, env=driver_environment(os.environ, fixture_root),
-                                      stdin=subprocess.PIPE) as fixture:
-                    try:
-                        deadline = time.monotonic() + 15
-                        while not ready.is_file() and fixture.poll() is None and time.monotonic() < deadline:
-                            time.sleep(0.05)
-                        self.assertTrue(ready.is_file(), "synthetic dialog did not open")
-                        stdout, evidence[action] = observe([*command, "-HelperStage", "dialog",
-                                                            "-FixtureProcessId", str(fixture.pid),
-                                                            "-Action", action])
-                        self.assertIn("Project-switch action delivered using native button handles", stdout)
-                        self.assertIsNone(fixture.poll(), "fixture exited during the endpoint comparison")
-                        fixture.communicate(input=b"\n", timeout=10)
-                        self.assertEqual(fixture.returncode, exit_code)
-                    finally:
-                        if fixture.poll() is None:
-                            fixture.kill()
-                            fixture.wait(timeout=5)
+                with windows_dialog_fixture(root / f"fixture-{exit_code}") as fixture:
+                    stdout, evidence[action] = observe([*command, "-HelperStage", "dialog",
+                                                        "-FixtureProcessId", str(fixture.pid),
+                                                        "-Action", action])
+                    self.assertIn("Project-switch action delivered using native button handles", stdout)
+                    self.assertIsNone(fixture.poll(), "fixture exited during the endpoint comparison")
+                    fixture.communicate(input=b"\n", timeout=10)
+                    self.assertEqual(fixture.returncode, exit_code)
             print("N12 PowerShell dialog helper candidate endpoints " + json.dumps(evidence, sort_keys=True))
 
 
