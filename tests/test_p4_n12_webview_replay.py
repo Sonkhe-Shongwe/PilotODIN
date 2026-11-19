@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from qa.p4_native import n12_etw_correlate as reduce_io, n12_trace as trace
+from qa.p4_research.n12_journey_diagnostics import OutsidePaths
 
 
 ROLE = "webview-network"
@@ -344,6 +345,7 @@ class WebViewWriteReplayTests(unittest.TestCase):
             unexpected_connections=[unexpected],
         )
         report, replay_issues, baseline_issues = {}, set(), set()
+        outside_paths = OutsidePaths([("generated-outside", OUTSIDE), ("generated-protected", PROTECTED)])
         with TemporaryDirectory() as folder:
             path = Path(folder) / "generated-etw.jsonl"
             path.write_bytes(payload)
@@ -354,6 +356,7 @@ class WebViewWriteReplayTests(unittest.TestCase):
             journey = trace.complete_journey_audit(
                 manifest, observed, path, snapshot, snapshot, etw=True, describe_path_gaps=True,
                 webview_dominant_writes=True, credit_verified_webview_writes=True,
+                record_outside_writer=outside_paths.record,
             )
             manifest["etw"]["counters"]["log_buffers_lost"] = 1
             loss = trace.complete_journey_audit(
@@ -396,6 +399,14 @@ class WebViewWriteReplayTests(unittest.TestCase):
         })
         self.assertEqual(journey["file_violations"][f"protected:{ROLE}:write"], 2)
         self.assertEqual(journey["file_violations"][f"outside-scope:{ROLE}:write"], 5)
+        self.assertEqual(outside_paths.writer_summary(), [
+            {"role": ROLE, "operation": "rename", "path_categories": ["generated-protected"],
+             "writer": "webview2", "count": 1},
+            {"role": ROLE, "operation": "write", "path_categories": ["generated-outside"],
+             "writer": "webview2", "count": 3},
+            {"role": ROLE, "operation": "write", "path_categories": ["generated-protected"],
+             "writer": "webview2", "count": 2},
+        ])
         self.assertEqual(journey["file_events"][f"{ROLE}:write"], 6)
         self.assertEqual(journey["unexpected_connections"], [unexpected])
         self.assertEqual((journey["filesystem"], journey["network"], journey["coverage"]), ("FAIL", "FAIL", "BLOCKED"))

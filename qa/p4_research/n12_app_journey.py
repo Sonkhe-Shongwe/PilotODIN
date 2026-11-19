@@ -860,9 +860,11 @@ def capture(root, staged, source, expected_hash, node):
     }), flush=True)
     try:
         with checkpoint_stage("webview-credit-comparison", source, expected_hash):
+            comparison_paths = diagnostic_paths(root, staged, manifest)
             trial = trace.complete_journey_audit(
                 manifest, observed, events, before, after, etw=True, journey_bookends=bookends,
                 describe_path_gaps=True, webview_dominant_writes=True, credit_verified_webview_writes=True,
+                record_outside_writer=comparison_paths.record,
             )
             credit = trial["etw_webview_write_credit"]
             remaining = trial["etw_unresolved_mutations"].get(gap, 0)
@@ -871,6 +873,10 @@ def capture(root, staged, source, expected_hash, node):
                           "WebView credit comparison does not reconcile with the ordinary audit")
             comparison = {"status": "completed", "etw_events_sha256": evidence_sha,
                           "baseline_webview_write_path_gaps": baseline_gaps,
+                          "outside_scope_webview_writes": [
+                              row for row in comparison_paths.writer_summary()
+                              if row["role"] == "webview-network" and row["operation"] == "write"
+                          ],
                           **{key: trial[key] for key in (
                               "coverage", "coverage_issues", "filesystem", "network", "file_events",
                               "file_violations", "etw_unresolved_mutations", "etw_webview_write_credit",

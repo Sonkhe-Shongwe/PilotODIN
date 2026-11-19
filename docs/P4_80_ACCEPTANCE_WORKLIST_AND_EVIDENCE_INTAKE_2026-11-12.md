@@ -57,6 +57,8 @@ The [16 November completed reducer](https://github.com/Sonkhe-Shongwe/PilotODIN/
 
 ### P4 plan to reach 75%
 
+**Consolidated driver verification, 19 November.** Use one separately approved Windows app audit to compare both driver groups with the prior counts and record the redacted destination categories for outside-scope WebView network-process writes found by the comparison. Keep the existing filesystem and network acceptance rules. [Run scope and evidence](./SESSION_HANDOFF_CURRENT.md#19-november-2026--consolidated-driver-isolation-verification)
+
 **Driver isolation, 18 November.** The source supplies a disposable PowerShell cache path to the QA driver tree. Compare the last audit's six PowerShell writes and six overwrites in `user-local` with the next applicable hosted audit. The file targets were unverified in the original report. [Driver cache isolation](./SESSION_HANDOFF_CURRENT.md#18-november-2026--isolate-the-qa-driver-powershell-cache)
 
 The QA Vite process now uses the config runner. Compare Node's two creates, one write and one delete under `frontend-dependencies` in the next applicable audit. The generated loader comparison checks the actual config and the presence of temporary bundling output. [Vite config isolation](./SESSION_HANDOFF_CURRENT.md#18-november-2026--isolate-vite-config-loading-in-the-qa-driver)

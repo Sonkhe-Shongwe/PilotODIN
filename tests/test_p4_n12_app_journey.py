@@ -791,16 +791,19 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
                     "etw_unresolved_mutations": {write_gap: 3, unrelated_gap: 1}}
         if credit_verified_webview_writes:
             events.append("credit-reducer")
-            assert observe_lifetimes is None and record_outside_writer is None
+            assert observe_lifetimes is None
             assert file_trace == root / "etw.jsonl"
             assert json.loads((root / "audit.json").read_text())["etw_unresolved_mutations"] == {
                 write_gap: 3, unrelated_gap: 1,
             }
             if fault == "credit-reduce":
                 raise ValueError("private-credit-reducer-value")
+            record_outside_writer("driver", "write", (r"c:\private\driver.bin",), "node.exe")
+            record_outside_writer("webview-network", "write", (r"c:\private\webview.cache",), "msedgewebview2.exe")
+            findings["file_violations"]["outside-scope:webview-network:write"] = 1
             findings["etw_unresolved_mutations"][write_gap] = 1
             findings["etw_webview_write_credit"] = {
-                "status": "compared", "credited_paths": {"permitted": 2},
+                "status": "compared", "credited_paths": {"permitted": 1, "outside-scope": 1},
                 "remaining_path_gaps": 0 if fault == "credit-reconcile" else 1,
             }
             return findings
@@ -903,7 +906,14 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert json.loads(comparison_path.read_text()) == comparison
             assert comparison["status"] == "completed"
             assert comparison["etw_unresolved_mutations"] == {write_gap: 1, unrelated_gap: 1}
-            assert comparison["file_violations"] == report["file_violations"]
+            assert comparison["file_violations"] == {
+                **report["file_violations"], "outside-scope:webview-network:write": 1,
+            }
+            assert comparison["outside_scope_webview_writes"] == [{
+                "role": "webview-network", "operation": "write", "path_categories": ["other-path"],
+                "writer": "webview2", "count": 1,
+            }]
+            assert "private" not in json.dumps(comparison["outside_scope_webview_writes"])
             assert comparison["network"] == report["network"]
         assert json.loads((root / "private-process-bookends.json").read_text())["before"] == [
             {"pid": 702, "birth_ticks": 170},

@@ -1,10 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
-**18 November 2026.** Work on `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 14 of 20 checks (70%).** P1 through P3 have bounded development closure records. P4 closure requires owner signoff after the remaining engineering gates. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) · [Documentation index](./DOCUMENTATION_INDEX.md)
+**19 November 2026.** Work on `feature/live-dev-workspace-20261023`. **P4 Target Intelligence is active at 14 of 20 checks (70%).** P1 through P3 have bounded development closure records. P4 closure requires owner signoff after the remaining engineering gates. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) · [Documentation index](./DOCUMENTATION_INDEX.md)
 
 ## Next engineering action
 
-Prioritise isolation fixes for observed outside-scope operations. The QA driver redirects its PowerShell module cache to disposable scratch and loads the Vite config without a temporary bundle. In the next separately approved app audit, compare the PowerShell `user-local` counts and the Node `frontend-dependencies` counts against the last audit. The WebView comparison's 23 unresolved writes remain open. [Vite config isolation](#18-november-2026--isolate-vite-config-loading-in-the-qa-driver) · [Driver cache isolation](#18-november-2026--isolate-the-qa-driver-powershell-cache)
+Verify the PowerShell cache and Vite config isolation fixes in one separately approved hosted Windows app audit. The same run collects the destination categories for WebView writes flagged by the path comparison. The workflow is disarmed pending approval. [Consolidated verification](#19-november-2026--consolidated-driver-isolation-verification)
 
 ## Windows audit evidence
 
@@ -14,6 +14,12 @@ Prioritise isolation fixes for observed outside-scope operations. The QA driver 
 | Previous app results | At `02f807b`, Sysmon identity mismatches blocked both launches. At `022df1c`, an earlier completed audit reported 67 outside-scope operations, seven unexpected connections and 200,077 unresolved WebView network-process writes. [Blocked attempt](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44337564606/job/134918293248) · [Earlier completed audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44298639798/job/134782187614) |
 | Fixture-only coverage | With the four-second hold at `5d4b8da`, Sysmon attributed both TCP and UDP to the fixture child on its first read. ETW wrote 276 buffers with zero event or buffer loss and produced a nonempty trace. Launch `8a3d05c` consumed the one-use approval. [Retained-child pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44356802211/job/134986971018) · [Earlier immediate-exit pass](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44335300490/job/134910240433) |
 | WebView write comparison | On the latest digest-matched trace, the strict comparison attributed 198,111 paths to permitted scope and 111 to outside-scope violations, leaving 23 unresolved. The ordinary result governs acceptance. [Latest live comparison](#18-november-2026--live-cleanup-write-diagnostic) · [Previous comparison with 141 gaps](#18-november-2026--live-webview-write-path-comparison-completed) |
+
+### 19 November 2026 | Consolidated driver isolation verification
+
+One unpackaged build and two app launches on disposable GitHub-hosted Windows Server 2022 can verify both fixes with generated data. The prior ordinary baseline is six PowerShell writes and six overwrites under `user-local`, plus two Node creates, one write and one delete under `frontend-dependencies`. Record these same writer and path categories after both launches, with the pinned source and binary, calibration results, capture continuity and matching protected endpoints. The isolation target for both operation groups is zero. The full filesystem and network verdicts retain their current rules. [Baseline Windows job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44379979033/job/135069239278)
+
+The comparison now includes a redacted writer and destination-category count for outside-scope WebView network-process writes. The previous run reported 111 such writes without destination categories. Generated replay checks that the existing violations reconcile with the categories and the ordinary audit stays independent. Live verification is **NOT RUN**. [Report contract](../qa/p4_native/N12_TRACE.md#hosted-journey-etw-gap-diagnostics)
 
 ### 18 November 2026 | Isolate Vite config loading in the QA driver
 
