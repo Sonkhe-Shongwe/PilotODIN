@@ -21,6 +21,7 @@ from qa.p4_native import n12_exit_corroboration as diagnostic
 from qa.p4_native import n12_lifetime_control as controls
 from qa.p4_native import n12_trace as trace
 from qa.p4_research.n12_app_journey import APP_TEMP_DIR, DRIVER_TEMP_DIR, driver_environment, temporary_environment
+from qa.p4_research.n12_app_lifetime import STORAGE_TMP_DIR, storage_app_environment
 from qa.p4_research.n12_driver_handles import DriverHandles, descendants, driver_lifetime_evidence
 from qa.p4_research.n12_project_switch import press_project_switch
 
@@ -218,6 +219,13 @@ assert.throws(() => projectSwitchCommand({ n12Journey: true, pid: '123', action:
             subprocess.run([sys.executable, "-B", "-c", script], env=temporary_environment(parent, scratch),
                            capture_output=True, check=True, timeout=15)
             self.assertEqual((scratch / "generated.txt").read_text(encoding="utf-8"), "fixture")
+            if sys.platform == "win32":
+                witness = scratch / STORAGE_TMP_DIR
+                witness.mkdir()
+                subprocess.run([sys.executable, "-B", "-c", script],
+                               env=storage_app_environment(parent, scratch.parent),
+                               capture_output=True, check=True, timeout=15)
+                self.assertEqual((witness / "generated.txt").read_text(encoding="utf-8"), "fixture")
             self.assertEqual(list(ambient.iterdir()), [])
             self.assertEqual(parent["TMP"], str(ambient))
 

@@ -56,11 +56,14 @@ def runner_control_temp(env):
 def capture(root, staged, node, source, expected_hash):
     ambient = runner_control_temp(os.environ)
     manifest, _, profile, fixture, _ = journey.prepare_journey(root, source, expected_hash)
+    tmp_witness = profile / journey.APP_TEMP_DIR / lifetime.STORAGE_TMP_DIR
+    tmp_witness.mkdir()
     manifest["probe_user_temp"] = str(ambient)
+    manifest["startup_tmp_probe"] = True
     fixture.write_text("fixture,value\nwebview-storage,1\n", encoding="utf-8")
     before = journey.snapshots(manifest)
     journey.mark(manifest, "fixture-ready")
-    file_control(manifest, "scratch", profile / journey.APP_TEMP_DIR / "storage-control.tmp")
+    file_control(manifest, "scratch", tmp_witness / "storage-control.tmp")
     lifetime.launch_and_close(root, staged, node, source, expected_hash, storage_manifest=manifest)
     with TemporaryDirectory(prefix="pilotodin-storage-control-", dir=ambient) as folder:
         file_control(manifest, "user-temp", Path(folder) / "storage-control.tmp")
@@ -124,6 +127,11 @@ def reduce(root, staged, manifest, sysmon, procmon):
     observed_controls = set()
     diagnostics = Counter()
     paths = journey.diagnostic_paths(root, staged, manifest, user_temp=manifest.get("probe_user_temp"))
+    app_temp = tmp_witness = None
+    if manifest.get("startup_tmp_probe") is True:
+        profile = trace.windows_path(manifest["observed_roots"]["qa-webview"])
+        app_temp = ntpath.join(profile, journey.APP_TEMP_DIR)
+        tmp_witness = ntpath.join(app_temp, lifetime.STORAGE_TMP_DIR)
 
     def observe(stamp, process, role, operation, path):
         if operation == "create" and role == "calibration":
@@ -134,8 +142,14 @@ def reduce(root, staged, manifest, sysmon, procmon):
                     observed_controls.add(label)
         if role not in WEBVIEW_ROLES or operation not in {"create", "overwrite", "write"}:
             return
+        stage = ("startup" if stamp < ready else "ready-probe" if stamp < close else
+                 "close" if stamp <= exited else "after-profile-exit")
+        extension = ntpath.splitext(path)[1]
         category = next((label for label, base in paths.roots if trace.inside(path, base)), None)
-        if category in {"user-temp", "runner-temp"}:
+        if (app_temp is not None and stage == "startup" and operation == "create"
+                and extension == ".tmp" and trace.inside(path, app_temp)):
+            family = "startup-tmp" if trace.inside(path, tmp_witness) else "qa-app-temp"
+        elif category in {"user-temp", "runner-temp"}:
             if operation != "create":
                 return
             family = category
@@ -144,9 +158,6 @@ def reduce(root, staged, manifest, sysmon, procmon):
                           "other-user-local")
         else:
             return
-        stage = ("startup" if stamp < ready else "ready-probe" if stamp < close else
-                 "close" if stamp <= exited else "after-profile-exit")
-        extension = ntpath.splitext(path)[1]
         file_type = FILE_TYPES.get(extension, "other-extension" if extension else "no-extension")
         diagnostics[family, operation, component(process, role, browser_guid), stage, file_type] += 1
 
@@ -182,6 +193,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
             "file_coverage_issues": sorted(file_coverage_issues),
             "protected_snapshot_comparison": manifest["protected_snapshot_comparison"],
             "protected_operations": protected_operations, "unresolved_file_events": unresolved_files,
+            "startup_tmp_probe": manifest.get("startup_tmp_probe") is True,
             "browser_process_corroborated": browser_guid is not None,
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
             "ambient_temp_creates": ambient_creates, "storage_events": rows}

@@ -10,7 +10,9 @@ import unittest
 from unittest.mock import patch
 
 from qa.p4_native import n12_trace as trace
+from qa.p4_research import n12_app_lifetime as lifetime
 from qa.p4_research import n12_webview_storage_probe as probe
+from qa.p4_research.n12_app_journey import APP_TEMP_DIR, app_environment
 from qa.p4_research.n12_journey_diagnostics import OutsidePaths
 
 
@@ -108,6 +110,30 @@ class StorageProbeTests(unittest.TestCase):
         report = self.reduce(rows)
         self.assertEqual(report["verdict"], "INCONCLUSIVE")
         self.assertEqual(report["ambient_temp_creates"], 0)
+
+    def test_focused_launch_changes_only_tmp(self):
+        profile = Path("webview-fixture")
+        baseline = app_environment({}, profile, "first")
+        self.assertEqual(lifetime.storage_app_environment({}, profile),
+                         {**baseline, "TMP": str(profile / APP_TEMP_DIR / lifetime.STORAGE_TMP_DIR)})
+
+    def test_startup_tmp_probe_distinguishes_launch_tmp_scratch_and_ambient(self):
+        self.manifest["startup_tmp_probe"] = True
+        self.manifest["observed_roots"]["qa-webview"] = SCRATCH
+        app_temp = SCRATCH + "\\" + APP_TEMP_DIR
+        tmp_witness = app_temp + "\\" + lifetime.STORAGE_TMP_DIR
+        rows = self.controls + [
+            row(7, 101, "msedgewebview2.exe", tmp_witness + r"\private-test.tmp"),
+            row(7, 101, "msedgewebview2.exe", app_temp + r"\private-sibling.tmp"),
+            row(7, 101, "msedgewebview2.exe", USER_TEMP + r"\private-ambient.tmp"),
+            row(9, 101, "msedgewebview2.exe", tmp_witness + r"\ignored-after-startup.tmp"),
+        ]
+        report = self.reduce(rows)
+        self.assertTrue(report["startup_tmp_probe"])
+        self.assertEqual(report["ambient_temp_creates"], 1)
+        self.assertEqual({r["destination_family"]: (r["stage"], r["count"]) for r in report["storage_events"]},
+                         {family: ("startup", 1) for family in ("startup-tmp", "qa-app-temp", "user-temp")})
+        self.assertNotIn("private-test", json.dumps(report))
 
     def test_unverified_shutdown_blocks_but_retains_corroborated_observations(self):
         for shutdown_verified in (False, None, "true"):
