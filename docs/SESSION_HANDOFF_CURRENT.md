@@ -28,6 +28,8 @@ Under simulated 0.936 GiB available RAM in Low-memory mode, selecting Offline Qw
 
 All 12 focused API tests and the existing five-answer Local analytics workload passed locally. This is generated API evidence for working under model deferral. Physical Qwen startup and coexistence still need evidence. The R03 workstream remains **1/3 (33%)** and the phase score is **14/20 (70%)**. [R03 evidence and next checkpoint](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#verification-and-decision)
 
+At source `cff816148de93be1528f19285871d88b29aef442`, all four [P4 CI jobs](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44548714165) and all seven adjacent P1–P3 workflows completed successfully. The new deferral regression passed in routine P4 CI. The Windows Local analytics job passed its separate model-free workload. The hosted N12 app retest and physical offline inference were **NOT RUN** at this source.
+
 ### 19 November 2026 | Keep Ask ODIN on one working version
 
 The provider-backed insight route previously loaded the working dataset three times. An interleaved Quality approval sent v1 facts to the provider while the API labelled the answer v0. The route now materializes one version and reads its decision metadata in the same transaction. The findings, provider context and local calculations use that snapshot. The regression verifies that an in-flight answer stays on v0 and a later request uses v1. Ten API tests and the five known Local analytics answers passed locally. [API regression](../tests/test_p4_r03_verified_answers.py) · [Quality snapshot](../backend/quality.py)
