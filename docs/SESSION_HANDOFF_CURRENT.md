@@ -28,6 +28,8 @@ The prior hosted job retained category totals and no replay artifact. Exact dest
 
 The existing app workflow is disarmed. The proposed scope is one GitHub-hosted Windows Server 2022 attempt at the reviewed source, with existing dependencies and Sysmon, one unpackaged build, two launches and the same FileIO decoder. The launch requires a fresh `qa/p4_research/N12_APP_JOURNEY_WEBVIEW_STORAGE_APPROVAL.txt` marker. The temp verification target is zero ambient creates in both launches with valid capture evidence and matching protected endpoints. Record the user-local family breakdown and the governing audit verdict from the same capture. Native retest **NOT RUN**. [Disarmed workflow](../.github/workflows/p4-n12-app-journey.yml)
 
+All four routine P4 jobs passed at source `8aa417e4f6710a1f91cbefd4513fa3ef3ef96f6f`. Local diagnostics and background-thread suites passed 23 tests. The approved app workflow stayed disarmed and the WebView storage retest was **NOT RUN**. [Exact-source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44535057895)
+
 ### 19 November 2026 | Isolate temporary files for the N12 app launches
 
 The hosted baseline attributed four creates to WebView under the runner's user-temp path. Its separate user-local category contained four creates, four overwrites and four writes. The retained report gives directory categories and writer family, with exact targets unavailable for the twelve user-local operations. [Hosted evidence](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44520473493/job/135547465484)
