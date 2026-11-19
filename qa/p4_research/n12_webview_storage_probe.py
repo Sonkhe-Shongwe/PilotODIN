@@ -63,7 +63,7 @@ def capture(root, staged, node, source, expected_hash):
     fixture.write_text("fixture,value\nwebview-storage,1\n", encoding="utf-8")
     before = journey.snapshots(manifest)
     journey.mark(manifest, "fixture-ready")
-    file_control(manifest, "scratch", tmp_witness / "storage-control.tmp")
+    file_control(manifest, "scratch", profile / journey.APP_TEMP_DIR / "storage-control.tmp")
     lifetime.launch_and_close(root, staged, node, source, expected_hash, storage_manifest=manifest)
     with TemporaryDirectory(prefix="pilotodin-storage-control-", dir=ambient) as folder:
         file_control(manifest, "user-temp", Path(folder) / "storage-control.tmp")
