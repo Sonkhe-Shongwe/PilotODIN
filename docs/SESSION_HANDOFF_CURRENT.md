@@ -30,6 +30,8 @@ A verified startup WebView2 `.tmp` create under `startup-tmp` supports influence
 
 Local replay verified the one-variable environment change and distinguished all three destination categories while excluding a post-startup scratch create. Fourteen focused Python tests passed. The broader local run passed 62 Python tests with four Windows-only skips. The focused live experiment is **NOT RUN**. File-mutation coverage is **3/4 (75%)** and P4 **14/20 (70%)**. [Generated cases](../tests/test_p4_n12_webview_storage.py)
 
+All four routine P4 jobs passed at implementation source `a2cea850e1bacbbbe2b7124f8f51d3debefe49f5`. The Windows child selected the distinct subdirectory through `GetTempPathW`. That tests the input, and the WebView2 startup outcome remains **NOT RUN**. The next approval would cover one hosted Windows Server 2022 attempt from the exact branch HEAD, one unpackaged build, the same pinned Sysmon and Process Monitor, one startup and graceful close, and the same two generated control writes. Assess only positive writer-linked startup observations for the temp choice. [Routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44582859547) · [Windows fixture job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44582859547/job/135767874642)
+
 ### Isolate one WebView2 filesystem question at a time
 
 | Order | Question | Evidence that decides it |
