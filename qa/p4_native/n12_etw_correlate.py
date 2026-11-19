@@ -325,6 +325,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 suffix = f":info-{info}" if event_id == 17 else ""
             details[f"{actor}:event-{event_id}{suffix}:{reason}"] += 1
 
+    def completion_file_identity_conflicts(request, completion):
+        return any(number(completion["data"].get(field)) not in {None, 0, number(request["data"].get(field))}
+                   for field in ("FileObject", "FileKey"))
+
     def completion_identity_issue(request, completion, handle, actor):
         owner_pid, owner_birth, _ = handle
         requested, completed = request["ticks"], completion["ticks"]
@@ -333,8 +337,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 or (owner_pid, requested) in process_transition_ticks
                 or (owner_pid, completed) in process_transition_ticks):
             return "process-lifetime-unverified-at-completion"
-        if any(number(completion["data"].get(field)) not in {None, 0, number(request["data"].get(field))}
-               for field in ("FileObject", "FileKey")):
+        if completion_file_identity_conflicts(request, completion):
             return "completion-file-identity-conflict"
         return None
 
@@ -437,7 +440,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if not irp or irp not in pending:
                 continue
             (operation, actor, identity, handle, source, destination, requested,
-             event_id, info_class, write_gap, protected_system_write, request) = pending.pop(irp)
+             event_id, info_class, write_gap, protected_system_write, request,
+             recovered_rundown_key) = pending.pop(irp)
             gap = path_gap_context.pop(irp, None)
             in_scope = relevant(actor, operation, source, destination)
             status = number(data.get("Status"))
@@ -451,6 +455,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 if in_scope and operation != "query":
                     record(actor, identity, operation, source, destination, requested, ticks, False)
                 continue
+            if recovered_rundown_key is not None:
+                # A stop-time name cannot resolve a write with contradictory file identity.
+                if operation == "write" and completion_file_identity_conflicts(request, event):
+                    flag(actor, f"{operation}:completion-file-identity-conflict", event_id, info_class)
+                    continue
+                if rundown_recovered_keys is not None:
+                    rundown_recovered_keys.add(recovered_rundown_key)
+                if details is not None:
+                    details[f"{actor}:event-{event_id}:rundown-path-recovered"] += 1
             if operation == "compression":
                 outcome = "unresolved-path" if source is None else (
                     "protected" if tracked(source) else "outside-protected"
@@ -544,12 +557,14 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             continue
         if kind == 27 and irp in pending:
             (operation, owner, identity, obj, source, previous, requested,
-             event_id, info_class, write_gap, protected_system_write, request) = pending[irp]
+             event_id, info_class, write_gap, protected_system_write, request,
+             recovered_rundown_key) = pending[irp]
             if operation == "rename" and obj == handle and path:
                 if previous and previous != path:
                     unresolved[f"{owner}:rename:destination-ambiguous"] += 1
                 pending[irp] = (operation, owner, identity, obj, source, path, requested,
-                                event_id, info_class, write_gap, protected_system_write, request)
+                                event_id, info_class, write_gap, protected_system_write, request,
+                                recovered_rundown_key)
             continue
         if strict and kind == 27 and path and relevant(actor, "rename", None, path):
             unresolved[f"{actor}:rename:request-missing-or-ambiguous"] += 1
@@ -625,6 +640,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                             else "outside-protected"
                         )
                         details[f"{actor}:event-{kind}:{operation}:name-candidates-{source_label}-{category}"] += 1
+        recovered_rundown_key = None
         if strict and source is None and kind in {16, 17, 23} and not calibration_rundown:
             # Write requests expose FileKey. Set-information events can expose
             # only FileObject. Never substitute a stop-time name for an
@@ -643,10 +659,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 recovered = next(iter(names))
                 if recovered is not None:
                     source = recovered
-                    if rundown_recovered_keys is not None:
-                        rundown_recovered_keys.add(rundown_key)
-                    if details is not None:
-                        details[f"{actor}:event-{kind}:rundown-path-recovered"] += 1
+                    if operation != "query":
+                        recovered_rundown_key = rundown_key
         if (details is not None and operation and source is not None
                 and actor in {"other", "unattributed"} and tracked(source)):
             file_key = number(data.get("FileKey"))
@@ -764,7 +778,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 target = "control-key-and-object" if key_matches and object_matches else "other-protected-identity"
                 protected_system_write = f"{target}:{capture_phase(ticks)}:{write_paging_flag(data)}"
             pending[irp] = (operation, actor, identity, handle, source, None, ticks, kind,
-                            info_class, write_gap, protected_system_write, event)
+                            info_class, write_gap, protected_system_write, event, recovered_rundown_key)
             if ((record_path_gap is not None or record_write_name_gap is not None
                  or webview_write_candidates is not None)
                     and source is None and operation != "query" and kind in {16, 17, 23}):

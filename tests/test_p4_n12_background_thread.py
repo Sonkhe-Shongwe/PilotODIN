@@ -39,10 +39,52 @@ class TestBackgroundThread(TestCase):
             dict(id=24, pid=0, ticks=base + 70, lifecycle=False, data=dict(Irp=77, Status=0)),
         ]
 
-    def reduce(self):
+    def export_events(self):
         self.export.write_text("".join(json.dumps(row) + "\n" for row in self.events), encoding="utf-8")
         self.manifest["etw"]["events_sha256"] = hashlib.sha256(self.export.read_bytes()).hexdigest()
+
+    def reduce(self):
+        self.export_events()
         return control.reduce_control(self.manifest, self.control, self.export)
+
+    def test_strict_rundown_checks_completion_before_resolving_preopened_writes(self):
+        outside = trace.windows_path(r"C:\qa\outside\generated.bin")
+        protected_root = trace.windows_path(r"C:\qa\protected")
+        protected = protected_root + r"\generated.bin"
+        request, completion = self.events
+        key = request["data"]["FileKey"]
+        obj = request["data"]["FileObject"]
+        cases = [
+            ("outside", [outside], dict(FileKey=key, FileObject=obj), {}, {}, {key}),
+            ("protected", [protected], {}, {"protected:other:write": 1}, {}, {key}),
+            ("ambiguous", [outside, protected], {}, {}, {"other:write:path-missing": 1}, set()),
+            ("wrong-key", [outside], dict(FileKey=99), {},
+             {"other:write:completion-file-identity-conflict": 1}, set()),
+            ("wrong-object", [outside], dict(FileObject=99), {},
+             {"other:write:completion-file-identity-conflict": 1}, set()),
+            ("protected-wrong-key", [protected], dict(FileKey=99), {},
+             {"other:write:completion-file-identity-conflict": 1}, set()),
+        ]
+        start, end = (trace.utc_time(self.manifest[field]) for field in ("start_utc", "end_utc"))
+        for label, names, fields, expected_violations, expected_gaps, expected_keys in cases:
+            with self.subTest(case=label):
+                name_events = [
+                    dict(id=10, pid=0, lifecycle=False, ticks=request["ticks"] - 10 + n,
+                         data=dict(FileKey=key, FileName=name))
+                    for n, name in enumerate(names)
+                ]
+                self.events = [*name_events, request, dict(completion, data={**completion["data"], **fields})]
+                self.export_events()
+                issues, recovered_keys = set(), set()
+                _, violations, _, unresolved = trace.inspect_etw_files(
+                    self.manifest, self.export, start, end, {}, {}, [protected_root], {}, issues,
+                    background_bookends=self.control["bookends"],
+                    rundown=[{"key": key, "path": names[0]}], rundown_recovered_keys=recovered_keys,
+                )
+                self.assertEqual(violations, expected_violations)
+                self.assertEqual(unresolved, expected_gaps)
+                self.assertEqual(recovered_keys, expected_keys)
+                self.assertEqual(issues, {"etw-mutation-coverage-unresolved"} if expected_gaps else set())
 
     def test_matches_known_completed_write(self):
         self.assertEqual(self.reduce(), {
