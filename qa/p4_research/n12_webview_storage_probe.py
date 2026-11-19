@@ -83,25 +83,39 @@ def component(process, role, browser_guid):
     return matches[0] if len(matches) == 1 and matches[0] in {"renderer", "gpu-process", "utility"} else "unclassified"
 
 
-def process_start_tmp(detail, process, parent):
-    """Extract only an explicit TMP from a matching Procmon Process Start."""
+def process_start_environment(detail, parent_pid, command):
+    """Bind the exported environment to a known parent and command."""
     match = re.fullmatch(
-        r"Parent PID: (\d+), Command line: (.*?), Current directory: .*?, Environment:(.*)", detail, re.S,
+        r"Parent PID: (\d+), Command line: (.*?), Current directory: (.*)", detail, re.S,
     )
     if match is None:
         return "start-detail-unrecognized", None
-    if (parent is None or int(match[1]) != parent.pid
-            or not process.command.strip() or match[2].strip() != process.command.strip()):
+    if (parent_pid is None or int(match[1]) != parent_pid
+            or not command.strip() or match[2].strip() != command.strip()):
         return "start-identity-mismatch", None
-    values = re.findall(r"(?:^| ; |\r?\n)\s*TMP=([^\r\n]*?)(?= ; |\r?\n|$)", match[3], re.I)
+    _, separator, environment = match[3].partition(", Environment:")
+    if not separator:
+        return "environment-field-unobserved", None
+    return "environment-observed", environment
+
+
+def process_start_path(environment, key):
+    values = re.findall(rf"(?:^| ; |\r?\n)[ \t]*{re.escape(key)}=([^\r\n]*?)(?= ; |\r?\n|$)",
+                        environment, re.I)
+    label = key.casefold()
     if not values:
-        return "tmp-not-observed", None
+        return f"{label}-not-observed", None
     if len(values) > 1:
-        return "tmp-ambiguous", None
+        return f"{label}-ambiguous", None
     try:
-        return "tmp-observed", trace.windows_path(values[0])
+        return f"{label}-observed", trace.windows_path(values[0])
     except ValueError:
-        return "tmp-path-invalid", None
+        return f"{label}-path-invalid", None
+
+
+def process_start_tmp(detail, process, parent):
+    status, environment = process_start_environment(detail, parent.pid if parent else None, process.command)
+    return (status, None) if environment is None else process_start_path(environment, "TMP")
 
 
 def reduce(root, staged, manifest, sysmon, procmon):

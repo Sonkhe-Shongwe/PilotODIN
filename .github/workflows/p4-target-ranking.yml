@@ -63,6 +63,7 @@ on:
       - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_webview_storage.py
       - tests/test_p4_n12_tmp_debugger_fixture.py
+      - tests/test_p4_n12_procmon_environment_control.py
       - tests/test_p4_n12_trace.py
       - tests/test_p4_n12_webview_replay.py
       - tests/test_p4_r06_prospective_fingerprint.py
@@ -74,6 +75,7 @@ on:
       - qa/p4_research/n12_app_journey.py
       - qa/p4_research/n12_backend_wakeup.py
       - qa/p4_research/n12_tmp_debugger_fixture.py
+      - qa/p4_research/n12_procmon_environment_control.py
       - qa/p4_research/n12_project_switch.py
       - qa/p4_research/n12_egress.py
       - qa/p4_research/n12_app_lifetime.py
@@ -185,6 +187,7 @@ jobs:
           tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_n12_webview_storage.py
           tests/test_p4_n12_tmp_debugger_fixture.py
+          tests/test_p4_n12_procmon_environment_control.py
           tests/test_p4_installer_provenance.py
       - name: Verify P4 source contracts and manual target choice
         run: >-
@@ -340,6 +343,8 @@ jobs:
 
       - name: Verify prospective R06 endpoint evidence on generated files
         run: python -B -m unittest discover -s tests -p test_p4_r06_prospective_fingerprint.py
+      - name: Verify generated Process Monitor environment evidence without live capture
+        run: python -B -m unittest tests.test_p4_n12_procmon_environment_control
       - name: Verify Windows dialog actions, retained child handles and driver scratch
         run: python -B -m unittest discover -s tests -p test_p4_n12_exit_corroboration.py
       - name: Check egress rule decisions and parse the Windows command

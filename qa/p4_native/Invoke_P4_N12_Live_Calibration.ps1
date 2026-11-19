@@ -7,6 +7,7 @@ param(
     [switch]$AppJourney,
     [switch]$AppLifetime,
     [switch]$WebViewStorage,
+    [switch]$ProcmonEnvironmentControl,
     [switch]$LifetimeControl,
     [switch]$LifetimeEtwControl,
     [switch]$SocketLifetimeControl,
@@ -35,6 +36,16 @@ if ($WebViewRuntimeDirectory -and -not $AppJourney) {
 if ($WebViewStorage -and ($WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or
         $LifetimeEtwControl -or $SocketLifetimeControl -or $InitialJourneyFixture -or $CollectorRundown)) {
     throw 'WebView storage requires its own Process Monitor capture mode.'
+}
+
+if ($ProcmonEnvironmentControl -and ($WithEtw -or $AppJourney -or $AppLifetime -or $WebViewStorage -or
+        $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl -or $InitialJourneyFixture -or
+        $CollectorRundown -or $SourceSha -or $ExecutableSha256 -or
+        $env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+        $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_CONSENT -cne 'I_APPROVE_ONE_N12_PROCMON_ENVIRONMENT_CONTROL' -or
+        $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
+        (git rev-parse HEAD) -cne $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_SOURCE)) {
+    throw 'The Process Monitor environment control requires its own source-pinned run.'
 }
 
 if ($InitialJourneyFixture -and (-not $WithEtw -or $CollectorRundown -or $AppJourney -or $AppLifetime -or
@@ -119,7 +130,8 @@ function Get-MicrosoftCollector($Name, $Executable, $Publisher, $ExpectedHash) {
     return $binary.FullName
 }
 
-if (@(Get-Service -Name Sysmon,Sysmon64 -ErrorAction SilentlyContinue).Count -gt 0 -or
+if ((-not $ProcmonEnvironmentControl -and
+        @(Get-Service -Name Sysmon,Sysmon64 -ErrorAction SilentlyContinue).Count -gt 0) -or
     @(Get-Process -Name Procmon,Procmon64 -ErrorAction SilentlyContinue).Count -gt 0) {
     throw 'Collector already present or running on the disposable image.'
 }
@@ -128,7 +140,9 @@ $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-live-$env:GITHUB_RUN_ID"
 New-Item -ItemType Directory -Path $root | Out-Null
 $channel = 'Microsoft-Windows-Sysmon/Operational'
 $clock = Get-TimeZone
-$sysmon = Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
+$sysmon = if (-not $ProcmonEnvironmentControl) {
+    Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
+}
 $procmon = $null
 if (-not $WithEtw -and -not $LifetimeControl -and -not $LifetimeEtwControl -and -not $SocketLifetimeControl) {
     $procmon = Get-MicrosoftCollector 'ProcessMonitor' 'Procmon64.exe' 'Microsoft Corporation' 'aa0b10e936feea464348695f8a85a2dcafd2cb3dabd1d47d8a57e7594783b27b'
@@ -160,8 +174,10 @@ $installStarted = $false
 $capture = $null
 try {
     if ($null -ne $procmon -and $clock.Id -ne 'UTC') { Set-TimeZone -Id 'UTC' }
-    $installStarted = $true
-    Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
+    if ($null -ne $sysmon) {
+        $installStarted = $true
+        Start-CollectorCommand $sysmon "-accepteula -i `"$config`"" 'Sysmon setup'
+    }
     if ($SocketLifetimeControl) {
         $socketOptions = @()
         if ($WithEtw) { $socketOptions += '--etw-boundary' }
@@ -196,8 +212,10 @@ try {
         & (Join-Path $PSScriptRoot 'Test_P4_N12_ETW_Fixture.ps1') -WithSysmon -Rundown:$CollectorRundown
         return
     }
-    $latest = Get-WinEvent -LogName $channel -MaxEvents 1
-    $firstRecord = $latest.RecordId + 1
+    if (-not $ProcmonEnvironmentControl) {
+        $latest = Get-WinEvent -LogName $channel -MaxEvents 1
+        $firstRecord = $latest.RecordId + 1
+    }
 
     $capture = Start-Process -FilePath $procmon -ArgumentList "/AcceptEula /Quiet /Minimized /NoFilter /BackingFile `"$pml`"" -PassThru
     Start-CollectorCommand $procmon '/WaitForIdle' 'Process Monitor readiness'
@@ -207,7 +225,10 @@ try {
     }
 
     $start = [DateTimeOffset]::UtcNow
-    if ($WebViewStorage) {
+    if ($ProcmonEnvironmentControl) {
+        python -B -m qa.p4_research.n12_procmon_environment_control capture $root
+        if ($LASTEXITCODE -ne 0) { throw 'Generated Process Monitor environment child failed.' }
+    } elseif ($WebViewStorage) {
         python -B -m qa.p4_research.n12_webview_storage_probe capture $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256
         if ($LASTEXITCODE -ne 0) { throw 'Focused WebView storage launch or control failed.' }
     } else {
@@ -217,7 +238,9 @@ try {
     }
     Start-Sleep -Seconds 5
     $end = [DateTimeOffset]::UtcNow
-    $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
+    if (-not $ProcmonEnvironmentControl) {
+        $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
+    }
 
     $stopError = $null
     try {
@@ -257,6 +280,17 @@ try {
         } finally { $writer.Dispose() }
     } finally { $reader.Dispose() }
 
+    if ($ProcmonEnvironmentControl) {
+        @{
+            start_utc = $start.ToString('o')
+            end_utc = $end.ToString('o')
+            clock_utc = (Get-TimeZone).Id -eq 'UTC'
+            shutdown_verified = ($null -eq $stopError)
+        } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'environment-window.json') -Encoding utf8
+        python -B -m qa.p4_research.n12_procmon_environment_control reduce $root
+        if ($LASTEXITCODE -ne 0) { throw 'Process Monitor environment evidence was blocked.' }
+        return
+    }
     & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') -FirstRecord $firstRecord -LastRecord $lastRecord -OutputFile $xml
     $window = @{
         schema_version = 1
