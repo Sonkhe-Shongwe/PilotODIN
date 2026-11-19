@@ -59,6 +59,7 @@ on:
       - tests/test_p4_n12_lifetime_control.py
       - tests/test_p4_n12_lifetime_etw.py
       - tests/test_p4_n12_exit_corroboration.py
+      - tests/test_p4_n12_egress.py
       - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_trace.py
       - tests/test_p4_n12_webview_replay.py
@@ -69,12 +70,14 @@ on:
       - qa/p4_research/n12_app_build.py
       - qa/p4_research/n12_app_journey.py
       - qa/p4_research/n12_project_switch.py
+      - qa/p4_research/n12_egress.py
       - qa/p4_research/n12_app_lifetime.py
       - frontend/e2e/p4-n12-app-lifetime-ready.mjs
       - frontend/e2e/p4-n12-native-close-readiness.mjs
       - frontend/e2e/p4-n12-native-close-readiness.test.mjs
       - .github/workflows/p4-n12-app-lifetime.yml
       - .github/workflows/p4-n12-app-journey.yml
+      - .github/workflows/p4-n12-egress-preflight.yml
       - .github/workflows/p4-n12-lifetime-control.yml
       - qa/p4_research/n12_journey_diagnostics.py
       - qa/p4_research/Invoke_N12_Journey_Evidence.ps1
@@ -170,6 +173,7 @@ jobs:
           tests/test_p4_n12_lifetime_control.py
           tests/test_p4_n12_lifetime_etw.py
           tests/test_p4_n12_exit_corroboration.py
+          tests/test_p4_n12_egress.py
           tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_installer_provenance.py
       - name: Verify P4 source contracts and manual target choice
@@ -320,6 +324,17 @@ jobs:
         run: python -B -m unittest discover -s tests -p test_p4_r06_prospective_fingerprint.py
       - name: Verify Windows dialog actions, retained child handles and driver scratch
         run: python -B -m unittest discover -s tests -p test_p4_n12_exit_corroboration.py
+      - name: Check egress rule decisions and parse the Windows command
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -B -m unittest discover -s tests -p test_p4_n12_egress.py
+          $source = python -B -c 'from qa.p4_research.n12_egress import FIREWALL_COMMAND; print(FIREWALL_COMMAND)'
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseInput(($source -join "`n"), [ref]$tokens, [ref]$errors)
+          if ($errors) { throw 'The egress firewall command did not parse.' }
       - name: Exercise N12 snapshot and calibration on generated files
         shell: pwsh
         run: |
