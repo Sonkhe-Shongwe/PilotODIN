@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_WEBVIEW_STORAGE_TEMP_RETEST_APPROVAL.txt
+      - qa/p4_research/N12_WEBVIEW_STORAGE_PROBE_APPROVAL.txt
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lifetime:
-    if: ${{ github.run_attempt == '1' }} # One approved attempt at the reviewed source.
+    if: ${{ false }} # Awaiting one source-pinned WebView storage approval.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
@@ -33,7 +33,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          $marker = 'qa/p4_research/N12_WEBVIEW_STORAGE_TEMP_RETEST_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_WEBVIEW_STORAGE_PROBE_APPROVAL.txt'
           $workflow = '.github/workflows/p4-n12-webview-storage.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or

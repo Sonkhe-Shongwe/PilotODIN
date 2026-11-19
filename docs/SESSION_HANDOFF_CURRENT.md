@@ -20,7 +20,13 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Keep WebView2 filesystem isolation the active work. The focused probe now resolves aliases and session subdirectories for its user-temp control. Check that resolution on the hosted runner before another source-pinned capture. The diagnostic will still target the four user-temp creates and the twelve user-local events from the earlier full audit. [Temp correction](#focused-probe-hosted-temp-correction) · [Focused run result](#focused-webview2-probe-blocked-on-runner-temp)
+Keep WebView2 filesystem isolation the active work. Correct the readiness probe's run-specific consent check, then exercise both consent paths without starting a native app. The next source-pinned diagnostic will still target the four user-temp creates and the twelve user-local events from the earlier full audit. [Focused attempt](#focused-webview2-retest-blocked-at-native-readiness) · [Temp correction](#focused-probe-hosted-temp-correction)
+
+### Focused WebView2 retest blocked at native readiness
+
+The approved Windows Server 2022 attempt used launch `ca8d8cb5efbc1f74e153ad366722969e04d00fb7` and source `d0e3149f44784986b1a5f75816ef937619576991`. The nine generated tests, corrected hosted temp preflight, pinned Sysmon 15.22 and Process Monitor 4.13 checks, and one unpackaged build passed. Executable SHA-256 `899ef796f6b4906e881f786bf6f0e63c3043fd97735f6c534c4ef54fa1c9b874`. All four routine P4 jobs passed on the launch commit. [Focused job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44565411794/job/135705668848) · [Routine P4 run](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44565411867)
+
+The capture job **FAILED** during `app-lifetime-ready` with `CalledProcessError`. The local services had passed readiness. The app had started and its CDP endpoint responded. The scratch control's local readback preceded startup, with no trace verification. The ambient control, graceful close verification and capture reduction did not run. Source review identified a consent mismatch. The storage workflow supplied its own consent, while the shared Node readiness entry point required separate lifetime consent before connecting to CDP. The published log recorded only the subprocess error type. Diagnostic verdict **BLOCKED**. File-mutation coverage **3/4 (75%)**. Governing full N12 filesystem and network verdicts remain **FAIL** with coverage **BLOCKED**. P4 **14/20 (70%)**. The one-use approval is consumed and the workflow is disarmed. [Approval marker](../qa/p4_research/N12_WEBVIEW_STORAGE_TEMP_RETEST_APPROVAL.txt)
 
 ### Focused probe hosted temp correction
 
