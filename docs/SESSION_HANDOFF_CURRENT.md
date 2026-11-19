@@ -20,17 +20,25 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Keep WebView2 filesystem isolation active. Start at the collector boundary. The existing Windows write-and-restore control already proves that a trace can observe a transient mutation between matching endpoints. The open measurement question is which collector evidence can support a zero-write result for the focused run. [Existing Windows evidence](#19-november-2026--hosted-protected-write-and-restore-control-passed) · [Latest focused result](#focused-webview2-report-verified-two-user-temp-creates)
+Keep WebView2 filesystem isolation active. The original collector-only Windows jobs answer the fixture-level measurement question. Use the ETW capture health and path checks for zero-write evidence, and use observed Procmon events for direct-path corroboration. The next preparation isolates the startup create before the readiness driver. Define which call path or changed input would explain the selected temp directory before proposing a live app build. [Collector evidence](#collector-choice-from-existing-windows-fixtures) · [Latest focused result](#focused-webview2-report-verified-two-user-temp-creates)
 
 ### Isolate one WebView2 filesystem question at a time
 
 | Order | Question | Evidence that decides it |
 | --- | --- | --- |
-| 1 | Can the selected collector support an absence claim? | Reuse the hosted ETW write-and-restore result for positive operation detection and the existing generated replays for fail-closed verdicts. Isolate live stop, export integrity and any available loss evidence at a generated fixture boundary before a new app build. A readable Procmon export and visible controls corroborate observed writes. An unreviewed loss state cannot support zero-write credit. |
+| 1 | Can the selected collector support an absence claim? | Fixture question answered by the retained Windows jobs. ETW tied the transient fixture changes to their writer and reported zero loss. Require verified coverage in the actual app run before giving zero-write credit. Procmon corroborates observed writes. [Collector evidence](#collector-choice-from-existing-windows-fixtures) |
 | 2 | What selected user temp for a reproduced create? | Use browser PID corroboration to narrow the writer. Require a known call path or an independently discriminating comparison before choosing a setting. Keep startup and readiness observations separate, and retain the protected operation as a separate finding. |
 | 3 | Does one correction move the identified write? | Record the predicted destination before the test. Keep runtime and build inputs comparable, run the same focused sequence, and require the trace controls, relevant coverage and the predicted result before the full N12 audit. |
 
 At source `2c7b81d6a9e1727a182689dcfdcd22333e280611`, the two focused local cases passed. A protected write produced a blocker despite matching endpoints, and unverified collector shutdown retained the two controls while blocking the verdict. The current Procmon workflow explicitly leaves loss review unconfirmed. The hosted ETW restore control verified the two completed fixture writes but retained a strict coverage blocker. The live capture workflow stays disarmed at this planning checkpoint. File-mutation coverage remains **3/4 (75%)** and P4 **14/20 (70%)**. [Local replay cases](../tests/test_p4_n12_webview_storage.py) · [Capture configuration](../qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1)
+
+### Collector choice from existing Windows fixtures
+
+The approved Windows collector-only Procmon job at source `67d85f5962dbfebebbb1fc54f7f5764eba59c71c` reproduced capture-process exit code 1 with a successful quiet stop command and readable exports, without PilotODIN. It observed all five fixture operations. The job failed after reduction, with capture loss review and a mutation path unresolved. That rules out a dependency on app startup for reproducing exit code 1. It leaves the cause of the exit code open. [Exact Procmon job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43458458941/job/131998729777) · [Pinned disposition](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/1fa8e7023c6e9798d5621f55892a7d9832cb39f1/docs/SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-live-fixture-markers-observed)
+
+The routine Windows ETW fixture at source `17f2522c6230d44a8ac9315d07412fcb440c80b0` passed. Its reduction counted one create, one write and one delete by the separate writer in the synthetic protected directory. The directory returned to baseline. It reported zero unresolved tracked events and zero event, log-buffer or realtime-buffer losses across 30 buffers. This verifies the generated mutation sequence at fixture scope. The later write-and-restore control retained a strict coverage blocker, and app-wide coverage still needs its own passing evidence. [Exact ETW job](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/43464663396/job/132020615173) · [Pinned outcome](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/cbccc77de60845a857d3c600b830bf0981497b47/docs/SESSION_HANDOFF_CURRENT.md#13-november-2026--n12-etw-failed-requests-and-protected-writes)
+
+No new live job was needed to make the collector choice. Both standard-library focused regressions passed at `9a53229c73323f090f8b41712ac78eade93d19f2`. The live WebView2 workflow stays disarmed. File-mutation coverage **3/4 (75%)**, P4 **14/20 (70%)**.
 
 ### Corroborate the WebView2 browser process
 
