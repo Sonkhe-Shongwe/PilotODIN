@@ -75,6 +75,7 @@ on:
       - qa/p4_research/n12_egress.py
       - qa/p4_research/n12_app_lifetime.py
       - frontend/e2e/p4-n12-app-lifetime-ready.mjs
+      - frontend/e2e/p4-n12-app-lifetime-ready.test.mjs
       - frontend/e2e/p4-n12-native-close-readiness.mjs
       - frontend/e2e/p4-n12-native-close-readiness.test.mjs
       - .github/workflows/p4-n12-app-lifetime.yml
@@ -198,6 +199,7 @@ jobs:
           frontend/e2e/p4-72-cdp-target-classifier.test.mjs
           frontend/e2e/p4-73-cdp-target-discovery.test.mjs
           frontend/e2e/p4-n12-native-close-readiness.test.mjs
+          frontend/e2e/p4-n12-app-lifetime-ready.test.mjs
           frontend/e2e/p4-n12-native-cases.test.mjs
       - name: Build actual TypeScript and Vite bundle
         run: npm run build --prefix frontend

@@ -23,6 +23,10 @@ CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
 READY_PROBE = journey.FRONTEND / "e2e" / "p4-n12-app-lifetime-ready.mjs"
 
 
+def readiness_command(node, *, storage):
+    return [node, str(READY_PROBE), "webview-storage" if storage else "lifetime"]
+
+
 def preflight(source, expected_hash, *, storage=False):
     if storage:
         trace.require(os.environ.get("PILOTODIN_N12_WEBVIEW_STORAGE_CONSENT") == "I_APPROVE_ONE_N12_WEBVIEW_STORAGE",
@@ -82,7 +86,7 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
                              45, "WebView debugger did not become ready", app)
             if storage_manifest is not None:
                 journey.mark(manifest, "ready")
-            ready = journey.quiet([node, str(READY_PROBE)], cwd=journey.FRONTEND,
+            ready = journey.quiet(readiness_command(node, storage=storage_manifest is not None), cwd=journey.FRONTEND,
                                   env={**env, "TEMP": str(root / journey.DRIVER_TEMP_DIR),
                                        "TMP": str(root / journey.DRIVER_TEMP_DIR)}, timeout=115)
             trace.require(ready.strip() == b"N12 app lifetime native close listener ready and peer closed",

@@ -71,6 +71,8 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
+      - name: Verify native readiness consent before dependencies and compilation
+        run: python -B -c 'import subprocess; from qa.p4_research.n12_app_lifetime import readiness_command; subprocess.run(readiness_command("node", storage=True) + ["--check-consent"], check=True, timeout=10)'
       - name: Preflight dependencies and native driver syntax
         shell: pwsh
         run: |

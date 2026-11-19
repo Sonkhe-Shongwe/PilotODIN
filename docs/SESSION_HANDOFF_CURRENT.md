@@ -20,7 +20,13 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Keep WebView2 filesystem isolation the active work. Correct the readiness probe's run-specific consent check, then exercise both consent paths without starting a native app. The next source-pinned diagnostic will still target the four user-temp creates and the twelve user-local events from the earlier full audit. [Focused attempt](#focused-webview2-retest-blocked-at-native-readiness) · [Temp correction](#focused-probe-hosted-temp-correction)
+Keep WebView2 filesystem isolation the active work. Run the fixed readiness preflight before dependencies and compilation in the next separately approved source-pinned diagnostic. Require both traced controls, graceful app and profile exit, readable capture evidence and protected endpoint matches. The target is the writer, stage and path family for the four user-temp creates and twelve user-local events from the earlier full audit. [Readiness correction](#focused-probe-readiness-consent-correction) · [Focused attempt](#focused-webview2-retest-blocked-at-native-readiness) · [Temp correction](#focused-probe-hosted-temp-correction)
+
+### Focused probe readiness consent correction
+
+The launcher now selects the readiness driver's storage scope explicitly. That scope checks the storage approval, and the lifetime scope continues to require the lifetime approval. The storage workflow executes the same command in a consent-only preflight before dependency setup and compilation. There is no app or collector activity in that mode. Target discovery, peer close and main close-listener registration are still part of the live readiness check. [Readiness launcher](../qa/p4_research/n12_app_lifetime.py) · [Driver regressions](../frontend/e2e/p4-n12-app-lifetime-ready.test.mjs)
+
+Local generated fixtures passed with each scope's own consent and rejected missing consent, cross-scope consent, a second run attempt and an unknown scope. The same preflight command passed with a synthetic hosted environment. The broader local checks recorded 23 Node passes, 57 Python standard-library passes and four Windows-only skips. The live correction is **NOT RUN**. Procmon returned exit code 1 during cleanup of the interrupted attempt; verify normal shutdown and export on a completed capture.
 
 ### Focused WebView2 retest blocked at native readiness
 
