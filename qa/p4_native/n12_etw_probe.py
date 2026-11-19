@@ -337,7 +337,7 @@ def preopened_control(root, *, rundown=False, system_timing=False):
 
 
 def capture_fixture(root, *, calibration_only, thread_context, controls=None, before_stop=None,
-                    open_comparison=None, verify_fixture=None, preopened_resize=None):
+                    open_comparison=None, verify_fixture=None, preopened_resize=None, protected_restore=None):
     session = f"PilotODIN-N12-{uuid4().hex}"
     etl = root / "fixture.etl"
     source, destination = root / "source" / "move.bin", root / "destination" / "move.bin"
@@ -461,6 +461,7 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         fixture = json.loads(result.stdout)
         fixture["start_window"] = [fixture_start, utc_ticks()]
         sysmon = verify_fixture(fixture, fixture_start) if verify_fixture is not None else None
+        restore_evidence = protected_restore() if protected_restore is not None else None
         second_writer = None
         if not calibration_only:
             writer_start = utc_ticks()
@@ -508,6 +509,8 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
             "start_ticks": capture_start, "end_ticks": utc_ticks() // 10 * 10}
     if sysmon is not None:
         capture["sysmon"] = sysmon
+    if restore_evidence is not None:
+        capture["protected_restore"] = restore_evidence
     if controls:
         capture["preopened"] = {"pid": os.getpid(), "tid": get_native_id(), "writes": control_writes}
         if comparison is not None:

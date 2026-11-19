@@ -1,7 +1,7 @@
 # A disposable fixture probe. The ETL and raw event payloads stay in runner temp.
 [CmdletBinding()]
 param([switch]$WithSysmon, [switch]$CalibrationOnly, [switch]$PreopenedControl,
-    [switch]$Rundown, [switch]$SystemTiming)
+    [switch]$Rundown, [switch]$SystemTiming, [switch]$ProtectedRestore)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -12,6 +12,9 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
 $env:PYTHONDONTWRITEBYTECODE = '1'
 $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-etw-$([guid]::NewGuid().ToString('N'))"
 $probeArgs = @($root)
+if ($ProtectedRestore -and ($WithSysmon -or $CalibrationOnly -or $PreopenedControl -or $Rundown -or $SystemTiming)) {
+    throw 'The protected write and restore uses its own approved ETW fixture.'
+}
 if ($PreopenedControl -and ($WithSysmon -or $CalibrationOnly)) {
     throw 'The pre-opened control uses its own ETW-only fixture.'
 }
@@ -137,6 +140,9 @@ if ($WithSysmon) {
     }
     if ($probeExit -ne 0 -or $output.Count -eq 0) { throw 'The collector-only fixture did not complete.' }
     $result = $output[-1]
+} elseif ($ProtectedRestore) {
+    $result = python -B -m qa.p4_native.n12_protected_restore capture $root
+    if ($LASTEXITCODE -ne 0) { throw 'The protected write and restore fixture did not complete.' }
 } else {
     $result = python (Join-Path $PSScriptRoot 'n12_etw_probe.py') @probeArgs
     if ($LASTEXITCODE -ne 0) { throw 'The ETW fixture did not complete.' }
@@ -167,7 +173,7 @@ try {
         $eventId = $event.Id
         $isFileEvent = $event.ProviderId -eq $provider
         $isLifecycleEvent = $event.ProviderId -eq $processProvider -and
-            ($eventId -in 1,2 -or ($withThreadBookends -and $eventId -in 3,4))
+            ($eventId -in 1,2 -or (($withThreadBookends -or $ProtectedRestore) -and $eventId -in 3,4))
         if ($isFileEvent) {
             $ids[$eventId] = 1 + [int]$ids[$eventId]
         }
@@ -313,6 +319,11 @@ if ($WithSysmon) {
 }
 python (Join-Path $PSScriptRoot 'n12_trace.py') check-etw-export $reducerManifest $eventsPath
 if ($LASTEXITCODE -ne 0) { throw 'The Windows ETW export failed reducer validation.' }
+if ($ProtectedRestore) {
+    python -B -m qa.p4_native.n12_protected_restore reduce $reducerManifest $manifestPath $eventsPath
+    if ($LASTEXITCODE -ne 0) { throw 'The protected write and restore evidence was blocked.' }
+    return
+}
 if ($PreopenedControl) {
     $controlArgs = @($manifestPath, $eventsPath, '--preopened-control')
     if ($Rundown) {

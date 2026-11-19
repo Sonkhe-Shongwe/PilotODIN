@@ -13,7 +13,7 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
-from qa.p4_native import n12_calibration, n12_etw_probe, n12_trace as trace
+from qa.p4_native import n12_calibration, n12_etw_probe, n12_protected_restore as restore, n12_trace as trace
 from qa.p4_native.n12_etw_correlate import (
     check_write_object_path, correlate, correlate_requests, decode_rundown_report,
     file_lifetime_report, preopened_report, preopened_resize_report, write_paging_flag,
@@ -1587,6 +1587,67 @@ FIELDNAMES = ["Time of Day", "PID", "Operation", "Path", "Result", "Detail", "Pr
 
 def instant(second):
     return f"{BASE}T00:00:{second:02}+00:00"
+
+
+def test_protected_restore_checks_both_writer_lifetimes_and_completed_paths(tmp_path):
+    path = PROTECTED + r"\generated.bin"
+    base = trace.utc_ticks(trace.utc_time(instant(0)))
+    manifest = {"schema_version": 1, "disposable": True, "start_utc": instant(0), "end_utc": instant(59),
+                "protected_roots": {"synthetic": PROTECTED},
+                "etw": {"schema_version": 1, "start_utc": instant(0), "end_utc": instant(59),
+                        "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+                        "counters": dict(events_lost=0, log_buffers_lost=0,
+                                         realtime_buffers_lost=0, buffers_written=1)}}
+    baseline = hashlib.sha256(restore.ORIGINAL).hexdigest()
+    control = {"path": path, "before": baseline, "after": baseline, "stages": {}}
+    rows = []
+
+    def emit(kind, pid, ticks, *, lifecycle=False, **data):
+        rows.append(dict(id=kind, pid=pid, ticks=ticks, lifecycle=lifecycle, data=data))
+
+    for label, payload, pid in zip(restore.STAGES, (restore.MODIFIED, restore.ORIGINAL), (21, 22)):
+        start = base + pid * 100
+        size = len(payload)
+        control["stages"][label] = dict(pid=pid, start=start, end=start + 20, size=size,
+                                        digest=hashlib.sha256(payload).hexdigest())
+        emit(1, 0, start + 1, lifecycle=True, ProcessID=pid)
+        emit(12, pid, start + 2, FileObject=pid, Irp=pid * 2, FileName=path)
+        emit(24, 0, start + 3, Irp=pid * 2, Status=0, ExtraInformation=1)
+        emit(16, pid, start + 4, FileObject=pid, FileKey=7, Irp=pid * 2 + 1, IOSize=size, ByteOffset=0)
+        emit(24, 0, start + 5, Irp=pid * 2 + 1, Status=0)
+        emit(13, pid, start + 6, FileObject=pid, FileKey=7)
+        emit(14, pid, start + 7, FileObject=pid, FileKey=7)
+        emit(2, 0, start + 8, lifecycle=True, ProcessID=pid)
+
+    export = tmp_path / "fileio.jsonl"
+
+    def audit():
+        export.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+        manifest["etw"]["events_sha256"] = hashlib.sha256(export.read_bytes()).hexdigest()
+        return restore.reduce_control(manifest, control, export)
+
+    assert audit() == {"control_status": "PASS", "endpoint_match": True,
+                       "write_path_verified": {"mutate": True, "restore": True}, "write_issues": {},
+                       "protected_writes": {"mutate": 1, "restore": 1},
+                       "strict_coverage": "CALIBRATED", "coverage_issues": []}
+    emit(16, 4, base + 3000, FileObject=99, FileKey=99, Irp=97, IOSize=8, ByteOffset=0)
+    emit(24, 0, base + 3001, Irp=97, Status=0)
+    background_gap = audit()
+    assert background_gap["control_status"] == "PASS" and background_gap["strict_coverage"] == "BLOCKED"
+
+    write, completion = rows[11:13]
+    for field, replacement in ((write, dict(write, pid=23)),
+                               (completion, dict(completion, data={**completion["data"], "Status": 5}))):
+        index = rows.index(field)
+        rows[index] = replacement
+        report = audit()
+        assert report["control_status"] == "BLOCKED"
+        assert report["write_path_verified"] == {"mutate": True, "restore": False}
+        assert "restore" in report["write_issues"]
+        rows[index] = field
+    manifest["etw"]["counters"]["events_lost"] = 1
+    assert audit()["control_status"] == "BLOCKED"
+    assert "generated.bin" not in json.dumps(audit())
 
 
 @pytest.mark.parametrize(("fault", "reason"), [
