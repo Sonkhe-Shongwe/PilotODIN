@@ -409,7 +409,8 @@ def unresolved_path_kind(value):
     return "relative-or-unrecognized"
 
 
-def inspect_files(path, start, end, processes, roles, protected, permitted, issues, *, observe=None):
+def inspect_files(path, start, end, processes, roles, protected, permitted, issues, *, observe=None,
+                  observe_process_start=None):
     lifetimes = {}
     for process in processes.values():
         lifetimes.setdefault(process.pid, []).append(process)
@@ -424,6 +425,8 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
         for row in rows:
             require(None not in row and all(value is not None for value in row.values()),
                     "malformed Procmon CSV row")
+            if observe_process_start is not None and row["Operation"] == "Process Start":
+                observe_process_start(row)
             operation = file_mutation(row)
             if operation is None:
                 continue

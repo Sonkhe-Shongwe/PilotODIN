@@ -173,6 +173,42 @@ class StorageProbeTests(unittest.TestCase):
                          {"startup":"browser", "ready-probe":"browser"})
         self.assertNotIn("cdp_browser_pid", report)
 
+    def test_startup_tmp_requires_replayable_control_and_matching_browser_start(self):
+        self.manifest.update(startup_tmp_probe=True, cdp_browser_pid=102, probe_user_temp=USER_TEMP)
+        self.manifest["observed_roots"]["qa-webview"] = SCRATCH
+        tmp_witness = SCRATCH + "\\" + APP_TEMP_DIR + "\\" + lifetime.STORAGE_TMP_DIR
+        launcher = process("launcher", "other", 99, PYTHON, 1, 19)
+        browser = process("browser", "app", 102, WEBVIEW, 6, 13, command="generated-browser-command")
+        self.processes.update(launcher=launcher, browser=browser)
+        scratch = self.processes["control-one"]
+        scratch.parent = launcher.guid
+        scratch.command = "generated-control-command"
+
+        def start_row(at, child, parent, environment):
+            detail = (f"Parent PID: {parent.pid}, Command line: {child.command} , "
+                      f"Current directory: c:\\fixture, Environment:{environment}")
+            return row(at, child.pid, child.image.rsplit("\\", 1)[1], "", op="Process Start", detail=detail)
+
+        scratch_start = start_row(2, scratch, launcher, f" ; TMP={tmp_witness} ; PRIVATE=secret-control")
+        browser_start = start_row(6, browser, self.processes["app"], f"\r\nTMP={USER_TEMP}\r\nPRIVATE=secret-browser")
+        report = self.reduce(self.controls + [scratch_start, browser_start])
+        self.assertTrue(report["startup_tmp_control_verified"])
+        self.assertEqual(report["browser_startup_tmp"], "ambient-temp")
+        self.assertNotIn("secret-", json.dumps(report))
+        self.assertNotIn("generated-browser-command", json.dumps(report))
+
+        expected = start_row(6, browser, self.processes["app"], f" ; Tmp={tmp_witness} ; TEMP={USER_TEMP}")
+        report = self.reduce(self.controls + [scratch_start, expected])
+        self.assertEqual(report["browser_startup_tmp"], "expected-tmp")
+
+        wrong_parent = start_row(6, browser, launcher, f" ; TMP={tmp_witness}")
+        duplicate_tmp = start_row(6, browser, self.processes["app"], f" ; TMP={tmp_witness} ; Tmp={USER_TEMP}")
+        for starts in ([expected], [scratch_start, wrong_parent], [scratch_start, duplicate_tmp],
+                       [scratch_start, expected, browser_start]):
+            with self.subTest(starts=len(starts)):
+                report = self.reduce(self.controls + starts)
+                self.assertEqual(report["browser_startup_tmp"], "unverified")
+
     def test_cdp_browser_pid_cannot_override_conflicting_lifetime_or_process_type(self):
         browser = process("browser", "app", 102, WEBVIEW, 6, 13)
         self.processes[browser.guid] = browser

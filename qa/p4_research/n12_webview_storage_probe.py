@@ -26,9 +26,9 @@ CONTROL = (
 )
 
 
-def file_control(manifest, label, path):
+def file_control(manifest, label, path, *, env=None):
     with subprocess.Popen([sys.executable, "-B", "-c", CONTROL, str(path)],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as child:
+                          env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as child:
         try:
             trace.require(child.wait(timeout=10) == 0 and path.read_bytes() == b"PilotODIN control",
                           "generated file control did not write its expected bytes")
@@ -63,7 +63,8 @@ def capture(root, staged, node, source, expected_hash):
     fixture.write_text("fixture,value\nwebview-storage,1\n", encoding="utf-8")
     before = journey.snapshots(manifest)
     journey.mark(manifest, "fixture-ready")
-    file_control(manifest, "scratch", profile / journey.APP_TEMP_DIR / "storage-control.tmp")
+    file_control(manifest, "scratch", profile / journey.APP_TEMP_DIR / "storage-control.tmp",
+                 env={**os.environ, "TMP": str(tmp_witness)})
     lifetime.launch_and_close(root, staged, node, source, expected_hash, storage_manifest=manifest)
     with TemporaryDirectory(prefix="pilotodin-storage-control-", dir=ambient) as folder:
         file_control(manifest, "user-temp", Path(folder) / "storage-control.tmp")
@@ -80,6 +81,23 @@ def component(process, role, browser_guid):
         return "network-service"
     matches = re.findall(r"(?:^|\s)--type=([a-z-]+)(?=\s|$)", process.command)
     return matches[0] if len(matches) == 1 and matches[0] in {"renderer", "gpu-process", "utility"} else "unclassified"
+
+
+def process_start_tmp(detail, process, parent):
+    """Extract only an explicit TMP from a matching Procmon Process Start."""
+    match = re.fullmatch(
+        r"Parent PID: (\d+), Command line: (.*?), Current directory: .*?, Environment:(.*)", detail, re.S,
+    )
+    if (parent is None or match is None or int(match[1]) != parent.pid
+            or not process.command.strip() or match[2].strip() != process.command.strip()):
+        return None
+    values = re.findall(r"(?:^| ; |\r?\n)\s*TMP=([^\r\n]*?)(?= ; |\r?\n|$)", match[3], re.I)
+    if len(values) == 1:
+        try:
+            return trace.windows_path(values[0])
+        except ValueError:
+            return None
+    return None
 
 
 def reduce(root, staged, manifest, sysmon, procmon):
@@ -132,6 +150,31 @@ def reduce(root, staged, manifest, sysmon, procmon):
         profile = trace.windows_path(manifest["observed_roots"]["qa-webview"])
         app_temp = ntpath.join(profile, journey.APP_TEMP_DIR)
         tmp_witness = ntpath.join(app_temp, lifetime.STORAGE_TMP_DIR)
+    startup_candidates = {}
+    if tmp_witness is not None:
+        scratch = next((process for binding, process in bindings if binding.get("label") == "scratch"), None)
+        pid_counts = Counter(process.pid for process in processes.values())
+        for label, process, first, last in (
+            ("scratch", scratch, fixture_ready, launch),
+            ("browser", processes.get(browser_guid), launch, ready),
+        ):
+            if process is not None and pid_counts[process.pid] == 1:
+                startup_candidates[str(process.pid)] = (label, process, first, last)
+    startup_values = {"scratch": [], "browser": []}
+
+    def observe_process_start(row):
+        candidate = startup_candidates.get(row["PID"])
+        if candidate is None or row["Result"] != "SUCCESS":
+            return
+        label, process, first, last = candidate
+        if row["Process Name"].casefold() != ntpath.basename(process.image):
+            return
+        try:
+            stamp = trace.capture_time(row["Time of Day"], start)
+        except (ValueError, trace.EvidenceValidationError):
+            return
+        if first <= stamp < last:
+            startup_values[label].append(process_start_tmp(row["Detail"], process, processes.get(process.parent)))
 
     def observe(stamp, process, role, operation, path):
         if operation == "create" and role == "calibration":
@@ -164,6 +207,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
     file_coverage_issues = set()
     _, violations, _, unresolved_files = trace.inspect_files(
         procmon, fixture_ready, end, processes, roles, protected, permitted, file_coverage_issues, observe=observe,
+        observe_process_start=observe_process_start if startup_candidates else None,
     )
     protected_operations = []
     for key, count in sorted(violations.items()):
@@ -173,6 +217,16 @@ def reduce(root, staged, manifest, sysmon, procmon):
     controls = {name: name in observed_controls for name in ("scratch", "user-temp")}
     if not all(controls.values()):
         issues.add("known-create-controls-unverified")
+    tmp_control_verified = tmp_witness is not None and controls["scratch"] and startup_values["scratch"] == [tmp_witness]
+    browser_startup_tmp = "unverified"
+    if tmp_control_verified and len(startup_values["browser"]) == 1:
+        observed = startup_values["browser"][0]
+        if observed is not None:
+            ambient = manifest.get("probe_user_temp")
+            labels = {tmp_witness: "expected-tmp", app_temp: "app-temp"}
+            if ambient is not None:
+                labels[trace.windows_path(ambient)] = "ambient-temp"
+            browser_startup_tmp = labels.get(observed, "different")
     if "file-event-process-ambiguous" in file_coverage_issues:
         issues.add("file-event-process-ambiguous")
     if (manifest["protected_snapshot_comparison"] != "MATCH" or
@@ -194,6 +248,8 @@ def reduce(root, staged, manifest, sysmon, procmon):
             "protected_snapshot_comparison": manifest["protected_snapshot_comparison"],
             "protected_operations": protected_operations, "unresolved_file_events": unresolved_files,
             "startup_tmp_probe": manifest.get("startup_tmp_probe") is True,
+            "startup_tmp_control_verified": tmp_control_verified,
+            "browser_startup_tmp": browser_startup_tmp,
             "browser_process_corroborated": browser_guid is not None,
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
             "ambient_temp_creates": ambient_creates, "storage_events": rows}
