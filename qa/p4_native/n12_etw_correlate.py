@@ -163,7 +163,8 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        credit_webview_path=None, webview_cleanup_window=None,
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None,
-                       rundown_verification_start=None, rundown_credit=None):
+                       rundown_verification_start=None, rundown_credit=None, background_rundown=None,
+                       background_write_window=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
@@ -193,7 +194,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
     process_transition_ticks = set()
     thread_transition_ticks = set()
     track_write_names = strict and (details is not None or record_write_name_gap is not None
-                                    or webview_write_candidates is not None)
+                                    or webview_write_candidates is not None or background_rundown is not None)
     if track_write_names:
         # ETW records at the same timestamp have no proven order here.
         name_transition_ticks = {
@@ -234,7 +235,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
         guard_events = ordered_events if rundown_guard_events is None else rundown_guard_events
         name_events = {}
         invalidating_kinds = {11, 12, 14, 18, 19, 27, 29}
-        if calibration_rundown:
+        if calibration_rundown or background_rundown is not None:
             invalidating_kinds.update({13, 26, 28})
         for guarded in guard_events:
             if guarded.get("lifecycle"):
@@ -455,6 +456,16 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 if in_scope and operation != "query":
                     record(actor, identity, operation, source, destination, requested, ticks, False)
                 continue
+            if background_rundown is not None and recovered_rundown_key is not None:
+                start, end = background_write_window
+                if (not start <= requested < ticks <= end or
+                        completion_identity_issue(request, event, handle, actor)):
+                    recovered_rundown_key = None
+                else:
+                    source = next(iter(rundown_names[recovered_rundown_key]))
+                    in_scope = relevant(actor, operation, source, destination)
+                    scope = "protected" if tracked(source) else "outside-tracked"
+                    background_rundown[scope] += 1
             if recovered_rundown_key is not None:
                 # A stop-time name cannot resolve a write with contradictory file identity.
                 if operation == "write" and completion_file_identity_conflicts(request, event):
@@ -658,8 +669,15 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                     and names is not None and len(names) == 1):
                 recovered = next(iter(names))
                 if recovered is not None:
-                    source = recovered
-                    if operation != "query":
+                    if background_rundown is None:
+                        source = recovered
+                        if operation != "query":
+                            recovered_rundown_key = rundown_key
+                    elif (actor == "other" and kind == 16 and thread_bookends is not None
+                          and thread_bookends.get(number(data.get("IssuingThreadId", data.get("ThreadId")))) == pid
+                          and birth is not None and rundown_object_keys.get(object_id) == {rundown_key}
+                          and file_names.get(rundown_key) == recovered and rundown_key not in invalidated_names
+                          and (rundown_key, ticks) not in name_transition_ticks):
                         recovered_rundown_key = rundown_key
         if (details is not None and operation and source is not None
                 and actor in {"other", "unattributed"} and tracked(source)):

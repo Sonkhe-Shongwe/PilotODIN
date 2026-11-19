@@ -792,7 +792,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
                       calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None,
                       webview_write_candidates=None, webview_dominant_writes=False,
-                      webview_write_credit=None, rundown_credit=None):
+                      webview_write_credit=None, rundown_credit=None, background_rundown=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -804,6 +804,14 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
         capture_bounds, devices = etw_capture_contract(manifest, start, end, issues)
         diagnostic_rundown_stop = None
         rundown_verification_start = None
+        if background_rundown is not None:
+            require(rundown and "etw-event-or-buffer-loss" not in issues,
+                    "background path comparison requires FileIO names and loss-free ETW")
+            capture = manifest["etw"]
+            rundown_verification_start = utc_ticks(utc_time(capture["rundown_start_utc"]))
+            stop = utc_ticks(utc_time(capture["rundown_stop_utc"]))
+            require(utc_ticks(end) < rundown_verification_start <= stop <= capture_bounds[1],
+                    "FileIO rundown must follow the audit within companion ETW")
         if calibration_diagnostics is not None and rundown is not None:
             capture = manifest["etw"]
             diagnostic_rundown_stop = utc_ticks(utc_time(capture["rundown_stop_utc"]))
@@ -974,6 +982,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             diagnostic_rundown_stop=diagnostic_rundown_stop,
             rundown_verification_start=rundown_verification_start,
             rundown_credit=rundown_credit,
+            background_rundown=background_rundown,
+            background_write_window=(start_ticks, end_ticks) if background_rundown is not None else None,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")

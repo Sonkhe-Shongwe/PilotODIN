@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('sysmon-tail','etw-export','etw-process-export','etw-app-lifetime-export','close','profile-active','webview-children','process-bookend','backend-tcp')][string]$Operation,
+    [ValidateSet('sysmon-tail','etw-export','etw-process-export','etw-app-lifetime-export','close','profile-active','webview-children','process-bookend','backend-tcp','fileio-rundown')][string]$Operation,
     [string]$CaptureRoot,
     [int]$AppProcessId,
     [string]$AppPath,
@@ -38,6 +38,18 @@ if (-not $rehearsalRead -and -not $lifetimeEtw -and -not $socketLifetimeRead -an
 }
 
 switch ($Operation) {
+    'fileio-rundown' {
+        $expected = Join-Path $env:RUNNER_TEMP "pilotodin-n12-build-$env:GITHUB_RUN_ID-journey"
+        if ($env:GITHUB_RUN_ATTEMPT -cne '1' -or $env:GITHUB_RUN_ID -cnotmatch '^[0-9]+$' -or
+            $env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or
+            $env:PILOTODIN_N12_APP_RUNDOWN_CONSENT -cne 'I_APPROVE_ONE_N12_APP_RUNDOWN' -or
+            (git rev-parse HEAD) -cne $env:PILOTODIN_N12_APPROVED_SOURCE -or
+            [IO.Path]::GetFullPath($CaptureRoot) -ne [IO.Path]::GetFullPath($expected)) {
+            throw 'FileIO rundown requires the source-pinned hosted app capture.'
+        }
+        . (Join-Path $PSScriptRoot '../p4_native/Export_N12_FileIo_Rundown.ps1')
+        Export-N12FileIoRundown $CaptureRoot | Out-Null
+    }
     'sysmon-tail' {
         $channel = 'Microsoft-Windows-Sysmon/Operational'
         if (-not (Get-WinEvent -ListLog $channel).IsEnabled) { throw 'Sysmon channel is disabled.' }

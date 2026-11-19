@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_APP_JOURNEY_DRIVER_ISOLATION_APPROVAL.txt
+      - qa/p4_research/N12_APP_JOURNEY_RUNDOWN_APPROVAL.txt
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # One-use hosted audit consumed by run 44440131278.
+    if: ${{ false }} # Awaiting separate approval for the same-capture FileIO comparison.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
@@ -33,7 +33,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          $marker = 'qa/p4_research/N12_APP_JOURNEY_DRIVER_ISOLATION_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_APP_JOURNEY_RUNDOWN_APPROVAL.txt'
           $workflow = '.github/workflows/p4-n12-app-journey.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
@@ -43,7 +43,7 @@ jobs:
           }
           $approval = @(Get-Content -LiteralPath $marker)
           if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
-              $approval[1] -cne 'scope=n12-one-build-one-hosted-journey') {
+              $approval[1] -cne 'scope=n12-one-build-one-hosted-journey-with-rundown') {
             throw 'A fresh source-pinned N12 approval marker is required.'
           }
           $source = $Matches[1]
@@ -59,6 +59,7 @@ jobs:
           "PILOTODIN_N12_APPROVED_SOURCE=$source" >> $env:GITHUB_ENV
           'PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT=I_APPROVE_UNPACKAGED_P4_NATIVE_DEV' >> $env:GITHUB_ENV
           'PILOTODIN_N12_APP_JOURNEY_CONSENT=I_APPROVE_ONE_N12_APP_JOURNEY' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_APP_RUNDOWN_CONSENT=I_APPROVE_ONE_N12_APP_RUNDOWN' >> $env:GITHUB_ENV
       - name: Set up Python for the local backend and trace audit
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:

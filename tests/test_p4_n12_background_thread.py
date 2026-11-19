@@ -6,9 +6,12 @@ from pathlib import Path
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest import TestCase
+from unittest.mock import patch
 
 from qa.p4_native import n12_background_thread as control, n12_trace as trace
+from qa.p4_research import n12_app_journey as journey
 
 
 class TestBackgroundThread(TestCase):
@@ -92,6 +95,73 @@ class TestBackgroundThread(TestCase):
             "issuing_thread": "bookend-header-agrees", "validated_etw_events": 2,
             "scope": "background writer thread identity",
         })
+
+    def test_app_comparison_verifies_same_capture_paths_without_changing_baseline(self):
+        outside = trace.windows_path(r"C:\qa\outside\generated.bin")
+        protected_root = trace.windows_path(r"C:\qa\protected")
+        protected = protected_root + r"\generated.bin"
+        self.manifest.update(protected_roots={"protected": protected_root},
+                             observed_roots={"fixture": r"C:\qa\fixture.csv"},
+                             immutable_observed=["fixture"], permitted_writes={})
+        start, end = (trace.utc_time(self.manifest[field]) for field in ("start_utc", "end_utc"))
+        first, last = map(trace.utc_time, ("2026-11-19T00:00:03Z", "2026-11-19T00:00:04Z"))
+        self.manifest["etw"]["end_utc"] = last.isoformat()
+        observed = SimpleNamespace(start=start, end=end, processes={}, roles={})
+        request, completion = self.events
+        key = request["data"]["FileKey"]
+        obj = request["data"]["FileObject"]
+        names_file = self.export.with_name("rundown.jsonl")
+        comparison_manifest = self.export.with_name("background-rundown-manifest.json")
+        for label, name, rundown_name, expected in (
+            ("outside", outside, outside, {"outside-tracked": 1}),
+            ("protected", protected, protected, {"protected": 1}),
+            ("name conflict", protected, outside, {}),
+            ("completion conflict", outside, outside, {}),
+            ("thread unavailable", outside, outside, {}),
+            ("closed before rundown", outside, outside, {}),
+        ):
+            with self.subTest(case=label):
+                issuer = 99 if label == "thread unavailable" else self.control["tid"]
+                fields = {"FileObject": 99} if label == "completion conflict" else {}
+                self.events = [
+                    dict(id=10, pid=0, lifecycle=False, ticks=request["ticks"] - 10,
+                         data=dict(FileKey=key, FileName=name)),
+                    dict(request, data={**request["data"], "IssuingThreadId": issuer}),
+                    dict(completion, data={**completion["data"], **fields}),
+                ]
+                if label == "closed before rundown":
+                    self.events.append(dict(id=14, pid=request["pid"], lifecycle=False,
+                                            ticks=trace.utc_ticks(end) + 10,
+                                            data=dict(FileKey=key, FileObject=obj)))
+                self.export_events()
+                names_file.write_text(json.dumps({"key": key, "path": rundown_name, "decoder": "tdh"}) + "\n",
+                                      encoding="utf-8")
+                _, violations, _, gaps = trace.inspect_etw_files(
+                    self.manifest, self.export, start, end, {}, {}, [protected_root], {}, set(),
+                    background_bookends=self.control["bookends"],
+                )
+                baseline = {"file_violations": violations, "etw_unresolved_mutations": gaps}
+                with patch.object(journey, "powershell") as export:
+                    report = journey.compare_background_paths(self.export.parent, self.manifest, observed,
+                                                              self.export, self.control["bookends"],
+                                                              baseline, (first, last))
+                    export.assert_called_once()
+                comparison_manifest.unlink()
+                self.assertEqual(baseline, {"file_violations": {}, "etw_unresolved_mutations": {
+                    "other:write:path-missing": 1}})
+                self.assertEqual(report["verified_paths"], expected)
+                self.assertEqual(report["remaining_write_path_gaps"], 1 - sum(expected.values()))
+                self.assertNotIn("generated.bin", json.dumps(report))
+
+        with patch.object(journey, "powershell"):
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "follow the audit"):
+                journey.compare_background_paths(self.export.parent, self.manifest, observed, self.export,
+                                                 self.control["bookends"], baseline, (end, last))
+            comparison_manifest.unlink()
+            self.manifest["etw"]["counters"]["events_lost"] = 1
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "loss-free ETW"):
+                journey.compare_background_paths(self.export.parent, self.manifest, observed, self.export,
+                                                 self.control["bookends"], baseline, (first, last))
 
     def test_generated_writer_stays_alive_across_the_write(self):
         root = self.export.parent

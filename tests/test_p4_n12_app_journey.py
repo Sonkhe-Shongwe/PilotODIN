@@ -581,7 +581,7 @@ def test_prepare_creates_scratch_only_in_the_driver_scope(tmp_path, monkeypatch)
                                     "etw-export", "etw-reduce", "backend-snapshot-unavailable",
                                     "app-and-cleanup", "etw-stop", "driver-readiness-missing",
                                     "final-calibration", "final-export-regressed",
-                                    "credit-reduce", "credit-reconcile"])
+                                    "credit-reduce", "credit-reconcile", "fileio", "fileio-stop-failed"])
 def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypatch, capsys, fault):
     events = []
     root = tmp_path / "capture"
@@ -630,6 +630,33 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey, "sysmon_tail", sysmon_tail)
     monkeypatch.setattr(journey, "start_capture", lambda *a: events.append("etw-start"))
     monkeypatch.setattr(journey.etw, "volume_devices", lambda: {"C:": r"\Device\HarddiskVolume1"})
+    fileio = fault in {"fileio", "fileio-stop-failed"}
+    if fileio:
+        monkeypatch.setenv("PILOTODIN_N12_APP_RUNDOWN_CONSENT", "I_APPROVE_ONE_N12_APP_RUNDOWN")
+
+        @contextmanager
+        def recorder(directory):
+            assert directory == root and events[-1] == "etw-start"
+            events.append("fileio-start")
+            def stop():
+                assert "end_utc" in manifest and events[-1] == "calibration-last"
+                events.append("fileio-stop")
+                if fault == "fileio-stop-failed":
+                    raise RuntimeError("private-recorder-error")
+                return journey.trace.utc_ticks(journey.now())
+            yield stop
+
+        def compare(directory, m, observed, file_trace, bookends, baseline, window):
+            assert events[-1] == "credit-reducer"
+            events.append("fileio-comparison")
+            assert directory == root and file_trace == root / "etw.jsonl"
+            assert journey.trace.utc_time(m["end_utc"]) < window[0] <= window[1] <= journey.trace.utc_time(
+                m["etw"]["end_utc"])
+            assert "webview_credit_comparison" in baseline and bookends["threads_before"] == bookends["threads_after"]
+            return {"status": "completed"}
+
+        monkeypatch.setattr(journey.etw, "collect_fileio_rundown", recorder)
+        monkeypatch.setattr(journey, "compare_background_paths", compare)
     def stop_trace(session):
         events.append("etw-stop")
         if fault in {"app-and-cleanup", "etw-stop"}:
@@ -639,7 +666,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(journey.etw, "stop_trace", stop_trace)
     def sleep(seconds):
         if "calibration-first" not in events:
-            assert events[-1] == "etw-start"
+            assert events[-1] == ("fileio-start" if fileio else "etw-start")
             assert manifest["start_utc"] == "2026-11-14T00:00:01+00:00"
             assert 0.001 < seconds <= 0.1
             events.append("initial-fixture-lead-in")
@@ -869,7 +896,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         return
 
     comparison_faults = {"credit-reduce": "ValueError", "credit-reconcile": "EvidenceValidationError"}
-    completed_baseline = {None, "backend-snapshot-unavailable", "final-calibration", *comparison_faults}
+    completed_baseline = {None, "backend-snapshot-unavailable", "final-calibration",
+                          "fileio", "fileio-stop-failed", *comparison_faults}
     if fault not in completed_baseline:
         error, message = {
             "sysmon-export": (journey.trace.EvidenceValidationError, "Sysmon export failed"),
@@ -883,15 +911,22 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     else:
         report = journey.capture(root, staged, SOURCE, EXE_SHA, "node.exe")
         assert report["coverage"] == "BLOCKED"
-        assert events == ["process-bookend-before", "etw-start", "initial-fixture-lead-in", "calibration-first",
+        assert events == ["process-bookend-before", "etw-start", *(["fileio-start"] if fileio else []),
+                          "initial-fixture-lead-in", "calibration-first",
                           "sysmon-prelaunch-check", "idle-observation",
                           "backend", "vite", "backend-snapshot", "verify-binary", "app-first", "driver-first", "graceful-close",
                           "profile-exit", "verify-binary", "app-relaunch", "driver-relaunch", "graceful-close",
                           "profile-exit", "cleanup-driver-relaunch", "cleanup-app-relaunch",
                           "cleanup-driver-first", "cleanup-app-first", "cleanup-vite", "cleanup-backend",
-                          "final-fixture-lead-in", "calibration-last", "etw-stop", "process-bookend-after", "drain",
+                          "final-fixture-lead-in", "calibration-last", *(["fileio-stop"] if fileio else []),
+                          "etw-stop", "process-bookend-after", "drain",
                           "sysmon-final-check", "sysmon-reducer",
-                          "etw-export", "reducer", "credit-reducer"]
+                          "etw-export", "reducer", "credit-reducer",
+                          *(["fileio-comparison"] if fault == "fileio" else [])]
+        if fileio:
+            assert report["background_rundown_comparison"] == (
+                {"status": "completed"} if fault == "fileio" else
+                {"status": "blocked", "error": "recorder-stop-failed"})
         public = (root / "audit.json").read_text()
         assert "private-value" not in public and "702" not in public
         assert "webview_credit_comparison" not in json.loads(public)

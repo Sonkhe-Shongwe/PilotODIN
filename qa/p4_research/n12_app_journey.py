@@ -698,6 +698,39 @@ def backend_socket_snapshot(backend):
         return None
 
 
+def compare_background_paths(root, manifest, observed, events, bookends, baseline, rundown_window):
+    trace.require(bookends and bookends.get("threads_before") and bookends.get("threads_after"),
+                  "paired thread snapshots are required for background path comparison")
+    powershell(HELPER, "fileio-rundown", "-CaptureRoot", root, timeout=300)
+    names = root / "rundown.jsonl"
+    first, last = rundown_window
+    manifest = {**manifest, "etw": {**manifest["etw"], "rundown_start_utc": first.isoformat(),
+                                    "rundown_stop_utc": last.isoformat(), "rundown_sha256": build.digest(names)}}
+    report_file(root / "background-rundown-manifest.json", manifest)
+    rundown = trace.read_rundown_file(names, manifest)
+    protected, permitted = trace.scope(manifest)
+    protected.extend(trace.windows_path(manifest["observed_roots"][label])
+                     for label in manifest["immutable_observed"])
+    verified = Counter()
+    _, violations, _, unresolved = trace.inspect_etw_files(
+        manifest, events, observed.start, observed.end, observed.processes, observed.roles,
+        protected, permitted, set(), background_bookends=bookends, rundown=rundown,
+        background_rundown=verified,
+    )
+    gap = "other:write:path-missing"
+    protected_write = "protected:other:write"
+    before = baseline["etw_unresolved_mutations"].get(gap, 0)
+    remaining = unresolved.get(gap, 0)
+    trace.require(before - remaining == sum(verified.values()) and verified["protected"] ==
+                  violations.get(protected_write, 0) - baseline["file_violations"].get(protected_write, 0),
+                  "background path comparison does not reconcile with the ordinary audit")
+    return {"status": "completed", "etw_events_sha256": manifest["etw"]["events_sha256"],
+            "rundown_sha256": manifest["etw"]["rundown_sha256"], "baseline_write_path_gaps": before,
+            "verified_paths": dict(verified), "remaining_write_path_gaps": remaining,
+            "unresolved_background_writes": {key: count for key, count in unresolved.items()
+                                             if key.startswith("other:write:")}}
+
+
 def capture(root, staged, source, expected_hash, node, egress_programs=None):
     manifest, home, profile, fixture, calibration = prepare_journey(root, source, expected_hash)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
@@ -719,7 +752,16 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     capture_start = now()
     start_journey_etw(root, session, source, expected_hash)
     driver_handles = DriverHandles()
+    compare_fileio = os.environ.get("PILOTODIN_N12_APP_RUNDOWN_CONSENT") == "I_APPROVE_ONE_N12_APP_RUNDOWN"
+    rundown_cleanup = ExitStack()
+    stop_rundown = rundown_window = None
+    rundown_error = "collector-unavailable"
     try:
+        if compare_fileio:
+            try:
+                stop_rundown = rundown_cleanup.enter_context(etw.collect_fileio_rundown(root))
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                rundown_error = "recorder-start-failed"
         run_initial_calibration(root, calibration[0], manifest, source, expected_hash)
         mark(manifest, "idle")
         time.sleep(3)
@@ -751,6 +793,12 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
             )
             final_end = now()
             manifest["end_utc"] = final_end.isoformat()
+        if stop_rundown is not None:
+            first = now()
+            try:
+                rundown_window = first, timestamp_from_ticks(stop_rundown())
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                rundown_error = "recorder-stop-failed"
     except BaseException:
         checkpoint("capture", "interrupted", source, expected_hash)
         print("N12 interrupted driver handle inventory " + json.dumps(driver_handles.inventory()), flush=True)
@@ -760,6 +808,12 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
             # The capture error remains primary, even when ETW cleanup also fails.
             pass
         raise
+    finally:
+        try:
+            rundown_cleanup.close()
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            rundown_window = None
+            rundown_error = "recorder-cleanup-failed"
     counters, capture_end = stop_capture(root, session, manifest, capture_start, devices)
     print("N12 journey stage export and audit", flush=True)
     last_processes, last_threads = process_bookend()
@@ -907,6 +961,17 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         comparison = {"status": "blocked", "etw_events_sha256": evidence_sha,
                       "baseline_webview_write_path_gaps": baseline_gaps, "error": type(exc).__name__}
     result["webview_credit_comparison"] = comparison
+    if compare_fileio:
+        if rundown_window is None:
+            background = {"status": "blocked", "error": rundown_error}
+        else:
+            try:
+                background = compare_background_paths(root, manifest, observed, events, bookends,
+                                                      result, rundown_window)
+            except (*trace.EVIDENCE_ERRORS, RuntimeError, subprocess.SubprocessError) as exc:
+                background = {"status": "blocked", "error": type(exc).__name__}
+        result["background_rundown_comparison"] = background
+        print("N12 background FileIO comparison " + json.dumps(background), flush=True)
     return result
 
 
@@ -986,7 +1051,9 @@ def main():
             print("N12 journey egress rules removed and cleanup verified", flush=True)
         print(json.dumps(result))
         return 0 if (result["network"] == result["filesystem"] == "PASS_SCOPED" and
-                     result["webview_credit_comparison"]["status"] == "completed") else 2
+                     result["webview_credit_comparison"]["status"] == "completed" and
+                     result.get("background_rundown_comparison", {"status": "completed"})["status"] ==
+                     "completed") else 2
     except trace.EvidenceValidationError as exc:
         print(f"N12 journey blocked: {exc}.", file=sys.stderr)
     except (KeyError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
