@@ -1,6 +1,7 @@
 """Validate program-scoped Windows egress containment on a disposable runner."""
 import argparse
-from contextlib import contextmanager
+from collections import Counter
+from contextlib import ExitStack, contextmanager
 from ipaddress import ip_address
 import json
 import ntpath
@@ -87,6 +88,39 @@ def outbound_block(program):
         yield
     finally:
         firewall("remove", name)
+
+
+def journey_programs(app, backend, webview_runtime_directory):
+    require(webview_runtime_directory.is_absolute(), "An absolute WebView2 runtime directory is required.")
+    runtime = (webview_runtime_directory / "msedgewebview2.exe").resolve(strict=True)
+    require(runtime.name.casefold() == "msedgewebview2.exe" and runtime.parent ==
+            webview_runtime_directory.resolve(strict=True), "The WebView2 executable must belong to the selected runtime.")
+    programs = {"app": app.resolve(strict=True), "backend": backend.resolve(strict=True), "webview": runtime}
+    require(all(path.is_file() and path.suffix.casefold() == ".exe" for path in programs.values()) and
+            len({ntpath.normcase(str(path)) for path in programs.values()}) == len(programs),
+            "The journey requires three distinct executable paths.")
+    return programs
+
+
+@contextmanager
+def journey_blocks(programs):
+    with ExitStack() as stack:
+        for program in programs.values():
+            stack.enter_context(outbound_block(program))
+        yield
+
+
+def journey_images_match(programs, observed):
+    expected = {role: ntpath.normcase(str(path)) for role, path in programs.items()}
+    expected["webview-network"] = expected["webview"]
+    verified = Counter()
+    for guid, role in observed.roles.items():
+        if role in expected:
+            if observed.processes[guid].image != expected[role]:
+                return False
+            verified[role] += 1
+    # The existing audit also requires both WebView roles in each launch.
+    return verified["app"] == 2 and all(verified[role] for role in expected)
 
 
 def non_loopback_peer():

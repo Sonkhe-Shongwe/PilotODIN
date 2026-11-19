@@ -23,6 +23,7 @@ from qa.p4_native import n12_etw_probe as etw
 from qa.p4_native.n12_exit_corroboration import journey_lifetime_evidence
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
+from qa.p4_research import n12_egress as egress
 from qa.p4_research.n12_journey_diagnostics import OutsidePaths, address, backend_self_connections, network_summary
 from qa.p4_research.n12_driver_handles import DriverHandles, driver_lifetime_evidence
 
@@ -547,10 +548,11 @@ def finish_webview_child_witnesses(children):
     return witnesses
 
 
-def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite, handles):
+def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite, handles,
+             egress_programs=None):
     from qa.p4_native.n12_lifetime_control import process_images, process_times
 
-    binary = build.executable(staged)
+    binary = build.executable(staged) if egress_programs is None else egress_programs["app"]
     title = json.loads(build.isolated_config())["app"]["windows"][0]["title"]
     first_pid = None
     witnesses = {}
@@ -564,6 +566,8 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
                    "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS":
                        '--remote-debugging-port=9331 --net-log-capture-mode=Default '
                        f'--log-net-log="{profile / f"netlog-{label}.json"}"'}
+        if egress_programs is not None:
+            app_env["WEBVIEW2_BROWSER_EXECUTABLE_FOLDER"] = str(egress_programs["webview"].parent)
         app = spawn(stack, manifest, "app", [binary], app_env, binary.parent, root / f"app-{label}.log")
         trace.require(app.pid != first_pid, "relaunch must have a distinct app PID")
         first_pid = app.pid
@@ -687,7 +691,7 @@ def backend_socket_snapshot(backend):
         return None
 
 
-def capture(root, staged, source, expected_hash, node):
+def capture(root, staged, source, expected_hash, node, egress_programs=None):
     manifest, home, profile, fixture, calibration = prepare_journey(root, source, expected_hash)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PILOTODIN_N12_QUALITY_FIXTURE": str(fixture)}
@@ -713,7 +717,8 @@ def capture(root, staged, source, expected_hash, node):
         mark(manifest, "idle")
         time.sleep(3)
         with driver_handles, journey_processes(source, expected_hash) as stack:
-            backend = spawn(stack, manifest, "backend", [sys.executable, "-B", "-m", "uvicorn",
+            python = sys.executable if egress_programs is None else egress_programs["backend"]
+            backend = spawn(stack, manifest, "backend", [python, "-B", "-m", "uvicorn",
                 "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 env, build.REPO, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
@@ -727,7 +732,7 @@ def capture(root, staged, source, expected_hash, node):
             wait_for(lambda: http_ready(5173, "/"), 60, "Vite did not become ready", vite)
             with checkpoint_stage("app-journey", source, expected_hash):
                 app_witnesses = run_apps(stack, manifest, root, staged, source, expected_hash, node,
-                                         env, profile, backend, vite, driver_handles)
+                                         env, profile, backend, vite, driver_handles, egress_programs)
         print("N12 journey stage final calibration", flush=True)
         with checkpoint_stage("final-fixture", source, expected_hash):
             final_start = now()
@@ -784,11 +789,16 @@ def capture(root, staged, source, expected_hash, node):
         export_sysmon(manifest["sysmon_first_record"], manifest["sysmon_last_record"], sysmon)
     endpoints, launches = [], {}
     rejected_sysmon_exits = []
+    egress_images_verified = None
     try:
         with checkpoint_stage("sysmon-reduction", source, expected_hash):
             observed = trace.inspect_journey_sysmon(manifest, sysmon, etw=True, private_endpoints=endpoints,
                                                     private_app_launches=launches,
                                                     rejected_sysmon_exits=rejected_sysmon_exits)
+            if egress_programs is not None:
+                egress_images_verified = egress.journey_images_match(egress_programs, observed)
+                if not egress_images_verified:
+                    observed.issues.add("egress-program-image-unverified")
     finally:
         if rejected_sysmon_exits:
             print("N12 rejected Sysmon exits " + json.dumps(rejected_sysmon_exits), flush=True)
@@ -844,6 +854,8 @@ def capture(root, staged, source, expected_hash, node):
                             "after": "available" if last_processes is not None else "unavailable"},
         "network": network_diagnostics,
     }
+    if egress_images_verified is not None:
+        result["journey_diagnostics"]["egress_rule_images"] = "verified" if egress_images_verified else "unverified"
     result["journey"] = "completed"
     report_file(root / "audit.json", result)
 
@@ -918,11 +930,14 @@ def run_prebuild_fixture(source):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True)
+    parser.add_argument("--webview-runtime-directory", type=Path)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--expected-exe-sha256")
     mode.add_argument("--initial-fixture-only", action="store_true")
     mode.add_argument("--prebuild-fixture", action="store_true")
     args = parser.parse_args()
+    if args.webview_runtime_directory is not None and args.expected_exe_sha256 is None:
+        parser.error("--webview-runtime-directory requires --expected-exe-sha256")
     try:
         if args.prebuild_fixture:
             with checkpoint_stage("pre-build-calibration", args.source, ""):
@@ -950,7 +965,16 @@ def main():
                 except subprocess.SubprocessError as exc:
                     raise trace.EvidenceValidationError("enabled operational channel required") from exc
             root = trace.local_disposable_path(staged.with_name(f'{staged.name}-journey'), runner_temp_only=True)
-        result = capture(root, staged, args.source, args.expected_exe_sha256, node)
+        if args.webview_runtime_directory is None:
+            result = capture(root, staged, args.source, args.expected_exe_sha256, node)
+        else:
+            with ExitStack() as stack:
+                with checkpoint_stage("egress-setup", args.source, args.expected_exe_sha256):
+                    programs = egress.journey_programs(build.executable(staged), Path(sys.executable),
+                                                       args.webview_runtime_directory)
+                    stack.enter_context(egress.journey_blocks(programs))
+                result = capture(root, staged, args.source, args.expected_exe_sha256, node, programs)
+            print("N12 journey egress rules removed and cleanup verified", flush=True)
         print(json.dumps(result))
         return 0 if (result["network"] == result["filesystem"] == "PASS_SCOPED" and
                      result["webview_credit_comparison"]["status"] == "completed") else 2

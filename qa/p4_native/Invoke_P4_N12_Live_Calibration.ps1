@@ -10,7 +10,8 @@ param(
     [switch]$LifetimeEtwControl,
     [switch]$SocketLifetimeControl,
     [string]$SourceSha,
-    [string]$ExecutableSha256
+    [string]$ExecutableSha256,
+    [string]$WebViewRuntimeDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -24,6 +25,10 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
 
 if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl)) {
     throw 'The FileIO rundown comparison requires the collector-only ETW rehearsal.'
+}
+
+if ($WebViewRuntimeDirectory -and -not $AppJourney) {
+    throw 'A WebView2 runtime directory requires the approved app journey.'
 }
 
 if ($InitialJourneyFixture -and (-not $WithEtw -or $CollectorRundown -or $AppJourney -or $AppLifetime -or
@@ -168,7 +173,9 @@ try {
         return
     }
     if ($AppJourney) {
-        python -B -m qa.p4_research.n12_app_journey --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        $journeyArgs = @('--source', $SourceSha, '--expected-exe-sha256', $ExecutableSha256)
+        if ($WebViewRuntimeDirectory) { $journeyArgs += @('--webview-runtime-directory', $WebViewRuntimeDirectory) }
+        python -B -m qa.p4_research.n12_app_journey @journeyArgs
         if ($LASTEXITCODE -ne 0) { throw 'The hosted app journey failed or returned blocked coverage.' }
         return
     }
