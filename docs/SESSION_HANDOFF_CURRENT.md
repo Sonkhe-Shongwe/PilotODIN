@@ -4,7 +4,13 @@
 
 ## Next engineering action
 
-The generated Windows dialog fixture passed. All three candidate files were absent at both endpoints in every case. Identify the PowerShell destination with a separate, one-use fixture-only FileIO capture on disposable hosted Windows Server 2022. Fresh approval is required. The app workflow is disarmed. [Dialog result](#19-november-2026--generated-powershell-dialog-helper-comparison) · [Proposed capture](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#proposed-fixture-only-fileio-capture) · [Last app audit](#19-november-2026--consolidated-driver-isolation-verification)
+Prepare a network containment candidate and its acceptance checks from the last completed app audit. It associated two WebView DNS transactions and one HTTPS request with documented Edge service hosts, three WebView loopback connections with the QA frontend’s Tauri IPC, and one backend connection with an internal loopback pair. Preserve all seven findings under the current acceptance rule. The PowerShell endpoint comparison passed as a fixture but did not identify the twelve previous operations. The proposed fixture-only capture is deferred while the audit design is reviewed. The app workflow is disarmed. [Windows audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44440131278/job/135278609026) · [Dialog result](#19-november-2026--generated-powershell-dialog-helper-comparison)
+
+### 19 November 2026 | Rework the N12 verification approach
+
+1. **Network.** Define enforceable offline egress boundaries for the exact application and runtime processes. Use generated controls to check that a non-loopback connection fails and the required local API and IPC paths work. The QA-only frontend and debugger traffic need distinct provenance. Propose any necessary change to the expected connection policy for owner review. The next approved application run must measure the proposed control and the actual startup-to-exit journey together.
+2. **Filesystem.** Remove avoidable QA-driver mutations at their source and account for driver activity independently in the report. Keep protected paths in scope for every writer. Before proposing another app audit, demonstrate a measured write to a permitted path and detection of an out-of-scope mutation with known writers and destinations. The observed WebView outside writes and unresolved paths remain open.
+3. **Run decision.** Reuse the completed audit as the baseline. A new full run needs a candidate that changes the failing behaviour, a working preflight for the intended setup and fresh source-pinned approval. Synthetic cases establish whether a control is ready for that run. Credit applies at the evidence level defined by each acceptance gate.
 
 ### 19 November 2026 | Generated PowerShell dialog helper comparison
 
