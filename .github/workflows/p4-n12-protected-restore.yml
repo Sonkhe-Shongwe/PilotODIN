@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   restore-control:
-    if: ${{ github.run_attempt == '1' }} # One approved attempt at the reviewed source.
+    if: ${{ false }} # One-use approval consumed by run 44498098710.
     runs-on: windows-2022
     timeout-minutes: 10
     steps:
