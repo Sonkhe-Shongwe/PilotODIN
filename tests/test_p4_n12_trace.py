@@ -2230,6 +2230,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     # Background identities can come from two matching snapshots, even when
     # there was no process-start event during the capture. Scoped app/backend
     # identities and PIDs with a recorded lifecycle transition stay excluded.
+    emit(24, 0, 10, FileKey=733, FileName=r"C:\QA\background\private-name.bin")
     emit(25, 72, 16, FileObject=711, FileKey=733, Irp=701, IssuingThreadId=88)
     emit(25, 0, 24, Irp=701, Status=0)
     emit(26, 73, 16, FileObject=721, FileKey=743, Irp=702, IssuingThreadId=89)
@@ -2237,7 +2238,7 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
     emit(27, 73, 2, lifecycle=True, ProcessID=73)
     mutation(28, 72, 7, 12, FileName=PROTECTED + r"\private-marker", Outcome=1)
     mutation(28, 72, 7, 16)
-    rows_added = 9
+    rows_added = 10
     baseline = report()
     assert baseline["etw_unresolved_mutations"]["other:write:process-lifetime-missing"] == 3
     before_start = trace.utc_ticks(trace.utc_time(instant(0))) - 10
@@ -2252,12 +2253,25 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
         "other:event-16:write:file-key:header-lifetime:unverified-thread": 1,
         "other:event-16:write:file-key:no-header-lifetime:unverified-thread": 1,
     }
-    assert with_bookends["etw_write_name_gap_context"] == {"other:unverified-thread:unseen-key": 2}
+    assert with_bookends["etw_write_name_gap_context"] == {
+        "other:unverified-thread:outside-tracked-paths": 1, "other:unverified-thread:unseen-key": 1,
+    }
     assert with_bookends["file_violations"]["protected:other:write"] == 1
     assert with_bookends["filesystem"] == "FAIL"
     assert with_bookends["coverage"] == "BLOCKED"
     assert with_bookends["native_n12_accepted"] is False
     assert "private-marker" not in json.dumps(with_bookends)
+    threads = [{"pid": 72, "tid": 88, "birth_ticks": before_start + 1},
+               {"pid": 73, "tid": 89, "birth_ticks": before_start + 1}]
+    with_threads = report(journey_bookends={"before": entries, "after": entries,
+                                           "threads_before": threads, "threads_after": threads},
+                          describe_path_gaps=True)
+    assert with_threads["etw_background_process_bookends"]["stable_background_threads"] == 1
+    assert with_threads["etw_write_name_gap_context"] == {
+        "other:bookend-header-agrees:outside-tracked-paths": 1, "other:unverified-thread:unseen-key": 1,
+    }
+    for field in ("etw_unresolved_mutations", "file_violations", "coverage", "filesystem", "network"):
+        assert with_threads[field] == with_bookends[field]
     del rows[-rows_added:]
 
     emit(21, 0, 1, lifecycle=True, ProcessID=4)

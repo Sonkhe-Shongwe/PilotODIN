@@ -661,14 +661,21 @@ def diagnostic_paths(root, staged, manifest):
 
 def process_bookend():
     try:
-        entries = json.loads(powershell(HELPER, "process-bookend"))
+        snapshot = json.loads(powershell(HELPER, "process-bookend"))
+        entries = snapshot["processes"]
         # Validate the snapshot before passing it to the audit. One bad
         # snapshot leaves the original audit available without bookend data.
         trace.require(isinstance(entries, list) and entries, "process bookend is empty")
         trace.stable_process_bookend_records({"before": entries, "after": []}, 0, set())
-        return entries
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
-        return None
+        return None, None
+    threads = snapshot.get("threads")
+    try:
+        trace.require(isinstance(threads, list) and threads, "thread bookend is empty")
+        trace.stable_thread_bookends({"threads_before": threads}, 0, set(), set())
+    except (ValueError, KeyError, TypeError):
+        threads = None
+    return entries, threads
 
 
 def backend_socket_snapshot(backend):
@@ -707,7 +714,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     report_file(root / "before.json", before)
     devices = etw.volume_devices()
     session = f"PilotODIN-N12-App-{uuid4().hex}"
-    first_processes = process_bookend()
+    first_processes, first_threads = process_bookend()
     manifest["sysmon_first_record"] = sysmon_tail() + 1
     capture_start = now()
     start_journey_etw(root, session, source, expected_hash)
@@ -755,10 +762,12 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         raise
     counters, capture_end = stop_capture(root, session, manifest, capture_start, devices)
     print("N12 journey stage export and audit", flush=True)
-    last_processes = process_bookend()
+    last_processes, last_threads = process_bookend()
     bookends = ({"before": first_processes, "after": last_processes}
                 if first_processes is not None and last_processes is not None else None)
     if bookends is not None:
+        if first_threads is not None and last_threads is not None:
+            bookends.update(threads_before=first_threads, threads_after=last_threads)
         report_file(root / "private-process-bookends.json", bookends)
     time.sleep(3)
     with checkpoint_stage("protected-endpoints", source, expected_hash), trace.evidence_stage("protected endpoint snapshot"):

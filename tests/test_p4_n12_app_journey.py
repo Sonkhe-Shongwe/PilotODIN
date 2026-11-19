@@ -718,7 +718,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert len(args) == 1
             label = "process-bookend-after" if "etw-stop" in events else "process-bookend-before"
             events.append(label)
-            return b'[{"pid": 702, "birth_ticks": 170}]'
+            return b'{"processes":[{"pid":702,"birth_ticks":170}],"threads":[{"pid":702,"tid":703,"birth_ticks":180}]}'
         if args[0] == "backend-tcp":
             assert args == ("backend-tcp", "-BackendProcessId", events.index("backend") + 1)
             events.append("backend-snapshot")
@@ -784,7 +784,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert before != after
         assert describe_path_gaps and webview_dominant_writes
         assert journey_bookends == {"before": [{"pid": 702, "birth_ticks": 170}],
-                                    "after": [{"pid": 702, "birth_ticks": 170}]}
+                                    "after": [{"pid": 702, "birth_ticks": 170}],
+                                    "threads_before": [{"pid": 702, "tid": 703, "birth_ticks": 180}],
+                                    "threads_after": [{"pid": 702, "tid": 703, "birth_ticks": 180}]}
         findings = {"coverage": "BLOCKED", "network": "BLOCKED", "filesystem": "BLOCKED",
                     "coverage_issues": ["etw-mutation-coverage-unresolved"],
                     "file_events": {}, "file_violations": {"outside-scope:driver:write": 1},

@@ -64,11 +64,33 @@ switch ($Operation) {
         ConvertTo-Json -InputObject $rows -Compress
     }
     'process-bookend' {
-        $rows = @(Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |
+        $processRows = @(Get-CimInstance -ClassName Win32_Process -Property ProcessId,CreationDate |
             Where-Object CreationDate | ForEach-Object {
                 @{ pid = $_.ProcessId; birth_ticks = $_.CreationDate.ToUniversalTime().Ticks }
             })
-        ConvertTo-Json -InputObject $rows -Compress
+        $threadRows = $null
+        try {
+            $threadRows = @(foreach ($process in [Diagnostics.Process]::GetProcesses()) {
+                try {
+                    foreach ($thread in $process.Threads) {
+                        try {
+                            if ($thread.Id -gt 0) {
+                                @{ pid = $process.Id; tid = $thread.Id; birth_ticks = $thread.StartTime.ToUniversalTime().Ticks }
+                            }
+                        } catch {
+                            # Windows may deny the read or the thread may have exited.
+                        }
+                    }
+                } catch {
+                    # A process can exit during enumeration.
+                } finally {
+                    $process.Dispose()
+                }
+            })
+        } catch {
+            # Preserve process evidence if optional thread enumeration fails.
+        }
+        ConvertTo-Json -InputObject @{ processes = $processRows; threads = $threadRows } -Compress -Depth 4
     }
     'backend-tcp' {
         if ($env:PILOTODIN_N12_APP_JOURNEY_CONSENT -cne 'I_APPROVE_ONE_N12_APP_JOURNEY' -or

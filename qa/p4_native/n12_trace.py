@@ -938,6 +938,14 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             initial_process_births.update({pid: entry["birth_ticks"] for pid, entry in stable.items()})
             if bookend_summary is not None:
                 bookend_summary.update(status="checked", stable_background_processes=len(stable))
+            if not etw_loss and {"threads_before", "threads_after"} <= background_bookends.keys():
+                lifecycle_tids = {
+                    number(event["data"].get("ThreadID", event["data"].get("TThreadId")))
+                    for event in event_records if event["lifecycle"] and event["id"] in (3, 4)
+                }
+                thread_bookends = stable_thread_bookends(background_bookends, capture_bounds[0], stable, lifecycle_tids)
+                if bookend_summary is not None:
+                    bookend_summary["stable_background_threads"] = len(thread_bookends)
         # Keep post-audit ETW events for rundown lifetime checks. A rename, close,
         # or key reuse after the Sysmon audit boundary still invalidates a stop-time
         # name for an earlier write.

@@ -779,6 +779,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                 owner = thread_owners.get(tid)
                 if owner is None or owner[1] is None or active.get(owner[0]) != owner[1]:
                     thread = "unverified-thread" if tid else "no-thread-id"
+                    if actor == "other" and thread_bookends is not None and tid in thread_bookends:
+                        owner_pid = thread_bookends[tid]
+                        if active.get(owner_pid) is not None:
+                            thread = "bookend-header-agrees" if owner_pid == pid else "bookend-header-differs"
                 else:
                     # Header comparison is descriptive, never used for attribution.
                     thread = "thread-header-agrees" if owner[0] == pid else "thread-header-differs"
