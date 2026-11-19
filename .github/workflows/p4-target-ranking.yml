@@ -66,6 +66,7 @@ on:
       - tests/test_p4_r06_prospective_fingerprint.py
       - tests/test_p4_installer_provenance.py
       - qa/p4_native/**
+      - '!qa/p4_native/N12_TRACE.md'
       - tools/Start_P4_Everyday_RAM_Baseline.ps1
       - qa/p4_research/n12_app_build.py
       - qa/p4_research/n12_app_journey.py

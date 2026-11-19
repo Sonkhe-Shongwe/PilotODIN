@@ -15,6 +15,7 @@ Regular Windows P4 CI verifies generated fixtures. Separately approved live runs
 | n12_trace.py audit | Matches the two app launches to Sysmon image hashes, builds process lineage, checks calibration and processes the network and file records. The summary omits raw endpoints, process identifiers, command lines and file paths. |
 | n12_fileio_rundown.exe | Uses native OpenTraceW/ProcessTrace and TDH to decode stop-time Kernel FileIO name records into private key/path JSONL. |
 | n12_trace.py check-etw-preopened-rundown | Feeds the actual native rundown and ETW event export through strict file-mutation correlation for the generated protected/outside pre-opened controls. The redacted report separates control results from unrelated global blockers. |
+| n12_protected_restore.py | Checks that both generated protected writes have a verified writer, path and successful completion even when the final file matches its original content. |
 
 ## Standalone collector calibration on hosted Windows
 
