@@ -57,7 +57,7 @@ The [16 November completed reducer](https://github.com/Sonkhe-Shongwe/PilotODIN/
 
 ### P4 plan to reach 75%
 
-**Consolidated driver verification, 19 November.** The approved app audit observed zero Node operations under `frontend-dependencies` and 12 PowerShell operations under `user-local`. The WebView comparison attributed all 114 outside-scope writes to the fallback category `other-path`. Isolate the PowerShell operations using a generated dialog-helper fixture before another app build. [Run evidence](./SESSION_HANDOFF_CURRENT.md#19-november-2026--consolidated-driver-isolation-verification)
+**Consolidated driver verification, 19 November.** The approved app audit observed zero Node operations under `frontend-dependencies` and 12 PowerShell operations under `user-local`. The WebView comparison attributed all 114 outside-scope writes to the fallback category `other-path`. The generated dialog-helper fixture compares startup, loading the control and both native button actions with a Node-only control. Review the endpoint evidence before choosing an isolation change or seeking a fresh capture. [Run evidence](./SESSION_HANDOFF_CURRENT.md#19-november-2026--consolidated-driver-isolation-verification) · [Dialog fixture](./SESSION_HANDOFF_CURRENT.md#19-november-2026--generated-powershell-dialog-helper-comparison)
 
 **Driver isolation, 18 November.** The source supplies a disposable PowerShell cache path to the QA driver tree. Compare the last audit's six PowerShell writes and six overwrites in `user-local` with the next applicable hosted audit. The file targets were unverified in the original report. [Driver cache isolation](./SESSION_HANDOFF_CURRENT.md#18-november-2026--isolate-the-qa-driver-powershell-cache)
 

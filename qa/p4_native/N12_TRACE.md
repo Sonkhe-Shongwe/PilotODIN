@@ -237,6 +237,12 @@ The command uses the same strict file-mutation reducer as the audit, and checks 
 
 The redacted report separately preserves unrelated protected-root violations and unrelated unresolved mutations. A control-specific PASS can therefore coexist with global strict coverage BLOCKED. The test is deliberately not an overall N12 acceptance pass.
 
+### Generated PowerShell dialog helper endpoints
+
+The routine P4 Windows job runs `python -B -m unittest discover -s tests -p test_p4_n12_exit_corroboration.py`. The fixture runs a Node-only negative control, a startup-only Windows PowerShell 5.1 process, the same process with the production QA dialog control loaded, and both native button actions against a generated dialog. The fixture and helper each have their own scratch cache. The generated dialog signals readiness before sampling starts and stays alive until the helper has exited and the second sample has been read. Both actions must produce the expected fixture exit codes.
+
+The report compares existence, last-modified time and SHA-256 at the endpoints of the CLR usage-log candidates and the redirected PowerShell module cache. It emits only fixed labels with values `absent`, `unchanged`, `appeared`, `changed`, `disappeared` or `UNVERIFIED`. A change during startup with a stable Node-only control supports a startup or shutdown source for that candidate. Endpoint evidence cannot count individual writes, establish their writer, see transient operations or resolve the earlier app trace. Changes between samples from unrelated runner processes remain possible. Use the calibrated Windows app audit for R02.5 and R02.6 acceptance.
+
 ## Collector requirements for the disposable Windows run
 
 1. Finish building and staging the unpackaged app before the measured window. Use one UTC day. Use the approved exact build, fresh disposable profiles, a loopback backend and generated data. Independently take the initial snapshots and record the source commit and executable SHA-256.

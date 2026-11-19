@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -27,6 +28,47 @@ ORIGIN = trace.utc_ticks(BASE)
 PARENT_IMAGE = r"c:\qa\private\pilotodin.exe"
 CHILD_IMAGE = r"c:\qa\private\msedgewebview2.exe"
 DEVICES = {r"\device\harddiskvolume3": "c:"}
+WINDOWS_DIALOG_FIXTURE = (Path(__file__).resolve().parents[1] / "qa" / "p4_native" /
+                          "Test_P4_Native_Project_Switch_Automation.ps1")
+NODE_POWERSHELL = """
+const {execFileSync} = require('node:child_process');
+const [powershell, script, ...args] = process.argv.slice(1);
+process.stdout.write(execFileSync(powershell,
+  ['-NoProfile', '-NonInteractive', '-STA', '-File', script, ...args],
+  {timeout: 20000, windowsHide: true}));
+"""
+
+
+def candidate_file_state(path):
+    try:
+        stream = path.open("rb")
+    except FileNotFoundError:
+        return ()
+    except OSError:
+        return None
+    try:
+        with stream:
+            before = os.fstat(stream.fileno())
+            digest = hashlib.file_digest(stream, "sha256").hexdigest()
+            after = path.stat()
+            if (before.st_ino, before.st_size, before.st_mtime_ns) == (
+                    after.st_ino, after.st_size, after.st_mtime_ns):
+                return after.st_mtime_ns, digest
+    except OSError:
+        pass
+    return None
+
+
+def candidate_file_change(before, after):
+    if before is None or after is None:
+        return "UNVERIFIED"
+    if before == after:
+        return "unchanged" if before else "absent"
+    if not before:
+        return "appeared"
+    if not after:
+        return "disappeared"
+    return "changed"
 
 
 def stamp(offset):
@@ -54,6 +96,23 @@ class WindowsQueryHandleTests(unittest.TestCase):
 
 
 class DriverTempTests(unittest.TestCase):
+    def test_candidate_file_endpoints_distinguish_absence_change_and_unreadable(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "candidate.log"
+            missing = candidate_file_state(path)
+            path.write_bytes(b"first")
+            first = candidate_file_state(path)
+            path.write_bytes(b"second")
+            second = candidate_file_state(path)
+            path.unlink()
+            self.assertEqual(candidate_file_change(missing, missing), "absent")
+            self.assertEqual(candidate_file_change(missing, first), "appeared")
+            self.assertEqual(candidate_file_change(first, first), "unchanged")
+            self.assertEqual(candidate_file_change(first, second), "changed")
+            self.assertEqual(candidate_file_change(second, candidate_file_state(path)), "disappeared")
+            with patch.object(Path, "open", side_effect=PermissionError):
+                self.assertEqual(candidate_file_change(second, candidate_file_state(path)), "UNVERIFIED")
+
     @unittest.skipUnless(shutil.which("node"), "requires Node")
     def test_node_create_write_and_rename_stay_in_qa_scratch(self):
         script = (
@@ -81,12 +140,6 @@ class DriverTempTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "win32" and shutil.which("node"), "requires Windows and Node")
     def test_powershell_dialog_child_inherits_the_qa_cache_location(self):
-        launch = (
-            "const {execFileSync} = require('node:child_process');"
-            "const [powershell, script] = process.argv.slice(1);"
-            "process.stdout.write(execFileSync(powershell,"
-            "['-NoProfile', '-NonInteractive', '-STA', '-File', script], {timeout: 15000}));"
-        )
         with TemporaryDirectory() as folder:
             root = Path(folder).resolve()
             scratch = root / DRIVER_TEMP_DIR
@@ -99,11 +152,68 @@ class DriverTempTests(unittest.TestCase):
             )
             parent = {**os.environ, "PSMODULEANALYSISCACHEPATH": str(root / "parent-cache")}
             result = subprocess.run(
-                [shutil.which("node"), "-e", launch, "powershell.exe", str(probe)],
-                env=driver_environment(parent, root), capture_output=True, check=True, timeout=20, text=True,
+                [shutil.which("node"), "-e", NODE_POWERSHELL, "powershell.exe", str(probe)],
+                env=driver_environment(parent, root), capture_output=True, check=True, timeout=25, text=True,
             )
             self.assertEqual(Path(result.stdout.strip()), scratch / "powershell-module-analysis-cache")
             self.assertEqual(parent["PSMODULEANALYSISCACHEPATH"], str(root / "parent-cache"))
+
+    @unittest.skipUnless(sys.platform == "win32" and shutil.which("node") and
+                         os.getenv("RUNNER_ENVIRONMENT") == "github-hosted",
+                         "requires the disposable GitHub-hosted Windows runner and Node")
+    def test_powershell_dialog_helper_candidate_file_endpoints(self):
+        with TemporaryDirectory(dir=os.environ["RUNNER_TEMP"]) as folder:
+            root = Path(folder).resolve()
+            scratch = root / DRIVER_TEMP_DIR
+            scratch.mkdir()
+            env = driver_environment(os.environ, root)
+            node = shutil.which("node")
+            command = [node, "-e", NODE_POWERSHELL, "powershell.exe", str(WINDOWS_DIALOG_FIXTURE)]
+            local_app_data = Path(os.environ["LOCALAPPDATA"]) / "Microsoft"
+            paths = {
+                "clr-usage-log": local_app_data / "CLR_v4.0" / "UsageLogs" / "powershell.exe.log",
+                "clr-usage-log-64": local_app_data / "CLR_v4.0_64" / "UsageLogs" / "powershell.exe.log",
+                "scratch-module-cache": Path(env["PSMODULEANALYSISCACHEPATH"]),
+            }
+
+            def observe(args):
+                before = {label: candidate_file_state(path) for label, path in paths.items()}
+                result = subprocess.run(args, env=env, capture_output=True, check=True, timeout=25, text=True)
+                changes = {label: candidate_file_change(before[label], candidate_file_state(path))
+                           for label, path in paths.items()}
+                return result.stdout, changes
+
+            _, idle = observe([node, "-e", ""])
+            evidence = {"node-only": idle}
+            for stage in ("startup", "compile"):
+                stdout, evidence[stage] = observe([*command, "-HelperStage", stage])
+                self.assertIn(f"N12 dialog helper stage completed: {stage}", stdout)
+            for action, exit_code in (("Stay", 20), ("Switch project", 21)):
+                fixture_root = root / f"fixture-{exit_code}"
+                (fixture_root / DRIVER_TEMP_DIR).mkdir(parents=True)
+                ready = fixture_root / "dialog-ready.txt"
+                fixture_command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-STA",
+                                   "-File", str(WINDOWS_DIALOG_FIXTURE), "-Fixture", "both",
+                                   "-ReadyPath", str(ready)]
+                with subprocess.Popen(fixture_command, env=driver_environment(os.environ, fixture_root),
+                                      stdin=subprocess.PIPE) as fixture:
+                    try:
+                        deadline = time.monotonic() + 15
+                        while not ready.is_file() and fixture.poll() is None and time.monotonic() < deadline:
+                            time.sleep(0.05)
+                        self.assertTrue(ready.is_file(), "synthetic dialog did not open")
+                        stdout, evidence[action] = observe([*command, "-HelperStage", "dialog",
+                                                            "-FixtureProcessId", str(fixture.pid),
+                                                            "-Action", action])
+                        self.assertIn("Project-switch action delivered using native button handles", stdout)
+                        self.assertIsNone(fixture.poll(), "fixture exited during the endpoint comparison")
+                        fixture.communicate(input=b"\n", timeout=10)
+                        self.assertEqual(fixture.returncode, exit_code)
+                    finally:
+                        if fixture.poll() is None:
+                            fixture.kill()
+                            fixture.wait(timeout=5)
+            print("N12 PowerShell dialog helper candidate endpoints " + json.dumps(evidence, sort_keys=True))
 
 
 def payload(offset):

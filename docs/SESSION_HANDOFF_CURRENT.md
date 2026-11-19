@@ -4,7 +4,11 @@
 
 ## Next engineering action
 
-Isolate the 12 remaining PowerShell operations with a generated dialog-helper fixture before spending another app build. The last app audit observed zero Node operations under frontend dependencies and the same six PowerShell writes and six overwrites under local app data. The WebView comparison identified 114 outside-scope writes in the fallback `other-path` category. The app workflow is disarmed. [Consolidated verification](#19-november-2026--consolidated-driver-isolation-verification)
+Read the generated dialog-helper endpoint comparison before choosing the PowerShell isolation change. Its four Windows PowerShell cases distinguish a startup-only process, loading the shared control, and both native button actions. The latest app audit observed six PowerShell writes and six overwrites under local app data, seven unexpected connections and 114 additional outside-scope WebView writes in the comparison. The app workflow is disarmed. [Dialog fixture](#19-november-2026--generated-powershell-dialog-helper-comparison) · [Consolidated verification](#19-november-2026--consolidated-driver-isolation-verification)
+
+### 19 November 2026 | Generated PowerShell dialog helper comparison
+
+Routine hosted Windows fixture CI compares a Node-only control with fresh Windows PowerShell 5.1 children for startup, loading the shared `Add-Type` control, and the two verified native button actions. A generated WinForms dialog signals readiness before measurement and waits for the endpoint comparison before its own process exits. The fixture reports only fixed labels for two CLR usage-log candidates under local app data and the redirected module cache under QA scratch. Neither contents nor hashes are published. An unchanged, absent or unreadable file leaves the candidate unverified for the app audit. [Fixture](../tests/test_p4_n12_exit_corroboration.py) · [Evidence contract](../qa/p4_native/N12_TRACE.md#generated-powershell-dialog-helper-endpoints)
 
 ## Windows audit evidence
 
