@@ -26,6 +26,8 @@ P4 is active across the six open engineering checks. The consolidated Windows QA
 
 The prospective R06 endpoint comparison can now check a supplied N12 ETW manifest and event export. It verifies that the recorded interval contains both full scans, the collector counters report zero loss, and the nonempty event export has valid timestamps and matches the recorded digest. A trace that starts one Windows tick late is blocked. An endpoint difference retains its failure even if the trace input is missing. Continuous write attribution requires its own reduction. [Generated cases](../tests/test_p4_r06_prospective_fingerprint.py) · [Owner-device procedure](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#prospective-r06-endpoint-capture)
 
+Local checks passed 75 cases with five Windows-only skips, including eight focused passes and one focused skip. All four routine P4 jobs passed at implementation source `cb5ccbc844f7dabdaabb82dd919899728181eda7`. The synthetic Windows job passed the R06 check and completed FileIO rundown. The other jobs reached the Vite build, real-HTTP browser cases and Windows engine shutdown. The source suite recorded 729 passed and five skipped. [P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44602341145)
+
 Original app-data preservation remains **0/2 (0%)** and P4 remains **14/20 (70%)**. Prospective owner-device verification is **NOT RUN**. The historical whole-tree result remains **STRICT FAIL**, with 74 differences and unknown writer. The live WebView2 diagnostic still starts with the one-use generated-child approval below. [R06 evidence scope](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#c-r06-non-intrusive-incident-evidence-intake)
 
 ### Verify TMP evidence precedes the create
