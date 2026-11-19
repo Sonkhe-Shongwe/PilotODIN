@@ -15,7 +15,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 - **[Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)** for chronological issue/evidence discussion.
 
 ## Verified development evidence
-All four routine P4 jobs and the Windows FileIO integration job passed at `2896266`. The latest N12 app audit matched protected endpoint snapshots. Its comparison reduced unresolved WebView network-process write paths from 198,245 to 23 and identified 111 outside-scope writes. Filesystem and network acceptance failed and coverage remains blocked. [Routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44377156834) · [Windows FileIO CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44377156796) · [N12 evidence](docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence)
+All four routine P4 jobs passed at `cd9b397`. The latest N12 app audit matched protected endpoint snapshots. Its comparison reduced unresolved WebView network-process write paths from 198,380 to 15 and identified 114 outside-scope writes. Filesystem and network acceptance failed and coverage remains blocked. [Routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44433329578) · [N12 evidence](docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence)
 
 The owner accepted two native Ask ODIN Local analytics interactions on the physical 8 GB laptop. An updated walkthrough completed with a verified HTML export and a **735.27 MiB sampled combined working-set peak** on that workload. The 1.50 GiB QA attempt deferred Qwen and returned local rules. Physical offline bundled generation and coexistence remain open. [Physical Windows evidence](docs/SESSION_HANDOFF_CURRENT.md#physical-windows-evidence)
 

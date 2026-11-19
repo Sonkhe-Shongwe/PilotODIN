@@ -2,7 +2,7 @@
 
 **13 November 2026 scope update:** The owner moved Gate C to approval of a specific real-world prediction use. P4 engineering closure now proceeds against R02–R06 and the phase exit criteria. [Owner decision](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md#13-november-2026--owner-decision-on-gate-c).
 
-**Current evidence, 18 November 2026.** P4 is at **14 of 20 (70%)**. The latest hosted N12 audit matched the protected endpoints and recorded six unexpected connections and 68 outside-scope file operations. The strict comparison left 23 WebView write-path gaps and identified 111 more outside-scope writes. Both acceptance checks failed and coverage remains blocked. [Latest diagnostic](./SESSION_HANDOFF_CURRENT.md#18-november-2026--live-cleanup-write-diagnostic) · [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
+**Current evidence, 19 November 2026.** P4 is at **14 of 20 (70%)**. The latest hosted N12 audit matched the protected endpoints and recorded seven unexpected connections and 63 outside-scope file operations. The strict comparison left 15 WebView write-path gaps and identified 114 more outside-scope writes. Both acceptance checks failed and coverage remains blocked. [Latest diagnostic](./SESSION_HANDOFF_CURRENT.md#19-november-2026--consolidated-driver-isolation-verification) · [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
 
 **Binding governance:** [P4-17 owner risk-deferral refusal](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md), [P4-46 hard-stop boundary](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), [P4-50 independent evidence intake](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md), [P4-71 limited actual native boot](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md), [existing native test kit](../qa/p4_native/README.md) / [results template](../qa/p4_native/RESULTS_TEMPLATE.md), [master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2), [owner P4 evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9).
 
@@ -57,7 +57,7 @@ The [16 November completed reducer](https://github.com/Sonkhe-Shongwe/PilotODIN/
 
 ### P4 plan to reach 75%
 
-**Consolidated driver verification, 19 November.** Use one separately approved Windows app audit to compare both driver groups with the prior counts and record the redacted destination categories for outside-scope WebView network-process writes found by the comparison. Keep the existing filesystem and network acceptance rules. [Run scope and evidence](./SESSION_HANDOFF_CURRENT.md#19-november-2026--consolidated-driver-isolation-verification)
+**Consolidated driver verification, 19 November.** The approved app audit observed zero Node operations under `frontend-dependencies` and 12 PowerShell operations under `user-local`. The WebView comparison attributed all 114 outside-scope writes to the fallback category `other-path`. Isolate the PowerShell operations using a generated dialog-helper fixture before another app build. [Run evidence](./SESSION_HANDOFF_CURRENT.md#19-november-2026--consolidated-driver-isolation-verification)
 
 **Driver isolation, 18 November.** The source supplies a disposable PowerShell cache path to the QA driver tree. Compare the last audit's six PowerShell writes and six overwrites in `user-local` with the next applicable hosted audit. The file targets were unverified in the original report. [Driver cache isolation](./SESSION_HANDOFF_CURRENT.md#18-november-2026--isolate-the-qa-driver-powershell-cache)
 
