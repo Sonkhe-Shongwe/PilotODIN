@@ -18,6 +18,10 @@ The Windows egress preflight stages an outbound block for one exact executable a
 
 The proposed one-use scope is the fixture alone on disposable hosted Windows Server 2022. It makes a DNS lookup and direct TCP connections to `github.com:443`, adds and removes one named outbound rule for the runner's Python executable, and records a redacted verdict. An app-specific follow-up needs the exact staged app, backend and WebView runtime images, verification of the required local connections and passing file-mutation coverage. All seven prior network findings retain their original dispositions. [Last app audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44440131278/job/135278609026)
 
+### 19 November 2026 | Protect immutable fixtures during Process Monitor audits
+
+The Process Monitor journey audit previously applied in-window protection to the original-data roots and checked the immutable CSV at the endpoints. A generated capture with matching snapshots reproduced a filesystem **PASS** after writes by a permitted driver and an unscoped process, and a rename onto the CSV. Both collector paths now use the immutable paths in their in-window mutation checks. The same replay returns filesystem **FAIL** with three protected mutations, and a permitted scratch write still passes. This corrects the direct-path audit option. The historical ETW path gaps and the latest app-audit verdict are unaffected. [Reducer](../qa/p4_native/n12_trace.py) · [Regression](../tests/test_p4_n12_trace.py)
+
 ### 19 November 2026 | Replace the staged N12 PowerShell dialog launcher
 
 The completed audit attributed six writes and six overwrites under `user-local` to PowerShell in the driver tree. The staged probe made six native project-switch calls through `powershell.exe`. The N12 route now uses the runner's existing Python and the same Win32 dialog title and exact button labels. The helper checks the staged image and process owner before sending the requested action. The other QA routes still use their established PowerShell launcher. [Native driver](../frontend/e2e/p4-71-native-webview-qa.mjs) · [Dialog control](../qa/p4_research/n12_project_switch.py)

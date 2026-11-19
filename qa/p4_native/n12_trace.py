@@ -1081,6 +1081,7 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
             "WebView write credit requires the dominant path evidence")
     issues = observed.issues.copy()
     protected, permitted = scope(manifest)
+    protected.extend(windows_path(manifest["observed_roots"][label]) for label in manifest["immutable_observed"])
     etw_diagnostics = {}
     disputed_exits = []
     bookend_summary = {}
@@ -1089,11 +1090,9 @@ def complete_journey_audit(manifest, observed, procmon, before, after, *, etw=Fa
     webview_write_candidates = {}
     webview_write_credit = {} if credit_verified_webview_writes else None
     if etw:
-        immutable = [windows_path(manifest["observed_roots"][label])
-                     for label in manifest["immutable_observed"]]
         file_counts, violations, file_events, etw_diagnostics = inspect_etw_files(
             manifest, procmon, observed.start, observed.end, observed.processes, observed.roles,
-            protected + immutable, permitted, issues, rundown=rundown, record_outside_scope=record_outside_scope,
+            protected, permitted, issues, rundown=rundown, record_outside_scope=record_outside_scope,
             record_outside_writer=record_outside_writer, background_bookends=journey_bookends,
             bookend_summary=bookend_summary, path_gap_counts=path_gap_counts if describe_path_gaps else None,
             write_name_gap_counts=write_name_gap_counts if describe_path_gaps else None,

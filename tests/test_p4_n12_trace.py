@@ -3143,6 +3143,28 @@ def test_create_open_and_failed_write_are_not_mutations(tmp_path):
     assert report["filesystem"] == "PASS_SCOPED"
 
 
+def test_procmon_detects_in_window_writes_to_restored_immutable_fixture(tmp_path):
+    evidence = Evidence()
+    evidence.manifest["permitted_writes"]["driver"] = [r"C:\QA"]
+    evidence.write(25, 20, "WriteFile", r"C:\QA\driver-scratch.txt")
+    assert evidence.report(tmp_path)["filesystem"] == "PASS_SCOPED"
+
+    # The fixture's endpoint hash is unchanged. It still must not be written
+    # during the audit, even by an unscoped writer or inside a permitted root.
+    evidence.write(26, 20, "WriteFile", FIXTURE)
+    evidence.write(27, 999, "WriteFile", FIXTURE)
+    evidence.write(28, 999, "SetRenameInformationFile", r"C:\QA\replacement.csv", f"FileName: {FIXTURE}")
+    report = evidence.report(tmp_path)
+    assert report["protected_snapshot_comparison"] == "MATCH"
+    assert report["coverage"] == "CALIBRATED"
+    assert report["filesystem"] == "FAIL"
+    assert report["file_violations"] == {
+        "protected:driver:write": 1,
+        "protected:other:write": 1,
+        "protected:other:rename": 1,
+    }
+
+
 def test_immutable_fixture_hash_difference_fails(tmp_path):
     evidence = Evidence()
     evidence.after["observed"]["fixture"]["digest"] = "2" * 64
