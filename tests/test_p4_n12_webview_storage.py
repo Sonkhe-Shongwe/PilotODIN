@@ -41,7 +41,7 @@ def process(guid, parent, pid, image, start, end, command="", sha=None):
 
 
 def row(seconds, pid, image, path, *, detail="OpenResult: Created", result="SUCCESS", op="CreateFile"):
-    return {"Time of Day":time_at(seconds).strftime("%H:%M:%S"), "PID":pid,
+    return {"Time of Day":time_at(seconds).strftime("%H:%M:%S.%f"), "PID":pid,
             "Process Name":image, "Operation":op, "Path":path, "Result":result, "Detail":detail}
 
 
@@ -214,6 +214,25 @@ class StorageProbeTests(unittest.TestCase):
                 report = self.reduce(self.controls + starts)
                 self.assertEqual(report["browser_startup_tmp"], "unverified")
                 self.assertEqual(report["startup_tmp_receipts"], dict(zip(("scratch", "browser"), reasons)))
+
+        browser_create = row(7, browser.pid, "msedgewebview2.exe", USER_TEMP + r"\private-first.tmp")
+        later_create = row(7.75, browser.pid, "msedgewebview2.exe", USER_TEMP + r"\private-later.tmp")
+        for receipt_at, expected in ((6, "expected-tmp"), (7, "unverified"), (7.5, "unverified")):
+            with self.subTest(browser_receipt=receipt_at):
+                receipt = start_row(receipt_at, browser, self.processes["app"], f" ; TMP={tmp_witness}")
+                report = self.reduce(self.controls + [later_create, receipt, scratch_start, browser_create])
+                self.assertEqual(report["browser_startup_tmp"], expected)
+                if expected == "unverified":
+                    self.assertEqual(report["startup_tmp_receipts"]["browser"], "start-order-unverified")
+                self.assertEqual(report["ambient_temp_creates"], 2)
+
+        for receipt_at in (3, 4):
+            with self.subTest(scratch_receipt=receipt_at):
+                late_scratch = start_row(receipt_at, scratch, launcher, f" ; TMP={tmp_witness}")
+                report = self.reduce(self.controls + [late_scratch, browser_start])
+                self.assertEqual(report["browser_startup_tmp"], "unverified")
+                self.assertFalse(report["startup_tmp_control_verified"])
+                self.assertEqual(report["startup_tmp_receipts"]["scratch"], "start-order-unverified")
 
     def test_cdp_browser_pid_cannot_override_conflicting_lifetime_or_process_type(self):
         browser = process("browser", "app", 102, WEBVIEW, 6, 13)

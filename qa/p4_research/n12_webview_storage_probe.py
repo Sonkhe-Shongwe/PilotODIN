@@ -147,7 +147,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
                 browser_guid = candidate.guid
     expected = {binding["label"]: (process.guid, trace.windows_path(binding["target"]))
                 for binding, process in bindings if binding["role"] == "calibration"}
-    observed_controls = set()
+    control_creates = {}
     diagnostics = Counter()
     paths = journey.diagnostic_paths(root, staged, manifest, user_temp=manifest.get("probe_user_temp"))
     app_temp = tmp_witness = None
@@ -166,6 +166,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
             if process is not None and pid_counts[process.pid] == 1:
                 startup_candidates[str(process.pid)] = (label, process, first, last)
     startup_values = {"scratch": [], "browser": []}
+    first_browser_tmp_create = None
     protected_details = Counter()
 
     def observe_protected(role, operation, targets, identity):
@@ -186,20 +187,24 @@ def reduce(root, staged, manifest, sysmon, procmon):
         except (ValueError, trace.EvidenceValidationError):
             return
         if first <= stamp < last:
-            startup_values[label].append(process_start_tmp(row["Detail"], process, processes.get(process.parent)))
+            status, value = process_start_tmp(row["Detail"], process, processes.get(process.parent))
+            startup_values[label].append((stamp, status, value))
 
     def observe(stamp, process, role, operation, path):
+        nonlocal first_browser_tmp_create
         if operation == "create" and role == "calibration":
             for label, identity in expected.items():
                 if identity == (process.guid, path) and (
                     (label == "scratch" and stamp < launch) or (label == "user-temp" and exited < stamp)
                 ):
-                    observed_controls.add(label)
+                    control_creates[label] = min(control_creates.get(label, stamp), stamp)
         if role not in WEBVIEW_ROLES or operation not in {"create", "overwrite", "write"}:
             return
         stage = ("startup" if stamp < ready else "ready-probe" if stamp < close else
                  "close" if stamp <= exited else "after-profile-exit")
         extension = ntpath.splitext(path)[1]
+        if process.guid == browser_guid and stage == "startup" and operation == "create" and extension == ".tmp":
+            first_browser_tmp_create = min(first_browser_tmp_create or stamp, stamp)
         category = next((label for label, base in paths.roots if trace.inside(path, base)), None)
         if (app_temp is not None and stage == "startup" and operation == "create"
                 and extension == ".tmp" and trace.inside(path, app_temp)):
@@ -227,13 +232,20 @@ def reduce(root, staged, manifest, sysmon, procmon):
         if key.startswith("protected:"):
             _, role, operation = key.split(":")
             protected_operations.append({"role": role, "operation": operation, "count": count})
-    controls = {name: name in observed_controls for name in ("scratch", "user-temp")}
+    controls = {name: name in control_creates for name in ("scratch", "user-temp")}
     if not all(controls.values()):
         issues.add("known-create-controls-unverified")
     startup_receipts = {}
+    # Compare timestamps within the Procmon export. Equal times cannot prove order.
+    first_creates = {"scratch": control_creates.get("scratch"), "browser": first_browser_tmp_create}
     for label, records in startup_values.items():
         if len(records) == 1:
-            startup_receipts[label] = records[0][0]
+            stamp, status, _ = records[0]
+            first_create = first_creates[label]
+            startup_receipts[label] = (
+                "start-order-unverified" if status == "tmp-observed" and first_create is not None
+                and stamp >= first_create else status
+            )
         elif records:
             startup_receipts[label] = "start-record-ambiguous"
         elif any(candidate[0] == label for candidate in startup_candidates.values()):
@@ -241,15 +253,16 @@ def reduce(root, staged, manifest, sysmon, procmon):
         else:
             startup_receipts[label] = "start-identity-unverified"
     scratch_record = startup_values["scratch"]
-    scratch_matches = tmp_witness is not None and scratch_record == [("tmp-observed", tmp_witness)]
+    scratch_matches = (startup_receipts["scratch"] == "tmp-observed"
+                       and tmp_witness is not None and scratch_record[0][2] == tmp_witness)
     if scratch_matches:
         startup_receipts["scratch"] = "expected-tmp" if controls["scratch"] else "file-control-unverified"
     elif startup_receipts["scratch"] == "tmp-observed":
         startup_receipts["scratch"] = "tmp-value-mismatch"
     tmp_control_verified = scratch_matches and controls["scratch"]
     browser_startup_tmp = "unverified"
-    if tmp_control_verified and len(startup_values["browser"]) == 1:
-        _, observed = startup_values["browser"][0]
+    if tmp_control_verified and startup_receipts["browser"] == "tmp-observed":
+        _, _, observed = startup_values["browser"][0]
         if observed is not None:
             ambient = manifest.get("probe_user_temp")
             labels = {tmp_witness: "expected-tmp", app_temp: "app-temp"}

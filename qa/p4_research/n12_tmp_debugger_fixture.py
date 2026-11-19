@@ -13,19 +13,33 @@ from qa.p4_research import n12_app_build as build
 
 
 CONSENT = "I_APPROVE_ONE_N12_TMP_DEBUGGER_FIXTURE"
+TMP_BEGIN = "PILOTODIN_TMP_BEGIN"
+TMP_END = "PILOTODIN_TMP_END"
 
 
 def debugger_tmp_status(output, expected):
-    sections = re.split(r"^\s*Environment:[ \t]+[0-9a-f`]+[ \t]*\r?$", output, flags=re.M | re.I)
-    if len(sections) == 1:
+    lines = output.splitlines()
+    markers = [(index, line.strip()) for index, line in enumerate(lines)
+               if line.strip() in (TMP_BEGIN, TMP_END)]
+    if not markers:
+        return "initial-break-output-missing"
+    if [marker for _, marker in markers] != [TMP_BEGIN, TMP_END]:
+        return "initial-break-output-incomplete"
+    lines = lines[markers[0][0] + 1:markers[1][0]]
+    headers = [(index, line.strip()) for index, line in enumerate(lines)
+               if line.lstrip().casefold().startswith("environment:")]
+    if not headers:
         if re.search(r"type information missing|symbols are not available|symbol file could not be found",
-                     output, re.I):
+                     "\n".join(lines), re.I):
             return "debugger-symbols-unavailable"
-        return "environment-section-unrecognized" if "environment:" in output.casefold() else "environment-section-missing"
-    if len(sections) > 2:
+        return "environment-section-missing"
+    if len(headers) != 1:
         return "environment-section-ambiguous"
+    index, header = headers[0]
+    if not re.fullmatch(r"Environment:[ \t]+(?:0x[0-9a-f]+|[0-9a-f]+(?:`[0-9a-f]+)?)", header, re.I):
+        return "environment-section-unrecognized"
     values = []
-    for line in sections[1].lstrip("\r\n").splitlines():
+    for line in "\n".join(lines[index + 1:]).lstrip("\n").splitlines():
         entry = re.fullmatch(r"[ \t]+([^=]+)=(.*)", line)
         if entry is None:
             break
@@ -70,7 +84,7 @@ def run_fixture():
         )
         result = subprocess.run(
             [str(debugger), "-noshell", "-sins", "-netsyms:no", "-y", str(work), "-G",
-             "-c", "!peb; g", sys.executable, "-I", "-S", str(child)],
+             "-c", f".echo {TMP_BEGIN}; !peb; .echo {TMP_END}; g", sys.executable, "-I", "-S", str(child)],
             cwd=work, env={"SystemRoot": env["SystemRoot"], "TMP": str(launch_tmp), "TEMP": str(fallback_temp)},
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, errors="replace", timeout=35, check=False,
