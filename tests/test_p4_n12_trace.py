@@ -1958,11 +1958,7 @@ def test_sysmon_exit_with_repeated_payload_field_is_blocked(tmp_path):
         trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after)
 
 
-def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
-    evidence = Evidence()
-    evidence.manifest.pop("procmon_loss_reviewed")
-    sysmon, _ = evidence.save(tmp_path)
-    etw_path = tmp_path / "etw.jsonl"
+def etw_journey_fixture(evidence, sysmon, etw_path):
     rows = []
     request = 0
 
@@ -2007,6 +2003,51 @@ def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
         evidence.manifest["etw"]["events_sha256"] = hashlib.sha256(etw_path.read_bytes()).hexdigest()
         return trace.audit(evidence.manifest, sysmon, etw_path, evidence.before, evidence.after,
                            etw=True, rundown=rundown, **options)
+
+    return rows, emit, mutation, report
+
+
+def test_file_collectors_on_paired_journey_evidence(tmp_path):
+    evidence = Evidence()
+    # Use the same backend write and fixture calibration in both formats.
+    evidence.files = [row for row in evidence.files if row[1] != "3"]
+    evidence.manifest["permitted_writes"]["backend"] = [r"C:\QA"]
+    sysmon, _ = evidence.save(tmp_path)
+    _, _, mutation, etw_report = etw_journey_fixture(evidence, sysmon, tmp_path / "etw.jsonl")
+
+    for report in (evidence.report(tmp_path), etw_report()):
+        assert report["coverage"] == "CALIBRATED"
+        assert report["filesystem"] == report["network"] == "PASS_SCOPED"
+        assert report["file_events"]["backend:write"] == 1
+        assert report["file_violations"] == {}
+
+    evidence.manifest["procmon_loss_reviewed"] = False
+    evidence.manifest["etw"]["counters"]["events_lost"] = 1
+    for report, issue in ((evidence.report(tmp_path), "procmon-coverage-not-confirmed"),
+                          (etw_report(), "etw-event-or-buffer-loss")):
+        assert report["coverage"] == report["filesystem"] == report["network"] == "BLOCKED"
+        assert report["coverage_issues"] == [issue]
+
+    evidence.manifest["procmon_loss_reviewed"] = True
+    evidence.manifest["etw"]["counters"]["events_lost"] = 0
+    mutation(42, 10, 4, 12, FileName=FIXTURE, Outcome=1)
+    for second in (43, 44):
+        evidence.write(second, 10, "WriteFile", FIXTURE)
+        mutation(second, 10, 4, 16)
+    for report in (evidence.report(tmp_path), etw_report()):
+        assert report["coverage"] == "CALIBRATED"
+        assert report["protected_snapshot_comparison"] == "MATCH"
+        assert report["filesystem"] == "FAIL"
+        assert report["file_events"]["backend:write"] == 3
+        assert report["file_violations"] == {"protected:backend:write": 2}
+
+
+def test_etw_audit_combines_sysmon_and_filesystem_evidence(tmp_path):
+    evidence = Evidence()
+    evidence.manifest.pop("procmon_loss_reviewed")
+    sysmon, _ = evidence.save(tmp_path)
+    etw_path = tmp_path / "etw.jsonl"
+    rows, emit, mutation, report = etw_journey_fixture(evidence, sysmon, etw_path)
 
     clean = report()
     rejected = []
@@ -3205,6 +3246,15 @@ def test_lost_procmon_coverage_and_unresolved_rename_block(tmp_path):
     report = evidence.report(tmp_path)
     assert {"procmon-coverage-not-confirmed", "file-mutation-path-unresolved"} <= set(
         report["coverage_issues"])
+
+
+def test_procmon_rejects_unterminated_record_after_both_calibrations(tmp_path):
+    evidence = Evidence()
+    sysmon, procmon = evidence.save(tmp_path)
+    with procmon.open("a", encoding="utf-8", newline="") as stream:
+        stream.write('00:00:57.1234567,999,ReadFile,C:\\QA\\generated.txt,SUCCESS,,"python.exe')
+    with pytest.raises(trace.EvidenceValidationError, match=r"^Procmon CSV: Error$"):
+        trace.audit(evidence.manifest, sysmon, procmon, evidence.before, evidence.after)
 
 
 def test_snapshot_refuses_overlap_and_path_aliases():

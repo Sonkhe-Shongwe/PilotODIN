@@ -417,8 +417,8 @@ def inspect_files(path, start, end, processes, roles, protected, permitted, issu
     calibration = set()
     violations = Counter()
     unresolved = Counter()
-    with path.open(encoding="utf-8-sig", newline="") as stream:
-        rows = csv.DictReader(stream)
+    with evidence_stage("Procmon CSV"), path.open(encoding="utf-8-sig", newline="") as stream:
+        rows = csv.DictReader(stream, strict=True)
         require({"Time of Day", "PID", "Operation", "Path", "Result", "Detail",
                  "Process Name"} <= set(rows.fieldnames or ()), "Procmon export columns missing")
         for row in rows:
