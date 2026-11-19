@@ -1,6 +1,6 @@
 # PilotODIN 1.0
 **Local-first Windows data investigation, analytics and predictive modelling.**  
-**Development status, 18 November 2026.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active at 14 of 20 engineering checks (70%).** P5 is unauthorised and P8 release certification is pending. [Engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
+**Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
 
 PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytical engine, and a Tauri desktop shell. The 1.0 roadmap covers versioned data-quality approval, evidence-backed investigation, model evaluation, reports and a bundled local ODIN assistant. [Roadmap and scope](docs/PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md)
 
@@ -15,7 +15,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 - **[Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2)** for chronological issue/evidence discussion.
 
 ## Verified development evidence
-All four routine P4 jobs passed at `cd9b397`. The latest N12 app audit matched protected endpoint snapshots. Its comparison reduced unresolved WebView network-process write paths from 198,380 to 15 and identified 114 outside-scope writes. Filesystem and network acceptance failed and coverage remains blocked. [Routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44433329578) · [N12 evidence](docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence)
+At `cd9b397`, the 19 November hosted N12 app audit matched protected endpoint snapshots. The filesystem and network checks failed, and coverage was blocked. Routine CI passed separately for the staged egress candidate at `a0a7c5e`. The current handoff records the tested scope and remaining acceptance evidence. [Hosted app audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44440131278/job/135278609026) · [Routine P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44482975206) · [Current Windows audit evidence](docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence)
 
 The owner accepted two native Ask ODIN Local analytics interactions on the physical 8 GB laptop. An updated walkthrough completed with a verified HTML export and a **735.27 MiB sampled combined working-set peak** on that workload. The 1.50 GiB QA attempt deferred Qwen and returned local rules. Physical offline bundled generation and coexistence remain open. [Physical Windows evidence](docs/SESSION_HANDOFF_CURRENT.md#physical-windows-evidence)
 

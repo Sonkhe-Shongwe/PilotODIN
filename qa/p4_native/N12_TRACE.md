@@ -4,7 +4,7 @@ The trace answers two questions for a specific disposable run. Which processes m
 
 ## Status and use
 
-Regular Windows P4 CI verifies generated fixtures. Separately approved live runs use pinned Sysmon and Windows ETW on a disposable runner. The latest app diagnostic completed both launches and reductions. Its strict comparison reduced WebView network-process write-path gaps from 198,380 to 15 and confirmed 114 outside-scope writes. The ordinary audit failed both acceptance checks and coverage remains blocked. Use the [current Windows audit evidence](../../docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence) for run dispositions and the [handoff](../../docs/SESSION_HANDOFF_CURRENT.md#next-engineering-action) for the next investigation. The Process Monitor procedure below covers the standalone alternative.
+Regular Windows P4 CI verifies generated fixtures. Separately approved live runs use pinned Sysmon and Windows ETW on a disposable runner. The 19 November app diagnostic at `cd9b397` completed both launches and reductions. Its comparison reduced one WebView network-process write-path category from 198,380 to 15, left 13 other unresolved categories and reported 114 additional outside-scope writes. Both acceptance checks failed and coverage was blocked. Use the [Windows audit evidence](../../docs/SESSION_HANDOFF_CURRENT.md#windows-audit-evidence) for current run dispositions and the [handoff](../../docs/SESSION_HANDOFF_CURRENT.md#next-engineering-action) for the next investigation. The Process Monitor procedure below covers the standalone alternative.
 
 | Input or tool | Purpose |
 | --- | --- |

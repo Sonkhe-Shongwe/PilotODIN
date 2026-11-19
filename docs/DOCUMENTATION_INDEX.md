@@ -13,9 +13,10 @@
 ## Current development references
 
 - [Live development workspace](./LIVE_DEVELOPMENT.md) and [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md).
+- [19 November work and process audit](./WORK_AND_PROCESS_AUDIT_2026-11-19.md) for the documented decision flow, hosted run analysis and evidence corrections.
 - [Complexity-last roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) for the intended phase sequence.
 - [P1 closure](./P1_CLOSURE_REGISTER_2026-10-28.md), [P2 closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) and [P3 closure](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md).
-- [18 November documentation audit](./DOCUMENTATION_AUDIT_2026-11-18.md) for the current reconciliation, link inventory and archived handoff. [17 November audit](./DOCUMENTATION_AUDIT_2026-11-17.md) · [16 November audit](./DOCUMENTATION_AUDIT_2026-11-16.md)
+- [18 November documentation audit](./DOCUMENTATION_AUDIT_2026-11-18.md) for that day's reconciliation, link inventory and archived handoff. [17 November audit](./DOCUMENTATION_AUDIT_2026-11-17.md) · [16 November audit](./DOCUMENTATION_AUDIT_2026-11-16.md)
 - The owner-held 22 October Master Reconstruction Blueprint defines the product specification, subject to recorded owner amendments.
 
 ## Historical navigation

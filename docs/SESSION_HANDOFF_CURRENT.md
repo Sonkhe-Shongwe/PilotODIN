@@ -20,7 +20,7 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Use generated evidence to choose the file collector for the next N12 candidate. Require evidence for permitted writes, an in-window protected write whose endpoint is restored, and an incomplete capture. The program-scoped Windows TCP preflight still awaits separate approval. Both live workflows are disarmed. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75) · [Egress preflight](#19-november-2026--prepare-a-reversible-windows-egress-control)
+Use generated evidence to choose the file collector for the next N12 candidate. Require evidence for permitted writes, an in-window protected write whose endpoint is restored, and an incomplete capture. This targets R02.5 and the shared coverage blocker for R02.6. The program-scoped Windows TCP preflight still awaits separate approval. Both live workflows are disarmed. [Acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#p4-plan-to-reach-75) · [Egress preflight](#19-november-2026--prepare-a-reversible-windows-egress-control) · [19 November work and process audit](./WORK_AND_PROCESS_AUDIT_2026-11-19.md)
 
 ### 19 November 2026 | Reconcile the four unexpected loopback connections
 

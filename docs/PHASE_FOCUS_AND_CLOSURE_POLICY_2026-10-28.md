@@ -1,5 +1,7 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+P4 is the active phase. The dated entries preserve decisions and results as recorded at the time. The active work, scope and score are maintained in the [handoff](./SESSION_HANDOFF_CURRENT.md) and [phase ledger](./PROJECT_STATUS_CURRENT.md).
+
 ## 13 November 2026 | Owner decision on Gate C
 
 The owner approved moving **P4-R01 / Gate C** from P4 engineering closure to the approval of a specific real-world prediction use. This decision supersedes the 9 November bundled deferral decision only for Gate C.
@@ -201,19 +203,19 @@ The owner approved moving **P4-R01 / Gate C** from P4 engineering closure to the
 This process preference **does not decide** whether broad P3-03 semantic adjudication is included/deferred, whether native W5 is mandatory for closure, or whether P3 is complete. Those phase-scope decisions remain open in the existing review register.
 
 
-> **6 November 2026 P3 activation annotation:** Owner said "okay lets begin" immediately after reviewing the P3 plan. **P3 is now the one active primary development phase**. P1/P2 remain development-closed with residuals, P4+ are not newly authorised; P8 release is not certified. Current P3 status/CI evidence is [recorded here](./P3_SEMANTIC_CONTEXT_ACCEPTANCE_2026-11-06.md). Earlier "no active phase" annotations below are historical. The phase exit criteria and exceptions remain binding.
+> **Historical P3 activation, 6 November 2026.** The owner activated P3 after reviewing its plan. At that date P1/P2 were development-closed, P4+ had no new authorisation, and P8 release certification remained pending. [P3 evidence](./P3_SEMANTIC_CONTEXT_ACCEPTANCE_2026-11-06.md)
 
-> **6 November 2026 current phase annotation:** P2 **CLOSED for bounded development** with an owner-frozen 14-gate matrix, documented residuals and [formal closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md). P1 remains bounded-development closed; no new primary phase is active and P3 requires separate authorisation. The six exit criteria and safety exceptions below remain binding, and P8 offline Windows release is NOT CERTIFIED.
+> **Historical P2 closure, 6 November 2026.** P2 closed for bounded development with an owner-frozen 14-gate matrix and documented residuals. A separate owner decision subsequently activated P3. [P2 closure](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md)
 
-> **5 November 2026 implementation-status annotation:** P1 has been recorded **CLOSED for bounded development scope** after owner-reported and scoped Windows/hosted acceptance. **P2 is the current single active phase.** Explicit residuals and non-release limits are in [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) and [current handoff](./SESSION_HANDOFF_CURRENT.md). The normative closure rules below remain unchanged. The 28 October P1 assignment at the end is historical.
+> **Historical P1 closure, 5 November 2026.** P1 closed for bounded development based on the documented owner and scoped Windows evidence. P2 then became the active phase. [P1 closure register](./P1_CLOSURE_REGISTER_2026-10-28.md)
 
-**Adopted by owner:** 28 October 2026. **Current primary phase: P3 ACTIVE by owner direction (6 November 2026); P2 bounded development CLOSED.**
+**Adopted by owner on 28 October 2026.** Use the [phase ledger](./PROJECT_STATUS_CURRENT.md#phase-ledger) for the active phase and completed scope.
 **Authoritative branch:** `feature/live-dev-workspace-20261023`.
 **Authority:** Owner's revised execution preference. This decision supersedes earlier *active priority* sequencing notes in historical roadmap and status reflections, **but does not invalidate their technical evidence or phase dependencies**.
 
 ## Operating rule
 
-One primary implementation and acceptance phase at a time. As of 5 November 2026, P1 development scope is documented CLOSED and P2 is authorised. Continue to preserve the explicit P1 residuals rather than treating development closure as release certification. Phase selection is not permission to conceal unresolved risks. Avoid scattering incremental polish across phases, and avoid endless new test scenarios in place of finishing complete product journeys.
+Work on one primary implementation and acceptance phase at a time. Preserve the documented residuals of closed phases. Record unresolved risks and use complete product journeys as the basis for phase acceptance.
 
 An indicative **90–95%** phase-completeness target may guide planning but **is never an acceptance criterion**. The earlier P1 `~75%` and overall `~45%` figures were qualitative estimates, not audited earned-value measurements. Do not turn them into tracked KPI progress without an explicit, weighted requirement inventory. Prefer **accepted / blocked / open / deferred by approved dependency** per requirement.
 
@@ -233,14 +235,14 @@ A phase is **BLOCKED** if essential validation depends on missing hardware, lice
 ## Explicitly permitted exceptions
 
 - **Critical feasibility only:** Bounded, read-only or owner-approved investigation of the true offline 8 GB local AI + ML coexistence risk and release licensing, early enough to prevent architecture rework. No new P6/P7 feature implementation under this exception.
-- **Critical cross-phase dependency:** An essential P1 test or safety fix requires a contained change outside P1. Explain the dependency first, limit the diff, and return to P1.
+- **Critical cross-phase dependency.** The original P1 example covered an essential P1 test or safety fix that required a contained change outside P1. Apply the relevant owner authority to a current dependency, explain it, limit the change and return to the active phase.
 - **Safety/regression:** An observed critical/high data-loss, privacy, security or application integrity problem in an otherwise accepted phase. Fix it using the same narrow QA/rollback rules.
 
 Do not use a convenience improvement, attractive UI polish, unrelated exploratory research, routine refactor or speculative benchmark to invoke an exception.
 
 ## Work cycle
 
-**Select one requirement → inspect existing source and evidence → implement one bounded change → add focused tests → validate without assuming a pass → commit → update handoffs/Issue #2 → obtain needed owner Windows evidence → record acceptance or real failure → continue the same P1 requirement family until closed.**
+Select an open requirement in the active phase and inspect the existing source and evidence. Implement the smallest useful change, run the relevant checks, verify their exact tested revision and publish the scoped result. Record it in the handoff and acceptance records, including QA Issue #2 for the phase exit review. Obtain separately authorised evidence as required by the gate. [QA process](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md)
 
 Do not rerun previously accepted suites on unchanged code. Do not infer clean offline release readiness from synthetic React tests. Do not overwrite owner-generated npm/Cargo lockfiles, local working changes, datasets or Tauri generated schemas. Do not launch installers, model downloads, paid services or GitHub Actions without explicit necessity and applicable approval.
 
