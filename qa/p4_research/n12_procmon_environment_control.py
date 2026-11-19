@@ -37,7 +37,11 @@ def capture(root):
     script = root / "environment-child.py"
     script.write_text(CHILD, encoding="ascii")
     args = [sys.executable, "-I", "-S", str(script), *map(str, paths.values()), str(target)]
-    with subprocess.Popen(args, cwd=root, env={**os.environ, **{key: str(p) for key, p in paths.items()}},
+    # Keep the exported control environment small and free of inherited CI variables.
+    env = {key: str(path) for key, path in paths.items()}
+    if os.name == "nt":
+        env["SystemRoot"] = os.environ["SystemRoot"]
+    with subprocess.Popen(args, cwd=root, env=env,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as child:
         try:
             trace.require(child.wait(timeout=10) == 0 and target.read_bytes() == PAYLOAD,
@@ -75,6 +79,7 @@ def inspect_rows(rows, child, start, end):
                 creates.append(ticks)
 
     report = {"process_start": "start-record-unobserved", "tmp": "unverified", "temp": "unverified",
+              "environment_contents": "unverified", "key_rendering": {"tmp": "unverified", "temp": "unverified"},
               "known_create": "observed" if len(creates) == 1 else "unverified",
               "start_before_create": False}
     if len(starts) != 1:
@@ -90,11 +95,19 @@ def inspect_rows(rows, child, start, end):
     report["process_start"] = status
     report["start_before_create"] = len(creates) == 1 and stamp < creates[0]
     if environment is not None:
+        report["environment_contents"] = "nonempty" if environment.strip(" \t\r\n;\0") else "empty"
         for key in ("TMP", "TEMP"):
+            label = key.casefold()
             status, observed = process_start_path(environment, key)
+            rendering = "recognized-assignment"
+            if status == f"{label}-not-observed":
+                # A token is a format hint only. It does not verify a key or its value.
+                looks_like_assignment = re.search(rf"(?<![\w=]){key}[ \t]*[=:]", environment, re.I)
+                rendering = "assignment-like-token" if looks_like_assignment else "no-assignment-token"
             if observed is not None:
                 status = "expected" if observed == trace.windows_path(child["paths"][key]) else "mismatch"
-            report[key.casefold()] = status
+            report[label] = status
+            report["key_rendering"][label] = rendering
     return report
 
 

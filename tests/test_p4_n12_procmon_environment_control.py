@@ -1,7 +1,9 @@
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_procmon_environment_control as control
@@ -31,10 +33,16 @@ def create(stamp="00:00:01.1234568", detail="OpenResult: Created", **settings):
 
 class ProcmonEnvironmentControlTests(unittest.TestCase):
     def test_child_checks_both_values_and_writes_expected_bytes(self):
-        with TemporaryDirectory() as folder:
+        with TemporaryDirectory() as folder, patch.dict(os.environ, {"FIXTURE_PARENT_ONLY": "synthetic"}), patch.object(
+            control.subprocess, "Popen", wraps=control.subprocess.Popen,
+        ) as launch:
             child = control.capture(Path(folder))
             self.assertNotEqual(child["paths"]["TMP"], child["paths"]["TEMP"])
             self.assertEqual(Path(child["target"]).read_bytes(), control.PAYLOAD)
+            expected = dict(child["paths"])
+            if os.name == "nt":
+                expected["SystemRoot"] = os.environ["SystemRoot"]
+            self.assertEqual(launch.call_args.kwargs["env"], expected)
 
     def test_both_environment_formats_prove_order_at_windows_tick_precision(self):
         for environment in (f" ; TMP={TMP} ; TEMP={TEMP} ; OTHER=private-value",
@@ -43,6 +51,9 @@ class ProcmonEnvironmentControlTests(unittest.TestCase):
                 report = control.inspect_rows([create(), process_start(environment)], CHILD, *WINDOW)
                 self.assertEqual(report, {"process_start": "environment-observed", "tmp": "expected",
                                           "temp": "expected", "known_create": "observed",
+                                          "environment_contents": "nonempty",
+                                          "key_rendering": {"tmp": "recognized-assignment",
+                                                            "temp": "recognized-assignment"},
                                           "start_before_create": True})
                 self.assertNotIn("private", json.dumps(report))
 
@@ -72,6 +83,19 @@ class ProcmonEnvironmentControlTests(unittest.TestCase):
             with self.subTest(reason=reason):
                 report = control.inspect_rows([process_start(environment), create()], CHILD, *WINDOW)
                 self.assertEqual((report["tmp"], report["temp"]), ("expected", reason))
+
+    def test_reports_empty_field_and_assignment_shape_without_values(self):
+        for environment, contents, rendering in (
+            (" ; \r\n", "empty", "no-assignment-token"),
+            (" ; OTHER=containsTMP=private-sample", "nonempty", "no-assignment-token"),
+            (f" ;OTHER=fixture;TMP={TMP};TEMP={TEMP}", "nonempty", "assignment-like-token"),
+        ):
+            with self.subTest(contents=contents, rendering=rendering):
+                report = control.inspect_rows([process_start(environment), create()], CHILD, *WINDOW)
+                self.assertEqual(report["environment_contents"], contents)
+                self.assertEqual(report["key_rendering"], dict.fromkeys(("tmp", "temp"), rendering))
+                self.assertEqual((report["tmp"], report["temp"]), ("tmp-not-observed", "temp-not-observed"))
+                self.assertNotIn("private", json.dumps(report))
 
     def test_wrong_writer_failed_open_tie_and_late_start_do_not_prove_order(self):
         env = f" ; TMP={TMP} ; TEMP={TEMP}"
