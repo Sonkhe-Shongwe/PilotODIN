@@ -20,7 +20,17 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Keep WebView2 filesystem isolation active. The focused run verified an ambient-temp create during startup and another during readiness. The exact subprocess and temp-path mechanism are still open. Use the prepared browser PID corroboration and protected-operation counts to distinguish the writer and explain the protected-path flag. A browser attribution narrows the source review to the browser process. The temporary path mechanism still requires evidence before changing launch settings. [Attribution preparation](#corroborate-the-webview2-browser-process) · [Focused result](#focused-webview2-report-verified-two-user-temp-creates)
+Keep WebView2 filesystem isolation active. Start at the collector boundary. The existing Windows write-and-restore control already proves that a trace can observe a transient mutation between matching endpoints. The open measurement question is which collector evidence can support a zero-write result for the focused run. [Existing Windows evidence](#19-november-2026--hosted-protected-write-and-restore-control-passed) · [Latest focused result](#focused-webview2-report-verified-two-user-temp-creates)
+
+### Isolate one WebView2 filesystem question at a time
+
+| Order | Question | Evidence that decides it |
+| --- | --- | --- |
+| 1 | Can the selected collector support an absence claim? | Reuse the hosted ETW write-and-restore result for positive operation detection and the existing generated replays for fail-closed verdicts. Isolate live stop, export integrity and any available loss evidence at a generated fixture boundary before a new app build. A readable Procmon export and visible controls corroborate observed writes. An unreviewed loss state cannot support zero-write credit. |
+| 2 | What selected user temp for a reproduced create? | Use browser PID corroboration to narrow the writer. Require a known call path or an independently discriminating comparison before choosing a setting. Keep startup and readiness observations separate, and retain the protected operation as a separate finding. |
+| 3 | Does one correction move the identified write? | Record the predicted destination before the test. Keep runtime and build inputs comparable, run the same focused sequence, and require the trace controls, relevant coverage and the predicted result before the full N12 audit. |
+
+At source `2c7b81d6a9e1727a182689dcfdcd22333e280611`, the two focused local cases passed. A protected write produced a blocker despite matching endpoints, and unverified collector shutdown retained the two controls while blocking the verdict. The current Procmon workflow explicitly leaves loss review unconfirmed. The hosted ETW restore control verified the two completed fixture writes but retained a strict coverage blocker. The live capture workflow stays disarmed at this planning checkpoint. File-mutation coverage remains **3/4 (75%)** and P4 **14/20 (70%)**. [Local replay cases](../tests/test_p4_n12_webview_storage.py) · [Capture configuration](../qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1)
 
 ### Corroborate the WebView2 browser process
 
