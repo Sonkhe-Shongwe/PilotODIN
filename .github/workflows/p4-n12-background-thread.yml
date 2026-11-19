@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   background-thread-control:
-    if: ${{ false }} # Disarmed pending one-use owner approval.
+    if: ${{ github.run_attempt == '1' }} # One approved attempt at the reviewed source.
     runs-on: windows-2022
     timeout-minutes: 10
     steps:
