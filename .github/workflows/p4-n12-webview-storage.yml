@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lifetime:
-    if: ${{ github.run_attempt == '1' }} # One approved attempt at the reviewed source.
+    if: ${{ false }} # Awaiting one source-pinned WebView storage approval.
     runs-on: windows-2022
     timeout-minutes: 25
     env:

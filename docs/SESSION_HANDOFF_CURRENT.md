@@ -20,7 +20,13 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Make WebView2 filesystem isolation the active work. The focused startup-and-close probe is prepared. Once its exact source is approved, use one hosted Windows diagnostic to identify the component and destination behind the four user-temp creates. Capture the user-local activity in the same window. Defer the full journey until there is a targeted correction to verify. [Prepared probe](#focused-webview2-probe-prepared) · [Focused plan](#webview2-filesystem-isolation-plan) · [Hosted result](#19-november-2026--hosted-webview-storage-and-ipc-retest)
+Keep WebView2 filesystem isolation the active work. Correct the focused probe's user-temp validation and verify the correction on the hosted runner without launching the app or the collectors. The next Windows capture then needs its own source-pinned approval. [Focused run result](#focused-webview2-probe-blocked-on-runner-temp) · [Focused plan](#webview2-filesystem-isolation-plan)
+
+### Focused WebView2 probe blocked on runner temp
+
+The one approved Windows Server 2022 attempt ran from launch `2ca90fe5731532fe44a1f221d8eb5f08c2ba701f` at source `4d8c20bc91d1ce45122bc39baf9102b8203bb4e8`. The seven generated focused checks, driver preflight and one unpackaged build passed. Executable SHA-256 `dec2194d8c062b899910c12bd433b67a5dc8330fb2b09b7976b8dc846e641316`. The runner verified Sysmon 15.22 and Process Monitor 4.13. The job **FAILED** at `webview-storage-launch-and-controls`, when the prep code rejected the inherited temp directory. The condition combined a literal equality check against two expected roots with a resolved-path equality check. The report does not establish which comparison failed. Neither control write nor the app launch ran, so the diagnostic is **BLOCKED BEFORE STARTUP**. Earlier full N12 evidence remains current. The approval is consumed and the workflow is disarmed. [Job log](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44561741364/job/135692573711) · [Approval marker](../qa/p4_research/N12_WEBVIEW_STORAGE_PROBE_APPROVAL.txt)
+
+The [routine P4 run on the launch commit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44561741031) passed three jobs. Its synthetic Windows job stopped early because the independent PID close-status fixture window did not open. The Windows workflow at the reviewed implementation source passed previously. File-mutation coverage is **3/4 (75%)** and P4 is **14/20 (70%)**.
 
 ### Focused WebView2 probe prepared
 
