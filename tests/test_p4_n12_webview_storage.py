@@ -145,6 +145,35 @@ class StorageProbeTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn("separate one-run N12 WebView storage consent is required", run.stderr)
 
+    def test_runner_temp_accepts_nested_and_canonical_user_temp(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            local = root / "local-app-data"
+            runner = root / "runner-temp"
+            ambient = local / "Temp" / "interactive-session"
+            ambient.mkdir(parents=True)
+            runner.mkdir()
+            env = {"LOCALAPPDATA": str(local), "RUNNER_TEMP": str(runner), "TEMP": str(ambient)}
+            self.assertEqual(probe.runner_control_temp(env), ambient)
+            self.assertEqual(probe.runner_control_temp({**env, "TEMP": str(runner)}), runner)
+            alias = root / "short-alias"
+            original_resolve = Path.resolve
+            with patch.object(Path, "resolve", autospec=True, side_effect=lambda path, **kwargs:
+                              ambient if path == alias else original_resolve(path, **kwargs)):
+                self.assertEqual(probe.runner_control_temp({**env, "TEMP": str(alias)}), ambient)
+
+    def test_runner_temp_rejects_resolved_paths_outside_the_two_roots(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            local = root / "local-app-data"
+            runner = root / "runner-temp"
+            unrelated = local / "Temp-backup"
+            unrelated.mkdir(parents=True)
+            runner.mkdir()
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "outside the hosted"):
+                probe.runner_control_temp({"LOCALAPPDATA": str(local), "RUNNER_TEMP": str(runner),
+                                           "TEMP": str(unrelated)})
+
 
 if __name__ == "__main__":
     unittest.main()

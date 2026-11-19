@@ -646,7 +646,7 @@ def prepare_journey(root, source, expected_hash):
     return manifest, home, profile, source_fixture, calibration
 
 
-def diagnostic_paths(root, staged, manifest):
+def diagnostic_paths(root, staged, manifest, *, user_temp=None):
     roots = [
         ("backend-stdout-log", root / "backend.log"),
         ("qa-home", manifest["observed_roots"]["qa-home"]),
@@ -661,12 +661,13 @@ def diagnostic_paths(root, staged, manifest):
         ("capture-workspace", root),
         ("python-installation", Path(sys.base_prefix)),
     ]
-    roots.extend((label, os.environ[key]) for label, key in (
+    environment = os.environ if user_temp is None else {**os.environ, "TEMP": user_temp}
+    roots.extend((label, environment[key]) for label, key in (
         ("runner-temp", "RUNNER_TEMP"), ("user-temp", "TEMP"), ("user-local", "LOCALAPPDATA"),
         ("user-roaming", "APPDATA"), ("runner-tool-cache", "RUNNER_TOOL_CACHE"),
         ("shared-application-data", "ProgramData"), ("user-profile", "USERPROFILE"),
         ("windows-system", "SystemRoot"),
-    ) if os.environ.get(key))
+    ) if environment.get(key))
     return OutsidePaths(roots)
 
 

@@ -38,16 +38,28 @@ def file_control(manifest, label, path):
                                       "label": label, "target": str(path)})
 
 
+def runner_control_temp(env):
+    inherited = Path(env["TEMP"])
+    trace.require(inherited.is_absolute() and ".." not in inherited.parts,
+                  "inherited temp is not an absolute local directory")
+    ambient = inherited.resolve(strict=True)
+    if os.name == "nt":
+        trace.windows_path(str(ambient))
+    user_temp = Path(env["LOCALAPPDATA"]).resolve(strict=True) / "Temp"
+    runner_temp = Path(env["RUNNER_TEMP"]).resolve(strict=True)
+    trace.require(ambient.is_dir(), "inherited temp does not resolve to a directory")
+    trace.require(ambient.is_relative_to(user_temp) or ambient.is_relative_to(runner_temp),
+                  "resolved temp is outside the hosted user-temp and runner-temp roots")
+    return ambient
+
+
 def capture(root, staged, node, source, expected_hash):
+    ambient = runner_control_temp(os.environ)
     manifest, _, profile, fixture, _ = journey.prepare_journey(root, source, expected_hash)
+    manifest["probe_user_temp"] = str(ambient)
     fixture.write_text("fixture,value\nwebview-storage,1\n", encoding="utf-8")
     before = journey.snapshots(manifest)
     journey.mark(manifest, "fixture-ready")
-    ambient = Path(os.environ["TEMP"]).absolute()
-    user_temp = Path(os.environ["LOCALAPPDATA"]).absolute() / "Temp"
-    trace.require(ambient in {user_temp, Path(os.environ["RUNNER_TEMP"]).absolute()}
-                  and ambient.resolve(strict=True) == ambient,
-                  "user temp does not match a disposable runner location")
     file_control(manifest, "scratch", profile / journey.APP_TEMP_DIR / "storage-control.tmp")
     lifetime.launch_and_close(root, staged, node, source, expected_hash, storage_manifest=manifest)
     with TemporaryDirectory(prefix="pilotodin-storage-control-", dir=ambient) as folder:
@@ -94,7 +106,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
                 for binding, process in bindings if binding["role"] == "calibration"}
     observed_controls = set()
     diagnostics = Counter()
-    paths = journey.diagnostic_paths(root, staged, manifest)
+    paths = journey.diagnostic_paths(root, staged, manifest, user_temp=manifest.get("probe_user_temp"))
 
     def observe(stamp, process, role, operation, path):
         if operation == "create" and role == "calibration":

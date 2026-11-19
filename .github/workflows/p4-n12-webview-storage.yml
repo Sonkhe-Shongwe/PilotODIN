@@ -65,6 +65,8 @@ jobs:
           python-version: '3.11'
       - name: Verify generated storage evidence before compiling
         run: python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
+      - name: Resolve hosted temp for the control write before compiling
+        run: python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
       - name: Set up Node for Vite and the native driver
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:

@@ -266,6 +266,17 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Python 3.11 for N12 synthetic Windows fixture
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verify hosted temp resolution and generated WebView storage cases
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
+          python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
       - name: Positive and negative read-only integrity cases on fake app files
         shell: pwsh
         run: |
@@ -321,14 +332,8 @@ jobs:
           }
           ./qa/p4_native/Test_P4_N12_Collector_Process.ps1
 
-      - name: Python 3.11 for N12 synthetic Windows fixture
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.11"
       - name: Verify prospective R06 endpoint evidence on generated files
         run: python -B -m unittest discover -s tests -p test_p4_r06_prospective_fingerprint.py
-      - name: Verify generated WebView storage diagnosis and approval refusal
-        run: python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
       - name: Verify Windows dialog actions, retained child handles and driver scratch
         run: python -B -m unittest discover -s tests -p test_p4_n12_exit_corroboration.py
       - name: Check egress rule decisions and parse the Windows command

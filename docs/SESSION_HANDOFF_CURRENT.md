@@ -20,7 +20,11 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-Keep WebView2 filesystem isolation the active work. Correct the focused probe's user-temp validation and verify the correction on the hosted runner without launching the app or the collectors. The next Windows capture then needs its own source-pinned approval. [Focused run result](#focused-webview2-probe-blocked-on-runner-temp) · [Focused plan](#webview2-filesystem-isolation-plan)
+Keep WebView2 filesystem isolation the active work. The focused probe now resolves aliases and session subdirectories for its user-temp control. Check that resolution on the hosted runner before another source-pinned capture. The diagnostic will still target the four user-temp creates and the twelve user-local events from the earlier full audit. [Temp correction](#focused-probe-hosted-temp-correction) · [Focused run result](#focused-webview2-probe-blocked-on-runner-temp)
+
+### Focused probe hosted temp correction
+
+Validate the resolved local `TEMP` against the canonical hosted user-temp and runner-temp roots, including their session subdirectories. The generated control and the focused reporter use that same resolved path. Paths outside those roots still block. Reuse this check in routine Windows CI and at the start of the focused workflow, before dependency setup, native compilation and collector provisioning. The synthetic tests cover nested temp, an alias and an unrelated sibling; the scoped hosted check is read-only. [Path check](../qa/p4_research/n12_webview_storage_probe.py) · [Disarmed workflow](../.github/workflows/p4-n12-webview-storage.yml)
 
 ### Focused WebView2 probe blocked on runner temp
 
