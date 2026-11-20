@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_APP_JOURNEY_20261120_APPROVAL.txt
+      - qa/p4_research/N12_APP_JOURNEY_20261121_ETW_BOUNDARY_APPROVAL.txt
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ false }} # One approved attempt completed at run 44817701849; new approval required.
+    if: ${{ true }} # One new approved ETW-boundary diagnostic run; checkout freezes the reviewed parent.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
@@ -33,7 +33,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          $marker = 'qa/p4_research/N12_APP_JOURNEY_20261120_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_APP_JOURNEY_20261121_ETW_BOUNDARY_APPROVAL.txt'
           $workflow = '.github/workflows/p4-n12-app-journey.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
