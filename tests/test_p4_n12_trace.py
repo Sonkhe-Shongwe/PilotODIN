@@ -3412,3 +3412,70 @@ def test_private_endpoints_include_matching_fields_only_when_requested(tmp_path)
     assert endpoints[0]["source_port"] == 53000
     assert endpoints[0]["process_guid"] == "net2"
     assert "203.0.113.23" not in json.dumps(report)
+
+@pytest.mark.parametrize(("positions", "expected"), [
+    ([("inside", 1, 24)], (0, 0, 0)),
+    ([("early", -3, 16), ("early", -1, 16), ("inside", 2, 24), ("late", 5, 24)],
+     (2, 1, 0)),
+    ([("bad", "0", 24), ("inside", 1, 24)], (0, 0, 1)),
+])
+def test_etw_boundary_diagnostic_is_redacted_and_cannot_award_pass(tmp_path, positions, expected):
+    start, end = 10_000_000, 30_000_000
+    events = []
+    for kind, timestamp, event_id in positions:
+        ticks = ((start + timestamp * 10_000_000) if kind != "bad" else timestamp)
+        events.append({"ticks": ticks, "id": event_id, "pid": 123456,
+                       "lifecycle": False, "data": {"FileName": "PRIVATE-DO-NOT-LOG"}})
+    payload = "".join(json.dumps(item) + "\n" for item in events).encode()
+    filename = tmp_path / "generated.jsonl"
+    filename.write_bytes(payload)
+    digest = hashlib.sha256(payload).hexdigest()
+    diagnostic = trace.etw_timestamp_boundary_diagnostic(filename, (start, end), digest)
+    assert diagnostic["digest_verified"] is True
+    assert diagnostic["acceptance_credit"] is False
+    assert (diagnostic["counts"]["before-start"], diagnostic["counts"]["after-end"],
+            diagnostic["counts"]["invalid-ticks"]) == expected
+    assert diagnostic["status"] == ("BLOCKED" if any(expected)
+                                     else "NO_TIMESTAMP_BOUNDARY_FAULT_OBSERVED")
+    assert "PRIVATE-DO-NOT-LOG" not in json.dumps(diagnostic)
+    assert "123456" not in json.dumps(diagnostic)
+    assert diagnostic["outside_event_ids"]["before-start"] == (
+        [{"event_id": 16, "count": 2}] if expected[0] else [])
+    if any(expected):
+        with pytest.raises(trace.EvidenceValidationError, match="ETW event timestamp outside capture"):
+            list(trace.etw_events(filename, (start, end), digest))
+
+
+def test_etw_boundary_diagnostic_cannot_analyse_changed_digest(tmp_path):
+    filename = tmp_path / "changed.jsonl"
+    filename.write_text('{"ticks":0,"id":13,"pid":123456,"data":{"path":"secret"}}\n')
+    report = trace.etw_timestamp_boundary_diagnostic(filename, (10, 20), "f" * 64)
+    assert report == {"status": "BLOCKED", "reason": "digest-mismatch", "digest_verified": False}
+
+
+def test_etw_boundary_diagnostic_handles_truncated_input_and_coarse_bands(tmp_path):
+    filename = tmp_path / "events.jsonl"
+    records = [
+        {"ticks": 9999999, "id": 10, "data": {"path": "SECRET"}},
+        {"ticks": 9999990, "id": 10},
+        {"ticks": 30050000, "id": 16},
+        {"ticks": 30150000, "id": 16},
+        {"ticks": 30000001, "id": 24},
+    ]
+    payload = (''.join(json.dumps(item) + '\n' for item in records) + '{"truncated":').encode()
+    filename.write_bytes(payload)
+    report = trace.etw_timestamp_boundary_diagnostic(
+        filename, (10000000, 30000000), hashlib.sha256(payload).hexdigest())
+    assert report["status"] == "BLOCKED"
+    assert report["counts"] == {"rows": 6, "within-bounds": 0, "before-start": 2,
+                                "after-end": 3, "invalid-ticks": 0, "malformed-json": 1}
+    assert report["outside_offset_bands"]["before-start"] == {"under-1ms": 2}
+    assert report["outside_offset_bands"]["after-end"] == {"1ms-to-100ms": 2, "under-1ms": 1}
+    assert "SECRET" not in json.dumps(report)
+
+
+def test_etw_boundary_diagnostic_rejects_invalid_capture_bounds(tmp_path):
+    filename = tmp_path / "events.jsonl"
+    filename.write_bytes(b'')
+    with pytest.raises(trace.EvidenceValidationError, match="invalid ETW diagnostic capture interval"):
+        trace.etw_timestamp_boundary_diagnostic(filename, (3, 2), "0" * 64)

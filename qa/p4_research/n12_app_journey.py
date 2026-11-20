@@ -991,6 +991,14 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
                        "end_utc": capture_end.isoformat(), "counters": counters,
                        "volume_devices": devices, "events_sha256": build.digest(events)}
     report_file(root / "manifest.json", manifest)
+    with checkpoint_stage("etw-boundary-diagnostic", source, expected_hash):
+        # This cannot change the reducer's strict timestamp bounds or a verdict.
+        bounds = tuple(trace.utc_ticks(trace.utc_time(manifest["etw"][key]))
+                       for key in ("start_utc", "end_utc"))
+        boundary = trace.etw_timestamp_boundary_diagnostic(events, bounds, manifest["etw"]["events_sha256"])
+        print("N12 ETW boundary diagnostic " + json.dumps({
+            "source_sha": source, "executable_sha256": expected_hash, **boundary,
+        }), flush=True)
     paths = diagnostic_paths(root, staged, manifest)
     app_lifetimes = {}
     driver_lifetimes = {}

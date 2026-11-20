@@ -789,6 +789,79 @@ def etw_events(path, capture_bounds, expected_digest):
         require(has_events, "ETW event export is empty")
 
 
+
+def etw_timestamp_boundary_diagnostic(path, capture_bounds, expected_digest):
+    """Redacted diagnostic only. Never adjusts bounds or authorises an ETW PASS.
+
+    Stream and hash the exact captured JSONL. Deliberately omit PIDs, paths,
+    event payloads and exact timestamps. Reports coarse offsets and event-ID
+    frequencies only, and withholds all counts if provenance does not match.
+    """
+    require(len(capture_bounds) == 2 and all(type(n) is int for n in capture_bounds)
+            and capture_bounds[0] < capture_bounds[1], "invalid ETW diagnostic capture interval")
+    require(re.fullmatch(r"[0-9a-f]{64}", expected_digest) is not None,
+            "invalid ETW diagnostic export digest")
+
+    def offset_band(ticks):
+        if ticks < 10_000:
+            return "under-1ms"
+        if ticks < 1_000_000:
+            return "1ms-to-100ms"
+        if ticks < 10_000_000:
+            return "100ms-to-1s"
+        if ticks < 600_000_000:
+            return "1s-to-60s"
+        if ticks < 36_000_000_000:
+            return "1m-to-1h"
+        return "1h-or-more"
+
+    digest = hashlib.sha256()
+    counts = Counter()
+    ids = {"before-start": Counter(), "after-end": Counter()}
+    bands = {"before-start": Counter(), "after-end": Counter()}
+    for line in path.open("rb"):
+        digest.update(line)
+        counts["rows"] += 1
+        try:
+            event = json.loads(line)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            counts["malformed-json"] += 1
+            continue
+        if not isinstance(event, dict) or type(event.get("ticks")) is not int:
+            counts["invalid-ticks"] += 1
+            continue
+        ticks = event["ticks"]
+        side = ("before-start" if ticks < capture_bounds[0] else
+                "after-end" if ticks > capture_bounds[1] else None)
+        if side is not None:
+            counts[side] += 1
+            offset = abs(ticks - (capture_bounds[0] if side == "before-start" else capture_bounds[1]))
+            bands[side][offset_band(offset)] += 1
+            if type(event.get("id")) is int and 0 <= event["id"] <= 65535:
+                ids[side][event["id"]] += 1
+        else:
+            counts["within-bounds"] += 1
+    if digest.hexdigest() != expected_digest:
+        return {"status": "BLOCKED", "reason": "digest-mismatch", "digest_verified": False}
+    findings = {key: counts[key] for key in (
+        "rows", "within-bounds", "before-start", "after-end", "invalid-ticks", "malformed-json"
+    )}
+    if not counts["rows"] or any(counts[k] for k in (
+        "before-start", "after-end", "invalid-ticks", "malformed-json"
+    )):
+        status = "BLOCKED"
+    else:
+        status = "NO_TIMESTAMP_BOUNDARY_FAULT_OBSERVED"
+    return {
+        "status": status, "digest_verified": True, "counts": findings,
+        "outside_offset_bands": {side: dict(sorted(bands[side].items()))
+                                 for side in ("before-start", "after-end")},
+        "outside_event_ids": {side: [{"event_id": key, "count": count} for key, count in
+                                    sorted(ids[side].items(), key=lambda item: (-item[1], item[0]))[:6]]
+                              for side in ("before-start", "after-end")},
+        "acceptance_credit": False,
+    }
+
 def inspect_etw_files(manifest, path, start, end, processes, roles, protected, permitted, issues, *,
                       details=None, process_bookends=None, thread_bookends=None, rundown=None,
                       synthetic_process_roles=None, synthetic_process_births=None,
