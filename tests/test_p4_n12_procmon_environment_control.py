@@ -44,9 +44,11 @@ class ProcmonEnvironmentControlTests(unittest.TestCase):
                 expected["SystemRoot"] = os.environ["SystemRoot"]
             self.assertEqual(launch.call_args.kwargs["env"], expected)
 
-    def test_both_environment_formats_prove_order_at_windows_tick_precision(self):
+    def test_environment_formats_prove_order_at_windows_tick_precision(self):
         for environment in (f" ; TMP={TMP} ; TEMP={TEMP} ; OTHER=private-value",
-                            f"\r\nTMP={TMP}\r\nTEMP={TEMP}\r\nOTHER=private-value"):
+                            f"\r\nTMP={TMP}\r\nTEMP={TEMP}\r\nOTHER=private-value",
+                            f"SystemRoot=C:\\Windows\tTEMP={TEMP}\r\n\tTMP={TMP}",
+                            f"\tTEMP={TEMP}\r\nSystemRoot=C:\\Windows\tTMP={TMP}"):
             with self.subTest(environment_format=environment[:3]):
                 report = control.inspect_rows([create(), process_start(environment)], CHILD, *WINDOW)
                 shapes = report.pop("assignment_shape")
@@ -80,8 +82,10 @@ class ProcmonEnvironmentControlTests(unittest.TestCase):
         for environment, reason in (
             (f" ; TMP={TMP}", "temp-not-observed"),
             (f" ; TMP={TMP} ; TEMP={TEMP} ; Temp={TEMP}", "temp-ambiguous"),
+            (f" ; TMP={TMP}\tTEMP={TEMP}\r\n\tTemp={TMP}", "temp-ambiguous"),
             (f" ; TMP={TMP} ; TEMP={TMP}", "mismatch"),
             (f" ; TMP={TMP} ; TEMP=C:relative", "temp-path-invalid"),
+            (f" ; TMP={TMP}\tTEMP={TEMP}\0other", "temp-path-invalid"),
         ):
             with self.subTest(reason=reason):
                 report = control.inspect_rows([process_start(environment), create()], CHILD, *WINDOW)
@@ -101,7 +105,7 @@ class ProcmonEnvironmentControlTests(unittest.TestCase):
                 self.assertNotIn("private", json.dumps(report))
 
     def test_reports_delimiters_padded_operator_and_quoted_literal(self):
-        environment = f'\r\nTMP : "{TMP}"\tTEMP={TEMP};'
+        environment = f'\r\nTMP : "{TMP}"\tTEMP : {TEMP};'
         report = control.inspect_rows([process_start(environment), create()], CHILD, *WINDOW)
         self.assertTrue(report["start_before_create"])
         self.assertEqual(report["assignment_shape"]["tmp"], {

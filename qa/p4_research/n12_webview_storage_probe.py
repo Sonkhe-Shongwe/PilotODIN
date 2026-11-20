@@ -100,14 +100,20 @@ def process_start_environment(detail, parent_pid, command):
 
 
 def process_start_path(environment, key):
-    values = re.findall(rf"(?:^| ; |\r?\n)[ \t]*{re.escape(key)}=([^\r\n]*?)(?= ; |\r?\n|$)",
-                        environment, re.I)
+    # Procmon 4.13 can put a tab directly before an environment assignment.
+    fields = re.split(r" ; |\r?\n|\t", environment)
     label = key.casefold()
+    values = []
+    for field in fields:
+        name, separator, value = field.lstrip(" ").partition("=")
+        if separator and name.casefold() == label:
+            values.append(value)
     if not values:
         return f"{label}-not-observed", None
     if len(values) > 1:
         return f"{label}-ambiguous", None
     try:
+        trace.require("\r" not in values[0] and "\0" not in values[0], "invalid environment path field")
         return f"{label}-observed", trace.windows_path(values[0])
     except ValueError:
         return f"{label}-path-invalid", None
