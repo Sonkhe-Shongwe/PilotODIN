@@ -25,12 +25,22 @@ test('Native save is type-restricted and returns cancel without a write',()=>{
  assert.match(rust,/b"<!doctype html>"/);
  assert.match(rust,/\.blocking_save_file\(\)/);
  assert.match(rust,/status:\s*"cancelled"/);
- const cancelPos=rust.indexOf('status: "cancelled"');
- const writePos=rust.indexOf('std::fs::write(path, bytes)');
- assert.ok(cancelPos > 0 && cancelPos < writePos,'Cancel must resolve before file writing');
- assert.match(rust,/Saved report size verification failed/);
- assert.match(rust,/Sha256::digest\(bytes\)/);
- assert.match(rust,/saved_hash\[\.\.\] != expected_hash\[\.\.\]/);
+ const command=rust.split('async fn save_report_as(')[1]?.split('fn write_verified_report(')[0];
+ const writer=rust.split('fn write_verified_report(')[1]?.split('#[cfg(test)]')[0];
+ assert.ok(command&&writer);
+ const cancel=command.indexOf('status: "cancelled"');
+ assert.ok(cancel>=0&&cancel<command.indexOf('write_verified_report(&path, &format, &bytes)'));
+ const publish=writer.indexOf('report_file::publish_report(path, bytes,');
+ assert.ok(publish>=0&&publish<writer.indexOf('status: "saved"'));
+ assert.doesNotMatch(writer,/std::fs::write\(/);
+ const file=native('src/report_file.rs');
+ assert.match(file,/path\.with_file_name\(/);
+ assert.match(file,/\.create_new\(true\)/);
+ assert.match(file,/file\.sync_all\(\)/);
+ assert.match(file,/file\.read_exact\(actual_chunk\)/);
+ assert.match(file,/if &\*actual_chunk != expected_chunk/);
+ assert.match(file,/verified\.and_then\(\|\(\)\| fs::rename\(&staging, path\)\)/);
+ assert.doesNotMatch(file.split('#[cfg(test)]')[0],/fs::remove_file\(path\)|fs::copy\(/);
 });
 
 test('Browser and native report export flows are explicitly distinct',()=>{

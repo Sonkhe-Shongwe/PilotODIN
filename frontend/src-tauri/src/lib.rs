@@ -14,6 +14,8 @@ use tauri::ipc::{InvokeBody, Request};
 use tauri_plugin_shell::{process::{CommandChild, CommandEvent}, ShellExt};
 use tauri_plugin_dialog::DialogExt;
 
+mod report_file;
+
 #[derive(Clone, Serialize)]
 struct BackendConnection {
     port: u16,
@@ -481,29 +483,8 @@ fn write_verified_report(path: &Path, format: &str, bytes: &[u8])
         .map(|ext| ext.eq_ignore_ascii_case(format)).unwrap_or(false) {
         return Err("Save As extension differs from the report format".into());
     }
-    std::fs::write(path, bytes)
+    report_file::publish_report(path, bytes, uuid::Uuid::new_v4().as_u128())
         .map_err(|e| format!("Could not save report to the selected location: {e}"))?;
-    // Verify the saved file's length and content before reporting success.
-    let mut file = File::open(path)
-        .map_err(|e| format!("Could not read the saved report for verification: {e}"))?;
-    let stored_size = file.metadata()
-        .map_err(|e| format!("Could not verify the saved report: {e}"))?.len();
-    if stored_size != bytes.len() as u64 {
-        return Err("Saved report size verification failed".into());
-    }
-    let mut hasher = Sha256::new();
-    let mut buffer = [0u8; 65_536];
-    loop {
-        let read = file.read(&mut buffer)
-            .map_err(|e| format!("Could not verify saved report contents: {e}"))?;
-        if read == 0 { break; }
-        hasher.update(&buffer[..read]);
-    }
-    let saved_hash = hasher.finalize();
-    let expected_hash = Sha256::digest(bytes);
-    if saved_hash[..] != expected_hash[..] {
-        return Err("The saved report failed content verification".into());
-    }
     let filename = path.file_name().and_then(|name| name.to_str()).map(str::to_owned);
     Ok(NativeReportSave { status: "saved", filename })
 }
