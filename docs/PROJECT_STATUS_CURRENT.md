@@ -6,7 +6,7 @@ The open engineering checks cover the hosted Windows filesystem and network audi
 
 [Evidence plan for the six open checks](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#six-open-engineering-checks-and-the-next-evidence-passes) · [Consolidated Windows QA preparation](./SESSION_HANDOFF_CURRENT.md#consolidated-p4-evidence-preparation)
 
-The 20 November audit fixes reached **6/7** at source and scoped fixture level. Late Windows CSV decoding passed the import and Quality regressions. The next fix is malformed JSON in oversized provider prompts. Windows Save As confirmation remains open, and the one-file clock diagnostics stay paused pending a decision that requires them. [Audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) · [CSV decoding](./SESSION_HANDOFF_CURRENT.md#20-november-2026--retry-complete-csv-decoding) · [Save As](./SESSION_HANDOFF_CURRENT.md#20-november-2026--stage-and-verify-report-exports-before-replacement) · [Prior fixes](./SESSION_HANDOFF_CURRENT.md#engineering-progress-and-next-checkpoints)
+The 20 November audit fixes reached **7/7** at source and scoped fixture level. The final fix preserves complete JSON in oversized Ask ODIN provider prompts. Prepare the representative calibrated Windows R02.5 journey next. Windows Save As confirmation remains open, and the one-file clock diagnostics stay paused pending a decision that requires them. [Audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) · [Provider prompts](./SESSION_HANDOFF_CURRENT.md#20-november-2026--budget-structured-provider-prompts) · [Save As](./SESSION_HANDOFF_CURRENT.md#20-november-2026--stage-and-verify-report-exports-before-replacement) · [Prior fixes](./SESSION_HANDOFF_CURRENT.md#engineering-progress-and-next-checkpoints)
 
 ## Phase ledger
 

@@ -377,14 +377,93 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()
 
-    def sent_context(self):
+    def sent_prompt(self):
         self.transport.assert_called_once()
         envelope = json.loads(self.transport.call_args.args[0].data)
-        return json.loads(envelope['contents'][0]['parts'][0]['text'])['verified_context']
+        text = envelope['contents'][0]['parts'][0]['text']
+        self.assertLessEqual(len(text), 11000)
+        return json.loads(text)
+
+    def sent_context(self):
+        return self.sent_prompt()['verified_context']
+
+    def test_wide_prompt_keeps_question_metrics_and_continuation_in_valid_json(self):
+        build = ai_context.build
+        columns = [{'name': f'{index:02d} ' + 'é"\\' * 32, 'kind': 'numeric',
+                    'missing_count': 0, 'missing_pct': 0.0, 'unique_count': 4,
+                    'min': 0.0, 'max': 3.0, 'mean': 1.5, 'median': 1.5, 'std': 1.29}
+                   for index in range(50)]
+
+        def wide_context(*args, **kwargs):
+            return {**build(*args, **kwargs), 'column_count': 50, 'columns': columns}
+
+        question = 'How does the held-out "score" compare with the baseline?'
+        continuation = '\u0001\\\n' * 1800 + 'Dernière phrase.'
+        prediction = {'prediction': 'PRIVATE_PREDICTION'}
+        with patch.object(ai_context, 'build', side_effect=wide_context):
+            result = self.insight('predict', question=question, continuation_text=continuation,
+                                  prediction=prediction)
+        self.assertEqual(result['source'], 'cloud_llm')
+        prompt = self.sent_prompt()
+        self.assertEqual((prompt['task'], prompt['question']), ('predict', question))
+        context = prompt['verified_context']
+        self.assertEqual((context['dataset_version'], context['row_count'], context['column_count']), (0, 4, 50))
+        self.assertEqual(context['experiment']['metrics']['accuracy'], 0.8)
+        self.assertEqual(context['experiment']['comparison'][0]['cv_metric'], 0.81)
+        self.assertTrue(context['columns'])
+        self.assertEqual(context['columns'], columns[:len(context['columns'])])
+        self.assertEqual(prompt['omitted_context_items']['columns'], 50 - len(context['columns']))
+        tail = prompt['continuation']['previous_answer_tail']
+        self.assertTrue(tail.endswith('Dernière phrase.') and continuation.endswith(tail))
+        self.assertEqual(prompt['continuation']['instruction'], 'Continue without repeating earlier text.')
+        self.assertNotIn('prediction', context)
+        for private in ('PRIVATE_PREDICTION', 'HELDOUT_ACTUAL_SENTINEL', 'PRIVATE_CLASS_SENTINEL'):
+            self.assertNotIn(private, json.dumps(prompt))
+
+    def test_local_transports_receive_complete_json_and_keep_local_prediction(self):
+        context = {'dataset_version': 0, 'row_count': 25, 'column_count': 50,
+                   'prediction': {'target': 'outcome', 'outcome': 'LOCAL_ONLY_OUTCOME'},
+                   'columns': [{'name': f'{index:02d}' + '\\"é' * 32} for index in range(50)],
+                   'verified_investigation': {'operation': 'missingness', 'column': 'outcome',
+                                              'missing_rows': 5, 'missing_pct': 20.0,
+                                              'numeric_comparisons': [{'column': 'premium', 'other_group_mean': float('inf')}]}}
+        continuation = 'a\n' * 2700 + 'End of previous answer.'
+        self.settings.update(intelligence_mode='local', local_model_enabled=True)
+        bundled_reply = {'choices': [{'message': {'content': 'Generated answer.'}, 'finish_reason': 'stop'}]}
+        ollama_reply = {'message': {'content': 'Generated answer.'}, 'done': True}
+        question = 'How many outcomes are missing?'
+        for desktop in (False, True):
+            with (self.subTest(desktop=desktop),
+                  patch.dict(os.environ, {'PILOTODIN_DESKTOP_SESSION': '1' if desktop else ''}),
+                  patch.object(resource_policy, 'admit_new_work', return_value={'decision': 'allow'}),
+                  patch.object(ai_provider, '_ollama_installed_models', return_value={self.settings['local_model']}),
+                  patch.object(ai_provider, '_ollama_request', return_value=ollama_reply) as ollama,
+                  patch.object(ai_provider.bundled_inference, 'status', return_value={'status': 'ready'}),
+                  patch.object(ai_provider.bundled_inference, '_request', return_value=bundled_reply) as bundled):
+                result = ai_provider.respond(context, 'predict', question, 'Local rules',
+                                             selected_provider='auto', continuation_text=continuation)
+                self.assertEqual(result['provider'], 'bundled' if desktop else 'ollama')
+                payload = bundled.call_args.args[1] if desktop else ollama.call_args.kwargs['payload']
+                text = payload['messages'][1]['content']
+                self.assertLessEqual(len(text), 9000)
+                prompt = json.loads(text, parse_constant=lambda value: self.fail(f'Invalid JSON constant: {value}'))
+                self.assertEqual(prompt['question'], question)
+                self.assertEqual(prompt['verified_context']['prediction'], context['prediction'])
+                investigation = prompt['verified_context']['verified_investigation']
+                self.assertEqual(investigation['missing_rows'], 5)
+                self.assertEqual(investigation['numeric_comparisons'], [{'column': 'premium', 'other_group_mean': None}])
+                self.assertTrue(prompt['continuation']['previous_answer_tail'].endswith('End of previous answer.'))
+        self.assertEqual(len(context['columns']), 50)
+        self.assertEqual(context['verified_investigation']['numeric_comparisons'][0]['other_group_mean'], float('inf'))
+        self.transport.assert_not_called()
 
     def test_saved_evaluation_only_sends_approved_aggregates(self):
-        self.assertEqual(self.insight()['source'], 'cloud_llm')
-        experiment = self.sent_context()['experiment']
+        continuation = 'A short previous answer with "quotes" and an accent, é.'
+        self.assertEqual(self.insight(continuation_text=continuation)['source'], 'cloud_llm')
+        prompt = self.sent_prompt()
+        self.assertEqual(prompt['continuation']['previous_answer_tail'], continuation)
+        self.assertNotIn('omitted_context_items', prompt)
+        experiment = prompt['verified_context']['experiment']
         self.assertNotIn('evaluation_rows', experiment['metrics'])
         self.assertEqual(experiment['metrics'], {
             'accuracy': 0.8, 'f1_macro': 0.75, 'sample_count': 64, 'baseline_test_metric': 0.5,
@@ -394,6 +473,18 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         saved = self.client.get(f'/api/experiments/{self.experiment_id}').json()['final_results']
         self.assertEqual(saved['evaluation_rows'], self.evaluation_rows)
         self.assertEqual(saved['class_labels'], self.metrics['class_labels'])
+
+    def test_unfittable_required_context_uses_verified_fallback(self):
+        context = {'row_count': 4, 'column_count': 2,
+                   'verified_investigation': {'column': '\\' * 6000, 'missing_rows': 1}}
+        with patch.object(ai_provider, '_get_key') as provider_key:
+            result = ai_provider.respond(context, 'assistant', 'Count missing values', 'One value is missing.',
+                                         selected_provider='gemini')
+        self.assertEqual(result['source'], 'local_computed_rules')
+        self.assertEqual(result['answer'], 'One value is missing.')
+        self.assertIn('exceeds the provider prompt limit', result['reason'])
+        provider_key.assert_not_called()
+        self.transport.assert_not_called()
 
     def test_individual_prediction_stays_local(self):
         prediction = {'prediction': 'PRIVATE_PREDICTION', 'probabilities': [
