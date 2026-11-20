@@ -150,9 +150,17 @@ def snapshot_capture_evidence(manifest, capture_start, capture_end):
         stamps = [trace.utc_time(markers[name]) for name in names]
     except (ValueError, TypeError, OverflowError):
         raise trace.EvidenceValidationError("snapshot-capture-markers-invalid") from None
-    trace.require(capture_start <= stamps[0] <= stamps[1] < stamps[2] <= stamps[3] <= capture_end,
-                  "snapshot-capture-unbracketed")
-    return {"status": "PASS", "before_in_capture": True, "after_in_capture": True}
+    trace.require(all(type(manifest.get(k)) is str for k in ("start_utc", "end_utc")),
+                  "snapshot-audit-bounds-missing")
+    try:
+        audit_start = trace.utc_time(manifest["start_utc"])
+        audit_end = trace.utc_time(manifest["end_utc"])
+    except (ValueError, TypeError, OverflowError):
+        raise trace.EvidenceValidationError("snapshot-audit-bounds-invalid") from None
+    trace.require(capture_start <= audit_start <= stamps[0] <= stamps[1] < stamps[2] <=
+                  stamps[3] <= audit_end <= capture_end, "snapshot-capture-unbracketed")
+    return {"status": "PASS", "before_in_capture": True, "after_in_capture": True,
+            "before_in_audit": True, "after_in_audit": True}
 
 
 def start_capture(root, session, logman):
@@ -429,7 +437,10 @@ def verify_initial_sysmon(root, manifest, record):
 
 
 def run_initial_calibration(root, directory, manifest, source, expected_hash):
-    manifest["start_utc"] = now().isoformat()
+    # The representative journey's audit already starts before the first full
+    # fingerprint. Standalone calibration still creates its own audit start.
+    if "start_utc" not in manifest:
+        manifest["start_utc"] = now().isoformat()
     # Leave room for Sysmon's millisecond birth timestamp at the audit boundary.
     time.sleep(INITIAL_FIXTURE_LEAD_IN_SECONDS)
     print("N12 journey stage initial calibration", flush=True)
@@ -817,6 +828,10 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     manifest["sysmon_first_record"] = sysmon_tail() + 1
     capture_start = now()
     start_journey_etw(root, session, source, expected_hash)
+    # Governed audit bounds must contain both fingerprints, not merely the
+    # wider ETW session. Otherwise a temporary mutation during a scan could
+    # disappear from the event reducer despite successful collector startup.
+    manifest["start_utc"] = now().isoformat()
     driver_handles = DriverHandles()
     compare_fileio = os.environ.get("PILOTODIN_N12_APP_RUNDOWN_CONSENT") == "I_APPROVE_ONE_N12_APP_RUNDOWN"
     rundown_cleanup = ExitStack()
@@ -868,11 +883,11 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
                 calibration[1], manifest, child_hold_seconds=TRACED_FIXTURE_CHILD_HOLD_SECONDS,
             )
             final_end = now()
-            manifest["end_utc"] = final_end.isoformat()
         with checkpoint_stage("protected-after-scan", source, expected_hash):
             mark(manifest, "snapshot-after-start")
             after = snapshots(manifest)
             mark(manifest, "snapshot-after-end")
+        manifest["end_utc"] = now().isoformat()
         if stop_rundown is not None:
             first = now()
             try:

@@ -671,7 +671,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     def sleep(seconds):
         if "calibration-first" not in events:
             assert events[-1] == ("fileio-start" if fileio else "etw-start")
-            assert manifest["start_utc"] == "2026-11-14T00:00:03+00:00"
+            assert manifest["start_utc"] == "2026-11-14T00:00:01+00:00"
             assert 0.001 < seconds <= 0.1
             events.append("initial-fixture-lead-in")
         elif events[-1] == "cleanup-backend":
@@ -704,7 +704,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert path == root and first == 11 and phase == "final"
         assert events[-2:] == ["process-bookend-after", "drain"]
         assert journey.trace.utc_time(manifest["markers"]["exit"]) < start < end
-        assert end.isoformat() == manifest["end_utc"]
+        assert end < journey.trace.utc_time(manifest["end_utc"])
         assert record is manifest["processes"][-1] and record["role"] == "calibration"
         events.append("sysmon-final-check")
         if fault == "final-calibration":
@@ -974,6 +974,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert report["journey_diagnostics"]["app_lifetimes"]["launches"]["relaunch"]["handle"] == "MATCH"
         assert report["journey_diagnostics"]["snapshot_capture"] == {
             "status": "PASS", "before_in_capture": True, "after_in_capture": True,
+            "before_in_audit": True, "after_in_audit": True,
         }
         assert report["journey_diagnostics"]["webview_storage"] == {
             "ambient_temp_creates": 0, "user_local_targets": [],

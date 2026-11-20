@@ -137,30 +137,55 @@ class SnapshotCaptureOrderingTests(unittest.TestCase):
             "snapshot-after-start": iso(17),
             "snapshot-after-end": iso(18),
         }
-        self.assertEqual(journey.snapshot_capture_evidence({"markers": markers}, start, end),
-                         {"status": "PASS", "before_in_capture": True, "after_in_capture": True})
+        manifest = {"markers": markers, "start_utc": iso(0), "end_utc": iso(19)}
+        self.assertEqual(journey.snapshot_capture_evidence(manifest, start, end),
+                         {"status": "PASS", "before_in_capture": True, "after_in_capture": True,
+                          "before_in_audit": True, "after_in_audit": True})
         for name, stamp in (("snapshot-before-start", iso(-1)),
                             ("snapshot-before-end", iso(22)),
                             ("snapshot-after-start", iso(1)),
                             ("snapshot-after-end", iso(21))):
             with self.subTest(name=name):
                 with self.assertRaisesRegex(Exception, "snapshot-capture-unbracketed"):
-                    journey.snapshot_capture_evidence({"markers": dict(markers, **{name: stamp})}, start, end)
+                    journey.snapshot_capture_evidence({**manifest, "markers": dict(markers, **{name: stamp})}, start, end)
         for name in markers:
             with self.subTest(missing=name):
                 changed = dict(markers)
                 changed.pop(name)
                 with self.assertRaisesRegex(Exception, "snapshot-capture-markers-missing"):
-                    journey.snapshot_capture_evidence({"markers": changed}, start, end)
+                    journey.snapshot_capture_evidence({**manifest, "markers": changed}, start, end)
 
     def test_capture_source_scans_under_live_etw_before_rundown_stop(self):
         source = inspect.getsource(journey.capture)
         self.assertLess(source.index("start_journey_etw("), source.index('mark(manifest, "snapshot-before-start")'))
         self.assertLess(source.index("before = snapshots(manifest)"), source.index("run_initial_calibration("))
-        self.assertLess(source.index('manifest["end_utc"] = final_end.isoformat()'),
-                        source.index('mark(manifest, "snapshot-after-start")'))
+        self.assertLess(source.index('mark(manifest, "snapshot-after-end")'),
+                        source.index('manifest["end_utc"] = now().isoformat()'))
+        self.assertLess(source.index('manifest["start_utc"] = now().isoformat()'),
+                        source.index('mark(manifest, "snapshot-before-start")'))
         self.assertLess(source.index("after = snapshots(manifest)"), source.index("stop_rundown()"))
         self.assertLess(source.index("after = snapshots(manifest)"),
                         source.index("counters, capture_end = stop_capture("))
         self.assertLess(source.index("counters, capture_end = stop_capture("),
                         source.index("snapshot_capture_evidence("))
+
+    def test_etw_only_bracketing_is_not_sufficient_for_governing_audit(self):
+        start = datetime(2026, 11, 20, tzinfo=timezone.utc)
+        iso = lambda seconds: (start + timedelta(seconds=seconds)).isoformat()
+        manifest = {
+            "start_utc": iso(1), "end_utc": iso(19),
+            "markers": {"snapshot-before-start": iso(2), "snapshot-before-end": iso(3),
+                        "snapshot-after-start": iso(17), "snapshot-after-end": iso(18)},
+        }
+        self.assertEqual(journey.snapshot_capture_evidence(
+            manifest, start, start + timedelta(seconds=20))["status"], "PASS")
+        for start_at, end_at in [(4, 19), (1, 16), (4, 16)]:
+            with self.subTest(start_at=start_at, end_at=end_at):
+                stale = {**manifest, "start_utc": iso(start_at), "end_utc": iso(end_at)}
+                with self.assertRaisesRegex(Exception, "snapshot-capture-unbracketed"):
+                    journey.snapshot_capture_evidence(stale, start, start + timedelta(seconds=20))
+        for missing in ("start_utc", "end_utc"):
+            stale = dict(manifest)
+            stale.pop(missing)
+            with self.assertRaisesRegex(Exception, "snapshot-audit-bounds-missing"):
+                journey.snapshot_capture_evidence(stale, start, start + timedelta(seconds=20))
