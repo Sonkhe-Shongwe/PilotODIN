@@ -1,8 +1,10 @@
 """Replay generated ETW evidence for the in-journey write-and-restore control."""
 
 import hashlib
+import inspect
 import json
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from qa.p4_native import n12_protected_restore as restore
 from qa.p4_research import n12_app_journey as journey
@@ -122,3 +124,43 @@ class SameCaptureRestoreTests(unittest.TestCase):
         journey.require_same_capture_restore(result, {"status": "BLOCKED", "reason": "restore-evidence-missing"})
         self.assertEqual(result, {"coverage": "BLOCKED", "filesystem": "BLOCKED", "network": "BLOCKED",
                                   "coverage_issues": ["etw-same-capture-restore-unverified"]})
+
+class SnapshotCaptureOrderingTests(unittest.TestCase):
+    def test_both_complete_fingerprints_must_be_within_one_capture(self):
+        start = datetime(2026, 11, 20, tzinfo=timezone.utc)
+        end = start + timedelta(seconds=20)
+        def iso(seconds):
+            return (start + timedelta(seconds=seconds)).isoformat()
+        markers = {
+            "snapshot-before-start": iso(1),
+            "snapshot-before-end": iso(2),
+            "snapshot-after-start": iso(17),
+            "snapshot-after-end": iso(18),
+        }
+        self.assertEqual(journey.snapshot_capture_evidence({"markers": markers}, start, end),
+                         {"status": "PASS", "before_in_capture": True, "after_in_capture": True})
+        for name, stamp in (("snapshot-before-start", iso(-1)),
+                            ("snapshot-before-end", iso(22)),
+                            ("snapshot-after-start", iso(1)),
+                            ("snapshot-after-end", iso(21))):
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(Exception, "snapshot-capture-unbracketed"):
+                    journey.snapshot_capture_evidence({"markers": dict(markers, **{name: stamp})}, start, end)
+        for name in markers:
+            with self.subTest(missing=name):
+                changed = dict(markers)
+                changed.pop(name)
+                with self.assertRaisesRegex(Exception, "snapshot-capture-markers-missing"):
+                    journey.snapshot_capture_evidence({"markers": changed}, start, end)
+
+    def test_capture_source_scans_under_live_etw_before_rundown_stop(self):
+        source = inspect.getsource(journey.capture)
+        self.assertLess(source.index("start_journey_etw("), source.index('mark(manifest, "snapshot-before-start")'))
+        self.assertLess(source.index("before = snapshots(manifest)"), source.index("run_initial_calibration("))
+        self.assertLess(source.index('manifest["end_utc"] = final_end.isoformat()'),
+                        source.index('mark(manifest, "snapshot-after-start")'))
+        self.assertLess(source.index("after = snapshots(manifest)"), source.index("stop_rundown()"))
+        self.assertLess(source.index("after = snapshots(manifest)"),
+                        source.index("counters, capture_end = stop_capture("))
+        self.assertLess(source.index("counters, capture_end = stop_capture("),
+                        source.index("snapshot_capture_evidence("))

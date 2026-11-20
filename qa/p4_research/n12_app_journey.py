@@ -139,6 +139,22 @@ def snapshots(manifest):
             for group in ("protected", "observed")}
 
 
+def snapshot_capture_evidence(manifest, capture_start, capture_end):
+    """Both complete protected/observed inventories must lie inside one ETW session."""
+    names = ("snapshot-before-start", "snapshot-before-end",
+             "snapshot-after-start", "snapshot-after-end")
+    markers = manifest.get("markers")
+    trace.require(isinstance(markers, dict) and all(type(markers.get(name)) is str for name in names),
+                  "snapshot-capture-markers-missing")
+    try:
+        stamps = [trace.utc_time(markers[name]) for name in names]
+    except (ValueError, TypeError, OverflowError):
+        raise trace.EvidenceValidationError("snapshot-capture-markers-invalid") from None
+    trace.require(capture_start <= stamps[0] <= stamps[1] < stamps[2] <= stamps[3] <= capture_end,
+                  "snapshot-capture-unbracketed")
+    return {"status": "PASS", "before_in_capture": True, "after_in_capture": True}
+
+
 def start_capture(root, session, logman):
     providers = root / "providers.txt"
     providers.write_text(
@@ -795,8 +811,6 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     trace.require(bool(fixture_bytes), "the generated Quality fixture is empty")
     with fixture.open("xb") as stream:
         stream.write(fixture_bytes)
-    before = snapshots(manifest)
-    report_file(root / "before.json", before)
     devices = etw.volume_devices()
     session = f"PilotODIN-N12-App-{uuid4().hex}"
     first_processes, first_threads = process_bookend()
@@ -809,6 +823,10 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     stop_rundown = rundown_window = None
     rundown_error = "collector-unavailable"
     try:
+        with checkpoint_stage("protected-before-scan", source, expected_hash):
+            mark(manifest, "snapshot-before-start")
+            before = snapshots(manifest)
+            mark(manifest, "snapshot-before-end")
         if compare_fileio:
             try:
                 stop_rundown = rundown_cleanup.enter_context(etw.collect_fileio_rundown(root))
@@ -851,6 +869,10 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
             )
             final_end = now()
             manifest["end_utc"] = final_end.isoformat()
+        with checkpoint_stage("protected-after-scan", source, expected_hash):
+            mark(manifest, "snapshot-after-start")
+            after = snapshots(manifest)
+            mark(manifest, "snapshot-after-end")
         if stop_rundown is not None:
             first = now()
             try:
@@ -883,7 +905,8 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         report_file(root / "private-process-bookends.json", bookends)
     time.sleep(3)
     with checkpoint_stage("protected-endpoints", source, expected_hash), trace.evidence_stage("protected endpoint snapshot"):
-        after = snapshots(manifest)
+        capture_windows = snapshot_capture_evidence(manifest, capture_start, capture_end)
+        report_file(root / "before.json", before)
         report_file(root / "after.json", after)
         comparison, issues = trace.compare_snapshots(before, after, manifest)
         if restore_control is not None:
@@ -991,6 +1014,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         "webview_storage": paths.webview_storage_summary(),
         "backend_outside_scope_targets": paths.backend_target_summary(),
         "final_sysmon_calibration": final_calibration,
+        "snapshot_capture": capture_windows,
         "process_bookends": {"before": "available" if first_processes is not None else "unavailable",
                             "after": "available" if last_processes is not None else "unavailable"},
         "network": network_diagnostics,

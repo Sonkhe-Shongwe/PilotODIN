@@ -3,7 +3,7 @@ import { openP4FixtureWorkspace } from './p4-open-fixture-workspace.mjs';
 import { p4QualityFixture, reloadP4SyntheticWorkspace, verifyP4QualityAfterRelaunch, verifyP4QualityTransition } from './p4-quality-version-transition.mjs';
 import { p4PreparationRequestUrl } from './p4-preparation-request.mjs';
 import { dragWorkspaceTab, prepareWorkspaceTabDrag } from './p4-drag-workspace-tab.mjs';
-import { approveCompactQuality, closeN12Peer, findN12Peer, isN12Peer, matchesN12LifecycleRequest, verifyN12ArchiveDraft } from './p4-n12-native-cases.mjs';
+import { approveCompactQuality, closeN12Peer, findN12Peer, isN12Peer, matchesN12LifecycleRequest, verifyN12ArchiveDraft, verifyN12ReviewedUndo, verifyN12ReopenedUndo } from './p4-n12-native-cases.mjs';
 import { waitForNativeCloseRegistration } from './p4-n12-native-close-readiness.mjs';
 import { projectSwitchCommand } from './p4-native-project-switch-command.mjs';
 import { verifyPrepareFittedAcceptance } from './p4-prepare-fitted-acceptance.mjs';
@@ -439,8 +439,9 @@ async function runNativeProbe(browser) {
   const failures=[];
   try{
    if(peer)await closeN12Peer(peer);
-   await verifyP4QualityAfterRelaunch(page,API,saved.quality);
-   console.log('N11 native process relaunch restores the synthetic project and Prepare version 1: PASS');
+   if(n12Journey)await verifyN12ReopenedUndo(url=>fetch(url),API,saved.quality);
+   await verifyP4QualityAfterRelaunch(page,API,saved.quality,n12Journey?2:1);
+   console.log('N11 native process relaunch restores the synthetic project and Prepare version '+(n12Journey?2:1)+': PASS');
    try{await verifyWindowsLayout(page)}catch(error){failures.push('R04');console.error('R04 check stopped:',error.message)}
    try{await verifyWindowsPrepare(page,saved.prepare)}catch(error){failures.push('R05');console.error('R05 check stopped:',error.message)}
   }finally{
@@ -551,15 +552,17 @@ async function runNativeProbe(browser) {
    await closeN12Peer(peer);
   }
   console.log('N11 Quality approval, 409 for the previous version, Prepare refresh and WebView reload: PASS');
+  if(n12Journey)await verifyN12ReviewedUndo(page,API,ids.quality,url=>fetch(url),reloadP4SyntheticWorkspace);
   await noTraining(all);
   console.log('N12 disposable projects contain no model experiments: PASS for experiment count');
   // Reopen the same WebView with the verified version and no edited draft
   // so the Windows close request can run through normal app shutdown.
   await reloadP4SyntheticWorkspace(page);
   await expect(chooser).toHaveValue(ids.quality);
-  await expect(section).toContainText('Current approved dataset version: 1.');
+  await expect(section).toContainText('Current approved dataset version: '+(n12Journey?2:1)+'.');
   await expect(target).toHaveValue('');
-  expect(writes).toEqual(peer?['proposals','commit','archive','restore']:['proposals','commit']);
+  expect(writes).toEqual(n12Journey
+   ? ['proposals','commit','archive','restore','proposals','commit'] : ['proposals','commit']);
   expect(lifecyclePermit).toBeNull();
   await writeFile(receiptPath,JSON.stringify(ids),{flag:'wx'});
   if(peer) {

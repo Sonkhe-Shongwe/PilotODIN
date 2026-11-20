@@ -83,7 +83,7 @@ export async function reloadP4SyntheticWorkspace(page) {
   }
 }
 
-export async function verifyP4QualityAfterRelaunch(page, api, projectId) {
+export async function verifyP4QualityAfterRelaunch(page, api, projectId, expectedVersion = 1) {
   const chooser = page.getByRole('combobox', { name: 'Switch project' });
   const navigation = page.getByRole('navigation', { name: 'Workspace navigation' });
   const review = page.getByRole('region', { name: 'Potential prediction opportunities' });
@@ -91,14 +91,14 @@ export async function verifyP4QualityAfterRelaunch(page, api, projectId) {
 
   await expect(chooser).toHaveValue(projectId, { timeout: 45000 });
   await navigation.getByRole('button', { name: 'Prepare', exact: true }).click();
-  await expect(review).toContainText('Current approved dataset version: 1.');
+  await expect(review).toContainText(`Current approved dataset version: ${expectedVersion}.`);
   await expect(target).toHaveValue('');
-  const planV1 = p4PreparationRequestUrl(api, projectId, 'churn', 1);
+  const planUrl = p4PreparationRequestUrl(api, projectId, 'churn', expectedVersion);
   const [response] = await Promise.all([
-    page.waitForResponse(r => r.url() === planV1 && r.request().method() === 'GET', { timeout: 30000 }),
+    page.waitForResponse(r => r.url() === planUrl && r.request().method() === 'GET', { timeout: 30000 }),
     target.selectOption('churn'),
   ]);
   expect(response.status()).toBe(200);
-  expect(await response.json()).toMatchObject({ quality_version: 1, target: 'churn' });
+  expect(await response.json()).toMatchObject({ quality_version: expectedVersion, target: 'churn' });
   await expect(page.getByRole('heading', { name: 'Automatic preprocessing plan' })).toBeVisible();
 }
