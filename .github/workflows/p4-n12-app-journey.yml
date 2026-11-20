@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ true }} # One separately approved source-pinned hosted journey.
+    if: ${{ false }} # One approved attempt completed at run 44817701849; new approval required.
     runs-on: windows-2022
     timeout-minutes: 100
     env:

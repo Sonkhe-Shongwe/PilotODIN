@@ -1,6 +1,6 @@
 # R02.5 | Representative Windows journey: bounded readiness decision
 
-Status: **preparation only; no live capture or native build authorised**. Prepared 20 November 2026 on `feature/live-dev-workspace-20261023`. The [current status](../../docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) governs scoring, not this plan.
+Status: **one separately approved native attempt completed, combined ETW reduction blocked; no further run authorised**. Prepared and updated 20 November 2026 on `feature/live-dev-workspace-20261023`. The [current status](../../docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) governs scoring, not this plan.
 
 ## Decision and prior evidence
 
@@ -34,6 +34,10 @@ Reuse rather than repeat: the [protected write-and-restore control](../p4_native
 The in-journey control reuses the two generated writers on a disposable sentinel outside the protected originals. The reducer reads their evidence from the journey's existing ETW export and requires their windows to fall after the Quality marker and before the first close. The draft accepted an extra completed write on the restore handle because the expected write still matched by size. The corrected check blocks that trace. Generated cases also rejected missing write evidence, wrong writer or destination, conflicting names, failed completion, out-of-window execution, ambiguous lifetime, changed endpoint and trace loss. A scoped pass preserves unrelated unresolved mutations and audit findings. [Replay cases](../../tests/test_p4_n12_same_capture_restore.py) · [Prior plan](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/186b6e7e1524b5da8885acc42260a432e9b20b76/qa/p4_research/R02_5_REPRESENTATIVE_JOURNEY_READINESS_2026-11-20.md)
 
 The optional control remains staged. The same N12 Undo helper now passes a disposable real-HTTP browser run through exact approval and version-2 reopen. A subsequent boundary audit found the earlier design's complete fingerprints were inside ETW but **outside** the narrower governing audit window. Capture timestamps now place both full fingerprints inside **both** windows; negative tests block truncated audit bounds even when ETW bounds remain intact. All four routine P4 jobs passed at `9c8d501fd433ef1a5894d5f88e6d41a4e7d02d09`: 766 Python passes, 6 skips, 242 subtests, 103 frontend checks, successful Vite build and 13 real-HTTP browser cases. Windows fixture diagnostics still include unresolved FileIO coverage. This is source/synthetic evidence, **not** a completed native desktop journey. The app workflow remains disarmed. [Exact-source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44816206674) · [Audit window tests](../../tests/test_p4_n12_same_capture_restore.py) · [Browser coverage](../../frontend/e2e/p4-real-http-review-queue.spec.ts).
+
+## First separately approved native attempt
+
+The first exact-source native hosted run [44817701849](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44817701849) completed both app launches and protected before/after scans with matching endpoint hashes, and passed initial/final Sysmon calibration. The combined reducer could not finish because an ETW event timestamp was outside its declared capture bounds. The network diagnostic also recorded three WebView non-loopback events and an app-lifecycle mismatch. Thus **no R02.5 or R02.6 acceptance verdict supersedes the prior FAIL/BLOCKED record**. The one-use workflow has been disarmed. The next action is an offline synthetic timestamp-boundary classification without silently dropping events. [Exact stage record](./N12_APP_JOURNEY_APPROVED_RESULT_44817701849.md).
 
 ## Stop rules and evidence retention
 
