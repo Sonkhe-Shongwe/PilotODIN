@@ -217,15 +217,16 @@ try {
         $firstRecord = $latest.RecordId + 1
     }
 
-    $captureArgs = '/AcceptEula /Quiet'
-    if (-not $ProcmonEnvironmentControl) { $captureArgs += ' /Minimized' }
-    $captureArgs += " /NoFilter /BackingFile `"$pml`""
-    $capture = Start-Process -FilePath $procmon -ArgumentList $captureArgs -PassThru
+    $capture = Start-Process -FilePath $procmon -ArgumentList "/AcceptEula /Quiet /Minimized /NoFilter /BackingFile `"$pml`"" -PassThru
     Start-CollectorCommand $procmon '/WaitForIdle' 'Process Monitor readiness'
     $capture.Refresh()
-    if ($capture.HasExited -or -not (Test-Path -LiteralPath $pml -PathType Leaf)) {
-        throw 'Process Monitor capture did not start.'
+    if ($capture.HasExited) {
+        throw "Process Monitor capture exited with code $($capture.ExitCode) before readiness."
     }
+    if (-not (Test-Path -LiteralPath $pml -PathType Leaf)) {
+        throw 'Process Monitor backing file was absent after readiness.'
+    }
+    Write-Host 'Process Monitor capture process is running and its backing file is present.'
 
     $start = [DateTimeOffset]::UtcNow
     if ($ProcmonEnvironmentControl) {
