@@ -1,6 +1,6 @@
 # R02.5 | Representative Windows journey: bounded readiness decision
 
-Status: **one separately approved native attempt completed, combined ETW reduction blocked; no further run authorised**. Prepared and updated 20 November 2026 on `feature/live-dev-workspace-20261023`. The [current status](../../docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) governs scoring, not this plan.
+Status: **two separately approved native attempts consumed. The second completed reduction and failed filesystem/network with mutation coverage BLOCKED. No further run authorised.** Updated 21 November 2026 on `feature/live-dev-workspace-20261023`. The [current status](../../docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) governs scoring, not this plan.
 
 ## Decision and prior evidence
 
@@ -38,6 +38,10 @@ The optional control remains staged. The same N12 Undo helper now passes a dispo
 ## First separately approved native attempt
 
 The first exact-source native hosted run [44817701849](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44817701849) completed both app launches and protected before/after scans with matching endpoint hashes, and passed initial/final Sysmon calibration. The combined reducer could not finish because an ETW event timestamp was outside its declared capture bounds. The network diagnostic also recorded three WebView non-loopback events and an app-lifecycle mismatch. Thus **no R02.5 or R02.6 acceptance verdict supersedes the prior FAIL/BLOCKED record**. The one-use workflow has been disarmed. The next action is an offline synthetic timestamp-boundary classification without silently dropping events. [Exact stage record](./N12_APP_JOURNEY_APPROVED_RESULT_44817701849.md).
+
+## Second approved native result
+
+At [one-use Windows run 44838416004](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44838416004), all 1,550,275 ETW events were inside the declared bounds and the strict reducer completed. The app launched/reopened and protected endpoints matched, but the governing result was filesystem **FAIL**, network **FAIL**, file mutation coverage **BLOCKED**. Documented out-of-scope WebView/backend writes, non-loopback traffic and incomplete attribution are now the active blockers. This was a new approved diagnostic attempt, not a replay of the prior approval. Both markers are consumed; the workflow is disarmed. [Detailed result](./N12_APP_JOURNEY_RESULT_44838416004.md).
 
 ## Stop rules and evidence retention
 

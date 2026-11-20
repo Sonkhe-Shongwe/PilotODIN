@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   journey:
-    if: ${{ true }} # One new approved ETW-boundary diagnostic run; checkout freezes the reviewed parent.
+    if: ${{ false }} # Approved ETW-boundary diagnostic run 44838416004 consumed; new approval required.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
