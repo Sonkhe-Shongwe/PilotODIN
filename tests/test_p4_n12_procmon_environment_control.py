@@ -49,12 +49,15 @@ class ProcmonEnvironmentControlTests(unittest.TestCase):
                             f"\r\nTMP={TMP}\r\nTEMP={TEMP}\r\nOTHER=private-value"):
             with self.subTest(environment_format=environment[:3]):
                 report = control.inspect_rows([create(), process_start(environment)], CHILD, *WINDOW)
+                shapes = report.pop("assignment_shape")
                 self.assertEqual(report, {"process_start": "environment-observed", "tmp": "expected",
                                           "temp": "expected", "known_create": "observed",
                                           "environment_contents": "nonempty",
                                           "key_rendering": {"tmp": "recognized-assignment",
                                                             "temp": "recognized-assignment"},
                                           "start_before_create": True})
+                self.assertEqual([item["expected_value"] for item in shapes.values()],
+                                 ["bounded-literal-match", "bounded-literal-match"])
                 self.assertNotIn("private", json.dumps(report))
 
     def test_rejects_identity_errors_and_ambiguous_start_records(self):
@@ -95,6 +98,41 @@ class ProcmonEnvironmentControlTests(unittest.TestCase):
                 self.assertEqual(report["environment_contents"], contents)
                 self.assertEqual(report["key_rendering"], dict.fromkeys(("tmp", "temp"), rendering))
                 self.assertEqual((report["tmp"], report["temp"]), ("tmp-not-observed", "temp-not-observed"))
+                self.assertNotIn("private", json.dumps(report))
+
+    def test_reports_delimiters_padded_operator_and_quoted_literal(self):
+        environment = f'\r\nTMP : "{TMP}"\tTEMP={TEMP};'
+        report = control.inspect_rows([process_start(environment), create()], CHILD, *WINDOW)
+        self.assertTrue(report["start_before_create"])
+        self.assertEqual(report["assignment_shape"]["tmp"], {
+            "token": "unique", "before_key": "crlf", "operator": "colon",
+            "padding_before_operator": True, "padding_after_operator": True,
+            "value_wrapper": "double-quote", "expected_value": "bounded-literal-match",
+            "after_value": "tab",
+        })
+        self.assertEqual(report["assignment_shape"]["temp"]["before_key"], "tab")
+        self.assertEqual(report["assignment_shape"]["temp"]["after_value"], "semicolon")
+        self.assertEqual(report["assignment_shape"]["temp"]["expected_value"], "bounded-literal-match")
+        self.assertEqual((report["tmp"], report["temp"]), ("tmp-not-observed", "temp-not-observed"))
+        self.assertNotIn("private", json.dumps(report))
+
+    def test_reports_padding_around_a_separator(self):
+        shape = control.assignment_shape(f" ; TMP={TMP} ; TEMP={TEMP}", "TMP", TMP)
+        self.assertEqual(shape["before_key"], "semicolon-space-before-space-after")
+        self.assertEqual(shape["after_value"], "semicolon-space-before-space-after")
+
+    def test_literal_matches_need_unique_tokens_and_known_boundaries(self):
+        for environment, token, value in (
+            (f"TMP={TMP}", "unique", "bounded-literal-match"),
+            (f"TMP={TMP}-extra", "unique", "unbounded-literal"),
+            (f"OTHER=prefix TMP={TMP}", "unique", "unbounded-literal"),
+            (f"TMP={TEMP}", "unique", "not-found"),
+            (f"TMP={TMP}; TMP={TEMP}", "ambiguous", None),
+            (" ; OTHER=containsTMP=private-sample", "missing", None),
+        ):
+            with self.subTest(token=token, value=value):
+                report = control.assignment_shape(environment, "TMP", TMP)
+                self.assertEqual((report["token"], report.get("expected_value")), (token, value))
                 self.assertNotIn("private", json.dumps(report))
 
     def test_wrong_writer_failed_open_tie_and_late_start_do_not_prove_order(self):

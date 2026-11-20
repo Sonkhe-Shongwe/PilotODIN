@@ -16,6 +16,9 @@ from qa.p4_research.n12_webview_storage_probe import process_start_environment, 
 
 CONSENT = "I_APPROVE_ONE_N12_PROCMON_ENVIRONMENT_CONTROL"
 PAYLOAD = b"PilotODIN generated environment control"
+SEPARATOR_LABELS = {";": "semicolon", ",": "comma", "|": "pipe", "\t": "tab",
+                    "\r\n": "crlf", "\r": "cr", "\n": "lf", "\0": "nul"}
+SEPARATOR_PATTERN = r"( *)(\r\n|[;,|\t\r\n\0])( *)"
 CHILD = """
 import os
 from pathlib import Path
@@ -55,6 +58,48 @@ def capture(root):
             "paths": {key: str(p) for key, p in paths.items()}}
 
 
+def boundary_shape(text, *, left):
+    pattern = SEPARATOR_PATTERN + r"\Z" if left else r"\A" + SEPARATOR_PATTERN
+    match = re.search(pattern, text)
+    if match:
+        before, separator, after = match.groups()
+        label = SEPARATOR_LABELS[separator]
+        if before:
+            label += "-space-before"
+        if after:
+            label += "-space-after"
+        return label, True
+    if not text.strip(" "):
+        return ("field-start" if left else "field-end"), True
+    edge = text[-1] if left else text[0]
+    return ("space-only" if edge == " " else "unrecognized"), False
+
+
+def assignment_shape(environment, key, expected):
+    """Report the shape around the known fixture value without publishing text."""
+    tokens = list(re.finditer(rf"(?<![\w=]){key}([ \t]*)([=:])([ \t]*)", environment, re.I))
+    if len(tokens) != 1:
+        return {"token": "ambiguous" if tokens else "missing"}
+    match = tokens[0]
+    left, left_bounded = boundary_shape(environment[:match.start()], left=True)
+    prefix, operator, suffix = match.groups()
+    remainder = environment[match.end():]
+    wrapper = remainder[:1]
+    quote = wrapper if wrapper in ("'", '"') else ""
+    literal = quote + expected + quote
+    report = {
+        "token": "unique", "before_key": left, "operator": "equals" if operator == "=" else "colon",
+        "padding_before_operator": bool(prefix), "padding_after_operator": bool(suffix),
+        "value_wrapper": {"": "none", "'": "single-quote", '"': "double-quote"}[quote],
+        "expected_value": "not-found", "after_value": "unverified",
+    }
+    if remainder[:len(literal)].casefold() == literal.casefold():
+        right, right_bounded = boundary_shape(remainder[len(literal):], left=False)
+        report["after_value"] = right
+        report["expected_value"] = "bounded-literal-match" if left_bounded and right_bounded else "unbounded-literal"
+    return report
+
+
 def inspect_rows(rows, child, start, end):
     trace.require(start.date() == end.date() and start < end, "invalid same-day Procmon window")
     first, last = trace.utc_ticks(start), trace.utc_ticks(end)
@@ -80,6 +125,7 @@ def inspect_rows(rows, child, start, end):
 
     report = {"process_start": "start-record-unobserved", "tmp": "unverified", "temp": "unverified",
               "environment_contents": "unverified", "key_rendering": {"tmp": "unverified", "temp": "unverified"},
+              "assignment_shape": {},
               "known_create": "observed" if len(creates) == 1 else "unverified",
               "start_before_create": False}
     if len(starts) != 1:
@@ -99,15 +145,16 @@ def inspect_rows(rows, child, start, end):
         for key in ("TMP", "TEMP"):
             label = key.casefold()
             status, observed = process_start_path(environment, key)
+            shape = assignment_shape(environment, key, child["paths"][key])
             rendering = "recognized-assignment"
             if status == f"{label}-not-observed":
                 # A token is a format hint only. It does not verify a key or its value.
-                looks_like_assignment = re.search(rf"(?<![\w=]){key}[ \t]*[=:]", environment, re.I)
-                rendering = "assignment-like-token" if looks_like_assignment else "no-assignment-token"
+                rendering = "assignment-like-token" if shape["token"] != "missing" else "no-assignment-token"
             if observed is not None:
                 status = "expected" if observed == trace.windows_path(child["paths"][key]) else "mismatch"
             report[label] = status
             report["key_rendering"][label] = rendering
+            report["assignment_shape"][label] = shape
     return report
 
 
