@@ -19,8 +19,15 @@ if ($FixtureExitCode -ge 0) {
 }
 
 . (Join-Path $PSScriptRoot 'Close_P4_Verified_Window.ps1')
+. (Join-Path $PSScriptRoot 'P4_N12_Collector_Process.ps1')
 $hostExe = Join-Path $PSHOME 'pwsh.exe'
-foreach ($expectedCode in @(0, 17)) {
+foreach ($case in @(
+    @{ CloseMode = 'app'; ExitCode = 0 }
+    @{ CloseMode = 'app'; ExitCode = 17 }
+    @{ CloseMode = 'collector'; ExitCode = 0 }
+    @{ CloseMode = 'collector'; ExitCode = 1 }
+)) {
+    $expectedCode = $case.ExitCode
     $child = Start-Process -FilePath $hostExe -ArgumentList "-NoProfile -NonInteractive -STA -File `"$PSCommandPath`" -FixtureExitCode $expectedCode" -PassThru
     try {
         $ready = $false
@@ -31,6 +38,16 @@ foreach ($expectedCode in @(0, 17)) {
             Start-Sleep -Milliseconds 200
         }
         if (-not $ready) { throw 'Synthetic close fixture window did not open' }
+        if ($case.CloseMode -eq 'collector') {
+            Request-P4N12CollectorWindowClose -Process $child
+            $result = Wait-P4N12CollectorExit -Process $child -TimeoutMs 15000
+            $expectedStatus = if ($expectedCode -eq 0) { 'EXITED' } else { 'NONZERO_EXIT' }
+            if ($result.Status -ne $expectedStatus -or $result.ExitCode -ne $expectedCode) {
+                throw "Unexpected collector window-close result for synthetic exit $expectedCode."
+            }
+            Write-Output "Synthetic collector window close: observed exit code $expectedCode"
+            continue
+        }
         try {
             Close-P4VerifiedWindow -AppProcessId $child.Id -ExpectedPath $hostExe -ExpectedTitle $title
             if ($expectedCode -ne 0) { throw 'A nonzero Windows process exit was incorrectly accepted' }

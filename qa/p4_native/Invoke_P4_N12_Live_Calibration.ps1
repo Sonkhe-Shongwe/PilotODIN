@@ -217,7 +217,10 @@ try {
         $firstRecord = $latest.RecordId + 1
     }
 
-    $capture = Start-Process -FilePath $procmon -ArgumentList "/AcceptEula /Quiet /Minimized /NoFilter /BackingFile `"$pml`"" -PassThru
+    $captureArgs = '/AcceptEula /Quiet'
+    if (-not $ProcmonEnvironmentControl) { $captureArgs += ' /Minimized' }
+    $captureArgs += " /NoFilter /BackingFile `"$pml`""
+    $capture = Start-Process -FilePath $procmon -ArgumentList $captureArgs -PassThru
     Start-CollectorCommand $procmon '/WaitForIdle' 'Process Monitor readiness'
     $capture.Refresh()
     if ($capture.HasExited -or -not (Test-Path -LiteralPath $pml -PathType Leaf)) {
@@ -243,15 +246,22 @@ try {
     }
 
     $stopError = $null
-    try {
-        Start-CollectorCommand $procmon '-terminate -quiet' 'Process Monitor stop command'
-    } catch {
-        $stopError = $_.Exception.Message
-        Write-Warning $stopError
+    if ($ProcmonEnvironmentControl) {
+        # Exercise a normal window close on the captured process. The finally
+        # block can request termination for cleanup after a failed close.
+        Request-P4N12CollectorWindowClose -Process $capture
+        Write-Host 'Process Monitor main-window close requested.'
+    } else {
+        try {
+            Start-CollectorCommand $procmon '-terminate -quiet' 'Process Monitor stop command'
+        } catch {
+            $stopError = $_.Exception.Message
+            Write-Warning $stopError
+        }
     }
     $captureExit = Wait-P4N12CollectorExit -Process $capture -TimeoutMs 30000
     if ($captureExit.Status -eq 'TIMEOUT') {
-        throw 'Process Monitor capture process was still running 30 seconds after the stop command.'
+        throw 'Process Monitor capture process was still running 30 seconds after the stop request.'
     }
     Write-Host "Process Monitor capture process exited with code $($captureExit.ExitCode)."
     if ($captureExit.Status -ne 'EXITED') {

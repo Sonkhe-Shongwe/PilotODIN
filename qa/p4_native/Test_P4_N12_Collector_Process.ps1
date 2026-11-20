@@ -20,6 +20,12 @@ foreach ($code in 0, 17) {
         if ($result.Status -ne $expectedStatus -or $result.ExitCode -ne $code) {
             throw "Unexpected status for synthetic process exit $code."
         }
+        try {
+            Request-P4N12CollectorWindowClose -Process $child
+            throw 'An already exited process accepted a window close request.'
+        } catch {
+            if ($_.Exception.Message -cne 'Process Monitor exited before the window close request.') { throw }
+        }
     } finally {
         $child.Dispose()
     }

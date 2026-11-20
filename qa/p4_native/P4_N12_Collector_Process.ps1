@@ -1,3 +1,15 @@
+function Request-P4N12CollectorWindowClose {
+    param([Parameter(Mandatory)][System.Diagnostics.Process]$Process)
+
+    $Process.Refresh()
+    if ($Process.HasExited) {
+        throw 'Process Monitor exited before the window close request.'
+    }
+    if (-not $Process.CloseMainWindow()) {
+        throw 'Process Monitor did not accept a main-window close request.'
+    }
+}
+
 function Wait-P4N12CollectorExit {
     param(
         [Parameter(Mandatory)][System.Diagnostics.Process]$Process,
