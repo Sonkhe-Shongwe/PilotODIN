@@ -613,7 +613,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     monkeypatch.setattr(n12_lifetime_control, "process_times",
                         lambda process: {"pid": process.pid, "birth": 170, "exit": 200})
     def endpoint_snapshots(m):
-        after = "etw-stop" in events
+        after = "snapshot-after-start" in m["markers"]
+        assert "etw-start" in events and "etw-stop" not in events
+        assert ("snapshot-before-start" in m["markers"]) and ("snapshot-before-end" in m["markers"]) == after
         states = {"quality-source": "absent" if fault == "absent-fixture" else "file",
                   "qa-home": "directory" if after else "absent",
                   "local-original": "directory" if after and fault == "changed-protected" else "absent"}
@@ -669,7 +671,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     def sleep(seconds):
         if "calibration-first" not in events:
             assert events[-1] == ("fileio-start" if fileio else "etw-start")
-            assert manifest["start_utc"] == "2026-11-14T00:00:01+00:00"
+            assert manifest["start_utc"] == "2026-11-14T00:00:03+00:00"
             assert 0.001 < seconds <= 0.1
             events.append("initial-fixture-lead-in")
         elif events[-1] == "cleanup-backend":
@@ -779,7 +781,11 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         assert sysmon.read_bytes() == b"record-bounded evidence"
         assert etw and "etw-export" not in events
         assert m["sysmon_first_record"] == 11 and m["sysmon_last_record"] == 60
-        assert list(m["markers"]) == list(journey.trace.MINIMUM_MARKERS)
+        assert [name for name in m["markers"] if name in journey.trace.MINIMUM_MARKERS] == list(
+            journey.trace.MINIMUM_MARKERS)
+        assert all(name in m["markers"] for name in (
+            "snapshot-before-start", "snapshot-before-end",
+            "snapshot-after-start", "snapshot-after-end"))
         assert list(m["markers"].values()) == sorted(m["markers"].values())
         assert [p["role"] for p in m["processes"]].count("app") == 2
         if fault in {"sysmon-parse", "changed-protected", "absent-fixture"}:
@@ -896,7 +902,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert stages[-4:] == [("app-journey", "interrupted"), ("process-cleanup", "interrupted"),
                                    ("capture", "interrupted"), ("etw-stop", "interrupted")]
         if fault == "etw-stop":
-            assert stages[-2:] == [("final-fixture", "completed"), ("etw-stop", "interrupted")]
+            assert stages[-2:] == [("protected-after-scan", "completed"), ("etw-stop", "interrupted")]
         return
 
     comparison_faults = {"credit-reduce": "ValueError", "credit-reconcile": "EvidenceValidationError"}
@@ -966,6 +972,9 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
         else:
             assert json.loads(socket_path.read_text())["observed_ticks"] == 200
         assert report["journey_diagnostics"]["app_lifetimes"]["launches"]["relaunch"]["handle"] == "MATCH"
+        assert report["journey_diagnostics"]["snapshot_capture"] == {
+            "status": "PASS", "before_in_capture": True, "after_in_capture": True,
+        }
         assert report["journey_diagnostics"]["webview_storage"] == {
             "ambient_temp_creates": 0, "user_local_targets": [],
         }
