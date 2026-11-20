@@ -664,10 +664,32 @@ def mark(eid, status, results=None, error=None):
                     (status,json.dumps(results) if results is not None else None,error,eid))
 
 
+class ModelSelectionVersionConflict(ValueError):
+    """The evaluated experiment no longer matches the working dataset."""
+
+
 def select_model(eid,model,final_results):
+    """Commit one evaluation under the same write lock as archive and Quality."""
+    from .project_lifecycle import require_active_for_write
+
     with connect() as con:
-        con.execute("UPDATE experiments SET selected_model=?,final_results=? WHERE id=? AND selected_model IS NULL",
-                    (model,json.dumps(final_results),eid))
-        return con.total_changes==1
+        con.execute("BEGIN IMMEDIATE")
+        candidate = con.execute(
+            "SELECT e.project_id,e.config,q.current_version FROM experiments e "
+            "LEFT JOIN quality_state q ON q.project_id=e.project_id "
+            "WHERE e.id=? AND e.status='completed' AND e.selected_model IS NULL", (eid,),
+        ).fetchone()
+        if candidate is None:
+            return False
+        require_active_for_write(con, candidate["project_id"])
+        trained_version = json.loads(candidate["config"]).get("quality_version", 0)
+        current_version = candidate["current_version"]
+        if current_version is None or current_version != trained_version:
+            raise ModelSelectionVersionConflict("Dataset changed since training. Start a new experiment on the current version.")
+        updated = con.execute(
+            "UPDATE experiments SET selected_model=?,final_results=? WHERE id=? AND selected_model IS NULL",
+            (model,json.dumps(final_results),eid),
+        )
+        return updated.rowcount == 1
 
 init()

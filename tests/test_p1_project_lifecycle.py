@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -159,6 +162,79 @@ def test_training_admission_checks_the_state_at_commit(workspace, monkeypatch, m
         worker.assert_not_called()
     assert source.read_bytes() == original
     assert list((home / "models").iterdir()) == []
+
+
+def _completed_selection_fixture(workspace, monkeypatch, before_prediction):
+    client, _, (pid, _), _ = workspace
+    eid = storage.new_experiment(pid, {"target": "Amount", "task": "regression", "quality_version": 0})
+    storage.mark(eid, "completed", {
+        "task": "regression", "baseline_cv": 5.0, "test_rows": 3,
+        "models": [
+            {"key": "ridge", "status": "ready", "cv_metric": 1.0},
+            {"key": "linear_regression", "status": "ready", "cv_metric": 2.0},
+        ],
+    })
+    targets = [11.0, 22.0, 33.0]
+
+    def load(path):
+        if path.name == "test_set.joblib":
+            return [[1.0], [2.0], [3.0]], targets
+
+        def predict(_rows):
+            before_prediction()
+            offset = {"ridge": 1, "linear_regression": 2}[path.stem]
+            return [value + offset for value in targets]
+
+        return SimpleNamespace(predict=predict)
+
+    monkeypatch.setattr(main.joblib, "load", load)
+    monkeypatch.setattr(main.engine, "bounded_feature_sensitivity", lambda *_: {"status": "fixture"})
+    return client, pid, eid
+
+
+@pytest.mark.parametrize("winner", ["quality", "archive"])
+def test_model_selection_cannot_save_after_project_state_changes(workspace, monkeypatch, winner):
+    def change_while_evaluating():
+        if winner == "quality":
+            assert quality.restore(pid, 0, 0)["version"] == 1
+        else:
+            archived = _change(client, pid, "archive", 0)
+            assert archived.status_code == 200, archived.text
+
+    client, pid, eid = _completed_selection_fixture(workspace, monkeypatch, change_while_evaluating)
+    response = client.post(f"/api/experiments/{eid}/select", json={"model_key": "ridge"})
+    assert response.status_code == 409, response.text
+    assert ("dataset changed" if winner == "quality" else "archived") in response.json()["detail"].lower()
+    saved = storage.get_experiment(eid)
+    assert saved["status"] == "completed"
+    assert saved["selected_model"] is None and saved["final_results"] is None
+    assert all(path.read_bytes() == original for path, original, _ in workspace[3])
+
+
+def test_concurrent_model_selection_saves_one_result_and_preserves_history(workspace, monkeypatch):
+    together = Barrier(2, timeout=10)
+    client, pid, eid = _completed_selection_fixture(workspace, monkeypatch, together.wait)
+    endpoint = f"/api/experiments/{eid}"
+
+    def select(candidate):
+        return client.post(f"{endpoint}/select", json={"model_key": candidate})
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        responses = list(pool.map(select, ("ridge", "linear_regression")))
+    assert sorted(response.status_code for response in responses) == [200, 409]
+    winner = next(response.json() for response in responses if response.status_code == 200)
+    expected_mae = {"ridge": 1, "linear_regression": 2}[winner["selected_model"]]
+    assert winner["final_results"]["mae"] == expected_mae
+    assert select(winner["selected_model"]).json() == winner  # current-version retry uses stored results
+
+    assert quality.restore(pid, 0, 0)["version"] == 1
+    history = client.get(endpoint)
+    assert history.status_code == 200, history.text
+    assert history.json()["is_stale"] is True
+    assert history.json()["dataset_version"] == 0 and history.json()["current_version"] == 1
+    assert history.json()["selected_model"] == winner["selected_model"]
+    assert history.json()["final_results"] == winner["final_results"]
+    assert all(path.read_bytes() == original for path, original, _ in workspace[3])
 
 
 def test_active_training_and_odin_runs_fail_closed_before_archive(workspace):

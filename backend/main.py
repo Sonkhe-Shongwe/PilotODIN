@@ -448,7 +448,7 @@ def cancel_training(experiment_id:str, request:Request):
 def choose_model(experiment_id:str,body:SelectionRequest):
     e=experiment_or_404(experiment_id)
     if e["status"]!="completed": raise HTTPException(status_code=409,detail="Experiment not ready")
-    if e["config"].get("quality_version",0)!=quality.current_version(e["project_id"]):
+    if e["config"].get("quality_version",0)!=quality_response(quality.current_version,e["project_id"]):
         raise HTTPException(status_code=409,detail="Dataset changed since training. Start a new experiment on the current version.")
     if e["selected_model"]:
         if e["selected_model"]==body.model_key:
@@ -498,7 +498,13 @@ def choose_model(experiment_id:str,body:SelectionRequest):
             "status":"unavailable",
             "reason":"Bounded sensitivity could not be calculated for this trained model."
         }
-    if not storage.select_model(experiment_id,body.model_key,metrics):
+    try:
+        saved = storage.select_model(experiment_id,body.model_key,metrics)
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+    except storage.ModelSelectionVersionConflict as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
+    if not saved:
         raise HTTPException(status_code=409,detail="Model was already selected")
     return {"selected_model":body.model_key,"final_results":metrics}
 
