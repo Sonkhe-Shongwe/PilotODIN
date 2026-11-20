@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   environment-control:
-    if: ${{ github.run_attempt == '1' }}
+    if: ${{ false }} # Awaiting one source-pinned Process Monitor environment control approval.
     runs-on: windows-2022
     timeout-minutes: 8
     steps:
