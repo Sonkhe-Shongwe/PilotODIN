@@ -6,8 +6,8 @@ import {join} from 'node:path';
 import {openP4FixtureWorkspace} from './p4-open-fixture-workspace.mjs';
 import {verifyPrepareFittedAcceptance} from './p4-prepare-fitted-acceptance.mjs';
 import {p4PreparationRequestUrl} from './p4-preparation-request.mjs';
-import {approveCompactQuality,matchesN12LifecycleRequest,verifyN12ArchiveDraft} from './p4-n12-native-cases.mjs';
-import {p4QualityFixture,verifyP4QualityAfterRelaunch,verifyP4QualityTransition} from './p4-quality-version-transition.mjs';
+import {approveCompactQuality,matchesN12LifecycleRequest,verifyN12ArchiveDraft,verifyN12ReviewedUndo,verifyN12ReopenedUndo} from './p4-n12-native-cases.mjs';
+import {p4QualityFixture,reloadP4SyntheticWorkspace,verifyP4QualityAfterRelaunch,verifyP4QualityTransition} from './p4-quality-version-transition.mjs';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
@@ -927,7 +927,7 @@ test('P4-79 real HTTP: reopened experiment settings are read from saved record, 
   expect((await realProject.json()).experiments).toEqual([]);
  });
 
-test('P4 N11 real HTTP: compact Quality approval refreshes Prepare, survives peer archive and browser restart',async({playwright,request})=>{
+test('P4 N11 real HTTP: compact approval, archive, reviewed Undo v2 and persistent browser reopen',async({playwright,request})=>{
   if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
      process.env.P1_REAL_HTTP_E2E!=='1'||!process.env.PILOTODIN_HOME)
     throw Error('Trusted synthetic CI only');
@@ -985,7 +985,12 @@ test('P4 N11 real HTTP: compact Quality approval refreshes Prepare, survives pee
       expect(permit).toBeNull();
       expect(lifecycleWrites).toEqual(['archive','restore']);
       await peer.close();
+      await test.step('Exercise the real N12 reviewed Undo helper and preserve v2 history',async()=>{
+        await verifyN12ReviewedUndo(page,API+'/api',projectId,read,reloadP4SyntheticWorkspace);
+      });
       expect(writes).toEqual([
+        `/api/projects/${projectId}/quality/proposals`,
+        `/api/projects/${projectId}/quality/commit`,
         `/api/projects/${projectId}/quality/proposals`,
         `/api/projects/${projectId}/quality/commit`,
       ]);
@@ -998,7 +1003,12 @@ test('P4 N11 real HTTP: compact Quality approval refreshes Prepare, survives pee
       const [page]=reopened.pages();
       // Start from the desktop's root URL without seeding the project's saved state.
       await page.goto('/');
-      await verifyP4QualityAfterRelaunch(page,API+'/api',projectId);
+      const read=async(url:string)=>{
+        const response=await request.get(url);
+        return {status:response.status(),json:()=>response.json()};
+      };
+      await verifyN12ReopenedUndo(read,API+'/api',projectId);
+      await verifyP4QualityAfterRelaunch(page,API+'/api',projectId,2);
       expect(blocked).toEqual([]);
       const project=await request.get(`${API}/api/projects/${projectId}`);
       expect(project.status()).toBe(200);
