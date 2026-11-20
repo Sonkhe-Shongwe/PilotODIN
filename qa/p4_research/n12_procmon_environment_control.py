@@ -100,7 +100,7 @@ def assignment_shape(environment, key, expected):
     return report
 
 
-def inspect_rows(rows, child, start, end):
+def inspect_rows(rows, child, start, end, *, private_timing=None):
     trace.require(start.date() == end.date() and start < end, "invalid same-day Procmon window")
     first, last = trace.utc_ticks(start), trace.utc_ticks(end)
     starts, creates = [], []
@@ -140,6 +140,8 @@ def inspect_rows(rows, child, start, end):
     status, environment = process_start_environment(row["Detail"], child["parent_pid"], child["command"])
     report["process_start"] = status
     report["start_before_create"] = len(creates) == 1 and stamp < creates[0]
+    if private_timing is not None and len(creates) == 1:
+        private_timing.update(process_start=stamp, create=creates[0])
     if environment is not None:
         report["environment_contents"] = "nonempty" if environment.strip(" \t\r\n;\0") else "empty"
         for key in ("TMP", "TEMP"):
@@ -156,6 +158,47 @@ def inspect_rows(rows, child, start, end):
             report["key_rendering"][label] = rendering
             report["assignment_shape"][label] = shape
     return report
+
+
+def replay_create_timing(rows, child, start, end, *, before, after, writer_guid, etw_creates):
+    """Compare one Procmon create with the ETW reducer's verified create observations.
+
+    ETW tuples contain a verified writer GUID, canonical path, request ticks and
+    completion ticks. A future capture adapter supplies those from the same run.
+    """
+    if (type(before) is not int or type(after) is not int or
+            not trace.utc_ticks(start) <= before < after <= trace.utc_ticks(end)):
+        return {"status": "BLOCKED", "reason": "invalid-create-window"}
+    if not isinstance(writer_guid, str) or not writer_guid:
+        return {"status": "BLOCKED", "reason": "etw-writer-unverified"}
+    timing = {}
+    procmon = inspect_rows(rows, child, start, end, private_timing=timing)
+    if (procmon["process_start"] != "environment-observed"
+            or procmon["tmp"] != "expected" or procmon["temp"] != "expected"):
+        return {"status": "BLOCKED", "reason": "procmon-start-unverified"}
+    if procmon["known_create"] != "observed":
+        return {"status": "BLOCKED", "reason": "procmon-create-missing-or-ambiguous"}
+    target = trace.windows_path(child["target"])
+    matching = [(requested, completed) for guid, path, requested, completed in etw_creates
+                if guid == writer_guid and path == target]
+    if len(matching) != 1:
+        return {"status": "BLOCKED", "reason": "etw-create-missing-or-ambiguous"}
+    requested, completed = matching[0]
+    if type(requested) is not int or type(completed) is not int:
+        return {"status": "BLOCKED", "reason": "invalid-etw-timestamp"}
+    launch, create = timing["process_start"], timing["create"]
+    stamps = {"procmon_create": create, "etw_request": requested, "etw_completion": completed}
+    report = {
+        "procmon_minus_etw_request_ticks": create - requested,
+        "procmon_minus_etw_completion_ticks": create - completed,
+        "from_open_begin_ticks": {label: stamp - before for label, stamp in stamps.items()},
+        "to_open_return_ticks": {label: after - stamp for label, stamp in stamps.items()},
+    }
+    if not all(before <= stamp <= after for stamp in stamps.values()):
+        return {**report, "status": "BLOCKED", "reason": "create-timestamp-outside-window"}
+    if not (launch < min(create, requested) and requested < completed):
+        return {**report, "status": "BLOCKED", "reason": "create-order-unverified"}
+    return {**report, "status": "PASS"}
 
 
 def main():
