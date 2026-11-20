@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import math
+import re
+from codecs import BOM_UTF8
+from collections.abc import Callable
 from typing import Any, TYPE_CHECKING
 
 import numpy as np
@@ -43,17 +46,31 @@ def native(value: Any) -> Any:
     return value
 
 
+def read_csv_with_identifiers(path: str, is_identifier: Callable[[str], bool]) -> pd.DataFrame:
+    """Retry the full CSV on a decoding error, keeping caller-specific text columns."""
+    def parse(encoding: str) -> pd.DataFrame:
+        header = pd.read_csv(path, encoding=encoding, nrows=0)
+        protected = {name: str for name in header.columns if is_identifier(str(name))}
+        return pd.read_csv(path, encoding=encoding, dtype=protected, low_memory=False)
+
+    try:
+        return parse("utf-8-sig")
+    except UnicodeDecodeError:
+        # An explicit UTF-8 BOM declares the encoding even if later bytes are invalid.
+        with open(path, "rb") as source:
+            if source.read(len(BOM_UTF8)) == BOM_UTF8:
+                raise
+        return parse("cp1252")
+
+
+def _import_identifier(name: str) -> bool:
+    normalized = re.sub(r"[\s_-]+", "", name).lower()
+    return normalized.endswith(("id", "key", "code", "postcode", "zipcode", "phone"))
+
+
 def read_data(path: str, ext: str) -> pd.DataFrame:
     if ext == ".csv":
-        import re
-        try:
-            header=pd.read_csv(path,encoding="utf-8-sig",nrows=0)
-            encoding="utf-8-sig"
-        except UnicodeDecodeError:
-            header=pd.read_csv(path,encoding="cp1252",nrows=0)
-            encoding="cp1252"
-        safe_types={c:str for c in header.columns if re.sub(r"[\s_-]+","",str(c)).lower().endswith(("id","key","code","postcode","zipcode","phone"))}
-        df=pd.read_csv(path,encoding=encoding,dtype=safe_types,low_memory=False)
+        df = read_csv_with_identifiers(path, _import_identifier)
     elif ext == ".xlsx":
         df = pd.read_excel(path, engine="openpyxl", sheet_name=0)
     else: raise ValueError("Only CSV and XLSX files are supported")

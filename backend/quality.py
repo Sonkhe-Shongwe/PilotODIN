@@ -138,21 +138,10 @@ def _state(con, pid: str) -> tuple[int, list[str]]:
 
 
 def _source_df(p: dict) -> pd.DataFrame:
-    """Preserve named CSV identifiers (including leading zeros) in quality views.
-
-    Existing ML ingest has its own type inference; it is deliberately not
-    modified in this increment.
-    """
+    """Use the shared CSV decoder with Quality's named identifier rules."""
     path, ext = p["dataset_path"], p["file_ext"]
     if ext == ".csv":
-        try:
-            header = pd.read_csv(path, nrows=0, encoding="utf-8-sig")
-            encoding = "utf-8-sig"
-        except UnicodeDecodeError:
-            header = pd.read_csv(path, nrows=0, encoding="cp1252")
-            encoding = "cp1252"
-        protected = {name: str for name in header.columns if _named_identifier(str(name))}
-        df = pd.read_csv(path, encoding=encoding, dtype=protected, low_memory=False)
+        df = engine.read_csv_with_identifiers(path, _named_identifier)
     elif ext == ".xlsx":
         df = pd.read_excel(path, engine="openpyxl", sheet_name=0)
     else:
