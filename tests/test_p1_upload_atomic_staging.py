@@ -81,7 +81,7 @@ def test_successful_import_pins_complete_original_sha_and_no_staging(monkeypatch
         assert state["current_version"]==0
 
 
-def test_bad_content_after_atomic_publish_still_rolls_back(monkeypatch,tmp_path):
+def test_bad_content_is_discarded_without_publication(monkeypatch,tmp_path):
     home=_isolated(monkeypatch,tmp_path)
     response=TestClient(main.app).post(
         "/api/projects",files={"file":("invalid.csv",b"only_column\nhello\n","text/csv")}

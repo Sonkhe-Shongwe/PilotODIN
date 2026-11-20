@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import io
 import asyncio
+import hashlib
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing
 import json
 import math
 import os
@@ -168,23 +169,14 @@ def health():
 def projects(): return storage.list_projects()
 
 
-def _rollback_failed_project_import(pid: str | None, path: Path) -> None:
-    """Undo import metadata transactionally before deleting staged source bytes.
-
-    The Quality tables may not exist if a workspace upgrade/init failed.
-    Never let a second 'no such table' error mask the original import failure,
-    and never delete the source while a failed metadata rollback would still
-    leave a database project pointing to it.
-    """
-    if pid is not None:
-        with storage.connect() as con:
-            tables = {row["name"] for row in con.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ).fetchall()}
-            for table in ("quality_versions", "quality_state"):
-                if table in tables:
-                    con.execute(f"DELETE FROM {table} WHERE project_id=?", (pid,))
-            con.execute("DELETE FROM projects WHERE id=?", (pid,))
+def _remove_uncommitted_dataset(path: Path) -> None:
+    """Remove a failed upload only after ruling out a committed project reference."""
+    if not path.exists():
+        return
+    with closing(storage.connect()) as con:
+        referenced = con.execute("SELECT 1 FROM projects WHERE dataset_path=? LIMIT 1", (str(path),)).fetchone()
+    if referenced is not None:
+        raise RuntimeError("The import source is already referenced by a project")
     path.unlink(missing_ok=True)
 
 
@@ -200,35 +192,40 @@ async def create_project(file: UploadFile = File(...)):
         raise HTTPException(status_code=413,detail="File exceeds local 40 MB limit")
     if not b: raise HTTPException(status_code=400,detail="Empty file")
     path=storage.HOME / "datasets" / f"{storage.uid()}{ext}"
-    # Do not expose a partially written upload as an immutable source file.
-    # A unique staging name is deleted after catchable write/rename failures.
+    # Publish only a complete, validated file. The subsequent database commit
+    # makes its catalogue entry, checksum and original version visible together.
     staging=path.with_name(path.name+".uploading")
-    pid=None
+    staging_created=False
+    published=False
     try:
         with staging.open("xb") as output:
+            staging_created=True
             output.write(b)
             output.flush()
             os.fsync(output.fileno())
-        os.replace(staging,path)
-        df=engine.read_data(str(path),ext)
+        df=engine.read_data(str(staging),ext)
         prof=engine.profile(df,filename)
-        pid=storage.save_project(Path(filename).stem,filename,ext,path,prof)
-        quality.register(pid)  # Anchor the immutable source hash at upload.
+        original_sha256=hashlib.sha256(b).hexdigest()
+        os.replace(staging,path)
+        published=True
+        pid=storage.save_project(Path(filename).stem,filename,ext,path,prof,original_sha256=original_sha256)
     except Exception as e:
         staging_cleanup_failed=False
         try:
-            staging.unlink(missing_ok=True)
+            if staging_created:
+                staging.unlink(missing_ok=True)
         except OSError:
             staging_cleanup_failed=True
             logging.exception("Failed to remove interrupted upload staging file")
         try:
-            _rollback_failed_project_import(pid, path)
+            if published:
+                _remove_uncommitted_dataset(path)
         except Exception:
-            # Retain staged bytes if metadata could not be rolled back, so a
-            # dangling database reference is not silently made unrecoverable.
-            logging.exception("Import rollback incomplete; manual workspace recovery is required")
+            # The catalogue check may be unavailable after a commit error.
+            # Retain any published bytes in case the database references them.
+            logging.exception("Import source cleanup could not be verified")
             raise HTTPException(status_code=500,
-                                detail="Import failed and could not be rolled back safely. Check local logs before retrying.") from e
+                                detail="Import could not be confirmed. Refresh projects and check local logs before retrying.") from e
         if staging_cleanup_failed:
             raise HTTPException(
                 status_code=500,

@@ -103,6 +103,12 @@ def _project(pid: str) -> dict:
 
 def _ensure(con, p: dict) -> None:
     pid = p["id"]
+    state = con.execute("SELECT original_sha256 FROM quality_state WHERE project_id=?", (pid,)).fetchone()
+    if state is None:
+        raise QualityError(
+            "The original dataset has no recorded checksum. Import a verified original as a new project to continue. "
+            "This project and its history were preserved.", 409,
+        )
     try:
         sha = _digest(p["dataset_path"])
     except FileNotFoundError as exc:
@@ -118,20 +124,8 @@ def _ensure(con, p: dict) -> None:
             "The original dataset cannot be read at its recorded location. "
             "Check file access before retrying. No Quality changes were applied.", 409,
         ) from exc
-    state = con.execute("SELECT original_sha256 FROM quality_state WHERE project_id=?", (pid,)).fetchone()
-    if state is None:
-        con.execute("INSERT INTO quality_state VALUES(?,?,0)", (pid, sha))
-        con.execute("INSERT INTO quality_versions VALUES (?,?,?,?,?,?)",
-                    (pid, 0, "[]", "original", "{}", storage.now()))
-    elif state["original_sha256"] != sha:
+    if state["original_sha256"] != sha:
         raise QualityError("Uploaded source file has changed outside PilotODIN. Quality history cannot be replayed safely.", 409)
-
-
-def register(pid: str) -> None:
-    """Pin original file digest at creation time, before any quality transformations."""
-    p = _project(pid)
-    with storage.connect() as con:
-        _ensure(con,p)
 
 
 def _state(con, pid: str) -> tuple[int, list[str]]:

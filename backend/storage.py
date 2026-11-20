@@ -165,11 +165,20 @@ def _progress_for(con, eid, status):
     }
 
 
-def save_project(name, filename, ext, path, profile):
+def save_project(name, filename, ext, path, profile, *, original_sha256: str | None = None):
+    """Publish the catalogue and original Quality version in one transaction.
+
+    Metadata-only records without a digest cannot be opened as working data.
+    """
     ident=uid()
+    created=now()
     with connect() as con:
         con.execute("INSERT INTO projects VALUES (?,?,?,?,?,?,?)",
-                    (ident,name,filename,ext,str(path),json.dumps(profile),now()))
+                    (ident,name,filename,ext,str(path),json.dumps(profile),created))
+        if original_sha256 is not None:
+            con.execute("INSERT INTO quality_state VALUES (?,?,0)", (ident, original_sha256))
+            con.execute("INSERT INTO quality_versions VALUES (?,?,?,?,?,?)",
+                        (ident, 0, "[]", "original", "{}", created))
     return ident
 
 
