@@ -12,7 +12,11 @@ test('P4 context persistence is additive project/version scoped and never change
  assert.match(sto,/def save_target_context\(/);
  assert.match(sto,/ON CONFLICT\(project_id,quality_version,target_column\)/);
  assert.match(sto,/def target_contexts\(/);
- assert.doesNotMatch(sto.slice(sto.indexOf('# Explicit USER-PROVIDED'),sto.indexOf('def new_experiment(pid, config):')),/UPDATE experiments|INSERT INTO experiments|DELETE FROM projects/);
+ for(const name of ['target_contexts','save_target_context']){
+  const body=sto.split(`def ${name}(`)[1]?.split(/\n(?=def |class )/)[0];
+  assert.ok(body,`Expected ${name} function`);
+  assert.doesNotMatch(body,/UPDATE experiments|INSERT INTO experiments|DELETE FROM projects/);
+ }
 });
 
 test('P4 local API guards user context save by project, exact version and matching column',()=>{

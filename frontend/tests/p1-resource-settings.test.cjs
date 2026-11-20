@@ -68,10 +68,11 @@ test('Low-memory gate sits before any new ML experiment is persisted and leaves 
  assert.match(handler,/engine\.preparation\(/);
  assert.match(handler,/resource_policy\.admit_new_work\("training"\)/);
  assert.match(handler,/HTTPException\(status_code=503/);
- assert.match(handler,/storage\.new_experiment\(project_id,config\)/);
- assert.ok(handler.indexOf('resource_policy.admit_new_work("training")') <
-           handler.indexOf('storage.new_experiment(project_id,config)'),
-           'No experiment artifacts may be created before admission');
+ const admission=handler.indexOf('resource_policy.admit_new_work("training")');
+ for(const allocator of ['new_experiment','new_experiment_with_capacity']){
+  const insert=handler.search(new RegExp(`storage\\.${allocator}\\(project_id,\\s*config,\\s*expected_quality_version=version\\)`));
+  assert.ok(admission>=0&&insert>admission,`${allocator} must follow preflight and pass its checked version`);
+ }
  const provider=read('backend/ai_provider.py');
  const local=provider.split('def local_try()->dict|None:')[1]?.split('    if prefer_local:')[0];
  assert.ok(local,'Local generation request function must exist');
