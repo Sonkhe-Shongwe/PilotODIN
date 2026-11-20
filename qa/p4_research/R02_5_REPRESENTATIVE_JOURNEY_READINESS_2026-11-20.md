@@ -29,6 +29,12 @@ Reuse rather than repeat: the [protected write-and-restore control](../p4_native
 | Import/edit/undo/reopen fails or original checksum differs | Product journey FAIL; report stage and recovery state |
 | All file checks pass while non-loopback traffic persists | Filesystem may pass at its own scope; **network R02.6 remains FAIL** |
 
+## Offline replay result
+
+The in-journey control reuses the two generated writers on a disposable sentinel outside the protected originals. The reducer reads their evidence from the journey's existing ETW export and requires their windows to fall after the Quality marker and before the first close. The draft accepted an extra completed write on the restore handle because the expected write still matched by size. The corrected check blocks that trace. Generated cases also rejected missing write evidence, wrong writer or destination, conflicting names, failed completion, out-of-window execution, ambiguous lifetime, changed endpoint and trace loss. A scoped pass preserves unrelated unresolved mutations and audit findings. [Replay cases](../../tests/test_p4_n12_same_capture_restore.py) · [Prior plan](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/186b6e7e1524b5da8885acc42260a432e9b20b76/qa/p4_research/R02_5_REPRESENTATIVE_JOURNEY_READINESS_2026-11-20.md)
+
+The optional control is staged in the capture code. Reviewed Undo, version-2 reopen and capture bracketing of both fingerprint scans still need representative driver verification. The hosted app workflow is disarmed.
+
 ## Stop rules and evidence retention
 
 - Preflight must establish the reducer can produce a genuine PASS for clean generated evidence and a FAIL/BLOCKED for each relevant mutation and capture fault. Passing unit tests is not evidence that Windows production traces are complete.

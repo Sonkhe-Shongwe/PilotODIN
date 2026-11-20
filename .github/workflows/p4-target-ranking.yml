@@ -65,6 +65,7 @@ on:
       - tests/test_p4_n12_tmp_debugger_fixture.py
       - tests/test_p4_n12_procmon_environment_control.py
       - tests/test_p4_n12_trace.py
+      - tests/test_p4_n12_same_capture_restore.py
       - tests/test_p4_n12_webview_replay.py
       - tests/test_p4_r06_prospective_fingerprint.py
       - tests/test_p4_installer_provenance.py
@@ -176,6 +177,7 @@ jobs:
           tests/test_p4_phase_exit_matrix.py
           tests/test_p4_native_acceptance_kit.py
           tests/test_p4_n12_trace.py
+          tests/test_p4_n12_same_capture_restore.py
           tests/test_p4_n12_webview_replay.py
           tests/test_p4_r06_prospective_fingerprint.py
           tests/test_p4_n12_app_build.py

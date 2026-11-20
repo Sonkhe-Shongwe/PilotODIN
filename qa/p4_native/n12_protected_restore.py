@@ -26,6 +26,25 @@ def write_payload(path, payload):
             raise RuntimeError("The protected control write was incomplete.")
 
 
+def exercise_restore(path):
+    before = build.digest(path)
+    trace.require(before == hashlib.sha256(ORIGINAL).hexdigest(), "the generated restore baseline changed")
+    stages = {}
+    for label, payload in zip(STAGES, (MODIFIED, ORIGINAL)):
+        start = probe.utc_ticks()
+        pid = probe.run_writer(
+            "from pathlib import Path\nimport sys\n"
+            "from qa.p4_native.n12_protected_restore import write_payload\n"
+            "write_payload(Path(sys.argv[1]), bytes.fromhex(sys.argv[2]))",
+            path, payload.hex(),
+        )
+        stages[label] = {"pid": pid, "start": start, "end": probe.utc_ticks(), "size": len(payload)}
+        if path.read_bytes() != payload:
+            raise RuntimeError("The protected control content did not match the generated write.")
+        stages[label]["digest"] = hashlib.sha256(payload).hexdigest()
+    return {"path": str(path), "before": before, "stages": stages}
+
+
 def capture_control(root):
     env = os.environ
     reviewed = env.get("PILOTODIN_N12_PROTECTED_RESTORE_SOURCE", "")
@@ -43,40 +62,16 @@ def capture_control(root):
     protected.mkdir()
     path = protected / "restore.bin"
     path.write_bytes(ORIGINAL)
-    before = build.digest(path)
-
-    def exercise():
-        stages = {}
-        for label, payload in zip(STAGES, (MODIFIED, ORIGINAL)):
-            start = probe.utc_ticks()
-            pid = probe.run_writer(
-                "from pathlib import Path\nimport sys\n"
-                "from qa.p4_native.n12_protected_restore import write_payload\n"
-                "write_payload(Path(sys.argv[1]), bytes.fromhex(sys.argv[2]))",
-                path, payload.hex(),
-            )
-            stages[label] = {"pid": pid, "start": start, "end": probe.utc_ticks(), "size": len(payload)}
-            if path.read_bytes() != payload:
-                raise RuntimeError("The protected control content did not match the generated write.")
-            stages[label]["digest"] = hashlib.sha256(payload).hexdigest()
-        return {"path": str(path), "before": before, "stages": stages}
-
-    capture = probe.capture_fixture(root, calibration_only=True, thread_context=True, protected_restore=exercise)
+    capture = probe.capture_fixture(root, calibration_only=True, thread_context=True,
+                                    protected_restore=lambda: exercise_restore(path))
     capture["protected_restore"]["after"] = build.digest(path)
     return capture
 
 
-def reduce_control(manifest, control, path):
-    trace.require(manifest["schema_version"] == 1 and manifest["disposable"] is True,
-                  "expected a disposable protected restore manifest")
-    start, end = (trace.utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
-    issues = set()
-    bounds, devices = trace.etw_capture_contract(manifest, start, end, issues)
-    with trace.evidence_stage("ETW restore event stream"):
-        records = list(trace.etw_events(path, bounds, manifest["etw"]["events_sha256"]))
-    protected = [trace.windows_path(root) for root in manifest["protected_roots"].values()]
-    target = trace.windows_path(control["path"])
-    trace.require(any(trace.inside(target, root) for root in protected), "restore target is outside the protected scope")
+def inspect_restore_writes(control, records, devices, bounds, expected_path, *, require_single_write=False):
+    """Verify two generated writes from an independently witnessed sequence."""
+    target = trace.windows_path(str(expected_path))
+    trace.require(trace.windows_path(control["path"]) == target, "the restore target differs from the fixture")
     stages = control["stages"]
     baseline = hashlib.sha256(ORIGINAL).hexdigest()
     trace.require(control["before"] == control["after"] == stages["restore"]["digest"] == baseline
@@ -101,11 +96,26 @@ def reduce_control(manifest, control, path):
         born, exited = [event["ticks"] for event in lifetimes]
         roles[pid], births[pid] = label, born
         result = file_lifetime_report({**stage, "path": target, "start": born, "end": exited}, records, devices,
-                                      verify_write_path=True)
+                                      verify_write_path=True, require_single_write=require_single_write)
         path_evidence = result.get("write_object_path", {})
         verified[label] = result["status"] == "PASS" and path_evidence.get("status") == "PASS"
         if not verified[label]:
             write_issues[label] = result.get("reason") or path_evidence.get("reason") or "write-path-unverified"
+    return roles, births, verified, write_issues
+
+
+def reduce_control(manifest, control, path):
+    trace.require(manifest["schema_version"] == 1 and manifest["disposable"] is True,
+                  "expected a disposable protected restore manifest")
+    start, end = (trace.utc_time(manifest[key]) for key in ("start_utc", "end_utc"))
+    issues = set()
+    bounds, devices = trace.etw_capture_contract(manifest, start, end, issues)
+    with trace.evidence_stage("ETW restore event stream"):
+        records = list(trace.etw_events(path, bounds, manifest["etw"]["events_sha256"]))
+    protected = [trace.windows_path(root) for root in manifest["protected_roots"].values()]
+    target = trace.windows_path(control["path"])
+    trace.require(any(trace.inside(target, root) for root in protected), "restore target is outside the protected scope")
+    roles, births, verified, write_issues = inspect_restore_writes(control, records, devices, bounds, target)
 
     _, violations, _, unresolved = trace.inspect_etw_files(
         manifest, path, start, end, {}, {}, protected,

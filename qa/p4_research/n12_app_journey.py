@@ -21,6 +21,7 @@ from uuid import uuid4
 from qa.p4_native.n12_calibration import calibration_failure_stages
 from qa.p4_native import n12_etw_probe as etw
 from qa.p4_native.n12_exit_corroboration import journey_lifetime_evidence
+from qa.p4_native import n12_protected_restore as restore
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
 from qa.p4_research import n12_egress as egress
@@ -38,6 +39,7 @@ PROBE = FRONTEND / "e2e" / "p4-71-native-webview-qa.mjs"
 PORTS = (5173, 8000, 9331)
 HTTP = build_opener(ProxyHandler({}))
 CAPTURE_CONSENT = "I_APPROVE_ONE_N12_APP_JOURNEY"
+SAME_CAPTURE_RESTORE = "PILOTODIN_N12_SAME_CAPTURE_RESTORE"
 DRIVER_TEMP_DIR = "driver-temp"
 APP_TEMP_DIR = "app-temp"
 INITIAL_FIXTURE_LEAD_IN_SECONDS = 0.05
@@ -565,13 +567,14 @@ def finish_webview_child_witnesses(children):
 
 
 def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite, handles,
-             egress_programs=None):
+             egress_programs=None, *, restore_path=None):
     from qa.p4_native.n12_lifetime_control import process_images, process_times
 
     binary = build.executable(staged) if egress_programs is None else egress_programs["app"]
     title = json.loads(build.isolated_config())["app"]["windows"][0]["title"]
     first_pid = None
     witnesses = {}
+    restore_control = None
     for relaunch in (False, True):
         label = "relaunch" if relaunch else "first"
         trace.require(backend.poll() is None and vite.poll() is None, "loopback service exited during journey")
@@ -589,6 +592,10 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
         if not relaunch:
             mark(manifest, "quality")
         run_driver(stack, manifest, node, root, {**env, "P4_NATIVE_QA_APP_PID": str(app.pid)}, relaunch, handles)
+        if not relaunch and restore_path is not None:
+            with checkpoint_stage("same-capture-write-and-restore", source, expected_hash):
+                target = trace.local_disposable_path(restore_path, runner_temp_only=True)
+                restore_control = restore.exercise_restore(target)
         with ExitStack() as child_stack:
             children = webview_child_handles(child_stack, app.pid)
             mark(manifest, "exit" if relaunch else "close")
@@ -608,7 +615,7 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
             if witnesses[label] is not None:
                 witnesses[label]["children"] = finish_webview_child_witnesses(children)
         checkpoint(label + "-launch-and-exit", "completed", source, expected_hash)
-    return witnesses
+    return witnesses, restore_control
 
 
 def prepare_journey(root, source, expected_hash):
@@ -746,10 +753,40 @@ def compare_background_paths(root, manifest, observed, events, bookends, baselin
                                              if key.startswith("other:write:")}}
 
 
+def same_capture_restore_evidence(control, expected_path, events, devices, window, capture_issues):
+    try:
+        _, _, verified, write_issues = restore.inspect_restore_writes(
+            control, events, devices, window, expected_path, require_single_write=True,
+        )
+    except trace.EvidenceValidationError as exc:
+        return {"status": "BLOCKED", "reason": str(exc)}
+    return {
+        "status": "PASS" if all(verified.values()) and "etw-event-or-buffer-loss" not in capture_issues else "BLOCKED",
+        "endpoint_match": True, "destination": "generated-restore-fixture",
+        "write_path_verified": verified, "write_issues": write_issues,
+        "etw_reported_loss": "etw-event-or-buffer-loss" in capture_issues,
+    }
+
+
+def require_same_capture_restore(result, control_evidence):
+    if control_evidence.get("status") != "PASS":
+        result["coverage"] = "BLOCKED"
+        result["coverage_issues"] = sorted({*result["coverage_issues"], "etw-same-capture-restore-unverified"})
+        for verdict in ("filesystem", "network"):
+            if result[verdict] == "PASS_SCOPED":
+                result[verdict] = "BLOCKED"
+
+
 def capture(root, staged, source, expected_hash, node, egress_programs=None):
     manifest, home, profile, fixture, calibration = prepare_journey(root, source, expected_hash)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PILOTODIN_N12_QUALITY_FIXTURE": str(fixture)}
+    restore_path = None
+    if env.get(SAME_CAPTURE_RESTORE) == "1":
+        restore_path = trace.local_disposable_path(root / "write-restore-control.bin", runner_temp_only=True)
+        with restore_path.open("xb") as stream:
+            stream.write(restore.ORIGINAL)
+        manifest["observed_roots"]["write-restore-control"] = str(restore_path)
     require_fixture = (
         "import {p4QualityFixture} from './e2e/p4-quality-version-transition.mjs';"
         "process.stdout.write(p4QualityFixture);"
@@ -799,8 +836,10 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
                 backend_wakeup = None
             wait_for(lambda: http_ready(5173, "/"), 60, "Vite did not become ready", vite)
             with checkpoint_stage("app-journey", source, expected_hash):
-                app_witnesses = run_apps(stack, manifest, root, staged, source, expected_hash, node,
-                                         env, profile, backend, vite, driver_handles, egress_programs)
+                app_witnesses, restore_control = run_apps(
+                    stack, manifest, root, staged, source, expected_hash, node, env, profile, backend, vite,
+                    driver_handles, egress_programs, restore_path=restore_path,
+                )
         print("N12 journey stage final calibration", flush=True)
         with checkpoint_stage("final-fixture", source, expected_hash):
             final_start = now()
@@ -847,6 +886,11 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         after = snapshots(manifest)
         report_file(root / "after.json", after)
         comparison, issues = trace.compare_snapshots(before, after, manifest)
+        if restore_control is not None:
+            final_control = after["observed"]["write-restore-control"]
+            restore_control["after"] = (build.digest(trace.local_disposable_path(restore_path, runner_temp_only=True))
+                                        if final_control["state"] == "file" else None)
+            report_file(root / "private-write-restore-control.json", restore_control)
     print("N12 protected endpoint snapshots " + json.dumps({
         "source_sha": source,
         "executable_sha256": expected_hash,
@@ -912,8 +956,10 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
     paths = diagnostic_paths(root, staged, manifest)
     app_lifetimes = {}
     driver_lifetimes = {}
+    control_evidence = {"status": "BLOCKED", "reason": "restore-evidence-missing"}
 
     def observe_lifetimes(events, devices, window, issues):
+        nonlocal control_evidence
         app_lifetimes.update(journey_lifetime_evidence(
             events, devices, window, observed, app_witnesses, expected_hash, issues))
         print("N12 app lifetime observations " + json.dumps({
@@ -921,12 +967,22 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         }), flush=True)
         driver_lifetimes.update(driver_lifetime_evidence(events, devices, window, observed, driver_handles, issues))
         print("N12 driver lifetime observations " + json.dumps(driver_lifetimes), flush=True)
+        if restore_control is not None:
+            quality, close = (trace.utc_ticks(trace.utc_time(manifest["markers"][marker]))
+                              for marker in ("quality", "close"))
+            control_window = (max(window[0], quality), min(window[1], close))
+            control_evidence = same_capture_restore_evidence(
+                restore_control, restore_path, events, devices, control_window, issues,
+            )
+            print("N12 same-capture restore " + json.dumps(control_evidence), flush=True)
 
     with checkpoint_stage("combined-reduction", source, expected_hash):
         result = trace.complete_journey_audit(manifest, observed, events, before, after, etw=True,
                                               record_outside_writer=paths.record, journey_bookends=bookends,
                                               describe_path_gaps=True, observe_lifetimes=observe_lifetimes,
                                               webview_dominant_writes=True)
+    if restore_path is not None:
+        require_same_capture_restore(result, control_evidence)
     result["journey_diagnostics"] = {
         "app_lifetimes": app_lifetimes,
         "driver_lifetimes": driver_lifetimes,
@@ -939,6 +995,8 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
                             "after": "available" if last_processes is not None else "unavailable"},
         "network": network_diagnostics,
     }
+    if restore_path is not None:
+        result["journey_diagnostics"]["same_capture_restore"] = control_evidence
     if egress_images_verified is not None:
         result["journey_diagnostics"]["egress_rule_images"] = "verified" if egress_images_verified else "unverified"
     result["journey"] = "completed"
@@ -964,6 +1022,8 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
                 describe_path_gaps=True, webview_dominant_writes=True, credit_verified_webview_writes=True,
                 record_outside_writer=comparison_paths.record,
             )
+            if restore_path is not None:
+                require_same_capture_restore(trial, control_evidence)
             credit = trial["etw_webview_write_credit"]
             remaining = trial["etw_unresolved_mutations"].get(gap, 0)
             trace.require(remaining == credit["remaining_path_gaps"] and

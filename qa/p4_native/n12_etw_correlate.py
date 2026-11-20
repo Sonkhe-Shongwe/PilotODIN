@@ -1936,7 +1936,7 @@ def resize_path_reason(control, events, expected, devices):
     return check_write_object_path(file_events, opened, request, completed, expected, devices, operation="resize")
 
 
-def file_lifetime_report(control, events, devices, *, verify_write_path=False):
+def file_lifetime_report(control, events, devices, *, verify_write_path=False, require_single_write=False):
     """Verify the generated in-trace open, write and handle teardown."""
     expected = canonical_file_path(control["path"], devices)
     if expected is None:
@@ -1964,6 +1964,8 @@ def file_lifetime_report(control, events, devices, *, verify_write_path=False):
             break
     offset = control.get("offset", 0)
     lifetime_writes = [event for event in lifetime if event["id"] == 16 and event["ticks"] <= control["end"]]
+    if require_single_write and len(lifetime_writes) > 1:
+        return {"status": "BLOCKED", "reason": "extra-write-on-control-handle"}
     same_process = [event for event in lifetime_writes if event["pid"] == control["pid"]]
     same_size = [event for event in same_process if number(event["data"].get("IOSize")) == control["size"]]
     same_offset = [event for event in same_size if number(event["data"].get("ByteOffset")) == offset]
