@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   timing-control:
-    if: ${{ github.run_attempt == '1' }}
+    if: ${{ false }} # Awaiting one source-pinned Procmon timing control approval.
     runs-on: windows-2022
     timeout-minutes: 8
     steps:
