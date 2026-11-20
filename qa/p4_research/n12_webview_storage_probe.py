@@ -11,6 +11,7 @@ import sys
 from tempfile import TemporaryDirectory
 
 from qa.p4_native import n12_trace as trace
+from qa.p4_native.n12_exit_corroboration import EtwLifetimes, SOURCE_COVERAGE_ISSUES
 from qa.p4_research import n12_app_journey as journey
 from qa.p4_research import n12_app_lifetime as lifetime
 from qa.p4_research.n12_journey_diagnostics import FILE_TYPES, WEBVIEW_ROLES
@@ -124,7 +125,55 @@ def process_start_tmp(detail, process, parent):
     return (status, None) if environment is None else process_start_path(environment, "TMP")
 
 
-def reduce(root, staged, manifest, sysmon, procmon):
+def replay_startup_creates(manifest, etw, start, ready, processes, roles, browser_guid, receipt,
+                           destination_roots, capture_issues):
+    """Join a verified Procmon TMP receipt to completed ETW creates for the same browser."""
+    if receipt is None:
+        return {"status": "procmon-tmp-receipt-unverified"}
+    if capture_issues & (SOURCE_COVERAGE_ISSUES | {"procmon-capture-configuration-unverified"}):
+        return {"status": "source-coverage-unverified"}
+    browser = processes[browser_guid]
+    receipt_time, launch_tmp = receipt
+    if receipt_time < browser.start:
+        return {"status": "procmon-start-before-browser-lifetime"}
+    receipt_ticks, ready_ticks = trace.utc_ticks(receipt_time), trace.utc_ticks(ready)
+    destination_families = set()
+    identity = "etw-browser-lifetime-unverified"
+
+    def observe_lifetimes(events, devices, window, issues):
+        nonlocal identity
+        if "etw-event-or-buffer-loss" in issues:
+            identity = "etw-event-or-buffer-loss"
+            return
+        lifetimes = EtwLifetimes(events, devices, window)
+        starts = lifetimes.starts[browser.pid]
+        if (len(starts) != 1 or not starts[0].creation <= receipt_ticks
+                or starts[0].emission < starts[0].creation
+                or any(min(stop.emission, stop.exit) < ready_ticks for stop in lifetimes.stops[browser.pid])):
+            return
+        identity = lifetimes.parent_sequence_comparison(browser, processes.get(browser.parent))
+
+    def observe_create(guid, target, requested, completed):
+        if (guid == browser_guid and receipt_ticks < requested < completed < ready_ticks
+                and ntpath.splitext(target)[1] == ".tmp"):
+            family = next((label for label, base in destination_roots if trace.inside(target, base)), "other-path")
+            destination_families.add(family)
+
+    try:
+        trace.inspect_etw_files(
+            manifest, etw, start, ready, processes, roles, (), {}, set(),
+            observe_lifetimes=observe_lifetimes, observe_create=observe_create,
+        )
+    except trace.EvidenceValidationError:
+        return {"status": "etw-evidence-invalid"}
+    if identity != "etw-parent-sequence-agrees":
+        return {"status": identity}
+    if not destination_families:
+        return {"status": "no-matched-etw-startup-create"}
+    return {"status": "matched", "launch_tmp": launch_tmp, "destination_families": sorted(destination_families)}
+
+
+def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
     start, end, processes, _, issues = trace.load_capture(manifest, sysmon)
     # This is a direct-path diagnosis. Track the existing capture-loss limitation separately.
     loss_reviewed = "procmon-coverage-not-confirmed" not in issues
@@ -301,7 +350,7 @@ def reduce(root, staged, manifest, sysmon, procmon):
     ambient_creates = sum(row["count"] for row in rows if row["destination_family"] in {"user-temp", "runner-temp"})
     if any(row["stage"] == "after-profile-exit" for row in rows):
         issues.add("webview-writes-after-profile-exit")
-    return {"scope": "one-startup-and-close-storage-diagnostic", "source_sha": manifest["source_sha"],
+    report = {"scope": "one-startup-and-close-storage-diagnostic", "source_sha": manifest["source_sha"],
             "executable_sha256": manifest["executable_sha256"],
             "verdict": "BLOCKED" if issues else "REPRODUCED" if ambient_creates else "INCONCLUSIVE",
             "issues": sorted(issues), "procmon_shutdown_verified": shutdown_verified,
@@ -320,6 +369,14 @@ def reduce(root, staged, manifest, sysmon, procmon):
             "browser_process_corroborated": browser_guid is not None,
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
             "ambient_temp_creates": ambient_creates, "storage_events": rows}
+    if replay_etw is not None:
+        receipt = ((startup_values["browser"][0][0], browser_startup_tmp)
+                   if browser_startup_tmp != "unverified" else None)
+        roots = [("startup-tmp", tmp_witness), ("qa-app-temp", app_temp)] if tmp_witness is not None else []
+        report["startup_tmp_etw"] = replay_startup_creates(
+            manifest, replay_etw, start, ready, processes, roles, browser_guid, receipt, roots + paths.roots, issues,
+        )
+    return report
 
 
 def main():

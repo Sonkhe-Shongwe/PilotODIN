@@ -164,7 +164,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None,
                        rundown_verification_start=None, rundown_credit=None, background_rundown=None,
-                       background_write_window=None):
+                       background_write_window=None, observe_create=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
@@ -203,7 +203,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             if (key := name_transition_key(event["id"], event["data"]))
         }
     if strict and (details is not None or rundown_verification_start is not None
-                   or webview_write_candidates is not None):
+                   or webview_write_candidates is not None or observe_create is not None):
         for event in ordered_events:
             if not event.get("lifecycle"):
                 continue
@@ -563,6 +563,10 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                                 completion_checks[id(request)] = issue
                 if source or destination:
                     record(actor, identity, operation, source, destination, requested, ticks, True)
+                    if (observe_create is not None and operation == "create" and source
+                            and actor not in {"other", "unattributed"}
+                            and not completion_identity_issue(request, event, handle, actor)):
+                        observe_create(identity, source, requested, ticks)
                     if protected_system_write is not None:
                         details[f"protected-system-write-paging:{protected_system_write}"] += 1
             continue

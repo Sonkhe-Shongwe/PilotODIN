@@ -801,7 +801,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       bookend_summary=None, path_gap_counts=None, write_name_gap_counts=None,
                       calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None,
                       webview_write_candidates=None, webview_dominant_writes=False,
-                      webview_write_credit=None, rundown_credit=None, background_rundown=None):
+                      webview_write_credit=None, rundown_credit=None, background_rundown=None,
+                      observe_create=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -993,6 +994,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             rundown_credit=rundown_credit,
             background_rundown=background_rundown,
             background_write_window=(start_ticks, end_ticks) if background_rundown is not None else None,
+            observe_create=observe_create,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")

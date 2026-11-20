@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -70,7 +71,7 @@ class StorageProbeTests(unittest.TestCase):
         }
         self.controls = [row(3, 200, "python.exe", CONTROL_SCRATCH), row(17, 201, "python.exe", CONTROL_TEMP)]
 
-    def reduce(self, rows):
+    def reduce(self, rows, *, etw_events=None, etw_loss=0, wrong_digest=False):
         categories = OutsidePaths([("qa-webview-profile", SCRATCH), ("user-temp", USER_TEMP), ("user-local", LOCAL)])
         with TemporaryDirectory() as folder, patch.object(
             probe.trace, "load_capture",
@@ -81,7 +82,20 @@ class StorageProbeTests(unittest.TestCase):
                 writer = csv.DictWriter(stream, fieldnames=self.controls[0])
                 writer.writeheader()
                 writer.writerows(rows)
-            return probe.reduce(None, None, self.manifest, None, path)
+            manifest = self.manifest.copy()
+            etw = None
+            if etw_events is not None:
+                etw = Path(folder) / "etw.jsonl"
+                encoded = "".join(json.dumps(event) + "\n" for event in etw_events).encode()
+                etw.write_bytes(encoded)
+                manifest["etw"] = {
+                    "schema_version": 1, "start_utc": START.isoformat(), "end_utc": time_at(20).isoformat(),
+                    "events_sha256": "0" * 64 if wrong_digest else hashlib.sha256(encoded).hexdigest(),
+                    "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+                    "counters": {"events_lost": etw_loss, "log_buffers_lost": 0,
+                                 "realtime_buffers_lost": 0, "buffers_written": 1},
+                }
+            return probe.reduce(None, None, manifest, None, path, replay_etw=etw)
 
     def test_reproduced_rows_keep_component_and_stage_and_hide_private_values(self):
         rows = self.controls + [
@@ -233,6 +247,83 @@ class StorageProbeTests(unittest.TestCase):
                 self.assertEqual(report["browser_startup_tmp"], "unverified")
                 self.assertFalse(report["startup_tmp_control_verified"])
                 self.assertEqual(report["startup_tmp_receipts"]["scratch"], "start-order-unverified")
+
+    def test_generated_procmon_receipt_joins_only_verified_etw_startup_creates(self):
+        self.manifest.update(startup_tmp_probe=True, cdp_browser_pid=102, probe_user_temp=USER_TEMP,
+                             procmon_shutdown_verified=False)
+        self.manifest["observed_roots"]["qa-webview"] = SCRATCH
+        witness = SCRATCH + "\\" + APP_TEMP_DIR + "\\" + lifetime.STORAGE_TMP_DIR
+        self.processes["browser"] = process("browser", "app", 102, WEBVIEW, 6, 13, command="browser-command")
+        self.processes["parent"] = process("parent", "other", 99, PYTHON, 0, 19)
+        self.processes["control-one"].command = "control-command"
+
+        def start_row(at, pid, image, parent, command):
+            detail = (f"Parent PID: {parent}, Command line: {command}, Current directory: {SCRATCH},"
+                      f" Environment:\tTMP={witness}")
+            return row(at, pid, image, "", op="Process Start", detail=detail)
+
+        scratch = start_row(2, 200, "python.exe", 99, "control-command")
+        browser = start_row(6.1, 102, "msedgewebview2.exe", 100, "browser-command")
+        rows = self.controls + [scratch, browser]
+
+        def event(at, kind, pid, *, lifecycle=False, **data):
+            return {"ticks": trace.utc_ticks(time_at(at)), "id": kind, "pid": pid,
+                    "version": 3, "lifecycle": lifecycle, "data": data}
+
+        def start(at, pid, parent, image, sequence, parent_sequence):
+            return event(at, 1, 0, lifecycle=True, ProcessID=str(pid), ParentProcessID=str(parent),
+                         CreateTime=time_at(at).isoformat(), ImageName=image,
+                         ProcessSequenceNumber=str(sequence), ParentProcessSequenceNumber=str(parent_sequence))
+
+        app_birth = start(5, 100, 99, APP, 10, 9)
+        browser_birth = start(6, 102, 100, WEBVIEW, 11, 10)
+        target = USER_TEMP + r"\private-browser-create.tmp"
+        request = event(7, 12, 102, FileObject=21, Irp=31, FileName=target)
+        completion = event(7.1, 24, 0, Irp=31, Status=0, ExtraInformation=2)
+        etw = [app_birth, browser_birth, request, completion]
+        report = self.reduce(rows, etw_events=etw)
+        self.assertEqual(report["startup_tmp_etw"], {
+            "status": "matched", "launch_tmp": "expected-tmp", "destination_families": ["user-temp"],
+        })
+        self.assertEqual(report["ambient_temp_creates"], 0)
+        self.assertEqual(report["issues"], ["procmon-shutdown-unverified"])
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertNotIn("private-", json.dumps(report))
+        self.assertNotIn("browser-command", json.dumps(report))
+
+        for inputs, records, reason in (
+            (rows[:-1], etw, "procmon-tmp-receipt-unverified"),
+            (rows + [browser], etw, "procmon-tmp-receipt-unverified"),
+            (rows[:-1] + [start_row(6.1, 102, "msedgewebview2.exe", 99, "browser-command")],
+             etw, "procmon-tmp-receipt-unverified"),
+            (rows, [app_birth, request, completion], "etw-browser-lifetime-unverified"),
+            (rows, etw + [browser_birth], "etw-browser-lifetime-unverified"),
+            (rows, etw + [event(7.05, 2, 0, lifecycle=True, ProcessID="102", ProcessSequenceNumber="11",
+                                CreateTime=time_at(6).isoformat(), ExitTime=time_at(7.05).isoformat())],
+             "etw-browser-lifetime-unverified"),
+            (rows, [app_birth, start(6, 102, 100, WEBVIEW, 11, 9), request, completion],
+             "etw-parent-sequence-conflict"),
+            (rows, [app_birth, start(6, 102, 100, WEBVIEW.replace("fixture", "different"), 11, 10),
+                    request, completion], "etw-child-birth-image-unverified"),
+            (rows, [app_birth, browser_birth, {**request, "pid": 101}, completion],
+             "no-matched-etw-startup-create"),
+            (rows, etw[:-1], "no-matched-etw-startup-create"),
+            (rows, etw[:-1] + [event(7.1, 24, 0, Irp=31, Status=0, ExtraInformation=2, FileObject=99)],
+             "no-matched-etw-startup-create"),
+            (rows, etw[:-1] + [event(7.1, 24, 0, Irp=31, Status=0xC0000035, ExtraInformation=2)],
+             "no-matched-etw-startup-create"),
+            (rows, [app_birth, browser_birth, event(6.1, 12, 102, FileObject=21, Irp=31, FileName=target),
+                    completion], "no-matched-etw-startup-create"),
+            (rows, etw[:-1] + [event(8, 24, 0, Irp=31, Status=0, ExtraInformation=2)],
+             "no-matched-etw-startup-create"),
+        ):
+            with self.subTest(reason=reason):
+                self.assertEqual(self.reduce(inputs, etw_events=records)["startup_tmp_etw"], {"status": reason})
+        for options, reason in (({"etw_loss": 1}, "etw-event-or-buffer-loss"),
+                                ({"wrong_digest": True}, "etw-evidence-invalid")):
+            with self.subTest(reason=reason):
+                self.assertEqual(self.reduce(rows, etw_events=etw, **options)["startup_tmp_etw"],
+                                 {"status": reason})
 
     def test_cdp_browser_pid_cannot_override_conflicting_lifetime_or_process_type(self):
         browser = process("browser", "app", 102, WEBVIEW, 6, 13)
