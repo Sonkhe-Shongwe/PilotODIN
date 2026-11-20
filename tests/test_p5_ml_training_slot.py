@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha256
 from threading import Barrier
 
 import pandas as pd
 import pytest
 from fastapi import BackgroundTasks, HTTPException
 
-from backend import main, resource_policy, storage
+from backend import main, quality, resource_policy, storage
 
 
 @pytest.fixture
@@ -24,9 +25,12 @@ def store(monkeypatch, tmp_path):
     monkeypatch.setattr(storage,"HOME",home)
     monkeypatch.setattr(storage,"DB_PATH",home/"pilotodin.sqlite3")
     storage.init()
-    pid=storage.save_project("Synthetic", "fixture.csv", ".csv",
-                             home/"datasets"/"fixture.csv",{"rows":80})
-    return pid
+    quality._init_tables()
+    raw = ("Metric,Outcome\n" + "".join(f"{i % 13},{'Y' if i % 2 else 'N'}\n" for i in range(80))).encode()
+    source = home / "datasets" / "fixture.csv"
+    source.write_bytes(raw)
+    return storage.save_project("Synthetic", "fixture.csv", ".csv", source, {"rows": 80},
+                                original_sha256=sha256(raw).hexdigest())
 
 
 def config():
@@ -37,8 +41,10 @@ def config():
 
 def test_single_slot_rejects_second_and_other_project_without_new_row(store):
     a=storage.new_experiment_with_capacity(store,config())
+    another = storage.save_project("Other project", "other.csv", ".csv",
+                                   storage.HOME / "datasets" / "other.csv", {"rows":80})
     with pytest.raises(storage.TrainingSlotBusy):
-        storage.new_experiment_with_capacity("another-project",config())
+        storage.new_experiment_with_capacity(another,config())
     with storage.connect() as con:
         rows=con.execute("SELECT id,status FROM experiments").fetchall()
     assert [(r["id"],r["status"]) for r in rows]==[(a,"queued")]

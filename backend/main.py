@@ -398,9 +398,13 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
         if admission["mode"] == "low_memory":
             # Atomic across request threads/process connections: one heavy
             # ML training job at a time while Low-memory is selected.
-            eid=storage.new_experiment_with_capacity(project_id,config)
+            eid=storage.new_experiment_with_capacity(project_id,config,expected_quality_version=version)
         else:
-            eid=storage.new_experiment(project_id,config)
+            eid=storage.new_experiment(project_id,config,expected_quality_version=version)
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+    except storage.TrainingVersionConflict as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
     except storage.TrainingSlotBusy as exc:
         raise HTTPException(status_code=503,detail={
             "code": "ml_training_slot_busy", "operation": "training",

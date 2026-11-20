@@ -369,35 +369,34 @@ def save_target_context(project_id: str, quality_version: int, target_column: st
     }
 
 
-def new_experiment(pid, config):
-    eid=uid()
-    with connect() as con:
-        con.execute("INSERT INTO experiments (id,project_id,status,config,created_at) VALUES (?,?,?,?,?)",
-                    (eid,pid,"queued",json.dumps(config),now()))
-        _append_progress(con,eid,"queued","Experiment accepted and waiting for a worker.")
-    return eid
-
-
-
 class TrainingSlotBusy(RuntimeError):
     """A queued or running experiment already owns the constrained ML slot."""
 
 
-def new_experiment_with_capacity(pid, config):
-    """Atomically reserve the one NEW heavy-training slot in Low-memory mode.
+class TrainingVersionConflict(ValueError):
+    """The working dataset changed after training admission inspected it."""
 
-    Uses SQLite BEGIN IMMEDIATE across connections so competing FastAPI
-    requests cannot both observe the same empty queue and insert a job.
-    The busy path writes no new experiment; existing work is left intact.
-    All projects share a single constrained slot on this local workstation.
-    """
+
+def _queue_experiment(pid, config, *, single_slot: bool, expected_quality_version: int | None):
+    """Recheck admission under the same write lock as archive and Quality."""
+    from .project_lifecycle import require_active_for_write
+
     eid = uid()
     with connect() as con:
         con.execute("BEGIN IMMEDIATE")
-        busy = con.execute(
-            "SELECT id FROM experiments WHERE status IN ('queued','running') LIMIT 1"
-        ).fetchone()
-        if busy is not None:
+        require_active_for_write(con, pid)
+        if expected_quality_version is not None:
+            state = con.execute("SELECT current_version FROM quality_state WHERE project_id=?", (pid,)).fetchone()
+            if state is None:
+                raise TrainingVersionConflict("The working dataset version could not be verified. Refresh before training.")
+            current = state["current_version"]
+            if current != expected_quality_version:
+                raise TrainingVersionConflict(
+                    f"Dataset version changed from {expected_quality_version} to {current}. Refresh before training."
+                )
+        if single_slot and con.execute(
+            "SELECT 1 FROM experiments WHERE status IN ('queued','running') LIMIT 1"
+        ).fetchone() is not None:
             raise TrainingSlotBusy("Another ML training operation is queued or running.")
         con.execute(
             "INSERT INTO experiments (id,project_id,status,config,created_at) VALUES (?,?,?,?,?)",
@@ -405,6 +404,15 @@ def new_experiment_with_capacity(pid, config):
         )
         _append_progress(con,eid,"queued","Experiment accepted and waiting for a worker.")
     return eid
+
+
+def new_experiment(pid, config, *, expected_quality_version: int | None = None):
+    return _queue_experiment(pid, config, single_slot=False, expected_quality_version=expected_quality_version)
+
+
+def new_experiment_with_capacity(pid, config, *, expected_quality_version: int | None = None):
+    """Atomically reserve the single workstation-wide Low-memory training slot."""
+    return _queue_experiment(pid, config, single_slot=True, expected_quality_version=expected_quality_version)
 
 
 def claim_queued_experiment(eid):

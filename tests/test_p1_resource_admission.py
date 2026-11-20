@@ -93,7 +93,8 @@ def _new_training(monkeypatch):
     monkeypatch.setattr(main,"project_or_404",lambda _:{"id":"synthetic"})
     monkeypatch.setattr(main.quality,"current_data",lambda _: (frame,0))
     created=[]
-    def create_synthetic(pid, conf):
+    def create_synthetic(pid, conf, *, expected_quality_version):
+        assert expected_quality_version == conf['quality_version']
         created.append((pid, conf))
         return "fake-experiment"
     monkeypatch.setattr(main.storage,"new_experiment",create_synthetic)

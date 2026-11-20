@@ -155,7 +155,7 @@ def test_train_api_refuses_unreviewed_included_risks_and_records_acknowledgement
     monkeypatch.setattr(main,"project_or_404",lambda _:{"id":"safe-demo"})
     monkeypatch.setattr(main.quality,"current_data",lambda _: (frame,3))
     captured=[]
-    monkeypatch.setattr(main.storage,"new_experiment",lambda pid,cfg: (captured.append((pid,cfg)) or "experiment-example"))
+    monkeypatch.setattr(main.storage,"new_experiment",lambda pid,cfg,**_: (captured.append((pid,cfg)) or "experiment-example"))
     body=dict(
         target="Flagged",task="classification",excluded_features=["Constant","AllMissing"],
         models=["logistic_regression"],split_strategy="random",
@@ -211,7 +211,7 @@ def test_group_and_time_keys_are_excluded_before_api_and_worker_resource_checks(
     monkeypatch.setattr(main.quality, "current_data", lambda _: (frame, 3))
     captured = []
     monkeypatch.setattr(main.storage, "new_experiment",
-                        lambda pid, cfg: (captured.append(cfg) or "example"))
+                        lambda pid, cfg, **_: (captured.append(cfg) or "example"))
 
     body = main.ExperimentRequest(
         target="Outcome", task="classification", excluded_features=[],

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -104,6 +105,60 @@ def test_stale_revision_and_invalid_names_fail_without_mutations(workspace):
     assert a_row["name"] == "Team Review" and a_row["revision"]==1 and a_row["archived_at"] is None
     for path,payload,_ in sources:
         assert path.read_bytes()==payload
+
+
+@pytest.mark.parametrize("mode", ["adaptive", "low_memory"])
+@pytest.mark.parametrize("winner", ["archive", "quality", "training"])
+def test_training_admission_checks_the_state_at_commit(workspace, monkeypatch, mode, winner):
+    client, home, _, _ = workspace
+    original = ("Amount,Outcome\n" + "".join(
+        f"{i % 11},{'yes' if i % 2 else 'no'}\n" for i in range(64)
+    )).encode()
+    upload = client.post("/api/projects", files={"file": ("training.csv", original, "text/csv")})
+    assert upload.status_code == 201, upload.text
+    pid = upload.json()["id"]
+    source = Path(storage.get_project(pid)["dataset_path"])
+    worker = Mock()
+    monkeypatch.setattr(main, "train_background", worker)
+
+    def admission(operation):
+        assert operation == "training"
+        # The request already read active project metadata and version 0.
+        # Commit the competing operation before the request tries to enqueue.
+        if winner == "archive":
+            archived = _change(client, pid, "archive", 0)
+            assert archived.status_code == 200, archived.text
+        elif winner == "quality":
+            assert quality.restore(pid, 0, 0)["version"] == 1
+        return {"decision": "allow", "mode": mode}
+
+    monkeypatch.setattr(main.resource_policy, "admit_new_work", admission)
+    response = client.post(f"/api/projects/{pid}/experiments", json={
+        "target": "Outcome", "task": "classification", "models": ["logistic_regression"],
+        "acknowledge_random_split": True,
+    })
+    with storage.connect() as con:
+        rows = con.execute("SELECT id,status FROM experiments WHERE project_id=?", (pid,)).fetchall()
+        progress = con.execute("SELECT stage FROM experiment_progress_events ORDER BY event_id").fetchall()
+    if winner == "training":
+        assert response.status_code == 202, response.text
+        eid = response.json()["id"]
+        assert [tuple(row) for row in rows] == [(eid, "queued")]
+        assert [row["stage"] for row in progress] == ["queued"]
+        worker.assert_called_once()
+        assert worker.call_args.args[:2] == (eid, pid)
+        archived = _change(client, pid, "archive", 0)
+        assert archived.status_code == 409, archived.text
+        assert "training" in archived.json()["detail"].lower()
+        assert storage.get_project(pid) is not None
+    else:
+        assert response.status_code == 409, response.text
+        detail = response.json()["detail"].lower()
+        assert ("archived" if winner == "archive" else "version changed") in detail
+        assert not rows and not progress
+        worker.assert_not_called()
+    assert source.read_bytes() == original
+    assert list((home / "models").iterdir()) == []
 
 
 def test_active_training_and_odin_runs_fail_closed_before_archive(workspace):
