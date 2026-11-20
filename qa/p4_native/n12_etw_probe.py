@@ -106,15 +106,25 @@ def volume_devices(logical_drive_mask=None, drive_type=None, resolve=None):
     return result
 
 
+def utc_clock(*, precise=True):
+    """Bind a Windows UTC clock before taking measurements in a tight interval."""
+    kernel = ctypes.WinDLL("kernel32")
+    get_time = kernel.GetSystemTimePreciseAsFileTime if precise else kernel.GetSystemTimeAsFileTime
+    get_time.argtypes = (ctypes.POINTER(wintypes.FILETIME),)
+    get_time.restype = None
+
+    def ticks():
+        stamp = wintypes.FILETIME()
+        get_time(ctypes.byref(stamp))
+        return (stamp.dwHighDateTime << 32 | stamp.dwLowDateTime) + 504911232000000000
+
+    return ticks
+
+
 def utc_ticks():
     # Python 3.11's Windows wall clock can lag the ETW event clock by several
     # milliseconds. Read the precise UTC FILETIME before start and after stop.
-    stamp = wintypes.FILETIME()
-    get_time = ctypes.WinDLL("kernel32").GetSystemTimePreciseAsFileTime
-    get_time.argtypes = (ctypes.POINTER(wintypes.FILETIME),)
-    get_time.restype = None
-    get_time(ctypes.byref(stamp))
-    return (stamp.dwHighDateTime << 32 | stamp.dwLowDateTime) + 504911232000000000
+    return utc_clock()()
 
 
 def run_writer(code, *paths):

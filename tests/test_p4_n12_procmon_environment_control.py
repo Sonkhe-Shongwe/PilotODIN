@@ -262,15 +262,18 @@ class SameSessionInputTests(unittest.TestCase):
         }}
         self.etw_path = self.root / "etw.jsonl"
         self.write_etw()
+        self.window = {"run": self.run_id.copy(),
+                       "start_utc": WINDOW[0].isoformat(), "end_utc": WINDOW[1].isoformat(),
+                       "clock_utc": True, "shutdown_verified": False}
+        self.write_procmon([process_start(f"\tTMP={TMP}\tTEMP={TEMP}"), create()])
+
+    def write_procmon(self, rows):
         csv_path = self.root / "capture-utf8.csv"
-        rows = [process_start(f"\tTMP={TMP}\tTEMP={TEMP}"), create()]
         with csv_path.open("w", encoding="utf-8", newline="") as stream:
             writer_csv = csv.DictWriter(stream, fieldnames=rows[0])
             writer_csv.writeheader()
             writer_csv.writerows(rows)
-        self.window = {"run": self.run_id.copy(), "csv_sha256": timing.build.digest(csv_path),
-                       "start_utc": WINDOW[0].isoformat(), "end_utc": WINDOW[1].isoformat(),
-                       "clock_utc": True, "shutdown_verified": False}
+        self.window["csv_sha256"] = timing.build.digest(csv_path)
 
     def write_etw(self):
         self.etw_path.write_text("".join(json.dumps(event) + "\n" for event in self.events), encoding="utf-8")
@@ -285,6 +288,7 @@ class SameSessionInputTests(unittest.TestCase):
         self.assertEqual(report["procmon_minus_etw_completion_ticks"], -1)
         self.assertFalse(report["procmon_shutdown_verified"])
         self.assertFalse(report["procmon_loss_reviewed"])
+        self.assertEqual(report["clock_comparison"], {"status": "standard-samples-unverified"})
         self.assertNotIn("private-test", json.dumps(report))
 
     def test_blocks_changed_capture_provenance_and_digests(self):
@@ -312,6 +316,42 @@ class SameSessionInputTests(unittest.TestCase):
         self.write_etw()
         self.assertEqual(self.reduce()["reason"], "etw-create-missing-or-ambiguous")
 
+    def test_standard_samples_discriminate_the_early_stamp_without_granting_a_pass(self):
+        clock = self.capture["child"]["clock"]
+        before = clock["before"]
+        clock["after"] = before + 2689
+        self.events[2]["ticks"] = before + 1036
+        self.events[3]["ticks"] = before + 1501
+        self.write_etw()
+        self.write_procmon([process_start(f"\tTMP={TMP}\tTEMP={TEMP}", stamp="00:00:01.1"),
+                            create(stamp="00:00:01.1133844")])
+        early = before - 100724
+        for standard_before, standard_after, status in (
+            (early, early, "procmon-inside-standard-window-only"),
+            (before - 20000, before + 1000, "procmon-outside-both-windows"),
+            (before + 1, before, "standard-samples-unverified"),
+        ):
+            with self.subTest(status=status), patch.dict(clock, {
+                "standard_before": standard_before, "standard_after": standard_after,
+            }):
+                report = self.reduce()
+                self.assertEqual((report["status"], report["reason"]),
+                                 ("BLOCKED", "create-timestamp-outside-window"))
+                self.assertEqual(report["from_open_begin_ticks"]["procmon_create"], -100724)
+                self.assertEqual(report["clock_comparison"]["status"], status)
+                if status == "procmon-inside-standard-window-only":
+                    self.assertEqual(report["clock_comparison"]["procmon_from_standard_before_ticks"], 0)
+                    self.assertEqual(report["clock_comparison"]["procmon_to_standard_after_ticks"], 0)
+
+    def test_reports_an_etw_clock_mismatch_separately(self):
+        clock = self.capture["child"]["clock"]
+        clock.update(standard_before=clock["before"], standard_after=clock["after"])
+        self.events[3]["ticks"] += 1
+        self.write_etw()
+        report = self.reduce()
+        self.assertEqual(report["status"], "BLOCKED")
+        self.assertEqual(report["clock_comparison"]["status"], "etw-outside-precise-window")
+
     @unittest.skipUnless(os.name == "nt", "requires the Windows clock and process handle")
     def test_windows_child_records_precise_clock_and_original_handle(self):
         child = control.capture(self.root, timed=True)
@@ -320,6 +360,8 @@ class SameSessionInputTests(unittest.TestCase):
         self.assertLessEqual(witness["birth"], clock["before"])
         self.assertLess(clock["before"], clock["after"])
         self.assertLessEqual(clock["after"], witness["exit"])
+        self.assertLess(0, clock["standard_before"])
+        self.assertLessEqual(clock["standard_before"], clock["standard_after"])
 
 
 if __name__ == "__main__":

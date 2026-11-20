@@ -65,6 +65,34 @@ def trace_process(role, handle, parent=""):
                          journey.timestamp_from_ticks(handle["exit"]))
 
 
+def compare_utc_readings(clock, timing_report):
+    """Compare the standard samples independently of the precise-window verdict."""
+    standard_before, standard_after = clock.get("standard_before"), clock.get("standard_after")
+    if (type(standard_before) is not int or type(standard_after) is not int
+            or not 0 < standard_before <= standard_after):
+        return {"status": "standard-samples-unverified"}
+    from_begin = timing_report.get("from_open_begin_ticks")
+    if from_begin is None:
+        return {"status": "file-timing-unverified"}
+    to_return = timing_report["to_open_return_ticks"]
+    procmon_create = clock["before"] + from_begin["procmon_create"]
+    if any(from_begin[key] < 0 or to_return[key] < 0 for key in ("etw_request", "etw_completion")):
+        status = "etw-outside-precise-window"
+    elif from_begin["procmon_create"] >= 0 and to_return["procmon_create"] >= 0:
+        status = "procmon-inside-precise-window"
+    elif standard_before <= procmon_create <= standard_after:
+        status = "procmon-inside-standard-window-only"
+    else:
+        status = "procmon-outside-both-windows"
+    return {
+        "status": status,
+        "standard_minus_precise_before_ticks": standard_before - clock["before"],
+        "standard_minus_precise_after_ticks": standard_after - clock["after"],
+        "procmon_from_standard_before_ticks": procmon_create - standard_before,
+        "procmon_to_standard_after_ticks": standard_after - procmon_create,
+    }
+
+
 def reduce(root, run, capture_data, window):
     trace.require(capture_data["run"] == run and window["run"] == run, "timing capture provenance mismatch")
     trace.require(window["clock_utc"] is True, "Procmon host clock was not UTC")
@@ -109,6 +137,7 @@ def reduce(root, run, capture_data, window):
         report = procmon.replay_create_timing(rows, child, start, end, before=before, after=after,
                                              writer_guid=writer.guid, etw_creates=creates)
     return {**report, **run, "scope": "one-generated-create-timing",
+            "clock_comparison": compare_utc_readings(child["clock"], report),
             "procmon_shutdown_verified": window["shutdown_verified"] is True, "procmon_loss_reviewed": False}
 
 

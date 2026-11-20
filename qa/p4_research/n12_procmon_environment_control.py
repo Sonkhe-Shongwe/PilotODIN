@@ -31,15 +31,20 @@ timed = len(sys.argv) == 5
 if timed:
     import json
     sys.path.insert(0, sys.argv[4])
-    from qa.p4_native.n12_etw_probe import utc_ticks
+    from qa.p4_native.n12_etw_probe import utc_clock
+    precise_utc = utc_clock()
+    standard_utc = utc_clock(precise=False)
     assert sys.stdin.buffer.read(1) == b"1"
-    before = utc_ticks()
+    standard_before = standard_utc()
+    before = precise_utc()
 with target.open("xb") as stream:
     if timed:
-        after = utc_ticks()
+        after = precise_utc()
+        standard_after = standard_utc()
     stream.write(b"PilotODIN generated environment control")
 if timed:
-    print(json.dumps({"before": before, "after": after}))
+    print(json.dumps({"before": before, "after": after,
+                      "standard_before": standard_before, "standard_after": standard_after}))
 """
 
 
