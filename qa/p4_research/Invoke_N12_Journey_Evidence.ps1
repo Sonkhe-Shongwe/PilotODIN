@@ -32,7 +32,16 @@ $backgroundThreadRead = $Operation -ceq 'process-bookend' -and $env:GITHUB_EVENT
     $env:PILOTODIN_N12_BACKGROUND_THREAD_CONSENT -ceq 'I_APPROVE_ONE_N12_BACKGROUND_THREAD' -and
     $env:PILOTODIN_N12_BACKGROUND_THREAD_SOURCE -cmatch '^[0-9a-f]{40}$' -and
     (git rev-parse HEAD) -ceq $env:PILOTODIN_N12_BACKGROUND_THREAD_SOURCE
-if (-not $rehearsalRead -and -not $lifetimeEtw -and -not $socketLifetimeRead -and -not $backgroundThreadRead -and
+$timingExport = $Operation -ceq 'etw-export' -and $env:GITHUB_EVENT_NAME -ceq 'push' -and
+    $env:GITHUB_REF_NAME -ceq 'feature/live-dev-workspace-20261023' -and $env:GITHUB_RUN_ATTEMPT -ceq '1' -and
+    $env:GITHUB_RUN_ID -cmatch '^[0-9]+$' -and
+    $env:PILOTODIN_N12_PROCMON_TIMING_CONSENT -ceq 'I_APPROVE_ONE_N12_PROCMON_TIMING_CONTROL' -and
+    $env:PILOTODIN_N12_PROCMON_TIMING_SOURCE -cmatch '^[0-9a-f]{40}$' -and
+    (git rev-parse HEAD) -ceq $env:PILOTODIN_N12_PROCMON_TIMING_SOURCE -and
+    [IO.Path]::GetFullPath($CaptureRoot) -eq [IO.Path]::GetFullPath(
+        (Join-Path $env:RUNNER_TEMP "pilotodin-n12-live-$env:GITHUB_RUN_ID"))
+if (-not $rehearsalRead -and -not $lifetimeEtw -and -not $socketLifetimeRead -and
+    -not $backgroundThreadRead -and -not $timingExport -and
     $env:PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT -cne 'I_APPROVE_UNPACKAGED_P4_NATIVE_DEV') {
     throw 'N12 journey operations require an approved disposable hosted Windows run.'
 }

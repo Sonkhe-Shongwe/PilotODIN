@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ from unittest.mock import patch
 
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_procmon_environment_control as control
+from qa.p4_research import n12_procmon_timing_control as timing
 
 
 TMP = r"C:\private-test\tmp"
@@ -216,6 +218,108 @@ class CreateTimingReplayTests(unittest.TestCase):
         wrong_environment = process_start(f"\tTMP={TEMP}\tTEMP={TEMP}")
         self.assertEqual(self.replay([wrong_environment, create()]),
                          {"status": "BLOCKED", "reason": "procmon-start-unverified"})
+
+
+class SameSessionInputTests(unittest.TestCase):
+    def setUp(self):
+        folder = TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.root = Path(folder.name)
+        self.run_id = {"source_sha": "1" * 40, "run_id": "21", "run_attempt": "1"}
+        parent_image = r"C:\fixture\python.exe"
+        native_image = r"\Device\HarddiskVolume3\fixture\python.exe"
+        origin = trace.utc_ticks(WINDOW[0])
+        second = 10_000_000
+        parent = {"pid": 9, "birth": origin + second // 2, "exit": origin + 3 * second,
+                  "image_dos": parent_image, "image_native": native_image}
+        writer = {**parent, "pid": 10, "birth": origin + second, "exit": origin + 2 * second}
+        at = trace.etw_payload_ticks("2026-11-20T00:00:01.1234568Z")
+
+        def lifecycle(kind, handle, sequence, **fields):
+            return {"id": kind, "pid": 0, "lifecycle": True, "version": 3,
+                    "ticks": handle["birth" if kind == 1 else "exit"], "data": {
+                        "ProcessID": str(handle["pid"]), "ProcessSequenceNumber": str(sequence),
+                        "CreateTime": timing.journey.timestamp_from_ticks(handle["birth"]).isoformat(),
+                        "ImageName": native_image, **fields,
+                    }}
+
+        self.events = [
+            lifecycle(1, parent, 5, ParentProcessID="8", ParentProcessSequenceNumber="4"),
+            lifecycle(1, writer, 6, ParentProcessID="9", ParentProcessSequenceNumber="5"),
+            {"id": 12, "pid": 10, "lifecycle": False, "ticks": at,
+             "data": {"FileObject": 3, "Irp": 4, "FileName": CHILD["target"]}},
+            {"id": 24, "pid": 0, "lifecycle": False, "ticks": at + 1,
+             "data": {"Irp": 4, "Status": 0, "ExtraInformation": 2}},
+            lifecycle(2, writer, 6, ExitTime=timing.journey.timestamp_from_ticks(writer["exit"]).isoformat()),
+            lifecycle(2, parent, 5, ExitTime=timing.journey.timestamp_from_ticks(parent["exit"]).isoformat()),
+        ]
+        self.capture = {"run": self.run_id.copy(), "parent": parent, "child": {
+            **CHILD, "witness": writer, "clock": {"before": at, "after": at + 1},
+        }, "etw": {
+            "schema_version": 1, "start_utc": WINDOW[0].isoformat(), "end_utc": WINDOW[1].isoformat(),
+            "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+            "counters": {"events_lost": 0, "log_buffers_lost": 0, "realtime_buffers_lost": 0, "buffers_written": 1},
+        }}
+        self.etw_path = self.root / "etw.jsonl"
+        self.write_etw()
+        csv_path = self.root / "capture-utf8.csv"
+        rows = [process_start(f"\tTMP={TMP}\tTEMP={TEMP}"), create()]
+        with csv_path.open("w", encoding="utf-8", newline="") as stream:
+            writer_csv = csv.DictWriter(stream, fieldnames=rows[0])
+            writer_csv.writeheader()
+            writer_csv.writerows(rows)
+        self.window = {"run": self.run_id.copy(), "csv_sha256": timing.build.digest(csv_path),
+                       "start_utc": WINDOW[0].isoformat(), "end_utc": WINDOW[1].isoformat(),
+                       "clock_utc": True, "shutdown_verified": False}
+
+    def write_etw(self):
+        self.etw_path.write_text("".join(json.dumps(event) + "\n" for event in self.events), encoding="utf-8")
+        self.capture["etw"]["events_sha256"] = timing.build.digest(self.etw_path)
+
+    def reduce(self):
+        return timing.reduce(self.root, self.run_id, self.capture, self.window)
+
+    def test_joins_real_fixture_export_formats_and_preserves_shutdown_status(self):
+        report = self.reduce()
+        self.assertEqual(report["status"], "PASS")
+        self.assertEqual(report["procmon_minus_etw_completion_ticks"], -1)
+        self.assertFalse(report["procmon_shutdown_verified"])
+        self.assertFalse(report["procmon_loss_reviewed"])
+        self.assertNotIn("private-test", json.dumps(report))
+
+    def test_blocks_changed_capture_provenance_and_digests(self):
+        for values, key, value, reason in (
+            (self.window["run"], "run_id", "22", "provenance mismatch"),
+            (self.capture["run"], "source_sha", "2" * 40, "provenance mismatch"),
+            (self.window, "csv_sha256", "0" * 64, "Procmon export digest mismatch"),
+            (self.capture["etw"], "events_sha256", "0" * 64, "ETW export digest mismatch"),
+        ):
+            with self.subTest(reason=reason), patch.dict(values, {key: value}):
+                with self.assertRaisesRegex(trace.EvidenceValidationError, reason):
+                    self.reduce()
+
+    def test_blocks_etw_loss_and_conflicting_parent_identity(self):
+        with patch.dict(self.capture["etw"]["counters"], {"events_lost": 1}):
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "etw-event-or-buffer-loss"):
+                self.reduce()
+        self.events[1]["data"]["ParentProcessSequenceNumber"] = "7"
+        self.write_etw()
+        with self.assertRaisesRegex(trace.EvidenceValidationError, "ETW parent sequence unverified"):
+            self.reduce()
+
+    def test_failed_file_completion_cannot_supply_timing(self):
+        self.events[3]["data"]["Status"] = 0xC0000035
+        self.write_etw()
+        self.assertEqual(self.reduce()["reason"], "etw-create-missing-or-ambiguous")
+
+    @unittest.skipUnless(os.name == "nt", "requires the Windows clock and process handle")
+    def test_windows_child_records_precise_clock_and_original_handle(self):
+        child = control.capture(self.root, timed=True)
+        witness, clock = child["witness"], child["clock"]
+        self.assertEqual(witness["pid"], child["pid"])
+        self.assertLessEqual(witness["birth"], clock["before"])
+        self.assertLess(clock["before"], clock["after"])
+        self.assertLessEqual(clock["after"], witness["exit"])
 
 
 if __name__ == "__main__":

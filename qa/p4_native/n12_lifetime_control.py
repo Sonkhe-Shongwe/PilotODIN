@@ -79,11 +79,12 @@ def open_process_query_handle(pid):
         close_handle(handle)
 
 
-def run_process(command, *, with_images=False, fixture_input=b"1", creationflags=0, hold_seconds=0):
+def run_process(command, *, with_images=False, fixture_input=b"1", creationflags=0, hold_seconds=0,
+                env=None, cwd=None):
     # The pipe holds even the fast fixture until its executable paths are recorded.
     stdin = subprocess.PIPE if with_images else None
     with subprocess.Popen(command, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                          creationflags=creationflags) as process:
+                          creationflags=creationflags, env=env, cwd=cwd) as process:
         try:
             images = process_images(process) if with_images else {}
             if hold_seconds:

@@ -24,15 +24,26 @@ import os
 from pathlib import Path
 import sys
 
-tmp, temp, target = map(Path, sys.argv[1:])
+tmp, temp, target = map(Path, sys.argv[1:4])
 assert Path(os.environ["TMP"]) == tmp
 assert Path(os.environ["TEMP"]) == temp
+timed = len(sys.argv) == 5
+if timed:
+    import json
+    sys.path.insert(0, sys.argv[4])
+    from qa.p4_native.n12_etw_probe import utc_ticks
+    assert sys.stdin.buffer.read(1) == b"1"
+    before = utc_ticks()
 with target.open("xb") as stream:
+    if timed:
+        after = utc_ticks()
     stream.write(b"PilotODIN generated environment control")
+if timed:
+    print(json.dumps({"before": before, "after": after}))
 """
 
 
-def capture(root):
+def capture(root, *, timed=False):
     paths = {key: root / key.lower() for key in ("TMP", "TEMP")}
     for path in paths.values():
         path.mkdir()
@@ -44,18 +55,29 @@ def capture(root):
     env = {key: str(path) for key, path in paths.items()}
     if os.name == "nt":
         env["SystemRoot"] = os.environ["SystemRoot"]
-    with subprocess.Popen(args, cwd=root, env=env,
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as child:
-        try:
-            trace.require(child.wait(timeout=10) == 0 and target.read_bytes() == PAYLOAD,
-                          "generated child did not verify its environment and file")
-        except subprocess.TimeoutExpired:
-            child.kill()
-            child.wait(timeout=5)
-            raise
-    return {"pid": child.pid, "parent_pid": os.getpid(), "image": ntpath.basename(sys.executable),
+    extra = {}
+    if timed:
+        from qa.p4_native.n12_lifetime_control import run_process
+
+        args.insert(1, "-B")
+        args.append(str(build.REPO))
+        witness, output = run_process(args, with_images=True, env=env, cwd=root)
+        pid = witness["pid"]
+        extra = {"witness": witness, "clock": json.loads(output)}
+    else:
+        with subprocess.Popen(args, cwd=root, env=env,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as child:
+            try:
+                trace.require(child.wait(timeout=10) == 0, "generated child failed")
+            except subprocess.TimeoutExpired:
+                child.kill()
+                child.wait(timeout=5)
+                raise
+            pid = child.pid
+    trace.require(target.read_bytes() == PAYLOAD, "generated child did not verify its file")
+    return {"pid": pid, "parent_pid": os.getpid(), "image": ntpath.basename(sys.executable),
             "command": subprocess.list2cmdline(args), "target": str(target),
-            "paths": {key: str(p) for key, p in paths.items()}}
+            "paths": {key: str(p) for key, p in paths.items()}, **extra}
 
 
 def boundary_shape(text, *, left):

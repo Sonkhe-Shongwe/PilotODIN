@@ -76,6 +76,7 @@ on:
       - qa/p4_research/n12_backend_wakeup.py
       - qa/p4_research/n12_tmp_debugger_fixture.py
       - qa/p4_research/n12_procmon_environment_control.py
+      - qa/p4_research/n12_procmon_timing_control.py
       - qa/p4_research/n12_project_switch.py
       - qa/p4_research/n12_egress.py
       - qa/p4_research/n12_app_lifetime.py

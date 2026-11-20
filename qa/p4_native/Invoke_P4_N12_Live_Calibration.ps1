@@ -8,6 +8,7 @@ param(
     [switch]$AppLifetime,
     [switch]$WebViewStorage,
     [switch]$ProcmonEnvironmentControl,
+    [switch]$ProcmonTimingControl,
     [switch]$LifetimeControl,
     [switch]$LifetimeEtwControl,
     [switch]$SocketLifetimeControl,
@@ -38,14 +39,25 @@ if ($WebViewStorage -and ($WithEtw -or $AppJourney -or $AppLifetime -or $Lifetim
     throw 'WebView storage requires its own Process Monitor capture mode.'
 }
 
-if ($ProcmonEnvironmentControl -and ($WithEtw -or $AppJourney -or $AppLifetime -or $WebViewStorage -or
+$procmonControl = $ProcmonEnvironmentControl -or $ProcmonTimingControl
+if ($procmonControl) {
+    $controlSource = if ($ProcmonTimingControl) {
+        $env:PILOTODIN_N12_PROCMON_TIMING_SOURCE
+    } else { $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_SOURCE }
+    $controlApproved = if ($ProcmonTimingControl) {
+        $env:PILOTODIN_N12_PROCMON_TIMING_CONSENT -ceq 'I_APPROVE_ONE_N12_PROCMON_TIMING_CONTROL'
+    } else {
+        $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_CONSENT -ceq 'I_APPROVE_ONE_N12_PROCMON_ENVIRONMENT_CONTROL'
+    }
+    if (($ProcmonEnvironmentControl -and $ProcmonTimingControl) -or
+        $WithEtw -or $AppJourney -or $AppLifetime -or $WebViewStorage -or
         $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl -or $InitialJourneyFixture -or
         $CollectorRundown -or $SourceSha -or $ExecutableSha256 -or
         $env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
-        $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_CONSENT -cne 'I_APPROVE_ONE_N12_PROCMON_ENVIRONMENT_CONTROL' -or
-        $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
-        (git rev-parse HEAD) -cne $env:PILOTODIN_N12_PROCMON_ENVIRONMENT_SOURCE)) {
-    throw 'The Process Monitor environment control requires its own source-pinned run.'
+        $env:GITHUB_RUN_ID -cnotmatch '^[0-9]+$' -or -not $controlApproved -or
+        $controlSource -cnotmatch '^[0-9a-f]{40}$' -or (git rev-parse HEAD) -cne $controlSource) {
+        throw 'Each Process Monitor control requires its own source-pinned run.'
+    }
 }
 
 if ($InitialJourneyFixture -and (-not $WithEtw -or $CollectorRundown -or $AppJourney -or $AppLifetime -or
@@ -130,7 +142,7 @@ function Get-MicrosoftCollector($Name, $Executable, $Publisher, $ExpectedHash) {
     return $binary.FullName
 }
 
-if ((-not $ProcmonEnvironmentControl -and
+if ((-not $procmonControl -and
         @(Get-Service -Name Sysmon,Sysmon64 -ErrorAction SilentlyContinue).Count -gt 0) -or
     @(Get-Process -Name Procmon,Procmon64 -ErrorAction SilentlyContinue).Count -gt 0) {
     throw 'Collector already present or running on the disposable image.'
@@ -140,7 +152,7 @@ $root = Join-Path $env:RUNNER_TEMP "pilotodin-n12-live-$env:GITHUB_RUN_ID"
 New-Item -ItemType Directory -Path $root | Out-Null
 $channel = 'Microsoft-Windows-Sysmon/Operational'
 $clock = Get-TimeZone
-$sysmon = if (-not $ProcmonEnvironmentControl) {
+$sysmon = if (-not $procmonControl) {
     Get-MicrosoftCollector 'Sysmon' 'Sysmon64.exe' 'Microsoft Windows Publisher' '83d31f2478dc6716cfdbf69e5c384bf043072b5f0d8d7b2eea365f709fda4352'
 }
 $procmon = $null
@@ -212,7 +224,7 @@ try {
         & (Join-Path $PSScriptRoot 'Test_P4_N12_ETW_Fixture.ps1') -WithSysmon -Rundown:$CollectorRundown
         return
     }
-    if (-not $ProcmonEnvironmentControl) {
+    if (-not $procmonControl) {
         $latest = Get-WinEvent -LogName $channel -MaxEvents 1
         $firstRecord = $latest.RecordId + 1
     }
@@ -229,7 +241,10 @@ try {
     Write-Host 'Process Monitor capture process is running and its backing file is present.'
 
     $start = [DateTimeOffset]::UtcNow
-    if ($ProcmonEnvironmentControl) {
+    if ($ProcmonTimingControl) {
+        python -B -m qa.p4_research.n12_procmon_timing_control capture $root
+        if ($LASTEXITCODE -ne 0) { throw 'Same-session timing fixture or ETW export failed.' }
+    } elseif ($ProcmonEnvironmentControl) {
         python -B -m qa.p4_research.n12_procmon_environment_control capture $root
         if ($LASTEXITCODE -ne 0) { throw 'Generated Process Monitor environment child failed.' }
     } elseif ($WebViewStorage) {
@@ -242,12 +257,12 @@ try {
     }
     Start-Sleep -Seconds 5
     $end = [DateTimeOffset]::UtcNow
-    if (-not $ProcmonEnvironmentControl) {
+    if (-not $procmonControl) {
         $lastRecord = (Get-WinEvent -LogName $channel -MaxEvents 1).RecordId
     }
 
     $stopError = $null
-    if ($ProcmonEnvironmentControl) {
+    if ($procmonControl) {
         # Exercise a normal window close on the captured process. The finally
         # block can request termination for cleanup after a failed close.
         Request-P4N12CollectorWindowClose -Process $capture
@@ -291,15 +306,27 @@ try {
         } finally { $writer.Dispose() }
     } finally { $reader.Dispose() }
 
-    if ($ProcmonEnvironmentControl) {
-        @{
+    if ($procmonControl) {
+        $controlWindow = @{
             start_utc = $start.ToString('o')
             end_utc = $end.ToString('o')
             clock_utc = (Get-TimeZone).Id -eq 'UTC'
             shutdown_verified = ($null -eq $stopError)
-        } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'environment-window.json') -Encoding utf8
-        python -B -m qa.p4_research.n12_procmon_environment_control reduce $root
-        if ($LASTEXITCODE -ne 0) { throw 'Process Monitor environment evidence was blocked.' }
+        }
+        $controlModule = 'qa.p4_research.n12_procmon_environment_control'
+        if ($ProcmonTimingControl) {
+            $controlWindow.run = @{
+                source_sha = $controlSource
+                run_id = $env:GITHUB_RUN_ID
+                run_attempt = $env:GITHUB_RUN_ATTEMPT
+            }
+            $controlWindow.csv_sha256 = (Get-FileHash -LiteralPath $normalized -Algorithm SHA256).Hash.ToLowerInvariant()
+            $controlModule = 'qa.p4_research.n12_procmon_timing_control'
+        }
+        $controlWindow | ConvertTo-Json -Depth 3 |
+            Set-Content -LiteralPath (Join-Path $root 'environment-window.json') -Encoding utf8
+        python -B -m $controlModule reduce $root
+        if ($LASTEXITCODE -ne 0) { throw 'Process Monitor control evidence was blocked.' }
         return
     }
     & (Join-Path $PSScriptRoot 'Export_P4_N12_Sysmon_Trace.ps1') -FirstRecord $firstRecord -LastRecord $lastRecord -OutputFile $xml

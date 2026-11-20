@@ -1,0 +1,54 @@
+name: P4 N12 same-session Procmon and ETW timing control
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_PROCMON_TIMING_CONTROL_APPROVAL.txt
+
+permissions:
+  contents: read
+
+jobs:
+  timing-control:
+    if: ${{ false }} # Awaiting one source-pinned Procmon timing control approval.
+    runs-on: windows-2022
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify the one-use approval and run one generated child
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $marker = 'qa/p4_research/N12_PROCMON_TIMING_CONTROL_APPROVAL.txt'
+          $workflow = '.github/workflows/p4-n12-procmon-timing-control.yml'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA) {
+            throw 'Expected the first approved hosted Windows push.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=n12-one-procmon-timing-control') {
+            throw 'A fresh source-pinned timing control approval is required.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $workflow -cnotin $changed -or $marker -cnotin $changed -or
+              $added.Count -ne 1 -or $added[0] -cne $marker) {
+            throw 'The launch must be a direct child of the reviewed source.'
+          }
+          git checkout --detach $source
+          $env:PILOTODIN_N12_PROCMON_TIMING_SOURCE = $source
+          $env:PILOTODIN_N12_PROCMON_TIMING_CONSENT = 'I_APPROVE_ONE_N12_PROCMON_TIMING_CONTROL'
+          python -B -m unittest tests.test_p4_n12_procmon_environment_control
+          ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -ProcmonTimingControl
