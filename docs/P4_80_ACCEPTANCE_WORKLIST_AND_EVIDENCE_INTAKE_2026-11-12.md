@@ -4,6 +4,8 @@
 
 **Current evidence.** The scorecard is the source for P4 points and the handoff identifies the next authorised task. [Scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) · [Next task](./SESSION_HANDOFF_CURRENT.md#next-engineering-action)
 
+**20 November diagnostic.** The collector-only clock jobs did not exercise the app. The hosted app audit retains its recorded filesystem and network failures and blocked coverage. Fix the reproduced product safety defects and prepare the representative calibrated journey described in the audit for the next R02.5 evidence decision. All acceptance criteria and approval boundaries still apply. [Audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md#direction-and-decision-checkpoints)
+
 **Binding governance:** [P4-17 owner risk-deferral refusal](./P4_17_BOUNDED_DEVELOPMENT_CLOSURE_DECISION_REVIEW_2026-11-09.md), [P4-46 hard-stop boundary](./P4_46_CLOSURE_EVIDENCE_AND_DECISION_BOUNDARY_2026-11-12.md), [P4-50 independent evidence intake](./P4_50_EVIDENCE_INTAKE_AND_SINGLE_NATIVE_READINESS_2026-11-12.md), [P4-71 limited actual native boot](./P4_71_ONE_OWNER_APPROVED_WINDOWS_NATIVE_QA_RESULT_2026-11-12.md), [existing native test kit](../qa/p4_native/README.md) / [results template](../qa/p4_native/RESULTS_TEMPLATE.md), [master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2), [owner P4 evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9).
 
 ## Six open engineering checks and the next evidence passes

@@ -12,6 +12,7 @@
 
 ## Current development references
 
+- [20 November code, test and direction audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) for reproduced product defects, the scope of the Windows failures and the corrective order.
 - [Live development workspace](./LIVE_DEVELOPMENT.md) and [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md).
 - [19 November work and process audit](./WORK_AND_PROCESS_AUDIT_2026-11-19.md) for the documented decision flow, hosted run analysis and evidence corrections.
 - [Complexity-last roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) for the intended phase sequence.
