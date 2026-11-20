@@ -225,8 +225,8 @@ def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:in
     clipped=len(text)>16000
     return ProviderText(text.strip()[:16000], finish, incomplete or clipped)
 
-# The local model receives the same bounded, computed context as cloud providers.
-# It does not execute Python or shell commands and cannot write project data.
+# The local model can also use the individual prediction. It cannot execute
+# Python or shell commands or write project data.
 def _ollama_request(path:str, *, payload:dict|None=None, timeout:int=2)->dict:
     if path not in ('/api/tags','/api/chat'):
         raise ValueError('Unsupported local inference route')
@@ -331,11 +331,13 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
         fallback['reason']='Deterministic local analysis selected'
         return fallback
     cloud_allowed=bool(cfg['cloud_enabled'] and cfg['share_aggregates'])
-    # Even if the cloud is enabled, mode=local never transmits anything remotely.
-    user=json.dumps({'task':task,'question':question[:900], 'verified_context':context,
-        'continuation':{'previous_answer_tail':continuation_text[-5500:],
-                        'instruction':'Continue without repeating earlier text.'} if continuation_text else None},
-        ensure_ascii=False,default=str)[:11000]
+    continuation = {'previous_answer_tail': continuation_text[-5500:],
+                    'instruction': 'Continue without repeating earlier text.'} if continuation_text else None
+
+    def encode_prompt(verified_context: dict) -> str:
+        return json.dumps({'task': task, 'question': question[:900], 'verified_context': verified_context,
+                           'continuation': continuation}, ensure_ascii=False, default=str)[:11000]
+
     explicit_cloud=selected in PROVIDERS
     prefer_local=selected=='ollama' or mode=='local' or (selected=='auto' and mode=='hybrid')
     local_failed='not_requested'
@@ -374,6 +376,7 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
             return None
         model=cfg['local_model']
         try:
+            user=encode_prompt(context)
             if os.environ.get('PILOTODIN_DESKTOP_SESSION'):
                 body, incomplete, finish_reason = bundled_inference.generate(SYSTEM,user,cfg['local_timeout_seconds'])
                 answer=ProviderText(body,finish_reason,incomplete)
@@ -415,6 +418,10 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
                             'Cloud disabled or consent not granted; verified deterministic analysis used')
         return fallback
 
+    user=encode_prompt({key: value for key, value in context.items() if key != 'prediction'})
+    system=SYSTEM
+    if task == 'predict':
+        system += '\nExplain the model and limitations using aggregate evidence. The individual prediction is available locally.'
     order=list(cfg['provider_order'])
     if explicit_cloud:order=[selected]+[p for p in order if p!=selected]
     attempted=[]
@@ -426,13 +433,13 @@ def respond(context:dict,task:str,question:str,local_answer:str,deep:bool=False,
         model=MODELS[provider]['deep' if deep else 'routine']
         try:
             try:
-                answer=_call_provider(provider,model,SYSTEM,user,key,cfg['timeout_seconds'])
+                answer=_call_provider(provider,model,system,user,key,cfg['timeout_seconds'])
             except urllib.error.HTTPError as initial:
                 alternate='gemini-2.5-flash-lite' if not deep else 'gemini-3.1-flash-lite'
                 if provider=='gemini' and initial.code in (502,503,504) and model!=alternate:
                     attempted.append({'provider':provider,'model':model,'status':f'http_{initial.code}_retry_alternate'})
                     model=alternate
-                    answer=_call_provider(provider,model,SYSTEM,user,key,cfg['timeout_seconds'])
+                    answer=_call_provider(provider,model,system,user,key,cfg['timeout_seconds'])
                 else:raise
             if not isinstance(answer,str) or not answer.strip():raise ValueError('Empty provider response')
             _health[provider]={'status':'connected','model':model,

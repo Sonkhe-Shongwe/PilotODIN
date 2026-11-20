@@ -1,7 +1,4 @@
-"""Redacted analytical facts shared with opt-in AI providers.
-
-No row records, sample values, category labels, file paths or API keys.
-"""
+"""Bounded analytical facts and the prediction details used locally."""
 from __future__ import annotations
 
 import math
@@ -30,6 +27,28 @@ def _finite(v):
         f=float(v)
         return round(f,4) if math.isfinite(f) else None
     except (ValueError,TypeError,OverflowError):return None
+
+
+def _evaluation_summary(results: dict | None) -> dict | None:
+    """Project stored evaluation evidence into approved aggregate metrics."""
+    if not isinstance(results, dict):
+        return None
+    summary = {}
+    for name in (
+        'sample_count', 'accuracy', 'f1_macro', 'precision_macro', 'recall_macro', 'roc_auc',
+        'mae', 'rmse', 'r2', 'baseline_cv', 'cv_score', 'baseline_test_metric',
+    ):
+        value = results.get(name)
+        if type(value) is int or (type(value) is float and math.isfinite(value)):
+            summary[name] = value
+    if results.get('baseline_test_label') in ('Macro F1', 'MAE'):
+        summary['baseline_test_label'] = results['baseline_test_label']
+    if isinstance(results.get('beats_heldout_baseline'), bool):
+        summary['beats_heldout_baseline'] = results['beats_heldout_baseline']
+    reliability = results.get('reliability')
+    if isinstance(reliability, dict) and reliability.get('level') in ('warning', 'review'):
+        summary['reliability'] = {'level': reliability['level']}
+    return summary
 
 
 def build(project_id:str,task:str,question:str='',target:str|None=None,experiment_id:str|None=None,prediction:dict|None=None,
@@ -71,11 +90,11 @@ def build(project_id:str,task:str,question:str='',target:str|None=None,experimen
         if exp and exp['project_id']==project_id:
             result['experiment']={'target':exp['config'].get('target'),'task':exp['config'].get('task'),
                'dataset_version':exp['config'].get('quality_version'),'stale':exp['config'].get('quality_version')!=version,
-               'selected_model':exp.get('selected_model'),'metrics':exp.get('final_results'),
+               'selected_model':exp.get('selected_model'),'metrics':_evaluation_summary(exp.get('final_results')),
                'comparison':[{k:m.get(k) for k in ('key','status','cv_metric','cv_std')}
                             for m in (exp.get('results') or {}).get('models',[])][:5]}
     if prediction and experiment_id and 'experiment' in result:
-        # Only prediction output; user-entered input feature values are excluded.
+        # Individual outputs support local explanation. Cloud prompts omit this section.
         probabilities=[]
         for item in (prediction.get('probabilities') or [])[:8]:
             if isinstance(item,dict):

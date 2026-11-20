@@ -326,5 +326,107 @@ class VerifiedAnswersTests(unittest.TestCase):
             self.assertNotIn(private, log_text)
 
 
+class CloudEvaluationPrivacyTests(unittest.TestCase):
+    def setUp(self):
+        workspace = self.enterContext(TemporaryDirectory(prefix='pilotodin-cloud-privacy-'))
+        home = Path(workspace)
+        (home / 'datasets').mkdir()
+        self.enterContext(patch.object(storage, 'HOME', home))
+        self.enterContext(patch.object(storage, 'DB_PATH', home / 'pilotodin.sqlite3'))
+        storage.init()
+        quality._init_tables()
+        self.client = TestClient(main.app)
+        self.addCleanup(self.client.close)
+        uploaded = self.client.post('/api/projects', files={
+            'file': ('generated.csv', 'feature,outcome\n0,No\n1,Yes\n2,No\n3,Yes\n', 'text/csv'),
+        })
+        self.assertEqual(uploaded.status_code, 201, uploaded.text)
+        self.project_id = uploaded.json()['id']
+        self.experiment_id = storage.new_experiment(self.project_id, {
+            'task': 'classification', 'target': 'outcome', 'quality_version': 0,
+        })
+        storage.mark(self.experiment_id, 'completed', {'models': [
+            {'key': 'logistic_regression', 'status': 'ready', 'cv_metric': 0.81, 'cv_std': 0.02},
+        ]})
+        self.evaluation_rows = [{'actual': 'HELDOUT_ACTUAL_SENTINEL', 'predicted': 'HELDOUT_PREDICTED_SENTINEL'}]
+        self.metrics = {
+            'accuracy': 0.8, 'f1_macro': 0.75, 'sample_count': 64,
+            'baseline_test_metric': 0.5, 'beats_heldout_baseline': True,
+            'reliability': {'level': 'warning', 'issues': ['LOCAL_NOTE_SENTINEL']},
+            'roc_auc': 'INVALID_METRIC_SENTINEL', 'rmse': True,
+            'class_labels': ['PRIVATE_CLASS_SENTINEL'],
+            'evaluation_rows': self.evaluation_rows,
+            'future_detail': {'rows': [{'value': 'FUTURE_RECORD_SENTINEL'}]},
+        }
+        self.assertTrue(storage.select_model(self.experiment_id, 'logistic_regression', self.metrics))
+        self.settings = {**ai_provider.DEFAULTS, 'intelligence_mode': 'cloud',
+                         'cloud_enabled': True, 'share_aggregates': True, 'local_model_enabled': False}
+        self.enterContext(patch.object(ai_provider, '_read_config', side_effect=lambda: self.settings))
+        self.enterContext(patch.object(ai_provider, '_get_key', return_value='generated-test-key'))
+        self.enterContext(patch.object(ai_provider, '_cooldowns', {}))
+        self.enterContext(patch.object(ai_provider, '_health', {}))
+        self.transport = self.enterContext(patch.object(ai_provider.urllib.request, 'urlopen'))
+        self.transport.return_value.__enter__.return_value.read.return_value = (
+            b'{"candidates":[{"content":{"parts":[{"text":"Generated explanation."}]},"finishReason":"STOP"}]}'
+        )
+
+    def insight(self, context='evaluate', provider='gemini', **kwargs):
+        response = self.client.post(f'/api/projects/{self.project_id}/ai/insight', json={
+            'context': context, 'experiment_id': self.experiment_id, 'selected_provider': provider, **kwargs,
+        })
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()
+
+    def sent_context(self):
+        self.transport.assert_called_once()
+        envelope = json.loads(self.transport.call_args.args[0].data)
+        return json.loads(envelope['contents'][0]['parts'][0]['text'])['verified_context']
+
+    def test_saved_evaluation_only_sends_approved_aggregates(self):
+        self.assertEqual(self.insight()['source'], 'cloud_llm')
+        experiment = self.sent_context()['experiment']
+        self.assertNotIn('evaluation_rows', experiment['metrics'])
+        self.assertEqual(experiment['metrics'], {
+            'accuracy': 0.8, 'f1_macro': 0.75, 'sample_count': 64, 'baseline_test_metric': 0.5,
+            'beats_heldout_baseline': True, 'reliability': {'level': 'warning'},
+        })
+        self.assertEqual(experiment['comparison'][0]['cv_metric'], 0.81)
+        saved = self.client.get(f'/api/experiments/{self.experiment_id}').json()['final_results']
+        self.assertEqual(saved['evaluation_rows'], self.evaluation_rows)
+        self.assertEqual(saved['class_labels'], self.metrics['class_labels'])
+
+    def test_individual_prediction_stays_local(self):
+        prediction = {'prediction': 'PRIVATE_PREDICTION', 'probabilities': [
+            {'class': 'PRIVATE_CLASS_SENTINEL', 'probability': 0.8},
+        ]}
+        self.assertEqual(self.insight('predict', prediction=prediction)['source'], 'cloud_llm')
+        self.assertNotIn('prediction', self.sent_context())
+        self.transport.reset_mock()
+        result = self.insight('predict', provider='local', prediction=prediction)
+        self.assertIn('PRIVATE_PREDICTION', result['answer'])
+        self.transport.assert_not_called()
+
+    def test_hybrid_fallback_sends_the_same_aggregate_context(self):
+        self.insight()
+        explicit_context = self.sent_context()
+        self.transport.reset_mock()
+        self.settings.update(intelligence_mode='hybrid', local_model_enabled=True)
+        with patch.object(resource_policy, 'admit_new_work', return_value={'decision': 'allow'}), \
+                patch.object(ai_provider, '_call_ollama', side_effect=TimeoutError) as local_model:
+            result = self.insight(provider='auto')
+        local_model.assert_called_once()
+        self.assertEqual((result['source'], result['local_status']), ('cloud_llm', 'timeout'))
+        self.assertEqual(self.sent_context(), explicit_context)
+
+    def test_consent_and_local_mode_still_gate_cloud_transport(self):
+        for mode, consent, provider in (('cloud', False, 'gemini'), ('local', True, 'gemini'),
+                                        ('hybrid', True, 'ollama')):
+            with self.subTest(mode=mode, consent=consent, provider=provider):
+                self.settings.update(intelligence_mode=mode, share_aggregates=consent)
+                result = self.insight(provider=provider, continuation_text='Generated previous answer')
+                self.assertEqual(result['source'], 'local_computed_rules')
+                self.transport.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

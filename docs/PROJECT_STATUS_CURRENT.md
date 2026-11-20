@@ -6,7 +6,7 @@ The open engineering checks cover the hosted Windows filesystem and network audi
 
 [Evidence plan for the six open checks](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md#six-open-engineering-checks-and-the-next-evidence-passes) · [Consolidated Windows QA preparation](./SESSION_HANDOFF_CURRENT.md#consolidated-p4-evidence-preparation)
 
-The 20 November audit reproduced cloud payload, import integrity and experiment state defects with disposable data. The first corrective task is the outbound cloud privacy contract. The one-file clock diagnostics are paused pending a decision that requires them. [Audit and corrective checkpoints](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md)
+The 20 November audit reproduced cloud payload, import integrity and experiment state defects with disposable data. The cloud payload fix passed local transport regression, advancing the audit fixes to **1/7** at source scope. Interrupted-import recovery is next. The one-file clock diagnostics stay paused pending a decision that requires them. [Audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) · [Cloud privacy evidence](./SESSION_HANDOFF_CURRENT.md#20-november-2026--cloud-evaluation-context-and-individual-predictions)
 
 ## Phase ledger
 

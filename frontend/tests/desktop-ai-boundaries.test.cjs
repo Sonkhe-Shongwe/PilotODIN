@@ -102,3 +102,9 @@ test('Ask ODIN labels deterministic fallback and exposes the explicit offline mo
  assert.match(assistant,/local_startup_issue/);
  assert.match(assistant,/No language-model answer was generated/);
 });
+
+test('continuing an offline workspace explanation pins the request to the local model',()=>{
+ const workspace=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
+ assert.match(workspace,/const continuationProvider = result\.source === 'local_llm' \? 'ollama' : selectedProvider/);
+ assert.match(workspace,/selected_provider:continuationProvider,continuation_text:result\.answer/);
+});

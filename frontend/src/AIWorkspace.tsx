@@ -88,7 +88,8 @@ export function AIInsight({projectId,scope,version,target,experimentId,predictio
   }catch(e){if(request===latest.current)setError((e as Error).message)}finally{if(request===latest.current)setBusy(false)}}
   useEffect(()=>{if(auto&&!cachedInsight(fingerprint))void run(false)},[auto,fingerprint]);
   async function continueInsight(){if(!result||busy)return;setBusy(true);setError('');try{
-    const r=await post<Analysis>(`/projects/${projectId}/ai/insight`,{context:scope,question:'Continue the previous explanation.',target:target||null,experiment_id:experimentId||null,deep:true,selected_provider:selectedProvider,continuation_text:result.answer});
+    const continuationProvider = result.source === 'local_llm' ? 'ollama' : selectedProvider;
+    const r=await post<Analysis>(`/projects/${projectId}/ai/insight`,{context:scope,question:'Continue the previous explanation.',target:target||null,experiment_id:experimentId||null,deep:true,selected_provider:continuationProvider,continuation_text:result.answer});
     setResult({...r,answer:result.answer+'\n\n'+r.answer});
   }catch(e){setError((e as Error).message)}finally{setBusy(false)}}
   async function investigate(){if(!investigation)return;setBusy(true);try{const outcome=await post<Record<string,unknown>>(`/projects/${projectId}/investigate`,{operation:investigation});setInvestigationResult(JSON.stringify(outcome,null,2))}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
