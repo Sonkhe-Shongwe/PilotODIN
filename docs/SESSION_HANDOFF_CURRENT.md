@@ -158,6 +158,7 @@ Source fix `75d0fc10d74124260c66d3974d633677001e295f` launches the disposable ho
 
 **No new native application build or N12 capture was authorised or executed.** The real Windows Tauri binary has not yet compiled the change, and its effect on the observed source-checkout file write remains unverified. Ambient WebView2 user-local/temp writes, Edge service network traffic, and FileIO name/lifetime gaps remain open. File-mutation **3/4 (75%)**, network isolation **2/3 (67%)**, N12 **0/2**, original app-data preservation **0/2**, official P4 **14/20 (70%)**. The one-use native workflow stays disarmed.
 
+<a name="21-november-2026--second-approved-n12-journey-completed-audit-with-fail-blocked-verdicts"></a>
 ### 21 November 2026 | Second approved N12 journey completed audit with FAIL/BLOCKED verdicts
 
 One owner-approved, source-pinned diagnostic Windows Server 2022 attempt ran at code `e21bcdc579456bb02016fb0b2cb86744a287edb5`, one-use activation `6589ce8825c9116f102c57ca3b0c2b1c06a989cc`. All routine P4 jobs and separate FileIO CI passed before activation. The approved [native run 44838416004](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44838416004) finished **FAIL** at the strict acceptance stage; no retry was launched. The workflow is disarmed. [Detailed evidence](../qa/p4_research/N12_APP_JOURNEY_RESULT_44838416004.md)
