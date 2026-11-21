@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**21 November 2026 | Current authority and single active P4 direction.** The no-CDP desktop path is now source-wired to the existing strict Kernel-File ETW reducer, but **real WebView2 containment is unverified**. Focus the remaining file-mutation engineering 25% exclusively on complete original product-tree FileIO, calibrated identity/coverage, specific prohibited-write product correction and separately approved native proof. Existing rules, permissions, installer freeze and official scores unchanged.
+**21 November 2026 | Current authority and single active P4 direction.** The guarded no-CDP Kernel-File path now requires original private WebView2 child handles and checks the independently derived child inventory and browser command-line profile. **Real WebView2 file containment remains unverified.** Close the remaining 25% through calibrated same-capture transient mutation proof, fully attributed real writes, targeted product correction and source-pinned one-use native verification. No changes in strict rules, permissions or official scores.
 
 ## Current authoritative route, in reading order
 
@@ -13,6 +13,8 @@
 7. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) · [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) · [Local analytics plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) · [8 GB RAM resource evidence](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom).
 
 ## Current development references
+
+- **[CURRENT original WebView2 child-handle gate on no-CDP FileIO](./P4_N12_NO_CDP_CHILD_HANDLE_FILEIO_PROVENANCE_GATE_2026-11-21.md)**: source-level mandatory child original-handle consent, hosted one-use scope and independent role-inventory/profile diagnostic, without private IDs or a false effective-UDF claim. [source 1ed9bfe](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1ed9bfe401dfea7251a6d2d256739c2d012a6756), [CI #44923037927](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44923037927) **4/4 SUCCESS** (1,029 Python passed, 6 skipped, 498 subtests; 104 frontend passed, Vite built, disposable browser, hosted-Windows R03 and generated ETW/FileIO checks). **No real WebView2 file IO tested.** Next: incorporate existing same-capture transient restore/calibration controls, then seek narrow fresh owner approval for real app evidence and product correction.
 
 - **[CURRENT no-CDP strict Kernel-File/Kernel-Process bridge and remaining native-proof gate](./P4_N12_NO_CDP_STRICT_FILEIO_BRIDGE_AND_ACCEPTANCE_LIMIT_2026-11-21.md)**: guarded default-off `--no-cdp --fileio`, retained original scope, protected snapshots inside ETW, same strict FileIO reducer, redacted violations/gaps, explicit non-acceptance. [exact tested source 2b9fa97](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2b9fa9744c23c0a8ba1c586fec3ad15d62bf8f68), [CI #44921405079](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44921405079) **4/4 SUCCESS** (1,024 Python passed, 6 skipped, 498 subtests; 104 frontend passed and Vite built; browser, hosted-Windows R03 and generated ETW/FileIO controls). **No actual WebView2 file writes measured.** Next: fill original child-handle and full calibration requirements before requesting new one-use source-pinned native attribution, then correct the observed product fault.
 

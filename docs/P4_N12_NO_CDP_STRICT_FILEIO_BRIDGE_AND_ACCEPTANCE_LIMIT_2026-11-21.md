@@ -32,7 +32,11 @@ Initial implementation [059136e](https://github.com/Sonkhe-Shongwe/PilotODIN/com
 
 **Important:** The green hosted-Windows synthetic ETW/FileIO job continues to test **generated controls only**, not the newly added real PilotODIN/no-CDP FileIO mode. That mode has never been executed and needs new one-use approval.
 
-## Last 25%: next bounded checkpoint
+## Follow-up: original child handle and browser profile gating now integrated
+
+[Source contract and exact CI](./P4_N12_NO_CDP_CHILD_HANDLE_FILEIO_PROVENANCE_GATE_2026-11-21.md): [source 1ed9bfe](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1ed9bfe401dfea7251a6d2d256739c2d012a6756), [CI #44923037927](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44923037927) **4/4 SUCCESS** (1,029 Python passed, 6 skipped, 498 subtests; 104 frontend passed, Vite built, disposable browser, hosted-Windows R03 and generated ETW/FileIO checks). The `--no-cdp --fileio` collector now **requires** the original child-handle transport/hosted scope before journey setup. Redacted diagnostics require matching private WebView + network-child original handle lifetime counts, source/binary identity and independently corroborated OS browser command-line UDF. Both labels remain `REVIEWABLE_ONLY` scope and do not establish effective storage location or per-write original-handle completion identity. The next concrete action is the existing N12 **calibration and same-capture write-and-restore proof**, with unchanged no-native approval constraints.
+
+## Last 25%: previous next bounded checkpoint
 
 **Stop multiplying new generic diagnostics.** Finalise a narrowly reviewable real-app source-pinned capture experiment for just the confirmed WebView2 ambient-temp and out-of-profile mutation mechanisms. Before approval, show how the no-CDP FileIO session obtains complete original scoped WebView2 child handles and Sysmon/ETW birth/exit, confirms the browser's **effective** UDF/ambient folder, preserves all protected paths and positive transient controls, and meets the same original strict N12 mutation coverage and calibration requirements. Use exact source/build hashes, previously established protected/permitted roots, no personal owner data, proper stop and cleanup, and only a separate fresh one-use owner authorization for real Windows execution.
 
