@@ -33,11 +33,15 @@ Microsoft documentation: [Restricted tokens](https://learn.microsoft.com/en-us/w
 
 A successful generated-writer isolation control would demonstrate a deliberately protected **test directory**, **not** that the PilotODIN app or its WebView2 subprocesses are confined to permitted folders. The application still does not use the proposed generated restricted writer, and earlier WebView2 outside-profile creates remain measured facts. Do not infer that Windows restricted tokens generally force all child storage into an application profile. A future product-specific design must verify actual process ancestry/token propagation and explain the deployment mechanism before making claims about PilotODIN isolation.
 
+## Subsequent product-tree integration decision
+
+The earlier next source-only decision has now been carried out in [the product-tree isolation feasibility review](./P4_N12_PRODUCT_TREE_ISOLATION_FEASIBILITY_2026-11-21.md) at [implementation `a6deb331`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a6deb331b200454a51ca01fb8bc84e1ae30aca17), [exact-source CI #44914777325](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44914777325) **4/4 completed SUCCESS** (986 Python passed, 6 skipped, 441 subtests, 104 frontend tests, Vite build, 13 disposable real-HTTP browser tests, 4 hosted-Windows R03 tests and hosted-Windows synthetic checks). It found that generated-writer restricted-token controls and export availability **cannot** be transferred to product-level Tauri/WebView2/backend/inference containment without independent runtime identity, effective access rights and file attribution evidence. The approved source-only result adds no native R02.5 credit and does not activate Windows controls.
+
 ## Stop rules and next decision
 
 - Do not use `PRESENT` to award P4, N12 or R02.5 evidence points.
 - No owner-device access, original data, ACL updates, token creation, test-writer execution, installer or new native WebView capture is approved by this change.
 - Do not bypass missing functions, OS/privilege limitations or the existing file-mutation coverage requirements.
-- If the Windows export lookup is positive, the **next source-only decision** is whether this mechanism can realistically apply to the actual Tauri/WebView2/backend process tree; separately approve a protected-folder control only after that integration review shows it would answer an application-relevant question.
+- The source-only product-tree feasibility review is linked above. Its result is **not demonstrated** for the actual app. Next, source-map WebView2 storage/identity and design a precise application-relevant experiment before any separately approved protected-folder control.
 
 **Unchanged:** P4 14/20 (70%); file-mutation 3/4 (75%); N12 0/2; governing filesystem FAIL, network FAIL, mutation coverage BLOCKED; R06 historical protected-data issue open. One-use native WebView workflow remains disarmed.

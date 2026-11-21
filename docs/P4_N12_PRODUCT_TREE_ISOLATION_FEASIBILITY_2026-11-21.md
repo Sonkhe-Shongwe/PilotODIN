@@ -19,6 +19,10 @@
 
 [Source-only review](../qa/p4_research/n12_product_tree_isolation_review.py) and [synthetic regression tests](../tests/test_p4_n12_product_tree_isolation_review.py) require the named Tauri, sidecar, QA redirect and restricted-writer boundaries to match current repository sources. Failures are redacted fixed labels. A matching source reports \`SOURCE_MATCH\`, **not verified containment**. Changed product launches, modified QA-only claims, disappearing worker scratch controls and newly introduced token-launch code all require renewed review. Outputs always retain \`native_N12_acceptance=NOT_EVALUATED\` and \`file_mutation_acceptance=NOT_EVALUATED\`.
 
+## Exact-source verification
+
+[implementation `a6deb331`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a6deb331b200454a51ca01fb8bc84e1ae30aca17), [exact-source CI #44914777325](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44914777325) **4/4 completed SUCCESS** (986 Python passed, 6 skipped, 441 subtests, 104 frontend tests, Vite build, 13 disposable real-HTTP browser tests, 4 hosted-Windows R03 tests and hosted-Windows synthetic checks). The focused Python suite exercised the six new source tests, followed by frontend/Vite, disposable browser and hosted-Windows synthetic jobs. **All four routine jobs completed successfully at implementation SHA `a6deb331b200454a51ca01fb8bc84e1ae30aca17`.** These do not exercise Windows restricted tokens, WebView2 process spawning, actual file-mutation coverage or the product's native filesystem permissions. A SOURCE_MATCH is not an isolated desktop PASS.
+
 ## Next justified decision and acceptance requirement
 
 1. **Do not launch an approved generated-writer Windows control yet solely to infer PilotODIN containment.** The product is not integrated with the proposed restricted token. No live control is authorised.
