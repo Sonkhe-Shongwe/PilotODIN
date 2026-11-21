@@ -91,6 +91,33 @@ class PrivateChildPipeTests(unittest.TestCase):
                 bridge.send_from_worker({}, fixture())
             client.assert_not_called()
 
+    def test_exact_windows_pipe_endpoint_and_worker_scoped_key(self):
+        env = {
+            "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted",
+            "RUNNER_OS": "Windows", "GITHUB_EVENT_NAME": "push",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "PILOTODIN_N12_APPROVED_SOURCE": SOURCE,
+            "PILOTODIN_N12_NO_CDP_STORAGE_CONSENT": "I_APPROVE_ONE_N12_NO_CDP_STORAGE",
+            "PILOTODIN_N12_CHILD_HANDLE_CONSENT": CHILD_HANDLE_CONSENT,
+            bridge.PIPE_ENV: r"\\.\pipe\pilotodin-n12-child-" + "d" * 32,
+            bridge.KEY_ENV: "e" * 64,
+        }
+        # Only validate the source contract here; this never opens Win32.
+        with patch.object(bridge.os, "name", "nt"), patch.object(bridge, "Client") as client:
+            bridge.require_worker_scope(env, SOURCE, HASH)
+            client.assert_not_called()
+            for change in (
+                {bridge.PIPE_ENV: r"\\.\pipe\other-" + "d" * 32},
+                {bridge.PIPE_ENV: r"\\.\pipe\pilotodin-n12-child-" + "d" * 31},
+                {bridge.KEY_ENV: "x" * 64},
+                {"PILOTODIN_N12_APPROVED_SOURCE": "f" * 40},
+                {"GITHUB_RUN_ATTEMPT": "2"},
+                {"PILOTODIN_N12_CHILD_HANDLE_CONSENT": ""},
+            ):
+                with self.subTest(change=next(iter(change))):
+                    with self.assertRaises(trace.EvidenceValidationError):
+                        bridge.require_worker_scope({**env, **change}, SOURCE, HASH)
+
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets unavailable")
     def test_authenticated_one_shot_memory_only_send(self):
         with TemporaryDirectory(prefix="p4-private-pipe-") as temp:
