@@ -165,7 +165,8 @@ def generated_original_handle_fileio_join(capture, events):
     """
     import ntpath
     from qa.p4_native import n12_trace as trace
-    from qa.p4_native.n12_etw_correlate import canonical_file_path, number
+    from qa.p4_native.n12_etw_correlate import (canonical_file_path, number,
+                                            check_write_object_path, successful_completion)
 
     def result(issues):
         return {
@@ -279,30 +280,22 @@ def generated_original_handle_fileio_join(capture, events):
                 and opened["ticks"] < e["ticks"] < write["ticks"]
                 and number(e["data"].get("Status")) == 0
             ] if old_irp else []
-            invalidators = [
-                e for e in events if e.get("lifecycle") is False
-                and e["id"] in (12, 13, 14, 18, 19, 26, 27, 28, 29)
-                and number(e.get("data", {}).get("FileObject")) == obj
-                and opened["ticks"] < e["ticks"] < write["ticks"]
-            ]
-            if len(open_completions) != 1 or invalidators:
-                issues.append("writer-fileio-open-object-lifetime-unverified")
-        matching_completions = [
-            e for e in events if e.get("lifecycle") is False and e["id"] == 24
-            and number(e.get("data", {}).get("Irp")) == irp and e["ticks"] > write["ticks"]
-        ] if irp else []
-        duplicate_requests = [
-            e for e in events if e is not write and e.get("lifecycle") is False
-            and e["id"] in (12, 16, 17, 18, 19, 23, 29)
-            and number(e.get("data", {}).get("Irp")) == irp
-            and write["ticks"] <= e["ticks"] <= control["end"]
-        ] if irp else []
-        if (len(matching_completions) != 1 or duplicate_requests
-                or number(matching_completions[0]["data"].get("Status")) != 0
-                if len(matching_completions) == 1 else True):
+            if len(open_completions) != 1:
+                issues.append("writer-fileio-open-completion-unverified")
+        file_events = sorted((e for e in events if e.get("lifecycle") is False),
+                             key=lambda e: e["ticks"])
+        completed = successful_completion(file_events, write, control["end"] + 1)
+        if completed is None:
             issues.append("writer-fileio-unique-success-completion-unverified")
-        elif not write["ticks"] < matching_completions[0]["ticks"] < handle["exit_ticks"]:
+        elif not write["ticks"] < completed < handle["exit_ticks"]:
             issues.append("writer-fileio-completion-outside-original-lifetime")
+        elif same_obj_opens:
+            # Reuse the separately tested path-epoch proof rather than
+            # treating unrelated handle-cleanup opcodes as name changes.
+            reason = check_write_object_path(
+                file_events, opened, write, completed, expected_path, volume_aliases)
+            if reason is not None:
+                issues.append("writer-fileio-request-time-path-or-object-unverified")
     return result(issues)
 
 
