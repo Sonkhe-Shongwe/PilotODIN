@@ -179,7 +179,7 @@ class NoCdpLifecycleStitchTests(unittest.TestCase):
             observer = self.observer(stack)
             self.synthetic_spawn(stack, observer)
             observer.bind_process(self.process, handle_reader=fake_handle)
-            ticks = iter([0.0, 1.0, 2.0])
+            ticks = iter([0.0, 0.05, 1.0, 2.0])
             with self.assertRaisesRegex(trace.EvidenceValidationError,
                                         "^no-cdp-readiness-timeout$"):
                 observer.observe_readiness(window_observer=fake_window,

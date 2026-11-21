@@ -247,6 +247,11 @@ def wait_for_main_window(process, *, expected_image, expected_title,
                           "no-cdp-window-result-unverified")
             trace.require(process.poll() is None,
                           "no-cdp-window-app-exited-before-ready")
+            completed_at = clock()
+            trace.require(last_sample is None or completed_at >= last_sample,
+                          "no-cdp-window-clock-invalid")
+            trace.require(completed_at <= deadline,
+                          "no-cdp-window-wait-timeout")
             return seen
         current = clock()
         trace.require(last_sample is None or current >= last_sample,

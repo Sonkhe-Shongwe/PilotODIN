@@ -132,7 +132,7 @@ class MainWindowIdentityTests(unittest.TestCase):
     def test_missing_expected_window_only_retries_absence_then_succeeds(self):
         app = SimpleNamespace(pid=1234, poll=lambda: None)
         observations = [[], [window(pid=56, title="Other")], [window()]]
-        ticks = iter([0.0, 0.1, 0.2])
+        ticks = iter([0.0, 0.1, 0.2, 0.3])
         sleeps = []
         def observe(_process, **_kwargs):
             self.assertTrue(observations)
@@ -203,6 +203,19 @@ class MainWindowIdentityTests(unittest.TestCase):
                 clock=iter([0.0, 0.1]).__next__, sleep=lambda _: None,
             )
         self.assertEqual(len(calls), 1)
+
+
+    def test_positive_window_observed_after_deadline_is_still_too_late(self):
+        app = SimpleNamespace(pid=1234, poll=lambda: None)
+        ticks = iter([0.0, 0.3])
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-window-wait-timeout$"):
+            win.wait_for_main_window(
+                app, expected_image=APP, expected_title=TITLE,
+                expected_birth_ticks=BIRTH, timeout_seconds=0.2,
+                observer=lambda *_a, **_kw: win.MainWindowIdentity(700, 1234, BIRTH),
+                clock=lambda: next(ticks),
+            )
 
     def test_bad_wait_limits_and_invalid_borrowed_witness_fail_closed(self):
         app = SimpleNamespace(pid=1234, poll=lambda: None)
