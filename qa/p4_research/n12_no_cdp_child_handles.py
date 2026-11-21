@@ -139,12 +139,14 @@ class ScopedQaChildHandleObserver:
             self.faults["snapshot-unavailable"] += 1
             return
         self.samples += 1
-        seen = set()
+        # The shared descendants() iterator intentionally deduplicates PIDs.
+        # Inspect the ORIGINAL snapshot too: two rows for one scoped PID
+        # cannot be silently collapsed into an authoritative process.
+        occurrence = Counter(pid for pid, _, _ in rows)
         for pid, parent, name in descendants(rows, {self.root.pid}):
-            if pid in seen:
+            if occurrence[pid] != 1:
                 self.faults["snapshot-duplicate-or-reused-pid"] += 1
                 continue
-            seen.add(pid)
             if name != WEBVIEW:
                 # Do not query unrelated executables even inside PID ancestry.
                 # Any extra descendant must be explicitly reviewed later.
@@ -263,8 +265,10 @@ def review_scoped_children(*, processes, roles, app_guid, witnesses, lifetimes,
             or not hasattr(lifetimes, "shadow_handle_exit_review")):
         receipt["failed_checks"] = {"invalid-capture-input": 1}
         return receipt
-    if source_issues & SOURCE_COVERAGE_ISSUES:
-        failures["source-coverage-incomplete"] += 1
+    if source_issues:
+        # Any pre-existing Sysmon/ETW identity or capture issue blocks this
+        # proposed whole-subtree review, not only the familiar loss labels.
+        failures["source-coverage-or-identity-unverified"] += 1
     if collector_receipt.get("status") != "SAMPLING_FINISHED_UNVERIFIED" or (
             collector_receipt.get("faults")):
         failures["child-handle-sampling-incomplete"] += 1

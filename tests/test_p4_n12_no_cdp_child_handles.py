@@ -100,6 +100,19 @@ class ChildObserverTests(unittest.TestCase):
         self.assertIn("snapshot-duplicate-or-reused-pid", self.observer.redacted_receipt()["faults"])
         self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
 
+    def test_duplicate_pid_in_one_snapshot_cannot_be_deduplicated_into_evidence(self):
+        rows = self.rows + [(601, 600, "msedgewebview2.exe")]
+        self.observer.sample_once(rows)
+        self.finish()
+        self.assertEqual(set(self.backend.opened), {602})
+        self.assertIn("snapshot-duplicate-or-reused-pid", self.observer.redacted_receipt()["faults"])
+        self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
+
+    def test_unarmed_live_snapshot_call_is_refused_before_win32_initialization(self):
+        with self.assertRaisesRegex(trace.EvidenceValidationError, "live-sampling-not-authorized"):
+            self.observer.sample_once()
+        self.assertEqual(self.backend.opened, [])
+
     def test_no_unrelated_or_unrecognized_process_is_queried(self):
         self.rows.append((800, 602, "powershell.exe"))
         self.observer.sample_once(self.rows)
@@ -212,6 +225,7 @@ class ChildObserverTests(unittest.TestCase):
             **vars(wrong_sequence.stops[602][0]), "sequence": 999})
         self.assertEqual(self.review(witnesses, lifetimes=wrong_sequence)["status"], "BLOCKED")
         self.assertEqual(self.review(witnesses, source_issues={"etw-event-or-buffer-loss"})["status"], "BLOCKED")
+        self.assertEqual(self.review(witnesses, source_issues={"process-root-missing-or-ambiguous"})["status"], "BLOCKED")
 
     def test_unbound_descendant_or_wrong_role_fails_review(self):
         self.observer.sample_once(self.rows)
