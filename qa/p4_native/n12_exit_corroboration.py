@@ -90,7 +90,10 @@ def compare_stop_image(image, expected_path, devices):
 
 
 class EtwLifetimes:
-    def __init__(self, events, devices, window):
+    def __init__(self, events, devices, window, *, no_cdp_sysmon_corroboration=False):
+        # Opt-in only for the distinct no-CDP hosted lifetime/profile
+        # diagnostic; ordinary N12 retains its existing strict behavior.
+        self.no_cdp_sysmon_corroboration = no_cdp_sysmon_corroboration
         self.starts = defaultdict(list)
         self.stops = defaultdict(list)
         self.by_sequence = defaultdict(list)
@@ -166,13 +169,29 @@ class EtwLifetimes:
             "stop_emission_minus_exit_ticks": stop.emission - stop.exit,
         }
 
-    def _order_issues(self, start, stop, deltas, *, exact_handle):
-        # The stop header can precede the actual exit. Only an original handle
-        # can independently establish that later exit for this exact lifetime.
-        early_stop_supported = exact_handle and start.sequence is not None and stop.exit <= self.window[1]
+    def _no_cdp_sysmon_confirmed(self, process, start, stop):
+        """Corroborate separate ETW header/payload times using a complete Sysmon exit.
+
+        No skew tolerance is introduced: the ETW ExitTime payload must agree
+        EXACTLY with Sysmon's GUID-owned, full-image, non-disputed process exit.
+        """
+        return (self.no_cdp_sysmon_corroboration is True
+                and process.end is not None and process.disputed_exit is None
+                and start.sequence is not None and start.sequence == stop.sequence
+                and self.window[0] <= start.creation <= stop.exit <= self.window[1]
+                and abs(start.creation - trace.utc_ticks(process.start)) <= BIRTH_TOLERANCE_TICKS
+                and stop.exit == trace.utc_ticks(process.end)
+                and compare_image_path(start.image, process.image, self.devices) == "exact-path-match")
+
+    def _order_issues(self, start, stop, deltas, *, exact_handle, independent_sysmon=False):
+        # Keep event-header ordering strict. Header-versus-provider-FILETIME
+        # comparisons may be bypassed ONLY with independent Sysmon evidence.
+        early_stop_supported = ((exact_handle or independent_sysmon)
+                                and start.sequence is not None and stop.exit <= self.window[1])
         return [label for failed, label in (
             (deltas["creation_minus_window_start_ticks"] < 0, "creation-before-window"),
-            (deltas["start_emission_minus_creation_ticks"] < 0, "start-header-before-creation"),
+            (deltas["start_emission_minus_creation_ticks"] < 0 and not independent_sysmon,
+             "start-header-before-creation"),
             (deltas["stop_emission_minus_start_emission_ticks"] <= 0, "stop-header-at-or-before-start-header"),
             (deltas["window_end_minus_stop_emission_ticks"] < 0, "stop-header-after-window"),
             (deltas["exit_minus_creation_ticks"] < 0, "exit-before-creation"),
@@ -201,9 +220,14 @@ class EtwLifetimes:
             trace.require((start.pid, start.creation, stop.exit) ==
                           (handle_witness["pid"], handle_witness["birth"], handle_witness["exit"]),
                           "etw-and-windows-handle-timestamps-differ")
-        trace.require(not self._order_issues(start, stop, self._order_deltas(start, stop),
-                                             exact_handle=handle_witness is not None),
-                      "etw-lifetime-order-unverified")
+        sysmon_confirmed = self._no_cdp_sysmon_confirmed(process, start, stop)
+        if self.no_cdp_sysmon_corroboration:
+            trace.require(sysmon_confirmed, "no-cdp-sysmon-lifetime-unverified")
+        trace.require(not self._order_issues(
+            start, stop, self._order_deltas(start, stop),
+            exact_handle=handle_witness is not None,
+            independent_sysmon=sysmon_confirmed,
+        ), "etw-lifetime-order-unverified")
         trace.require(not any(event is not start and start.creation <= event.creation <= stop.exit
                               for event in self.starts[start.pid]), "overlapping-etw-pid-lifetimes")
         trace.require(not any(event is not stop and event.creation < start.creation <= event.exit
@@ -221,7 +245,16 @@ class EtwLifetimes:
                 and all(compare_image_path(handle_witness.get(key), process.image, self.devices) == "exact-path-match"
                         for key in ("image_dos", "image_native"))
             )
-            trace.require(stop_form in {"exact-path-match", "exact-basename-match"} or handle_confirms_short_name,
+            # A WebView stop can contain a fixed ANSI prefix. It is never
+            # sufficient alone: require the full ETW start path, unique ETW
+            # sequence, and separately verified full-image Sysmon GUID exit.
+            sysmon_confirms_short_name = (
+                self.no_cdp_sysmon_corroboration and sysmon_confirmed
+                and stop_form == "short-basename-prefix" and stop.image.isascii()
+                and len(stop.image) == OBSERVED_STOP_BASENAME_PREFIX_LENGTH
+            )
+            trace.require(stop_form in {"exact-path-match", "exact-basename-match"}
+                          or handle_confirms_short_name or sysmon_confirms_short_name,
                           "etw-stop-image-conflict")
         return start, stop
 

@@ -30,7 +30,7 @@ class EtwFixture:
 
     def find(self, process, *, handle_witness=None):
         if process.guid == "app":
-            assert handle_witness == {"pid": 101, "birth": trace.utc_ticks(BASE),
+            assert handle_witness == {"pid": 101, "birth": trace.utc_ticks(BASE + timedelta(milliseconds=1500)),
                                       "exit": trace.utc_ticks(BASE + timedelta(seconds=6))}
         # Synthetic sequence chain: app(4) -> browser(6) -> children(8/10).
         if process.guid == "app":
@@ -60,8 +60,8 @@ class EtwFixture:
 
 
 def fixture():
-    app = p("app", "root", 101, APP, '"pilotodin.exe"', BASE,
-            BASE + timedelta(seconds=6), SHA)
+    app = p("app", "root", 101, APP, '"pilotodin.exe"',
+            BASE + timedelta(milliseconds=1500), BASE + timedelta(seconds=6), SHA)
     browser = p("browser", "app", 202, WEBVIEW,
                 f'"{WEBVIEW}" --user-data-dir="{PROFILE}" --no-first-run',
                 BASE + timedelta(seconds=2), BASE + timedelta(seconds=5))
@@ -77,7 +77,7 @@ def fixture():
         "ready": BASE + timedelta(seconds=3),
         "close": BASE + timedelta(seconds=4),
         "capture_end": BASE + timedelta(seconds=7),
-        "app_handle_witness": {"pid": 101, "birth": trace.utc_ticks(BASE),
+        "app_handle_witness": {"pid": 101, "birth": trace.utc_ticks(BASE + timedelta(milliseconds=1500)),
                                "exit": trace.utc_ticks(BASE + timedelta(seconds=6))},
         "etw_lifetimes": EtwFixture(),
     }
@@ -157,6 +157,14 @@ class NoCdpBrowserIdentityTests(unittest.TestCase):
         c = fixture()
         c["app_handle_witness"] = None
         self.fail_with(c, "no-cdp-app-handle-unverified")
+
+    def test_app_must_be_born_between_launch_and_ready(self):
+        a = fixture()
+        a["processes"]["app"].start = BASE + timedelta(milliseconds=500)
+        self.fail_with(a, "no-cdp-stage-order-unverified")
+        b = fixture()
+        b["processes"]["app"].start = BASE + timedelta(milliseconds=3500)
+        self.fail_with(b, "no-cdp-stage-order-unverified")
 
     def test_direct_app_parent_and_time_required(self):
         a = fixture()

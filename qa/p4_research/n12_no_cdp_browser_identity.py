@@ -73,8 +73,10 @@ def resolve_browser_identity(*, processes, roles, app_guid, expected_app_image,
                   "no-cdp-app-source-unverified")
     profile = trace.windows_path(disposable_profile)
     trace.require(app.end is not None, "no-cdp-app-exit-unverified")
-    trace.require(launch < ready < close < capture_end and app.start <= launch
-                  and app.end >= close, "no-cdp-stage-order-unverified")
+    # The launch stage is recorded BEFORE journey.spawn creates the app.
+    trace.require(launch < ready < close < capture_end
+                  and launch <= app.start <= ready and app.end >= close,
+                  "no-cdp-stage-order-unverified")
 
     # Enumerate every Sysmon GUID descendant, even one omitted from roles.
     # Never allow an unbound WebView child to disappear from candidate review.

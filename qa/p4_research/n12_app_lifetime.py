@@ -211,7 +211,10 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
                           and worker.image == trace.windows_path(sys.executable),
                           "launcher-sysmon-identity-unverified")
             with trace.evidence_stage("app lifetime ETW payload"):
-                lifetimes = corroboration.EtwLifetimes(stream, devices, window)
+                lifetimes = corroboration.EtwLifetimes(
+                    stream, devices, window,
+                    no_cdp_sysmon_corroboration=no_cdp_profile,
+                )
             # Record each scoped comparison before the strict join stops at the first failure.
             by_role = {"launcher": Counter({lifetimes.start_image_comparison(worker): 1})}
             for guid, process in scoped.items():

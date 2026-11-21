@@ -162,6 +162,64 @@ class AppLifetimeTests(unittest.TestCase):
         for private in ("pilotodin-desktop", "python.exe", "private", str(ORIGIN + 50_000)):
             self.assertNotIn(private, json.dumps(report["etw_handle_order_comparison"]))
 
+    def test_no_cdp_native_header_shape_with_independent_sysmon_and_short_stop(self):
+        # Synthetic reconstruction of observed header-offset categories,
+        # not a replay of the actual private native trace.
+        self.events[2]["ticks"] = ORIGIN + 130_000 - 237
+        self.events[4]["ticks"] = ORIGIN + 210_000 - 1816
+        self.events[5]["ticks"] = ORIGIN + 650_000 - 3584
+        self.events[5]["data"]["ImageName"] = "msedgewebview2"
+        self.events[6]["ticks"] = ORIGIN + 320_000 - 1282
+        self.events[7]["ticks"] = ORIGIN + 690_000 - 3325
+        self.events[7]["data"]["ImageName"] = "msedgewebview2"
+        ordinary = self.reduce()
+        self.assertEqual(ordinary["verdict"], "BLOCKED")
+        self.assertIn("etw-lifetime-order-unverified", ordinary["issues"])
+        scoped = self.reduce(no_cdp_profile=True)
+        self.assertEqual(scoped["handle_comparison"], {"app": "MATCH", "launcher": "MATCH"})
+        self.assertEqual(len(scoped["timing_comparisons"]), 4)
+        self.assertNotIn("etw-lifetime-order-unverified", scoped["issues"])
+        self.assertNotIn("etw-stop-image-conflict", scoped["issues"])
+        self.assertEqual(scoped["verdict"], "BLOCKED")
+        self.assertIn("no-cdp-os-stage-markers-unverified", scoped["issues"])
+        self.assertEqual(scoped["native_N12_acceptance"], "NOT_EVALUATED")
+
+    def test_no_cdp_missing_or_mismatched_independent_exit_blocks(self):
+        self.events[4]["ticks"] = ORIGIN + 210_000 - 1816
+        self.events[5]["ticks"] = ORIGIN + 650_000 - 3584
+        self.events[5]["data"]["ImageName"] = "msedgewebview2"
+        original_rows = deepcopy(self.rows)
+        for case in ("missing", "wrong-exit"):
+            with self.subTest(case=case):
+                self.rows = deepcopy(original_rows)
+                if case == "missing":
+                    self.rows = [row for row in self.rows
+                                 if not (row[1] == 5 and row[2]["ProcessId"] == "702")]
+                else:
+                    for _, kind, fields in self.rows:
+                        if kind == 5 and fields["ProcessId"] == "702":
+                            fields["UtcTime"] = payload(650_010)[:-1]
+                result = self.reduce(no_cdp_profile=True)
+                self.assertEqual(result["verdict"], "BLOCKED")
+                self.assertIn("no-cdp-sysmon-lifetime-unverified", result["issues"])
+        self.rows = original_rows
+
+    def test_no_cdp_wrong_stop_name_and_sequence_still_block(self):
+        for case in ("wrong-name", "wrong-sequence"):
+            with self.subTest(case=case):
+                original = deepcopy(self.events)
+                self.events[4]["ticks"] = ORIGIN + 210_000 - 1816
+                self.events[5]["ticks"] = ORIGIN + 650_000 - 3584
+                if case == "wrong-name":
+                    self.events[5]["data"]["ImageName"] = "otherwebview2"
+                else:
+                    self.events[5]["data"]["ProcessSequenceNumber"] = "999"
+                result = self.reduce(no_cdp_profile=True)
+                self.assertEqual(result["verdict"], "BLOCKED")
+                self.assertTrue(any(issue in result["issues"] for issue in
+                                    ("etw-stop-image-conflict", "etw-sequence-conflict")))
+                self.events = original
+
     def test_exact_original_handles_corroborate_observed_early_stop_headers(self):
         self.events[1]["ticks"] = self.worker["exit"] - 1041
         self.events[3]["ticks"] = self.app["exit"] - 935
