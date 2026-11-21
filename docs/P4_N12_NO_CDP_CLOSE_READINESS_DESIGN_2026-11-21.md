@@ -20,6 +20,12 @@
 
 **Limitation:** Static JS tests and pure Rust predicates do **not** verify that the Rust Tauri command compiles and actually emits the log marker from a live native process. Exact-source routine CI can verify TypeScript/Vite and Node source contracts; **do not claim native no-CDP runtime success** until a separate, approved host test demonstrates it.
 
+## Exact-source routine CI verification (not native app execution)
+
+All **8** check jobs that ran against [code `f6f49313`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/f6f49313f1fc16ddf45f4026a38b0f4d10e2fca7) completed **SUCCESS**. [P4 routine run #44854190067](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44854190067) passed **4/4** jobs: 810 Python tests passed, 6 skipped, 300 subtests, **104 Node/frontend/source tests passed** (including the new QA acknowledgement/close-veto source contract) and TypeScript/Vite build, **13 real-HTTP browser cases**, 4 Windows R03 checks and Windows synthetic FileIO controls. The four additional triggered jobs also passed: [report safety #44854189994](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44854189994), [source/Chromium #44854190018](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44854190018), [disposable browser/backend #44854189990](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44854189990) and [saved revision #44854190035](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44854190035).
+
+**These jobs do not compile or launch the modified Rust desktop binary**. Rust gate negative cases exist in the source but have not been executed by a native Cargo test. The QA log acknowledgement is therefore **code-prepared and source/TS-verified, not native-verified**. No new N12 acceptance evidence was obtained.
+
 ## Subsequent bounded implementation, NOT in this change
 
 Before any future native request, build and test a **read-only Python receipt reader** for an exact, fixed app-log marker with a bounded deadline, unique source/binary identity, app-process liveness and a verified single main window. The reader must fail on missing, duplicate, out-of-order or stale markers; never parse private log lines into public output. The runner can already use `request_graceful_close`, the same native ticket veto and independent process/profile exit. **Do not** bypass the normal close listener and do **not** replace graceful close with `kill` as an acceptance action.
