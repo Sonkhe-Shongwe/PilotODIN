@@ -1,5 +1,5 @@
 """Disposable local log fixtures, no WebView, native app or ACL changes."""
-import os
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 import unittest
@@ -131,11 +131,23 @@ class NoCdpLogWitnessTests(unittest.TestCase):
 
     def test_replaced_log_and_symlink_block(self):
         witness = prelaunch(self.file)
-        self.file.unlink()
-        self.file.write_bytes(reader.MARKER + b"\n")
-        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-identity-changed$"):
-            self.observe(witness)
-        self.file.unlink()
+        self.assertFalse(witness.handle.closed)
+        try:
+            self.file.unlink()
+        except PermissionError:
+            # On Windows an open read handle may prevent replacement.
+            # Exercise identity rejection with a synthetic changed identity.
+            with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-identity-changed$"):
+                self.observe(replace(witness, inode=witness.inode + 1))
+        else:
+            self.file.write_bytes(reader.MARKER + b"\n")
+            with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-identity-changed$"):
+                self.observe(witness)
+        finally:
+            witness.close()
+        self.assertTrue(witness.handle.closed)
+        if self.file.exists():
+            self.file.unlink()
         target = Path(self.folder.name) / "private.log"
         target.write_bytes(reader.MARKER + b"\n")
         try:
@@ -147,13 +159,21 @@ class NoCdpLogWitnessTests(unittest.TestCase):
 
     def test_missing_and_oversize_logs_block(self):
         witness = prelaunch(self.file)
-        self.file.unlink()
+        missing = Path(self.folder.name) / "missing" / "app.log"
         with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-unavailable$"):
-            self.observe(witness)
-        self.file.write_bytes(b"")
-        witness = prelaunch(self.file)
+            self.observe(replace(witness, path=missing))
         self.file.write_bytes(b"q" * (reader.MAX_LOG_BYTES + 1))
         with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-size-limit$"):
+            self.observe(witness)
+        witness.close()
+
+    def test_prelaunch_handle_remains_live_until_explicit_disposal(self):
+        with prelaunch(self.file) as witness:
+            self.assertFalse(witness.handle.closed)
+            self.file.write_bytes(reader.MARKER + b"\n")
+            self.assertEqual(self.observe(witness).marker_lines_before_close, 1)
+        self.assertTrue(witness.handle.closed)
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-identity-changed$"):
             self.observe(witness)
 
     def test_fragmented_log_ack_is_not_accepted_until_newline(self):

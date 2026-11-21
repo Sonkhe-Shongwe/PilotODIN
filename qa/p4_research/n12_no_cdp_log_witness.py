@@ -28,6 +28,18 @@ class PrelaunchLog:
     inode: int = field(repr=False)
     source_sha: str
     executable_sha256: str
+    # Hold this original descriptor through observation. Closing it and
+    # comparing only the inode permits rapid delete/recreate inode reuse.
+    handle: object = field(repr=False, compare=False)
+
+    def close(self):
+        self.handle.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.close()
 
 
 @dataclass(frozen=True)
@@ -50,19 +62,31 @@ def prepare_prelaunch_log(path, *, expected_source, actual_source,
     path = Path(path)
     require(path.name == "app.log" and not path.is_symlink(), "no-cdp-log-path-unverified")
     try:
-        meta = path.stat()
+        handle = path.open("rb")
     except OSError as exc:
         raise EvidenceValidationError("no-cdp-log-unavailable") from exc
-    require(stat.S_ISREG(meta.st_mode) and meta.st_size == 0
-            and type(meta.st_ino) is int and meta.st_ino > 0,
-            "no-cdp-prelaunch-log-not-empty-or-unique")
-    return PrelaunchLog(path, meta.st_dev, meta.st_ino,
-                        expected_source, expected_executable_sha256)
+    try:
+        meta = os.fstat(handle.fileno())
+        require(stat.S_ISREG(meta.st_mode) and meta.st_size == 0
+                and type(meta.st_ino) is int and meta.st_ino > 0,
+                "no-cdp-prelaunch-log-not-empty-or-unique")
+        current = path.stat()
+        require((current.st_dev, current.st_ino) == (meta.st_dev, meta.st_ino)
+                and current.st_size == 0 and not path.is_symlink(),
+                "no-cdp-log-identity-changed")
+        return PrelaunchLog(path, meta.st_dev, meta.st_ino,
+                            expected_source, expected_executable_sha256, handle)
+    except (OSError, EvidenceValidationError) as exc:
+        handle.close()
+        if isinstance(exc, EvidenceValidationError):
+            raise
+        raise EvidenceValidationError("no-cdp-log-unavailable") from exc
 
 
 def _read_lines(witness):
     path = witness.path
-    require(not path.is_symlink(), "no-cdp-log-identity-changed")
+    require(not witness.handle.closed and not path.is_symlink(),
+            "no-cdp-log-identity-changed")
     try:
         with path.open("rb") as stream:
             meta = os.fstat(stream.fileno())
@@ -81,7 +105,7 @@ def _read_lines(witness):
     # Only fully terminated, exact byte-for-byte lines count. No private text
     # from any other line can enter an error or a public receipt.
     complete = content.split(b"\n")[:-1]
-    count = sum(line.rstrip(b"\r") == MARKER for line in complete)
+    count = sum(line == MARKER or line == MARKER + b"\r" for line in complete)
     return meta.st_size, count
 
 
