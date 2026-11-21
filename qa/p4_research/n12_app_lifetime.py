@@ -441,6 +441,14 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
                       and os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
                       and os.environ.get("PILOTODIN_N12_APPROVED_SOURCE") == provenance.get("source_sha"),
                       "no-cdp-fileio-new-one-use-approval-required")
+        # Without held original WebView2 child handles the FileIO writer
+        # lifetime cannot be tied to its actual WebView2 descendants. Require
+        # the existing separately authorized, authenticated memory-only pipe
+        # BEFORE any directories, source build or native process are touched.
+        trace.require(child_pipe.requested(os.environ),
+                      "no-cdp-fileio-original-child-handle-consent-required")
+        child_pipe.hosted_scope(os.environ, provenance["source_sha"],
+                                provenance["executable_sha256"])
     source, expected_hash = provenance["source_sha"], provenance["executable_sha256"]
     manifest, _, _, fixture, _ = journey.prepare_journey(root, source, expected_hash)
     fixture.write_text("fixture,value\nstartup-close,1\n", encoding="utf-8")
@@ -552,6 +560,8 @@ def main():
         if args.fileio:
             trace.require(os.environ.get("PILOTODIN_N12_NO_CDP_FILEIO_CONSENT") == FILEIO_CONSENT,
                           "no-cdp-fileio-new-one-use-approval-required")
+            trace.require(child_pipe.requested(os.environ),
+                          "no-cdp-fileio-original-child-handle-consent-required")
         if args.no_cdp:
             trace.require(
                 os.environ.get("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT")

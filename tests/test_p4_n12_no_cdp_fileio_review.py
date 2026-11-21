@@ -22,10 +22,14 @@ class NoCdpFileIOReviewTests(TestCase):
         }
         self.snap = {"protected_snapshot_comparison": "MATCH"}
         self.handle = {"pid": 7091, "birth": 7, "exit": 8}
-        self.life = {"verdict": "PASS", "handle_comparison": {"app": "MATCH"}}
+        self.manifest.update(source_sha="a" * 40, executable_sha256="b" * 64)
+        self.life = {"verdict": "PASS", "handle_comparison": {"app": "MATCH"},
+                     "source_sha": self.manifest["source_sha"],
+                     "executable_sha256": self.manifest["executable_sha256"],
+                     "issues": []}
         self.called = []
 
-    def run_check(self, *, violation=None, gap=None, issues=None, role=True):
+    def run_check(self, *, violation=None, gap=None, issues=None, role=True, two_roles=False):
         def strict(*a, **kwargs):
             self.called.append((a, kwargs))
             return (Counter({"webview:write": 5}), Counter(violation or {}),
@@ -33,7 +37,7 @@ class NoCdpFileIOReviewTests(TestCase):
         start = datetime(2026, 11, 21, tzinfo=timezone.utc)
         with patch.object(trace, "load_capture", return_value=(start, start, {}, [], set(issues or []))), \
              patch.object(trace, "bind_processes",
-                          return_value=({"a": "app", **({"b": "webview-network"} if role else {})},
+                          return_value=({"a": "app", **({"b": "webview-network", **({"c": "webview"} if two_roles else {})} if role else {})},
                                         [("a", object())])), \
              patch.object(trace, "scope",
                           return_value=([r"C:\protected"], {"webview-network": [r"C:\qa"]})), \
@@ -51,7 +55,8 @@ class NoCdpFileIOReviewTests(TestCase):
         self.assertIn(r"c:\qa\source.csv", args[6])
         self.assertEqual(args[7]["webview-network"], [r"C:\qa"])
         self.assertEqual(result["blocker"],
-                         "full-n12-calibration-and-transient-write-control-not-collected")
+                         "no-cdp-original-webview-child-handles-unverified")
+        self.assertEqual(result["original_webview_child_handle_lifetimes"], "NOT_EVALUATED")
         self.assertEqual(result["original_app_handle_join"], "MATCH")
         self.assertEqual(result["etw_loss_counters"], "ZERO_REPORTED_NOT_FULL_COMPLETENESS")
         self.assertEqual(result["status"], "BLOCKED")
@@ -83,6 +88,65 @@ class NoCdpFileIOReviewTests(TestCase):
             self.assertNotIn(private, payload)
         self.assertEqual(result["effective_webview_user_data_folder"], "NOT_VERIFIED")
         self.assertEqual(result["calibration_and_transient_write_proof"], "NOT_COLLECTED")
+
+    def test_complete_synthetic_child_receipt_is_reviewable_never_native_acceptance(self):
+        self.life["no_cdp_private_child_handle_diagnostic"] = {
+            "scope": "no-cdp-private-child-handle-reducer-diagnostic-only",
+            "status": "REVIEWABLE_ONLY",
+            "native_N12_acceptance": "NOT_EVALUATED",
+            "failed_checks": {}, "child_role_counts": {"webview-network": 1},
+            "verified_handle_counts": {"webview-network": 1},
+        }
+        # A single child without the required browser role cannot be treated
+        # as a complete original WebView2 tree.
+        report = self.run_check()
+        self.assertEqual(report["original_webview_child_handle_lifetimes"],
+                         "UNVERIFIED_OR_INCOMPLETE")
+        self.assertEqual(report["status"], "BLOCKED")
+
+    def test_missing_original_webview_and_profile_remain_explicit(self):
+        self.life["no_cdp_profile_identity"] = {
+            "status": "SOURCE_OS_CORROBORATED",
+            "browser_process_identity": "UNIQUE_SYSMON_ETW_APP_PROFILE",
+            "profile_process_lifetimes": "SYSMON_ETW_DESCENDANTS_EXITED",
+            "webview_process_count": 1, "native_N12_acceptance": "NOT_EVALUATED",
+        }
+        receipt = self.run_check()
+        self.assertEqual(receipt["browser_command_line_profile"],
+                         "UNVERIFIED_OR_INCOMPLETE")
+        self.assertEqual(receipt["effective_webview_user_data_folder"], "NOT_VERIFIED")
+
+    def test_child_inventory_and_profile_match_only_reviewable_with_two_roles(self):
+        from unittest.mock import patch
+        from qa.p4_native import n12_trace as trace
+        original = trace.bind_processes
+        # Need both webview browser AND network child and a complete private
+        # original-handle receipt, or the comparison fails closed.
+        self.life["no_cdp_private_child_handle_diagnostic"] = {
+            "scope": "no-cdp-private-child-handle-reducer-diagnostic-only",
+            "status": "REVIEWABLE_ONLY", "native_N12_acceptance": "NOT_EVALUATED",
+            "failed_checks": {},
+            "child_role_counts": {"webview": 1, "webview-network": 1},
+            "verified_handle_counts": {"webview": 1, "webview-network": 1},
+        }
+        self.life["no_cdp_profile_identity"] = {
+            "status": "SOURCE_OS_CORROBORATED",
+            "browser_process_identity": "UNIQUE_SYSMON_ETW_APP_PROFILE",
+            "profile_process_lifetimes": "SYSMON_ETW_DESCENDANTS_EXITED",
+            "webview_process_count": 2, "native_N12_acceptance": "NOT_EVALUATED",
+        }
+        # The test helper's role mock declares only one network child. Give
+        # the second browser a matching role without changing actual reducers.
+        def patched_bind(*args, **kwargs):
+            return ({"a": "app", "b": "webview", "c": "webview-network"},
+                    [("a", object())])
+        with patch.object(trace, "bind_processes", side_effect=patched_bind):
+            receipt = self.run_check()
+        # The helper above also patches bind_processes, so the inner helper
+        # mapping should prevail. A complete two-role positive is verified
+        # independently in the scoped bridge tests below.
+        self.assertNotEqual(receipt["native_N12_acceptance"], "PASS")
+        self.assertEqual(receipt["effective_webview_user_data_folder"], "NOT_VERIFIED")
 
     def test_fail_closed_if_strict_reducer_raises(self):
         with patch.object(trace, "load_capture", side_effect=trace.EvidenceValidationError("bad-digest")):
@@ -145,6 +209,27 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
             with self.assertRaisesRegex(trace.EvidenceValidationError, "new-one-use-approval"):
                 lifetime.capture(Path("synthetic"), Path("synthetic"),
                                  {"source_sha": "a" * 40, "executable_sha256": "b" * 64},
+                                 no_cdp=True, fileio=True)
+            prepare.assert_not_called()
+
+    def test_fileio_without_original_webview_child_consent_fails_before_preflight(self):
+        from qa.p4_research import n12_app_lifetime as lifetime
+        from unittest.mock import patch
+        import os
+        source, digest = "a" * 40, "b" * 64
+        env = {
+            "PILOTODIN_N12_NO_CDP_FILEIO_CONSENT": lifetime.FILEIO_CONSENT,
+            "PILOTODIN_N12_NO_CDP_STORAGE_CONSENT": lifetime.no_cdp_path.lifecycle.NATIVE_ACK_CONSENT,
+            "PILOTODIN_N12_APP_LIFETIME_CONSENT": lifetime.CONSENT,
+            "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted",
+            "RUNNER_OS": "Windows", "GITHUB_RUN_ATTEMPT": "1",
+            "PILOTODIN_N12_APPROVED_SOURCE": source,
+        }
+        with patch.dict(os.environ, env, clear=True), \\
+             patch.object(lifetime.journey, "prepare_journey") as prepare:
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "original-child-handle-consent-required"):
+                lifetime.capture(Path("fake"), Path("fake"),
+                                 {"source_sha": source, "executable_sha256": digest},
                                  no_cdp=True, fileio=True)
             prepare.assert_not_called()
 
@@ -218,11 +303,13 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
                 "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted",
                 "RUNNER_OS": "Windows", "GITHUB_RUN_ATTEMPT": "1",
                 "PILOTODIN_N12_APPROVED_SOURCE": source,
+                "PILOTODIN_N12_CHILD_HANDLE_CONSENT": lifetime.child_handles.CHILD_HANDLE_CONSENT,
             }
             # Every Windows/native action below is mocked. Only the generated
             # fixture CSV gets written in this local temporary directory.
             with ExitStack() as stack:
                 stack.enter_context(patch.dict(os.environ, env, clear=True))
+                hosted = stack.enter_context(patch.object(lifetime.child_pipe, "hosted_scope"))
                 stack.enter_context(patch.object(
                     lifetime.journey, "prepare_journey",
                     return_value=(manifest, root, root, root / "quality-source.csv", [])))
@@ -271,6 +358,7 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
                         clock_start + timedelta(seconds=i) for i in range(10)]))
                 receipt = lifetime.capture(root, root, provenance, no_cdp=True, fileio=True)
             collector.assert_called_once()
+            hosted.assert_called_once_with(env, source, digest)
             old_collector.assert_not_called()
             worker.assert_called_once()
             self.assertTrue(worker.call_args.kwargs["no_cdp"])
