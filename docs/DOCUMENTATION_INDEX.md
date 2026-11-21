@@ -1,5 +1,8 @@
 # PilotODIN | Documentation index
 
+**New independent source-only checkpoint:** [21 November Event3/source-to-native reapproval review](./P4_N12_SYSMON_EVENT3_SOURCE_AND_REAPPROVAL_GATE_REVIEW_2026-11-21.md) checked 12/12 bounded source predicates. Actual #44932378332 FAILED pre-app; prior #44933130221 source/synthetic CI passed on `daaa8d2`. Consumed approval remains unusable; native evidence needs a new owner one-use approval. P4 14/20 unchanged.
+
+
 **21 November 2026 | Current authority and single active P4 direction.** The first narrowly owner-approved one-use hosted Windows no-CDP FileIO baseline was **CONSUMED AND BLOCKED BEFORE REAL APP LAUNCH** by generated Sysmon TCP/UDP calibration failure. ETW started and protected endpoints matched, but no WebView2 product filesystem evidence was captured. Source-filter fault candidate corrected, synthetics 4/4 green; native retest requires NEW explicit owner one-use authorization. All original strict rules and P4 scores unchanged.
 
 ## Current authoritative route, in reading order
