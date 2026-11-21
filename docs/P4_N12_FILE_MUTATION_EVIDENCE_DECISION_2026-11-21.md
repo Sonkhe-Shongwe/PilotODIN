@@ -65,3 +65,7 @@ Microsoft's [file access control](https://learn.microsoft.com/windows/security/i
 - R06 historical 74-file difference: unresolved, historical writer unknown.
 - Native WebView one-use approval: consumed; workflow disarmed.
 - No installer through P4–P7, no owner-device modification, no P5/P8 release authorization.
+
+## Updated original-run path-credit accounting, 21 November
+
+The saved native journal had already computed a same-ETW WebView credit comparison. [Exact original-job reconciliation](./P4_R02_5_FILE_MUTATION_CREDIT_RECONCILIATION_2026-11-21.md) confirms **226,959** permitted write path credits and **113 outside-scope** write path credits, leaving **15** of the ordinary **227,087** WebView-network write path gaps unresolved in the diagnostic comparison. Background rundown separately left **4,112** background write path gaps and **42** missing process lifetimes. This is not evidence of clean disk isolation. The added source-only mutation triage preserves and surfaces both violations and unresolved coverage; the actual protected-root prevention and complete native FileIO verification remain required before any acceptance credit.
