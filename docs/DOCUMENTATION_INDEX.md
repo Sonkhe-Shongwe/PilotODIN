@@ -14,6 +14,8 @@
 
 ## Current development references
 
+- **[Latest S01-S11 source-verified Stage 1 reference evidence worksheet](./P4_N12_STAGE1_SOURCE_EVIDENCE_WORKSHEET_2026-11-21.md)**, [machine-readable JSON mapping](./P4_N12_STAGE1_SOURCE_EVIDENCE_MAP_2026-11-21.json): independent actual app/launcher partial reference, precise original-handle/ETW/SystemMonitor checks, existing fixture names, and three source-level assumptions requiring controlled counterexamples. [Exact CI #44912012772](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44912012772) 4/4; source traceability only, no native acceptance.
+
 - **Real last approved native Stage 1 (failure, not pass):** [Sysmon/ETW exact exit timestamp mismatch #44893498723](./P4_N12_STAGE1_NATIVE_SYSMON_ETW_EXIT_CLOCK_DIAGNOSIS_44893498723.md); app/launcher independent original-handle agreement, seven WebView2 children without retained original handles, prior approval consumed.
 - **Newest source-only/synthetic transport:** [real Windows AF_PIPE using synthetic subprocesses, interrupted-observer cleanup](./P4_N12_SYNTHETIC_WINDOWS_PIPE_AND_ABORT_SOURCE_REVIEW_2026-11-21.md); [exact CI #44903523887](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44903523887) **4/4 PASS** at `0511aca`, no native PilotODIN/WebView2 execution.
 - **Diagnostic-only prior contracts:** [original child-handle observer](./P4_N12_NO_CDP_SCOPED_CHILD_HANDLE_OBSERVER_SOURCE_REVIEW_2026-11-21.md), [private reducer handoff](./P4_N12_NO_CDP_PRIVATE_CHILD_HANDLE_REDUCER_HANDOFF_2026-11-21.md), [authenticated private transport](./P4_N12_PRIVATE_CHILD_HANDLE_MEMORY_PIPE_TRANSFER_2026-11-21.md), [original-handle shadow design](./P4_N12_STAGE1_SHADOW_HANDLE_WITNESS_DESIGN_2026-11-21.md). These do not amend strict native acceptance.
