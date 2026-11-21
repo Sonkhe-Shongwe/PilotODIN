@@ -82,6 +82,14 @@ class NoCdpNativePathTests(unittest.TestCase):
         with patch.object(trace, "windows_path", side_effect=lambda value: str(value).casefold()):
             return native.no_cdp_environments({**self.env, **(changes or {})}, self.profile)
 
+    def approved_launch_environment(self):
+        return {
+            **self.env,
+            "WEBVIEW2_USER_DATA_FOLDER": str(self.profile),
+            **{key: str(self.profile / journey.APP_TEMP_DIR)
+               for key in ("TEMP", "TMP", "TMPDIR")},
+        }
+
     def test_debugger_free_disposable_qa_environments(self):
         vite, app = self.environments()
         self.assertEqual(vite["VITE_PILOTODIN_N12_NO_CDP"], "1")
@@ -145,7 +153,7 @@ class NoCdpNativePathTests(unittest.TestCase):
             result = native.run_one_no_cdp_app(
                 stack=stack, manifest=manifest, root=self.root, binary=binary,
                 title="PilotODIN QA", source=SOURCE, expected_hash=SHA,
-                app_env={**self.env, "WEBVIEW2_USER_DATA_FOLDER": str(self.profile)},
+                app_env=self.approved_launch_environment(),
                 profile=self.profile,
             )
         self.assertEqual(FakeObserver.latest.events, ["bind", "ready", "preclose", "postclose"])
@@ -159,16 +167,42 @@ class NoCdpNativePathTests(unittest.TestCase):
         self.assertNotIn(str(self.root), str(saved["no-cdp-source-witness.json"]))
 
     def test_unsafe_app_environment_refuses_without_spawning(self):
+        # The final launch seam must fail closed even when called without the
+        # no_cdp_environments builder. These are synthetic, non-launching cases.
+        invalid_settings = (
+            {"WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=9331"},
+            {"WEBVIEW2_BROWSER_EXECUTABLE_FOLDER": "unreviewed-runtime"},
+            {"webview2_user_data_folder": "case-duplicate"},
+            {"WEBVIEW2_USER_DATA_FOLDER": "unreviewed-profile"},
+            {"TEMP": str(self.root / "ambient-temp")},
+            {"TMP": str(self.root / "ambient-temp")},
+            {"TMPDIR": str(self.root / "ambient-temp")},
+            {"PILOTODIN_N12_NO_CDP_STORAGE_CONSENT": "wrong"},
+        )
+        for changes in invalid_settings:
+            with self.subTest(changes=changes), ExitStack() as stack, \
+                 patch.object(journey, "spawn") as spawn:
+                with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                            "no-cdp-app-launch-scope-unverified"):
+                    native.run_one_no_cdp_app(
+                        stack=stack, manifest={"markers": {}}, root=self.root,
+                        binary=self.root / "fake.exe", title="QA",
+                        source=SOURCE, expected_hash=SHA,
+                        app_env={**self.approved_launch_environment(), **changes},
+                        profile=self.profile,
+                    )
+                spawn.assert_not_called()
+
+    def test_wrong_disposable_root_refuses_before_launch(self):
         with ExitStack() as stack, patch.object(journey, "spawn") as spawn:
             with self.assertRaisesRegex(trace.EvidenceValidationError,
                                         "no-cdp-app-launch-scope-unverified"):
                 native.run_one_no_cdp_app(
-                    stack=stack, manifest={"markers": {}}, root=self.root,
-                    binary=self.root / "fake.exe", title="QA", source=SOURCE,
-                    expected_hash=SHA,
-                    app_env={**self.env,
-                             "WEBVIEW2_USER_DATA_FOLDER": str(self.profile),
-                             "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=9331"},
+                    stack=stack, manifest={"markers": {}},
+                    root=self.root / "unreviewed-run-root",
+                    binary=self.root / "fake.exe", title="QA",
+                    source=SOURCE, expected_hash=SHA,
+                    app_env=self.approved_launch_environment(),
                     profile=self.profile,
                 )
             spawn.assert_not_called()

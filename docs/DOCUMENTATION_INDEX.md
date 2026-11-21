@@ -14,6 +14,7 @@
 
 ## Current development references
 
+- [21 November no-CDP final launch scope guard](./P4_N12_NO_CDP_FINAL_LAUNCH_SCOPE_GUARD_2026-11-21.md) for source-only prevention of direct-call WebView/temp/root bypass, generated negative tests and the precise next native approval boundary.
 - [21 November documentation and direction audit](./DOCUMENTATION_AUDIT_2026-11-21.md) for the current source/native truth table, corrected README/worklist/runbook route, verified links and next approval boundary.
 - [20 November code, test and direction audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) for reproduced product defects, the scope of the Windows failures and the corrective order.
 - [Guarded no-CDP native QA lifecycle integration](./P4_N12_NO_CDP_NATIVE_LIFECYCLE_INTEGRATION_2026-11-21.md) for source-wired debugger-free startup/normal close and OS browser profile-verification, explicitly not FileIO acceptance.

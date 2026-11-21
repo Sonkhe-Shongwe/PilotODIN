@@ -43,10 +43,23 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
     """
     from qa.p4_native.n12_lifetime_control import process_images, process_times
 
-    trace.require(app_env.get("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT")
+    # Recheck the *launch* boundary independently of the environment builder.
+    # A later caller must not bypass the disposable profile, owned scratch, or
+    # browser-override prohibition by calling this seam directly.
+    trace.require(type(app_env) is dict and isinstance(root, Path)
+                  and isinstance(profile, Path) and profile.parent == root
+                  and profile.is_dir() and not profile.is_symlink()
+                  and (profile / journey.APP_TEMP_DIR).is_dir()
+                  and not (profile / journey.APP_TEMP_DIR).is_symlink()
+                  and all(type(key) is str for key in app_env)
+                  and app_env.get("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT")
                   == lifecycle.NATIVE_ACK_CONSENT
                   and app_env.get("WEBVIEW2_USER_DATA_FOLDER") == str(profile)
-                  and not app_env.get("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS")
+                  and all(app_env.get(key) == str(profile / journey.APP_TEMP_DIR)
+                          for key in ("TEMP", "TMP", "TMPDIR"))
+                  and not any(key.upper().startswith("WEBVIEW2_")
+                              and key != "WEBVIEW2_USER_DATA_FOLDER" and value
+                              for key, value in app_env.items())
                   and type(source) is str and type(expected_hash) is str,
                   "no-cdp-app-launch-scope-unverified")
     observer = lifecycle.NoCdpLifecycleObserver(
