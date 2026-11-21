@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**21 November 2026 | Clean authoritative route.** **One active direction:** independently establish a Stage 1 *correctness and evidence contract*, construct an honest partial golden reference, derive passing and adversarial test variations, then compare source code and collector behavior against real Windows evidence. **This audit is documentation-only, not a change of native acceptance, permissions or P4 points.**
+**21 November 2026 | Current authority and single active P4 direction.** Continue **R02.5 file-mutation causal investigation** via independent WebView2 storage, process identity and FileIO evidence contracts. The earlier Stage 1 golden-reference and synthetic backward verification are completed source-level prerequisites, not a competing current direction. No change of strict native acceptance, permissions, installer freeze or P4 points.
 
 ## Current authoritative route, in reading order
 
@@ -13,6 +13,8 @@
 7. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) · [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) · [Local analytics plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) · [8 GB RAM resource evidence](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom).
 
 ## Current development references
+
+- **[CURRENT R02.5 WebView2 storage source and falsification map](./P4_N12_WEBVIEW_STORAGE_HYPOTHESIS_AND_FALSIFICATION_MAP_2026-11-21.md)**: three distinct launch configurations (production, standard N12, no-CDP) plus the explicitly opt-in QA ambient redirect, six independent competing explanations, exact source-to-evidence discriminators and fail-closed source tests. [source `b17a0f6`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b17a0f6299d6fe9bfa3c11997d2e6ced08618933); [routine CI #44915740879](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44915740879) **4/4 jobs COMPLETED SUCCESS** at exact SHA `b17a0f6` (994 Python passed, 6 skipped, 450 subtests passed; 104 frontend tests and Vite build; 13 disposable browser tests; 4 hosted-Windows R03 tests; hosted-Windows synthetic ETW/FileIO checks). **No native WebView2 process or file writer retested.**
 
 - **[NEW source-audited product process-tree isolation feasibility](./P4_N12_PRODUCT_TREE_ISOLATION_FEASIBILITY_2026-11-21.md)**: the existing generated protected-writer fixture/API lookup cannot establish that the Tauri, WebView2, Python sidecar and inference processes actually run under a restricted security principal. Source-backed fixed-label drift checks in `qa/p4_research/n12_product_tree_isolation_review.py` preserve that negative evidence boundary. [implementation `a6deb331`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a6deb331b200454a51ca01fb8bc84e1ae30aca17), [exact-source CI #44914777325](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44914777325) **4/4 completed SUCCESS** (986 Python passed, 6 skipped, 441 subtests, 104 frontend tests, Vite build, 13 disposable real-HTTP browser tests, 4 hosted-Windows R03 tests and hosted-Windows synthetic checks). **No native app, token or ACL was exercised, and R02.5 earns no points.**
 
