@@ -33,3 +33,7 @@ A fake ETW validator and a caller-supplied capture-loss Boolean are insufficient
 Native N12 re-execution still requires new one-use owner approval; existing workflows stay disarmed. Product installers frozen, original data untouched, firewall/permission changes unapproved.
 
 **Official progress unchanged:** P4 **14/20 (70%)**; product fixes **7/7 (100%)**, dialog driver **3/3 (100%)**, file-mutation coverage **3/4 (75%)**, desktop network **2/3 (67%)**, firewall preflight **2/3 (67%)**, N12 acceptance **0/2 (0%)**, physical offline inference **1/3 (33%)**, original-data preservation **0/2 (0%)**. No native acceptance point earned.
+
+## Later guarded read-only reducer integration (source-only)
+
+A consent-gated [no-CDP QA lifetime mode](./P4_N12_NO_CDP_NATIVE_LIFECYCLE_INTEGRATION_2026-11-21.md) now calls `verify_profile_shutdown` after loading the existing actual Sysmon process map and digest-checked ETW events from the life-cycle collector. It refuses missing ordered markers, incomplete process identities or reported capture loss. The earlier “must be incorporated” direction above is now addressed **at code scope only**. [Code `51be1e2`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/51be1e225dc736f8e003659612c0c93787f3c1fb) passed [P4 CI #44885183619](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44885183619), 4/4 source/synthetic; **no live native ETW, actual browser shutdown or filesystem/network acceptance** was observed. The profile-active string count stays diagnostic, not attribution.

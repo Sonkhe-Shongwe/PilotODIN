@@ -16,6 +16,7 @@
 
 - [21 November documentation and direction audit](./DOCUMENTATION_AUDIT_2026-11-21.md) for the current source/native truth table, corrected README/worklist/runbook route, verified links and next approval boundary.
 - [20 November code, test and direction audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) for reproduced product defects, the scope of the Windows failures and the corrective order.
+- [Guarded no-CDP native QA lifecycle integration](./P4_N12_NO_CDP_NATIVE_LIFECYCLE_INTEGRATION_2026-11-21.md) for source-wired debugger-free startup/normal close and OS browser profile-verification, explicitly not FileIO acceptance.
 - [Focused WebView storage backend-temp parity and causal boundary](./P4_N12_FOCUSED_BACKEND_TEMP_AND_WEBVIEW_CAUSAL_BOUNDARY_2026-11-21.md) covers source correction, original temp observations, and no-CDP experiment limits.
 - [Product worker temp containment](./P4_R02_5_PRODUCT_WORKER_TEMP_CONTAINMENT_2026-11-21.md) documents real Rust child-process temporary-file redirection, N12 QA parity and held native acceptance.
 - [Opt-in QA WebView2 ambient local-data candidate](./P4_N12_QA_AMBIENT_LOCAL_REDIRECT_CANDIDATE_2026-11-21.md) for source-only LOCALAPPDATA and APPDATA redirects inside the permitted disposable QA profile, not native acceptance.
