@@ -79,6 +79,7 @@ on:
       - tests/test_p4_n12_no_cdp_child_handles.py
       - qa/p4_research/n12_private_child_pipe.py
       - tests/test_p4_n12_private_child_pipe.py
+      - tests/test_p4_n12_private_child_pipe_windows.py
       - qa/p4_research/n12_no_cdp_browser_identity.py
       - tests/test_p4_n12_no_cdp_log_witness.py
       - qa/p4_research/n12_no_cdp_log_witness.py
@@ -320,6 +321,13 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
+      - name: Exercise authenticated Windows AF_PIPE with synthetic subprocess witnesses ONLY
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONDONTWRITEBYTECODE = '1'
+          python -B -m unittest -v tests.test_p4_n12_private_child_pipe_windows
+          if ($LASTEXITCODE -ne 0) { throw 'Synthetic Windows AF_PIPE contract tests failed.' }
       - name: Verify hosted temp resolution and generated WebView storage cases
         shell: pwsh
         run: |

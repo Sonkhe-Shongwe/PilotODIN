@@ -166,6 +166,59 @@ class NoCdpNativePathTests(unittest.TestCase):
                          "NOT_EVALUATED")
         self.assertNotIn(str(self.root), str(saved["no-cdp-source-witness.json"]))
 
+    def test_failed_readiness_or_observer_start_always_aborts_child_handles(self):
+        from unittest.mock import MagicMock
+        binary = self.root / "pilotodin-desktop.exe"
+        binary.write_bytes(b"synthetic fixture")
+        for stage in ("readiness", "observer-start"):
+            with self.subTest(stage=stage):
+                app = FakeApp()
+                child = MagicMock()
+                if stage == "observer-start":
+                    child.start_live.side_effect = trace.EvidenceValidationError(
+                        "synthetic-observer-start-failure")
+                with ExitStack() as stack, \
+                     patch.object(native.lifecycle, "NoCdpLifecycleObserver", FakeObserver), \
+                     patch.object(native.child_pipe, "requested", return_value=True), \
+                     patch.object(native.child_pipe, "require_worker_scope"), \
+                     patch.object(native.child_handles, "ScopedQaChildHandleObserver",
+                                  return_value=child), \
+                     patch.object(journey, "spawn", return_value=app), \
+                     patch.object(journey, "mark",
+                                  side_effect=lambda m, label: m["markers"].__setitem__(label, label)), \
+                     patch.object(FakeObserver, "observe_readiness",
+                                  side_effect=trace.EvidenceValidationError(
+                                      "synthetic-readiness-failure")):
+                    with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                               "synthetic-(readiness|observer-start)-failure"):
+                        native.run_one_no_cdp_app(
+                            stack=stack, manifest={"markers": {}, "processes": []},
+                            root=self.root, binary=binary, title="Synthetic QA",
+                            source=SOURCE, expected_hash=SHA,
+                            app_env=self.approved_launch_environment(), profile=self.profile,
+                            transport_env={"synthetic-only": "worker"},
+                        )
+                child.abort.assert_called_once()
+                child.finish.assert_not_called()
+
+    def test_transport_key_never_reaches_qa_app_environment(self):
+        binary = self.root / "pilotodin-desktop.exe"
+        with ExitStack() as stack, patch.object(journey, "spawn") as spawn:
+            for field in (native.child_pipe.PIPE_ENV, native.child_pipe.KEY_ENV,
+                          "PILOTODIN_N12_CHILD_HANDLE_CONSENT"):
+                with self.subTest(field=field):
+                    with self.assertRaisesRegex(
+                            trace.EvidenceValidationError,
+                            "no-cdp-child-pipe-secret-must-not-reach-app"):
+                        native.run_one_no_cdp_app(
+                            stack=stack, manifest={"markers": {}}, root=self.root,
+                            binary=binary, title="Synthetic QA",
+                            source=SOURCE, expected_hash=SHA,
+                            app_env={**self.approved_launch_environment(), field: "opaque"},
+                            profile=self.profile,
+                        )
+            spawn.assert_not_called()
+
     def test_unsafe_app_environment_refuses_without_spawning(self):
         # The final launch seam must fail closed even when called without the
         # no_cdp_environments builder. These are synthetic, non-launching cases.
