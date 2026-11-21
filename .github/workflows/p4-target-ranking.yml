@@ -68,6 +68,8 @@ on:
       - tests/test_p4_n12_egress.py
       - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_webview_storage.py
+      - qa/p4_research/n12_no_cdp_native_path.py
+      - tests/test_p4_n12_no_cdp_native_path.py
       - tests/test_p4_n12_no_cdp_lifecycle.py
       - qa/p4_research/n12_no_cdp_lifecycle.py
       - tests/test_p4_n12_no_cdp_main_window.py
@@ -211,6 +213,7 @@ jobs:
           tests/test_p4_n12_egress.py
           tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_n12_webview_storage.py
+          tests/test_p4_n12_no_cdp_native_path.py
           tests/test_p4_n12_no_cdp_lifecycle.py
           tests/test_p4_n12_no_cdp_main_window.py
           tests/test_p4_n12_no_cdp_browser_identity.py
@@ -321,6 +324,7 @@ jobs:
           python -B -m unittest discover -s tests -p test_p4_n12_worker_scratch_source.py
           python -B -m unittest discover -s tests -p test_p4_n12_mutation_triage.py
           python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
+          python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_native_path.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_lifecycle.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_main_window.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_browser_identity.py

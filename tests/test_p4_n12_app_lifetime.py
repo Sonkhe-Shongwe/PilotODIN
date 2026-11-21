@@ -57,7 +57,7 @@ class AppLifetimeTests(unittest.TestCase):
         ])
         return {"pid": pid, "birth": ORIGIN + birth, "exit": ORIGIN + exit}
 
-    def reduce(self):
+    def reduce(self, **mode):
         root = ET.Element("Events")
         for record, (offset, kind, fields) in enumerate(sorted(self.rows), 150):
             row = ET.SubElement(root, trace.EVENT_NS + "Event")
@@ -74,7 +74,43 @@ class AppLifetimeTests(unittest.TestCase):
                              events_sha256=lifetime.build.digest(self.etw))
         with patch.object(lifetime.sys, "executable", PYTHON):
             return lifetime.reduction(self.manifest, self.sysmon, self.etw, self.volume_devices,
-                                      self.session, self.app, self.worker, APP)
+                                      self.session, self.app, self.worker, APP, **mode)
+
+    def test_no_cdp_missing_stage_markers_remains_blocked(self):
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertIn("no-cdp-os-stage-markers-unverified", report["issues"])
+        self.assertEqual(report["no_cdp_profile_identity"]["file_event_coverage"], "NOT_EVALUATED")
+
+    def test_no_cdp_etw_loss_blocks_before_identity_claim(self):
+        self.session["counters"]["events_lost"] = 1
+        with patch.object(lifetime.browser_identity, "verify_profile_shutdown") as verify:
+            report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-event-or-buffer-loss", report["issues"])
+        verify.assert_not_called()
+
+    def test_no_cdp_profile_verifier_invoked_only_with_reviewed_capture(self):
+        from tests.test_p4_n12_exit_corroboration import stamp as moment
+        self.manifest["markers"] = {k: moment(n).isoformat() for k, n in (
+            ("launch", 150_000), ("ready", 250_000), ("close", 450_000),
+            ("profile-exit", 750_000),
+        )}
+        self.manifest["observed_roots"] = {"qa-webview": "c:/qa/profile"}
+        positive = SimpleNamespace(redacted_receipt=lambda: {
+            "scope": "no-cdp-profile-shutdown-source-only",
+            "native_N12_acceptance": "NOT_EVALUATED",
+            "file_event_coverage": "NOT_EVALUATED",
+            "network_isolation": "NOT_EVALUATED",
+        })
+        with patch.object(lifetime.browser_identity, "verify_profile_shutdown",
+                          return_value=positive) as verify:
+            report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertEqual(report["no_cdp_profile_identity"]["status"], "SOURCE_OS_CORROBORATED")
+        self.assertTrue(verify.call_args.kwargs["capture_loss_reviewed"])
 
     def test_clean_lifetime_matches_both_original_handles(self):
         report = self.reduce()
