@@ -18,6 +18,7 @@
 - [N12 restricted-token capability preflight](./P4_N12_RESTRICTED_TOKEN_CAPABILITY_PREFLIGHT_2026-11-21.md) for read-only Windows API export checks and the distinction between a generated writer fixture and real PilotODIN process confinement.
 - [N12 process-boundary applicability review](./P4_N12_PROCESS_BOUNDARY_APPLICABILITY_REVIEW_2026-11-21.md) for the source-grounded Tauri/WebView2/backend execution map, rejected app-wide token approach and selected runtime-specific next action.
 - [N12 production-versus-QA WebView startup and ambient-temp audit](./P4_N12_WEBVIEW_STARTUP_AND_AMBIENT_TEMP_AUDIT_2026-11-21.md) for the two observed temporary creates, safe cross-stage path correlation and the bounded UDP calibration-fixture correction.
+- [N12 no-CDP close-readiness source design](./P4_N12_NO_CDP_CLOSE_READINESS_DESIGN_2026-11-21.md) for the QA-only fixed Rust log marker, preserved native close veto, and required independent process identity before any future capture.
 - [21 November authorized debug-only WebView storage result](../qa/p4_research/N12_WEBVIEW_DEBUG_ONLY_RESULT_44852642468.md) for the observed ambient temp creates without netlog, incomplete collector coverage and the no-CDP next hypothesis.
 - [Live development workspace](./LIVE_DEVELOPMENT.md) and [QA preflight and failure planning](./QA_PREFLIGHT_AND_FAILURE_PLANNING.md).
 - [19 November work and process audit](./WORK_AND_PROCESS_AUDIT_2026-11-19.md) for the documented decision flow, hosted run analysis and evidence corrections.
