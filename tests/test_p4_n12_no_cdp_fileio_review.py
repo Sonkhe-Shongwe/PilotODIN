@@ -323,7 +323,7 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
         self.assertNotIn('<NetworkConnect onmatch="include" />', wrapper)
         self.assertNotIn('$definition = $definition.Replace(', wrapper)
         self.assertIn('Event ID 3 must be captured', wrapper)
-        self.assertIn('-NoCdpFileIO', wrapper)
+        self.assertIn('[switch]$NoCdpFileIO', wrapper)
 
     def test_powershell_native_entry_requires_new_scoped_permission_and_fileio_dispatch(self):
         """Source inspection only: no PowerShell command or native app runs."""
@@ -362,7 +362,15 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
         marker = build.REPO / 'qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt'
         workflow = (build.REPO / '.github/workflows/p4-n12-no-cdp-fileio.yml'
                     ).read_text(encoding='utf-8')
-        self.assertFalse(marker.exists(), 'No owner has authorised this capture')
+        # The initial source preauthorization had no marker; after one
+        # approved run it remains as a consumed historical marker. Either
+        # state is safe ONLY while the workflow is disabled.
+        if marker.exists():
+            approval = marker.read_text(encoding='utf-8').splitlines()
+            self.assertEqual(len(approval), 2)
+            self.assertRegex(approval[0], r'^reviewed_source=[0-9a-f]{40}$')
+            self.assertEqual(approval[1],
+                             'scope=n12-one-build-one-no-cdp-fileio-baseline')
         for token in (
                 'if: ${{ false }}',
                 'N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt',
