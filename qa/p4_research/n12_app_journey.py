@@ -519,15 +519,24 @@ def temporary_environment(env, scratch):
     return {**env, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch)}
 
 
-def backend_environment(env):
-    """Import the QA server from source without making the checkout its CWD.
+def backend_environment(env, home=None):
+    """Keep QA imports on PYTHONPATH, but never send backend temp to the host.
 
-    The backend's data home is already runner-local. Its prior CWD was the
-    repository, so relative library writes could mutate the source checkout.
-    Never permit that path in the N12 filesystem policy.
+    When a journey home is supplied, require its existing dedicated scratch
+    directory inside the already permitted QA data root. Neither the checked
+    out source nor a new filesystem exception is ever writable by policy.
     """
     existing = env.get("PYTHONPATH", "")
-    return {**env, "PYTHONPATH": str(build.REPO) + (os.pathsep + existing if existing else "")}
+    result = {**env, "PYTHONPATH": str(build.REPO) + (os.pathsep + existing if existing else "")}
+    if home is None:
+        return result
+    home = Path(home)
+    scratch = home / "backend-temp"
+    trace.require(home.is_dir() and not home.is_symlink()
+                  and scratch.is_dir() and not scratch.is_symlink()
+                  and scratch.resolve(strict=True).parent == home.resolve(strict=True),
+                  "n12-backend-temp-home-unverified")
+    return {**result, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch)}
 
 
 def app_environment(env, profile, label):
@@ -715,6 +724,7 @@ def prepare_journey(root, source, expected_hash):
     trace.scope(manifest)
     root.mkdir(exist_ok=False)
     home.mkdir()
+    (home / "backend-temp").mkdir()
     profile.mkdir()
     (profile / APP_TEMP_DIR).mkdir()
     (root / DRIVER_TEMP_DIR).mkdir()
@@ -899,7 +909,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
             python = sys.executable if egress_programs is None else egress_programs["backend"]
             backend = spawn(stack, manifest, "backend", [python, "-B", "-m", "uvicorn",
                 "qa.p4_research.n12_backend_wakeup:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
-                backend_environment(env), home, root / "backend.log")
+                backend_environment(env, home), home, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort", "--configLoader", "runner"],
                 driver_environment(env, root), FRONTEND, root / "vite.log")

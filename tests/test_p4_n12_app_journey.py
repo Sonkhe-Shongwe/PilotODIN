@@ -47,6 +47,37 @@ def test_backend_environment_keeps_qa_imports_without_source_as_cwd(tmp_path):
     assert (tmp_path / "data" / "models").is_dir()
 
 
+def test_backend_qa_temp_stays_within_prepared_home(tmp_path):
+    home = tmp_path / "qa-home"
+    home.mkdir()
+    (home / "backend-temp").mkdir()
+    original = {"TEMP": str(tmp_path / "host-temp"),
+                "TMP": str(tmp_path / "host-temp"),
+                "TMPDIR": str(tmp_path / "host-temp"),
+                "PYTHONPATH": "", "PILOTODIN_HOME": str(home)}
+    scoped = journey.backend_environment(original, home)
+    for key in ("TEMP", "TMP", "TMPDIR"):
+        assert scoped[key] == str(home / "backend-temp")
+        assert original[key] == str(tmp_path / "host-temp")
+    assert scoped["PILOTODIN_HOME"] == str(home)
+
+
+def test_backend_qa_temp_refuses_absent_or_symlinked_directory(tmp_path, monkeypatch):
+    home = tmp_path / "qa-home"
+    home.mkdir()
+    with pytest.raises(journey.trace.EvidenceValidationError,
+                       match="n12-backend-temp-home-unverified"):
+        journey.backend_environment({}, home)
+    scratch = home / "backend-temp"
+    scratch.mkdir()
+    assert journey.backend_environment({}, home)["TMP"] == str(scratch)
+    orig = Path.is_symlink
+    monkeypatch.setattr(Path, "is_symlink", lambda path: path == scratch or orig(path))
+    with pytest.raises(journey.trace.EvidenceValidationError,
+                       match="n12-backend-temp-home-unverified"):
+        journey.backend_environment({}, home)
+
+
 def test_linux_cli_refuses_before_collecting(tmp_path):
     env = {**os.environ, "GITHUB_ACTIONS": "false", "GITHUB_EVENT_NAME": "push",
            "GITHUB_REF_NAME": journey.build.BRANCH, "GITHUB_RUN_ATTEMPT": "1",
@@ -595,8 +626,9 @@ def test_prepare_creates_disposable_app_and_driver_scratch(tmp_path, monkeypatch
     # Windows path parsing is covered by the trace reducer tests.
     monkeypatch.setattr(journey.trace, "scope", lambda manifest: None)
 
-    manifest, _, profile, *_ = journey.prepare_journey(root, SOURCE, EXE_SHA)
+    manifest, home, profile, *_ = journey.prepare_journey(root, SOURCE, EXE_SHA)
 
+    assert (home / "backend-temp").is_dir()
     scratch = root / journey.DRIVER_TEMP_DIR
     assert scratch.is_dir()
     assert [role for role, paths in manifest["permitted_writes"].items() if str(scratch) in paths] == ["driver"]
@@ -615,6 +647,8 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
     root = tmp_path / "capture"
     root.mkdir()
     staged, home, profile, fixture = [tmp_path / name for name in ("build", "home", "webview", "quality.csv")]
+    home.mkdir()
+    (home / "backend-temp").mkdir()
     calibrations = [root / "calibration-first", root / "calibration-last"]
     user_temp = str(tmp_path / "user-temp")
     user_cache = str(tmp_path / "user-cache")
@@ -752,7 +786,7 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert env["PYTHONPATH"].split(os.pathsep)[0] == str(journey.build.REPO)
             assert env["PILOTODIN_HOME"] == str(home)
             assert env["PYTHONDONTWRITEBYTECODE"] == "1"
-            assert env["TEMP"] == env["TMP"] == user_temp
+            assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(home / "backend-temp")
             assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
         elif role == "driver":
             scratch = root / journey.DRIVER_TEMP_DIR
