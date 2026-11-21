@@ -186,5 +186,94 @@ class FileIOJoinSourceTests(unittest.TestCase):
         self.assertEqual(join.review_candidate(fixture)["join_status"], "BLOCKED")
 
 
+def generated_original_windows_join_fixture():
+    """Generated cross-provider records; not an actual Windows capture."""
+    root = r"C:\qa"
+    path = root + r"\file-lifetime.bin"
+    handle = {"pid": 7001, "birth_ticks": 100, "exit_ticks": 190}
+    capture = {
+        "file_lifetime": {"pid": 7001, "path": path, "size": 97,
+                          "start": 90, "end": 200, "two_handles": True,
+                          "original_handle": handle},
+        "counters": {"events_lost": 0, "log_buffers_lost": 0,
+                     "realtime_buffers_lost": 0, "buffers_written": 2},
+        "volume_devices": {"C:": r"\Device\HarddiskVolume3"},
+    }
+    def record(kind, ticks, data, *, pid=7001, lifecycle=False):
+        return {"id": kind, "ticks": ticks, "data": data,
+                "pid": pid, "lifecycle": lifecycle}
+    # The ETW payload creation/exit values are FILETIME UTC strings. Real
+    # Windows originals must independently match the retained HANDLE.
+    # These generated strings map to known integers on a real date timeline;
+    # shift all events to that date rather than fabricating a 1601 timestamp.
+    from datetime import datetime, timezone
+    from qa.p4_native import n12_trace as trace
+    base = trace.utc_ticks(datetime(2026, 11, 21, tzinfo=timezone.utc))
+    start, end = base + 100, base + 190
+    capture["file_lifetime"]["start"] = base + 90
+    capture["file_lifetime"]["end"] = base + 200
+    handle.update(birth_ticks=start, exit_ticks=end)
+    # Existing etw_payload_ticks returns UTC nanosecond/100ns based integers.
+    def instant(ticks):
+        dt = datetime(2026, 11, 21, tzinfo=timezone.utc)
+        return dt.strftime("%Y-%m-%dT%H:%M:%S") + f".{ticks-base:07d}Z"
+    etw = [
+        record(1, base + 101, {"ProcessID": "7001", "ProcessSequenceNumber": "81",
+                              "CreateTime": instant(start), "ParentProcessID": "7000"}, lifecycle=True, pid=0),
+        record(12, base + 120, {"Irp": 33, "FileObject": 400, "FileName": path}),
+        record(24, base + 128, {"Irp": 33, "Status": 0}, pid=0),
+        record(16, base + 140, {"Irp": 35, "FileObject": 400,
+                                "FileKey": 40, "IOSize": 97}),
+        record(24, base + 150, {"Irp": 35, "Status": 0}, pid=0),
+        record(14, base + 160, {"FileObject": 400}),
+        record(2, base + 191, {"ProcessID": "7001", "ProcessSequenceNumber": "81",
+                              "CreateTime": instant(start), "ExitTime": instant(end)}, lifecycle=True, pid=0),
+    ]
+    return capture, etw
+
+
+class GeneratedOriginalHandleEtwJoinTests(unittest.TestCase):
+    def test_generator_corroborates_handle_lifetime_etw_process_and_fileio(self):
+        capture, rows = generated_original_windows_join_fixture()
+        result = join.generated_original_handle_fileio_join(capture, rows)
+        self.assertEqual(result["status"], "GENERATED_JOIN_CORROBORATED", result["issues"])
+        self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertEqual(result["sysmon_original_webview_identity"], "NOT_COLLECTED")
+        self.assertNotIn("7001", json.dumps(result))
+        self.assertNotIn(r"C:\qa", json.dumps(result))
+
+    def test_rejects_actor_reuse_late_completion_missing_status_and_path_reuse(self):
+        for label, modify in (
+            ("late-completion", lambda c, e: c["file_lifetime"]["original_handle"].update(exit_ticks=e[4]["ticks"]-1)),
+            ("reuse", lambda c, e: e.append({**e[0], "ticks": e[3]["ticks"]+2,
+                                            "data": {**e[0]["data"], "ProcessSequenceNumber": "82"}})),
+            ("missing-open", lambda c, e: e.pop(1)),
+            ("wrong-object", lambda c, e: e[3]["data"].update(FileObject=999)),
+            ("lost-events", lambda c, e: c["counters"].update(events_lost=1)),
+            ("bad-completion", lambda c, e: e[4]["data"].update(Status=0xC0000022)),
+            ("reused-irp", lambda c, e: e.insert(4, {**e[3], "ticks": e[3]["ticks"]+1})),
+            ("missing-sequence", lambda c, e: e[0]["data"].pop("ProcessSequenceNumber")),
+            ("wrong-file", lambda c, e: e[1]["data"].update(FileName=r"C:\elsewhere\fake.bin")),
+            ("name-reused", lambda c, e: e.insert(3, {
+                "id": 14, "ticks": e[2]["ticks"]+1, "pid": 7001,
+                "lifecycle": False, "data": {"FileObject": 400}})),
+        ):
+            with self.subTest(label=label):
+                capture, rows = generated_original_windows_join_fixture()
+                modify(capture, rows)
+                report = join.generated_original_handle_fileio_join(capture, rows)
+                self.assertEqual(report["status"], "BLOCKED", (label, report))
+
+    def test_rejects_missing_original_process_and_boolean_pid(self):
+        for mutate in (
+            lambda c, e: c["file_lifetime"].pop("original_handle"),
+            lambda c, e: c["file_lifetime"]["original_handle"].update(pid=True),
+        ):
+            capture, rows = generated_original_windows_join_fixture()
+            mutate(capture, rows)
+            self.assertEqual(join.generated_original_handle_fileio_join(capture, rows)["status"],
+                             "BLOCKED")
+
+
 if __name__ == "__main__":
     unittest.main()

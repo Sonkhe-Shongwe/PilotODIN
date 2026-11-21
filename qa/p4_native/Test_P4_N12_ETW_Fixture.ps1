@@ -376,6 +376,19 @@ if ($PreopenedControl) {
             throw 'The strict ETW reducer did not preserve the protected/outside control distinction.'
         }
     }
+    if ($Rundown) {
+        $controlOriginalJoin = @(python -B -m qa.p4_research.n12_fileio_identity_join --generated-windows-join $manifestPath $eventsPath)
+        if ($LASTEXITCODE -ne 0) {
+            foreach ($line in $controlOriginalJoin) { Write-Host $line }
+            throw 'The generated original-handle to ETW FileIO process join is not corroborated.'
+        }
+        $controlJoinReceipt = ($controlOriginalJoin -join "`n").Trim() | ConvertFrom-Json -ErrorAction Stop
+        if ($controlJoinReceipt.status -ne 'GENERATED_JOIN_CORROBORATED' -or
+            $controlJoinReceipt.native_N12_acceptance -ne 'NOT_EVALUATED') {
+            throw 'The generated original-handle join returned an invalid scope claim.'
+        }
+        Write-Host ('Generated original-handle FileIO join: ' + ($controlJoinReceipt | ConvertTo-Json -Compress))
+    }
     return
 }
 $report = python (Join-Path $PSScriptRoot 'n12_etw_correlate.py') $manifestPath $eventsPath

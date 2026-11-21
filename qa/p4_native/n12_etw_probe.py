@@ -127,7 +127,28 @@ def utc_ticks():
     return utc_clock()()
 
 
-def run_writer(code, *paths):
+def original_writer_process_times(process):
+    """Read original-handle Win32 birth and exit before Popen closes its handle.
+
+    Only called for the hosted-Windows generated fixture. Neither native
+    PilotODIN nor an owner process is started or inspected.
+    """
+    get_times = ctypes.WinDLL("kernel32", use_last_error=True).GetProcessTimes
+    get_times.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4
+    get_times.restype = wintypes.BOOL
+    created, exited, kernel, user = (wintypes.FILETIME() for _ in range(4))
+    if not get_times(int(process._handle), *(ctypes.byref(t) for t in (
+            created, exited, kernel, user))):
+        raise RuntimeError("Generated writer original-handle times unavailable.")
+    def ticks(stamp):
+        return (stamp.dwHighDateTime << 32 | stamp.dwLowDateTime) + 504911232000000000
+    birth, exit_time = ticks(created), ticks(exited)
+    if not 504911232000000000 < birth < exit_time:
+        raise RuntimeError("Generated writer original-handle lifetime invalid.")
+    return {"pid": process.pid, "birth_ticks": birth, "exit_ticks": exit_time}
+
+
+def run_writer(code, *paths, retain_original_handle=False):
     result = subprocess.Popen(
         [sys.executable, "-B", "-c", code, *map(str, paths)],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -140,6 +161,9 @@ def run_writer(code, *paths):
             result.kill()
             result.wait()
             raise
+        # The subprocess context has not closed the original kernel handle yet.
+        if retain_original_handle:
+            return original_writer_process_times(result)
     return result.pid
 
 
@@ -439,15 +463,18 @@ def capture_fixture(root, *, calibration_only, thread_context, controls=None, be
         if before_stop is not None and controls:
             lifetime_path = root / "file-lifetime.bin"
             lifetime_start = utc_ticks()
-            lifetime_pid = run_writer(
+            writer_witness = run_writer(
                 "from pathlib import Path\nimport sys\n"
                 "sys.path.insert(0, sys.argv[1])\n"
                 "from n12_etw_probe import write_two_handle_control\n"
                 "write_two_handle_control(Path(sys.argv[2]))",
-                Path(__file__).parent, lifetime_path,
+                Path(__file__).parent, lifetime_path, retain_original_handle=True,
             )
-            lifetime_control = {"pid": lifetime_pid, "path": str(lifetime_path), "size": 97,
-                                "start": lifetime_start, "end": utc_ticks(), "two_handles": True}
+            lifetime_control = {
+                "pid": writer_witness["pid"], "path": str(lifetime_path), "size": 97,
+                "start": lifetime_start, "end": utc_ticks(), "two_handles": True,
+                "original_handle": writer_witness,
+            }
             basic_info_path = root / "file-basic-info.bin"
             basic_info_start = utc_ticks()
             basic_info_pid = run_writer(
