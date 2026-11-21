@@ -5,6 +5,7 @@ reviewable result is diagnostic, NEVER full Stage 1 or N12 acceptance.
 """
 from collections import Counter, defaultdict
 from contextlib import ExitStack
+from dataclasses import dataclass
 import ntpath
 import os
 from pathlib import Path
@@ -240,6 +241,106 @@ class ScopedQaChildHandleObserver:
             "faults": dict(sorted(self.faults.items())),
             "native_N12_acceptance": "NOT_EVALUATED",
         }
+
+
+@dataclass(frozen=True)
+class PrivateChildHandleEvidence:
+    """Private-only source-pinned witness bundle, never JSON-serialized.
+
+    The upstream collector has not been wired into the approved native path.
+    This type supplies the reducer with an explicit future evidence contract.
+    """
+    source_sha: str
+    executable_sha256: str
+    root_birth_ticks: int
+    sampling_started_ticks: int
+    sampling_finished_ticks: int
+    witnesses: tuple
+    collector_receipt: dict
+
+
+def private_child_handle_diagnostic(*, evidence, manifest, processes, roles, app_guid,
+                                    app_witness, lifetimes, source_issues, capture_start,
+                                    capture_end):
+    """Only a privacy-safe shadow receipt; malformed inputs fail closed.
+
+    The bundle cannot change EtwLifetimes.find, profile identity or N12 verdict.
+    Its timestamps are checked against independent capture/stage markers and
+    the exact retained app handle. Status is never an acceptance PASS.
+    """
+    receipt = {"scope": "no-cdp-private-child-handle-reducer-diagnostic-only",
+               "status": "NOT_EVALUATED" if evidence is None else "BLOCKED",
+               "native_N12_acceptance": "NOT_EVALUATED"}
+    if evidence is None:
+        return receipt
+    try:
+        trace.require(type(evidence) is PrivateChildHandleEvidence,
+                      "private-evidence-type-unverified")
+        trace.require(type(evidence.source_sha) is str
+                      and type(evidence.executable_sha256) is str
+                      and evidence.source_sha == manifest["source_sha"]
+                      and evidence.executable_sha256 == manifest["executable_sha256"],
+                      "private-evidence-provenance-unverified")
+        trace.require(type(evidence.root_birth_ticks) is int
+                      and type(app_witness.get("birth")) is int
+                      and evidence.root_birth_ticks == app_witness["birth"],
+                      "private-evidence-app-original-handle-unverified")
+        trace.require(type(evidence.sampling_started_ticks) is int
+                      and type(evidence.sampling_finished_ticks) is int,
+                      "private-evidence-sampling-time-invalid")
+        markers = manifest.get("markers")
+        trace.require(type(markers) is dict
+                      and all(type(markers.get(key)) is str
+                              for key in ("launch", "ready", "close", "profile-exit")),
+                      "private-evidence-stage-markers-unavailable")
+        launch, ready, close, profile_exit = [
+            trace.utc_ticks(trace.utc_time(markers[key]))
+            for key in ("launch", "ready", "close", "profile-exit")
+        ]
+        trace.require(capture_start < launch
+                      <= app_witness["birth"] <= evidence.sampling_started_ticks
+                      <= ready < close < profile_exit
+                      <= evidence.sampling_finished_ticks < capture_end,
+                      "private-evidence-capture-stage-order-unverified")
+        trace.require(type(evidence.witnesses) is tuple
+                      and type(evidence.collector_receipt) is dict
+                      and evidence.collector_receipt.get("status")
+                      == "SAMPLING_FINISHED_UNVERIFIED"
+                      and type(evidence.collector_receipt.get("sample_count")) is int
+                      and evidence.collector_receipt["sample_count"] > 0
+                      and evidence.collector_receipt.get("retained_original_handle_count")
+                      == len(evidence.witnesses),
+                      "private-evidence-inventory-unverified")
+        for witness in evidence.witnesses:
+            trace.require(type(witness) is dict
+                          and type(witness.get("birth")) is int
+                          and type(witness.get("exit")) is int
+                          and evidence.sampling_started_ticks <= witness["birth"]
+                          <= witness["exit"] <= profile_exit,
+                          "private-evidence-child-outside-sampling-or-profile")
+        trace.require(type(source_issues) is set and lifetimes is not None,
+                      "private-evidence-source-unverified")
+    except (KeyError, TypeError, AttributeError, ValueError, trace.EvidenceValidationError) as exc:
+        # Never echo the potentially private exception contents.
+        reason = str(exc) if isinstance(exc, trace.EvidenceValidationError) else "private-evidence-invalid"
+        allowed = {
+            "private-evidence-type-unverified",
+            "private-evidence-provenance-unverified",
+            "private-evidence-app-original-handle-unverified",
+            "private-evidence-sampling-time-invalid",
+            "private-evidence-stage-markers-unavailable",
+            "private-evidence-capture-stage-order-unverified",
+            "private-evidence-inventory-unverified",
+            "private-evidence-child-outside-sampling-or-profile",
+            "private-evidence-source-unverified",
+        }
+        return {**receipt, "failed_checks": [reason if reason in allowed else "private-evidence-invalid"]}
+    return review_scoped_children(
+        processes=processes, roles=roles, app_guid=app_guid,
+        witnesses=evidence.witnesses, lifetimes=lifetimes,
+        collector_receipt=evidence.collector_receipt,
+        source_issues=source_issues,
+    ) | {"scope": receipt["scope"], "native_N12_acceptance": "NOT_EVALUATED"}
 
 
 def review_scoped_children(*, processes, roles, app_guid, witnesses, lifetimes,

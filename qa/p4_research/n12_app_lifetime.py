@@ -19,6 +19,7 @@ from qa.p4_research import n12_app_build as build
 from qa.p4_research import n12_app_journey as journey
 from qa.p4_research import n12_no_cdp_native_path as no_cdp_path
 from qa.p4_research import n12_no_cdp_browser_identity as browser_identity
+from qa.p4_research import n12_no_cdp_child_handles as child_handles
 
 
 CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
@@ -179,7 +180,10 @@ def launch_worker(root, source, expected_hash, *, no_cdp=False):
 
 
 def reduction(manifest, sysmon, events, volume_devices, session, app_witness, worker_witness, binary, *,
-              no_cdp_profile=False):
+              no_cdp_profile=False, child_handle_evidence=None):
+    # The independent child-handle bundle is never available in default N12.
+    trace.require(no_cdp_profile or child_handle_evidence is None,
+                  "child-handle-shadow-only-in-no-cdp-profile")
     devices = trace.etw_device_aliases(volume_devices)
     start, end, processes, _, issues = trace.load_capture(
         manifest, sysmon, etw=True, rejected_sysmon_exits=[])
@@ -204,6 +208,8 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
     shadow_review = {"scope": "no-cdp-original-handle-witness-design-only",
                      "status": "NOT_EVALUATED",
                      "native_N12_acceptance": "NOT_EVALUATED"} if no_cdp_profile else None
+    child_join = {"scope": "no-cdp-private-child-handle-reducer-diagnostic-only",
+                  "status": "NOT_EVALUATED", "native_N12_acceptance": "NOT_EVALUATED"} if no_cdp_profile else None
     # Redacted source-comparison diagnostics only. These cannot grant a PASS,
     # override coverage issues or silently waive an unavailable ETW pair.
     sysmon_reasons = {"status": "NOT_EVALUATED",
@@ -284,6 +290,17 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
                     "children_by_role": shadow_children,
                     "native_N12_acceptance": "NOT_EVALUATED",
                 }
+            if no_cdp_profile:
+                # This diagnostic consumes only PRIVATE in-memory handle evidence.
+                # It must be measured before the first strict find() failure.
+                # It is NEVER used as a native acceptance or profile witness.
+                child_join = child_handles.private_child_handle_diagnostic(
+                    evidence=child_handle_evidence, manifest=manifest,
+                    processes=processes, roles=roles, app_guid=app.guid,
+                    app_witness=app_witness, lifetimes=lifetimes,
+                    source_issues=set(issues),
+                    capture_start=window[0], capture_end=window[1],
+                )
             launcher_lifetime = lifetimes.find(worker, handle_witness=worker_witness)
             launcher_start, launcher_stop = launcher_lifetime
             witnesses["launcher"] = "MATCH"
@@ -375,7 +392,8 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
             "disputed_exits": disputed,
             **({"no_cdp_profile_identity": no_cdp_receipt,
                 "no_cdp_sysmon_diagnostic": sysmon_reasons,
-                "no_cdp_shadow_handle_witness_review": shadow_review} if no_cdp_profile else {}),
+                "no_cdp_shadow_handle_witness_review": shadow_review,
+                "no_cdp_private_child_handle_diagnostic": child_join} if no_cdp_profile else {}),
             "native_N12_acceptance": "NOT_EVALUATED"}
 
 

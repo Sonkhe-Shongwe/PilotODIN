@@ -308,6 +308,127 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertNotIn("no_cdp_shadow_handle_witness_review", report)
         self.assertEqual(report["verdict"], "PASS")
 
+
+    def child_bundle(self, *, stage=None, witnesses=None, receipt=None):
+        from qa.p4_research.n12_no_cdp_child_handles import PrivateChildHandleEvidence
+        marks = {"launch": 125_000, "ready": 250_000,
+                 "close": 450_000, "profile-exit": 750_000}
+        if stage:
+            marks.update(stage)
+        self.manifest["markers"] = {
+            label: stamp(offset).isoformat() for label, offset in marks.items()
+        }
+        child_witnesses = (
+            {"pid": 702, "birth": ORIGIN + 210_000, "exit": ORIGIN + 650_000,
+             "parent_pid": 701, "image_dos": WEBVIEW,
+             "image_native": r"\Device\HarddiskVolume3\qa\msedgewebview2.exe"},
+            {"pid": 703, "birth": ORIGIN + 320_000, "exit": ORIGIN + 690_000,
+             "parent_pid": 702, "image_dos": WEBVIEW,
+             "image_native": r"\Device\HarddiskVolume3\qa\msedgewebview2.exe"},
+        )
+        return PrivateChildHandleEvidence(
+            source_sha=SOURCE, executable_sha256=HASH,
+            root_birth_ticks=self.app["birth"],
+            sampling_started_ticks=ORIGIN + 140_000,
+            sampling_finished_ticks=ORIGIN + 770_000,
+            witnesses=child_witnesses if witnesses is None else witnesses,
+            collector_receipt=receipt if receipt is not None else {
+                "status": "SAMPLING_FINISHED_UNVERIFIED",
+                "sample_count": 3, "retained_original_handle_count": 2, "faults": {},
+            },
+        )
+
+    def test_no_cdp_private_child_handle_shadow_joins_only_when_supplied(self):
+        plain = self.reduce(no_cdp_profile=True)
+        self.assertEqual(plain["no_cdp_private_child_handle_diagnostic"]["status"], "NOT_EVALUATED")
+        bundle = self.child_bundle()
+        enhanced = self.reduce(no_cdp_profile=True, child_handle_evidence=bundle)
+        join = enhanced["no_cdp_private_child_handle_diagnostic"]
+        self.assertEqual(join["status"], "REVIEWABLE_ONLY")
+        self.assertEqual(join["verified_handle_counts"], {"webview": 1, "webview-network": 1})
+        self.assertEqual(join["child_role_counts"], {"webview": 1, "webview-network": 1})
+        self.assertEqual(join["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertEqual(enhanced["verdict"], self.reduce(no_cdp_profile=True)["verdict"])
+        self.assertEqual(enhanced["issues"], self.reduce(no_cdp_profile=True)["issues"])
+        self.assertEqual(enhanced["handle_comparison"], plain["handle_comparison"])
+        self.assertEqual(enhanced["no_cdp_profile_identity"], plain["no_cdp_profile_identity"])
+        self.assertEqual(enhanced["native_N12_acceptance"], "NOT_EVALUATED")
+        report = json.dumps(join)
+        for secret in (str(ORIGIN), WEBVIEW, APP, '"pid"', '"guid"',
+                       "HarddiskVolume", "private"):
+            self.assertNotIn(secret, report)
+
+    def test_private_bundle_is_not_available_to_default_n12(self):
+        bundle = self.child_bundle()
+        with self.assertRaisesRegex(trace.EvidenceValidationError, "child-handle-shadow-only"):
+            self.reduce(child_handle_evidence=bundle)
+        normal = self.reduce()
+        self.assertNotIn("no_cdp_private_child_handle_diagnostic", normal)
+
+    def test_private_bundle_bad_source_and_app_handle_never_advance_verdict(self):
+        from dataclasses import replace
+        original = self.child_bundle()
+        strict = self.reduce(no_cdp_profile=True)
+        for mutate, label in (
+            ({"source_sha": "f" * 40}, "private-evidence-provenance-unverified"),
+            ({"executable_sha256": "f" * 64}, "private-evidence-provenance-unverified"),
+            ({"root_birth_ticks": original.root_birth_ticks + 1},
+             "private-evidence-app-original-handle-unverified"),
+            ({"sampling_started_ticks": ORIGIN + 110_000},
+             "private-evidence-capture-stage-order-unverified"),
+            ({"sampling_finished_ticks": ORIGIN + 700_000},
+             "private-evidence-capture-stage-order-unverified"),
+        ):
+            with self.subTest(label=label, mutate=mutate):
+                bad = replace(original, **mutate)
+                report = self.reduce(no_cdp_profile=True, child_handle_evidence=bad)
+                self.assertEqual(report["no_cdp_private_child_handle_diagnostic"]["status"], "BLOCKED")
+                self.assertIn(label, report["no_cdp_private_child_handle_diagnostic"]["failed_checks"])
+                self.assertEqual(report["issues"], strict["issues"])
+                self.assertEqual(report["verdict"], strict["verdict"])
+
+    def test_private_bundle_missing_child_and_tampered_handle_remain_blocked(self):
+        from dataclasses import replace
+        full = self.child_bundle()
+        for bundle in (
+            replace(full, witnesses=full.witnesses[:1],
+                    collector_receipt={**full.collector_receipt,
+                                       "retained_original_handle_count": 1}),
+            replace(full, witnesses=(full.witnesses[0],
+                                    {**full.witnesses[1], "exit": full.witnesses[1]["exit"] + 10})),
+            replace(full, witnesses=(full.witnesses[0],
+                                    {**full.witnesses[1], "birth": ORIGIN + 100_000})),
+            replace(full, collector_receipt={**full.collector_receipt,
+                        "sample_count": 0}),
+            replace(full, collector_receipt={**full.collector_receipt,
+                        "faults": {"snapshot-unavailable": 1}}),
+        ):
+            with self.subTest(bundle=bundle):
+                report = self.reduce(no_cdp_profile=True, child_handle_evidence=bundle)
+                self.assertEqual(report["no_cdp_private_child_handle_diagnostic"]["status"], "BLOCKED")
+                self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
+
+    def test_private_bundle_missing_and_misordered_stage_markers_block_shadow(self):
+        good = self.child_bundle()
+        del self.manifest["markers"]["ready"]
+        report = self.reduce(no_cdp_profile=True, child_handle_evidence=good)
+        self.assertEqual(report["no_cdp_private_child_handle_diagnostic"]["status"], "BLOCKED")
+        self.assertIn("private-evidence-stage-markers-unavailable",
+                      report["no_cdp_private_child_handle_diagnostic"]["failed_checks"])
+        # The same bundle cannot certify a source window whose markers were reordered.
+        self.child_bundle(stage={"ready": 110_000})
+        report = self.reduce(no_cdp_profile=True, child_handle_evidence=good)
+        self.assertIn("private-evidence-capture-stage-order-unverified",
+                      report["no_cdp_private_child_handle_diagnostic"]["failed_checks"])
+
+    def test_private_bundle_failed_etw_coverage_is_never_reviewable(self):
+        bundle = self.child_bundle()
+        self.session["counters"]["events_lost"] = 1
+        report = self.reduce(no_cdp_profile=True, child_handle_evidence=bundle)
+        self.assertNotEqual(report["no_cdp_private_child_handle_diagnostic"]["status"], "REVIEWABLE_ONLY")
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("etw-event-or-buffer-loss", report["issues"])
+
     def test_no_cdp_missing_stage_markers_remains_blocked(self):
         report = self.reduce(no_cdp_profile=True)
         self.assertEqual(report["verdict"], "BLOCKED")
