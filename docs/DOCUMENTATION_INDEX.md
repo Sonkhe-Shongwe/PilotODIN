@@ -1,5 +1,7 @@
 # PilotODIN | Documentation index
 
+**21 November 2026 navigation rule:** The handoff determines the next action, the project status owns the official score, the acceptance worklist owns check requirements, and the dated technical notes provide evidence only at their tested scope. [Documentation and direction audit](./DOCUMENTATION_AUDIT_2026-11-21.md). Older proposals below remain historical, not new permissions.
+
 ## Current authoritative route, in reading order
 
 1. [Session handoff](./SESSION_HANDOFF_CURRENT.md) for the active branch, exact-source evidence and next engineering action.
@@ -12,6 +14,7 @@
 
 ## Current development references
 
+- [21 November documentation and direction audit](./DOCUMENTATION_AUDIT_2026-11-21.md) for the current source/native truth table, corrected README/worklist/runbook route, verified links and next approval boundary.
 - [20 November code, test and direction audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) for reproduced product defects, the scope of the Windows failures and the corrective order.
 - [Product worker temp containment](./P4_R02_5_PRODUCT_WORKER_TEMP_CONTAINMENT_2026-11-21.md) documents real Rust child-process temporary-file redirection, N12 QA parity and held native acceptance.
 - [Opt-in QA WebView2 ambient local-data candidate](./P4_N12_QA_AMBIENT_LOCAL_REDIRECT_CANDIDATE_2026-11-21.md) for source-only LOCALAPPDATA and APPDATA redirects inside the permitted disposable QA profile, not native acceptance.
