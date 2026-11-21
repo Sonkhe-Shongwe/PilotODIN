@@ -178,11 +178,18 @@ def hosted_channel(env, source, expected_hash):
                             source=source, expected_hash=expected_hash)
 
 
-def send_from_worker(env, evidence):
-    hosted_scope(env, evidence.source_sha, evidence.executable_sha256)
+def require_worker_scope(env, source, expected_hash):
+    """Check the complete worker transport before spawning the QA app."""
+    hosted_scope(env, source, expected_hash)
     address, secret = env.get(PIPE_ENV, ""), env.get(KEY_ENV, "")
-    trace.require(re.fullmatch(r"\\\\\.\\pipe\\pilotodin-n12-child-[0-9a-f]{32}", address)
+    trace.require(type(address) is str and type(secret) is str
+                  and re.fullmatch(r"\\\\\.\\pipe\\pilotodin-n12-child-[0-9a-f]{32}", address)
                   and re.fullmatch(r"[0-9a-f]{64}", secret),
                   "no-cdp-private-child-pipe-worker-scope-unverified")
+
+
+def send_from_worker(env, evidence):
+    require_worker_scope(env, evidence.source_sha, evidence.executable_sha256)
+    address, secret = env[PIPE_ENV], env[KEY_ENV]
     with Client(address, family="AF_PIPE", authkey=bytes.fromhex(secret)) as connection:
         connection.send_bytes(encode(evidence))

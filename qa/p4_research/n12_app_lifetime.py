@@ -91,7 +91,13 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
     profile = root / "webview"
     binary = build.executable(staged)
     title = json.loads(build.isolated_config())["app"]["windows"][0]["title"]
-    env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home),
+    # Private child-witness authentication remains confined to this Python
+    # worker. Never hand pipe credentials to app, backend or Vite children.
+    transport_env = dict(os.environ) if no_cdp else None
+    env = {**{k: v for k, v in os.environ.items()
+              if k not in (child_pipe.PIPE_ENV, child_pipe.KEY_ENV,
+                           "PILOTODIN_N12_CHILD_HANDLE_CONSENT")},
+           "CI": "true", "PILOTODIN_HOME": str(home),
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PYTHONDONTWRITEBYTECODE": "1"}
     manifest = {"processes": [], "markers": {}} if storage_manifest is None else storage_manifest
     if no_cdp:
@@ -121,6 +127,7 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
                     stack=stack, manifest=manifest, root=root, binary=binary,
                     title=title, source=source, expected_hash=expected_hash,
                     app_env=no_cdp_app_env, profile=profile,
+                    transport_env=transport_env,
                 )
                 return
             app_env = {**env, "WEBVIEW2_USER_DATA_FOLDER": str(profile),

@@ -36,7 +36,7 @@ def no_cdp_environments(base, profile):
 
 
 def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
-                       source, expected_hash, app_env, profile):
+                       source, expected_hash, app_env, profile, transport_env=None):
     """Actual guarded launch seam; no native caller in current workflows.
 
     The app is never spawned before caller-supplied consent and profile
@@ -66,12 +66,16 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
                   "no-cdp-app-launch-scope-unverified")
     # Optional, independently source/runner/consent guarded. There is no
     # native workflow enabling this branch; check before app creation.
-    use_child_handles = child_pipe.requested(app_env)
+    # Only the Python worker sees the authenticated pipe key. The QA app,
+    # backend and Vite must not inherit it.
+    transport_env = {} if transport_env is None else transport_env
+    trace.require(not any(key in app_env for key in (
+                      child_pipe.PIPE_ENV, child_pipe.KEY_ENV,
+                      "PILOTODIN_N12_CHILD_HANDLE_CONSENT")),
+                  "no-cdp-child-pipe-secret-must-not-reach-app")
+    use_child_handles = child_pipe.requested(transport_env)
     if use_child_handles:
-        child_pipe.hosted_scope(app_env, source, expected_hash)
-        trace.require(type(app_env.get(child_pipe.PIPE_ENV)) is str
-                      and type(app_env.get(child_pipe.KEY_ENV)) is str,
-                      "no-cdp-child-pipe-worker-environment-missing")
+        child_pipe.require_worker_scope(transport_env, source, expected_hash)
     observer = lifecycle.NoCdpLifecycleObserver(
         stack=stack, expected_source=source, actual_source=source,
         expected_executable_sha256=expected_hash, actual_executable_sha256=expected_hash,
@@ -86,7 +90,7 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
         from datetime import datetime, timezone
         child_observer = child_handles.ScopedQaChildHandleObserver(
             root_process=app, expected_app_image=str(binary))
-        child_observer.start_live(profile=profile, env=app_env)
+        child_observer.start_live(profile=profile, env=transport_env)
         sampling_started_ticks = trace.utc_ticks(datetime.now(timezone.utc))
     provisional = observer.observe_readiness(timeout_seconds=40,
                                              window_timeout_seconds=15)
@@ -120,7 +124,7 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
             collector_receipt=child_observer.redacted_receipt())
         # Raw GUID/PID/full image/times transfer only via authenticated
         # in-memory Windows pipe; neither logger nor JSON file sees them.
-        child_pipe.send_from_worker(app_env, private_evidence)
+        child_pipe.send_from_worker(transport_env, private_evidence)
     receipt = observer.verify_after_close(
         close_request_verified=True, profile_processes_before=profile_before,
         profile_processes_after=0,
