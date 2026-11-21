@@ -57,3 +57,22 @@ test('the QA acknowledgement follows successful native listener registration', (
   assert.match(shell, /listen<NativeCloseRequest>\(NATIVE_CLOSE_EVENT,[\s\S]+?\.then\(stop=>\{\s*if\(disposed\)stop\(\);\s*else\s*\{\s*unlisten=stop;\s*if\(isNativeA4SmokeMode\(\)\)setNativeCloseRegistered\(true\);/);
   assert.ok(shell.includes('data-native-close-ready={isNativeA4SmokeMode()&&nativeCloseRegistered?'));
 });
+
+test('no-CDP readiness acknowledgement is strictly after listener registration and never bypasses OS close', () => {
+  const shell = readFileSync(new URL('../src/UnifiedShell.tsx', import.meta.url), 'utf8');
+  const native = readFileSync(new URL('../src-tauri/src/lib.rs', import.meta.url), 'utf8');
+  const ready = shell.indexOf('unlisten=stop;');
+  const acknowledged = shell.indexOf("invoke<void>('acknowledge_n12_no_cdp_close_listener_ready')");
+  assert.ok(ready >= 0 && acknowledged > ready, 'native listener must be registered first');
+  const start = shell.indexOf("if(isNativeA4SmokeMode()&&import.meta.env.VITE_PILOTODIN_N12_NO_CDP==='1'){");
+  assert.ok(start > ready && acknowledged > start, 'ack only behind explicit QA-only Vite switch');
+  assert.match(shell.slice(start, acknowledged + 220), /\.catch\(\(\)=>\{\s*setWarning\('Native QA readiness acknowledgement unavailable\. Closing remains guarded\.'\)/);
+  assert.match(native, /debug && consent == Some\("I_APPROVE_ONE_N12_NO_CDP_STORAGE"\)/);
+  assert.match(native, /page_url\.split\('#'\)\.next\(\) == Some\("http:\/\/127\.0\.0\.1:5173\/"\)/);
+  assert.match(native, /eprintln!\("N12 QA native close listener registered"\)/);
+  assert.match(native, /fn acknowledge_n12_no_cdp_close_listener_ready\(window: tauri::WebviewWindow\)/);
+  assert.match(native, /acknowledge_n12_no_cdp_close_listener_ready,/);
+  // Acknowledgement must never be an alternative to resolving the ticket.
+  assert.match(native, /if let tauri::WindowEvent::CloseRequested \{ api, \.\. \} = event \{[\s\S]+?api\.prevent_close\(\)/);
+  assert.match(native, /if !consume_native_close_ticket\(&mut pending, &token\)/);
+});

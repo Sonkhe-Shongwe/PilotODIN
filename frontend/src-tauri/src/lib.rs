@@ -87,6 +87,28 @@ fn resolve_native_close_request(
     Ok(())
 }
 
+// This command only acknowledges frontend registration for a future
+// source-pinned, non-CDP QA capture. It cannot confirm or bypass a close ticket,
+// create windows, open files or expose any owner/runner data.
+fn eligible_n12_no_cdp_listener_ack(debug: bool, page_url: &str, consent: Option<&str>) -> bool {
+    debug && consent == Some("I_APPROVE_ONE_N12_NO_CDP_STORAGE")
+        && page_url.split('#').next() == Some("http://127.0.0.1:5173/")
+}
+
+#[tauri::command]
+fn acknowledge_n12_no_cdp_close_listener_ready(window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let page_url = window.url()
+        .map_err(|_| "N12 no-CDP readiness URL unavailable".to_string())?;
+    let consent = std::env::var("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT").ok();
+    if !eligible_n12_no_cdp_listener_ack(cfg!(debug_assertions), page_url.as_str(), consent.as_deref()) {
+        return Err("N12 no-CDP readiness not authorized".into());
+    }
+    // Fixed literal: no paths, tokens, PIDs, browser flags or project content.
+    eprintln!("N12 QA native close listener registered");
+    Ok(())
+}
+
 // QA-only deterministic exit for the *specific* native W5 dev page.
 // The original environment/identifier checks could disagree with Tauri dev
 // configuration merging. The loaded WebView URL is a stronger, independently
@@ -581,7 +603,30 @@ mod report_save_tests {
 
 #[cfg(test)]
 mod native_close_ticket_tests {
-    use super::{consume_native_close_ticket, eligible_p3_w5_qa_exit};
+    use super::{consume_native_close_ticket, eligible_p3_w5_qa_exit, eligible_n12_no_cdp_listener_ack};
+
+    #[test]
+    fn no_cdp_ack_needs_debug_exact_local_root_and_separate_consent() {
+        let page = "http://127.0.0.1:5173/";
+        let consent = Some("I_APPROVE_ONE_N12_NO_CDP_STORAGE");
+        assert!(eligible_n12_no_cdp_listener_ack(true, page, consent));
+        assert!(eligible_n12_no_cdp_listener_ack(
+            true, "http://127.0.0.1:5173/#/quality", consent,
+        ));
+        for (debug, url, approval) in [
+            (false, page, consent),
+            (true, page, None),
+            (true, page, Some("I_APPROVE_ONE_N12_WEBVIEW_STORAGE")),
+            (true, "http://localhost:5173/", consent),
+            (true, "http://127.0.0.1:5173/?other=1", consent),
+            (true, "http://127.0.0.1:5173/p4_n12_lifecycle_peer.html", consent),
+            (true, "http://127.0.0.1:5178/", consent),
+            (true, "tauri://localhost/", consent),
+            (true, "https://example.com/", consent),
+        ] {
+            assert!(!eligible_n12_no_cdp_listener_ack(debug, url, approval));
+        }
+    }
 
     #[test]
     fn synthetic_w5_finish_is_not_a_general_native_close_bypass() {
@@ -632,6 +677,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             launch_backend, launch_bundled_ai, save_report_as,
             resolve_native_close_request, confirm_native_close, confirm_native_project_switch,
+            acknowledge_n12_no_cdp_close_listener_ready,
             finish_p3_w5_synthetic_qa, confirm_native_deliver_exit
         ])
         .on_window_event(|window, event| {

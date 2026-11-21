@@ -498,6 +498,13 @@ export function UnifiedShell(){
    else {
     unlisten=stop;
     if(isNativeA4SmokeMode())setNativeCloseRegistered(true);
+    // No-CDP QA-only observation after actual Tauri listener registration.
+    // Normal development and production omit this Vite flag entirely.
+    if(isNativeA4SmokeMode()&&import.meta.env.VITE_PILOTODIN_N12_NO_CDP==='1'){
+     void invoke<void>('acknowledge_n12_no_cdp_close_listener_ready').catch(()=>{
+      setWarning('Native QA readiness acknowledgement unavailable. Closing remains guarded.');
+     });
+    }
    }
   }).catch(()=>setWarning('Native close protection could not be registered. Closing is blocked for safety.'));
   return()=>{disposed=true;unlisten?.()};
