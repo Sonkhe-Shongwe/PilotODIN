@@ -41,6 +41,12 @@ def storage_app_environment(env, profile, *, variant="debug-netlog"):
     return settings
 
 
+def backend_launch_context(env, home):
+    """Run the focused QA backend from its generated data home, never source."""
+    trace.require(home.is_dir(), "isolated QA backend data home is missing")
+    return journey.backend_environment(env), home
+
+
 def preflight(source, expected_hash, *, storage=False):
     if storage:
         trace.require(os.environ.get("PILOTODIN_N12_WEBVIEW_STORAGE_CONSENT") == "I_APPROVE_ONE_N12_WEBVIEW_STORAGE",
@@ -74,10 +80,11 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
     manifest = {"processes": []} if storage_manifest is None else storage_manifest
     with journey.journey_processes(source, expected_hash) as stack:
         with journey.checkpoint_stage("app-lifetime-services", source, expected_hash):
+            backend_env, backend_cwd = backend_launch_context(env, home)
             backend = journey.spawn(stack, manifest, "backend", [
                 sys.executable, "-B", "-m", "uvicorn", "backend.main:app",
                 "--host", "127.0.0.1", "--port", "8000", "--no-access-log",
-            ], env, build.REPO, root / "backend.log")
+            ], backend_env, backend_cwd, root / "backend.log")
             vite = journey.spawn(stack, manifest, "driver", [
                 node, str(journey.FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort",

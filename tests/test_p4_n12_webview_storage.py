@@ -132,6 +132,21 @@ class StorageProbeTests(unittest.TestCase):
         self.assertEqual(lifetime.storage_app_environment({}, profile),
                          {**baseline, "TMP": str(profile / APP_TEMP_DIR / lifetime.STORAGE_TMP_DIR)})
 
+    def test_focused_backend_uses_existing_generated_home_and_import_only_source(self):
+        with TemporaryDirectory() as folder:
+            home = Path(folder) / "qa-home"
+            environment = {"PILOTODIN_HOME": str(home), "PYTHONPATH": "generated-extra"}
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "data home is missing"):
+                lifetime.backend_launch_context(environment, home)
+            home.mkdir()
+            backend_env, backend_cwd = lifetime.backend_launch_context(environment, home)
+            self.assertEqual(backend_cwd, home)
+            self.assertEqual(backend_env["PILOTODIN_HOME"], str(home))
+            self.assertEqual(backend_env["PYTHONPATH"].split(os.pathsep)[0], str(lifetime.build.REPO))
+            self.assertIn("generated-extra", backend_env["PYTHONPATH"])
+            self.assertEqual(environment["PYTHONPATH"], "generated-extra")
+            self.assertNotEqual(backend_cwd, lifetime.build.REPO)
+
     def test_debug_variant_changes_only_netlog_not_storage_or_readiness(self):
         profile = Path("webview-fixture")
         baseline = lifetime.storage_app_environment({}, profile, variant="debug-netlog")
