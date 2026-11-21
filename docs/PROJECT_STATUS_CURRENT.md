@@ -10,7 +10,7 @@ The 20 November product audit fixes reached **7/7** at source and scoped fixture
 
 ## 21 November | Fail-closed prelaunch log seam
 
-The optional app-only `journey.spawn(..., prelaunch_log_hook=...)` now allows the read-only no-CDP witness to capture a newly created empty log before process start, with closed/mismatched-witness rejection. Existing CDP and legacy launch behaviour is unchanged. The no-CDP native mode, unique main-window proof and independent browser identity remain unintegrated. No N12/R02 acceptance points are awarded.
+The optional app-only `journey.spawn(..., prelaunch_log_hook=...)` now allows the read-only no-CDP witness to capture a newly created empty log before process start, with closed/mismatched-witness rejection. [Exact-source P4 CI #44865363902](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44865363902) completed 4/4 jobs successfully at `d1a4884`, including focused prelaunch-hook negatives and the existing Windows synthetic log-witness tests. No real native N12 was exercised. Existing CDP and legacy launch behaviour is unchanged. The no-CDP native mode, unique main-window proof and independent browser identity remain unintegrated. No N12/R02 acceptance points are awarded.
 
 ## 21 November | Current bounded source preparation
 
