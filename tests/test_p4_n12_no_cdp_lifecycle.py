@@ -30,6 +30,10 @@ class FakeProcess:
     def wait(self, timeout=None):
         return self.returncode
 
+    def kill(self):
+        # Match the existing QA stack's fail-safe cleanup for a fake launch.
+        self.returncode = -9
+
 
 def fake_handle(app):
     return {"pid": app.pid, "birth": BIRTH, "exit": None}
