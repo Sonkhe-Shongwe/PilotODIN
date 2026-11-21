@@ -7,6 +7,8 @@ param(
     [switch]$AppJourney,
     [switch]$AppLifetime,
     [switch]$WebViewStorage,
+    [ValidateSet('debug-netlog', 'debug-only')]
+    [string]$StorageVariant = 'debug-netlog',
     [switch]$ProcmonEnvironmentControl,
     [switch]$ProcmonTimingControl,
     [switch]$LifetimeControl,
@@ -32,6 +34,9 @@ if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $
 
 if ($WebViewRuntimeDirectory -and -not $AppJourney) {
     throw 'A WebView2 runtime directory requires the approved app journey.'
+}
+if ($PSBoundParameters.ContainsKey('StorageVariant') -and -not $WebViewStorage) {
+    throw 'Storage variant is only valid for an approved WebView storage capture.'
 }
 
 if ($WebViewStorage -and ($WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or
@@ -248,7 +253,7 @@ try {
         python -B -m qa.p4_research.n12_procmon_environment_control capture $root
         if ($LASTEXITCODE -ne 0) { throw 'Generated Process Monitor environment child failed.' }
     } elseif ($WebViewStorage) {
-        python -B -m qa.p4_research.n12_webview_storage_probe capture $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        python -B -m qa.p4_research.n12_webview_storage_probe capture $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256 --diagnostic-variant $StorageVariant
         if ($LASTEXITCODE -ne 0) { throw 'Focused WebView storage launch or control failed.' }
     } else {
         $fixtureJson = python (Join-Path $PSScriptRoot 'n12_calibration.py') (Join-Path $root 'fixture')
@@ -350,7 +355,7 @@ try {
         $window.procmon_stop_command_verified = $stopCommandVerified
         $window.procmon_capture_exit_status = $captureExit.Status
         $window | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $root 'storage-window.json') -Encoding utf8
-        python -B -m qa.p4_research.n12_webview_storage_probe reduce $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        python -B -m qa.p4_research.n12_webview_storage_probe reduce $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256 --diagnostic-variant $StorageVariant
         if ($LASTEXITCODE -ne 0) { throw 'Focused WebView storage evidence was blocked.' }
         return
     }

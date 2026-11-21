@@ -5,7 +5,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_WEBVIEW_STORAGE_PROBE_APPROVAL.txt
+      - qa/p4_research/N12_WEBVIEW_STORAGE_DEBUG_ONLY_APPROVAL.txt
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lifetime:
-    if: ${{ false }} # One-use debug-netlog approval consumed by run 44847306630; disarmed.
+    if: ${{ false }} # Debug-only experiment awaits separate one-use source-pinned approval.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
@@ -33,7 +33,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          $marker = 'qa/p4_research/N12_WEBVIEW_STORAGE_PROBE_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_WEBVIEW_STORAGE_DEBUG_ONLY_APPROVAL.txt'
           $workflow = '.github/workflows/p4-n12-webview-storage.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
@@ -43,7 +43,7 @@ jobs:
           }
           $approval = @(Get-Content -LiteralPath $marker)
           if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
-              $approval[1] -cne 'scope=n12-one-build-one-startup-close-storage-probe') {
+              $approval[1] -cne 'scope=n12-one-build-one-debug-only-startup-close-storage-probe') {
             throw 'A fresh source-pinned N12 approval marker is required.'
           }
           $source = $Matches[1]
@@ -100,5 +100,5 @@ jobs:
       - name: Attribute storage during one app startup and close
         shell: pwsh
         run: |
-          ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WebViewStorage `
+          ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WebViewStorage -StorageVariant debug-only `
             -SourceSha $env:PILOTODIN_N12_APPROVED_SOURCE -ExecutableSha256 $env:PILOTODIN_N12_EXE_SHA256

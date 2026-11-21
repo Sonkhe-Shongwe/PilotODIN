@@ -165,6 +165,23 @@ class StorageProbeTests(unittest.TestCase):
         with self.assertRaisesRegex(trace.EvidenceValidationError, "unknown WebView"):
             lifetime.storage_app_environment({}, profile, variant="no-debugger")
 
+    def test_powershell_native_mode_binds_debug_only_from_workflow_to_both_stages(self):
+        # Contracts only: never launches a Windows host or an application.
+        source = Path(__file__).resolve().parents[1]
+        wrapper = (source / "qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1").read_text(encoding="utf-8")
+        workflow = (source / ".github/workflows/p4-n12-webview-storage.yml").read_text(encoding="utf-8")
+        self.assertIn("[ValidateSet('debug-netlog', 'debug-only')]", wrapper)
+        self.assertIn("[string]$StorageVariant = 'debug-netlog'", wrapper)
+        self.assertEqual(wrapper.count("--diagnostic-variant $StorageVariant"), 2)
+        self.assertIn("storage_probe capture $root --source $SourceSha", wrapper)
+        self.assertIn("storage_probe reduce $root --source $SourceSha", wrapper)
+        self.assertIn("if: ${{ false }}", workflow)
+        self.assertIn("N12_WEBVIEW_STORAGE_DEBUG_ONLY_APPROVAL.txt", workflow)
+        self.assertIn("scope=n12-one-build-one-debug-only-startup-close-storage-probe", workflow)
+        self.assertIn("-WebViewStorage -StorageVariant debug-only", workflow)
+        self.assertNotIn("N12_WEBVIEW_STORAGE_PROBE_APPROVAL.txt", workflow)
+        self.assertNotIn("scope=n12-one-build-one-startup-close-storage-probe", workflow)
+
     def test_startup_tmp_probe_distinguishes_launch_tmp_scratch_and_ambient(self):
         self.manifest["startup_tmp_probe"] = True
         self.manifest["observed_roots"]["qa-webview"] = SCRATCH
