@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   no-cdp-fileio:
-    if: ${{ true }} # NEVER activate without fresh, explicit, source-pinned, one-use owner approval.
+    if: ${{ false }} # NEVER activate without fresh, explicit, source-pinned, one-use owner approval.
     runs-on: windows-2022
     timeout-minutes: 110
     env:
