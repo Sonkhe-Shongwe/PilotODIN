@@ -62,6 +62,8 @@ on:
       - tests/test_p4_n12_egress.py
       - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_webview_storage.py
+      - tests/test_p4_n12_no_cdp_lifecycle.py
+      - qa/p4_research/n12_no_cdp_lifecycle.py
       - tests/test_p4_n12_no_cdp_main_window.py
       - qa/p4_research/n12_no_cdp_main_window.py
       - tests/test_p4_n12_no_cdp_browser_identity.py
@@ -200,6 +202,7 @@ jobs:
           tests/test_p4_n12_egress.py
           tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_n12_webview_storage.py
+          tests/test_p4_n12_no_cdp_lifecycle.py
           tests/test_p4_n12_no_cdp_main_window.py
           tests/test_p4_n12_no_cdp_browser_identity.py
           tests/test_p4_n12_no_cdp_log_witness.py
@@ -306,6 +309,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
           python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
+          python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_lifecycle.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_main_window.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_browser_identity.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_log_witness.py
