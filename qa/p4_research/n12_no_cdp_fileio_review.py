@@ -54,7 +54,8 @@ def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_is
             "SOURCE_ONLY_CONTROL_REVIEWABLE" if (
                 restore_status == "TWO_UNIQUE_WRITES_CORROBORATED"
                 and calibration_status == "BOOKEND_OS_FILE_NETWORK_REVIEWABLE"
-            ) else "UNVERIFIED_OR_INCOMPLETE"),
+            ) else ("NOT_COLLECTED" if restore_status == calibration_status == "NOT_COLLECTED"
+                    else "UNVERIFIED_OR_INCOMPLETE")),
         "same_capture_write_restore": restore_status,
         "generated_calibration_bookends": calibration_status,
         "effective_webview_user_data_folder": "NOT_VERIFIED",

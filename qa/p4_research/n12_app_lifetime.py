@@ -542,8 +542,8 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
         trace.require(restore_control is not None and restore_path is not None,
                       "no-cdp-restore-control-missing")
         restore_control["after"] = build.digest(restore_path)
-        trace.require(snapshot["protected_snapshot_comparison"] == "MATCH",
-                      "no-cdp-protected-endpoints-changed")
+        # Preserve even negative endpoint evidence for strict reduction; do
+        # not abort or discard a real protected mutation before the report.
     else:
         manifest["end_utc"] = journey.timestamp_from_ticks(session["end"]).isoformat()
         snapshot, snapshot_issues = endpoint_evidence(manifest, before)

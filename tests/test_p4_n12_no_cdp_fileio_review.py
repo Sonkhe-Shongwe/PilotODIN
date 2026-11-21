@@ -136,8 +136,7 @@ class NoCdpFileIOReviewTests(TestCase):
                          "PRIVATE_ORIGINAL_HANDLES_REVIEWABLE_ONLY")
         self.assertEqual(result["browser_command_line_profile"],
                          "SYSMON_ETW_BROWSER_PROFILE_COMMAND_LINE_REVIEWED")
-        self.assertEqual(result["blocker"],
-                         "full-n12-calibration-and-transient-write-control-not-collected")
+        self.assertEqual(result["blocker"], "same-capture-write-and-restore-unverified")
         self.assertEqual(result["effective_webview_user_data_folder"], "NOT_VERIFIED")
         self.assertEqual(result["file_mutation_acceptance"], "NOT_EVALUATED")
         self.assertEqual(result["status"], "BLOCKED")
@@ -334,6 +333,19 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
                 stack.enter_context(patch.dict(os.environ, env, clear=True))
                 hosted = stack.enter_context(patch.object(lifetime.child_pipe, "hosted_scope"))
                 stack.enter_context(patch.object(
+                    lifetime.trace, "local_disposable_path", side_effect=lambda path, **kw: path))
+                initial_calibration = stack.enter_context(patch.object(
+                    lifetime.journey, "run_initial_calibration"))
+                finish_calibration = stack.enter_context(patch.object(
+                    lifetime.journey, "calibrate", return_value={"role": "calibration",
+                        "pid": 999, "image": "generated-only", "port": 9000}))
+                verified_final = stack.enter_context(patch.object(
+                    lifetime.journey, "verify_fixture_sysmon"))
+                exercised = stack.enter_context(patch.object(
+                    lifetime.restore, "exercise_restore", return_value={
+                        "path": str(root / "write-restore-control.bin"),
+                        "before": "e" * 64, "stages": {}}))
+                stack.enter_context(patch.object(
                     lifetime.journey, "prepare_journey",
                     return_value=(manifest, root, root, root / "quality-source.csv", [])))
                 stack.enter_context(patch.object(
@@ -381,6 +393,12 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
                         clock_start + timedelta(seconds=i) for i in range(10)]))
                 receipt = lifetime.capture(root, root, provenance, no_cdp=True, fileio=True)
             collector.assert_called_once()
+            initial_calibration.assert_called_once()
+            finish_calibration.assert_called_once()
+            verified_final.assert_called_once()
+            exercised.assert_called_once_with(root / "write-restore-control.bin")
+            self.assertIn("write-restore-control", manifest["observed_roots"])
+            self.assertIn("write-restore-control", manifest["immutable_observed"])
             hosted.assert_called_once()
             self.assertEqual(hosted.call_args.args[1:], (source, digest))
             old_collector.assert_not_called()
@@ -391,8 +409,10 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
             strict.assert_called_once()
             self.assertEqual(strict.call_args.args[0]["etw"]["events_sha256"], "d" * 64)
             self.assertEqual(strict.call_args.args[0]["etw"]["counters"]["buffers_written"], 5)
+            self.assertEqual(strict.call_args.kwargs["restore_control"]["after"], "d" * 64)
             self.assertTrue({"snapshot-before-start", "snapshot-before-end",
                              "snapshot-after-start", "snapshot-after-end",
+                             "restore-control-start", "restore-control-end",
                              "launch", "ready", "close", "profile-exit"} <=
                             manifest["markers"].keys())
             self.assertEqual(receipt["no_cdp_fileio"]["status"], "BLOCKED")
