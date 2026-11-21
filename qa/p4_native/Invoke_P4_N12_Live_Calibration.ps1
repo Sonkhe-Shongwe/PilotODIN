@@ -219,9 +219,11 @@ $definition = @'
   </EventFiltering>
 </Sysmon>
 '@
-if ($LifetimeEtwControl -or $AppLifetime) {
-    $definition = $definition.Replace('<NetworkConnect onmatch="exclude" />', '<NetworkConnect onmatch="include" />')
-}
+# NetworkConnect Event ID 3 must be captured without a rule-based exclusion
+# for the generated TCP/UDP calibration and real app egress review. In Sysmon,
+# an empty onmatch="include" rule logs no network events; an empty
+# onmatch="exclude" rule logs every Event 3. Do not suppress original
+# calibration witnesses or real WebView2 activity.
 $definition | Set-Content -LiteralPath $config -Encoding ascii
 
 $installStarted = $false

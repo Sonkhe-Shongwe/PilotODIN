@@ -314,6 +314,17 @@ class NoCdpFileIOReviewTests(TestCase):
 
 
 class NoCdpFileIOCollectionAndPermissionTests(TestCase):
+    def test_hosted_sysmon_network_event3_does_not_discard_empty_include_markers(self):
+        """Source contract only: a generated TCP/UDP fixture must be observable."""
+        from qa.p4_research import n12_app_build as build
+        wrapper = (build.REPO / "qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1"
+                   ).read_text(encoding="utf-8")
+        self.assertIn('<NetworkConnect onmatch="exclude" />', wrapper)
+        self.assertNotIn('<NetworkConnect onmatch="include" />', wrapper)
+        self.assertNotIn('$definition = $definition.Replace(', wrapper)
+        self.assertIn('Event ID 3 must be captured', wrapper)
+        self.assertIn('-NoCdpFileIO', wrapper)
+
     def test_powershell_native_entry_requires_new_scoped_permission_and_fileio_dispatch(self):
         """Source inspection only: no PowerShell command or native app runs."""
         from qa.p4_research import n12_app_build as build
