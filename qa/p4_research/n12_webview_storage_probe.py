@@ -432,10 +432,10 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
         browser_launch_flags = {
             "status": verified_writer_context(browser)["receipt"],
             "remote_debugging": "present" if re.search(
-                r"(?:^|\\s)--remote-debugging-port(?:=|\\s|$)", browser.command
+                r"(?:^|\s)--remote-debugging-port(?:=|\s|$)", browser.command
             ) else "absent",
             "netlog": "present" if re.search(
-                r"(?:^|\\s)--log-net-log(?:=|\\s|$)", browser.command
+                r"(?:^|\s)--log-net-log(?:=|\s|$)", browser.command
             ) else "absent",
         }
     if any(row["stage"] == "after-profile-exit" for row in rows):
