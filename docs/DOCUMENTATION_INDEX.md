@@ -19,6 +19,7 @@
 - [N12 process-boundary applicability review](./P4_N12_PROCESS_BOUNDARY_APPLICABILITY_REVIEW_2026-11-21.md) for the source-grounded Tauri/WebView2/backend execution map, rejected app-wide token approach and selected runtime-specific next action.
 - [N12 production-versus-QA WebView startup and ambient-temp audit](./P4_N12_WEBVIEW_STARTUP_AND_AMBIENT_TEMP_AUDIT_2026-11-21.md) for the two observed temporary creates, safe cross-stage path correlation and the bounded UDP calibration-fixture correction.
 - [N12 no-CDP close-readiness source design](./P4_N12_NO_CDP_CLOSE_READINESS_DESIGN_2026-11-21.md) for the QA-only fixed Rust log marker, preserved native close veto, and required independent process identity before any future capture.
+- [N12 no-CDP source lifecycle observer](./P4_N12_NO_CDP_LIFECYCLE_SOURCE_STITCH_2026-11-21.md) for the fail-closed log/handle/window/close stage ordering, current CI and remaining native-proof gaps.
 - [N12 no-CDP main-window identity](./P4_N12_NO_CDP_MAIN_WINDOW_IDENTITY_2026-11-21.md) for the read-only Windows window/process-handle witness and generated CI, not native acceptance.
 - [N12 no-CDP OS-corroborated browser identity](./P4_N12_NO_CDP_BROWSER_IDENTITY_2026-11-21.md) for the source-only fail-closed role/profile/lifetime proof, not a native capture.
 - [N12 no-CDP read-only app-log witness](./P4_N12_NO_CDP_LOG_WITNESS_2026-11-21.md) for fixed, unique, non-stale readiness receipts with a bounded prelaunch/postclose verification contract; no native acceptance.
