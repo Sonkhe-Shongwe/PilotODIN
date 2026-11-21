@@ -481,6 +481,41 @@ class StorageProbeTests(unittest.TestCase):
         self.assertEqual(report["writer_storage_context"][0]["receipt"], "start-record-ambiguous")
         self.assertEqual(report["verdict"], "REPRODUCED")
 
+    def test_missing_procmon_environment_keys_are_distinguished_from_syntax(self):
+        parent = self.processes["app"]
+        browser = process("browser", "app", 102, WEBVIEW, 6, 13, command="private-command")
+        def inspect(environment):
+            return probe.redacted_environment_format(
+                f"Parent PID: {parent.pid}, Command line: {browser.command}, "
+                f"Current directory: C:\\fixture, Environment:{environment}",
+                parent.pid, browser.command,
+            )
+        missing = inspect(" ; SOMEOTHER=private-value")
+        self.assertEqual(missing, {
+            "receipt": "environment-observed", "contents": "nonempty",
+            "keys": {key: "assignment-token-absent" for key in
+                     ("temp", "tmp", "webview2_user_data_folder")},
+        })
+        self.assertEqual(inspect(";TEMP:C:\\private;TMP:C:\\private;WEBVIEW2_USER_DATA_FOLDER:C:\\private")["keys"],
+                         {key: "colon-token" for key in
+                          ("temp", "tmp", "webview2_user_data_folder")})
+        self.assertEqual(inspect(" ; TEMP=C:\\private ; TMP=C:\\private ; WEBVIEW2_USER_DATA_FOLDER=C:\\private")["keys"],
+                         {key: "equals-token" for key in
+                          ("temp", "tmp", "webview2_user_data_folder")})
+        self.assertEqual(inspect(" ; TEMP=C:\\private ; Temp=C:\\private")["keys"]["temp"],
+                         "assignment-token-ambiguous")
+        self.assertEqual(inspect("OTHER=prefixTEMP=C:\\private")["keys"]["temp"],
+                         "assignment-token-absent")
+        self.assertEqual(inspect("OTHER=prefix TEMP=C:\\private")["keys"]["temp"],
+                         "unbounded-assignment-like-token")
+        self.assertNotIn("private", json.dumps(inspect(" ; PRIVATE=secret-home")))
+        self.assertEqual(inspect("  ;  ")["contents"], "empty")
+        invalid = probe.redacted_environment_format(
+            "Process Start unknown details", parent.pid, browser.command,
+        )
+        self.assertEqual(invalid["receipt"], "start-detail-unrecognized")
+        self.assertEqual(invalid["contents"], "unverified")
+
     def test_storage_context_reports_duplicate_and_invalid_environment_values(self):
         child = self.processes["renderer"]
         parent = self.processes["app"]
@@ -495,6 +530,21 @@ class StorageProbeTests(unittest.TestCase):
             "tmp": "tmp-ambiguous", "udf": "declared-profile",
         })
         self.assertNotIn("relative", json.dumps(context))
+
+    def test_named_pipe_gaps_remain_blocking_but_separate_from_disk_paths(self):
+        pipe_gaps = [
+            {"role": "webview", "operation": "write", "field": "source",
+             "kind": "named-pipe", "count": 9},
+            {"role": "app", "operation": "write", "field": "source",
+             "kind": "named-pipe", "count": 3},
+            {"role": "webview", "operation": "write", "field": "source",
+             "kind": "device-or-extended", "count": 1},
+        ]
+        # Only use generated fake input; test the report's deterministic,
+        # non-exempt count classification in the reducer's pure helper.
+        named, other = probe.unresolved_family_counts(pipe_gaps)
+        self.assertEqual((named, other), (12, 1))
+        self.assertEqual(probe.unresolved_family_counts([]), (0, 0))
 
     def test_variant_cli_rejects_unknown_variant_before_native_preflight(self):
         run = subprocess.run([sys.executable, "-B", "-m", probe.__name__, "capture", ".",

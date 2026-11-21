@@ -27,6 +27,14 @@ CONTROL = (
 )
 
 
+def unresolved_family_counts(unresolved_files):
+    """Diagnostic-only counts; never filters the blocking unresolved records."""
+    return (
+        sum(row["count"] for row in unresolved_files if row["kind"] == "named-pipe"),
+        sum(row["count"] for row in unresolved_files if row["kind"] != "named-pipe"),
+    )
+
+
 def file_control(manifest, label, path, *, env=None):
     with subprocess.Popen([sys.executable, "-B", "-c", CONTROL, str(path)],
                           env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) as child:
@@ -107,6 +115,39 @@ def process_start_environment(detail, parent_pid, command):
     if not separator:
         return "environment-field-unobserved", None
     return "environment-observed", environment
+
+
+def redacted_environment_format(detail, parent_pid, command):
+    """Distinguish absent Procmon keys from unparseable assignment shapes.
+
+    These are token-format hints, never evidence of inherited environment values.
+    Return fixed labels only; do not leak the raw Detail or environment payload.
+    """
+    keys = ("TEMP", "TMP", "WEBVIEW2_USER_DATA_FOLDER")
+    status, environment = process_start_environment(detail, parent_pid, command)
+    if environment is None:
+        return {"receipt": status, "contents": "unverified",
+                "keys": {key.casefold(): "unverified" for key in keys}}
+    contents = "nonempty" if environment.strip(" \t\r\n;\0") else "empty"
+    findings = {}
+    for key in keys:
+        matches = list(re.finditer(
+            rf"(?<![A-Za-z0-9_=]){key}[ \t]*([=:])", environment, re.I,
+        ))
+        if not matches:
+            label = "assignment-token-absent"
+        elif len(matches) > 1:
+            label = "assignment-token-ambiguous"
+        else:
+            preceding = environment[:matches[0].start()]
+            bounded = (not preceding.strip(" \t\r\n;\0") or
+                       re.search(r"(?:\r\n|[;,|\t\r\n\0])[ \t]*$", preceding) is not None)
+            if not bounded:
+                label = "unbounded-assignment-like-token"
+            else:
+                label = "equals-token" if matches[0][1] == "=" else "colon-token"
+        findings[key.casefold()] = label
+    return {"receipt": "environment-observed", "contents": contents, "keys": findings}
 
 
 def process_start_path(environment, key):
@@ -282,6 +323,8 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
         str(process.pid): process for process in webviews if pid_counts_all[process.pid] == 1
     }
     webview_start_receipts = {process.guid: [] for process in webviews}
+    webview_start_formats = {process.guid: [] for process in webviews}
+    startup_formats = {"scratch": [], "browser": []}
     storage_profile = trace.windows_path(manifest["observed_roots"]["qa-webview"])
     storage_app_temp = ntpath.join(storage_profile, journey.APP_TEMP_DIR)
     storage_ambient = (trace.windows_path(manifest["probe_user_temp"])
@@ -314,6 +357,10 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
                     and first <= stamp < last):
                 status, value = process_start_tmp(row["Detail"], process, processes.get(process.parent))
                 startup_values[label].append((stamp, status, value))
+                startup_formats[label].append(redacted_environment_format(
+                    row["Detail"], processes.get(process.parent).pid
+                    if processes.get(process.parent) else None, process.command,
+                ))
         if webview_process is not None:
             process = webview_process
             if (row["Process Name"].casefold() == ntpath.basename(process.image)
@@ -321,6 +368,10 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
                 webview_start_receipts[process.guid].append(storage_environment_context(
                     row["Detail"], process, processes.get(process.parent),
                     storage_profile, storage_app_temp, storage_ambient, tmp_witness,
+                ))
+                webview_start_formats[process.guid].append(redacted_environment_format(
+                    row["Detail"], processes.get(process.parent).pid
+                    if processes.get(process.parent) else None, process.command,
                 ))
 
     def observe(stamp, process, role, operation, path):
@@ -438,6 +489,17 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
                   "destination_family", "operation", "stage"), key), count=count)
         for key, count in sorted(writer_context_counts.items())
     ]
+    def observed_format(records):
+        if len(records) == 1:
+            return records[0]
+        return {"receipt": "start-record-ambiguous" if records else "start-record-unobserved",
+                "contents": "unverified",
+                "keys": {key: "unverified" for key in ("temp", "tmp", "webview2_user_data_folder")}}
+
+    browser_environment_format = observed_format(
+        webview_start_formats[browser_guid] if browser_guid is not None else [],
+    )
+    scratch_environment_format = observed_format(startup_formats["scratch"])
     browser_launch_flags = {"status": "browser-identity-unverified"}
     browser_storage_context = {"receipt": "browser-identity-unverified",
                                "temp": "unverified", "tmp": "unverified", "udf": "unverified"}
@@ -466,6 +528,10 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
         variant_corroboration = "disagrees"
     if any(row["stage"] == "after-profile-exit" for row in rows):
         issues.add("webview-writes-after-profile-exit")
+    named_pipe_unresolved, other_path_unresolved = unresolved_family_counts(unresolved_files)
+    collector_exit_status = manifest.get("procmon_capture_exit_status")
+    if collector_exit_status not in {"EXITED", "NONZERO_EXIT", "TIMEOUT"}:
+        collector_exit_status = "unverified"
     report = {"scope": "one-startup-and-close-storage-diagnostic",
             "storage_diagnostic_variant": variant,
             "browser_variant_corroboration": variant_corroboration,
@@ -475,10 +541,15 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             "storage_capture_attempt": manifest.get("storage_capture_attempt"),
             "verdict": "BLOCKED" if issues else "REPRODUCED" if ambient_creates else "INCONCLUSIVE",
             "issues": sorted(issues), "procmon_shutdown_verified": shutdown_verified,
+            "procmon_stop_command_verified": manifest.get("procmon_stop_command_verified") is True,
+            "procmon_capture_exit_status": collector_exit_status,
             "procmon_loss_reviewed": loss_reviewed,
             "file_coverage_issues": sorted(file_coverage_issues),
             "protected_snapshot_comparison": manifest["protected_snapshot_comparison"],
             "protected_operations": protected_operations, "unresolved_file_events": unresolved_files,
+            "named_pipe_unresolved_event_count": named_pipe_unresolved,
+            "other_unresolved_path_event_count": other_path_unresolved,
+            "named_pipe_events_excluded_from_coverage": False,
             "protected_operation_details": [
                 {"role": role, "operation": operation, "target": family, "identity": identity, "count": count}
                 for (role, operation, family, identity), count in sorted(protected_details.items())
@@ -492,6 +563,8 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             "ambient_temp_creates": ambient_creates, "storage_events": rows,
             "writer_storage_context": writer_storage_context,
             "browser_storage_context": browser_storage_context,
+            "browser_environment_format": browser_environment_format,
+            "scratch_environment_format": scratch_environment_format,
             "browser_launch_flags": browser_launch_flags,
             "storage_context_is_acceptance_evidence": False}
     if replay_etw is not None:
@@ -536,6 +609,8 @@ def main():
             "sysmon_last_record", "procmon_all_events", "procmon_loss_reviewed", "procmon_clock_utc",
         )})
         manifest["procmon_shutdown_verified"] = window.get("procmon_shutdown_verified")
+        manifest["procmon_stop_command_verified"] = window.get("procmon_stop_command_verified")
+        manifest["procmon_capture_exit_status"] = window.get("procmon_capture_exit_status")
         with journey.checkpoint_stage("webview-storage-reduction", args.source, args.expected_exe_sha256):
             report = reduce(root, staged, manifest, base / "sysmon.xml", base / "capture-utf8.csv")
         print("N12 WebView storage " + json.dumps(report), flush=True)

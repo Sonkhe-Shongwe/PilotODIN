@@ -262,14 +262,17 @@ try {
     }
 
     $stopError = $null
+    $stopCommandVerified = $false
     if ($procmonControl) {
         # Exercise a normal window close on the captured process. The finally
         # block can request termination for cleanup after a failed close.
         Request-P4N12CollectorWindowClose -Process $capture
+        $stopCommandVerified = $true
         Write-Host 'Process Monitor main-window close requested.'
     } else {
         try {
             Start-CollectorCommand $procmon '-terminate -quiet' 'Process Monitor stop command'
+            $stopCommandVerified = $true
         } catch {
             $stopError = $_.Exception.Message
             Write-Warning $stopError
@@ -344,6 +347,8 @@ try {
     if ($WebViewStorage) {
         # Keep the exported observations while making shutdown health part of the verdict.
         $window.procmon_shutdown_verified = ($null -eq $stopError)
+        $window.procmon_stop_command_verified = $stopCommandVerified
+        $window.procmon_capture_exit_status = $captureExit.Status
         $window | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $root 'storage-window.json') -Encoding utf8
         python -B -m qa.p4_research.n12_webview_storage_probe reduce $root --source $SourceSha --expected-exe-sha256 $ExecutableSha256
         if ($LASTEXITCODE -ne 0) { throw 'Focused WebView storage evidence was blocked.' }
