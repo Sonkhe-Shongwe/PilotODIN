@@ -95,6 +95,8 @@ on:
       - tests/test_p4_n12_product_tree_isolation_review.py
       - qa/p4_research/n12_webview_storage_mechanism_map.py
       - tests/test_p4_n12_webview_storage_mechanism_map.py
+      - qa/p4_research/n12_fileio_identity_join.py
+      - tests/test_p4_n12_fileio_identity_join.py
       - tests/test_p4_n12_tmp_debugger_fixture.py
       - tests/test_p4_n12_procmon_environment_control.py
       - tests/test_p4_n12_trace.py
@@ -237,6 +239,7 @@ jobs:
           tests/test_p4_n12_protected_fixture_contract.py
           tests/test_p4_n12_product_tree_isolation_review.py
           tests/test_p4_n12_webview_storage_mechanism_map.py
+          tests/test_p4_n12_fileio_identity_join.py
           tests/test_p4_n12_token_capability_preflight.py
           tests/test_p4_n12_tmp_debugger_fixture.py
           tests/test_p4_n12_procmon_environment_control.py
