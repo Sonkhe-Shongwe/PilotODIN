@@ -87,9 +87,10 @@ fn resolve_native_close_request(
     Ok(())
 }
 
-// This command only acknowledges frontend registration for a future
-// source-pinned, non-CDP QA capture. It cannot confirm or bypass a close ticket,
-// create windows, open files or expose any owner/runner data.
+// This command acknowledges QA listener registration *only* after disposing
+// the extra hidden lifecycle peer created by the isolated QA build. The peer
+// has no project content; the real main CloseRequested ticket is untouched.
+// This command cannot approve/close the main window or expose owner data.
 fn eligible_n12_no_cdp_listener_ack(debug: bool, page_url: &str, consent: Option<&str>) -> bool {
     debug && consent == Some("I_APPROVE_ONE_N12_NO_CDP_STORAGE")
         && page_url.split('#').next() == Some("http://127.0.0.1:5173/")
@@ -104,7 +105,16 @@ fn acknowledge_n12_no_cdp_close_listener_ready(window: tauri::WebviewWindow) -> 
     if !eligible_n12_no_cdp_listener_ack(cfg!(debug_assertions), page_url.as_str(), consent.as_deref()) {
         return Err("N12 no-CDP readiness not authorized".into());
     }
+    // In the exact isolated QA overlay there is one extra hidden "n12peer"
+    // window. The CDP driver used to close it before the main OS-close test.
+    // No-CDP mode has no browser driver, so close only this empty synthetic
+    // peer through its ordinary Tauri close request. The host's on_window_event
+    // veto applies to "main" only; never destroy or close that window here.
+    let peer = window.app_handle().get_webview_window("n12peer")
+        .ok_or_else(|| "N12 QA synthetic peer missing".to_string())?;
+    peer.close().map_err(|_| "N12 QA synthetic peer close refused".to_string())?;
     // Fixed literal: no paths, tokens, PIDs, browser flags or project content.
+    // The later OS window close and full process exit are separately checked.
     eprintln!("N12 QA native close listener registered");
     Ok(())
 }
