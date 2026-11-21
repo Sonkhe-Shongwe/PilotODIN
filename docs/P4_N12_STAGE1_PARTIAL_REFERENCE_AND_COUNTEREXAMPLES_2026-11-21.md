@@ -22,7 +22,7 @@ This proves a **source-contract overrestriction counterexample** in the diagnost
 
 ## Focused verification and outstanding decision
 
-**Planned focused check:** \`python -m pytest -q tests/test_p4_n12_source_evidence_map.py\`. The routine P4 workflow includes this existing test file and should test exact changed code on push. Its CI result and last stage must be reported separately after inspection. A source-only passing fixture never earns N12 or R02 points.
+**Focused check executed and passed:** \`python -m pytest -q tests/test_p4_n12_source_evidence_map.py\`. The routine P4 workflow completed [exact-source CI #44913993754](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44913993754) **4/4 SUCCESS** at `6b04a37e`: **980 Python passed, 6 skipped, 430 subtests**, **104 Node frontend**, **Vite production build**, **13 disposable browser**, **4 Windows R03** and hosted Windows synthetic checks. This establishes the new executable counterexample and source-reference guard at its tested scope, not native Stage 1 acceptance. No installer, real PilotODIN/WebView2 app, source-pinned native process capture, firewall enforcement or owner dataset was exercised.
 
 **Next decision-relevant work:** Review the timing provenance of a retained original handle opened after a child's birth, determine whether to correct the QA-only diagnostic birth inequality, and independently justify cross-provider Sysmon Event 5 versus ETW ExitTime semantics with additional adversarial variants. Preserve full PID+birth, GUID, parent, exact images, ETW loss/sequence and capture window checks. No blanket 8 ms tolerance, no weakening of the strict native reducer, and no assumptions of a fixed seven-child role mix.
 

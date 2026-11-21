@@ -3,6 +3,8 @@
 **Direction adopted:** 21 November 2026. **Status:** DESIGNED, NOT NATIVE-ACCEPTED.  
 **Branch:** `feature/live-dev-workspace-20261023`. **Latest independently tested source at this decision:** [`0511aca1e192ff4aa0950ac1255dcbd1b887b8f2`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/0511aca1e192ff4aa0950ac1255dcbd1b887b8f2); [routine synthetic CI #44903523887](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44903523887) **4/4 SUCCESS**: 970 Python tests passed, 6 skipped, 417 subtests, 104 frontend and Vite, hosted-Windows *synthetic* AF_PIPE. Documentation edits after that source do not extend its tested scope.
 
+**New subsequent partial-reference implementation checkpoint:** [Redacted derived native-reference fixture and early-born / role counterexamples](./P4_N12_STAGE1_PARTIAL_REFERENCE_AND_COUNTEREXAMPLES_2026-11-21.md) at [implementation `6b04a37e`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6b04a37e3868522697ee88c0699f0ce4348cace1), [exact-source CI #44913993754](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44913993754) **4/4 SUCCESS** (980 Python passed, 6 skipped, 430 subtests, 104 Node/Vite, browser and hosted-Windows synthetic). M1's privacy-safe **reusable derived partial fixture** now exists, but it is not a full original process trace, cannot retrospectively reconstruct seven missing child original handles, and grants no native acceptance. The synthetic QA diagnostic pre-sampling-birth counterexample proves a current source-contract assumption needs independent review. **Strict native gate unchanged.**
+
 **Source verification implementation checkpoint:** [S01-S11 worksheet](./P4_N12_STAGE1_SOURCE_EVIDENCE_WORKSHEET_2026-11-21.md) and [machine-readable source/test evidence map](./P4_N12_STAGE1_SOURCE_EVIDENCE_MAP_2026-11-21.json) at [code `0a03266`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/0a03266a269c31269382f91370c4db816140f649), [exact-source CI #44912012772](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44912012772) **4/4 SUCCESS**. This source evidence traceability step did not build or run PilotODIN natively, does not provide a full green reference, and does not alter the original strict acceptance rule.
 
 ## Decision and scope
@@ -93,7 +95,7 @@ This contract concerns **N12 Stage 1 isolated no-CDP native startup, unique proc
 | Milestone | Required proof | Current |
 | --- | --- | --- |
 | M0: Direction and success-contract audit | Requirements mapped to sources and negative controls; historic evidence retained | **This document, design only** |
-| M1: Independently reviewed partial golden reference | App/launcher original-handle/ETW parity, correct source identity and truthful missing-child markers | **Evidence available; reusable fixture not yet built** |
+| M1: Independently reviewed partial golden reference | App/launcher original-handle/ETW parity, correct source identity and truthful missing-child markers | **Redacted derived fixture built and source-tested; complete independent native reference NOT available** |
 | M2: Full real native child reference | New consented isolated native capture, original handles for every independent child GUID, zero source coverage loss | **NOT DONE** |
 | M3: Defensible clock semantics and strict verifier rule | Independent argument and positive+adversarial tests, no unjustified threshold | **NOT DONE** |
 | M4: Native Stage 1 verified at exact source | Fresh consented native run accepted under justified unchanged or separately reviewed strict gate | **BLOCKED** |
