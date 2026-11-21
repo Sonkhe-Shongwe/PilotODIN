@@ -51,6 +51,12 @@ The **identity evidence** is a verified restricted primary token with no privile
 
 ETW counters, protected file hashes and Win32 token receipts must come from separate trustworthy runtime observations. The source-only `check_evidence_shape()` validates **only the schema**: exact two root labels, all expected operations, required binary proof labels, strict zero unresolved-mutation counts and no extra raw fields. It cannot verify evidence provenance or OS behavior; even a flawless synthetic receipt never awards native acceptance. Never echo secrets, full filenames, raw SIDs, PIDs, tokens, command lines or event payloads in the public summary.
 
+## Exact-source verification
+
+[Routine P4 #44849408615](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44849408615) passed **all four CI jobs** at [`093413b8`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/093413b8a781f1ab94ef4ab85e0bf574732c31cc): 798 Python test passes, 6 skips, 290 subtests, 103 frontend passes and Vite, 13 disposable real-HTTP browser cases, nine new Windows protected-fixture contract tests, the existing 32 WebView2 storage tests and four R03 Windows tests. No restricted token was created; no access-control changes or native application capture were executed. Verification concerns *schema and existing synthetic test tools*, **not Windows isolation**.
+
+**Scope limitation:** A generated restricted writer test, even once completed on Windows, is **not** proof PilotODIN itself launches under that restricted token or cannot write outside its permitted home. That separate application-level integration and N12 acceptance would require future reviewed design, source-pinned approval and full strict evidence. This fixture validates the prevention mechanism and instrumentation in isolation only.
+
 ## Next micro-step
 
 Without running it, specify a bounded **restricted-token capability preflight**: required Windows APIs, expected access token privilege/SID checks and precise fail-closed reasons for launch or effective ACL issues. Do not yet create ACLs, request actual token launches, trigger native CI, run PilotODIN or create installers. A source-reviewed and separately owner-approved disposable Windows capability test is required before physical verification.
