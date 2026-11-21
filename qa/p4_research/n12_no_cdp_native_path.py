@@ -85,58 +85,64 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
     app = journey.spawn(stack, manifest, "app", [binary], app_env, binary.parent,
                         root / "app.log", prelaunch_log_hook=observer.prelaunch_hook)
     observer.bind_process(app)
-    child_observer = None
-    if use_child_handles:
-        from datetime import datetime, timezone
-        child_observer = child_handles.ScopedQaChildHandleObserver(
-            root_process=app, expected_app_image=str(binary))
-        child_observer.start_live(profile=profile, env=transport_env)
-        sampling_started_ticks = trace.utc_ticks(datetime.now(timezone.utc))
-    provisional = observer.observe_readiness(timeout_seconds=40,
-                                             window_timeout_seconds=15)
-    trace.require(provisional["native_N12_acceptance"] == "NOT_EVALUATED",
-                  "no-cdp-provisional-verdict-invalid")
-    journey.mark(manifest, "ready")
-    # A path-substring profile count is *only a diagnostic*, never identity.
-    profile_before = int(journey.powershell(
-        journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
-    ))
-    trace.require(profile_before > 0, "no-cdp-profile-before-close-missing")
-    observer.prepare_normal_close()
-    images = process_images(app)
-    journey.mark(manifest, "close")
-    journey.request_graceful_close(app, binary, title)
-    trace.require(app.wait(timeout=5) == 0, "no-cdp-app-did-not-exit-normally")
-    journey.wait_for(lambda: int(journey.powershell(
-        journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
-    )) == 0, 25, "no-cdp-profile-did-not-exit")
-    journey.mark(manifest, "profile-exit")
-    if child_observer is not None:
-        from datetime import datetime, timezone
-        retained = child_observer.finish()
-        sampling_finished_ticks = trace.utc_ticks(datetime.now(timezone.utc))
-        private_evidence = child_handles.PrivateChildHandleEvidence(
-            source_sha=source, executable_sha256=expected_hash,
-            root_birth_ticks=child_observer._root_birth,
-            sampling_started_ticks=sampling_started_ticks,
-            sampling_finished_ticks=sampling_finished_ticks,
-            witnesses=retained,
-            collector_receipt=child_observer.redacted_receipt())
-        # Raw GUID/PID/full image/times transfer only via authenticated
-        # in-memory Windows pipe; neither logger nor JSON file sees them.
-        child_pipe.send_from_worker(transport_env, private_evidence)
-    receipt = observer.verify_after_close(
-        close_request_verified=True, profile_processes_before=profile_before,
-        profile_processes_after=0,
-    )
-    trace.require(receipt["native_N12_acceptance"] == "NOT_EVALUATED"
-                  and receipt["profile_process_identity"] == "NOT_EVALUATED",
-                  "no-cdp-source-receipt-invalid")
-    times = process_times(app) | images
-    journey.report_file(root / "no-cdp-source-witness.json", receipt)
-    journey.report_file(root / "no-cdp-private-stage.json", {
-        "source_sha": source, "executable_sha256": expected_hash,
-        "markers": manifest["markers"],
-    })
-    journey.report_file(root / "private-app-handle.json", times)
-    return times
+    # Register cleanup before activating the observer. Abnormal readiness,
+    # close or worker failures must release retained handles and never emit a
+    # partial positive child-handle witness.
+    from contextlib import ExitStack
+    with ExitStack() as child_guard:
+        child_observer = None
+        if use_child_handles:
+            from datetime import datetime, timezone
+            child_observer = child_handles.ScopedQaChildHandleObserver(
+                root_process=app, expected_app_image=str(binary))
+            child_guard.callback(child_observer.abort)
+            sampling_started_ticks = trace.utc_ticks(datetime.now(timezone.utc))
+            child_observer.start_live(profile=profile, env=transport_env)
+        provisional = observer.observe_readiness(timeout_seconds=40,
+                                                 window_timeout_seconds=15)
+        trace.require(provisional["native_N12_acceptance"] == "NOT_EVALUATED",
+                      "no-cdp-provisional-verdict-invalid")
+        journey.mark(manifest, "ready")
+        # A path-substring profile count is *only a diagnostic*, never identity.
+        profile_before = int(journey.powershell(
+            journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
+        ))
+        trace.require(profile_before > 0, "no-cdp-profile-before-close-missing")
+        observer.prepare_normal_close()
+        images = process_images(app)
+        journey.mark(manifest, "close")
+        journey.request_graceful_close(app, binary, title)
+        trace.require(app.wait(timeout=5) == 0, "no-cdp-app-did-not-exit-normally")
+        journey.wait_for(lambda: int(journey.powershell(
+            journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
+        )) == 0, 25, "no-cdp-profile-did-not-exit")
+        journey.mark(manifest, "profile-exit")
+        if child_observer is not None:
+            from datetime import datetime, timezone
+            retained = child_observer.finish()
+            sampling_finished_ticks = trace.utc_ticks(datetime.now(timezone.utc))
+            private_evidence = child_handles.PrivateChildHandleEvidence(
+                source_sha=source, executable_sha256=expected_hash,
+                root_birth_ticks=child_observer._root_birth,
+                sampling_started_ticks=sampling_started_ticks,
+                sampling_finished_ticks=sampling_finished_ticks,
+                witnesses=retained,
+                collector_receipt=child_observer.redacted_receipt())
+            # Raw GUID/PID/full image/times transfer only via authenticated
+            # in-memory Windows pipe; neither logger nor JSON file sees them.
+            child_pipe.send_from_worker(transport_env, private_evidence)
+        receipt = observer.verify_after_close(
+            close_request_verified=True, profile_processes_before=profile_before,
+            profile_processes_after=0,
+        )
+        trace.require(receipt["native_N12_acceptance"] == "NOT_EVALUATED"
+                      and receipt["profile_process_identity"] == "NOT_EVALUATED",
+                      "no-cdp-source-receipt-invalid")
+        times = process_times(app) | images
+        journey.report_file(root / "no-cdp-source-witness.json", receipt)
+        journey.report_file(root / "no-cdp-private-stage.json", {
+            "source_sha": source, "executable_sha256": expected_hash,
+            "markers": manifest["markers"],
+        })
+        journey.report_file(root / "private-app-handle.json", times)
+        return times

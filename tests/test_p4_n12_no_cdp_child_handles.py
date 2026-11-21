@@ -91,6 +91,31 @@ class ChildObserverTests(unittest.TestCase):
         self.assertEqual(len(witnesses), 1)
         self.assertEqual(self.observer.redacted_receipt()["status"], "SAMPLING_FINISHED_UNVERIFIED")
 
+    def test_aborted_observer_releases_handles_without_partial_witness(self):
+        self.observer.sample_once(self.rows)
+        self.assertEqual(set(self.backend.opened), {601, 602})
+        self.assertEqual(self.backend.closed, [])
+        self.observer.abort()
+        self.observer.abort()  # idempotent exception unwind
+        self.assertEqual(set(self.backend.closed), {601, 602})
+        self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
+        self.assertEqual(self.observer.redacted_receipt()["retained_original_handle_count"], 0)
+        self.assertIn("observer-interrupted", self.observer.redacted_receipt()["faults"])
+        with self.assertRaisesRegex(trace.EvidenceValidationError, "already-finished"):
+            self.observer.finish()
+
+    def test_child_created_and_exited_between_samples_is_never_credited(self):
+        # Child 602 exists in the independent Sysmon/ETW fixture but never
+        # appeared in either snapshot. A clean sampler count is NOT coverage.
+        self.observer.sample_once([self.rows[0], self.rows[1]])
+        self.observer.sample_once([self.rows[0], self.rows[1]])
+        witnesses = self.finish()
+        self.assertEqual(len(witnesses), 1)
+        self.assertEqual(self.observer.redacted_receipt()["status"], "SAMPLING_FINISHED_UNVERIFIED")
+        self.assertEqual(self.review(witnesses)["status"], "BLOCKED")
+        self.assertIn("original-child-handle-missing-or-ambiguous",
+                      self.review(witnesses)["failed_checks"])
+
     def test_pid_reuse_and_parent_spoof_faults_are_permanent(self):
         self.observer.sample_once(self.rows)
         self.backend.timing[601]["birth"] += 50_000

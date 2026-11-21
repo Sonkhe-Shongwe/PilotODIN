@@ -29,7 +29,7 @@ SAFE_FAULTS = frozenset({
     "child-image-changed", "child-root-chronology-unverified",
     "unexpected-descendant", "handle-limit-reached",
     "handle-exit-unavailable", "root-identity-unverified",
-    "observer-internal-failure",
+    "observer-internal-failure", "observer-interrupted",
 })
 
 
@@ -200,17 +200,46 @@ class ScopedQaChildHandleObserver:
         self._backend(need_snapshot=True)
         self._verify_root()
         self._live_armed = True
+        # Synchronously sample immediately on arming before the polling loop.
+        # Any already-dead child remains uncredited; independent Sysmon/ETW
+        # GUID completeness must reveal it, rather than guessing its handle.
+        self.sample_once()
         self._thread = Thread(target=self._observe, name="n12-isolated-qa-webview-handles",
                               daemon=True)
         self._thread.start()
         return self
+
+    def abort(self):
+        """Fail closed and release original query handles after worker failure.
+
+        Must be safe before start, during startup, and after normal finish.
+        No partial lifetime can acquire a positive diagnostic receipt.
+        """
+        if self._finished:
+            return
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=5)
+            if self._thread.is_alive():
+                self.faults["observer-internal-failure"] += 1
+        self.faults["observer-interrupted"] += 1
+        self._finished = True
+        try:
+            self._resources.close()
+        finally:
+            self._retained.clear()
+            self._witnesses.clear()
 
     def finish(self):
         """Query retained ORIGINAL handles after normal exit, then close them."""
         trace.require(not self._finished, "no-cdp-child-observer-already-finished")
         self._stop.set()
         if self._thread is not None:
-            self._thread.join()
+            self._thread.join(timeout=5)
+            if self._thread.is_alive():
+                self.faults["observer-internal-failure"] += 1
+                self.abort()
+                return ()
         self._finished = True
         try:
             for (pid, birth), (handle, images, parent) in sorted(self._retained.items()):
