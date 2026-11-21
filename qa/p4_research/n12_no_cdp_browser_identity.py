@@ -131,3 +131,100 @@ def _descends_from(process, app_guid, processes):
         seen.add(current.parent)
         current = processes[current.parent]
     return False
+
+
+@dataclass(frozen=True)
+class ProfileShutdownWitness:
+    # Private process GUID and browser handle are never exposed in a receipt.
+    browser: BrowserIdentity = field(repr=False)
+    webview_guids: tuple[str, ...] = field(repr=False)
+
+    def redacted_receipt(self):
+        return {
+            "scope": "no-cdp-profile-shutdown-source-only",
+            "browser_process_identity": "UNIQUE_SYSMON_ETW_APP_PROFILE",
+            "profile_process_lifetimes": "SYSMON_ETW_DESCENDANTS_EXITED",
+            "webview_process_count": len(self.webview_guids),
+            "profile_isolation": "NOT_EVALUATED",
+            "native_N12_acceptance": "NOT_EVALUATED",
+            "file_event_coverage": "NOT_EVALUATED",
+            "network_isolation": "NOT_EVALUATED",
+        }
+
+
+def verify_profile_shutdown(*, processes, roles, app_guid, expected_app_image,
+                            expected_app_sha256, disposable_profile, launch, ready,
+                            close, profile_exit, capture_end, app_handle_witness,
+                            etw_lifetimes, capture_loss_reviewed, capture_issues):
+    """Independent descendant exit checks after the ordinary OS close.
+
+    The caller must provide a *complete, loss-reviewed* Sysmon/ETW capture.
+    Synthetic fixtures cannot certify native WebView2 shutdown. The historical
+    substring-only profile-active count is not a sufficient witness.
+    """
+    from qa.p4_native.n12_exit_corroboration import SOURCE_COVERAGE_ISSUES
+
+    trace.require(capture_loss_reviewed is True and type(capture_issues) is set
+                  and not (capture_issues & SOURCE_COVERAGE_ISSUES),
+                  "no-cdp-profile-process-coverage-unverified")
+    trace.require(close < profile_exit < capture_end,
+                  "no-cdp-profile-exit-stage-unverified")
+    trace.require(type(processes) is dict and type(roles) is dict
+                  and all(key == p.guid for key, p in processes.items()),
+                  "no-cdp-profile-process-map-unverified")
+    browser = resolve_browser_identity(
+        processes=processes, roles=roles, app_guid=app_guid,
+        expected_app_image=expected_app_image,
+        expected_app_sha256=expected_app_sha256,
+        disposable_profile=disposable_profile, launch=launch, ready=ready,
+        close=close, capture_end=capture_end,
+        app_handle_witness=app_handle_witness, etw_lifetimes=etw_lifetimes,
+    )
+    profile = trace.windows_path(disposable_profile)
+    scoped_webviews = []
+    for p in processes.values():
+        if ntpath.basename(p.image) != _WEBVIEW:
+            continue
+        explicit_profile = bool(_PROFILE_TOKEN.search(p.command))
+        if explicit_profile:
+            supplied_profile = _profile_from_command(p.command)
+            trace.require(supplied_profile != profile or p.guid == browser.guid
+                          or _descends_from(p, browser.guid, processes),
+                          "no-cdp-profile-external-contender")
+        if _descends_from(p, app_guid, processes):
+            trace.require(p.guid == browser.guid
+                          or _descends_from(p, browser.guid, processes),
+                          "no-cdp-profile-webview-unbound-parent")
+            trace.require(roles.get(p.guid) in ("webview", "webview-network"),
+                          "no-cdp-profile-webview-role-unverified")
+            trace.require(not explicit_profile or supplied_profile == profile,
+                          "no-cdp-profile-child-profile-mismatch")
+            scoped_webviews.append(p)
+    trace.require(sum(p.guid == browser.guid for p in scoped_webviews) == 1,
+                  "no-cdp-profile-browser-unverified")
+    verified = {app_guid: etw_lifetimes.find(
+        processes[app_guid], handle_witness=app_handle_witness)}
+    for p in sorted(scoped_webviews, key=lambda process: process.guid):
+        born, stopped = etw_lifetimes.find(p)
+        trace.require(p.end is not None
+                      and launch <= p.start <= p.end <= profile_exit
+                      and trace.utc_ticks(launch) <= born.creation
+                      <= stopped.exit <= trace.utc_ticks(profile_exit),
+                      "no-cdp-profile-descendant-exit-unverified")
+        parent = processes.get(p.parent)
+        trace.require(parent is not None
+                      and ((p.parent == app_guid) if p.guid == browser.guid
+                           else (p.parent == browser.guid
+                                 or _descends_from(parent, browser.guid, processes))),
+                      "no-cdp-profile-parent-unverified")
+        if parent.guid not in verified:
+            verified[parent.guid] = etw_lifetimes.find(parent)
+        parent_birth, parent_stop = verified[parent.guid]
+        trace.require(etw_lifetimes.parent_sequence_comparison(p, parent)
+                      == "etw-parent-sequence-agrees"
+                      and born.parent == parent_birth.pid
+                      and born.parent_sequence == parent_birth.sequence
+                      and parent_birth.creation <= born.creation <= parent_stop.exit,
+                      "no-cdp-profile-etw-parent-or-lifetime-unverified")
+        verified[p.guid] = (born, stopped)
+    return ProfileShutdownWitness(browser, tuple(sorted(p.guid for p in scoped_webviews)))

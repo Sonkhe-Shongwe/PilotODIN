@@ -4,7 +4,9 @@ from types import SimpleNamespace
 import unittest
 
 from qa.p4_native import n12_trace as trace
-from qa.p4_research.n12_no_cdp_browser_identity import resolve_browser_identity
+from qa.p4_research.n12_no_cdp_browser_identity import (
+    resolve_browser_identity, verify_profile_shutdown,
+)
 
 
 BASE = datetime(2026, 11, 21, tzinfo=timezone.utc)
@@ -24,20 +26,37 @@ class EtwFixture:
     def __init__(self):
         self.corrupt_parent = False
         self.corrupt_stop = False
+        self.corrupt_child_parent = False
 
     def find(self, process, *, handle_witness=None):
         if process.guid == "app":
             assert handle_witness == {"pid": 101, "birth": trace.utc_ticks(BASE),
                                       "exit": trace.utc_ticks(BASE + timedelta(seconds=6))}
+        # Synthetic sequence chain: app(4) -> browser(6) -> children(8/10).
+        if process.guid == "app":
+            parent, parent_sequence, sequence = 1, 0, 4
+        elif process.guid == "browser":
+            parent, parent_sequence, sequence = 101, 4, 6
+        else:
+            parent = 303 if process.parent == "renderer" else 202
+            parent_sequence = 8 if process.parent == "renderer" else 6
+            sequence = 8 if process.guid == "renderer" else 10
+            if self.corrupt_child_parent:
+                parent_sequence += 1
         birth = SimpleNamespace(pid=process.pid, creation=trace.utc_ticks(process.start),
-                                parent=101 if process.guid != "app" else 1,
-                                parent_sequence=4 if process.guid != "app" else 0,
-                                sequence=4 if process.guid == "app" else 6)
-        stop = SimpleNamespace(exit=trace.utc_ticks(process.end) - int(self.corrupt_stop) * 9_000_000_000)
+                                parent=parent, parent_sequence=parent_sequence,
+                                sequence=sequence)
+        if process.end is None:
+            raise trace.EvidenceValidationError("etw-stop-missing-or-ambiguous")
+        stop = SimpleNamespace(exit=trace.utc_ticks(process.end)
+                               - int(self.corrupt_stop) * 9_000_000_000)
         return birth, stop
 
     def parent_sequence_comparison(self, child, parent):
-        return "etw-parent-sequence-conflict" if self.corrupt_parent else "etw-parent-sequence-agrees"
+        return ("etw-parent-sequence-conflict"
+                if self.corrupt_parent or (self.corrupt_child_parent
+                                           and child.guid not in ("app", "browser"))
+                else "etw-parent-sequence-agrees")
 
 
 def fixture():
@@ -164,6 +183,132 @@ class NoCdpBrowserIdentityTests(unittest.TestCase):
         receipt = resolve_browser_identity(**fixture()).redacted_receipt()
         for key in ("native_N12_acceptance", "file_event_coverage", "network_isolation"):
             self.assertEqual(receipt[key], "NOT_EVALUATED")
+
+
+def profile_fixture():
+    f = fixture()
+    f["profile_exit"] = BASE + timedelta(seconds=5, milliseconds=500)
+    f["capture_loss_reviewed"] = True
+    f["capture_issues"] = set()
+    return f
+
+
+def add_profile_child(args, *, guid="network", parent="browser",
+                      end=BASE + timedelta(seconds=5)):
+    child = p(guid, parent, 501, WEBVIEW,
+              f'"{WEBVIEW}" --type=utility',
+              BASE + timedelta(seconds=3), end)
+    args["processes"][guid] = child
+    args["roles"][guid] = "webview-network"
+    return child
+
+
+class NoCdpProfileShutdownSourceTests(unittest.TestCase):
+    def test_browser_renderer_and_network_exit_with_private_receipt(self):
+        args = profile_fixture()
+        add_profile_child(args)
+        result = verify_profile_shutdown(**args)
+        self.assertEqual(len(result.webview_guids), 3)
+        receipt = result.redacted_receipt()
+        self.assertEqual(receipt["profile_process_lifetimes"], "SYSMON_ETW_DESCENDANTS_EXITED")
+        self.assertEqual(receipt["webview_process_count"], 3)
+        for key in ("native_N12_acceptance", "file_event_coverage",
+                    "network_isolation", "profile_isolation"):
+            self.assertEqual(receipt[key], "NOT_EVALUATED")
+        self.assertNotIn(PROFILE, repr(result))
+        self.assertNotIn("501", str(receipt))
+
+    def test_source_loss_or_unreviewed_capture_never_claims_profile_exit(self):
+        for field, value in (
+            ("capture_loss_reviewed", False),
+            ("capture_issues", {"etw-event-or-buffer-loss"}),
+            ("capture_issues", {"sysmon-record-gap"}),
+            ("capture_issues", {"sysmon-restart-config-change-or-error"}),
+            ("capture_issues", None),
+        ):
+            with self.subTest(field=field, value=value):
+                args = profile_fixture()
+                args[field] = value
+                with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                            "^no-cdp-profile-process-coverage-unverified$"):
+                    verify_profile_shutdown(**args)
+
+    def test_renderer_still_alive_after_profile_exit_blocks(self):
+        args = profile_fixture()
+        args["processes"]["renderer"].end = BASE + timedelta(seconds=6)
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-profile-descendant-exit-unverified$"):
+            verify_profile_shutdown(**args)
+
+    def test_network_child_missing_stop_blocks(self):
+        args = profile_fixture()
+        add_profile_child(args, end=None)
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^etw-stop-missing-or-ambiguous$"):
+            verify_profile_shutdown(**args)
+
+    def test_mismatched_descendant_parent_sequence_blocks(self):
+        args = profile_fixture()
+        args["etw_lifetimes"].corrupt_child_parent = True
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-profile-etw-parent-or-lifetime-unverified$"):
+            verify_profile_shutdown(**args)
+
+    def test_renderer_outside_verified_browser_subtree_blocks(self):
+        args = profile_fixture()
+        args["processes"]["renderer"].parent = "app"
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-profile-webview-unbound-parent$"):
+            verify_profile_shutdown(**args)
+
+    def test_external_webview_with_same_profile_blocks(self):
+        args = profile_fixture()
+        args["processes"]["outside"] = p("outside", "root", 901, WEBVIEW,
+                     f'"{WEBVIEW}" --user-data-dir="{PROFILE}"',
+                     BASE + timedelta(seconds=1), BASE + timedelta(seconds=5))
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-profile-external-contender$"):
+            verify_profile_shutdown(**args)
+
+    def test_unrelated_profile_is_not_assigned_to_app(self):
+        args = profile_fixture()
+        args["processes"]["outside"] = p("outside", "root", 901, WEBVIEW,
+                     f'"{WEBVIEW}" --user-data-dir="C:\\OtherProfile"',
+                     BASE + timedelta(seconds=1), BASE + timedelta(seconds=5))
+        self.assertEqual(verify_profile_shutdown(**args).redacted_receipt()[
+            "native_N12_acceptance"], "NOT_EVALUATED")
+
+    def test_descendant_explicit_different_profile_blocks(self):
+        args = profile_fixture()
+        args["processes"]["renderer"].command += ' --user-data-dir="C:\\Wrong"'
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-profile-child-profile-mismatch$"):
+            verify_profile_shutdown(**args)
+
+    def test_roles_process_keys_and_profile_stage_are_strict(self):
+        args = profile_fixture()
+        args["roles"].pop("renderer")
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-webview-role-unverified$"):
+            verify_profile_shutdown(**args)
+        args = profile_fixture()
+        args["processes"]["wrong"] = args["processes"].pop("renderer")
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-profile-process-map-unverified$"):
+            verify_profile_shutdown(**args)
+        args = profile_fixture()
+        args["profile_exit"] = BASE + timedelta(seconds=4, milliseconds=700)
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-profile-descendant-exit-unverified$"):
+            verify_profile_shutdown(**args)
+
+    def test_no_profile_end_before_close_or_after_capture(self):
+        for seconds in (3, 7):
+            args = profile_fixture()
+            args["profile_exit"] = BASE + timedelta(seconds=seconds)
+            with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                        "^no-cdp-profile-exit-stage-unverified$"):
+                verify_profile_shutdown(**args)
 
 
 if __name__ == "__main__":
