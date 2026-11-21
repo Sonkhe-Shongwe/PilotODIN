@@ -1134,6 +1134,19 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
                 background = {"status": "blocked", "error": type(exc).__name__}
         result["background_rundown_comparison"] = background
         print("N12 background FileIO comparison " + json.dumps(background), flush=True)
+    # Report calibrated FileIO path credit without overriding the ordinary audit.
+    from qa.p4_research.n12_mutation_triage import summarize
+    try:
+        result["mutation_triage"] = summarize(result)
+    except trace.EvidenceValidationError:
+        result["mutation_triage"] = {
+            "scope": "file-mutation-triage-only", "comparison": "BLOCKED",
+            "blockers": ["mutation-evidence-inconsistent"],
+            "native_N12_acceptance": "NOT_EVALUATED",
+            "file_mutation_acceptance": "NOT_EVALUATED",
+        }
+    report_file(root / "mutation-triage.json", result["mutation_triage"])
+    print("N12 mutation triage " + json.dumps(result["mutation_triage"]), flush=True)
     return result
 
 

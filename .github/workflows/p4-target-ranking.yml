@@ -54,6 +54,8 @@ on:
       - tests/test_p4_phase_exit_matrix.py
       - tests/test_p4_native_acceptance_kit.py
       - tests/test_p4_n12_app_build.py
+      - qa/p4_research/n12_mutation_triage.py
+      - tests/test_p4_n12_mutation_triage.py
       - tests/test_p4_n12_app_journey.py
       - tests/test_p4_n12_app_lifetime.py
       - tests/test_p4_n12_lifetime_control.py
@@ -194,6 +196,7 @@ jobs:
           tests/test_p4_n12_webview_replay.py
           tests/test_p4_r06_prospective_fingerprint.py
           tests/test_p4_n12_app_build.py
+          tests/test_p4_n12_mutation_triage.py
           tests/test_p4_n12_app_journey.py
           tests/test_p4_n12_app_lifetime.py
           tests/test_p4_n12_lifetime_control.py
@@ -308,6 +311,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
+          python -B -m unittest discover -s tests -p test_p4_n12_mutation_triage.py
           python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_lifecycle.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_main_window.py
