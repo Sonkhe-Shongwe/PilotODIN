@@ -93,25 +93,45 @@ def calibrate_child(original: Path, renamed: Path, port: int) -> None:
             raise RuntimeError("UDP marker was not sent in full")
 
 
+# TCP ephemeral port allocation is not a reservation of the corresponding
+# UDP port. Windows may reject the UDP bind even after TCP bind succeeds.
+# Retry only this two-socket setup, never marker/identity/coverage failures.
+SOCKET_PAIR_ATTEMPTS = 3
+
+
+@contextmanager
+def matching_loopback_sockets(*, socket_factory=None):
+    factory = socket.socket if socket_factory is None else socket_factory
+    for attempt in range(SOCKET_PAIR_ATTEMPTS):
+        with (
+            calibration_stage(CalibrationStage.SOCKETS),
+            factory(socket.AF_INET, socket.SOCK_STREAM) as tcp,
+            factory(socket.AF_INET, socket.SOCK_DGRAM) as udp,
+        ):
+            with calibration_stage(CalibrationStage.TCP_BIND):
+                tcp.bind(("127.0.0.1", 0))
+                tcp.listen(1)
+                tcp.settimeout(5)
+                address = tcp.getsockname()
+            try:
+                udp.bind(address)
+            except OSError as exc:
+                if attempt + 1 == SOCKET_PAIR_ATTEMPTS:
+                    raise CalibrationFailure(CalibrationStage.UDP_BIND.failure_message()) from exc
+                continue
+            with calibration_stage(CalibrationStage.UDP_BIND):
+                udp.settimeout(5)
+            yield tcp, udp, address
+            return
+
+
 def calibrate(directory: Path, child_hold_seconds: int = 0) -> dict:
     if child_hold_seconds not in (0, 4):
         raise ValueError("unsupported calibration child lifetime")
     with calibration_stage(CalibrationStage.DIRECTORY):
         directory.mkdir()
     original, renamed = directory / "n12-marker.bin", directory / "n12-renamed.bin"
-    with (
-        calibration_stage(CalibrationStage.SOCKETS),
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp,
-        socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp,
-    ):
-        with calibration_stage(CalibrationStage.TCP_BIND):
-            tcp.bind(("127.0.0.1", 0))
-            tcp.listen(1)
-            tcp.settimeout(5)
-            address = tcp.getsockname()
-        with calibration_stage(CalibrationStage.UDP_BIND):
-            udp.bind(address)
-            udp.settimeout(5)
+    with matching_loopback_sockets() as (tcp, udp, address):
         command = [sys.executable, __file__, "--child", str(directory), str(address[1])]
         if child_hold_seconds:
             command.extend(("--child-hold-seconds", str(child_hold_seconds)))

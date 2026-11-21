@@ -62,6 +62,7 @@ on:
       - tests/test_p4_n12_egress.py
       - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_webview_storage.py
+      - tests/test_p4_n12_calibration_socket_pair.py
       - tests/test_p4_n12_protected_fixture_contract.py
       - tests/test_p4_n12_token_capability_preflight.py
       - qa/p4_research/n12_token_capability_preflight.py
@@ -193,6 +194,7 @@ jobs:
           tests/test_p4_n12_egress.py
           tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_n12_webview_storage.py
+          tests/test_p4_n12_calibration_socket_pair.py
           tests/test_p4_n12_protected_fixture_contract.py
           tests/test_p4_n12_token_capability_preflight.py
           tests/test_p4_n12_tmp_debugger_fixture.py
@@ -295,6 +297,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
           python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
+          python -B -m unittest discover -s tests -p test_p4_n12_calibration_socket_pair.py
           python -B -m unittest discover -s tests -p test_p4_n12_protected_fixture_contract.py
           python -B -m unittest discover -s tests -p test_p4_n12_token_capability_preflight.py
           python -B -m qa.p4_research.n12_token_capability_preflight
