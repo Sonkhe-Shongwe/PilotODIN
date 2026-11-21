@@ -103,21 +103,24 @@ class NoCdpLifecycleObserver:
         self._birth = identity["birth"]
 
     def observe_readiness(self, *, window_observer=None, timeout_seconds=30,
-                          clock=None, sleep=None):
+                          window_timeout_seconds=10, clock=None, sleep=None):
         trace.require(self._process is not None and self._window is None
                       and self._provisional is None and not self._finished
                       and self._witness is not None and not self._witness.handle.closed,
                       "no-cdp-ready-stage-invalid")
-        if window_observer is None:
-            window_observer = window.observe_main_window
-        identity = window_observer(
-            self._process, expected_image=self._image, expected_title=self._title,
-            expected_birth_ticks=self._birth,
-        )
-        trace.require(isinstance(identity, window.MainWindowIdentity)
-                      and identity.pid == self._process.pid
-                      and identity.process_birth_ticks == self._birth,
-                      "no-cdp-window-result-unverified")
+        window_options = {
+            "expected_image": self._image, "expected_title": self._title,
+            "expected_birth_ticks": self._birth,
+            "timeout_seconds": window_timeout_seconds,
+            "observer": window_observer,
+        }
+        if clock is not None:
+            window_options["clock"] = clock
+        if sleep is not None:
+            window_options["sleep"] = sleep
+        # The clean absence-only wait is independent of the log read.
+        # A bad/duplicate window can never be mistaken for a slow startup.
+        identity = window.wait_for_main_window(self._process, **window_options)
         options = {"expected_pid": self._process.pid,
                    "main_window_identity_verified": True,
                    "timeout_seconds": timeout_seconds}

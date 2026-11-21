@@ -8,11 +8,14 @@ from dataclasses import dataclass, field
 import ctypes
 from ctypes import wintypes
 import os
+import time
 
 from qa.p4_native import n12_trace as trace
 
 MAX_ENUM_WINDOWS = 4096
 MAX_TITLE_CHARS = 1024
+MAX_WINDOW_WAIT_SECONDS = 20
+WINDOW_POLL_SECONDS = 0.1
 
 
 @dataclass(frozen=True)
@@ -81,6 +84,11 @@ def select_main_window(records, *, expected_pid, expected_image,
     trace.require(not any(r.title == expected_title and r.pid != expected_pid for r in records),
                   "no-cdp-window-title-collision")
     matches = [r for r in records if r.title == expected_title and r.pid == expected_pid]
+    # Only a clean *absence* of both expected app windows and the exact
+    # expected title is retryable. A wrong-title app window, foreign-title
+    # collision, hidden match or duplicate is a hard identity failure.
+    if not matches and not any(r.pid == expected_pid for r in records):
+        raise trace.EvidenceValidationError("no-cdp-window-not-yet-present")
     trace.require(len(matches) == 1, "no-cdp-window-missing-or-ambiguous")
     main = matches[0]
     trace.require(main.visible and main.owner_hwnd == 0 and main.root_hwnd == main.hwnd,
@@ -195,6 +203,58 @@ def observe_main_window(process, *, expected_image, expected_title, expected_bir
                   and process_times(process, allow_running=True) == original,
                   "no-cdp-window-process-lifetime-unverified")
     return identity
+
+
+def wait_for_main_window(process, *, expected_image, expected_title,
+                         expected_birth_ticks, timeout_seconds=10,
+                         observer=None, clock=time.monotonic, sleep=time.sleep):
+    """Bound the *absence-only* startup wait, without weakening identity checks.
+
+    A full OS observation on every attempt must independently pin the original
+    live handle and exact image/birth. Only a clean 'not yet present' error may
+    be retried. Ambiguous windows, invalid snapshots, changing identity, and
+    access failures stop immediately; no browser port is queried.
+    """
+    trace.require(type(timeout_seconds) in (int, float)
+                  and 0 < timeout_seconds <= MAX_WINDOW_WAIT_SECONDS,
+                  "no-cdp-window-wait-timeout-invalid")
+    trace.require(callable(getattr(process, "poll", None))
+                  and type(getattr(process, "pid", None)) is int
+                  and process.pid > 0,
+                  "no-cdp-window-process-lifetime-unverified")
+    if observer is None:
+        observer = observe_main_window
+    trace.require(callable(observer) and callable(clock) and callable(sleep),
+                  "no-cdp-window-observer-unverified")
+    deadline = clock() + timeout_seconds
+    last_sample = None
+    while True:
+        trace.require(process.poll() is None,
+                      "no-cdp-window-app-exited-before-ready")
+        try:
+            seen = observer(
+                process, expected_image=expected_image, expected_title=expected_title,
+                expected_birth_ticks=expected_birth_ticks,
+            )
+        except trace.EvidenceValidationError as exc:
+            if str(exc) != "no-cdp-window-not-yet-present":
+                raise
+        else:
+            trace.require(isinstance(seen, MainWindowIdentity)
+                          and seen.pid == process.pid
+                          and seen.process_birth_ticks == expected_birth_ticks
+                          and type(seen.hwnd) is int and seen.hwnd > 0,
+                          "no-cdp-window-result-unverified")
+            trace.require(process.poll() is None,
+                          "no-cdp-window-app-exited-before-ready")
+            return seen
+        current = clock()
+        trace.require(last_sample is None or current >= last_sample,
+                      "no-cdp-window-clock-invalid")
+        last_sample = current
+        if current >= deadline:
+            raise trace.EvidenceValidationError("no-cdp-window-wait-timeout")
+        sleep(min(WINDOW_POLL_SECONDS, max(0.0, deadline - current)))
 
 
 def confirm_same_main_window(previous, process, *, expected_image, expected_title):

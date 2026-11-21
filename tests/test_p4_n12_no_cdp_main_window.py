@@ -2,6 +2,7 @@
 from dataclasses import replace
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_no_cdp_main_window as win
@@ -44,7 +45,7 @@ class MainWindowIdentityTests(unittest.TestCase):
         self.assertNotIn(TITLE, str(receipt))
 
     def test_missing_or_duplicate_window_blocks(self):
-        self.fail_with("no-cdp-window-missing-or-ambiguous", records=[])
+        self.fail_with("no-cdp-window-not-yet-present", records=[])
         self.fail_with("no-cdp-window-missing-or-ambiguous",
                        records=[window(), window(710)])
         self.fail_with("no-cdp-window-missing-or-ambiguous",
@@ -123,6 +124,117 @@ class MainWindowIdentityTests(unittest.TestCase):
                                         "^no-cdp-window-changed-before-close$"):
                 win.confirm_same_main_window(previous, Process(),
                                              expected_image=APP, expected_title=TITLE)
+
+    def test_foreign_unrelated_windows_do_not_create_an_identity_collision(self):
+        self.fail_with("no-cdp-window-not-yet-present",
+                       records=[window(pid=56, title="Some other application")])
+
+    def test_missing_expected_window_only_retries_absence_then_succeeds(self):
+        app = SimpleNamespace(pid=1234, poll=lambda: None)
+        observations = [[], [window(pid=56, title="Other")], [window()]]
+        ticks = iter([0.0, 0.1, 0.2])
+        sleeps = []
+        def observe(_process, **_kwargs):
+            self.assertTrue(observations)
+            return win.select_main_window(**good(records=observations.pop(0)))
+        found = win.wait_for_main_window(
+            app, expected_image=APP, expected_title=TITLE,
+            expected_birth_ticks=BIRTH, timeout_seconds=2,
+            observer=observe, clock=lambda: next(ticks),
+            sleep=sleeps.append,
+        )
+        self.assertEqual(found.hwnd, 700)
+        self.assertEqual(len(sleeps), 2)
+        self.assertFalse(observations)
+
+    def test_ambiguity_wrong_title_and_other_identity_faults_never_retry(self):
+        app = SimpleNamespace(pid=1234, poll=lambda: None)
+        cases = (
+            [window(), window(701)],
+            [window(pid=1234, title="Unexpected startup title")],
+            [window(), window(900, pid=56)],
+            [window(visible=False)],
+        )
+        for records in cases:
+            with self.subTest(case=len(records)):
+                calls = []
+                def observe(_process, **_kwargs):
+                    calls.append(True)
+                    return win.select_main_window(**good(records=records))
+                with self.assertRaises(trace.EvidenceValidationError) as exc:
+                    win.wait_for_main_window(
+                        app, expected_image=APP, expected_title=TITLE,
+                        expected_birth_ticks=BIRTH, observer=observe,
+                        sleep=lambda _: self.fail("unsafe retry"),
+                    )
+                self.assertNotEqual(str(exc.exception), "no-cdp-window-wait-timeout")
+                self.assertEqual(len(calls), 1)
+
+    def test_transient_absence_times_out_with_redacted_fixed_reason(self):
+        app = SimpleNamespace(pid=1234, poll=lambda: None)
+        ticks = iter([0.0, 0.2, 0.4])
+        calls = []
+        def observe(_process, **_kwargs):
+            calls.append(True)
+            raise trace.EvidenceValidationError("no-cdp-window-not-yet-present")
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-window-wait-timeout$"):
+            win.wait_for_main_window(
+                app, expected_image=APP, expected_title=TITLE,
+                expected_birth_ticks=BIRTH, timeout_seconds=0.3,
+                observer=observe, clock=lambda: next(ticks),
+                sleep=lambda _: None,
+            )
+        self.assertEqual(len(calls), 2)
+
+    def test_app_exit_between_attempts_fails_before_next_window_probe(self):
+        app = SimpleNamespace(pid=1234)
+        live = [None, 17]
+        app.poll = lambda: live.pop(0)
+        calls = []
+        def observe(_process, **_kwargs):
+            calls.append(True)
+            raise trace.EvidenceValidationError("no-cdp-window-not-yet-present")
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-window-app-exited-before-ready$"):
+            win.wait_for_main_window(
+                app, expected_image=APP, expected_title=TITLE,
+                expected_birth_ticks=BIRTH, observer=observe,
+                clock=iter([0.0, 0.1]).__next__, sleep=lambda _: None,
+            )
+        self.assertEqual(len(calls), 1)
+
+    def test_bad_wait_limits_and_invalid_borrowed_witness_fail_closed(self):
+        app = SimpleNamespace(pid=1234, poll=lambda: None)
+        for seconds in (0, -1, 21, True, float("inf"), None):
+            with self.subTest(seconds=seconds):
+                with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                            "^no-cdp-window-wait-timeout-invalid$"):
+                    win.wait_for_main_window(
+                        app, expected_image=APP, expected_title=TITLE,
+                        expected_birth_ticks=BIRTH, timeout_seconds=seconds,
+                        observer=lambda *_a, **_kw: self.fail("unexpected read"),
+                    )
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-window-result-unverified$"):
+            win.wait_for_main_window(
+                app, expected_image=APP, expected_title=TITLE,
+                expected_birth_ticks=BIRTH,
+                observer=lambda *_a, **_kw: win.MainWindowIdentity(999, 999, BIRTH),
+            )
+
+    def test_backward_monotonic_clock_cannot_allow_unbounded_wait(self):
+        app = SimpleNamespace(pid=1234, poll=lambda: None)
+        ticks = iter([3.0, 2.0, 1.0])
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "^no-cdp-window-clock-invalid$"):
+            win.wait_for_main_window(
+                app, expected_image=APP, expected_title=TITLE,
+                expected_birth_ticks=BIRTH,
+                observer=lambda *_a, **_kw: (_ for _ in ()).throw(
+                    trace.EvidenceValidationError("no-cdp-window-not-yet-present")),
+                clock=lambda: next(ticks), sleep=lambda _: None,
+            )
 
     def test_no_actual_windows_api_or_close_in_fixture_suite(self):
         self.assertEqual(win.MAX_TITLE_CHARS, 1024)

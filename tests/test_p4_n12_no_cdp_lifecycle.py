@@ -133,6 +133,47 @@ class NoCdpLifecycleStitchTests(unittest.TestCase):
                               prelaunch_log_hook=observer.prelaunch_hook)
             popen.assert_not_called()
 
+    def test_lifecycle_waits_for_clean_absence_then_readiness(self):
+        with ExitStack() as stack:
+            observer = self.observer(stack)
+            file = self.synthetic_spawn(stack, observer)
+            observer.bind_process(self.process, handle_reader=fake_handle)
+            file.write_bytes(log.MARKER + b"\n")
+            calls = []
+            def delayed_window(app, **expected):
+                calls.append(True)
+                if len(calls) < 3:
+                    raise trace.EvidenceValidationError("no-cdp-window-not-yet-present")
+                return fake_window(app, **expected)
+            receipt = observer.observe_readiness(
+                window_observer=delayed_window, window_timeout_seconds=1,
+            )
+            self.assertEqual(len(calls), 3)
+            self.assertEqual(receipt["native_N12_acceptance"], "NOT_EVALUATED")
+            self.assertEqual(observer.prepare_normal_close(
+                recheck_window=fake_recheck)["normal_close"], "EXTERNAL_HELPER_REQUIRED")
+
+    def test_lifecycle_multiple_windows_never_reaches_log_or_close(self):
+        with ExitStack() as stack:
+            observer = self.observer(stack)
+            file = self.synthetic_spawn(stack, observer)
+            observer.bind_process(self.process, handle_reader=fake_handle)
+            file.write_bytes(log.MARKER + b"\n")
+            calls = []
+            def ambiguous(app, **kwargs):
+                calls.append(True)
+                raise trace.EvidenceValidationError("no-cdp-window-missing-or-ambiguous")
+            with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                        "^no-cdp-window-missing-or-ambiguous$"):
+                observer.observe_readiness(window_observer=ambiguous,
+                                           window_timeout_seconds=1,
+                                           sleep=lambda _: self.fail("unsafe retry"))
+            self.assertEqual(len(calls), 1)
+            self.assertIsNone(observer._provisional)
+            with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                        "^no-cdp-close-stage-invalid$"):
+                observer.prepare_normal_close(recheck_window=fake_recheck)
+
     def test_missing_log_marker_does_not_reach_close(self):
         with ExitStack() as stack:
             observer = self.observer(stack)
