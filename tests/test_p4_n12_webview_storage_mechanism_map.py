@@ -115,5 +115,23 @@ class StorageMechanismSourceTests(unittest.TestCase):
             self.assertNotIn(forbidden, text)
 
 
+    def test_no_cdp_ambient_opt_in_disappearance_or_default_proof_change_blocks(self):
+        for field, old, changed, reason in (
+            ("no_cdp", "ambient_local.apply_to_app_env(app_env, profile)",
+             "unreviewed_app_data_redirect(app_env, profile)", "no-cdp-env-source-drift"),
+            ("no_cdp", "ambient_local.enabled(base)",
+             "True", "no-cdp-env-source-drift"),
+            ("qa_ambient", "pilotodin-n12-build-[0-9]+-(?:journey|lifetime)",
+             "pilotodin-n12-build-.*", "qa-ambient-opt-in-source-drift"),
+        ):
+            with self.subTest(field=field, old=old):
+                def alter(s):
+                    self.assertIn(old, s[field])
+                    s[field] = s[field].replace(old, changed, 1)
+                report = self.review(alter)
+                self.assertEqual(report["source_status"], "SOURCE_DRIFT_BLOCKED")
+                self.assertIn(reason, report["issues"])
+                self.assertFalse(report["owner_native_execution_authorized"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,9 @@
 """Opt-in, QA-only candidate for WebView2 ambient user-local writes.
 
+The only approved source shapes for preparation are a disposable N12 journey
+or lifetime root owned by the preflight under RUNNER_TEMP. This does not
+create new permitted roots and does not enable a native run.
+
 This does not assert that WebView2 honours inherited LOCALAPPDATA/APPDATA.
 The production app configuration and strict N12 filesystem scope are unchanged.
 Never use this as a native capture approval or a security isolation boundary.
@@ -13,7 +17,7 @@ FLAG = "PILOTODIN_N12_QA_AMBIENT_LOCAL_VARIANT"
 CANDIDATE = "ISOLATED_QA_ROOTS"
 LOCAL_DIR = "ambient-local"
 ROAMING_DIR = "ambient-roaming"
-EXPECTED_ROOT = re.compile(r"pilotodin-n12-build-[0-9]+-journey")
+EXPECTED_ROOT = re.compile(r"pilotodin-n12-build-[0-9]+-(?:journey|lifetime)")
 
 
 def enabled(env):

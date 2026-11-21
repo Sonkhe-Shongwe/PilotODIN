@@ -165,8 +165,9 @@ def inspect_sources(sources):
     no_cdp = _function(sources["no_cdp"], "no_cdp_environments")
     if (not _contains(no_cdp, "journey.temporary_environment(", '"WEBVIEW2_USER_DATA_FOLDER"',
                       "lifecycle.verify_opt_in_environment(")
-            or any(value in no_cdp for value in (
-                '"WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"', "ambient_local.apply_to_app_env("))):
+            or '"WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"' in no_cdp
+            or not _contains(no_cdp, "ambient_local.enabled(base)",
+                             "ambient_local.apply_to_app_env(app_env, profile)")):
         issues.append("no-cdp-env-source-drift")
     ambient = sources["qa_ambient"]
     flag = _function(ambient, "enabled")
@@ -174,7 +175,8 @@ def inspect_sources(sources):
     if (not _contains(flag, "choice in (None, \"\", CANDIDATE)", "return choice == CANDIDATE")
             or not _contains(apply, '"LOCALAPPDATA"', '"APPDATA"',
                              '"WEBVIEW2_USER_DATA_FOLDER"', '"TEMP"', '"TMP"', '"TMPDIR"')
-            or not _contains(ambient, '"native_filesystem_containment": "NOT_VERIFIED"')):
+            or not _contains(ambient, '"native_filesystem_containment": "NOT_VERIFIED"',
+                             "pilotodin-n12-build-[0-9]+-(?:journey|lifetime)")):
         issues.append("qa-ambient-opt-in-source-drift")
     return _report(issues, configured)
 

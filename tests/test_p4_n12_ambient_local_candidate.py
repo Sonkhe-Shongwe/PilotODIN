@@ -135,5 +135,33 @@ class AmbientLocalCandidateSourceTests(unittest.TestCase):
         self.assertNotEqual(app["LOCALAPPDATA"], self.env["LOCALAPPDATA"])
 
 
+    def test_lifetime_profile_candidate_uses_same_owned_disposable_runner_guard(self):
+        root = self.runner / "pilotodin-n12-build-456-lifetime"
+        root.mkdir()
+        profile = root / "webview"
+        profile.mkdir()
+        (profile / journey.APP_TEMP_DIR).mkdir()
+        candidate.prepare(profile, self.runner)
+        app = candidate.apply_to_app_env({
+            **self.env, candidate.FLAG: candidate.CANDIDATE,
+            "WEBVIEW2_USER_DATA_FOLDER": str(profile),
+            **{key: str(profile / journey.APP_TEMP_DIR) for key in ("TEMP", "TMP", "TMPDIR")},
+        }, profile)
+        self.assertEqual(app["LOCALAPPDATA"], str(profile / candidate.LOCAL_DIR))
+        self.assertEqual(app["APPDATA"], str(profile / candidate.ROAMING_DIR))
+        self.assertEqual(candidate.public_receipt(app)["native_filesystem_containment"], "NOT_VERIFIED")
+
+    def test_unrecognised_lifetime_like_root_is_not_eligible(self):
+        for name in ("pilotodin-n12-build-456-lifetime-extra", "pilotodin-n12-build-x-lifetime",
+                     "pilotodin-n12-build-456-protected"):
+            with self.subTest(name=name):
+                root = self.runner / name
+                root.mkdir()
+                profile = root / "webview"
+                profile.mkdir()
+                with self.assertRaisesRegex(trace.EvidenceValidationError, "profile-unverified"):
+                    candidate.prepare(profile, self.runner)
+
+
 if __name__ == "__main__":
     unittest.main()

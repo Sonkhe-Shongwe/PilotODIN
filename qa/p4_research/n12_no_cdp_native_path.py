@@ -10,6 +10,7 @@ from pathlib import Path
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_journey as journey
 from qa.p4_research import n12_no_cdp_lifecycle as lifecycle
+from qa.p4_research import n12_ambient_local_candidate as ambient_local
 from qa.p4_research import n12_no_cdp_child_handles as child_handles
 from qa.p4_research import n12_private_child_pipe as child_pipe
 
@@ -29,6 +30,11 @@ def no_cdp_environments(base, profile):
         **journey.temporary_environment(base, profile / journey.APP_TEMP_DIR),
         "WEBVIEW2_USER_DATA_FOLDER": str(profile),
     }
+    # Explicit QA-only variant tests inherited browser ambient app data
+    # WITHOUT enabling CDP/netlog or changing the product/storage allowlist.
+    # This is not a claim that WebView2 inherits these variables.
+    if ambient_local.enabled(base):
+        app_env = ambient_local.apply_to_app_env(app_env, profile)
     lifecycle.verify_opt_in_environment(
         vite_env=vite_env, app_env=app_env, expected_profile=profile,
     )
@@ -64,6 +70,16 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
                               for key, value in app_env.items())
                   and type(source) is str and type(expected_hash) is str,
                   "no-cdp-app-launch-scope-unverified")
+    # Re-verify at the final spawn boundary, not merely during construction.
+    # Unexpected candidate values and pre-existing redirects fail closed.
+    if ambient_local.enabled(app_env):
+        trace.require(ambient_local.apply_to_app_env(app_env, profile) == app_env,
+                      "no-cdp-ambient-local-app-env-unverified")
+    else:
+        trace.require(all(app_env.get(key) != str(profile / name)
+                          for key, name in (("LOCALAPPDATA", ambient_local.LOCAL_DIR),
+                                            ("APPDATA", ambient_local.ROAMING_DIR))),
+                      "no-cdp-ambient-local-unapproved-residue")
     # Optional, independently source/runner/consent guarded. There is no
     # native workflow enabling this branch; check before app creation.
     # Only the Python worker sees the authenticated pipe key. The QA app,

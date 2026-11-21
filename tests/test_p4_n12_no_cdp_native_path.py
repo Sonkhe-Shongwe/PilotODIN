@@ -321,5 +321,86 @@ class NoCdpNativePathTests(unittest.TestCase):
         self.assertNotIn("cdp_browser_pid", launch)
 
 
+    def test_opt_in_ambient_local_is_exclusive_to_no_cdp_app_without_debugging(self):
+        from qa.p4_research import n12_ambient_local_candidate as candidate
+        runner_root = self.root / "pilotodin-n12-build-733-lifetime"
+        runner_root.mkdir()
+        profile = runner_root / "webview"
+        profile.mkdir()
+        (profile / journey.APP_TEMP_DIR).mkdir()
+        candidate.prepare(profile, self.root)
+        env = {
+            **self.env, candidate.FLAG: candidate.CANDIDATE,
+            "LOCALAPPDATA": str(self.root / "original-host-local"),
+            "APPDATA": str(self.root / "original-host-roaming"),
+        }
+        with patch.object(trace, "windows_path", side_effect=lambda value: str(value).casefold()):
+            vite_env, app = native.no_cdp_environments(env, profile)
+        self.assertEqual(app["LOCALAPPDATA"], str(profile / candidate.LOCAL_DIR))
+        self.assertEqual(app["APPDATA"], str(profile / candidate.ROAMING_DIR))
+        self.assertEqual(vite_env["LOCALAPPDATA"], env["LOCALAPPDATA"])
+        self.assertEqual(vite_env["APPDATA"], env["APPDATA"])
+        self.assertEqual(app["WEBVIEW2_USER_DATA_FOLDER"], str(profile))
+        self.assertNotIn("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", app)
+        self.assertNotIn("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", vite_env)
+        self.assertFalse(any(key.upper().startswith("WEBVIEW2_") for key in vite_env))
+        for key in ("TEMP", "TMP", "TMPDIR"):
+            self.assertEqual(app[key], str(profile / journey.APP_TEMP_DIR))
+        # Re-run the exact pre-spawn guard with an injected, fake process.
+        with ExitStack() as stack, patch.object(journey, "spawn") as spawn, \
+             patch.object(native.lifecycle, "NoCdpLifecycleObserver") as observer:
+            observer.side_effect = trace.EvidenceValidationError("synthetic-prelaunch-stop")
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "synthetic-prelaunch-stop"):
+                native.run_one_no_cdp_app(
+                    stack=stack, manifest={"markers": {}}, root=runner_root,
+                    binary=runner_root / "synthetic.exe", title="Synthetic only",
+                    source=SOURCE, expected_hash=SHA, app_env=app, profile=profile,
+                )
+            spawn.assert_not_called()
+
+    def test_opt_in_must_be_prepared_and_final_ambient_settings_exact(self):
+        from qa.p4_research import n12_ambient_local_candidate as candidate
+        runner_root = self.root / "pilotodin-n12-build-734-lifetime"
+        runner_root.mkdir()
+        profile = runner_root / "webview"
+        profile.mkdir()
+        (profile / journey.APP_TEMP_DIR).mkdir()
+        env = {**self.env, candidate.FLAG: candidate.CANDIDATE}
+        with self.assertRaisesRegex(trace.EvidenceValidationError, "directory-unverified"):
+            native.no_cdp_environments(env, profile)
+        candidate.prepare(profile, self.root)
+        with patch.object(trace, "windows_path", side_effect=lambda value: str(value).casefold()):
+            _, app = native.no_cdp_environments(env, profile)
+        for key, wrong in (
+            ("LOCALAPPDATA", str(self.root / "unreviewed-local")),
+            ("APPDATA", str(self.root / "unreviewed-roaming")),
+        ):
+            with self.subTest(key=key), ExitStack() as stack, patch.object(journey, "spawn") as spawn:
+                with self.assertRaisesRegex(
+                        trace.EvidenceValidationError, "no-cdp-ambient-local-app-env-unverified"):
+                    native.run_one_no_cdp_app(
+                        stack=stack, manifest={"markers": {}}, root=runner_root,
+                        binary=runner_root / "synthetic.exe", title="QA",
+                        source=SOURCE, expected_hash=SHA,
+                        app_env={**app, key: wrong}, profile=profile,
+                    )
+                spawn.assert_not_called()
+
+    def test_unapproved_ambient_candidate_residue_refused_before_spawn(self):
+        from qa.p4_research import n12_ambient_local_candidate as candidate
+        for key, folder in (("LOCALAPPDATA", candidate.LOCAL_DIR),
+                            ("APPDATA", candidate.ROAMING_DIR)):
+            with self.subTest(key=key), ExitStack() as stack, patch.object(journey, "spawn") as spawn:
+                with self.assertRaisesRegex(trace.EvidenceValidationError, "unapproved-residue"):
+                    native.run_one_no_cdp_app(
+                        stack=stack, manifest={"markers": {}}, root=self.root,
+                        binary=self.root / "synthetic.exe", title="QA",
+                        source=SOURCE, expected_hash=SHA,
+                        app_env={**self.approved_launch_environment(), key: str(self.profile / folder)},
+                        profile=self.profile,
+                    )
+                spawn.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
