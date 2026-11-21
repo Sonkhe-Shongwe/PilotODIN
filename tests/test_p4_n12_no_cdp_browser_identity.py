@@ -257,6 +257,9 @@ class NoCdpProfileShutdownSourceTests(unittest.TestCase):
     def test_renderer_outside_verified_browser_subtree_blocks(self):
         args = profile_fixture()
         args["processes"]["renderer"].parent = "app"
+        # No explicit profile switch on this malformed branch, to isolate
+        # the process-ancestry decision from the independent contender gate.
+        args["processes"]["renderer"].command = f'"{WEBVIEW}" --type=renderer'
         with self.assertRaisesRegex(trace.EvidenceValidationError,
                                     "^no-cdp-profile-webview-unbound-parent$"):
             verify_profile_shutdown(**args)
@@ -280,7 +283,11 @@ class NoCdpProfileShutdownSourceTests(unittest.TestCase):
 
     def test_descendant_explicit_different_profile_blocks(self):
         args = profile_fixture()
-        args["processes"]["renderer"].command += ' --user-data-dir="C:\\Wrong"'
+        # Replace the single existing switch; appending would instead
+        # correctly fail the duplicate-switch parser first.
+        args["processes"]["renderer"].command = (
+            f'"{WEBVIEW}" --type=renderer --user-data-dir="C:\\Wrong"'
+        )
         with self.assertRaisesRegex(trace.EvidenceValidationError,
                                     "^no-cdp-profile-child-profile-mismatch$"):
             verify_profile_shutdown(**args)
