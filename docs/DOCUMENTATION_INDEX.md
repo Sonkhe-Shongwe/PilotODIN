@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**21 November 2026 | Current authority and single active P4 direction.** Continue **R02.5 file-mutation causal investigation** via independent WebView2 storage, process identity and FileIO evidence contracts. The earlier Stage 1 golden-reference and synthetic backward verification are completed source-level prerequisites, not a competing current direction. No change of strict native acceptance, permissions, installer freeze or P4 points.
+**21 November 2026 | Current authority and single active P4 direction.** Continue **R02.5 file-mutation causal investigation** using the independent original process-handle ↔ ETW FileIO writer/path join contract. The earlier WebView2 storage hypothesis map and Stage 1 partial golden reference remain source-level prerequisites, not a native acceptance result. No change of strict native acceptance, permissions, installer freeze or P4 points.
 
 ## Current authoritative route, in reading order
 
@@ -13,6 +13,8 @@
 7. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) · [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) · [Local analytics plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) · [8 GB RAM resource evidence](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom).
 
 ## Current development references
+
+- **[CURRENT original-writer ↔ FileIO known-path completion evidence contract](./P4_N12_FILEIO_ORIGINAL_WRITER_JOIN_EVIDENCE_2026-11-21.md)**: direct inspection of the existing strict reducer, synthetic early-process-exit and PID-reuse counterexamples, a separate fail-closed join witness and acceptance-proof boundaries. [corrected source `c4376f4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c4376f435d45eaebe07ae368168189ed104c0da3); exact-source [CI #44916512787](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44916512787) **4/4 SUCCESS** (1,003 Python passed, 6 skipped, 473 subtests, 104 Node/frontend tests and Vite build, 13 disposable-browser tests, 4 hosted-Windows R03 tests, hosted-Windows synthetic ETW/FileIO controls). Historical native FileIO remains FAIL/BLOCKED; **no actual WebView2 handle or file destination was newly captured**.
 
 - **[CURRENT R02.5 WebView2 storage source and falsification map](./P4_N12_WEBVIEW_STORAGE_HYPOTHESIS_AND_FALSIFICATION_MAP_2026-11-21.md)**: three distinct launch configurations (production, standard N12, no-CDP) plus the explicitly opt-in QA ambient redirect, six independent competing explanations, exact source-to-evidence discriminators and fail-closed source tests. [source `b17a0f6`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b17a0f6299d6fe9bfa3c11997d2e6ced08618933); [routine CI #44915740879](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44915740879) **4/4 jobs COMPLETED SUCCESS** at exact SHA `b17a0f6` (994 Python passed, 6 skipped, 450 subtests passed; 104 frontend tests and Vite build; 13 disposable browser tests; 4 hosted-Windows R03 tests; hosted-Windows synthetic ETW/FileIO checks). **No native WebView2 process or file writer retested.**
 
