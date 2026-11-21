@@ -181,7 +181,7 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
 
     def test_source_only_full_capture_brackets_snapshots_and_reuses_fileio_reducer(self):
         from contextlib import ExitStack, contextmanager, nullcontext
-        from datetime import datetime, timezone
+        from datetime import datetime, timedelta, timezone
         from tempfile import TemporaryDirectory
         from unittest.mock import patch
         import os
@@ -264,6 +264,11 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
                     lifetime.fileio_review, "reduce", return_value={
                         "status": "BLOCKED", "native_N12_acceptance": "NOT_EVALUATED"}))
                 stack.enter_context(patch.object(lifetime.time, "sleep"))
+                # Source-only test must not invoke a Windows FILETIME clock.
+                clock_start = datetime(2026, 11, 21, tzinfo=timezone.utc)
+                stack.enter_context(patch.object(
+                    lifetime.journey, "now", side_effect=[
+                        clock_start + timedelta(seconds=i) for i in range(10)]))
                 receipt = lifetime.capture(root, root, provenance, no_cdp=True, fileio=True)
             collector.assert_called_once()
             old_collector.assert_not_called()
