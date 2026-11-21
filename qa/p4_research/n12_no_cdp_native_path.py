@@ -39,7 +39,7 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
 
     The app is never spawned before caller-supplied consent and profile
     validation. This function uses the existing close helper, never kills a
-    process as a successful close, and never tries port 9331.
+    process as a successful close, and never queries the debugger port.
     """
     from qa.p4_native.n12_lifetime_control import process_images, process_times
 
