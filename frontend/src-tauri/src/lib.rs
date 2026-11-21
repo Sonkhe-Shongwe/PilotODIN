@@ -4,7 +4,7 @@
 use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::net::TcpListener;
 use std::sync::Mutex;
 use sha2::{Digest, Sha256};
@@ -247,6 +247,43 @@ fn new_token() -> String {
     format!("{}{}", uuid::Uuid::new_v4().simple(), uuid::Uuid::new_v4().simple())
 }
 
+// Keep both worker families in the *same app-local data home*. The R03 QA
+// identity has separate baseline/candidate stores, as it already did for
+// analytics. Do not redirect the application-wide WebView2 or owner temp.
+fn worker_data_home(app: &AppHandle) -> Result<PathBuf, String> {
+    let mut home = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("data");
+    if app.config().identifier == "com.pilotodin.p4r03benchmark" {
+        let profile = std::env::var("PILOTODIN_R03_BENCHMARK").unwrap_or_default();
+        match profile.as_str() {
+            "baseline" | "candidate" => home.push(profile),
+            _ => return Err("Select a valid R03 QA benchmark profile".into()),
+        }
+    }
+    std::fs::create_dir_all(&home)
+        .map_err(|e| format!("Could not prepare user storage: {e}"))?;
+    Ok(home)
+}
+
+// Product-level containment for temporary files created by bundled workers.
+// Unlike inherited Windows TEMP/TMP, this path is inside the worker's owned
+// app data directory. Reject a pre-existing symlink/junction which escapes it.
+fn worker_temp_directory(home: &Path, name: &str) -> Result<PathBuf, String> {
+    if !matches!(name, "backend-temp" | "inference-temp") {
+        return Err("Unexpected worker temporary directory".into());
+    }
+    let root = home.canonicalize()
+        .map_err(|_| "Worker data directory unavailable".to_string())?;
+    let candidate = root.join(name);
+    std::fs::create_dir_all(&candidate)
+        .map_err(|_| "Could not prepare worker temporary storage".to_string())?;
+    let resolved = candidate.canonicalize()
+        .map_err(|_| "Worker temporary storage unavailable".to_string())?;
+    if resolved.parent() != Some(root.as_path()) {
+        return Err("Worker temporary storage escapes app data".into());
+    }
+    Ok(resolved)
+}
+
 #[tauri::command]
 fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<BackendConnection, String> {
     let mut guard = state.backend.lock().map_err(|_| "Engine state unavailable".to_string())?;
@@ -258,22 +295,17 @@ fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<Back
     if port == inference_port {return Err("Port reservation collision".into());}
     let token = new_token();
     let inference_token = new_token();
-    let mut data_dir = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("data");
-    if app.config().identifier == "com.pilotodin.p4r03benchmark" {
-        let profile = std::env::var("PILOTODIN_R03_BENCHMARK").unwrap_or_default();
-        match profile.as_str() {
-            "baseline" | "candidate" => data_dir.push(profile),
-            _ => return Err("Select a valid R03 QA benchmark profile".into()),
-        }
-    }
-    std::fs::create_dir_all(&data_dir)
-        .map_err(|e| format!("Could not prepare user storage: {e}"))?;
+    let data_dir = worker_data_home(&app)?;
+    let worker_temp = worker_temp_directory(&data_dir, "backend-temp")?;
 
     // Supplying a dedicated port and key does not start or load a model.
     // Only a deliberate local AI request invokes launch_bundled_ai.
     let command = app.shell().sidecar("pilotodin-engine")
         .map_err(|e| format!("Bundled analytical engine missing: {e}"))?
         .env("PILOTODIN_HOME", data_dir.to_string_lossy().to_string())
+        .env("TEMP", worker_temp.as_os_str())
+        .env("TMP", worker_temp.as_os_str())
+        .env("TMPDIR", worker_temp.as_os_str())
         .env("PILOTODIN_DESKTOP_PORT", port.to_string())
         .env("PILOTODIN_DESKTOP_SESSION", token.as_str())
         .env("PILOTODIN_DESKTOP_WATCH_STDIN", "1")
@@ -361,6 +393,7 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
         (settings.token.clone(), settings.port)
     };
     let model = verify_bundled_model(&app)?;
+    let worker_temp = worker_temp_directory(&worker_data_home(&app)?, "inference-temp")?;
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
     let runtime_dlls = resources.join("llama-runtime");
     let old_path = std::env::var_os("PATH").unwrap_or_default();
@@ -377,6 +410,9 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
                "--no-webui", "--no-agent"])
         .env("LLAMA_API_KEY", token.as_str())
         .env("PATH", runtime_path)
+        .env("TEMP", worker_temp.as_os_str())
+        .env("TMP", worker_temp.as_os_str())
+        .env("TMPDIR", worker_temp.as_os_str())
         // ggml_backend_load_all scans the executable directory and current
         // working directory, not PATH, for version-specific CPU backends.
         // Keep the runtime DLL directory as the process working directory.
@@ -600,6 +636,54 @@ mod report_save_tests {
     }
 }
 
+
+#[cfg(test)]
+mod worker_temp_directory_tests {
+    use super::worker_temp_directory;
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn worker_temp_stays_under_existing_app_data_and_refuses_unreviewed_name() {
+        let root = std::env::temp_dir().join(format!(
+            "pilotodin-worker-temp-unit-{}", uuid::Uuid::new_v4()
+        ));
+        fs::create_dir(&root).unwrap();
+        let run = (|| -> Result<(), String> {
+            let backend = worker_temp_directory(&root, "backend-temp")?;
+            let inference = worker_temp_directory(&root, "inference-temp")?;
+            let home = root.canonicalize().map_err(|e| e.to_string())?;
+            if backend.parent() != Some(home.as_path()) ||
+                inference.parent() != Some(home.as_path()) ||
+                backend == inference || !backend.is_dir() || !inference.is_dir() {
+                return Err("Worker scratch directory was not isolated".into());
+            }
+            if worker_temp_directory(&root, "..").is_ok() {
+                return Err("Unreviewed worker directory was accepted".into());
+            }
+            Ok(())
+        })();
+        fs::remove_dir_all(&root).unwrap();
+        run.unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn worker_temp_rejects_symlink_outside_app_data() {
+        use std::os::unix::fs::symlink;
+        let outer = std::env::temp_dir().join(format!(
+            "pilotodin-worker-temp-outer-{}", uuid::Uuid::new_v4()
+        ));
+        let home = outer.join("home");
+        let outside = outer.join("outside");
+        fs::create_dir(&outer).unwrap();
+        fs::create_dir(&home).unwrap();
+        fs::create_dir(&outside).unwrap();
+        symlink(&outside, home.join("backend-temp")).unwrap();
+        assert!(worker_temp_directory(&home, "backend-temp").is_err());
+        fs::remove_dir_all(&outer).unwrap();
+    }
+}
 
 #[cfg(test)]
 mod native_close_ticket_tests {
