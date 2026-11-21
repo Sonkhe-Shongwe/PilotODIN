@@ -15,6 +15,10 @@ Outside Windows it reports `windows-host-required`. Any load or symbol-resolutio
 
 Routine Windows CI may exercise existing unrelated generated ETW and browser fixtures. This new preflight step itself is strictly a DLL/export availability check. `tests/test_p4_n12_token_capability_preflight.py` mocks API exports and verifies that **none of their functions is invoked**, even for a clean synthetic result.
 
+## Exact-source Windows verification
+
+[Routine P4 CI #44850133377](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44850133377) passed **all four jobs** at exact source [`839c2e1f`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/839c2e1fbf398584c764d5601086d390ae0f4f9f). Linux source job: **804 Python tests passed, 6 skipped, 300 subtests**; frontend **103 passes** plus Vite. Disposable browser: **13 passed**. Hosted Windows R03: **4 passed**. The Windows preservation/ETW fixture ran **6/6 new token-capability unit cases** and the actual *read-only* export lookup returned **`api_surface_status: PRESENT`, `exports_observed: 10`, `exports_expected: 10`**. It also returned **`native_token_created: false`, `acl_modified: false`, `file_access_attempted: false`, `file_protection_verified: false`** and **`native_N12_acceptance: NOT_EVALUATED`**. The result establishes API-symbol availability on that hosted Windows runner and nothing about restricted-token enforcement.
+
 ## Token and access facts required in a later, explicitly approved test
 
 1. Prove a real restricted **primary token** for the generated writer by querying `TokenType`, `TokenGroups`, `TokenRestrictedSids`, `TokenPrivileges` and `TokenOwner`. In particular, verify a nonempty restricting SID list and Administrators enabled only for denial, with all relevant takeover and bypass privileges absent. `IsTokenRestricted` alone cannot prove these conditions.
