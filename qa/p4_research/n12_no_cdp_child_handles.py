@@ -70,6 +70,10 @@ class ScopedQaChildHandleObserver:
         self.root = root_process
         self.expected_app_image = trace.windows_path(expected_app_image)
         self.snapshots = snapshots
+        # Synthetic sampling must not initialize Win32, even on CI Linux.
+        self._injected = (open_handle is not None and process_times is not None
+                          and process_images is not None)
+        self._live_armed = False
         self.open_handle = open_handle
         self.process_times = process_times
         self.process_images = process_images
@@ -86,8 +90,8 @@ class ScopedQaChildHandleObserver:
         self.samples = 0
         self._finished = False
 
-    def _backend(self):
-        if self.snapshots is None:
+    def _backend(self, *, need_snapshot=False):
+        if need_snapshot and self.snapshots is None:
             self.snapshots = ProcessSnapshots()
         if self.open_handle is None or self.process_times is None or self.process_images is None:
             from qa.p4_native.n12_lifetime_control import (
@@ -113,7 +117,9 @@ class ScopedQaChildHandleObserver:
     def sample_once(self, rows=None):
         """One bounded, test-injectable sample; no broad handle enumeration."""
         trace.require(not self._finished, "no-cdp-child-observer-already-finished")
-        self._backend()
+        trace.require(self._live_armed or (rows is not None and self._injected),
+                      "no-cdp-child-live-sampling-not-authorized")
+        self._backend(need_snapshot=rows is None)
         try:
             root_times = self._verify_root()
         except (OSError, KeyError, TypeError, ValueError, trace.EvidenceValidationError):
@@ -188,8 +194,9 @@ class ScopedQaChildHandleObserver:
         env = dict(os.environ) if env is None else env
         _hosted_scope(env, Path(profile), Path(self.expected_app_image))
         trace.require(self._thread is None and not self._finished, "no-cdp-child-observer-already-started")
-        self._backend()
+        self._backend(need_snapshot=True)
         self._verify_root()
+        self._live_armed = True
         self._thread = Thread(target=self._observe, name="n12-isolated-qa-webview-handles",
                               daemon=True)
         self._thread.start()
