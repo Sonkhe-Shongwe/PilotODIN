@@ -201,6 +201,9 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
     stop_images = {}
     handle_order = {}
     child_order = []
+    shadow_review = {"scope": "no-cdp-original-handle-witness-design-only",
+                     "status": "NOT_EVALUATED",
+                     "native_N12_acceptance": "NOT_EVALUATED"} if no_cdp_profile else None
     # Redacted source-comparison diagnostics only. These cannot grant a PASS,
     # override coverage issues or silently waive an unavailable ETW pair.
     sysmon_reasons = {"status": "NOT_EVALUATED",
@@ -254,6 +257,31 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
                     "launcher": lifetimes.no_cdp_sysmon_diagnostic(worker, handle_witness=worker_witness),
                     "app": lifetimes.no_cdp_sysmon_diagnostic(app, handle_witness=app_witness),
                     "children_by_role": child_totals,
+                    "native_N12_acceptance": "NOT_EVALUATED",
+                }
+            if no_cdp_profile:
+                # Shadow design only. No output from this review is ever fed
+                # into the original find() gate, marker gate, or acceptance.
+                shadow_children = {}
+                for role in sorted(set(roles.values()) - {"app"}):
+                    reviews = [
+                        lifetimes.shadow_handle_exit_review(
+                            process, parent=processes.get(process.parent), require_parent=True)
+                        for guid, process in scoped.items() if roles[guid] == role
+                    ]
+                    shadow_children[role] = {
+                        "count": len(reviews),
+                        "retained_handle_witness_count": sum(
+                            row["status"] == "REVIEWABLE_ONLY" for row in reviews),
+                        "failed_checks": dict(sorted(Counter(
+                            label for row in reviews for label in row["failed_checks"]).items())),
+                    }
+                shadow_review = {
+                    "scope": "no-cdp-original-handle-witness-design-only",
+                    "launcher": lifetimes.shadow_handle_exit_review(worker, witness=worker_witness),
+                    "app": lifetimes.shadow_handle_exit_review(
+                        app, witness=app_witness, parent=worker, require_parent=True),
+                    "children_by_role": shadow_children,
                     "native_N12_acceptance": "NOT_EVALUATED",
                 }
             launcher_lifetime = lifetimes.find(worker, handle_witness=worker_witness)
@@ -346,7 +374,8 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
             "collector_counters": session["counters"], "timing_comparisons": timing,
             "disputed_exits": disputed,
             **({"no_cdp_profile_identity": no_cdp_receipt,
-                "no_cdp_sysmon_diagnostic": sysmon_reasons} if no_cdp_profile else {}),
+                "no_cdp_sysmon_diagnostic": sysmon_reasons,
+                "no_cdp_shadow_handle_witness_review": shadow_review} if no_cdp_profile else {}),
             "native_N12_acceptance": "NOT_EVALUATED"}
 
 

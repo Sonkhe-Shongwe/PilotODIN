@@ -231,6 +231,84 @@ class EtwLifetimes:
             })
         return receipt
 
+
+    def shadow_handle_exit_review(self, process, *, witness=None, parent=None, require_parent=False):
+        """Source-only candidate contract; NEVER used by find() or native admission.
+
+        Sysmon GUID-owned exit is evidence of a termination event, but Event 5
+        UtcTime is not represented as the Windows process handle's exact exit
+        FILETIME. Removing their equality from this *shadow* comparison does
+        not prove child exit unless an independently retained original Windows
+        process handle has an exact identity and exit-time match with ETW.
+        """
+        result = {"status": "BLOCKED", "failed_checks": [],
+                  "native_N12_acceptance": "NOT_EVALUATED"}
+        failures = []
+        if self.no_cdp_sysmon_corroboration is not True:
+            failures.append("no-cdp-scope-not-active")
+        try:
+            start, stop = self._candidate_pair(process)
+        except trace.EvidenceValidationError as exc:
+            label = str(exc)
+            if label not in {"etw-start-missing-or-ambiguous",
+                             "etw-stop-missing-or-ambiguous", "etw-sequence-conflict"}:
+                label = "etw-pair-unverified"
+            return {**result, "failed_checks": [label]}
+
+        checks = self._no_cdp_sysmon_checks(process, start, stop)
+        # Deliberately OMIT only the disputed cross-provider exit equality;
+        # all other original predicate checks remain mandatory here.
+        failures.extend(label for label, verified in checks.items()
+                        if label != "etw-exit-exactly-matches-sysmon" and not verified)
+        deltas = self._order_deltas(start, stop)
+        # Event-header timestamps can slightly precede provider payloads.
+        # Still require positive event emission ordering, capture boundaries,
+        # and a non-negative process lifetime.
+        if (deltas["creation_minus_window_start_ticks"] < 0
+                or deltas["stop_emission_minus_start_emission_ticks"] <= 0
+                or deltas["window_end_minus_stop_emission_ticks"] < 0
+                or deltas["exit_minus_creation_ticks"] < 0):
+            failures.append("etw-event-order-unverified")
+        if (any(event is not start and start.creation <= event.creation <= stop.exit
+                for event in self.starts[start.pid])
+                or any(event is not stop and event.creation < start.creation <= event.exit
+                       for event in self.stops[start.pid])):
+            failures.append("overlapping-etw-pid-lifetimes")
+        if require_parent:
+            if parent is None or self.parent_sequence_comparison(process, parent) != "etw-parent-sequence-agrees":
+                failures.append("independent-etw-parent-identity-unverified")
+            else:
+                parent_candidates = self._start_candidates(parent)
+                if (len(parent_candidates) != 1 or
+                        not parent_candidates[0].creation <= start.creation):
+                    failures.append("independent-etw-parent-chronology-unverified")
+        stop_kind = compare_stop_image(stop.image, process.image, self.devices)
+        short_stop = stop_kind == "short-basename-prefix"
+        if stop_kind not in {"exact-path-match", "exact-basename-match"} and not (
+                short_stop and isinstance(stop.image, str) and stop.image.isascii()
+                and len(stop.image) == OBSERVED_STOP_BASENAME_PREFIX_LENGTH):
+            failures.append("etw-stop-image-unverified")
+        if witness is None:
+            failures.append("retained-original-handle-unavailable")
+        else:
+            if (not isinstance(witness, dict)
+                    or any(type(witness.get(key)) is not int for key in ("pid", "birth", "exit"))
+                    or (start.pid, start.creation, stop.exit) != (
+                        witness.get("pid"), witness.get("birth"), witness.get("exit"))):
+                failures.append("etw-original-handle-identity-or-clock-conflict")
+            # A shortened stop image cannot identify a child by basename alone.
+            # Its original retained handle must supply BOTH exact full images.
+            if short_stop:
+                if not all(compare_image_path(witness.get(key), process.image, self.devices)
+                           == "exact-path-match" for key in ("image_dos", "image_native")):
+                    failures.append("short-stop-original-handle-images-unverified")
+            elif any(key in witness for key in ("image_dos", "image_native")):
+                if not all(compare_image_path(witness.get(key), process.image, self.devices)
+                           == "exact-path-match" for key in ("image_dos", "image_native")):
+                    failures.append("original-handle-full-image-unverified")
+        return {**result, "status": "REVIEWABLE_ONLY" if not failures else "BLOCKED",
+                "failed_checks": sorted(set(failures))}
+
     def _order_issues(self, start, stop, deltas, *, exact_handle, independent_sysmon=False):
         # Keep event-header ordering strict. Header-versus-provider-FILETIME
         # comparisons may be bypassed ONLY with independent Sysmon evidence.

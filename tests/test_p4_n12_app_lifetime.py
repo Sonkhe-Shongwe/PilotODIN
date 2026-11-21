@@ -182,6 +182,132 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertNotIn("no_cdp_sysmon_diagnostic", report)
         self.assertEqual(report["verdict"], "PASS")
 
+    def test_shadow_design_retains_strict_exit_equality_block_on_observed_clock_offsets(self):
+        # Use microsecond-representable reconstructions, not private trace.
+        # 1 tick = 100 ns. These are not new acceptance thresholds.
+        for _, kind, fields in self.rows:
+            if kind == 5 and fields["ProcessId"] == "700":
+                fields["UtcTime"] = payload(800_000 - 32_930)[:-1]
+            if kind == 5 and fields["ProcessId"] == "701":
+                fields["UtcTime"] = payload(520_000 - 77_620)[:-1]
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("no-cdp-sysmon-lifetime-unverified", report["issues"])
+        reviewer = report["no_cdp_shadow_handle_witness_review"]
+        self.assertEqual(reviewer["launcher"]["status"], "REVIEWABLE_ONLY")
+        self.assertEqual(reviewer["app"]["status"], "REVIEWABLE_ONLY")
+        self.assertEqual(reviewer["launcher"]["failed_checks"], [])
+        self.assertEqual(reviewer["app"]["failed_checks"], [])
+        self.assertEqual(reviewer["children_by_role"]["webview"]["retained_handle_witness_count"], 0)
+        self.assertEqual(reviewer["children_by_role"]["webview-network"]["retained_handle_witness_count"], 0)
+        self.assertEqual(reviewer["children_by_role"]["webview"]["failed_checks"],
+                         {"retained-original-handle-unavailable": 1})
+        self.assertEqual(reviewer["native_N12_acceptance"], "NOT_EVALUATED")
+        rendered = json.dumps(reviewer)
+        for private in ("private", "pilotodin-desktop.exe", "msedgewebview2.exe",
+                        "guid", '"pid"', str(ORIGIN)):
+            self.assertNotIn(private, rendered)
+
+    def test_shadow_design_bad_handle_and_wrong_parent_are_never_reviewable(self):
+        from qa.p4_native import n12_exit_corroboration as correlate
+        with self.subTest("wrong handle pid"):
+            events = [correlate.read_lifecycle(row) for row in self.events]
+            lifetimes = correlate.EtwLifetimes(self.events, trace.etw_device_aliases(
+                self.volume_devices), (ORIGIN, ORIGIN + 900_000),
+                no_cdp_sysmon_corroboration=True)
+            worker = SimpleNamespace(pid=700, start=stamp(50_000), end=stamp(800_000),
+                                     disputed_exit=None, image=PYTHON)
+            app = SimpleNamespace(pid=701, start=stamp(130_000), end=stamp(520_000),
+                                  disputed_exit=None, image=APP)
+            wrong = dict(self.app, pid=999)
+            report = lifetimes.shadow_handle_exit_review(
+                app, witness=wrong, parent=worker, require_parent=True)
+            self.assertEqual(report["status"], "BLOCKED")
+            self.assertIn("etw-original-handle-identity-or-clock-conflict", report["failed_checks"])
+            self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
+        with self.subTest("parent sequence conflict"):
+            self.events[2]["data"]["ParentProcessSequenceNumber"] = "999"
+            lifetimes = correlate.EtwLifetimes(self.events, trace.etw_device_aliases(
+                self.volume_devices), (ORIGIN, ORIGIN + 900_000),
+                no_cdp_sysmon_corroboration=True)
+            report = lifetimes.shadow_handle_exit_review(
+                app, witness=self.app, parent=worker, require_parent=True)
+            self.assertEqual(report["status"], "BLOCKED")
+            self.assertIn("independent-etw-parent-identity-unverified", report["failed_checks"])
+
+    def test_shadow_design_missing_child_handle_short_stop_and_bad_image_fail_closed(self):
+        from qa.p4_native import n12_exit_corroboration as correlate
+        devices = trace.etw_device_aliases(self.volume_devices)
+        proc = SimpleNamespace(pid=702, start=stamp(210_000), end=stamp(650_000),
+                               disputed_exit=None, image=WEBVIEW)
+        parent = SimpleNamespace(pid=701, start=stamp(130_000), end=stamp(520_000),
+                                 disputed_exit=None, image=APP)
+        self.events[5]["data"]["ImageName"] = "msedgewebview2"  # observed 14-byte stop prefix
+        lifetimes = correlate.EtwLifetimes(
+            self.events, devices, (ORIGIN, ORIGIN + 900_000),
+            no_cdp_sysmon_corroboration=True)
+        without_handle = lifetimes.shadow_handle_exit_review(
+            proc, parent=parent, require_parent=True)
+        self.assertEqual(without_handle["status"], "BLOCKED")
+        self.assertIn("retained-original-handle-unavailable", without_handle["failed_checks"])
+        fake_handle = {"pid": 702, "birth": ORIGIN + 210_000,
+                       "exit": ORIGIN + 650_000,
+                       "image_dos": WEBVIEW, "image_native": WEBVIEW}
+        with_handle = lifetimes.shadow_handle_exit_review(
+            proc, witness=fake_handle, parent=parent, require_parent=True)
+        self.assertEqual(with_handle["status"], "REVIEWABLE_ONLY")
+        wrong_image = {**fake_handle, "image_native": APP}
+        bad = lifetimes.shadow_handle_exit_review(
+            proc, witness=wrong_image, parent=parent, require_parent=True)
+        self.assertEqual(bad["status"], "BLOCKED")
+        self.assertIn("short-stop-original-handle-images-unverified", bad["failed_checks"])
+        self.assertEqual(bad["native_N12_acceptance"], "NOT_EVALUATED")
+
+    def test_shadow_design_pid_reuse_sequence_and_missing_exit_fail_closed(self):
+        from qa.p4_native import n12_exit_corroboration as correlate
+        devices = trace.etw_device_aliases(self.volume_devices)
+        proc = SimpleNamespace(pid=702, start=stamp(210_000), end=stamp(650_000),
+                               disputed_exit=None, image=WEBVIEW)
+        parent = SimpleNamespace(pid=701, start=stamp(130_000), end=stamp(520_000),
+                                 disputed_exit=None, image=APP)
+        handle = {"pid": 702, "birth": ORIGIN + 210_000,
+                  "exit": ORIGIN + 650_000}
+        for case, expected in (
+            ("missing-exit", "sysmon-exit-present"),
+            ("pid-reuse-ambiguous", "etw-start-missing-or-ambiguous"),
+            ("duplicate-sequence", "etw-sequence-conflict"),
+            ("wrong-image", "etw-start-exact-image"),
+            ("bad-chronology", "etw-event-order-unverified"),
+        ):
+            with self.subTest(case=case):
+                original = deepcopy(self.events)
+                changed = deepcopy(original)
+                observed = SimpleNamespace(**vars(proc))
+                if case == "missing-exit":
+                    observed.end = None
+                elif case == "pid-reuse-ambiguous":
+                    changed.append(deepcopy(changed[4]))
+                elif case == "duplicate-sequence":
+                    changed[5]["data"]["ProcessSequenceNumber"] = "999"
+                elif case == "wrong-image":
+                    changed[4]["data"]["ImageName"] = APP
+                else:
+                    changed[5]["ticks"] = changed[4]["ticks"]
+                lifetimes = correlate.EtwLifetimes(
+                    changed, devices, (ORIGIN, ORIGIN + 900_000),
+                    no_cdp_sysmon_corroboration=True)
+                report = lifetimes.shadow_handle_exit_review(
+                    observed, witness=handle, parent=parent, require_parent=True)
+                self.assertEqual(report["status"], "BLOCKED")
+                self.assertIn(expected, report["failed_checks"])
+                self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertEqual(self.reduce()["verdict"], "PASS")
+
+    def test_shadow_design_never_appears_in_default_strict_reduction(self):
+        report = self.reduce()
+        self.assertNotIn("no_cdp_shadow_handle_witness_review", report)
+        self.assertEqual(report["verdict"], "PASS")
+
     def test_no_cdp_missing_stage_markers_remains_blocked(self):
         report = self.reduce(no_cdp_profile=True)
         self.assertEqual(report["verdict"], "BLOCKED")
