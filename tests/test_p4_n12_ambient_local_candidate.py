@@ -1,142 +1,129 @@
-"""N12 QA-only LOCALAPPDATA/APPDATA candidate, source/fixture scope only."""
+"""QA-only ambient local redirection candidate, generated source/fixture cases."""
 import os
 from pathlib import Path
-
-import pytest
+from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import patch
 
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_ambient_local_candidate as candidate
 from qa.p4_research import n12_app_journey as journey
 
 
-def given(tmp_path):
-    root = tmp_path / "pilotodin-n12-build-123-journey"
-    root.mkdir()
-    profile = root / "webview"
-    profile.mkdir()
-    (profile / journey.APP_TEMP_DIR).mkdir()
-    before = {
-        "LOCALAPPDATA": str(tmp_path / "original-host-local"),
-        "APPDATA": str(tmp_path / "original-host-roaming"),
-        "WEBVIEW2_USER_DATA_FOLDER": str(profile),
-        "TEMP": str(profile / journey.APP_TEMP_DIR),
-        "TMP": str(profile / journey.APP_TEMP_DIR),
-        "TMPDIR": str(profile / journey.APP_TEMP_DIR),
-    }
-    return profile, before
+class AmbientLocalCandidateSourceTests(unittest.TestCase):
+    def setUp(self):
+        temp = TemporaryDirectory(prefix="n12-ambient-fixture-")
+        self.addCleanup(temp.cleanup)
+        self.runner = Path(temp.name)
+        root = self.runner / "pilotodin-n12-build-123-journey"
+        root.mkdir()
+        self.profile = root / "webview"
+        self.profile.mkdir()
+        (self.profile / journey.APP_TEMP_DIR).mkdir()
+        self.env = {
+            "LOCALAPPDATA": str(self.runner / "original-host-local"),
+            "APPDATA": str(self.runner / "original-host-roaming"),
+            "WEBVIEW2_USER_DATA_FOLDER": str(self.profile),
+            "TEMP": str(self.profile / journey.APP_TEMP_DIR),
+            "TMP": str(self.profile / journey.APP_TEMP_DIR),
+            "TMPDIR": str(self.profile / journey.APP_TEMP_DIR),
+        }
+
+    def opt_in(self):
+        self.env[candidate.FLAG] = candidate.CANDIDATE
+        candidate.prepare(self.profile, self.runner)
+
+    def test_baseline_keeps_original_app_data_locations(self):
+        app = journey.app_environment(self.env, self.profile, "first")
+        self.assertEqual(app["LOCALAPPDATA"], self.env["LOCALAPPDATA"])
+        self.assertEqual(app["APPDATA"], self.env["APPDATA"])
+        self.assertEqual(app["WEBVIEW2_USER_DATA_FOLDER"], str(self.profile))
+        self.assertFalse((self.profile / candidate.LOCAL_DIR).exists())
+        self.assertEqual(candidate.public_receipt(self.env)["variant"], "unchanged-baseline")
+
+    def test_opt_in_redirects_only_local_and_roaming_inside_permitted_profile(self):
+        self.opt_in()
+        app = journey.app_environment(self.env, self.profile, "first")
+        self.assertEqual(app["LOCALAPPDATA"], str(self.profile / candidate.LOCAL_DIR))
+        self.assertEqual(app["APPDATA"], str(self.profile / candidate.ROAMING_DIR))
+        for key in ("TEMP", "TMP", "TMPDIR", "WEBVIEW2_USER_DATA_FOLDER"):
+            self.assertEqual(app[key], self.env[key])
+        receipt = candidate.public_receipt(self.env)
+        self.assertEqual(receipt["native_filesystem_containment"], "NOT_VERIFIED")
+        self.assertNotIn("original-host-local", str(receipt))
+
+    def test_nonempty_unknown_variant_refuses(self):
+        for variant in ("1", "true", "ISOLATED_QA_ROOT", "candidate"):
+            with self.subTest(variant=variant):
+                env = {**self.env, candidate.FLAG: variant}
+                with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                            "variant-unrecognised"):
+                    journey.app_environment(env, self.profile, "first")
+        self.assertFalse(candidate.enabled({**self.env, candidate.FLAG: ""}))
+
+    def test_unprepared_candidate_directory_refuses(self):
+        self.env[candidate.FLAG] = candidate.CANDIDATE
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "directory-unverified"):
+            journey.app_environment(self.env, self.profile, "first")
+
+    def test_host_temp_for_any_app_variable_refuses(self):
+        self.opt_in()
+        for key in ("TEMP", "TMP", "TMPDIR"):
+            with self.subTest(variable=key):
+                env = {**self.env, key: self.env["LOCALAPPDATA"]}
+                with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                            "temp-unverified"):
+                    journey.app_environment(env, self.profile, "first")
+
+    def test_profile_outside_runner_refuses(self):
+        other = self.runner / "unrelated-runner"
+        other.mkdir()
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "outside-runner"):
+            candidate.prepare(self.profile, other)
+
+    def test_existing_candidate_target_cannot_be_overwritten(self):
+        (self.profile / candidate.LOCAL_DIR).mkdir()
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "already-exists"):
+            candidate.prepare(self.profile, self.runner)
+
+    def test_unexpected_webview_profile_argument_refuses(self):
+        self.opt_in()
+        env = {**self.env, "WEBVIEW2_USER_DATA_FOLDER":
+               str(self.runner / "wrong-profile")}
+        with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                    "profile-unverified"):
+            candidate.apply_to_app_env(env, self.profile)
+
+    def test_synthetic_symlink_flag_refuses_without_creating_host_symlink(self):
+        self.opt_in()
+        local = self.profile / candidate.LOCAL_DIR
+        original = Path.is_symlink
+        with patch.object(Path, "is_symlink",
+                          lambda obj: obj == local or original(obj)):
+            with self.assertRaisesRegex(trace.EvidenceValidationError,
+                                        "directory-unverified"):
+                candidate.apply_to_app_env(self.env, self.profile)
+
+    def test_backend_and_driver_do_not_inherit_candidate_overrides(self):
+        self.opt_in()
+        app = journey.app_environment(self.env, self.profile, "first")
+        backend = journey.backend_environment(self.env)
+        driver = journey.driver_environment(self.env, self.profile.parent)
+        self.assertNotEqual(app["LOCALAPPDATA"], backend["LOCALAPPDATA"])
+        self.assertEqual(backend["LOCALAPPDATA"], driver["LOCALAPPDATA"])
+        self.assertNotEqual(app["APPDATA"], backend["APPDATA"])
+        self.assertEqual(backend["APPDATA"], driver["APPDATA"])
+
+    def test_global_os_environment_stays_untouched(self):
+        self.opt_in()
+        before = dict(os.environ)
+        app = candidate.apply_to_app_env(self.env, self.profile)
+        self.assertEqual(before, dict(os.environ))
+        self.assertNotEqual(app["LOCALAPPDATA"], self.env["LOCALAPPDATA"])
 
 
-def test_default_produces_identical_inherited_app_data_environment(tmp_path):
-    profile, base = given(tmp_path)
-    app = journey.app_environment(base, profile, "first")
-    assert app["LOCALAPPDATA"] == base["LOCALAPPDATA"]
-    assert app["APPDATA"] == base["APPDATA"]
-    assert app["WEBVIEW2_USER_DATA_FOLDER"] == str(profile)
-    assert not (profile / candidate.LOCAL_DIR).exists()
-    assert candidate.public_receipt(base)["variant"] == "unchanged-baseline"
-
-
-def test_opt_in_sets_only_app_local_and_roaming_beneath_disposable_profile(tmp_path):
-    profile, base = given(tmp_path)
-    base[candidate.FLAG] = candidate.CANDIDATE
-    assert candidate.prepare(profile, tmp_path) == {
-        "candidate": "prepared", "native_verified": False,
-        "write_policy_broadened": False,
-    }
-    app = journey.app_environment(base, profile, "first")
-    assert app["LOCALAPPDATA"] == str(profile / candidate.LOCAL_DIR)
-    assert app["APPDATA"] == str(profile / candidate.ROAMING_DIR)
-    assert app["TEMP"] == base["TEMP"]
-    assert app["TMP"] == base["TMP"]
-    assert app["TMPDIR"] == base["TMPDIR"]
-    assert app["WEBVIEW2_USER_DATA_FOLDER"] == str(profile)
-    assert base["LOCALAPPDATA"] != app["LOCALAPPDATA"]
-    assert base["APPDATA"] != app["APPDATA"]
-    assert candidate.public_receipt(base)["native_filesystem_containment"] == "NOT_VERIFIED"
-    assert "original-host-local" not in str(candidate.public_receipt(base))
-
-
-@pytest.mark.parametrize("bad", ["1", "true", "ISOLATED_QA_ROOT", "candidate", ""])
-def test_invalid_modes_fail_closed_except_empty_is_baseline(tmp_path, bad):
-    profile, base = given(tmp_path)
-    base[candidate.FLAG] = bad
-    if bad == "":
-        assert candidate.enabled(base) is False
-    else:
-        with pytest.raises(trace.EvidenceValidationError, match="variant-unrecognised"):
-            journey.app_environment(base, profile, "first")
-
-
-def test_candidate_refuses_unprepared_directories(tmp_path):
-    profile, base = given(tmp_path)
-    base[candidate.FLAG] = candidate.CANDIDATE
-    with pytest.raises(trace.EvidenceValidationError, match="directory-unverified"):
-        journey.app_environment(base, profile, "first")
-
-
-@pytest.mark.parametrize("key", ["TEMP", "TMP", "TMPDIR"])
-def test_candidate_refuses_nonprofile_temp_without_widening_write_policy(tmp_path, key):
-    profile, base = given(tmp_path)
-    candidate.prepare(profile, tmp_path)
-    base[candidate.FLAG] = candidate.CANDIDATE
-    base[key] = base["LOCALAPPDATA"]
-    with pytest.raises(trace.EvidenceValidationError, match="temp-unverified"):
-        journey.app_environment(base, profile, "first")
-
-
-def test_candidate_refuses_profile_outside_runner(tmp_path):
-    profile, _ = given(tmp_path)
-    other = tmp_path / "unrelated-runner"
-    other.mkdir()
-    with pytest.raises(trace.EvidenceValidationError, match="outside-runner"):
-        candidate.prepare(profile, other)
-
-
-def test_candidate_refuses_reuse_of_existing_target_and_never_overwrites(tmp_path):
-    profile, _ = given(tmp_path)
-    (profile / candidate.LOCAL_DIR).mkdir()
-    with pytest.raises(trace.EvidenceValidationError, match="already-exists"):
-        candidate.prepare(profile, tmp_path)
-
-
-def test_candidate_refuses_mismatched_profile_identity(tmp_path):
-    profile, base = given(tmp_path)
-    candidate.prepare(profile, tmp_path)
-    base[candidate.FLAG] = candidate.CANDIDATE
-    base["WEBVIEW2_USER_DATA_FOLDER"] = str(tmp_path / "different")
-    with pytest.raises(trace.EvidenceValidationError, match="profile-unverified"):
-        candidate.apply_to_app_env(base, profile)
-
-
-def test_candidate_refuses_symlink_marked_directory_even_without_real_windows_symlink(
-        tmp_path, monkeypatch):
-    profile, base = given(tmp_path)
-    candidate.prepare(profile, tmp_path)
-    base[candidate.FLAG] = candidate.CANDIDATE
-    local = profile / candidate.LOCAL_DIR
-    original = Path.is_symlink
-    monkeypatch.setattr(Path, "is_symlink",
-                        lambda self: self == local or original(self))
-    with pytest.raises(trace.EvidenceValidationError, match="directory-unverified"):
-        candidate.apply_to_app_env(base, profile)
-
-
-def test_only_app_environment_receives_candidate_override(tmp_path):
-    profile, base = given(tmp_path)
-    candidate.prepare(profile, tmp_path)
-    base[candidate.FLAG] = candidate.CANDIDATE
-    app = journey.app_environment(base, profile, "first")
-    backend = journey.backend_environment(base)
-    driver = journey.driver_environment(base, profile.parent)
-    assert app["LOCALAPPDATA"] != backend["LOCALAPPDATA"] == driver["LOCALAPPDATA"]
-    assert app["APPDATA"] != backend["APPDATA"] == driver["APPDATA"]
-
-
-def test_candidate_never_mutates_global_environment(tmp_path):
-    profile, base = given(tmp_path)
-    candidate.prepare(profile, tmp_path)
-    base[candidate.FLAG] = candidate.CANDIDATE
-    prev = dict(os.environ)
-    result = candidate.apply_to_app_env(base, profile)
-    assert dict(os.environ) == prev
-    assert base["LOCALAPPDATA"] != result["LOCALAPPDATA"]
+if __name__ == "__main__":
+    unittest.main()

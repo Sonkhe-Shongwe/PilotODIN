@@ -314,7 +314,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
-          python -B -m pytest -q tests/test_p4_n12_ambient_local_candidate.py
+          python -B -m unittest discover -s tests -p test_p4_n12_ambient_local_candidate.py
           python -B -m unittest discover -s tests -p test_p4_n12_mutation_triage.py
           python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
           python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_lifecycle.py
