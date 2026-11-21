@@ -37,7 +37,8 @@ class NoCdpFileIOReviewTests(TestCase):
         start = datetime(2026, 11, 21, tzinfo=timezone.utc)
         with patch.object(trace, "load_capture", return_value=(start, start, {}, [], set(issues or []))), \
              patch.object(trace, "bind_processes",
-                          return_value=({"a": "app", **({"b": "webview-network", **({"c": "webview"} if two_roles else {})} if role else {})},
+                          return_value=({"a": "app", **({"b": "webview-network"} if role else {}),
+                                         **({"c": "webview"} if role and two_roles else {})},
                                         [("a", object())])), \
              patch.object(trace, "scope",
                           return_value=([r"C:\protected"], {"webview-network": [r"C:\qa"]})), \
@@ -116,12 +117,7 @@ class NoCdpFileIOReviewTests(TestCase):
                          "UNVERIFIED_OR_INCOMPLETE")
         self.assertEqual(receipt["effective_webview_user_data_folder"], "NOT_VERIFIED")
 
-    def test_child_inventory_and_profile_match_only_reviewable_with_two_roles(self):
-        from unittest.mock import patch
-        from qa.p4_native import n12_trace as trace
-        original = trace.bind_processes
-        # Need both webview browser AND network child and a complete private
-        # original-handle receipt, or the comparison fails closed.
+    def test_complete_original_handle_and_profile_counts_remain_only_reviewable(self):
         self.life["no_cdp_private_child_handle_diagnostic"] = {
             "scope": "no-cdp-private-child-handle-reducer-diagnostic-only",
             "status": "REVIEWABLE_ONLY", "native_N12_acceptance": "NOT_EVALUATED",
@@ -135,18 +131,45 @@ class NoCdpFileIOReviewTests(TestCase):
             "profile_process_lifetimes": "SYSMON_ETW_DESCENDANTS_EXITED",
             "webview_process_count": 2, "native_N12_acceptance": "NOT_EVALUATED",
         }
-        # The test helper's role mock declares only one network child. Give
-        # the second browser a matching role without changing actual reducers.
-        def patched_bind(*args, **kwargs):
-            return ({"a": "app", "b": "webview", "c": "webview-network"},
-                    [("a", object())])
-        with patch.object(trace, "bind_processes", side_effect=patched_bind):
-            receipt = self.run_check()
-        # The helper above also patches bind_processes, so the inner helper
-        # mapping should prevail. A complete two-role positive is verified
-        # independently in the scoped bridge tests below.
-        self.assertNotEqual(receipt["native_N12_acceptance"], "PASS")
-        self.assertEqual(receipt["effective_webview_user_data_folder"], "NOT_VERIFIED")
+        result = self.run_check(two_roles=True)
+        self.assertEqual(result["original_webview_child_handle_lifetimes"],
+                         "PRIVATE_ORIGINAL_HANDLES_REVIEWABLE_ONLY")
+        self.assertEqual(result["browser_command_line_profile"],
+                         "SYSMON_ETW_BROWSER_PROFILE_COMMAND_LINE_REVIEWED")
+        self.assertEqual(result["blocker"],
+                         "full-n12-calibration-and-transient-write-control-not-collected")
+        self.assertEqual(result["effective_webview_user_data_folder"], "NOT_VERIFIED")
+        self.assertEqual(result["file_mutation_acceptance"], "NOT_EVALUATED")
+        self.assertEqual(result["status"], "BLOCKED")
+
+    def test_incomplete_child_inventory_or_mismatched_profile_fails(self):
+        self.life["no_cdp_private_child_handle_diagnostic"] = {
+            "scope": "no-cdp-private-child-handle-reducer-diagnostic-only",
+            "status": "REVIEWABLE_ONLY", "native_N12_acceptance": "NOT_EVALUATED",
+            "failed_checks": {},
+            "child_role_counts": {"webview": 1, "webview-network": 1},
+            "verified_handle_counts": {"webview": 1, "webview-network": 1},
+        }
+        self.life["no_cdp_profile_identity"] = {
+            "status": "SOURCE_OS_CORROBORATED",
+            "browser_process_identity": "UNIQUE_SYSMON_ETW_APP_PROFILE",
+            "profile_process_lifetimes": "SYSMON_ETW_DESCENDANTS_EXITED",
+            "webview_process_count": 3, "native_N12_acceptance": "NOT_EVALUATED",
+        }
+        wrong_profile = self.run_check(two_roles=True)
+        self.assertEqual(wrong_profile["blocker"],
+                         "no-cdp-browser-profile-command-line-unverified")
+        self.assertEqual(wrong_profile["browser_command_line_profile"],
+                         "UNVERIFIED_OR_INCOMPLETE")
+        self.life["no_cdp_profile_identity"]["webview_process_count"] = 2
+        self.life["no_cdp_private_child_handle_diagnostic"]["verified_handle_counts"] = {
+            "webview": 1, "webview-network": 2,
+        }
+        wrong_children = self.run_check(two_roles=True)
+        self.assertEqual(wrong_children["blocker"],
+                         "no-cdp-original-webview-child-handles-unverified")
+        self.assertEqual(wrong_children["original_webview_child_handle_lifetimes"],
+                         "UNVERIFIED_OR_INCOMPLETE")
 
     def test_fail_closed_if_strict_reducer_raises(self):
         with patch.object(trace, "load_capture", side_effect=trace.EvidenceValidationError("bad-digest")):
@@ -225,7 +248,7 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
             "RUNNER_OS": "Windows", "GITHUB_RUN_ATTEMPT": "1",
             "PILOTODIN_N12_APPROVED_SOURCE": source,
         }
-        with patch.dict(os.environ, env, clear=True), \\
+        with patch.dict(os.environ, env, clear=True), \
              patch.object(lifetime.journey, "prepare_journey") as prepare:
             with self.assertRaisesRegex(trace.EvidenceValidationError, "original-child-handle-consent-required"):
                 lifetime.capture(Path("fake"), Path("fake"),
