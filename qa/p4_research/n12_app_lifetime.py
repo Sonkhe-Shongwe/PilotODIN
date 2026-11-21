@@ -42,9 +42,16 @@ def storage_app_environment(env, profile, *, variant="debug-netlog"):
 
 
 def backend_launch_context(env, home):
-    """Run the focused QA backend from its generated data home, never source."""
+    """Keep the focused storage probe's backend identical to the full N12 QA.
+
+    Previously the focused WebView storage capture retained inherited host
+    TEMP/TMP/TMPDIR even after the full journey and product worker received
+    app-local scratch. This made backend ambient writes a confounder in an
+    otherwise WebView-focused experiment. Require already prepared dedicated
+    scratch: no host-temp fallback and no change to allowed filesystem roots.
+    """
     trace.require(home.is_dir(), "isolated QA backend data home is missing")
-    return journey.backend_environment(env), home
+    return journey.backend_environment(env, home), home
 
 
 def preflight(source, expected_hash, *, storage=False):

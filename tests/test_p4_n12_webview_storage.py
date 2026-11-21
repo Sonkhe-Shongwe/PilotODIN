@@ -136,10 +136,16 @@ class StorageProbeTests(unittest.TestCase):
     def test_focused_backend_uses_existing_generated_home_and_import_only_source(self):
         with TemporaryDirectory() as folder:
             home = Path(folder) / "qa-home"
-            environment = {"PILOTODIN_HOME": str(home), "PYTHONPATH": "generated-extra"}
+            inherited = str(Path(folder) / "host-temp")
+            environment = {"PILOTODIN_HOME": str(home), "PYTHONPATH": "generated-extra",
+                           "TEMP": inherited, "TMP": inherited, "TMPDIR": inherited}
             with self.assertRaisesRegex(trace.EvidenceValidationError, "data home is missing"):
                 lifetime.backend_launch_context(environment, home)
             home.mkdir()
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "temp-home-unverified"):
+                lifetime.backend_launch_context(environment, home)
+            scratch = home / "backend-temp"
+            scratch.mkdir()
             backend_env, backend_cwd = lifetime.backend_launch_context(environment, home)
             self.assertEqual(backend_cwd, home)
             self.assertEqual(backend_env["PILOTODIN_HOME"], str(home))
@@ -147,6 +153,22 @@ class StorageProbeTests(unittest.TestCase):
             self.assertIn("generated-extra", backend_env["PYTHONPATH"])
             self.assertEqual(environment["PYTHONPATH"], "generated-extra")
             self.assertNotEqual(backend_cwd, lifetime.build.REPO)
+            for key in ("TEMP", "TMP", "TMPDIR"):
+                self.assertEqual(backend_env[key], str(scratch))
+                self.assertEqual(environment[key], inherited)
+            self.assertEqual(set(backend_env) - set(environment), set())
+
+    def test_focused_backend_refuses_symlinked_qa_home_scratch(self):
+        with TemporaryDirectory() as folder:
+            home = Path(folder) / "qa-home"
+            home.mkdir()
+            scratch = home / "backend-temp"
+            scratch.mkdir()
+            original = Path.is_symlink
+            with patch.object(Path, "is_symlink",
+                              lambda obj: obj == scratch or original(obj)):
+                with self.assertRaisesRegex(trace.EvidenceValidationError, "temp-home-unverified"):
+                    lifetime.backend_launch_context({"PILOTODIN_HOME": str(home)}, home)
 
     def test_debug_variant_changes_only_netlog_not_storage_or_readiness(self):
         profile = Path("webview-fixture")
