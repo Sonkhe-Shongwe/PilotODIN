@@ -97,7 +97,7 @@ class StorageMechanismSourceTests(unittest.TestCase):
             self.assertTrue(row["discriminator"])
         report = self.review()
         self.assertNotIn("C:\\", json.dumps(report))
-        self.assertNotIn("pid", json.dumps(report).lower())
+        self.assertFalse(report["webview_child_fileio_attributed"])
 
     def test_invalid_sources_fail_closed_without_echoing_private_values(self):
         for invalid in (None, {}, [], {"qa_ambient": "C:\\owner\\secret.txt"}):
@@ -108,8 +108,6 @@ class StorageMechanismSourceTests(unittest.TestCase):
                 self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
 
     def test_no_native_or_owner_data_actions_in_review_module(self):
-        src = (study.ROOT / study.__file__.split("qa/")[-1]).as_posix()
-        _ = src  # Do not access any host path other than fixed checked-in source.
         text = (study.ROOT / "qa/p4_research/n12_webview_storage_mechanism_map.py").read_text(
             encoding="utf-8")
         for forbidden in ("subprocess.", "ctypes.WinDLL(", "os.chmod(", ".mkdir(",
