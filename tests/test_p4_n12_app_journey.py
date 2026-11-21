@@ -40,9 +40,6 @@ def test_backend_environment_keeps_qa_imports_without_source_as_cwd(tmp_path):
                "assert pathlib.Path.cwd() == pathlib.Path(os.environ['PILOTODIN_HOME']).parent / 'isolated-cwd'; "
                "assert storage.HOME == pathlib.Path(os.environ['PILOTODIN_HOME']).resolve()"]
     # The import must not rely on an implicit source-checkout CWD.
-    command[3] = command[3].replace(
-        "pathlib.Path(os.environ['PILOTODIN_HOME']).parent / 'isolated-cwd'",
-        "pathlib.Path(os.environ['PILOTODIN_HOME']).parent / 'isolated-cwd'")
     result = subprocess.run(command, cwd=sandbox, env={**os.environ, **env},
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr[-1500:]

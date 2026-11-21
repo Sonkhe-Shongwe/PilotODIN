@@ -258,6 +258,10 @@ fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<Back
         .env("PILOTODIN_BUNDLED_LLM_PORT", inference_port.to_string())
         .env("PILOTODIN_BUNDLED_LLM_TOKEN", inference_token.as_str())
         .env("PILOTODIN_DESKTOP_ALLOW_DEV", if cfg!(debug_assertions) { "1" } else { "0" })
+        // The sidecar owns only user storage. Do not inherit the desktop's
+        // installation or source-checkout working directory: relative cache
+        // writes must land under the created application data directory.
+        .current_dir(&data_dir)
         .set_process_group(true);
     let (mut events, child) = command.spawn()
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
