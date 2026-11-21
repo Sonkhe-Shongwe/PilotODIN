@@ -136,12 +136,46 @@ class AppLifetimeTests(unittest.TestCase):
         self.events.pop(3)  # app stop missing
         report = self.reduce(no_cdp_profile=True)
         self.assertEqual(report["no_cdp_sysmon_diagnostic"]["app"]["failed_checks"],
-                         ["etw-pair-missing-or-ambiguous"])
+                         ["etw-stop-missing-or-ambiguous"])
         self.assertEqual(report["verdict"], "BLOCKED")
         self.session["counters"]["events_lost"] = 1
         report = self.reduce(no_cdp_profile=True)
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertEqual(report["no_cdp_sysmon_diagnostic"]["status"], "NOT_EVALUATED")
+
+    def test_no_cdp_sysmon_diagnostic_reports_sequence_image_and_window_failures(self):
+        original = deepcopy(self.events)
+        for case, expected in (
+            ("wrong-sequence", "etw-sequence-conflict"),
+            ("wrong-image", "etw-start-exact-image"),
+            ("payload-outside-window", "etw-lifetime-payload-within-window"),
+        ):
+            with self.subTest(case=case):
+                self.events = deepcopy(original)
+                if case == "wrong-sequence":
+                    self.events[3]["data"]["ProcessSequenceNumber"] = "999"
+                elif case == "wrong-image":
+                    self.events[2]["data"]["ImageName"] = r"c:\unknown\pilotodin-desktop.exe"
+                else:
+                    self.events[3]["data"]["ExitTime"] = payload(920_000)
+                report = self.reduce(no_cdp_profile=True)
+                self.assertEqual(report["verdict"], "BLOCKED")
+                diagnostic = report["no_cdp_sysmon_diagnostic"]["app"]
+                self.assertEqual(diagnostic["status"], "BLOCKED")
+                self.assertIn(expected, diagnostic["failed_checks"])
+                self.assertNotIn("pilotodin-desktop.exe", json.dumps(diagnostic))
+        self.events = original
+
+    def test_no_cdp_sysmon_diagnostic_reports_disputed_sysmon_exit(self):
+        for _, kind, fields in self.rows:
+            if kind == 5 and fields["ProcessId"] == "701":
+                fields["Image"] = "private-opaque-image"
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        diagnostic = report["no_cdp_sysmon_diagnostic"]["app"]
+        self.assertIn("sysmon-exit-present", diagnostic["failed_checks"])
+        self.assertIn("sysmon-exit-not-disputed", diagnostic["failed_checks"])
+        self.assertEqual(diagnostic["etw_exit_minus_sysmon_exit_ticks"], None)
 
     def test_no_cdp_sysmon_diagnostic_is_absent_in_default_strict_mode(self):
         report = self.reduce()

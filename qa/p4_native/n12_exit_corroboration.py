@@ -204,8 +204,15 @@ class EtwLifetimes:
             return {"status": "NOT_EVALUATED", "failed_checks": []}
         try:
             start, stop = self._candidate_pair(process)
-        except trace.EvidenceValidationError:
-            return {"status": "BLOCKED", "failed_checks": ["etw-pair-missing-or-ambiguous"]}
+        except trace.EvidenceValidationError as exc:
+            # Whitelist ONLY fixed internal labels, never propagate arbitrary
+            # error text into the redacted diagnostic receipt.
+            label = str(exc)
+            if label not in {"etw-start-missing-or-ambiguous",
+                             "etw-stop-missing-or-ambiguous",
+                             "etw-sequence-conflict"}:
+                label = "etw-pair-unverified"
+            return {"status": "BLOCKED", "failed_checks": [label]}
         checks = self._no_cdp_sysmon_checks(process, start, stop)
         receipt = {
             "status": "CHECKS_MATCH" if all(checks.values()) else "BLOCKED",
