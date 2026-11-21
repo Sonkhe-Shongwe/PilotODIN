@@ -314,6 +314,37 @@ class NoCdpFileIOReviewTests(TestCase):
 
 
 class NoCdpFileIOCollectionAndPermissionTests(TestCase):
+    def test_powershell_native_entry_requires_new_scoped_permission_and_fileio_dispatch(self):
+        """Source inspection only: no PowerShell command or native app runs."""
+        from qa.p4_research import n12_app_build as build
+        wrapper = (build.REPO / "qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1"
+                   ).read_text(encoding="utf-8")
+        required = (
+            "[switch]$NoCdpFileIO",
+            "if ($NoCdpFileIO -and (",
+            "-not $NoCdp -or -not $AppLifetime -or -not $WithEtw",
+            "PILOTODIN_N12_NO_CDP_FILEIO_CONSENT -cne 'I_APPROVE_ONE_N12_NO_CDP_FILEIO'",
+            "PILOTODIN_N12_CHILD_HANDLE_CONSENT -cne 'I_APPROVE_ONE_N12_QA_CHILD_HANDLES'",
+            "PILOTODIN_N12_APP_LIFETIME_CONSENT -cne 'I_APPROVE_ONE_N12_APP_LIFETIME'",
+            "PILOTODIN_N12_NO_CDP_STORAGE_CONSENT -cne 'I_APPROVE_ONE_N12_NO_CDP_STORAGE'",
+            "PILOTODIN_N12_QA_AMBIENT_LOCAL_VARIANT -or",
+            "PILOTODIN_N12_APPROVED_SOURCE -cne $SourceSha",
+            "if ($NoCdpFileIO) { $lifetimeArgs += '--fileio' }",
+            "python -B -m qa.p4_research.n12_app_lifetime @lifetimeArgs",
+        )
+        for marker in required:
+            with self.subTest(marker=marker):
+                self.assertIn(marker, wrapper)
+        # All extra guards must appear before collector provisioning.
+        self.assertLess(wrapper.index("if ($NoCdpFileIO -and ("),
+                        wrapper.index("Get-MicrosoftCollector"))
+        self.assertLess(wrapper.index("if ($NoCdpFileIO -and ("),
+                        wrapper.index("python -B -m qa.p4_research.n12_app_build verify"))
+        wf = (build.REPO / ".github/workflows/p4-n12-app-lifetime.yml"
+              ).read_text(encoding="utf-8")
+        self.assertIn("if: ${{ false }}", wf)
+        self.assertNotIn("-NoCdpFileIO", wf)
+
     def test_cli_refuses_fileio_without_no_cdp_or_new_one_use_permission(self):
         from qa.p4_research import n12_app_lifetime as lifetime
         from unittest.mock import patch
