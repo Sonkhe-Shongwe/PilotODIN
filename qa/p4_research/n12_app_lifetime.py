@@ -17,6 +17,8 @@ from qa.p4_native import n12_trace as trace
 from qa.p4_native.n12_lifetime_control import process_images, process_times
 from qa.p4_research import n12_app_build as build
 from qa.p4_research import n12_app_journey as journey
+from qa.p4_research import n12_no_cdp_native_path as no_cdp_path
+from qa.p4_research import n12_no_cdp_browser_identity as browser_identity
 
 
 CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
@@ -73,8 +75,12 @@ def preflight(source, expected_hash, *, storage=False):
     return root, staged, provenance, node
 
 
-def launch_and_close(root, staged, node, source, expected_hash, *, storage_manifest=None):
+def launch_and_close(root, staged, node, source, expected_hash, *, storage_manifest=None, no_cdp=False):
     """Run in a short-lived worker so the app parent is also captured through exit."""
+    trace.require(no_cdp is False or (no_cdp is True and storage_manifest is None
+                  and os.environ.get("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT")
+                  == no_cdp_path.lifecycle.NATIVE_ACK_CONSENT),
+                  "no-cdp-distinct-native-consent-missing")
     if storage_manifest is None:
         trace.require((root / "lifetime-launch.json").is_file(), "app lifetime capture has not opened")
         journey.report_file(root / "lifetime-worker-started.json", {"source_sha": source})
@@ -84,7 +90,11 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
     title = json.loads(build.isolated_config())["app"]["windows"][0]["title"]
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home),
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-    manifest = {"processes": []} if storage_manifest is None else storage_manifest
+    manifest = {"processes": [], "markers": {}} if storage_manifest is None else storage_manifest
+    if no_cdp:
+        vite_env, no_cdp_app_env = no_cdp_path.no_cdp_environments(env, profile)
+    else:
+        vite_env = env
     with journey.journey_processes(source, expected_hash) as stack:
         with journey.checkpoint_stage("app-lifetime-services", source, expected_hash):
             backend_env, backend_cwd = backend_launch_context(env, home)
@@ -95,7 +105,7 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
             vite = journey.spawn(stack, manifest, "driver", [
                 node, str(journey.FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort",
-            ], env, journey.FRONTEND, root / "vite.log")
+            ], vite_env, journey.FRONTEND, root / "vite.log")
             journey.wait_for(lambda: journey.http_ready(8000, "/api/health", lambda status:
                             status.get("status") == "ok" and status.get("cloud_ai") is False),
                             60, "isolated backend did not become ready with cloud AI off", backend)
@@ -103,6 +113,13 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
 
         with journey.checkpoint_stage("app-lifetime-ready", source, expected_hash):
             build.verify(staged, source, expected_hash)
+            if no_cdp:
+                no_cdp_path.run_one_no_cdp_app(
+                    stack=stack, manifest=manifest, root=root, binary=binary,
+                    title=title, source=source, expected_hash=expected_hash,
+                    app_env=no_cdp_app_env, profile=profile,
+                )
+                return
             app_env = {**env, "WEBVIEW2_USER_DATA_FOLDER": str(profile),
                        "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=9331"}
             if storage_manifest is not None:
@@ -146,10 +163,12 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
     journey.report_file(root / "private-app-handle.json", app_times)
 
 
-def launch_worker(root, source, expected_hash):
+def launch_worker(root, source, expected_hash, *, no_cdp=False):
     journey.report_file(root / "lifetime-launch.json", {"source_sha": source})
     command = [sys.executable, "-B", "-m", "qa.p4_research.n12_app_lifetime",
                "--source", source, "--expected-exe-sha256", expected_hash, "--worker"]
+    if no_cdp:
+        command.append("--no-cdp")
     with subprocess.Popen(command, cwd=build.REPO) as worker:
         try:
             trace.require(worker.wait(timeout=300) == 0, "app lifetime worker did not complete")
@@ -159,7 +178,8 @@ def launch_worker(root, source, expected_hash):
     return times, trace.read_json(root / "private-app-handle.json")
 
 
-def reduction(manifest, sysmon, events, volume_devices, session, app_witness, worker_witness, binary):
+def reduction(manifest, sysmon, events, volume_devices, session, app_witness, worker_witness, binary, *,
+              no_cdp_profile=False):
     devices = trace.etw_device_aliases(volume_devices)
     start, end, processes, _, issues = trace.load_capture(
         manifest, sysmon, etw=True, rejected_sysmon_exits=[])
@@ -181,6 +201,7 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
     stop_images = {}
     handle_order = {}
     child_order = []
+    lifetimes = None
     if bindings and not issues & corroboration.SOURCE_COVERAGE_ISSUES:
         app = bindings[0][1]
         worker = processes.get(app.parent)
@@ -251,6 +272,44 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
     ) if row["role"] in {"app", "webview", "webview-network", "helper"}]
     if "BLOCKED" in witnesses.values():
         issues.add("app-or-launcher-handle-unverified")
+    no_cdp_receipt = None
+    if no_cdp_profile:
+        no_cdp_receipt = {"scope": "no-cdp-os-profile-lifetime-only",
+                          "status": "BLOCKED", "native_N12_acceptance": "NOT_EVALUATED",
+                          "file_event_coverage": "NOT_EVALUATED",
+                          "network_isolation": "NOT_EVALUATED"}
+        try:
+            trace.require(not issues and lifetimes is not None and len(bindings) == 1,
+                          "no-cdp-prior-lifetime-evidence-unverified")
+            marks = manifest.get("markers")
+            trace.require(type(marks) is dict and all(
+                type(marks.get(label)) is str
+                for label in ("launch", "ready", "close", "profile-exit")),
+                "no-cdp-os-stage-markers-unverified")
+            times = [trace.utc_time(marks[label]) for label in
+                     ("launch", "ready", "close", "profile-exit")]
+            trace.require(start < times[0] < times[1] < times[2] < times[3] < end,
+                          "no-cdp-os-stage-order-unverified")
+            # Source and Sysmon capture must be complete before the reviewer
+            # derives this Boolean; it is never supplied by the QA operator.
+            trace.require(all(session["counters"][k] == 0 for k in etw.COUNTERS[:-1])
+                          and session["counters"]["buffers_written"] > 0,
+                          "no-cdp-os-etw-loss-unverified")
+            verified = browser_identity.verify_profile_shutdown(
+                processes=processes, roles=roles, app_guid=bindings[0][1].guid,
+                expected_app_image=str(binary),
+                expected_app_sha256=manifest["executable_sha256"],
+                disposable_profile=manifest["observed_roots"]["qa-webview"],
+                launch=times[0], ready=times[1], close=times[2],
+                profile_exit=times[3], capture_end=end,
+                app_handle_witness=app_witness, etw_lifetimes=lifetimes,
+                capture_loss_reviewed=True, capture_issues=set(issues),
+            )
+            no_cdp_receipt = {**verified.redacted_receipt(), "status": "SOURCE_OS_CORROBORATED"}
+        except (trace.EvidenceValidationError, KeyError, ValueError, TypeError) as exc:
+            reason = str(exc) if isinstance(exc, trace.EvidenceValidationError) else "no-cdp-os-evidence-invalid"
+            issues.add(reason)
+            no_cdp_receipt["reason"] = reason
     return {"scope": "one-native-startup-and-graceful-close", "source_sha": manifest["source_sha"],
             "executable_sha256": manifest["executable_sha256"],
             "verdict": "BLOCKED" if issues else "PASS", "issues": sorted(issues),
@@ -258,7 +317,9 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
             "etw_stop_image_comparisons": stop_images, "handle_comparison": witnesses, "etw_handle_order_comparison": handle_order,
             "etw_child_order_comparisons": child_order,
             "collector_counters": session["counters"], "timing_comparisons": timing,
-            "disputed_exits": disputed}
+            "disputed_exits": disputed,
+            **({"no_cdp_profile_identity": no_cdp_receipt} if no_cdp_profile else {}),
+            "native_N12_acceptance": "NOT_EVALUATED"}
 
 
 def endpoint_evidence(manifest, before):
@@ -271,7 +332,7 @@ def endpoint_evidence(manifest, before):
         return snapshot, issues
 
 
-def capture(root, staged, provenance):
+def capture(root, staged, provenance, *, no_cdp=False):
     source, expected_hash = provenance["source_sha"], provenance["executable_sha256"]
     manifest, _, _, fixture, _ = journey.prepare_journey(root, source, expected_hash)
     fixture.write_text("fixture,value\nstartup-close,1\n", encoding="utf-8")
@@ -284,7 +345,14 @@ def capture(root, staged, provenance):
             manifest["start_utc"] = journey.now().isoformat()
             time.sleep(journey.INITIAL_FIXTURE_LEAD_IN_SECONDS)
             with journey.checkpoint_stage("app-lifetime-worker", source, expected_hash):
-                worker, app = launch_worker(root, source, expected_hash)
+                worker, app = launch_worker(root, source, expected_hash, no_cdp=no_cdp)
+                if no_cdp:
+                    child = trace.read_json(root / "no-cdp-private-stage.json")
+                    trace.require(child.get("source_sha") == source
+                                  and child.get("executable_sha256") == expected_hash
+                                  and type(child.get("markers")) is dict,
+                                  "no-cdp-child-stage-provenance-unverified")
+                    manifest["markers"] = child["markers"]
     except Exception:
         try:
             endpoint_evidence(manifest, before)
@@ -304,7 +372,7 @@ def capture(root, staged, provenance):
         events = root / "lifetime-etw.jsonl"
         manifest["events_sha256"] = build.digest(events)
         report = reduction(manifest, sysmon, events, volume_devices, session, app, worker,
-                           build.executable(staged))
+                           build.executable(staged), no_cdp_profile=no_cdp)
         report["cargo_lock_sha256"] = provenance["cargo_lock_sha256"]
         report["protected_snapshot_comparison"] = snapshot["protected_snapshot_comparison"]
         if snapshot["protected_snapshot_comparison"] != "MATCH":
@@ -320,17 +388,32 @@ def main():
     parser.add_argument("--source", required=True)
     parser.add_argument("--expected-exe-sha256", required=True)
     parser.add_argument("--worker", action="store_true")
+    parser.add_argument("--no-cdp", action="store_true",
+                        help="Separately consent-gated, no-debugger lifecycle only; NOT FileIO acceptance")
     args = parser.parse_args()
     try:
+        if args.no_cdp:
+            trace.require(
+                os.environ.get("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT")
+                == no_cdp_path.lifecycle.NATIVE_ACK_CONSENT
+                and os.environ.get("PILOTODIN_N12_APP_LIFETIME_CONSENT") == CONSENT
+                and os.environ.get("GITHUB_ACTIONS") == "true"
+                and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted"
+                and os.environ.get("RUNNER_OS") == "Windows"
+                and os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
+                and os.environ.get("PILOTODIN_N12_APPROVED_SOURCE") == args.source,
+                "no-cdp-separately-approved-native-run-required",
+            )
         with journey.checkpoint_stage("app-lifetime-preflight", args.source, args.expected_exe_sha256):
             root, staged, provenance, node = preflight(args.source, args.expected_exe_sha256)
         if args.worker:
-            launch_and_close(root, staged, node, args.source, args.expected_exe_sha256)
+            launch_and_close(root, staged, node, args.source, args.expected_exe_sha256,
+                             no_cdp=args.no_cdp)
             return 0
         print("N12 app lifetime provenance " + json.dumps({
             key: provenance[key] for key in ("source_sha", "executable_sha256", "cargo_lock_sha256")
         }), flush=True)
-        return 0 if capture(root, staged, provenance)["verdict"] == "PASS" else 2
+        return 0 if capture(root, staged, provenance, no_cdp=args.no_cdp)["verdict"] == "PASS" else 2
     except trace.EvidenceValidationError as exc:
         print(f"N12 app lifetime blocked: {exc}.", file=sys.stderr)
     except (KeyError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
