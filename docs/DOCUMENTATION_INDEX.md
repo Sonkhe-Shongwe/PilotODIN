@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**21 November 2026 | Current authority and single active P4 direction.** The no-CDP Full FileIO launch wrapper and a **disarmed** exact-source one-use baseline workflow have now passed synthetic CI. No new owner approval or real PilotODIN/WebView2 filesystem evidence exists. The remaining 25% requires a specific informed owner decision on the baseline, including known possible WebView2 external egress and public log risks, then independent native writer/destination measurement and a product correction. No change to strict rules, permissions, installer freeze or scores.
+**21 November 2026 | Current authority and single active P4 direction.** The first narrowly owner-approved one-use hosted Windows no-CDP FileIO baseline was **CONSUMED AND BLOCKED BEFORE REAL APP LAUNCH** by generated Sysmon TCP/UDP calibration failure. ETW started and protected endpoints matched, but no WebView2 product filesystem evidence was captured. Source-filter fault candidate corrected, synthetics 4/4 green; native retest requires NEW explicit owner one-use authorization. All original strict rules and P4 scores unchanged.
 
 ## Current authoritative route, in reading order
 
@@ -13,6 +13,8 @@
 7. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) · [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) · [Local analytics plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) · [8 GB RAM resource evidence](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom).
 
 ## Current development references
+
+- **[CURRENT consumed one-use baseline and blocked Sysmon Event3 calibration](./P4_N12_NO_CDP_FILEIO_ONE_USE_RESULT_SYSMON_NETWORK_FILTER_2026-11-21.md)]**: [native run #44932378332](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44932378332) compiled the isolated app and started ETW, but failed BEFORE the app launch on missing generated loopback TCP/UDP in Sysmon; no actual WebView FileIO captured. The unique owner marker remains consumed, workflow disarmed, source filter corrected only in synthetic tests. [exact source/synthetic CI #44933130221](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44933130221) **4/4 SUCCESS**, 1,037 Python passed, 6 skipped, 528 subtests; 104 frontend passed and Vite built; hosted-Windows generated FileIO/R03 and disposable browser green. Next: new, separately approved source-pinned attempt after review, NOT a rerun.
 
 - **[CURRENT narrowly scoped no-CDP FileIO native baseline preauthorization review](./P4_N12_NO_CDP_FILEIO_ONE_USE_CAPTURE_PREAUTH_REVIEW_2026-11-21.md)**: corrects the missing PowerShell FileIO switch, adds a **disabled** source-pinned one-use workflow with **no owner marker**, and discloses real app/network/privacy limitations. [exact-source CI #44928296299](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44928296299) **4/4 SUCCESS**, 1,036 Python passed, 6 skipped, 528 subtests, 104 frontend plus Vite, Windows synthetic FileIO/R03 and disposable browser. No real PilotODIN launch, path cause or production containment result. **Next decision: new explicit one-use owner authorization for this exact source and scope, not generic synthetic testing.**
 

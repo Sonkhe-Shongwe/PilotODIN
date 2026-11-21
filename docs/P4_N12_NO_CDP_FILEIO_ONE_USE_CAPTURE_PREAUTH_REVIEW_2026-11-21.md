@@ -1,5 +1,7 @@
 # PilotODIN P4 R02.5 | Source-pinned one-use no-CDP FileIO baseline, preauthorization review
 
+> **STATUS UPDATE, 21 NOVEMBER 2026: THIS IS NOW A HISTORICAL PREAUTHORIZATION PROPOSAL.** The user separately approved exactly one source-pinned run; it was executed as [#44932378332](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44932378332), **FAILED CLOSED DURING INITIAL GENERATED SYSMON TCP/UDP CALIBRATION BEFORE THE REAL APP LAUNCHED**, then the unique workflow was re-disarmed. The owner approval marker **now EXISTS AND IS CONSUMED**. See [authoritative run result and corrected Sysmon source](./P4_N12_NO_CDP_FILEIO_ONE_USE_RESULT_SYSMON_NETWORK_FILTER_2026-11-21.md). The following past-tense and future-tense details describe the **original pre-approval contract as it existed before execution** and do NOT grant permission to retry. Any new native capture requires a new source-pinned one-use authorization.
+
 **21 November 2026 | PREPARED AND DISARMED. No owner approval or real native PilotODIN run occurred.** This document is the current decision packet for the final 25% of file-mutation engineering. It is not an approval token and cannot activate a workflow.
 
 ## 1. Concrete launch-protocol defect corrected
