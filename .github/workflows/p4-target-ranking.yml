@@ -91,6 +91,8 @@ on:
       - tests/test_p4_n12_token_capability_preflight.py
       - qa/p4_research/n12_token_capability_preflight.py
       - qa/p4_research/n12_protected_fixture_contract.py
+      - qa/p4_research/n12_product_tree_isolation_review.py
+      - tests/test_p4_n12_product_tree_isolation_review.py
       - tests/test_p4_n12_tmp_debugger_fixture.py
       - tests/test_p4_n12_procmon_environment_control.py
       - tests/test_p4_n12_trace.py
@@ -231,6 +233,7 @@ jobs:
           tests/test_p4_n12_no_cdp_log_witness.py
           tests/test_p4_n12_calibration_socket_pair.py
           tests/test_p4_n12_protected_fixture_contract.py
+          tests/test_p4_n12_product_tree_isolation_review.py
           tests/test_p4_n12_token_capability_preflight.py
           tests/test_p4_n12_tmp_debugger_fixture.py
           tests/test_p4_n12_procmon_environment_control.py
