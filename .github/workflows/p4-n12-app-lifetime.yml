@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lifetime:
-    if: ${{ true }} # One-use source-pinned no-CDP Stage 1 activation; consumed on initial hosted run.
+    if: ${{ false }} # One-use approval consumed by run 43996565069.
     runs-on: windows-2022
     timeout-minutes: 100
     env:
@@ -59,7 +59,6 @@ jobs:
           "PILOTODIN_N12_APPROVED_SOURCE=$source" >> $env:GITHUB_ENV
           'PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT=I_APPROVE_UNPACKAGED_P4_NATIVE_DEV' >> $env:GITHUB_ENV
           'PILOTODIN_N12_APP_LIFETIME_CONSENT=I_APPROVE_ONE_N12_APP_LIFETIME' >> $env:GITHUB_ENV
-          'PILOTODIN_N12_NO_CDP_STORAGE_CONSENT=I_APPROVE_ONE_N12_NO_CDP_STORAGE' >> $env:GITHUB_ENV
       - name: Set up Python for the local backend and trace audit
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
@@ -95,5 +94,5 @@ jobs:
       - name: Provision reviewed Sysmon and capture one app lifetime
         shell: pwsh
         run: |
-          ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WithEtw -AppLifetime -NoCdp `
+          ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WithEtw -AppLifetime `
             -SourceSha $env:PILOTODIN_N12_APPROVED_SOURCE -ExecutableSha256 $env:PILOTODIN_N12_EXE_SHA256
