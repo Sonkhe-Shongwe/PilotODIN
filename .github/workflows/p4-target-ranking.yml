@@ -80,6 +80,9 @@ on:
       - qa/p4_research/n12_private_child_pipe.py
       - tests/test_p4_n12_private_child_pipe.py
       - tests/test_p4_n12_private_child_pipe_windows.py
+      - tests/test_p4_n12_source_evidence_map.py
+      - docs/P4_N12_STAGE1_SOURCE_EVIDENCE_MAP_2026-11-21.json
+      - docs/P4_N12_STAGE1_SOURCE_EVIDENCE_WORKSHEET_2026-11-21.md
       - qa/p4_research/n12_no_cdp_browser_identity.py
       - tests/test_p4_n12_no_cdp_log_witness.py
       - qa/p4_research/n12_no_cdp_log_witness.py
@@ -224,6 +227,7 @@ jobs:
           tests/test_p4_n12_no_cdp_browser_identity.py
           tests/test_p4_n12_no_cdp_child_handles.py
           tests/test_p4_n12_private_child_pipe.py
+          tests/test_p4_n12_source_evidence_map.py
           tests/test_p4_n12_no_cdp_log_witness.py
           tests/test_p4_n12_calibration_socket_pair.py
           tests/test_p4_n12_protected_fixture_contract.py
