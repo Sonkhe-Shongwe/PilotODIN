@@ -256,6 +256,19 @@ class NoCdpFileIOReviewTests(TestCase):
         self.assertGreater(result["reducer_issue_count"], 0)
         self.assertEqual(result["full_product_tree_mutation_containment"], "NOT_DEMONSTRATED")
 
+    def test_generated_protected_control_writes_are_never_silently_exempted(self):
+        self.synthetic_positive_lifetime_receipts()
+        result = self.run_check(
+            two_roles=True, calibrated=True, restore_verified=True,
+            violation={"protected:other:write": 2})
+        self.assertEqual(result["same_capture_write_restore"],
+                         "TWO_UNIQUE_WRITES_CORROBORATED")
+        self.assertEqual(result["prohibited_by_role"]["other"], 2)
+        self.assertEqual(result["observed_prohibited_operations"], 2)
+        self.assertEqual(result["blocker"], "observed-prohibited-fileio-operations")
+        self.assertEqual(result["full_product_tree_mutation_containment"], "NOT_DEMONSTRATED")
+        self.assertEqual(result["file_mutation_acceptance"], "NOT_EVALUATED")
+
     def test_etw_loss_blocks_both_positive_controls_even_when_mock_returns_pass(self):
         self.synthetic_positive_lifetime_receipts()
         self.manifest["etw"]["counters"]["events_lost"] = 1
