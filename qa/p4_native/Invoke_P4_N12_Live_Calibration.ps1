@@ -6,6 +6,7 @@ param(
     [switch]$InitialJourneyFixture,
     [switch]$AppJourney,
     [switch]$AppLifetime,
+    [switch]$NoCdp,
     [switch]$WebViewStorage,
     [ValidateSet('debug-netlog', 'debug-only')]
     [string]$StorageVariant = 'debug-netlog',
@@ -30,6 +31,18 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
 
 if ($CollectorRundown -and (-not $WithEtw -or $AppJourney -or $AppLifetime -or $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl)) {
     throw 'The FileIO rundown comparison requires the collector-only ETW rehearsal.'
+}
+
+# This optional entry is exclusively for a separately approved one-use,
+# source-pinned hosted-Windows app lifetime/profile smoke. Other modes cannot
+# inherit it, and the backend CLI independently verifies both consents.
+if ($NoCdp -and (-not $AppLifetime -or -not $WithEtw -or $AppJourney -or
+        $WebViewStorage -or $InitialJourneyFixture -or $CollectorRundown -or
+        $ProcmonEnvironmentControl -or $ProcmonTimingControl -or
+        $LifetimeControl -or $LifetimeEtwControl -or $SocketLifetimeControl -or
+        $WebViewRuntimeDirectory -or
+        $env:PILOTODIN_N12_NO_CDP_STORAGE_CONSENT -cne 'I_APPROVE_ONE_N12_NO_CDP_STORAGE')) {
+    throw 'A no-CDP profile smoke requires its distinct one-use, hosted app lifetime/ETW approval.'
 }
 
 if ($WebViewRuntimeDirectory -and -not $AppJourney) {
@@ -209,7 +222,9 @@ try {
         return
     }
     if ($AppLifetime) {
-        python -B -m qa.p4_research.n12_app_lifetime --source $SourceSha --expected-exe-sha256 $ExecutableSha256
+        $lifetimeArgs = @('--source', $SourceSha, '--expected-exe-sha256', $ExecutableSha256)
+        if ($NoCdp) { $lifetimeArgs += '--no-cdp' }
+        python -B -m qa.p4_research.n12_app_lifetime @lifetimeArgs
         if ($LASTEXITCODE -ne 0) { throw 'The hosted app lifetime capture failed or returned blocked evidence.' }
         return
     }

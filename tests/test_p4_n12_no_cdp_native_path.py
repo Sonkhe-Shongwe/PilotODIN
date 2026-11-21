@@ -236,6 +236,21 @@ class NoCdpNativePathTests(unittest.TestCase):
             self.assertEqual(lifetime.main(), 2)
             preflight.assert_not_called()
 
+    def test_native_collector_no_cdp_entry_requires_distinct_consent_and_lifetime(self):
+        # Static source contract. Never provisions Sysmon or compiles Rust.
+        ps = (Path(__file__).resolve().parents[1] /
+              "qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1").read_text(encoding="utf-8")
+        self.assertIn("[switch]$NoCdp,", ps)
+        self.assertIn("if ($NoCdp -and (-not $AppLifetime -or -not $WithEtw", ps)
+        self.assertIn("$env:PILOTODIN_N12_NO_CDP_STORAGE_CONSENT -cne 'I_APPROVE_ONE_N12_NO_CDP_STORAGE'", ps)
+        self.assertIn("if ($NoCdp) { $lifetimeArgs += '--no-cdp' }", ps)
+        self.assertIn("python -B -m qa.p4_research.n12_app_lifetime @lifetimeArgs", ps)
+        self.assertIn("if ($LASTEXITCODE -ne 0) { throw 'The hosted app lifetime capture failed or returned blocked evidence.' }", ps)
+        workflow = (Path(__file__).resolve().parents[1] /
+                    ".github/workflows/p4-n12-app-lifetime.yml").read_text(encoding="utf-8")
+        self.assertIn("if: $" + "{{ false }}", workflow)
+        self.assertNotIn("-NoCdp", workflow)
+
     def test_original_workflows_stay_disabled_and_browser_identity_is_os_based(self):
         root = Path(__file__).resolve().parents[1]
         for path in (".github/workflows/p4-n12-app-lifetime.yml",
