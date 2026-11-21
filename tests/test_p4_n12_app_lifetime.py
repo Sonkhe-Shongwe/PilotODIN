@@ -76,6 +76,78 @@ class AppLifetimeTests(unittest.TestCase):
             return lifetime.reduction(self.manifest, self.sysmon, self.etw, self.volume_devices,
                                       self.session, self.app, self.worker, APP, **mode)
 
+    def test_no_cdp_sysmon_per_clause_positive_is_only_diagnostic(self):
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")  # no OS markers in fixture
+        diagnostic = report["no_cdp_sysmon_diagnostic"]
+        self.assertEqual(diagnostic["scope"], "no-cdp-independent-sysmon-diagnostic-only")
+        for role in ("launcher", "app"):
+            self.assertEqual(diagnostic[role]["status"], "CHECKS_MATCH")
+            self.assertEqual(diagnostic[role]["failed_checks"], [])
+            self.assertEqual(diagnostic[role]["etw_exit_minus_sysmon_exit_ticks"], 0)
+            self.assertEqual(diagnostic[role]["sysmon_birth_minus_handle_ticks"], 0)
+            self.assertEqual(diagnostic[role]["sysmon_exit_minus_handle_ticks"], 0)
+        self.assertEqual(diagnostic["children_by_role"]["webview"]["checks_match_count"], 1)
+        self.assertEqual(diagnostic["children_by_role"]["webview-network"]["checks_match_count"], 1)
+        self.assertEqual(diagnostic["native_N12_acceptance"], "NOT_EVALUATED")
+        rendered = json.dumps(diagnostic)
+        for private in ("private", "pilotodin-desktop.exe", "msedgewebview2.exe",
+                        str(ORIGIN), '"pid"', '"guid"'):
+            self.assertNotIn(private, rendered)
+
+    def test_no_cdp_sysmon_diagnostic_identifies_missing_and_mismatched_exit(self):
+        original = deepcopy(self.rows)
+        for case, expected, delta in (
+            ("missing", "sysmon-exit-present", None),
+            ("mismatch", "etw-exit-exactly-matches-sysmon", -10),
+        ):
+            with self.subTest(case=case):
+                self.rows = deepcopy(original)
+                if case == "missing":
+                    self.rows = [row for row in self.rows
+                                 if not (row[1] == 5 and row[2]["ProcessId"] == "702")]
+                else:
+                    for _, kind, fields in self.rows:
+                        if kind == 5 and fields["ProcessId"] == "702":
+                            fields["UtcTime"] = payload(650_010)[:-1]
+                report = self.reduce(no_cdp_profile=True)
+                self.assertEqual(report["verdict"], "BLOCKED")
+                self.assertIn("no-cdp-sysmon-lifetime-unverified", report["issues"])
+                child = report["no_cdp_sysmon_diagnostic"]["children_by_role"]["webview"]
+                self.assertEqual(child["count"], 1)
+                self.assertEqual(child["checks_match_count"], 0)
+                self.assertEqual(child["failed_checks"].get(expected), 1)
+                self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
+        self.rows = original
+
+    def test_no_cdp_sysmon_diagnostic_reports_app_sysmon_exit_difference_from_handle(self):
+        for _, kind, fields in self.rows:
+            if kind == 5 and fields["ProcessId"] == "701":
+                fields["UtcTime"] = payload(520_020)[:-1]
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        diagnostic = report["no_cdp_sysmon_diagnostic"]["app"]
+        self.assertIn("etw-exit-exactly-matches-sysmon", diagnostic["failed_checks"])
+        self.assertEqual(diagnostic["etw_exit_minus_sysmon_exit_ticks"], -20)
+        self.assertEqual(diagnostic["sysmon_exit_minus_handle_ticks"], 20)
+        self.assertEqual(report["handle_comparison"]["app"], "BLOCKED")
+
+    def test_no_cdp_sysmon_diagnostic_refuses_etw_pair_or_loss(self):
+        self.events.pop(3)  # app stop missing
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["no_cdp_sysmon_diagnostic"]["app"]["failed_checks"],
+                         ["etw-pair-missing-or-ambiguous"])
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.session["counters"]["events_lost"] = 1
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertEqual(report["no_cdp_sysmon_diagnostic"]["status"], "NOT_EVALUATED")
+
+    def test_no_cdp_sysmon_diagnostic_is_absent_in_default_strict_mode(self):
+        report = self.reduce()
+        self.assertNotIn("no_cdp_sysmon_diagnostic", report)
+        self.assertEqual(report["verdict"], "PASS")
+
     def test_no_cdp_missing_stage_markers_remains_blocked(self):
         report = self.reduce(no_cdp_profile=True)
         self.assertEqual(report["verdict"], "BLOCKED")

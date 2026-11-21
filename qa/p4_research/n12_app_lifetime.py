@@ -201,6 +201,10 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
     stop_images = {}
     handle_order = {}
     child_order = []
+    # Redacted source-comparison diagnostics only. These cannot grant a PASS,
+    # override coverage issues or silently waive an unavailable ETW pair.
+    sysmon_reasons = {"status": "NOT_EVALUATED",
+                      "reason": "lifetime-source-or-coverage-unverified"} if no_cdp_profile else None
     lifetimes = None
     if bindings and not issues & corroboration.SOURCE_COVERAGE_ISSUES:
         app = bindings[0][1]
@@ -232,6 +236,26 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
                 {"role": roles[guid], **lifetimes.order_comparison(process)}
                 for guid, process in scoped.items() if guid != app.guid
             ]
+            if no_cdp_profile:
+                # Record before find() can fail on its FIRST disputed role.
+                # No GUID, PID, raw path, image or absolute clock is serialized.
+                child_totals = {}
+                for role in sorted(set(roles.values()) - {"app"}):
+                    receipts = [lifetimes.no_cdp_sysmon_diagnostic(process)
+                                for guid, process in scoped.items() if roles[guid] == role]
+                    failed_counts = Counter(label for row in receipts for label in row["failed_checks"])
+                    child_totals[role] = {
+                        "count": len(receipts),
+                        "checks_match_count": sum(row["status"] == "CHECKS_MATCH" for row in receipts),
+                        "failed_checks": dict(sorted(failed_counts.items())),
+                    }
+                sysmon_reasons = {
+                    "scope": "no-cdp-independent-sysmon-diagnostic-only",
+                    "launcher": lifetimes.no_cdp_sysmon_diagnostic(worker, handle_witness=worker_witness),
+                    "app": lifetimes.no_cdp_sysmon_diagnostic(app, handle_witness=app_witness),
+                    "children_by_role": child_totals,
+                    "native_N12_acceptance": "NOT_EVALUATED",
+                }
             launcher_lifetime = lifetimes.find(worker, handle_witness=worker_witness)
             launcher_start, launcher_stop = launcher_lifetime
             witnesses["launcher"] = "MATCH"
@@ -321,7 +345,8 @@ def reduction(manifest, sysmon, events, volume_devices, session, app_witness, wo
             "etw_child_order_comparisons": child_order,
             "collector_counters": session["counters"], "timing_comparisons": timing,
             "disputed_exits": disputed,
-            **({"no_cdp_profile_identity": no_cdp_receipt} if no_cdp_profile else {}),
+            **({"no_cdp_profile_identity": no_cdp_receipt,
+                "no_cdp_sysmon_diagnostic": sysmon_reasons} if no_cdp_profile else {}),
             "native_N12_acceptance": "NOT_EVALUATED"}
 
 

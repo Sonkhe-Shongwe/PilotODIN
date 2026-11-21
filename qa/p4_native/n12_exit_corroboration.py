@@ -169,19 +169,60 @@ class EtwLifetimes:
             "stop_emission_minus_exit_ticks": stop.emission - stop.exit,
         }
 
-    def _no_cdp_sysmon_confirmed(self, process, start, stop):
-        """Corroborate separate ETW header/payload times using a complete Sysmon exit.
+    def _no_cdp_sysmon_checks(self, process, start, stop):
+        """The EXACT existing fail-closed corroboration predicate, item by item.
 
-        No skew tolerance is introduced: the ETW ExitTime payload must agree
-        EXACTLY with Sysmon's GUID-owned, full-image, non-disputed process exit.
+        These labels are static and privacy-safe. The return value is also
+        consumed by the original verifier, so the diagnostic cannot diverge
+        from the actual approval decision.
         """
-        return (self.no_cdp_sysmon_corroboration is True
-                and process.end is not None and process.disputed_exit is None
-                and start.sequence is not None and start.sequence == stop.sequence
-                and self.window[0] <= start.creation <= stop.exit <= self.window[1]
-                and abs(start.creation - trace.utc_ticks(process.start)) <= BIRTH_TOLERANCE_TICKS
-                and stop.exit == trace.utc_ticks(process.end)
-                and compare_image_path(start.image, process.image, self.devices) == "exact-path-match")
+        return {
+            "no-cdp-scope-enabled": self.no_cdp_sysmon_corroboration is True,
+            "sysmon-exit-present": process.end is not None,
+            "sysmon-exit-not-disputed": process.disputed_exit is None,
+            "etw-sequence-present-and-equal": start.sequence is not None and start.sequence == stop.sequence,
+            "etw-lifetime-payload-within-window": self.window[0] <= start.creation <= stop.exit <= self.window[1],
+            "etw-birth-within-original-sysmon-bound":
+                abs(start.creation - trace.utc_ticks(process.start)) <= BIRTH_TOLERANCE_TICKS,
+            "etw-exit-exactly-matches-sysmon":
+                process.end is not None and stop.exit == trace.utc_ticks(process.end),
+            "etw-start-exact-image":
+                compare_image_path(start.image, process.image, self.devices) == "exact-path-match",
+        }
+
+    def _no_cdp_sysmon_confirmed(self, process, start, stop):
+        """No-CDP only: retain all original checks, with NO time relaxation."""
+        return all(self._no_cdp_sysmon_checks(process, start, stop).values())
+
+    def no_cdp_sysmon_diagnostic(self, process, *, handle_witness=None):
+        """Private-data-safe reason receipt; never authorizes a process lifetime.
+
+        Only named check outcomes and relative FILETIME deltas may be emitted.
+        Missing ETW pairs fail closed without guessing which PID/image was seen.
+        """
+        if not self.no_cdp_sysmon_corroboration:
+            return {"status": "NOT_EVALUATED", "failed_checks": []}
+        try:
+            start, stop = self._candidate_pair(process)
+        except trace.EvidenceValidationError:
+            return {"status": "BLOCKED", "failed_checks": ["etw-pair-missing-or-ambiguous"]}
+        checks = self._no_cdp_sysmon_checks(process, start, stop)
+        receipt = {
+            "status": "CHECKS_MATCH" if all(checks.values()) else "BLOCKED",
+            "failed_checks": sorted(label for label, value in checks.items() if not value),
+            "etw_birth_minus_sysmon_birth_ticks": start.creation - trace.utc_ticks(process.start),
+            "etw_exit_minus_sysmon_exit_ticks":
+                stop.exit - trace.utc_ticks(process.end) if process.end is not None else None,
+        }
+        if handle_witness is not None:
+            receipt.update({
+                "sysmon_birth_minus_handle_ticks":
+                    trace.utc_ticks(process.start) - handle_witness["birth"],
+                "sysmon_exit_minus_handle_ticks":
+                    trace.utc_ticks(process.end) - handle_witness["exit"]
+                    if process.end is not None else None,
+            })
+        return receipt
 
     def _order_issues(self, start, stop, deltas, *, exact_handle, independent_sysmon=False):
         # Keep event-header ordering strict. Header-versus-provider-FILETIME
