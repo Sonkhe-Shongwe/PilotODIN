@@ -345,6 +345,40 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
         self.assertIn("if: ${{ false }}", wf)
         self.assertNotIn("-NoCdpFileIO", wf)
 
+    def test_new_fileio_capture_workflow_is_inert_and_requires_exact_owner_scope(self):
+        """Read static workflow text only, with no Windows or app execution."""
+        from qa.p4_research import n12_app_build as build
+        marker = build.REPO / 'qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt'
+        workflow = (build.REPO / '.github/workflows/p4-n12-no-cdp-fileio.yml'
+                    ).read_text(encoding='utf-8')
+        self.assertFalse(marker.exists(), 'No owner has authorised this capture')
+        for token in (
+                'if: ${{ false }}',
+                'N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt',
+                'scope=n12-one-build-one-no-cdp-fileio-baseline',
+                'GITHUB_RUN_ATTEMPT',
+                "(git rev-parse HEAD) -cne $env:GITHUB_SHA",
+                'git rev-list --parents -n 1 HEAD',
+                'git diff --name-only $source HEAD',
+                'git checkout --detach $source',
+                'I_APPROVE_ONE_N12_NO_CDP_FILEIO',
+                'I_APPROVE_ONE_N12_QA_CHILD_HANDLES',
+                'I_APPROVE_ONE_N12_NO_CDP_STORAGE',
+                'I_APPROVE_ONE_N12_APP_LIFETIME',
+                'n12_app_build stage --source',
+                '-WithEtw -AppLifetime -NoCdp -NoCdpFileIO',
+                'Redacted fixed-label diagnostic',
+                'if: always()',
+                "f.status -cne 'BLOCKED'",
+                "f.native_N12_acceptance -cne 'NOT_EVALUATED'",
+                'GITHUB_STEP_SUMMARY',
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token.casefold(), workflow.casefold())
+        self.assertNotIn('actions/upload-artifact', workflow)
+        self.assertNotIn('continue-on-error: true', workflow)
+        self.assertNotIn('workflow_dispatch:', workflow)
+        self.assertEqual(workflow.count('if: ${{ false }}'), 1)
     def test_cli_refuses_fileio_without_no_cdp_or_new_one_use_permission(self):
         from qa.p4_research import n12_app_lifetime as lifetime
         from unittest.mock import patch
