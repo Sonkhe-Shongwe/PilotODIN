@@ -42,3 +42,7 @@ I reopened the **original completed GitHub Actions journey job log #136640497137
 ## Later staged QA candidate, no additional mutation credit
 
 [Opt-in source-only ambient-local redirection](./P4_N12_QA_AMBIENT_LOCAL_REDIRECT_CANDIDATE_2026-11-21.md) adds a tested QA app environment option inside the existing permitted WebView profile; the effect on the known 113 outside-scope WebView-network writes, 15 remaining WebView path gaps, 4,112 background write gaps and 42 missing process lifetimes is **NOT_VERIFIED**. No native run was triggered. R02.5 remains **FAIL/BLOCKED**; file-mutation **3/4**.
+
+## Later actual bundled-worker temporary-file correction
+
+[Product worker source change and QA parity](./P4_R02_5_PRODUCT_WORKER_TEMP_CONTAINMENT_2026-11-21.md) now set backend and inference child temp paths to app-local worker folders instead of inherited host temp. Source cfc738b passed routine P4 CI #44881225948, 4/4. This is not a native product launch and does not resolve the original WebView2 out-of-scope writes, 113 outside-scope request-time candidates, 15 residual WebView path gaps, 4,112 background write gaps or 42 missing process lifetimes. Strict filesystem FAIL and mutation coverage BLOCKED remain.
