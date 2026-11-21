@@ -1,0 +1,2 @@
+reviewed_source=78ae56b19ad24e357bfeb4181ec0134affc4e528
+scope=n12-one-build-one-app-lifetime
