@@ -10,6 +10,8 @@ from pathlib import Path
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_journey as journey
 from qa.p4_research import n12_no_cdp_lifecycle as lifecycle
+from qa.p4_research import n12_no_cdp_child_handles as child_handles
+from qa.p4_research import n12_private_child_pipe as child_pipe
 
 
 def no_cdp_environments(base, profile):
@@ -62,6 +64,14 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
                               for key, value in app_env.items())
                   and type(source) is str and type(expected_hash) is str,
                   "no-cdp-app-launch-scope-unverified")
+    # Optional, independently source/runner/consent guarded. There is no
+    # native workflow enabling this branch; check before app creation.
+    use_child_handles = child_pipe.requested(app_env)
+    if use_child_handles:
+        child_pipe.hosted_scope(app_env, source, expected_hash)
+        trace.require(type(app_env.get(child_pipe.PIPE_ENV)) is str
+                      and type(app_env.get(child_pipe.KEY_ENV)) is str,
+                      "no-cdp-child-pipe-worker-environment-missing")
     observer = lifecycle.NoCdpLifecycleObserver(
         stack=stack, expected_source=source, actual_source=source,
         expected_executable_sha256=expected_hash, actual_executable_sha256=expected_hash,
@@ -71,6 +81,13 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
     app = journey.spawn(stack, manifest, "app", [binary], app_env, binary.parent,
                         root / "app.log", prelaunch_log_hook=observer.prelaunch_hook)
     observer.bind_process(app)
+    child_observer = None
+    if use_child_handles:
+        from datetime import datetime, timezone
+        child_observer = child_handles.ScopedQaChildHandleObserver(
+            root_process=app, expected_app_image=str(binary))
+        child_observer.start_live(profile=profile, env=app_env)
+        sampling_started_ticks = trace.utc_ticks(datetime.now(timezone.utc))
     provisional = observer.observe_readiness(timeout_seconds=40,
                                              window_timeout_seconds=15)
     trace.require(provisional["native_N12_acceptance"] == "NOT_EVALUATED",
@@ -90,6 +107,20 @@ def run_one_no_cdp_app(*, stack, manifest, root, binary, title,
         journey.HELPER, "profile-active", "-ProfilePath", profile, timeout=10,
     )) == 0, 25, "no-cdp-profile-did-not-exit")
     journey.mark(manifest, "profile-exit")
+    if child_observer is not None:
+        from datetime import datetime, timezone
+        retained = child_observer.finish()
+        sampling_finished_ticks = trace.utc_ticks(datetime.now(timezone.utc))
+        private_evidence = child_handles.PrivateChildHandleEvidence(
+            source_sha=source, executable_sha256=expected_hash,
+            root_birth_ticks=child_observer._root_birth,
+            sampling_started_ticks=sampling_started_ticks,
+            sampling_finished_ticks=sampling_finished_ticks,
+            witnesses=retained,
+            collector_receipt=child_observer.redacted_receipt())
+        # Raw GUID/PID/full image/times transfer only via authenticated
+        # in-memory Windows pipe; neither logger nor JSON file sees them.
+        child_pipe.send_from_worker(app_env, private_evidence)
     receipt = observer.verify_after_close(
         close_request_verified=True, profile_processes_before=profile_before,
         profile_processes_after=0,

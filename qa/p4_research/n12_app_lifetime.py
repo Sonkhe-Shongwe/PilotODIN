@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from contextlib import nullcontext
 import json
 import os
 import shutil
@@ -20,6 +21,7 @@ from qa.p4_research import n12_app_journey as journey
 from qa.p4_research import n12_no_cdp_native_path as no_cdp_path
 from qa.p4_research import n12_no_cdp_browser_identity as browser_identity
 from qa.p4_research import n12_no_cdp_child_handles as child_handles
+from qa.p4_research import n12_private_child_pipe as child_pipe
 
 
 CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
@@ -170,13 +172,22 @@ def launch_worker(root, source, expected_hash, *, no_cdp=False):
                "--source", source, "--expected-exe-sha256", expected_hash, "--worker"]
     if no_cdp:
         command.append("--no-cdp")
-    with subprocess.Popen(command, cwd=build.REPO) as worker:
-        try:
-            trace.require(worker.wait(timeout=300) == 0, "app lifetime worker did not complete")
-            times = process_times(worker)
-        finally:
-            journey.cleanup_process(worker)
-    return times, trace.read_json(root / "private-app-handle.json")
+    enabled = no_cdp and child_pipe.requested(os.environ)
+    pipe_context = (child_pipe.hosted_channel(os.environ, source, expected_hash)
+                    if enabled else nullcontext(None))
+    with pipe_context as receiver:
+        # The independent receiver is armed *before* the worker launches;
+        # missing, tampered or oversized frames fail closed.
+        private_env = receiver.worker_environment(os.environ) if receiver else None
+        with subprocess.Popen(command, cwd=build.REPO, env=private_env) as worker:
+            try:
+                trace.require(worker.wait(timeout=300) == 0,
+                              "app lifetime worker did not complete")
+                times = process_times(worker)
+            finally:
+                journey.cleanup_process(worker)
+        child_evidence = receiver.take() if receiver else None
+    return times, trace.read_json(root / "private-app-handle.json"), child_evidence
 
 
 def reduction(manifest, sysmon, events, volume_devices, session, app_witness, worker_witness, binary, *,
@@ -420,7 +431,8 @@ def capture(root, staged, provenance, *, no_cdp=False):
             manifest["start_utc"] = journey.now().isoformat()
             time.sleep(journey.INITIAL_FIXTURE_LEAD_IN_SECONDS)
             with journey.checkpoint_stage("app-lifetime-worker", source, expected_hash):
-                worker, app = launch_worker(root, source, expected_hash, no_cdp=no_cdp)
+                worker, app, private_children = launch_worker(
+                    root, source, expected_hash, no_cdp=no_cdp)
                 if no_cdp:
                     child = trace.read_json(root / "no-cdp-private-stage.json")
                     trace.require(child.get("source_sha") == source
@@ -447,7 +459,8 @@ def capture(root, staged, provenance, *, no_cdp=False):
         events = root / "lifetime-etw.jsonl"
         manifest["events_sha256"] = build.digest(events)
         report = reduction(manifest, sysmon, events, volume_devices, session, app, worker,
-                           build.executable(staged), no_cdp_profile=no_cdp)
+                           build.executable(staged), no_cdp_profile=no_cdp,
+                           child_handle_evidence=private_children)
         report["cargo_lock_sha256"] = provenance["cargo_lock_sha256"]
         report["protected_snapshot_comparison"] = snapshot["protected_snapshot_comparison"]
         if snapshot["protected_snapshot_comparison"] != "MATCH":
