@@ -7,6 +7,7 @@ weaken path-missing blockers, or certify mutation containment.
 from collections import Counter
 
 from qa.p4_native import n12_trace as trace
+from qa.p4_research import n12_app_journey as journey
 
 
 ROLES = ("webview", "webview-network", "backend", "app", "helper",
@@ -16,7 +17,8 @@ ROLES = ("webview", "webview-network", "backend", "app", "helper",
 def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_issues=0,
                   scoped_roles=None, snapshot_state="NOT_EVALUATED", app_identity="NOT_VERIFIED",
                   capture_loss="NOT_EVALUATED", child_handles="NOT_EVALUATED",
-                  browser_profile="NOT_EVALUATED"):
+                  browser_profile="NOT_EVALUATED", restore_status="NOT_COLLECTED",
+                  calibration_status="NOT_COLLECTED"):
     violations = Counter(violations or {})
     gaps = Counter(gaps or {})
     counts = Counter(counts or {})
@@ -48,7 +50,13 @@ def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_is
         "original_webview_child_handle_lifetimes": child_handles,
         "browser_command_line_profile": browser_profile,
         "etw_loss_counters": capture_loss,
-        "calibration_and_transient_write_proof": "NOT_COLLECTED",
+        "calibration_and_transient_write_proof": (
+            "SOURCE_ONLY_CONTROL_REVIEWABLE" if (
+                restore_status == "TWO_UNIQUE_WRITES_CORROBORATED"
+                and calibration_status == "BOOKEND_OS_FILE_NETWORK_REVIEWABLE"
+            ) else "UNVERIFIED_OR_INCOMPLETE"),
+        "same_capture_write_restore": restore_status,
+        "generated_calibration_bookends": calibration_status,
         "effective_webview_user_data_folder": "NOT_VERIFIED",
         "full_product_tree_mutation_containment": "NOT_DEMONSTRATED",
         "native_N12_acceptance": "NOT_EVALUATED",
@@ -57,7 +65,8 @@ def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_is
     }
 
 
-def reduce(manifest, sysmon, events, app_witness, binary, *, lifetime_report, snapshot):
+def reduce(manifest, sysmon, events, app_witness, binary, *,
+           lifetime_report, snapshot, restore_control=None):
     """Reuse the governing strict ETW FileIO reducer on the same exported bytes.
 
     Missing loss, mutation path, actor, coverage or snapshot evidence never
@@ -69,14 +78,21 @@ def reduce(manifest, sysmon, events, app_witness, binary, *, lifetime_report, sn
             and manifest.get("etw", {}).get("schema_version") == 1):
         return _fixed_report(blocker="incomplete-fileio-review-envelope")
     try:
-        start, end, processes, _, issues = trace.load_capture(manifest, sysmon, etw=True)
-        roles, bindings = trace.bind_processes(
-            [{"pid": app_witness["pid"], "role": "app", "image": str(binary)}],
-            processes, issues)
+        start, end, processes, connections, issues = trace.load_capture(manifest, sysmon, etw=True)
+        # Classify original generated calibration actors independently of
+        # product WebView descendants. Their writes are not product writes,
+        # but unresolved calibration operations still BLOCK the report.
+        calibrators = manifest.get("processes", [])
+        trace.require(type(calibrators) is list and len(calibrators) in (0, 2)
+                      and all(type(p) is dict and p.get("role") == "calibration"
+                              for p in calibrators),
+                      "no-cdp-calibration-roots-malformed")
+        declared = [{"pid": app_witness["pid"], "role": "app", "image": str(binary)}, *calibrators]
+        roles, bindings = trace.bind_processes(declared, processes, issues)
         protected, permitted = trace.scope(manifest)
         protected.extend(trace.windows_path(manifest["observed_roots"][name])
                          for name in manifest["immutable_observed"])
-        file_counts, violations, _events, gaps = trace.inspect_etw_files(
+        file_counts, violations, calibration_files, gaps = trace.inspect_etw_files(
             manifest, events, start, end, processes, roles,
             protected, permitted, issues)
         full_role_count = sum(1 for role in roles.values()
@@ -84,8 +100,57 @@ def reduce(manifest, sysmon, events, app_witness, binary, *, lifetime_report, sn
         app_identity = (
             "MATCH" if lifetime_report.get("verdict") == "PASS"
             and lifetime_report.get("handle_comparison", {}).get("app") == "MATCH"
-            and len(bindings) == 1 else "NOT_VERIFIED"
+            and sum(role == "app" for role in roles.values()) == 1
+            and sum(1 for root, process in bindings if root["role"] == "app") == 1
+            else "NOT_VERIFIED"
         )
+        calibration_status = "NOT_COLLECTED"
+        if len(calibrators) == 2:
+            sample_issues = set()
+            windows = []
+            for root, process in bindings:
+                if root["role"] == "calibration":
+                    bounds = trace.calibration_window(
+                        root, process, processes, connections, calibration_files,
+                        sample_issues)
+                    if bounds is not None:
+                        windows.append(bounds)
+            try:
+                marks = manifest["markers"]
+                launch = trace.utc_time(marks["launch"])
+                finish = trace.utc_time(marks["profile-exit"])
+                if (not sample_issues and len(windows) == 2
+                        and windows[0][1] < launch < finish < windows[1][0]):
+                    calibration_status = "BOOKEND_OS_FILE_NETWORK_REVIEWABLE"
+                else:
+                    calibration_status = "BLOCKED"
+            except (KeyError, TypeError, ValueError, trace.EvidenceValidationError):
+                calibration_status = "BLOCKED"
+            if calibration_status == "BLOCKED":
+                issues.add("no-cdp-generated-calibration-unverified")
+        restore_status = "NOT_COLLECTED"
+        if restore_control is not None:
+            try:
+                trace.require(type(restore_control) is dict
+                              and len(calibrators) == 2,
+                              "no-cdp-restore-or-calibration-incomplete")
+                bounds, devices = trace.etw_capture_contract(manifest, start, end, issues)
+                rows = list(trace.etw_events(
+                    events, bounds, manifest["etw"]["events_sha256"]))
+                control = journey.same_capture_restore_evidence(
+                    restore_control, manifest["observed_roots"]["write-restore-control"],
+                    rows, devices, bounds, issues)
+                if control.get("status") == "PASS" and all(
+                        control.get("write_path_verified", {}).get(label) is True
+                        for label in ("mutate", "restore")):
+                    restore_status = "TWO_UNIQUE_WRITES_CORROBORATED"
+                else:
+                    restore_status = "BLOCKED"
+            except (KeyError, TypeError, ValueError, OSError,
+                    UnicodeError, trace.EvidenceValidationError):
+                restore_status = "BLOCKED"
+            if restore_status == "BLOCKED":
+                issues.add("no-cdp-same-capture-restore-unverified")
         if not full_role_count:
             issues.add("no-cdp-webview-process-tree-missing")
         # The *same* lifetime reduction already checks original held child
@@ -156,13 +221,18 @@ def reduce(manifest, sysmon, events, app_witness, binary, *, lifetime_report, sn
             reason = "no-cdp-original-webview-child-handles-unverified"
         elif profile_review != "SYSMON_ETW_BROWSER_PROFILE_COMMAND_LINE_REVIEWED":
             reason = "no-cdp-browser-profile-command-line-unverified"
+        elif restore_status != "TWO_UNIQUE_WRITES_CORROBORATED":
+            reason = "same-capture-write-and-restore-unverified"
+        elif calibration_status != "BOOKEND_OS_FILE_NETWORK_REVIEWABLE":
+            reason = "generated-os-file-network-calibration-unverified"
         else:
-            reason = "full-n12-calibration-and-transient-write-control-not-collected"
+            reason = "full-native-product-write-containment-not-yet-proven"
         return _fixed_report(
             blocker=reason, violations=violations, gaps=gaps, counts=file_counts,
             source_issues=len(issues), scoped_roles=full_role_count,
             snapshot_state=state, app_identity=app_identity, capture_loss=loss,
             child_handles=child_review, browser_profile=profile_review,
+            restore_status=restore_status, calibration_status=calibration_status,
         )
     except (trace.EvidenceValidationError, KeyError, ValueError, TypeError, OSError,
             UnicodeError):

@@ -23,6 +23,7 @@ from qa.p4_research import n12_no_cdp_browser_identity as browser_identity
 from qa.p4_research import n12_no_cdp_child_handles as child_handles
 from qa.p4_research import n12_private_child_pipe as child_pipe
 from qa.p4_research import n12_no_cdp_fileio_review as fileio_review
+from qa.p4_native import n12_protected_restore as restore
 
 
 CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
@@ -450,8 +451,20 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
         child_pipe.hosted_scope(os.environ, provenance["source_sha"],
                                 provenance["executable_sha256"])
     source, expected_hash = provenance["source_sha"], provenance["executable_sha256"]
-    manifest, _, _, fixture, _ = journey.prepare_journey(root, source, expected_hash)
+    manifest, _, _, fixture, calibration_directories = journey.prepare_journey(root, source, expected_hash)
     fixture.write_text("fixture,value\nstartup-close,1\n", encoding="utf-8")
+    # This fixture is generated ONLY under the disposable, source-pinned
+    # runner root. It is an immutable observed endpoint, NOT an owner file.
+    # No role exception or permitted-write root is added.
+    restore_path = None
+    restore_control = None
+    if fileio:
+        restore_path = trace.local_disposable_path(
+            root / "write-restore-control.bin", runner_temp_only=True)
+        with restore_path.open("xb") as stream:
+            stream.write(restore.ORIGINAL)
+        manifest["observed_roots"]["write-restore-control"] = str(restore_path)
+        manifest["immutable_observed"].append("write-restore-control")
     # Keep ordinary process-only lifetime snapshots unchanged. Full FileIO
     # places BOTH complete snapshots under the same live Kernel-File session.
     before = None if fileio else journey.snapshots(manifest)
@@ -467,7 +480,13 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
                 journey.mark(manifest, "snapshot-before-start")
                 before = journey.snapshots(manifest)
                 journey.mark(manifest, "snapshot-before-end")
-            time.sleep(journey.INITIAL_FIXTURE_LEAD_IN_SECONDS)
+                # Two existing generated N12 calibration fixtures bracket the
+                # no-CDP app. Their Sysmon and FileIO evidence is evaluated
+                # separately; this does NOT bestow ordinary N12 acceptance.
+                journey.run_initial_calibration(
+                    root, calibration_directories[0], manifest, source, expected_hash)
+            else:
+                time.sleep(journey.INITIAL_FIXTURE_LEAD_IN_SECONDS)
             with journey.checkpoint_stage("app-lifetime-worker", source, expected_hash):
                 worker, app, private_children = launch_worker(
                     root, source, expected_hash, no_cdp=no_cdp)
@@ -485,6 +504,23 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
                     else:
                         manifest["markers"] = child["markers"]
             if fileio:
+                # A positive transient write followed by an exact byte
+                # restore must happen under THIS SAME live Kernel-File trace.
+                # Endpoint hashes alone cannot demonstrate either write.
+                with journey.checkpoint_stage(
+                        "no-cdp-same-capture-write-and-restore", source, expected_hash):
+                    journey.mark(manifest, "restore-control-start")
+                    restore_control = restore.exercise_restore(restore_path)
+                    journey.mark(manifest, "restore-control-end")
+                with journey.checkpoint_stage("no-cdp-final-calibration", source, expected_hash):
+                    final_start = journey.now()
+                    final_record = journey.calibrate(
+                        calibration_directories[1], manifest,
+                        child_hold_seconds=journey.TRACED_FIXTURE_CHILD_HOLD_SECONDS)
+                    final_end = journey.now()
+                    journey.verify_fixture_sysmon(
+                        root, manifest["sysmon_first_record"], final_start, final_end,
+                        final_record, phase="final")
                 journey.mark(manifest, "snapshot-after-start")
                 after = journey.snapshots(manifest)
                 journey.mark(manifest, "snapshot-after-end")
@@ -501,6 +537,13 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
             manifest, journey.timestamp_from_ticks(session["start"]),
             journey.timestamp_from_ticks(session["end"]))
         snapshot, snapshot_issues = trace.compare_snapshots(before, after, manifest)
+        # Check endpoint bytes separately after ETW stop; the positive FileIO
+        # write evidence is evaluated from the digested ETW event stream.
+        trace.require(restore_control is not None and restore_path is not None,
+                      "no-cdp-restore-control-missing")
+        restore_control["after"] = build.digest(restore_path)
+        trace.require(snapshot["protected_snapshot_comparison"] == "MATCH",
+                      "no-cdp-protected-endpoints-changed")
     else:
         manifest["end_utc"] = journey.timestamp_from_ticks(session["end"]).isoformat()
         snapshot, snapshot_issues = endpoint_evidence(manifest, before)
@@ -533,7 +576,8 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
             # status never promotes lifecycle PASS to N12 filesystem acceptance.
             report["no_cdp_fileio"] = fileio_review.reduce(
                 manifest, sysmon, events, app, build.executable(staged),
-                lifetime_report=report, snapshot=snapshot)
+                lifetime_report=report, snapshot=snapshot,
+                restore_control=restore_control)
         report["cargo_lock_sha256"] = provenance["cargo_lock_sha256"]
         report["protected_snapshot_comparison"] = snapshot["protected_snapshot_comparison"]
         if snapshot["protected_snapshot_comparison"] != "MATCH":
