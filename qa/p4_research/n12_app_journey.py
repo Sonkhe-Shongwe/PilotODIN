@@ -24,6 +24,7 @@ from qa.p4_native.n12_exit_corroboration import journey_lifetime_evidence
 from qa.p4_native import n12_protected_restore as restore
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_build as build
+from qa.p4_research import n12_ambient_local_candidate as ambient_local
 from qa.p4_research import n12_egress as egress
 from qa.p4_research.n12_backend_wakeup import WITNESS_NAME
 from qa.p4_research.n12_journey_diagnostics import (
@@ -530,11 +531,15 @@ def backend_environment(env):
 
 
 def app_environment(env, profile, label):
-    return {**temporary_environment(env, profile / APP_TEMP_DIR),
+    base = {**temporary_environment(env, profile / APP_TEMP_DIR),
             "WEBVIEW2_USER_DATA_FOLDER": str(profile),
             "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS":
                 '--remote-debugging-port=9331 --net-log-capture-mode=Default '
                 f'--log-net-log="{profile / f"netlog-{label}.json"}"'}
+    # Only the opt-in disposable N12 QA launch gets ambient local override.
+    # The strict filesystem allowlist does not change. The browser's actual
+    # inheritance is an unanswered *native* measurement, not a source fact.
+    return ambient_local.apply_to_app_env(base, profile)
 
 
 def driver_environment(env, root):
@@ -678,6 +683,7 @@ def run_apps(stack, manifest, root, staged, source, expected_hash, node, env, pr
 
 
 def prepare_journey(root, source, expected_hash):
+    candidate_enabled = ambient_local.enabled(os.environ)
     protected = {
         f"{location}-{label}": str(trace.local_disposable_path(Path(os.environ[variable]) / identifier))
         for location, variable in (("local", "LOCALAPPDATA"), ("roaming", "APPDATA"))
@@ -712,6 +718,11 @@ def prepare_journey(root, source, expected_hash):
     profile.mkdir()
     (profile / APP_TEMP_DIR).mkdir()
     (root / DRIVER_TEMP_DIR).mkdir()
+    if candidate_enabled:
+        ambient_local.prepare(profile, os.environ["RUNNER_TEMP"])
+    # A label in the manifest changes no protected root or permitted role.
+    manifest["qa_ambient_local_variant"] = (
+        "isolated-qa-roots" if candidate_enabled else "unchanged-baseline")
     return manifest, home, profile, source_fixture, calibration
 
 
@@ -838,6 +849,8 @@ def require_same_capture_restore(result, control_evidence):
 
 def capture(root, staged, source, expected_hash, node, egress_programs=None):
     manifest, home, profile, fixture, calibration = prepare_journey(root, source, expected_hash)
+    print("N12 QA ambient local candidate " + json.dumps(
+        ambient_local.public_receipt(os.environ)), flush=True)
     env = {**os.environ, "CI": "true", "PILOTODIN_HOME": str(home), "PYTHONDONTWRITEBYTECODE": "1",
            "VITE_PILOTODIN_NATIVE_SMOKE": "1", "PILOTODIN_N12_QUALITY_FIXTURE": str(fixture)}
     restore_path = None
