@@ -120,7 +120,12 @@ def reduce(manifest, sysmon, events, app_witness, binary, *,
                 marks = manifest["markers"]
                 launch = trace.utc_time(marks["launch"])
                 finish = trace.utc_time(marks["profile-exit"])
-                if (not sample_issues and len(windows) == 2
+                counters = manifest["etw"]["counters"]
+                loss_free = (all(type(counters.get(k)) is int and counters[k] == 0
+                                 for k in ("events_lost", "log_buffers_lost", "realtime_buffers_lost"))
+                             and type(counters.get("buffers_written")) is int
+                             and counters["buffers_written"] > 0)
+                if (loss_free and not sample_issues and len(windows) == 2
                         and windows[0][1] < launch < finish < windows[1][0]):
                     calibration_status = "BOOKEND_OS_FILE_NETWORK_REVIEWABLE"
                 else:
@@ -141,9 +146,13 @@ def reduce(manifest, sysmon, events, app_witness, binary, *,
                 control = journey.same_capture_restore_evidence(
                     restore_control, manifest["observed_roots"]["write-restore-control"],
                     rows, devices, bounds, issues)
-                if control.get("status") == "PASS" and all(
-                        control.get("write_path_verified", {}).get(label) is True
-                        for label in ("mutate", "restore")):
+                if (control.get("status") == "PASS"
+                        and not ("etw-event-or-buffer-loss" in issues)
+                        and all(type(manifest["etw"]["counters"].get(k)) is int
+                                and manifest["etw"]["counters"][k] == 0
+                                for k in ("events_lost", "log_buffers_lost", "realtime_buffers_lost"))
+                        and all(control.get("write_path_verified", {}).get(label) is True
+                                for label in ("mutate", "restore"))):
                     restore_status = "TWO_UNIQUE_WRITES_CORROBORATED"
                 else:
                     restore_status = "BLOCKED"

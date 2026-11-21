@@ -256,6 +256,18 @@ class NoCdpFileIOReviewTests(TestCase):
         self.assertGreater(result["reducer_issue_count"], 0)
         self.assertEqual(result["full_product_tree_mutation_containment"], "NOT_DEMONSTRATED")
 
+    def test_etw_loss_blocks_both_positive_controls_even_when_mock_returns_pass(self):
+        self.synthetic_positive_lifetime_receipts()
+        self.manifest["etw"]["counters"]["events_lost"] = 1
+        result = self.run_check(two_roles=True, calibrated=True, restore_verified=True)
+        self.assertEqual(result["generated_calibration_bookends"], "BLOCKED")
+        self.assertEqual(result["same_capture_write_restore"], "BLOCKED")
+        self.assertEqual(result["calibration_and_transient_write_proof"],
+                         "UNVERIFIED_OR_INCOMPLETE")
+        self.assertEqual(result["etw_loss_counters"], "LOSS_OR_UNVERIFIED")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+
     def test_product_prohibited_writes_remain_even_if_controls_reviewable(self):
         self.synthetic_positive_lifetime_receipts()
         result = self.run_check(two_roles=True, calibrated=True, restore_verified=True,
