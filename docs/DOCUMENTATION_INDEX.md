@@ -14,6 +14,8 @@
 
 ## Current development references
 
+- [Latest hosted-Windows synthetic AF_PIPE and interrupted child-handle cleanup review](./P4_N12_SYNTHETIC_WINDOWS_PIPE_AND_ABORT_SOURCE_REVIEW_2026-11-21.md) records four real Windows named-pipe synthetic subprocess cases, early-child missing-handle counterexamples, fail-closed observer abort, exact source-only CI results and the fresh native-consent boundary.
+
 - [Latest authenticated memory-only child-handle worker/reducer transport](./P4_N12_PRIVATE_CHILD_HANDLE_MEMORY_PIPE_TRANSFER_2026-11-21.md) records opt-in Windows named-pipe scope, private source-validated single-frame transfer, credential isolation, exact CI, and the remaining untested native child sampling and acceptance boundary.
 
 - [Latest source-only private original WebView child-handle reducer handoff](./P4_N12_NO_CDP_PRIVATE_CHILD_HANDLE_REDUCER_HANDOFF_2026-11-21.md) documents an in-memory source/binary-pinned observer-to-reducer diagnostic interface, fixed-label privacy protection, capture-stage negative tests, unchanged native verdict and outstanding worker transport boundary.
