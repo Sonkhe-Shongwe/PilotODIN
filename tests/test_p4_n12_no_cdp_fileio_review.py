@@ -441,7 +441,8 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
                         "before": "e" * 64, "stages": {}}))
                 stack.enter_context(patch.object(
                     lifetime.journey, "prepare_journey",
-                    return_value=(manifest, root, root, root / "quality-source.csv", [])))
+                    return_value=(manifest, root, root, root / "quality-source.csv",
+                                  [root / "calibration-first", root / "calibration-last"])))
                 stack.enter_context(patch.object(
                     lifetime.journey, "snapshots", return_value={"protected": {}, "observed": {}}))
                 bracket = stack.enter_context(patch.object(
