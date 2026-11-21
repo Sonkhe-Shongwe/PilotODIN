@@ -1,0 +1,179 @@
+"""Disposable local log fixtures, no WebView, native app or ACL changes."""
+import os
+from pathlib import Path
+import tempfile
+import unittest
+
+from qa.p4_native.n12_trace import EvidenceValidationError
+from qa.p4_research import n12_no_cdp_log_witness as reader
+
+
+SOURCE = "a" * 40
+EXE = "b" * 64
+
+
+class FakeProcess:
+    pid = 8123
+    returncode = None
+
+    def poll(self):
+        return self.returncode
+
+
+def prelaunch(path):
+    return reader.prepare_prelaunch_log(
+        path,
+        expected_source=SOURCE, actual_source=SOURCE,
+        expected_executable_sha256=EXE, actual_executable_sha256=EXE,
+    )
+
+
+class NoCdpLogWitnessTests(unittest.TestCase):
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.file = Path(self.folder.name) / "app.log"
+        self.file.write_bytes(b"")
+        self.app = FakeProcess()
+
+    def observe(self, witness=None, *, sleep=lambda _: None, clock=None, **kwargs):
+        # Use fake ticking clock to avoid tests relying on wall clock.
+        if clock is None:
+            ticks = iter([0.0, 1.0, 2.0, 3.0, 4.0])
+            clock = lambda: next(ticks)
+        return reader.wait_for_readiness(
+            witness or prelaunch(self.file), self.app,
+            expected_pid=8123, main_window_identity_verified=True,
+            clock=clock, sleep=sleep, timeout_seconds=2, **kwargs,
+        )
+
+    def test_clean_marker_and_normal_close_are_only_log_witness_not_native_acceptance(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(b"unrelated private path\n" + reader.MARKER + b"\n")
+        ready = self.observe(witness)
+        self.app.returncode = 0
+        result = reader.verify_after_normal_close(
+            witness, ready, process=self.app, expected_pid=8123,
+            close_request_verified=True,
+        )
+        self.assertEqual(result["marker"], "observed-once-before-close")
+        self.assertEqual(result["browser_process_identity"], "NOT_EVALUATED")
+        self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertFalse(result["owner_native_execution_authorized"])
+        self.assertNotIn("private", str(result))
+        self.assertNotIn(self.folder.name, str(result))
+
+    def test_marker_absent_times_out_with_fixed_redacted_reason(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(b"private: " + reader.MARKER + b" suffix\n")
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-readiness-timeout$"):
+            self.observe(witness)
+
+    def test_stale_prelaunch_and_wrong_provenance_are_rejected(self):
+        self.file.write_bytes(reader.MARKER + b"\n")
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-prelaunch-log-not-empty-or-unique$"):
+            prelaunch(self.file)
+        self.file.write_bytes(b"")
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-source-unverified$"):
+            reader.prepare_prelaunch_log(
+                self.file, expected_source=SOURCE, actual_source="c" * 40,
+                expected_executable_sha256=EXE, actual_executable_sha256=EXE,
+            )
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-executable-unverified$"):
+            reader.prepare_prelaunch_log(
+                self.file, expected_source=SOURCE, actual_source=SOURCE,
+                expected_executable_sha256=EXE, actual_executable_sha256="c" * 64,
+            )
+
+    def test_duplicate_preclose_blocks_without_exposing_raw_log(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(reader.MARKER + b"\nsecret\n" + reader.MARKER + b"\n")
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-marker-duplicate$"):
+            self.observe(witness)
+
+    def test_duplicate_postclose_blocks_even_with_zero_exit(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(reader.MARKER + b"\n")
+        observed = self.observe(witness)
+        self.file.write_bytes(reader.MARKER + b"\n" + reader.MARKER + b"\n")
+        self.app.returncode = 0
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-postclose-marker-missing-or-duplicate$"):
+            reader.verify_after_normal_close(
+                witness, observed, process=self.app,
+                expected_pid=8123, close_request_verified=True,
+            )
+
+    def test_provisional_does_not_bypass_close_or_nonzero_exit(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(reader.MARKER + b"\n")
+        observed = self.observe(witness)
+        self.app.returncode = 1
+        for value in (False, True):
+            with self.subTest(close_verified=value):
+                with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-graceful-close-unverified$"):
+                    reader.verify_after_normal_close(
+                        witness, observed, process=self.app,
+                        expected_pid=8123, close_request_verified=value,
+                    )
+
+    def test_pid_window_and_process_liveness_must_be_verified(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(reader.MARKER + b"\n")
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-app-process-identity-unverified$"):
+            reader.wait_for_readiness(witness, self.app, expected_pid=8124,
+                                      main_window_identity_verified=True)
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-window-identity-unverified$"):
+            reader.wait_for_readiness(witness, self.app, expected_pid=8123,
+                                      main_window_identity_verified=False)
+        self.app.returncode = 0
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-app-exited-before-readiness$"):
+            self.observe(witness)
+
+    def test_replaced_log_and_symlink_block(self):
+        witness = prelaunch(self.file)
+        self.file.unlink()
+        self.file.write_bytes(reader.MARKER + b"\n")
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-identity-changed$"):
+            self.observe(witness)
+        self.file.unlink()
+        target = Path(self.folder.name) / "private.log"
+        target.write_bytes(reader.MARKER + b"\n")
+        try:
+            self.file.symlink_to(target)
+        except (OSError, NotImplementedError):
+            self.skipTest("host does not permit symlinks")
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-path-unverified$"):
+            prelaunch(self.file)
+
+    def test_missing_and_oversize_logs_block(self):
+        witness = prelaunch(self.file)
+        self.file.unlink()
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-unavailable$"):
+            self.observe(witness)
+        self.file.write_bytes(b"")
+        witness = prelaunch(self.file)
+        self.file.write_bytes(b"q" * (reader.MAX_LOG_BYTES + 1))
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-log-size-limit$"):
+            self.observe(witness)
+
+    def test_fragmented_log_ack_is_not_accepted_until_newline(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(reader.MARKER)
+        def append_newline(_seconds):
+            self.file.write_bytes(reader.MARKER + b"\n")
+        ready = self.observe(witness, sleep=append_newline)
+        self.assertEqual(ready.marker_lines_before_close, 1)
+
+    def test_missing_close_proof_never_yields_verified_receipt(self):
+        witness = prelaunch(self.file)
+        self.file.write_bytes(reader.MARKER + b"\n")
+        observed = self.observe(witness)
+        with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-graceful-close-unverified$"):
+            reader.verify_after_normal_close(
+                witness, observed, process=self.app,
+                expected_pid=8123, close_request_verified=False,
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()
