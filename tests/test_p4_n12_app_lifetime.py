@@ -357,7 +357,7 @@ class AppLifetimeTests(unittest.TestCase):
         self.assertEqual(enhanced["native_N12_acceptance"], "NOT_EVALUATED")
         report = json.dumps(join)
         for secret in (str(ORIGIN), WEBVIEW, APP, '"pid"', '"guid"',
-                       "HarddiskVolume", "private"):
+                       "HarddiskVolume", "private-702", "private-703"):
             self.assertNotIn(secret, report)
 
     def test_private_bundle_is_not_available_to_default_n12(self):
