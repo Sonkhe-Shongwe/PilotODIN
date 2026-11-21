@@ -77,13 +77,16 @@ def review_candidate(witness):
            for k, expected in FIELDS.items()):
         return _result(["witness-schema-invalid"])
     c, p, w = (witness[k] for k in ("capture", "process", "write"))
-    if any(type(row[field]) is not int or row[field] <= 0 for row, keys in (
-            (c, ("start_ticks", "end_ticks")),
-            (p, ("pid", "birth_ticks", "exit_ticks", "etw_birth_ticks", "etw_exit_ticks",
-                 "original_handle_birth_ticks", "original_handle_exit_ticks")),
-            (w, ("pid", "birth_ticks", "request_ticks", "completion_ticks",
-                 "request_event_id", "completion_event_id", "irp", "completion_irp",
-                 "file_object", "file_key")) for field in keys):
+    numeric_groups = (
+        (c, ("start_ticks", "end_ticks")),
+        (p, ("pid", "birth_ticks", "exit_ticks", "etw_birth_ticks", "etw_exit_ticks",
+             "original_handle_birth_ticks", "original_handle_exit_ticks")),
+        (w, ("pid", "birth_ticks", "request_ticks", "completion_ticks",
+             "request_event_id", "completion_event_id", "irp", "completion_irp",
+             "file_object", "file_key")),
+    )
+    if any(type(row[field]) is not int or row[field] <= 0
+           for row, keys in numeric_groups for field in keys):
         return _result(["numeric-identity-invalid"])
     issues = []
     if any(c[k] is not True for k in CAPTURE_TRUES) or c["start_ticks"] >= c["end_ticks"]:
