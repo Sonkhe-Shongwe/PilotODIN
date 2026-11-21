@@ -13,6 +13,7 @@
 ## Current development references
 
 - [20 November code, test and direction audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) for reproduced product defects, the scope of the Windows failures and the corrective order.
+- [Opt-in QA WebView2 ambient local-data candidate](./P4_N12_QA_AMBIENT_LOCAL_REDIRECT_CANDIDATE_2026-11-21.md) for source-only LOCALAPPDATA and APPDATA redirects inside the permitted disposable QA profile, not native acceptance.
 - [R02.5 mutation gaps reconciled from original native log](./P4_R02_5_FILE_MUTATION_CREDIT_RECONCILIATION_2026-11-21.md) for 227,087 write path original gaps, 226,959 permitted path credits, 113 outside-scope credits and outstanding real blockers.
 - [N12 file-mutation evidence architecture decision](./P4_N12_FILE_MUTATION_EVIDENCE_DECISION_2026-11-21.md) for why the current ProcMon A/B proof gate cannot qualify, and the planned independent prevention + preservation + ETW measurement approach.
 - [N12 two-root protected fixture contract](./P4_N12_PROTECTED_FIXTURE_CONTRACT_2026-11-21.md) for the restricted-writer prevention design and source-only non-acceptance evidence-schema checks.

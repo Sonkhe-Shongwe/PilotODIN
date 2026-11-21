@@ -59,3 +59,7 @@ No filename, private path, pathname hash, process ID or per-target record is pub
 Official P4 **14/20 (70%)**; file-mutation **3/4 (75%)**; desktop network isolation **2/3 (67%)**; N12 **0/2**; original data preservation **0/2**. The one-use WebView native approval remains consumed and the workflow remains `if: false`. Installer freeze through P7, owner-device prohibition and separate firewall approval remain unchanged.
 
 **Next scope:** Investigate a *specific observed WebView2 temporary-file mechanism* only when actual native evidence justifies a product-level change. Avoid changing production `TEMP`, WebView2 data directories or allowed write/network paths based on assumptions from an incomplete QA diagnostic.
+
+## Later opt-in QA ambient-local environment candidate
+
+The [source-only ambient local-data candidate](./P4_N12_QA_AMBIENT_LOCAL_REDIRECT_CANDIDATE_2026-11-21.md) may redirect the N12 QA desktop app process LOCALAPPDATA/APPDATA into the existing permitted WebView profile when explicitly enabled. The default remains unchanged. This does **not** establish that browser subprocesses or Windows Known Folder APIs use the values. [Exact code c667232](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c667232fc3419cf3b72cc19ec3d547eff38abdba) passed 4/4 routine source/fixture CI jobs. No actual native capture, product remediation or acceptance credit occurred.
