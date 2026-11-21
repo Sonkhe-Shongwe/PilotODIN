@@ -1,0 +1,13 @@
+# N12 ETW timestamp boundary diagnostic, 21 November 2026
+
+The separately approved Windows N12 run [44817701849](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44817701849) completed both native launch cycles and protected endpoint comparison, but the strict combined reducer failed on `ETW event timestamp outside capture`. The captured raw ETW JSONL was runner-local and is not available for retrospective inspection. Do not infer whether the event was before start or after end.
+
+This change adds a **provenance-checked, redacted classification** immediately after ETW export and before combined reduction. It reads the same digest-pinned JSONL, reports counts of records before-start/after-end, invalid tick types, malformed rows, coarse offset bands, and up to six numeric ETW event IDs per side. It publishes no exact timestamps, PIDs, file paths, event payloads or raw traces. If the digest mismatches, the diagnostic reveals no counts.
+
+The strict reducer (`etw_events`) is unchanged. A diagnostic `NO_TIMESTAMP_BOUNDARY_FAULT_OBSERVED` is **not** an acceptance PASS, and any out-of-bounds record continues to BLOCK combined reduction. The new tests use generated JSONL to reproduce before-start, after-end, invalid-tick, malformed and digest-mismatch cases. These give the next authorised run a concrete expected difference: **a safe reasoned classification** of a formerly opaque bounds failure, allowing a later source fix based on evidence rather than guessed timestamp tolerances. A run still needs the pre-existing source-pinned one-use approval gate, actual desktop validation and separate scoring for filesystem/network.
+
+Official P4 remains **14/20**, N12 **0/2**, file-mutation **3/4**, network isolation **2/3**. The native workflow remains disarmed at this source commit; any activation must be a fresh direct child of a reviewed source.
+
+## Verified second native run
+
+The owner separately approved one diagnostic native attempt after all source CI jobs passed. At [run 44838416004](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44838416004), the exact same strict reducer completed. The classification was `NO_TIMESTAMP_BOUNDARY_FAULT_OBSERVED`, with **1,550,275 digest-verified events all within bounds**. No side or offset band was populated. The first run's timestamp fault remains unproven and may have been intermittent; **do not assert it was fixed by the diagnostic**. The completed second audit instead failed on real file and network scope violations and blocked on incomplete path attribution. [Full result](./N12_APP_JOURNEY_RESULT_44838416004.md).

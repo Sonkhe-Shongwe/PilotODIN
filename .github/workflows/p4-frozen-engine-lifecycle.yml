@@ -1,0 +1,124 @@
+name: P4 Frozen Engine Lifecycle
+
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: [qa/p4_research/FROZEN_ENGINE_LIFECYCLE_APPROVAL.txt]
+
+permissions:
+  contents: read
+
+jobs:
+  unpackaged:
+    if: ${{ false }} # Consumed by the completed Windows QA run 44144350648.
+    runs-on: windows-2022
+    timeout-minutes: 55
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 3
+          persist-credentials: false
+      - name: Verify the one-use launch and pin the application source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $source = 'acfc40247ceb68a8e33a9fca5f81d5d2cb68b12b'
+          $setupFailure = '26cb4c4c7322fad34b0b08aa9c35ad17f433ce28'
+          $marker = 'qa/p4_research/FROZEN_ENGINE_LIFECYCLE_APPROVAL.txt'
+          $driver = 'qa/p4_research/Test_P4_Frozen_Engine_Lifecycle.ps1'
+          $workflow = '.github/workflows/p4-frozen-engine-lifecycle.yml'
+          $approval = @(Get-Content -LiteralPath $marker)
+          $parents = (git rev-list -n 1 --parents HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD)
+          $retryChanges = @(git diff --name-only $setupFailure HEAD)
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA -or $parents.Count -ne 2 -or
+              $parents[1] -cne $setupFailure -or (git rev-parse HEAD~2) -cne $source -or
+              $retryChanges.Count -ne 2 -or $workflow -cnotin $retryChanges -or $marker -cnotin $retryChanges -or
+              $changed.Count -ne 3 -or $added.Count -ne 3 -or
+              $marker -cnotin $added -or $driver -cnotin $added -or $workflow -cnotin $added -or
+              $approval.Count -ne 3 -or $approval[0] -cne "reviewed_source=$source" -or
+              $approval[1] -cne 'scope=one-unpackaged-desktop-and-frozen-engine-shutdown' -or
+              $approval[2] -cne 'retry_after_setup_failure=44143975103') {
+            throw 'The reviewed one-use launch or approved source differs.'
+          }
+          Copy-Item -LiteralPath $driver -Destination (Join-Path $env:RUNNER_TEMP 'Test_P4_Frozen_Engine_Lifecycle.ps1')
+          git checkout --detach $source
+          "PILOTODIN_LIFECYCLE_SOURCE=$source" >> $env:GITHUB_ENV
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verify disposable app identity and build the production frontend
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          foreach ($root in @($env:LOCALAPPDATA,$env:APPDATA)) {
+            foreach ($identity in @('com.pilotodin.studio','com.pilotodin.p4nativeqa','com.pilotodin.p4enginelifecycle')) {
+              if (Test-Path -LiteralPath (Join-Path $root $identity)) { throw 'Expected clean disposable app data.' }
+            }
+          }
+          if ($env:PILOTODIN_HOME -or $env:TAURI_CONFIG -or $env:WEBVIEW2_USER_DATA_FOLDER -or
+              $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -or $env:VITE_PILOTODIN_NATIVE_SMOKE) {
+            throw 'Unexpected inherited app data or build configuration.'
+          }
+          if ('x86_64-pc-windows-msvc' -cnotin @(rustup target list --installed)) {
+            throw 'Expected the hosted Windows x64 MSVC toolchain.'
+          }
+          npm ci --prefix frontend --no-audit --no-fund
+          npm run build --prefix frontend
+      - name: Rebuild and smoke-test the genuine frozen Windows analytics engine
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          ./desktop/Build_Python_Sidecar.ps1
+          $receipt = Get-Content build/engine-smoke-result.json -Raw | ConvertFrom-Json
+          if (-not $receipt.passed -or -not $receipt.owner_disconnect_stops_engine -or $receipt.model_started) {
+            throw 'The frozen engine did not prove owner-disconnect shutdown.'
+          }
+          Write-Host ('Frozen engine smoke: ' + ($receipt | ConvertTo-Json -Compress))
+      - name: Compile and fingerprint an unpackaged desktop with the engine only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ((git rev-parse HEAD) -cne $env:PILOTODIN_LIFECYCLE_SOURCE -or
+              @(git status --porcelain --untracked-files=no).Count -ne 0) {
+            throw 'The checkout differs from the reviewed product source.'
+          }
+          $crate = Join-Path $PWD 'frontend/src-tauri'
+          $target = Join-Path $env:RUNNER_TEMP "pilotodin-engine-lifecycle-$env:GITHUB_RUN_ID"
+          $env:TAURI_CONFIG = @{
+            identifier = 'com.pilotodin.p4enginelifecycle'
+            productName = 'pilotODIN-P4-Engine-Lifecycle'
+            bundle = @{active = $false; targets = @(); resources = @(); externalBin = @('binaries/pilotodin-engine')}
+          } | ConvertTo-Json -Depth 6 -Compress
+          cargo build --manifest-path (Join-Path $crate 'Cargo.toml') --bin pilotodin-desktop --target x86_64-pc-windows-msvc --target-dir $target --release --features tauri/custom-protocol
+          $layout = Join-Path $target 'x86_64-pc-windows-msvc/release'
+          $desktop = Join-Path $layout 'pilotodin-desktop.exe'
+          $desktopHash = (Get-FileHash -LiteralPath $desktop).Hash.ToLowerInvariant()
+          $engineHash = (Get-FileHash -LiteralPath (Join-Path $layout 'pilotodin-engine.exe')).Hash.ToLowerInvariant()
+          $frozenHash = (Get-FileHash -LiteralPath 'build/py-dist/pilotodin-engine.exe').Hash.ToLowerInvariant()
+          if ($engineHash -cne $frozenHash) { throw 'The desktop layout did not use the engine that passed the smoke test.' }
+          "LIFECYCLE_DESKTOP=$desktop" >> $env:GITHUB_ENV
+          "LIFECYCLE_DESKTOP_HASH=$desktopHash" >> $env:GITHUB_ENV
+          "LIFECYCLE_ENGINE_HASH=$engineHash" >> $env:GITHUB_ENV
+          $lockHash = (Get-FileHash -LiteralPath (Join-Path $crate 'Cargo.lock')).Hash.ToLowerInvariant()
+          Write-Host "Source $env:PILOTODIN_LIFECYCLE_SOURCE desktop $desktopHash engine $engineHash Cargo.lock $lockHash"
+      - name: Confirm both frozen engine processes exit on normal close and lost desktop
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & (Join-Path $env:RUNNER_TEMP 'Test_P4_Frozen_Engine_Lifecycle.ps1') `
+            -Desktop $env:LIFECYCLE_DESKTOP -ExpectedDesktopHash $env:LIFECYCLE_DESKTOP_HASH `
+            -ExpectedEngineHash $env:LIFECYCLE_ENGINE_HASH

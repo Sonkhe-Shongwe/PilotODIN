@@ -1,0 +1,141 @@
+name: P4 N12 No-CDP FileIO (DISARMED, one-use only)
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p4-n12-app-journey
+  cancel-in-progress: false
+
+jobs:
+  no-cdp-fileio:
+    if: ${{ false }} # NEVER activate without fresh, explicit, source-pinned, one-use owner approval.
+    runs-on: windows-2022
+    timeout-minutes: 110
+    env:
+      CI: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Check out the reviewed launch commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify source-pinned owner approval before any build or collector
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $marker = 'qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt'
+          $workflow = '.github/workflows/p4-n12-no-cdp-fileio.yml'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA) {
+            throw 'No-CDP FileIO requires first-run trusted hosted Windows push approval.'
+          }
+          if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
+            throw 'Fresh owner-approval marker is missing.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or
+              $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=n12-one-build-one-no-cdp-fileio-baseline') {
+            throw 'Approval marker format or exact one-use capture scope is invalid.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $workflow -cnotin $changed -or
+              $marker -cnotin $changed -or $added.Count -ne 1 -or
+              $added[0] -cne $marker) {
+            throw 'Activation may change ONLY this workflow and add one fresh source-pinned marker.'
+          }
+          git checkout --detach $source
+          'PILOTODIN_N12_APPROVED_SOURCE=' + $source >> $env:GITHUB_ENV
+          'PILOTODIN_P4_UNPACKAGED_NATIVE_DEV_CONSENT=I_APPROVE_UNPACKAGED_P4_NATIVE_DEV' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_APP_LIFETIME_CONSENT=I_APPROVE_ONE_N12_APP_LIFETIME' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_NO_CDP_STORAGE_CONSENT=I_APPROVE_ONE_N12_NO_CDP_STORAGE' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_CHILD_HANDLE_CONSENT=I_APPROVE_ONE_N12_QA_CHILD_HANDLES' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_NO_CDP_FILEIO_CONSENT=I_APPROVE_ONE_N12_NO_CDP_FILEIO' >> $env:GITHUB_ENV
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Preflight reviewed toolchain and dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ('x86_64-pc-windows-msvc' -cnotin @(rustup target list --installed)) {
+            throw 'Reviewed x64 Windows MSVC toolchain absent.'
+          }
+          npm ci --prefix frontend --no-audit --no-fund
+          python -m pip install -r backend/requirements.txt
+          node --check frontend/e2e/p4-n12-app-lifetime-ready.mjs
+      - name: Build one isolated unpackaged binary with immutable digest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -B -m qa.p4_research.n12_app_build stage --source $env:PILOTODIN_N12_APPROVED_SOURCE
+          $receiptPath = Join-Path $env:RUNNER_TEMP ('pilotodin-n12-build-' + $env:GITHUB_RUN_ID + '/build.json')
+          $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+          if ($receipt.source_sha -cne $env:PILOTODIN_N12_APPROVED_SOURCE -or
+              $receipt.executable_sha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'Unverified staged binary receipt.'
+          }
+          'PILOTODIN_N12_EXE_SHA256=' + $receipt.executable_sha256 >> $env:GITHUB_ENV
+      - name: Capture EXACTLY one no-CDP baseline with full FileIO diagnostic
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ($env:PILOTODIN_N12_QA_AMBIENT_LOCAL_VARIANT) {
+            throw 'Baseline-only capture cannot inherit the ambient-local candidate.'
+          }
+          ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -WithEtw -AppLifetime -NoCdp -NoCdpFileIO `
+            -SourceSha $env:PILOTODIN_N12_APPROVED_SOURCE `
+            -ExecutableSha256 $env:PILOTODIN_N12_EXE_SHA256
+      - name: Report REDACTED fixed-label diagnostic only, never owner paths or raw ETW
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $reportPath = Join-Path $env:RUNNER_TEMP ('pilotodin-n12-build-' + $env:GITHUB_RUN_ID + '-lifetime/lifetime-report.json')
+          if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+            '### N12 no-CDP FileIO: no complete redacted diagnostic receipt (BLOCKED)' >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+          try {
+            $receipt = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+            $f = $receipt.no_cdp_fileio
+            if ($null -eq $f -or
+                $f.scope -cne 'no-cdp-kernel-file-observation-not-acceptance' -or
+                $f.status -cne 'BLOCKED' -or
+                $f.native_N12_acceptance -cne 'NOT_EVALUATED' -or
+                $f.file_mutation_acceptance -cne 'NOT_EVALUATED') {
+              throw 'Invalid diagnostic receipt scope or unauthorized acceptance claim.'
+            }
+            '### N12 no-CDP FileIO diagnostic: BLOCKED, not acceptance' >> $env:GITHUB_STEP_SUMMARY
+            ('Confirmed prohibited-operation count: ' + [int]$f.observed_prohibited_operations) >> $env:GITHUB_STEP_SUMMARY
+            ('Unresolved mutation-path credit count: ' + [int]$f.missing_mutation_path_credits) >> $env:GITHUB_STEP_SUMMARY
+            ('Unresolved WebView-network write-path count: ' + [int]$f.remaining_webview_network_write_path_gaps) >> $env:GITHUB_STEP_SUMMARY
+            ('Strict reducer issue count: ' + [int]$f.reducer_issue_count) >> $env:GITHUB_STEP_SUMMARY
+            'Source-pinned one-use baseline ONLY. No private path, PID, GUID or raw capture exported.' >> $env:GITHUB_STEP_SUMMARY
+          } catch {
+            throw 'Redacted diagnostic receipt missing, malformed or unreviewed.'
+          }

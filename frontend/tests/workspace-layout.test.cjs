@@ -81,3 +81,16 @@ test('project selector reconciliation is connected to the persistent shell',()=>
  assert.match(shell,/localStorage\.removeItem\('pilotodin-current'\)/);
  assert.match(shell,/setWarning\('The previously selected project is no longer available/);
 });
+
+
+test('project-dependent views wait for catalogue validation and expose retry on failure',()=>{
+ const shell=fs.readFileSync(path.join(__dirname,'../src/UnifiedShell.tsx'),'utf8');
+ assert.match(shell,/catalogState,setCatalogState/);
+ assert.match(shell,/setCatalogState\('ready'\)/);
+ assert.match(shell,/const workspaceReady=isProjectWorkspaceRestored\(projectId,restoredFor,catalogState\)/);
+ assert.match(shell,/workspaceReady\?\(active==='investigate'/);
+ assert.match(shell,/Checking that the saved project belongs to this local workspace/);
+ assert.match(shell,/catalogState==='failed'&&<button[^>]+onClick=/);
+ assert.match(shell,/setCatalogState\(previous=>previous==='ready'\?'ready':'failed'\)/);
+ assert.match(shell,/key=\{`studio-\$\{projectId\}`\}/);
+});

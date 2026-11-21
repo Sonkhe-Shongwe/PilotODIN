@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.pilotodin.p2deliverconsentqa",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --port 5177",
+    "devUrl": "http://127.0.0.1:5177/p2_native_deliver_consent_qa.html"
+  },
+  "app": {
+    "windows": [{
+      "label": "main",
+      "title": "PilotODIN P2 Native Deliver Consent - SYNTHETIC DEV QA",
+      "width": 1320,
+      "height": 850,
+      "minWidth": 1010,
+      "minHeight": 680
+    }]
+  },
+  "bundle": {
+    "active": false,
+    "externalBin": [],
+    "resources": []
+  }
+}

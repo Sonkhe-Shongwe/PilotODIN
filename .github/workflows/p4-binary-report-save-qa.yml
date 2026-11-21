@@ -1,0 +1,125 @@
+name: P4 Windows Binary Report Save As
+
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: [qa/p4_research/BINARY_REPORT_SAVE_APPROVAL.txt]
+
+permissions:
+  contents: read
+
+jobs:
+  native-fixture:
+    if: ${{ false }}
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify the one-use hosted launch and pin product source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $source = 'da1caeaa17b1cbf44dbcc19d23c941cf8f1e95c0'
+          $marker = 'qa/p4_research/BINARY_REPORT_SAVE_APPROVAL.txt'
+          $driver = 'qa/p4_research/p4-native-report-binary-qa.mjs'
+          $dialog = 'qa/p4_research/Invoke_P4_Report_SaveAs_Dialog.ps1'
+          $workflow = '.github/workflows/p4-binary-report-save-qa.yml'
+          $approval = @(Get-Content -LiteralPath $marker)
+          $parents = (git rev-list -n 1 --parents HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA -or $parents.Count -ne 2 -or
+              $parents[1] -cne $source -or $changed.Count -ne 4 -or
+              $marker -cnotin $changed -or $driver -cnotin $changed -or $dialog -cnotin $changed -or $workflow -cnotin $changed -or
+              $approval.Count -ne 3 -or $approval[0] -cne "reviewed_source=$source" -or
+              $approval[1] -cne 'scope=one-unpackaged-desktop-synthetic-report-cancel-and-file-integrity' -or
+              $approval[2] -cne 'after_dialog_locator_failure=44149152932') {
+            throw 'The reviewed one-use launch or approved source differs.'
+          }
+          Copy-Item -LiteralPath $driver -Destination (Join-Path $env:RUNNER_TEMP 'p4-native-report-binary-qa.mjs')
+          Copy-Item -LiteralPath $dialog -Destination (Join-Path $env:RUNNER_TEMP 'Invoke_P4_Report_SaveAs_Dialog.ps1')
+          git checkout --detach $source
+          "PILOTODIN_SAVE_QA_SOURCE=$source" >> $env:GITHUB_ENV
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Build the fixture page from the real report transport module
+        shell: pwsh
+        working-directory: frontend
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          foreach ($root in @($env:LOCALAPPDATA,$env:APPDATA)) {
+            foreach ($identity in @('com.pilotodin.studio','com.pilotodin.p4nativeqa','com.pilotodin.p4reportbinary')) {
+              if (Test-Path -LiteralPath (Join-Path $root $identity)) { throw 'Expected clean disposable app data.' }
+            }
+          }
+          if ($env:PILOTODIN_HOME -or $env:TAURI_CONFIG -or $env:WEBVIEW2_USER_DATA_FOLDER -or
+              $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -or $env:VITE_PILOTODIN_NATIVE_SMOKE) {
+            throw 'Unexpected inherited app data or build configuration.'
+          }
+          if ('x86_64-pc-windows-msvc' -cnotin @(rustup target list --installed)) {
+            throw 'Expected the hosted Windows x64 MSVC toolchain.'
+          }
+          npm ci --no-audit --no-fund
+          node --input-type=module -e "import {build} from 'vite'; await build({configFile:false,build:{rollupOptions:{input:'p2_native_export_test.html'}}})"
+          node --test tests/a4-native-report-save-contract.test.cjs tests/a4-quality-export-gates.test.cjs
+      - name: Build the unpackaged Windows fixture and verify native disk writes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ((git rev-parse HEAD) -cne $env:PILOTODIN_SAVE_QA_SOURCE -or
+              @(git status --porcelain --untracked-files=no).Count -ne 0) {
+            throw 'The checkout differs from reviewed product source.'
+          }
+          $target = Join-Path $env:RUNNER_TEMP "pilotodin-report-binary-$env:GITHUB_RUN_ID"
+          $env:TAURI_CONFIG = @{
+            identifier = 'com.pilotodin.p4reportbinary'
+            productName = 'PilotODIN P4 Report Transport QA'
+            app = @{windows = @(@{label = 'main'; title = 'PilotODIN P4 Report Transport QA'; url = 'p2_native_export_test.html'; width = 1100; height = 800})}
+            bundle = @{active = $false; targets = @(); resources = @(); externalBin = @()}
+          } | ConvertTo-Json -Depth 7 -Compress
+          cargo build --manifest-path frontend/src-tauri/Cargo.toml --bin pilotodin-desktop --target x86_64-pc-windows-msvc --target-dir $target --release --features tauri/custom-protocol
+          cargo test --manifest-path frontend/src-tauri/Cargo.toml --lib --target x86_64-pc-windows-msvc --target-dir $target --release --features tauri/custom-protocol report_save_tests
+          $desktop = Join-Path $target 'x86_64-pc-windows-msvc/release/pilotodin-desktop.exe'
+          $digest = (Get-FileHash -LiteralPath $desktop).Hash.ToLowerInvariant()
+          "PILOTODIN_SAVE_QA_DESKTOP=$desktop" >> $env:GITHUB_ENV
+          "PILOTODIN_SAVE_QA_HASH=$digest" >> $env:GITHUB_ENV
+          Write-Host "Source $env:PILOTODIN_SAVE_QA_SOURCE desktop $digest"
+      - name: Measure raw IPC and cancel the real Windows Save As dialog
+        shell: pwsh
+        working-directory: frontend
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $exe = $env:PILOTODIN_SAVE_QA_DESKTOP
+          $layout = Split-Path -Parent $exe
+          if ((Get-FileHash -LiteralPath $exe).Hash -ine $env:PILOTODIN_SAVE_QA_HASH -or
+              (Get-NetTCPConnection -State Listen -LocalPort 9331 -ErrorAction SilentlyContinue)) {
+            throw 'The desktop identity or private QA port failed preflight.'
+          }
+          foreach ($item in @('pilotodin-engine.exe','pilotodin-inference.exe','models','llama-runtime')) {
+            if (Test-Path -LiteralPath (Join-Path $layout $item)) { throw 'Unexpected engine or model payload.' }
+          }
+          $env:PILOTODIN_SAVE_QA_OUTPUT = Join-Path $layout 'synthetic-outputs'
+          $null = New-Item -ItemType Directory -Path $env:PILOTODIN_SAVE_QA_OUTPUT
+          $env:PILOTODIN_SAVE_QA_DIALOG = Join-Path $env:RUNNER_TEMP 'Invoke_P4_Report_SaveAs_Dialog.ps1'
+          Copy-Item -LiteralPath (Join-Path $env:RUNNER_TEMP 'p4-native-report-binary-qa.mjs') -Destination '.p4-native-report-binary-qa.mjs'
+          $env:WEBVIEW2_USER_DATA_FOLDER = Join-Path $layout 'webview-p4-save'
+          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-address=127.0.0.1 --remote-debugging-port=9331'
+          $desktop = Start-Process -FilePath $exe -WorkingDirectory $layout -PassThru
+          try {
+            $null = $desktop.SafeHandle
+            $env:PILOTODIN_SAVE_QA_PID = $desktop.Id.ToString()
+            node .p4-native-report-binary-qa.mjs
+          } finally {
+            if (-not $desktop.HasExited) { $desktop.Kill(); $null = $desktop.WaitForExit(5000) }
+            $desktop.Dispose()
+          }

@@ -1,5 +1,7 @@
 # PilotODIN 1.0 Build A: Desktop Foundation
 
+> **Historical Build A guide.** The current owner policy freezes intermediate installer builds and installation through P4–P7. Use the [current handoff](../docs/SESSION_HANDOFF_CURRENT.md) and [phase policy](../docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) before any native or packaging work.
+
 This is an **engineering preview of a native Tauri 2 + React application using a bundled Python analytics sidecar**, built on the existing Studio v0.8 source. It **does not yet include a precompiled Windows installer**.
 
 ## What changes

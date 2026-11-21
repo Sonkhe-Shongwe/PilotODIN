@@ -82,6 +82,7 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
         env.update({
             'PILOTODIN_DESKTOP_PORT': str(port),
             'PILOTODIN_DESKTOP_SESSION': token,
+            'PILOTODIN_DESKTOP_WATCH_STDIN': '1',
             'PILOTODIN_HOME': str(data_dir),
             'PILOTODIN_DESKTOP_ALLOW_DEV': '0',
         })
@@ -90,7 +91,7 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
         url = f'http://127.0.0.1:{port}'
         creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         child = subprocess.Popen(list(command), cwd=root, env=env,
-                                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL, creationflags=creationflags)
         try:
             deadline = time.monotonic() + startup_seconds
@@ -123,12 +124,26 @@ def smoke_test_engine(command: Sequence[str], root: Path, startup_seconds: float
                 raise RuntimeError('Persistent local user data was not initialized in the designated directory')
             if child.poll() is not None:
                 raise RuntimeError('Desktop engine died after the health check')
+            assert child.stdin is not None
+            child.stdin.close()
+            if child.wait(timeout=15) != 0:
+                raise RuntimeError('Desktop engine did not exit cleanly after losing its owner')
+            try:
+                with socket.create_connection(('127.0.0.1', port), timeout=1):
+                    raise RuntimeError('Desktop engine listener remained after its parent exited')
+            except (ConnectionRefusedError, TimeoutError):
+                pass
             return {'passed': True, 'auth_required': True, 'wrong_origin_rejected': True,
-                    'user_storage_isolated': True, 'model_started': False}
+                    'user_storage_isolated': True, 'model_started': False,
+                    'owner_disconnect_stops_engine': True}
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError('Packaged engine stayed alive after its owner pipe closed') from error
         except Exception as error:
             raise RuntimeError(f'Packaged engine smoke verification failed: {error}; '
                                f'check process startup and configuration') from error
         finally:
+            if child.stdin is not None and not child.stdin.closed:
+                child.stdin.close()
             # PyInstaller --onefile starts a child process on Windows. Killing
             # only the bootloader parent can leave that child running.
             # Terminate the entire tree before deleting sandbox data.
@@ -169,7 +184,7 @@ def main() -> int:
     if args.result_json:
         args.result_json.parent.mkdir(parents=True, exist_ok=True)
         args.result_json.write_text(json.dumps(observed, indent=2), encoding='utf-8')
-    print('PACKAGED ENGINE CHECK PASSED: loopback authentication, origin guard, isolated local storage, and local API readiness')
+    print('PACKAGED ENGINE CHECK PASSED: loopback authentication, origin guard, isolated local storage, and owner-disconnect shutdown')
     return 0
 
 

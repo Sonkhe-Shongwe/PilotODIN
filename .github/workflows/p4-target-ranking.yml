@@ -1,0 +1,496 @@
+name: P4 Target Review Queue and Transparent Ranking
+
+# Synthetic data and local test services only. Run the fitted BE-024 browser
+# case through its separately approved, one-use Windows workflow.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-target-ranking.yml
+      - .github/workflows/p4-r03-qwen-idle-release.yml
+      - desktop/verify_live_bundled_inference.py
+      - frontend/src-tauri/src/lib.rs
+      - backend/desktop_runner.py
+      - desktop/verify_packaged_engine.py
+      - tests/test_packaged_engine_smoke.py
+      - tests/test_desktop_runner_process_smoke.py
+      - tests/test_p4_r03_worker_comparison.py
+      - backend/target_opportunities.py
+      - backend/main.py
+      - backend/analytics.py
+      - backend/ai_provider.py
+      - backend/storage.py
+      - backend/verified_answers.py
+      - frontend/src/AssistantWorkspace.tsx
+      - tests/test_p4_r03_verified_answers.py
+      - qa/p4_research/measure_local_answers.py
+      - backend/engine.py
+      - backend/target_timing_review.py
+      - frontend/src/TargetOpportunities.tsx
+      - frontend/src/App.tsx
+      - frontend/src/api.ts
+      - frontend/src/selectedFeatureBudget.ts
+      - frontend/tests/ml-a3-feature-preparation.test.cjs
+      - frontend/tests/p4-75-selected-feature-budget.test.cjs
+      - frontend/tests/p1-primary-button-edit-markers.test.cjs
+      - frontend/tests/p4-review-queue-contracts.test.cjs
+      - tests/test_p4_target_opportunities.py
+      - tests/test_p4_bike_public_import.py
+      - tests/test_p4_bike_time_readiness.py
+      - tests/test_p4_bike_categorical_readiness.py
+      - tests/fixtures/public_bike_daily_categorical_preday_731.csv
+      - tests/fixtures/public_bike_daily_preday_731.csv
+      - tests/test_p4_target_business_context.py
+      - tests/test_p4_prediction_timing_review.py
+      - tests/test_p4_two_axis_evidence.py
+      - frontend/tests/p4-business-context-contracts.test.cjs
+      - frontend/tests/p4-prediction-timing-contracts.test.cjs
+      - frontend/tests/p4-two-axis-contracts.test.cjs
+      - tests/test_p4_review_queue.py
+      - tests/test_p4_manual_target_inspection.py
+      - tests/test_p4_queue_resource_bounds.py
+      - tests/test_p4_consolidated_acceptance.py
+      - tests/test_p4_phase_exit_matrix.py
+      - tests/test_p4_native_acceptance_kit.py
+      - frontend/src-tauri/src/lib.rs
+      - tests/test_p4_n12_worker_scratch_source.py
+      - tests/test_p4_n12_app_build.py
+      - qa/p4_research/n12_mutation_triage.py
+      - tests/test_p4_n12_mutation_triage.py
+      - qa/p4_research/n12_ambient_local_candidate.py
+      - tests/test_p4_n12_ambient_local_candidate.py
+      - tests/test_p4_n12_app_journey.py
+      - tests/test_p4_n12_app_lifetime.py
+      - qa/p4_research/n12_no_cdp_fileio_review.py
+      - tests/test_p4_n12_no_cdp_fileio_review.py
+      - tests/test_p4_n12_lifetime_control.py
+      - tests/test_p4_n12_lifetime_etw.py
+      - tests/test_p4_n12_exit_corroboration.py
+      - tests/test_p4_n12_egress.py
+      - tests/test_p4_n12_journey_diagnostics.py
+      - tests/test_p4_n12_webview_storage.py
+      - qa/p4_research/n12_no_cdp_native_path.py
+      - tests/test_p4_n12_no_cdp_native_path.py
+      - tests/test_p4_n12_no_cdp_lifecycle.py
+      - qa/p4_research/n12_no_cdp_lifecycle.py
+      - tests/test_p4_n12_no_cdp_main_window.py
+      - qa/p4_research/n12_no_cdp_main_window.py
+      - tests/test_p4_n12_no_cdp_browser_identity.py
+      - qa/p4_research/n12_no_cdp_child_handles.py
+      - tests/test_p4_n12_no_cdp_child_handles.py
+      - qa/p4_research/n12_private_child_pipe.py
+      - tests/test_p4_n12_private_child_pipe.py
+      - tests/test_p4_n12_private_child_pipe_windows.py
+      - tests/test_p4_n12_source_evidence_map.py
+      - docs/P4_N12_STAGE1_SOURCE_EVIDENCE_MAP_2026-11-21.json
+      - docs/P4_N12_STAGE1_SOURCE_EVIDENCE_WORKSHEET_2026-11-21.md
+      - qa/p4_research/n12_no_cdp_browser_identity.py
+      - tests/test_p4_n12_no_cdp_log_witness.py
+      - qa/p4_research/n12_no_cdp_log_witness.py
+      - tests/test_p4_n12_calibration_socket_pair.py
+      - tests/test_p4_n12_protected_fixture_contract.py
+      - tests/test_p4_n12_token_capability_preflight.py
+      - qa/p4_research/n12_token_capability_preflight.py
+      - qa/p4_research/n12_protected_fixture_contract.py
+      - qa/p4_research/n12_product_tree_isolation_review.py
+      - tests/test_p4_n12_product_tree_isolation_review.py
+      - qa/p4_research/n12_webview_storage_mechanism_map.py
+      - tests/test_p4_n12_webview_storage_mechanism_map.py
+      - qa/p4_research/n12_fileio_identity_join.py
+      - tests/test_p4_n12_fileio_identity_join.py
+      - tests/test_p4_n12_tmp_debugger_fixture.py
+      - tests/test_p4_n12_procmon_environment_control.py
+      - tests/test_p4_n12_trace.py
+      - tests/test_p4_n12_same_capture_restore.py
+      - tests/test_p4_n12_webview_replay.py
+      - tests/test_p4_r06_prospective_fingerprint.py
+      - tests/test_p4_installer_provenance.py
+      - qa/p4_native/**
+      - '!qa/p4_native/N12_TRACE.md'
+      - tools/Start_P4_Everyday_RAM_Baseline.ps1
+      - qa/p4_research/n12_app_build.py
+      - qa/p4_research/n12_app_journey.py
+      - qa/p4_research/n12_backend_wakeup.py
+      - qa/p4_research/n12_tmp_debugger_fixture.py
+      - qa/p4_research/n12_procmon_environment_control.py
+      - qa/p4_research/n12_procmon_timing_control.py
+      - qa/p4_research/n12_project_switch.py
+      - qa/p4_research/n12_egress.py
+      - qa/p4_research/n12_app_lifetime.py
+      - frontend/e2e/p4-n12-app-lifetime-ready.mjs
+      - frontend/e2e/p4-n12-app-lifetime-ready.test.mjs
+      - frontend/e2e/p4-n12-native-close-readiness.mjs
+      - frontend/e2e/p4-n12-native-close-readiness.test.mjs
+      - .github/workflows/p4-n12-app-lifetime.yml
+      - .github/workflows/p4-n12-webview-storage.yml
+      - qa/p4_research/n12_webview_storage_probe.py
+      - .github/workflows/p4-n12-app-journey.yml
+      - .github/workflows/p4-n12-egress-preflight.yml
+      - .github/workflows/p4-n12-lifetime-control.yml
+      - qa/p4_research/n12_journey_diagnostics.py
+      - qa/p4_research/Invoke_N12_Journey_Evidence.ps1
+      - frontend/tests/p4-target-opportunities-contracts.test.cjs
+      - frontend/package.json
+      - frontend/scripts/p4-isolated-native-dev.mjs
+      - frontend/scripts/deny-unsafe-default-tauri-dev.mjs
+      - frontend/src-tauri/tauri.conf.json
+      - frontend/scripts/deny-intermediate-installer.mjs
+      - frontend/src-tauri/tauri.p4-isolated-native-dev.conf.json
+      - frontend/tests/p4-native-dev-isolation.test.cjs
+      - frontend/e2e/p4-real-http-review-queue.spec.ts
+      - frontend/e2e/p4-prepare-fitted-acceptance.mjs
+      - frontend/e2e/p4-preparation-request.mjs
+      - frontend/e2e/p4-quality-version-transition.mjs
+      - frontend/e2e/p4-71-native-webview-qa.mjs
+      - frontend/e2e/p4-native-project-switch-command.mjs
+      - frontend/e2e/p4-n12-native-cases.mjs
+      - frontend/e2e/p4-n12-native-cases.test.mjs
+      - frontend/e2e/p4-72-cdp-target-classifier.mjs
+      - frontend/e2e/p4-72-cdp-target-classifier.test.mjs
+      - frontend/e2e/p4-73-cdp-target-discovery.mjs
+      - frontend/e2e/p4-73-cdp-target-discovery.test.mjs
+      - frontend/playwright.p4-real-http.config.ts
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Recovery-only isolation: previous group's zero-job queued run cannot be
+  # cancelled (GitHub API HTTP 409). Keep CI source-only, no installer jobs.
+  group: pilotodin-p4-ranking-recovery-20261112-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p4-synthetic-source-and-frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact trusted feature branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install existing declared test dependencies
+        run: |
+          python -m pip install -r backend/requirements-test.txt
+          npm ci --prefix frontend --no-audit --no-fund
+      - name: Compile changed backend code
+        run: python -m py_compile backend/target_opportunities.py backend/target_timing_review.py
+      - name: Run focused existing and new P4 backend suites on synthetic data
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-p4-review-${{ github.run_id }}
+        run: >-
+          python -m pytest -q
+          tests/test_p4_target_opportunities.py
+          tests/test_p4_bike_public_import.py
+          tests/test_p4_bike_time_readiness.py
+          tests/test_p4_bike_categorical_readiness.py
+          tests/test_p4_target_business_context.py
+          tests/test_p4_prediction_timing_review.py
+          tests/test_p4_two_axis_evidence.py
+          tests/test_p4_review_queue.py
+          tests/test_p4_manual_target_inspection.py
+          tests/test_p4_queue_resource_bounds.py
+          tests/test_p4_consolidated_acceptance.py
+          tests/test_p4_r03_worker_comparison.py
+          tests/test_p4_r03_verified_answers.py
+          tests/test_build_e_autonomous_investigations.py
+          tests/test_p1_resource_admission.py
+          tests/test_p4_phase_exit_matrix.py
+          tests/test_p4_native_acceptance_kit.py
+          tests/test_p4_n12_trace.py
+          tests/test_p4_n12_same_capture_restore.py
+          tests/test_p4_n12_webview_replay.py
+          tests/test_p4_r06_prospective_fingerprint.py
+          tests/test_p4_n12_worker_scratch_source.py
+          tests/test_p4_n12_app_build.py
+          tests/test_p4_n12_mutation_triage.py
+          tests/test_p4_n12_ambient_local_candidate.py
+          tests/test_p4_n12_app_journey.py
+          tests/test_p4_n12_app_lifetime.py
+          tests/test_p4_n12_no_cdp_fileio_review.py
+          tests/test_p4_n12_lifetime_control.py
+          tests/test_p4_n12_lifetime_etw.py
+          tests/test_p4_n12_exit_corroboration.py
+          tests/test_p4_n12_egress.py
+          tests/test_p4_n12_journey_diagnostics.py
+          tests/test_p4_n12_webview_storage.py
+          tests/test_p4_n12_no_cdp_native_path.py
+          tests/test_p4_n12_no_cdp_lifecycle.py
+          tests/test_p4_n12_no_cdp_main_window.py
+          tests/test_p4_n12_no_cdp_browser_identity.py
+          tests/test_p4_n12_no_cdp_child_handles.py
+          tests/test_p4_n12_private_child_pipe.py
+          tests/test_p4_n12_source_evidence_map.py
+          tests/test_p4_n12_no_cdp_log_witness.py
+          tests/test_p4_n12_calibration_socket_pair.py
+          tests/test_p4_n12_protected_fixture_contract.py
+          tests/test_p4_n12_product_tree_isolation_review.py
+          tests/test_p4_n12_webview_storage_mechanism_map.py
+          tests/test_p4_n12_fileio_identity_join.py
+          tests/test_p4_n12_token_capability_preflight.py
+          tests/test_p4_n12_tmp_debugger_fixture.py
+          tests/test_p4_n12_procmon_environment_control.py
+          tests/test_p4_installer_provenance.py
+      - name: Verify P4 source contracts and manual target choice
+        run: >-
+          node --test
+          frontend/tests/p4-target-opportunities-contracts.test.cjs
+          frontend/tests/p4-business-context-contracts.test.cjs
+          frontend/tests/p4-prediction-timing-contracts.test.cjs
+          frontend/tests/p4-two-axis-contracts.test.cjs
+          frontend/tests/p4-review-queue-contracts.test.cjs
+          frontend/tests/ml-a3-feature-preparation.test.cjs
+          frontend/tests/p4-75-selected-feature-budget.test.cjs
+          frontend/tests/p1-primary-button-edit-markers.test.cjs
+          frontend/tests/p4-native-dev-isolation.test.cjs
+          frontend/tests/desktop-ai-boundaries.test.cjs
+          frontend/tests/p1-resource-settings.test.cjs
+          frontend/e2e/p4-72-cdp-target-classifier.test.mjs
+          frontend/e2e/p4-73-cdp-target-discovery.test.mjs
+          frontend/e2e/p4-n12-native-close-readiness.test.mjs
+          frontend/e2e/p4-n12-app-lifetime-ready.test.mjs
+          frontend/e2e/p4-n12-native-cases.test.mjs
+      - name: Build actual TypeScript and Vite bundle
+        run: npm run build --prefix frontend
+
+  p4-disposable-real-http-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      CI: "true"
+      P1_REAL_HTTP_E2E: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Set exact CI-owned disposable backend home
+        run: echo "PILOTODIN_HOME=${RUNNER_TEMP}/pilotodin-p1-real-http-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
+      - name: Checkout trusted branch without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install existing backend and frontend test dependencies
+        run: |
+          python -m pip install -r backend/requirements-test.txt
+          npm ci --prefix frontend --no-audit --no-fund
+      - name: Install isolated headless Chromium
+        working-directory: frontend
+        run: npx --no-install playwright install --only-shell chromium
+      - name: Test actual P4 review queue against disposable real HTTP backend
+        working-directory: frontend
+        run: >-
+          npx --no-install playwright test --config=playwright.p4-real-http.config.ts
+          --grep-invert 'BE-024 real HTTP: reopen a fitted synthetic experiment'
+
+
+  p4-r03-windows-local-answers:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Install existing backend test requirements
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Measure exact local answers at simulated laptop headroom
+        run: python -B qa/p4_research/measure_local_answers.py
+      - name: Verify engine shutdown with and without a desktop owner
+        run: python -m pytest -q tests/test_packaged_engine_smoke.py tests/test_desktop_runner_process_smoke.py
+
+  p4-readonly-windows-probe:
+    name: Exercise preservation/hash collector on synthetic Windows fixture ONLY
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11 for N12 synthetic Windows fixture
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Exercise authenticated Windows AF_PIPE with synthetic subprocess witnesses ONLY
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONDONTWRITEBYTECODE = '1'
+          python -B -m unittest -v tests.test_p4_n12_private_child_pipe_windows
+          if ($LASTEXITCODE -ne 0) { throw 'Synthetic Windows AF_PIPE contract tests failed.' }
+      - name: Verify hosted temp resolution and generated WebView storage cases
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
+          python -B -m unittest discover -s tests -p test_p4_n12_ambient_local_candidate.py
+          python -B -m unittest discover -s tests -p test_p4_n12_worker_scratch_source.py
+          python -B -m unittest discover -s tests -p test_p4_n12_mutation_triage.py
+          python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
+          python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_native_path.py
+          python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_lifecycle.py
+          python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_main_window.py
+          python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_browser_identity.py
+          python -B -m unittest discover -s tests -p test_p4_n12_no_cdp_log_witness.py
+          python -B -m unittest discover -s tests -p test_p4_n12_calibration_socket_pair.py
+          python -B -m unittest discover -s tests -p test_p4_n12_protected_fixture_contract.py
+          python -B -m unittest discover -s tests -p test_p4_n12_token_capability_preflight.py
+          python -B -m qa.p4_research.n12_token_capability_preflight
+      - name: Positive and negative read-only integrity cases on fake app files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./qa/p4_native/Test_P4_Native_Readiness_Probe.ps1
+          ./qa/p4_native/Test_P4_Original_Storage_Compare.ps1
+          ./qa/p4_native/Test_P4_WebView_Process_Evidence.ps1
+      - name: Verify original-storage and WebView safety on Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Expected Windows PowerShell 5.1, not pwsh.' }
+          foreach ($script in @(
+            'Invoke_P4_Native_Project_Switch_Dialog.ps1',
+            'Invoke_P4_Native_Project_Switch_Control.ps1',
+            'Run_P4_71_Disposable_Windows.ps1',
+            'Export_P4_N12_Sysmon_Trace.ps1',
+            'Test_P4_Native_Project_Switch_Automation.ps1'
+          )) {
+            $path = Join-Path (Resolve-Path './qa/p4_native').Path $script
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw ($parseErrors -join [Environment]::NewLine) }
+          }
+          ./qa/p4_native/Test_P4_Original_Storage_Compare.ps1
+          ./qa/p4_native/Test_P4_WebView_Process_Evidence.ps1
+      - name: Verify the everyday RAM sampler with Windows counters and generated fixtures
+        shell: powershell
+        run: ./qa/p4_native/Test_P4_Everyday_RAM_Baseline.ps1
+      - name: Verify offline Qwen benchmark evidence and profile preservation
+        shell: powershell
+        run: ./qa/p4_native/Test_P4_R03_Offline_Launcher.ps1
+      - name: Exercise Windows UI Automation against a synthetic dialog
+        shell: powershell
+        run: ./qa/p4_native/Test_P4_Native_Project_Switch_Automation.ps1
+      - name: Verify close status for a Windows process opened by PID
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_Verified_Window_Close.ps1
+      - name: Verify N12 collector exit and backing-file checks on synthetic inputs
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          foreach ($script in @(
+            './qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1',
+            './qa/p4_native/Test_P4_N12_ETW_Fixture.ps1',
+            './qa/p4_research/Invoke_N12_Journey_Evidence.ps1'
+          )) {
+            $source = (Resolve-Path $script).Path
+            [void][System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw ($parseErrors -join [Environment]::NewLine) }
+          }
+          ./qa/p4_native/Test_P4_N12_Collector_Process.ps1
+
+      - name: Verify prospective R06 endpoint evidence on generated files
+        run: python -B -m unittest discover -s tests -p test_p4_r06_prospective_fingerprint.py
+      - name: Verify generated Process Monitor environment evidence without live capture
+        run: python -B -m unittest tests.test_p4_n12_procmon_environment_control
+      - name: Verify Windows dialog actions, retained child handles and driver scratch
+        run: python -B -m unittest discover -s tests -p test_p4_n12_exit_corroboration.py
+      - name: Check egress rule decisions and parse the Windows command
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -B -m unittest discover -s tests -p test_p4_n12_egress.py
+          $source = python -B -c 'from qa.p4_research.n12_egress import FIREWALL_COMMAND; print(FIREWALL_COMMAND)'
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseInput(($source -join "`n"), [ref]$tokens, [ref]$errors)
+          if ($errors) { throw 'The egress firewall command did not parse.' }
+      - name: Exercise N12 snapshot and calibration on generated files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONDONTWRITEBYTECODE = '1'
+          $fixture = Join-Path $env:RUNNER_TEMP "pilotodin-n12-fixture-$env:GITHUB_RUN_ID"
+          New-Item -ItemType Directory -Path $fixture | Out-Null
+          $original = Join-Path $fixture 'protected'
+          $observed = Join-Path $fixture 'input.csv'
+          $manifest = Join-Path $fixture 'manifest.json'
+          $before = Join-Path $fixture 'before.json'
+          $after = Join-Path $fixture 'after.json'
+          New-Item -ItemType Directory -Path $original | Out-Null
+          Set-Content -LiteralPath (Join-Path $original 'unchanged.txt') -Value 'generated'
+          Set-Content -LiteralPath $observed -Value @('id,amount','1,20')
+          @{
+            disposable = $true
+            protected_roots = @{ original = $original }
+            observed_roots = @{ input = $observed }
+            immutable_observed = @('input')
+            permitted_writes = @{ calibration = @((Join-Path $fixture 'calibration')) }
+          } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifest -Encoding utf8
+          python qa/p4_native/n12_trace.py snapshot $manifest $before
+          if ($LASTEXITCODE -ne 0) { throw 'N12 synthetic baseline failed.' }
+          $output = python qa/p4_native/n12_calibration.py (Join-Path $fixture 'calibration')
+          if ($LASTEXITCODE -ne 0) { throw 'N12 synthetic loopback/file calibration failed.' }
+          $calibration = $output | ConvertFrom-Json
+          if ($calibration.role -ne 'calibration' -or $calibration.port -le 0 -or
+              (Test-Path -LiteralPath $calibration.fixture) -or
+              (Test-Path -LiteralPath $calibration.renamed_fixture)) {
+            throw 'N12 calibration evidence inconsistent.'
+          }
+          $creation = [long]$calibration.parent_created_utc_ticks
+          $now = [DateTime]::UtcNow
+          if ($creation -lt $now.AddMinutes(-1).Ticks -or $creation -gt $now.AddSeconds(1).Ticks) {
+            throw 'The generated fixture did not report a plausible Windows process creation time.'
+          }
+          python qa/p4_native/n12_trace.py snapshot $manifest $after
+          if ($LASTEXITCODE -ne 0 -or
+              (Get-FileHash -LiteralPath $before).Hash -ne (Get-FileHash -LiteralPath $after).Hash) {
+            throw 'N12 synthetic preservation check failed.'
+          }
+          Write-Host 'N12 synthetic Windows snapshot and loopback/file operation fixture passed.'
+
+      - name: Probe Windows ETW loss counters and generated fixture events
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1
+
+      - name: Verify the combined rehearsal fixture with ETW alone
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -CalibrationOnly
+
+      - name: Check ETW writes through handles opened before capture
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl
+
+      - name: Compare Windows file-name rundown with known handle targets
+        shell: pwsh
+        run: ./qa/p4_native/Test_P4_N12_ETW_Fixture.ps1 -PreopenedControl -Rundown

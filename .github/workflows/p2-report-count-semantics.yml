@@ -1,0 +1,49 @@
+name: P2 Saved Report Count Semantics
+
+# Only trusted branch; no private user data, model assets, fonts, builds, or installers.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p2-report-count-semantics.yml
+      - backend/report_charts.py
+      - tests/test_p2_report_count_semantics.py
+      - tests/test_p2_saved_html_chart_header.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p2-count-caption-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  report-chart-count:
+    name: Python production HTML/PDF chart behaviour
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout source (no persisted credentials)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Install existing backend test dependencies
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Compile changed reporting module
+        run: python -m py_compile backend/report_charts.py
+      - name: Verify count denominator labels and previously accepted chart layout
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-p2-chart-caption-${{ github.run_id }}
+        run: >-
+          python -m pytest -q
+          tests/test_p2_report_count_semantics.py
+          tests/test_p2_saved_html_chart_header.py

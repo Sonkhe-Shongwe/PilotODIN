@@ -42,5 +42,6 @@ test('App guards training, prediction, experiment and quality response paths',()
  }
  assert.match(app,/result\.project_id!==projectId/);
  assert.match(app,/exp\.project_id!==projectId/);
- assert.match(app,/!embedded&&!uploadOpen&&page!=='ai_settings'&&<StudioAssistant/);
+ assert.match(app,/!embedded&&!showUpload&&page!=='ai_settings'&&<StudioAssistant/);
+ assert.match(app,/const showUpload=uploadOpen\|\|\(!embedded&&forceNewProject\)/);
 });

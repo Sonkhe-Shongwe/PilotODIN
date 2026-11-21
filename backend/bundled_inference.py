@@ -15,6 +15,7 @@ from typing import Any
 
 
 MODEL_ALIAS = "pilotodin-qwen3-1.7b"
+USER_PROMPT_LIMIT = 9000
 
 
 def is_configured() -> bool:
@@ -99,7 +100,7 @@ def generate(system: str, user: str, timeout: int) -> tuple[str, bool, str]:
     response = _request("/v1/chat/completions", {
         "model": MODEL_ALIAS,
         "messages": [{"role": "system", "content": system[:5000]},
-                     {"role": "user", "content": user[:9000]}],
+                     {"role": "user", "content": user[:USER_PROMPT_LIMIT]}],
         "stream": False, "temperature": 0.2, "max_tokens": 850,
     }, timeout=remaining)
     choices = response.get("choices")

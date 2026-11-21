@@ -123,3 +123,17 @@ def test_tauri_shell_permissions_do_not_expose_arbitrary_executables():
     assert perms['permissions'] == ['core:default']
     assert cfg['bundle']['targets'] == ['nsis']
     assert 'localhost:8000' not in json.dumps(cfg)
+
+
+
+def test_desktop_sidecar_does_not_inherit_source_or_install_working_directory():
+    """Source contract; the Windows native build still needs owner approval."""
+    source = (Path(__file__).resolve().parents[1] /
+              "frontend" / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+    start = source.index("fn launch_backend(")
+    next_command = source.index("#[tauri::command]", start + 1)
+    block = source[start:next_command]
+    assert ".env(\"PILOTODIN_HOME\", data_dir.to_string_lossy().to_string())" in block
+    assert ".current_dir(&data_dir)" in block
+    assert block.index("std::fs::create_dir_all(&data_dir)") < block.index(".current_dir(&data_dir)")
+    assert block.index(".current_dir(&data_dir)") < block.index("command.spawn()")

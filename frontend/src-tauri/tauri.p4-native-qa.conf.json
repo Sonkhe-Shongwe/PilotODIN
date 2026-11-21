@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "pilotODIN-P4-Native-QA",
+  "identifier": "com.pilotodin.p4nativeqa",
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"]
+  }
+}

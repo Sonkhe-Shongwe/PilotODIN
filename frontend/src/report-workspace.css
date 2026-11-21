@@ -1,1 +1,130 @@
 .pd-report-workspace{color:#18253e;max-width:1050px;margin:0 auto;padding:8px 0 40px}.pd-report-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:24px}.pd-report-header h2{font-size:24px;line-height:1.2;margin:6px 0 8px}.pd-report-header p,.pd-report-muted{color:#647089;line-height:1.5;font-size:13px}.pd-report-eyebrow{color:#087B87;font-size:11px;font-weight:800;letter-spacing:1.5px}.pd-report-columns{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(240px,1fr);gap:20px}.pd-report-editor,.pd-report-library{background:white;border:1px solid #E1E5EF;border-radius:16px;padding:22px;min-width:0}.pd-report-field{display:flex;flex-direction:column;gap:8px;color:#33425b;font-size:13px;font-weight:650;margin-bottom:18px}.pd-report-field input,.pd-report-field select,.pd-report-field textarea{padding:12px;border:1px solid #D6DAEA;background:white;border-radius:9px;font:inherit;width:100%;color:#18253e;box-sizing:border-box}.pd-report-field textarea{resize:vertical;min-height:110px}.pd-report-evidence{display:flex;gap:12px;padding:11px 6px;border-bottom:1px solid #EDF0F6;align-items:center}.pd-report-evidence span{display:flex;flex-direction:column;gap:4px;font-size:13px}.pd-report-evidence small,.pd-report-export small{color:#647089;font-size:11px}.pd-report-library h3{display:flex;align-items:center;gap:9px;margin-top:0}.pd-report-library>button{display:flex;align-items:center;gap:10px;text-align:left;background:white;border:1px solid #EDF0F6;border-radius:10px;padding:12px;width:100%;margin-bottom:10px;cursor:pointer}.pd-report-library>button span{display:flex;flex-direction:column;gap:5px;min-width:0}.pd-report-library>button small{font-size:11px;color:#647089}.pd-report-library>button.pd-report-selected{background:#F4F1FF;border-color:#B7AAEF}.pd-report-export{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap;padding-top:16px;border-top:1px solid #E1E5EF}.pd-report-export>div{display:flex;flex:1;flex-direction:column;gap:4px;min-width:130px}.pd-report-export>button{display:flex;align-items:center;gap:4px;background:#F4F3FD;color:#34258d;border:1px solid #C8BDEF;border-radius:8px;padding:9px;cursor:pointer}.pd-report-warning,.pd-report-error,.pd-report-notice{display:flex;align-items:center;gap:8px;padding:12px;border-radius:9px;font-size:13px;line-height:1.5}.pd-report-warning,.pd-report-error{background:#FFF4E3;color:#79500c}.pd-report-notice{background:#E8F5F3;color:#12656F}@media(max-width:850px){.pd-report-columns{grid-template-columns:1fr}.pd-report-header{flex-wrap:wrap}}
+
+/* Editorially guided report creation, clear saved/draft boundary. */
+.pd-report-flow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 15px;margin-bottom:20px;background:linear-gradient(100deg,#f0efff,#f2fbfd);border:1px solid #e2e0fb;border-radius:12px}
+.pd-report-flow span{display:flex;align-items:center;gap:7px;color:#8590aa;font-size:12px;font-weight:650;padding:6px 8px}
+.pd-report-flow span b{display:grid;place-items:center;min-width:25px;height:25px;border-radius:50%;border:1px solid #bdc7db}
+.pd-report-flow .pd-report-step-current{color:#4935bc;background:white;border-radius:9px;box-shadow:0 2px 11px #4846a313}
+.pd-report-flow .pd-report-step-current b{background:#6654df;border-color:#6654df;color:white}
+.pd-report-flow .pd-report-step-done{color:#078979}
+.pd-report-flow .pd-report-step-done b{background:#d8f5ec;border-color:#b4e9db}
+.pd-report-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:14px;margin:14px 0;background:#f5f4ff;border:1px solid #ddd8fb;border-radius:12px}
+.pd-report-actions div{display:flex;flex-direction:column;gap:5px}
+.pd-report-actions strong{font-size:13px;color:#262b59}
+.pd-report-actions small{font-size:11px;line-height:1.4;color:#6e7790;max-width:410px}
+.pd-report-preview{padding:12px 14px;border:1px solid #e3e6f4;border-radius:10px;margin-bottom:14px}
+.pd-report-preview summary{cursor:pointer;color:#4f3dbd;font-weight:700;font-size:12px}
+.pd-report-preview h4{margin:12px 0 6px}.pd-report-preview p{white-space:pre-wrap;line-height:1.5}
+.pd-report-preview li{margin:5px 0;color:#5e6e89;font-size:12px}
+.pd-report-export>button:hover{background:#e8e6ff;border-color:#9487e4}
+@media(max-width:850px){.pd-report-actions{position:static}}
+
+/* A4: report evidence composition is ordered and accessible, not just a set. */
+.pd-report-order{border:1px solid #E1E5EF;background:#FAFBFE;border-radius:12px;padding:12px 14px;margin-top:16px}
+.pd-report-order h4{margin:0 0 6px;color:#273451;font-size:13px}
+.pd-report-order p{margin:0 0 8px}
+.pd-report-order ol{list-style:none;margin:0;padding:0}
+.pd-report-order li{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid #E9EDF5;padding:7px 0;font-size:12px;color:#33425b;min-width:0}
+.pd-report-order li span{min-width:0;overflow-wrap:anywhere}
+.pd-report-order li div{display:flex;flex-shrink:0;gap:5px}
+.pd-report-order-button{width:30px;height:30px;border-radius:7px;border:1px solid #D6DAEA;background:white;color:#4330AD;cursor:pointer;display:grid;place-items:center}
+.pd-report-order-button:hover:not(:disabled){background:#F0EDFF}
+.pd-report-order-button:disabled{opacity:.36;cursor:not-allowed}
+.pd-report-order-button:focus-visible{outline:3px solid #148F9B;outline-offset:2px}
+.pd-report-export>button:disabled{opacity:.48;cursor:not-allowed}
+
+/* A4: a Quality audit must be explicitly captured without writing to the dataset. */
+.pd-report-quality-capture{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid #cee5e8;border-radius:11px;background:#f5fbfb;margin-bottom:16px;flex-wrap:wrap}
+.pd-report-quality-capture>div{display:flex;flex-direction:column;gap:5px;flex:1;min-width:180px}
+.pd-report-quality-capture strong{font-size:13px;color:#234357}
+.pd-report-quality-capture small{font-size:11px;line-height:1.5;color:#587184}
+.pd-report-quality-capture button{min-height:38px;white-space:normal;text-align:center}
+.pd-report-quality-capture button:focus-visible{outline:3px solid #148f9b;outline-offset:2px}
+
+
+/* Read-only rendered HTML preview of an immutable saved revision.
+   It is separate from the draft outline and does not create a PDF/Save As. */
+.pd-report-saved-preview{
+ margin-top:20px;padding:15px;border-radius:15px;
+ border:1px solid #d6ddf0;background:linear-gradient(160deg,#f8f7ff,#f1fafb);
+ box-shadow:0 8px 24px #24276b0d;min-width:0;
+}
+.pd-report-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.pd-report-preview-heading strong{color:#34258d;font-size:15px}
+.pd-report-preview-heading p{font-size:12px;line-height:1.5;color:#586782;margin:5px 0 0}
+.pd-report-preview-heading button{display:inline-flex;align-items:center;gap:6px}
+.pd-report-saved-preview-frame{
+ display:block;width:100%;min-width:0;height:min(75vh,760px);min-height:360px;
+ border:1px solid #dce2f0;border-radius:10px;background:white;
+}
+.pd-report-export>button:focus-visible,
+.pd-report-preview-heading button:focus-visible{outline:3px solid #087b87;outline-offset:2px}
+@media(max-width:600px){
+ .pd-report-saved-preview{padding:10px}
+ .pd-report-saved-preview-frame{height:62vh;min-height:300px}
+}
+
+
+/* Read-only comparison of two immutable saved revisions (not draft text). */
+.pd-report-revision-comparison{
+ margin-top:18px;padding:16px 18px;border-color:#d4dded;
+ background:#f9fbfe;color:#26374d;overflow-wrap:anywhere;
+}
+.pd-report-revision-comparison h3{font-size:16px;margin:0 0 10px;color:#28365b}
+.pd-report-revision-comparison h4{font-size:13px;margin:15px 0 7px;color:#3e4973}
+.pd-report-revision-comparison p{font-size:13px;line-height:1.6}
+.pd-report-revision-comparison ul{padding-left:19px;margin:8px 0}
+.pd-report-revision-comparison li{font-size:12px;line-height:1.55}
+.pd-report-diff-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.pd-report-library button:focus-visible{outline:3px solid #087b87;outline-offset:2px}
+
+/* P2 bounded evidence facts: separately focusable preview, never a nested
+   button inside a checkbox label; preserves keyboard selection semantics. */
+.pd-report-evidence-row{display:flex;gap:9px;align-items:center;border-bottom:1px solid #edf0f6}
+.pd-report-evidence-row .pd-report-evidence{flex:1;min-width:0;border-bottom:0;cursor:pointer}
+.pd-report-inspect{flex-shrink:0;border:1px solid #b2cee0;background:#f6fbff;color:#255879;
+ border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700;cursor:pointer}
+.pd-report-inspect:focus-visible,.pd-report-inspection-heading button:focus-visible{outline:3px solid #087b87;outline-offset:2px}
+.pd-report-inspect:disabled{opacity:.6;cursor:wait}
+.pd-report-evidence-inspection{background:#f9fbfe;border:1px solid #d5deee;
+ border-radius:10px;margin:12px 0 18px;padding:14px;color:#253550;overflow-wrap:anywhere}
+.pd-report-inspection-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pd-report-inspection-heading h4{font-size:14px;margin:0}
+.pd-report-evidence-inspection dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin:12px 0}
+.pd-report-evidence-inspection dl>div{padding:8px;background:white;border:1px solid #e7edf5;border-radius:7px}
+.pd-report-evidence-inspection dt{font-size:11px;color:#647089;font-weight:700}
+.pd-report-evidence-inspection dd{font-size:13px;line-height:1.4;overflow-wrap:anywhere;margin:5px 0 0}
+@media(max-width:560px){.pd-report-evidence-row{flex-wrap:wrap;gap:0}.pd-report-inspect{margin:0 0 9px 8px}}
+
+/* Explicitly human-authored outline guidance; never invent or overwrite evidence. */
+.pd-report-outline-guide{margin:0 0 14px;padding:13px 15px;background:#f7fbfd;
+ border:1px solid #d5e6ef;border-radius:11px}
+.pd-report-outline-guide>div:first-child{display:flex;flex-direction:column;gap:4px}
+.pd-report-outline-guide strong{font-size:13px;color:#1d395a}
+.pd-report-outline-guide small{font-size:12px;line-height:1.5;color:#5b6980}
+.pd-report-outline-choices{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.pd-report-outline-choices button{border:1px solid #b2cee0;border-radius:8px;
+ background:#fff;color:#245677;padding:8px 10px;font-weight:700;font-size:12px;cursor:pointer}
+.pd-report-outline-choices button:disabled{opacity:.55;cursor:not-allowed}
+.pd-report-outline-choices button:focus-visible,.pd-report-outline-progress button:focus-visible{
+ outline:3px solid #087b87;outline-offset:2px}
+.pd-report-outline-progress{padding-top:12px}
+.pd-report-outline-progress p{font-size:12px;line-height:1.5;margin:0}
+.pd-report-outline-progress ul{font-size:12px;line-height:1.7;
+ margin:8px 0 12px;padding-left:20px;color:#364966}
+
+/* The Deliver in-pane discard gate uses a focused, keyboard-contained dialog.
+   No browser-native confirm is required for Windows WebView2. */
+.pd-report-discard-backdrop{
+ position:fixed;inset:0;z-index:6000;background:rgba(12,21,42,.64);
+ display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.pd-report-discard-dialog{
+ background:#fff;color:#1c2c4b;border:1px solid #d7e2f1;border-radius:14px;
+ width:min(480px,100%);max-height:90vh;overflow:auto;
+ padding:24px;box-shadow:0 22px 55px rgba(8,22,45,.26);
+}
+.pd-report-discard-dialog h3{margin:0 0 12px;font-size:18px;color:#26355a}
+.pd-report-discard-dialog p{font-size:14px;line-height:1.55;margin:0 0 18px;color:#42536f}
+.pd-report-discard-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.pd-report-discard-actions button:focus-visible{outline:3px solid #087b87;outline-offset:3px}

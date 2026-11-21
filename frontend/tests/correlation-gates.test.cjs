@@ -1,0 +1,2 @@
+const{test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const s=fs.readFileSync(path.join(__dirname,'../src/ExploreWorkspace.tsx'),'utf8');
+test('Correlation cells navigate to an actual scatter comparison',()=>{assert.match(s,/Correlation heatmap/);assert.match(s,/onClick=\{\(\)=>\{setX\(column\);setY\(row\);setKind\('scatter'\)\}\}/);assert.match(s,/correlationTone/);});

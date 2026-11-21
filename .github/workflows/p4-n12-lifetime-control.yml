@@ -1,0 +1,68 @@
+name: P4 N12 Hosted Driver Exit Control
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_DRIVER_EXIT_CONTROL_APPROVAL.txt
+
+permissions:
+  contents: read
+
+jobs:
+  calibration:
+    if: ${{ false }} # One-use hosted driver exit control consumed by run 44276525696.
+    runs-on: windows-2022
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout calibration source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify this is the approved one-time run
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $workflow = '.github/workflows/p4-n12-lifetime-control.yml'
+          $marker = 'qa/p4_research/N12_DRIVER_EXIT_CONTROL_APPROVAL.txt'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA) {
+            throw 'The rehearsal requires the first run of an approved hosted Windows push.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=n12-one-hosted-driver-exit-control') {
+            throw 'A fresh source-pinned collector-only approval marker is required.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $workflow -cnotin $changed -or $marker -cnotin $changed -or
+              $added.Count -ne 1 -or $added[0] -cne $marker) {
+            throw 'The rehearsal launch must be a direct child of the reviewed source with only the workflow activation and fresh marker.'
+          }
+          git checkout --detach $source
+          "PILOTODIN_N12_LIFETIME_SOURCE=$source" >> $env:GITHUB_ENV
+          'PILOTODIN_N12_IMAGE_PATH_CONTROL=1' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_DRIVER_EXIT_CONTROL=1' >> $env:GITHUB_ENV
+          'PILOTODIN_N12_LIFETIME_CONTROL_CONSENT=I_APPROVE_ONE_N12_LIFETIME_ETW_CONTROL' >> $env:GITHUB_ENV
+      - name: Use Python for the generated fixture
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: Use the driver Node version
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Compare driver-like processes using kernel ETW, Sysmon and retained handles
+        shell: pwsh
+        run: ./qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1 -LifetimeEtwControl

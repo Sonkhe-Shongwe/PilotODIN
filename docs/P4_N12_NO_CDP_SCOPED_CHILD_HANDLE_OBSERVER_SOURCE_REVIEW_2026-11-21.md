@@ -1,0 +1,35 @@
+# PilotODIN P4 N12 | Default-off isolated QA child-handle observer
+
+**21 November 2026 | Source-only checkpoint COMPLETE.** [Tested code `2d8ecf3ae6e55402156e9f98177f61bb328ed179`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2d8ecf3ae6e55402156e9f98177f61bb328ed179) passed [exact-source CI #44896754953](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44896754953) **4/4 SUCCESS**: 953 Python tests passed, six skipped, 385 subtests, 104 Node/frontend tests, successful Vite, hosted-Windows **synthetic** preservation/hash/ETW control, real disposable HTTP browser and R03. **No actual PilotODIN native build, startup, Win32 child-handle capture, installer, firewall action or owner-device access occurred in this source increment.** The separate [native run #44893498723](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44893498723) remains **STRICT BLOCKED** by exact Sysmon/ETW exit timestamp divergence.
+
+## Engineering added
+
+New source module: `qa/p4_research/n12_no_cdp_child_handles.py`. New focused fixtures: `tests/test_p4_n12_no_cdp_child_handles.py`. Routine synthetic P4 workflow `.github/workflows/p4-target-ranking.yml` now explicitly triggers on both new paths and runs the new tests. No dormant native workflow or product executable was activated or modified.
+
+### Host-only original-handle collection, not automatic approval
+
+`ScopedQaChildHandleObserver` is **default-off**, not wired to the current no-CDP native startup route. Its optional `start_live` entrypoint has a separate exact child-handle consent value `I_APPROVE_ONE_N12_QA_CHILD_HANDLES`, existing no-CDP consent, GitHub-hosted Windows, first trusted push/run, reviewed source SHA, and disposable runner-temp QA profile/binary path guards. No user-supplied consent was created or enabled by this source work. Unauthorized calls to `sample_once` without explicit synthetic dependency injection are rejected **before live Win32 initialization**.
+
+The observer reuses existing `ProcessSnapshots`, `open_process_query_handle`, `QueryFullProcessImageNameW` and `GetProcessTimes`. Its root is a retained **original application process handle**, not a PID reopened later. A default **10 ms** bounded snapshot sample follows only the app-rooted descendant process tree. Only `msedgewebview2.exe` descendants can be opened and retained, with exact full DOS path, a native image representation, validated creation chronology, unique PID/birth and observed parent PID. Any unrecognized executable in that scoped tree is a **permanent diagnostic fault**, not silently ignored. It retains up to **96** original child query handles and reads their exit times from those **same retained handles after shutdown**, finally closing all handles.
+
+Because `descendants()` intentionally deduplicates PIDs, this new observer separately examines original snapshot PID occurrences to reject duplicate entries before they could be incorrectly credited. PID birth changes, parent changes, handle exhaustion, snapshot failure, image problems, unreadable exits and observer exceptions also produce faults. Real live capture has **not** been exercised.
+
+The diagnostic `redacted_receipt()` provides only sample count, retained count, safe static failure labels and `native_N12_acceptance=NOT_EVALUATED`. A clean sampler result is named **`SAMPLING_FINISHED_UNVERIFIED`**: sampling can miss short-lived children and cannot itself establish a complete browser process list.
+
+### Independent synthetic post-capture join, always diagnostic
+
+`review_scoped_children` accepts a separately observed **complete** Sysmon process GUID/parent/role map, unique ETW start/stop/sequence pairs, the original Windows handle witness inventory and sampler fault summary. It rejects **any** upstream capture/identity issue, unbound/outside-app WebView role, unexpected app descendant, absent browser or network role, missing/ambiguous/duplicate/unmatched handles, wrong full DOS/native image, mismatched parent PID or birth, wrong original handle exit, ETW sequence/parent/order conflicts, and missing or disputed Sysmon termination. Each scoped WebView child must uniquely match the existing source-only `shadow_handle_exit_review` proof, which uses retained original handle creation/exit equality against ETW while retaining Sysmon GUID-owned exit *presence*, without assuming cross-provider exact Sysmon vs ETW exit equality.
+
+Even a fully matched **synthetic** subtree returns **`REVIEWABLE_ONLY`**, never `PASS`; the original strict native `EtwLifetimes.find()`, actual Stage 1 profile verification and N12 FileIO/network acceptance are unchanged. The source-only tests prove both a positive synthetic full tree and negative missing/short-lived child, PID reuse, duplicated PID row, wrong parent, wrong full-image, wrong handle exit, ambiguous/unrelated retained handles, missing Sysmon end, wrong ETW sequence, capture loss, unbound role, handle-cap exhaustion, original root fault, missing observer sample and refusal to initialize live Win32 sampling without source/consent.
+
+## CI and limitations
+
+The initial code-only commit `4f74c03` did not trigger the existing filtered workflow because its new paths were not listed. This was corrected with the synthetic workflow path and test registration. An intermediate CI run `44896469492` failed 12 newly added tests due to eager `ctypes.WinDLL` snapshot initialization on Linux despite injected fake rows; the collector was corrected to lazily initialize live Windows snapshots and to forbid unarmed live sampling. The final source CI at **`2d8ecf3`** is **4/4 SUCCESS**, with **953 Python passed, six skipped, 385 subtests, 104 frontend and Vite build**. The intermediate failure is not relabeled as successful.
+
+No real child handle was captured; 10 ms polling cannot prove completeness in isolation. A positive synthetic result does not verify a real WebView lifetime or prove that external/non-descendant browsers do not use the same disposable profile. The native profile and strict filesystem/network gates remain independent.
+
+## Next engineering boundary
+
+The next scoped work is **source-only review and opt-in integration design** for passing the private retained child-handle witnesses into the existing no-CDP reduction **without exposing PID/GUID/images or changing its strict verdict**, plus a source-tested native-process stage-order/capture-lifetime contract. Any future one-use hosted Windows **native** execution requires a new explicit owner authorization, independently source-pinned and scoped. It must not take this observer's clean snapshot count as acceptance; full Sysmon/ETW GUID ancestry and every expected WebView original handle must be proven independently. No installer, owner-PC or Stage 2 N12 action is permitted.
+
+**Scores unchanged:** Stage 1 **BLOCKED**; R02.5 **0/5**; file-mutation engineering **3/4 (75%)**; N12 **0/2**; network isolation **2/3**; official P4 **14/20 (70%)**. Latest approved full N12 [#44838416004](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44838416004) remains filesystem **FAIL**, network **FAIL**, FileIO coverage **BLOCKED**.

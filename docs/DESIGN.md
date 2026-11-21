@@ -1,5 +1,7 @@
 # PilotODIN: Design decisions
 
+> **Historical first-release specification.** Some first-release boundaries below (such as requiring manual target selection and lacking AI) record an earlier iteration. Do not treat them as the current approved end-state. The living [development handoff](./CONTINUE_HERE.md) and **research-only** [Master modes / target-discovery proposal](./MASTER_MODES_TARGET_DISCOVERY_RESEARCH.md) describe the current October 2026 direction. Their proposed autonomy capabilities are **not yet implemented**.
+
 ## Goal
 
 An intelligent data science workspace that can ingest data, interpret its structure, suggest analysis paths, prepare features, compare several valid ML candidates, and expose the selected saved pipeline through a prediction form.

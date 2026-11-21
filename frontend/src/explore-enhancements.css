@@ -1,0 +1,82 @@
+/* Quantitative charts: interval histograms and scale-aligned Tukey plots. */
+.po-histogram{border:1px solid #e3e7f3;border-radius:13px;padding:18px 16px 12px;background:linear-gradient(180deg,#fff,#f8faff)}
+.po-hist-meta{display:flex;justify-content:space-between;gap:12px;color:#65738d;font-size:12px;margin-bottom:12px}
+.po-hist-bars{display:grid;align-items:stretch;gap:1px;height:235px;border-bottom:1px solid #aab9d1;background:repeating-linear-gradient(to top,transparent 0,transparent 24.5%,#ecedf6 25%)}
+.po-hist-bin{display:flex;flex-direction:column;justify-content:flex-end;min-width:0;height:100%;outline-offset:3px;position:relative}
+.po-hist-rectangle{width:100%;background:linear-gradient(180deg,#7770ef,#22b9bd);border-radius:3px 3px 0 0;min-height:2px;transition:filter .16s ease}
+.po-hist-bin:is(:hover,:focus) .po-hist-rectangle{filter:brightness(1.17)}
+.po-hist-tick{position:absolute;top:calc(100% + 4px);left:0;white-space:nowrap;color:#7587a3;font-size:9px;transform:translateX(-4px)}
+.po-hist-foot{text-align:center;color:#697993;font-size:12px;margin-top:28px}
+.po-box-outlier{position:absolute;top:50%;width:10px;height:10px;transform:translate(-50%,-50%);border-radius:50%;background:#d26a39;border:2px solid white;box-shadow:0 0 0 1px #bc6e4b;z-index:2}
+.po-box-scale{display:flex;justify-content:space-between;font-size:11px;color:#60708c;margin:7px 0 14px}
+.po-box-facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.po-box-facts span{border-radius:8px;background:#f3f4ff;padding:8px 7px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.po-box-facts small{font-size:10px;color:#697693}
+.po-box-facts strong{font-size:12px;color:#272c5d;overflow-wrap:anywhere}
+@media(max-width:700px){.po-box-facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.po-hist-rectangle{transition:none}}
+
+.po-correlation-panel{overflow:hidden}
+.po-correlation-method{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;font-weight:700;color:#52617b;margin:10px 0 15px}
+.po-correlation-method .input{max-width:310px}
+.po-correlation-scroll{overflow-x:auto;border:1px solid #e0e4f0;border-radius:12px}
+.po-correlation-grid{display:grid;gap:3px;padding:10px;min-width:max-content;background:#fcfdff}
+.po-correlation-axis{display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 5px;font-size:11px;font-weight:700;color:#5c6d89;overflow-wrap:anywhere;min-width:0}
+.po-correlation-cell{border:1px solid #ffffff9f;border-radius:5px;min-height:47px;font-size:12px;font-weight:750;cursor:pointer;transition:transform .12s ease,filter .12s ease}
+.po-correlation-cell:hover:not(:disabled){filter:brightness(1.07);transform:scale(1.035);z-index:1}
+.po-correlation-cell:disabled{cursor:default}
+@media(prefers-reduced-motion:reduce){.po-correlation-cell{transition:none}.po-correlation-cell:hover{transform:none}}
+
+
+/* Macro A2: bounded, linked, read-only analytical filtering. */
+.po-filter-panel{border:1px solid #dcd8f1;background:linear-gradient(130deg,#fff,#f8faff)}
+.po-filter-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}
+.po-filter-toolbar>span{font-size:12px;font-weight:750;color:#40577e;margin-left:auto}
+.po-filter-toolbar .btn{display:inline-flex;align-items:center;gap:6px}
+.po-filter-rows{display:flex;flex-direction:column;gap:9px}
+.po-filter-row{display:grid;grid-template-columns:minmax(170px,1.3fr) repeat(2,minmax(130px,1fr)) 40px;align-items:end;gap:12px;padding:12px;border:1px solid #e4e8f5;border-radius:12px;background:#fff}
+.po-filter-row label{min-width:0;display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:800;color:#5a6683}
+.po-filter-row .input{width:100%;min-width:0;max-width:100%;min-height:35px}
+.po-filter-remove{height:35px;width:35px;display:grid;place-items:center;background:#fff;border:1px solid #e0dced;border-radius:9px;color:#6f547f;cursor:pointer}
+.po-filter-remove:hover{background:#fff0f5;color:#972a5e}
+.po-filter-remove:focus-visible{outline:2px solid #5538c6;outline-offset:2px}
+@media(max-width:760px){.po-filter-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px}.po-filter-row label:first-child{grid-column:1/-1}.po-filter-toolbar>span{width:100%;margin-left:0}}
+@media(max-width:470px){.po-filter-row{grid-template-columns:minmax(0,1fr) 40px}.po-filter-row label{grid-column:1}.po-filter-row .po-filter-remove{grid-column:2;grid-row:1}}
+
+
+/* Macro A2: chart-to-record drill-down, read-only and keyboard accessible. */
+.po-hist-bin{padding:0;border:0;background:transparent;text-align:left;cursor:pointer}
+.po-hist-bin:focus-visible,.po-inspect-bar:focus-visible,.po-inspect-point:focus-visible{outline:3px solid #5538c6;outline-offset:3px}
+.po-inspect-point{cursor:pointer;transition:opacity .15s ease,stroke-width .15s ease}
+.po-inspect-point:hover,.po-inspect-point:focus-visible{opacity:1;stroke:#2a1b7a;stroke-width:2px}
+.po-inspect-bar{width:100%;font-family:inherit;font-size:inherit;cursor:pointer;border:1px solid transparent;background:transparent;text-align:left}
+.po-inspect-bar:hover{background:#f4f1ff;border-color:#ddd5ff;border-radius:8px}
+.po-record-inspector{border:1px solid #cabef5;background:linear-gradient(150deg,#fff,#f9faff)}
+.po-record-inspector .panel-title{display:flex;align-items:center;gap:10px}
+.po-inspect-dismiss{margin-left:auto;width:35px;height:35px;display:grid;place-items:center;border:1px solid #ded8f6;background:#fff;color:#4b3f82;border-radius:9px;cursor:pointer}
+.po-inspect-dismiss:focus-visible{outline:2px solid #5538c6;outline-offset:2px}
+.po-inspect-summary{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#334269;font-size:13px;padding:10px 0}
+.po-inspect-summary>span{color:#5b668a;font-weight:700}
+.po-inspect-scroll{max-height:410px;overflow:auto}
+.po-inspect-scroll table{min-width:max-content}
+.po-inspect-scroll td{max-width:260px;overflow-wrap:anywhere;vertical-align:top}
+.po-inspect-pagination{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin:12px 0}
+.po-inspect-pagination>span{font-size:12px;font-weight:700;color:#62718f;margin-right:auto}
+@media(prefers-reduced-motion:reduce){.po-inspect-point{transition:none}}
+
+
+/* Navigation easing belongs to revealRecordInspector.ts. Avoid a competing
+   arrival flash that begins before the panel reaches the viewport. */
+.po-record-inspector{scroll-margin-top:28px}
+.po-record-inspector:focus-visible{outline:2px solid #6e5de9;outline-offset:3px}
+
+
+/* A2: source-record inspection extends to quantitative outliers and line marks. */
+.po-box-outlier{padding:0;cursor:pointer;appearance:none}
+.po-box-outlier:hover,.po-box-outlier:focus-visible{background:#b94822;outline:3px solid #6b40a9;outline-offset:3px;z-index:4}
+.po-box-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.po-box-actions .btn{font-size:12px}
+.po-inspect-line-point{cursor:pointer;stroke:#ffffff;stroke-width:2;transition:r .15s,fill .15s}
+.po-inspect-line-point:hover,.po-inspect-line-point:focus-visible{r:8;fill:#106b5b;outline:none;stroke:#5538c6;stroke-width:3}
+.po-interactive-line .pilot-chart{min-width:480px}
+@media(prefers-reduced-motion:reduce){.po-inspect-line-point{transition:none}}

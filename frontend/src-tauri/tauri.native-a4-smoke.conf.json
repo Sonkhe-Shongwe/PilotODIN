@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.pilotodin.a4smoke",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --port 5174",
+    "devUrl": "http://127.0.0.1:5174"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PilotODIN - A4 Native Save As Smoke (DEV ONLY)",
+        "width": 1320,
+        "height": 820,
+        "minWidth": 1010,
+        "minHeight": 680
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "externalBin": [],
+    "resources": []
+  }
+}

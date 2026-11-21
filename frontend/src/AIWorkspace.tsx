@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {BrainCircuit,CheckCircle2,Cloud,KeyRound,LoaderCircle,LockKeyhole,RefreshCw,ShieldCheck,Sparkles,WifiOff} from 'lucide-react';
 import {get,post,put} from './api';
 import {RichText} from './RichText';
+import {ResourceSettings} from './ResourceSettings';
 
 type ProviderId='gemini'|'groq'|'openrouter';
 type ProviderState={id:ProviderId;connected:boolean;verified?:boolean;health?:{status:string;latency_ms?:number;tested_at_utc?:string;message?:string;http_status?:number};routine_model:string;deep_model:string};
@@ -24,6 +25,7 @@ export function AISettings(){
   return <section className="ai-settings-page">
     <section className="quality-banner"><div><div className="eyebrow">ODIN INTELLIGENCE · SETTINGS</div><h2>Local-first ODIN intelligence</h2><p>Use bundled local intelligence on Windows desktop, or Ollama during development. Cloud AI is an optional, consent-based backup. Calculations stay in the verified local engine.</p></div><BrainCircuit size={42}/></section>
     {error&&<div className="alert-error">{error}</div>}{busy&&<div role="status" className="ai-working"><LoaderCircle size={18} className="spin"/><span><strong>{busy==='test:ollama'?'Checking local model server status (no generation)…':busy.startsWith('test:')?'Contacting provider and verifying connection…':busy==='settings'?'Saving preferences securely…':'Saving credential and checking connectivity…'}</strong><small>{elapsed}s elapsed · real API response required before success is shown</small></span></div>}{notice&&<div className="ai-notice"><CheckCircle2 size={16}/>{notice}</div>}
+    <ResourceSettings/>
     {!settings?<div className="panel">Loading AI settings…</div>:<>
     <section className="panel ai-settings-panel"><div className="panel-title"><BrainCircuit size={19}/><h2>ODIN intelligence routing</h2></div>
       <p className="body-muted">Hybrid first tries the bundled offline model on desktop (or development Ollama), then checks consented cloud providers if local inference is unavailable. No autonomous execution or dataset changes are performed.</p>
@@ -34,7 +36,7 @@ export function AISettings(){
       <div className="ai-settings-actions"><button className="btn" disabled={Boolean(busy)} onClick={()=>void testLocal()}>{busy==='test:ollama'?<LoaderCircle size={14} className="spin"/>:<RefreshCw size={14}/>} Check local model status</button><span className="muted-caption">{localStatus?`Status: ${localStatus.status} (${localStatus.model}, ${localStatus.runtime??'Ollama'})`:'This is a status probe, not an actual generation test.'}</span></div>
       {localStatus?.runtime==='bundled'&&localStatus.status==='idle'&&<p className="muted-caption">Idle means the desktop model server has not responded to this probe. It does not prove that generation will fail. Run an Ask ODIN question to launch Qwen3, then inspect the answer source and any local failure code.</p>}
        {localStatus&&localStatus.runtime!=='bundled'&&localStatus.status!=='ready'&&<p className="muted-caption">Development Ollama only: install the Ollama app, then run <code>ollama pull qwen3:1.7b</code> in PowerShell. The installed desktop should not require Ollama.</p>}
-      <p className="muted-caption">On an 8 GB laptop, inference may be slow. ODIN unloads the model after each response to free RAM. If the local model is unavailable, deterministic analytics remain functional.</p>
+      <p className="muted-caption">The bundled model releases memory after 30 seconds without an inference request. The next question may take longer while the model reloads. Local analytics remain available.</p>
     </section>
     <section className="panel ai-settings-panel"><div className="panel-title"><ShieldCheck size={19}/><h2>Optional cloud access and privacy</h2></div>
       <label className="ai-toggle"><input type="checkbox" checked={settings.share_aggregates} onChange={e=>setSettings({...settings,share_aggregates:e.target.checked,cloud_enabled:e.target.checked?settings.cloud_enabled:false})}/><span><strong>I permit sending bounded dataset summaries to configured cloud AI providers</strong><small>Includes column names, row counts, numeric aggregates, quality issue categories and optional model metrics. Your typed question is also sent to cloud if you allow it, so do not include private information. No uploaded rows or raw prediction inputs are automatically shared.</small></span></label>
@@ -86,7 +88,8 @@ export function AIInsight({projectId,scope,version,target,experimentId,predictio
   }catch(e){if(request===latest.current)setError((e as Error).message)}finally{if(request===latest.current)setBusy(false)}}
   useEffect(()=>{if(auto&&!cachedInsight(fingerprint))void run(false)},[auto,fingerprint]);
   async function continueInsight(){if(!result||busy)return;setBusy(true);setError('');try{
-    const r=await post<Analysis>(`/projects/${projectId}/ai/insight`,{context:scope,question:'Continue the previous explanation.',target:target||null,experiment_id:experimentId||null,deep:true,selected_provider:selectedProvider,continuation_text:result.answer});
+    const continuationProvider = result.source === 'local_llm' ? 'ollama' : selectedProvider;
+    const r=await post<Analysis>(`/projects/${projectId}/ai/insight`,{context:scope,question:'Continue the previous explanation.',target:target||null,experiment_id:experimentId||null,deep:true,selected_provider:continuationProvider,continuation_text:result.answer});
     setResult({...r,answer:result.answer+'\n\n'+r.answer});
   }catch(e){setError((e as Error).message)}finally{setBusy(false)}}
   async function investigate(){if(!investigation)return;setBusy(true);try{const outcome=await post<Record<string,unknown>>(`/projects/${projectId}/investigate`,{operation:investigation});setInvestigationResult(JSON.stringify(outcome,null,2))}catch(e){setError((e as Error).message)}finally{setBusy(false)}}

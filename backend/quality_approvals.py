@@ -145,6 +145,7 @@ def prepare(pid:str,body:ProposalRequest)->dict:
     p=quality._project(pid)
     with storage.connect() as con:
         con.execute('BEGIN IMMEDIATE')
+        quality._require_active_for_write(con,pid)
         payload,before,after=_make(con,p,body)
         changed,examples=_compare_rows(before,after)
         if not changed:
@@ -169,6 +170,7 @@ def commit(pid:str,body:ApprovalCommit)->dict:
     p=quality._project(pid)
     with storage.connect() as con:
         con.execute('BEGIN IMMEDIATE')
+        quality._require_active_for_write(con,pid)
         rec=con.execute('SELECT * FROM quality_approval_receipts WHERE proposal_id=? AND project_id=?',
                         (body.proposal_id,pid)).fetchone()
         if rec is None or rec['proposal_hash']!=body.proposal_hash:

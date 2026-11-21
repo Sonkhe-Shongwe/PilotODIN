@@ -1,0 +1,3 @@
+13 November 2026. Owner approved one consolidated isolated hosted Windows QA session.
+Reviewed source: adf521269ab0dbc75c03223cfe14561dbbb2edc5.
+Scope: one unpackaged development compilation, same-binary relaunch, synthetic layout and Prepare controls, and scoped traffic and write evidence. No installer, executable transfer, owner PC access, original data, Qwen, model fitting or repeat compilation.

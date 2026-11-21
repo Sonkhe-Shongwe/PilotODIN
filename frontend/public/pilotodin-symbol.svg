@@ -1,12 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PilotODIN Navigator symbol">
-<rect width="64" height="64" rx="17" fill="#111B37"/>
-<circle cx="32" cy="32" r="19" fill="none" stroke="#FFFFFF" stroke-width="2.8"/>
-<circle cx="32" cy="32" r="9" fill="none" stroke="#D6D5FF" stroke-width="2.4"/>
-<path d="M32 8v10 M56 32H46 M32 56V46 M8 32h10" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
-<path d="M32 21 43 32 32 43 21 32Z" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round"/>
-<path d="M32 21 43 32H32V21Z" fill="#148F9B"/>
-<circle cx="32" cy="32" r="3" fill="#FFFFFF"/>
-<circle cx="32" cy="8" r="2.6" fill="#148F9B"/>
-<circle cx="56" cy="32" r="2.6" fill="#7466EF"/>
-<circle cx="8" cy="32" r="2.6" fill="#148F9B"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="PilotODIN Neural Horizon orbital intelligence symbol">
+<defs>
+  <linearGradient id="ring" x1="0" x2="1" y1="1" y2="0"><stop stop-color="#09bbd4"/><stop offset=".52" stop-color="#009de3"/><stop offset="1" stop-color="#4068ed"/></linearGradient>
+  <radialGradient id="planet" cx="30%" cy="24%" r="83%"><stop stop-color="#9557f8"/><stop offset=".43" stop-color="#6632da"/><stop offset=".84" stop-color="#4820ba"/><stop offset="1" stop-color="#271078"/></radialGradient>
+  <clipPath id="planetCut"><circle cx="64" cy="64" r="38"/></clipPath>
+</defs>
+<!-- The blue pilot orbit passes behind the ODIN intelligence planet. -->
+<ellipse cx="64" cy="64" rx="55" ry="25" transform="rotate(-28 64 64)" fill="none" stroke="url(#ring)" stroke-width="7" stroke-linecap="round"/>
+<circle cx="64" cy="64" r="38" fill="url(#planet)"/>
+<circle cx="64" cy="64" r="37" fill="none" stroke="#b2a2ff" stroke-opacity=".38" stroke-width="1.6"/>
+<g clip-path="url(#planetCut)">
+  <path d="M60 34C50 31 42 39 44 48C37 51 33 59 39 67C35 73 40 83 49 86C50 92 55 94 60 93Z" fill="#f8f7ff"/>
+  <path d="M68 34C78 31 86 39 84 48C91 51 95 59 89 67C93 73 88 83 79 86C78 92 73 94 68 93Z" fill="#f8f7ff"/>
+  <path d="M60 34V93M68 34V93" stroke="#d8ccff" stroke-width=".6"/>
+  <g fill="none" stroke="#7143df" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M56 42L48 50L52 58L43 65"/>
+    <path d="M53 77L45 75L49 83"/>
+    <path d="M72 42L80 50L76 58L85 65"/>
+    <path d="M75 77L83 75L79 83"/>
+    <path d="M55 64L51 68"/>
+    <path d="M73 64L77 68"/>
+  </g>
+  <g fill="#7143df">
+    <circle cx="56" cy="42" r="3.4"/><circle cx="43" cy="65" r="3.4"/><circle cx="49" cy="83" r="3.4"/>
+    <circle cx="72" cy="42" r="3.4"/><circle cx="85" cy="65" r="3.4"/><circle cx="79" cy="83" r="3.4"/>
+  </g>
+</g>
+<!-- A front-side cyan sweep gives the ring its unmistakable orbital depth. -->
+<path d="M17 81C26 99 70 111 99 89" fill="none" stroke="url(#ring)" stroke-width="6" stroke-linecap="round"/>
+<circle cx="103" cy="84" r="3.4" fill="#15b7d5"/>
 </svg>

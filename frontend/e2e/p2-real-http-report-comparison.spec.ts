@@ -1,0 +1,704 @@
+import {test,expect} from '@playwright/test';
+import type {BrowserContext,Route} from '@playwright/test';
+import {Buffer} from 'node:buffer';
+import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
+import type {DisposableBackend} from './p1-real-http-backend';
+
+// One owned, temporary Uvicorn on CI :8000, dedicated Vite :5178.
+// All source CSV/report revisions are synthetic and only CI-runner-local.
+// Browser can READ the reviewed report paths but cannot mutate API state.
+const API='http://127.0.0.1:8000';
+const UI='http://127.0.0.1:5178';
+const csv=[
+ 'OrderID,Region,Revenue',
+ '0001,West,120.00',
+ '0002,East,220.00',
+ '0003,West,140.00',
+ '0004,North,180.00',
+ '0005,East,230.00',
+].join('\n')+'\n';
+
+type ReadAudit={reads:string[];readOnlyCalculations:number;unexpected:string[];blockedWrites:string[];remote:string[]};
+async function protectBrowser(context:BrowserContext,pid:string,rid:string,evidenceIds:string[]):Promise<ReadAudit>{
+ const audit:ReadAudit={reads:[],readOnlyCalculations:0,unexpected:[],blockedWrites:[],remote:[]};
+ await context.route('**/*',async(route:Route)=>{
+  const request=route.request(),url=new URL(request.url()),method=request.method();
+  if(url.origin===UI){
+   if(method==='GET'||method==='HEAD'){await route.continue();return;}
+   audit.blockedWrites.push(method+' '+url.pathname+' [UI]');
+   await route.fulfill({status:403,json:{detail:'Unapproved browser write'}});return;
+  }
+  if(method==='GET'&&url.origin==='https://fonts.googleapis.com'&&url.pathname==='/css2'){
+   // No remote font downloads or page-origin credential propagation in CI.
+   await route.fulfill({status:200,contentType:'text/css',body:'/* local system font substitute */'});return;
+  }
+  if(url.origin!==API||!url.pathname.startsWith('/api/')){
+   audit.remote.push(method+' '+url.origin+url.pathname);
+   await route.abort('blockedbyclient');return;
+  }
+  const path=url.pathname.slice(4),query=[...url.searchParams.entries()];
+  // This POST is a strictly read-only analytical workbench computation on
+  // the disposable project, never a saved report/evidence mutation.
+  if(method==='POST'&&url.search===''&&path===`/projects/${pid}/explore/workbench`){
+   const body=request.postDataJSON();
+   if(body&&body.expected_version===0&&Array.isArray(body.filters)&&body.filters.length<=4&&
+       typeof body.x==='string'&&body.x.length<=256&&typeof body.kind==='string'){
+    audit.readOnlyCalculations++;
+    await route.continue();return;
+   }
+   audit.blockedWrites.push('Unapproved workbench calculation');
+   await route.fulfill({status:403,json:{detail:'Unapproved calculation'}});return;
+  }
+  const read=method==='GET'&&(
+   (url.pathname.startsWith(`/api/projects/${pid}/explore/`)||
+   (url.search===''&&['/projects','/ai/settings',
+      `/projects/${pid}`,`/projects/${pid}/live-profile`,
+      `/projects/${pid}/reports`,`/projects/${pid}/report-evidence`,
+      `/reports/${rid}`,...evidenceIds.map(id=>`/projects/${pid}/report-evidence/${id}/preview`)].includes(path))||
+   (path===`/reports/${rid}`&&query.length===1&&
+      query[0][0]==='revision'&&['1','2'].includes(query[0][1]))));
+  if(read){
+   audit.reads.push(path+url.search);
+   await route.continue();return;
+  }
+  if(method==='GET'){
+   audit.unexpected.push(path+url.search);
+   await route.fulfill({status:404,json:{detail:'Unreviewed synthetic GET'}});return;
+  }
+  audit.blockedWrites.push(method+' '+path);
+  await route.fulfill({status:403,json:{detail:'All browser writes denied'}});return;
+ });
+ return audit;
+}
+let backend:DisposableBackend|null=null;
+test.beforeEach(async()=>{backend=await startDisposableBackend()});
+test.afterEach(async()=>{if(backend){const old=backend;backend=null;await stopDisposableBackend(old)}});
+
+test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser writes or source mutations',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only the isolated GitHub CI disposable backend may run this test.');
+
+  // Browser-independent, explicitly allowed synthetic seed writes.
+  const upload=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'PilotODIN_P2_Disposable_Revision_Compare.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(upload.status(),await upload.text()).toBe(201);
+  const pid=(await upload.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+
+  const evidenceIds:string[]=[];
+  // Each synthetic investigation has one completed artifact. Do not assume
+  // the first element of a reused investigation's history is the newest run.
+  for(const [operation,params] of [
+   ['overview',{}],['compare',{x:'Region',y:'Revenue'}]
+  ] as const){
+   const investigation=await request.post(API+`/api/projects/${pid}/investigations`,{
+    data:{objective:'Synthetic '+operation+' report evidence for revision comparison'}
+   });
+   expect(investigation.status(),await investigation.text()).toBe(201);
+   const inv=await investigation.json() as {id:string;version:number};
+   const run=await request.post(API+`/api/investigations/${inv.id}/runs`,{
+    data:{operation,params,expected_version:inv.version}
+   });
+   expect(run.status(),await run.text()).toBe(200);
+   evidenceIds.push((await run.json()).artifacts[0].id);
+  }
+  expect(new Set(evidenceIds).size).toBe(2);
+
+  // This snapshot is synthetic and project-scoped. It exercises the real
+  // Explore saved-analysis to Deliver handoff without browser write approval.
+  const savedExploreTitle='Synthetic Saved Regional View';
+  const savedExplore=await request.post(API+`/api/projects/${pid}/explore/saved`,{
+   data:{title:savedExploreTitle,expected_version:0,x:'Region',y:'Revenue',
+    kind:'bar',aggregation:'sum',bins:16,correlation_method:'pearson',color_by:null,filters:[]}
+  });
+  expect(savedExplore.status(),await savedExplore.text()).toBe(201);
+  const savedExploreId=(await savedExplore.json()).id as string;
+  expect(savedExploreId).toMatch(/^[a-f0-9]{32}$/);
+
+  const originalTitle='Synthetic Regional Overview';
+  const updatedTitle='Synthetic Regional Revenue Reviewed';
+  const oldNarrative='Original synthetic interpretation (not an inference).';
+  const newNarrative='Updated analyst interpretation. <script>window.p2Executed=true</script>';
+  const created=await request.post(API+`/api/projects/${pid}/reports`,{
+   data:{title:originalTitle,narrative:oldNarrative,evidence_ids:[evidenceIds[0]]}
+  });
+  expect(created.status(),await created.text()).toBe(201);
+  const first=await created.json() as {id:string;revision:number;content_sha256:string};
+  expect(first.revision).toBe(1);
+  const rid=first.id;
+  const revised=await request.post(API+`/api/reports/${rid}/revisions`,{
+   data:{title:updatedTitle,narrative:newNarrative,evidence_ids:[evidenceIds[1],evidenceIds[0]]}
+  });
+  expect(revised.status(),await revised.text()).toBe(201);
+  const second=await revised.json() as {revision:number;content_sha256:string};
+  expect(second.revision).toBe(2);
+  expect(first.content_sha256).not.toBe(second.content_sha256);
+
+  const initialList=await (await request.get(API+`/api/projects/${pid}/reports`)).json();
+  const q0=await (await request.get(API+`/api/projects/${pid}/quality/history`)).json();
+  const audit=await protectBrowser(context,pid,rid,evidenceIds);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await expect(primary.getByText('Saved revision 2')).toBeVisible();
+  await expect(primary.getByRole('button',{name:'Compare with previous saved revision'})).toBeVisible();
+  // The inspector fetches a verified summary but never mutates a selection.
+  const checkedBefore=await primary.locator('.pd-report-evidence-row input:checked').count();
+  const inspectRead=page.waitForResponse(res=>res.url()===
+   API+`/api/projects/${pid}/report-evidence/${evidenceIds[0]}/preview`&&
+   res.request().method()==='GET');
+  await primary.getByRole('button',{
+   name:`Inspect verified overview evidence ${evidenceIds[0].slice(0,12)}`
+  }).click();
+  expect((await inspectRead).status()).toBe(200);
+  const facts=primary.getByRole('region',{name:'Verified evidence facts'});
+  await expect(facts).toBeVisible();
+  await expect(facts).toContainText('dataset v0');
+  await expect(facts).toContainText(evidenceIds[0].slice(0,12));
+  await expect(facts).toContainText('Only bounded verified aggregate facts');
+  expect(await primary.locator('.pd-report-evidence-row input:checked').count()).toBe(checkedBefore);
+  await facts.getByRole('button',{name:'Close evidence facts'}).click();
+  await expect(facts).toHaveCount(0);
+
+  const comparisonRequest=page.waitForResponse(res=>res.url()===
+   API+`/api/reports/${rid}?revision=1`&&res.request().method()==='GET');
+  await primary.getByRole('button',{name:'Compare with previous saved revision'}).click();
+  const priorResponse=await comparisonRequest;
+  expect(priorResponse.status()).toBe(200);
+  const compare=primary.getByRole('region',{name:'Saved report revision differences'});
+  await expect(compare).toBeVisible();
+  await expect(compare).toContainText('Revision 1 compared with revision 2');
+  await expect(compare).toContainText('Title changed');
+  await expect(compare).toContainText(originalTitle);
+  await expect(compare).toContainText(updatedTitle);
+  await expect(compare).toContainText('Interpretation changed');
+  await expect(compare).toContainText(oldNarrative);
+  await expect(compare).toContainText(newNarrative);
+  await expect(compare).toContainText('New evidence');
+  await expect(compare).toContainText(evidenceIds[1].slice(0,12));
+  await expect(compare).toContainText('Previous SHA-256: '+first.content_sha256.slice(0,16));
+  await expect(compare).toContainText('Selected SHA-256: '+second.content_sha256.slice(0,16));
+  expect(await page.evaluate(()=>(window as Window&{p2Executed?:boolean}).p2Executed)).toBeUndefined();
+  expect(await compare.locator('script').count()).toBe(0);
+
+  // Selecting the earlier revision replaces the currently visible content.
+  await primary.getByLabel('Open saved revision').selectOption('1');
+  await expect(primary.getByText('Saved revision 1')).toBeVisible();
+  await expect(compare).toHaveCount(0);
+  await expect(primary.getByRole('button',{name:'Compare with previous saved revision'})).toHaveCount(0);
+  await primary.getByLabel('Open saved revision').selectOption('2');
+  await expect(primary.getByText('Saved revision 2')).toBeVisible();
+  await expect(primary.getByRole('button',{name:'Compare with previous saved revision'})).toBeVisible();
+
+  // Browser was strictly GET-only, and immutable backend bytes/history did not change.
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(audit.reads).toContain(`/reports/${rid}?revision=1`);
+  expect(audit.reads).toContain(`/projects/${pid}/report-evidence/${evidenceIds[0]}/preview`);
+  const afterList=await (await request.get(API+`/api/projects/${pid}/reports`)).json();
+  const afterHistory=await (await request.get(API+`/api/projects/${pid}/quality/history`)).json();
+  const stillFirst=await (await request.get(API+`/api/reports/${rid}?revision=1`)).json();
+  const stillSecond=await (await request.get(API+`/api/reports/${rid}?revision=2`)).json();
+  expect(afterList).toEqual(initialList);
+  expect(afterHistory).toEqual(q0);
+  expect(stillFirst.content_sha256).toBe(first.content_sha256);
+  expect(stillSecond.content_sha256).toBe(second.content_sha256);
+
+  // Guided drafting is user-authored and never writes until explicit Save.
+  // Keep the browser GET-only so a mistaken implicit POST fails this contract.
+  await expect(primary.getByRole('button',{name:'Use General analysis outline'})).toBeDisabled();
+  await primary.getByRole('button',{name:'New report'}).click();
+  const unsavedNotice=primary.locator('.pd-report-workspace > .pd-report-warning');
+  await expect(unsavedNotice).toHaveCount(0); // The untouched default title is not an edit.
+  await primary.getByRole('button',{name:'Use General analysis outline'}).click();
+  await expect(unsavedNotice).toContainText('Unsaved report draft. Save a revision before exporting.');
+  const outline=primary.locator('.pd-report-outline-progress');
+  const narrativeArea=primary.getByLabel('Interpretation and limitations');
+  await expect(outline).toContainText('0 of 4 sections complete');
+  await expect(primary.getByRole('button',{name:'Save report'})).toBeDisabled();
+  await expect(primary.getByRole('button',{name:'Use General analysis outline'})).toBeDisabled();
+  const firstDraft=await narrativeArea.inputValue();
+  expect(firstDraft).toContain('Verified evidence interpretation');
+  expect(firstDraft).not.toContain('Accuracy: 99');
+
+  await narrativeArea.fill(
+   'Purpose and decision\n\nReview the synthetic project for a human decision.\n\n'+
+   'Verified evidence interpretation\n\nOnly figures verified in the chosen exhibit may be asserted.\n\n'+
+   'Limitations and uncertainty\n\nThis analysis does not prove causation.\n\n'+
+   'Recommendations and next steps\n\nReview source quality before deciding next actions.\n'
+  );
+  await expect(outline).toContainText('4 of 4 sections complete');
+  await primary.locator('.pd-report-evidence-row input').first().check();
+  await expect(primary.getByRole('button',{name:'Save report'})).toBeEnabled();
+  const writtenText=await narrativeArea.inputValue();
+  await primary.getByRole('button',{name:'Use freeform writing (keep my text)'}).click();
+  await expect(outline).toHaveCount(0);
+  expect(await narrativeArea.inputValue()).toBe(writtenText);
+
+  // Browser checks both unsaved NEW drafts and edited SAVED report drafts.
+  // Escape and Keep leave the authored text and selected evidence unchanged.
+  await primary.getByRole('button',{name:'New report'}).click();
+  const discard=primary.getByRole('dialog',{name:'Discard unsaved report edits?'});
+  await expect(discard).toBeVisible();
+  await expect(discard.getByRole('button',{name:'Keep editing'})).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(discard).toHaveCount(0);
+  expect(await narrativeArea.inputValue()).toBe(writtenText);
+  expect(await primary.locator('.pd-report-evidence-row input:checked').count()).toBe(1);
+
+  const savedChoice=primary.locator('.pd-report-library > button').first();
+  await savedChoice.click();
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Keep editing'}).click();
+  await expect(discard).toHaveCount(0);
+  expect(await narrativeArea.inputValue()).toBe(writtenText);
+
+  await savedChoice.click();
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(discard).toHaveCount(0);
+  await expect(primary.getByLabel('Report title')).toHaveValue(updatedTitle);
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(newNarrative);
+  await expect(unsavedNotice).toHaveCount(0);
+
+  const changedSaved=newNarrative+' Additional unsaved human note.';
+  await primary.getByLabel('Interpretation and limitations').fill(changedSaved);
+  await expect(unsavedNotice).toContainText('Unsaved changes. Exports remain linked to the saved revision until you save again.');
+  await primary.getByRole('button',{name:'New report'}).click();
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Keep editing'}).click();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(changedSaved);
+  await primary.getByRole('button',{name:'New report'}).click();
+  await discard.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(discard).toHaveCount(0);
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+  await expect(unsavedNotice).toHaveCount(0);
+
+  // The unified shell exposes New project; its nested legacy Studio
+  // sidebar is hidden in this mode, so test the actual visible control.
+  // A pending shell dirty marker may still require explicit route consent
+  // while the just-reset report settles; the test grants that consent only
+  // for this requested import, never for the later rejection checks.
+  const acceptImportConsent=async (dialog:import('@playwright/test').Dialog)=>{
+   expect(dialog.message()).toContain('unsaved changes');
+   await dialog.accept();
+  };
+  page.on('dialog',acceptImportConsent);
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  page.off('dialog',acceptImportConsent);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
+  // The synthetic fixture can display the importer before Studio's project
+  // hydration, so the project-dependent Cancel upload control is optional.
+  await expect(page.locator('button.po-nav-item[aria-label="Home"]')).toHaveAttribute('aria-current','page');
+  await expect(primary.locator('.landing .upload-card')).toBeVisible();
+  await page.locator('button.po-nav-item[aria-label="Deliver"]').click();
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+
+  // A dirty Deliver primary view must not unmount when the shell rail selects
+  // Explore and the user denies the browser/native-compatible confirmation.
+  const draftLeavingDeliver='Unfinished analyst interpretation for this synthetic report.';
+  await primary.getByLabel('Interpretation and limitations').fill(draftLeavingDeliver);
+
+  // A refused shell New project must not hide dirty Deliver or arm an
+  // importer that appears after the next ordinary visit to Home.
+  let sawRejectedNewProject=false;
+  page.once('dialog',async dialog=>{
+   sawRejectedNewProject=true;
+   expect(dialog.message()).toContain('Your Deliver report contains unsaved changes');
+   await dialog.dismiss();
+  });
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  expect(sawRejectedNewProject).toBe(true);
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(draftLeavingDeliver);
+  await expect(primary.locator('.landing')).toHaveCount(0);
+  expect(page.url()).toContain('/studio/deliver');
+  let sawExitPrompt=false;
+  page.once('dialog',async dialog=>{
+   sawExitPrompt=true;
+   expect(dialog.message()).toContain('Your Deliver report contains unsaved changes');
+   await dialog.dismiss();
+  });
+  await page.locator('button.po-nav-item[aria-label="Explore"]').click();
+  expect(sawExitPrompt).toBe(true);
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(draftLeavingDeliver);
+  expect(page.url()).toContain('/studio/deliver');
+
+  // Explicitly discard the disposable note before switching workspaces.
+  await primary.getByRole('button',{name:'New report'}).click();
+  const leaveDialog=primary.getByRole('dialog',{name:'Discard unsaved report edits?'});
+  await leaveDialog.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+  await page.locator('button.po-nav-item[aria-label="Home"]').click();
+  // A previously refused shell New project must not show a delayed importer.
+  await expect(primary.locator('.landing')).toHaveCount(0);
+  await page.locator('button.po-nav-item[aria-label="Explore"]').click();
+  const savedArea=primary.getByRole('region',{name:'Saved analytical investigations'});
+  await expect(savedArea).toBeVisible();
+  await savedArea.getByRole('button',{name:`Open ${savedExploreTitle} and jump to saved history`}).click();
+  await expect(savedArea.getByRole('button',{name:'Use verified evidence in Deliver'})).toBeVisible();
+  await savedArea.getByRole('button',{name:'Use verified evidence in Deliver'}).click();
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await expect(primary.getByLabel('Report title')).toHaveValue(savedExploreTitle+' report');
+  const incoming=primary.locator('.pd-report-evidence-row').filter({hasText:savedExploreId.slice(0,12)});
+  await expect(incoming).toHaveCount(1);
+  await expect(incoming.locator('input[type=checkbox]')).toBeChecked();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue('');
+  expect(audit.readOnlyCalculations).toBeGreaterThan(0);
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect((await (await request.get(API+`/api/projects/${pid}/reports`)).json())).toEqual(initialList);
+ });
+
+
+test('P2 simulated native Deliver consent preserves draft until fresh OS approval without browser fallback',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only the isolated GitHub CI disposable backend may run this test.');
+  const upload=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'PilotODIN_P2_Native_Consent_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(upload.status(),await upload.text()).toBe(201);
+  const pid=(await upload.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const beforeReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const beforeQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  const note=primary.getByLabel('Interpretation and limitations');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await note.fill('Human-authored synthetic interpretation must survive cancelled navigation.');
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+
+  // Simulate the native IPC bridge AFTER the web app has mounted. This does
+  // not claim that Rust, WebView2 or native Windows UI was executed.
+  await page.evaluate(()=>{
+   type ExitProbe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(name:string)=>Promise<boolean>};
+    __p2NativeInvocations?:string[];
+    __p2NativeReplies?:Array<(approved:boolean)=>void>;
+   };
+   const w=window as ExitProbe;
+   w.__p2NativeInvocations=[];
+   w.__p2NativeReplies=[];
+   w.__TAURI_INTERNALS__={invoke:(name:string)=>{
+    if(name!=='confirm_native_deliver_exit')return Promise.reject(new Error('Unexpected synthetic native IPC'));
+    w.__p2NativeInvocations!.push(name);
+    return new Promise<boolean>(resolve=>w.__p2NativeReplies!.push(resolve));
+   }};
+  });
+  const commands=()=>page.evaluate(()=>(window as Window&{__p2NativeInvocations?:string[]}).__p2NativeInvocations?.length??0);
+  const reply=(approved:boolean)=>page.evaluate((yes:boolean)=>{
+   const w=window as Window&{__p2NativeReplies?:Array<(answer:boolean)=>void>};
+   const complete=w.__p2NativeReplies?.shift();
+   if(!complete)throw new Error('No synthetic native consent request is pending');
+   complete(yes);
+  },approved);
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  await expect.poll(commands).toBe(1);
+  expect(page.url()).toContain('/studio/deliver');
+  await expect(note).toHaveValue('Human-authored synthetic interpretation must survive cancelled navigation.');
+  await expect(primary.locator('.landing')).toHaveCount(0);
+  // Double activation while one native dialog is pending cannot bypass it.
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  expect(await commands()).toBe(1);
+  await reply(false);
+  await expect(note).toHaveValue('Human-authored synthetic interpretation must survive cancelled navigation.');
+  expect(page.url()).toContain('/studio/deliver');
+
+  // An approval that returns after the user intentionally cleared the draft
+  // is stale, so it must not open the import panel.
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  await expect.poll(commands).toBe(2);
+  await primary.getByRole('button',{name:'New report'}).click();
+  const discard=primary.getByRole('dialog',{name:'Discard unsaved report edits?'});
+  await expect(discard).toBeVisible();
+  await discard.getByRole('button',{name:'Discard and continue'}).click();
+  await expect(note).toHaveValue('');
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toHaveCount(0);
+  await reply(true);
+  expect(page.url()).toContain('/studio/deliver');
+  await expect(primary.locator('.landing')).toHaveCount(0);
+
+  // Only fresh explicit native consent may open the real Studio importer.
+  await note.fill('New disposable report draft.');
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toBeVisible();
+  await page.getByRole('button',{name:'New project: import dataset'}).click();
+  await expect.poll(commands).toBe(3);
+  await reply(true);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
+  await expect(primary.locator('.landing .upload-card')).toBeVisible();
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
+ });
+
+
+test('P2 direct Studio command palette uses the same simulated native Deliver consent and closes only after approval',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only isolated disposable GitHub CI can run this real-UI scenario.');
+  const created=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'P2_Direct_Studio_Consent_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(created.status(),await created.text()).toBe(201);
+  const pid=(await created.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const beforeReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const beforeQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  const note=primary.getByLabel('Interpretation and limitations');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  const draft='Unpublished synthetic Deliver narrative via Studio command palette.';
+  await note.fill(draft);
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+
+  // Tauri IPC is simulated ONLY after mounting the real UI. Actual native
+  // Rust + Windows dialog execution remains a separate owner acceptance gate.
+  await page.evaluate(()=>{
+   type Probe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(name:string)=>Promise<boolean>};
+    __p2DirectCalls?:string[];
+    __p2DirectReplies?:Array<(answer:boolean)=>void>;
+   };
+   const w=window as Probe;
+   w.__p2DirectCalls=[];
+   w.__p2DirectReplies=[];
+   w.__TAURI_INTERNALS__={invoke:name=>{
+    if(name!=='confirm_native_deliver_exit')return Promise.reject(new Error('Unexpected synthetic native request'));
+    w.__p2DirectCalls!.push(name);
+    return new Promise<boolean>(resolve=>w.__p2DirectReplies!.push(resolve));
+   }};
+  });
+  const count=()=>page.evaluate(()=>(
+   window as Window&{__p2DirectCalls?:string[]}
+  ).__p2DirectCalls?.length??0);
+  const answer=(allow:boolean)=>page.evaluate(approved=>{
+   const w=window as Window&{__p2DirectReplies?:Array<(answer:boolean)=>void>};
+   const done=w.__p2DirectReplies?.shift();
+   if(!done)throw new Error('No pending synthetic Windows response');
+   done(approved);
+  },allow);
+
+  // The app's Ctrl+K command palette is a direct Studio go() path, not the
+  // unified shell rail or header tested by earlier native IPC coverage.
+  await page.keyboard.press('Control+k');
+  const palette=page.getByRole('dialog',{name:'Search PilotODIN workspaces'});
+  await expect(palette).toBeVisible();
+  await palette.getByRole('button',{name:/Overview/}).click();
+  await expect.poll(count).toBe(1);
+  await expect(note).toHaveValue(draft);
+  await expect(palette).toBeVisible();
+  expect(page.url()).toContain('/studio/deliver');
+
+  await answer(false);
+  await expect(note).toHaveValue(draft);
+  await expect(palette).toBeVisible();
+  expect(page.url()).toContain('/studio/deliver');
+
+  await palette.getByRole('button',{name:/Overview/}).click();
+  await expect.poll(count).toBe(2);
+  await expect(palette).toBeVisible();
+  await answer(true);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
+  await expect(palette).toHaveCount(0);
+  await expect(primary.locator('.landing')).toHaveCount(0); // Navigating Home alone must not arm an importer.
+  await expect(page.locator('button.po-nav-item[aria-label="Home"]')).toHaveAttribute('aria-current','page');
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
+ });
+
+
+test('P2 external hash push uses native Deliver consent before changing workspace',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('This scenario requires the isolated GitHub CI backend and synthetic data.');
+  const created=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'P2_External_Native_Hash_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(created.status(),await created.text()).toBe(201);
+  const pid=(await created.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const initialReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const initialQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  const draft='Original disposable report survives a rejected external URL hash.';
+  const note=primary.getByLabel('Interpretation and limitations');
+  await note.fill(draft);
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+
+  // A simulated Tauri IPC bridge is installed after genuine app hydration.
+  // No Rust dialog or native Windows GUI is executed by this Chromium test.
+  await page.evaluate(()=>{
+   type NativeProbe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(name:string)=>Promise<boolean>};
+    __p2ExternalCalls?:string[];
+    __p2ExternalAnswers?:Array<(answer:boolean)=>void>;
+   };
+   const w=window as NativeProbe;
+   w.__p2ExternalCalls=[];
+   w.__p2ExternalAnswers=[];
+   w.__TAURI_INTERNALS__={invoke:name=>{
+    if(name!=='confirm_native_deliver_exit')
+     return Promise.reject(new Error('Unexpected native IPC in synthetic external route QA'));
+    w.__p2ExternalCalls!.push(name);
+    return new Promise<boolean>(resolve=>w.__p2ExternalAnswers!.push(resolve));
+   }};
+  });
+  const count=()=>page.evaluate(()=>(
+   window as Window&{__p2ExternalCalls?:string[]}
+  ).__p2ExternalCalls?.length??0);
+  const reply=(allow:boolean)=>page.evaluate(answer=>{
+   const w=window as Window&{__p2ExternalAnswers?:Array<(v:boolean)=>void>};
+   const resolve=w.__p2ExternalAnswers?.shift();
+   if(!resolve)throw new Error('No synthetic external native consent is pending');
+   resolve(answer);
+  },allow);
+
+  // This is an external browser hash assignment, NOT a Studio go() or rail click.
+  await page.evaluate(()=>{window.location.hash='#/studio/explore'});
+  await expect.poll(count).toBe(1);
+  await expect(page).toHaveURL(/#\/studio\/deliver/);
+  await expect(note).toHaveValue(draft);
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  await reply(false);
+  await expect(note).toHaveValue(draft);
+  await expect(page).toHaveURL(/#\/studio\/deliver/);
+
+  await page.evaluate(()=>{window.location.hash='#/studio/overview'});
+  await expect.poll(count).toBe(2);
+  await expect(page).toHaveURL(/#\/studio\/deliver/);
+  await expect(note).toHaveValue(draft);
+  await reply(true);
+  await expect(page).toHaveURL(/#\/studio\/overview/);
+  await expect(page.locator('button.po-nav-item[aria-label="Home"]')).toHaveAttribute('aria-current','page');
+  await expect(primary.locator('.landing')).toHaveCount(0);
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(initialReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(initialQuality);
+ });
+
+
+test('P2 Close Deliver tab waits for native consent and preserves dirty report on Keep',
+ async({page,context,request})=>{
+  if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||process.env.P1_REAL_HTTP_E2E!=='1')
+   throw new Error('Only isolated GitHub CI may run this synthetic real-browser scenario.');
+  const created=await request.post(API+'/api/projects',{multipart:{
+   file:{name:'P2_Tab_Close_Synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}
+  }});
+  expect(created.status(),await created.text()).toBe(201);
+  const pid=(await created.json()).id as string;
+  expect(pid).toMatch(/^[a-f0-9]{32}$/);
+  const beforeReports=await (await request.get(API+'/api/projects/'+pid+'/reports')).json();
+  const beforeQuality=await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json();
+  const audit=await protectBrowser(context,pid,'',[]);
+  await page.addInitScript((id:string)=>{
+   localStorage.setItem('pilotodin-current',id);
+   localStorage.setItem('pilotodin-workspace-tabs-v1-'+id,JSON.stringify(['explore','deliver']));
+   localStorage.setItem('pilotodin-workspace-active-v1-'+id,'deliver');
+  },pid);
+  await page.goto('/#/studio/deliver');
+  const primary=page.locator('.po-primary-pane');
+  const note=primary.getByLabel('Interpretation and limitations');
+  await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
+  const draft='Disposable report must survive rejecting a native tab-close request.';
+  await note.fill(draft);
+  await expect(primary.locator('.pd-report-workspace > .pd-report-warning')).toContainText('Unsaved report draft.');
+  const close=page.getByRole('button',{name:'Close Deliver tab'});
+  await expect(close).toBeVisible();
+
+  // Hosted CI uses a simulated IPC bridge after mounting the real UI, never a
+  // physical WebView2/Rust dialog. Owner-native acceptance remains separate.
+  await page.evaluate(()=>{
+   type Probe=Window&{
+    __TAURI_INTERNALS__?:{invoke:(command:string)=>Promise<boolean>};
+    __p2TabCloseCalls?:string[];
+    __p2TabCloseAnswers?:Array<(answer:boolean)=>void>;
+   };
+   const w=window as Probe;
+   w.__p2TabCloseCalls=[];
+   w.__p2TabCloseAnswers=[];
+   w.__TAURI_INTERNALS__={invoke:command=>{
+    if(command!=='confirm_native_deliver_exit')
+     return Promise.reject(new Error('Unexpected synthetic native command'));
+    w.__p2TabCloseCalls!.push(command);
+    return new Promise<boolean>(resolve=>w.__p2TabCloseAnswers!.push(resolve));
+   }};
+  });
+  const commands=()=>page.evaluate(()=>(
+   window as Window&{__p2TabCloseCalls?:string[]}
+  ).__p2TabCloseCalls?.length??0);
+  const reply=(allow:boolean)=>page.evaluate(approved=>{
+   const w=window as Window&{__p2TabCloseAnswers?:Array<(answer:boolean)=>void>};
+   const resolve=w.__p2TabCloseAnswers?.shift();
+   if(!resolve)throw new Error('No native tab-close response is pending');
+   resolve(approved);
+  },allow);
+
+  await close.click();
+  await expect.poll(commands).toBe(1);
+  await expect(note).toHaveValue(draft);
+  await expect(close).toBeVisible();
+  expect(page.url()).toContain('/studio/deliver');
+  await close.click();
+  expect(await commands()).toBe(1);
+  await reply(false);
+  await expect(note).toHaveValue(draft);
+  await expect(close).toBeVisible();
+
+  // A fresh explicit Leave applies the exact original close plan once.
+  await close.click();
+  await expect.poll(commands).toBe(2);
+  await expect(note).toHaveValue(draft);
+  await reply(true);
+  await expect(page).toHaveURL(/#\/studio\/explore/);
+  await expect(close).toHaveCount(0);
+  await expect(primary.getByRole('region',{name:'Saved analytical investigations'})).toBeVisible();
+
+  expect(audit.blockedWrites).toEqual([]);
+  expect(audit.unexpected).toEqual([]);
+  expect(audit.remote).toEqual([]);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/reports')).json()).toEqual(beforeReports);
+  expect(await (await request.get(API+'/api/projects/'+pid+'/quality/history')).json()).toEqual(beforeQuality);
+ });

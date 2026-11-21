@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PilotODIN P2 Native Save As (TEST ONLY)</title>
+<style>body{font-family:system-ui,sans-serif;background:#101c2c;color:#ecf1f9;max-width:850px;margin:36px auto;padding:20px}
+h1{font-size:25px}p{line-height:1.5}.panel{border:1px solid #465b70;border-radius:10px;padding:20px}
+button{padding:10px 16px;margin:8px 12px 8px 0;font-size:14px}li{margin:10px 0}output{font-weight:600}
+.pass{color:#6ff2a7}.fail{color:#ff8e8e}.pending{color:#eec76b}</style></head>
+<body><h1>PilotODIN native export acceptance (development only)</h1>
+<p>This separate Tauri window uses only two committed synthetic fixture files. It does not import datasets, contact the application API, or start AI.</p>
+<div class="panel"><p><strong>Save both files into the EMPTY temporary folder shown in the PowerShell window.</strong>
+Keep the proposed names, then test Cancel and rejection. Do not select an existing report.</p>
+<ol>
+<li><button id="pdf">1. Save synthetic PDF</button><output id="pdf-state" class="pending">Not checked</output></li>
+<li><button id="html">2. Save synthetic HTML</button><output id="html-state" class="pending">Not checked</output></li>
+<li><button id="cancel">3. Open PDF Save As and CANCEL</button><output id="cancel-state" class="pending">Not checked</output></li>
+<li><button id="badcontent">4. Reject invalid PDF content</button><output id="badcontent-state" class="pending">Not checked</output></li>
+<li><button id="badextension">5. Reject mismatched extension</button><output id="badextension-state" class="pending">Not checked</output></li>
+</ol>
+<p>Do not mark untested steps as passed. Once the five outputs show PASS, close this native window and answer the console question.</p>
+<pre id="native-note"></pre></div>
+<script type="module" src="/src/p2NativeExportTest.ts"></script></body></html>

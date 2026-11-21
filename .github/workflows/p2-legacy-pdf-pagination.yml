@@ -1,0 +1,48 @@
+name: P2 BE-030 Legacy PDF Pagination Regression
+
+# A narrowly scoped, disposable production-renderer test. No owner datasets,
+# Windows runner, Tauri, model fitting, release fonts or installer build.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p2-legacy-pdf-pagination.yml
+      - backend/reports.py
+      - backend/report_charts.py
+      - backend/pdf_release_font_loader.py
+      - tests/test_p2_legacy_pdf_pagination.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p2-be030-pagination-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  standard-legacy-pdf:
+    name: In-memory production PDF render and verified chart/table grouping
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout trusted feature-branch source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Install existing backend test dependencies
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Compile the actual legacy reporting and disabled-font modules
+        run: python -m py_compile backend/reports.py backend/report_charts.py backend/pdf_release_font_loader.py
+      - name: Verify exact synthetic three-page PDF and chart/values same-page grouping
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-p2-be030-${{ github.run_id }}
+        run: python -m pytest -q tests/test_p2_legacy_pdf_pagination.py

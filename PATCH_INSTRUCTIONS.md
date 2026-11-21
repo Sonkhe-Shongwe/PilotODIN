@@ -1,5 +1,7 @@
 # PilotODIN Studio v0.8 | One consolidated update
 
+> **Historical v0.8 patch instructions.** The current development checkout and approval boundaries are in the [session handoff](docs/SESSION_HANDOFF_CURRENT.md) and [phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md). Preserve the existing installation and its app data.
+
 **This package updates an existing PilotODIN Studio v0.7 installation. It does not create a new user project.**
 
 1. Close the frontend window and the backend window, even if the Chrome tab is still open. Stop any old v0.6 instances too.

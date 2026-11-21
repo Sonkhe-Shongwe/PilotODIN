@@ -1,0 +1,66 @@
+name: P4 N12 Backend Bytecode Control
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_BACKEND_BYTECODE_APPROVAL.txt
+
+permissions:
+  contents: read
+
+jobs:
+  backend-bytecode:
+    if: ${{ false }} # One-use hosted control consumed by run 44268706863.
+    runs-on: windows-2022
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout the authorized launch commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify the one-use approval and check out the reviewed source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $workflow = '.github/workflows/p4-n12-backend-bytecode.yml'
+          $marker = 'qa/p4_research/N12_BACKEND_BYTECODE_APPROVAL.txt'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA) {
+            throw 'The approval applies to the first run of a trusted hosted Windows push.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=n12-one-hosted-backend-bytecode-control') {
+            throw 'A fresh source-pinned backend bytecode approval marker is required.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $workflow -cnotin $changed -or $marker -cnotin $changed -or
+              $added.Count -ne 1 -or $added[0] -cne $marker) {
+            throw 'The launch must directly follow the reviewed source and change only the workflow and fresh marker.'
+          }
+          git checkout --detach $source
+      - name: Use the same Python line as the app journey
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Install the backend dependencies and run the generated cases
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python --version
+          python -m pip install -r backend/requirements.txt
+          python -B -m qa.p4_research.n12_backend_bytecode

@@ -1,0 +1,48 @@
+.po-pm-backdrop{position:fixed;inset:0;z-index:2000;background:#15213db8;display:flex;align-items:center;justify-content:center;padding:16px}
+.po-pm-dialog{background:#fff;border:1px solid #ccd3e5;border-radius:16px;box-shadow:0 22px 65px #111b3e60;width:min(800px,100%);max-height:88dvh;min-height:210px;display:flex;flex-direction:column;color:#222e46}
+.po-pm-dialog>header,.po-pm-dialog>footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 22px}
+.po-pm-dialog>header{border-bottom:1px solid #e1e5f0;align-items:flex-start}
+.po-pm-dialog>header h2{font-size:21px;margin:0 0 6px;color:#30207f}
+.po-pm-dialog>header p{font-size:13px;line-height:1.5;max-width:660px;color:#66728b;margin:0}
+.po-pm-dialog>footer{border-top:1px solid #e1e5f0}
+.po-pm-dialog>footer span{font-size:11px;color:#69758d}
+.po-pm-dialog button{font:inherit;cursor:pointer}
+.po-pm-dialog button:disabled{opacity:.45;cursor:not-allowed}
+.po-pm-dialog button:focus-visible,.po-pm-dialog input:focus-visible{outline:3px solid #0b9cbc;outline-offset:3px}
+.po-pm-dialog>header button{border:0;border-radius:8px;padding:7px;background:#f2f3fa;display:flex}
+.po-pm-scroll{overflow-y:auto;padding:12px 22px 18px;min-height:0}
+.po-pm-scroll h3{font-size:15px;margin:14px 0 9px;color:#46546c}
+.po-pm-scroll section>p{font-size:13px;color:#748096}
+.po-pm-scroll ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.po-pm-item{display:flex;align-items:center;gap:11px;padding:12px;background:#f9faff;border:1px solid #e0e4ef;border-radius:10px;min-width:0}
+.po-pm-item>svg{color:#5640c0;flex:0 0 auto}
+.po-pm-details{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.po-pm-details strong{font-size:14px;overflow-wrap:anywhere}
+.po-pm-details small{font-size:11px;color:#76829a;overflow-wrap:anywhere}
+.po-pm-controls,.po-pm-edit{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.po-pm-edit label{font-size:11px}
+.po-pm-edit{width:100%;min-width:0}
+.po-pm-edit input{border:1px solid #aeb9d1;padding:8px;border-radius:7px;flex:1 1 360px;width:min(100%,440px);min-width:0;max-width:440px}
+.po-pm-controls button,.po-pm-edit button,.po-pm-dialog>footer button{display:inline-flex;align-items:center;gap:4px;border:1px solid #cdd3e4;border-radius:8px;padding:8px;background:white;font-size:12px;font-weight:700;color:#413684}
+.po-pm-controls button:hover:not(:disabled),.po-pm-edit button:hover:not(:disabled){background:#eeeafc}
+.po-pm-error,.po-pm-notice{padding:10px;margin:8px 22px;border-radius:7px;font-size:12px}
+.po-pm-error{background:#fff1f1;color:#942b35}
+.po-pm-notice{background:#eefaf6;color:#0d6555}
+.po-pm-loading{padding:18px}
+@media(max-width:620px){.po-pm-item{flex-wrap:wrap}.po-pm-controls{width:100%}.po-pm-dialog>header,.po-pm-dialog>footer,.po-pm-scroll{padding-inline:12px}}
+@media(prefers-reduced-motion:reduce){.po-pm-dialog *{animation:none!important;transition:none!important}}
+
+/* Read-only impact inventory, not a deletion confirmation or delete button. */
+.po-pm-impact{background:#f6f7fd;border:1px solid #ccd3e6;border-radius:10px;margin:12px 22px 0;padding:12px 15px;overflow-y:auto;max-height:48dvh;font-size:12px;line-height:1.5}
+.po-pm-impact-heading{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.po-pm-impact-heading>strong{color:#33278a;font-size:14px}
+.po-pm-impact-heading button{border:1px solid #cbd2e0;border-radius:7px;background:#fff;padding:6px 9px;font-size:12px}
+.po-pm-impact ul{list-style:none;padding:0;margin:10px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:7px}
+.po-pm-impact li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 9px;border:1px solid #e0e4f0;border-radius:6px;background:white}
+.po-pm-impact li strong{font-variant-numeric:tabular-nums}
+.po-pm-limitations{color:#657089}
+.po-pm-impact-blocked{color:#804321;background:#fff5e7;padding:9px;border-radius:7px;border:1px solid #ecd3a8}
+@media(max-width:620px){.po-pm-impact{margin-inline:12px;padding:10px}}
+
+/* Long project names remain legible; buttons wrap rather than crowding input. */
+@media(max-width:620px){.po-pm-edit label{width:100%}.po-pm-edit input{flex:1 1 100%;max-width:none}}

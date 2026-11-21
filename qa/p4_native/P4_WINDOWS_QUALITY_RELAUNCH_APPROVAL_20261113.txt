@@ -1,0 +1,3 @@
+13 November 2026. Owner approved a single isolated, unpackaged Windows test of the Quality refresh fix and actual close/relaunch of the same compiled app.
+Reviewed source: a9ccf9ebcb3fd41caa994af1eaa8a7b15942c0d1.
+Scope: synthetic data and disposable hosted Windows only. No installer, executable transfer, owner PC access, original data, Qwen, model fitting, or repeat compilation.

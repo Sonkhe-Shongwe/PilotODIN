@@ -1,0 +1,59 @@
+name: P4 R03 Windows offline worker comparison
+
+# A new source-pinned owner approval marker is required to launch this run.
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: [qa/p4_research/R03_QWEN_IDLE_RELEASE_APPROVAL.txt]
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    if: ${{ github.run_attempt == '1' }}
+    runs-on: windows-2022
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify one-use approval and check out the reviewed source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $marker = 'qa/p4_research/R03_QWEN_IDLE_RELEASE_APPROVAL.txt'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD) -cne $env:GITHUB_SHA) {
+            throw 'The test requires the first attempt of an approved hosted Windows push.'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=r03-one-windows-worker-comparison') {
+            throw 'The test requires a new source-pinned approval marker.'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $change = @(git diff --name-status $source HEAD)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $change.Count -ne 1 -or $change[0] -cne "A`t$marker") {
+            throw 'The launch commit must be a direct child of the reviewed source and only add the marker.'
+          }
+          git checkout --detach $source
+          $hostOs = Get-CimInstance Win32_OperatingSystem
+          Write-Host ('Hosted runner RAM: {0:N2} GiB visible, {1:N2} GiB free' -f ($hostOs.TotalVisibleMemorySize / 1MB), ($hostOs.FreePhysicalMemory / 1MB))
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Stage the pinned Qwen model and CPU runtime
+        shell: pwsh
+        run: ./desktop/Stage_Pinned_Offline_AI.ps1
+      - name: Compare cold start, analytics answers and idle memory release
+        shell: pwsh
+        run: python -B desktop/verify_live_bundled_inference.py --compare-worker-memory

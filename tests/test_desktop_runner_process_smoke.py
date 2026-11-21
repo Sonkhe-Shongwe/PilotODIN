@@ -27,12 +27,19 @@ def test_desktop_runner_process_local_token_and_isolated_storage(tmp_path):
     port = _port()
     token = 'pilotodin-session-' + '5' * 64
     home = tmp_path / 'personal-workspace'
-    env = {**os.environ, 'PILOTODIN_DESKTOP_SESSION': token, 'PILOTODIN_HOME': str(home),
+    home.mkdir()
+    # The real Tauri sidecar now starts with this app-data directory as CWD.
+    # Python -m still needs the absolute source location while testing; the
+    # packaged PyInstaller executable resolves its own modules internally.
+    python_path = str(root) + (os.pathsep + os.environ["PYTHONPATH"] if os.environ.get("PYTHONPATH") else "")
+    env = {**os.environ, 'PYTHONPATH': python_path,
+           'PILOTODIN_DESKTOP_SESSION': token, 'PILOTODIN_HOME': str(home),
            'PILOTODIN_DESKTOP_PORT': str(port), 'PILOTODIN_DESKTOP_ALLOW_DEV': '0'}
     env.pop('PILOTODIN_BUNDLED_LLM_PORT', None)
     env.pop('PILOTODIN_BUNDLED_LLM_TOKEN', None)
-    process = subprocess.Popen([sys.executable, '-m', 'backend.desktop_runner'],
-                               cwd=root, env=env, stdout=subprocess.DEVNULL,
+    env.pop('PILOTODIN_DESKTOP_WATCH_STDIN', None)
+    process = subprocess.Popen([sys.executable, '-B', '-m', 'backend.desktop_runner'],
+                               cwd=home, env=env, stdout=subprocess.DEVNULL,
                                stderr=subprocess.PIPE)
     url = f'http://127.0.0.1:{port}/api/health'
     try:

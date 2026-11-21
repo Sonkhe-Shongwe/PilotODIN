@@ -11,6 +11,37 @@ try {
         python -m venv .venv
         if ($LASTEXITCODE -ne 0) { throw 'Could not initialise Python build environment' }
     }
+    # Read-only, code-controlled policy. Do NOT use DevQA receipt, OS fonts or env
+    # switches to authorize redistribution or install release resource files.
+    $policyJson = & $python -B 'tools\p2_pdf_release_bundle_preflight.py'
+    if ($LASTEXITCODE -ne 0) { throw 'PDF release font preflight BLOCKED; no build attempted' }
+    try {
+        $fontPolicy = ($policyJson | ConvertFrom-Json -ErrorAction Stop)
+    } catch {
+        throw 'PDF release font preflight output could not be verified'
+    }
+    $fontDataArgs = @()
+    if ($fontPolicy.state -eq 'NOT_APPROVED_LEGACY_ENGINE_ONLY') {
+        if ($fontPolicy.include_font_resources -ne $false) {
+            throw 'Unapproved PDF fonts cannot be included'
+        }
+        Write-Host 'Font distribution NOT APPROVED: building unchanged legacy PDF engine.'
+    }
+    elseif ($fontPolicy.state -eq 'APPROVED_PACKAGING_SOURCE_READY') {
+        if ($fontPolicy.include_font_resources -ne $true -or
+            $fontPolicy.verified_release_files -ne 6) {
+            throw 'Approved PDF font bundle incomplete'
+        }
+        $fontDir = Join-Path $root 'backend\assets\pdf_fonts'
+        if (-not (Test-Path -LiteralPath $fontDir -PathType Container)) {
+            throw 'Verified PDF resource folder is absent'
+        }
+        $fontDataArgs = @('--add-data', "${fontDir}:backend/assets/pdf_fonts")
+        Write-Host 'Approved six-file PDF fonts and complete OFL notices will be bundled.'
+    }
+    else {
+        throw 'Unknown PDF font release policy state'
+    }
     & $python -m pip install -r 'backend\requirements.txt' 'pyinstaller>=6,<7'
     if ($LASTEXITCODE -ne 0) { throw 'Could not install Python engine build requirements' }
     Write-Host 'Freezing the REAL Python/FastAPI analytical engine...'
@@ -22,6 +53,7 @@ try {
       --distpath (Join-Path $root 'build\py-dist') `
       --workpath (Join-Path $root 'build\py-work') `
       --specpath (Join-Path $root 'build') `
+      @fontDataArgs `
       'backend\desktop_runner.py'
     if ($LASTEXITCODE -ne 0) { throw 'PyInstaller could not package the scientific Python runtime' }
     $engine = Join-Path $root 'build\py-dist\pilotodin-engine.exe'

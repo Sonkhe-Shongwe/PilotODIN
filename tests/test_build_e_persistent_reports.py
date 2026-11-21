@@ -154,3 +154,69 @@ def test_report_combines_versions_and_preserves_original_snapshot():
     # Source bytes are never rewritten by changes to the working dataset.
     from pathlib import Path
     assert Path(storage.get_project(pid)['dataset_path']).read_bytes()==raw
+
+
+
+def test_report_reorder_creates_new_revision_without_rewriting_prior_exports():
+    """P0/A4: persisted exhibit order, old revision and PDF/HTML parity."""
+    pid, source = project("ordering.csv")
+    overview_id = artifact(pid, "overview")
+    comparison_id = artifact(pid, "compare", {"x": "Region", "y": "Revenue"})
+    original = save(pid, [overview_id, comparison_id],
+                    title="Original Exhibit Order",
+                    narrative="First review with summary then comparison")
+    assert original.status_code == 201, original.text
+    first = original.json()
+    rid = first["id"]
+    assert [e["id"] for e in first["evidence"]] == [
+        overview_id, comparison_id
+    ]
+    first_hash = first["content_sha256"]
+
+    revised = client.post(f"/api/reports/{rid}/revisions", json={
+        "title": "Reordered Exhibit Review",
+        "narrative": "Reviewed comparison before summary",
+        "evidence_ids": [comparison_id, overview_id],
+    })
+    assert revised.status_code == 201, revised.text
+    second = revised.json()
+    assert second["revision"] == 2
+    assert second["content_sha256"] != first_hash
+    assert [e["id"] for e in second["evidence"]] == [
+        comparison_id, overview_id
+    ]
+    assert second["revisions"] == [1, 2]
+
+    preserved = client.get(f"/api/reports/{rid}?revision=1")
+    current = client.get(f"/api/reports/{rid}?revision=2")
+    assert preserved.status_code == 200 and current.status_code == 200
+    assert preserved.json()["title"] == "Original Exhibit Order"
+    assert preserved.json()["content_sha256"] == first_hash
+    assert [e["id"] for e in preserved.json()["evidence"]] == [
+        overview_id, comparison_id
+    ]
+    assert current.json()["content_sha256"] == second["content_sha256"]
+    assert [e["id"] for e in current.json()["evidence"]] == [
+        comparison_id, overview_id
+    ]
+
+    html_old = client.get(f"/api/reports/{rid}/export/html?revision=1")
+    html_new = client.get(f"/api/reports/{rid}/export/html?revision=2")
+    pdf_old = client.get(f"/api/reports/{rid}/export/pdf?revision=1")
+    pdf_new = client.get(f"/api/reports/{rid}/export/pdf?revision=2")
+    assert all(response.status_code == 200 for response in (
+        html_old, html_new, pdf_old, pdf_new
+    ))
+    assert html_old.text.index("Overview</h2>") < html_old.text.index("Compare</h2>")
+    assert html_new.text.index("Compare</h2>") < html_new.text.index("Overview</h2>")
+    old_text = " ".join(page.get_text() for page in
+                        fitz.open(stream=pdf_old.content, filetype="pdf"))
+    new_text = " ".join(page.get_text() for page in
+                        fitz.open(stream=pdf_new.content, filetype="pdf"))
+    assert old_text.index("Overview") < old_text.index("Compare")
+    assert new_text.index("Compare") < new_text.index("Overview")
+    assert first_hash in html_old.text and first_hash in old_text
+    assert second["content_sha256"] in html_new.text
+    assert second["content_sha256"] in new_text
+    assert storage.get_project(pid)["dataset_path"]
+    assert quality.current_version(pid) == 0

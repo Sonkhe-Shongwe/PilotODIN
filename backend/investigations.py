@@ -9,9 +9,9 @@ import json
 import re
 import pandas as pd
 try:
-    from . import analytics, quality, storage
+    from . import analytics, quality, storage, project_lifecycle
 except ImportError:
-    import analytics, quality, storage
+    import analytics, quality, storage, project_lifecycle
 
 ALLOWED = frozenset({'overview', 'compare', 'missingness', 'distribution'})
 
@@ -61,6 +61,13 @@ def create(project_id: str, objective: str):
     version = quality.current_version(project_id)
     uid, now = storage.uid(), storage.now()
     with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        project_lifecycle.require_active_for_write(con,project_id)
+        latest=con.execute(
+            "SELECT current_version FROM quality_state WHERE project_id=?",(project_id,)
+        ).fetchone()
+        if latest is None or latest["current_version"]!=version:
+            raise RuntimeError("Dataset changed before investigation creation. Refresh and try again.")
         con.execute('INSERT INTO investigations_v1 VALUES (?,?,?,?,?,?,?)',
                     (uid, project_id, objective, version, 'draft', now, now))
     return load(uid)
@@ -155,6 +162,7 @@ def run(ident: str, operation: str, params: dict, expected_version: int, *, exec
         # Reserve the write lock BEFORE validating version; quality commits
         # cannot slip in between the final check and the evidence insert.
         con.execute('BEGIN IMMEDIATE')
+        project_lifecycle.require_active_for_write(con,project_id)
         if quality.current_version(project_id) != current:
             raise RuntimeError('Dataset changed while processing. Result was not saved.')
         if execution_key is not None:

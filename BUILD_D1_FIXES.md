@@ -1,5 +1,7 @@
 # PilotODIN Build D.1: Branding, Project Context and Diagnostic Fixes
 
+> **Historical Build D.1 patch guide.** Use the [session handoff](docs/SESSION_HANDOFF_CURRENT.md) and [phase policy](docs/PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) before changing any existing installation.
+
 This is a targeted correction for the Build D Unified Studio source. It does **not** change your dataset files, project database, model files or AI provider configuration.
 
 ## What was corrected
