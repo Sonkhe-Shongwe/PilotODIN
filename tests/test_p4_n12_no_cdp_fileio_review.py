@@ -180,7 +180,7 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
             stop.assert_called_once()
 
     def test_source_only_full_capture_brackets_snapshots_and_reuses_fileio_reducer(self):
-        from contextlib import contextmanager, nullcontext
+        from contextlib import ExitStack, contextmanager, nullcontext
         from datetime import datetime, timezone
         from tempfile import TemporaryDirectory
         from unittest.mock import patch
@@ -221,40 +221,49 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
             }
             # Every Windows/native action below is mocked. Only the generated
             # fixture CSV gets written in this local temporary directory.
-            with patch.dict(os.environ, env, clear=True), \
-                 patch.object(lifetime.journey, "prepare_journey",
-                              return_value=(manifest, root, root, root / "quality-source.csv", [])), \
-                 patch.object(lifetime.journey, "snapshots",
-                              return_value={"protected": {}, "observed": {}}), \
-                 patch.object(lifetime.journey, "snapshot_capture_evidence",
-                              return_value={"status": "PASS"}) as bracket, \
-                 patch.object(lifetime.journey, "sysmon_tail", side_effect=[1, 4]), \
-                 patch.object(lifetime.journey, "export_sysmon"), \
-                 patch.object(lifetime.journey, "powershell") as powershell, \
-                 patch.object(lifetime.journey, "report_file", side_effect=capture_file), \
-                 patch.object(lifetime.journey, "checkpoint_stage",
-                              side_effect=lambda *a: nullcontext()), \
-                 patch.object(lifetime.etw, "fileio_process_session",
-                              side_effect=fixture_session) as collector, \
-                 patch.object(lifetime.etw, "process_session") as old_collector, \
-                 patch.object(lifetime.n12_etw_probe, "volume_devices",
-                              return_value={"C:": r"\Device\HarddiskVolume3"}), \
-                 patch.object(lifetime, "launch_worker",
-                              return_value=(witness, witness, None)) as worker, \
-                 patch.object(lifetime.trace, "read_json", return_value={
-                     "source_sha": source, "executable_sha256": digest,
-                     "markers": {"launch": "x", "ready": "y", "close": "z", "profile-exit": "v"}}), \
-                 patch.object(lifetime.trace, "compare_snapshots",
-                              return_value=({"protected_snapshot_comparison": "MATCH"}, set())), \
-                 patch.object(lifetime.build, "digest", return_value="d" * 64), \
-                 patch.object(lifetime.build, "executable", return_value=root / "fake.exe"), \
-                 patch.object(lifetime, "reduction",
-                              return_value={"verdict": "PASS", "issues": [],
-                                            "handle_comparison": {"app": "MATCH"}}), \
-                 patch.object(lifetime.fileio_review, "reduce",
-                              return_value={"status": "BLOCKED",
-                                            "native_N12_acceptance": "NOT_EVALUATED"}) as strict, \
-                 patch.object(lifetime.time, "sleep"):
+            with ExitStack() as stack:
+                stack.enter_context(patch.dict(os.environ, env, clear=True))
+                stack.enter_context(patch.object(
+                    lifetime.journey, "prepare_journey",
+                    return_value=(manifest, root, root, root / "quality-source.csv", [])))
+                stack.enter_context(patch.object(
+                    lifetime.journey, "snapshots", return_value={"protected": {}, "observed": {}}))
+                bracket = stack.enter_context(patch.object(
+                    lifetime.journey, "snapshot_capture_evidence", return_value={"status": "PASS"}))
+                stack.enter_context(patch.object(lifetime.journey, "sysmon_tail", side_effect=[1, 4]))
+                stack.enter_context(patch.object(lifetime.journey, "export_sysmon"))
+                powershell = stack.enter_context(patch.object(lifetime.journey, "powershell"))
+                stack.enter_context(patch.object(
+                    lifetime.journey, "report_file", side_effect=capture_file))
+                stack.enter_context(patch.object(
+                    lifetime.journey, "checkpoint_stage", side_effect=lambda *a: nullcontext()))
+                collector = stack.enter_context(patch.object(
+                    lifetime.etw, "fileio_process_session", side_effect=fixture_session))
+                old_collector = stack.enter_context(patch.object(lifetime.etw, "process_session"))
+                stack.enter_context(patch.object(
+                    lifetime.n12_etw_probe, "volume_devices",
+                    return_value={"C:": r"\Device\HarddiskVolume3"}))
+                worker = stack.enter_context(patch.object(
+                    lifetime, "launch_worker", return_value=(witness, witness, None)))
+                stack.enter_context(patch.object(
+                    lifetime.trace, "read_json", return_value={
+                        "source_sha": source, "executable_sha256": digest,
+                        "markers": {"launch": "x", "ready": "y",
+                                    "close": "z", "profile-exit": "v"}}))
+                stack.enter_context(patch.object(
+                    lifetime.trace, "compare_snapshots",
+                    return_value=({"protected_snapshot_comparison": "MATCH"}, set())))
+                stack.enter_context(patch.object(
+                    lifetime.build, "digest", return_value="d" * 64))
+                stack.enter_context(patch.object(
+                    lifetime.build, "executable", return_value=root / "fake.exe"))
+                stack.enter_context(patch.object(
+                    lifetime, "reduction", return_value={
+                        "verdict": "PASS", "issues": [], "handle_comparison": {"app": "MATCH"}}))
+                strict = stack.enter_context(patch.object(
+                    lifetime.fileio_review, "reduce", return_value={
+                        "status": "BLOCKED", "native_N12_acceptance": "NOT_EVALUATED"}))
+                stack.enter_context(patch.object(lifetime.time, "sleep"))
                 receipt = lifetime.capture(root, root, provenance, no_cdp=True, fileio=True)
             collector.assert_called_once()
             old_collector.assert_not_called()
