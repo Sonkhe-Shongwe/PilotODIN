@@ -497,6 +497,17 @@ def temporary_environment(env, scratch):
     return {**env, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch)}
 
 
+def backend_environment(env):
+    """Import the QA server from source without making the checkout its CWD.
+
+    The backend's data home is already runner-local. Its prior CWD was the
+    repository, so relative library writes could mutate the source checkout.
+    Never permit that path in the N12 filesystem policy.
+    """
+    existing = env.get("PYTHONPATH", "")
+    return {**env, "PYTHONPATH": str(build.REPO) + (os.pathsep + existing if existing else "")}
+
+
 def app_environment(env, profile, label):
     return {**temporary_environment(env, profile / APP_TEMP_DIR),
             "WEBVIEW2_USER_DATA_FOLDER": str(profile),
@@ -854,7 +865,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
             python = sys.executable if egress_programs is None else egress_programs["backend"]
             backend = spawn(stack, manifest, "backend", [python, "-B", "-m", "uvicorn",
                 "qa.p4_research.n12_backend_wakeup:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
-                env, build.REPO, root / "backend.log")
+                backend_environment(env), home, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort", "--configLoader", "runner"],
                 driver_environment(env, root), FRONTEND, root / "vite.log")

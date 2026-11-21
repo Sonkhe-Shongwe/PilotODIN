@@ -21,6 +21,35 @@ SOURCE = "a" * 40
 EXE_SHA = "b" * 64
 
 
+def test_backend_environment_keeps_qa_imports_without_source_as_cwd(tmp_path):
+    original = {"PILOTODIN_HOME": str(tmp_path / "data"),
+                "PYTHONPATH": str(tmp_path / "other-module-path"), "CI": "true"}
+    env = journey.backend_environment(original)
+    assert env["PYTHONPATH"].split(os.pathsep) == [
+        str(journey.build.REPO), str(tmp_path / "other-module-path")]
+    assert env["PILOTODIN_HOME"] == original["PILOTODIN_HOME"]
+    assert original["PYTHONPATH"] == str(tmp_path / "other-module-path")
+    import_root = str(journey.build.REPO)
+    # Actual Python import from a disposable working directory, not repo CWD.
+    sandbox = tmp_path / "isolated-cwd"
+    sandbox.mkdir()
+    command = [sys.executable, "-B", "-c",
+               "import os, pathlib; "
+               "import qa.p4_research.n12_backend_wakeup; "
+               "from backend import storage; "
+               "assert pathlib.Path.cwd() == pathlib.Path(os.environ['PILOTODIN_HOME']).parent / 'isolated-cwd'; "
+               "assert storage.HOME == pathlib.Path(os.environ['PILOTODIN_HOME']).resolve()"]
+    # The import must not rely on an implicit source-checkout CWD.
+    command[3] = command[3].replace(
+        "pathlib.Path(os.environ['PILOTODIN_HOME']).parent / 'isolated-cwd'",
+        "pathlib.Path(os.environ['PILOTODIN_HOME']).parent / 'isolated-cwd'")
+    result = subprocess.run(command, cwd=sandbox, env={**os.environ, **env},
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr[-1500:]
+    assert (tmp_path / "data" / "datasets").is_dir()
+    assert (tmp_path / "data" / "models").is_dir()
+
+
 def test_linux_cli_refuses_before_collecting(tmp_path):
     env = {**os.environ, "GITHUB_ACTIONS": "false", "GITHUB_EVENT_NAME": "push",
            "GITHUB_REF_NAME": journey.build.BRANCH, "GITHUB_RUN_ATTEMPT": "1",
@@ -718,6 +747,15 @@ def test_capture_brackets_journey_and_reduces_exact_artifacts(tmp_path, monkeypa
             assert env["WEBVIEW2_USER_DATA_FOLDER"] == str(profile)
             assert f"netlog-{log.stem.removeprefix('app-')}.json" in env["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"]
             assert env["TEMP"] == env["TMP"] == env["TMPDIR"] == str(profile / journey.APP_TEMP_DIR)
+            assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
+        elif role == "backend":
+            # The QA server imports code from source but uses the generated
+            # home as CWD. A relative write must not target the checkout.
+            assert cwd == home and cwd != journey.build.REPO
+            assert env["PYTHONPATH"].split(os.pathsep)[0] == str(journey.build.REPO)
+            assert env["PILOTODIN_HOME"] == str(home)
+            assert env["PYTHONDONTWRITEBYTECODE"] == "1"
+            assert env["TEMP"] == env["TMP"] == user_temp
             assert env["PSMODULEANALYSISCACHEPATH"] == user_cache
         elif role == "driver":
             scratch = root / journey.DRIVER_TEMP_DIR
