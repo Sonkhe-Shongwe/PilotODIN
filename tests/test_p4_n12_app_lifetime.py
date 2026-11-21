@@ -339,9 +339,11 @@ class AppLifetimeTests(unittest.TestCase):
         )
 
     def test_no_cdp_private_child_handle_shadow_joins_only_when_supplied(self):
+        # Use the SAME capture and stage markers for the no-bundle baseline.
+        # Otherwise stage-marker-dependent profile reasons legitimately differ.
+        bundle = self.child_bundle()
         plain = self.reduce(no_cdp_profile=True)
         self.assertEqual(plain["no_cdp_private_child_handle_diagnostic"]["status"], "NOT_EVALUATED")
-        bundle = self.child_bundle()
         enhanced = self.reduce(no_cdp_profile=True, child_handle_evidence=bundle)
         join = enhanced["no_cdp_private_child_handle_diagnostic"]
         self.assertEqual(join["status"], "REVIEWABLE_ONLY")
