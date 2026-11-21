@@ -14,6 +14,8 @@
 
 ## Current development references
 
+- [Latest Stage 1 native no-CDP retest, STRICT BLOCKED](./P4_N12_STAGE1_NATIVE_NO_CDP_RETEST_RESULT_44890538700.md) records run #44890538700, compiled source/binary identity, matched handles/ETW and snapshots, new combined Sysmon blocker, consumed one-use workflow and the next source-only diagnostic.
+
 - [Stage 1 ETW header/payload and Sysmon lifetime corroboration](./P4_N12_STAGE1_ETW_HEADER_PAYLOAD_CORROBORATION_2026-11-21.md) documents source-only default-preserving diagnostics, the pre-spawn birth fix, exact CI and next separate native gate.
 
 - [Stage 1 actual no-CDP hosted-Windows result, BLOCKED](./P4_N12_STAGE1_HOSTED_NO_CDP_NATIVE_RESULT_2026-11-21.md) for source-pinned Rust/Tauri compile, native startup/close, protected endpoint match, exact observed ETW header/payload timing conflicts, disarmed one-use activation and unchanged R02.5/P4 verdict.
