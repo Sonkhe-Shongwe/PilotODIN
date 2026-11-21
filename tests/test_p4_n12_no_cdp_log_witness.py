@@ -1,11 +1,14 @@
 """Disposable local log fixtures, no WebView, native app or ACL changes."""
 from dataclasses import replace
+from contextlib import ExitStack
+from unittest.mock import patch
 from pathlib import Path
 import tempfile
 import unittest
 
 from qa.p4_native.n12_trace import EvidenceValidationError
 from qa.p4_research import n12_no_cdp_log_witness as reader
+from qa.p4_research import n12_app_journey as journey
 
 
 SOURCE = "a" * 40
@@ -183,6 +186,106 @@ class NoCdpLogWitnessTests(unittest.TestCase):
             self.file.write_bytes(reader.MARKER + b"\n")
         ready = self.observe(witness, sleep=append_newline)
         self.assertEqual(ready.marker_lines_before_close, 1)
+
+
+    def test_spawn_prelaunch_witness_is_pinned_before_popen_and_survives_close(self):
+        # No real process is launched, and the old CDP/default path is not changed.
+        log = Path(self.folder.name) / "prelaunch" / "app.log"
+        log.parent.mkdir()
+        manifest = {"processes": []}
+        captured = []
+        process = FakeProcess()
+        with ExitStack() as stack:
+            def before_spawn(path):
+                self.assertEqual(path, log)
+                self.assertFalse(captured)
+                pinned = prelaunch(path)
+                captured.append(pinned)
+                stack.callback(pinned.close)
+                return pinned
+
+            def fake_popen(*args, **kwargs):
+                self.assertEqual(len(captured), 1)
+                self.assertFalse(captured[0].handle.closed)
+                self.assertEqual(log.read_bytes(), b"")
+                self.assertEqual(kwargs["stdout"].name, str(log))
+                return process
+
+            with patch.object(journey.subprocess, "Popen", side_effect=fake_popen) as launch:
+                result = journey.spawn(
+                    stack, manifest, "app", ["qa-fake.exe"], {}, log.parent, log,
+                    prelaunch_log_hook=before_spawn,
+                )
+            self.assertIs(result, process)
+            launch.assert_called_once()
+            self.assertEqual(manifest["processes"][0]["pid"], process.pid)
+            with log.open("ab") as handle:
+                handle.write(reader.MARKER + b"\n")
+            provisional = reader.wait_for_readiness(
+                captured[0], process, expected_pid=process.pid,
+                main_window_identity_verified=True,
+            )
+            process.returncode = 0
+            evidence = reader.verify_after_normal_close(
+                captured[0], provisional, process=process, expected_pid=process.pid,
+                close_request_verified=True,
+            )
+            self.assertEqual(evidence["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertTrue(captured[0].handle.closed)
+
+    def test_spawn_prelaunch_rejection_is_before_process_start(self):
+        log = Path(self.folder.name) / "prelaunch" / "app.log"
+        log.parent.mkdir()
+        manifest = {"processes": []}
+        with ExitStack() as stack, patch.object(journey.subprocess, "Popen") as launch:
+            def reject(_path):
+                raise EvidenceValidationError("no-cdp-prelaunch-blocked")
+            with self.assertRaisesRegex(EvidenceValidationError, "^no-cdp-prelaunch-blocked$"):
+                journey.spawn(stack, manifest, "app", ["fake.exe"], {}, log.parent, log,
+                              prelaunch_log_hook=reject)
+            launch.assert_not_called()
+        self.assertEqual(manifest, {"processes": []})
+        self.assertEqual(log.read_bytes(), b"")
+
+    def test_spawn_prelaunch_refuses_non_app_closed_or_missing_witness(self):
+        for mode in ("backend", "closed", "missing"):
+            with self.subTest(mode=mode), ExitStack() as stack:
+                log = Path(self.folder.name) / (mode + ".dir") / "app.log"
+                log.parent.mkdir()
+                held = []
+                def hook(path):
+                    if mode == "missing":
+                        return None
+                    witness = prelaunch(path)
+                    held.append(witness)
+                    stack.callback(witness.close)
+                    if mode == "closed":
+                        witness.close()
+                    return witness
+                manifest = {"processes": []}
+                with patch.object(journey.subprocess, "Popen") as launch:
+                    with self.assertRaisesRegex(
+                        EvidenceValidationError,
+                        "^no-cdp-prelaunch-hook-invalid$" if mode == "backend"
+                        else "^no-cdp-prelaunch-witness-unverified$",
+                    ):
+                        journey.spawn(stack, manifest, mode if mode == "backend" else "app",
+                                      ["fake.exe"], {}, log.parent, log,
+                                      prelaunch_log_hook=hook)
+                    launch.assert_not_called()
+                self.assertEqual(manifest["processes"], [])
+
+    def test_unmodified_spawn_still_supports_existing_callers(self):
+        log = Path(self.folder.name) / "default" / "app.log"
+        log.parent.mkdir()
+        process = FakeProcess()
+        process.returncode = 0
+        with ExitStack() as stack, patch.object(journey.subprocess, "Popen",
+                                                return_value=process) as launch:
+            journey.spawn(stack, {"processes": []}, "app", ["legacy-fake.exe"],
+                          {}, log.parent, log)
+            launch.assert_called_once()
+            self.assertEqual(log.read_bytes(), b"")
 
     def test_missing_close_proof_never_yields_verified_receipt(self):
         witness = prelaunch(self.file)

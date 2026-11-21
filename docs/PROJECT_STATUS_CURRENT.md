@@ -8,6 +8,10 @@ The open engineering checks cover hosted Windows filesystem and network isolatio
 
 The 20 November product audit fixes reached **7/7** at source and scoped fixture level. The final fix preserves complete JSON in oversized Ask ODIN provider prompts. The source-only R02.5 restore control passed replay; the latest **approved native N12 driver subsequently exercised reviewed Quality Undo, version-2 reopen and fingerprint comparisons**, but still failed the strict filesystem/network gates with unresolved FileIO attribution. Do not repeat these passed driver steps as though they were unrun, and do not mistake them for N12 acceptance. Windows Save As confirmation remains open and the one-file clock diagnostics stay paused. [Latest native audit](../qa/p4_research/N12_APP_JOURNEY_RESULT_44838416004.md) · [Provider prompts](./SESSION_HANDOFF_CURRENT.md#20-november-2026--budget-structured-provider-prompts) · [Save As](./SESSION_HANDOFF_CURRENT.md#20-november-2026--stage-and-verify-report-exports-before-replacement)
 
+## 21 November | Fail-closed prelaunch log seam
+
+The optional app-only `journey.spawn(..., prelaunch_log_hook=...)` now allows the read-only no-CDP witness to capture a newly created empty log before process start, with closed/mismatched-witness rejection. Existing CDP and legacy launch behaviour is unchanged. The no-CDP native mode, unique main-window proof and independent browser identity remain unintegrated. No N12/R02 acceptance points are awarded.
+
 ## 21 November | Current bounded source preparation
 
 The [no-CDP browser identity verifier](./P4_N12_NO_CDP_BROWSER_IDENTITY_2026-11-21.md) now has generated source-only positive/negative tests. It is not integrated with the native launcher or capture reducer. It therefore does not change the N12, R02 or P4 acceptance scores and is not evidence that the existing native filesystem/network failures have been fixed. Fresh restricted native approval remains required before a real capture.

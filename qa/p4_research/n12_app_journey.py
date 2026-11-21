@@ -195,8 +195,29 @@ def cleanup_process(process):
         process.wait(timeout=15)
 
 
-def spawn(stack, manifest, role, command, env, cwd, log):
+def spawn(stack, manifest, role, command, env, cwd, log, *, prelaunch_log_hook=None):
+    """Existing spawn unchanged unless a reviewed QA-only prelaunch hook is supplied.
+
+    The hook runs after exclusive log creation but strictly before Popen, so
+    the no-CDP reader can pin a new empty log without any stale-marker race.
+    It must return the still-open PrelaunchLog, retained by its caller until
+    after verified normal close. A failed verification never starts the app.
+    """
     with log.open("xb") as stream:
+        if prelaunch_log_hook is not None:
+            from qa.p4_research.n12_no_cdp_log_witness import PrelaunchLog
+            trace.require(role == "app" and callable(prelaunch_log_hook),
+                          "no-cdp-prelaunch-hook-invalid")
+            witness = prelaunch_log_hook(log)
+            trace.require(isinstance(witness, PrelaunchLog)
+                          and witness.path == log and not witness.handle.closed,
+                          "no-cdp-prelaunch-witness-unverified")
+            # Recheck the exact path and empty content immediately before
+            # Popen; the held original descriptor defeats rapid inode reuse.
+            status = log.stat()
+            trace.require(not log.is_symlink() and status.st_dev == witness.device
+                          and status.st_ino == witness.inode and status.st_size == 0,
+                          "no-cdp-log-identity-changed")
         process = subprocess.Popen(command, cwd=cwd, env=env, stdout=stream, stderr=subprocess.STDOUT)
     stack.callback(cleanup_process, process)
     manifest["processes"].append({"role": role, "pid": process.pid, "image": str(command[0])})
