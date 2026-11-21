@@ -13,6 +13,7 @@ from unittest.mock import patch
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_lifetime as lifetime
 from qa.p4_research import n12_webview_storage_probe as probe
+from qa.p4_research import n12_webview_storage_compare as comparison
 from qa.p4_research.n12_app_journey import APP_TEMP_DIR, app_environment
 from qa.p4_research.n12_journey_diagnostics import OutsidePaths
 
@@ -540,6 +541,155 @@ class StorageProbeTests(unittest.TestCase):
             with self.assertRaisesRegex(trace.EvidenceValidationError, "outside the hosted"):
                 probe.runner_control_temp({"LOCALAPPDATA": str(local), "RUNNER_TEMP": str(runner),
                                            "TEMP": str(unrelated)})
+
+
+
+class StorageVariantComparisonTests(unittest.TestCase):
+    """Synthetic receipts only: no native process or live monitoring."""
+
+    def receipt(self, variant, run_id, outside_count=0):
+        events = [] if not outside_count else [{
+            "destination_family": "user-temp", "operation": "create",
+            "component": "browser", "stage": "startup", "file_type": "temporary",
+            "count": outside_count,
+        }]
+        writers = [] if not outside_count else [{
+            "destination_family": "user-temp", "operation": "create",
+            "component": "browser", "stage": "startup", "count": outside_count,
+            "receipt": "environment-observed", "temp": "declared-app-temp",
+            "tmp": "startup-tmp", "udf": "declared-profile",
+        }]
+        return {
+            "scope": "one-startup-and-close-storage-diagnostic",
+            "source_sha": SOURCE, "executable_sha256": HASH,
+            "storage_capture_run_id": run_id, "storage_capture_attempt": 1,
+            "storage_diagnostic_variant": variant, "browser_variant_corroboration": "agrees",
+            "verdict": "REPRODUCED" if outside_count else "INCONCLUSIVE",
+            "issues": [], "file_coverage_issues": [], "unresolved_file_events": [],
+            "procmon_shutdown_verified": True, "procmon_loss_reviewed": True,
+            "protected_snapshot_comparison": "MATCH", "protected_operations": [],
+            "protected_operation_details": [], "known_create_controls": {"scratch": True, "user-temp": True},
+            "startup_tmp_probe": True, "startup_tmp_control_verified": True,
+            "browser_startup_tmp": "expected-tmp",
+            "browser_launch_flags": {"status": "environment-observed",
+                                     "remote_debugging": "present",
+                                     "netlog": "present" if variant == "debug-netlog" else "absent"},
+            "browser_storage_context": {"receipt": "environment-observed",
+                                        "temp": "declared-app-temp", "tmp": "startup-tmp",
+                                        "udf": "declared-profile"},
+            "storage_context_is_acceptance_evidence": False,
+            "webview_runtime_versions": ["1.2.3.4"],
+            "storage_events": events, "writer_storage_context": writers,
+            "ambient_temp_creates": outside_count,
+        }
+
+    def compare(self, netlog=2, debug_only=0):
+        return comparison.compare_pair(
+            self.receipt("debug-netlog", "901", netlog),
+            self.receipt("debug-only", "902", debug_only),
+        )
+
+    def test_one_pair_reports_candidate_without_claiming_cause_or_acceptance(self):
+        result = self.compare(netlog=2, debug_only=0)
+        self.assertEqual(result["verdict"], "COMPARABLE_DIAGNOSTIC")
+        self.assertEqual(result["signal"], "observed-only-with-netlog")
+        self.assertEqual(result["outside_profile_operation_counts"],
+                         {"debug-only": 0, "debug-netlog": 2})
+        self.assertEqual(result["group_differences"][0], {
+            "destination_family": "user-temp", "operation": "create",
+            "component": "browser", "stage": "startup", "debug_only": 0, "debug_netlog": 2,
+        })
+        self.assertFalse(result["causality_proven"])
+        self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+
+    def test_persistent_ambient_and_zero_ambient_remain_diagnostic_only(self):
+        result = self.compare(netlog=3, debug_only=1)
+        self.assertEqual(result["signal"], "outside-operations-in-both")
+        result = self.compare(netlog=0, debug_only=0)
+        self.assertEqual(result["signal"], "no-observed-outside-operations-in-pair")
+        self.assertEqual(result["verdict"], "COMPARABLE_DIAGNOSTIC")
+        self.assertFalse(result["causality_proven"])
+
+    def test_provenance_runtime_and_capture_identity_reject_confounded_pairs(self):
+        variants = (
+            ("source_sha", "3" * 40, "source-revision-mismatch"),
+            ("executable_sha256", "4" * 64, "executable-digest-mismatch"),
+            ("webview_runtime_versions", ["2.3.4.5"], "runtime-version-mismatch"),
+            ("storage_capture_run_id", "901", "independent-captures-required"),
+            ("storage_capture_attempt", 2, "capture-identity-unverified"),
+        )
+        for key, value, expected in variants:
+            with self.subTest(field=key):
+                first = self.receipt("debug-netlog", "901", 2)
+                second = self.receipt("debug-only", "902", 0)
+                second[key] = value
+                result = comparison.compare_pair(first, second)
+                self.assertEqual(result["verdict"], "BLOCKED")
+                self.assertIn(expected, result["issues"])
+                self.assertNotIn("signal", result)
+
+    def test_capture_evidence_and_control_failures_never_compare(self):
+        changes = (
+            ("procmon_shutdown_verified", False, "collector-coverage-unverified"),
+            ("procmon_loss_reviewed", False, "collector-coverage-unverified"),
+            ("protected_snapshot_comparison", "DIFFERENT", "protected-data-evidence-unverified"),
+            ("protected_operations", [{"role": "webview", "operation": "write", "count": 1}],
+             "protected-data-evidence-unverified"),
+            ("known_create_controls", {"scratch": True}, "positive-controls-incomplete"),
+            ("browser_startup_tmp", "ambient-temp", "browser-tmp-control-unverified"),
+            ("browser_variant_corroboration", "unverified", "observed-browser-flags-disagree"),
+            ("unresolved_file_events", [{"kind": "private"}], "file-attribution-incomplete"),
+            ("issues", ["procmon-capture-configuration-unverified"], "storage-reducer-not-clean"),
+            ("verdict", "BLOCKED", "storage-reducer-not-clean"),
+        )
+        for key, value, expected in changes:
+            with self.subTest(field=key):
+                first = self.receipt("debug-netlog", "901", 2)
+                second = self.receipt("debug-only", "902", 0)
+                first[key] = value
+                result = comparison.compare_pair(first, second)
+                self.assertEqual(result["verdict"], "BLOCKED")
+                self.assertIn(expected, result["issues"])
+
+    def test_writer_environment_mismatch_and_event_tampering_block(self):
+        baseline = self.receipt("debug-only", "902", 1)
+        netlog = self.receipt("debug-netlog", "901", 2)
+        baseline["writer_storage_context"][0]["tmp"] = "ambient-temp"
+        self.assertIn("writer-storage-boundary-unverified",
+                      comparison.compare_pair(netlog, baseline)["issues"])
+        baseline = self.receipt("debug-only", "902", 1)
+        baseline["storage_events"][0]["count"] = 10
+        self.assertIn("writer-event-summaries-disagree",
+                      comparison.compare_pair(netlog, baseline)["issues"])
+        baseline = self.receipt("debug-only", "902", 1)
+        baseline["storage_events"][0]["destination_family"] = "C:\\private\\secret-filename"
+        result = comparison.compare_pair(netlog, baseline)
+        self.assertIn("event-summary-invalid", result["issues"])
+        self.assertNotIn("private", json.dumps(result))
+        self.assertNotIn("secret-filename", json.dumps(result))
+
+    def test_no_duplicate_or_unlabeled_variants(self):
+        first = self.receipt("debug-only", "901", 0)
+        second = self.receipt("debug-only", "902", 3)
+        result = comparison.compare_pair(first, second)
+        self.assertEqual(result["verdict"], "BLOCKED")
+        self.assertIn("distinct-variants-required", result["issues"])
+
+    def test_comparison_cli_is_offline_and_fails_closed_on_bad_files(self):
+        with TemporaryDirectory() as folder:
+            left, right = Path(folder) / "first.json", Path(folder) / "second.json"
+            left.write_text(json.dumps(self.receipt("debug-only", "901", 0)), encoding="utf-8")
+            right.write_text(json.dumps(self.receipt("debug-netlog", "902", 2)), encoding="utf-8")
+            command = [sys.executable, "-B", "-m", comparison.__name__, str(left), str(right)]
+            result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            self.assertEqual(report["verdict"], "COMPARABLE_DIAGNOSTIC")
+            right.write_text('{"some-secret":"do-not-print"', encoding="utf-8")
+            result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(json.loads(result.stdout)["verdict"], "BLOCKED")
+            self.assertNotIn("do-not-print", result.stdout)
 
 
 if __name__ == "__main__":

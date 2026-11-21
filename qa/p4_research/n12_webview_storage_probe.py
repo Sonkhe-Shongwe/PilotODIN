@@ -64,6 +64,12 @@ def capture(root, staged, node, source, expected_hash, *, variant="debug-netlog"
     manifest["probe_user_temp"] = str(ambient)
     manifest["startup_tmp_probe"] = True
     manifest["storage_diagnostic_variant"] = variant
+    run_id = os.environ.get("GITHUB_RUN_ID", "")
+    trace.require(re.fullmatch(r"[1-9][0-9]{0,18}", run_id) is not None
+                  and os.environ.get("GITHUB_RUN_ATTEMPT") == "1",
+                  "one-use GitHub capture identity is not verified")
+    manifest["storage_capture_run_id"] = run_id
+    manifest["storage_capture_attempt"] = 1
     fixture.write_text("fixture,value\nwebview-storage,1\n", encoding="utf-8")
     before = journey.snapshots(manifest)
     journey.mark(manifest, "fixture-ready")
@@ -433,8 +439,11 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
         for key, count in sorted(writer_context_counts.items())
     ]
     browser_launch_flags = {"status": "browser-identity-unverified"}
+    browser_storage_context = {"receipt": "browser-identity-unverified",
+                               "temp": "unverified", "tmp": "unverified", "udf": "unverified"}
     if browser_guid is not None:
         browser = processes[browser_guid]
+        browser_storage_context = verified_writer_context(browser)
         browser_launch_flags = {
             "status": verified_writer_context(browser)["receipt"],
             "remote_debugging": "present" if re.search(
@@ -462,6 +471,8 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             "browser_variant_corroboration": variant_corroboration,
             "source_sha": manifest["source_sha"],
             "executable_sha256": manifest["executable_sha256"],
+            "storage_capture_run_id": manifest.get("storage_capture_run_id"),
+            "storage_capture_attempt": manifest.get("storage_capture_attempt"),
             "verdict": "BLOCKED" if issues else "REPRODUCED" if ambient_creates else "INCONCLUSIVE",
             "issues": sorted(issues), "procmon_shutdown_verified": shutdown_verified,
             "procmon_loss_reviewed": loss_reviewed,
@@ -480,6 +491,7 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
             "ambient_temp_creates": ambient_creates, "storage_events": rows,
             "writer_storage_context": writer_storage_context,
+            "browser_storage_context": browser_storage_context,
             "browser_launch_flags": browser_launch_flags,
             "storage_context_is_acceptance_evidence": False}
     if replay_etw is not None:
