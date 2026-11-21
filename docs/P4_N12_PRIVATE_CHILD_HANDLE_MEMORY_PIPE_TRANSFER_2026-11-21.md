@@ -1,0 +1,30 @@
+# P4 N12 | Authenticated, memory-only child-handle worker transfer
+
+**21 November 2026 | SOURCE-ONLY integration code complete, routine CI PASS, native Stage 1 remains BLOCKED.**
+
+- **Code source:** [`73ce81583b693840023dbf5e959b8419a920c1f2`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/73ce81583b693840023dbf5e959b8419a920c1f2).
+- **Exact-source CI:** [#44898614948](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44898614948), **4/4 SUCCESS**, **966 Python passed**, six skipped, **412 subtests**, **104 frontend Node tests**, Vite build, disposable real-HTTP browser, R03 Windows and hosted-Windows **synthetic** collector checks.
+- **No native PilotODIN binary was built or launched for this increment.** No real WebView child handle was captured. No installer, owner device, protected data, firewall changes or Stage 2 FileIO/network test was authorized. Native lifetime workflow remains `if: false` and consumed one-use approval marker is absent.
+
+## Source-only engineering now wired
+
+`qa/p4_research/n12_private_child_pipe.py` provides a **bounded, authenticated, local Windows named pipe (`AF_PIPE`)** for *one* private witness message from the no-CDP app worker to the outer capture/reducer process. The pipe address is freshly randomized per worker. A fresh 256-bit authentication key is passed only to that worker. Raw child PID, original exact Windows creation/exit times, full DOS/native executable paths and parent PID do **not** appear in console/logs, public receipts, or a transfer file. The IPC payload is canonical JSON, **not pickle**; decoding checks an exact schema, provenance SHA, executable SHA-256, original-handle identities and counts, bounded size (65,536 bytes), image/path types and receipt fields. Malformed, oversized, duplicate, missing, or incorrectly sourced messages fail closed with static error labels.
+
+The outer `qa/p4_research/n12_app_lifetime.py::launch_worker` starts the private authenticated listener **before** spawning the Python worker and receives after the worker's normal completion. It passes the optional received `PrivateChildHandleEvidence` into the existing `reduction(..., child_handle_evidence=...)` path. If no new consent is present, the channel is not created and the original source-only/default path is preserved.
+
+The inner `qa/p4_research/n12_no_cdp_native_path.py::run_one_no_cdp_app` runs the optional observer only after the *actual original* QA app process has been spawned and bound, **before readiness**. After verified ordinary app exit and disposable profile-exit marker, it stops the observer, reads each retained original child handle's final exit timestamp, and transmits the private evidence through the authenticated pipe. **The pipe key and child-handle consent are deliberately removed from the environments inherited by the actual app, backend and Vite processes.** Only the authorized Python worker has them.
+
+## Source/run and permission boundaries
+
+- This optional branch requires **distinct** `PILOTODIN_N12_CHILD_HANDLE_CONSENT=I_APPROVE_ONE_N12_QA_CHILD_HANDLES` in addition to the earlier no-CDP consent, the GitHub-hosted Windows runner, first push attempt and the exact `PILOTODIN_N12_APPROVED_SOURCE`. A missing consent yields the original default-off behavior; an unknown/misspelled consent is rejected, not silently ignored.
+- The existing real native workflow remains dormant; **no consent marker was created or reactivated**. The new test only exercises source, synthetic fixtures and a local AF_UNIX equivalent for the authenticated one-shot transport on the source runner. It does **not** prove the future real Windows AF_PIPE process handoff.
+- The existing `ScopedQaChildHandleObserver` still polls every **10 ms**, can miss short-lived children and produces `SAMPLING_FINISHED_UNVERIFIED`, not completeness. Every Sysmon GUID-bound WebView child still needs a unique original Windows handle, a proper parent/sequence match, and corroborating ETW under the shadow review.
+- The original strict `EtwLifetimes.find()`, exact Sysmon/ETW cross-source exit equality, app/profile acceptance checks and N12 FileIO/network verdict are **not changed**. Even a complete synthetic private handle bundle yields `REVIEWABLE_ONLY` within the redacted shadow report, **never native Stage 1 PASS**.
+
+## Tests and remaining open evidence
+
+The new `tests/test_p4_n12_private_child_pipe.py` proves exact-source/binary payload round-trip, wrong provenance, schema injection, duplicate/wrong parent or image, invalid receipt, oversized/private malformed frames, default-off refusal, invalid hosted source/consent/first-attempt, authenticated local one-message transfer and private-message rejection. The existing no-CDP reducer tests also retain source/binary and launch/ready/close/profile-exit stage-order negatives, full-vs-missing child joins, independent ETW/Sysmon coverage, original handle checks and native-verdict parity. All 4 routine CI jobs pass. **No live native Windows named pipe, app process or WebView child capture was run.**
+
+**Next:** Source-only hardening review for early-process/sampling gaps, worker-failure resource cleanup, and live Windows named-pipe contract in a *synthetic* control before proposing a **separately approved**, one-use source-pinned no-CDP native Stage 1 retest. The next capture must explicitly test missing child coverage, original-handle retention and redacted output before any discussion of changing exact Sysmon/ETW clock semantics or native acceptance. Do not start native, Stage 2, installer or firewall work from this source-only result.
+
+**Ledger unchanged:** actual native Stage 1 **BLOCKED** at [#44893498723](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44893498723); R02.5 **0/5**; N12 **0/2**; internal file-mutation tracker **3/4 (75%)**; desktop network **2/3**; P4 **14/20 (70%)**. Prior complete N12 [#44838416004](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44838416004) remains filesystem FAIL, network FAIL, FileIO coverage BLOCKED.
