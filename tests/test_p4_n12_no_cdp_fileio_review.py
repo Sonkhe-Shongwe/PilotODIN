@@ -39,7 +39,7 @@ class NoCdpFileIOReviewTests(TestCase):
              patch.object(trace, "bind_processes",
                           return_value=({"a": "app", **({"b": "webview-network"} if role else {}),
                                          **({"c": "webview"} if role and two_roles else {})},
-                                        [("a", object())])), \
+                                        [({"role": "app"}, object())])), \
              patch.object(trace, "scope",
                           return_value=([r"C:\protected"], {"webview-network": [r"C:\qa"]})), \
              patch.object(trace, "windows_path", side_effect=lambda p: p.casefold()), \
