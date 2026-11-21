@@ -63,6 +63,8 @@ on:
       - tests/test_p4_n12_journey_diagnostics.py
       - tests/test_p4_n12_webview_storage.py
       - tests/test_p4_n12_protected_fixture_contract.py
+      - tests/test_p4_n12_token_capability_preflight.py
+      - qa/p4_research/n12_token_capability_preflight.py
       - qa/p4_research/n12_protected_fixture_contract.py
       - tests/test_p4_n12_tmp_debugger_fixture.py
       - tests/test_p4_n12_procmon_environment_control.py
@@ -192,6 +194,7 @@ jobs:
           tests/test_p4_n12_journey_diagnostics.py
           tests/test_p4_n12_webview_storage.py
           tests/test_p4_n12_protected_fixture_contract.py
+          tests/test_p4_n12_token_capability_preflight.py
           tests/test_p4_n12_tmp_debugger_fixture.py
           tests/test_p4_n12_procmon_environment_control.py
           tests/test_p4_installer_provenance.py
@@ -293,6 +296,8 @@ jobs:
           python -B -c 'import os; from qa.p4_research.n12_webview_storage_probe import runner_control_temp; runner_control_temp(os.environ); print("Hosted temp preflight passed")'
           python -B -m unittest discover -s tests -p test_p4_n12_webview_storage.py
           python -B -m unittest discover -s tests -p test_p4_n12_protected_fixture_contract.py
+          python -B -m unittest discover -s tests -p test_p4_n12_token_capability_preflight.py
+          python -B -m qa.p4_research.n12_token_capability_preflight
       - name: Positive and negative read-only integrity cases on fake app files
         shell: pwsh
         run: |
