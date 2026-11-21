@@ -96,7 +96,7 @@ class ChildObserverTests(unittest.TestCase):
         self.backend.timing[601]["birth"] += 50_000
         self.observer.sample_once(self.rows)
         witnesses = self.finish()
-        self.assertEqual(len(witnesses), 1) if False else self.assertEqual(len(witnesses), 2)
+        self.assertEqual(len(witnesses), 1)  # the old original handle's birth must not change
         self.assertIn("snapshot-duplicate-or-reused-pid", self.observer.redacted_receipt()["faults"])
         self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
 

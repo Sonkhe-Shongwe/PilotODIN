@@ -75,6 +75,8 @@ on:
       - tests/test_p4_n12_no_cdp_main_window.py
       - qa/p4_research/n12_no_cdp_main_window.py
       - tests/test_p4_n12_no_cdp_browser_identity.py
+      - qa/p4_research/n12_no_cdp_child_handles.py
+      - tests/test_p4_n12_no_cdp_child_handles.py
       - qa/p4_research/n12_no_cdp_browser_identity.py
       - tests/test_p4_n12_no_cdp_log_witness.py
       - qa/p4_research/n12_no_cdp_log_witness.py
@@ -217,6 +219,7 @@ jobs:
           tests/test_p4_n12_no_cdp_lifecycle.py
           tests/test_p4_n12_no_cdp_main_window.py
           tests/test_p4_n12_no_cdp_browser_identity.py
+          tests/test_p4_n12_no_cdp_child_handles.py
           tests/test_p4_n12_no_cdp_log_witness.py
           tests/test_p4_n12_calibration_socket_pair.py
           tests/test_p4_n12_protected_fixture_contract.py
