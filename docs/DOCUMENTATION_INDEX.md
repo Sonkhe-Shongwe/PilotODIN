@@ -1,6 +1,6 @@
 # PilotODIN | Documentation index
 
-**21 November 2026 | Current authority and single active P4 direction.** The generated original-handle-to-ETW FileIO measurement capability is now **CORROBORATED on disposable hosted Windows**, but **no real PilotODIN/WebView2 containment** has been demonstrated. Stop expanding generic synthetic controls. Focus the remaining R02.5 file-mutation engineering 25% on the actual WebView2 outside-root mutation mechanism and a narrowly reviewed source-pinned native verification plan, pending fresh explicit one-use owner authorization. No change of strict acceptance, permissions, installer freeze or P4 points.
+**21 November 2026 | Current authority and single active P4 direction.** The no-CDP desktop path is now source-wired to the existing strict Kernel-File ETW reducer, but **real WebView2 containment is unverified**. Focus the remaining file-mutation engineering 25% exclusively on complete original product-tree FileIO, calibrated identity/coverage, specific prohibited-write product correction and separately approved native proof. Existing rules, permissions, installer freeze and official scores unchanged.
 
 ## Current authoritative route, in reading order
 
@@ -13,6 +13,8 @@
 7. [Master QA Issue #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) · [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9) · [Local analytics plan](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md) · [8 GB RAM resource evidence](./RESOURCE_AWARE_MODE_DESIGN.md#everyday-ram-range-and-system-headroom).
 
 ## Current development references
+
+- **[CURRENT no-CDP strict Kernel-File/Kernel-Process bridge and remaining native-proof gate](./P4_N12_NO_CDP_STRICT_FILEIO_BRIDGE_AND_ACCEPTANCE_LIMIT_2026-11-21.md)**: guarded default-off `--no-cdp --fileio`, retained original scope, protected snapshots inside ETW, same strict FileIO reducer, redacted violations/gaps, explicit non-acceptance. [exact tested source 2b9fa97](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2b9fa9744c23c0a8ba1c586fec3ad15d62bf8f68), [CI #44921405079](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44921405079) **4/4 SUCCESS** (1,024 Python passed, 6 skipped, 498 subtests; 104 frontend passed and Vite built; browser, hosted-Windows R03 and generated ETW/FileIO controls). **No actual WebView2 file writes measured.** Next: fill original child-handle and full calibration requirements before requesting new one-use source-pinned native attribution, then correct the observed product fault.
 
 - **[CURRENT no-CDP ambient-local WebView2 QA option and required FileIO capture gap](./P4_N12_NO_CDP_AMBIENT_LOCAL_PRODUCT_WRITE_GATE_2026-11-21.md)**: explicit QA-only, default-off local/roaming redirect now tested at final no-CDP app launch guard, with no debugger/netlog. [source d31f8fa](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/d31f8fac343f9cd11083785982d02b552aed712f), [exact-source CI #44919033565](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44919033565) **4/4 SUCCESS** (1,012 Python passed, 6 skipped, 493 subtests; 104 Node/frontend passed, Vite built, disposable browser/hosted-Windows synthetic checks passed). **No actual WebView2 writes tested.** Next: connect existing N12 full FileIO collector to no-CDP before any separately authorised native experiment or product-fix claim.
 

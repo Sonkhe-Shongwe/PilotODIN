@@ -23,7 +23,11 @@ The separately tested QA ambient-local candidate was previously wired to a launc
 
 [CI #44919033565](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44919033565) at source d31f8fac343f9cd11083785982d02b552aed712f completed **4/4 SUCCESS**: 1,012 Python passed, 6 skipped, 493 subtests; 104 frontend Node tests and Vite build; disposable browser and hosted-Windows synthetic ETW/FileIO/R03 checks passed. None of these ran the real Tauri/WebView2 application or measured its actual writes.
 
-## Mandatory evidence gap before native authorization
+## Completed follow-up: no-CDP strict FileIO source bridge now exists
+
+[Reviewed integration and non-acceptance](./P4_N12_NO_CDP_STRICT_FILEIO_BRIDGE_AND_ACCEPTANCE_LIMIT_2026-11-21.md) at [exact tested source 2b9fa97](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2b9fa9744c23c0a8ba1c586fec3ad15d62bf8f68), [CI #44921405079](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44921405079) **4/4 SUCCESS** (1,024 Python passed, 6 skipped, 498 subtests; 104 frontend passed and Vite built; browser, hosted-Windows R03 and generated ETW/FileIO controls). The existing Kernel-File/Process collector and `inspect_etw_files` are now wired to guarded `--no-cdp --fileio`, and both protected snapshots fall inside ETW observation. No real WebView2 launch occurred; full calibration, original child handles, effective storage and transient write-and-restore remain unverified. No path or actor gaps can be waived, and the new diagnostic can never award acceptance. The next work is specifically **complete and source-pin the native evidence plan**, not repeat source-only environment candidate research.
+
+## Previous missing FileIO prerequisite (source wiring now completed)
 
 The present no-CDP app-lifetime path uses a **Kernel-Process ETW lifecycle session**, not the full N12 **Kernel-File/FileIO mutation collection and strict reducer**. An apparently successful no-CDP app lifetime could not therefore establish that its WebView2 writes moved, were prohibited, or were entirely observed. The last 25% does not close from this patch.
 
