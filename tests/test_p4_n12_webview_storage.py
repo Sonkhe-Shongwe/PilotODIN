@@ -220,6 +220,53 @@ class StorageProbeTests(unittest.TestCase):
         self.assertEqual({item["stage"]:item["component"] for item in report["storage_events"]},
                          {"startup":"browser", "ready-probe":"browser"})
         self.assertNotIn("cdp_browser_pid", report)
+        self.assertEqual(report["browser_ambient_target_summary"], {
+            "scope": "observed-browser-ambient-createfile-only",
+            "observed_create_events": 2,
+            "distinct_normalized_path_count": 1,
+            "normalized_paths_seen_in_multiple_stages": 1,
+            "filesystem_object_identity_verified": False,
+            "capture_completeness_verified": False,
+        })
+
+    def test_browser_ambient_target_cardinality_never_publishes_private_paths(self):
+        browser = process("browser", "app", 102, WEBVIEW, 6, 13)
+        self.processes[browser.guid] = browser
+        self.manifest["cdp_browser_pid"] = browser.pid
+        first = USER_TEMP + r"\\Private-Unique-One.tmp"
+        second = USER_TEMP + r"\\Private-Unique-Two.tmp"
+        report = self.reduce(self.controls + [
+            row(7, browser.pid, "msedgewebview2.exe", first),
+            row(9, browser.pid, "msedgewebview2.exe", second),
+        ])
+        summary = report["browser_ambient_target_summary"]
+        self.assertEqual(summary["observed_create_events"], 2)
+        self.assertEqual(summary["distinct_normalized_path_count"], 2)
+        self.assertEqual(summary["normalized_paths_seen_in_multiple_stages"], 0)
+        self.assertFalse(summary["filesystem_object_identity_verified"])
+        self.assertFalse(summary["capture_completeness_verified"])
+        self.assertNotIn("private-unique", json.dumps(report).lower())
+        self.assertNotIn("c:\\\\private-user", json.dumps(report).lower())
+
+        # Same normalized Windows filename with changed case is a repeated
+        # path-string observation, not independently proven file identity.
+        report = self.reduce(self.controls + [
+            row(7, browser.pid, "msedgewebview2.exe", first),
+            row(9, browser.pid, "msedgewebview2.exe", first.upper()),
+        ])
+        summary = report["browser_ambient_target_summary"]
+        self.assertEqual(summary["distinct_normalized_path_count"], 1)
+        self.assertEqual(summary["normalized_paths_seen_in_multiple_stages"], 1)
+
+        # A renderer write is still reported in storage_events, but cannot
+        # be misattributed as a browser-process target.
+        report = self.reduce(self.controls + [
+            row(7, 101, "msedgewebview2.exe", first),
+        ])
+        summary = report["browser_ambient_target_summary"]
+        self.assertEqual(summary["observed_create_events"], 0)
+        self.assertEqual(summary["distinct_normalized_path_count"], 0)
+        self.assertEqual(summary["normalized_paths_seen_in_multiple_stages"], 0)
 
     def test_startup_tmp_requires_replayable_control_and_matching_browser_start(self):
         self.manifest.update(startup_tmp_probe=True, cdp_browser_pid=102, probe_user_temp=USER_TEMP)

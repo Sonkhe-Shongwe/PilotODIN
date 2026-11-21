@@ -330,6 +330,10 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
     storage_ambient = (trace.windows_path(manifest["probe_user_temp"])
                        if manifest.get("probe_user_temp") else None)
     writer_operations = Counter()
+    # Private normalized path strings are held in memory only. The public
+    # receipt reports numeric cardinality and cross-stage lexical reuse, never
+    # a filename, path hash, PID or per-target record.
+    browser_ambient_target_stages = {}
     startup_values = {"scratch": [], "browser": []}
     first_browser_tmp_create = None
     protected_details = Counter()
@@ -402,6 +406,10 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
                           "other-user-local")
         else:
             return
+        if (process.guid == browser_guid and operation == "create"
+                and family in {"user-temp", "runner-temp"}):
+            normalized_path = ntpath.normcase(path)
+            browser_ambient_target_stages.setdefault(normalized_path, set()).add(stage)
         file_type = FILE_TYPES.get(extension, "other-extension" if extension else "no-extension")
         diagnostics[family, operation, component(process, role, browser_guid), stage, file_type] += 1
         writer_operations[process.guid, family, operation, stage] += 1
@@ -464,6 +472,21 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
              "stage": stage, "file_type": file_type, "count": count}
             for (family, operation, kind, stage, file_type), count in sorted(diagnostics.items())]
     ambient_creates = sum(row["count"] for row in rows if row["destination_family"] in {"user-temp", "runner-temp"})
+    browser_ambient_creates = sum(
+        row["count"] for row in rows
+        if row["component"] == "browser" and row["operation"] == "create"
+        and row["destination_family"] in {"user-temp", "runner-temp"}
+    )
+    browser_ambient_target_summary = {
+        "scope": "observed-browser-ambient-createfile-only",
+        "observed_create_events": browser_ambient_creates,
+        "distinct_normalized_path_count": len(browser_ambient_target_stages),
+        "normalized_paths_seen_in_multiple_stages": sum(
+            len(stages) > 1 for stages in browser_ambient_target_stages.values()
+        ),
+        "filesystem_object_identity_verified": False,
+        "capture_completeness_verified": False,
+    }
 
     def verified_writer_context(process):
         if pid_counts_all[process.pid] != 1:
@@ -561,6 +584,7 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             "browser_process_corroborated": browser_guid is not None,
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
             "ambient_temp_creates": ambient_creates, "storage_events": rows,
+            "browser_ambient_target_summary": browser_ambient_target_summary,
             "writer_storage_context": writer_storage_context,
             "browser_storage_context": browser_storage_context,
             "browser_environment_format": browser_environment_format,
