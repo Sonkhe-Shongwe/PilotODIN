@@ -14,6 +14,8 @@
 
 ## Current development references
 
+- [Stage 1 actual no-CDP hosted-Windows result, BLOCKED](./P4_N12_STAGE1_HOSTED_NO_CDP_NATIVE_RESULT_2026-11-21.md) for source-pinned Rust/Tauri compile, native startup/close, protected endpoint match, exact observed ETW header/payload timing conflicts, disarmed one-use activation and unchanged R02.5/P4 verdict.
+
 - [Stage 1 no-CDP collector entrypoint](./P4_N12_STAGE1_NO_CDP_COLLECTOR_ENTRYPOINT_2026-11-21.md) for the bounded one-use native lifetime/profile launch entrypoint, required consents and source/non-native boundary.
 
 - [21 November no-CDP final launch scope guard](./P4_N12_NO_CDP_FINAL_LAUNCH_SCOPE_GUARD_2026-11-21.md) for source-only prevention of direct-call WebView/temp/root bypass, generated negative tests and the precise next native approval boundary.
