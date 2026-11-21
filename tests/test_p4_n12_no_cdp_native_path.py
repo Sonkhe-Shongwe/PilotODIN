@@ -135,6 +135,7 @@ class NoCdpNativePathTests(unittest.TestCase):
              patch.object(journey, "spawn", side_effect=fake_spawn) as spawn, \
              patch.object(journey, "powershell", side_effect=fake_power), \
              patch.object(journey, "request_graceful_close", side_effect=normal_close) as close, \
+             patch.object(journey, "mark", side_effect=lambda m, label: m["markers"].__setitem__(label, label)), \
              patch.object(journey, "wait_for", side_effect=wait_for), \
              patch.object(journey, "report_file", side_effect=lambda p, obj: saved.update({p.name: obj})), \
              patch.object(control, "process_images", return_value={"image_dos": "synthetic"}), \
