@@ -56,7 +56,8 @@ class StorageProbeTests(unittest.TestCase):
         )}
         self.manifest = {
             "source_sha": SOURCE, "executable_sha256": HASH,
-            "protected_roots": {"original": PROTECTED}, "observed_roots": {"quality-source": CSV},
+            "protected_roots": {"original": PROTECTED},
+            "observed_roots": {"quality-source": CSV, "qa-webview": SCRATCH},
             "immutable_observed": ["quality-source"], "permitted_writes": {"webview":[SCRATCH]},
             "protected_snapshot_comparison": "MATCH", "procmon_all_events": True, "procmon_clock_utc": True,
             "procmon_shutdown_verified": True,
@@ -365,6 +366,72 @@ class StorageProbeTests(unittest.TestCase):
         report = self.reduce(self.controls + [row(7, 101, "msedgewebview2.exe", TARGET)])
         self.assertEqual(report["verdict"], "BLOCKED")
         self.assertIn("app-source-identity-unverified", report["issues"])
+
+    def test_writer_storage_context_correlates_process_start_without_private_paths(self):
+        browser = process("browser", "app", 102, WEBVIEW, 6, 13,
+                          command="--remote-debugging-port=9331 --log-net-log=c:\\private\\secret.json")
+        self.processes[browser.guid] = browser
+        self.manifest.update(cdp_browser_pid=102, probe_user_temp=USER_TEMP)
+        env = (f" ; TEMP={SCRATCH}\\app-temp ; TMP={USER_TEMP} ; "
+               f"WEBVIEW2_USER_DATA_FOLDER={SCRATCH} ; SECRET=private-token")
+
+        def started(child):
+            parent = self.processes[child.parent]
+            detail = (f"Parent PID: {parent.pid}, Command line: {child.command}, "
+                      f"Current directory: c:\\fixture, Environment:{env}")
+            return row(6, child.pid, "msedgewebview2.exe", "", detail=detail, op="Process Start")
+
+        report = self.reduce(self.controls + [
+            started(browser), started(self.processes["renderer"]),
+            row(7, 102, "msedgewebview2.exe", USER_TEMP + r"\\private-browser.tmp"),
+            row(7, 101, "msedgewebview2.exe", USER_TEMP + r"\\private-renderer.tmp"),
+        ])
+        self.assertFalse(report["storage_context_is_acceptance_evidence"])
+        self.assertEqual(report["browser_launch_flags"], {
+            "status": "environment-observed", "remote_debugging": "present", "netlog": "present",
+        })
+        contexts = report["writer_storage_context"]
+        self.assertEqual({item["component"] for item in contexts}, {"browser", "renderer"})
+        for item in contexts:
+            self.assertEqual(item["receipt"], "environment-observed")
+            self.assertEqual((item["temp"], item["tmp"], item["udf"]),
+                             ("declared-app-temp", "ambient-temp", "declared-profile"))
+            self.assertEqual((item["destination_family"], item["operation"], item["count"]),
+                             ("user-temp", "create", 1))
+        rendered = json.dumps(report)
+        for secret in ("private-token", "private-browser", "private-renderer", "secret.json"):
+            self.assertNotIn(secret, rendered)
+        self.assertEqual(report["verdict"], "REPRODUCED")
+
+    def test_writer_context_rejects_wrong_parent_and_duplicate_start_receipts(self):
+        child = self.processes["renderer"]
+        detail = (f"Parent PID: 999, Command line: {child.command}, "
+                  f"Current directory: c:\\fixture, Environment: ; TMP={SCRATCH}\\app-temp")
+        start = row(6, child.pid, "msedgewebview2.exe", "", detail=detail, op="Process Start")
+        write = row(7, child.pid, "msedgewebview2.exe", TARGET)
+        report = self.reduce(self.controls + [start, write])
+        context = report["writer_storage_context"][0]
+        self.assertEqual(context["receipt"], "start-identity-mismatch")
+        self.assertEqual((context["temp"], context["tmp"], context["udf"]),
+                         ("unverified", "unverified", "unverified"))
+        report = self.reduce(self.controls + [start, start, write])
+        self.assertEqual(report["writer_storage_context"][0]["receipt"], "start-record-ambiguous")
+        self.assertEqual(report["verdict"], "REPRODUCED")
+
+    def test_storage_context_reports_duplicate_and_invalid_environment_values(self):
+        child = self.processes["renderer"]
+        parent = self.processes["app"]
+        detail = (f"Parent PID: {parent.pid}, Command line: {child.command}, "
+                  f"Current directory: c:\\fixture, Environment: ; TEMP=relative ; "
+                  f"TMP={SCRATCH}\\app-temp ; Tmp={USER_TEMP} ; WEBVIEW2_USER_DATA_FOLDER={SCRATCH}")
+        context = probe.storage_environment_context(
+            detail, child, parent, SCRATCH, SCRATCH + r"\\app-temp", USER_TEMP, None,
+        )
+        self.assertEqual(context, {
+            "receipt": "environment-observed", "temp": "temp-path-invalid",
+            "tmp": "tmp-ambiguous", "udf": "declared-profile",
+        })
+        self.assertNotIn("relative", json.dumps(context))
 
     def test_capture_refuses_absent_one_use_approval(self):
         run = subprocess.run([sys.executable, "-B", "-m", probe.__name__, "capture", ".",

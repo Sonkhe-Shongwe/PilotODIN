@@ -116,8 +116,37 @@ def process_start_path(environment, key):
     try:
         trace.require("\r" not in values[0] and "\0" not in values[0], "invalid environment path field")
         return f"{label}-observed", trace.windows_path(values[0])
-    except ValueError:
+    except (ValueError, trace.EvidenceValidationError):
         return f"{label}-path-invalid", None
+
+
+def storage_environment_context(detail, process, parent, profile, app_temp, ambient, witness):
+    """Classify only verified Process Start environment paths, never publish their values."""
+    names = (("temp", "TEMP"), ("tmp", "TMP"), ("udf", "WEBVIEW2_USER_DATA_FOLDER"))
+    status, environment = process_start_environment(
+        detail, parent.pid if parent else None, process.command,
+    )
+    if environment is None:
+        return {"receipt": status, **{name: "unverified" for name, _ in names}}
+    context = {"receipt": "environment-observed"}
+    for name, key in names:
+        path_status, path = process_start_path(environment, key)
+        if path is None:
+            context[name] = path_status
+        elif name == "udf":
+            context[name] = ("declared-profile" if path == profile
+                             else "profile-subpath" if trace.inside(path, profile) else "other-path")
+        elif witness is not None and trace.inside(path, witness):
+            context[name] = "startup-tmp"
+        elif trace.inside(path, app_temp):
+            context[name] = "declared-app-temp"
+        elif trace.inside(path, profile):
+            context[name] = "other-profile-location"
+        elif ambient is not None and trace.inside(path, ambient):
+            context[name] = "ambient-temp"
+        else:
+            context[name] = "other-path"
+    return context
 
 
 def process_start_tmp(detail, process, parent):
@@ -234,6 +263,18 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
         ):
             if process is not None and pid_counts[process.pid] == 1:
                 startup_candidates[str(process.pid)] = (label, process, first, last)
+    # The dedicated TMP control remains independent. This second diagnostic
+    # links each WebView writer to its own uniquely identified Process Start.
+    pid_counts_all = Counter(process.pid for process in processes.values())
+    webview_start_candidates = {
+        str(process.pid): process for process in webviews if pid_counts_all[process.pid] == 1
+    }
+    webview_start_receipts = {process.guid: [] for process in webviews}
+    storage_profile = trace.windows_path(manifest["observed_roots"]["qa-webview"])
+    storage_app_temp = ntpath.join(storage_profile, journey.APP_TEMP_DIR)
+    storage_ambient = (trace.windows_path(manifest["probe_user_temp"])
+                       if manifest.get("probe_user_temp") else None)
+    writer_operations = Counter()
     startup_values = {"scratch": [], "browser": []}
     first_browser_tmp_create = None
     protected_details = Counter()
@@ -245,19 +286,30 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             protected_details[role, operation, family, identity] += 1
 
     def observe_process_start(row):
-        candidate = startup_candidates.get(row["PID"])
-        if candidate is None or row["Result"] != "SUCCESS":
+        if row["Result"] != "SUCCESS":
             return
-        label, process, first, last = candidate
-        if row["Process Name"].casefold() != ntpath.basename(process.image):
+        candidate = startup_candidates.get(row["PID"])
+        webview_process = webview_start_candidates.get(row["PID"])
+        if candidate is None and webview_process is None:
             return
         try:
             stamp = trace.capture_time(row["Time of Day"], start)
         except (ValueError, trace.EvidenceValidationError):
             return
-        if first <= stamp < last:
-            status, value = process_start_tmp(row["Detail"], process, processes.get(process.parent))
-            startup_values[label].append((stamp, status, value))
+        if candidate is not None:
+            label, process, first, last = candidate
+            if (row["Process Name"].casefold() == ntpath.basename(process.image)
+                    and first <= stamp < last):
+                status, value = process_start_tmp(row["Detail"], process, processes.get(process.parent))
+                startup_values[label].append((stamp, status, value))
+        if webview_process is not None:
+            process = webview_process
+            if (row["Process Name"].casefold() == ntpath.basename(process.image)
+                    and process.start <= stamp <= (process.end or end)):
+                webview_start_receipts[process.guid].append(storage_environment_context(
+                    row["Detail"], process, processes.get(process.parent),
+                    storage_profile, storage_app_temp, storage_ambient, tmp_witness,
+                ))
 
     def observe(stamp, process, role, operation, path):
         nonlocal first_browser_tmp_create
@@ -289,11 +341,12 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             return
         file_type = FILE_TYPES.get(extension, "other-extension" if extension else "no-extension")
         diagnostics[family, operation, component(process, role, browser_guid), stage, file_type] += 1
+        writer_operations[process.guid, family, operation, stage] += 1
 
     file_coverage_issues = set()
     _, violations, _, unresolved_files = trace.inspect_files(
         procmon, fixture_ready, end, processes, roles, protected, permitted, file_coverage_issues, observe=observe,
-        observe_process_start=observe_process_start if startup_candidates else None,
+        observe_process_start=observe_process_start if startup_candidates or webview_start_candidates else None,
         observe_protected=observe_protected,
     )
     protected_operations = []
@@ -348,6 +401,43 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
              "stage": stage, "file_type": file_type, "count": count}
             for (family, operation, kind, stage, file_type), count in sorted(diagnostics.items())]
     ambient_creates = sum(row["count"] for row in rows if row["destination_family"] in {"user-temp", "runner-temp"})
+
+    def verified_writer_context(process):
+        if pid_counts_all[process.pid] != 1:
+            state = "process-lifetime-ambiguous"
+        else:
+            receipts = webview_start_receipts[process.guid]
+            if len(receipts) == 1:
+                return receipts[0]
+            state = "start-record-ambiguous" if receipts else "start-record-unobserved"
+        return {"receipt": state, "temp": "unverified", "tmp": "unverified", "udf": "unverified"}
+
+    writer_context_counts = Counter()
+    for (guid, family, operation, stage), count in writer_operations.items():
+        process = processes[guid]
+        context = verified_writer_context(process)
+        writer_context_counts[(
+            component(process, roles.get(guid), browser_guid),
+            context["receipt"], context["temp"], context["tmp"], context["udf"],
+            family, operation, stage,
+        )] += count
+    writer_storage_context = [
+        dict(zip(("component", "receipt", "temp", "tmp", "udf",
+                  "destination_family", "operation", "stage"), key), count=count)
+        for key, count in sorted(writer_context_counts.items())
+    ]
+    browser_launch_flags = {"status": "browser-identity-unverified"}
+    if browser_guid is not None:
+        browser = processes[browser_guid]
+        browser_launch_flags = {
+            "status": verified_writer_context(browser)["receipt"],
+            "remote_debugging": "present" if re.search(
+                r"(?:^|\\s)--remote-debugging-port(?:=|\\s|$)", browser.command
+            ) else "absent",
+            "netlog": "present" if re.search(
+                r"(?:^|\\s)--log-net-log(?:=|\\s|$)", browser.command
+            ) else "absent",
+        }
     if any(row["stage"] == "after-profile-exit" for row in rows):
         issues.add("webview-writes-after-profile-exit")
     report = {"scope": "one-startup-and-close-storage-diagnostic", "source_sha": manifest["source_sha"],
@@ -368,7 +458,10 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
             "browser_startup_tmp": browser_startup_tmp,
             "browser_process_corroborated": browser_guid is not None,
             "webview_runtime_versions": sorted(versions), "known_create_controls": controls,
-            "ambient_temp_creates": ambient_creates, "storage_events": rows}
+            "ambient_temp_creates": ambient_creates, "storage_events": rows,
+            "writer_storage_context": writer_storage_context,
+            "browser_launch_flags": browser_launch_flags,
+            "storage_context_is_acceptance_evidence": False}
     if replay_etw is not None:
         receipt = ((startup_values["browser"][0][0], browser_startup_tmp)
                    if browser_startup_tmp != "unverified" else None)
