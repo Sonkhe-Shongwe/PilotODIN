@@ -22,6 +22,7 @@
 - [N12 no-CDP bounded main-window readiness](./P4_N12_NO_CDP_BOUNDED_WINDOW_WAIT_2026-11-21.md) for clean-absence-only retries, capped startup observation, and exact-source CI evidence, not native acceptance.
 - [N12 no-CDP source lifecycle observer](./P4_N12_NO_CDP_LIFECYCLE_SOURCE_STITCH_2026-11-21.md) for the fail-closed log/handle/window/close stage ordering, current CI and remaining native-proof gaps.
 - [N12 no-CDP main-window identity](./P4_N12_NO_CDP_MAIN_WINDOW_IDENTITY_2026-11-21.md) for the read-only Windows window/process-handle witness and generated CI, not native acceptance.
+- [N12 no-CDP whole-profile shutdown source proof](./P4_N12_NO_CDP_PROFILE_SHUTDOWN_2026-11-21.md) for child ETW exit, parent sequence and capture-loss completeness fixtures, not native acceptance.
 - [N12 no-CDP OS-corroborated browser identity](./P4_N12_NO_CDP_BROWSER_IDENTITY_2026-11-21.md) for the source-only fail-closed role/profile/lifetime proof, not a native capture.
 - [N12 no-CDP read-only app-log witness](./P4_N12_NO_CDP_LOG_WITNESS_2026-11-21.md) for fixed, unique, non-stale readiness receipts with a bounded prelaunch/postclose verification contract; no native acceptance.
 - [21 November authorized debug-only WebView storage result](../qa/p4_research/N12_WEBVIEW_DEBUG_ONLY_RESULT_44852642468.md) for the observed ambient temp creates without netlog, incomplete collector coverage and the no-CDP next hypothesis.

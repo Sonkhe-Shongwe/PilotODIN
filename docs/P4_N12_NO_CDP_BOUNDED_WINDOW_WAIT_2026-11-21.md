@@ -27,3 +27,7 @@ The non-launching `NoCdpLifecycleObserver.observe_readiness` now waits for this 
 Prepare independent WebView2 browser/profile lifetime corroboration for the same post-close diagnostic without using CDP: unique Sysmon GUID + ETW birth/stop + retained app-handle parent sequence, exact disposable profile (or fail closed if no supported profile evidence), explicit capture-loss review and no inferred PID. Reconcile actual WebView2 browser startup command/profile conventions against available **approved** evidence without relaxing identity rules on speculation. Only after source verification and a fresh source-pinned, one-use owner authorisation may a real native test be considered. The existing restricted workflow stays disarmed.
 
 **Official P4 score stays 14/20 (70%).** Workstreams unchanged: product fixes **7/7 (100%)**, QA dialog driver **3/3 (100%)**, firewall preflight **2/3 (67%)**, network isolation **2/3 (67%)**, file-mutation coverage **3/4 (75%)**, native N12 **0/2 (0%)**, physical offline inference **1/3 (33%)**, original-data preservation **0/2 (0%)**. No acceptance point was earned by source-only testing.
+
+## Next preparation completed at source-only scope
+
+The [whole WebView2 profile shutdown source witness](./P4_N12_NO_CDP_PROFILE_SHUTDOWN_2026-11-21.md) now verifies the root browser plus OS-corroborated renderer/network descendant exits in generated ETW/Sysmon fixtures. That verifier is **not wired into a real native process reducer** and does not establish FileIO/network acceptance. The existing one-use native capture remains disabled.
