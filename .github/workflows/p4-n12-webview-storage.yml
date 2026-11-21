@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lifetime:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.run_attempt == 1 }} # One approved debug-netlog storage capture only.
+    if: ${{ false }} # One-use debug-netlog approval consumed by run 44847306630; disarmed.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
