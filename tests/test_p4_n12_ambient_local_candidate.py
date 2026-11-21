@@ -67,14 +67,24 @@ class AmbientLocalCandidateSourceTests(unittest.TestCase):
                                     "directory-unverified"):
             journey.app_environment(self.env, self.profile, "first")
 
-    def test_host_temp_for_any_app_variable_refuses(self):
+    def test_candidate_guard_refuses_nonprofile_temp_if_called_directly(self):
         self.opt_in()
         for key in ("TEMP", "TMP", "TMPDIR"):
             with self.subTest(variable=key):
                 env = {**self.env, key: self.env["LOCALAPPDATA"]}
                 with self.assertRaisesRegex(trace.EvidenceValidationError,
                                             "temp-unverified"):
-                    journey.app_environment(env, self.profile, "first")
+                    candidate.apply_to_app_env(env, self.profile)
+
+    def test_app_launch_normalises_inherited_temp_before_guard(self):
+        self.opt_in()
+        env = {**self.env, "TEMP": self.env["LOCALAPPDATA"],
+               "TMP": self.env["LOCALAPPDATA"],
+               "TMPDIR": self.env["LOCALAPPDATA"]}
+        app = journey.app_environment(env, self.profile, "first")
+        expected = str(self.profile / journey.APP_TEMP_DIR)
+        self.assertEqual((app["TEMP"], app["TMP"], app["TMPDIR"]),
+                         (expected, expected, expected))
 
     def test_profile_outside_runner_refuses(self):
         other = self.runner / "unrelated-runner"
