@@ -29,24 +29,67 @@ class NoCdpFileIOReviewTests(TestCase):
                      "issues": []}
         self.called = []
 
-    def run_check(self, *, violation=None, gap=None, issues=None, role=True, two_roles=False):
+    def run_check(self, *, violation=None, gap=None, issues=None, role=True,
+                  two_roles=False, calibrated=False, restore_verified=None):
         def strict(*a, **kwargs):
             self.called.append((a, kwargs))
             return (Counter({"webview:write": 5}), Counter(violation or {}),
                     set(), dict(gap or {}))
+        from datetime import timedelta
+        from contextlib import ExitStack
+        from qa.p4_research import n12_app_journey as journey
         start = datetime(2026, 11, 21, tzinfo=timezone.utc)
-        with patch.object(trace, "load_capture", return_value=(start, start, {}, [], set(issues or []))), \
-             patch.object(trace, "bind_processes",
-                          return_value=({"a": "app", **({"b": "webview-network"} if role else {}),
-                                         **({"c": "webview"} if role and two_roles else {})},
-                                        [({"role": "app"}, object())])), \
-             patch.object(trace, "scope",
-                          return_value=([r"C:\protected"], {"webview-network": [r"C:\qa"]})), \
-             patch.object(trace, "windows_path", side_effect=lambda p: p.casefold()), \
-             patch.object(trace, "inspect_etw_files", side_effect=strict):
-            return review.reduce(self.manifest, Path("fixture.xml"), Path("fixture.jsonl"),
-                                 self.handle, Path("fake.exe"),
-                                 lifetime_report=self.life, snapshot=self.snap)
+        roots = []
+        if calibrated:
+            roots = [{"role": "calibration", "pid": pid, "image": r"C:\qa\synthetic.exe"}
+                     for pid in (70, 71)]
+            self.manifest["processes"] = roots
+            self.manifest["markers"] = {
+                "launch": (start + timedelta(seconds=4)).isoformat(),
+                "profile-exit": (start + timedelta(seconds=6)).isoformat(),
+            }
+        if restore_verified is not None:
+            self.manifest["observed_roots"]["write-restore-control"] = (
+                r"C:\qa\write-restore-control.bin")
+            self.manifest["etw"]["events_sha256"] = "c" * 64
+        def binding(*a, **kw):
+            roles = {"a": "app", **({"b": "webview-network"} if role else {}),
+                     **({"c": "webview"} if role and two_roles else {})}
+            roles.update({f"cal-{i}": "calibration" for i in range(len(roots))})
+            return roles, [({"role": "app"}, object()),
+                           *((root, object()) for root in roots)]
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(
+                trace, "load_capture", return_value=(start, start, {}, [], set(issues or []))))
+            stack.enter_context(patch.object(trace, "bind_processes", side_effect=binding))
+            stack.enter_context(patch.object(
+                trace, "scope",
+                return_value=([r"C:\protected"], {"webview-network": [r"C:\qa"]})))
+            stack.enter_context(patch.object(trace, "windows_path",
+                                            side_effect=lambda p: p.casefold()))
+            stack.enter_context(patch.object(trace, "inspect_etw_files", side_effect=strict))
+            stack.enter_context(patch.object(
+                trace, "calibration_window", side_effect=[
+                    (start + timedelta(seconds=1), start + timedelta(seconds=2)),
+                    (start + timedelta(seconds=8), start + timedelta(seconds=9)),
+                ]))
+            stack.enter_context(patch.object(
+                trace, "etw_capture_contract",
+                return_value=((100, 500), {r"\device\harddiskvolume3": "c:"})))
+            stack.enter_context(patch.object(trace, "etw_events", return_value=iter(())))
+            if restore_verified is not None:
+                stack.enter_context(patch.object(
+                    journey, "same_capture_restore_evidence",
+                    return_value={
+                        "status": "PASS" if restore_verified else "BLOCKED",
+                        "write_path_verified": {
+                            "mutate": True, "restore": bool(restore_verified)},
+                    }))
+            return review.reduce(
+                self.manifest, Path("fixture.xml"), Path("fixture.jsonl"),
+                self.handle, Path("fake.exe"), lifetime_report=self.life,
+                snapshot=self.snap,
+                restore_control={"private": "generated-only"} if restore_verified is not None else None)
 
     def test_invokes_governing_strict_reducer_and_guards_immutable_original(self):
         result = self.run_check()
@@ -169,6 +212,57 @@ class NoCdpFileIOReviewTests(TestCase):
                          "no-cdp-original-webview-child-handles-unverified")
         self.assertEqual(wrong_children["original_webview_child_handle_lifetimes"],
                          "UNVERIFIED_OR_INCOMPLETE")
+
+    def synthetic_positive_lifetime_receipts(self):
+        self.life["no_cdp_private_child_handle_diagnostic"] = {
+            "scope": "no-cdp-private-child-handle-reducer-diagnostic-only",
+            "status": "REVIEWABLE_ONLY", "native_N12_acceptance": "NOT_EVALUATED",
+            "failed_checks": {},
+            "child_role_counts": {"webview": 1, "webview-network": 1},
+            "verified_handle_counts": {"webview": 1, "webview-network": 1},
+        }
+        self.life["no_cdp_profile_identity"] = {
+            "status": "SOURCE_OS_CORROBORATED",
+            "browser_process_identity": "UNIQUE_SYSMON_ETW_APP_PROFILE",
+            "profile_process_lifetimes": "SYSMON_ETW_DESCENDANTS_EXITED",
+            "webview_process_count": 2, "native_N12_acceptance": "NOT_EVALUATED",
+        }
+
+    def test_two_generated_bookends_and_both_restore_writes_can_only_be_reviewable(self):
+        self.synthetic_positive_lifetime_receipts()
+        result = self.run_check(two_roles=True, calibrated=True, restore_verified=True)
+        self.assertEqual(result["same_capture_write_restore"],
+                         "TWO_UNIQUE_WRITES_CORROBORATED")
+        self.assertEqual(result["generated_calibration_bookends"],
+                         "BOOKEND_OS_FILE_NETWORK_REVIEWABLE")
+        self.assertEqual(result["calibration_and_transient_write_proof"],
+                         "SOURCE_ONLY_CONTROL_REVIEWABLE")
+        self.assertEqual(result["blocker"],
+                         "full-native-product-write-containment-not-yet-proven")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertEqual(result["file_mutation_acceptance"], "NOT_EVALUATED")
+        self.assertNotIn("synthetic.exe", json.dumps(result))
+
+    def test_missing_restored_write_blocks_even_if_endpoints_match(self):
+        self.synthetic_positive_lifetime_receipts()
+        result = self.run_check(two_roles=True, calibrated=True, restore_verified=False)
+        self.assertEqual(result["same_capture_write_restore"], "BLOCKED")
+        self.assertEqual(result["generated_calibration_bookends"],
+                         "BOOKEND_OS_FILE_NETWORK_REVIEWABLE")
+        self.assertEqual(result["calibration_and_transient_write_proof"],
+                         "UNVERIFIED_OR_INCOMPLETE")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertGreater(result["reducer_issue_count"], 0)
+        self.assertEqual(result["full_product_tree_mutation_containment"], "NOT_DEMONSTRATED")
+
+    def test_product_prohibited_writes_remain_even_if_controls_reviewable(self):
+        self.synthetic_positive_lifetime_receipts()
+        result = self.run_check(two_roles=True, calibrated=True, restore_verified=True,
+                                violation={"outside-scope:webview-network:write": 113})
+        self.assertEqual(result["observed_prohibited_operations"], 113)
+        self.assertEqual(result["blocker"], "observed-prohibited-fileio-operations")
+        self.assertEqual(result["file_mutation_acceptance"], "NOT_EVALUATED")
 
     def test_fail_closed_if_strict_reducer_raises(self):
         with patch.object(trace, "load_capture", side_effect=trace.EvidenceValidationError("bad-digest")):
