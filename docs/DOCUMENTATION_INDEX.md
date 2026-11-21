@@ -14,6 +14,8 @@
 
 ## Current development references
 
+- **[New current partial real-observation Stage 1 reference and backward counterexample](./P4_N12_STAGE1_PARTIAL_REFERENCE_AND_COUNTEREXAMPLES_2026-11-21.md)**: redacted actual app/launcher handle and ETW measurements, seven explicitly missing WebView original handles, executable synthetic early-born retained-child and role-mix variants. [source `6b04a37e`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/6b04a37e3868522697ee88c0699f0ce4348cace1); [routine CI #44913993754](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44913993754) (check exact-source outcome before credit). Native Stage 1 remains BLOCKED and no strict reducer predicate was changed.
+
 - **[Latest S01-S11 source-verified Stage 1 reference evidence worksheet](./P4_N12_STAGE1_SOURCE_EVIDENCE_WORKSHEET_2026-11-21.md)**, [machine-readable JSON mapping](./P4_N12_STAGE1_SOURCE_EVIDENCE_MAP_2026-11-21.json): independent actual app/launcher partial reference, precise original-handle/ETW/SystemMonitor checks, existing fixture names, and three source-level assumptions requiring controlled counterexamples. [Exact CI #44912012772](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44912012772) 4/4; source traceability only, no native acceptance.
 
 - **Real last approved native Stage 1 (failure, not pass):** [Sysmon/ETW exact exit timestamp mismatch #44893498723](./P4_N12_STAGE1_NATIVE_SYSMON_ETW_EXIT_CLOCK_DIAGNOSIS_44893498723.md); app/launcher independent original-handle agreement, seven WebView2 children without retained original handles, prior approval consumed.
