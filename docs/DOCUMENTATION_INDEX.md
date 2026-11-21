@@ -14,6 +14,8 @@
 
 ## Current development references
 
+- [Latest source-only private original WebView child-handle reducer handoff](./P4_N12_NO_CDP_PRIVATE_CHILD_HANDLE_REDUCER_HANDOFF_2026-11-21.md) documents an in-memory source/binary-pinned observer-to-reducer diagnostic interface, fixed-label privacy protection, capture-stage negative tests, unchanged native verdict and outstanding worker transport boundary.
+
 - [Latest source-only guarded QA WebView child-handle observer and shadow Sysmon/ETW join](./P4_N12_NO_CDP_SCOPED_CHILD_HANDLE_OBSERVER_SOURCE_REVIEW_2026-11-21.md) details new source module, separate hosted consent, incomplete 10ms polling coverage, duplicate/PID reuse negatives, 4/4 synthetic CI and next integration boundary.
 
 - [Stage 1 source-only original Windows handle witness shadow review](./P4_N12_STAGE1_SHADOW_HANDLE_WITNESS_DESIGN_2026-11-21.md) records the unchanged strict predicate, synthetic per-process handle-witness alternative, unresolved seven child handles, existing 10 ms Windows collector constraints and next source-only implementation boundary.
