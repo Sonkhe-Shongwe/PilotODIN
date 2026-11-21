@@ -106,3 +106,170 @@ class NoCdpFileIOReviewTests(TestCase):
         self.assertFalse(result["owner_native_execution_authorized"])
 
 
+
+
+class NoCdpFileIOCollectionAndPermissionTests(TestCase):
+    def test_cli_refuses_fileio_without_no_cdp_or_new_one_use_permission(self):
+        from qa.p4_research import n12_app_lifetime as lifetime
+        from unittest.mock import patch
+        import os
+        with patch.object(lifetime.sys, "argv", [
+                "app-lifetime", "--source", "a" * 40,
+                "--expected-exe-sha256", "b" * 64, "--fileio"]), \
+             patch.object(lifetime, "preflight") as preflight, \
+             patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(lifetime.main(), 2)
+            preflight.assert_not_called()
+        with patch.object(lifetime.sys, "argv", [
+                "app-lifetime", "--source", "a" * 40,
+                "--expected-exe-sha256", "b" * 64, "--fileio", "--no-cdp"]), \
+             patch.object(lifetime, "preflight") as preflight, \
+             patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(lifetime.main(), 2)
+            preflight.assert_not_called()
+
+    def test_capture_rejects_fileio_before_creating_root_without_fresh_approval(self):
+        from qa.p4_research import n12_app_lifetime as lifetime
+        from unittest.mock import patch
+        import os
+        with patch.object(lifetime.journey, "prepare_journey") as prepare, \
+             patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "new-one-use-approval"):
+                lifetime.capture(Path("synthetic"), Path("synthetic"),
+                                 {"source_sha": "a" * 40, "executable_sha256": "b" * 64},
+                                 no_cdp=True, fileio=True)
+            prepare.assert_not_called()
+        with patch.object(lifetime.journey, "prepare_journey") as prepare, \
+             patch.dict(os.environ, {"PILOTODIN_N12_NO_CDP_FILEIO_CONSENT":
+                                     lifetime.FILEIO_CONSENT}, clear=True):
+            with self.assertRaisesRegex(trace.EvidenceValidationError, "new-one-use-approval"):
+                lifetime.capture(Path("synthetic"), Path("synthetic"),
+                                 {"source_sha": "a" * 40, "executable_sha256": "b" * 64},
+                                 no_cdp=True, fileio=True)
+            prepare.assert_not_called()
+
+    def test_full_collector_reuses_journey_kernel_file_start_and_stop(self):
+        from qa.p4_native import n12_lifetime_etw as etw
+        from unittest.mock import patch
+        import os
+        with patch.dict(os.environ, {"SystemRoot": r"C:\Windows"}), \
+             patch.object(etw.journey, "start_journey_etw") as start, \
+             patch.object(etw.etw, "stop_trace", return_value={
+                 "events_lost": 0, "log_buffers_lost": 0, "realtime_buffers_lost": 0,
+                 "buffers_written": 3}) as stop, \
+             patch.object(etw.etw, "utc_ticks", side_effect=[100, 200]):
+            with etw.fileio_process_session(Path("disposable"), "a" * 40, "b" * 64) as session:
+                self.assertEqual(session["start"], 100)
+            self.assertEqual(session["end"], 200)
+            self.assertEqual(session["counters"]["buffers_written"], 3)
+            self.assertEqual(start.call_count, 1)
+            self.assertEqual(stop.call_count, 1)
+            self.assertIn("Lifetime-FileIO-", start.call_args.args[1])
+
+    def test_full_collector_stops_on_body_error_without_reporting_a_pass(self):
+        from qa.p4_native import n12_lifetime_etw as etw
+        from unittest.mock import patch
+        import os
+        with patch.dict(os.environ, {"SystemRoot": r"C:\Windows"}), \
+             patch.object(etw.journey, "start_journey_etw"), \
+             patch.object(etw.etw, "stop_trace", return_value={}) as stop, \
+             patch.object(etw.etw, "utc_ticks", return_value=100):
+            with self.assertRaisesRegex(ValueError, "synthetic-body-failed"):
+                with etw.fileio_process_session(Path("disposable"), "a" * 40, "b" * 64):
+                    raise ValueError("synthetic-body-failed")
+            stop.assert_called_once()
+
+    def test_source_only_full_capture_brackets_snapshots_and_reuses_fileio_reducer(self):
+        from contextlib import contextmanager, nullcontext
+        from datetime import datetime, timezone
+        from tempfile import TemporaryDirectory
+        from unittest.mock import patch
+        import os
+        from qa.p4_research import n12_app_lifetime as lifetime
+        source, digest = "a" * 40, "b" * 64
+        provenance = {"source_sha": source, "executable_sha256": digest,
+                      "cargo_lock_sha256": "c" * 64}
+        base = trace.utc_ticks(datetime.now(timezone.utc))
+        mock_session = {
+            "start": base - 50_000_000, "end": base + 50_000_000,
+            "counters": {"events_lost": 0, "log_buffers_lost": 0,
+                         "realtime_buffers_lost": 0, "buffers_written": 5},
+        }
+        @contextmanager
+        def fixture_session(*unused):
+            yield mock_session
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = {"schema_version": 1, "disposable": True,
+                        "source_sha": source, "executable_sha256": digest,
+                        "markers": {},
+                        "protected_roots": {"old": str(root / "private-old")},
+                        "observed_roots": {"quality-source": str(root / "quality-source.csv")},
+                        "immutable_observed": ["quality-source"],
+                        "permitted_writes": {"webview": [str(root / "webview")]}}
+            witness = {"pid": 50, "birth": 100, "exit": 200}
+            saved = {}
+            def capture_file(path, data):
+                saved[path.name] = data
+            env = {
+                "PILOTODIN_N12_NO_CDP_FILEIO_CONSENT": lifetime.FILEIO_CONSENT,
+                "PILOTODIN_N12_NO_CDP_STORAGE_CONSENT": lifetime.no_cdp_path.lifecycle.NATIVE_ACK_CONSENT,
+                "PILOTODIN_N12_APP_LIFETIME_CONSENT": lifetime.CONSENT,
+                "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted",
+                "RUNNER_OS": "Windows", "GITHUB_RUN_ATTEMPT": "1",
+                "PILOTODIN_N12_APPROVED_SOURCE": source,
+            }
+            # Every Windows/native action below is mocked. Only the generated
+            # fixture CSV gets written in this local temporary directory.
+            with patch.dict(os.environ, env, clear=True), \
+                 patch.object(lifetime.journey, "prepare_journey",
+                              return_value=(manifest, root, root, root / "quality-source.csv", [])), \
+                 patch.object(lifetime.journey, "snapshots",
+                              return_value={"protected": {}, "observed": {}}), \
+                 patch.object(lifetime.journey, "snapshot_capture_evidence",
+                              return_value={"status": "PASS"}) as bracket, \
+                 patch.object(lifetime.journey, "sysmon_tail", side_effect=[1, 4]), \
+                 patch.object(lifetime.journey, "export_sysmon"), \
+                 patch.object(lifetime.journey, "powershell") as powershell, \
+                 patch.object(lifetime.journey, "report_file", side_effect=capture_file), \
+                 patch.object(lifetime.journey, "checkpoint_stage",
+                              side_effect=lambda *a: nullcontext()), \
+                 patch.object(lifetime.etw, "fileio_process_session",
+                              side_effect=fixture_session) as collector, \
+                 patch.object(lifetime.etw, "process_session") as old_collector, \
+                 patch.object(lifetime.n12_etw_probe, "volume_devices",
+                              return_value={"C:": r"\Device\HarddiskVolume3"}), \
+                 patch.object(lifetime, "launch_worker",
+                              return_value=(witness, witness, None)) as worker, \
+                 patch.object(lifetime.trace, "read_json", return_value={
+                     "source_sha": source, "executable_sha256": digest,
+                     "markers": {"launch": "x", "ready": "y", "close": "z", "profile-exit": "v"}}), \
+                 patch.object(lifetime.trace, "compare_snapshots",
+                              return_value=({"protected_snapshot_comparison": "MATCH"}, set())), \
+                 patch.object(lifetime.build, "digest", return_value="d" * 64), \
+                 patch.object(lifetime.build, "executable", return_value=root / "fake.exe"), \
+                 patch.object(lifetime, "reduction",
+                              return_value={"verdict": "PASS", "issues": [],
+                                            "handle_comparison": {"app": "MATCH"}}), \
+                 patch.object(lifetime.fileio_review, "reduce",
+                              return_value={"status": "BLOCKED",
+                                            "native_N12_acceptance": "NOT_EVALUATED"}) as strict, \
+                 patch.object(lifetime.time, "sleep"):
+                receipt = lifetime.capture(root, root, provenance, no_cdp=True, fileio=True)
+            collector.assert_called_once()
+            old_collector.assert_not_called()
+            worker.assert_called_once()
+            self.assertTrue(worker.call_args.kwargs["no_cdp"])
+            bracket.assert_called_once()
+            self.assertEqual(powershell.call_args.args[1], "etw-export")
+            strict.assert_called_once()
+            self.assertEqual(strict.call_args.args[0]["etw"]["events_sha256"], "d" * 64)
+            self.assertEqual(strict.call_args.args[0]["etw"]["counters"]["buffers_written"], 5)
+            self.assertTrue({"snapshot-before-start", "snapshot-before-end",
+                             "snapshot-after-start", "snapshot-after-end",
+                             "launch", "ready", "close", "profile-exit"} <=
+                            manifest["markers"].keys())
+            self.assertEqual(receipt["no_cdp_fileio"]["status"], "BLOCKED")
+            self.assertEqual(saved["lifetime-report.json"]["no_cdp_fileio"]["native_N12_acceptance"],
+                             "NOT_EVALUATED")
+

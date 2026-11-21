@@ -470,6 +470,9 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
                                   and type(child.get("markers")) is dict,
                                   "no-cdp-child-stage-provenance-unverified")
                     if fileio:
+                        trace.require(set(child["markers"]) == {
+                            "launch", "ready", "close", "profile-exit"
+                        }, "no-cdp-stage-markers-unverified")
                         manifest["markers"].update(child["markers"])
                     else:
                         manifest["markers"] = child["markers"]
@@ -544,7 +547,8 @@ def main():
                         help="No-CDP only, new one-use approval, full FileIO diagnostic NOT N12 acceptance")
     args = parser.parse_args()
     try:
-        trace.require(not args.fileio or args.no_cdp, "no-cdp-fileio-requires-no-cdp")
+        trace.require(not args.fileio or (args.no_cdp and not args.worker),
+                      "no-cdp-fileio-requires-no-cdp-controller")
         if args.fileio:
             trace.require(os.environ.get("PILOTODIN_N12_NO_CDP_FILEIO_CONSENT") == FILEIO_CONSENT,
                           "no-cdp-fileio-new-one-use-approval-required")
@@ -569,8 +573,10 @@ def main():
         print("N12 app lifetime provenance " + json.dumps({
             key: provenance[key] for key in ("source_sha", "executable_sha256", "cargo_lock_sha256")
         }), flush=True)
-        return 0 if capture(root, staged, provenance, no_cdp=args.no_cdp,
-                            fileio=args.fileio)["verdict"] == "PASS" else 2
+        result = capture(root, staged, provenance, no_cdp=args.no_cdp, fileio=args.fileio)
+        # Diagnostic-only full FileIO cannot yield success/acceptance yet:
+        # the complete N12 calibration and transient mutation proof are absent.
+        return 0 if not args.fileio and result["verdict"] == "PASS" else 2
     except trace.EvidenceValidationError as exc:
         print(f"N12 app lifetime blocked: {exc}.", file=sys.stderr)
     except (KeyError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
