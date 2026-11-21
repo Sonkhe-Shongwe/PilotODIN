@@ -273,14 +273,14 @@ def generated_original_handle_fileio_join(capture, events):
             # The most recent matching open must be completed successfully,
             # and no close/reuse may have invalidated its FileObject.
             opened = max(same_obj_opens, key=lambda e: e["ticks"])
-            old_irp = number(opened["data"].get("Irp"))
-            open_completions = [
-                e for e in events if e.get("lifecycle") is False
-                and e["id"] == 24 and number(e.get("data", {}).get("Irp")) == old_irp
-                and opened["ticks"] < e["ticks"] < write["ticks"]
-                and number(e["data"].get("Status")) == 0
-            ] if old_irp else []
-            if len(open_completions) != 1:
+            # First subsequent completion before the write belongs to the
+            # request if no intervening IRP reuse or ordering conflict exists.
+            # Later reuses of that IRP are not duplicate completions of this
+            # open. Use the same established completion contract as the
+            # already-tested generated file-lifetime control.
+            prior = sorted((e for e in events if e.get("lifecycle") is False),
+                           key=lambda e: e["ticks"])
+            if successful_completion(prior, opened, write["ticks"]) is None:
                 issues.append("writer-fileio-open-completion-unverified")
         file_events = sorted((e for e in events if e.get("lifecycle") is False),
                              key=lambda e: e["ticks"])
