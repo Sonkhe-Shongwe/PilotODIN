@@ -22,9 +22,11 @@ from qa.p4_research import n12_no_cdp_native_path as no_cdp_path
 from qa.p4_research import n12_no_cdp_browser_identity as browser_identity
 from qa.p4_research import n12_no_cdp_child_handles as child_handles
 from qa.p4_research import n12_private_child_pipe as child_pipe
+from qa.p4_research import n12_no_cdp_fileio_review as fileio_review
 
 
 CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
+FILEIO_CONSENT = "I_APPROVE_ONE_N12_NO_CDP_FILEIO"
 READY_PROBE = journey.FRONTEND / "e2e" / "p4-n12-app-lifetime-ready.mjs"
 STORAGE_TMP_DIR = "startup-tmp"
 STORAGE_DIAGNOSTIC_VARIANTS = ("debug-netlog", "debug-only")
@@ -425,17 +427,38 @@ def endpoint_evidence(manifest, before):
         return snapshot, issues
 
 
-def capture(root, staged, provenance, *, no_cdp=False):
+def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
+    # The full app and FileIO path is dormant without a NEW one-use approval.
+    if fileio:
+        trace.require(no_cdp is True
+                      and os.environ.get("PILOTODIN_N12_NO_CDP_FILEIO_CONSENT") == FILEIO_CONSENT
+                      and os.environ.get("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT")
+                      == no_cdp_path.lifecycle.NATIVE_ACK_CONSENT
+                      and os.environ.get("PILOTODIN_N12_APP_LIFETIME_CONSENT") == CONSENT
+                      and os.environ.get("GITHUB_ACTIONS") == "true"
+                      and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted"
+                      and os.environ.get("RUNNER_OS") == "Windows"
+                      and os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
+                      and os.environ.get("PILOTODIN_N12_APPROVED_SOURCE") == provenance.get("source_sha"),
+                      "no-cdp-fileio-new-one-use-approval-required")
     source, expected_hash = provenance["source_sha"], provenance["executable_sha256"]
     manifest, _, _, fixture, _ = journey.prepare_journey(root, source, expected_hash)
     fixture.write_text("fixture,value\nstartup-close,1\n", encoding="utf-8")
-    before = journey.snapshots(manifest)
+    # Keep ordinary process-only lifetime snapshots unchanged. Full FileIO
+    # places BOTH complete snapshots under the same live Kernel-File session.
+    before = None if fileio else journey.snapshots(manifest)
+    after = None
     volume_devices = n12_etw_probe.volume_devices()
     with journey.checkpoint_stage("app-lifetime-window-open", source, expected_hash):
         manifest["sysmon_first_record"] = journey.sysmon_tail() + 1
     try:
-        with etw.process_session(root, source, expected_hash) as session:
+        collector = etw.fileio_process_session if fileio else etw.process_session
+        with collector(root, source, expected_hash) as session:
             manifest["start_utc"] = journey.now().isoformat()
+            if fileio:
+                journey.mark(manifest, "snapshot-before-start")
+                before = journey.snapshots(manifest)
+                journey.mark(manifest, "snapshot-before-end")
             time.sleep(journey.INITIAL_FIXTURE_LEAD_IN_SECONDS)
             with journey.checkpoint_stage("app-lifetime-worker", source, expected_hash):
                 worker, app, private_children = launch_worker(
@@ -446,28 +469,60 @@ def capture(root, staged, provenance, *, no_cdp=False):
                                   and child.get("executable_sha256") == expected_hash
                                   and type(child.get("markers")) is dict,
                                   "no-cdp-child-stage-provenance-unverified")
-                    manifest["markers"] = child["markers"]
+                    if fileio:
+                        manifest["markers"].update(child["markers"])
+                    else:
+                        manifest["markers"] = child["markers"]
+            if fileio:
+                journey.mark(manifest, "snapshot-after-start")
+                after = journey.snapshots(manifest)
+                journey.mark(manifest, "snapshot-after-end")
+                manifest["end_utc"] = journey.now().isoformat()
     except Exception:
         try:
-            endpoint_evidence(manifest, before)
+            if before is not None:
+                endpoint_evidence(manifest, before)
         except Exception:
             pass  # Preserve the startup or capture failure.
         raise
-    manifest["end_utc"] = journey.timestamp_from_ticks(session["end"]).isoformat()
-    snapshot, snapshot_issues = endpoint_evidence(manifest, before)
+    if fileio:
+        journey.snapshot_capture_evidence(
+            manifest, journey.timestamp_from_ticks(session["start"]),
+            journey.timestamp_from_ticks(session["end"]))
+        snapshot, snapshot_issues = trace.compare_snapshots(before, after, manifest)
+    else:
+        manifest["end_utc"] = journey.timestamp_from_ticks(session["end"]).isoformat()
+        snapshot, snapshot_issues = endpoint_evidence(manifest, before)
     sysmon = root / "lifetime-sysmon.xml"
     with journey.checkpoint_stage("app-lifetime-sysmon-export", source, expected_hash):
         time.sleep(3)
         manifest["sysmon_last_record"] = journey.sysmon_tail()
         journey.export_sysmon(manifest["sysmon_first_record"], manifest["sysmon_last_record"], sysmon)
     with journey.checkpoint_stage("app-lifetime-etw-export", source, expected_hash):
-        journey.powershell(journey.HELPER, "etw-app-lifetime-export", "-CaptureRoot", root, timeout=90)
+        journey.powershell(
+            journey.HELPER, "etw-export" if fileio else "etw-app-lifetime-export",
+            "-CaptureRoot", root, timeout=600 if fileio else 90)
     with journey.checkpoint_stage("app-lifetime-reduction", source, expected_hash):
-        events = root / "lifetime-etw.jsonl"
+        events = root / ("etw.jsonl" if fileio else "lifetime-etw.jsonl")
         manifest["events_sha256"] = build.digest(events)
+        if fileio:
+            manifest["etw"] = {
+                "schema_version": 1,
+                "start_utc": journey.timestamp_from_ticks(session["start"]).isoformat(),
+                "end_utc": journey.timestamp_from_ticks(session["end"]).isoformat(),
+                "counters": session["counters"], "volume_devices": volume_devices,
+                "events_sha256": manifest["events_sha256"],
+            }
         report = reduction(manifest, sysmon, events, volume_devices, session, app, worker,
                            build.executable(staged), no_cdp_profile=no_cdp,
                            child_handle_evidence=private_children)
+        if fileio:
+            # Same digest-verified ETW export, original strict FileIO reducer.
+            # Retain every prohibited and unclassified operation. Diagnostic
+            # status never promotes lifecycle PASS to N12 filesystem acceptance.
+            report["no_cdp_fileio"] = fileio_review.reduce(
+                manifest, sysmon, events, app, build.executable(staged),
+                lifetime_report=report, snapshot=snapshot)
         report["cargo_lock_sha256"] = provenance["cargo_lock_sha256"]
         report["protected_snapshot_comparison"] = snapshot["protected_snapshot_comparison"]
         if snapshot["protected_snapshot_comparison"] != "MATCH":
@@ -485,8 +540,14 @@ def main():
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--no-cdp", action="store_true",
                         help="Separately consent-gated, no-debugger lifecycle only; NOT FileIO acceptance")
+    parser.add_argument("--fileio", action="store_true",
+                        help="No-CDP only, new one-use approval, full FileIO diagnostic NOT N12 acceptance")
     args = parser.parse_args()
     try:
+        trace.require(not args.fileio or args.no_cdp, "no-cdp-fileio-requires-no-cdp")
+        if args.fileio:
+            trace.require(os.environ.get("PILOTODIN_N12_NO_CDP_FILEIO_CONSENT") == FILEIO_CONSENT,
+                          "no-cdp-fileio-new-one-use-approval-required")
         if args.no_cdp:
             trace.require(
                 os.environ.get("PILOTODIN_N12_NO_CDP_STORAGE_CONSENT")
@@ -508,7 +569,8 @@ def main():
         print("N12 app lifetime provenance " + json.dumps({
             key: provenance[key] for key in ("source_sha", "executable_sha256", "cargo_lock_sha256")
         }), flush=True)
-        return 0 if capture(root, staged, provenance, no_cdp=args.no_cdp)["verdict"] == "PASS" else 2
+        return 0 if capture(root, staged, provenance, no_cdp=args.no_cdp,
+                            fileio=args.fileio)["verdict"] == "PASS" else 2
     except trace.EvidenceValidationError as exc:
         print(f"N12 app lifetime blocked: {exc}.", file=sys.stderr)
     except (KeyError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:

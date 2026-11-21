@@ -41,6 +41,26 @@ def process_session(root, source, executable_sha256=""):
     evidence["end"] = etw.utc_ticks()
 
 
+@contextmanager
+def fileio_process_session(root, source, executable_sha256=""):
+    """Existing full Kernel-File + Kernel-Process collector, consent gated by caller.
+
+    The journey.etl and logman provider settings are unchanged. A generated
+    receipt never authorizes a new native app run or confers N12 acceptance.
+    """
+    session = f"PilotODIN-N12-Lifetime-FileIO-{uuid4().hex}"
+    logman = str(Path(os.environ["SystemRoot"]) / "System32" / "logman.exe")
+    evidence = {"start": etw.utc_ticks()}
+    journey.start_journey_etw(root, session, source, executable_sha256)
+    try:
+        yield evidence
+    except BaseException:
+        stop_session(logman, session, source, executable_sha256, primary_error=True)
+        raise
+    evidence["counters"] = stop_session(logman, session, source, executable_sha256)
+    evidence["end"] = etw.utc_ticks()
+
+
 def stop_session(logman, session, source, executable_sha256, *, primary_error=False):
     try:
         with journey.checkpoint_stage("lifetime-etw-stop", source, executable_sha256):
