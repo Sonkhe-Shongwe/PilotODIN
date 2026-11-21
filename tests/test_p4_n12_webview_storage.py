@@ -132,6 +132,23 @@ class StorageProbeTests(unittest.TestCase):
         self.assertEqual(lifetime.storage_app_environment({}, profile),
                          {**baseline, "TMP": str(profile / APP_TEMP_DIR / lifetime.STORAGE_TMP_DIR)})
 
+    def test_debug_variant_changes_only_netlog_not_storage_or_readiness(self):
+        profile = Path("webview-fixture")
+        baseline = lifetime.storage_app_environment({}, profile, variant="debug-netlog")
+        debug_only = lifetime.storage_app_environment({}, profile, variant="debug-only")
+        self.assertEqual(baseline["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"],
+                         app_environment({}, profile, "first")["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"])
+        self.assertEqual(debug_only["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"],
+                         "--remote-debugging-port=9331")
+        self.assertEqual({key: value for key, value in baseline.items()
+                          if key != "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"},
+                         {key: value for key, value in debug_only.items()
+                          if key != "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"})
+        self.assertEqual(lifetime.readiness_command("node", storage=True),
+                         ["node", str(lifetime.READY_PROBE), "webview-storage"])
+        with self.assertRaisesRegex(trace.EvidenceValidationError, "unknown WebView"):
+            lifetime.storage_app_environment({}, profile, variant="no-debugger")
+
     def test_startup_tmp_probe_distinguishes_launch_tmp_scratch_and_ambient(self):
         self.manifest["startup_tmp_probe"] = True
         self.manifest["observed_roots"]["qa-webview"] = SCRATCH
@@ -387,6 +404,8 @@ class StorageProbeTests(unittest.TestCase):
             row(7, 101, "msedgewebview2.exe", USER_TEMP + r"\\private-renderer.tmp"),
         ])
         self.assertFalse(report["storage_context_is_acceptance_evidence"])
+        self.assertEqual(report["storage_diagnostic_variant"], "debug-netlog")
+        self.assertEqual(report["browser_variant_corroboration"], "agrees")
         self.assertEqual(report["browser_launch_flags"], {
             "status": "environment-observed", "remote_debugging": "present", "netlog": "present",
         })
@@ -402,6 +421,34 @@ class StorageProbeTests(unittest.TestCase):
         for secret in ("private-token", "private-browser", "private-renderer", "secret.json"):
             self.assertNotIn(secret, rendered)
         self.assertEqual(report["verdict"], "REPRODUCED")
+
+    def test_variant_comparison_is_descriptive_not_an_acceptance_override(self):
+        browser = process("browser", "app", 102, WEBVIEW, 6, 13,
+                          command="--remote-debugging-port=9331")
+        self.processes[browser.guid] = browser
+        self.manifest.update(cdp_browser_pid=102, probe_user_temp=USER_TEMP,
+                             storage_diagnostic_variant="debug-only")
+        parent = self.processes["app"]
+        start = row(6, 102, "msedgewebview2.exe", "", op="Process Start",
+                    detail=(f"Parent PID: {parent.pid}, Command line: {browser.command}, "
+                            f"Current directory: c:\\fixture, Environment: "
+                            f" ; TEMP={SCRATCH}\\app-temp ; TMP={SCRATCH}\\app-temp "
+                            f" ; WEBVIEW2_USER_DATA_FOLDER={SCRATCH}"))
+        rows = self.controls + [start, row(7, 102, "msedgewebview2.exe", TARGET)]
+        report = self.reduce(rows)
+        self.assertEqual(report["storage_diagnostic_variant"], "debug-only")
+        self.assertEqual(report["browser_variant_corroboration"], "agrees")
+        self.assertEqual(report["ambient_temp_creates"], 1)
+        self.assertEqual(report["verdict"], "REPRODUCED")
+        self.assertFalse(report["storage_context_is_acceptance_evidence"])
+
+        self.manifest["storage_diagnostic_variant"] = "debug-netlog"
+        self.assertEqual(self.reduce(rows)["browser_variant_corroboration"], "disagrees")
+        self.manifest["cdp_browser_pid"] = 999
+        self.assertEqual(self.reduce(rows)["browser_variant_corroboration"], "unverified")
+        self.manifest["storage_diagnostic_variant"] = "invalid-variant"
+        with self.assertRaisesRegex(trace.EvidenceValidationError, "unknown WebView"):
+            self.reduce(rows)
 
     def test_writer_context_rejects_wrong_parent_and_duplicate_start_receipts(self):
         child = self.processes["renderer"]
@@ -432,6 +479,14 @@ class StorageProbeTests(unittest.TestCase):
             "tmp": "tmp-ambiguous", "udf": "declared-profile",
         })
         self.assertNotIn("relative", json.dumps(context))
+
+    def test_variant_cli_rejects_unknown_variant_before_native_preflight(self):
+        run = subprocess.run([sys.executable, "-B", "-m", probe.__name__, "capture", ".",
+                              "--source", SOURCE, "--expected-exe-sha256", HASH,
+                              "--diagnostic-variant", "disable-everything"],
+                             capture_output=True, text=True, timeout=10)
+        self.assertEqual(run.returncode, 2)
+        self.assertIn("invalid choice", run.stderr)
 
     def test_capture_refuses_absent_one_use_approval(self):
         run = subprocess.run([sys.executable, "-B", "-m", probe.__name__, "capture", ".",

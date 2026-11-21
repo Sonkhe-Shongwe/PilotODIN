@@ -54,13 +54,16 @@ def runner_control_temp(env):
     return ambient
 
 
-def capture(root, staged, node, source, expected_hash):
+def capture(root, staged, node, source, expected_hash, *, variant="debug-netlog"):
+    trace.require(variant in lifetime.STORAGE_DIAGNOSTIC_VARIANTS,
+                  "unknown WebView storage diagnostic variant")
     ambient = runner_control_temp(os.environ)
     manifest, _, profile, fixture, _ = journey.prepare_journey(root, source, expected_hash)
     tmp_witness = profile / journey.APP_TEMP_DIR / lifetime.STORAGE_TMP_DIR
     tmp_witness.mkdir()
     manifest["probe_user_temp"] = str(ambient)
     manifest["startup_tmp_probe"] = True
+    manifest["storage_diagnostic_variant"] = variant
     fixture.write_text("fixture,value\nwebview-storage,1\n", encoding="utf-8")
     before = journey.snapshots(manifest)
     journey.mark(manifest, "fixture-ready")
@@ -203,6 +206,9 @@ def replay_startup_creates(manifest, etw, start, ready, processes, roles, browse
 
 
 def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
+    variant = manifest.get("storage_diagnostic_variant", "debug-netlog")
+    trace.require(variant in lifetime.STORAGE_DIAGNOSTIC_VARIANTS,
+                  "unknown WebView storage diagnostic variant")
     start, end, processes, _, issues = trace.load_capture(manifest, sysmon)
     # This is a direct-path diagnosis. Track the existing capture-loss limitation separately.
     loss_reviewed = "procmon-coverage-not-confirmed" not in issues
@@ -438,9 +444,23 @@ def reduce(root, staged, manifest, sysmon, procmon, *, replay_etw=None):
                 r"(?:^|\s)--log-net-log(?:=|\s|$)", browser.command
             ) else "absent",
         }
+    # The variant label is a capture declaration, not proof that WebView2
+    # applied its flags. Require the independently captured browser command
+    # and uniquely identified Process Start receipt before corroboration.
+    if browser_launch_flags["status"] != "environment-observed":
+        variant_corroboration = "unverified"
+    elif browser_launch_flags["remote_debugging"] != "present":
+        variant_corroboration = "disagrees"
+    elif browser_launch_flags["netlog"] == ("present" if variant == "debug-netlog" else "absent"):
+        variant_corroboration = "agrees"
+    else:
+        variant_corroboration = "disagrees"
     if any(row["stage"] == "after-profile-exit" for row in rows):
         issues.add("webview-writes-after-profile-exit")
-    report = {"scope": "one-startup-and-close-storage-diagnostic", "source_sha": manifest["source_sha"],
+    report = {"scope": "one-startup-and-close-storage-diagnostic",
+            "storage_diagnostic_variant": variant,
+            "browser_variant_corroboration": variant_corroboration,
+            "source_sha": manifest["source_sha"],
             "executable_sha256": manifest["executable_sha256"],
             "verdict": "BLOCKED" if issues else "REPRODUCED" if ambient_creates else "INCONCLUSIVE",
             "issues": sorted(issues), "procmon_shutdown_verified": shutdown_verified,
@@ -478,6 +498,8 @@ def main():
     parser.add_argument("capture_root", type=Path)
     parser.add_argument("--source", required=True)
     parser.add_argument("--expected-exe-sha256", required=True)
+    parser.add_argument("--diagnostic-variant", choices=lifetime.STORAGE_DIAGNOSTIC_VARIANTS,
+                        default="debug-netlog")
     args = parser.parse_args()
     try:
         trace.require(os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
@@ -488,11 +510,14 @@ def main():
         root = base / PROBE_DIR
         if args.action == "capture":
             with journey.checkpoint_stage("webview-storage-launch-and-controls", args.source, args.expected_exe_sha256):
-                capture(root, staged, node, args.source, args.expected_exe_sha256)
+                capture(root, staged, node, args.source, args.expected_exe_sha256,
+                        variant=args.diagnostic_variant)
             return 0
         manifest = trace.read_json(root / "private-storage-capture.json")
         trace.require(manifest["source_sha"] == args.source and manifest["executable_sha256"] == args.expected_exe_sha256,
                       "storage capture provenance mismatch")
+        trace.require(manifest.get("storage_diagnostic_variant", "debug-netlog") == args.diagnostic_variant,
+                      "requested storage variant disagrees with captured variant")
         window = trace.read_json(base / "storage-window.json")
         manifest.update({key: window[key] for key in (
             "schema_version", "disposable", "start_utc", "end_utc", "sysmon_first_record",

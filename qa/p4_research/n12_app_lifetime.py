@@ -22,15 +22,22 @@ from qa.p4_research import n12_app_journey as journey
 CONSENT = "I_APPROVE_ONE_N12_APP_LIFETIME"
 READY_PROBE = journey.FRONTEND / "e2e" / "p4-n12-app-lifetime-ready.mjs"
 STORAGE_TMP_DIR = "startup-tmp"
+STORAGE_DIAGNOSTIC_VARIANTS = ("debug-netlog", "debug-only")
 
 
 def readiness_command(node, *, storage):
     return [node, str(READY_PROBE), "webview-storage" if storage else "lifetime"]
 
 
-def storage_app_environment(env, profile):
+def storage_app_environment(env, profile, *, variant="debug-netlog"):
+    """Compare netlog presence without changing startup debugging or storage roots."""
+    trace.require(variant in STORAGE_DIAGNOSTIC_VARIANTS,
+                  "unknown WebView storage diagnostic variant")
     settings = journey.app_environment(env, profile, "first")
     settings["TMP"] = str(profile / journey.APP_TEMP_DIR / STORAGE_TMP_DIR)
+    if variant == "debug-only":
+        # The CDP readiness and close driver still requires this single switch.
+        settings["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = "--remote-debugging-port=9331"
     return settings
 
 
@@ -85,7 +92,9 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
             app_env = {**env, "WEBVIEW2_USER_DATA_FOLDER": str(profile),
                        "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=9331"}
             if storage_manifest is not None:
-                app_env = storage_app_environment(env, profile)
+                app_env = storage_app_environment(
+                    env, profile, variant=manifest.get("storage_diagnostic_variant", "debug-netlog"),
+                )
                 journey.mark(manifest, "launch")
             app = journey.spawn(stack, manifest, "app", [binary], app_env, binary.parent, root / "app.log")
             journey.wait_for(lambda: journey.http_ready(9331, "/json/version",
