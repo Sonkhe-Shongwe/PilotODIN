@@ -14,6 +14,8 @@
 
 ## Current development references
 
+- [Stage 1 source-only original Windows handle witness shadow review](./P4_N12_STAGE1_SHADOW_HANDLE_WITNESS_DESIGN_2026-11-21.md) records the unchanged strict predicate, synthetic per-process handle-witness alternative, unresolved seven child handles, existing 10 ms Windows collector constraints and next source-only implementation boundary.
+
 - [Latest Stage 1 actual native per-clause Sysmon/ETW exit diagnosis](./P4_N12_STAGE1_NATIVE_SYSMON_ETW_EXIT_CLOCK_DIAGNOSIS_44893498723.md) documents owner-approved #44893498723, sole exact exit timestamp equality failure across nine lifetimes, precise signed app/launcher clock differences, original handle corroboration, consumed one-use permission and source-only next review.
 
 - [Newest source-only per-clause Sysmon/ETW lifetime diagnostic](./P4_N12_STAGE1_SYSMON_PER_CLAUSE_DIAGNOSTIC_2026-11-21.md) describes fixed failure categories, privacy-safe relative clock deltas, source CI 4/4, and next one-use native approval boundary, with no acceptance credit.
