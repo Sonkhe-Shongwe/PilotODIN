@@ -28,3 +28,7 @@ The latest complete approved N12 result remains **filesystem FAIL, network FAIL,
 ## Source-only lifecycle assembly checkpoint
 
 The next planned integration seam was prepared in the [guarded non-launching no-CDP lifecycle observer](./P4_N12_NO_CDP_LIFECYCLE_SOURCE_STITCH_2026-11-21.md), with exact-source fixture CI success at `3afdaad`. The native launcher has **not** been converted. Startup-window polling and independent browser lifetime/profile attribution remain required before seeking separate one-use native capture consent.
+
+## Bounded startup observation update
+
+[Absence-only wait and exact-source CI](./P4_N12_NO_CDP_BOUNDED_WINDOW_WAIT_2026-11-21.md) change one selector contract: only an OS snapshot with **neither** expected-PID windows nor expected-title windows may produce the retryable `no-cdp-window-not-yet-present` state. All other missing/ambiguous identity errors stay hard failures. The source-only wait is bounded to 20 seconds maximum and rejects positive results arriving after the deadline. Routine CI #44876670006 passed 4/4 at `298c402`; no actual Win32 observation has been authorised or run.
