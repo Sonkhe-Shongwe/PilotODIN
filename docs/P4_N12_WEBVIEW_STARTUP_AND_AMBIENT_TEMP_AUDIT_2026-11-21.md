@@ -50,6 +50,10 @@ No filename, private path, pathname hash, process ID or per-target record is pub
 
 **Exact-source follow-up routine CI:** [#44851735583](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44851735583) at `473c06d8bc5e98abf1224997d1f6f8cdab7feaaa`: completed, 4/4 jobs SUCCESS. The updated Windows generated calibration crossed its prior UDP bind stage; no native PilotODIN app build was run. A single completed host run does not guarantee the transient issue can never recur.
 
+## Later owner-authorized debug-only native result (21 November)
+
+[One-use `debug-only` native run #44852642468](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44852642468) was explicitly authorized after this audit, scoped to one unpackaged QA build and startup/close capture, independently source pinned to `0e135955`. It completed the build, app lifecycle and reduction but returned **BLOCKED** on ProcMon shutdown and incomplete coverage. **The browser created two distinct normalized `.tmp` path strings under user-temp, both during readiness, with `--log-net-log` absent and the CDP debugging flag present.** This rejects *netlog as a necessary condition for all observed ambient temp creation* while leaving the causality of specific files and production non-debug behavior unresolved. ProcMon returned code 1; browser `TEMP`, `TMP`, UDF values were unverified; 10,121 named-pipe operations unresolved; snapshots MATCHED endpoints. See [full redacted result](../qa/p4_research/N12_WEBVIEW_DEBUG_ONLY_RESULT_44852642468.md). The new source-pinned approval was consumed and the workflow disarmed again. No new N12 credit.
+
 ## Unchanged P4 acceptance
 
 Official P4 **14/20 (70%)**; file-mutation **3/4 (75%)**; desktop network isolation **2/3 (67%)**; N12 **0/2**; original data preservation **0/2**. The one-use WebView native approval remains consumed and the workflow remains `if: false`. Installer freeze through P7, owner-device prohibition and separate firewall approval remain unchanged.
