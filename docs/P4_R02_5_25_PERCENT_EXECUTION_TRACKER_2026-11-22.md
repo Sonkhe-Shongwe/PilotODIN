@@ -78,6 +78,11 @@
 - Source root cause: Python `os.environ` is **not exactly `dict`**, while both driver gates demanded `type(env) is dict`. Correct to `collections.abc.Mapping` while preserving identity/consent restrictions, add realistic non-native tests, and replace the stale synthetic assertion that the now-consumed marker is absent. [Detailed G2.4 review](./P4_R02_5_G2_3_GENERATED_SYSMON_BOOKENDS_SOURCE_DESIGN_2026-11-22.md).
 - **Progress stays 1/4 = 25%, G2 OPEN; official R02.5 0/5, N12 0/2, P4 14/20 (70%).** Further native execution requires a new explicitly scoped one-use permission, not a retry.
 
+## G2.4 exact-source source regression verification (22 November 2026)
+
+- [`c0fcd3fb071ce963cc62a725f10241e4d896fa30`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c0fcd3fb071ce963cc62a725f10241e4d896fa30) corrected Python `os._Environ` vs exact-`dict` guard and updated historical consumed-marker tests only. [Linux CI #45046033479](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45046033479) **SUCCESS at exact source, 155/155 synthetic regression tests plus syntax**. No native Sysmon operation occurred during source CI.
+- Actual Windows run [#45045760389](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45045760389) remains **BLOCKED / preflight**, one-use consent consumed, zero generated calibration bookends verified. Workflow stays `if: ${{ false }}`. Further Windows tests require another specific source-pinned approval; **G2 OPEN** and four-gate delivery **1/4 = 25%**. Official R02.5 0/5, N12 0/2, P4 14/20 (70%).
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
