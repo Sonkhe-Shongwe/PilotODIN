@@ -34,7 +34,7 @@ class GeneratedSysmonSourceGuards(unittest.TestCase):
         self.assertIn("python -B -m qa.p4_research.n12_generated_sysmon_bookends", source)
         self.assertLess(source.index("if ($GeneratedBookendsOnly -and ("), source.index("Get-MicrosoftCollector"))
         self.assertLess(source.index("python -B -m qa.p4_research.n12_generated_sysmon_bookends"),
-                        source.index("if ($AppLifetime) {"))
+                        source.index("    if ($AppLifetime) {"))
         self.assertIn("if ($NoCdpFileIO -and (", source)
         self.assertIn('if: ${{ false }}',
                       (ROOT / '.github/workflows/p4-n12-no-cdp-fileio.yml').read_text(encoding='utf-8'))
