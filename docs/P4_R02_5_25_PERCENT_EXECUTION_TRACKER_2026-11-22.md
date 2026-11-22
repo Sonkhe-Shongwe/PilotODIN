@@ -48,6 +48,13 @@
 - **Delivery remains 1/4 (25%), G2 OPEN. Official R02.5 0/5, N12 0/2, P4 14/20 (70%) unchanged.**
 
 
+## G2.2 source verification result (22 November 2026)
+
+- [Source-only fix `a7b76eb`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a7b76eba8ab9c527c3dbe299c5aba4331753110c) adds a 50 ms lead-in for the **generated final** Sysmon fixture while retaining the strict existing event window and no-cdp audit. Its first [Linux CI #45042350684](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45042350684) FAILED because a historical static test still expected the old consumed marker path in the workflow.
+- [G2.2 test follow-up `dda5428`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/dda54289d5c1e70993936aed78cd3017cdc4bcf4) corrects that test without changing the disabled native workflow. [Exact-source Linux CI #45042450714](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45042450714) **SUCCESS: 139/139 synthetic tests plus syntax**. The broad non-native push workflow [#45042350753](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45042350753) was CANCELLED on superseding push; no broad CI PASS is claimed.
+- Proposed next smallest check: independently authorised **generated Sysmon calibration-only** hosted Windows execution, not an automatic native rerun. Source-test the proposed calibration harness first. An actual original WebView2 file-handle witness remains unproven.
+- **G2 OPEN, four-gate delivery still 1/4 = 25%; official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
