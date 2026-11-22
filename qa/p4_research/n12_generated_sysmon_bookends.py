@@ -21,19 +21,31 @@ SCOPE = "n12-generated-sysmon-bookends-only"
 CONSENT = "I_APPROVE_ONE_N12_GENERATED_SYSMON_BOOKENDS"
 PHASES = ("initial", "final")
 LEAD_SECONDS = 0.05
+# Public labels are fixed constants. Never include raw source, path, PID,
+# event, exception or environment information in a returned blocker.
+BLOCKERS = frozenset((
+    "NONE", "UNSPECIFIED", "HOST_SCOPE", "SOURCE_APPROVAL",
+    "RUNNER_PATH", "SYSMON_CHANNEL", "INTERNAL_PREFLIGHT",
+    "FIXTURE_VERIFICATION",
+))
+
 
 
 class BookendBlocked(RuntimeError):
     """A fixed-label failure, never a raw process path or event payload."""
 
-    def __init__(self, phase):
-        self.phase = phase if phase in ("preflight", *PHASES) else "preflight"
+    def __init__(self, phase, blocker="UNSPECIFIED"):
+        self.phase = phase if type(phase) is str and phase in ("preflight", *PHASES) else "preflight"
+        self.blocker = blocker if type(blocker) is str and blocker in BLOCKERS else "UNSPECIFIED"
         super().__init__("generated-sysmon-" + self.phase + "-blocked")
 
 
-def receipt(status, *, phase="none"):
-    """Never serialize supplied source identifiers, PIDs, paths or IPs."""
+def receipt(status, *, phase="none", blocker="NONE"):
+    """Serialize only fixed public labels, not private runner information."""
+    phase = phase if type(phase) is str and phase in ("none", "preflight", *PHASES) else "preflight"
+    blocker = blocker if type(blocker) is str and blocker in BLOCKERS else "UNSPECIFIED"
     return {
+        "blocker": blocker,
         "scope": SCOPE,
         "status": status,
         "stage": phase,
@@ -101,42 +113,55 @@ def run_bookend_sequence(root, manifest, *, clock, pause, generate, verify):
             if type(verified_last) is not int or verified_last < next_first_record:
                 raise ValueError("generated-bookend-sysmon-tail-unverified")
             next_first_record = verified_last + 1
-        except Exception as exc:
-            raise BookendBlocked(phase) from exc
+        except Exception:
+            raise BookendBlocked(phase, "FIXTURE_VERIFICATION") from None
     return receipt("GENERATED_BOOKENDS_CORROBORATED")
 
 
 def capture_approved(source, env):
-    """Optional future Windows entry; not invoked by source-only GitHub CI."""
-    # Source identity and consent must precede the FIRST Sysmon channel read,
-    # directory creation, generated socket/process, or file change.
+    """Generated-only entry with fail-closed, privacy-safe diagnostic boundaries."""
+    # Source identity must be checked before any channel or runner path access.
     if os.name != "nt" or not isinstance(env, Mapping):
-        raise BookendBlocked("preflight")
+        raise BookendBlocked("preflight", "HOST_SCOPE")
     try:
         result = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                                 check=True, timeout=10, text=True)
-        actual = result.stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        raise BookendBlocked("preflight") from None
-    require_hosted_approval(source, env, actual)
-    from qa.p4_native import n12_trace as trace
-    from qa.p4_research import n12_app_journey as journey
+        require_hosted_approval(source, env, result.stdout.strip())
+    except Exception:
+        raise BookendBlocked("preflight", "SOURCE_APPROVAL") from None
 
-    run_id = env["GITHUB_RUN_ID"]
+    try:
+        from qa.p4_native import n12_trace as trace
+        from qa.p4_research import n12_app_journey as journey
+    except Exception:
+        raise BookendBlocked("preflight", "INTERNAL_PREFLIGHT") from None
+
+    # No raw path or underlying validation exception may leave this boundary.
     try:
         root = trace.local_disposable_path(
-            Path(env["RUNNER_TEMP"]) / ("pilotodin-n12-generated-bookends-" + run_id),
+            Path(env["RUNNER_TEMP"]) / ("pilotodin-n12-generated-bookends-" + env["GITHUB_RUN_ID"]),
             runner_temp_only=True)
         root.mkdir(exist_ok=False)
-        manifest = {"processes": [], "loopback_ports": [],
-                    "sysmon_first_record": journey.sysmon_tail() + 1}
+    except Exception:
+        raise BookendBlocked("preflight", "RUNNER_PATH") from None
+
+    try:
+        channel_last = journey.sysmon_tail()
+        if type(channel_last) is not int or channel_last < 0:
+            raise ValueError("invalid Sysmon channel tail")
+    except Exception:
+        raise BookendBlocked("preflight", "SYSMON_CHANNEL") from None
+
+    manifest = {"processes": [], "loopback_ports": [],
+                "sysmon_first_record": channel_last + 1}
+    try:
         return run_bookend_sequence(
             root, manifest, clock=journey.now, pause=journey.time.sleep,
             generate=journey.calibrate, verify=journey.verify_fixture_sysmon)
     except BookendBlocked:
         raise
     except Exception:
-        raise BookendBlocked("preflight") from None
+        raise BookendBlocked("preflight", "INTERNAL_PREFLIGHT") from None
 
 
 def main(argv=None, *, env=None):
@@ -152,7 +177,7 @@ def main(argv=None, *, env=None):
         print(json.dumps(result, sort_keys=True))
         return 0
     except BookendBlocked as exc:
-        print(json.dumps(receipt("BLOCKED", phase=exc.phase), sort_keys=True))
+        print(json.dumps(receipt("BLOCKED", phase=exc.phase, blocker=exc.blocker), sort_keys=True))
         return 2
 
 
