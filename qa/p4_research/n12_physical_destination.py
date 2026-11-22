@@ -116,11 +116,19 @@ def assess_private_destination(
     with the original-handle final path in this conservative subset. A blocked
     result must not be converted to permission or ignored in strict auditing.
     """
-    if not corroboration.complete():
+    # A future private collector is a trust boundary. Malformed source
+    # envelopes must produce a fixed BLOCKED result, not a thrown attribute
+    # error or a partial classification. These type checks do NOT authenticate
+    # a purported original handle or make the source eligible for native use.
+    if not isinstance(corroboration, Corroboration) or not corroboration.complete():
         return _blocked("INCOMPLETE_INDEPENDENT_CORROBORATION")
+    if not isinstance(write_target, PrivateHandlePath):
+        return _blocked("NOT_AN_ORIGINAL_FILE_HANDLE")
     if write_target.acquisition != "original_file_handle":
         return _blocked("NOT_AN_ORIGINAL_FILE_HANDLE")
-    if not allowed_roots or any(r.acquisition != "permitted_root_handle" for r in allowed_roots):
+    if (type(allowed_roots) is not tuple or not allowed_roots
+            or any(not isinstance(r, PrivateHandlePath)
+                   or r.acquisition != "permitted_root_handle" for r in allowed_roots)):
         return _blocked("PERMITTED_ROOT_HANDLE_EVIDENCE_MISSING")
     if (not isinstance(write_target.volume_serial, int) or
         isinstance(write_target.volume_serial, bool) or
@@ -143,6 +151,10 @@ def assess_private_destination(
             return _blocked("UNSUPPORTED_OR_AMBIGUOUS_PERMITTED_ROOT")
         parsed_roots.append((p[0], p[1], root.volume_serial))
 
+    # Evaluate all already-validated roots before deciding. A case-ambiguous
+    # candidate in an earlier permitted root cannot shadow a later exact root.
+    # The only positive outcome remains a supplemental, non-acceptance label.
+    case_mode_ambiguous = False
     for drive, parts, volume_id in parsed_roots:
         if (drive != target[0] or volume_id != write_target.volume_serial
                 or len(target[1]) < len(parts)):
@@ -150,11 +162,12 @@ def assess_private_destination(
         prefix = target[1][:len(parts)]
         if prefix == parts:
             return PrivateAssessment("CONTAINED_CANDIDATE_ONLY", "MATCHING_HANDLE_DERIVED_ROOT")
-        # This can be a legitimate match on ordinary NTFS, or a distinct
-        # directory when case sensitivity is enabled. Neither conclusion may
-        # be promoted without independently verified filesystem semantics.
+        # NTFS may have case-sensitive directories: neither casefold match nor
+        # casefold mismatch is proof of physical identity without a handle.
         if tuple(p.casefold() for p in prefix) == tuple(p.casefold() for p in parts):
-            return _blocked("DIRECTORY_CASE_MODE_UNVERIFIED")
+            case_mode_ambiguous = True
+    if case_mode_ambiguous:
+        return _blocked("DIRECTORY_CASE_MODE_UNVERIFIED")
     return PrivateAssessment("OUTSIDE_CANDIDATE_ONLY", "NO_MATCHING_HANDLE_DERIVED_ROOT")
 
 

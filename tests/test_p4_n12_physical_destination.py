@@ -128,6 +128,67 @@ class PhysicalDestinationCandidateTests(unittest.TestCase):
         self.assertNotIn(p, repr(r))
         self.assertNotIn("private-sensitive-name", str(r.public_receipt()))
 
+
+    def test_later_exact_root_is_not_shadowed_by_ambiguous_case_root(self):
+        # Roots must be considered as a set, not by order. A safe exact root
+        # must be checked even if another root has an ambiguous case alias.
+        target = r"C:\QA\UDF\file.tmp"
+        ambiguous = PrivateHandlePath(r"C:\qa\udf", 123, "permitted_root_handle")
+        for roots in ((ambiguous, ROOT), (ROOT, ambiguous)):
+            with self.subTest(order=roots):
+                self.assertEqual(assess_private_destination(
+                    write_target=PrivateHandlePath(target, 123, "original_file_handle"),
+                    allowed_roots=roots, request_time_path=target, corroboration=FULL,
+                ).status, "CONTAINED_CANDIDATE_ONLY")
+
+    def test_permitted_root_order_does_not_change_exact_result(self):
+        from itertools import permutations
+        target = r"C:\QA\UDF\file.tmp"
+        variants = (
+            PrivateHandlePath(r"C:\QA\UDf", 123, "permitted_root_handle"),
+            ROOT,
+            PrivateHandlePath(r"C:\irrelevant", 123, "permitted_root_handle"),
+        )
+        for roots in permutations(variants):
+            with self.subTest(roots=tuple(r.final_path for r in roots)):
+                result = assess_private_destination(
+                    write_target=PrivateHandlePath(target, 123, "original_file_handle"),
+                    allowed_roots=roots, request_time_path=target, corroboration=FULL,
+                )
+                self.assertEqual(result.status, "CONTAINED_CANDIDATE_ONLY")
+                self.assertEqual(result.public_receipt()["native_N12_acceptance"], "NOT_EVALUATED")
+
+    def test_ambiguous_root_case_is_still_blocked_without_exact_root(self):
+        target = r"C:\QA\UDF\file.tmp"
+        mixed = PrivateHandlePath(r"C:\qa\udf", 123, "permitted_root_handle")
+        self.assertEqual(assess_private_destination(
+            write_target=PrivateHandlePath(target, 123, "original_file_handle"),
+            allowed_roots=(mixed,), request_time_path=target, corroboration=FULL,
+        ).status, "BLOCKED")
+
+    def test_malformed_boundary_inputs_fail_closed_without_exceptions(self):
+        valid = dict(
+            write_target=PrivateHandlePath(r"C:\QA\UDF\file.tmp", 123, "original_file_handle"),
+            allowed_roots=(ROOT,), request_time_path=r"C:\QA\UDF\file.tmp",
+            corroboration=FULL,
+        )
+        bad = (
+            {"write_target": None},
+            {"write_target": {"path": "C:\\QA\\UDF"}},
+            {"allowed_roots": None},
+            {"allowed_roots": (None,)},
+            {"allowed_roots": ("C:\\QA\\UDF",)},
+            {"allowed_roots": "C:\\QA\\UDF"},
+            {"allowed_roots": (ROOT, None)},
+            {"corroboration": None},
+            {"corroboration": {"complete": True}},
+        )
+        for change in bad:
+            with self.subTest(change=repr(change)):
+                result = assess_private_destination(**(valid | change))
+                self.assertEqual(result.status, "BLOCKED")
+                self.assertEqual(result.public_receipt()["file_mutation_acceptance"], "NOT_EVALUATED")
+
     def test_nonwindows_adapter_refuses_without_access(self):
         import os
         if os.name != "nt":
