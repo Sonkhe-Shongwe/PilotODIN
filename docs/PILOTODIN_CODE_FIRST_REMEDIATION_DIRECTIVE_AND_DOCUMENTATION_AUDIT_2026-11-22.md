@@ -8,6 +8,13 @@
 
 **Scope of this publication:** documentation-only. No product source, test runner, CI job, acceptance predicate, approval marker, installer, owner file or protected root is modified. This directive changes work priority, not the Master Reconstruction Blueprint, the release/phase rules or explicit one-use permissions.
 
+## R1 CF-02 | Implemented and verified, 22 November 2026
+
+- **Resolved for new CSV imports:** the engine's new `is_identifier_column` function is the single identifier-name rule. Initial import and Quality replay both delegate to it. SKU, OrderNumber, CustomerID, PostalCode and related code fields preserve text/leading zeros; ordinary Revenue/Quantity remain numeric. The complete CSV decoder, UTF-8 BOM handling and CP1252 full-file retry remain intact.
+- **Exact provenance:** [product fix `502d84fe4bd7dcae175d03b640293f8f232ba1bf`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/502d84fe4bd7dcae175d03b640293f8f232ba1bf), [test expectation correction `d8c2aa47d5cc30f80afafb59ea44953489e40ac6`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/d8c2aa47d5cc30f80afafb59ea44953489e40ac6), [exact-source CI #45057052836](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45057052836). Existing [P1 isolated backend source CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45057052836) **SUCCESS: 42/42 tests and two passing encoding subtests**. The first run at the product-fix SHA failed two subtests because they explicitly expected the former incorrect `SKU=7` coercion; only the outdated assertion was corrected, while preserving the unicode/BOM expectations and enforcing import-to-Quality parity. Existing product lifecycle, disposable real-browser and broad P4 workflows **SUCCESS** at the production-source fix `502d84f`, without native capture activation.
+- **Scope and residual:** the regression imports a synthetic CSV over real disposable FastAPI routes, checks saved profile, immutable original bytes, Quality version 0 and ML preparation feature kinds. This prevents new import/Quality drift for the shared CSV heuristic. It **does not automatically rewrite older projects' stored initial import profiles** or make subjective ID-column names universally correct. Any existing-source profile remediation must preserve original bytes, existing Quality history and version provenance.
+- **Next product defect:** R1 **CF-01**, reject excessive CSV/XLSX dimensions/expansion **before full pandas materialization**, without relying only on the 40 MiB upload-byte limit. No Sysmon/ETW/PSS/Windows native action or installer.
+
 ## 1. What the source and history actually establish
 
 1. The [20 November product code/test audit](./PILOTODIN_P4_CODE_AND_TEST_AUDIT_2026-11-20.md) reproduced historical product faults. Its exact earlier defects are not automatically current: the [handoff](./SESSION_HANDOFF_CURRENT.md) records **7/7 fixes within that earlier defined audit scope**. Do not re-open those without proving a regression on the current source.
@@ -68,7 +75,7 @@ For every package: (1) find and explain the root cause; (2) produce the smallest
 
 ## 5. Next action and permission boundary
 
-**Next code task is R1 / CF-02: one canonical CSV/identifier reader, used consistently by import and Quality.** Then CF-01 pre-parse input limits. Start with source inspection and disposable leading-zero fixtures, not another collector. A correction may require routine source-only product tests, but it does not authorize Windows native collection.
+**R1 / CF-02 completed for new CSV imports at product commit `502d84f`, verified by corrected exact-source P1 CI #45057052836. Next code task: R1 / CF-01 pre-parse CSV/XLSX input limits.** Use disposable generated inputs and measure bounded CPU/memory; do not modify original projects or start native collectors. A correction may require routine source-only product tests, but it does not authorize Windows native collection.
 
 Both previously disarmed native workflows remain disabled, one-use approvals consumed. No Sysmon, PSS, ETW, WebView2, installer, owner-device access, raw path capture, privilege change or native score modification is authorised by this documentation request. Real-app containment and historical preservation remain explicitly unresolved.
 

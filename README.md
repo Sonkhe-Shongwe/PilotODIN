@@ -1,6 +1,6 @@
 # PilotODIN 1.0
 
-**CURRENT ENGINEERING DIRECTIVE (22 November):** [Code-first remediation and documentation audit](docs/PILOTODIN_CODE_FIRST_REMEDIATION_DIRECTIVE_AND_DOCUMENTATION_AUDIT_2026-11-22.md). Correct product code and root causes before extending N12 test instrumentation. **Next R1/CF-02 canonical schema parsing, then CF-01 input safety.** Dated N12 references below remain as evidence, not the default next engineering task. Official P4 14/20, R02.5 0/5 and N12 0/2 unchanged.
+**CURRENT ENGINEERING DIRECTIVE (22 November):** [Code-first remediation and documentation audit](docs/PILOTODIN_CODE_FIRST_REMEDIATION_DIRECTIVE_AND_DOCUMENTATION_AUDIT_2026-11-22.md). Correct product code and root causes before extending N12 test instrumentation. **R1/CF-02 complete for new CSV imports; [verified CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45057052836). Next R1/CF-01 pre-parse input safety.** Dated N12 references below remain as evidence, not the default next engineering task. Official P4 14/20, R02.5 0/5 and N12 0/2 unchanged.
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
