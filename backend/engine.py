@@ -63,14 +63,26 @@ def read_csv_with_identifiers(path: str, is_identifier: Callable[[str], bool]) -
         return parse("cp1252")
 
 
-def _import_identifier(name: str) -> bool:
+def is_identifier_column(name: str) -> bool:
+    """One conservative, shared CSV typing rule for import and Quality.
+
+    Protect identifier-like values from numeric inference and lost leading
+    zeros. This names-based heuristic does not establish actual identity.
+    """
     normalized = re.sub(r"[\s_-]+", "", name).lower()
-    return normalized.endswith(("id", "key", "code", "postcode", "zipcode", "phone"))
+    return (normalized.endswith((
+        "id", "key", "code", "postcode", "zipcode", "postalcode",
+        "phone", "number",
+    )) or normalized in {"sku", "ean", "upc", "isbn", "barcode"})
+
+
+# Retained for compatibility with existing callers that reference this helper.
+_import_identifier = is_identifier_column
 
 
 def read_data(path: str, ext: str) -> pd.DataFrame:
     if ext == ".csv":
-        df = read_csv_with_identifiers(path, _import_identifier)
+        df = read_csv_with_identifiers(path, is_identifier_column)
     elif ext == ".xlsx":
         df = pd.read_excel(path, engine="openpyxl", sheet_name=0)
     else: raise ValueError("Only CSV and XLSX files are supported")

@@ -138,7 +138,7 @@ def _state(con, pid: str) -> tuple[int, list[str]]:
 
 
 def _source_df(p: dict) -> pd.DataFrame:
-    """Use the shared CSV decoder with Quality's named identifier rules."""
+    """Use the same CSV decoder and identifier typing as initial import."""
     path, ext = p["dataset_path"], p["file_ext"]
     if ext == ".csv":
         df = engine.read_csv_with_identifiers(path, _named_identifier)
@@ -157,10 +157,8 @@ def _source_df(p: dict) -> pd.DataFrame:
 
 
 def _named_identifier(name: str) -> bool:
-    # Exclude generic business quantities: 'OrderNumber' is ambiguous, err on side of safety.
-    compact = re.sub(r"[\s_-]+", "", name).lower()
-    return (compact.endswith(("id", "key", "code", "postcode", "zipcode", "postalcode", "phone", "number"))
-            or compact in {"sku", "ean", "upc", "isbn", "barcode"})
+    """Delegate CSV identifier typing and Quality safety decisions to one rule."""
+    return engine.is_identifier_column(name)
 
 
 def _excluded_text_column(name: str) -> bool:

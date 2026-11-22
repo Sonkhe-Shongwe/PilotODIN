@@ -93,6 +93,55 @@ def test_rejected_invalid_dataset_removes_staged_bytes(monkeypatch, tmp_path):
     _check_no_orphans(home)
 
 
+def test_identifier_csv_import_quality_and_ml_preparation_agree(monkeypatch, tmp_path):
+    """A real upload must not numerically coerce codes before Quality reload."""
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    lines = ["OrderNumber,SKU,CustomerID,PostalCode,Quantity,Revenue"]
+    lines.extend(
+        f"{i:06d},{i:05d},{i:05d},{i:04d},{i % 5 + 1},{100 + i * 12}"
+        for i in range(1, 13)
+    )
+    source = ("\n".join(lines) + "\n").encode("utf-8")
+    with TestClient(app) as client:
+        uploaded = client.post(
+            "/api/projects", files={"file": ("leading_zeros.csv", source, "text/csv")},
+        )
+        assert uploaded.status_code == 201, uploaded.text
+        payload = uploaded.json()
+        pid, profile = payload["id"], payload["profile"]
+        columns = {col["name"]: col for col in profile["columns"]}
+        for col, expected in (
+            ("OrderNumber", "000001"), ("SKU", "00001"),
+            ("CustomerID", "00001"), ("PostalCode", "0001"),
+        ):
+            assert columns[col]["kind"] == "categorical"
+            assert profile["preview"][0][col] == expected
+        assert columns["Quantity"]["kind"] == "numeric"
+        assert columns["Revenue"]["kind"] == "numeric"
+        project = storage.get_project(pid)
+        assert Path(project["dataset_path"]).read_bytes() == source
+
+        current, version = quality.current_data(pid)
+        assert version == 0
+        for col in ("OrderNumber", "SKU", "CustomerID", "PostalCode"):
+            assert current[col].iloc[0] == profile["preview"][0][col]
+            assert pd.api.types.is_string_dtype(current[col])
+        assert pd.api.types.is_numeric_dtype(current["Quantity"])
+        assert pd.api.types.is_numeric_dtype(current["Revenue"])
+
+        prepared = client.get(
+            f"/api/projects/{pid}/preparation",
+            params={"target": "Revenue", "expected_version": 0},
+        )
+        assert prepared.status_code == 200, prepared.text
+        features = {row["column"]: row for row in prepared.json()["feature_audit"]}
+        assert features["SKU"]["kind"] == "categorical"
+        assert features["OrderNumber"]["kind"] == "categorical"
+        assert features["Quantity"]["kind"] == "numeric"
+        assert list((home / "models").iterdir()) == []
+
+
 def test_unknown_commit_state_keeps_source_for_recovery(monkeypatch, tmp_path):
     """Retain published bytes when the database becomes unavailable."""
     home = _temporary_store(monkeypatch, tmp_path)
