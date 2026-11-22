@@ -29,6 +29,16 @@
 
 `before N/4 (N*25%) -> after M/4 (M*25%); active gate; exact GitHub revision and workflow run; tests; remaining native/privacy blockers; next smallest task; official scores unchanged unless independent native acceptance`. No announcement of green before verified GitHub results.
 
+## G2.1 | One-use native activation and immediate disarm (22 November 2026)
+
+- Fresh **explicit owner approval** for exactly one disposable GitHub-hosted Windows no-CDP FileIO baseline, pinned to reviewed source `166dfa39efa6a1629c35cc4c2c6c3fc740078c3c`. Not a general native-run permission.
+- Activation commit [`58f72bf3e226b2a1d87ab11a6fe3727f424268b4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/58f72bf3e226b2a1d87ab11a6fe3727f424268b4) is a direct child of reviewed source and changed **exactly two files**: the guarded native workflow plus new marker `qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL_20261122_FRESH_ONE_USE.txt`. Old previously consumed marker remains unchanged.
+- One triggered push run: [#45041259808](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45041259808), attempt 1, pinned to the activation SHA. Source identity and owner approval job steps succeeded; **in progress at latest 22 November 2026 16:00 UTC check**, preflight dependencies active; no verified build/calibration/app FileIO outcome yet. Do not interpret the run as a native PASS.
+- Immediate re-disarm commit [`5a4c14d7cfa8f9af003ef22c19b55ab43488d5b0`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5a4c14d7cfa8f9af003ef22c19b55ab43488d5b0) restored `if: ${{ false }}` with only the workflow modified. The running capture remains pinned to the activation SHA; **no retry**, no second run, and no further native authorisation.
+- Explicit scope: one unpackaged staged QA build; initial Sysmon TCP/UDP before any app launch; at most one app startup/exit if calibration passes; existing process-child handle observation; same-capture write/restore and strict redacted reduction; cleanup. External WebView2 connections may occur. **No installer, owner workstation/data, unapproved original file-handle enumeration, raw trace upload, root/policy expansion or acceptance award.**
+- Critical dependency: a retained original WebView2 **process** handle does not prove the original **file** handle to FileObject/IRP/path relation. A source-only or incomplete native run cannot satisfy G2, even with a successful build or calibration. The native diagnostic intentionally returns non-acceptance; the job result and redacted report must be reconciled once final.
+- **Progress remains 1/4 = 25%; G2 IN PROGRESS. Official R02.5 0/5, N12 0/2, P4 14/20 (70%), engineering preparation 3/4 (75%).**
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
