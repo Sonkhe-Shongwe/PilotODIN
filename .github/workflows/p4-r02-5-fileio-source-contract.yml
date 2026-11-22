@@ -32,6 +32,8 @@ on:
       - tests/test_p4_n12_g2_bookend_source_guards.py
       - tests/test_p4_n12_g2_7_preflight_diagnostics.py
       - tests/test_p4_n12_g2_9_original_file_handle_admission.py
+      - qa/p4_research/n12_pss_file_handle_candidates.py
+      - tests/test_p4_n12_g2_10_pss_file_handle_candidates.py
       - qa/p4_research/n12_no_cdp_child_handles.py
       - qa/p4_research/n12_private_child_pipe.py
       - qa/p4_research/n12_no_cdp_native_path.py
@@ -80,6 +82,8 @@ jobs:
               "tests/test_p4_n12_g2_bookend_source_guards.py",
               "tests/test_p4_n12_g2_7_preflight_diagnostics.py",
               "tests/test_p4_n12_g2_9_original_file_handle_admission.py",
+              "qa/p4_research/n12_pss_file_handle_candidates.py",
+              "tests/test_p4_n12_g2_10_pss_file_handle_candidates.py",
           )
           for filename in sources:
               ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
@@ -108,3 +112,5 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_7_preflight_diagnostics.py' -v
       - name: G2.9 source-only original WebView file-handle admission boundary
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_9_original_file_handle_admission.py' -v
+      - name: G2.10 process-scoped PSS handle candidate, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_10_pss_file_handle_candidates.py' -v

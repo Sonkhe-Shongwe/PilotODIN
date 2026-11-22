@@ -121,6 +121,12 @@
 - New G2.9 negative admission tests and exact-source [Ubuntu CI #45052136179](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45052136179) **SUCCESS: 181/181 tests across 12 suites** (13 G2.9 tests). Both native workflows remain disarmed and no fresh approval marker is created.
 - **Delivery remains 1/4 = 25%, G2 OPEN; official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
 
+## G2.10 | Process-scoped PSS handle candidates, inert source-only (22 November 2026)
+
+- [G2.10 PSS feasibility review](./P4_R02_5_G2_10_PROCESS_SCOPED_PSS_HANDLE_CANDIDATE_DESIGN_2026-11-22.md): Microsoft-documented PSS can capture handle metadata for **a selected process**, but its ObjectType enum lacks `File`, and PSS handle numbers, type names and paths are not ETW `FileObject`/IRP pointers. Handle reuse between snapshots is unresolved.
+- New **inert**, bounded source-only PSS candidate gate with adversarial tests. Requires one claimed exact process lifetime, two complete process-scoped snapshots, <=256 rows each and <=5s span; every result remains at most **CANDIDATE_ONLY** and original file-handle/provenance and FileObject join **NOT_VERIFIED**. Linux-only CI to verify exact committed source.
+- **No Windows native observer, new owner approval, process scan, raw artifact or product launch. Both native workflows stay disarmed.** Four-gate delivery **1/4 = 25%**, G2 OPEN, R02.5 0/5, N12 0/2, P4 14/20 (70%).
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
