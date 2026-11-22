@@ -53,3 +53,11 @@ The GitHub source-only workflow runs the new focused suite, with **no** Windows/
 Both native GitHub workflows remain **DISARMED**; previously consumed approval markers remain immutable and the next future generated-only marker remains absent. No actual original WebView file handles, native collection, owner files, root exemptions, installer, or acceptance are created by this review.
 
 G1 **PASSED**. G2 **OPEN**. Four-gate delivery **1/4 = 25%**; official R02.5 **0/5**, N12 **0/2**, P4 **14/20 (70%)** unchanged.
+
+## Exact-source GitHub verification, after publication
+
+- [G2.9 source commit `1cbc65cd7476d59889fa5b468b1bdb06bdf5c243`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1cbc65cd7476d59889fa5b468b1bdb06bdf5c243) changed exactly four files: the focused original-file-handle admission tests, Ubuntu-only CI, this source feasibility review and the four-gate execution tracker. It did **not** change either native capture workflow or any one-use consent marker.
+- [Exact-source Linux Actions #45052136179](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45052136179) **COMPLETED SUCCESS**, first attempt. GitHub job logs verified **181/181 source/synthetic tests across 12 suites**, including **13 new G2.9 negative-admission tests**. The preexisting 168 suites also passed, with no raw Windows trace, collector, application launch, foreign handle duplication, kernel driver or owner filesystem access.
+- Even the all-true synthetic `original_file_handle` input remains **`CONTAINED_CANDIDATE_ONLY`**, with `native_N12_acceptance=NOT_EVALUATED`. The original strict no-CDP reducer remains **BLOCKED**. This validates conservative source handling only, not live native FileIO provenance.
+
+**Status after CI:** Four-gate delivery **1/4 = 25%**, G2 OPEN, R02.5 **0/5**, N12 **0/2**, P4 **14/20 (70%)**, unchanged. The next engineering activity is to design and test a strictly bounded, original WebView2 writer-owned *file* handle acquisition witness with a defensible same-object Kernel-File ETW bridge. Actual Windows access remains separately consent-gated.

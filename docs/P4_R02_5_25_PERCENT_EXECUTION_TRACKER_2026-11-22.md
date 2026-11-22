@@ -118,7 +118,7 @@
 
 - [Source-only G2.9 feasibility and exact witness requirements](./P4_R02_5_G2_9_ORIGINAL_WEBVIEW_FILE_HANDLE_FEASIBILITY_2026-11-22.md): live no-CDP child observer and private pipe hold **original WebView process query handles**, *not original file handles*. The generated-writer original handle is also a **process** handle. The Win32 final-path adapter accepts a supplied handle but does not acquire or authenticate an original WebView-owned file handle or prove ETW FileObject pointer/IRP relation. Existing G1 contracts remain candidate-only.
 - Explicit **NO-GO** for treating PID, synthetic handles, reopen-by-name, final path or user-supplied proof booleans as native file-destination credit. Scoped real WebView file-handle acquisition and same-object kernel bridge need separate mechanism design, privacy review and new explicit Windows permission before any native measurement.
-- New source-only negative admission tests and Ubuntu CI; success/conclusion to be independently recorded from exact-source GitHub Actions. Both native workflows remain disarmed and no fresh approval marker is created.
+- New G2.9 negative admission tests and exact-source [Ubuntu CI #45052136179](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45052136179) **SUCCESS: 181/181 tests across 12 suites** (13 G2.9 tests). Both native workflows remain disarmed and no fresh approval marker is created.
 - **Delivery remains 1/4 = 25%, G2 OPEN; official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
 
 ## Last verified milestone
