@@ -1,0 +1,59 @@
+name: P4 R02.5 FileIO source-only contract
+
+# This workflow is ONLY Python source/synthetic verification. It must never
+# run a native PilotODIN application, ETW/Sysmon/ProcMon collector, installer,
+# owner-data operation, remote services, or protected-root inspection.
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - .github/workflows/p4-r02-5-fileio-source-contract.yml
+      - qa/p4_research/n12_physical_destination.py
+      - qa/p4_research/n12_fileio_pair_contract.py
+      - tests/test_p4_n12_physical_destination.py
+      - tests/test_p4_n12_fileio_pair_contract.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-r025-fileio-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-only-python:
+    name: Standalone fail-closed FileIO evidence tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Check out exact pushed source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up Python 3.11 with no test dependencies
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: Syntax-check sources in memory without writing bytecode
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import ast
+          from pathlib import Path
+          sources = (
+              "qa/p4_research/n12_physical_destination.py",
+              "qa/p4_research/n12_fileio_pair_contract.py",
+              "tests/test_p4_n12_physical_destination.py",
+              "tests/test_p4_n12_fileio_pair_contract.py",
+          )
+          for filename in sources:
+              ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
+          PY
+      - name: Test physical-destination candidate, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_physical_destination.py' -v
+      - name: Test cross-process original-file-pair contract, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_fileio_pair_contract.py' -v
