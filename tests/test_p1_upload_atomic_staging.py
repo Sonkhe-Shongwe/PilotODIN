@@ -153,10 +153,9 @@ class CsvEncodingTests(unittest.TestCase):
                 source.write_bytes(text.encode(encoding))
                 imported = engine.read_data(str(source), ".csv")
                 self.assertEqual(imported.iloc[0].to_dict(),
-                                 {"CustomerID": "0099", "SKU": 7, "City": "Zoë 東京", "Revenue": 300})
-                working = quality._source_df({"dataset_path": str(source), "file_ext": ".csv"})
-                self.assertEqual(working.iloc[0].to_dict(),
                                  {"CustomerID": "0099", "SKU": "0007", "City": "Zoë 東京", "Revenue": 300})
+                working = quality._source_df({"dataset_path": str(source), "file_ext": ".csv"})
+                self.assertEqual(working.iloc[0].to_dict(), imported.iloc[0].to_dict())
 
     def test_invalid_utf8_marked_with_a_bom_is_not_reinterpreted_as_windows_csv(self):
         response = self._upload_bytes(BOM_UTF8 + _late_windows_csv())
