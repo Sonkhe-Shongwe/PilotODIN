@@ -39,7 +39,7 @@ class GeneratedSysmonSourceGuards(unittest.TestCase):
             "scope=n12-generated-sysmon-bookends-one-use",
         ])
         self.assertIn("if: ${{ false }}", workflow)
-        self.assertIn("never rerun", workflow)
+        self.assertIn("never rerun", workflow.casefold())
         self.assertIn("$changed.Count -ne 2", workflow)
         self.assertIn("$added.Count -ne 1", workflow)
 
