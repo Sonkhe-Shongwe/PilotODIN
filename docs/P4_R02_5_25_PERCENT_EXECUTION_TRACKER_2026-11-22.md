@@ -20,7 +20,7 @@
 
 ## Ledger at G1.4 publication preparation
 
-- **Current delivery score: 0 of 4 gates = 0%.** G1 published source substeps G1.1, G1.2 and G1.3. G1.4's exact-source broad regression outcome is pending GitHub CI. Mark **25% only if and when that run succeeds** and the fixed scope is independently checked.
+- **Current delivery score: 1 of 4 gates = 25%. G1 PASSED, source-only.** G1.1, G1.2, G1.3 and G1.4 have been published, with exact-source [G1.4 CI #45038916372](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45038916372) **SUCCESS, first attempt, 126/126 tests** across six suites (35 physical destination, 43 FileIO pair, 3 strict-isolation integration, 12 existing writer-identity join, 25 no-CDP strict reducer, 8 mutation triage). Verified source commit [`8138117`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8138117bcb4479af9e136db303461a61672dee8a), with exactly six scoped files and no modifications to the original strict reducer or native workflow. The source-only G1 exit is met; G2 native original-file-handle capture and product attribution remain **NOT STARTED/BLOCKED pending distinct source-pinned approval**. This score is not R02.5 native acceptance.
 - Last green G1.3 source CI: [#45037803846](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45037803846), 74/74 isolated synthetic tests at `39bd933e82673f675b41483fa229b4decdac57c4`.
 - **Official register unchanged:** R02.5 0/5; N12 0/2; P4 14/20 (70%); original file-mutation engineering 3/4 (75%).
 - Known historical strict results remain filesystem FAIL, network FAIL, mutation coverage BLOCKED. Former no-CDP run #44932378332 failed pre-app on Sysmon TCP/UDP calibration; approval consumed and workflow disarmed. No native app mutation path inference is permitted.
@@ -28,6 +28,11 @@
 ## Required status report after each NEXT
 
 `before N/4 (N*25%) -> after M/4 (M*25%); active gate; exact GitHub revision and workflow run; tests; remaining native/privacy blockers; next smallest task; official scores unchanged unless independent native acceptance`. No announcement of green before verified GitHub results.
+
+## Last verified milestone
+
+- **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
+- **Next gate G2: 25% -> 50%.** Requires a fresh, separately approved hosted Windows native capture, original file handles, independently proven writer/FileObject/IRP/path joins, calibrations and loss review. Do not attempt under source-only standing authority.
 
 ## Source references
 

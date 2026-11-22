@@ -1,5 +1,7 @@
 # PilotODIN | Documentation index
 
+**22 November | R02.5 GitHub-first source milestone PASSED (G1 25% of new four-gate remaining-work tracker).** [Four-gate execution ledger](./P4_R02_5_25_PERCENT_EXECUTION_TRACKER_2026-11-22.md) and [G1.4 strict isolation report](./P4_R02_5_G1_4_SOURCE_INTEGRATION_REVIEW_2026-11-22.md) record exact-source [Linux source CI #45038916372](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45038916372), 126/126 tests. No real original file handles, live WebView2 FileIO, R02.5 acceptance or native authorisation. Official P4 remains 14/20 (70%).
+
 **New independent source-only checkpoint:** [21 November Event3/source-to-native reapproval review](./P4_N12_SYSMON_EVENT3_SOURCE_AND_REAPPROVAL_GATE_REVIEW_2026-11-21.md) checked 12/12 bounded source predicates. Actual #44932378332 FAILED pre-app; prior #44933130221 source/synthetic CI passed on `daaa8d2`. Consumed approval remains unusable; native evidence needs a new owner one-use approval. P4 14/20 unchanged.
 
 
