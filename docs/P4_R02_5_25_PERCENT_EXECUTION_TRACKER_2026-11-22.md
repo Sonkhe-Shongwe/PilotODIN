@@ -64,6 +64,13 @@
 - **No Windows instrumentation or new owner consent obtained.** Two green generated calibrations, when later separately authorised, would not supply real WebView2 file-handle/FileObject/IRP/path attribution.
 - **Delivery remains G1 1/4 = 25%, G2 OPEN. R02.5 0/5, N12 0/2, P4 14/20 (70%) unchanged.**
 
+## G2.3 exact-source CI verified (22 November 2026)
+
+- [Published generated-only source `e5367be`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e5367befccbc3a3d9bdfba934f874d6578a01a40) added gated, default-off Sysmon fixture-only Windows entry plus Linux synthetic CI and docs, **without** enabling any Windows workflow. The first [source CI #45044886616](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45044886616) FAILED on an overly broad branch-order test, not a collector run.
+- [Scoped test correction `fac34b4`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/fac34b43393535e1ca8041ee178ebc4182501641) reran source CI [#45044944037](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45044944037), **SUCCESS: 152/152 tests across ten suites**, exact committed Python 3.11 source and syntax. **No Windows native instrumentation or new one-use approval.**
+- Both the historical N12 FileIO workflow and future generated-only Sysmon workflow remain disabled; prospective marker does not exist. Future native fixture-only check requires fresh explicit one-use owner source-pinned consent. Even a green generated check would not prove original WebView2 file-handle/IRP attribution.
+- **G2 OPEN: delivery remains 1/4 = 25%, official R02.5 0/5, N12 0/2 and P4 14/20 (70%) unchanged.**
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
