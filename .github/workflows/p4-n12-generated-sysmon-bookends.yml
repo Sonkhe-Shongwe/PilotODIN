@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   generated-bookends:
-    if: ${{ false }} # NEVER activate without a NEW owner-approved source-pinned one-use calibration.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.run_attempt == 1 }} # Exact approved one-use generated-only calibration.
     runs-on: windows-2022
     timeout-minutes: 20
     env:
