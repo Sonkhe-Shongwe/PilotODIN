@@ -22,6 +22,10 @@ on:
       - tests/test_p4_n12_mutation_triage.py
       - qa/p4_native/n12_etw_correlate.py
       - qa/p4_native/n12_trace.py
+      - qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1
+      - qa/p4_research/n12_app_build.py
+      - qa/p4_research/n12_app_lifetime.py
+      - tests/test_p4_n12_g2_static_preflight.py
 
 permissions:
   contents: read
@@ -75,3 +79,5 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_no_cdp_fileio_review.py' -v
       - name: Keep historical known violations and missing writes visible
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_mutation_triage.py' -v
+      - name: G2 source-only Sysmon Event3 and one-use approval preflight
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_static_preflight.py' -v
