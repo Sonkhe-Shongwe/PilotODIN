@@ -1,0 +1,2 @@
+reviewed_source=598bb9fe80f7caca8cd20eec1ab898b9be027fc6
+scope=n12-generated-sysmon-bookends-one-use

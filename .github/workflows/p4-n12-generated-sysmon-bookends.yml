@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   generated-bookends:
-    if: ${{ false }} # G2.5 one-use approval consumed by activation 65c7ee999ae463d851e81fe6d54f11abf46771fa; NEVER rerun.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.run_attempt == 1 }} # Single G2.6 source-pinned generated calibration only.
     runs-on: windows-2022
     timeout-minutes: 20
     env:
