@@ -78,7 +78,7 @@ class GeneratedSysmonSourceGuards(unittest.TestCase):
     def test_sysmon_tail_delegates_to_the_guarded_powershell_reader(self):
         from unittest.mock import patch
         from qa.p4_research import n12_app_journey as journey
-        with patch.object(journey, "powershell", return_value=b"1234\\n") as child:
+        with patch.object(journey, "powershell", return_value=b"1234\n") as child:
             self.assertEqual(journey.sysmon_tail(), 1234)
         child.assert_called_once()
         self.assertEqual(child.call_args.args[0].name, "Invoke_N12_Journey_Evidence.ps1")
