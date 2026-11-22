@@ -114,6 +114,13 @@
 - [Full G2.8 evidence report](./P4_R02_5_G2_8_REAL_WINDOWS_GENERATED_SYSMON_CALIBRATION_RESULT_2026-11-22.md). Generated collector calibration is **corroborated**; original WebView2 file handles, completed real FileIO operations and independently loss-reviewed same-capture containment remain unproven. No original-app run was performed under this consent.
 - **G2 still OPEN; delivery 1/4 = 25%.** Official R02.5 0/5; N12 0/2; P4 14/20 (70%). Next task: source review of original native **file** handle witness before another separately authorised Windows app test.
 
+## G2.9 | Original WebView2 file-handle bridge admission audit (22 November 2026)
+
+- [Source-only G2.9 feasibility and exact witness requirements](./P4_R02_5_G2_9_ORIGINAL_WEBVIEW_FILE_HANDLE_FEASIBILITY_2026-11-22.md): live no-CDP child observer and private pipe hold **original WebView process query handles**, *not original file handles*. The generated-writer original handle is also a **process** handle. The Win32 final-path adapter accepts a supplied handle but does not acquire or authenticate an original WebView-owned file handle or prove ETW FileObject pointer/IRP relation. Existing G1 contracts remain candidate-only.
+- Explicit **NO-GO** for treating PID, synthetic handles, reopen-by-name, final path or user-supplied proof booleans as native file-destination credit. Scoped real WebView file-handle acquisition and same-object kernel bridge need separate mechanism design, privacy review and new explicit Windows permission before any native measurement.
+- New source-only negative admission tests and Ubuntu CI; success/conclusion to be independently recorded from exact-source GitHub Actions. Both native workflows remain disarmed and no fresh approval marker is created.
+- **Delivery remains 1/4 = 25%, G2 OPEN; official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
