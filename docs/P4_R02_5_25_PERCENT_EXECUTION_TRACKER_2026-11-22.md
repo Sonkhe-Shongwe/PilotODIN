@@ -94,6 +94,13 @@
 - [G2.5 commit `e71e918`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e71e918877d8411c561dca9b6ed38833583d6632) published the non-overlapping initial/final Sysmon record boundary and disabled next-use workflow trigger. [Linux source CI #45046441140](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45046441140) **SUCCESS, 157/157 synthetic tests across ten suites**. Two new tail-safety cases reject missing/non-integer/regressed channel verification without retries. No Windows instrumentation was executed.
 - G1 25% earned, G2 OPEN, G3/G4 unstarted: **1/4 (25%)**. Next Windows generated calibration requires fresh exact-source one-use approval and absent new marker; prior marker consumed. Official R02.5 0/5, N12 0/2, P4 14/20 (70%).
 
+## G2.6 | Generated-only Windows attempt and source-only permission-gate fix (22 November 2026)
+
+- One approved hosted-Windows [Sysmon bookends run #45046709245](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45046709245) **FAILED, BLOCKED/preflight**, after exact-source guard and Sysmon provisioning. Zero bookends verified, one-use approval consumed. Immediate [workflow disarm](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e8bad5ae2f591bc03ed47141a6f8fc1ff855f3ed); no retry, no acceptance.
+- [Detailed G2.6 source review](./P4_R02_5_G2_6_GENERATED_SYSMON_HELPER_CONSENT_READ_REVIEW_2026-11-22.md) identifies missing generated-only `sysmon-tail` consent in independent PowerShell helper, a probable preflight blocker. Fix narrowly adds source/consent/hosted-runner/operation-scoped exception, not broad native permission. Definitive native cause not proven by the redacted receipt.
+- [Exact-source Linux CI #45047289406](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45047289406) **SUCCESS: 159/159 synthetic tests**, including source-safe generated-only reader tests. Both Windows workflows remain `if: ${{ false }}`, G2.5 approval consumed, new absent G2.6 marker prepared in disarmed source. Future native use needs a fresh explicitly pinned one-use approval.
+- **G2 still OPEN, four-gate delivery 25%; official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
