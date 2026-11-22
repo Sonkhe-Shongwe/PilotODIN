@@ -7,7 +7,7 @@ on:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL.txt
+      - qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_5_FRESH_ONE_USE.txt
 
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $marker = 'qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL.txt'
+          $marker = 'qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_5_FRESH_ONE_USE.txt'
           $workflow = '.github/workflows/p4-n12-generated-sysmon-bookends.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or
               $env:GITHUB_RUN_ATTEMPT -cne '1' -or

@@ -53,10 +53,11 @@ class GeneratedBookendSourceTests(TestCase):
         def verify(root, first, start, end, record, *, phase):
             self.events.append(("verify", phase, first, start, end))
             self.assertEqual(root, self.root)
-            self.assertEqual(first, 42)
+            self.assertEqual(first, {"initial": 42, "final": 51}[phase])
             self.assertEqual(record, {"role": "calibration", "fixture": True})
             if phase == broken:
                 raise ValueError("parent-birth-before-window")
+            return {"initial": 50, "final": 90}[phase]
 
         return bookends.run_bookend_sequence(
             self.root, self.manifest, clock=clock, pause=pause,
@@ -73,6 +74,50 @@ class GeneratedBookendSourceTests(TestCase):
                          ["clock", "pause", "generate", "clock", "verify"] * 2)
         self.assertEqual([event[1] for event in self.events if isinstance(event, tuple)
                           and event[0] == "pause"], [0.05, 0.05])
+        self.assertEqual([event[2] for event in self.events if isinstance(event, tuple)
+                          and event[0] == "verify"], [42, 51])
+        self.assertEqual(self.manifest["sysmon_first_record"], 42)
+
+    def test_unverified_initial_sysmon_tail_cannot_start_final_fixture(self):
+        for last in (None, True, 41, "50", 0):
+            with self.subTest(last=last):
+                calls = []
+                clock_values = iter([
+                    self.start, self.start + timedelta(seconds=4),
+                ])
+                def generator(path, manifest, *, child_hold_seconds):
+                    calls.append(path.name)
+                    return {"role": "calibration"}
+                def verifier(root, first, start, end, record, *, phase):
+                    self.assertEqual((phase, first), ("initial", 42))
+                    return last
+                with self.assertRaises(bookends.BookendBlocked) as blocked:
+                    bookends.run_bookend_sequence(
+                        self.root, self.manifest, clock=lambda: next(clock_values),
+                        pause=lambda seconds: None, generate=generator, verify=verifier,
+                    )
+                self.assertEqual(blocked.exception.phase, "initial")
+                self.assertEqual(calls, ["generated-initial"])
+
+    def test_invalid_final_sysmon_tail_still_blocks_without_retry(self):
+        calls = []
+        ticks = iter([
+            self.start, self.start + timedelta(seconds=4),
+            self.start + timedelta(seconds=5),
+            self.start + timedelta(seconds=9),
+        ])
+        def generator(path, manifest, *, child_hold_seconds):
+            calls.append(path.name)
+            return {"role": "calibration"}
+        def verifier(root, first, start, end, record, *, phase):
+            return 50
+        with self.assertRaises(bookends.BookendBlocked) as blocked:
+            bookends.run_bookend_sequence(
+                self.root, self.manifest, clock=lambda: next(ticks),
+                pause=lambda seconds: None, generate=generator, verify=verifier,
+            )
+        self.assertEqual(blocked.exception.phase, "final")
+        self.assertEqual(calls, ["generated-initial", "generated-final"])
 
     def test_initial_failure_blocks_second_fixture_without_retry(self):
         with self.assertRaises(bookends.BookendBlocked) as cm:

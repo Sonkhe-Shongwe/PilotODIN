@@ -83,6 +83,12 @@
 - [`c0fcd3fb071ce963cc62a725f10241e4d896fa30`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/c0fcd3fb071ce963cc62a725f10241e4d896fa30) corrected Python `os._Environ` vs exact-`dict` guard and updated historical consumed-marker tests only. [Linux CI #45046033479](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45046033479) **SUCCESS at exact source, 155/155 synthetic regression tests plus syntax**. No native Sysmon operation occurred during source CI.
 - Actual Windows run [#45045760389](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45045760389) remains **BLOCKED / preflight**, one-use consent consumed, zero generated calibration bookends verified. Workflow stays `if: ${{ false }}`. Further Windows tests require another specific source-pinned approval; **G2 OPEN** and four-gate delivery **1/4 = 25%**. Official R02.5 0/5, N12 0/2, P4 14/20 (70%).
 
+## G2.5 | Non-overlapping Sysmon bookends source correction (22 November 2026)
+
+- Read-only review detected that the generated-bookend driver reused the **initial** Sysmon record start for its final phase, which could re-import earlier fixture births and confuse process ID reuse with true final-window events. The candidate correction advances the next first record to the previous **verified** tail + 1, preserving strict channel continuity and refusing missing/regressed/non-integer tails.
+- The consumed G2.4 generated-only marker remains unchanged. The future **disarmed** Windows workflow is source-scoped to a new **absent** G2.5 marker, preventing reactivation with the prior marker. No native or product launch is authorised or triggered by this source change. Exact-source CI must pass before another one-use approval is considered.
+- Delivery **1/4 (25%)**, G2 OPEN; R02.5 **0/5**, N12 **0/2**, P4 **14/20 (70%)** unchanged.
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.

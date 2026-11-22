@@ -76,6 +76,10 @@ def run_bookend_sequence(root, manifest, *, clock, pause, generate, verify):
             or type(manifest.get("loopback_ports")) is not list
             or not all(callable(fn) for fn in (clock, pause, generate, verify))):
         raise BookendBlocked("preflight")
+    # Each phase must begin at the previous VERIFIED Sysmon channel tail + 1.
+    # Re-reading the initial fixture in the final window can falsely classify
+    # a recycled parent PID as a pre-window birth, and can obscure gaps.
+    next_first_record = manifest["sysmon_first_record"]
     for phase in PHASES:
         try:
             # Both windows begin BEFORE sleeping and spawning the generated
@@ -92,8 +96,11 @@ def run_bookend_sequence(root, manifest, *, clock, pause, generate, verify):
                     or end <= start or type(record) is not dict
                     or record.get("role") != "calibration"):
                 raise ValueError("generated-bookend-window-or-fixture-invalid")
-            verify(root, manifest["sysmon_first_record"], start, end, record,
-                   phase=phase)
+            verified_last = verify(root, next_first_record, start, end, record,
+                                   phase=phase)
+            if type(verified_last) is not int or verified_last < next_first_record:
+                raise ValueError("generated-bookend-sysmon-tail-unverified")
+            next_first_record = verified_last + 1
         except Exception as exc:
             raise BookendBlocked(phase) from exc
     return receipt("GENERATED_BOOKENDS_CORROBORATED")
