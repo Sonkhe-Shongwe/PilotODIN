@@ -39,3 +39,11 @@
 - [G1.3 pair contract](./P4_R02_5_G1_3_PRIVATE_FILEIO_PAIR_CONTRACT_2026-11-22.md) and [G1.4 compatibility](./P4_R02_5_G1_4_SOURCE_INTEGRATION_REVIEW_2026-11-22.md)
 - [Official P4 acceptance worklist](./P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md) and [current status](./PROJECT_STATUS_CURRENT.md)
 - [Latest governing session handoff](./SESSION_HANDOFF_CURRENT.md) and [strict trace runbook](../qa/p4_native/N12_TRACE.md)
+
+## G2.0 read-only native preflight | 22 November 2026
+
+- **G2 IN PROGRESS, 25% total, 1/4 gates earned.** This is a source-only readiness checkpoint, not a native capture or G2 acceptance.
+- Published [G2.0 preflight source commit `a88f32a`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a88f32adde19ffd0ac6b3c8200cb401d3d8fd49f) with exactly three files: nine static regressions, the existing Ubuntu-only CI workflow and [native approval/intake boundary](./P4_R02_5_G2_0_SOURCE_ONLY_NATIVE_PREFLIGHT_2026-11-22.md).
+- Exact-source [GitHub Actions #45039766442](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45039766442) **first attempt SUCCESS, 135/135 tests** (35 + 43 + 3 + 12 + 25 + 8 + 9), no native Windows/ETW/Sysmon run, installer or original owner data.
+- Corrected unfiltered Sysmon Event 3 XML, source pinning, consumed marker and disarmed native workflow are independently checked **as source**. Actual Event 3 TCP/UDP delivery after the correction remains unproven. New one-use approval is still required for the first genuine hosted Windows baseline; a fresh real file-handle/physical-path witness may require an additional separately approved mechanism. **Do not credit protected roots, outside paths or native acceptance from static checks.**
+- Official R02.5 **0/5**, N12 **0/2**, P4 **14/20 (70%)**, original file-mutation preparation **3/4 (75%)** unchanged.
