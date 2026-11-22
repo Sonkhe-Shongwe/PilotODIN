@@ -28,3 +28,8 @@
 ## Source-only verification
 
 The Linux-only CI workflow is run on exact published source; record its verified conclusion separately before claiming the patch is tested in GitHub. No desktop app or native collector is invoked by this change.
+
+## Exact-source CI follow-up
+
+- Commit [`a7b76eb`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a7b76eba8ab9c527c3dbe299c5aba4331753110c) published the G2.2 source correction, four new synthetic final-window tests and updated consumed-marker preflight. The first automatic [source-only CI #45042350684](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45042350684) **FAILED** in the *existing* `test_p4_n12_no_cdp_fileio_review.py` test: it required the **old** marker filename in the already-disarmed workflow, which now correctly references the **fresh consumed** marker. Candidate suites preceding that assertion passed; the new final-window tests had not yet run in that attempt.
+- Follow-up source-only test correction validates both marker files and explicitly requires the disabled native job. This is **not** a replay of the native workflow. The amended exact-source CI must pass before the G2.2 source correction is considered regression-verified.

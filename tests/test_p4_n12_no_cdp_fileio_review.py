@@ -371,9 +371,19 @@ class NoCdpFileIOCollectionAndPermissionTests(TestCase):
             self.assertRegex(approval[0], r'^reviewed_source=[0-9a-f]{40}$')
             self.assertEqual(approval[1],
                              'scope=n12-one-build-one-no-cdp-fileio-baseline')
+        # The native workflow now names the *second* consumed one-use
+        # marker. Preserve the original marker as a historical record,
+        # require the new exact approved source, and forbid stale re-use.
+        fresh = 'qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL_20261122_FRESH_ONE_USE.txt'
+        fresh_lines = (build.REPO / fresh).read_text(encoding='utf-8').splitlines()
+        self.assertEqual(fresh_lines, [
+            'reviewed_source=166dfa39efa6a1629c35cc4c2c6c3fc740078c3c',
+            'scope=n12-one-build-one-no-cdp-fileio-baseline',
+        ])
+        self.assertNotIn('N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt', workflow)
         for token in (
                 'if: ${{ false }}',
-                'N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt',
+                fresh,
                 'scope=n12-one-build-one-no-cdp-fileio-baseline',
                 'GITHUB_RUN_ATTEMPT',
                 "(git rev-parse HEAD) -cne $env:GITHUB_SHA",
