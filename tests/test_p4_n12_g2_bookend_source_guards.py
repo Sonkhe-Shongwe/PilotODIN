@@ -21,9 +21,15 @@ class GeneratedSysmonSourceGuards(unittest.TestCase):
         self.assertIn("$added.Count -ne 1", workflow)
         self.assertIn("git checkout --detach $source", workflow)
         self.assertIn("-WithEtw -GeneratedBookendsOnly", workflow)
-        self.assertIn("N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_5_FRESH_ONE_USE.txt", workflow)
+        self.assertIn("N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_6_FRESH_ONE_USE.txt", workflow)
+        self.assertNotIn("qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_5_FRESH_ONE_USE.txt", workflow)
         self.assertNotIn("qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL.txt", workflow)
-        self.assertFalse((ROOT / "qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_5_FRESH_ONE_USE.txt").exists())
+        self.assertFalse((ROOT / "qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_6_FRESH_ONE_USE.txt").exists())
+        # Second approved G2.5 activation is now consumed and immutable.
+        self.assertEqual((ROOT / "qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL_G2_5_FRESH_ONE_USE.txt").read_text(encoding="utf-8").splitlines(), [
+            "reviewed_source=aea47e35e257b0f227059a39127c2daa458e3c85",
+            "scope=n12-generated-sysmon-bookends-one-use",
+        ])
         # Exactly one authorised run has consumed this marker. The marker
         # must remain a source-pinned historical record, NOT be deleted or
         # treated as permission to re-arm the disabled workflow.
