@@ -71,6 +71,13 @@
 - Both the historical N12 FileIO workflow and future generated-only Sysmon workflow remain disabled; prospective marker does not exist. Future native fixture-only check requires fresh explicit one-use owner source-pinned consent. Even a green generated check would not prove original WebView2 file-handle/IRP attribution.
 - **G2 OPEN: delivery remains 1/4 = 25%, official R02.5 0/5, N12 0/2 and P4 14/20 (70%) unchanged.**
 
+## G2.4 | One-use generated Sysmon calibration outcome (22 November 2026)
+
+- Approved reviewed source `0862c8dbfe7cd0305bd6fe18a850ca2fc96788b6`, one direct-child activation [`5f99493`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5f99493c7e3ec951fa6332fbb8f96425ead81e9e), immediately disarmed [`2f910a1`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2f910a1cdcf50eb042ffa6357a1d23833d71b07d). One-use owner approval consumed; marker retained, both Windows workflows disabled.
+- Hosted Windows [run #45045760389](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45045760389) **FAILED in generated-driver PREFLIGHT**, after approved checkout and Sysmon provision. Neither of the two generated calibration fixtures ran, no application was built/launched, no Windows collector-timing outcome was established. Fixed-label output `BLOCKED / preflight` and nonacceptance only.
+- Source root cause: Python `os.environ` is **not exactly `dict`**, while both driver gates demanded `type(env) is dict`. Correct to `collections.abc.Mapping` while preserving identity/consent restrictions, add realistic non-native tests, and replace the stale synthetic assertion that the now-consumed marker is absent. [Detailed G2.4 review](./P4_R02_5_G2_3_GENERATED_SYSMON_BOOKENDS_SOURCE_DESIGN_2026-11-22.md).
+- **Progress stays 1/4 = 25%, G2 OPEN; official R02.5 0/5, N12 0/2, P4 14/20 (70%).** Further native execution requires a new explicitly scoped one-use permission, not a retry.
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.

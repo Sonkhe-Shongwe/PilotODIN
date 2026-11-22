@@ -1,5 +1,8 @@
 """Adversarial generated Sysmon bookend contract, never host instrumentation."""
 from datetime import datetime, timedelta, timezone
+from collections import UserDict
+import os
+from types import SimpleNamespace
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
@@ -152,6 +155,56 @@ class GeneratedBookendSourceTests(TestCase):
                 pause=lambda seconds: None, generate=lambda *a, **k: {},
                 verify=lambda *a, **k: None)
         self.assertEqual(cm.exception.phase, "initial")
+
+    def test_live_cli_environment_mapping_is_accepted_without_collection(self):
+        # os.environ is os._Environ, NOT a built-in dict. This is the exact
+        # argument that main() sends to capture_approved on hosted Windows.
+        self.assertIsNot(type(os.environ), dict)
+        with patch.dict(os.environ, GOOD_ENV, clear=True):
+            bookends.require_hosted_approval(SOURCE, os.environ, SOURCE)
+            bookends.require_hosted_approval(SOURCE, UserDict(GOOD_ENV), SOURCE)
+            observed = []
+
+            def capture(source, env):
+                observed.append((source, env is os.environ))
+                bookends.require_hosted_approval(source, env, SOURCE)
+                return bookends.receipt("GENERATED_BOOKENDS_CORROBORATED")
+
+            with patch.object(bookends, "capture_approved", side_effect=capture):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(bookends.main(["--capture", "--source", SOURCE]), 0)
+            self.assertEqual(observed, [(SOURCE, True)])
+            self.assertEqual(json.loads(output.getvalue())["product_launched"], False)
+
+    def test_windows_entry_reaches_hosted_guard_with_real_environ_mapping(self):
+        # This remains entirely synthetic and stops at the guard. It would
+        # have failed on the former type(env) is not dict source gate.
+        with (
+            patch.object(bookends.os, "name", "nt"),
+            patch.object(bookends.subprocess, "run",
+                         return_value=SimpleNamespace(stdout=SOURCE + "\n")) as git,
+            patch.object(bookends, "require_hosted_approval",
+                         side_effect=bookends.BookendBlocked("preflight")) as guard,
+        ):
+            with self.assertRaises(bookends.BookendBlocked):
+                bookends.capture_approved(SOURCE, os.environ)
+        git.assert_called_once()
+        guard.assert_called_once()
+        self.assertIs(guard.call_args.args[1], os.environ)
+        self.assertEqual(guard.call_args.args[2], SOURCE)
+
+    def test_mapping_does_not_bypass_invalid_source_consent_or_nonmapping(self):
+        bookends.require_hosted_approval(SOURCE, UserDict(GOOD_ENV), SOURCE)
+        for bad in (None, [], "", 17, [("GITHUB_ACTIONS", "true")]):
+            with self.subTest(value=repr(bad)):
+                with self.assertRaises(bookends.BookendBlocked):
+                    bookends.require_hosted_approval(SOURCE, bad, SOURCE)
+        with self.assertRaises(bookends.BookendBlocked):
+            bookends.require_hosted_approval(
+                SOURCE, UserDict({**GOOD_ENV, "GITHUB_RUN_ATTEMPT": "2"}), SOURCE)
+        with self.assertRaises(bookends.BookendBlocked):
+            bookends.require_hosted_approval(SOURCE, UserDict(GOOD_ENV), "b" * 40)
 
     def test_cli_success_remains_calibration_only(self):
         with patch.object(bookends, "capture_approved", return_value=bookends.receipt("GENERATED_BOOKENDS_CORROBORATED")):

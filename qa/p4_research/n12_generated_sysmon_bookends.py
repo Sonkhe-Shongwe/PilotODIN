@@ -8,6 +8,7 @@ provisioning by the separately reviewed, normally DISARMED workflow.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Mapping
 from datetime import datetime, timezone
 import json
 import os
@@ -47,7 +48,7 @@ def receipt(status, *, phase="none"):
 def require_hosted_approval(source, env, actual_sha):
     """Fail before touching a collector or generated fixture."""
     if (type(source) is not str or re.fullmatch(r"[0-9a-f]{40}", source) is None
-            or type(env) is not dict or type(actual_sha) is not str
+            or not isinstance(env, Mapping) or type(actual_sha) is not str
             or actual_sha != source
             or env.get("GITHUB_ACTIONS") != "true"
             or env.get("RUNNER_ENVIRONMENT") != "github-hosted"
@@ -102,7 +103,7 @@ def capture_approved(source, env):
     """Optional future Windows entry; not invoked by source-only GitHub CI."""
     # Source identity and consent must precede the FIRST Sysmon channel read,
     # directory creation, generated socket/process, or file change.
-    if os.name != "nt" or type(env) is not dict:
+    if os.name != "nt" or not isinstance(env, Mapping):
         raise BookendBlocked("preflight")
     try:
         result = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,

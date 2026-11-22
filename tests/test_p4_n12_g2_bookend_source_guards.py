@@ -21,7 +21,17 @@ class GeneratedSysmonSourceGuards(unittest.TestCase):
         self.assertIn("$added.Count -ne 1", workflow)
         self.assertIn("git checkout --detach $source", workflow)
         self.assertIn("-WithEtw -GeneratedBookendsOnly", workflow)
-        self.assertFalse((ROOT / "qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL.txt").exists())
+        # Exactly one authorised run has consumed this marker. The marker
+        # must remain a source-pinned historical record, NOT be deleted or
+        # treated as permission to re-arm the disabled workflow.
+        consumed = ROOT / "qa/p4_research/N12_GENERATED_BOOKENDS_OWNER_APPROVAL.txt"
+        self.assertEqual(consumed.read_text(encoding="utf-8").splitlines(), [
+            "reviewed_source=0862c8dbfe7cd0305bd6fe18a850ca2fc96788b6",
+            "scope=n12-generated-sysmon-bookends-one-use",
+        ])
+        self.assertIn("if: ${{ false }}", workflow)
+        self.assertIn("never rerun", workflow)
+
 
     def test_powershell_source_does_not_inherit_ordinary_collector_permission(self):
         source = (ROOT / "qa/p4_native/Invoke_P4_N12_Live_Calibration.ps1").read_text(encoding="utf-8")
