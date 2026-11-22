@@ -89,18 +89,19 @@ class G27PreflightDiagnostics(unittest.TestCase):
 
     def test_malformed_tail_blocks_without_fixture(self):
         for tail in (True, -1, None, "88"):
-            with self.subTest(tail=tail), (
-                patch.object(b, "os", SimpleNamespace(name="nt")),
-                patch.object(b.subprocess, "run", return_value=SimpleNamespace(stdout=SHA + "\n")),
-                patch.object(trace, "local_disposable_path", return_value=ROOT),
-                patch.object(Path, "mkdir", return_value=None),
-                patch.object(journey, "sysmon_tail", return_value=tail),
-                patch.object(b, "run_bookend_sequence") as fixtures,
-            ):
-                with self.assertRaises(b.BookendBlocked) as caught:
-                    b.capture_approved(SHA, ENV)
-                self.assertEqual(caught.exception.blocker, "SYSMON_CHANNEL")
-                fixtures.assert_not_called()
+            with self.subTest(tail=tail):
+                with (
+                    patch.object(b, "os", SimpleNamespace(name="nt")),
+                    patch.object(b.subprocess, "run", return_value=SimpleNamespace(stdout=SHA + "\n")),
+                    patch.object(trace, "local_disposable_path", return_value=ROOT),
+                    patch.object(Path, "mkdir", return_value=None),
+                    patch.object(journey, "sysmon_tail", return_value=tail),
+                    patch.object(b, "run_bookend_sequence") as fixtures,
+                ):
+                    with self.assertRaises(b.BookendBlocked) as caught:
+                        b.capture_approved(SHA, ENV)
+                    self.assertEqual(caught.exception.blocker, "SYSMON_CHANNEL")
+                    fixtures.assert_not_called()
 
     def test_good_tail_passes_next_record_to_original_sequence(self):
         with (patch.object(b, "os", SimpleNamespace(name="nt")),
