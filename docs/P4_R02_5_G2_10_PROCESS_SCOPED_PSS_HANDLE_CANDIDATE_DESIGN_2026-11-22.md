@@ -27,3 +27,11 @@ Official Microsoft references: [PssCaptureSnapshot](https://learn.microsoft.com/
 Design and review a **mockable Windows PSS adapter** with explicit target-process ownership, exact capture flags and access rights, bounded walk and failure cleanup before requesting a new one-use generated-only native measurement. Independently validate the API's real file TypeName behavior. If no supported FileObject bridge can be established, retain **BLOCKED** rather than weakening original file-handle or physical-destination proof.
 
 **Both native workflows remain disabled, no new one-use approval marker was created. G1 PASSED, G2 OPEN, four-gate delivery 25% (1/4); official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
+
+## Exact-source source/synthetic CI reconciliation
+
+- [Source-only G2.10 commit `97a8895e424faf28d3dbfecc953594d650b80091`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/97a8895e424faf28d3dbfecc953594d650b80091) changed precisely five files: new pure PSS candidate validator, new negative tests, Ubuntu-only source CI, this review and execution tracker. Neither native Windows workflow, consumed owner marker nor application collector was modified or activated.
+- [GitHub Actions #45054188711](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45054188711) **COMPLETED SUCCESS**, exact committed Python 3.11 source. Job logs report **194/194 tests across 13 suites**, including **13 new G2.10 PSS source/synthetic tests**, plus source AST syntax checks. This is **not** a Windows PSS snapshot, original WebView file-handle observation or Kernel-File trace.
+- The pure candidate gate remains fully independent of native acceptance, and the public receipt never contains handle numbers, PIDs, filenames, paths or ETW pointers. Microsoft PSS capability is a **hypothesis for scoped discovery** pending a separately authorised native feasibility experiment and an independently proved FileObject bridge.
+
+**G2 remains OPEN, four-gate delivery 1/4 = 25%; official R02.5 0/5, N12 0/2, P4 14/20 (70%) unchanged.**
