@@ -1,4 +1,4 @@
-name: P4 N12 No-CDP FileIO (22 Nov 2026 one-use approved baseline)
+name: P4 N12 No-CDP FileIO (DISARMED, 22 Nov 2026 approval consumed)
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   no-cdp-fileio:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.run_attempt == 1 }} # Owner-approved one-use baseline, only exact direct-child activation.
+    if: ${{ false }} # One-use approval consumed by activation 58f72bf3e226b2a1d87ab11a6fe3727f424268b4; never rerun.
     runs-on: windows-2022
     timeout-minutes: 110
     env:
