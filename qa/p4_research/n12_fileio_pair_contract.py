@@ -133,6 +133,11 @@ def index_private_kernel_file_events(events: object, *, start_tick: int, end_tic
         for event in events:
             if type(event) is not dict:
                 return empty
+            # The provider decoder emits an explicit boolean lifecycle flag.
+            # Do not mistake a malformed process record for a Kernel-File
+            # operation and accidentally manufacture a valid write pair.
+            if "lifecycle" in event and type(event["lifecycle"]) is not bool:
+                return empty
             if event.get("lifecycle") is True:
                 # PID/thread lifetimes must come from a separate original
                 # Sysmon/ETW/handle join, never invented from FileIO headers.
@@ -167,9 +172,15 @@ def index_private_kernel_file_events(events: object, *, start_tick: int, end_tic
             row = _Row(kind, tick, pid, irp, obj, key, tid, status)
             if irp:
                 by_irp[irp].append(row)
-            if obj:
+            # A completion may omit one/both object identity fields. Do
+            # not invent a (FileObject, None) or (None, FileKey) *reuse*
+            # association from an otherwise valid Event24; the request/IRP
+            # join separately checks any nonzero contradicting completion ID.
+            # For all non-completion kinds, missing counterpart identity is
+            # still a possible alias/epoch ambiguity and remains indexed.
+            if obj and (kind != _END or key):
                 by_obj_key[obj][key].append(tick)
-            if key:
+            if key and (kind != _END or obj):
                 by_key_obj[key][obj].append(tick)
             # Unknown operations are not silently treated as harmless.
             guarded = kind not in _KNOWN_NONTRANSITIONS
@@ -252,7 +263,14 @@ def review_private_write_pair(
         return _blocked("ETW_REQUEST_WRITER_OR_OBJECT_MISMATCH")
     # Completion PID need not be writer PID: Windows may complete in system
     # context. The issuing request, independent thread/process and IRP matter.
-    if (completed.file_object != write.file_object or completed.file_key != write.file_key
+    # Kernel-File OperationEnd identifies the request by IRP. Some valid
+    # provider records omit FileObject/FileKey on Event 24, as do the existing
+    # generated N12 fixtures. An *absent or zero* completion identity is not
+    # independent file-object evidence. A nonzero contradictory value blocks;
+    # the request's identity, unique ordered IRP completion, and separately
+    # required original-handle/epoch corroboration are still mandatory.
+    if (completed.file_object not in (None, 0, write.file_object)
+            or completed.file_key not in (None, 0, write.file_key)
             or completed.status != 0):
         return _blocked("ETW_SUCCESSFUL_COMPLETION_UNVERIFIED")
 

@@ -107,6 +107,47 @@ class PrivateFileIoPairContractTests(unittest.TestCase):
     def test_intervening_irp_reuse_blocks(self):
         self.assertEqual(evaluate(events=[PARENT, REQUEST, record(16, 350, irp=9), COMPLETE]).status, "BLOCKED")
 
+    def test_native_style_completion_may_omit_optional_identity_fields(self):
+        # The existing N12 strict reducer treats missing/zero Event24 identity
+        # as not contradictory, never as *positive* corroboration. The unique
+        # IRP and request carry identity, with external proof still required.
+        for end_data in (
+            {"Irp": 9, "Status": 0},
+            {"Irp": 9, "Status": 0, "FileObject": 0, "FileKey": 0},
+            {"Irp": 9, "Status": 0, "FileObject": 700},
+            {"Irp": 9, "Status": 0, "FileKey": 800},
+        ):
+            with self.subTest(end_data=end_data):
+                end = {**COMPLETE, "data": end_data}
+                result = evaluate(events=[PARENT, REQUEST, end])
+                self.assertEqual(result.status, "CONTAINED_CANDIDATE_ONLY")
+                self.assertEqual(result.public_receipt()["native_N12_acceptance"],
+                                 "NOT_EVALUATED")
+
+    def test_unknown_identity_on_noncompletion_event_remains_ambiguous(self):
+        # Do not apply the Event24 missing-identity exception to a second
+        # write, open or unknown event on the same FileObject.
+        unknown = {"id": 16, "pid": 200, "ticks": 250, "data": {
+            "Irp": 1234, "FileObject": 700, "IssuingThreadId": 220,
+        }}
+        self.assertEqual(evaluate(events=[PARENT, REQUEST, COMPLETE, unknown]).status,
+                         "BLOCKED")
+
+    def test_optional_completion_identity_conflict_still_blocks(self):
+        for field, value in (("FileObject", 701), ("FileKey", 801)):
+            with self.subTest(field=field):
+                end = {**COMPLETE, "data": {"Irp": 9, "Status": 0,
+                                               field: value}}
+                self.assertEqual(evaluate(events=[PARENT, REQUEST, end]).status,
+                                 "BLOCKED")
+
+    def test_malformed_lifecycle_flag_never_becomes_fileio_evidence(self):
+        for value in ("true", 1, None, {}, []):
+            with self.subTest(value=value):
+                forged = {**REQUEST, "lifecycle": value}
+                self.assertEqual(evaluate(events=[PARENT, forged, COMPLETE]).status,
+                                 "BLOCKED")
+
     def test_completion_identity_conflict_blocks(self):
         changed = {**COMPLETE, "data": {**COMPLETE["data"], "FileKey": 801}}
         self.assertEqual(evaluate(events=[PARENT, REQUEST, changed]).status, "BLOCKED")

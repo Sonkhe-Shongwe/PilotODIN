@@ -13,6 +13,15 @@ on:
       - qa/p4_research/n12_fileio_pair_contract.py
       - tests/test_p4_n12_physical_destination.py
       - tests/test_p4_n12_fileio_pair_contract.py
+      - tests/test_p4_n12_g1_source_integration.py
+      - qa/p4_research/n12_fileio_identity_join.py
+      - tests/test_p4_n12_fileio_identity_join.py
+      - qa/p4_research/n12_no_cdp_fileio_review.py
+      - tests/test_p4_n12_no_cdp_fileio_review.py
+      - qa/p4_research/n12_mutation_triage.py
+      - tests/test_p4_n12_mutation_triage.py
+      - qa/p4_native/n12_etw_correlate.py
+      - qa/p4_native/n12_trace.py
 
 permissions:
   contents: read
@@ -49,6 +58,7 @@ jobs:
               "qa/p4_research/n12_fileio_pair_contract.py",
               "tests/test_p4_n12_physical_destination.py",
               "tests/test_p4_n12_fileio_pair_contract.py",
+              "tests/test_p4_n12_g1_source_integration.py",
           )
           for filename in sources:
               ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
@@ -57,3 +67,11 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_physical_destination.py' -v
       - name: Test cross-process original-file-pair contract, synthetic only
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_fileio_pair_contract.py' -v
+      - name: Cross-check original strict reducer and new source-only candidate
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g1_source_integration.py' -v
+      - name: Original writer and file identity join regressions
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_fileio_identity_join.py' -v
+      - name: Original no-CDP reducer must still fail closed
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_no_cdp_fileio_review.py' -v
+      - name: Keep historical known violations and missing writes visible
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_mutation_triage.py' -v
