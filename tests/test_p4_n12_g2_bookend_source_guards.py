@@ -62,6 +62,28 @@ class GeneratedSysmonSourceGuards(unittest.TestCase):
         self.assertIn('trace.sysmon_events(', source)
         self.assertIn('"child-loopback-tcp-or-udp-missing"', source)
 
+    def test_generated_sysmon_reader_only_has_hosted_one_use_source_guard(self):
+        helper = (ROOT / "qa/p4_research/Invoke_N12_Journey_Evidence.ps1").read_text(encoding="utf-8")
+        gate = helper.split("$generatedBookendRead = ", 1)[1].split("$backgroundThreadRead =", 1)[0]
+        for part in ("$Operation -ceq 'sysmon-tail'", "GITHUB_EVENT_NAME -ceq 'push'",
+                     "GITHUB_RUN_ATTEMPT -ceq '1'", "GITHUB_RUN_ID -cmatch '^[0-9]+$'",
+                     "PILOTODIN_N12_GENERATED_BOOKENDS_CONSENT -ceq 'I_APPROVE_ONE_N12_GENERATED_SYSMON_BOOKENDS'",
+                     "(git rev-parse HEAD) -ceq $env:PILOTODIN_N12_GENERATED_BOOKENDS_SOURCE"):
+            with self.subTest(part=part):
+                self.assertIn(part, gate)
+        self.assertNotIn("'etw-export'", gate)
+        self.assertNotIn("'fileio-rundown'", gate)
+        self.assertIn("-not $timingExport -and -not $generatedBookendRead -and", helper)
+
+    def test_sysmon_tail_delegates_to_the_guarded_powershell_reader(self):
+        from unittest.mock import patch
+        from qa.p4_research import n12_app_journey as journey
+        with patch.object(journey, "powershell", return_value=b"1234\\n") as child:
+            self.assertEqual(journey.sysmon_tail(), 1234)
+        child.assert_called_once()
+        self.assertEqual(child.call_args.args[0].name, "Invoke_N12_Journey_Evidence.ps1")
+        self.assertEqual(child.call_args.args[1], "sysmon-tail")
+
 
 if __name__ == '__main__':
     unittest.main()
