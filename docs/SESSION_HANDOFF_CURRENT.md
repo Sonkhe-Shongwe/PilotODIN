@@ -1,5 +1,8 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
+**SUPERSEDING 22 NOVEMBER WORK-PRIORITY HANDOFF:** [Code-first remediation directive and audit](./PILOTODIN_CODE_FIRST_REMEDIATION_DIRECTIVE_AND_DOCUMENTATION_AUDIT_2026-11-22.md) governs the next task over dated N12/PSS candidate instructions below. **Next: R1/CF-02 identifier/schema consistency, then CF-01 bounded import; do not launch native runs.** Generated-only [Sysmon job #45049623361](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45049623361) succeeded, but real original WebView FileIO remains unproven. P4 14/20, R02.5 0/5, N12 0/2, G1-G4 1/4 unchanged. Historical handoff follows.
+
+
 **21 November | INDEPENDENT SOURCE REVIEW COMPLETE, NATIVE REAPPROVAL STILL REQUIRED.** [Read-only 12/12 current-source checks and decision gate](./P4_N12_SYSMON_EVENT3_SOURCE_AND_REAPPROVAL_GATE_REVIEW_2026-11-21.md) verified the corrected unfiltered Sysmon Event3 configuration, source/binary guards, disarmed single-use workflow with consumed marker, protected snapshots, cleanup, redacted fixed-label report and strict non-acceptance. It did **not** rerun Sysmon or PilotODIN. Source/synthetic CI #44933130221 tested `daaa8d2` (4/4 success); intervening commits to reviewed `7fba23e` were documentation-only. Next decision is **fresh explicit one-use source-pinned owner consent**, not reactivation of consumed #44932378332. File mutation **3/4 (75%) -> 3/4 (75%)**; R02.5 **0/5**, N12 **0/2**, official P4 **14/20 (70%)** unchanged.
 
 

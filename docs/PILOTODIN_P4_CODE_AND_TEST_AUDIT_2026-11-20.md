@@ -1,5 +1,8 @@
 # PilotODIN P4 code, test and direction audit
 
+**HISTORICAL SCOPE (20 NOVEMBER):** This document describes defects and next steps at its pinned revision; the [current handoff](./SESSION_HANDOFF_CURRENT.md) records seven subsequently corrected product-audit items at that earlier scope. The original 'cloud payload first' instruction is superseded for current work prioritization by the [22 November code-first directive and current-source register](./PILOTODIN_CODE_FIRST_REMEDIATION_DIRECTIVE_AND_DOCUMENTATION_AUDIT_2026-11-22.md). All historical evidence below remains unchanged.
+
+
 20 November 2026. Reviewed `feature/live-dev-workspace-20261023` at `577447964c09a44173028b0dd28211fc0766c342`, verified against the remote. The audit covers import and Quality, project lifecycle, experiment admission and model selection, Ask ODIN privacy, native export, Windows QA and the phase evidence. Local execution used generated data in disposable Linux workspaces and a stubbed cloud transport. Native-only findings use source or existing Windows evidence. [Pinned source and handoff](https://github.com/Sonkhe-Shongwe/PilotODIN/tree/577447964c09a44173028b0dd28211fc0766c342) · [Master QA #2](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/2) · [P4 owner evidence #9](https://github.com/Sonkhe-Shongwe/PilotODIN/issues/9)
 
 ## Why the jobs failed
