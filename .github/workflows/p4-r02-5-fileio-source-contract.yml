@@ -27,6 +27,10 @@ on:
       - qa/p4_research/n12_app_lifetime.py
       - tests/test_p4_n12_g2_static_preflight.py
       - tests/test_p4_n12_g2_final_calibration_window.py
+      - qa/p4_research/n12_generated_sysmon_bookends.py
+      - tests/test_p4_n12_g2_generated_bookends.py
+      - tests/test_p4_n12_g2_bookend_source_guards.py
+      - .github/workflows/p4-n12-generated-sysmon-bookends.yml
 
 permissions:
   contents: read
@@ -65,6 +69,9 @@ jobs:
               "tests/test_p4_n12_fileio_pair_contract.py",
               "tests/test_p4_n12_g1_source_integration.py",
               "tests/test_p4_n12_g2_final_calibration_window.py",
+              "qa/p4_research/n12_generated_sysmon_bookends.py",
+              "tests/test_p4_n12_g2_generated_bookends.py",
+              "tests/test_p4_n12_g2_bookend_source_guards.py",
           )
           for filename in sources:
               ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
@@ -85,3 +92,7 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_static_preflight.py' -v
       - name: G2 final Sysmon boundary remains strict (synthetic only)
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_final_calibration_window.py' -v
+      - name: G2.3 generated Sysmon bookends injected synthetic tests
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_generated_bookends.py' -v
+      - name: G2.3 disabled hosted collector and strict source guards
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_bookend_source_guards.py' -v

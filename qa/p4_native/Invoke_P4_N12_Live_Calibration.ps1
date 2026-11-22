@@ -4,6 +4,7 @@ param(
     [switch]$WithEtw,
     [switch]$CollectorRundown,
     [switch]$InitialJourneyFixture,
+    [switch]$GeneratedBookendsOnly,
     [switch]$AppJourney,
     [switch]$AppLifetime,
     [switch]$NoCdp,
@@ -28,6 +29,26 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or
     $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows' -or
     $env:GITHUB_RUN_ATTEMPT -ne '1') {
     throw 'Live calibration requires the first run on disposable hosted Windows.'
+}
+
+# Generated-only future Sysmon fixture path. New exact-source owner consent
+# required BEFORE any fixture, collector provisioning or app preparation.
+if ($GeneratedBookendsOnly -and (
+        -not $WithEtw -or $CollectorRundown -or $InitialJourneyFixture -or
+        $AppJourney -or $AppLifetime -or $NoCdp -or $NoCdpFileIO -or
+        $WebViewStorage -or $ProcmonEnvironmentControl -or
+        $ProcmonTimingControl -or $LifetimeControl -or $LifetimeEtwControl -or
+        $SocketLifetimeControl -or $WebViewRuntimeDirectory -or
+        $SourceSha -or $ExecutableSha256 -or
+        $PSBoundParameters.ContainsKey('StorageVariant') -or
+        $env:PILOTODIN_N12_QA_AMBIENT_LOCAL_VARIANT -or
+        $env:GITHUB_EVENT_NAME -cne 'push' -or
+        $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+        $env:GITHUB_RUN_ID -cnotmatch '^[0-9]+$' -or
+        $env:PILOTODIN_N12_GENERATED_BOOKENDS_CONSENT -cne 'I_APPROVE_ONE_N12_GENERATED_SYSMON_BOOKENDS' -or
+        $env:PILOTODIN_N12_GENERATED_BOOKENDS_SOURCE -cnotmatch '^[0-9a-f]{40}$' -or
+        (git rev-parse HEAD) -cne $env:PILOTODIN_N12_GENERATED_BOOKENDS_SOURCE)) {
+    throw 'Generated Sysmon bookends require a fresh one-use source-pinned owner approval.'
 }
 
 # The guarded no-CDP FileIO path requires new scoped one-use authorization.
@@ -146,7 +167,7 @@ if ($SocketLifetimeControl) {
     if ($LASTEXITCODE -ne 0) { throw 'Staged build verification failed before Sysmon provisioning.' }
 } elseif ($SourceSha -or $ExecutableSha256) {
     throw 'A staged build identity requires an approved app capture.'
-} elseif ($WithEtw -and
+} elseif ($WithEtw -and -not $GeneratedBookendsOnly -and
     $env:PILOTODIN_N12_COLLECTOR_REHEARSAL_CONSENT -cne 'I_APPROVE_ONE_N12_COLLECTOR_REHEARSAL') {
     throw 'The collector-only rehearsal requires separate approval before provisioning Sysmon.'
 }
@@ -245,6 +266,11 @@ try {
         $captureMode = if ($LifetimeEtwControl) { '--capture-etw' } else { '--capture' }
         python -B -m qa.p4_native.n12_lifetime_control $captureMode $root
         if ($LASTEXITCODE -ne 0) { throw 'The collector lifetime control did not pass.' }
+        return
+    }
+    if ($GeneratedBookendsOnly) {
+        python -B -m qa.p4_research.n12_generated_sysmon_bookends --capture --source $env:PILOTODIN_N12_GENERATED_BOOKENDS_SOURCE
+        if ($LASTEXITCODE -ne 0) { throw 'Generated Sysmon bookend calibration blocked.' }
         return
     }
     if ($AppLifetime) {

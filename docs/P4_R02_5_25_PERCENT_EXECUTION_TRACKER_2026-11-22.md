@@ -55,6 +55,15 @@
 - Proposed next smallest check: independently authorised **generated Sysmon calibration-only** hosted Windows execution, not an automatic native rerun. Source-test the proposed calibration harness first. An actual original WebView2 file-handle witness remains unproven.
 - **G2 OPEN, four-gate delivery still 1/4 = 25%; official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
 
+## G2.3 | Generated Sysmon-only bookend harness prepared (22 November 2026)
+
+- New source-only generated fixture driver `qa/p4_research/n12_generated_sysmon_bookends.py`: two strictly validated **initial and final** Sysmon Windows windows, 50 ms lead-in before **each** generated parent, no PilotODIN build/launch, no original file-handle observation. Reuses `journey.calibrate` and the original `journey.verify_fixture_sysmon`; all verified outcomes are **calibration-only, not product acceptance**.
+- `Invoke_P4_N12_Live_Calibration.ps1 -WithEtw -GeneratedBookendsOnly` is an opt-in future Windows source path reusing existing verified Sysmon provisioning and `finally` cleanup. It rejects all app, FileIO, ProcMon and unrelated capture modes, and requires a distinct one-use source-pinned consent. `-WithEtw` selects the Sysmon-only wrapper branch, not an ETW FileIO trace session.
+- New `.github/workflows/p4-n12-generated-sysmon-bookends.yml` remains **DISARMED** (`if: ${{ false }}`) and watches a **nonexistent** new approval marker. Future activation must be an independently authorised direct-child commit with a fresh exact-source marker. The old native FileIO workflow remains disarmed and both earlier approvals remain consumed.
+- [G2.3 source review](./P4_R02_5_G2_3_GENERATED_SYSMON_BOOKENDS_SOURCE_DESIGN_2026-11-22.md), new injected synthetic timing/negative tests and source guard tests run only in Linux read-only CI. **Do not claim this source is CI-green until the exact-source GitHub run has passed.**
+- **No Windows instrumentation or new owner consent obtained.** Two green generated calibrations, when later separately authorised, would not supply real WebView2 file-handle/FileObject/IRP/path attribution.
+- **Delivery remains G1 1/4 = 25%, G2 OPEN. R02.5 0/5, N12 0/2, P4 14/20 (70%) unchanged.**
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
