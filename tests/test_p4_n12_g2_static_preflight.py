@@ -98,8 +98,16 @@ class G2SourceOnlySafetyPreflight(unittest.TestCase):
             "reviewed_source=c6062b5c8c1e1d75e6dab1f91d515d21bcfdd089",
             "scope=n12-one-build-one-no-cdp-fileio-baseline",
         ])
-        self.assertIn("qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL.txt",
-                      self.workflow)
+        # The first marker remains a historical consumed record. A second
+        # one-use native approval was consumed by run #45041259808, and the
+        # workflow was safely disarmed immediately after activation.
+        fresh = "qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL_20261122_FRESH_ONE_USE.txt"
+        self.assertEqual(read(fresh).splitlines(), [
+            "reviewed_source=166dfa39efa6a1629c35cc4c2c6c3fc740078c3c",
+            "scope=n12-one-build-one-no-cdp-fileio-baseline",
+        ])
+        self.assertIn(fresh, self.workflow)
+        self.assertTrue(native_disarmed(self.workflow))
 
     def test_privacy_limits_and_nonacceptance_remain_explicit(self):
         self.assertNotIn("upload-artifact", self.workflow)

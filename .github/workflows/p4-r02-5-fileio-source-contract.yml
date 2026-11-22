@@ -26,6 +26,7 @@ on:
       - qa/p4_research/n12_app_build.py
       - qa/p4_research/n12_app_lifetime.py
       - tests/test_p4_n12_g2_static_preflight.py
+      - tests/test_p4_n12_g2_final_calibration_window.py
 
 permissions:
   contents: read
@@ -63,6 +64,7 @@ jobs:
               "tests/test_p4_n12_physical_destination.py",
               "tests/test_p4_n12_fileio_pair_contract.py",
               "tests/test_p4_n12_g1_source_integration.py",
+              "tests/test_p4_n12_g2_final_calibration_window.py",
           )
           for filename in sources:
               ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
@@ -81,3 +83,5 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_mutation_triage.py' -v
       - name: G2 source-only Sysmon Event3 and one-use approval preflight
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_static_preflight.py' -v
+      - name: G2 final Sysmon boundary remains strict (synthetic only)
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_final_calibration_window.py' -v

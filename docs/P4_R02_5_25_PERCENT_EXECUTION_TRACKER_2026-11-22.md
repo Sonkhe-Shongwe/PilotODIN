@@ -39,6 +39,15 @@
 - Critical dependency: a retained original WebView2 **process** handle does not prove the original **file** handle to FileObject/IRP/path relation. A source-only or incomplete native run cannot satisfy G2, even with a successful build or calibration. The native diagnostic intentionally returns non-acceptance; the job result and redacted report must be reconciled once final.
 - **Progress remains 1/4 = 25%; G2 IN PROGRESS. Official R02.5 0/5, N12 0/2, P4 14/20 (70%), engineering preparation 3/4 (75%).**
 
+## G2.2 | Final Sysmon birth-window failure isolated, source correction (22 November 2026)
+
+- [Run #45041259808](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45041259808) **COMPLETED FAILURE**: source guard, dependency preflight, unpackaged binary build and **initial Sysmon TCP/UDP calibration (read 1)** succeeded; app worker and same-capture write/restore stage completed. **Final Sysmon calibration blocked** by `parent-birth-before-window` on read 1, before a full strict redacted FileIO receipt could be produced. No acceptance credit.
+- Redacted birth diagnostic: one outside-window parent event `-4710` ticks versus start; independent parent creation `+5279` ticks versus start; near 1 ms discrepancy. This supports a *possible Sysmon timestamp quantisation* explanation but is not an independent Windows proof.
+- [G2.2 source review](./P4_R02_5_G2_2_FINAL_SYSMON_BOUNDARY_SOURCE_REVIEW_2026-11-22.md) describes the proposed **50 ms final-fixture lead-in** before generated process creation. It **does not** widen the strict Sysmon event window or alter runtime product code, acceptance, file roots or consumed native workflow.
+- The activation remains consumed and disarmed; a second native run needs fresh explicit source-pinned one-use owner permission. GitHub source-only tests/CI alone **cannot** turn this into G2 PASS.
+- **Delivery remains 1/4 (25%), G2 OPEN. Official R02.5 0/5, N12 0/2, P4 14/20 (70%) unchanged.**
+
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.

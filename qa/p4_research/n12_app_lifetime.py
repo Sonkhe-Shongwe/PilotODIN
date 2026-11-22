@@ -428,6 +428,28 @@ def endpoint_evidence(manifest, before):
         return snapshot, issues
 
 
+def verify_final_calibration(root, directory, manifest):
+    """Keep Sysmon's millisecond birth stamp INSIDE the real final window.
+
+    Windows Sysmon ProcessCreate UtcTime can be truncated to a millisecond.
+    Without a short pre-fixture lead-in, a genuine process created after the
+    start marker can appear up to one millisecond before it. Start the window
+    first, then wait BEFORE spawning the generated fixture. Never extend the
+    window after observing events or weaken strict Sysmon identity checks.
+    This does not launch the product, grant acceptance or change allowed roots.
+    """
+    start = journey.now()
+    time.sleep(journey.INITIAL_FIXTURE_LEAD_IN_SECONDS)
+    record = journey.calibrate(
+        directory, manifest,
+        child_hold_seconds=journey.TRACED_FIXTURE_CHILD_HOLD_SECONDS,
+    )
+    end = journey.now()
+    return journey.verify_fixture_sysmon(
+        root, manifest["sysmon_first_record"], start, end, record, phase="final",
+    )
+
+
 def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
     # The full app and FileIO path is dormant without a NEW one-use approval.
     if fileio:
@@ -513,14 +535,7 @@ def capture(root, staged, provenance, *, no_cdp=False, fileio=False):
                     restore_control = restore.exercise_restore(restore_path)
                     journey.mark(manifest, "restore-control-end")
                 with journey.checkpoint_stage("no-cdp-final-calibration", source, expected_hash):
-                    final_start = journey.now()
-                    final_record = journey.calibrate(
-                        calibration_directories[1], manifest,
-                        child_hold_seconds=journey.TRACED_FIXTURE_CHILD_HOLD_SECONDS)
-                    final_end = journey.now()
-                    journey.verify_fixture_sysmon(
-                        root, manifest["sysmon_first_record"], final_start, final_end,
-                        final_record, phase="final")
+                    verify_final_calibration(root, calibration_directories[1], manifest)
                 journey.mark(manifest, "snapshot-after-start")
                 after = journey.snapshots(manifest)
                 journey.mark(manifest, "snapshot-after-end")
