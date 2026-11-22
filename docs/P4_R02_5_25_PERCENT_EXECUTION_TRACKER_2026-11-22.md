@@ -101,6 +101,12 @@
 - [Exact-source Linux CI #45047289406](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45047289406) **SUCCESS: 159/159 synthetic tests**, including source-safe generated-only reader tests. Both Windows workflows remain `if: ${{ false }}`, G2.5 approval consumed, new absent G2.6 marker prepared in disarmed source. Future native use needs a fresh explicitly pinned one-use approval.
 - **G2 still OPEN, four-gate delivery 25%; official R02.5 0/5, N12 0/2, P4 14/20 (70%).**
 
+## G2.7 | Redacted preflight blocker labels, source-only (22 November 2026)
+
+- [G2.7 fixed-label engineering review](./P4_R02_5_G2_7_REDACTED_PREFLIGHT_DIAGNOSTICS_2026-11-22.md): the generated-only source driver now separates **HOST_SCOPE, SOURCE_APPROVAL, RUNNER_PATH and SYSMON_CHANNEL** preflight blockers using only enumerated, privacy-safe public labels. Strict failure, host/source consents, original event verification, and all root restrictions remain unchanged.
+- [Source implementation `3baa5f7`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/3baa5f778a200533fde0a19a5f2438353eba9192) had initial CI [#45049057684](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45049057684) fail at new-test syntax. A single test-file correction [`a5e548b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a5e548b5c4237108346ca167408990d936f8df99) was followed by [exact-source Linux CI #45049161934](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45049161934) **SUCCESS, 168/168 synthetic tests in 11 suites plus AST syntax**. No Windows execution.
+- One-use G2.5 native run remains **BLOCKED/preflight**; its approval remains consumed. Both native workflows stay disabled, next marker absent. **G2 OPEN, execution 1/4 = 25%; R02.5 0/5, N12 0/2, P4 14/20 (70%)**.
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
