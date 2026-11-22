@@ -89,6 +89,11 @@
 - The consumed G2.4 generated-only marker remains unchanged. The future **disarmed** Windows workflow is source-scoped to a new **absent** G2.5 marker, preventing reactivation with the prior marker. No native or product launch is authorised or triggered by this source change. Exact-source CI must pass before another one-use approval is considered.
 - Delivery **1/4 (25%)**, G2 OPEN; R02.5 **0/5**, N12 **0/2**, P4 **14/20 (70%)** unchanged.
 
+## G2.5 exact-source regression verification (22 November 2026)
+
+- [G2.5 commit `e71e918`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/e71e918877d8411c561dca9b6ed38833583d6632) published the non-overlapping initial/final Sysmon record boundary and disabled next-use workflow trigger. [Linux source CI #45046441140](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45046441140) **SUCCESS, 157/157 synthetic tests across ten suites**. Two new tail-safety cases reject missing/non-integer/regressed channel verification without retries. No Windows instrumentation was executed.
+- G1 25% earned, G2 OPEN, G3/G4 unstarted: **1/4 (25%)**. Next Windows generated calibration requires fresh exact-source one-use approval and absent new marker; prior marker consumed. Official R02.5 0/5, N12 0/2, P4 14/20 (70%).
+
 ## Last verified milestone
 
 - **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
