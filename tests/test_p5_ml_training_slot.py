@@ -155,21 +155,47 @@ def test_low_memory_api_busy_refuses_before_background_enqueue(store,monkeypatch
         assert con.execute("SELECT count(*) FROM experiments").fetchone()[0]==1
 
 
-def test_adaptive_keeps_existing_multistart_semantics(store,monkeypatch):
-    resource_policy.save_policy("adaptive")
-    monkeypatch.setattr(resource_policy,"_physical_memory_bytes",
-                        lambda:(8*1024**3,int(0.1*1024**3),"synthetic"))
-    fake=pd.DataFrame({"Metric":[float(i%13) for i in range(80)],
-                       "Outcome":["Y" if i%2 else "N" for i in range(80)]})
-    monkeypatch.setattr(main.quality,"current_data",lambda _: (fake,0))
-    body=main.ExperimentRequest(target="Outcome",task="classification",
-        excluded_features=[],models=["logistic_regression"],
-        acknowledge_random_split=True,expected_quality_version=0)
-    first=main.new_experiment(store,body,BackgroundTasks())
-    second=main.new_experiment(store,body,BackgroundTasks())
-    assert first["id"]!=second["id"]
-    assert storage.get_experiment(first["id"])["status"]=="queued"
-    assert storage.get_experiment(second["id"])["status"]=="queued"
+@pytest.mark.parametrize("first_mode", ["low_memory", "adaptive", "performance"])
+@pytest.mark.parametrize("second_mode", ["low_memory", "adaptive", "performance"])
+def test_all_policy_modes_share_one_atomic_training_slot(
+        store, monkeypatch, first_mode, second_mode):
+    """A policy change cannot bypass the workstation-wide memory-safety slot."""
+    monkeypatch.setattr(resource_policy, "_physical_memory_bytes",
+                        lambda: (8 * 1024**3, int(2.5 * 1024**3), "synthetic"))
+    fake = pd.DataFrame({"Metric": [float(i % 13) for i in range(80)],
+                         "Outcome": ["Y" if i % 2 else "N" for i in range(80)]})
+    monkeypatch.setattr(main.quality, "current_data", lambda _: (fake, 0))
+    body = main.ExperimentRequest(
+        target="Outcome", task="classification", excluded_features=[],
+        models=["logistic_regression"], acknowledge_random_split=True,
+        expected_quality_version=0,
+    )
+    resource_policy.save_policy(first_mode)
+    first_tasks = BackgroundTasks()
+    first = main.new_experiment(store, body, first_tasks)
+    assert first["status"] == "queued" and len(first_tasks.tasks) == 1
+
+    resource_policy.save_policy(second_mode)
+    refused_tasks = BackgroundTasks()
+    with pytest.raises(HTTPException) as blocked:
+        main.new_experiment(store, body, refused_tasks)
+    assert blocked.value.status_code == 503
+    assert blocked.value.detail["code"] == "ml_training_slot_busy"
+    assert blocked.value.detail["retryable"] is True
+    assert refused_tasks.tasks == []
+    with storage.connect() as con:
+        assert con.execute("SELECT COUNT(*) FROM experiments").fetchone()[0] == 1
+
+    assert storage.claim_queued_experiment(first["id"])
+    with pytest.raises(HTTPException) as running:
+        main.new_experiment(store, body, BackgroundTasks())
+    assert running.value.detail["code"] == "ml_training_slot_busy"
+
+    assert storage.finish_running_experiment(first["id"], "completed",
+                                             results={"models": []})
+    after = main.new_experiment(store, body, BackgroundTasks())
+    assert after["id"] != first["id"]
+    assert storage.get_experiment(after["id"])["status"] == "queued"
 
 
 def test_terminal_status_contract_is_strict(store):

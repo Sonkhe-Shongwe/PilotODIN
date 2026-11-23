@@ -375,9 +375,10 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
     except quality.QualityError as e:
         raise HTTPException(status_code=e.status,detail=str(e)) from e
     except ValueError as e: raise HTTPException(status_code=422,detail=str(e))
-    # Low-memory policy gates only NEW training requests before creating
-    # experiment history or scheduling work. Existing engine model/row/matrix
-    # caps and split/leakage checks still apply independently.
+    # Low-memory additionally screens available RAM. Every policy must still
+    # reserve the same atomic workstation-wide ML fitting slot, so switching
+    # to Adaptive or Performance cannot queue concurrent expensive training.
+    # Existing engine model/row/matrix and leakage caps remain independent.
     admission = resource_policy.admit_new_work("training")
     if admission["decision"] == "defer":
         raise HTTPException(status_code=503, detail={
@@ -395,12 +396,8 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
             "reviewed_high_risk_features":included_risks,
             "max_duration_seconds":body.max_duration_seconds}
     try:
-        if admission["mode"] == "low_memory":
-            # Atomic across request threads/process connections: one heavy
-            # ML training job at a time while Low-memory is selected.
-            eid=storage.new_experiment_with_capacity(project_id,config,expected_quality_version=version)
-        else:
-            eid=storage.new_experiment(project_id,config,expected_quality_version=version)
+        eid=storage.new_experiment_with_capacity(
+            project_id,config,expected_quality_version=version)
     except project_lifecycle.ProjectLifecycleError as exc:
         raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
     except storage.TrainingVersionConflict as exc:
