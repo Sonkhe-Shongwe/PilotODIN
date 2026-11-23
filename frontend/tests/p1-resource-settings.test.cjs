@@ -69,10 +69,13 @@ test('Low-memory gate sits before any new ML experiment is persisted and leaves 
  assert.match(handler,/resource_policy\.admit_new_work\("training"\)/);
  assert.match(handler,/HTTPException\(status_code=503/);
  const admission=handler.indexOf('resource_policy.admit_new_work("training")');
- for(const allocator of ['new_experiment','new_experiment_with_capacity']){
-  const insert=handler.search(new RegExp(`storage\\.${allocator}\\(project_id,\\s*config,\\s*expected_quality_version=version\\)`));
-  assert.ok(admission>=0&&insert>admission,`${allocator} must follow preflight and pass its checked version`);
- }
+ // Every resource mode must reserve capacity after admission and preserve
+ // the checked Quality version. The former unguarded allocator is forbidden.
+ const insert=handler.search(/storage\.new_experiment_with_capacity\(\s*project_id,\s*config,\s*expected_quality_version=version\s*\)/);
+ assert.ok(admission>=0&&insert>admission,
+           'Atomic capacity reservation must follow preflight and bind the checked version');
+ assert.doesNotMatch(handler,/storage\.new_experiment\s*\(/,
+           'Resource modes must never bypass the atomic fitting slot');
  const provider=read('backend/ai_provider.py');
  const local=provider.split('def local_try()->dict|None:')[1]?.split('    if prefer_local:')[0];
  assert.ok(local,'Local generation request function must exist');
