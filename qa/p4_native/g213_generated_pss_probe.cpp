@@ -67,7 +67,7 @@ const char* probe() {
     return "G213_FIXTURE_UNAVAILABLE";
 
   HANDLE file = CreateFileW(
-      fixture_name, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING,
+      fixture_name, GENERIC_READ | GENERIC_WRITE | DELETE, 0, nullptr, OPEN_EXISTING,
       FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
   if (file == INVALID_HANDLE_VALUE) {
     DeleteFileW(fixture_name);

@@ -47,7 +47,8 @@ class G213SourceContractTests(unittest.TestCase):
 
     def test_generated_only_runner_root_and_delete_on_close(self):
         for s in ("RUNNER_TEMP", "GetTempFileNameW", "FILE_FLAG_DELETE_ON_CLOSE",
-                  "FILE_ATTRIBUTE_REPARSE_POINT", "DeleteFileW(fixture_name)",
+                  "FILE_ATTRIBUTE_REPARSE_POINT", "GENERIC_WRITE | DELETE",
+                  "DeleteFileW(fixture_name)",
                   "GetFileAttributesW(fixture_name)", "CloseHandle(file)"):
             self.assertIn(s, self.cpp)
 
