@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   generated-pss-only:
-    if: ${{ true }} # One-use source-pinned G2.13 generated-only approval; disarm immediately after trigger.
+    if: ${{ false }} # G2.13 one-use approval consumed by activation 7dae94d59e4451ce36005e0842a442c2854c14df; permanently disarmed.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
