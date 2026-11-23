@@ -1,48 +1,37 @@
-name: R3 ML training single-slot source regression
+name: R3 ML single-slot synthetic Windows regression
 
-# P4 safety remediation of confirmed CF-05 admission gap. Synthetic data only;
-# never build/launch native PilotODIN, install packages outside the runner,
-# access owner data, execute models, or change P5 authorization.
+# Workstation ML admission safety on isolated synthetic SQLite only.
+# Exact source branch, no owner data, native Tauri, installer, or P5 launch.
 on:
-  pull_request:
+  push:
     branches:
-      - feature/live-dev-workspace-20261023
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'backend/main.py'
-      - 'backend/storage.py'
-      - 'backend/resource_policy.py'
-      - 'tests/test_p5_ml_training_slot.py'
-      - 'tests/test_p5_training_cancellation.py'
-      - 'tests/test_p1_resource_admission.py'
-      - '.github/workflows/r3-ml-single-slot-source.yml'
+      - fix/r3-ml-slot-all-policies-20261123
 
 permissions:
   contents: read
 
 jobs:
   windows-synthetic-slot:
-    if: ${{ github.event.pull_request.head.repo.full_name == 'Sonkhe-Shongwe/PilotODIN' && github.event.pull_request.head.ref == 'fix/r3-ml-slot-all-policies-20261123' }}
     runs-on: windows-2022
     timeout-minutes: 25
     env:
-      CI: 'true'
-      PYTHONDONTWRITEBYTECODE: '1'
+      CI: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
       PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-r3-slot-${{ github.run_id }}
     steps:
-      - name: Checkout isolated PR source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout exact source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
       - name: Python 3.11
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install existing backend test dependencies
         run: python -m pip install -r backend/requirements-test.txt
-      - name: Compile changed backend source
+      - name: Compile changed Python
         run: python -B -m compileall -q backend/main.py backend/storage.py tests/test_p5_ml_training_slot.py
-      - name: Validate cross-policy ML concurrency, cancellation, resource guards and project lifecycle
+      - name: Run bounded source-only regressions
         run: >-
           python -B -m pytest -q -p no:cacheprovider
           tests/test_p5_ml_training_slot.py
