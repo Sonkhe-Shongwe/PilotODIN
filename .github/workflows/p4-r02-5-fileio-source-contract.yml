@@ -36,6 +36,8 @@ on:
       - tests/test_p4_n12_g2_10_pss_file_handle_candidates.py
       - qa/p4_research/n12_pss_scoped_source_plan.py
       - tests/test_p4_n12_g2_11_pss_scoped_source_plan.py
+      - qa/p4_research/n12_pss_win32_backend.py
+      - tests/test_p4_n12_g2_12_pss_win32_backend.py
       - qa/p4_research/n12_no_cdp_child_handles.py
       - qa/p4_research/n12_private_child_pipe.py
       - qa/p4_research/n12_no_cdp_native_path.py
@@ -88,6 +90,8 @@ jobs:
               "tests/test_p4_n12_g2_10_pss_file_handle_candidates.py",
               "qa/p4_research/n12_pss_scoped_source_plan.py",
               "tests/test_p4_n12_g2_11_pss_scoped_source_plan.py",
+              "qa/p4_research/n12_pss_win32_backend.py",
+              "tests/test_p4_n12_g2_12_pss_win32_backend.py",
           )
           for filename in sources:
               ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
@@ -120,3 +124,5 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_10_pss_file_handle_candidates.py' -v
       - name: G2.11 bounded injected PSS resource cleanup, source-only
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_11_pss_scoped_source_plan.py' -v
+      - name: G2.12 dormant Win32 PSS ABI and scoped native adapter contract
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_12_pss_win32_backend.py' -v
