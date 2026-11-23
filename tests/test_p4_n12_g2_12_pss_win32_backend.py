@@ -194,6 +194,35 @@ class G212Win32AdapterTests(unittest.TestCase):
         self.assertIn(("free_snapshot",), api.events)
         self.assertEqual(api.events[-1], ("close_process",))
 
+    def test_partial_native_capture_failure_frees_snapshot_if_returned(self):
+        api = object.__new__(p._Win32PssApi)
+        freed = []
+        api.current_ticks = lambda: 100
+        def fail_after_partial(process, flags, thread_flags, out):
+            self.assertEqual(flags, p.PSS_FLAGS)
+            self.assertEqual(thread_flags, 0)
+            ctypes.cast(out, ctypes.POINTER(ctypes.c_void_p))[0] = 444
+            return 5
+        api.capture_fn = fail_after_partial
+        api.free = lambda handle: freed.append(handle)
+        with self.assertRaises(p.PssScopeError):
+            api.capture(111)
+        self.assertEqual(freed, [444])
+
+    def test_capture_clock_anomaly_releases_snapshot(self):
+        api = object.__new__(p._Win32PssApi)
+        freed = []
+        times = iter([100, 10_000_201])
+        api.current_ticks = lambda: next(times)
+        def succeed(process, flags, thread_flags, out):
+            ctypes.cast(out, ctypes.POINTER(ctypes.c_void_p))[0] = 555
+            return 0
+        api.capture_fn = succeed
+        api.free = lambda handle: freed.append(handle)
+        with self.assertRaises(p.PssScopeError):
+            api.capture(111)
+        self.assertEqual(freed, [555])
+
     def test_handle_entry_decode_never_reads_object_name(self):
         row = p._HandleEntry()
         row.handle = 30

@@ -220,6 +220,11 @@ class _Win32PssApi:
         handle = ctypes.c_void_p()
         result = self.capture_fn(process_handle, PSS_FLAGS, 0, ctypes.byref(handle))
         if result or not handle.value:
+            # A failed API call should normally clear HPSS. If it returns a
+            # non-null partial snapshot, attempt to free that local handle
+            # instead of abandoning it. Either failure remains BLOCKED.
+            if handle.value:
+                self.free(int(handle.value))
             raise PssScopeError("PSS_CAPTURE_INCOMPLETE")
         end_tick = self.current_ticks()
         # The timestamp is a caller clock observation, NOT an authenticated
