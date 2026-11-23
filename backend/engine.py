@@ -11,6 +11,11 @@ from typing import Any, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
+try:
+    from . import import_preflight
+except ImportError:  # Support the existing direct-module backend import path.
+    import import_preflight
+
 if TYPE_CHECKING:
     from sklearn.pipeline import Pipeline
 
@@ -80,11 +85,24 @@ def is_identifier_column(name: str) -> bool:
 _import_identifier = is_identifier_column
 
 
+def read_xlsx_with_identifiers(path: str, is_identifier: Callable[[str], bool]) -> pd.DataFrame:
+    """Preserve text-formatted identifier values in the first XLSX worksheet.
+
+    For genuine text cells like '0007', dtype=str prevents pandas numeric
+    inference. A numeric cell with a '0000' display format has no literal
+    zero-padded text to recover; that requires separate schema review.
+    """
+    header = pd.read_excel(path, engine="openpyxl", sheet_name=0, nrows=0)
+    protected = {name: str for name in header.columns if is_identifier(str(name))}
+    return pd.read_excel(path, engine="openpyxl", sheet_name=0, dtype=protected)
+
+
 def read_data(path: str, ext: str) -> pd.DataFrame:
+    import_preflight.preflight_dataset(path, ext)
     if ext == ".csv":
         df = read_csv_with_identifiers(path, is_identifier_column)
     elif ext == ".xlsx":
-        df = pd.read_excel(path, engine="openpyxl", sheet_name=0)
+        df = read_xlsx_with_identifiers(path, is_identifier_column)
     else: raise ValueError("Only CSV and XLSX files are supported")
     if df.empty or df.shape[1] < 2:
         raise ValueError("Upload a dataset with at least one row and two columns")

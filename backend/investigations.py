@@ -22,7 +22,8 @@ def init():
         CREATE TABLE IF NOT EXISTS investigations_v1 (
           id TEXT PRIMARY KEY, project_id TEXT NOT NULL, objective TEXT NOT NULL,
           dataset_version INTEGER NOT NULL, status TEXT NOT NULL,
-          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+          FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         CREATE INDEX IF NOT EXISTS ix_investigations_v1_project
           ON investigations_v1(project_id, updated_at DESC);

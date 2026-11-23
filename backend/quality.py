@@ -49,24 +49,28 @@ def _init_tables() -> None:
         con.executescript("""
         CREATE TABLE IF NOT EXISTS quality_state (
           project_id TEXT PRIMARY KEY, original_sha256 TEXT NOT NULL,
-          current_version INTEGER NOT NULL DEFAULT 0
+          current_version INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         CREATE TABLE IF NOT EXISTS quality_versions (
           project_id TEXT NOT NULL, version INTEGER NOT NULL,
           operations_json TEXT NOT NULL, event TEXT NOT NULL,
           details_json TEXT NOT NULL, created_at TEXT NOT NULL,
-          PRIMARY KEY (project_id,version)
+          PRIMARY KEY (project_id,version),
+          FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         CREATE TABLE IF NOT EXISTS quality_actions (
           id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
           kind TEXT NOT NULL, column_name TEXT NOT NULL, params_json TEXT NOT NULL,
           source TEXT NOT NULL, affected_rows INTEGER NOT NULL,
-          created_at TEXT NOT NULL
+          created_at TEXT NOT NULL,
+          FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         CREATE TABLE IF NOT EXISTS quality_decisions (
           project_id TEXT NOT NULL, issue_id TEXT NOT NULL,
           status TEXT NOT NULL, created_at TEXT NOT NULL,
-          PRIMARY KEY(project_id,issue_id)
+          PRIMARY KEY(project_id,issue_id),
+          FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         """)
 
@@ -140,10 +144,15 @@ def _state(con, pid: str) -> tuple[int, list[str]]:
 def _source_df(p: dict) -> pd.DataFrame:
     """Use the same CSV decoder and identifier typing as initial import."""
     path, ext = p["dataset_path"], p["file_ext"]
+    if ext in (".csv", ".xlsx"):
+        try:
+            engine.import_preflight.preflight_dataset(path, ext)
+        except ValueError as exc:
+            raise QualityError(f"Source dataset failed import preflight: {exc}", 409) from exc
     if ext == ".csv":
         df = engine.read_csv_with_identifiers(path, _named_identifier)
     elif ext == ".xlsx":
-        df = pd.read_excel(path, engine="openpyxl", sheet_name=0)
+        df = engine.read_xlsx_with_identifiers(path, _named_identifier)
     else:
         raise QualityError("Unsupported dataset extension")
     if df.empty or df.shape[1] < 2 or len(df) > 100000 or len(df.columns) > 100 or df.shape[0]*df.shape[1] > 6000000:
@@ -443,10 +452,16 @@ def _add_version(con, pid: str, ops: list[str], event: str, detail: dict) -> int
     return new
 
 
-def _record_action(con, p: dict, ops: list[str], proposal: dict, source: str,
-                   issue_id: str) -> tuple[int,dict]:
-    df=_materialize(con,p,ops)
-    _,affected=_apply(df,proposal)
+def _record_validated_action(con, p: dict, ops: list[str], proposal: dict,
+                             source: str, issue_id: str, affected: int) -> tuple[int, dict]:
+    """Persist metadata for an action already validated against the exact version.
+
+    The caller owns the BEGIN IMMEDIATE transaction and must fence the active
+    project, original checksum, history, receipt and decision states before use.
+    This helper does not validate or replay user data on its own.
+    """
+    if not con.in_transaction:
+        raise RuntimeError("Validated Quality actions require the current write transaction")
     action_id=storage.uid()
     con.execute("INSERT INTO quality_actions VALUES(?,?,?,?,?,?,?,?)",
                 (action_id,p["id"],proposal["kind"],proposal["column"],_json(proposal),source,affected,storage.now()))
@@ -455,6 +470,13 @@ def _record_action(con, p: dict, ops: list[str], proposal: dict, source: str,
                 (p["id"],issue_id,"applied",storage.now()))
     return nxt,{"id":action_id,"kind":proposal["kind"],"column":proposal["column"],
                 "source":source,"affected_rows":affected}
+
+
+def _record_action(con, p: dict, ops: list[str], proposal: dict, source: str,
+                   issue_id: str) -> tuple[int,dict]:
+    df=_materialize(con,p,ops)
+    _,affected=_apply(df,proposal)
+    return _record_validated_action(con,p,ops,proposal,source,issue_id,affected)
 
 
 def snapshot(pid: str, preview_limit: int = 7) -> dict:

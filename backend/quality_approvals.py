@@ -48,7 +48,8 @@ def _init_tables():
             payload_json TEXT NOT NULL,
             issued_at TEXT NOT NULL,
             expires_at TEXT NOT NULL,
-            consumed_at TEXT
+            consumed_at TEXT,
+            FOREIGN KEY(project_id) REFERENCES projects(id)
         )''')
         con.execute('CREATE INDEX IF NOT EXISTS quality_approval_project ON quality_approval_receipts(project_id,expected_version)')
 
@@ -140,20 +141,64 @@ def _make(con,p:dict,body:ProposalRequest)->tuple[dict,pd.DataFrame,pd.DataFrame
     return {'project_id':pid,'expected_version':version,'operation':op,'steps':steps},before,after
 
 
+def _preview_state(con, pid: str, body: ProposalRequest) -> tuple:
+    """Small, version-bound SQLite read set used to fence a prepared preview."""
+    version, ops = quality._state(con, pid)
+    decisions = quality._decisions(con, pid)
+    target = None
+    if body.operation == 'restore' and body.target_version is not None:
+        row = con.execute(
+            'SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?',
+            (pid, body.target_version),
+        ).fetchone()
+        target = row['operations_json'] if row is not None else None
+    return version, tuple(ops), decisions, target
+
+
+def _require_active_for_preview(con, pid: str) -> None:
+    """Read-only fast archive check; the writer-lock check remains authority."""
+    row = con.execute(
+        "SELECT l.archived_at FROM projects p "
+        "LEFT JOIN project_lifecycle l ON l.project_id=p.id WHERE p.id=?",
+        (pid,),
+    ).fetchone()
+    if row is None:
+        raise quality.QualityError('Project no longer exists. No Quality changes were applied.', 404)
+    if row['archived_at'] is not None:
+        raise quality.QualityError(
+            'Project is archived. Restore it in Manage projects before making Quality changes.', 409
+        )
+
+
 def prepare(pid:str,body:ProposalRequest)->dict:
     _init_tables()
     p=quality._project(pid)
     with storage.connect() as con:
-        con.execute('BEGIN IMMEDIATE')
-        quality._require_active_for_write(con,pid)
+        _require_active_for_preview(con, pid)
+        # Retain the legacy no-checksum error from _ensure before asking for
+        # a version. This only hashes on the legacy/error path, not normally.
+        if con.execute('SELECT 1 FROM quality_state WHERE project_id=?', (pid,)).fetchone() is None:
+            quality._ensure(con, p)
+        # SELECT statements are short and autocommit. Do not begin a long read
+        # transaction: on rollback-journal SQLite that would still block writers.
+        observed = _preview_state(con, pid, body)
         payload,before,after=_make(con,p,body)
         changed,examples=_compare_rows(before,after)
+        _require_active_for_preview(con, pid)
         if not changed:
             raise quality.QualityError('This action would not change the working dataset',409)
+        if _preview_state(con, pid, body) != observed:
+            raise quality.QualityError('Quality state changed while preparing the preview. Review it again.',409)
         digest=_hash(payload)
         proposal_id=secrets.token_hex(24)
         issued=datetime.now(timezone.utc)
         expires=issued+timedelta(minutes=10)
+        # Only the receipt publication holds the writer lock. A stale version,
+        # changed decision or archived project must fail without a receipt.
+        con.execute('BEGIN IMMEDIATE')
+        quality._require_active_for_write(con,pid)
+        if _preview_state(con, pid, body) != observed:
+            raise quality.QualityError('Quality state changed while preparing the preview. Review it again.',409)
         con.execute('''INSERT INTO quality_approval_receipts
                      (proposal_id,project_id,expected_version,proposal_hash,payload_json,issued_at,expires_at)
                      VALUES(?,?,?,?,?,?,?)''',(
@@ -165,73 +210,159 @@ def prepare(pid:str,body:ProposalRequest)->dict:
                 'warning':'Review the exact proposed changes. Approving creates a new immutable working version; the uploaded original is unchanged.'}
 
 
+def _receipt_for_commit(con, pid: str, body: ApprovalCommit):
+    rec=con.execute('SELECT * FROM quality_approval_receipts WHERE proposal_id=? AND project_id=?',
+                    (body.proposal_id,pid)).fetchone()
+    if rec is None or rec['proposal_hash']!=body.proposal_hash:
+        raise quality.QualityError('Approval receipt is invalid or belongs to another project',403)
+    if rec['consumed_at']:
+        raise quality.QualityError('Approval has already been used',409)
+    if datetime.fromisoformat(rec['expires_at'])<=datetime.now(timezone.utc):
+        raise quality.QualityError('Approval expired; review a new preview',409)
+    payload=json.loads(rec['payload_json'])
+    if rec['proposal_hash']!=_hash(payload):
+        raise quality.QualityError('Approval contents failed integrity verification',409)
+    return rec,payload
+
+
+def _stage_commit(con, p:dict, version:int, ops:list[str], payload:dict):
+    """Replay and validate an approved operation without taking a write lock.
+
+    SELECTs are in autocommit mode. A competing writer remains free to commit,
+    and the final write transaction must reject a changed version/decision set.
+    """
+    pid=p['id']
+    operation=payload['operation']
+    steps=payload['steps']
+    if operation in ('approve','impute','autopilot'):
+        df=quality._materialize(con,p,ops)
+        verified=[]
+        for step in steps:
+            matching=next((x for x in quality._issues(df) if x['id']==step['issue_id']),None)
+            if matching is None:
+                raise quality.QualityError('Approved finding changed; review it again',409)
+            if operation!='impute' and matching['proposal']!=step['proposal']:
+                raise quality.QualityError('Approved correction no longer matches the finding',409)
+            if operation=='impute' and (matching['kind']!='missing' or matching['column']!=step['proposal']['column']):
+                raise quality.QualityError('Imputation finding has changed',409)
+            df,affected=quality._apply(df,step['proposal'],expected_affected=step['affected_rows'])
+            verified.append((step['issue_id'],step['proposal'],affected))
+        return ('actions',verified)
+    if operation=='undo':
+        step=steps[0]
+        action_id=step['action_id']
+        if action_id not in ops:
+            raise quality.QualityError('Action no longer active',409)
+        target=[i for i in ops if i!=action_id]
+        if target!=step['operations']:
+            raise quality.QualityError('Undo scope changed',409)
+        quality._materialize(con,p,target)
+        return ('undo',target)
+    if operation=='restore':
+        step=steps[0]
+        row=con.execute('SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?',
+                        (pid,step['target_version'])).fetchone()
+        if row is None or step['operations']!=json.loads(row['operations_json']):
+            raise quality.QualityError('Restore target changed',409)
+        quality._materialize(con,p,step['operations'])
+        return ('restore',step['operations'])
+    raise quality.QualityError('Unsupported approval operation',409)
+
+
+def _replay_inputs(con, pid: str, ops: list[str], payload: dict) -> tuple:
+    """Small DB-only signature of the immutable transforms about to be replayed.
+
+    Version/operation IDs alone cannot detect unexpected in-place edits to
+    existing audit rows. Include restore/undo target actions as well.
+    """
+    ids=list(dict.fromkeys(ops))
+    if payload['operation'] in ('undo','restore'):
+        ids=list(dict.fromkeys([*ids,*payload['steps'][0]['operations']]))
+    result=[]
+    for action_id in ids:
+        row=con.execute(
+            'SELECT params_json,affected_rows FROM quality_actions WHERE project_id=? AND id=?',
+            (pid,action_id),
+        ).fetchone()
+        if row is None:
+            raise quality.QualityError('Missing transformation from history',409)
+        result.append((action_id,row['params_json'],row['affected_rows']))
+    return tuple(result)
+
+
 def commit(pid:str,body:ApprovalCommit)->dict:
     _init_tables()
     p=quality._project(pid)
     with storage.connect() as con:
-        con.execute('BEGIN IMMEDIATE')
-        quality._require_active_for_write(con,pid)
-        rec=con.execute('SELECT * FROM quality_approval_receipts WHERE proposal_id=? AND project_id=?',
-                        (body.proposal_id,pid)).fetchone()
-        if rec is None or rec['proposal_hash']!=body.proposal_hash:
-            raise quality.QualityError('Approval receipt is invalid or belongs to another project',403)
-        if rec['consumed_at']:
-            raise quality.QualityError('Approval has already been used',409)
-        if datetime.fromisoformat(rec['expires_at'])<=datetime.now(timezone.utc):
-            raise quality.QualityError('Approval expired; review a new preview',409)
+        # Preserve archive-denial precedence even when the request cached a
+        # project before archive or supplied a forged/missing receipt. This is
+        # a short read-only check, NOT the authority for the final write.
+        _require_active_for_preview(con,pid)
+        # No BEGIN across dataset parsing, issue discovery or transformation
+        # replay. In rollback-journal mode even a long read transaction would
+        # stall a writer, so only short autocommitted SELECTs are used here.
+        rec,payload=_receipt_for_commit(con,pid,body)
         quality._ensure(con,p)
         version,ops=quality._state(con,pid)
         quality._check_version(version,rec['expected_version'])
-        payload=json.loads(rec['payload_json'])
-        if rec['proposal_hash']!=_hash(payload):
-            raise quality.QualityError('Approval contents failed integrity verification',409)
+        decisions=quality._decisions(con,pid)
+        inputs=_replay_inputs(con,pid,ops,payload)
+        staged=_stage_commit(con,p,version,ops,payload)
+        if (quality._state(con,pid)!=(version,ops)
+                or quality._decisions(con,pid)!=decisions
+                or _replay_inputs(con,pid,ops,payload)!=inputs):
+            raise quality.QualityError('Quality state changed while verifying approval. Review it again',409)
+
+        # Only verified receipt/history metadata writes follow BEGIN IMMEDIATE.
+        # Hash the source again under the lock: no stale replay may be
+        # published if the original bytes changed after the read-only phase.
+        con.execute('BEGIN IMMEDIATE')
+        quality._require_active_for_write(con,pid)
+        current,final_payload=_receipt_for_commit(con,pid,body)
+        if tuple(current)!=tuple(rec) or final_payload!=payload:
+            raise quality.QualityError('Approval receipt changed; review it again',409)
+        quality._ensure(con,p)
+        actual,actual_ops=quality._state(con,pid)
+        quality._check_version(actual,version)
+        if (actual_ops!=ops or quality._decisions(con,pid)!=decisions
+                or _replay_inputs(con,pid,ops,payload)!=inputs):
+            raise quality.QualityError('Quality history or decisions changed; review it again',409)
+
         operation=payload['operation']
         steps=payload['steps']
         outcome=[]
-        if operation in ('approve','impute','autopilot'):
-            for step in steps:
-                matching=next((x for x in quality._issues(quality._materialize(con,p,ops)) if x['id']==step['issue_id']),None)
-                if matching is None:
-                    raise quality.QualityError('Approved finding changed; review it again',409)
-                if operation!='impute' and matching['proposal']!=step['proposal']:
-                    raise quality.QualityError('Approved correction no longer matches the finding',409)
-                if operation=='impute' and (matching['kind']!='missing' or matching['column']!=step['proposal']['column']):
-                    raise quality.QualityError('Imputation finding has changed',409)
-                version,action=quality._record_action(con,p,ops,step['proposal'],'explicit_receipt',step['issue_id'])
-                if action['affected_rows']!=step['affected_rows']:
-                    raise quality.QualityError('Approved affected-row count changed; review again',409)
+        if staged[0]=='actions':
+            for issue_id,proposal,affected in staged[1]:
+                version,action=quality._record_validated_action(con,p,ops,proposal,'explicit_receipt',issue_id,affected)
                 ops=[*ops,action['id']]
                 outcome.append(action)
-        elif operation=='undo':
+        elif staged[0]=='undo':
             action_id=steps[0]['action_id']
-            if action_id not in ops:
-                raise quality.QualityError('Action no longer active',409)
-            target=[i for i in ops if i!=action_id]
-            if target!=steps[0]['operations']:
-                raise quality.QualityError('Undo scope changed',409)
-            quality._materialize(con,p,target)
+            target=staged[1]
             version=quality._add_version(con,pid,target,'undo',{'action_id':action_id,'prior_version':version,'source':'explicit_receipt'})
-            # Suppress automatic re-application of undone corrections.
-            for r in con.execute("SELECT details_json FROM quality_versions WHERE project_id=? AND event='apply'",(pid,)):
-                d=json.loads(r['details_json'])
+            for row in con.execute("SELECT details_json FROM quality_versions WHERE project_id=? AND event='apply'",(pid,)):
+                d=json.loads(row['details_json'])
                 if d.get('action_id')==action_id and d.get('issue_id'):
                     con.execute('INSERT OR REPLACE INTO quality_decisions VALUES(?,?,?,?)',(pid,d['issue_id'],'undone',storage.now()))
                     break
-        elif operation=='restore':
-            target=steps[0]['operations']
-            if target != json.loads(con.execute('SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?',
-                                               (pid,steps[0]['target_version'])).fetchone()['operations_json']):
+        elif staged[0]=='restore':
+            target=staged[1]
+            row=con.execute('SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?',
+                            (pid,steps[0]['target_version'])).fetchone()
+            if row is None or target!=json.loads(row['operations_json']):
                 raise quality.QualityError('Restore target changed',409)
-            quality._materialize(con,p,target)
             version=quality._add_version(con,pid,target,'restore',{'from_version':steps[0]['target_version'],'prior_version':version,'source':'explicit_receipt'})
             for removed in set(ops)-set(target):
-                for r in con.execute("SELECT details_json FROM quality_versions WHERE project_id=? AND event='apply'",(pid,)):
-                    d=json.loads(r['details_json'])
+                for row in con.execute("SELECT details_json FROM quality_versions WHERE project_id=? AND event='apply'",(pid,)):
+                    d=json.loads(row['details_json'])
                     if d.get('action_id')==removed and d.get('issue_id'):
                         con.execute('INSERT OR REPLACE INTO quality_decisions VALUES(?,?,?,?)',(pid,d['issue_id'],'undone',storage.now()))
                         break
         else:
-            raise quality.QualityError('Unsupported approval operation',409)
-        con.execute('UPDATE quality_approval_receipts SET consumed_at=? WHERE proposal_id=?',(storage.now(),body.proposal_id))
+            raise RuntimeError('Unrecognized validated approval state')
+        updated=con.execute('UPDATE quality_approval_receipts SET consumed_at=? WHERE proposal_id=? AND consumed_at IS NULL',
+                            (storage.now(),body.proposal_id))
+        if updated.rowcount!=1:
+            raise quality.QualityError('Approval has already been used',409)
         return {'version':version,'operation':operation,'applied':outcome,'count':len(outcome),
                 'approved':True,'receipt_id':body.proposal_id}

@@ -62,7 +62,9 @@ COUNTS: tuple[tuple[str, str, str, str], ...] = (
     ("report_quality_audits_v1", "Report quality evidence", "report_quality_audits_v1",
      "SELECT COUNT(*) FROM report_quality_audits_v1 WHERE project_id=?"),
 )
-KNOWN_TABLES = frozenset(item[0] for item in COUNTS)
+# The one-row FK certificate is internal database metadata, not project data.
+# Unknown user/plugin tables remain unclassified retention blockers.
+KNOWN_TABLES = frozenset(item[0] for item in COUNTS) | {'pilotodin_fk_gate_v1'}
 
 
 def impact(project_id: str, expected_revision: int) -> dict:

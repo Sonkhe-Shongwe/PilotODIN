@@ -8,6 +8,11 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+try:
+    from . import sqlite_fk_gate
+except ImportError:
+    import sqlite_fk_gate
+
 HOME = Path(os.environ.get("PILOTODIN_HOME", str(Path(__file__).resolve().parents[1] / "data"))).resolve()
 HOME.mkdir(parents=True,exist_ok=True)
 (HOME / "datasets").mkdir(exist_ok=True)
@@ -15,13 +20,31 @@ HOME.mkdir(parents=True,exist_ok=True)
 DB_PATH = HOME / "pilotodin.sqlite3"
 
 
+class _ClosingSQLiteConnection(sqlite3.Connection):
+    """Keep SQLite transaction semantics and always close managed handles."""
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
+
+
 def connect():
-    con=sqlite3.connect(DB_PATH, timeout=30)
-    con.row_factory=sqlite3.Row
+    con = sqlite3.connect(DB_PATH, timeout=30, factory=_ClosingSQLiteConnection)
+    con.row_factory = sqlite3.Row
+    try:
+        sqlite_fk_gate.configure_connection(con)
+    except Exception:
+        con.close()
+        raise
     return con
 
 
 def init():
+    # Do not automatically certify or rewrite databases already on disk.
+    # Legacy FK enforcement requires a separate audited migration.
+    fresh_database = not DB_PATH.exists()
     with connect() as conn:
         conn.executescript("""
         CREATE TABLE IF NOT EXISTS projects (
@@ -91,7 +114,8 @@ def init():
             revision INTEGER NOT NULL,
             previous_decision TEXT,
             decision TEXT NOT NULL,
-            occurred_at TEXT NOT NULL
+            occurred_at TEXT NOT NULL,
+            FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         CREATE INDEX IF NOT EXISTS semantic_review_event_lookup
             ON semantic_human_review_events(project_id,quality_version,column_name,hypothesis_role,event_id);
@@ -108,6 +132,8 @@ def init():
             FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         """)
+        if fresh_database:
+            sqlite_fk_gate.certify_new_schema(conn)
 
 
 def now(): return datetime.now(timezone.utc).isoformat()

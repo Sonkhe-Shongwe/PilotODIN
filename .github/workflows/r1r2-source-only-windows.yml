@@ -1,0 +1,93 @@
+name: R1/R2 Source-Only Windows Regression (Owner Approval Required)
+
+# PR #10: single owner-approved source-only CI completed successfully.
+# Verified run: https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45180270785
+# One-time approval consumed. This job is DISABLED for all future events.
+# No native app, installer, model download, owner data or P5.
+on:
+  pull_request:
+    branches:
+      - feature/live-dev-workspace-20261023
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/r1r2-source-only-windows.yml'
+      - 'backend/**'
+      - 'tests/**'
+
+permissions:
+  contents: read
+
+jobs:
+  r1r2-source-only:
+    name: R1/R2 Windows source tests (PAUSED, one-use approval consumed)
+    if: ${{ false }}
+    runs-on: windows-2022
+    timeout-minutes: 40
+    env:
+      CI: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout source only, without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Fail closed outside intended same-repository PR
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -ne 'pull_request') { throw 'Wrong CI event' }
+          if ($env:GITHUB_BASE_REF -ne 'feature/live-dev-workspace-20261023') { throw 'Wrong PR base' }
+          if ($env:GITHUB_HEAD_REF -ne 'feature/r1r2-integration-20261123') { throw 'Wrong PR head' }
+          if ((git rev-parse HEAD).Trim() -ne $env:GITHUB_SHA) {
+            # PR checkouts normally use a synthetic merge SHA, not the head SHA.
+            throw 'Source checkout does not match CI event SHA'
+          }
+      - name: Set up Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements-test.txt
+      - name: Install pinned-range backend test requirements
+        shell: pwsh
+        run: python -m pip install -r backend/requirements-test.txt
+      - name: Compile backend and focused tests
+        shell: pwsh
+        run: |
+          python -B -m compileall -q backend
+          python -B -m compileall -q tests/test_cf01_import_preflight.py tests/test_cf03_sqlite_fk_migration.py
+      - name: R1/R2 focused synthetic regression
+        shell: pwsh
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-r1r2-focus-${{ github.run_id }}
+        run: >-
+          python -B -m pytest -q -p no:cacheprovider
+          tests/test_cf01_import_preflight.py
+          tests/test_cf01_upload_http.py
+          tests/test_cf02_xlsx_identifier_parity.py
+          tests/test_cf03_sqlite_fk_audit.py
+          tests/test_cf03_sqlite_fk_migration.py
+          tests/test_cf03_sqlite_fk_stagec.py
+          tests/test_cf04_quality_preview_transaction.py
+          tests/test_cf04_quality_commit_transaction.py
+          tests/test_build_e_approval_receipts.py
+          tests/test_p1_import_recovery.py
+          tests/test_p1_upload_atomic_staging.py
+          tests/test_p1_project_lifecycle.py
+      - name: Broader synthetic backend regression
+        shell: pwsh
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-r1r2-broad-${{ github.run_id }}
+        run: >-
+          python -B -m pytest -q -p no:cacheprovider
+          tests/test_quality_increment1.py
+          tests/test_quality_deep_investigations.py
+          tests/test_build_d_unified_journey.py
+          tests/test_build_e_cleaned_exports.py
+          tests/test_build_e_autonomous_investigations.py
+          tests/test_build_e_persistent_reports.py
+          tests/test_p1_resource_admission.py
+          tests/test_p1_resource_policy.py
+          tests/test_p3_semantic_profile.py
+          tests/test_p3_semantic_business_context.py
+          tests/test_p3_human_semantic_review.py
+          tests/test_non_ai_correctness_gates.py
