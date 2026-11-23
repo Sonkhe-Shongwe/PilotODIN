@@ -1,0 +1,41 @@
+name: G2.13 synthetic source-only premerge contracts
+# Ubuntu, no Windows/PSS/native app/ETW/owner data. Temporary verification.
+on:
+  push:
+    branches:
+      - fix/p4-r025-g213-generated-pss-feasibility-20261123
+permissions:
+  contents: read
+jobs:
+  source-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout isolated committed source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: AST check G2.13 source contract
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import ast
+          from pathlib import Path
+          ast.parse(Path('tests/test_p4_n12_g2_13_source_contract.py').read_text(encoding='utf-8'))
+          PY
+      - name: G2.13 static source and disabled workflow test
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_13_source_contract.py' -v
+      - name: G2.12 dormant PSS adapter regression
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_12_pss_win32_backend.py' -v
+      - name: G2.11 mock snapshot cleanup regression
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_11_pss_scoped_source_plan.py' -v
+      - name: G2.10 strict type-name admission regression
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_10_pss_file_handle_candidates.py' -v
+      - name: Original FileIO pair strict regression
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_fileio_pair_contract.py' -v
