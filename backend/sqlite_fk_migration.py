@@ -259,8 +259,10 @@ def migrate_disposable_backup(source: str | Path, output: str | Path, *,
                 raise MigrationRefused('Snapshot changed or failed the integrity gate')
             summary = _migrate_staged_file(staged, gaps)
             # Optional modules may not have initialized their tables yet.
-            # Their CURRENT CREATE TABLE definitions still lack FK clauses;
-            # source DDL must be updated before real connection enforcement.
+            # This report cannot prove how a future process will CREATE them.
+            # The integrated Stage C runtime has updated FK-bearing DDL, but
+            # a migrated copy still needs runtime schema verification before
+            # any separately authorized deployment.
             with closing(sqlite3.connect(staged)) as catalog:
                 missing_optional = sorted(MIGRATABLE_TABLES - set(_schema(catalog)))
             after = audit_database(staged)
@@ -274,8 +276,12 @@ def migrate_disposable_backup(source: str | Path, output: str | Path, *,
                     'post_audit_complete': after['audit_complete'],
                     'post_full_project_fk_coverage': after['full_project_fk_coverage'],
                     'missing_optional_tables': missing_optional,
-                    'current_source_ddl_update_required': True,
-                    'current_source_connection_factory_update_required': True,
+                    # These are facts about this Stage C integrated SOURCE,
+                    # not certification of a future deployment or legacy DB.
+                    'current_source_ddl_update_required': False,
+                    'current_source_connection_factory_update_required': False,
+                    'optional_table_creation_must_be_rechecked': bool(missing_optional),
+                    'legacy_database_activation_requires_separate_approval': True,
                     'production_enforcement_enabled': False,
                     'official_acceptance_changed': False}
         finally:

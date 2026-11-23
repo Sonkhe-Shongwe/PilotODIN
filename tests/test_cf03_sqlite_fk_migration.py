@@ -101,6 +101,10 @@ def test_safe_migration_covers_all_seven_relationships_and_preserves_bytes(tmp_p
     out, report = _run(db)
     assert out.exists()
     assert report['production_enforcement_enabled'] is False
+    assert report['current_source_ddl_update_required'] is False
+    assert report['current_source_connection_factory_update_required'] is False
+    assert report['optional_table_creation_must_be_rechecked'] is False
+    assert report['legacy_database_activation_requires_separate_approval'] is True
     assert report['post_full_project_fk_coverage']
     assert {r['table'] for r in report['migrated_tables']} == MIGRATABLE_TABLES
     assert hashlib.sha256(db.read_bytes()).hexdigest() == before_hash
@@ -273,10 +277,14 @@ def test_absent_optional_table_is_reported_as_future_ddl_risk(tmp_path):
         con.execute('DROP TABLE quality_approval_receipts')
     out, report = _run(db)
     assert report['missing_optional_tables'] == ['quality_approval_receipts']
-    assert report['current_source_ddl_update_required'] is True
+    assert report['current_source_ddl_update_required'] is False
+    assert report['current_source_connection_factory_update_required'] is False
+    assert report['optional_table_creation_must_be_rechecked'] is True
+    assert report['legacy_database_activation_requires_separate_approval'] is True
     assert report['production_enforcement_enabled'] is False
     assert audit_database(out)['full_project_fk_coverage']
-    # An unmodified runtime CREATE TABLE can reintroduce the missing link.
+    # An unvetted alternate CREATE TABLE can reintroduce a missing link;
+    # a missing optional table cannot be treated as production clearance.
     with sqlite3.connect(out) as con:
         con.execute('CREATE TABLE quality_approval_receipts (proposal_id TEXT,project_id TEXT NOT NULL)')
     assert not audit_database(out)['full_project_fk_coverage']
