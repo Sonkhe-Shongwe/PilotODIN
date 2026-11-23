@@ -1,8 +1,9 @@
 name: R1/R2 Source-Only Windows Regression (Owner Approval Required)
 
-# PR #10 candidate. Keep the job disabled until the owner separately
-# authorizes CI execution. A PR synchronize event must never turn this on
-# by itself. No native app, installer, model download, owner data or P5.
+# PR #10: user approved exactly one source-only CI run on 23 Nov 2026.
+# Scope limited to the single synchronizing PR event for the known integration
+# head, with synthetic data only. The job MUST be disabled after this run.
+# No native app, installer, model download, owner data or P5.
 on:
   pull_request:
     branches:
@@ -18,8 +19,8 @@ permissions:
 
 jobs:
   r1r2-source-only:
-    name: R1/R2 Windows source tests (PAUSED, owner approval pending)
-    if: ${{ false }}
+    name: R1/R2 Windows source tests (ONE OWNER-APPROVED RUN)
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.number == 10 && github.event.pull_request.head.repo.full_name == 'Sonkhe-Shongwe/PilotODIN' && github.event.pull_request.head.ref == 'feature/r1r2-integration-20261123' && github.event.pull_request.base.ref == 'feature/live-dev-workspace-20261023' }}
     runs-on: windows-2022
     timeout-minutes: 40
     env:
