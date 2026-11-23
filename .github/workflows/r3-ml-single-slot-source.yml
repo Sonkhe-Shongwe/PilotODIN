@@ -17,7 +17,6 @@ jobs:
     env:
       CI: "true"
       PYTHONDONTWRITEBYTECODE: "1"
-      PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-r3-slot-${{ github.run_id }}
     steps:
       - name: Checkout exact source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -32,6 +31,8 @@ jobs:
       - name: Compile changed Python
         run: python -B -m compileall -q backend/main.py backend/storage.py tests/test_p5_ml_training_slot.py
       - name: Run bounded source-only regressions
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-r3-slot-${{ github.run_id }}
         run: >-
           python -B -m pytest -q -p no:cacheprovider
           tests/test_p5_ml_training_slot.py
