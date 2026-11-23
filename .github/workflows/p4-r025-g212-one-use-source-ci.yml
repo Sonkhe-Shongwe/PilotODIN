@@ -1,0 +1,47 @@
+name: P4 G2.12 dormant PSS ABI source-only verification
+
+# Pure Linux mocks and static checks. NO native Windows, Sysmon, ETW,
+# PSS capture, PilotODIN launch, owner data, installer or approvals.
+on:
+  push:
+    branches:
+      - fix/p4-r025-g212-win32-pss-abi-20261123
+
+permissions:
+  contents: read
+
+jobs:
+  mock-api-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout isolated exact source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: AST syntax check without bytecode
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import ast
+          from pathlib import Path
+          for path in (
+              "qa/p4_research/n12_pss_win32_backend.py",
+              "tests/test_p4_n12_g2_12_pss_win32_backend.py",
+          ):
+              ast.parse(Path(path).read_text(encoding="utf-8"), path)
+          PY
+      - name: G2.12 mock API and full resource cleanup
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_12_pss_win32_backend.py' -v
+      - name: G2.10 PSS candidate compatibility
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_10_pss_file_handle_candidates.py' -v
+      - name: G2.11 injected PSS plan compatibility
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_11_pss_scoped_source_plan.py' -v
+      - name: Original file pair strict contract
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_fileio_pair_contract.py' -v
