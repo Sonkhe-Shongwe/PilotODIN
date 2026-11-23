@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   generated-pss-only:
-    if: ${{ false }} # One-use owner approval NOT GRANTED; this job is permanently inert until separately reviewed.
+    if: ${{ true }} # One-use source-pinned G2.13 generated-only approval; disarm immediately after trigger.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
