@@ -1,5 +1,8 @@
 # PilotODIN | Documentation index
 
+**23 NOVEMBER 2026 | SUPERSEDING OWNER PRIORITY: R02.5 ONLY.** [G2.13 one-use Windows compiler result and source correction](./P4_R02_5_G2_13_ONE_USE_WINDOWS_COMPILER_BLOCK_2026-11-23.md). Reviewed source `ea00597acab1533dcdb4bf266d48b28c57ccb83f`; activation `7dae94d59e4451ce36005e0842a442c2854c14df`; immediate disarm `b739c7229db664155e5e540fc9de86799ffee134`. [Actual hosted Windows #45272822119](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45272822119) **FAILED at MSVC C2664 before the generated executable ran**; source/host authorisation gates passed, the one-use consent was consumed, and the disabled workflow/consumed marker are preserved. The bounded follow-up corrects the PSS_CAPTURE_FLAGS call and stale source-only assertion; a new native attempt remains prohibited without new exact-source one-use approval. No real WebView2 file handle/path, new FileIO product observation, native acceptance or installer. **P4 14/20 (70%), R02.5 0/5, N12 0/2, internal 3/4, four-gate 1/4 unchanged.** Earlier dated priorities below are historical.
+
+
 **ACTIVE WORK PRIORITY, 22 NOVEMBER:** [Code-first remediation directive and current-source defect register](./PILOTODIN_CODE_FIRST_REMEDIATION_DIRECTIVE_AND_DOCUMENTATION_AUDIT_2026-11-22.md). **R1/CF-02 canonical identifier parsing is fixed for new CSV imports and [verified](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45057052836)**. The next implementation task is **R1/CF-01 bounded CSV/XLSX pre-parse limits**. Previous N12 collector 'current' links below are historical evidence and acceptance prerequisites, not the present product backlog. No new native approval or official score change.
 
 

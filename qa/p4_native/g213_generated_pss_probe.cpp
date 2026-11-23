@@ -78,7 +78,9 @@ const char* probe() {
   HPSSWALK marker = nullptr;
   const char* verdict = "G213_PSS_INCOMPLETE";
   do {
-    DWORD result = PssCaptureSnapshot(GetCurrentProcess(), kCapture, 0, &snapshot);
+    // The Windows SDK API requires a PSS_CAPTURE_FLAGS enum, not a DWORD.
+    // Keep the reviewed 0x14 handle/basic flags unchanged.
+    DWORD result = PssCaptureSnapshot(GetCurrentProcess(), static_cast<PSS_CAPTURE_FLAGS>(kCapture), 0, &snapshot);
     if (result != ERROR_SUCCESS || !snapshot) break;
     result = PssWalkMarkerCreate(nullptr, &marker);
     if (result != ERROR_SUCCESS || !marker) break;

@@ -18,11 +18,30 @@ class G213SourceContractTests(unittest.TestCase):
         cls.cpp = CPP.read_text(encoding="utf-8")
         cls.wf = WF.read_text(encoding="utf-8")
 
-    def test_no_owner_approval_marker_and_workflow_remains_disarmed(self):
-        self.assertFalse(MARKER.exists())
+    def test_consumed_owner_marker_retained_and_workflow_disarmed(self):
+        # The one-use 23 Nov activation is consumed even though Windows compile
+        # failed. Do not delete this evidence or mistake it for fresh consent.
+        self.assertTrue(MARKER.is_file())
+        self.assertEqual(
+            MARKER.read_text(encoding="utf-8"),
+            "reviewed_source=ea00597acab1533dcdb4bf266d48b28c57ccb83f\n"
+            "scope=g213-one-generated-process-one-pss-feasibility\n",
+        )
+        self.assertIn("7dae94d59e4451ce36005e0842a442c2854c14df", self.wf)
         self.assertRegex(self.wf, r"(?m)^\s+if: \$\{\{ false \}\}")
+        self.assertNotRegex(self.wf, r"(?m)^\s+if: \$\{\{ true \}\}")
         self.assertNotIn("workflow_dispatch", self.wf)
         self.assertIn("PILOTODIN_G213_GENERATED_CONSENT", self.wf)
+
+    def test_windows_pss_capture_requires_explicit_enum_conversion(self):
+        # Hosted MSVC C2664 at the consumed one-use run: DWORD is not the
+        # enum type PssCaptureSnapshot requires for its second argument.
+        self.assertIn(
+            "PssCaptureSnapshot(GetCurrentProcess(), "
+            "static_cast<PSS_CAPTURE_FLAGS>(kCapture), 0, &snapshot)",
+            self.cpp,
+        )
+        self.assertNotIn("PssCaptureSnapshot(GetCurrentProcess(), kCapture,", self.cpp)
 
     def test_approval_is_fresh_direct_child_and_exact_source(self):
         for s in ("$env:GITHUB_RUN_ATTEMPT -cne '1'",
