@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 8c7cc01d9920e598d5295fbf9b5b7c57bd3dad86 |
+| Observed starting HEAD | 46d5f0121deadaf8c0de45f39f7de50aace8a372 |
 | Product baseline | eb89356dad89c7b1637d30bef287c60561ed2b23 |
-| Scope | Windows source registration and retained independent timer/factory behind compile-time false gate; no shared grant activation. |
-| Operation ID | C1-C2-INTEGRATION-20261124-desktop-registration |
-| Operation state | RECONCILED |
-| Intended files | frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_desktop.rs; continuity docs |
-| Approval | Standing P4 source authority. No native compile/run, partial activation, model/download, installer, owner data or OS operations authorized. |
-| Verification | Published eb89356dad89c7b1637d30bef287c60561ed2b23; lib blob f821f0fb7c883aeaa548f7127aadb4a1b60a2ab1; desktop blob 6a66612e04e5def6d0d08db197ffe5561fc04c10; exact changed-path and source review. One additional uncompiled Rust fixture definition. All 82 workflow definitions unchanged since previous review; P4 and P2 routine source workflows triggered, no restricted execution authorized. |
-| Pending runs | P4 #45484468091 and P2 #45484468092 both IN_PROGRESS at last observation on exact eb89356dad89c7b1637d30bef287c60561ed2b23. Reconcile terminal jobs and any regressions before further source publication. |
+| Scope | Explicit owned runner bootstrap and frontend demand mode, paired with private native mode selection. Compile-time gate remains false; no partial grant activation. |
+| Operation ID | C1-C2-INTEGRATION-20261124-runner-frontend |
+| Operation state | PREPARED |
+| Intended files | backend/desktop_runner.py; frontend/src-tauri/src/lib.rs; frontend/src/api.ts; frontend/src/desktopBootstrap.ts; tests/test_c1_resource_host.py; frontend/tests/desktop-ai-boundaries.test.cjs; continuity docs |
+| Approval | Standing P4 source authority; no native product compilation/run, model operations, installer, owner data or activation. |
+| Verification | Previous exact P4 #45484468091 and P2 #45484468092 SUCCESS, logs reconciled. All 82 workflow definitions unchanged; planned paths match P1 backend/frontend, P2 report, P3 real HTTP and P4 routine source/synthetic workflows only; restricted P4 probe false. |
+| Pending runs | None before publication. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact routine CI, then wire explicit Python desktop_runner owned bootstrap (consume credentials before analytical imports, no legacy fallback on partial configuration) and frontend backend-driven request mode. Preserve explicit cloud consent/provider behavior and native binary Save As shared admission before activation; both native Save As paths currently deliberately refuse in the disabled candidate mode. Review existing lifecycle tests and exact source; no partial activation. Fresh native approval only after coherent source readiness. |
+| Recovery action | Publish explicit owned mode runner before analytical imports, authenticated frontend mode metadata and no launch-before-POST in owned path, regression fixtures. Reconcile CI; preserve native Save As shared admission and cloud compatibility before activation. |
 | Resume after closure | C1/C2 verification then C3–C5; D separately approved. |
 
 ## Prior operation
