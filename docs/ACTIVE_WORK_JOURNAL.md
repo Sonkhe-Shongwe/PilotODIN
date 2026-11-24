@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 00329dc82127eb7c8466fd0dda7610117981f2e4 |
+| Observed starting HEAD | 02da9c0ae21d921705769a78a063b68312e48ce6 |
 | Product baseline | 992f1f73d52e48047b5c0331d44b5f36271b1b51 |
-| Scope | C1 staged Python owned stream pump and Rust transport deadline state; review exact locked shell source; no actual transport registration or native compilation. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-transport |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_transport.rs; journal, handoff, C evidence/spec |
+| Scope | C1 dormant owned shell child writer/join and event adapter; Python pre-import control stdout isolation seam. No actual app registration or native compilation. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-owned-io |
+| Operation state | PREPARED |
+| Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_shell.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Staged binary pump, 11 new Python fixtures and seven Rust deadline tests published. Python CI pending, Rust uncompiled/unregistered. |
-| Pending runs | [P1 #45461515747](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45461515747), exact 992f1f73d52e48047b5c0331d44b5f36271b1b51, IN_PROGRESS at last observation. |
+| Verification | Prior #45461515747 SUCCESS 166 regression + 2 subtests, 164 C1, 20 legacy autonomy. Next injected descriptor isolation tests and staged Rust child writer/event ownership tests (uncompiled). |
+| Pending runs | None; #45461515747/job 138685036355 terminal SUCCESS, exact checkout/counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile Python CI, stage desktop stdout isolation and actual owned shell writer/event lifecycle, then native grant/exit integration. Deadline state alone does not cancel synchronous writes; actual writer ownership/join and group exit remain open. No live registration or native run. |
+| Recovery action | Publish dormant owned shell adapter and descriptor isolation seam; reconcile Python CI, then actual startup composition and native grant/exit design. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
