@@ -27,9 +27,10 @@ def load_sources(root=ROOT):
 
 
 def _function(source, name):
-    match = re.search(r"(?m)^(?:async )?fn " + re.escape(name) + r"\(", source)
-    if match is None:
+    matches = list(re.finditer(r"(?m)^(?:async )?fn " + re.escape(name) + r"\(", source))
+    if len(matches) != 1:
         return ""
+    match = matches[0]
     # Only audit the named Rust function, not comments or a different worker.
     tail = source[match.start():]
     boundary = re.search(r"(?m)^(?:(?:pub )?(?:async )?fn |const )", tail[len(match.group(0)):])
@@ -40,6 +41,17 @@ def _all(source, *fragments):
     return all(fragment in source for fragment in fragments)
 
 
+def _ordered(source, *fragments):
+    """Require the reviewed literal sequence, not merely global presence."""
+    offset = 0
+    for fragment in fragments:
+        position = source.find(fragment, offset)
+        if position < 0:
+            return False
+        offset = position + len(fragment)
+    return True
+
+
 def review_source_topology(sources):
     """Return fixed-label evidence gaps; string checks are NOT runtime proof."""
     issues = []
@@ -48,7 +60,28 @@ def review_source_topology(sources):
         return _report(["source-input-invalid"])
     rust = sources["rust"]
     backend = _function(rust, "launch_backend")
-    ai = _function(rust, "launch_bundled_ai")
+    ai_command = _function(rust, "launch_bundled_ai")
+    ai = _function(rust, "start_owned_inference")
+    # The command is now asynchronous and the actual spawn occurs in the
+    # separately joined blocking job. Review both named functions and their
+    # connection; do not search the entire file for containment fragments.
+    # This is a literal source contract, not a Rust control-flow proof.
+    ai_dispatch = (
+        ai_command.startswith("async fn launch_bundled_ai(")
+        and _ordered(ai_command,
+            'window.label() != "main"',
+            "if startup.is_some()",
+            "*startup = Some(attempt.clone())",
+            "tauri::async_runtime::spawn(async move",
+            "tauri::async_runtime::spawn_blocking(move ||",
+            "start_owned_inference(work_app, work_attempt)).await",
+            "attempt.joined.store(true, Ordering::Release)",
+            "*slot = None",
+            "rx.recv().await")
+        and ai_command.count("start_owned_inference(") == 1
+        and "command.spawn()" not in ai_command
+        and rust.count('.shell().sidecar("pilotodin-inference")') == 1
+    )
     checks = {
         "desktop-webview-builder": _all(
             rust, "pub fn run()", "tauri::Builder::default()"),
@@ -59,13 +92,29 @@ def review_source_topology(sources):
             '.env("TMP", worker_temp.as_os_str())',
             '.env("TMPDIR", worker_temp.as_os_str())',
             ".set_process_group(true)"),
-        "inference-shell-child": _all(
-            ai, '.shell().sidecar("pilotodin-inference")', "command.spawn()",
-            '.current_dir(&runtime_dlls)',
-            '.env("TEMP", worker_temp.as_os_str())',
-            '.env("TMP", worker_temp.as_os_str())',
-            '.env("TMPDIR", worker_temp.as_os_str())',
-            ".set_process_group(true)"),
+        "inference-async-dispatch": ai_dispatch,
+        "inference-shell-child": (
+            _ordered(ai,
+                "worker_data_home(&app, &mut storage_pins)?",
+                'worker_temp_directory(&data_dir, "inference-temp", &mut storage_pins)?',
+                '.shell().sidecar("pilotodin-inference")',
+                '.env("TEMP", worker_temp.as_os_str())',
+                '.env("TMP", worker_temp.as_os_str())',
+                '.env("TMPDIR", worker_temp.as_os_str())',
+                '.current_dir(&runtime_dlls)',
+                ".set_process_group(true)",
+                ".kill_on_drop(cfg!(windows))",
+                "storage_pins.verify()?",
+                "model.verify()?",
+                "state.launch_gate.lock()",
+                "ensure_desktop_admission(&app, &state)?",
+                "current.connection.token != attempt.backend_token",
+                "Arc::ptr_eq(s, &attempt)",
+                "attempt.check(&state.stopping)?;",
+                "command.spawn()",
+                "_storage_pins: storage_pins, _model: model")
+            and ai.count("command.spawn()") == 1
+        ),
         "application-owned-worker-home": _all(
             rust, "app.path().app_local_data_dir()", "worker_temp_directory(",
             '"backend-temp"', '"inference-temp"'),

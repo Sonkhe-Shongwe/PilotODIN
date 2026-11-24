@@ -50,6 +50,52 @@ class ProductTreeIsolationReviewTests(unittest.TestCase):
                 self.assertIn(issue, result["issues"])
                 self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
 
+    def test_async_inference_dispatch_and_owned_spawn_drift_block(self):
+        cases = (
+            ("launch_bundled_ai", "start_owned_inference(work_app, work_attempt)",
+             "unreviewed_worker(work_app, work_attempt)", "inference-async-dispatch-source-drift"),
+            ("launch_bundled_ai", "tauri::async_runtime::spawn_blocking(move ||",
+             "tauri::async_runtime::spawn(move ||", "inference-async-dispatch-source-drift"),
+            ("launch_bundled_ai", "attempt.joined.store(true, Ordering::Release)",
+             "attempt.joined.store(false, Ordering::Release)", "inference-async-dispatch-source-drift"),
+            ("launch_bundled_ai", "*startup = Some(attempt.clone())",
+             "*startup = None", "inference-async-dispatch-source-drift"),
+            ("start_owned_inference", '.env("TMP", worker_temp.as_os_str())',
+             '.env("TMP", "C:/unknown")', "inference-shell-child-source-drift"),
+            ("start_owned_inference", ".set_process_group(true)",
+             ".set_process_group(false)", "inference-shell-child-source-drift"),
+            ("start_owned_inference", "storage_pins.verify()?",
+             "unreviewed_verify()?", "inference-shell-child-source-drift"),
+            ("start_owned_inference", "current.connection.token != attempt.backend_token",
+             "false", "inference-shell-child-source-drift"),
+            ("start_owned_inference", "Arc::ptr_eq(s, &attempt)",
+             "true", "inference-shell-child-source-drift"),
+            ("start_owned_inference", "_storage_pins: storage_pins, _model: model",
+             "_storage_pins: discarded, _model: model", "inference-shell-child-source-drift"),
+        )
+        for function, before, after, issue in cases:
+            with self.subTest(function=function, before=before):
+                sources = dict(self.original)
+                body = review._function(sources["rust"], function)
+                self.assertIn(before, body)
+                sources["rust"] = sources["rust"].replace(body, body.replace(before, after, 1), 1)
+                result = review.review_source_topology(sources)
+                self.assertEqual(result["review_status"], "SOURCE_DRIFT_BLOCKED")
+                self.assertIn(issue, result["issues"])
+                self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+
+    def test_duplicate_worker_or_command_is_not_accepted(self):
+        for function, issue in (
+                ("launch_bundled_ai", "inference-async-dispatch-source-drift"),
+                ("start_owned_inference", "inference-shell-child-source-drift")):
+            with self.subTest(function=function):
+                sources = dict(self.original)
+                sources["rust"] += "\n" + review._function(sources["rust"], function)
+                result = review.review_source_topology(sources)
+                self.assertEqual(result["review_status"], "SOURCE_DRIFT_BLOCKED")
+                self.assertIn(issue, result["issues"])
+                self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+
     def test_modified_webview_or_qa_redirect_contract_blocks(self):
         changes = (
             ("config", '"label": "main"', '"label": "other"', "configured-webview-main-source-drift"),
