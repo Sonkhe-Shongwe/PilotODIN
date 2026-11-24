@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 02da9c0ae21d921705769a78a063b68312e48ce6 |
+| Observed starting HEAD | 238d6c39f65c404ec6cd6bef21e96363b00793ed |
 | Product baseline | 819670c758c2e6aca591ef581df0d69577b07c34 |
-| Scope | C1 dormant owned shell child writer/join and event adapter; Python pre-import control stdout isolation seam. No actual app registration or native compilation. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-owned-io |
-| Operation state | RECONCILED |
+| Scope | C1 dormant explicit control bootstrap, raw descriptor ownership, shutdown notification and bounded shell receiver driver. No desktop activation/native compilation. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-bootstrap |
+| Operation state | PREPARED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_shell.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Dormant descriptor isolation seam (12 inert fixtures) and actual shell API writer/event adapter (3 staged Rust tests) published. Python CI pending; Rust uncompiled/unregistered. |
-| Pending runs | [P1 #45462108603](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45462108603), exact 819670c758c2e6aca591ef581df0d69577b07c34, IN_PROGRESS at last observation. |
+| Verification | Prior #45462108603 SUCCESS 166 regression + 2 subtests, 176 C1, 20 legacy autonomy. Next injected bootstrap/descriptor/shutdown tests; Rust driver staged only. |
+| Pending runs | None; #45462108603/job 138687192247 terminal SUCCESS, exact checkout/counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile Python CI, review descriptor fdopen error ownership and Win32/bootloader stdout isolation, stage actual desktop startup composition and event-loop retention, then native grant/exit integration. No live registration or native run. |
+| Recovery action | Publish startup/receiver driver seams and reconcile Python CI before actual composition and grant/exit integration. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
