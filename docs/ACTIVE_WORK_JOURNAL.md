@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5838ee91c26ffd27fa2da09051238474e947e6a5 |
-| Product baseline | 58d89a18cbb1cd5fae05695c576a752a23f4287f |
+| Product baseline | b1e3a14acb69c9053104e092a1b9996f04372f50 |
 | Scope | Consolidated backend-driven inference demand after DATA, correlated host poll/grant/readiness/drain/release, actual desktop composition callbacks. Dormant until native group proof and launcher integration. Source/synthetic only. |
 | Operation ID | C1-C2-INTEGRATION-20261124-demand-bridge |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_host.py; backend/resource_session.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; frontend/src-tauri/src/resource_transport.rs; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Actual owned app/autonomy demand callbacks, correlated host poll/grant/ready/return/release state, ten Python cases (including irreversible drain and duplicate READY fences) and one staged Rust test. CI pending; no actual launcher registration or native execution. |
-| Pending runs | Initial #45476857824 observed running at 36712cfa; follow-up same operation closes reviewed drain/READY race. Reconcile exact final source CI; initial run may be superseded. |
+| Pending runs | [P1 #45476857824](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45476857824), initial 36712cfa IN_PROGRESS at observation; [P1 #45476978799](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45476978799), final exact b1e3a14acb69c9053104e092a1b9996f04372f50 PENDING at observation. Reconcile both, no inferred result. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish correlated one-demand host protocol and actual app/autonomy callbacks, no live registration. Resolve locked shell job-empty evidence by explicit owner decision if dependency design change required. |
+| Recovery action | Reconcile final P1 CI (214 C1 expected). Blocking native integration decision: locked shell 2.6.0 private job has no job-empty query; recommend narrow source-only patch to pinned existing dependency exposing own-job active process count/retained termination handle, requiring explicit owner design approval and exact source/lock/license review. No dependency change/download/compile/run yet. Then actual host poll/start/drain/release, runner/frontend activation and one scoped native verification. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
