@@ -42,6 +42,11 @@ class Transfer:
         # Never retry blindly or unlink if the durable outcome is uncertain.
         try:
             self.receipt = storage.advance_export_publication(self.receipt,state,**metadata)
+        except ledger.VersionUnavailable:
+            # The admission check precedes UPDATE. The finalizer still
+            # requires an exact persisted receipt before removing scratch.
+            self.reason = "validation_failed"
+            raise
         except BaseException:
             self.uncertain = True
             raise
@@ -61,6 +66,13 @@ class Transfer:
         self.path = exports._scratch_directory() / self.receipt.filename
         try:
             # No following a preexisting name and no reopening after writing.
+            storage.check_write_path(self.path.parent,directory=True)
+            try:
+                self.path.lstat()
+            except FileNotFoundError:
+                pass
+            else:
+                raise FileExistsError("Export scratch collision")
             storage.check_write_path(self.path, absent=True)
             flags = os.O_RDWR | os.O_CREAT | os.O_EXCL | getattr(os,"O_BINARY",0) | getattr(os,"O_NOFOLLOW",0)
             fd = os.open(self.path,flags,0o600)
@@ -69,6 +81,9 @@ class Transfer:
             raise quality.QualityError("Export scratch collision; existing file preserved",409) from None
         except storage.WorkspaceBoundaryError:
             self.reason = "unsafe_identity"
+            raise
+        except OSError:
+            self.reason = "storage_unavailable"
             raise
         try:
             self.stream = os.fdopen(fd,"w+b")
@@ -127,27 +142,36 @@ class Transfer:
         self.finished = True
         safe = False
         try:
-            if self.receipt is None:
+            if self.receipt is None or self.uncertain:
                 return
-            if self.uncertain:
-                log.warning("Export receipt outcome uncertain; scratch preserved")
+            try:
+                with storage.connect() as con:
+                    if ledger.read(con,self.receipt.operation_id) != self.receipt:
+                        self.uncertain = True
+                        return
+            except Exception:
+                self.uncertain = True
+                log.warning("Export receipt lookup failed; scratch preserved")
                 return
-            with storage.connect() as con:
-                if ledger.read(con,self.receipt.operation_id) != self.receipt:
-                    self.uncertain = True
-                    return
             if self.identity is not None:
-                if self.staged is not None:
-                    self.verify()
-                else:
-                    exports._identity(self.path,self.identity)
-                safe = True
-        except Exception:
-            self.reason = "unsafe_identity"
-            log.warning("Export cleanup identity or receipt unavailable; scratch preserved")
+                try:
+                    if self.staged is not None:
+                        self.verify()
+                    else:
+                        exports._identity(self.path,self.identity)
+                    safe = True
+                except Exception:
+                    self.reason = "unsafe_identity"
+                    log.warning("Export cleanup identity unavailable; scratch preserved")
         finally:
             if self.stream is not None:
-                self.stream.close()
+                try:
+                    self.stream.close()
+                except Exception:
+                    # Never unlink or certify release when close is unconfirmed.
+                    safe = False
+                    self.reason = "storage_unavailable"
+                    log.warning("Export handle close failed; scratch preserved")
         if self.receipt is None or self.uncertain:
             return
         try:

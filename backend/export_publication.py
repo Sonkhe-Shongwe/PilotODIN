@@ -145,13 +145,17 @@ def read(con, operation_id):
     return Receipt(*row).validate() if row is not None else None
 
 
+class VersionUnavailable(PublicationError):
+    """Admission refused before any receipt UPDATE."""
+
+
 def _require_version(con, project_id, quality_version):
     row = con.execute("SELECT 1 FROM projects p JOIN quality_versions v ON p.id=v.project_id "
                       "LEFT JOIN project_lifecycle l ON p.id=l.project_id "
                       "WHERE p.id=? AND v.version=? AND l.archived_at IS NULL",
                       (project_id,quality_version)).fetchone()
     if row is None:
-        raise PublicationError("Export version is unavailable")
+        raise VersionUnavailable("Export version is unavailable")
 
 
 def insert_intent(con, operation_id, project_id, quality_version, format):

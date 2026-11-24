@@ -1,5 +1,7 @@
 """Real export route plus direct ASGI fault injection, disposable source only."""
 import hashlib
+import errno
+from concurrent.futures import ThreadPoolExecutor
 import os
 from pathlib import Path
 
@@ -141,3 +143,125 @@ def test_invalid_version_no_receipt_or_scratch(project):
     assert response.status_code==404
     assert receipts()==[] and not (home/"export_tmp").exists()
     assert path.read_bytes()==raw
+
+def test_archive_after_stage_refuses_transfer_and_releases_scratch(project,monkeypatch):
+    pid,home,path,raw=project
+    real=storage.advance_export_publication
+    def archive_after_stage(receipt,state,**metadata):
+        actual=real(receipt,state,**metadata)
+        if state=="staged":
+            main.project_lifecycle.change(pid,"archive",0)
+        return actual
+    monkeypatch.setattr(storage,"advance_export_publication",archive_after_stage)
+    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    assert response.status_code==409
+    r,=receipts()
+    assert r.state=="interrupted" and r.reason_code=="validation_failed"
+    assert list((home/"export_tmp").iterdir())==[]
+    assert path.read_bytes()==raw
+
+
+@pytest.mark.parametrize("error",[errno.EACCES,errno.ENOSPC])
+def test_write_failure_settles_without_deleting_foreign_scratch(project,monkeypatch,error):
+    pid,home,path,raw=project
+    scratch=home/"export_tmp"
+    scratch.mkdir()
+    foreign=scratch/"foreign.csv"
+    foreign.write_bytes(b"foreign")
+    def fail(frame,output):
+        output.write(b"partial")
+        raise OSError(error,"synthetic write refusal")
+    monkeypatch.setattr(data_exports,"_write_csv",fail)
+    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    assert response.status_code==503
+    r,=receipts()
+    assert r.state=="blocked" and r.reason_code=="storage_unavailable"
+    assert list(scratch.iterdir())==[foreign]
+    assert foreign.read_bytes()==b"foreign" and path.read_bytes()==raw
+
+
+def test_receipt_lookup_failure_preserves_payload_and_pending_receipt(project,monkeypatch):
+    pid,home,path,raw=project
+    transfer=export_transfer.Transfer()
+    transfer.prepare(pid,data_exports.ExportRequest(version=0))
+    def unavailable(*args,**kwargs):
+        raise OSError("synthetic receipt read failure")
+    with monkeypatch.context() as patch:
+        patch.setattr(ledger,"read",unavailable)
+        transfer.finish(True)
+    assert transfer.stream.closed and transfer.uncertain
+    assert transfer.path.exists()
+    r,=receipts()
+    assert r.state=="transferring"
+    assert hashlib.sha256(transfer.path.read_bytes()).hexdigest()==r.sha256
+    assert path.read_bytes()==raw
+
+
+def test_unlink_failure_does_not_certify_release(project,monkeypatch):
+    pid,home,path,raw=project
+    def refuse(*args,**kwargs):
+        raise PermissionError("synthetic unlink refusal")
+    monkeypatch.setattr(storage,"guarded_unlink",refuse)
+    response=TestClient(main.app).post(f"/api/projects/{pid}/quality/export",json={"version":0})
+    assert response.status_code==200
+    r,=receipts()
+    assert r.state=="blocked" and r.reason_code=="storage_unavailable"
+    assert (home/"export_tmp"/r.filename).read_bytes()==response.content
+    assert path.read_bytes()==raw
+
+
+def test_modified_payload_refuses_final_chunk(project,monkeypatch):
+    pid,home,path,raw=project
+    monkeypatch.setattr(export_transfer,"CHUNK",8)
+    sent=[]
+    async def send(message):
+        if message["type"]=="http.response.start":
+            r,=receipts()
+            scratch=home/"export_tmp"/r.filename
+            with scratch.open("r+b") as f:
+                f.write(b"changed!")
+        elif message["type"]=="http.response.body":
+            sent.append(message)
+    with pytest.raises(Exception):
+        asgi_response(pid,send)
+    r,=receipts()
+    assert r.state=="blocked"
+    assert not sent
+    assert (home/"export_tmp"/r.filename).exists()
+    assert path.read_bytes()==raw
+
+
+def test_concurrent_live_exports_independent_receipts(project):
+    pid,home,path,raw=project
+    # Startup recovery must never run concurrently with live requests.
+    def request(fmt):
+        client=TestClient(main.app)
+        try:
+            result=client.post(f"/api/projects/{pid}/quality/export",json={"version":0,"format":fmt})
+            assert result.status_code==200,result.text
+            return fmt,hashlib.sha256(result.content).hexdigest()
+        finally:
+            client.close()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results=dict(pool.map(request,("csv","xlsx")))
+    rows=receipts()
+    assert len(rows)==2 and all(r.state=="released" for r in rows)
+    assert {r.format:r.sha256 for r in rows}==results
+    assert list((home/"export_tmp").iterdir())==[]
+    assert path.read_bytes()==raw
+
+
+def test_real_75_mib_output_extent_and_one_byte_refusal(tmp_path):
+    limit=ledger.MAX_EXPORT_BYTES
+    path=tmp_path/"generated.bin"
+    with path.open("w+b") as stream:
+        output=data_exports._BoundedOutput(stream,limit)
+        block=b"x"*(1024*1024)
+        for _ in range(75):
+            output.write(block)
+        output.flush()
+        assert os.fstat(stream.fileno()).st_size==limit==output.extent
+        with pytest.raises(quality.QualityError) as exc:
+            output.write(b"x")
+        assert exc.value.status==413
+        assert os.fstat(stream.fileno()).st_size==limit
