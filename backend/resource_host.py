@@ -24,7 +24,7 @@ _HEX64 = re.compile(r"[0-9a-f]{64}")
 _SEQ = re.compile(r"[1-9][0-9]{0,9}")
 _DENIALS = frozenset(("resource_busy","ownership_unknown","shutting_down",
                      "memory_unavailable","policy_unavailable",
-                     "observation_stale","low_memory_headroom"))
+                     "observation_stale","low_memory_headroom","not_ready"))
 
 
 class ProtocolFault(RuntimeError):
@@ -103,6 +103,8 @@ def parse_request(frame, generation, capability):
     if (command == "RELEASE" and len(args) == 2 and _HEX32.fullmatch(args[0])
             and args[1] in ("NEVER_STARTED","EXITED")):
         return Request(sequence,command,args[0],args[1])
+    if command == "READY" and not args:
+        return Request(sequence,command)
     if command == "STOP" and not args:
         return Request(sequence,command)
     raise _fault()
@@ -116,7 +118,7 @@ class HostBroker:
     Neither a frontend message nor a mere elapsed timeout can release a grant.
     Not wired to desktop_runner or Tauri yet.
     """
-    def __init__(self, coordinator, generation, capability):
+    def __init__(self, coordinator, generation, capability, *, ready=None):
         if (type(generation) is not str or not _HEX32.fullmatch(generation)
                 or type(capability) is not str or not _HEX64.fullmatch(capability)):
             raise ValueError("Invalid owned resource session identity")
@@ -131,11 +133,14 @@ class HostBroker:
         self._faulted = False
         self._pending_reply = None
         self._release_after_reply = False
+        self._ready_check = ready
+        self._ready_confirmed = ready is None
+        self._ready_after_reply = False
 
     @property
     def shutdown_ready(self):
         return (self._stopping and not self._faulted and self._lease is None
-                and self._pending_reply is None)
+                and self._pending_reply is None and not self._reader.partial)
 
     def transport_lost(self):
         self._faulted = True
@@ -163,12 +168,24 @@ class HostBroker:
             raise _fault()
         self._last = request.sequence
         seq = request.sequence
+        if request.command == "READY":
+            if self._lease is not None:
+                raise _fault()
+            if self._stopping or self.coordinator.status()["stopping"]:
+                return self._reply(seq,"NOT_READY")
+            if self._ready_check is not None and self._ready_check() is not True:
+                return self._reply(seq,"NOT_READY")
+            self._ready_after_reply = True
+            return self._reply(seq,"READY")
         if request.command == "STOP":
             self._stop()
             return self._reply(seq,"ADMISSION_STOPPED")
         if request.command == "GRANT_REQUEST":
             if self._stopping:
                 return self._reply(seq,"GRANT_REPLY","DENIED","shutting_down")
+            if not self._ready_confirmed or (
+                    self._ready_check is not None and self._ready_check() is not True):
+                return self._reply(seq,"GRANT_REPLY","DENIED","not_ready")
             if self._lease is not None:
                 return self._reply(seq,"GRANT_REPLY","DENIED","resource_busy")
             admission = self.coordinator.try_acquire(Operation.LOCAL_INFERENCE)
@@ -238,13 +255,17 @@ class HostBroker:
                 self._lease = None
                 self._grant = None
                 self._release_after_reply = False
+            if self._ready_after_reply:
+                self._ready_confirmed = True
+                self._ready_after_reply = False
             self._pending_reply = None
         except BaseException:
             self.transport_lost()
             raise
 
 
-def serve_owned(broker, read_chunk, write_reply, flush_reply, *, on_shutdown=None):
+def serve_owned(broker, read_chunk, write_reply, flush_reply, *, on_shutdown=None,
+                exit_on_shutdown=False):
     """Staged single-reader/writer pump over already owned binary streams.
 
     The caller provides read-at-most, write and flush functions. No descriptor
@@ -277,6 +298,8 @@ def serve_owned(broker, read_chunk, write_reply, flush_reply, *, on_shutdown=Non
                 broker.reply_written(reply)
             if broker.shutdown_ready:
                 notify()
+                if exit_on_shutdown:
+                    return
     except BaseException as exc:
         broker.transport_lost()
         try:
@@ -401,15 +424,16 @@ class ControlBootstrap:
         self._ops = ops
         self._used = False
 
-    def run(self, coordinator, on_shutdown):
+    def run(self, coordinator, on_shutdown, *, ready=None, exit_on_shutdown=False):
         if self._used:
             raise _fault()
         self._used = True
-        broker = HostBroker(coordinator, self._generation, self._capability)
+        broker = HostBroker(coordinator, self._generation, self._capability, ready=ready)
         self._capability = None
         try:
             serve_owned(broker, lambda cap: self._ops.read(self._descriptor, cap),
-                        self._writer.write, self._writer.flush, on_shutdown=on_shutdown)
+                        self._writer.write, self._writer.flush, on_shutdown=on_shutdown,
+                        exit_on_shutdown=exit_on_shutdown)
         finally:
             try:
                 self._writer.close()

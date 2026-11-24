@@ -15,10 +15,10 @@ fn hex(value: &str, n: usize) -> bool {
 pub(crate) enum ExitEvidence { NeverStarted, Exited }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Pending { Grant, Drain, Release, Stop }
+enum Pending { Ready, Grant, Drain, Release, Stop }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) enum Reply { Granted, Denied(&'static str), Draining, Released, AdmissionStopped }
+pub(crate) enum Reply { Ready, NotReady, Granted, Denied(&'static str), Draining, Released, AdmissionStopped }
 
 pub(crate) struct Wire {
     generation: String,
@@ -28,6 +28,7 @@ pub(crate) struct Wire {
     grant: Option<String>,
     buffer: Vec<u8>,
     stopping: bool,
+    ready: bool,
     faulted: bool,
 }
 
@@ -35,7 +36,7 @@ impl Wire {
     pub(crate) fn new(generation: String, capability: String) -> Result<Self, &'static str> {
         if !hex(&generation, 32) || !hex(&capability, 64) { return Err(FAULT); }
         Ok(Self { generation, capability, sequence: 0, pending: None, grant: None,
-            buffer: Vec::new(), stopping: false, faulted: false })
+            buffer: Vec::new(), stopping: false, ready: false, faulted: false })
     }
 
     pub(crate) fn fault(&mut self) {
@@ -63,8 +64,20 @@ impl Wire {
             self.sequence, body).into_bytes())
     }
 
-    pub(crate) fn grant(&mut self) -> Result<Vec<u8>, &'static str> {
+    pub(crate) fn ready(&mut self) -> Result<Vec<u8>, &'static str> {
         if self.stopping || self.grant.is_some() { return Err(FAULT); }
+        self.request(Pending::Ready, "READY")
+    }
+
+    #[cfg(test)]
+    pub(crate) fn fixture_ready(generation: String, capability: String) -> Self {
+        let mut wire = Self::new(generation, capability).unwrap();
+        wire.ready = true;
+        wire
+    }
+
+    pub(crate) fn grant(&mut self) -> Result<Vec<u8>, &'static str> {
+        if !self.ready || self.stopping || self.grant.is_some() { return Err(FAULT); }
         self.request(Pending::Grant, "GRANT_REQUEST LOCAL_INFERENCE")
     }
 
@@ -109,6 +122,8 @@ impl Wire {
             return self.reject();
         }
         let reply = match (self.pending, &parts[3..]) {
+            (Some(Pending::Ready), ["READY"]) => { self.ready = true; Reply::Ready },
+            (Some(Pending::Ready), ["NOT_READY"]) => { self.ready = false; Reply::NotReady },
             (Some(Pending::Grant), ["GRANT_REPLY", "GRANTED", id]) if hex(id,32) => {
                 if self.grant.is_some() { return self.reject(); }
                 self.grant = Some((*id).to_owned());
@@ -116,6 +131,7 @@ impl Wire {
             },
             (Some(Pending::Grant), ["GRANT_REPLY", "DENIED", code]) => {
                 let denial = match *code {
+                    "not_ready" => { self.ready = false; "not_ready" },
                     "resource_busy" => "resource_busy",
                     "ownership_unknown" => "ownership_unknown",
                     "shutting_down" => "shutting_down",
@@ -149,9 +165,21 @@ mod tests {
     const GEN: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const KEY: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
     const GRANT: &str = "cccccccccccccccccccccccccccccccc";
-    fn wire() -> Wire { Wire::new(GEN.into(), KEY.into()).unwrap() }
+    fn wire() -> Wire { Wire::fixture_ready(GEN.into(), KEY.into()) }
     fn reply(seq: u32, body: &str) -> Vec<u8> {
         format!("POD1 {GEN} {seq} {body}\n").into_bytes()
+    }
+
+    #[test]
+    fn readiness_precedes_any_grant() {
+        let mut w=Wire::new(GEN.into(),KEY.into()).unwrap();
+        assert!(w.grant().is_err());
+        assert_eq!(w.ready().unwrap(),format!("POD1 {GEN} {KEY} 1 READY\n").into_bytes());
+        assert_eq!(w.receive(&reply(1,"NOT_READY")).unwrap(),Some(Reply::NotReady));
+        assert!(w.grant().is_err());
+        w.ready().unwrap();
+        assert_eq!(w.receive(&reply(2,"READY")).unwrap(),Some(Reply::Ready));
+        assert!(w.grant().is_ok());
     }
 
     #[test]

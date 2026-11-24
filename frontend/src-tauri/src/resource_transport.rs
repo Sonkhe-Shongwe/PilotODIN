@@ -10,7 +10,7 @@ const DEADLINE: Duration = Duration::from_secs(5);
 const FAULT: &str = "Owned resource transport unavailable";
 
 #[derive(Clone, Copy)]
-pub(crate) enum Command { Grant, Drain, Release(ExitEvidence), Stop }
+pub(crate) enum Command { Ready, Grant, Drain, Release(ExitEvidence), Stop }
 
 pub(crate) struct Transport {
     wire: Wire,
@@ -50,6 +50,7 @@ impl Transport {
         if self.pending() { return Err(FAULT); }
         let deadline = now.checked_add(DEADLINE).ok_or(FAULT)?;
         let bytes = match command {
+            Command::Ready => self.wire.ready(),
             Command::Grant => self.wire.grant(),
             Command::Drain => self.wire.drain(),
             Command::Release(proof) => self.wire.release(proof),
@@ -115,7 +116,7 @@ mod tests {
     const KEY: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
     const ID: &str = "cccccccccccccccccccccccccccccccc";
     fn transport() -> Transport {
-        Transport::new(Wire::new(GEN.into(), KEY.into()).unwrap())
+        Transport::new(Wire::fixture_ready(GEN.into(), KEY.into()))
     }
     fn reply(seq: u32, body: &str) -> Vec<u8> {
         format!("POD1 {GEN} {seq} {body}\n").into_bytes()

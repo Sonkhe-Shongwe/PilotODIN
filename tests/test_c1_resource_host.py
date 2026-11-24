@@ -483,3 +483,190 @@ def test_control_writer_close_error_not_retried():
     assert ops.calls.count(("close",9))==1
     with pytest.raises(ProtocolFault):
         writer.write(b"POD1")
+
+
+def test_ready_gate_requires_acknowledged_startup():
+    c,_=setup()
+    ready=[False]
+    b=HostBroker(c,GEN,KEY,ready=lambda:ready[0])
+    assert exchange(b,frame(1,"READY"))[0].endswith(b"NOT_READY\n")
+    assert exchange(b,frame(2,"GRANT_REQUEST LOCAL_INFERENCE"))[0].endswith(b"DENIED not_ready\n")
+    ready[0]=True
+    assert exchange(b,frame(3,"GRANT_REQUEST LOCAL_INFERENCE"))[0].endswith(b"DENIED not_ready\n")
+    assert exchange(b,frame(4,"READY"))[0].endswith(b"READY\n")
+    gid=grant(b,5)
+    assert c.status()["operation"]=="local_inference"
+    exchange(b,frame(6,"RELEASE "+gid+" EXITED"))
+    assert not c.status()["active"]
+
+
+def test_ready_reply_lost_never_allows_grant():
+    c,_=setup()
+    b=HostBroker(c,GEN,KEY,ready=lambda:True)
+    assert b.receive(frame(1,"READY"))[0].endswith(b"READY\n")
+    b.transport_lost()
+    with pytest.raises(ProtocolFault):
+        b.receive(frame(2,"GRANT_REQUEST LOCAL_INFERENCE"))
+    assert c.status()["stopping"] and not c.status()["active"]
+
+
+def test_composed_stop_exits_pump_without_waiting_for_eof():
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    gid=grant(b)
+    pending=iter([frame(2,"STOP"),frame(3,"RELEASE "+gid+" EXITED")])
+    notifications=[]
+    replies=[]
+    def write(reply):
+        replies.append(reply)
+        return len(reply)
+    serve_owned(b,lambda _:next(pending),write,lambda:None,
+                on_shutdown=lambda:notifications.append(True),exit_on_shutdown=True)
+    assert notifications==[True] and len(replies)==2 and not c.status()["active"]
+
+
+def _session_fixture(ops, run_server, *, drain=True, app_error=False):
+    from threading import Event
+    from types import SimpleNamespace
+    from backend.resource_session import DesktopResourceSession
+    boot=_bootstrap(ops,_control_env())
+    done=Event()
+    observed={}
+    class Auto:
+        def __init__(self,c):
+            self.stages=SimpleNamespace(coordinator=c)
+            self.stopping=False
+        def stop_admission(self):
+            self.stopping=True
+        def drain(self,timeout):
+            assert self.stopping
+            return drain
+    class Server:
+        started=False
+        _exit=False
+        @property
+        def should_exit(self):
+            return self._exit
+        @should_exit.setter
+        def should_exit(self,value):
+            self._exit=value
+            if value:
+                done.set()
+        def run(self):
+            run_server(self,done,observed)
+    def app(c,a):
+        assert a.stages.coordinator is c
+        observed["coordinator"]=c
+        if app_error:
+            raise ValueError("fixture app construction")
+        return object()
+    def server(app):
+        observed["app"]=app
+        return Server()
+    result=DesktopResourceSession(boot,lambda:"adaptive",lambda:3*GIB,
+                                  build_autonomy=Auto,build_app=app,build_server=server)
+    return result,observed
+
+
+def test_desktop_session_shares_coordinator_and_joins_control():
+    from threading import Event
+    first=Event()
+    started=Event()
+    class Ops(_FixtureDescriptors):
+        def read(self,fd,cap):
+            n=len(self.replies)
+            if n==0:return frame(1,"READY")
+            if n==1:
+                assert started.wait(2)
+                return frame(2,"READY")
+            if n==2:return frame(3,"GRANT_REQUEST LOCAL_INFERENCE")
+            if n==3:return frame(4,"STOP")
+            if n==4:
+                return frame(5,"RELEASE "+self.replies[2].decode().split()[-1]+" EXITED")
+            pytest.fail("Composed pump waited for EOF")
+        def write(self,fd,payload):
+            count=super().write(fd,payload)
+            if len(self.replies)==1:
+                assert payload.endswith(b"NOT_READY\n")
+                first.set()
+            if len(self.replies)==3:
+                assert observed["coordinator"].try_acquire(Operation.DATA).code=="resource_busy"
+            return count
+    def run(server,done,observed):
+        assert first.wait(2)
+        server.started=True
+        started.set()
+        assert done.wait(2)
+    ops=Ops()
+    session,observed=_session_fixture(ops,run)
+    assert session.run(join_timeout=2)
+    assert observed["coordinator"] is session.coordinator
+    assert observed["app"] is session.app
+    assert not session.control_alive()
+    assert ops.calls[-1]==("close",9)
+    assert ops.replies[1].endswith(b" READY\n")
+    with pytest.raises(ProtocolFault):
+        session.run(join_timeout=0)
+
+
+def test_desktop_unexpected_eof_is_not_success():
+    from threading import Event
+    started=Event()
+    class Ops(_FixtureDescriptors):
+        def read(self,fd,cap):
+            assert started.wait(2)
+            return b""
+    def run(server,done,observed):
+        server.started=True
+        started.set()
+        assert done.wait(2)
+    session,_=_session_fixture(Ops(),run)
+    assert not session.run(join_timeout=2)
+    assert session.coordinator.status()["stopping"]
+    assert not session.control_alive()
+
+
+def test_desktop_bounded_join_never_claims_blocked_reader_exit():
+    from threading import Event
+    entered,release=Event(),Event()
+    class Ops(_FixtureDescriptors):
+        def read(self,fd,cap):
+            entered.set()
+            assert release.wait(3)
+            return b""
+    def run(server,done,observed):
+        server.started=True
+        assert entered.wait(2)
+    session,_=_session_fixture(Ops(),run)
+    try:
+        assert not session.run(join_timeout=0)
+        assert session.control_alive()
+        assert session.coordinator.status()["stopping"]
+    finally:
+        release.set()
+        session._thread.join(2)
+    assert not session.control_alive()
+
+
+def test_desktop_app_construction_failure_discards_unstarted_bootstrap():
+    ops=_FixtureDescriptors()
+    with pytest.raises(ValueError,match="fixture app"):
+        _session_fixture(ops,lambda *a:None,app_error=True)
+    assert ops.calls[-1]==("close",9)
+    assert ops.calls.count(("close",9))==1
+
+
+def test_desktop_drain_refusal_prevents_success():
+    from threading import Event
+    started=Event()
+    class Ops(_FixtureDescriptors):
+        def read(self,fd,cap):
+            assert started.wait(2)
+            return frame(1,"STOP")
+    def run(server,done,observed):
+        server.started=True
+        started.set()
+        assert done.wait(2)
+    session,_=_session_fixture(Ops(),run,drain=False)
+    assert not session.run(join_timeout=2)
+    assert not session.control_alive()
