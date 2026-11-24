@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   generated-pss-only:
-    if: ${{ false }} # Fresh one-use approval absent. Generated-only; no native PSS execution until separately activated.
+    if: ${{ true }} # One approved G2.14 generated-only runtime attempt. Immediate disarm is prebuilt.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
