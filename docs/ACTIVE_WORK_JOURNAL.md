@@ -6,20 +6,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | B5-NATIVE-SYNTHETIC-PROPOSAL-20261124 |
-| State | BLOCKED |
+| Task ID | B5-CLOSURE-AUDIT-20261124 |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 7f5654d1e87c781f1b227d49392ebba71bd065fd |
+| Observed starting HEAD | 4c9863dbf4bf8215e142680431c69daf1ebf846a |
 | Product baseline | b9a9181313b709abe729b3bddac3ac4e10709e59 |
-| Scope | Reconciled failed one-use dispatch; source-only preparation permitted; native execution blocked pending fresh approval |
-| Operation ID | B5-NATIVE-SYNTHETIC-PROPOSAL-20261124/approved-one-use-dispatch |
-| Operation state | RECONCILED |
-| Intended files | .github/workflows/p4-package-b5-native-synthetic-once.yml; docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; active B5 evidence ledger; optional scoped proposal documentation |
+| Scope | Consolidated source/workflow audit; bounded export input and destination safety corrections, ordinary source CI only; no native execution |
+| Operation ID | B5-CLOSURE-AUDIT-20261124-source-hardening |
+| Operation state | PREPARED |
+| Intended files | frontend/src-tauri/src/dataset_file.rs; frontend/src-tauri/src/lib.rs; frontend/src/QualityWorkspace.tsx; frontend/tests/b5-dataset-export-download.test.cjs; handoff and evidence ledger |
 | Approval | One-use native test approval consumed by dispatch 10f371b; no new approval, no reruns. |
 | Verification | #45439476190 FAILURE before job creation; zero jobs; YAML colon-space parse failure independently reproduced. Disarm #45439603207 SKIPPED. Exact product source CI remains PASS; native test not run. |
 | Pending runs | None from this attempt; terminal failure and disarm verified |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Review source and prepare corrected activation syntax with colon-free marker and exact YAML parse validation; obtain fresh approval before any future dispatch. No replay. |
+| Recovery action | Inspect exact source commit/diff and matching source CI before repeating; preserve consumed native approval and disabled workflow; after source verification review entire fresh activation configuration before requesting new approval |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation
