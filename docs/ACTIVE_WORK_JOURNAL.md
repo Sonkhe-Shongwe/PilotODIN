@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-INTEGRATION-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 98a6e9916eece8cb26483fdc382e2cca44ad8e24 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 (runtime source verified); fixture candidate 5af71b893c6b7939356b13e37d4a0fc9d6114f38 (test-only Cargo feature/module registration) |
 | Scope | Ignored actual private pipe, Python broker/session, Windows shell job, supervisor and writer lifecycle integration; no real app, network or model. |
 | Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-prepare-once |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | qa/c1_c2_owned_host_fixture.py; frontend/src-tauri/src/resource_integration_fixture.rs; .github/workflows/p4-c1-c2-owned-host-once.yml; qa/c1_c2_owned_host_preflight.rb; continuity docs |
 | Approval | Previous one-use 40-test native run CONSUMED, SUCCESS and disarmed. New native compilation or process fixture run requires fresh scoped approval. Standing source only; no installer, model, network, owner data or activation. |
 | Verification | Exact 388b357 Windows all-targets check and 40/40 synthetic tests SUCCESS, disarm SUCCESS native SKIPPED. Test-only dev feature locked metadata PASS #45494710822, 457 packages unchanged. New ignored fixture not compiled or executed. Production gate false. |

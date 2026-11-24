@@ -4,6 +4,7 @@ Invoked only by the ignored Rust library fixture with a fresh runner-owned root.
 All markers are generated, fixed names and exclusive creates. No secrets logged.
 """
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -19,11 +20,21 @@ def require_root(value):
             or os.environ.get("GITHUB_RUN_ATTEMPT") != "1"
             or os.environ.get("PILOTODIN_C1_C2_FIXTURE_APPROVAL") != "OWNED_HOST_SYNTHETIC_ONCE"):
         raise RuntimeError("Fixture not authorized")
-    root = Path(value).resolve(strict=True)
-    allowed = Path(os.environ["PILOTODIN_C1_C2_FIXTURE_ROOT"]).resolve(strict=True)
-    runner = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
-    if root.parent != allowed or allowed.parent != runner or not root.name.startswith("owned-host-"):
+    root = Path(value)
+    allowed = Path(os.environ["PILOTODIN_C1_C2_FIXTURE_ROOT"])
+    runner = Path(os.environ["RUNNER_TEMP"])
+    for path in (root, allowed, runner):
+        if (not path.is_absolute() or not re.fullmatch(r"[A-Za-z]:", path.drive)
+                or ".." in path.parts):
+            raise RuntimeError("Fixture path spelling refused")
+    root_id, allowed_id, runner_id = (p.resolve(strict=True) for p in (root, allowed, runner))
+    if (root.parent != allowed or allowed.parent != runner
+            or root_id.parent != allowed_id or allowed_id.parent != runner_id
+            or not re.fullmatch(r"owned-host-[0-9a-f-]{36}", root.name)
+            or not all(p.is_dir() for p in (root_id, allowed_id, runner_id))
+            or not root.samefile(root_id)):
         raise RuntimeError("Fixture root not isolated")
+    # Keep normal drive spelling; never strip an unchecked verbatim prefix.
     return root
 
 

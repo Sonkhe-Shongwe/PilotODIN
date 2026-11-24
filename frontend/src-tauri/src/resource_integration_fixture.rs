@@ -8,6 +8,15 @@ use crate::resource_save::SaveTicket;
 use std::{fs, io::Write, path::{Path, PathBuf}, sync::{Arc, Mutex, mpsc},
           sync::atomic::{AtomicUsize, Ordering}, thread, time::{Duration, Instant}};
 use tauri_plugin_shell::{ShellExt, process::OwnedJob};
+use std::path::{Component, Prefix};
+
+// canonicalize() yields a Windows verbatim prefix. Compare that identity,
+// but pass the checked, ordinary drive spelling to the workspace boundary.
+fn ordinary_drive(path: &Path) -> bool {
+    path.is_absolute() && matches!(path.components().next(),
+        Some(Component::Prefix(prefix)) if matches!(prefix.kind(), Prefix::Disk(_)))
+        && !path.components().any(|part| matches!(part, Component::ParentDir))
+}
 
 fn mark(root: &Path, name: &str) {
     let mut out = fs::OpenOptions::new().write(true).create_new(true)
@@ -51,17 +60,21 @@ fn actual_owned_pipe_job_and_writer_lifecycle() {
     assert_eq!(std::env::var("GITHUB_RUN_ATTEMPT").as_deref(), Ok("1"));
     assert_eq!(std::env::var("PILOTODIN_C1_C2_FIXTURE_APPROVAL").as_deref(),
                Ok("OWNED_HOST_SYNTHETIC_ONCE"));
-    let fixture_base = PathBuf::from(std::env::var_os("PILOTODIN_C1_C2_FIXTURE_ROOT").unwrap())
-        .canonicalize().unwrap();
-    let runner = PathBuf::from(std::env::var_os("RUNNER_TEMP").unwrap()).canonicalize().unwrap();
+    let fixture_base = PathBuf::from(std::env::var_os("PILOTODIN_C1_C2_FIXTURE_ROOT").unwrap());
+    let runner = PathBuf::from(std::env::var_os("RUNNER_TEMP").unwrap());
+    assert!(ordinary_drive(&fixture_base) && ordinary_drive(&runner));
+    let base_identity = fixture_base.canonicalize().unwrap();
+    assert_eq!(base_identity.parent(), Some(runner.canonicalize().unwrap().as_path()));
     assert_eq!(fixture_base.parent(), Some(runner.as_path()));
+    assert!(fs::read_dir(&fixture_base).unwrap().next().is_none());
     let root = fixture_base.join(format!("owned-host-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
-    let python = PathBuf::from(std::env::var_os("PILOTODIN_C1_C2_FIXTURE_PYTHON").unwrap())
-        .canonicalize().unwrap();
-    assert!(python.is_file());
+    assert_eq!(root.canonicalize().unwrap().parent(), Some(base_identity.as_path()));
+    let python = PathBuf::from(std::env::var_os("PILOTODIN_C1_C2_FIXTURE_PYTHON").unwrap());
+    assert!(ordinary_drive(&python) && python.is_file());
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().parent().unwrap();
-    let script = repo.join("qa/c1_c2_owned_host_fixture.py").canonicalize().unwrap();
+    let script = repo.join("qa/c1_c2_owned_host_fixture.py");
+    assert!(ordinary_drive(&script) && script.is_file());
 
     // No application event loop, webview, IPC or production resource gate.
     let app = tauri::test::mock_builder()
@@ -97,6 +110,7 @@ fn actual_owned_pipe_job_and_writer_lifecycle() {
     let wire = Wire::new(generation, capability).unwrap();
     let mut s = Supervisor::new(ShellDriver::new(ShellChannel::new(Transport::new(wire),child),events),factory);
     tick_until(&mut s, |s| s.ready());
+    assert!(engine_job.active_processes().unwrap() >= 1);
 
     // Native report grant shares the actual Python lane and owns the writer.
     let ticket = reserve(&mut s, SaveKind::Report);
@@ -132,6 +146,7 @@ fn actual_owned_pipe_job_and_writer_lifecycle() {
     mark(&root,"callback-return");
     tick_until(&mut s, |_| root.join("demand-complete").is_file());
     assert_eq!(observed_job.lock().unwrap().as_ref().unwrap().active_processes().unwrap(),0);
+    println!("C1-C2-INFERENCE-GROUP-ZERO: retained owned job observed empty after release");
 
     // STOP cannot certify a closed engine while a native writer is active.
     let ticket = reserve(&mut s, SaveKind::Export);
