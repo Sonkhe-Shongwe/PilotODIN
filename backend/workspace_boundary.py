@@ -34,6 +34,7 @@ def _directory(path):
     info = path.lstat()
     if _redirected(info) or not stat.S_ISDIR(info.st_mode):
         raise WorkspaceBoundaryError("Workspace directory is redirected or invalid")
+    return info
 
 
 def _regular(info, *, empty=False):
@@ -104,12 +105,13 @@ def _acquire(fd):
 
 
 @contextmanager
-def engine_workspace(value):
-    """Hold a non-inheritable exclusive writer lease until the caller exits."""
+def _workspace_lease(value):
+    """Retain the descriptor and original workspace identity for runtime checks."""
     fd = None
     try:
         try:
             home = _home(value)
+            root_identity = _directory(home)
             _verify_entries(home)
             path = home / LOCK_NAME
             try:
@@ -128,28 +130,89 @@ def engine_workspace(value):
             except OSError as exc:
                 raise WorkspaceBoundaryError("Workspace already in use or locking unavailable") from exc
             _same_lock(fd, path)
-            _directory(home)
+            if not os.path.samestat(root_identity, _directory(home)):
+                raise WorkspaceBoundaryError("Workspace identity changed")
             _verify_entries(home)
         except OSError as exc:
             raise WorkspaceBoundaryError("Workspace storage unavailable or unsafe") from exc
-        yield home
+        yield home, fd, root_identity
     finally:
         # Closing the original non-inheritable descriptor releases the OS lock.
         if fd is not None:
             os.close(fd)
 
 
+@contextmanager
+def engine_workspace(value):
+    """Hold a non-inheritable exclusive writer lease until the caller exits."""
+    with _workspace_lease(value) as (home, _, _root_identity):
+        yield home
+
+
 # Keep runtime ownership through interpreter shutdown, after non-daemon
 # executor threads have finished, rather than only through server.run().
 _process_lease = None
+_process_workspace = None
+
+
+def _database_identity(home, previous=None):
+    identity = None
+    for suffix in ("", "-journal", "-wal", "-shm"):
+        try:
+            info = (home / ("pilotodin.sqlite3" + suffix)).lstat()
+        except FileNotFoundError:
+            if not suffix and previous is not None:
+                raise WorkspaceBoundaryError("Owned database disappeared")
+            continue
+        _regular(info)
+        if not suffix:
+            if not info.st_ino or (previous is not None
+                                   and not os.path.samestat(previous, info)):
+                raise WorkspaceBoundaryError("Owned database identity changed")
+            identity = info
+    return identity
 
 
 def hold_process_workspace(value):
-    global _process_lease
+    global _process_lease, _process_workspace
     if _process_lease is not None:
         raise WorkspaceBoundaryError("Workspace ownership already established")
-    lease = engine_workspace(value)
-    home = lease.__enter__()
+    lease = _workspace_lease(value)
+    home, fd, root_identity = lease.__enter__()
+    try:
+        database_identity = _database_identity(home)
+    except BaseException:
+        lease.__exit__(None, None, None)
+        raise
     _process_lease = lease
+    _process_workspace = (home, fd, root_identity, database_identity)
     atexit.register(lease.__exit__, None, None, None)
     return home
+
+
+def validate_process_database(home, database):
+    """Recheck owned SQLite paths immediately before/after connection opening.
+
+    A startup lease is not a permanent filesystem safety certificate. Direct
+    legacy/test imports without a process lease remain a separate migration
+    boundary. This check detects observed replacements, not hostile swaps
+    between the check and SQLite's own path-based opens.
+    """
+    global _process_workspace
+    if _process_workspace is None:
+        return
+    owned, fd, root_identity, previous = _process_workspace
+    if Path(home) != owned or Path(database) != owned / "pilotodin.sqlite3":
+        raise WorkspaceBoundaryError("Database outside owned workspace")
+    try:
+        for parent in reversed(owned.parents):
+            _directory(parent)
+        current = _directory(owned)
+        if not current.st_ino or not os.path.samestat(root_identity, current):
+            raise WorkspaceBoundaryError("Workspace identity changed")
+        _same_lock(fd, owned / LOCK_NAME)
+        identity = _database_identity(owned, previous)
+    except OSError as exc:
+        raise WorkspaceBoundaryError("Workspace database unavailable or unsafe") from exc
+    if previous is None and identity is not None:
+        _process_workspace = (owned, fd, root_identity, identity)

@@ -106,6 +106,78 @@ class WorkspaceBoundaryTests(unittest.TestCase):
         self.assertEqual((self.home / "datasets").read_bytes(), b"do not replace")
         self.assertFalse((self.home / LOCK_NAME).exists())
 
+    def _owned_database_case(self, operation):
+        code = r"""
+import os, sys
+from pathlib import Path
+from unittest.mock import patch
+from backend.workspace_boundary import hold_process_workspace, WorkspaceBoundaryError
+home = hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+from backend import storage
+with storage.connect() as conn:
+    assert conn.execute("SELECT 1").fetchone()[0] == 1
+db = home / "pilotodin.sqlite3"
+operation = sys.argv[2]
+if operation == "replace":
+    saved = home / "saved-original.sqlite"
+    db.rename(saved)
+    db.write_bytes(b"replacement, not a database")
+    protected = saved.read_bytes()
+elif operation == "missing":
+    saved = home / "saved-original.sqlite"
+    db.rename(saved)
+    protected = saved.read_bytes()
+elif operation == "hardlink":
+    saved = home / "other-file"
+    saved.write_bytes(b"do not open")
+    protected = saved.read_bytes()
+    try:
+        os.link(saved, home / "pilotodin.sqlite3-wal")
+    except OSError:
+        sys.exit(77)
+elif operation == "different-path":
+    storage.DB_PATH = home / "other.sqlite"
+    saved = db
+    protected = saved.read_bytes()
+else:
+    raise AssertionError("unknown case")
+with patch.object(storage.sqlite3, "connect", side_effect=AssertionError("SQLite opened unsafe path")):
+    try:
+        storage.connect()
+    except WorkspaceBoundaryError:
+        pass
+    else:
+        raise AssertionError("unsafe database path admitted")
+assert saved.read_bytes() == protected
+if operation == "replace":
+    assert db.read_bytes() == b"replacement, not a database"
+elif operation == "missing":
+    assert not db.exists()
+elif operation == "different-path":
+    assert not storage.DB_PATH.exists()
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home), operation],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=15, check=False,
+        )
+        if result.returncode == 77 and operation == "hardlink":
+            self.skipTest("Hard links unsupported in fixture")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_owned_database_rejects_replacement_before_sqlite_open(self):
+        self._owned_database_case("replace")
+
+    def test_owned_database_rejects_disappearance_before_sqlite_open(self):
+        self._owned_database_case("missing")
+
+    def test_owned_database_rejects_hardlinked_sidecar_before_sqlite_open(self):
+        self._owned_database_case("hardlink")
+
+    def test_owned_database_rejects_different_path_before_sqlite_open(self):
+        self._owned_database_case("different-path")
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()

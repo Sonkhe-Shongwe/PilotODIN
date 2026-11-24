@@ -10,14 +10,17 @@ from pathlib import Path
 
 try:
     from . import sqlite_fk_gate
+    from .workspace_boundary import validate_process_database
 except ImportError:
     import sqlite_fk_gate
+    from workspace_boundary import validate_process_database
 
 HOME = Path(os.environ.get("PILOTODIN_HOME", str(Path(__file__).resolve().parents[1] / "data"))).resolve()
+DB_PATH = HOME / "pilotodin.sqlite3"
+validate_process_database(HOME, DB_PATH)
 HOME.mkdir(parents=True,exist_ok=True)
 (HOME / "datasets").mkdir(exist_ok=True)
 (HOME / "models").mkdir(exist_ok=True)
-DB_PATH = HOME / "pilotodin.sqlite3"
 
 
 class _ClosingSQLiteConnection(sqlite3.Connection):
@@ -31,9 +34,11 @@ class _ClosingSQLiteConnection(sqlite3.Connection):
 
 
 def connect():
+    validate_process_database(HOME, DB_PATH)
     con = sqlite3.connect(DB_PATH, timeout=30, factory=_ClosingSQLiteConnection)
     con.row_factory = sqlite3.Row
     try:
+        validate_process_database(HOME, DB_PATH)
         sqlite_fk_gate.configure_connection(con)
     except Exception:
         con.close()
