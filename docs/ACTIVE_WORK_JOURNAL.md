@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 73c3c951e48f26da85f62843c79921a32407e08c |
 | Product baseline | 0a2419893c25e6575e9ce381c6d62f6abc0e3a2b |
 | Scope | Actual native inference command async single-flight, retained blocking job/join, cancellation and exact engine generation final fence, model file read pin; source tests only. Shared grant activation and job-empty proof still gated. |
 | Operation ID | C1-C2-INTEGRATION-20261124-native-singleflight |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | frontend/src-tauri/src/lib.rs; tests/test_p4_n12_worker_scratch_source.py; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior exact 0a24198 all nine SUCCESS; P1 390 tests + 2 subtests (204 C1), P4 1054 Python + 532 subtests, 104 Node, B5 22 live export. Next existing P2/P4 source/synthetic CI only; no app Rust compile. |
-| Pending runs | None; all nine exact previous workflows terminal SUCCESS. |
+| Verification | Actual async command and retained startup generation, final engine/settings fences, read-only model pin, shutdown join fence, two source assertions. No app Rust compile/run or shared grant activation. |
+| Pending runs | Exact-source P2 report safety and P4 source/synthetic CI pending discovery. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Refactor actual native command rather than add another independent module. Preserve existing launcher/frontend protocol for now; no partially enforced shared lane. Source-review backend-demand bridge and whole-group proof before combined activation/approval. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

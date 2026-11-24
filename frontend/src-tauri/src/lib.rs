@@ -47,6 +47,29 @@ struct ActiveInference {
     child: Option<CommandChild>,
     exit: Arc<AtomicU8>,
     _storage_pins: storage_boundary::DirectoryPins,
+    _model: VerifiedModel,
+}
+
+// A generation is retained until the actual blocking startup task has joined.
+// The caller's dropped IPC future is not cancellation or completion evidence.
+struct InferenceStartup {
+    backend_token: String,
+    cancelled: AtomicBool,
+    joined: AtomicBool,
+    uncertain: AtomicBool,
+}
+
+impl InferenceStartup {
+    fn new(backend_token: String) -> Self {
+        Self { backend_token, cancelled: AtomicBool::new(false),
+            joined: AtomicBool::new(false), uncertain: AtomicBool::new(false) }
+    }
+
+    fn check(&self, stopping: &AtomicBool) -> Result<(), String> {
+        if self.cancelled.load(Ordering::Acquire) || stopping.load(Ordering::Acquire) {
+            Err("Local inference startup cancelled".into())
+        } else { Ok(()) }
+    }
 }
 
 const INFERENCE_IDLE_SLEEP_SECONDS: &str = "30";
@@ -59,6 +82,7 @@ struct DesktopState {
     launch_gate: Mutex<()>,
     backend: Mutex<Option<ActiveBackend>>,
     inference: Mutex<Option<ActiveInference>>,
+    inference_startup: Mutex<Option<Arc<InferenceStartup>>>,
     inference_settings: Mutex<Option<InferenceSettings>>,
 }
 
@@ -401,7 +425,31 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
     let deadline = Instant::now() + Duration::from_secs(5);
     let _launch = loop {
         match state.launch_gate.try_lock() {
-            Ok(guard) => break guard,
+            Ok(guard) => {
+                // Stop was published before this gate. No new startup can be
+                // installed after we release it for the actual join wait.
+                let pending = state.inference_startup.lock()
+                    .map_err(|_| "AI startup state unavailable")?.clone();
+                if let Some(attempt) = pending {
+                    attempt.cancelled.store(true, Ordering::Release);
+                    drop(guard);
+                    while !attempt.joined.load(Ordering::Acquire) && Instant::now() < deadline {
+                        std::thread::sleep(Duration::from_millis(25));
+                    }
+                    if !attempt.joined.load(Ordering::Acquire)
+                        || attempt.uncertain.load(Ordering::Acquire) {
+                        return Err("Local inference startup exit is not confirmed; retry close".into());
+                    }
+                    // The supervisor clears the matching slot after joining.
+                    // Do not wait for it with the launch gate held.
+                    if Instant::now() >= deadline {
+                        return Err("Local inference startup settlement is pending; retry close".into());
+                    }
+                    std::thread::sleep(Duration::from_millis(10));
+                    continue;
+                }
+                break guard;
+            },
             Err(std::sync::TryLockError::WouldBlock) if Instant::now() < deadline =>
                 std::thread::sleep(Duration::from_millis(25)),
             _ => return Err("Worker launch is not finished; retry close".into()),
@@ -514,12 +562,19 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
                     if let Ok(mut active) = state.backend.lock() {
                         if !state.stopping.load(Ordering::Acquire)
                             && active.as_ref().map(|b| b.connection.token == token).unwrap_or(false) {
-                            *active = None;
+                            // An unexpected engine exit invalidates the
+                            // whole session, not just a cached connection.
+                            state.stopping.store(true, Ordering::Release);
+                            if let Ok(pending) = state.inference_startup.lock() {
+                                if let Some(attempt) = pending.as_ref() {
+                                    attempt.cancelled.store(true, Ordering::Release);
+                                }
+                            }
+                            // Retain backend and inference ownership for
+                            // explicit shutdown; do not start a replacement.
                             if let Ok(mut ai) = state.inference.lock() {
-                                // Keep the inference exit witness while its group stops.
                                 if let Some(worker) = ai.as_mut() { terminate_owned_child(worker.child.take()); }
                             }
-                            if let Ok(mut settings) = state.inference_settings.lock() {*settings = None;}
                         }
                     }
                     break;
@@ -532,57 +587,167 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
     Ok(connection)
 }
 
-fn verify_bundled_model(app: &AppHandle) -> Result<std::path::PathBuf, String> {
-    let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
-    let manifest_file = resources.join("models").join("model-manifest.json");
-    let manifest: ModelManifest = serde_json::from_slice(
-        &std::fs::read(&manifest_file).map_err(|_| "Bundled AI manifest missing".to_string())?
-    ).map_err(|_| "Invalid bundled AI manifest".to_string())?;
-    // Reject path traversal and alternate model paths from a modified manifest.
+struct VerifiedModel {
+    path: PathBuf,
+    file: File,
+    size: u64,
+    modified: std::time::SystemTime,
+    pins: storage_boundary::DirectoryPins,
+}
+
+impl VerifiedModel {
+    fn verify(&self) -> Result<(), String> {
+        self.pins.verify()?;
+        let held = self.file.metadata().map_err(|_| "Bundled model identity unavailable")?;
+        let named = std::fs::symlink_metadata(&self.path)
+            .map_err(|_| "Bundled model identity unavailable")?;
+        if !held.is_file() || !named.is_file() || named.file_type().is_symlink()
+            || held.len() != self.size || named.len() != self.size
+            || held.modified().ok() != Some(self.modified)
+            || named.modified().ok() != Some(self.modified) {
+            return Err("Bundled model changed during verification".into());
+        }
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::MetadataExt;
+            if held.file_attributes() & 0x400 != 0 || named.file_attributes() & 0x400 != 0 {
+                return Err("Bundled model redirected".into());
+            }
+        }
+        Ok(())
+    }
+}
+
+fn verify_bundled_model(app: &AppHandle, attempt: &InferenceStartup,
+                        stopping: &AtomicBool) -> Result<VerifiedModel, String> {
+    attempt.check(stopping)?;
+    let resources = app.path().resource_dir().map_err(|_| "Bundled resources unavailable")?;
+    let directory = resources.join("models");
+    let mut pins = storage_boundary::DirectoryPins::default();
+    pins.admit_existing(&directory)?;
+    let manifest_file = directory.join("model-manifest.json");
+    let mut manifest_bytes = Vec::new();
+    File::open(&manifest_file).map_err(|_| "Bundled AI manifest missing")?
+        .take(65_537).read_to_end(&mut manifest_bytes)
+        .map_err(|_| "Bundled AI manifest unreadable")?;
+    if manifest_bytes.len() > 65_536 { return Err("Bundled AI manifest too large".into()); }
+    let manifest: ModelManifest = serde_json::from_slice(&manifest_bytes)
+        .map_err(|_| "Invalid bundled AI manifest")?;
     if manifest.model_file != "qwen3-1.7b-q4_k_m.gguf" || manifest.model_sha256.len() != 64 ||
        !manifest.model_sha256.bytes().all(|c| c.is_ascii_hexdigit()) {
         return Err("Invalid bundled model identity".into());
     }
-    let model = resources.join("models").join(&manifest.model_file);
-    let mut reader = File::open(&model).map_err(|_| "Bundled offline model missing".to_string())?;
+    let model = directory.join(&manifest.model_file);
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        // Hold read-only sharing through worker cleanup; refuse normal write
+        // or deletion/rename while the exact verified file is resident.
+        options.share_mode(1).custom_flags(0x00200000);
+    }
+    let mut reader = options.open(&model).map_err(|_| "Bundled offline model missing")?;
+    let metadata = reader.metadata().map_err(|_| "Bundled model identity unavailable")?;
+    let size = metadata.len();
+    let modified = metadata.modified().map_err(|_| "Bundled model timestamp unavailable")?;
+    if !metadata.is_file() || size == 0 { return Err("Invalid bundled model file".into()); }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        if metadata.file_attributes() & 0x400 != 0 { return Err("Bundled model redirected".into()); }
+    }
     let mut hash = Sha256::new();
-    // Allocate the 1 MiB hashing buffer on the heap. A fixed-size local array can
-    // overflow Windows' default 1 MiB thread stack before model verification runs.
     let mut chunk = vec![0u8; 1024 * 1024];
+    let mut observed = 0u64;
     loop {
-        let count = reader.read(&mut chunk).map_err(|_| "Could not verify local AI model".to_string())?;
-        if count == 0 {break;}
+        attempt.check(stopping)?;
+        let count = reader.read(&mut chunk).map_err(|_| "Could not verify local AI model")?;
+        if count == 0 { break; }
+        observed = observed.checked_add(count as u64).ok_or("Bundled model size invalid")?;
+        if observed > size { return Err("Bundled model grew during verification".into()); }
         hash.update(&chunk[..count]);
     }
     let computed = format!("{:x}", hash.finalize());
-    if !computed.eq_ignore_ascii_case(&manifest.model_sha256) {
+    if observed != size || !computed.eq_ignore_ascii_case(&manifest.model_sha256) {
         return Err("Bundled local model failed integrity verification".into());
     }
-    Ok(model)
+    let verified = VerifiedModel { path: model, file: reader, size, modified, pins };
+    verified.verify()?;
+    attempt.check(stopping)?;
+    Ok(verified)
 }
 
 #[tauri::command]
-fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(), String> {
-    let _launch = state.launch_gate.lock().map_err(|_| "Worker launch unavailable")?;
-    ensure_desktop_admission(&app, &state)?;
-    // Only one local inference worker is permitted on constrained hardware.
-    let mut active = state.inference.lock().map_err(|_| "AI state unavailable".to_string())?;
-    if let Some(worker) = active.as_ref() {
-        if worker.exit.load(Ordering::Acquire) == 0 {
-            return if worker.child.is_some() { Ok(()) }
-                else { Err("Previous inference worker is still stopping".into()) };
+async fn launch_bundled_ai(window: tauri::WebviewWindow, app: AppHandle,
+                           state: State<'_, DesktopState>) -> Result<(), String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let attempt = {
+        let _launch = state.launch_gate.lock().map_err(|_| "Worker launch unavailable")?;
+        ensure_desktop_admission(&app, &state)?;
+        let backend_token = {
+            let backend = state.backend.lock().map_err(|_| "Engine state unavailable")?;
+            let current = backend.as_ref().ok_or("Start analytics before AI")?;
+            if current.exit.load(Ordering::Acquire) != 0 {
+                return Err("Analytical engine exit detected".into());
+            }
+            current.connection.token.clone()
+        };
+        let mut startup = state.inference_startup.lock().map_err(|_| "AI startup state unavailable")?;
+        if startup.is_some() { return Err("Local inference startup in progress".into()); }
+        let active = state.inference.lock().map_err(|_| "AI state unavailable")?;
+        if let Some(worker) = active.as_ref() {
+            return if worker.exit.load(Ordering::Acquire) == 0 && worker.child.is_some() { Ok(()) }
+                else { Err("Previous inference worker exit requires session cleanup".into()) };
         }
-        *active = None;
-    }
-    // Copy the settings before doing model integrity checks or spawning the worker.
-    // A borrowed settings reference cannot be dropped to release the mutex.
+        let attempt = Arc::new(InferenceStartup::new(backend_token));
+        *startup = Some(attempt.clone());
+        attempt
+    };
+    // An independent supervisor owns the join. Dropping this IPC invocation
+    // only drops the one-result receiver, never the blocking startup.
+    let (tx, mut rx) = tauri::async_runtime::channel(1);
+    let owner = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let work_app = owner.clone();
+        let work_attempt = attempt.clone();
+        let result = match tauri::async_runtime::spawn_blocking(move ||
+            start_owned_inference(work_app, work_attempt)).await {
+            Ok(result) => result,
+            Err(_) => {
+                attempt.uncertain.store(true, Ordering::Release);
+                Err("Local inference startup outcome unconfirmed".into())
+            }
+        };
+        attempt.joined.store(true, Ordering::Release);
+        {
+            let state = owner.state::<DesktopState>();
+            if !attempt.uncertain.load(Ordering::Acquire) {
+                if let Ok(mut slot) = state.inference_startup.lock() {
+                    if slot.as_ref().is_some_and(|current| Arc::ptr_eq(current,&attempt)) {
+                        *slot = None;
+                    }
+                }
+            } else {
+                state.stopping.store(true, Ordering::Release);
+            }
+        }
+        let _ = tx.send(result).await;
+    });
+    rx.recv().await.ok_or_else(|| "Local inference startup supervisor unavailable".to_string())?
+}
+
+fn start_owned_inference(app: AppHandle, attempt: Arc<InferenceStartup>) -> Result<(), String> {
+    let state = app.state::<DesktopState>();
+    attempt.check(&state.stopping)?;
+    // Copy immutable launch settings. No state lock across hash or filesystem
+    // preparation, no launch gate held during model integrity verification.
     let (token, port) = {
-        let guard = state.inference_settings.lock()
-            .map_err(|_| "AI configuration unavailable".to_string())?;
+        let guard = state.inference_settings.lock().map_err(|_| "AI configuration unavailable")?;
         let settings = guard.as_ref().ok_or("Start analytics before AI")?;
         (settings.token.clone(), settings.port)
     };
-    let model = verify_bundled_model(&app)?;
+    let model = verify_bundled_model(&app, &attempt, &state.stopping)?;
     let mut storage_pins = storage_boundary::DirectoryPins::default();
     let data_dir = worker_data_home(&app, &mut storage_pins)?;
     let worker_temp = worker_temp_directory(&data_dir, "inference-temp", &mut storage_pins)?;
@@ -594,7 +759,7 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
     let runtime_path = std::env::join_paths(paths).map_err(|_| "Invalid inference runtime path".to_string())?;
     let command = app.shell().sidecar("pilotodin-inference")
         .map_err(|_| "Bundled inference executable missing".to_string())?
-        .args(["--model", model.to_str().ok_or("Invalid model path")?,
+        .args(["--model", model.path.to_str().ok_or("Invalid model path")?,
                "--alias", "pilotodin-qwen3-1.7b", "--host", "127.0.0.1",
                "--port", &port.to_string(), "--ctx-size", "2048",
                "--threads", "2", "--parallel", "1", "--gpu-layers", "0",
@@ -612,24 +777,59 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
         .set_process_group(true)
         .kill_on_drop(cfg!(windows));
     storage_pins.verify()?;
-    let (mut events, child) = command.spawn().map_err(|e| format!("Could not launch local model: {e}"))?;
+    model.verify()?;
+    // Final admission is serialized with shutdown and engine replacement.
+    // No hashing, long wait or async await occurs under this gate.
+    let _launch = state.launch_gate.lock().map_err(|_| "Worker launch unavailable")?;
+    ensure_desktop_admission(&app, &state)?;
+    attempt.check(&state.stopping)?;
+    {
+        let backend = state.backend.lock().map_err(|_| "Engine state unavailable")?;
+        let current = backend.as_ref().ok_or("Start analytics before AI")?;
+        if current.connection.token != attempt.backend_token
+            || current.exit.load(Ordering::Acquire) != 0 {
+            return Err("Analytical engine changed during AI startup".into());
+        }
+    }
+    {
+        let current = state.inference_settings.lock().map_err(|_| "AI configuration unavailable")?;
+        if !current.as_ref().is_some_and(|s| s.port == port && s.token == token) {
+            return Err("Local inference configuration changed".into());
+        }
+    }
+    {
+        let current = state.inference_startup.lock().map_err(|_| "AI startup state unavailable")?;
+        if !current.as_ref().is_some_and(|s| Arc::ptr_eq(s, &attempt)) {
+            return Err("Local inference startup generation changed".into());
+        }
+    }
+    let mut active = state.inference.lock().map_err(|_| "AI state unavailable")?;
+    if active.is_some() { return Err("Previous inference worker remains owned".into()); }
+    attempt.check(&state.stopping)?;
+    let (mut events, child) = match command.spawn() {
+        Ok(value) => value,
+        Err(_) => {
+            // The locked shell can fail after creating a child. A failed
+            // return is not conclusive evidence that no group exists.
+            attempt.uncertain.store(true, Ordering::Release);
+            state.stopping.store(true, Ordering::Release);
+            return Err("Local inference launch outcome unconfirmed".into());
+        }
+    };
     let exit = Arc::new(AtomicU8::new(0));
-    *active = Some(ActiveInference { child: Some(child), exit: exit.clone(), _storage_pins: storage_pins });
+    *active = Some(ActiveInference { child: Some(child), exit: exit.clone(),
+        _storage_pins: storage_pins, _model: model });
     drop(active);
-    let owner = app.clone();
+    // The owned event task retains the leader witness. Never discard the
+    // exact child/group just because its leader terminated.
     tauri::async_runtime::spawn(async move {
         while let Some(event) = events.recv().await {
             match event {
                 CommandEvent::Terminated(payload) => {
                     exit.store(if payload.code == Some(0) { 1 } else { 2 }, Ordering::Release);
-                    let state = owner.state::<DesktopState>();
-                    if let Ok(mut active) = state.inference.lock() {
-                        if !state.stopping.load(Ordering::Acquire)
-                            && active.as_ref().map(|w| Arc::ptr_eq(&w.exit, &exit)).unwrap_or(false) {*active = None;}
-                    }
                     break;
                 }
-                CommandEvent::Error(message) => eprintln!("Local AI worker error: {message}"),
+                CommandEvent::Error(_) => eprintln!("Local AI worker event unavailable"),
                 _ => {}
             }
         }
@@ -1170,6 +1370,11 @@ pub fn run() {
                 let state = app.state::<DesktopState>();
                 state.stopping.store(true, Ordering::Release);
                 // Emergency/non-ticket exit is not a verified graceful drain.
+                if let Ok(pending) = state.inference_startup.lock() {
+                    if let Some(attempt) = pending.as_ref() {
+                        attempt.cancelled.store(true, Ordering::Release);
+                    }
+                }
                 if let Ok(mut ai) = state.inference.lock() {
                     if let Some(mut worker) = ai.take() {
                         eprintln!("Emergency inference cleanup");

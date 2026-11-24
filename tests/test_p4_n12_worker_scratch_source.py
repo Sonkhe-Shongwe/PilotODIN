@@ -89,6 +89,41 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertIn("pins.prepare(root)?", profile)
         self.assertIn("verify_root(&root)?", src)
 
+    def test_actual_inference_command_has_one_independent_join_and_final_generation_fence(self):
+        src = RUST.read_text(encoding="utf-8")
+        command = slice_between(src, "async fn launch_bundled_ai(", "fn start_owned_inference(")
+        self.assertIn('window.label() != "main"', command)
+        self.assertIn('if startup.is_some()', command)
+        self.assertLess(command.index('*startup = Some(attempt.clone())'),
+                        command.index('tauri::async_runtime::spawn(async move'))
+        self.assertLess(command.index('spawn_blocking(move ||'), command.index('attempt.joined.store(true'))
+        self.assertLess(command.index('attempt.joined.store(true'), command.index('*slot = None'))
+        self.assertIn('Arc::ptr_eq(current,&attempt)', command)
+        self.assertIn('rx.recv().await', command)
+        launch = slice_between(src, "fn start_owned_inference(", "const MAX_REPORT_EXPORT_BYTES")
+        self.assertLess(launch.index('verify_bundled_model(&app'), launch.index('state.launch_gate.lock()'))
+        self.assertLess(launch.index('current.connection.token != attempt.backend_token'), launch.index('command.spawn()'))
+        self.assertLess(launch.index('Arc::ptr_eq(s, &attempt)'), launch.index('command.spawn()'))
+        self.assertLess(launch.index('attempt.check(&state.stopping)?;\n    let (mut events, child)'),
+                        launch.index('command.spawn()'))
+        self.assertIn('attempt.uncertain.store(true', launch)
+        self.assertNotIn('*active = None', launch)
+
+    def test_model_read_pin_and_shutdown_do_not_treat_cancel_as_join(self):
+        src = RUST.read_text(encoding="utf-8")
+        verify = slice_between(src, "fn verify_bundled_model(", "#[tauri::command]\nasync fn launch_bundled_ai")
+        self.assertIn('.take(65_537)', verify)
+        self.assertIn('options.share_mode(1).custom_flags(0x00200000)', verify)
+        self.assertLess(verify.index('attempt.check(stopping)?;\n        let count'),
+                        verify.index('reader.read(&mut chunk)'))
+        self.assertIn('verified.verify()?', verify)
+        launch = slice_between(src, "fn start_owned_inference(", "const MAX_REPORT_EXPORT_BYTES")
+        self.assertIn('_model: model', launch)
+        shutdown = slice_between(src, "fn stop_owned_workers(", "#[tauri::command]\nasync fn launch_backend")
+        self.assertLess(shutdown.index('attempt.cancelled.store(true'), shutdown.index('drop(guard)'))
+        self.assertLess(shutdown.index('drop(guard)'), shutdown.index('while !attempt.joined.load'))
+        self.assertIn('attempt.uncertain.load(Ordering::Acquire)', shutdown)
+
     def test_no_application_wide_environment_or_production_webview_override(self):
         import json
         src = RUST.read_text(encoding="utf-8")
