@@ -32,6 +32,8 @@ on:
       - tests/test_b4_quality_resource_measurement.py
       - tests/test_b4_quality_metadata_bounds.py
       - backend/export_publication.py
+      - backend/data_exports.py
+      - tests/test_b5_bounded_export_writer.py
       - backend/maintenance_backup.py
       - tests/test_b5_export_startup.py
       - tests/test_b5_export_publication.py
@@ -108,7 +110,7 @@ jobs:
       - name: Verify typed export receipt transitions and existing cleaned exports
         run: |
           status=0
-          for suite in test_b5_export_publication test_b5_export_startup test_build_e_cleaned_exports; do
+          for suite in test_b5_export_publication test_b5_export_startup test_b5_bounded_export_writer test_build_e_cleaned_exports; do
             echo "::group::${suite}"
             PILOTODIN_HOME="${RUNNER_TEMP}/pilotodin-b5-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${suite}" python -m pytest -q "tests/${suite}.py" || status=1
             echo "::endgroup::"
