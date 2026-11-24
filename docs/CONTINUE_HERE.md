@@ -5,7 +5,7 @@
 **Start with [current tab migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).** The sole live sequence is the [product-first directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md). Earlier P3 directions are historical. [Preserved prior continuation document](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/39b8e5f8286f6b17122ddd0f9d1e72f31d87ff44/docs/CONTINUE_HERE.md).
 
 
-**Current action:** [Migration handoff, section 4](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order). [B5 evidence](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md).
+**Current action:** [Migration handoff, section 4](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order). [B source closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). C specification preparation next.
 
 ## Historical continuation records (superseded instructions)
 

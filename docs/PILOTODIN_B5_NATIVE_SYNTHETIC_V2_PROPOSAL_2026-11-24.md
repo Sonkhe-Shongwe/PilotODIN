@@ -1,6 +1,6 @@
 # PilotODIN | B5 V2 one-use Windows synthetic library test proposal
 
-**DISARMED after approved one-use dispatch. Approval consumed; no reruns.** Exact product `8e3cc9112073b9744ff18ffa3e4e549662504a97`. Four source CI workflows PASS; native code uncompiled. Previous V1 run #45439476190 failed before job creation, approval consumed; its workflow remains disabled and must not be reused. [Evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md).
+**HISTORICAL: DISARMED, one-use run SUCCESS. Approval consumed; no reruns.** See [terminal receipt](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) and [closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). Exact product `8e3cc9112073b9744ff18ffa3e4e549662504a97`. Four source CI workflows PASS; native code uncompiled. Previous V1 run #45439476190 failed before job creation, approval consumed; its workflow remains disabled and must not be reused. [Evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md).
 
 ## Preflight before approval
 

@@ -60,7 +60,7 @@ The [no-CDP browser identity verifier](./P4_N12_NO_CDP_BROWSER_IDENTITY_2026-11-
 | P1 · Data, projects and workspace reliability | Bounded development closed. [Closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) |
 | P2 · Deliver and reporting | Bounded development closed. End-user Unicode PDF and associated font-distribution approval remain deferred. [Closure record](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) |
 | P3 · Deterministic semantic context | Bounded development closed. [Closure record](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md) |
-| P4 · Target Intelligence | Active. Package A source closed; Package B active (B1–B4 source closed; B5 active). Remaining technical gates and owner signoff are tracked below. |
+| P4 · Target Intelligence | Active. Packages A and B source closed; C specification preparation active. Remaining technical gates and owner signoff are tracked below. |
 | P5 · Durable execution and resource coordination | Later phase, unauthorised. Earlier implementation slices are recorded in history. |
 | P6 · Master Analyst and Master Scientist | Later phase. [Roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) |
 | P7 · Autonomous ODIN and orchestration | Later phase. [Roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) |

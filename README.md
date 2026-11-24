@@ -2,7 +2,7 @@
 
 **CURRENT | Live reference.** Consult the [current handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) for changing source status and next action, and the [official scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) for acceptance. [Continuation protocol](docs/CONTINUATION_PROTOCOL_CURRENT.md). Historical evidence below is not a current work order.
 
-**Resume development:** [Current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) | [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Current documentation audit](docs/DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md).
+**Resume development:** [Current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) | [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package B closure audit](docs/DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md).
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
@@ -11,7 +11,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 
 ## Read this first
 - **[Current product-first implementation directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md)**: sole live work order, fixed A–D scope, readiness specification and permissions.
-- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: durable-data scope and exit criteria; live completion state is in the handoff.
+- **[Closed Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: durable-data scope and exit criteria; live completion state is in the handoff.
 - **[24 November migration audit](docs/DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md)**: current authority, evidence and historical preservation.
 - **[Current tab migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md)**: single starting point, latest evidence, exact next action, safe scope and source references.
 - **[Stage 1 golden-reference verification contract](docs/P4_N12_STAGE1_GOLDEN_REFERENCE_AND_BACKWARD_VERIFICATION_2026-11-21.md)** for retained native evidence requirements, not the current development sequence.

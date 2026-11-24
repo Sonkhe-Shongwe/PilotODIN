@@ -8,7 +8,7 @@ Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Latest en
 
 ## Current execution boundary
 
-G2 remains BLOCKED. The product-first sequence controls immediate work; no new G2.x experiments or native activation. Package B product remediation evidence is maintained in the B5 evidence ledger; it earns no G2 or N12 credit. Historical next-action entries remain as evidence only.
+G2 remains BLOCKED. The product-first sequence controls immediate work; no new G2.x experiments or native activation. Package B source is closed; evidence remains in B5 ledger. C next. Product remediation earns no G2 or N12 credit. Historical next-action entries remain as evidence only.
 
 ## Rules for incrementing
 

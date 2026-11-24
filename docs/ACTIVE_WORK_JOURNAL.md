@@ -6,21 +6,21 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | B-CLOSURE-20261124 |
-| State | PREPARED |
+| Task ID | C-SPECIFICATION-20261124 |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 85c3dbbe3bb5dfc209834a83108558da91136097 |
+| Observed starting HEAD | cff1ffe1cb5087498ef1abd43c8822ceaebcda68 (closure preparation; resolve closure commit from operation marker) |
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
-| Scope | Reconcile successful V2 evidence, assess Package B source exit and publish bounded documentation closure audit; no product or workflow change, no native operations |
-| Operation ID | B-CLOSURE-20261124-documentation |
-| Operation state | PREPARED |
-| Intended files | active journal; compact handoff; B5 ledger; package B spec; directive; navigation/current status labels; package closure audit |
-| Approval | V2 approval consumed; exact run #45442066752 SUCCESS; V1 consumed; no fresh restricted approval |
-| Verification | Actual native log 7 passed, 0 failed, 0 ignored, 26 filtered; source/lock and cleanup checks passed. Disarm #45442158067 source preflight PASS and Windows job SKIPPED. Source 8e3cc91 unchanged. |
-| Pending runs | None from V2 or disarm; review closure criteria, then record outcome |
+| Scope | One integrated C resource/trust specification, source review; C1 first; no restricted operations |
+| Operation ID | NONE |
+| Operation state | NONE |
+| Intended files | C specification and evidence ledger when scoped; inspect current code first |
+| Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
+| Verification | B source CLOSED; exact 8e3cc91 four source CI and Windows library 7/7 PASS; production acceptance pending |
+| Pending runs | None from B5; verify live HEAD |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Recover closure operation by exact commit marker and verify documentation-only diff; no native rerun. If closure criteria met, transition journal to C bounded specification preparation; preserve D acceptance obligations. |
-| Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
+| Recovery action | Read B closure audit and architecture C1–C5; inspect resource policy, heavy work entrypoints, inference/dev/settings/build contracts; prepare integrated C specification then C1 only |
+| Resume after closure | C1 source implementation, C2–C5 in order; D after C source closure |
 
 ## Prior operation
 
@@ -28,4 +28,4 @@ CONT-RESILIENCE-20261124/preparation was published at [`89cb4b5`](https://github
 
 ## Unresolved or interrupted operations
 
-Dispatch 10f371b terminal FAILURE with zero jobs; disarm 2c50faa terminal SKIPPED. V1 remains closed; V2 dispatch published and consumed. This checkpoint disarms V2. Reconcile exact dispatch/disarm CI; do not repeat. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
+B5 V1 failed before jobs; V2 terminal SUCCESS and disarm Windows SKIPPED. Both approvals consumed. No restricted operation pending. B closure operation B-CLOSURE-20261124-documentation; [audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). Do not replay; preserve unknown local state.
