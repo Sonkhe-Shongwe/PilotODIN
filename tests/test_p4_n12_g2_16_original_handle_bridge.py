@@ -211,6 +211,76 @@ class G216NativeSourceTests(unittest.TestCase):
                 self.fail("failed duplicate must never yield")
         self.assertEqual(closed, [300])
 
+    def test_retained_original_handle_does_not_reopen_pid_or_close_caller_handle(self):
+        api = Fake()
+        report = p.ScopedPssApiAdapter(api).collect_from_retained_original_process(
+            process_handle=712, pid=501, birth=300_000_000,
+            acquisition_rights=p.PROCESS_RIGHTS)
+        self.assertEqual(report.handles, (31,))
+        self.assertEqual(api.events.count(("identity",)), 2)
+        self.assertNotIn(("open_process", 501), api.events)
+        self.assertNotIn(("close_process",), api.events)
+        self.assertEqual(api.events[-1], ("identity",))
+        self.assertEqual(
+            [x for x in api.events if x[0] == "close_duplicate"],
+            [("close_duplicate", 31), ("close_duplicate", 32)])
+        self.assertIn(("free_snapshot",), api.events)
+
+    def test_retained_query_only_rights_fail_before_any_native_call(self):
+        api = Fake()
+        for rights in (0x1000, 0x40, 0xFFFF, True, "0x1040", None):
+            with self.subTest(rights=rights):
+                with self.assertRaises(p.PssScopeError):
+                    p.ScopedPssApiAdapter(api).collect_from_retained_original_process(
+                        process_handle=712, pid=501, birth=300_000_000,
+                        acquisition_rights=rights)
+        self.assertEqual(api.events, [])
+        from pathlib import Path
+        source = (Path(__file__).resolve().parents[1] /
+                  "qa/p4_native/n12_lifetime_control.py").read_text(encoding="utf-8")
+        self.assertIn("open_process(0x1000, False, pid)", source)
+
+    def test_retained_invalid_process_identity_fails_without_capture(self):
+        for h, pid, birth in ((0, 501, 300_000_000),
+                              (True, 501, 300_000_000),
+                              (712, 0, 300_000_000),
+                              (712, 501, True), (712, 501, 0)):
+            api = Fake()
+            with self.assertRaises(p.PssScopeError):
+                p.ScopedPssApiAdapter(api).collect_from_retained_original_process(
+                    process_handle=h, pid=pid, birth=birth,
+                    acquisition_rights=p.PROCESS_RIGHTS)
+            self.assertEqual(api.events, [])
+
+    def test_retained_identity_rechecked_after_snapshot(self):
+        api = Fake()
+        identity = api.identity
+        count = [0]
+        def changed(handle):
+            count[0] += 1
+            if count[0] == 2:
+                return 501, 300_000_001, "msedgewebview2.exe"
+            return identity(handle)
+        api.identity = changed
+        with self.assertRaises(p.PssScopeError):
+            p.ScopedPssApiAdapter(api).collect_from_retained_original_process(
+                process_handle=712, pid=501, birth=300_000_000,
+                acquisition_rights=p.PROCESS_RIGHTS)
+        self.assertEqual(count[0], 2)
+        self.assertNotIn(("close_process",), api.events)
+        self.assertIn(("free_snapshot",), api.events)
+
+    def test_retained_cleanup_error_blocks_without_closing_original(self):
+        api = Fake()
+        api.fail_close = True
+        with self.assertRaises(p.PssScopeError):
+            p.ScopedPssApiAdapter(api).collect_from_retained_original_process(
+                process_handle=712, pid=501, birth=300_000_000,
+                acquisition_rights=p.PROCESS_RIGHTS)
+        self.assertNotIn(("close_process",), api.events)
+        self.assertNotIn(("open_process", 501), api.events)
+        self.assertIn(("close_duplicate", 31), api.events)
+
     def test_ctypes_file_type_unknown_error_captured_and_not_native_invoked(self):
         api = object.__new__(p._Win32PssApi)
         api.file_type_fn = lambda h: p.FILE_TYPE_DISK
