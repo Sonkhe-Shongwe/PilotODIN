@@ -46,13 +46,21 @@ def test_seekable_cap_checks_extent_not_cumulative_writes():
 
 
 @pytest.mark.parametrize("fmt",["csv","xlsx"])
-def test_actual_writer_exact_cap_and_overflow(fmt):
+def test_actual_writer_exact_cap_and_overflow(fmt,monkeypatch):
+    # ZIP XML compression must not depend on a clock tick between attempts.
+    from datetime import datetime
+    real_book=openpyxl.Workbook
+    def fixed_book(*args,**kwargs):
+        book=real_book(*args,**kwargs)
+        book.properties.created=book.properties.modified=datetime(2026,1,1)
+        return book
+    monkeypatch.setattr(openpyxl,"Workbook",fixed_book)
     frame=pd.DataFrame({"Key":["001","002"],"Text":["é","normal"]})
     serialize=exports._write_csv if fmt=="csv" else exports._write_xlsx
     raw=io.BytesIO()
     serialize(frame,exports._BoundedOutput(raw,1024*1024))
     size=len(raw.getvalue())
-    # XLSX ZIP timestamps can change metadata but not output extent here.
+    # Fixed workbook properties keep the compressed XML extent deterministic.
     exact=io.BytesIO()
     serialize(frame,exports._BoundedOutput(exact,size))
     assert len(exact.getvalue())==size
@@ -151,3 +159,8 @@ def test_disk_write_failure_removes_only_own_file(project,monkeypatch):
         exports.prepare(pid,exports.ExportRequest(version=0))
     assert list(scratch.iterdir())==[other]
     assert other.read_bytes()==b"untouched" and path.read_bytes()==raw
+
+@pytest.mark.parametrize("xlsx",[False,True])
+def test_unsafe_spreadsheet_controls_remain_refused(xlsx):
+    with pytest.raises(quality.QualityError,match="control characters"):
+        exports._safe_excel_string("\x00=SUM(1)",xlsx=xlsx)

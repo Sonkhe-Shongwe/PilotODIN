@@ -62,8 +62,8 @@ def _safe_excel_string(value, *, xlsx=True):
         value = "'" + value
     if xlsx and len(value) > 32767:
         raise quality.QualityError("A cell exceeds Excel's 32,767-character limit; export as CSV instead")
-    if xlsx and re.search(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', value):
-        raise quality.QualityError('A cell contains characters unsupported by Excel; export as CSV instead')
+    if re.search(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', value):
+        raise quality.QualityError('A cell contains unsupported spreadsheet control characters')
     return value
 
 
