@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5838ee91c26ffd27fa2da09051238474e947e6a5 |
 | Product baseline | b1e3a14acb69c9053104e092a1b9996f04372f50 |
@@ -16,10 +16,10 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Operation state | RECONCILED |
 | Intended files | backend/resource_host.py; backend/resource_session.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; frontend/src-tauri/src/resource_transport.rs; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Actual owned app/autonomy demand callbacks, correlated host poll/grant/ready/return/release state, ten Python cases (including irreversible drain and duplicate READY fences) and one staged Rust test. CI pending; no actual launcher registration or native execution. |
-| Pending runs | [P1 #45476857824](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45476857824), initial 36712cfa IN_PROGRESS at observation; [P1 #45476978799](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45476978799), final exact b1e3a14acb69c9053104e092a1b9996f04372f50 PENDING at observation. Reconcile both, no inferred result. |
+| Verification | Final exact P1 SUCCESS; 214 C1 tests, 166 regression + 2 subtests, 20 legacy autonomy; 400 total + 2. Native staged tests uncompiled, real compose callback integration not exercised end-to-end. |
+| Pending runs | None. #45476857824 CANCELLED (superseded); #45476978799/job 138740004851 SUCCESS exact b1e3a14. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile final P1 CI (214 C1 expected). Blocking native integration decision: locked shell 2.6.0 private job has no job-empty query; recommend narrow source-only patch to pinned existing dependency exposing own-job active process count/retained termination handle, requiring explicit owner design approval and exact source/lock/license review. No dependency change/download/compile/run yet. Then actual host poll/start/drain/release, runner/frontend activation and one scoped native verification. |
+| Recovery action | Await explicit owner approval of narrow pinned shell dependency/API source patch for owned Windows job-empty observation. Generic continuation is not approval. Review exact source/lock/license and patch scope only after approval; then actual native host/runner/frontend wiring and separate native verification authority. No partial activation or phase credit. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
