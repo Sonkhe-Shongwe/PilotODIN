@@ -13,6 +13,7 @@ on:
       - qa/p4_research/n12_fileio_pair_contract.py
       - tests/test_p4_n12_physical_destination.py
       - tests/test_p4_n12_fileio_pair_contract.py
+      - tests/test_p4_n12_g2_19_passive_write_coverage.py
       - tests/test_p4_n12_g1_source_integration.py
       - qa/p4_research/n12_fileio_identity_join.py
       - tests/test_p4_n12_fileio_identity_join.py
@@ -89,6 +90,7 @@ jobs:
               "qa/p4_research/n12_fileio_pair_contract.py",
               "tests/test_p4_n12_physical_destination.py",
               "tests/test_p4_n12_fileio_pair_contract.py",
+              "tests/test_p4_n12_g2_19_passive_write_coverage.py",
               "tests/test_p4_n12_g1_source_integration.py",
               "tests/test_p4_n12_g2_final_calibration_window.py",
               "qa/p4_research/n12_generated_sysmon_bookends.py",
@@ -149,3 +151,5 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_15_native_scope.py' -v
       - name: G2.16 real Win32 duplicate API bridge and process-scope mocks, source-only
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_16_original_handle_bridge.py' -v
+      - name: G2.19 passive same-capture WebView write request completeness and redaction
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_19_passive_write_coverage.py' -v

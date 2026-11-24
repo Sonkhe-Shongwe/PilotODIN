@@ -112,6 +112,10 @@ class PrivatePairIndex:
     _obj_guard_ticks: Mapping[int, tuple[int, ...]] = field(repr=False)
     _key_guard_ticks: Mapping[int, tuple[int, ...]] = field(repr=False)
     build_issue: str | None = None
+    # Include EVERY write request, even a missing/zero IRP. Otherwise an
+    # incomplete trace silently disappears from count-only passive triage.
+    _write_rows_by_pid: Mapping[int, tuple[_Row, ...]] = field(
+        default_factory=dict, repr=False)
 
 
 def index_private_kernel_file_events(events: object, *, start_tick: int, end_tick: int) -> PrivatePairIndex:
@@ -129,6 +133,7 @@ def index_private_kernel_file_events(events: object, *, start_tick: int, end_tic
     by_key_obj: dict[int, dict[int | None, list[int]]] = defaultdict(lambda: defaultdict(list))
     by_obj_guard: dict[int, list[int]] = defaultdict(list)
     by_key_guard: dict[int, list[int]] = defaultdict(list)
+    by_writer: dict[int, list[_Row]] = defaultdict(list)
     try:
         for event in events:
             if type(event) is not dict:
@@ -170,6 +175,8 @@ def index_private_kernel_file_events(events: object, *, start_tick: int, end_tic
                 tid = field("ThreadId")
             status = field("Status")
             row = _Row(kind, tick, pid, irp, obj, key, tid, status)
+            if kind == _WRITE:
+                by_writer[pid].append(row)
             if irp:
                 by_irp[irp].append(row)
             # A completion may omit one/both object identity fields. Do
@@ -200,7 +207,126 @@ def index_private_kernel_file_events(events: object, *, start_tick: int, end_tic
             for k, counterparts in by_key_obj.items()},
         {k: tuple(sorted(ticks)) for k, ticks in by_obj_guard.items()},
         {k: tuple(sorted(ticks)) for k, ticks in by_key_guard.items()},
+        _write_rows_by_pid={pid: tuple(rows) for pid, rows in by_writer.items()},
     )
+
+
+# G2.19: Passive candidate coverage, never original-handle or path credit.
+_PASSIVE_ROLES = ("webview", "webview-network")
+_PASSIVE_METRICS = (
+    "write_requests", "pair_shape_only", "missing_or_ambiguous_irp",
+    "unsuccessful_or_unknown_completion", "missing_or_conflicting_identity",
+    "outside_claimed_process_lifetime",
+)
+
+
+@dataclass(frozen=True, repr=False)
+class PrivateWriterEpoch:
+    """Untrusted caller-supplied PID/lifetime/role, never public evidence."""
+    pid: int
+    birth_tick: int
+    exit_tick: int
+    role: str
+
+    def __str__(self):
+        return "<private caller-supplied writer epoch, not authenticated>"
+
+    __repr__ = __str__
+
+
+def passive_webview_write_coverage(
+        *, index: PrivatePairIndex,
+        writer_epochs: tuple[PrivateWriterEpoch, ...]) -> dict:
+    """Count ALL numeric WebView-like write request shapes without handle access.
+
+    This is an O(number of indexed writes) shadow diagnostic. Missing IRPs
+    count as gaps, not absent writes. Roles, lifetimes, event loss and source
+    capture remain UNVERIFIED input. Even 100% paired shapes cannot prove
+    original writer identity, FileObject provenance, physical destination,
+    browser effective UDF or N12/R02.5 acceptance.
+
+    The result has a fixed schema: no PIDs, paths, handle values, IRPs, source
+    events, user-defined keys or OS error text are ever emitted.
+    """
+    totals = {
+        role: {metric: 0 for metric in _PASSIVE_METRICS}
+        for role in _PASSIVE_ROLES
+    }
+
+    def receipt(problem: str) -> dict:
+        return {
+            "scope": "g2-19-passive-webview-write-pair-shape-only",
+            "status": ("SHAPES_REVIEWABLE_ONLY" if problem == "NONE"
+                       else "BLOCKED"),
+            "blocker": problem,
+            "supplied_writer_epoch_count": len(writer_epochs)
+                if type(writer_epochs) is tuple else 0,
+            "counts_by_claimed_role": totals,
+            "input_process_roles_and_lifetimes": "NOT_AUTHENTICATED",
+            "etw_capture_loss_and_completeness": "NOT_VERIFIED",
+            "original_webview_writer_file_handle": "NOT_VERIFIED",
+            "kernel_fileobject_handle_join": "NOT_ESTABLISHED",
+            "request_time_physical_destination": "NOT_VERIFIED",
+            "native_N12_acceptance": "NOT_EVALUATED",
+            "file_mutation_acceptance": "NOT_EVALUATED",
+            "owner_native_execution_authorized": False,
+        }
+
+    if type(index) is not PrivatePairIndex or index.build_issue:
+        return receipt("ETW_INDEX_UNVERIFIED")
+    if (type(writer_epochs) is not tuple or
+            not 1 <= len(writer_epochs) <= 96 or
+            any(type(e) is not PrivateWriterEpoch
+                or e.role not in _PASSIVE_ROLES
+                or not all(_positive(v) for v in (
+                    e.pid, e.birth_tick, e.exit_tick))
+                or not index.start_tick <= e.birth_tick < e.exit_tick <= index.end_tick
+                for e in writer_epochs)):
+        return receipt("WRITER_EPOCH_ENVELOPE_INVALID")
+    # PID reuse and aliasing require independent ETW/Sysmon identities. Never
+    # select among multiple declared lifetimes for the same raw PID.
+    by_pid = {e.pid: e for e in writer_epochs}
+    if len(by_pid) != len(writer_epochs):
+        return receipt("PID_REUSE_OR_ROLE_AMBIGUOUS")
+
+    for pid, epoch in by_pid.items():
+        counts = totals[epoch.role]
+        for req in index._write_rows_by_pid.get(pid, ()):
+            counts["write_requests"] += 1
+            if not epoch.birth_tick < req.tick < epoch.exit_tick:
+                counts["outside_claimed_process_lifetime"] += 1
+                continue
+            if not all(_positive(value) for value in (
+                    req.irp, req.file_object, req.file_key, req.issuing_tid)):
+                counts["missing_or_conflicting_identity"] += 1
+                continue
+            # Examine the ENTIRE same-capture IRP history, not just a
+            # conveniently selected window. Any reuse, extra event or
+            # multiple completion makes this non-creditable.
+            history = index._by_irp.get(req.irp, ())
+            if (len(history) != 2 or history[0] != req
+                    or history[1].kind != _END
+                    or not req.tick < history[1].tick < epoch.exit_tick):
+                counts["missing_or_ambiguous_irp"] += 1
+                continue
+            completed = history[1]
+            if completed.status != 0:
+                counts["unsuccessful_or_unknown_completion"] += 1
+                continue
+            if (completed.file_object not in (None, 0, req.file_object)
+                    or completed.file_key not in (None, 0, req.file_key)):
+                counts["missing_or_conflicting_identity"] += 1
+                continue
+            counts["pair_shape_only"] += 1
+
+    has_writes = sum(totals[role]["write_requests"] for role in _PASSIVE_ROLES)
+    if not has_writes:
+        return receipt("NO_SELECTED_WRITE_REQUESTS")
+    unresolved = sum(totals[role][metric] for role in _PASSIVE_ROLES
+                     for metric in _PASSIVE_METRICS[2:])
+    if unresolved:
+        return receipt("UNRESOLVED_FILEIO_REQUEST_SHAPES")
+    return receipt("NONE")
 
 
 def review_private_write_pair(
