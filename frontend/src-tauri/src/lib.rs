@@ -16,6 +16,7 @@ use tauri_plugin_dialog::DialogExt;
 
 mod report_file;
 mod storage_boundary;
+mod desktop_profile;
 
 #[derive(Clone, Serialize)]
 struct BackendConnection {
@@ -762,6 +763,30 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(DesktopState::default())
         .manage(NativeCloseState::default())
+        .setup(|app| {
+            // Only the production main window is deferred in tauri.conf.json.
+            // Isolated QA configurations retain their own existing startup paths.
+            if app.config().identifier == "com.pilotodin.studio" {
+                let config = app.config().app.windows.iter()
+                    .find(|window| window.label == "main")
+                    .ok_or_else(|| std::io::Error::other("Missing production main window configuration"))?
+                    .clone();
+                if config.create || app.get_webview_window("main").is_some() {
+                    return Err(std::io::Error::other("Production window must be deferred").into());
+                }
+                let root = app.path().app_local_data_dir()?;
+                let (profile, lease) = desktop_profile::prepare_production_profile(&root)
+                    .map_err(std::io::Error::other)?;
+                // Retain the lease in application state, not a temporary setup variable.
+                if !app.manage(lease) {
+                    return Err(std::io::Error::other("Desktop profile ownership already registered").into());
+                }
+                tauri::WebviewWindowBuilder::from_config(app.handle(), &config)?
+                    .data_directory(profile)
+                    .build()?;
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             launch_backend, launch_bundled_ai, save_report_as,
             resolve_native_close_request, confirm_native_close, confirm_native_project_switch,

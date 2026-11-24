@@ -75,6 +75,17 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         config = json.loads(CONFIG.read_text(encoding="utf-8"))
         main = config["app"]["windows"][0]
         self.assertNotIn("dataDirectory", main)
+        self.assertIs(main.get("create"), False)
+        setup = slice_between(src, ".setup(|app| {", ".invoke_handler(")
+        self.assertIn('app.config().identifier == "com.pilotodin.studio"', setup)
+        self.assertLess(setup.index("prepare_production_profile(&root)"), setup.index("app.manage(lease)"))
+        self.assertLess(setup.index("app.manage(lease)"), setup.index(".data_directory(profile)"))
+        self.assertLess(setup.index(".data_directory(profile)"), setup.index(".build()?"))
+        profile = RUST.with_name("desktop_profile.rs").read_text(encoding="utf-8")
+        self.assertIn("reject_registry_overrides()?", profile)
+        self.assertIn(".share_mode(0)", profile)
+        self.assertIn("info.links != 1", profile)
+        self.assertNotIn("set_var(", profile)
         self.assertNotIn("appDirectoriesOverride", config["app"])
 
 

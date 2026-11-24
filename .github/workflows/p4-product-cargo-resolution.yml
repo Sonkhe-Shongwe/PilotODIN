@@ -1,0 +1,55 @@
+name: P4 product Rust dependency resolution (metadata only)
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - '.github/workflows/p4-product-cargo-resolution.yml'
+      - 'frontend/src-tauri/Cargo.toml'
+      - 'frontend/src-tauri/Cargo.lock'
+permissions:
+  contents: read
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Resolve registry metadata only, never build or run any crate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cd frontend/src-tauri
+          cargo --version
+          if [ ! -f Cargo.lock ]; then
+            cargo generate-lockfile
+          fi
+          cargo metadata --locked --no-deps --format-version 1 > "$RUNNER_TEMP/pilotodin-cargo-metadata.json"
+          python - <<'PY'
+          import base64, hashlib, pathlib, tomllib
+          raw = pathlib.Path("Cargo.lock").read_bytes()
+          lock = tomllib.loads(raw.decode("utf-8"))
+          expected = {"tauri":"2.12.7","tauri-build":"2.7.6",
+                      "tauri-plugin-shell":"2.6.0","tauri-plugin-dialog":"2.8.4",
+                      "tauri-utils":"2.10.4","tauri-runtime":"2.12.4",
+                      "tauri-runtime-wry":"2.12.5","wry":"0.57.3",
+                      "webview2-com":"0.39.1"}
+          packages = lock["package"]
+          for name, version in expected.items():
+              actual = sorted(p["version"] for p in packages if p["name"] == name)
+              print("LOCK-VERSION", name, ",".join(actual))
+              if actual != [version]:
+                  raise SystemExit("Historical core version mismatch: " + name)
+          for p in packages:
+              if "source" in p and (not p["source"].startswith("registry+https://github.com/rust-lang/crates.io-index")
+                                    or len(p.get("checksum", "")) != 64):
+                  raise SystemExit("Unexpected registry source or missing checksum")
+          print("LOCK-SHA256", hashlib.sha256(raw).hexdigest(), len(raw), len(packages))
+          data = base64.b64encode(raw).decode("ascii")
+          for i in range(0, len(data), 1600):
+              print("LOCK-CHUNK", i//1600, data[i:i+1600])
+          print("LOCK-END", (len(data)+1599)//1600)
+          PY
+          test ! -d target
