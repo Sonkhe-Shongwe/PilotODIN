@@ -1,4 +1,4 @@
-"""B2 model artifact staging and publication. No model deserialization here."""
+"""B2 verified model artifact staging, publication and private-snapshot loading."""
 from __future__ import annotations
 
 from contextlib import closing, ExitStack
@@ -65,16 +65,23 @@ def _sync_directory(path, verify):
     verify()
 
 
+class ArtifactBudgetExceeded(Error):
+    """The serialized payload exceeds a configured capacity limit."""
+
+
 class _BoundedWriter:
     """A sequential file-like sink, bounding serialized bytes during dump."""
-    def __init__(self, file, limit):
+    def __init__(self, file, limit, *, aggregate_limited=False):
         self.file=file
         self.limit=limit
+        self.aggregate_limited=aggregate_limited
         self.count=0
 
     def write(self, data):
         if self.count+len(data)>self.limit:
-            raise Error("Model artifact byte budget exceeded")
+            if self.aggregate_limited:
+                raise ArtifactBudgetExceeded("Experiment artifact byte budget exceeded. Choose fewer model candidates or a reviewed smaller dataset and retry; existing data is unchanged.")
+            raise ArtifactBudgetExceeded("Model artifact byte budget exceeded. Choose a less costly model or a reviewed smaller dataset and retry; existing data is unchanged.")
         written=self.file.write(data)
         if written!=len(data):
             raise OSError("Incomplete model artifact write")
@@ -197,7 +204,7 @@ def _settle(receipt, results, error):
         if row["status"]=="completed" or current.state not in ("intent","staged","publishing"):
             raise Error("Model publication outcome unconfirmed")
         reason=("cancelled" if isinstance(error,storage.TrainingInterrupted) else
-                "storage_unavailable" if isinstance(error,OSError) else "integrity_mismatch")
+                "storage_unavailable" if isinstance(error,(OSError,ArtifactBudgetExceeded)) else "integrity_mismatch")
         ledger.advance(con,current,"interrupted",reason=reason)
         return None
 
@@ -240,7 +247,8 @@ def publish(eid, config, source_sha256, results, pipes, holdout):
                     checkpoint()
                     destination=stage/name
                     with _exclusive(destination,verify_stage,owned) as output:
-                        bounded=_BoundedWriter(output,min(ledger.MAX_FILE_BYTES,remaining))
+                        bounded=_BoundedWriter(output,min(ledger.MAX_FILE_BYTES,remaining),
+                                               aggregate_limited=remaining<ledger.MAX_FILE_BYTES)
                         joblib.dump(objects[name],bounded)
                         output.flush()
                         os.fsync(output.fileno())

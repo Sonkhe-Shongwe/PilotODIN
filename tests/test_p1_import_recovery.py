@@ -828,3 +828,25 @@ def test_verified_load_disk_fills_after_admission_defers_without_deserializing(m
     assert storage.get_experiment(experiment["id"])["status"] == "completed"
     assert not list((home / "backend-temp").iterdir())
     assert (home / "models" / experiment["id"] / "ridge.joblib").read_bytes() == b"inert model"
+
+@pytest.mark.parametrize("overflow", [False, True])
+def test_model_publication_aggregate_byte_boundary(monkeypatch, tmp_path, overflow):
+    home, eid, config, results, digest = _fresh_model_worker(monkeypatch, tmp_path)
+    monkeypatch.setattr(model_publication, "MAX_FILE_BYTES", 8)
+    monkeypatch.setattr(model_publication, "MAX_TOTAL_BYTES", 12)
+    model, holdout = b"12345678", b"12345" if overflow else b"1234"
+    if overflow:
+        with pytest.raises(model_artifacts.ArtifactBudgetExceeded, match="Choose fewer model candidates"):
+            model_artifacts.publish(eid, config, digest, results, {"ridge": model}, holdout)
+        with storage.connect() as con:
+            receipt = model_publication.read(con, eid)
+            assert receipt.state == "interrupted"
+            assert receipt.reason_code == "storage_unavailable"
+        assert storage.get_experiment(eid)["status"] == "running"
+        assert not (home / "models" / eid).exists()
+        assert not (home / "models" / (eid + ".publishing")).exists()
+    else:
+        receipt = model_artifacts.publish(eid, config, digest, results, {"ridge": model}, holdout)
+        assert receipt.state == "committed"
+        assert sum(item["size"] for item in receipt.files.values()) == 12
+        assert storage.get_experiment(eid)["status"] == "completed"

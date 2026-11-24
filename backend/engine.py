@@ -13,9 +13,10 @@ import numpy as np
 import pandas as pd
 
 try:
-    from . import import_preflight
+    from . import import_preflight, model_publication
 except ImportError:  # Support the existing direct-module backend import path.
     import import_preflight
+    import model_publication
 
 if TYPE_CHECKING:
     from sklearn.pipeline import Pipeline
@@ -427,7 +428,11 @@ def training_resource_plan(X: pd.DataFrame, labelled_rows: int, models: list[str
                                    "knn":MAX_NEIGHBOUR_MODEL_ROWS},
         "estimated_dense_mb_limit":MAX_DENSE_TRAIN_BYTES//(1024*1024),
         "within_local_budget":bool(labelled_rows<=model_row_limit and estimated<=MAX_DENSE_TRAIN_BYTES),
-        "note":"Conservative upper-bound dense matrix for all labelled rows, including uneven group splits; model, CV, pandas and OS overhead are additional. Not a peak RAM measurement."
+        "note":("Conservative upper-bound dense matrix for all labelled rows, including uneven group splits; model, CV, pandas and OS overhead are additional. Not a peak RAM measurement. "
+                f"Saving fitted models and held-out data separately requires at most {model_publication.MAX_FILE_BYTES // (1024*1024)} MiB per artifact "
+                f"and {model_publication.MAX_TOTAL_BYTES // (1024*1024)} MiB per experiment. "
+                "Serialized size is checked during saving, not predicted by this training estimate. "
+                "Large ensembles or neighbour models may exceed the storage budget even when this estimate passes.")
     }
 
 

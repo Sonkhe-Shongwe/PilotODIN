@@ -551,3 +551,15 @@ def test_p4_76_worker_forwards_persisted_strategy_without_fitting(monkeypatch):
     assert "no-fit sentinel" in captured["terminal"][1]["error"]
     assert frame.equals(pd.DataFrame({"amount": [1.0, None, 2.0],
                                       "churn": ["Y", "N", "Y"]}))
+
+def test_training_resource_note_discloses_separate_publication_budget_without_fitting(monkeypatch):
+    from backend import model_publication
+    monkeypatch.setattr(model_publication, "MAX_FILE_BYTES", 128 * 1024 * 1024)
+    monkeypatch.setattr(model_publication, "MAX_TOTAL_BYTES", 768 * 1024 * 1024)
+    frame = pd.DataFrame({"amount": range(40)})
+    plan = main.engine.training_resource_plan(frame, 40, ["random_forest"])
+    assert plan["within_local_budget"]
+    assert "128 MiB per artifact" in plan["note"]
+    assert "768 MiB per experiment" in plan["note"]
+    assert "checked during saving" in plan["note"]
+    assert "not predicted by this training estimate" in plan["note"]
