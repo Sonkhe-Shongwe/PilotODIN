@@ -404,6 +404,105 @@ assert storage.list_projects() == []
                 self.fail("Missing database admitted")
         self.assertEqual(list(self.home.iterdir()), [])
 
+    def test_unleased_named_runtime_roots_and_modes_refused_before_creation(self):
+        from unittest.mock import patch
+        from backend.workspace_boundary import storage_home
+        protected = [
+            self.root / ".pilotodin-dev-data",
+            self.root / "com.pilotodin.studio" / "data",
+            self.root_source / "data",
+            self.root / "pilotodin-p1-real-http-123",
+            self.root / "P4-71-only-home-123",
+            self.root / "PilotODIN" / "DevQA" / "runs" /
+            "P2-NATIVE-CHAIN-20261124T100000Z-0123456789" / "workspace",
+        ]
+        with patch.dict(os.environ, {"PILOTODIN_DESKTOP_SESSION": "", "PILOTODIN_SERVER_MODE": ""}):
+            for path in protected:
+                with self.subTest(path=str(path)), self.assertRaisesRegex(
+                        WorkspaceBoundaryError, "requires writer ownership"):
+                    storage_home(str(path))
+            self.assertEqual(list(self.root.iterdir()), [])
+            for key, value in (("PILOTODIN_SERVER_MODE", "dev"),
+                               ("PILOTODIN_DESKTOP_SESSION", "fixture-token")):
+                with patch.dict(os.environ, {key: value}):
+                    with self.assertRaisesRegex(WorkspaceBoundaryError, "requires writer ownership"):
+                        storage_home(str(self.home))
+                self.assertFalse(self.home.exists())
+            with engine_workspace(str(self.home)):
+                pass
+            with self.assertRaisesRegex(WorkspaceBoundaryError, "requires writer ownership"):
+                storage_home(str(self.home))
+            self.assertEqual({p.name for p in self.home.iterdir()}, {LOCK_NAME})
+            disposable = self.root / "explicit-disposable"
+            self.assertEqual(storage_home(str(disposable)), disposable)
+            self.assertTrue(disposable.is_dir())
+
+    def test_owned_scratch_configuration_and_replacement_refusal(self):
+        code = r"""
+import os, sys, tempfile
+from pathlib import Path
+from backend.workspace_boundary import hold_process_workspace, configure_process_scratch
+home = hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+configure_process_scratch(home)
+from backend import main, storage
+from fastapi.testclient import TestClient
+scratch = home / "backend-temp"
+assert Path(tempfile.gettempdir()) == scratch
+assert all(os.environ[key] == str(scratch) for key in ("TEMP","TMP","TMPDIR","JOBLIB_TEMP_FOLDER"))
+with tempfile.NamedTemporaryFile() as handle:
+    assert Path(handle.name).parent == scratch
+client = TestClient(main.app)
+assert client.get("/api/health").status_code == 200
+os.environ["TMP"] = str(home.parent)
+assert client.get("/api/health").status_code == 503
+os.environ["TMP"] = str(scratch)
+scratch.rename(home / "original-backend-temp")
+scratch.mkdir()
+response = client.post("/api/projects", files={"file": ("fixture.csv", b"a,b\n1,2\n", "text/csv")})
+assert response.status_code == 503, response.text
+assert not list((home / "datasets").iterdir())
+assert not list(scratch.iterdir())
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            env={**os.environ, "PILOTODIN_DESKTOP_SESSION": "", "PILOTODIN_SERVER_MODE": ""},
+            timeout=30, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_owned_database_and_write_refuse_changed_ancestor_identity(self):
+        code = r"""
+import os, sys
+from pathlib import Path
+from unittest.mock import patch
+from backend import workspace_boundary as boundary
+home = boundary.hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+from backend import storage
+replacement = home.parent / "replacement"
+replacement.mkdir()
+original = boundary._directory
+def changed(path):
+    return original(replacement) if path == home.parent else original(path)
+with patch.object(boundary, "_directory", side_effect=changed):
+    for call in (storage.connect, lambda: storage.check_write_path(home / "datasets" / "x.csv", absent=True)):
+        try:
+            call()
+        except boundary.WorkspaceBoundaryError as exc:
+            assert "ancestor identity changed" in str(exc)
+        else:
+            raise AssertionError("Changed ancestor admitted")
+assert not (home / "datasets" / "x.csv").exists()
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=30, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()

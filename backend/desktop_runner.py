@@ -57,9 +57,12 @@ def main() -> int:
             return 2
     # The writer lease must precede backend.main/storage import, schema
     # initialization and interrupted-experiment recovery, and outlive server.run.
-    from backend.workspace_boundary import WorkspaceBoundaryError, hold_process_workspace
+    from backend.workspace_boundary import (
+        WorkspaceBoundaryError, hold_process_workspace, configure_process_scratch,
+    )
     try:
         owned_home = hold_process_workspace(home)
+        configure_process_scratch(owned_home)
     except WorkspaceBoundaryError as exc:
         print(str(exc), file=sys.stderr)
         return 2

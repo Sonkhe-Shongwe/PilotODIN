@@ -72,6 +72,17 @@ def _allowed_desktop_origin(origin: str) -> bool:
 
 
 @app.middleware("http")
+async def workspace_scratch_guard(request: Request, call_next):
+    # Registered inside the desktop authentication guard. Refuse before
+    # multipart parsing or endpoint-level third-party temporary file writes.
+    try:
+        storage.check_scratch()
+    except storage.WorkspaceBoundaryError:
+        return JSONResponse({"detail": "Workspace scratch unavailable or unsafe"}, status_code=503)
+    return await call_next(request)
+
+
+@app.middleware("http")
 async def desktop_session_guard(request: Request, call_next):
     secret = os.environ.get("PILOTODIN_DESKTOP_SESSION", "")
     if not secret:

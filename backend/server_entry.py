@@ -14,7 +14,7 @@ import re
 
 from backend.workspace_boundary import (
     LOCK_NAME, WorkspaceBoundaryError, existing_fixture_file,
-    existing_fixture_home, hold_process_workspace,
+    existing_fixture_home, hold_process_workspace, configure_process_scratch,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -187,5 +187,6 @@ def owned_app():
         if _local_fixture_home(os.environ, owned) != owned:
             raise WorkspaceBoundaryError("Local fixture workspace changed")
     os.environ["PILOTODIN_HOME"] = str(owned)
+    configure_process_scratch(owned)
     from backend.main import app
     return app

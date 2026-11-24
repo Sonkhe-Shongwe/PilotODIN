@@ -178,6 +178,8 @@ def existing_maintenance_workspace(value):
 _process_lease = None
 _process_workspace = None
 _process_directories = {}
+_process_ancestors = {}
+_process_scratch = None
 
 
 def _database_identity(home, previous=None):
@@ -232,6 +234,12 @@ def hold_process_workspace(value):
         _same_lock(fd, home / LOCK_NAME)
         _verify_entries(canonical)
         database_identity = _database_identity(canonical)
+        ancestor_identities = {}
+        for parent in reversed(canonical.parents):
+            identity = _directory(parent)
+            if not identity.st_ino:
+                raise WorkspaceBoundaryError("Workspace ancestor identity unverified")
+            ancestor_identities[parent] = identity
         directory_identities = {}
         for name in DIRECTORIES:
             try:
@@ -246,6 +254,7 @@ def hold_process_workspace(value):
     _process_lease = lease
     _process_workspace = (canonical, fd, root_identity, database_identity)
     _process_directories.update(directory_identities)
+    _process_ancestors.update(ancestor_identities)
     atexit.register(lease.__exit__, None, None, None)
     return canonical
 
@@ -290,17 +299,63 @@ def hold_fresh_fixture_workspace(value, expected):
     return owned
 
 
+def _reject_unleased_runtime(path):
+    """Prevent the compatibility import seam selecting named owned roots.
+
+    This is a product entrypoint rule, not authentication of arbitrary
+    Python code or proof that every other absolute path is disposable.
+    """
+    if (os.environ.get("PILOTODIN_SERVER_MODE")
+            or os.environ.get("PILOTODIN_DESKTOP_SESSION")):
+        raise WorkspaceBoundaryError("Runtime workspace requires writer ownership")
+    parts = tuple(part.casefold() for part in path.parts)
+    checkout_data = Path(__file__).resolve().parents[1] / "data"
+    if (path.is_relative_to(checkout_data)
+            or any(part == ".pilotodin-dev-data" or part.startswith("com.pilotodin.")
+                   for part in parts)
+            or any(re.fullmatch(r"pilotodin-p1-real-http-[0-9]+|p4-71-only-home-[0-9]+", part)
+                   for part in parts)):
+        raise WorkspaceBoundaryError("Runtime workspace requires writer ownership")
+    # The five managed native QA phases also require the owned entrypoint.
+    # Other historical disposable in-process QA fixtures are not promoted
+    # to runtime authority by this compatibility rule.
+    for i in range(len(parts) - 3):
+        if parts[i:i+3] == ("pilotodin", "devqa", "runs"):
+            if re.fullmatch(
+                r"p(?:2-native-(?:chain|deliver-consent|two-window-deliver)|3-native-(?:semantic-context|quality-w5))-[0-9]{8}t[0-9]{6}z-[a-f0-9]{10}",
+                parts[i+3],
+            ):
+                raise WorkspaceBoundaryError("Runtime workspace requires writer ownership")
+
+
 def storage_home(value):
     """Require an explicit home; leased storage uses the admitted path."""
     if not isinstance(value, str) or not value:
         raise WorkspaceBoundaryError("Explicit local workspace required")
     if _process_workspace is None:
-        # Compatibility for isolated in-process callers. Never resolve away
-        # a redirect before validating the supplied spelling and ancestors.
-        # This preflight is not an exclusive lease.
+        supplied = Path(value)
+        if not supplied.is_absolute() or ".." in supplied.parts:
+            raise WorkspaceBoundaryError("Explicit local workspace required")
+        _reject_unleased_runtime(supplied)
         try:
-            supplied = _home(value)
-            canonical = existing_fixture_home(str(supplied))
+            # Before creating a missing final directory, check the physically
+            # validated parent's canonical spelling as well as the input.
+            try:
+                _home(value, create=False)
+            except FileNotFoundError:
+                parent = existing_fixture_home(str(supplied.parent))
+                _reject_unleased_runtime(parent / supplied.name)
+                _home(value)
+            canonical = existing_fixture_home(value)
+            _reject_unleased_runtime(canonical)
+            try:
+                (canonical / LOCK_NAME).lstat()
+            except FileNotFoundError:
+                pass
+            else:
+                # A marker is not evidence of a live lock; it identifies a
+                # workspace that must be reopened through its owned route.
+                raise WorkspaceBoundaryError("Runtime workspace requires writer ownership")
             _verify_entries(canonical)
             return canonical
         except OSError as exc:
@@ -309,6 +364,14 @@ def storage_home(value):
     if Path(value) != owned:
         raise WorkspaceBoundaryError("Database outside owned workspace")
     return owned
+
+
+def _validate_owned_ancestors(owned):
+    for parent in reversed(owned.parents):
+        current = _directory(parent)
+        previous = _process_ancestors.get(parent)
+        if previous is None or not current.st_ino or not os.path.samestat(previous, current):
+            raise WorkspaceBoundaryError("Workspace ancestor identity changed")
 
 
 def validate_process_database(home, database):
@@ -326,8 +389,7 @@ def validate_process_database(home, database):
     if Path(home) != owned or Path(database) != owned / "pilotodin.sqlite3":
         raise WorkspaceBoundaryError("Database outside owned workspace")
     try:
-        for parent in reversed(owned.parents):
-            _directory(parent)
+        _validate_owned_ancestors(owned)
         current = _directory(owned)
         if not current.st_ino or not os.path.samestat(root_identity, current):
             raise WorkspaceBoundaryError("Workspace identity changed")
@@ -362,13 +424,12 @@ def validate_process_write(home, path, *, directory=False, missing=False,
                  (root in ("ai_settings.json", "ai_settings.tmp", "ai_secrets.dpapi",
                            "resource_preferences.json", "r03-benchmark.jsonl")
                   or re.fullmatch(r"\.(?:secrets|resource-policy)-[A-Za-z0-9_-]+\.tmp", root)))
-    if not root_file and root not in ("datasets", "models", "export_tmp"):
+    if not root_file and root not in ("datasets", "models", "export_tmp", "backend-temp"):
         raise WorkspaceBoundaryError("Unexpected workspace write path")
     if not root_file and len(parts) == 1 and not directory:
         raise WorkspaceBoundaryError("Expected workspace directory")
     try:
-        for parent in reversed(owned.parents):
-            _directory(parent)
+        _validate_owned_ancestors(owned)
         current = _directory(owned)
         if not current.st_ino or not os.path.samestat(root_identity, current):
             raise WorkspaceBoundaryError("Workspace identity changed")
@@ -404,3 +465,43 @@ def validate_process_write(home, path, *, directory=False, missing=False,
         return info
     except OSError as exc:
         raise WorkspaceBoundaryError("Workspace write path unavailable or unsafe") from exc
+
+
+def configure_process_scratch(home):
+    """Bind ordinary Python temporary-file defaults to owned backend scratch.
+
+    PyInstaller extraction happens before Python entry; the Rust launcher
+    must still supply its pre-spawn TEMP/TMP/TMPDIR. This cannot constrain
+    every third-party native DLL or an explicitly overridden temp path.
+    """
+    global _process_scratch
+    if _process_workspace is None:
+        return
+    path = Path(home) / "backend-temp"
+    validate_process_write(home, path, directory=True, missing=True)
+    try:
+        path.mkdir(exist_ok=True)
+    except OSError as exc:
+        raise WorkspaceBoundaryError("Backend scratch unavailable or unsafe") from exc
+    validate_process_write(home, path, directory=True)
+    import tempfile
+    for key in ("TEMP", "TMP", "TMPDIR", "JOBLIB_TEMP_FOLDER"):
+        os.environ[key] = str(path)
+    tempfile.tempdir = str(path)
+    _process_scratch = path
+
+
+def validate_process_scratch(home):
+    """Check the configured scratch identity before accepting API work."""
+    if _process_workspace is None:
+        return
+    path = _process_scratch
+    if path is None:
+        raise WorkspaceBoundaryError("Backend scratch is not admitted")
+    validate_process_write(home, path, directory=True)
+    import tempfile
+    if tempfile.tempdir != str(path) or any(
+        os.environ.get(key) != str(path)
+        for key in ("TEMP", "TMP", "TMPDIR", "JOBLIB_TEMP_FOLDER")
+    ):
+        raise WorkspaceBoundaryError("Backend scratch configuration changed")

@@ -11,18 +11,25 @@ from pathlib import Path
 try:
     from . import sqlite_fk_gate
     from .workspace_boundary import (WorkspaceBoundaryError, storage_home,
-                                     validate_process_database, validate_process_write)
+                                     validate_process_database, validate_process_write,
+                                     configure_process_scratch, validate_process_scratch)
 except ImportError:
     import sqlite_fk_gate
     from workspace_boundary import (WorkspaceBoundaryError, storage_home,
-                                    validate_process_database, validate_process_write)
+                                    validate_process_database, validate_process_write,
+                                    configure_process_scratch, validate_process_scratch)
 
 # No implicit checkout data root. Product entrypoints establish ownership
 # before import; isolated in-process tests must supply an explicit home.
 HOME = storage_home(os.environ.get("PILOTODIN_HOME"))
 DB_PATH = HOME / "pilotodin.sqlite3"
 validate_process_database(HOME, DB_PATH)
+configure_process_scratch(HOME)
 HOME.mkdir(parents=True,exist_ok=True)
+
+
+def check_scratch():
+    validate_process_scratch(HOME)
 
 
 def check_write_path(path, **options):
