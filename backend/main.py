@@ -38,6 +38,9 @@ async def _lifespan(_app:FastAPI):
     model_receipts=storage.recover_model_publications()
     if model_receipts:
         logging.warning("Reconciled %s unfinished model publication receipt(s)",model_receipts)
+    export_receipts=storage.recover_export_publications()
+    if export_receipts:
+        logging.warning("Reconciled %s unfinished export receipt(s)",export_receipts)
     recovered=storage.recover_interrupted_experiments()
     if recovered:
         logging.warning("Marked %s unfinished ML experiment(s) failed after backend restart",recovered)

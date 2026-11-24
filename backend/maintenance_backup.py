@@ -18,7 +18,7 @@ import sqlite3
 import time
 
 try:
-    from . import artifact_publication, model_publication
+    from . import artifact_publication, model_publication, export_publication
     from .workspace_boundary import (
         existing_fixture_home, existing_fixture_file,
         existing_maintenance_workspace, pinned_existing_directory,
@@ -28,6 +28,7 @@ try:
 except ImportError:
     import artifact_publication
     import model_publication
+    import export_publication
     from workspace_boundary import (
         existing_fixture_home, existing_fixture_file,
         existing_maintenance_workspace, pinned_existing_directory,
@@ -260,6 +261,11 @@ def _inventory(con, source, verify, checkpoint, *, recorded_source=None):
     # During independent verification the recorded absolute location is a
     # logical binding only: never resolve or open the original workspace.
     recorded_source = source if recorded_source is None else recorded_source
+    # Export payloads are temporary transfers, not committed project artifacts.
+    # Retain terminal receipt metadata in SQLite; refuse unsettled transfers
+    # rather than silently making a backup that implies a completed release.
+    if export_publication.validate_existing_schema(con) and export_publication.pending_page(con, limit=1):
+        raise SnapshotBlocked("Unsettled export transfer; recovery required")
     plan = {}
     projects = {}
     folded = set()

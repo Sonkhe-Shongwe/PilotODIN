@@ -10,13 +10,13 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 try:
-    from . import artifact_publication, model_publication, sqlite_fk_gate
+    from . import artifact_publication, model_publication, export_publication, sqlite_fk_gate
     from .workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                      validate_process_database, validate_process_write,
                                      configure_process_scratch, validate_process_scratch,
                                      pin_process_model_directory)
 except ImportError:
-    import artifact_publication, model_publication, sqlite_fk_gate
+    import artifact_publication, model_publication, export_publication, sqlite_fk_gate
     from workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                     validate_process_database, validate_process_write,
                                     configure_process_scratch, validate_process_scratch,
@@ -171,6 +171,7 @@ def init():
         """)
         artifact_publication.ensure_schema(conn)
         model_publication.ensure_schema(conn)
+        export_publication.ensure_schema(conn)
         if fresh_database:
             sqlite_fk_gate.certify_new_schema(conn)
 
@@ -871,6 +872,31 @@ def recover_model_publications():
                 else:
                     model_publication.advance(con, receipt, "interrupted", reason="interrupted_before_commit")
                 count += 1
+
+
+def begin_export_publication(project_id, version, format):
+    """Durable intent before a coordinator creates any export payload."""
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        return export_publication.insert_intent(con, uid(), project_id, version, format)
+
+
+def advance_export_publication(receipt, state, **metadata):
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        return export_publication.advance(con, receipt, state, **metadata)
+
+
+def recover_export_publications():
+    """Startup only, under the existing owned backend lifecycle.
+
+    connect() validates the admitted process database. Like existing recovery
+    helpers, disposable in-process tests may supply a temporary explicit home.
+    Recovery never opens or deletes scratch files.
+    """
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        return export_publication.reconcile_pending(con)
 
 
 def recover_interrupted_experiments():

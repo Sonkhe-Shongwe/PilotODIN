@@ -22,6 +22,8 @@ COUNTS: tuple[tuple[str, str, str, str], ...] = (
     # Publication receipts are durable history, not deletion permission.
     ("artifact_publications_v1", "Dataset publication receipts", "artifact_publications_v1",
      "SELECT COUNT(*) FROM artifact_publications_v1 WHERE kind='dataset' AND subject_id=?"),
+    ("export_publications_v1", "Export transfer receipts (retained history)", "export_publications_v1",
+     "SELECT COUNT(*) FROM export_publications_v1 WHERE subject_id=?"),
     ("project_lifecycle", "Lifecycle metadata", "project_lifecycle",
      "SELECT COUNT(*) FROM project_lifecycle WHERE project_id=?"),
     ("quality_state", "Quality state", "quality_state",

@@ -28,13 +28,13 @@ TERMINAL = frozenset(("released", "interrupted", "blocked"))
 REASONS = frozenset(("validation_failed", "interrupted_before_release",
                      "cancelled", "collision", "unsafe_identity",
                      "integrity_mismatch", "storage_unavailable", "unknown_commit"))
-_COLUMNS = ("operation_id,project_id,quality_version,format,schema_version,"
+_COLUMNS = ("operation_id,subject_id,quality_version,format,schema_version,"
             "expected_bytes,sha256,state,reason_code,created_at,updated_at")
 _DDL = """CREATE TABLE export_publications_v1 (
     operation_id TEXT NOT NULL PRIMARY KEY
         CHECK(length(operation_id)=32 AND operation_id NOT GLOB '*[^0-9a-f]*'),
-    project_id TEXT NOT NULL
-        CHECK(length(project_id)=32 AND project_id NOT GLOB '*[^0-9a-f]*'),
+    subject_id TEXT NOT NULL
+        CHECK(length(subject_id)=32 AND subject_id NOT GLOB '*[^0-9a-f]*'),
     quality_version INTEGER NOT NULL
         CHECK(typeof(quality_version)='integer' AND quality_version>=0),
     format TEXT NOT NULL CHECK(format IN ('csv','xlsx')),
@@ -64,10 +64,23 @@ def ensure_schema(con):
             raise PublicationError("Incompatible export publication schema")
 
 
+def validate_existing_schema(con):
+    """Read-only backup compatibility; absent ledger is a valid old database."""
+    table = con.execute("SELECT type,sql FROM sqlite_master WHERE name=?", (TABLE,)).fetchone()
+    index = con.execute("SELECT type,sql FROM sqlite_master WHERE name=?", (INDEX,)).fetchone()
+    if table is None and index is None:
+        return False
+    if (table is None or index is None or table[0] != "table" or index[0] != "index"
+            or _sql_shape(table[1]) != _sql_shape(_DDL)
+            or _sql_shape(index[1]) != _sql_shape(_INDEX_DDL)):
+        raise PublicationError("Incompatible export publication schema")
+    return True
+
+
 @dataclass(frozen=True)
 class Receipt:
     operation_id: str
-    project_id: str
+    subject_id: str
     quality_version: int
     format: str
     schema_version: int
@@ -80,7 +93,7 @@ class Receipt:
 
     def validate(self):
         if (not isinstance(self.operation_id,str) or not _ID.fullmatch(self.operation_id)
-                or not isinstance(self.project_id,str) or not _ID.fullmatch(self.project_id)
+                or not isinstance(self.subject_id,str) or not _ID.fullmatch(self.subject_id)
                 or type(self.quality_version) is not int or self.quality_version < 0
                 or self.format not in ("csv","xlsx") or type(self.schema_version) is not int
                 or self.schema_version != 1 or self.state not in NONTERMINAL | TERMINAL
@@ -102,6 +115,11 @@ class Receipt:
         elif self.reason_code is not None:
             raise PublicationError("Unexpected export reason")
         return self
+
+    @property
+    def project_id(self):
+        """Historical subject, not a live project foreign key."""
+        return self.subject_id
 
     @property
     def filename(self):
