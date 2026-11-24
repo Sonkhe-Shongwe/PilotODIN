@@ -362,8 +362,23 @@ def _stage_payloads(source, destination, database_receipt, verify, checkpoint):
                 continue
             directory = destination / parent
             if directory not in directories:
-                directory.mkdir(exist_ok=False)
-                directories[directory] = directory.lstat()
+                # Validate the original parent identity BEFORE creating any
+                # child, not only when opening the subsequent payload file.
+                with pinned_existing_directory(directory.parent,
+                                               expected=directories.get(directory.parent)) as verify_parent:
+                    verify()
+                    verify_parent()
+                    directory.mkdir(exist_ok=False)
+                    identity = directory.lstat()
+                    with pinned_existing_directory(directory, expected=identity) as verify_created:
+                        verify_parent()
+                        verify_created()
+                        verify()
+                    directories[directory] = identity
+            else:
+                with pinned_existing_directory(directory, expected=directories[directory]) as verify_existing:
+                    verify()
+                    verify_existing()
         with pinned_existing_directory(path.parent) as verify_input:
             with pinned_existing_directory(target.parent, expected=directories[target.parent]) as verify_output:
                 def verify_copy():

@@ -1013,3 +1013,31 @@ def test_b3_invalid_references_do_not_publish_manifest(monkeypatch, tmp_path, fa
     assert not (target / "manifest.json").exists()
     assert (home / "pilotodin.sqlite3").read_bytes() == before
     assert foreign.read_bytes() == _csv()
+
+def test_b3_replaced_stage_parent_blocks_nested_creation(monkeypatch, tmp_path):
+    from backend import maintenance_backup
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage = tmp_path / "backup"
+    unrelated = tmp_path / "unrelated"
+    unrelated.mkdir()
+    original = maintenance_backup.pinned_existing_directory
+    from contextlib import contextmanager
+
+    @contextmanager
+    def replaced(value, **kwargs):
+        path = Path(value)
+        if path == stage / "models" and kwargs.get("expected") is not None:
+            # Replace the parent between the initial mkdir and its admission.
+            # The retained expected identity must prevent nested writes.
+            if not (stage / "displaced-models").exists():
+                path.rename(stage / "displaced-models")
+                path.mkdir()
+        with original(value, **kwargs) as verify:
+            yield verify
+
+    monkeypatch.setattr(maintenance_backup, "pinned_existing_directory", replaced)
+    with pytest.raises(maintenance_backup.SnapshotBlocked):
+        maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    assert not (stage / "manifest.json").exists()
+    assert not (stage / "models" / experiment["id"]).exists()
+    assert not list(unrelated.iterdir())
