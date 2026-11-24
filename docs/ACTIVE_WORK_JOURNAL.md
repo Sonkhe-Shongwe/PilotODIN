@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 1a1ba06037f6916d0007d855a25defb90de8260e |
-| Product baseline | b1e3a14acb69c9053104e092a1b9996f04372f50 |
+| Product baseline | 8ce75779d74eb9820ab94d168a2b7e053489791c |
 | Scope | Owner-approved source-only pinned shell 2.6.0 patch: own-job retained witness, no raw handles or browser API; exact source provenance and local path pin, metadata-only CI. No native compile/run or live grant activation. |
 | Operation ID | C1-C2-INTEGRATION-20261124-owned-job-api |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | third_party/tauri-plugin-shell-2.6.0/**; frontend/src-tauri/Cargo.toml; frontend/src-tauri/Cargo.lock; continuity docs |
 | Approval | Owner: "i approve next" in direct response to narrow source-only pinned shell dependency modification. No native compile/run, model download, installer, owner data or OS operations authorized; B5 approvals consumed. |
-| Verification | 36 exact upstream tag source blobs matched before three modifications; local path pin, unchanged package version/other lock packages, own-job accounting/termination. Metadata-only CI pending; no native compile/runtime. |
-| Pending runs | Exact metadata-only CI discovery pending. |
+| Verification | 36 upstream tag blobs exact before modifications; 33 unchanged after patch. P4 metadata-only #45482016627/job 138757366105 SUCCESS exact 8ce7577; locked core versions retained, 457 packages, lock SHA256 f9f386f75fee57b20ebf25d24ac25849c74b424e47c08f674d3b6988d3c9d0bf. No target directory/native compile/run. |
+| Pending runs | None; [#45482016627](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45482016627) terminal success, exact checkout verified. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish narrow reviewed vendored shell source and local path pin; reconcile metadata-only CI, then actual host polling/termination proof and runner/frontend integration. Do not activate shared grants until complete. |
+| Recovery action | Actual consolidated native host integration: retain OwnedJob on backend/inference ownership before moving child to writer, terminate exact job without consuming witness, join startup/leader/pipe/writer, drop leader references then bounded successful ActiveProcesses==0 before EXITED, no release on timeout/error. Wire demand poll/start/ready/drain/release with runner and frontend in coherent source batch; no partial activation or new native approval. Recheck actual Windows API compile compatibility and group-exit semantics in later separately approved native verification. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
