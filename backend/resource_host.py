@@ -1,0 +1,208 @@
+"""Staged C1 owned host control protocol; no live transport registration.
+
+Only the trusted host/engine composition can supply the private capability.
+A RELEASE is a trusted host assertion, not independent process-exit evidence.
+The host must prove the corresponding child/group exited (or never started).
+A single owned reader dispatches frames and writes replies synchronously.
+Any transport uncertainty is terminal for this session, not a retry signal.
+"""
+from dataclasses import dataclass
+import hmac
+import re
+from uuid import uuid4
+
+try:
+    from .resource_admission import Operation
+except ImportError:
+    from resource_admission import Operation
+
+MAX_FRAME = 4096
+MAX_SEQUENCE = 2147483647
+LEGACY_STOP = b"PILOTODIN_STOP\n"
+_HEX32 = re.compile(r"[0-9a-f]{32}")
+_HEX64 = re.compile(r"[0-9a-f]{64}")
+_SEQ = re.compile(r"[1-9][0-9]{0,9}")
+_DENIALS = frozenset(("resource_busy","ownership_unknown","shutting_down",
+                     "memory_unavailable","policy_unavailable",
+                     "observation_stale","low_memory_headroom"))
+
+
+class ProtocolFault(RuntimeError):
+    """Fixed error message; never include frame bytes or credentials."""
+
+
+def _fault():
+    return ProtocolFault("Owned resource control protocol fault")
+
+
+class FrameReader:
+    """Bounded LF framing over binary chunks; no partial-line publication."""
+    def __init__(self):
+        self._pending = bytearray()
+        self._failed = False
+
+    def feed(self, chunk):
+        if self._failed or type(chunk) is not bytes or not 0 < len(chunk) <= MAX_FRAME:
+            self._failed = True
+            raise _fault()
+        frames = []
+        for byte in chunk:
+            if byte != 10 and not 32 <= byte <= 126:
+                self._failed = True
+                raise _fault()
+            self._pending.append(byte)
+            if byte == 10:
+                if len(self._pending) == 1:
+                    self._failed = True
+                    raise _fault()
+                frames.append(bytes(self._pending))
+                self._pending.clear()
+            elif len(self._pending) >= MAX_FRAME:
+                # There is no room for the required trailing LF.
+                self._failed = True
+                raise _fault()
+        return frames
+
+
+@dataclass(frozen=True, repr=False)
+class Request:
+    sequence: int
+    command: str
+    grant: str | None = None
+    evidence: str | None = None
+
+
+def parse_request(frame, generation, capability):
+    if (type(frame) is not bytes or not 1 < len(frame) <= MAX_FRAME
+            or not frame.endswith(b"\n")):
+        raise _fault()
+    try:
+        line = frame[:-1].decode("ascii")
+    except UnicodeError:
+        raise _fault() from None
+    if any(not 32 <= ord(c) <= 126 for c in line):
+        raise _fault()
+    parts = line.split(" ")
+    if len(parts) < 5 or parts[0] != "POD1":
+        raise _fault()
+    _, gen, secret, seq, command, *args = parts
+    if (not _HEX32.fullmatch(gen) or not _HEX64.fullmatch(secret)
+            or not hmac.compare_digest(gen,generation)
+            or not hmac.compare_digest(secret,capability)
+            or not _SEQ.fullmatch(seq) or int(seq) > MAX_SEQUENCE):
+        raise _fault()
+    sequence = int(seq)
+    if command == "GRANT_REQUEST" and args == ["LOCAL_INFERENCE"]:
+        return Request(sequence,command)
+    if command == "DRAIN" and len(args) == 1 and _HEX32.fullmatch(args[0]):
+        return Request(sequence,command,args[0])
+    if (command == "RELEASE" and len(args) == 2 and _HEX32.fullmatch(args[0])
+            and args[1] in ("NEVER_STARTED","EXITED")):
+        return Request(sequence,command,args[0],args[1])
+    if command == "STOP" and not args:
+        return Request(sequence,command)
+    raise _fault()
+
+
+class HostBroker:
+    """One reader, one generation, one grant, no durable queue or timeout release.
+
+    Call receive() only from the owner of the ordered input stream, and call
+    transport_lost() on EOF, write/flush failure or uncertain reply delivery.
+    Neither a frontend message nor a mere elapsed timeout can release a grant.
+    Not wired to desktop_runner or Tauri yet.
+    """
+    def __init__(self, coordinator, generation, capability):
+        if (type(generation) is not str or not _HEX32.fullmatch(generation)
+                or type(capability) is not str or not _HEX64.fullmatch(capability)):
+            raise ValueError("Invalid owned resource session identity")
+        self.coordinator = coordinator
+        self._generation = generation
+        self._capability = capability
+        self._reader = FrameReader()
+        self._last = 0
+        self._lease = None
+        self._grant = None
+        self._stopping = False
+        self._faulted = False
+
+    def transport_lost(self):
+        self._faulted = True
+        self._stopping = True
+        self.coordinator.begin_shutdown()
+        if self._lease is not None:
+            self.coordinator.block(self._lease)
+
+    def _stop(self):
+        self._stopping = True
+        self.coordinator.begin_shutdown()
+        if self._lease is not None:
+            if not self.coordinator.drain(self._lease):
+                raise _fault()
+
+    def _reply(self, sequence, *fields):
+        return (" ".join(("POD1",self._generation,str(sequence),*fields))+"\n").encode("ascii")
+
+    def _dispatch(self, frame):
+        if frame == LEGACY_STOP:
+            self._stop()
+            return None
+        request = parse_request(frame,self._generation,self._capability)
+        if request.sequence != self._last + 1:
+            raise _fault()
+        self._last = request.sequence
+        seq = request.sequence
+        if request.command == "STOP":
+            self._stop()
+            return self._reply(seq,"STOPPED")
+        if request.command == "GRANT_REQUEST":
+            if self._stopping:
+                return self._reply(seq,"GRANT_REPLY","DENIED","shutting_down")
+            if self._lease is not None:
+                return self._reply(seq,"GRANT_REPLY","DENIED","resource_busy")
+            admission = self.coordinator.try_acquire(Operation.LOCAL_INFERENCE)
+            if not admission.allowed:
+                if admission.code not in _DENIALS:
+                    raise _fault()
+                return self._reply(seq,"GRANT_REPLY","DENIED",admission.code)
+            self._lease = admission.lease
+            # The host may perform integrity verification immediately after
+            # the grant. The lane is RUNNING before the reply is sent.
+            if not self.coordinator.start(self._lease):
+                if not self.coordinator.release(self._lease):
+                    raise _fault()
+                self._lease = None
+                return self._reply(seq,"GRANT_REPLY","DENIED","shutting_down")
+            self._grant = uuid4().hex
+            return self._reply(seq,"GRANT_REPLY","GRANTED",self._grant)
+        if self._lease is None or request.grant != self._grant:
+            raise _fault()
+        if request.command == "DRAIN":
+            if not self.coordinator.drain(self._lease):
+                raise _fault()
+            return self._reply(seq,"DRAINING",self._grant)
+        if request.command == "RELEASE":
+            # Actual start/exit evidence is the responsibility of the
+            # trusted native owner. The wire enum is NOT an exit witness.
+            if not self.coordinator.release(self._lease):
+                raise _fault()
+            grant = self._grant
+            self._lease = None
+            self._grant = None
+            return self._reply(seq,"RELEASED",grant)
+        raise _fault()
+
+    def receive(self, chunk):
+        """Return bounded replies; caller must write/flush before next read."""
+        if self._faulted:
+            raise _fault()
+        try:
+            replies = []
+            for frame in self._reader.feed(chunk):
+                reply = self._dispatch(frame)
+                if reply is not None:
+                    replies.append(reply)
+            return replies
+        except BaseException:
+            self.transport_lost()
+            raise

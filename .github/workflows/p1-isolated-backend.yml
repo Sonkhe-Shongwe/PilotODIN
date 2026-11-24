@@ -15,6 +15,8 @@ on:
       - backend/resource_training.py
       - backend/resource_training_store.py
       - backend/resource_autonomy.py
+      - backend/resource_host.py
+      - tests/test_c1_resource_host.py
       - backend/autonomy.py
       - tests/test_c1_resource_autonomy.py
       - tests/test_c1_resource_training_store.py
@@ -84,3 +86,6 @@ jobs:
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c1-autonomy-${{ github.run_id }}
         run: python -m pytest -q tests/test_c1_resource_autonomy.py tests/test_build_e_autonomous_investigations.py
+
+      - name: Exercise staged C1 owned host protocol without native processes
+        run: python -m pytest -q tests/test_c1_resource_host.py

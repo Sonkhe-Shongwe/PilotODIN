@@ -713,9 +713,8 @@ class OwnedAutonomy:
                 self._pending=False
             raise ResourceDeferred("shutting_down")
         try:
-            thread=threading.Thread(target=_worker,
-                args=(run_id,_no_legacy_planner,self.stages),
-                kwargs={"retain_thread":True},name="odin-owned-investigation",daemon=False)
+            thread=threading.Thread(target=self._entry,
+                args=(run_id,),name="odin-owned-investigation",daemon=False)
             with self._guard:self._thread=thread
             with _LOCK:
                 old=_ACTIVE.get(run_id)
@@ -730,6 +729,16 @@ class OwnedAutonomy:
             raise
         with self._guard:self._pending=False
         return _row(run_id)
+
+    def _entry(self, run_id):
+        # The actual worker entry is the final launch linearization point.
+        # If stop won during Thread.start, do not begin data or inference.
+        # Retain the exact thread until join and durable exit settlement.
+        with self._guard:
+            if (self._stopping or self._blocked or self._run_id != run_id
+                    or self._thread is not threading.current_thread()):
+                return
+        _worker(run_id,_no_legacy_planner,self.stages,retain_thread=True)
 
     def start(self, investigation_id, *, max_steps=5):
         return self._submit(investigation_id,resume=False,max_steps=max_steps)

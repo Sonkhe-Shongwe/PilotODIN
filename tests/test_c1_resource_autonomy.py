@@ -490,3 +490,27 @@ def test_owned_exit_without_terminal_checkpoint_is_interrupted(fixture,monkeypat
         assert autonomy.for_investigation(inv)["status"]=="interrupted"
     finally:
         owner.drain(10)
+
+
+def test_owned_stop_after_thread_creation_before_worker_entry(fixture,monkeypatch):
+    _,inv,eid=fixture
+    autonomy._set(eid,"interrupted")
+    entered,proceed=threading.Event(),threading.Event()
+    owner=_owned_fixture(fixture,lambda _:pytest.fail("Shutdown planner"))
+    real=owner._entry
+    def paused(run_id):
+        entered.set()
+        assert proceed.wait(10)
+        real(run_id)
+    monkeypatch.setattr(owner,"_entry",paused)
+    monkeypatch.setattr(autonomy,"_worker",lambda *a,**k:pytest.fail("Worker began after stop"))
+    try:
+        owner.resume(inv)
+        assert entered.wait(5)
+        owner.stop_admission()
+        assert not owner.drain(0)
+    finally:
+        proceed.set()
+        assert owner.drain(10)
+    assert autonomy.for_investigation(inv)["status"]=="interrupted"
+    assert eid not in autonomy._ACTIVE
