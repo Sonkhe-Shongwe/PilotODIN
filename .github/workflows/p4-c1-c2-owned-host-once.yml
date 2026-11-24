@@ -129,46 +129,7 @@ jobs:
             if (Test-Path -LiteralPath $copy) { throw 'Existing fixture copy refused' }
             Copy-Item -LiteralPath $original -Destination $copy
             $sdk = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
-            $mtTools = @(Get-ChildItem -LiteralPath $sdk -Directory | Where-Object { $_.Name -match '^10\.\d+\.\d+\.\d+
-            Remove-Item Env:PILOTODIN_C1_C2_FIXTURE_APPROVAL -ErrorAction SilentlyContinue
-          }
-          $output = Get-Content -LiteralPath $log -Raw
-          if ($output -notmatch 'test result: ok\. 1 passed; 0 failed; 0 ignored;') { throw 'Unexpected owned host test count' }
-          if ($output -notmatch [regex]::Escape($expected)) { throw 'Missing exact fixture test' }
-          if ($output -notmatch 'C1-C2-INFERENCE-GROUP-ZERO: retained owned job observed empty after release') { throw 'Missing real inference group witness' }
-          if ($output -notmatch 'C1-C2-ACTUAL-OWNED-HOST-PASS: real pipes; real job descendant and zero; shared lane; joined saves; graceful STOP') { throw 'Missing real shared-host lifecycle result' }
-          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne 'f635ba1f8257266c242429e2b44ae94b039329b9') { throw 'Cargo lock changed' }
-          git diff --exit-code
-          if ($LASTEXITCODE -ne 0) { throw 'Tracked source changed during fixture' }
-          Write-Host 'C1-C2-OWNED-HOST-VERIFICATION-PASS 1/1; disposable fixture roots retained on runner; no product launch'
-      - name: Remove only owned compile-only placeholders
-        if: always()
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $tauri = 'frontend/src-tauri'
-          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
-          if (-not (Test-Path -LiteralPath $marker)) { return }
-          $assets = @(
-            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
-            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
-            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
-            "$tauri/resources/models/model-manifest.json",
-            'frontend/dist/index.html'
-          )
-          foreach ($file in $assets) {
-            if (Test-Path -LiteralPath $file) {
-              if ((Get-Item -LiteralPath $file).Length -gt 256) { throw "Unexpected content; refusing cleanup: $file" }
-              Remove-Item -LiteralPath $file -Force
-            }
-          }
-          if (Test-Path -LiteralPath 'frontend/dist') {
-            if (@(Get-ChildItem -LiteralPath 'frontend/dist' -Force).Count -ne 0) { throw 'Unexpected frontend fixture content' }
-            Remove-Item -LiteralPath 'frontend/dist'
-          }
-          Remove-Item -LiteralPath $marker
-          Write-Host 'COMPILE-ONLY-FIXTURES-REMOVED; no executable artifact upload or application launch'
- -and (Test-Path -LiteralPath (Join-Path $_.FullName 'x64/mt.exe')) } | Sort-Object { [version]$_.Name } -Descending)
+            $mtTools = @(Get-ChildItem -LiteralPath $sdk -Directory | Where-Object { $_.Name -match '^10\.\d+\.\d+\.\d+$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'x64/mt.exe')) } | Sort-Object { [version]$_.Name } -Descending)
             if ($mtTools.Count -eq 0) { throw 'Hosted Windows SDK manifest tool unavailable' }
             $mt = Join-Path $mtTools[0].FullName 'x64/mt.exe'
             $before = Join-Path $root 'original.manifest'
