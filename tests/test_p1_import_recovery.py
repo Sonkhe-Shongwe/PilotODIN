@@ -17,7 +17,9 @@ from unittest.mock import patch
 import pandas as pd
 from fastapi.testclient import TestClient
 
-from backend import quality, storage
+import pytest
+
+from backend import artifact_publication, quality, storage
 from backend.main import app
 
 
@@ -290,3 +292,151 @@ with interruption:
                 for table in ("quality_state", "quality_versions"):
                     self.assertEqual(con.execute("SELECT COUNT(*) FROM " + table).fetchone()[0], 0)
         self.assertEqual(source.read_bytes(), changed)
+
+
+def _ledger_intent():
+    source = _csv()
+    return storage.begin_dataset_publication(
+        ".csv", len(source), hashlib.sha256(source).hexdigest())
+
+
+def _ledger_publishing():
+    intent = _ledger_intent()
+    staged = storage.advance_dataset_publication(intent, "staged")
+    return storage.advance_dataset_publication(staged, "publishing")
+
+
+def test_publication_ledger_persists_intent_and_fences_transitions(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    intent = _ledger_intent()
+    with storage.connect() as con:
+        assert artifact_publication.read(con, intent.operation_id) == intent
+        assert artifact_publication.pending_page(con) == [intent]
+    assert intent.final_name == intent.operation_id + ".csv"
+    assert intent.staging_name == intent.final_name + ".uploading"
+    assert not list((home / "datasets").iterdir())
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.advance_dataset_publication(intent, "publishing")
+    staged = storage.advance_dataset_publication(intent, "staged")
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.advance_dataset_publication(intent, "staged")
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.advance_dataset_publication(staged, "committed")
+    publishing = storage.advance_dataset_publication(staged, "publishing")
+    interrupted = storage.advance_dataset_publication(
+        publishing, "interrupted", reason="interrupted_before_commit")
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.advance_dataset_publication(interrupted, "staged")
+    with storage.connect() as con:
+        assert artifact_publication.read(con, intent.operation_id) == interrupted
+        assert artifact_publication.pending_page(con) == []
+    _check_no_orphans(home)
+
+
+def test_publication_schema_idempotent_refuses_incompatible_table(monkeypatch, tmp_path):
+    _temporary_store(monkeypatch, tmp_path)
+    intent = _ledger_intent()
+    storage.init()
+    with storage.connect() as con:
+        assert artifact_publication.read(con, intent.operation_id) == intent
+        con.execute("DROP TABLE artifact_publications_v1")
+        con.execute("CREATE TABLE artifact_publications_v1 (operation_id TEXT)")
+    with pytest.raises(artifact_publication.PublicationError, match="schema"):
+        storage.init()
+    with storage.connect() as con:
+        assert [r[1] for r in con.execute(
+            "PRAGMA table_info(artifact_publications_v1)")] == ["operation_id"]
+
+
+def test_publication_receipt_validates_names_sizes_digests_and_reason(monkeypatch, tmp_path):
+    _temporary_store(monkeypatch, tmp_path)
+    digest = hashlib.sha256(_csv()).hexdigest()
+    for suffix, size, sha in [
+        ("../source.csv", 3, digest), (".csv", 0, digest),
+        (".csv", 40 * 1024 * 1024 + 1, digest), (".xlsx", 3, "invalid"),
+    ]:
+        with pytest.raises(artifact_publication.PublicationError):
+            storage.begin_dataset_publication(suffix, size, sha)
+    intent = _ledger_intent()
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.advance_dataset_publication(intent, "blocked", reason="private/path")
+    with storage.connect() as con:
+        assert artifact_publication.pending_page(con, limit=1) == [intent]
+        assert artifact_publication.pending_page(con, after=intent.operation_id) == []
+        with pytest.raises(artifact_publication.PublicationError):
+            artifact_publication.pending_page(con, limit=129)
+
+
+def test_publication_metadata_commit_is_atomic_and_terminal(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    receipt = _ledger_publishing()
+    path = home / "datasets" / receipt.final_name
+    path.write_bytes(_csv())
+    checks = []
+    committed = storage.commit_dataset_publication(
+        receipt, "generated.csv", {"rows": 3},
+        verify_final=lambda: checks.append(path.stat().st_size))
+    assert checks == [len(_csv()), len(_csv())]
+    assert committed.state == "committed"
+    with storage.connect() as con:
+        assert artifact_publication.read(con, receipt.operation_id) == committed
+        assert artifact_publication.pending_page(con) == []
+        assert tuple(con.execute(
+            "SELECT original_sha256,current_version FROM quality_state WHERE project_id=?",
+            (receipt.subject_id,)).fetchone()) == (receipt.sha256, 0)
+        assert tuple(con.execute(
+            "SELECT version,event FROM quality_versions WHERE project_id=?",
+            (receipt.subject_id,)).fetchone()) == (0, "original")
+    assert Path(storage.get_project(receipt.subject_id)["dataset_path"]) == path
+    assert path.read_bytes() == _csv()
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.advance_dataset_publication(committed, "interrupted",
+                                            reason="unknown_commit")
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.commit_dataset_publication(receipt, "generated.csv", {}, verify_final=lambda: None)
+
+
+def test_publication_commit_rolls_back_on_version_or_final_identity_failure(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    receipt = _ledger_publishing()
+    path = home / "datasets" / receipt.final_name
+    path.write_bytes(_csv())
+    with storage.connect() as con:
+        con.execute("""CREATE TRIGGER publication_abort BEFORE INSERT ON quality_versions
+                    BEGIN SELECT RAISE(ABORT, 'Synthetic version failure'); END""")
+    with pytest.raises(Exception, match="Synthetic version failure"):
+        storage.commit_dataset_publication(receipt, "generated.csv", {}, verify_final=lambda: None)
+    with storage.connect() as con:
+        con.execute("DROP TRIGGER publication_abort")
+    checks = []
+    def verify():
+        checks.append(True)
+        if len(checks) == 2:
+            raise OSError("Synthetic identity change")
+    with pytest.raises(OSError, match="identity change"):
+        storage.commit_dataset_publication(receipt, "generated.csv", {}, verify_final=verify)
+    with storage.connect() as con:
+        assert artifact_publication.read(con, receipt.operation_id) == receipt
+        for table in ("projects", "quality_state", "quality_versions"):
+            assert con.execute("SELECT COUNT(*) FROM " + table).fetchone()[0] == 0
+    assert path.read_bytes() == _csv()
+
+
+def test_publication_commit_refuses_archived_reference(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    receipt = _ledger_publishing()
+    path = home / "datasets" / receipt.final_name
+    path.write_bytes(_csv())
+    other = storage.save_project("Legacy", "legacy.csv", ".csv", path, {})
+    with storage.connect() as con:
+        con.execute("INSERT INTO project_lifecycle VALUES (?,?,?)",
+                    (other, 1, storage.now()))
+    with pytest.raises(artifact_publication.PublicationError, match="reference conflict"):
+        storage.commit_dataset_publication(receipt, "generated.csv", {}, verify_final=lambda: None)
+    with storage.connect() as con:
+        assert artifact_publication.read(con, receipt.operation_id) == receipt
+        assert con.execute("SELECT COUNT(*) FROM projects").fetchone()[0] == 1
+    assert path.read_bytes() == _csv()

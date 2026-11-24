@@ -9,13 +9,13 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 try:
-    from . import sqlite_fk_gate
+    from . import artifact_publication, sqlite_fk_gate
     from .workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                      validate_process_database, validate_process_write,
                                      configure_process_scratch, validate_process_scratch,
                                      pin_process_model_directory)
 except ImportError:
-    import sqlite_fk_gate
+    import artifact_publication, sqlite_fk_gate
     from workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                     validate_process_database, validate_process_write,
                                     configure_process_scratch, validate_process_scratch,
@@ -168,6 +168,7 @@ def init():
             FOREIGN KEY(project_id) REFERENCES projects(id)
         );
         """)
+        artifact_publication.ensure_schema(conn)
         if fresh_database:
             sqlite_fk_gate.certify_new_schema(conn)
 
@@ -242,6 +243,53 @@ def save_project(name, filename, ext, path, profile, *, original_sha256: str | N
             con.execute("INSERT INTO quality_versions VALUES (?,?,?,?,?,?)",
                         (ident, 0, "[]", "original", "{}", created))
     return ident
+
+
+def begin_dataset_publication(suffix, expected_bytes, sha256):
+    """Persist intent before the import coordinator touches payload files."""
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        return artifact_publication.insert_intent(
+            con, uid(), uid(), suffix, expected_bytes, sha256)
+
+
+def advance_dataset_publication(receipt, state, *, reason=None):
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        return artifact_publication.advance(con, receipt, state, reason=reason)
+
+
+def commit_dataset_publication(receipt, filename, profile, *, verify_final):
+    """Atomic catalogue, original Quality version and publication receipt.
+
+    The coordinator verifies actual payload bytes outside the transaction.
+    verify_final is a short identity check on its already verified file,
+    not another parse or a long-running hash under the SQLite write lock.
+    """
+    receipt.validate()
+    if receipt.state != "publishing":
+        raise artifact_publication.PublicationError("Dataset is not publishing")
+    path = HOME / "datasets" / receipt.final_name
+    created = now()
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        if artifact_publication.read(con, receipt.operation_id) != receipt:
+            raise artifact_publication.PublicationError("Publication receipt changed")
+        if con.execute(
+                "SELECT 1 FROM projects WHERE id=? OR dataset_path=? COLLATE NOCASE LIMIT 1",
+                (receipt.subject_id, str(path))).fetchone() is not None:
+            raise artifact_publication.PublicationError("Publication reference conflict")
+        verify_final()
+        con.execute("INSERT INTO projects VALUES (?,?,?,?,?,?,?)",
+                    (receipt.subject_id, Path(filename).stem, filename, receipt.suffix,
+                     str(path), json.dumps(profile), created))
+        con.execute("INSERT INTO quality_state VALUES (?,?,0)",
+                    (receipt.subject_id, receipt.sha256))
+        con.execute("INSERT INTO quality_versions VALUES (?,?,?,?,?,?)",
+                    (receipt.subject_id, 0, "[]", "original", "{}", created))
+        committed = artifact_publication.commit_dataset_receipt(con, receipt)
+        verify_final()
+        return committed
 
 
 def get_project(pid):
