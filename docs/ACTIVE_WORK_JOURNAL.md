@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 06ff8df5ab5b5a58f775dcfe5a05a78cf0410871 |
-| Product baseline | a3ae7af641de83442fd566666f29cba68caebbca |
+| Product baseline | 950bfed7b4a8393a656f82adfe37f7ae4df5337c |
 | Scope | C1 targeted durable queued settlement and terminal witness, staged full ASGI training adapter and real framework/SQLite synthetic integration tests; no live activation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-training-durable-asgi |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_training.py; backend/resource_training_store.py; tests/test_c1_resource_training_store.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Staged durable training and actual FastAPI background fixtures published; exact-source CI pending. No live registration. |
-| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before integration. |
+| Pending runs | [P1 #45454926496](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45454926496), exact 950bfed7b4a8393a656f82adfe37f7ae4df5337c, QUEUED at last observation; reconcile job/logs before integration. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish staged durable adapter and ASGI binding, then reconcile exact CI; no live registration until production route/worker, autonomous and host seam integrated. |
+| Recovery action | Reconcile exact durable training/ASGI CI, correct any failures; review cancellation during finalizer, bind production route/worker only with unified admission design; next autonomous/host seam. No live registration or native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation

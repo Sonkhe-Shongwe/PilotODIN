@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `a3ae7af641de83442fd566666f29cba68caebbca`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `950bfed7b4a8393a656f82adfe37f7ae4df5337c`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -37,3 +37,7 @@ Operation C1-RESOURCE-ADMISSION-20261124-training-ownership, prepared at `1c6376
 ## 24 November | C1 training ownership and upload disk/fault exact-source CI reconciled
 
 [P1 #45453690745](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45453690745), job 138657295121, terminal SUCCESS; checkout `a3ae7af641de83442fd566666f29cba68caebbca`, compile, 166 regression + 2 subtests, 77 C1 (58 prior + 19), zero failures. Actual disposable disk spool rollover/close and injected close fault passed; staged training ownership tested with inert callbacks. No durable training store/ASGI integration or production registration yet; no native/model operation. C0/5, source 10/17, P4 14/20 unchanged.
+
+## 24 November | C1 staged durable training and ASGI background ownership published
+
+Operation C1-RESOURCE-ADMISSION-20261124-training-durable-asgi, prepared at `187b8d0`, published [`950bfed`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/950bfed7b4a8393a656f82adfe37f7ae4df5337c). New narrow durable adapter uses guarded storage.connect, exact queued-only CAS plus atomic existing progress event, conservative unstarted checks, and bounded terminal status/progress witness; no schema or storage.py change. TrainingHTTP owns full ASGI call after trusted matching and injects server-only scope owner, awaits shielded thread finalization and blocks on uncertain finalizer. 13 disposable SQLite/real FastAPI BackgroundTasks fixtures with inert workers, including exact settlement, rollback, claim race, existing slot, validation refusal, response delivery failure and worker terminal uncertainty. Not wired to live main.py/train_background; cancellation during actual finalization and actual model artifact worker integration still outstanding. Existing 82 workflow definitions compared; only P1 workflow changed, new dedicated disposable-home test step. [Exact CI #45454926496](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45454926496) QUEUED at last observation; actual result pending. No live registration, native/model/installer/owner operation; C0/5, source 10/17, P4 14/20 unchanged.
