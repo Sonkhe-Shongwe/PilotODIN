@@ -91,7 +91,12 @@ def save(project_id: str, *, title: str, expected_version: int,
         raise SavedAnalysisError('Give this analysis a title between 4 and 120 characters')
     if storage.get_project(project_id) is None:
         raise SavedAnalysisError('Project does not exist',404)
-    frame,version=quality.current_data(project_id)
+    try:
+        frame,version=quality.current_data(project_id)
+    except quality.QualityArchivedError as exc:
+        # Archive may commit after initial catalogue admission but before
+        # the coherent Quality read. Keep the established service contract.
+        raise SavedAnalysisError(str(exc), exc.status) from exc
     if version!=expected_version:
         raise SavedAnalysisError('Dataset version changed. Refresh Explore before saving.',409)
     config=_config(x,y,kind,aggregation,bins,correlation_method,filters,color_by)

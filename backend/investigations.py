@@ -128,7 +128,12 @@ def run(ident: str, operation: str, params: dict, expected_version: int, *, exec
     if expected_version != investigation['version'] or investigation['stale']:
         raise RuntimeError('Dataset version changed. Start a new investigation to preserve prior evidence.')
     project_id = investigation['project_id']
-    df, current = quality.current_data(project_id)
+    try:
+        df, current = quality.current_data(project_id)
+    except quality.QualityArchivedError as exc:
+        # Early read-side archive admission must not escape the existing
+        # lifecycle conflict contract for investigation mutations.
+        raise project_lifecycle.ProjectLifecycleError(str(exc), exc.status) from exc
     if current != expected_version:
         raise RuntimeError('Dataset changed during the investigation. Refresh before running a tool.')
     args = {}

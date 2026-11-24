@@ -28,6 +28,10 @@ class QualityError(ValueError):
         self.status = status
 
 
+class QualityArchivedError(QualityError):
+    """Archive observed during metadata snapshot; adapters preserve HTTP 409."""
+
+
 def _json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
@@ -492,7 +496,7 @@ def _metadata_snapshot(con, pid, *, target_version=None):
     if row is None:
         raise QualityError("Project not found", 404)
     if row["lifecycle_archived"] is not None:
-        raise QualityError("Project is archived. Restore it in Manage projects before making Quality changes.", 409)
+        raise QualityArchivedError("Project is archived. Restore it in Manage projects before making Quality changes.", 409)
     p = dict(row)
     contract = _source_contract(con, p)
     version, ops = _state(con, pid)
