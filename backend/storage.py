@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import stat
 import uuid
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -270,6 +271,20 @@ def commit_dataset_publication(receipt, filename, profile, *, verify_final):
     if receipt.state != "publishing":
         raise artifact_publication.PublicationError("Dataset is not publishing")
     path = HOME / "datasets" / receipt.final_name
+    # Metadata commitment must not rely solely on a caller-supplied callback.
+    # Require an existing regular single-link payload of the recorded size,
+    # including in the explicitly unleased disposable fixture seam.
+    def checked_identity(expected=None):
+        check_write_path(path, expected=expected)
+        info = path.lstat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or not info.st_ino
+                or getattr(info, "st_file_attributes", 0) & 0x400
+                or info.st_size != receipt.expected_bytes
+                or (expected is not None and not os.path.samestat(expected, info))):
+            raise artifact_publication.PublicationError("Publication payload identity or size mismatch")
+        return info
+
+    identity = checked_identity()
     created = now()
     with connect() as con:
         artifact_publication.begin_durable(con)
@@ -279,6 +294,7 @@ def commit_dataset_publication(receipt, filename, profile, *, verify_final):
                 "SELECT 1 FROM projects WHERE id=? OR dataset_path=? COLLATE NOCASE LIMIT 1",
                 (receipt.subject_id, str(path))).fetchone() is not None:
             raise artifact_publication.PublicationError("Publication reference conflict")
+        checked_identity(identity)
         verify_final()
         con.execute("INSERT INTO projects VALUES (?,?,?,?,?,?,?)",
                     (receipt.subject_id, Path(filename).stem, filename, receipt.suffix,
@@ -289,6 +305,7 @@ def commit_dataset_publication(receipt, filename, profile, *, verify_final):
                     (receipt.subject_id, 0, "[]", "original", "{}", created))
         committed = artifact_publication.commit_dataset_receipt(con, receipt)
         verify_final()
+        checked_identity(identity)
         return committed
 
 

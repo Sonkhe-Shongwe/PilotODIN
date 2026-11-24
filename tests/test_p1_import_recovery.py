@@ -390,6 +390,16 @@ def test_publication_metadata_commit_is_atomic_and_terminal(monkeypatch, tmp_pat
             (receipt.subject_id,)).fetchone()) == (0, "original")
     assert Path(storage.get_project(receipt.subject_id)["dataset_path"]) == path
     assert path.read_bytes() == _csv()
+    from backend import project_delete_impact
+    inventory = project_delete_impact.impact(receipt.subject_id, 0)
+    counts = {row["key"]: row["count"] for row in inventory["records"]}
+    assert counts["artifact_publications_v1"] == 1
+    assert "artifact_publications_v1" not in inventory["unclassified_tables"]
+    assert inventory["deletion_available"] is False
+    legacy = storage.save_project("Legacy", "legacy.csv", ".csv", path, {})
+    inventory = project_delete_impact.impact(legacy, 0)
+    assert {row["key"]: row["count"] for row in inventory["records"]}["artifact_publications_v1"] == 0
+
     with pytest.raises(artifact_publication.PublicationError):
         storage.advance_dataset_publication(committed, "interrupted",
                                             reason="unknown_commit")
@@ -440,3 +450,19 @@ def test_publication_commit_refuses_archived_reference(monkeypatch, tmp_path):
         assert artifact_publication.read(con, receipt.operation_id) == receipt
         assert con.execute("SELECT COUNT(*) FROM projects").fetchone()[0] == 1
     assert path.read_bytes() == _csv()
+
+
+def test_publication_commit_requires_existing_expected_size_payload(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    receipt = _ledger_publishing()
+    path = home / "datasets" / receipt.final_name
+    with pytest.raises(FileNotFoundError):
+        storage.commit_dataset_publication(receipt, "generated.csv", {}, verify_final=lambda: None)
+    path.write_bytes(b"x")
+    with pytest.raises(artifact_publication.PublicationError, match="size mismatch"):
+        storage.commit_dataset_publication(receipt, "generated.csv", {}, verify_final=lambda: None)
+    assert path.read_bytes() == b"x"
+    assert storage.list_projects() == []
+    with storage.connect() as con:
+        assert artifact_publication.read(con, receipt.operation_id) == receipt
