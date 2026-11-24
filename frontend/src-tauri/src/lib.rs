@@ -21,6 +21,16 @@ mod storage_boundary;
 mod desktop_profile;
 mod dataset_file;
 mod dataset_attestation;
+#[cfg(windows)]
+mod resource_wire;
+#[cfg(windows)]
+mod resource_transport;
+#[cfg(windows)]
+mod resource_shell;
+#[cfg(windows)]
+mod resource_supervisor;
+#[cfg(windows)]
+mod resource_desktop;
 
 #[derive(Clone, Serialize)]
 struct BackendConnection {
@@ -36,6 +46,8 @@ struct ActiveBackend {
     exit: Arc<AtomicU8>,
     stop_requested: bool,
     _storage_pins: storage_boundary::DirectoryPins,
+    #[cfg(windows)]
+    owned: Option<Arc<resource_desktop::OwnedSession>>,
 }
 
 struct InferenceSettings {
@@ -54,14 +66,14 @@ struct ActiveInference {
 // The caller's dropped IPC future is not cancellation or completion evidence.
 struct InferenceStartup {
     backend_token: String,
-    cancelled: AtomicBool,
+    cancelled: Arc<AtomicBool>,
     joined: AtomicBool,
     uncertain: AtomicBool,
 }
 
 impl InferenceStartup {
     fn new(backend_token: String) -> Self {
-        Self { backend_token, cancelled: AtomicBool::new(false),
+        Self { backend_token, cancelled: Arc::new(AtomicBool::new(false)),
             joined: AtomicBool::new(false), uncertain: AtomicBool::new(false) }
     }
 
@@ -79,6 +91,8 @@ struct DesktopState {
     profile_verified: AtomicBool,
     dataset_save_busy: AtomicBool,
     stopping: AtomicBool,
+    #[cfg(windows)]
+    owned_engine_uncertain: AtomicBool,
     launch_gate: Mutex<()>,
     backend: Mutex<Option<ActiveBackend>>,
     inference: Mutex<Option<ActiveInference>>,
@@ -422,6 +436,35 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
     if state.dataset_save_busy.load(Ordering::Acquire) {
         return Err("Dataset Save As is still active; finish or cancel it, then retry close".into());
     }
+    #[cfg(windows)]
+    if resource_desktop::selected(app) {
+        // Preserve the legacy bounded gate path when the new mode is off.
+        // Serialize against backend installation, then release all locks
+        // before waiting for the exact timer join.
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let owned = {
+            let _launch = loop {
+                match state.launch_gate.try_lock() {
+                    Ok(guard) => break guard,
+                    Err(std::sync::TryLockError::WouldBlock) if Instant::now() < deadline =>
+                        std::thread::sleep(Duration::from_millis(25)),
+                    _ => return Err("Owned worker launch is not finished; retry close".into()),
+                }
+            };
+            if state.owned_engine_uncertain.load(Ordering::Acquire) {
+                return Err("Owned engine launch outcome unconfirmed; shutdown blocked".into());
+            }
+            let backend = state.backend.lock().map_err(|_| "Engine state unavailable")?;
+            match backend.as_ref() {
+                Some(worker) => Some(worker.owned.clone().ok_or("Owned session identity unavailable")?),
+                None => None,
+            }
+        };
+        return match owned {
+            Some(owner) => owner.stop_and_join(),
+            None => Ok(()), // launch gate held above: no spawn entered or retained
+        };
+    }
     let deadline = Instant::now() + Duration::from_secs(5);
     let _launch = loop {
         match state.launch_gate.try_lock() {
@@ -508,6 +551,10 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
     ensure_desktop_admission(&app, &state)?;
     let mut guard = state.backend.lock().map_err(|_| "Engine state unavailable".to_string())?;
     if let Some(existing) = guard.as_ref() {
+        #[cfg(windows)]
+        if let Some(owner) = &existing.owned {
+            owner.check_available()?;
+        }
         return Ok(existing.connection.clone());
     }
     let port = free_loopback_port()?;
@@ -542,12 +589,50 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         .set_process_group(true)
         .kill_on_drop(cfg!(windows));
     storage_pins.verify()?;
+    #[cfg(windows)]
+    if resource_desktop::selected(&app) {
+        // Source registration is deliberately inactive until the coherent
+        // runner/frontend and resource/consent compatibility switch.
+        let generation = uuid::Uuid::new_v4().simple().to_string();
+        let capability = new_token();
+        let wire = resource_wire::Wire::new(generation.clone(), capability.clone())
+            .map_err(str::to_owned)?;
+        let (events, child) = match command
+            .env("PILOTODIN_CONTROL_GENERATION", generation.as_str())
+            .env("PILOTODIN_CONTROL_CAPABILITY", capability.as_str())
+            .set_raw_out(true).spawn() {
+                Ok(value) => value,
+                Err(_) => {
+                    // Spawn may have created an unobserved process group.
+                    state.owned_engine_uncertain.store(true, Ordering::Release);
+                    state.stopping.store(true, Ordering::Release);
+                    return Err("Owned engine launch outcome unconfirmed".into());
+                },
+            };
+        let connection = BackendConnection { port, token: token.clone() };
+        let exit = Arc::new(AtomicU8::new(0));
+        let owner = Arc::new(resource_desktop::OwnedSession::new(
+            app.clone(), wire, events, child, token.clone(), inference_port, inference_token));
+        // Install ownership before scheduling the independent timer. A
+        // failed timer creation does not clear the installed owner.
+        *guard = Some(ActiveBackend { connection: connection.clone(), dataset_export_key,
+            child: None, exit, stop_requested: false, _storage_pins: storage_pins,
+            owned: Some(owner.clone()) });
+        drop(guard);
+        if let Err(error) = owner.start_timer(app.clone()) {
+            state.stopping.store(true, Ordering::Release);
+            return Err(error);
+        }
+        return Ok(connection);
+    }
     let (mut events, child) = command.spawn()
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
     let connection = BackendConnection { port, token: token.clone() };
     let exit = Arc::new(AtomicU8::new(0));
     *guard = Some(ActiveBackend { connection: connection.clone(), dataset_export_key, child: Some(child),
-        exit: exit.clone(), stop_requested: false, _storage_pins: storage_pins });
+        exit: exit.clone(), stop_requested: false, _storage_pins: storage_pins,
+        #[cfg(windows)]
+        owned: None });
     *state.inference_settings.lock().map_err(|_| "AI state unavailable".to_string())? =
         Some(InferenceSettings { port: inference_port, token: inference_token });
     drop(guard);
@@ -682,6 +767,10 @@ fn verify_bundled_model(app: &AppHandle, attempt: &InferenceStartup,
 async fn launch_bundled_ai(window: tauri::WebviewWindow, app: AppHandle,
                            state: State<'_, DesktopState>) -> Result<(), String> {
     if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    #[cfg(windows)]
+    if resource_desktop::selected(&app) {
+        return Err("Local inference is admitted only by the analytical engine".into());
+    }
     let attempt = {
         let _launch = state.launch_gate.lock().map_err(|_| "Worker launch unavailable")?;
         ensure_desktop_admission(&app, &state)?;
@@ -921,6 +1010,11 @@ fn current_dataset_export_key(app: &AppHandle) -> Result<String,String> {
     let backend=state.backend.lock().map_err(|_| "Engine state unavailable")?;
     let active=backend.as_ref().filter(|b| !b.stop_requested && b.exit.load(Ordering::Acquire)==0)
         .ok_or("Active analytical engine required for dataset Save As")?;
+    #[cfg(windows)]
+    if active.owned.is_some() {
+        // Native binary-save admission is not yet wired to the shared lane.
+        return Err("Owned resource admission for dataset Save As is unavailable".into());
+    }
     active._storage_pins.verify()?;
     Ok(active.dataset_export_key.clone())
 }
@@ -1038,6 +1132,11 @@ async fn save_dataset_as(window:tauri::WebviewWindow, request:Request<'_>)
 async fn save_report_as(app: AppHandle, request: Request<'_>)
     -> Result<NativeReportSave, String> {
     ensure_desktop_admission(&app, &app.state::<DesktopState>())?;
+    #[cfg(windows)]
+    if resource_desktop::selected(&app) {
+        // No independent native writer may bypass the shared workload lane.
+        return Err("Owned resource admission for report Save As is unavailable".into());
+    }
     let (format, filename, bytes) = {
         let (format, filename) = report_save_headers(request.headers())?;
         let bytes = report_save_bytes(request.body())?;
@@ -1383,6 +1482,8 @@ pub fn run() {
                 }
                 if let Ok(mut backend) = state.backend.lock() {
                     if let Some(mut worker) = backend.take() {
+                        #[cfg(windows)]
+                        if let Some(owner) = &worker.owned { owner.request_stop(); }
                         eprintln!("Emergency analytical cleanup");
                         terminate_owned_child(worker.child.take());
                     }

@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 8c7cc01d9920e598d5295fbf9b5b7c57bd3dad86 |
 | Product baseline | 2322c4aa72cd2aa541ea4d99992d7ee8dbaf2605 |
 | Scope | Windows application composition, retained independent timer and trusted startup factory, exact generation gate and shutdown. Register source behind compile-time false activation gate; preserve legacy behavior until runner/frontend and remaining admission/consent compatibility are coherent. |
 | Operation ID | C1-C2-INTEGRATION-20261124-desktop-registration |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_desktop.rs; continuity docs |
 | Approval | Standing P4 source authority; no native compile/run, partial grant activation, model/download, installer or owner-data/OS operations authorized. |
 | Verification | Prior product 2322c4a has zero CI runs. All 82 workflows unchanged from 81de01d reviewed set; lib.rs triggers only existing P4 routine synthetic/source and P2 export-source workflows, jobs reviewed (restricted Windows probe false). No workflow or approval marker edits. |
