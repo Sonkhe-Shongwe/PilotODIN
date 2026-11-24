@@ -1,10 +1,8 @@
 # PilotODIN 1.0
 
-**24 NOVEMBER 2026 | B2 VERIFIED LOAD INTEGRATED:** [Source 88711e4](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/88711e4a9e29747786fd42ad89056db57edc4237) connects selection/prediction to verified private scratch loading; corrects previous no-fit fixture. Integrated CI and B2 exit review pending. See [current B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) for exact evidence and limitations. B1 source closed; B2 active; no acceptance change.
+**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B3 SOURCE CLOSED; B4 ACTIVE (report capture staged, mixed CI); B5, C1–C5 and D1–D2 pending. Source remediation 8/17 (47.1%); Package B 3/5 (60%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
 
-[Previous B2 publication checkpoint](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/2bb2aaa57f3eec1a8cb7b36213ab4d2839e142c7/README.md).
-
-**CURRENT ENGINEERING FOCUS (24 November):** Package A source CLOSED; Package B ACTIVE, B1 source CLOSED; B2 verified loading integrated, CI and exit review outstanding. [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) | [Tab handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). G2 BLOCKED, four-gate 1/4 (25%), P4 14/20 (70%), R02.5 0/5, N12 0/2, mutation preparation 3/4 (75%). No native collector or installer.
+**Resume development:** [Current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) | [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Migration audit](docs/DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md).
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
@@ -13,8 +11,8 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 
 ## Read this first
 - **[Current product-first implementation directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md)**: sole live work order, fixed A–D scope, readiness specification and permissions.
-- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: B1 source closed; B2 verified loading integrated; exit review pending; B3–B5 pending.
-- **[24 November documentation audit](docs/DOCUMENTATION_AUDIT_PACKAGE_B_ACTIVATION_2026-11-24.md)**: current authority, evidence and historical preservation.
+- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: B1–B3 source closed; B4 active, mixed CI; B5 pending.
+- **[24 November migration audit](docs/DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md)**: current authority, evidence and historical preservation.
 - **[Current tab migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md)**: single starting point, latest evidence, exact next action, safe scope and source references.
 - **[Stage 1 golden-reference verification contract](docs/P4_N12_STAGE1_GOLDEN_REFERENCE_AND_BACKWARD_VERIFICATION_2026-11-21.md)** for retained native evidence requirements, not the current development sequence.
 - **[Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)** for current product-first next action and historical engineering chronology.
@@ -30,7 +28,9 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 
 ## Verified development evidence
 
-**Latest source/integration baseline:** `60041f144a29e0c18db9c8ad1b9e07651309c7d9`: eight source workflows passed, including [P4 regression](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45378250732). [One-time locked Windows host check](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45380098568) passed; [retired workflow](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45382351664) skipped. This closes Package A at source level, not native runtime acceptance.
+**Latest product source:** `39b8e5f`, five of six workflows passed; P2 browser 6 passed/1 failed. See migration handoff for exact evidence and blocker.
+
+**Historical Package A source/integration baseline:** `60041f144a29e0c18db9c8ad1b9e07651309c7d9`: eight source workflows passed, including [P4 regression](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45378250732). [One-time locked Windows host check](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45380098568) passed; [retired workflow](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45382351664) skipped. This closes Package A at source level, not native runtime acceptance.
 **Latest actual native evidence baseline, 24 November:** [G2.20 source CI #45341086645](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45341086645) passed at `8c2d456a1978145d10af1da86caf97053b07a1b3`. A subsequent [one-use actual Windows diagnostic #45342345634](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45342345634) built, started and closed the isolated app, verified both calibration bookends and write/restore, reported zero lost events/buffers, and returned BLOCKED evidence: 23 prohibited operations, 4,921 unresolved mutation credits (125 network write-path gaps); 102 bounded lexical outside-scope candidates without original-file-handle/physical destination credit. Original process identity and private child inventory remain blocked. [Full result](docs/P4_R02_5_G2_20_INTEGRATED_PASSIVE_FILEIO_PATH_DIAGNOSTIC_2026-11-24.md). The earlier [complete N12 journey #44838416004](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44838416004) still governs official filesystem FAIL, network FAIL and mutation coverage BLOCKED. Neither endpoint matches nor this scoped diagnostic close acceptance. File-mutation workstream 3/4; official P4 14/20 (70%). Native workflows disarmed; the latest consent is consumed.
 
 **Earlier evidence (historical, not the current native baseline):** The 19 November N12 run at `cd9b397` matched protected endpoints but failed filesystem/network checks with coverage blocked. Its staged egress comparison passed routine source CI separately. [19 November app audit](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44440131278/job/135278609026) · [historical P4 CI](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44482975206).
