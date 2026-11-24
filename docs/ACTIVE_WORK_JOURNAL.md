@@ -13,11 +13,11 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
 | Scope | Prepare fresh disabled native workflow pinned to 8e3cc91 and source-only complete YAML preflight; previous approval remains consumed; no native run |
 | Operation ID | B5-WORKFLOW-PREFLIGHT-20261124-prepare |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | .github/workflows/p4-package-b5-native-synthetic-v2-once.yml; qa/b5_native_workflow_preflight.rb; active journal, compact handoff, evidence ledger and new proposal |
 | Approval | One-use native test approval consumed by dispatch 10f371b; no new approval, no reruns. |
 | Verification | All four exact source CI #45440551353, #45440551376, #45440550975, #45440551176 SUCCESS. Backend tree and actual fixture generator unchanged from fixture producer 7789f84; artifact 14937864793 available. Native remains uncompiled. |
-| Pending runs | Source-only V2 preflight from publication commit identified by B5-WORKFLOW-PREFLIGHT-20261124-publish, parent 7fee631c5da3502d80e3bd93bcead17a9d765d1e. Native job disabled. Reconcile exact run and log. |
+| Pending runs | [V2 source preflight #45441506809](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45441506809) COMPLETED/SUCCESS; exact QA commit 3609bf27f69c1469262b134af0ad249a9d1e16b3; Windows job disabled; reconcile final log and both full YAML digests before approval |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Confirm exact preflight log and full prospective armed YAML SHA256, native job skipped; if green, request fresh precise owner approval. If preflight fails, correct only source-level defect; no native activation, no replay of consumed V1. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
