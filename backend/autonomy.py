@@ -51,6 +51,11 @@ _LOCK = threading.RLock()
 _HEAVY_SLOT = threading.Semaphore(1)  # also prevents two ODIN runs fighting for inference memory
 Planner = Callable[[dict[str, Any]], dict[str, Any]]
 
+try:
+    from .resource_autonomy import AutonomyStages, ResourceDeferred
+except ImportError:
+    from resource_autonomy import AutonomyStages, ResourceDeferred
+
 
 def init() -> None:
     with storage.connect() as con:
@@ -212,11 +217,48 @@ def _claim_step(run_id: str, ordinal: int, plan: dict, status='proposed') -> str
     return sid
 
 
-def _worker(run_id: str, planner: Planner):
+def _owned_context(state, prior):
+    inv = investigations.load(state['investigation_id'])
+    if inv is None or inv['stale'] or state['stale']:
+        return None
+    return _model_context(inv, prior)
+
+
+def _owned_tool_receipt(state, proposal, params, sid):
+    evidence = investigations.run(state['investigation_id'], proposal['tool'],
+                                  params, state['dataset_version'], execution_key=sid)
+    artifact = next((a for a in evidence['artifacts'] if a.get('execution_key') == sid), None)
+    if artifact is None:
+        raise RuntimeError('Verified tool did not return an evidence receipt')
+    return artifact['id']
+
+
+def _owned_claim_step(run_id, ordinal, plan, state):
+    """Never record a returned plan after cancel or version supersession."""
+    sid = f'{run_id}:{ordinal}'
+    with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        row = con.execute("SELECT status,dataset_version,project_id FROM odin_runs WHERE id=?",
+                          (run_id,)).fetchone()
+        if row is None or row['status'] != 'running':
+            return None
+        version = con.execute('SELECT current_version FROM quality_state WHERE project_id=?',
+                              (row['project_id'],)).fetchone()
+        if (version is None or row['dataset_version'] != state['dataset_version']
+                or version[0] != state['dataset_version']):
+            con.execute("UPDATE odin_runs SET status='stale',updated_at=? WHERE id=? AND status='running'",
+                        (storage.now(),run_id))
+            return None
+        con.execute('INSERT INTO odin_run_steps VALUES (?,?,?,?,?,?,?,?)',
+                    (sid,run_id,ordinal,plan['intent'],json.dumps(plan),'proposed',None,storage.now()))
+    return sid
+
+
+def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None):
     acquired=False
     try:
         _set(run_id,'waiting_for_resources',only=('queued','interrupted','waiting_for_resources'))
-        while not acquired:
+        while stages is None and not acquired:
             with storage.connect() as con:
                 status=con.execute('SELECT status FROM odin_runs WHERE id=?',(run_id,)).fetchone()['status']
             if status=='cancelled':return
@@ -225,38 +267,76 @@ def _worker(run_id: str, planner: Planner):
         while True:
             state=_row(run_id)
             if not state or state['status'] in ('cancelled','stale','failed','ready_for_review'):return
-            inv=investigations.load(state['investigation_id'])
-            if inv is None or inv['stale'] or state['stale']:
-                _set(run_id,'stale',reason='Dataset version has changed');return
+            inv = None
+            if stages is None:
+                inv=investigations.load(state['investigation_id'])
+                if inv is None or inv['stale'] or state['stale']:
+                    _set(run_id,'stale',reason='Dataset version has changed');return
+            elif state['status'] != 'running':
+                return
+            elif state['stale']:
+                _set(run_id,'stale',reason='Dataset version has changed',only=('running',));return
             # Crash recovery: an earlier process might have inserted evidence but
             # exited before it recorded the journal receipt. Never skip or
             # blindly repeat that step. The tool's execution key deduplicates.
             pending=next((s for s in state['steps'] if s['status']=='proposed'),None)
             if pending:
-                context=_model_context(inv,[])
+                if stages is None:
+                    context=_model_context(inv,[])
+                else:
+                    payload=stages.context(_owned_context,state,[])
+                    if payload is None:
+                        _set(run_id,'stale',reason='Dataset version has changed',only=('running',));return
+                    context=json.loads(payload)
                 intent,params=validate(pending['proposal'],context)
                 if intent!='run_tool':
                     _set(run_id,'needs_review',reason='Pending step is not a read-only operation');return
-                evidence=investigations.run(inv['id'],pending['proposal']['tool'],params,inv['version'],
-                                            execution_key=pending['id'])
-                artifact=next((a for a in evidence['artifacts'] if a.get('execution_key')==pending['id']),None)
-                if artifact is None:raise RuntimeError('Recovered step has no verified evidence receipt')
+                if stages is None:
+                    evidence=investigations.run(inv['id'],pending['proposal']['tool'],params,inv['version'],
+                                                execution_key=pending['id'])
+                    artifact=next((a for a in evidence['artifacts'] if a.get('execution_key')==pending['id']),None)
+                    if artifact is None:raise RuntimeError('Recovered step has no verified evidence receipt')
+                    receipt_id=artifact['id']
+                else:
+                    current=_row(run_id)
+                    if not current or current['status']!='running':return
+                    if current['stale']:
+                        _set(run_id,'stale',reason='Dataset version has changed',only=('running',));return
+                    receipt_id=stages.data(_owned_tool_receipt,state,pending['proposal'],params,pending['id'])
                 with storage.connect() as con:
                     con.execute('UPDATE odin_run_steps SET status=?,evidence_id=? WHERE id=?',
-                                ('completed',artifact['id'],pending['id']))
+                                ('completed',receipt_id,pending['id']))
                 continue
             if len(state['steps'])>=state['max_steps']:
                 _set(run_id,'needs_review',reason='Step budget reached; investigation may be incomplete');return
-            context=_model_context(inv,[{'intent':s['intent'],'tool':s['proposal']['tool'],
-                       'columns':s['proposal']['columns'],'status':s['status']} for s in state['steps']])
-            plan=planner(context)
+            prior=[{'intent':s['intent'],'tool':s['proposal']['tool'],
+                       'columns':s['proposal']['columns'],'status':s['status']} for s in state['steps']]
+            if stages is None:
+                context=_model_context(inv,prior)
+                plan=planner(context)
+            else:
+                payload=stages.context(_owned_context,state,prior)
+                if payload is None:
+                    _set(run_id,'stale',reason='Dataset version has changed',only=('running',));return
+                current=_row(run_id)
+                if not current or current['status']!='running':return
+                if current['stale']:
+                    _set(run_id,'stale',reason='Dataset version has changed',only=('running',));return
+                plan=stages.plan(payload)
+                current=_row(run_id)
+                if not current or current['status']!='running':return
+                if current['stale']:
+                    _set(run_id,'stale',reason='Dataset version has changed',only=('running',));return
+                context=json.loads(payload)
             intent,params=validate(plan,context)
             ordinal=len(state['steps'])
             signature=(plan['tool'],tuple(plan['columns']))
             if intent=='run_tool' and any((s['proposal']['tool'],tuple(s['proposal']['columns']))==signature
                 and s['status']=='completed' for s in state['steps']):
                 _set(run_id,'needs_review',reason='Planner repeated an already verified operation');return
-            sid=_claim_step(run_id,ordinal,plan)
+            sid=(_claim_step(run_id,ordinal,plan) if stages is None else
+                 _owned_claim_step(run_id,ordinal,plan,state))
+            if sid is None:return
             if intent!='run_tool':
                 outcomes={'suggest_finish':'ready_for_review','clarify':'needs_clarification',
                           'unsupported':'unsupported','propose_change':'needs_approval'}
@@ -270,12 +350,18 @@ def _worker(run_id: str, planner: Planner):
             with storage.connect() as con:
                 status=con.execute('SELECT status FROM odin_runs WHERE id=?',(run_id,)).fetchone()['status']
             if status=='cancelled':return
-            evidence=investigations.run(inv['id'],plan['tool'],params,inv['version'],execution_key=sid)
-            artifact=next((a for a in evidence['artifacts'] if a.get('execution_key')==sid),None)
-            if artifact is None:raise RuntimeError('Verified tool did not return an evidence receipt')
+            if stages is None:
+                evidence=investigations.run(inv['id'],plan['tool'],params,inv['version'],execution_key=sid)
+                artifact=next((a for a in evidence['artifacts'] if a.get('execution_key')==sid),None)
+                if artifact is None:raise RuntimeError('Verified tool did not return an evidence receipt')
+                receipt_id=artifact['id']
+            else:
+                receipt_id=stages.data(_owned_tool_receipt,state,plan,params,sid)
             with storage.connect() as con:
                 con.execute('UPDATE odin_run_steps SET status=?, evidence_id=? WHERE id=?',
-                            ('completed',artifact['id'],sid))
+                            ('completed',receipt_id,sid))
+    except ResourceDeferred as exc:
+        _set(run_id,'interrupted',reason='Resources deferred: '+str(exc)[:80],only=('running','waiting_for_resources'))
     except (OSError, ValueError, RuntimeError, KeyError, TimeoutError) as exc:
         # Don't hide planner failures or fall back to invented analyses.
         current=_row(run_id)
@@ -314,11 +400,11 @@ def _write_request(objective: str)->bool:
     return bool(_WRITE_OBJECTIVE.search(_NEGATION.sub('',objective)))
 
 
-def _launch(run_id: str,planner: Planner) -> None:
+def _launch(run_id: str,planner: Planner, *, stages: AutonomyStages | None = None) -> None:
     with _LOCK:
         t=_ACTIVE.get(run_id)
         if t and t.is_alive():raise RuntimeError('Investigation is already executing')
-        t=threading.Thread(target=_worker,args=(run_id,planner),name='odin-investigation',daemon=True)
+        t=threading.Thread(target=_worker,args=(run_id,planner,stages),name='odin-investigation',daemon=True)
         _ACTIVE[run_id]=t
         t.start()
 

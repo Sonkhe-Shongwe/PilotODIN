@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | dd731bf38ce09ab84854905b8548a43b9792a3a1 |
 | Product baseline | 9ed3b52c8ccbb224d1a644c1d7cdca1dae4d2d7e |
 | Scope | C1 staged autonomous data/inference boundary and actual dormant worker integration; no native or model work, no live registration. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-stages |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Eight exact-source 9ed3b52 workflows SUCCESS; P1 166 regression + 2 subtests, 95 C1. Next real autonomous worker loop with inert owned-planner adapter and disposable data/receipts; verify data stage, resource refusal, cancellation and stale result. |
-| Pending runs | None; eight runs at 9ed3b52 terminal SUCCESS; see C evidence ledger. |
+| Verification | Staged actual autonomous worker/data boundary and seven disposable/inert tests published; CI pending. No live registration. |
+| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before start/resume or host work. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish staged autonomy worker boundary, verify exact CI; then start/resume handoff and owned host bridge. No default planner use or native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
