@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | dd731bf38ce09ab84854905b8548a43b9792a3a1 |
-| Product baseline | 9ed3b52c8ccbb224d1a644c1d7cdca1dae4d2d7e |
+| Product baseline | 4c2f7bf5c936f08eda1df56f499e059c72aa3c25 |
 | Scope | C1 staged autonomous data/inference boundary and actual dormant worker integration; no native or model work, no live registration. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-stages |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Staged actual autonomous worker/data boundary and seven disposable/inert tests published; CI pending. No live registration. |
-| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before start/resume or host work. |
+| Pending runs | [P1 #45457035697](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45457035697), exact 4c2f7bf5c936f08eda1df56f499e059c72aa3c25, IN_PROGRESS at last observation; reconcile exact job/logs. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish staged autonomy worker boundary, verify exact CI; then start/resume handoff and owned host bridge. No default planner use or native/model run. |
+| Recovery action | Reconcile exact autonomy stage CI; review atomic cancel/terminal status race and bounded context serialization, then trusted start/resume launch ownership and host grant/exit bridge. No live registration or native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
