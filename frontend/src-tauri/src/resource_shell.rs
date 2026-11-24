@@ -30,7 +30,7 @@ const JOB_FAULT: &str = "Owned process group exit is unconfirmed";
 fn final_command(command: Command, has_grant: bool, stop_sent: bool) -> bool {
     match command {
         Command::Stop => !has_grant,
-        Command::Release(_) => stop_sent,
+        Command::Release(_) | Command::SaveRelease => stop_sent,
         _ => false,
     }
 }

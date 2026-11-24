@@ -8,7 +8,8 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 use crate::resource_shell::{InferenceGroup, ShellDriver};
 use crate::resource_transport::Command;
-use crate::resource_wire::{ExitEvidence, Reply};
+use crate::resource_wire::{ExitEvidence, Reply, SaveKind};
+use crate::resource_save::{SaveOwner, SaveTicket};
 
 const FAULT: &str = "Owned desktop resource supervisor is blocked";
 const POLL_INTERVAL: Duration = Duration::from_millis(100);
@@ -50,11 +51,11 @@ fn join_finished<R>(slot: &mut Option<Startup<R>>, now: Instant)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Phase {
     Boot, Idle, Claim, Starting, Running, Drain, Exit, Release,
-    EngineExit, Closed, Fault,
+    SaveClaim, SaveRunning, SaveRelease, EngineExit, Closed, Fault,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Pending { Ready, Poll, Grant, WorkerReady, Drain, Release, Stop }
+enum Pending { Ready, Poll, Grant, WorkerReady, Drain, Release, SaveGrant, SaveRelease, Stop }
 
 enum Worker<R> {
     None,
@@ -67,6 +68,7 @@ pub(crate) struct Supervisor<R: Send + 'static> {
     factory: Factory<R>,
     startup: Option<Startup<R>>,
     worker: Worker<R>,
+    save: Option<SaveOwner>,
     phase: Phase,
     pending: Option<Pending>,
     next_poll: Instant,
@@ -83,7 +85,7 @@ impl<R: Send + 'static> Supervisor<R> {
     pub(crate) fn new(shell: ShellDriver, factory: Factory<R>) -> Self {
         let now = Instant::now();
         Self { shell, factory, startup: None, worker: Worker::None,
-            phase: Phase::Boot, pending: None, next_poll: now,
+            save: None, phase: Phase::Boot, pending: None, next_poll: now,
             ready_deadline: now + READY_LIMIT, stopping: false, stop_ack: false,
             exit_deadline: None, graceful_observation: false,
             fault_engine_cleanup: false, fault_worker_cleanup: false }
@@ -92,10 +94,20 @@ impl<R: Send + 'static> Supervisor<R> {
     // This is private host state, not a public grant or model-ready claim.
     pub(crate) fn ready(&self) -> bool {
         !self.stopping && matches!(self.phase, Phase::Idle | Phase::Claim |
-            Phase::Starting | Phase::Running | Phase::Drain | Phase::Exit | Phase::Release)
+            Phase::Starting | Phase::Running | Phase::Drain | Phase::Exit | Phase::Release |
+            Phase::SaveClaim | Phase::SaveRunning | Phase::SaveRelease)
     }
 
     pub(crate) fn closed(&self) -> bool { self.phase == Phase::Closed }
+
+    pub(crate) fn reserve_save(&mut self, kind: SaveKind) -> Result<SaveTicket, &'static str> {
+        if self.stopping || self.phase != Phase::Idle || self.pending.is_some() ||
+            self.save.is_some() || self.shell.has_grant() { return Err("resource_busy"); }
+        let (owner, ticket) = SaveOwner::pair(kind);
+        self.save = Some(owner);
+        self.phase = Phase::SaveClaim;
+        Ok(ticket)
+    }
 
     pub(crate) fn request_stop(&mut self) {
         self.stopping = true;
@@ -205,6 +217,26 @@ impl<R: Send + 'static> Supervisor<R> {
                 if self.stop_ack { self.begin_engine_exit(now); }
                 else { self.phase = Phase::Idle; }
             },
+            (Pending::SaveGrant, Reply::Granted) if self.phase == Phase::SaveClaim => {
+                if !self.shell.has_grant() { return Err(FAULT); }
+                self.save.as_mut().ok_or(FAULT)?.granted()?;
+                self.phase = Phase::SaveRunning;
+            },
+            (Pending::SaveGrant, Reply::Denied(reason)) if self.phase == Phase::SaveClaim => {
+                self.save.take().ok_or(FAULT)?.denied(reason);
+                self.phase = match reason {
+                    "not_ready" => Phase::Boot,
+                    "shutting_down" | "ownership_unknown" => return Err(FAULT),
+                    _ => Phase::Idle,
+                };
+                if self.phase == Phase::Boot { self.ready_deadline = now + READY_LIMIT; }
+            },
+            (Pending::SaveRelease, Reply::Released) if self.phase == Phase::SaveRelease => {
+                if self.shell.has_grant() { return Err(FAULT); }
+                self.save.take().ok_or(FAULT)?.released()?;
+                if self.stop_ack { self.begin_engine_exit(now); }
+                else { self.phase = Phase::Idle; }
+            },
             (Pending::Stop, Reply::AdmissionStopped) if self.stopping && !self.stop_ack => {
                 self.stop_ack = true;
                 if !self.shell.has_grant() {
@@ -237,6 +269,12 @@ impl<R: Send + 'static> Supervisor<R> {
             }
         }
         if self.pending.is_some() { return Ok(()); }
+        if self.stopping && !self.stop_ack && self.phase == Phase::SaveClaim {
+            // No grant request entered the wire (pending is empty). Refuse
+            // the ticket rather than leave a reservation after final STOP.
+            self.save.take().ok_or(FAULT)?.denied("shutting_down");
+            self.phase = Phase::Idle;
+        }
         if self.stopping && !self.stop_ack &&
             !matches!(self.phase, Phase::EngineExit | Phase::Closed) {
             return self.send(Pending::Stop, Command::Stop, now);
@@ -278,6 +316,16 @@ impl<R: Send + 'static> Supervisor<R> {
                 };
                 self.send(Pending::Release, Command::Release(evidence), now)?;
             },
+            Phase::SaveClaim => {
+                let kind = self.save.as_ref().ok_or(FAULT)?.kind;
+                self.send(Pending::SaveGrant, Command::SaveGrant(kind), now)?;
+            },
+            Phase::SaveRunning => {
+                if self.save.as_mut().ok_or(FAULT)?.poll(self.stopping)? {
+                    self.phase = Phase::SaveRelease;
+                }
+            },
+            Phase::SaveRelease => self.send(Pending::SaveRelease, Command::SaveRelease, now)?,
             Phase::EngineExit => {
                 if !self.graceful_observation {
                     if now >= self.exit_deadline.ok_or(FAULT)? { return Err(FAULT); }
@@ -299,6 +347,7 @@ impl<R: Send + 'static> Supervisor<R> {
     // Best-effort termination is not permission to release or to restart.
     fn cleanup_fault(&mut self, now: Instant) {
         let _ = self.reap_start(now);
+        if let Some(save) = &mut self.save { save.fault(); }
         if !self.fault_engine_cleanup {
             self.fault_engine_cleanup = true;
             let _ = self.shell.begin_owned_cleanup();

@@ -3,14 +3,14 @@
 //! A single supervisor drives this state; its writer owns the actual child
 //! and must report completion even after timeout. Timeout is not job exit.
 use std::time::{Duration, Instant};
-use crate::resource_wire::{Wire, Reply, ExitEvidence};
+use crate::resource_wire::{Wire, Reply, ExitEvidence, SaveKind};
 
 const CAP: usize = 4096;
 const DEADLINE: Duration = Duration::from_secs(5);
 const FAULT: &str = "Owned resource transport unavailable";
 
 #[derive(Clone, Copy)]
-pub(crate) enum Command { Ready, PollDemand, GrantDemand, WorkerReady, Grant, Drain, Release(ExitEvidence), Stop }
+pub(crate) enum Command { Ready, PollDemand, GrantDemand, WorkerReady, Grant, Drain, Release(ExitEvidence), SaveGrant(SaveKind), SaveRelease, Stop }
 
 pub(crate) struct Transport {
     wire: Wire,
@@ -57,6 +57,8 @@ impl Transport {
             Command::Grant => self.wire.grant(),
             Command::Drain => self.wire.drain(),
             Command::Release(proof) => self.wire.release(proof),
+            Command::SaveGrant(kind) => self.wire.save_grant(kind),
+            Command::SaveRelease => self.wire.save_release(),
             Command::Stop => self.wire.stop(),
         }?;
         self.deadline = Some(deadline);

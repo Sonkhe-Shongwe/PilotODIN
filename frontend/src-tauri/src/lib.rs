@@ -30,6 +30,8 @@ mod resource_shell;
 #[cfg(windows)]
 mod resource_supervisor;
 #[cfg(windows)]
+mod resource_save;
+#[cfg(windows)]
 mod resource_desktop;
 
 #[derive(Clone, Serialize)]
@@ -1015,9 +1017,8 @@ fn current_dataset_export_key(app: &AppHandle) -> Result<String,String> {
     let active=backend.as_ref().filter(|b| !b.stop_requested && b.exit.load(Ordering::Acquire)==0)
         .ok_or("Active analytical engine required for dataset Save As")?;
     #[cfg(windows)]
-    if active.owned.is_some() {
-        // Native binary-save admission is not yet wired to the shared lane.
-        return Err("Owned resource admission for dataset Save As is unavailable".into());
+    if let Some(owner) = &active.owned {
+        owner.check_available()?;
     }
     active._storage_pins.verify()?;
     Ok(active.dataset_export_key.clone())
@@ -1089,8 +1090,11 @@ async fn save_dataset_as(window:tauri::WebviewWindow, request:Request<'_>)
         return Err("Another dataset Save As is already active".into());
     }
     let lease=DatasetSaveLease(app.clone());
+    #[cfg(windows)]
+    let ticket = resource_desktop::reserve_save(&app, resource_wire::SaveKind::Export).await?;
+    // The broker grant precedes the extra payload copy in owned mode.
     let bytes=bytes.to_vec();
-    tauri::async_runtime::spawn_blocking(move||->Result<NativeReportSave,String>{
+    let work = move |entered_publication: &mut bool| -> Result<NativeReportSave,String> {
         let _lease=lease;
         metadata.verify(&key)?;
         let payload=dataset_file::validate(metadata.format,&metadata.filename,metadata.version,
@@ -1126,10 +1130,17 @@ async fn save_dataset_as(window:tauri::WebviewWindow, request:Request<'_>)
         let state=app.state::<DesktopState>();
         let _publication=state.launch_gate.lock().map_err(|_|"Desktop publication unavailable")?;
         if current_dataset_export_key(&app)?!=key {return Err("Analytical engine changed; export again".into());}
+        *entered_publication = true;
         dataset_file::publish_new(&path,&payload,uuid::Uuid::new_v4().as_u128(),
             &allowed_now,&protected_now)?;
         Ok(NativeReportSave{status:"saved",filename:path.file_name().and_then(|n|n.to_str()).map(str::to_owned)})
-    }).await.map_err(|_|"Native dataset Save As could not finish".to_string())?
+    };
+    #[cfg(windows)]
+    if let Some(ticket) = ticket {
+        return resource_desktop::run_save(ticket, Box::new(work)).await;
+    }
+    tauri::async_runtime::spawn_blocking(move || work(&mut false))
+        .await.map_err(|_|"Native dataset Save As could not finish".to_string())?
 }
 
 #[tauri::command]
@@ -1137,10 +1148,7 @@ async fn save_report_as(app: AppHandle, request: Request<'_>)
     -> Result<NativeReportSave, String> {
     ensure_desktop_admission(&app, &app.state::<DesktopState>())?;
     #[cfg(windows)]
-    if resource_desktop::selected(&app) {
-        // No independent native writer may bypass the shared workload lane.
-        return Err("Owned resource admission for report Save As is unavailable".into());
-    }
+    let ticket = resource_desktop::reserve_save(&app, resource_wire::SaveKind::Report).await?;
     let (format, filename, bytes) = {
         let (format, filename) = report_save_headers(request.headers())?;
         let bytes = report_save_bytes(request.body())?;
@@ -1149,7 +1157,7 @@ async fn save_report_as(app: AppHandle, request: Request<'_>)
     };
     // Blocking native dialogs must not run on the application's UI thread.
     // Spawn one blocking worker, then report the exact outcome to Deliver.
-    tauri::async_runtime::spawn_blocking(move || -> Result<NativeReportSave, String> {
+    let work = move |entered_publication: &mut bool| -> Result<NativeReportSave, String> {
         let dialog = app.dialog().file()
             .set_title("Save PilotODIN report")
             .set_file_name(filename);
@@ -1166,8 +1174,15 @@ async fn save_report_as(app: AppHandle, request: Request<'_>)
         // Only the OS dialog may choose the destination. Never accept a path
         // from JavaScript. Standard Save As handles overwrite confirmation.
         ensure_desktop_admission(&app, &app.state::<DesktopState>())?;
+        *entered_publication = true;
         write_verified_report(&path, &format, &bytes)
-    }).await.map_err(|_| "The native Save As task could not finish".to_string())?
+    };
+    #[cfg(windows)]
+    if let Some(ticket) = ticket {
+        return resource_desktop::run_save(ticket, Box::new(work)).await;
+    }
+    tauri::async_runtime::spawn_blocking(move || work(&mut false))
+        .await.map_err(|_| "The native Save As task could not finish".to_string())?
 }
 
 fn write_verified_report(path: &Path, format: &str, bytes: &[u8])

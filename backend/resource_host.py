@@ -105,6 +105,11 @@ def parse_request(frame, generation, capability):
     if (command == "GRANT_REQUEST" and len(args) == 2
             and args[0] == "LOCAL_INFERENCE" and _HEX32.fullmatch(args[1])):
         return Request(sequence,command,args[1])
+    if command == "SAVE_GRANT" and args in (["REPORT"],["EXPORT"]):
+        return Request(sequence,command,evidence=args[0])
+    if (command == "SAVE_RELEASE" and len(args) == 2
+            and _HEX32.fullmatch(args[0]) and args[1] == "SETTLED"):
+        return Request(sequence,command,args[0],args[1])
     if command == "POLL_DEMAND" and not args:
         return Request(sequence,command)
     if command == "WORKER_READY" and len(args) == 1 and _HEX32.fullmatch(args[0]):
@@ -311,6 +316,7 @@ class HostBroker:
         self._last = 0
         self._lease = None
         self._grant = None
+        self._native_save = False
         self._stopping = False
         self._faulted = False
         self._pending_reply = None
@@ -370,11 +376,36 @@ class HostBroker:
         if request.command == "STOP":
             self._stop()
             return self._reply(seq,"ADMISSION_STOPPED")
+        if request.command == "SAVE_GRANT":
+            if self._stopping:
+                return self._reply(seq,"SAVE_DENIED","shutting_down")
+            if not self._ready_confirmed or (
+                    self._ready_check is not None and self._ready_check() is not True):
+                return self._reply(seq,"SAVE_DENIED","not_ready")
+            if self._lease is not None:
+                return self._reply(seq,"SAVE_DENIED","resource_busy")
+            op = Operation.REPORT if request.evidence == "REPORT" else Operation.EXPORT
+            admission = self.coordinator.try_acquire(op)
+            if not admission.allowed:
+                if admission.code not in _DENIALS:
+                    raise _fault()
+                return self._reply(seq,"SAVE_DENIED",admission.code)
+            self._lease = admission.lease
+            if not self.coordinator.start(self._lease):
+                if not self.coordinator.release(self._lease):
+                    raise _fault()
+                self._lease = None
+                return self._reply(seq,"SAVE_DENIED","shutting_down")
+            self._native_save = True
+            self._grant = uuid4().hex
+            return self._reply(seq,"SAVE_GRANTED",self._grant)
         if request.command == "POLL_DEMAND":
-            if self._demand is None:
+            if self._native_save or self._demand is None:
                 raise _fault()
             return self._reply(seq,*self._demand.poll())
         if request.command == "GRANT_REQUEST":
+            if self._native_save:
+                raise _fault()
             claimed = False
             if self._demand is not None:
                 if request.grant is None:
@@ -415,6 +446,13 @@ class HostBroker:
                 self._demand_ack = ("grant",True,"reserved")
             return self._reply(seq,"GRANT_REPLY","GRANTED",self._grant)
         if self._lease is None or request.grant != self._grant:
+            raise _fault()
+        if self._native_save:
+            if request.command != "SAVE_RELEASE":
+                raise _fault()
+            self._release_after_reply = True
+            return self._reply(seq,"SAVE_RELEASED",self._grant)
+        if request.command == "SAVE_RELEASE":
             raise _fault()
         if request.command == "WORKER_READY":
             if self._demand is None:
@@ -476,8 +514,9 @@ class HostBroker:
                 self._lease = None
                 self._grant = None
                 self._release_after_reply = False
-                if self._demand is not None:
+                if self._demand is not None and not self._native_save:
                     self._demand.released()
+                self._native_save = False
             if self._demand_ack is not None:
                 action,*args = self._demand_ack
                 self._demand_ack = None

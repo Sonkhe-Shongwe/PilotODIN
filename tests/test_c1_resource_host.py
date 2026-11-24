@@ -966,3 +966,53 @@ def test_runner_bootstrap_failure_cannot_enter_legacy(monkeypatch,capsys):
     monkeypatch.setattr(desktop_runner,"Thread",lambda *a,**kw:pytest.fail("Legacy watcher"))
     assert desktop_runner.main()==3
     assert KEY not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("kind,operation",[("REPORT",Operation.REPORT),("EXPORT",Operation.EXPORT)])
+def test_native_save_owns_same_lane_until_correlated_flush(kind,operation):
+    from backend.resource_host import InferenceDemand
+    c=Coordinator(lambda:"adaptive",lambda:3*GIB)
+    b=HostBroker(c,GEN,KEY,demand=InferenceDemand())
+    reply=exchange(b,frame(1,"SAVE_GRANT "+kind))[0].decode().split()
+    assert reply[3]=="SAVE_GRANTED"
+    gid=reply[4]
+    assert c.status()["operation"]==operation.value
+    for other in (Operation.DATA,Operation.TRAINING,Operation.LOCAL_INFERENCE):
+        assert c.try_acquire(other).code=="resource_busy"
+    exchange(b,frame(2,"STOP"))
+    assert not b.shutdown_ready
+    ack=b.receive(frame(3,"SAVE_RELEASE "+gid+" SETTLED"))[0]
+    assert c.status()["active"] and not b.shutdown_ready
+    b.reply_written(ack)
+    assert not c.status()["active"] and b.shutdown_ready
+
+@pytest.mark.parametrize("command",["RELEASE {gid} EXITED","WORKER_READY {gid}","SAVE_RELEASE {gid} EXITED",
+                                     "SAVE_RELEASE "+("f"*32)+" SETTLED","POLL_DEMAND"])
+def test_native_save_rejects_wrong_evidence_or_grant(command):
+    c,b=setup()
+    gid=exchange(b,frame(1,"SAVE_GRANT REPORT"))[0].decode().split()[4]
+    with pytest.raises(ProtocolFault):
+        b.receive(frame(2,command.format(gid=gid)))
+    assert c.status()["phase"]=="blocked"
+
+def test_native_save_does_not_release_on_lost_ack():
+    c,b=setup()
+    gid=exchange(b,frame(1,"SAVE_GRANT EXPORT"))[0].decode().split()[4]
+    b.receive(frame(2,"SAVE_RELEASE "+gid+" SETTLED"))
+    b.transport_lost()
+    assert c.status()["phase"]=="blocked"
+
+def test_native_save_busy_before_allocation():
+    c,b=setup()
+    lease=c.try_acquire(Operation.TRAINING).lease
+    assert c.start(lease)
+    assert exchange(b,frame(1,"SAVE_GRANT REPORT"))[0].endswith(b"SAVE_DENIED resource_busy\n")
+    assert c.status()["operation"]=="training"
+    assert c.release(lease)
+
+def test_inference_cannot_use_native_save_release():
+    c,b=setup()
+    gid=grant(b)
+    with pytest.raises(ProtocolFault):
+        b.receive(frame(2,"SAVE_RELEASE "+gid+" SETTLED"))
+    assert c.status()["phase"]=="blocked"

@@ -15,7 +15,10 @@ fn hex(value: &str, n: usize) -> bool {
 pub(crate) enum ExitEvidence { NeverStarted, Exited }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Pending { Ready, PollDemand, Grant, WorkerReady, Drain, Release, Stop }
+pub(crate) enum SaveKind { Report, Export }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Pending { Ready, PollDemand, Grant, WorkerReady, Drain, Release, SaveGrant, SaveRelease, Stop }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Reply { Ready, NotReady, DemandNone, DemandPending, DemandWaiting, DemandFinished, Granted, Denied(&'static str), WorkerReady, Draining, Released, AdmissionStopped }
@@ -27,6 +30,7 @@ pub(crate) struct Wire {
     pending: Option<Pending>,
     grant: Option<String>,
     demand: Option<String>,
+    native_save: bool,
     buffer: Vec<u8>,
     stopping: bool,
     ready: bool,
@@ -36,7 +40,7 @@ pub(crate) struct Wire {
 impl Wire {
     pub(crate) fn new(generation: String, capability: String) -> Result<Self, &'static str> {
         if !hex(&generation, 32) || !hex(&capability, 64) { return Err(FAULT); }
-        Ok(Self { generation, capability, sequence: 0, pending: None, grant: None, demand: None,
+        Ok(Self { generation, capability, sequence: 0, pending: None, grant: None, demand: None, native_save: false,
             buffer: Vec::new(), stopping: false, ready: false, faulted: false })
     }
 
@@ -78,7 +82,7 @@ impl Wire {
     }
 
     pub(crate) fn poll_demand(&mut self) -> Result<Vec<u8>, &'static str> {
-        if !self.ready { return Err(FAULT); }
+        if !self.ready || self.native_save { return Err(FAULT); }
         self.request(Pending::PollDemand, "POLL_DEMAND")
     }
 
@@ -89,7 +93,7 @@ impl Wire {
     }
 
     pub(crate) fn worker_ready(&mut self) -> Result<Vec<u8>, &'static str> {
-        if self.stopping || self.demand.is_none() { return Err(FAULT); }
+        if self.stopping || self.native_save || self.demand.is_none() { return Err(FAULT); }
         let grant = self.grant.clone().ok_or(FAULT)?;
         self.request(Pending::WorkerReady, &format!("WORKER_READY {grant}"))
     }
@@ -100,15 +104,30 @@ impl Wire {
     }
 
     pub(crate) fn drain(&mut self) -> Result<Vec<u8>, &'static str> {
+        if self.native_save { return Err(FAULT); }
         let id = self.grant.clone().ok_or(FAULT)?;
         self.request(Pending::Drain, &format!("DRAIN {id}"))
     }
 
     pub(crate) fn release(&mut self, evidence: ExitEvidence) -> Result<Vec<u8>, &'static str> {
+        if self.native_save { return Err(FAULT); }
         let id = self.grant.clone().ok_or(FAULT)?;
         let proof = match evidence { ExitEvidence::NeverStarted => "NEVER_STARTED",
             ExitEvidence::Exited => "EXITED" };
         self.request(Pending::Release, &format!("RELEASE {id} {proof}"))
+    }
+
+    pub(crate) fn save_grant(&mut self, kind: SaveKind) -> Result<Vec<u8>, &'static str> {
+        if !self.ready || self.stopping || self.grant.is_some() { return Err(FAULT); }
+        self.request(Pending::SaveGrant, match kind {
+            SaveKind::Report => "SAVE_GRANT REPORT", SaveKind::Export => "SAVE_GRANT EXPORT",
+        })
+    }
+
+    pub(crate) fn save_release(&mut self) -> Result<Vec<u8>, &'static str> {
+        if !self.native_save { return Err(FAULT); }
+        let id = self.grant.clone().ok_or(FAULT)?;
+        self.request(Pending::SaveRelease, &format!("SAVE_RELEASE {id} SETTLED"))
     }
 
     pub(crate) fn stop(&mut self) -> Result<Vec<u8>, &'static str> {
@@ -160,7 +179,14 @@ impl Wire {
                 self.grant = Some((*id).to_owned());
                 Reply::Granted
             },
-            (Some(Pending::Grant), ["GRANT_REPLY", "DENIED", code]) => {
+            (Some(Pending::SaveGrant), ["SAVE_GRANTED", id]) if hex(id,32) => {
+                if self.grant.is_some() { return self.reject(); }
+                self.grant = Some((*id).to_owned());
+                self.native_save = true;
+                Reply::Granted
+            },
+            (Some(Pending::Grant), ["GRANT_REPLY", "DENIED", code]) |
+            (Some(Pending::SaveGrant), ["SAVE_DENIED", code]) => {
                 let denial = match *code {
                     "not_ready" => { self.ready = false; "not_ready" },
                     "resource_busy" => "resource_busy",
@@ -182,6 +208,12 @@ impl Wire {
                 if self.grant.as_deref() == Some(*id) => {
                     self.grant = None;
                     self.demand = None;
+                    Reply::Released
+                },
+            (Some(Pending::SaveRelease), ["SAVE_RELEASED", id])
+                if self.native_save && self.grant.as_deref() == Some(*id) => {
+                    self.grant = None;
+                    self.native_save = false;
                     Reply::Released
                 },
             (Some(Pending::Stop), ["ADMISSION_STOPPED"]) => Reply::AdmissionStopped,
@@ -215,6 +247,31 @@ mod tests {
         assert_eq!(w.receive(&reply(3,&format!("WORKER_READY {GRANT}"))).unwrap(),Some(Reply::WorkerReady));
         w.poll_demand().unwrap();
         assert_eq!(w.receive(&reply(4,&format!("DEMAND_FINISHED {GRANT}"))).unwrap(),Some(Reply::DemandFinished));
+    }
+
+    #[test]
+    fn native_save_grant_is_typed_and_release_is_correlated() {
+        let mut w=wire();
+        assert_eq!(w.save_grant(SaveKind::Report).unwrap(),
+            format!("POD1 {GEN} {KEY} 1 SAVE_GRANT REPORT\n").into_bytes());
+        assert_eq!(w.receive(&reply(1,&format!("SAVE_GRANTED {GRANT}"))).unwrap(),Some(Reply::Granted));
+        assert!(w.poll_demand().is_err());
+        assert!(w.release(ExitEvidence::Exited).is_err());
+        assert_eq!(w.save_release().unwrap(),
+            format!("POD1 {GEN} {KEY} 2 SAVE_RELEASE {GRANT} SETTLED\n").into_bytes());
+        assert!(w.has_grant());
+        assert_eq!(w.receive(&reply(2,&format!("SAVE_RELEASED {GRANT}"))).unwrap(),Some(Reply::Released));
+        assert!(!w.has_grant());
+    }
+
+    #[test]
+    fn native_save_wrong_ack_retains_grant() {
+        let mut w=wire();
+        w.save_grant(SaveKind::Export).unwrap();
+        w.receive(&reply(1,&format!("SAVE_GRANTED {GRANT}"))).unwrap();
+        w.save_release().unwrap();
+        assert!(w.receive(&reply(2,&format!("RELEASED {GRANT}"))).is_err());
+        assert!(w.faulted() && w.has_grant());
     }
 
     #[test]

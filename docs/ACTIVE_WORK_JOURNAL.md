@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a2013f555812eee86a08769c8934aeb10c6527e2 |
 | Product baseline | a6ec84c784152d7ab5f357a9083ca6eb34cdeb92 |
 | Scope | Private native REPORT/EXPORT grant and joined writer lifetime on the existing POD1 lane; preserve native save checks and legacy mode; compile-time gate remains false. |
 | Operation ID | C1-C2-INTEGRATION-20261124-native-save |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; resource_transport.rs; resource_shell.rs; resource_supervisor.rs; resource_desktop.rs; resource_save.rs; lib.rs; continuity docs |
 | Approval | Standing P4 source authority. No product native compilation/run, live save, model operations, installer, owner data, new OS operations or partial activation. |
 | Verification | Prior five exact routine workflows SUCCESS, seven executed jobs and logs reconciled. All 82 workflows unchanged from 81de01d; planned paths match P1 backend, P2 report and P4 routine synthetic/source jobs only; restricted P4 probe disabled. |

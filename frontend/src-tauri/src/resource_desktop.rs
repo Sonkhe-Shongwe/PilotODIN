@@ -6,7 +6,8 @@ use std::thread::{self, JoinHandle};
 use crate::resource_shell::{InferenceGroup, ShellChannel, ShellDriver};
 use crate::resource_supervisor::{Factory, StartupOutcome, Supervisor};
 use crate::resource_transport::Transport;
-use crate::resource_wire::Wire;
+use crate::resource_wire::{Wire, SaveKind};
+use crate::resource_save::{SaveTicket, Work};
 use tauri_plugin_shell::process::Command;
 
 const OWNED_RESOURCE_ENABLED: bool = false;
@@ -136,6 +137,37 @@ impl OwnedSession {
             thread::sleep(TICK);
         }
     }
+}
+
+// Acquire the exact installed native owner, without holding a desktop lock
+// across the broker handshake. No caller may select a grant by ID.
+pub(super) async fn reserve_save(app: &AppHandle, kind: SaveKind)
+    -> Result<Option<SaveTicket>, String> {
+    if !selected(app) { return Ok(None); }
+    let ticket = {
+        let state = app.state::<DesktopState>();
+        ensure_desktop_admission(app, &state)?;
+        let backend = state.backend.lock().map_err(|_| "Engine state unavailable")?;
+        let owner = backend.as_ref().and_then(|worker| worker.owned.as_ref())
+            .ok_or("Owned analytical session unavailable")?;
+        owner.check_available()?;
+        let mut supervisor = owner.supervisor.try_lock()
+            .map_err(|_| "Native Save As resource_busy")?;
+        supervisor.reserve_save(kind).map_err(str::to_owned)?
+    };
+    let ticket = tauri::async_runtime::spawn_blocking(move || ticket.wait_grant())
+        .await.map_err(|_| "Native Save As admission unavailable".to_owned())??;
+    Ok(Some(ticket))
+}
+
+pub(super) async fn run_save(ticket: SaveTicket, work: Work)
+    -> Result<NativeReportSave, String> {
+    let result = ticket.submit(work)?;
+    // This waiter is not the writer. A dropped IPC future cannot detach
+    // the actual writer from the supervisor or authorize lane release.
+    tauri::async_runtime::spawn_blocking(move || {
+        result.recv().map_err(|_| "Native Save As ownership unavailable".to_owned())?
+    }).await.map_err(|_| "Native Save As result unavailable".to_owned())?
 }
 
 // Same existing model integrity, location, scratch and process-group
