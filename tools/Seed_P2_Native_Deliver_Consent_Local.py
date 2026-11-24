@@ -24,7 +24,9 @@ def main() -> int:
     explicit_home = os.environ.get("PILOTODIN_HOME")
     if not explicit_home:
         raise RuntimeError("PILOTODIN_HOME must identify a fresh isolated DevQA workspace")
-    home = Path(explicit_home).resolve(strict=True)
+    sys.path.insert(0, str(ROOT))
+    from backend.workspace_boundary import existing_fixture_home, hold_fresh_fixture_workspace
+    home = existing_fixture_home(explicit_home)
     output = Path(sys.argv[1]).resolve()
     session = home.parent
     qa = json.loads((session / "manifest.json").read_text(encoding="utf-8-sig"))
@@ -41,7 +43,8 @@ def main() -> int:
     for node in (session, session / "manifest.json", home, output.parent):
         if node.is_symlink() or getattr(node, "is_junction", lambda: False)():
             raise RuntimeError("Refusing redirected DevQA path")
-    sys.path.insert(0, str(ROOT))
+    home = hold_fresh_fixture_workspace(explicit_home, home)
+    os.environ["PILOTODIN_HOME"] = str(home)
     from fastapi.testclient import TestClient
     from backend.main import app
     from backend import storage

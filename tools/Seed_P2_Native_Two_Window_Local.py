@@ -26,7 +26,9 @@ def main() -> int:
     raw_home = os.environ.get("PILOTODIN_HOME")
     if not raw_home:
         raise RuntimeError("PILOTODIN_HOME required for disposable DevQA")
-    home = Path(raw_home).resolve(strict=True)
+    sys.path.insert(0, str(ROOT))
+    from backend.workspace_boundary import existing_fixture_home, hold_fresh_fixture_workspace
+    home = existing_fixture_home(raw_home)
     run_dir = home.parent
     fixture = Path(sys.argv[1]).resolve()
     qa = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8-sig"))
@@ -40,7 +42,8 @@ def main() -> int:
     for node in (run_dir, run_dir / "manifest.json", home, fixture.parent):
         if node.is_symlink() or getattr(node, "is_junction", lambda: False)():
             raise RuntimeError("Refusing redirected QA location")
-    sys.path.insert(0, str(ROOT))
+    home = hold_fresh_fixture_workspace(raw_home, home)
+    os.environ["PILOTODIN_HOME"] = str(home)
     from fastapi.testclient import TestClient
     from backend.main import app
     from backend import storage

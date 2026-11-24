@@ -242,6 +242,40 @@ with engine_workspace(str(home)):
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_fresh_fixture_never_creates_missing_or_admits_dirty_home(self):
+        from backend.workspace_boundary import existing_fixture_home, hold_fresh_fixture_workspace
+        with self.assertRaises(WorkspaceBoundaryError):
+            existing_fixture_home(str(self.home))
+        self.assertFalse(self.home.exists())
+        self.home.mkdir()
+        marker = self.home / "original.txt"
+        marker.write_bytes(b"preserve")
+        with self.assertRaises(WorkspaceBoundaryError):
+            hold_fresh_fixture_workspace(str(self.home), self.home)
+        self.assertEqual(marker.read_bytes(), b"preserve")
+        self.assertFalse((self.home / LOCK_NAME).exists())
+
+    def test_fresh_fixture_refuses_competing_writer_before_storage_import(self):
+        code = r"""
+import sys
+from pathlib import Path
+from backend.workspace_boundary import hold_fresh_fixture_workspace, WorkspaceBoundaryError
+try:
+    hold_fresh_fixture_workspace(sys.argv[1], Path(sys.argv[1]))
+except WorkspaceBoundaryError:
+    assert "backend.storage" not in sys.modules
+else:
+    raise AssertionError("Competing fixture writer admitted")
+"""
+        with engine_workspace(str(self.home)):
+            result = subprocess.run(
+                [sys.executable, "-B", "-c", code, str(self.home)],
+                cwd=self.root_source, capture_output=True, text=True,
+                timeout=15, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual({p.name for p in self.home.iterdir()}, {LOCK_NAME})
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()

@@ -119,6 +119,10 @@ def test_disposable_seeder_imports_only_two_p3_fixtures(tmp_path):
         assert saved.is_relative_to(workspace)
         assert saved.read_bytes() == original
     assert not any((workspace / "models").iterdir())
+    from backend.workspace_boundary import LOCK_NAME, engine_workspace
+    assert (workspace / LOCK_NAME).is_file()
+    with engine_workspace(str(workspace.resolve())):
+        assert (workspace / LOCK_NAME).stat().st_size == 0
 
 
 def test_disposable_seeder_fails_closed_when_workspace_not_empty(tmp_path):

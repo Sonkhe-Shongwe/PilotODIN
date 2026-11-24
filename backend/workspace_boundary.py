@@ -43,7 +43,7 @@ def _regular(info, *, empty=False):
         raise WorkspaceBoundaryError("Workspace file is redirected or invalid")
 
 
-def _home(value):
+def _home(value, *, create=True):
     if not isinstance(value, str) or not value:
         raise WorkspaceBoundaryError("Explicit local workspace required")
     path = Path(value)
@@ -58,6 +58,8 @@ def _home(value):
     try:
         _directory(path)
     except FileNotFoundError:
+        if not create:
+            raise
         # Only a missing final component may be created. Never recursively
         # create a caller-supplied chain of unverified ancestors.
         try:
@@ -216,6 +218,33 @@ def hold_process_workspace(value):
     _process_workspace = (canonical, fd, root_identity, database_identity)
     atexit.register(lease.__exit__, None, None, None)
     return canonical
+
+
+def existing_fixture_home(value):
+    """Validate an already allocated fixture directory without creating it."""
+    try:
+        supplied = _home(value, create=False)
+        identity = _directory(supplied)
+        canonical = supplied.resolve(strict=True)
+        _home(str(canonical), create=False)
+        if (not identity.st_ino
+                or not os.path.samestat(identity, _directory(canonical))):
+            raise WorkspaceBoundaryError("Fixture workspace identity changed")
+        return canonical
+    except OSError as exc:
+        raise WorkspaceBoundaryError("Fixture workspace unavailable or unsafe") from exc
+
+
+def hold_fresh_fixture_workspace(value, expected):
+    """Called only after a seeder's existing manifest and scope checks."""
+    if existing_fixture_home(value) != expected:
+        raise WorkspaceBoundaryError("Fixture workspace identity changed")
+    if any(expected.iterdir()):
+        raise WorkspaceBoundaryError("Fixture workspace is not empty")
+    owned = hold_process_workspace(value)
+    if owned != expected or {entry.name for entry in owned.iterdir()} != {LOCK_NAME}:
+        raise WorkspaceBoundaryError("Fixture workspace changed during ownership admission")
+    return owned
 
 
 def storage_home(value):

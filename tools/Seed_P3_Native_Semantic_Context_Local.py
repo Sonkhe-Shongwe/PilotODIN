@@ -20,7 +20,9 @@ SOURCES = (
 def main() -> int:
     if len(sys.argv) != 2 or not os.environ.get("PILOTODIN_HOME"):
         raise RuntimeError("Require one fixture manifest and a disposable PILOTODIN_HOME")
-    workspace = Path(os.environ["PILOTODIN_HOME"]).resolve(strict=True)
+    sys.path.insert(0, str(ROOT))
+    from backend.workspace_boundary import existing_fixture_home, hold_fresh_fixture_workspace
+    workspace = existing_fixture_home(os.environ["PILOTODIN_HOME"])
     run = workspace.parent
     output = Path(sys.argv[1]).resolve()
     manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8-sig"))
@@ -41,7 +43,8 @@ def main() -> int:
             raise RuntimeError("Refusing redirected QA paths")
 
     # Import only after the confirmed isolated env is in effect.
-    sys.path.insert(0, str(ROOT))
+    workspace = hold_fresh_fixture_workspace(os.environ["PILOTODIN_HOME"], workspace)
+    os.environ["PILOTODIN_HOME"] = str(workspace)
     from fastapi.testclient import TestClient
     from backend import storage
     from backend.main import app
