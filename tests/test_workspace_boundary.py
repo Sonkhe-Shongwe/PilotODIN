@@ -411,7 +411,7 @@ home = hold_process_workspace(sys.argv[1])
 os.environ["PILOTODIN_HOME"] = str(home)
 from backend import main, storage, dataset_publication
 from fastapi.testclient import TestClient
-raw = b"A,B\\n1,2\\n"
+raw = b"A,B\n1,2\n"
 boundary = sys.argv[2]
 original = dataset_publication._write_exclusive
 def stop(path, payload, owned, verify):
@@ -431,21 +431,30 @@ if boundary != "recover":
 else:
     paths = list((home/"datasets").iterdir())
     before = {p.name:p.read_bytes() for p in paths}
-    assert len(before) in (1,2)
-    assert b"A,B" in before.values()
+    expected_boundary = sys.argv[3]
+    with storage.connect() as con:
+        receipt = con.execute("SELECT operation_id,state FROM artifact_publications_v1").fetchone()
+    final = receipt["operation_id"] + ".csv"
+    staging = final + ".uploading"
+    if expected_boundary == "partial-stage":
+        assert receipt["state"] == "intent"
+        assert before == {staging: raw[:3]}, before
+    else:
+        assert receipt["state"] == "publishing"
+        assert before == {staging: raw, final: raw[:3]}, before
     assert dataset_publication.recover_pending()==1
     assert dataset_publication.recover_pending()==0
     assert storage.list_projects()==[]
     with storage.connect() as con:
         assert tuple(con.execute("SELECT state,reason_code FROM artifact_publications_v1").fetchone())==("interrupted","interrupted_before_commit")
-    assert {p.name:p.read_bytes() for p in paths}==before
+    assert {p.name:p.read_bytes() for p in (home/"datasets").iterdir()}==before
 """
         for boundary in ("partial-stage", "partial-final"):
             with self.subTest(boundary=boundary):
                 home = self.root / boundary
                 for step, expected in ((boundary, 73), ("recover", 0)):
                     result = subprocess.run(
-                        [sys.executable, "-B", "-c", child, str(home), step],
+                        [sys.executable, "-B", "-c", child, str(home), step, boundary],
                         cwd=self.root_source, capture_output=True, text=True,
                         timeout=30, check=False,
                     )

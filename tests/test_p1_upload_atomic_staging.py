@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from backend import dataset_publication, engine, main, quality, storage
+from backend import artifact_publication, dataset_publication, engine, main, quality, storage
 
 
 def _isolated(monkeypatch, tmp_path):
@@ -304,3 +304,63 @@ def test_receipt_disagreement_blocks_quality_without_rewriting_history(monkeypat
     with storage.connect() as con:
         assert tuple(con.execute("SELECT original_sha256,current_version FROM quality_state WHERE project_id=?",(pid,)).fetchone())==(hashlib.sha256(_data()).hexdigest(),0)
         assert con.execute("SELECT COUNT(*) FROM quality_versions WHERE project_id=?",(pid,)).fetchone()[0]==1
+
+
+def test_recovery_refuses_malformed_receipt_without_touching_bytes(monkeypatch,tmp_path):
+    home=_isolated(monkeypatch,tmp_path)
+    raw=_data()
+    receipt=storage.begin_dataset_publication(".csv",len(raw),hashlib.sha256(raw).hexdigest())
+    staging=home/"datasets"/receipt.staging_name
+    staging.write_bytes(raw[:8])
+    with storage.connect() as con:
+        con.execute("UPDATE artifact_publications_v1 SET created_at=? WHERE operation_id=?",
+                    ("invalid timestamp",receipt.operation_id))
+    with pytest.raises(artifact_publication.PublicationError):
+        dataset_publication.recover_pending()
+    assert staging.read_bytes()==raw[:8]
+    assert storage.list_projects()==[]
+    with storage.connect() as con:
+        assert con.execute("SELECT state FROM artifact_publications_v1").fetchone()[0]=="intent"
+
+
+def test_recovery_blocks_redirected_payload_without_touching_target(monkeypatch,tmp_path):
+    home=_isolated(monkeypatch,tmp_path)
+    raw=_data()
+    receipt=storage.begin_dataset_publication(".csv",len(raw),hashlib.sha256(raw).hexdigest())
+    foreign=tmp_path/"foreign.csv"
+    foreign.write_bytes(raw)
+    staged=home/"datasets"/receipt.staging_name
+    try:
+        staged.symlink_to(foreign)
+    except OSError as exc:
+        pytest.skip("Symbolic links unavailable in disposable fixture: "+str(exc))
+    assert dataset_publication.recover_pending()==1
+    assert dataset_publication.recover_pending()==0
+    assert staged.is_symlink()
+    assert foreign.read_bytes()==raw
+    with storage.connect() as con:
+        assert tuple(con.execute("SELECT state,reason_code FROM artifact_publications_v1").fetchone())==("blocked","unsafe_identity")
+
+
+def test_committed_receipt_survives_exact_digest_relink(monkeypatch,tmp_path):
+    home=_isolated(monkeypatch,tmp_path)
+    response=_upload()
+    assert response.status_code==201,response.text
+    pid=response.json()["id"]
+    original=Path(storage.get_project(pid)["dataset_path"])
+    relocated=home/"datasets"/"relocated-original.csv"
+    original.rename(relocated)
+    # Simulate the metadata-only result of an approved exact-digest relink.
+    # The real maintenance command has its own P1 backup/lease regressions.
+    with storage.connect() as con:
+        before=tuple(con.execute("SELECT * FROM artifact_publications_v1 WHERE subject_id=?",(pid,)).fetchone())
+        con.execute("UPDATE projects SET dataset_path=? WHERE id=?",(str(relocated),pid))
+    assert dataset_publication.recover_pending()==0
+    response=TestClient(main.app).get(f"/api/projects/{pid}/live-profile")
+    assert response.status_code==200,response.text
+    assert response.json()["version"]==0
+    assert relocated.read_bytes()==_data()
+    assert not original.exists()
+    with storage.connect() as con:
+        assert tuple(con.execute("SELECT * FROM artifact_publications_v1 WHERE subject_id=?",(pid,)).fetchone())==before
+        assert tuple(con.execute("SELECT original_sha256,current_version FROM quality_state WHERE project_id=?",(pid,)).fetchone())==(hashlib.sha256(_data()).hexdigest(),0)
