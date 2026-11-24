@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5a9ca712ded15fd1167d24a77c09a8a1e7204f4e |
+| Observed starting HEAD | dd731bf38ce09ab84854905b8548a43b9792a3a1 |
 | Product baseline | 9ed3b52c8ccbb224d1a644c1d7cdca1dae4d2d7e |
-| Scope | C1 dormant production training endpoint binding to trusted server scope owner, preserve existing unregistered behavior; cancellation finalizer fixtures and script-mode imports. No partial live enforcement. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-training-production-seam |
-| Operation state | RECONCILED |
-| Intended files | backend/main.py; backend/resource_training.py; backend/resource_training_store.py; tests/test_c1_resource_training_store.py; journal, handoff, C evidence/spec |
+| Scope | C1 staged autonomous data/inference boundary and actual dormant worker integration; no native or model work, no live registration. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-stages |
+| Operation state | PREPARED |
+| Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Dormant actual production endpoint binding, cancellation fixture and script-mode import corrections published; exact source CI pending. No live wrapper registration. |
-| Pending runs | [P1 recovery #45455828292](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828292), [P1 lifecycle #45455828413](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828413), [P1 browser #45455828338](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828338), [P2 comparison #45455828739](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828739), [P2 revisions #45455828377](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828377), [P3 browser #45455828237](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828237), [P3 semantic #45455828360](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828360), [P4 ranking #45455828796](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828796); all queued/in progress at observation; exact 9ed3b52c8ccbb224d1a644c1d7cdca1dae4d2d7e. Reconcile all terminal results and job scope. |
+| Verification | Eight exact-source 9ed3b52 workflows SUCCESS; P1 166 regression + 2 subtests, 95 C1. Next real autonomous worker loop with inert owned-planner adapter and disposable data/receipts; verify data stage, resource refusal, cancellation and stale result. |
+| Pending runs | None; eight runs at 9ed3b52 terminal SUCCESS; see C evidence ledger. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact production seam and broad routine CI; correct any cancellation/endpoint failure, then integrate autonomy ownership and host bridge. No live wrapper registration or restricted operation. |
+| Recovery action | Publish staged autonomy worker boundary, verify exact CI; then start/resume handoff and owned host bridge. No default planner use or native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
