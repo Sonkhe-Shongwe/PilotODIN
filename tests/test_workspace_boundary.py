@@ -592,6 +592,75 @@ with boundary.engine_workspace(str(home)):
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+
+    def test_maintenance_pins_workspace_and_releases_on_exit(self):
+        from backend.workspace_boundary import existing_maintenance_workspace
+        self.home.mkdir()
+        (self.home / "datasets").mkdir()
+        (self.home / "pilotodin.sqlite3").write_bytes(b"synthetic")
+        moved = self.root / "moved"
+        with existing_maintenance_workspace(str(self.home)) as (owned, verify):
+            self.assertEqual(owned, self.home)
+            verify()
+            if os.name == "nt":
+                with self.assertRaises(OSError):
+                    self.home.rename(moved)
+                with self.assertRaises(OSError):
+                    (self.home / "datasets").rename(self.home / "moved-datasets")
+            else:
+                self.home.rename(moved)
+                self.home.mkdir()
+                with self.assertRaises(WorkspaceBoundaryError):
+                    verify()
+                self.home.rmdir()
+                moved.rename(self.home)
+                verify()
+        self.home.rename(moved)
+        with engine_workspace(str(moved)):
+            pass
+
+    def test_scoped_model_directory_pin_released_before_cleanup(self):
+        code = r"""
+import os, sys
+from backend import workspace_boundary as boundary
+home = boundary.hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+from backend import storage
+path = home / "models" / "synthetic-id"
+path.mkdir()
+moved = path.with_name("moved")
+with storage.pin_model_directory(path, expected=path.lstat()) as verify:
+    verify()
+    if os.name == "nt":
+        try:
+            path.rename(moved)
+        except OSError:
+            pass
+        else:
+            raise AssertionError("Pinned model directory was renamed")
+    else:
+        path.rename(moved)
+        path.mkdir()
+        try:
+            verify()
+        except boundary.WorkspaceBoundaryError:
+            pass
+        else:
+            raise AssertionError("Replaced model directory admitted")
+        path.rmdir()
+        moved.rename(path)
+    verify()
+path.rename(moved)
+moved.rmdir()
+assert not path.exists()
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=30, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()

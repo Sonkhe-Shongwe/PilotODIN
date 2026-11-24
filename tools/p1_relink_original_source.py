@@ -24,7 +24,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from backend.workspace_boundary import (
     LOCK_NAME, WorkspaceBoundaryError, existing_fixture_home,
-    existing_fixture_file, existing_maintenance_workspace,
+    existing_fixture_file, existing_maintenance_workspace, pinned_existing_directory,
 )
 
 
@@ -206,47 +206,83 @@ def apply(home: Path, plan: Inspection, backup_to: Path, confirm_id: str, repo_r
         raise RecoveryBlocked("Backups must be outside the repository and workspace.")
     _check_backend_stopped()
     try:
-        with existing_maintenance_workspace(str(home)) as owned:
-            _apply_owned(owned, plan, backup_to)
+        with existing_maintenance_workspace(str(home)) as (owned, verify_home):
+            with pinned_existing_directory(backup_to.parent) as verify_parent:
+                _apply_owned(owned, plan, backup_to, verify_home, verify_parent)
     except WorkspaceBoundaryError as exc:
         raise RecoveryBlocked("Workspace ownership or physical admission refused.") from exc
 
 
-def _apply_owned(home: Path, plan: Inspection, backup_to: Path) -> None:
+def _copy_backup_contents(home, backup_to, verify):
+    # The destination root is already exclusively created and pinned.
+    # Retain copytree's absent-only directory semantics for each subtree.
+    for source in home.iterdir():
+        if source.name == LOCK_NAME:
+            continue
+        verify()
+        destination = backup_to / source.name
+        if destination.exists() or destination.is_symlink():
+            raise RecoveryBlocked("Backup destination changed during copy.")
+        if source.is_dir():
+            existing_fixture_home(str(source))
+            shutil.copytree(source, destination)
+        else:
+            existing_fixture_file(source)
+            shutil.copy2(source, destination)
+    verify()
+    shutil.copystat(home, backup_to)
+
+
+def _apply_owned(home: Path, plan: Inspection, backup_to: Path,
+                 verify_home, verify_parent) -> None:
+    verify_home()
+    verify_parent()
     initial_manifest = _manifest(home)
     size = sum((home / key).stat().st_size for key in initial_manifest)
     if shutil.disk_usage(backup_to.parent).free < size + 64 * 1024 * 1024:
         raise RecoveryBlocked("Insufficient free space for full development-workspace backup.")
     db = home / "pilotodin.sqlite3"
     # Hold the write-reservation lock for a consistent snapshot and sole metadata update.
-    con = sqlite3.connect(db, timeout=8, isolation_level=None)
+    verify_home()
+    con = sqlite3.connect(db.as_uri() + "?mode=rw", uri=True, timeout=8, isolation_level=None)
     try:
+        verify_home()
         con.execute("BEGIN IMMEDIATE")
         if inspect(home, "day") != plan:
             raise RecoveryBlocked("Project identity, source or Quality state changed. Reinspect.")
         if _manifest(home) != initial_manifest:
             raise RecoveryBlocked("Workspace changed during preflight. No relink.")
-        def ignore_coordination(directory, names):
-            return {LOCK_NAME} if Path(directory) == home and LOCK_NAME in names else set()
+        verify_home()
+        verify_parent()
+        backup_to.mkdir(exist_ok=False)
+        created = backup_to.lstat()
+        with pinned_existing_directory(backup_to, expected=created) as verify_backup:
+            def verify():
+                verify_home()
+                verify_parent()
+                verify_backup()
 
-        shutil.copytree(home, backup_to, ignore=ignore_coordination)
-        if _manifest(backup_to) != initial_manifest:
-            raise RecoveryBlocked("Full backup comparison failed. Metadata unchanged.")
-        if _sha256(plan.candidate) != plan.pinned_sha256:
-            raise RecoveryBlocked("Candidate source changed during backup.")
-        updated = con.execute(
-            "UPDATE projects SET dataset_path=? WHERE id=? AND dataset_path=?",
-            (str(plan.candidate), plan.project_id, plan.old_path),
-        )
-        if updated.rowcount != 1:
-            raise RecoveryBlocked("Recorded path changed concurrently; update cancelled.")
-        stored = con.execute(
-            "SELECT original_sha256,current_version FROM quality_state WHERE project_id=?",
-            (plan.project_id,),
-        ).fetchone()
-        if stored != (plan.pinned_sha256, plan.quality_version):
-            raise RecoveryBlocked("Quality pin/version changed. Update cancelled.")
-        con.execute("COMMIT")
+            _copy_backup_contents(home, backup_to, verify)
+            verify()
+            if _manifest(backup_to) != initial_manifest:
+                raise RecoveryBlocked("Full backup comparison failed. Metadata unchanged.")
+            if _sha256(plan.candidate) != plan.pinned_sha256:
+                raise RecoveryBlocked("Candidate source changed during backup.")
+            verify()
+            updated = con.execute(
+                "UPDATE projects SET dataset_path=? WHERE id=? AND dataset_path=?",
+                (str(plan.candidate), plan.project_id, plan.old_path),
+            )
+            if updated.rowcount != 1:
+                raise RecoveryBlocked("Recorded path changed concurrently; update cancelled.")
+            stored = con.execute(
+                "SELECT original_sha256,current_version FROM quality_state WHERE project_id=?",
+                (plan.project_id,),
+            ).fetchone()
+            if stored != (plan.pinned_sha256, plan.quality_version):
+                raise RecoveryBlocked("Quality pin/version changed. Update cancelled.")
+            verify()
+            con.execute("COMMIT")
     except Exception:
         if con.in_transaction:
             con.execute("ROLLBACK")

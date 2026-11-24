@@ -89,6 +89,49 @@ def test_backup_first_relinks_only_path_and_preserves_history(tmp_path, monkeypa
         relocation.inspect(home, "day")
 
 
+
+def test_backup_root_and_parent_pinned_before_copy(tmp_path, monkeypatch):
+    import os
+    repo, home, db, _, original = workspace(tmp_path)
+    plan = relocation.inspect(home, "day")
+    before = rows(db)
+    parent = tmp_path / "backup-parent"
+    parent.mkdir()
+    backup = parent / "backup"
+    moved = parent / "moved"
+    copy = relocation._copy_backup_contents
+    monkeypatch.setattr(relocation, "_check_backend_stopped", lambda: None)
+
+    def challenge(source, destination, verify):
+        verify()
+        if os.name == "nt":
+            with pytest.raises(OSError):
+                parent.rename(tmp_path / "moved-parent")
+            with pytest.raises(OSError):
+                destination.rename(moved)
+            copy(source, destination, verify)
+        else:
+            destination.rename(moved)
+            destination.mkdir()
+            # The backup root must be verified before the first copy.
+            copy(source, destination, verify)
+
+    monkeypatch.setattr(relocation, "_copy_backup_contents", challenge)
+    if os.name == "nt":
+        relocation.apply(home, plan, backup, ID, repo)
+        assert rows(db)["projects"] == [(ID, "day", str(original.resolve()))]
+        assert rows(backup / "pilotodin.sqlite3") == before
+        backup.rename(moved)
+    else:
+        with pytest.raises(relocation.RecoveryBlocked, match="ownership"):
+            relocation.apply(home, plan, backup, ID, repo)
+        assert rows(db) == before
+        assert not list(backup.iterdir())
+        assert not list(moved.iterdir())
+    assert original.read_bytes() == DATA
+    parent.rename(tmp_path / "released-parent")
+
+
 def test_requires_confirmation_and_keeps_db_unmodified(tmp_path, monkeypatch):
     repo, home, db, _, _ = workspace(tmp_path)
     before = rows(db)

@@ -344,24 +344,33 @@ def train_background(eid:str,pid:str,config:dict):
         path=storage.HOME / "models" / eid
         storage.check_training_interruption(eid)
         storage.check_write_path(path, directory=True, absent=True)
-        path.mkdir(parents=True,exist_ok=False)
-        artifact_path = path
-        artifact_identity = storage.check_write_path(path, directory=True)
-        for name,pipe in pipes.items():
-            storage.check_training_interruption(eid)
-            storage.check_write_path(path, directory=True, expected=artifact_identity)
-            destination = path/f"{name}.joblib"
-            storage.check_write_path(destination, absent=True)
-            joblib.dump(pipe,destination)
-            storage.check_write_path(destination)
-        storage.check_training_interruption(eid)
+        path.mkdir(exist_ok=False)
+        artifact_identity = path.lstat()
         storage.check_write_path(path, directory=True, expected=artifact_identity)
-        destination = path/"test_set.joblib"
-        storage.check_write_path(destination, absent=True)
-        joblib.dump((x_test,y_test),destination)
-        storage.check_write_path(destination)
-        storage.check_training_interruption(eid)
-        finished = storage.finish_running_experiment(eid,"completed",results=result)
+        with storage.pin_model_directory(path, expected=artifact_identity) as verify_artifacts:
+            # Admission failure leaves an unverified directory untouched.
+            # Release the scoped pin before intentional failed-job cleanup.
+            artifact_path = path
+            for name,pipe in pipes.items():
+                storage.check_training_interruption(eid)
+                verify_artifacts()
+                storage.check_write_path(path, directory=True, expected=artifact_identity)
+                destination = path/f"{name}.joblib"
+                storage.check_write_path(destination, absent=True)
+                joblib.dump(pipe,destination)
+                verify_artifacts()
+                storage.check_write_path(destination)
+            storage.check_training_interruption(eid)
+            verify_artifacts()
+            storage.check_write_path(path, directory=True, expected=artifact_identity)
+            destination = path/"test_set.joblib"
+            storage.check_write_path(destination, absent=True)
+            joblib.dump((x_test,y_test),destination)
+            verify_artifacts()
+            storage.check_write_path(destination)
+            storage.check_training_interruption(eid)
+            verify_artifacts()
+            finished = storage.finish_running_experiment(eid,"completed",results=result)
     except storage.TrainingInterrupted as e:
         storage.finish_interrupted_experiment(eid,e.status)
     except Exception as e:

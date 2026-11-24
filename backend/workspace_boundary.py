@@ -284,6 +284,48 @@ def engine_workspace(value):
 
 
 @contextmanager
+def pinned_existing_directory(value, *, expected=None, workspace_children=False):
+    """Retain one existing physical directory chain for a bounded operation.
+
+    Only the known immediate workspace children may optionally be retained.
+    Never create a path or pin an unbounded directory tree. The caller must
+    verify before consequential writes; POSIX checks do not prevent renames.
+    """
+    pins = {}
+    try:
+        try:
+            canonical = existing_fixture_home(str(value))
+            root_identity = _directory(canonical)
+            if expected is not None and not os.path.samestat(expected, root_identity):
+                raise WorkspaceBoundaryError("Scoped directory identity changed")
+            ancestors = {parent: _directory(parent) for parent in reversed(canonical.parents)}
+            children = {}
+            if workspace_children:
+                for name in DIRECTORIES:
+                    try:
+                        children[name] = _directory(canonical / name)
+                    except FileNotFoundError:
+                        pass
+            pins = _pin_directory_chain(canonical, root_identity, ancestors, children)
+            observed = {**ancestors, canonical: root_identity,
+                        **{canonical / name: info for name, info in children.items()}}
+        except OSError as exc:
+            raise WorkspaceBoundaryError("Scoped directory unavailable or unsafe") from exc
+
+        def verify():
+            try:
+                for path, identity in observed.items():
+                    pins[path].verify(identity)
+            except OSError as exc:
+                raise WorkspaceBoundaryError("Scoped directory unavailable or unsafe") from exc
+
+        verify()
+        yield verify
+    finally:
+        _close_directory_pins(pins)
+
+
+@contextmanager
 def existing_maintenance_workspace(value):
     """Acquire the shared lease for an existing, physically checked workspace.
 
@@ -293,16 +335,21 @@ def existing_maintenance_workspace(value):
     canonical = existing_fixture_home(value)
     database = canonical / "pilotodin.sqlite3"
     before = existing_fixture_file(database)
+    before_root = _directory(canonical)
     with _workspace_lease(value, create=False) as (home, fd, root_identity):
-        if existing_fixture_home(str(home)) != canonical:
+        if (existing_fixture_home(str(home)) != canonical
+                or not os.path.samestat(before_root, root_identity)):
             raise WorkspaceBoundaryError("Maintenance workspace identity changed")
-        if not os.path.samestat(root_identity, _directory(canonical)):
-            raise WorkspaceBoundaryError("Maintenance workspace identity changed")
-        _same_lock(fd, canonical / LOCK_NAME)
-        current = existing_fixture_file(database)
-        if not before.st_ino or not current.st_ino or not os.path.samestat(before, current):
-            raise WorkspaceBoundaryError("Maintenance database identity changed")
-        yield canonical
+        with pinned_existing_directory(canonical, expected=root_identity,
+                                       workspace_children=True) as verify_pins:
+            def verify():
+                verify_pins()
+                _same_lock(fd, canonical / LOCK_NAME)
+                _verify_entries(canonical)
+                _database_identity(canonical, before)
+
+            verify()
+            yield canonical, verify
 
 
 # Keep runtime ownership through interpreter shutdown, after non-daemon
@@ -623,6 +670,41 @@ def validate_process_write(home, path, *, directory=False, missing=False,
         return info
     except OSError as exc:
         raise WorkspaceBoundaryError("Workspace write path unavailable or unsafe") from exc
+
+
+@contextmanager
+def pin_process_model_directory(home, path, *, expected=None):
+    """Hold only the new model directory for publication, not cleanup."""
+    if _process_workspace is None:
+        # Existing explicit in-process disposable fixture compatibility.
+        yield lambda: None
+        return
+    path = Path(path)
+    owned = _process_workspace[0]
+    if path.parent != owned / "models":
+        raise WorkspaceBoundaryError("Unexpected model directory")
+    observed = validate_process_write(home, path, directory=True, expected=expected)
+    pin = None
+    try:
+        try:
+            pin = _DirectoryPin(path, observed)
+            if pin.identity[0] != _process_pins[owned].identity[0]:
+                raise WorkspaceBoundaryError("Workspace directory volume changed")
+        except OSError as exc:
+            raise WorkspaceBoundaryError("Model directory unavailable or unsafe") from exc
+
+        def verify():
+            current = validate_process_write(home, path, directory=True, expected=observed)
+            try:
+                pin.verify(current)
+            except OSError as exc:
+                raise WorkspaceBoundaryError("Model directory unavailable or unsafe") from exc
+
+        verify()
+        yield verify
+    finally:
+        if pin is not None:
+            pin.close()
 
 
 def configure_process_scratch(home):

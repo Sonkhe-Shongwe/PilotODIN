@@ -12,12 +12,14 @@ try:
     from . import sqlite_fk_gate
     from .workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                      validate_process_database, validate_process_write,
-                                     configure_process_scratch, validate_process_scratch)
+                                     configure_process_scratch, validate_process_scratch,
+                                     pin_process_model_directory)
 except ImportError:
     import sqlite_fk_gate
     from workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                     validate_process_database, validate_process_write,
-                                    configure_process_scratch, validate_process_scratch)
+                                    configure_process_scratch, validate_process_scratch,
+                                     pin_process_model_directory)
 
 # No implicit checkout data root. Product entrypoints establish ownership
 # before import; isolated in-process tests must supply an explicit home.
@@ -34,6 +36,10 @@ def check_scratch():
 
 def check_write_path(path, **options):
     return validate_process_write(HOME, path, **options)
+
+
+def pin_model_directory(path, *, expected=None):
+    return pin_process_model_directory(HOME, path, expected=expected)
 
 
 def guarded_unlink(path, *, expected=None):
