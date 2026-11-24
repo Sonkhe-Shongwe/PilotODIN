@@ -105,9 +105,11 @@ export async function upload(file:File):Promise<{id:string;name:string;profile:P
 
 /** Read-only download: authentication never appears in the URL. */
 export async function downloadCleanedData(path:string,body:DatasetExportRequest):Promise<VerifiedDatasetDownload> {
+ const project=/^\/projects\/([a-f0-9]{32})\/quality\/export$/.exec(path)?.[1];
+ if(!project)throw new Error('Dataset export must identify an exact project.');
  const response=await fetchLocal(path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(!response.ok){await check(response);throw new Error('Dataset export failed')}
- return verifyDatasetDownload(response,body);
+ return verifyDatasetDownload(response,body,project);
 }
 /** Authenticated binary download. Never put desktop session credentials in URLs. */
 export async function downloadReportFile(path:string):Promise<{blob:Blob;filename:string}> {

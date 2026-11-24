@@ -16,10 +16,11 @@ import anyio
 from starlette.responses import JSONResponse, Response, StreamingResponse
 
 try:
-    from . import data_exports as exports, export_publication as ledger, quality, storage
+    from . import data_exports as exports, export_publication as ledger, export_attestation, quality, storage
 except ImportError:
     import data_exports as exports
     import export_publication as ledger
+    import export_attestation
     import quality, storage
 
 CHUNK = 256 * 1024
@@ -221,6 +222,7 @@ class ExportResponse(Response):
                 # Do not abandon a worker that owns a file or SQLite transaction.
                 with anyio.CancelScope(shield=True):
                     await anyio.to_thread.run_sync(transfer.prepare,self.pid,self.request)
+                    attestation = export_attestation.headers_for_transfer(transfer.receipt, transfer.filename, transfer.count)
             except quality.QualityError as exc:
                 await JSONResponse({"detail":str(exc)},status_code=exc.status)(scope,receive,send)
                 return
@@ -241,7 +243,7 @@ class ExportResponse(Response):
                                   "X-PilotODIN-Export-SHA256":transfer.receipt.sha256,
                                   "X-PilotODIN-Dataset-Version":str(transfer.version),
                                   "X-PilotODIN-Exported-Rows":str(transfer.count),
-                                  "Cache-Control":"no-store","X-Content-Type-Options":"nosniff"})
+                                  "Cache-Control":"no-store","X-Content-Type-Options":"nosniff",**attestation})
             await body(scope,receive,send)
         finally:
             with anyio.CancelScope(shield=True):

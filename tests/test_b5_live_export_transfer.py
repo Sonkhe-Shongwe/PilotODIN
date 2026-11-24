@@ -318,3 +318,52 @@ def test_export_metadata_requires_desktop_session_and_allowed_origin(project,mon
     assert accepted.headers["x-pilotodin-export-sha256"]==receipt.sha256==hashlib.sha256(accepted.content).hexdigest()
     assert accepted.headers["access-control-allow-origin"]=="https://tauri.localhost"
     assert path.read_bytes()==raw and list((home/"export_tmp").iterdir())==[]
+
+
+def test_attestation_canonical_vector_and_refusals(monkeypatch):
+    from backend import export_attestation
+    from dataclasses import replace
+    receipt = ledger.Receipt("b"*32, "a"*32, 7, "csv", 1, 25, "c"*64,
+                             "transferring", None, "now", "now")
+    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION", "2"*64)
+    monkeypatch.setenv(export_attestation.KEY_ENV, "1"*64)
+    expected = "6e628fe3aaae0e3f2d01ddc839d74b607b730b09f893108632ef63dde2e55fb3"
+    filename = "Generated_cleaned_v7_filtered.csv"
+    assert export_attestation.headers_for_transfer(receipt, filename, 2)["X-PilotODIN-Export-MAC"] == expected
+    assert export_attestation.headers_for_transfer(receipt, filename, 3)["X-PilotODIN-Export-MAC"] != expected
+    with pytest.raises(ledger.PublicationError):
+        export_attestation.headers_for_transfer(receipt, "../"+filename, 2)
+    with pytest.raises(ledger.PublicationError):
+        export_attestation.headers_for_transfer(replace(receipt, state="released"), filename, 2)
+    monkeypatch.setenv(export_attestation.KEY_ENV, "2"*64)
+    with pytest.raises(ledger.PublicationError):
+        export_attestation.headers_for_transfer(receipt, filename, 2)
+    monkeypatch.delenv(export_attestation.KEY_ENV)
+    assert export_attestation.headers_for_transfer(receipt, filename, 2) == {}
+
+
+@pytest.mark.parametrize("fmt", ["csv", "xlsx"])
+def test_live_attestation_binds_receipt_and_response(project, monkeypatch, fmt):
+    import hmac
+    pid,home,path,raw=project
+    secret="2"*64
+    key="1"*64
+    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION",secret)
+    monkeypatch.setenv("PILOTODIN_DATASET_EXPORT_KEY",key)
+    with TestClient(main.app) as client:
+        response=client.post(f"/api/projects/{pid}/quality/export",
+                             json={"version":0,"format":fmt},
+                             headers={"Origin":"https://tauri.localhost","X-PilotODIN-Session":secret})
+    assert response.status_code==200,response.text
+    r,=receipts()
+    assert r.state=="released"
+    assert response.headers["x-pilotodin-export-project"]==pid
+    assert response.headers["x-pilotodin-export-operation"]==r.operation_id
+    filename=response.headers["content-disposition"].split('"')[1]
+    message="\n".join(("PilotODIN/export-receipt/v1",pid,r.operation_id,"0",fmt,
+                       str(len(response.content)),hashlib.sha256(response.content).hexdigest(),
+                       filename,"2",""))
+    assert response.headers["x-pilotodin-export-mac"]==hmac.digest(key.encode(),message.encode(),"sha256").hex()
+    assert key not in str(response.headers) and secret not in str(response.headers)
+    assert "x-pilotodin-export-mac" in response.headers["access-control-expose-headers"].lower()
+    assert path.read_bytes()==raw and list((home/"export_tmp").iterdir())==[]

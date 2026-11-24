@@ -63,7 +63,8 @@ app.add_middleware(CORSMiddleware,
                    allow_credentials=False,allow_methods=["*"],allow_headers=["*"],
                    expose_headers=["Content-Disposition","Content-Length",
                                    "X-PilotODIN-Dataset-Version","X-PilotODIN-Exported-Rows",
-                                   "X-PilotODIN-Export-SHA256"])
+                                   "X-PilotODIN-Export-SHA256","X-PilotODIN-Export-Project",
+                                   "X-PilotODIN-Export-Operation","X-PilotODIN-Export-MAC"])
 MAX_BYTES = 40 * 1024 * 1024
 
 # Desktop mode uses a randomly generated per-launch secret supplied by the

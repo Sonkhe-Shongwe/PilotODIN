@@ -70,5 +70,15 @@ test('excess bytes cancel an unfinished transfer',async()=>{
 });
 test('production download calls the strict verifier before returning bytes',()=>{
   const api=fs.readFileSync(path.join(__dirname,'../src/api.ts'),'utf8');
-  assert.match(api,/return verifyDatasetDownload\(response,body\)/);
+  assert.match(api,/return verifyDatasetDownload\(response,body,project\)/);
+});
+
+test('signed receipt metadata must match the requested project and be complete',async()=>{
+  const project='a'.repeat(32);
+  const headers={'x-pilotodin-export-project':project,'x-pilotodin-export-operation':'b'.repeat(32),'x-pilotodin-export-mac':'c'.repeat(64)};
+  const result=await verifyDatasetDownload(response(csv,headers),req,project);
+  assert.deepEqual(result.receipt,{project,operation:'b'.repeat(32),mac:'c'.repeat(64)});
+  await assert.rejects(verifyDatasetDownload(response(csv,headers),req,'d'.repeat(32)));
+  await assert.rejects(verifyDatasetDownload(response(csv,{...headers,'x-pilotodin-export-mac':''}),req,project));
+  assert.equal((await verifyDatasetDownload(response(),req)).receipt,null);
 });

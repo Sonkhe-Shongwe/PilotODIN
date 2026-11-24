@@ -12,6 +12,7 @@ export type DatasetExportRequest={
 export type VerifiedDatasetDownload={
   blob:Blob;filename:string;format:'csv'|'xlsx';version:number;
   expectedBytes:number;sha256:string;rows:number;
+  receipt:{project:string;operation:string;mac:string}|null;
 };
 const INVALID='Dataset export metadata or bytes do not match the requested export. No file was downloaded.';
 function decimal(value:string|null):number {
@@ -21,7 +22,7 @@ function decimal(value:string|null):number {
   return n;
 }
 
-export async function verifyDatasetDownload(response:Response,request:DatasetExportRequest):Promise<VerifiedDatasetDownload>{
+export async function verifyDatasetDownload(response:Response,request:DatasetExportRequest,expectedProject?:string):Promise<VerifiedDatasetDownload>{
   let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
   try{
     if(response.status!==200||!Number.isSafeInteger(request.version)||request.version<0||
@@ -38,6 +39,16 @@ export async function verifyDatasetDownload(response:Response,request:DatasetExp
     if(version!==request.version||expectedBytes<1||expectedBytes>MAX_DATASET_EXPORT_BYTES||
        !/^[a-f0-9]{64}$/.test(sha256)||!filename||!filename.endsWith(suffix)||mime!==expectedMime||
        !response.body||!globalThis.crypto?.subtle)throw new Error(INVALID);
+    const project=response.headers.get('x-pilotodin-export-project');
+    const operation=response.headers.get('x-pilotodin-export-operation');
+    const mac=response.headers.get('x-pilotodin-export-mac');
+    let receipt:VerifiedDatasetDownload['receipt']=null;
+    if(project!==null||operation!==null||mac!==null){
+      if(!project||!operation||!mac||project!==expectedProject||
+         !/^[a-f0-9]{32}$/.test(project)||!/^[a-f0-9]{32}$/.test(operation)||
+         !/^[a-f0-9]{64}$/.test(mac))throw new Error(INVALID);
+      receipt={project,operation,mac};
+    }
     // Preallocate only after validating the declared cap. Never use unbounded
     // response.blob() or JSON byte arrays for an untrusted transfer.
     const bytes=new Uint8Array(expectedBytes);
@@ -58,7 +69,7 @@ export async function verifyDatasetDownload(response:Response,request:DatasetExp
       bytes[bytes.length-2]===13&&bytes[bytes.length-1]===10;
     const xlsx=bytes.length>=4&&bytes[0]===0x50&&bytes[1]===0x4b&&bytes[2]===3&&bytes[3]===4;
     if(request.format==='csv'?!csv:!xlsx)throw new Error(INVALID);
-    return {blob:new Blob([bytes],{type:expectedMime}),filename,format:request.format,version,expectedBytes,sha256,rows};
+    return {blob:new Blob([bytes],{type:expectedMime}),filename,format:request.format,version,expectedBytes,sha256,rows,receipt};
   }catch(error){
     // Cancel the response on metadata/stream refusal so the backend can settle
     // its owned transfer. Cancellation failure does not admit invalid bytes.

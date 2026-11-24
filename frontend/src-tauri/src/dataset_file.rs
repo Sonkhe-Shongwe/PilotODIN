@@ -33,7 +33,7 @@ pub(crate) struct Validated<'a> {
     bytes: &'a [u8],
 }
 
-fn generated_name(name: &str, format: Format, version: u64) -> bool {
+pub(crate) fn generated_name(name: &str, format: Format, version: u64) -> bool {
     let extension = format!(".{}", format.extension());
     let Some(base) = name.strip_suffix(&extension) else { return false; };
     let base = base.strip_suffix("_filtered").unwrap_or(base);

@@ -28,6 +28,8 @@ struct BackendConnection {
 
 struct ActiveBackend {
     connection: BackendConnection,
+    // Separate from the serialized WebView API connection.
+    dataset_export_key: String,
     child: Option<CommandChild>,
     exit: Arc<AtomicU8>,
     stop_requested: bool,
@@ -456,6 +458,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
     if port == inference_port {return Err("Port reservation collision".into());}
     let token = new_token();
     let inference_token = new_token();
+    let dataset_export_key = new_token();
     let mut storage_pins = storage_boundary::DirectoryPins::default();
     let data_dir = worker_data_home(&app, &mut storage_pins)?;
     let worker_temp = worker_temp_directory(&data_dir, "backend-temp", &mut storage_pins)?;
@@ -470,6 +473,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         .env("TMPDIR", worker_temp.as_os_str())
         .env("PILOTODIN_DESKTOP_PORT", port.to_string())
         .env("PILOTODIN_DESKTOP_SESSION", token.as_str())
+        .env("PILOTODIN_DATASET_EXPORT_KEY", dataset_export_key.as_str())
         .env("PILOTODIN_DESKTOP_WATCH_STDIN", "1")
         .env("PILOTODIN_BUNDLED_LLM_PORT", inference_port.to_string())
         .env("PILOTODIN_BUNDLED_LLM_TOKEN", inference_token.as_str())
@@ -485,7 +489,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
     let connection = BackendConnection { port, token: token.clone() };
     let exit = Arc::new(AtomicU8::new(0));
-    *guard = Some(ActiveBackend { connection: connection.clone(), child: Some(child),
+    *guard = Some(ActiveBackend { connection: connection.clone(), dataset_export_key, child: Some(child),
         exit: exit.clone(), stop_requested: false, _storage_pins: storage_pins });
     *state.inference_settings.lock().map_err(|_| "AI state unavailable".to_string())? =
         Some(InferenceSettings { port: inference_port, token: inference_token });
