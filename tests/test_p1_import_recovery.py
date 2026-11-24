@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 
 import pytest
 
-from backend import artifact_publication, model_publication, quality, storage
+from backend import artifact_publication, model_artifacts, model_publication, quality, storage
 from backend.main import app
 
 
@@ -635,3 +635,72 @@ def test_legacy_model_metadata_is_not_retroactively_certified(monkeypatch, tmp_p
     with storage.connect() as con:
         assert model_publication.read(con, legacy) is None
         assert model_publication.read(con, eid) == intent
+
+
+def _fresh_model_worker(monkeypatch,tmp_path):
+    home,pid,_,config,results,_,intent=_model_receipt_fixture(monkeypatch,tmp_path)
+    eid=storage.new_experiment(pid,config,expected_quality_version=0)
+    assert storage.claim_queued_experiment(eid)
+    def dump(value,target):
+        target.write(value)
+    monkeypatch.setattr(model_artifacts.joblib,"dump",dump)
+    return home,eid,config,results,intent.source_sha256
+
+
+@pytest.mark.parametrize("lost_ack",[False,True])
+def test_model_artifact_publication_verifies_and_commits_exact_bytes(monkeypatch,tmp_path,lost_ack):
+    home,eid,config,results,digest=_fresh_model_worker(monkeypatch,tmp_path)
+    if lost_ack:
+        original=storage.commit_model_publication
+        def commit(*args,**kwargs):
+            original(*args,**kwargs)
+            raise OSError("Synthetic lost completion acknowledgement")
+        monkeypatch.setattr(storage,"commit_model_publication",commit)
+    receipt=model_artifacts.publish(eid,config,digest,results,{"ridge":b"inert model"},b"inert holdout")
+    assert receipt.state=="committed"
+    assert storage.get_experiment(eid)["status"]=="completed"
+    final=home/"models"/eid
+    assert not final.with_name(eid+".publishing").exists()
+    assert {p.name:p.read_bytes() for p in final.iterdir()}=={
+        "ridge.joblib":b"inert model","test_set.joblib":b"inert holdout"}
+    assert receipt.files["ridge.joblib"]["sha256"]==hashlib.sha256(b"inert model").hexdigest()
+
+
+def test_model_artifact_collision_preserves_foreign_directory(monkeypatch,tmp_path):
+    home,eid,config,results,digest=_fresh_model_worker(monkeypatch,tmp_path)
+    final=home/"models"/eid
+    final.mkdir()
+    (final/"foreign").write_bytes(b"preserve")
+    with pytest.raises((OSError,storage.WorkspaceBoundaryError)):
+        model_artifacts.publish(eid,config,digest,results,{"ridge":b"inert model"},b"inert holdout")
+    assert (final/"foreign").read_bytes()==b"preserve"
+    assert storage.get_experiment(eid)["status"]=="running"
+    assert not final.with_name(eid+".publishing").exists()
+
+
+def test_model_artifact_budget_fails_without_completion(monkeypatch,tmp_path):
+    home,eid,config,results,digest=_fresh_model_worker(monkeypatch,tmp_path)
+    monkeypatch.setattr(model_publication,"MAX_FILE_BYTES",4)
+    with pytest.raises(artifact_publication.PublicationError,match="budget"):
+        model_artifacts.publish(eid,config,digest,results,{"ridge":b"too big"},b"test")
+    assert storage.get_experiment(eid)["status"]=="running"
+    assert not (home/"models"/eid).exists()
+    assert not (home/"models"/(eid+".publishing")).exists()
+    with storage.connect() as con:
+        assert model_publication.read(con,eid).state=="interrupted"
+
+
+def test_model_recovery_preserves_partial_artifacts_without_promoting(monkeypatch,tmp_path):
+    home,pid,eid,config,results,files,intent=_model_receipt_fixture(monkeypatch,tmp_path)
+    staged=storage.stage_model_publication(intent,results,files)
+    publishing=storage.advance_model_publication(staged,"publishing")
+    final=home/"models"/eid
+    final.mkdir()
+    (final/"ridge.joblib").write_bytes(b"partial")
+    assert storage.recover_model_publications()==1
+    assert storage.recover_model_publications()==0
+    assert storage.recover_interrupted_experiments()==1
+    assert storage.get_experiment(eid)["status"]=="failed"
+    assert (final/"ridge.joblib").read_bytes()==b"partial"
+    with storage.connect() as con:
+        assert model_publication.read(con,eid).state=="interrupted"

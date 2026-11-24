@@ -761,6 +761,15 @@ def _model_publication_context(con, eid):
     return pid, config, state["original_sha256"]
 
 
+def model_training_source(eid, pid, config):
+    """Capture recorded source provenance before loading training data."""
+    with connect() as con:
+        project_id, persisted, digest = _model_publication_context(con, eid)
+        if project_id != pid or model_publication.config_digest(config) != model_publication.config_digest(persisted):
+            raise artifact_publication.PublicationError("Model training provenance changed")
+        return digest
+
+
 def begin_model_publication(eid, *, config, source_sha256):
     """Create a receipt before writing any model artifacts."""
     runtime = model_publication.runtime_versions()
@@ -836,6 +845,32 @@ def finish_running_experiment(eid, status, *, results=None, error=None):
                 else "Training stopped with an error; review experiment details.",
             )
         return changed.rowcount == 1
+
+
+def recover_model_publications():
+    """Startup-only receipt classification; never inspect or delete artifact files."""
+    cursor = ""
+    count = 0
+    while True:
+        with connect() as con:
+            artifact_publication.begin_durable(con)
+            rows = con.execute(
+                "SELECT experiment_id FROM model_publications_v1 "
+                "WHERE state IN ('intent','staged','publishing') AND experiment_id>? "
+                "ORDER BY experiment_id LIMIT 128", (cursor,)).fetchall()
+            if not rows:
+                return count
+            if count + len(rows) > 4096:
+                raise artifact_publication.PublicationError("Model publication recovery limit reached")
+            for row in rows:
+                cursor = row[0]
+                receipt = model_publication.read(con, cursor)
+                experiment = con.execute("SELECT status,project_id FROM experiments WHERE id=?", (cursor,)).fetchone()
+                if experiment is None or experiment["project_id"] != receipt.project_id or experiment["status"] == "completed":
+                    model_publication.advance(con, receipt, "blocked", reason="reference_conflict")
+                else:
+                    model_publication.advance(con, receipt, "interrupted", reason="interrupted_before_commit")
+                count += 1
 
 
 def recover_interrupted_experiments():

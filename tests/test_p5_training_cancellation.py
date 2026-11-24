@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from hashlib import sha256
 
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from backend import engine, main, storage
+from backend import engine, main, quality, storage
 
 
 @pytest.fixture
@@ -19,8 +20,12 @@ def local_home(tmp_path, monkeypatch):
     monkeypatch.setattr(storage, "HOME", home)
     monkeypatch.setattr(storage, "DB_PATH", home / "pilotodin.sqlite3")
     storage.init()
+    quality._init_tables()
+    source = home / "datasets" / "fixture.csv"
+    raw = b"Metric,Outcome\n0,Y\n1,N\n"
+    source.write_bytes(raw)
     pid = storage.save_project("Synthetic", "fixture.csv", ".csv",
-                               home / "datasets" / "fixture.csv", {"rows": 64})
+                               source, {"rows": 64}, original_sha256=sha256(raw).hexdigest())
     return pid, home
 
 
@@ -139,13 +144,13 @@ def test_partial_artifacts_deleted_after_cancellation_during_save(local_home, mo
     monkeypatch.setattr(main, "df_for", lambda *_args: frame)
     monkeypatch.setattr(main.engine, "run_training",
                         lambda *_args, **_kwargs: (
-                            {"task": "classification", "models": []},
-                            {"model1": object(), "model2": object()},
+                            {"task": "classification", "models": [{"key": "logistic_regression", "status": "ready"}]},
+                            {"logistic_regression": object()},
                             frame, frame["Outcome"],
                         ))
     dumps = []
     def fake_dump(_object, target):
-        Path(target).write_bytes(b"partial file")
+        target.write(b"partial file")
         dumps.append(str(target))
         if len(dumps) == 1:
             assert storage.request_training_cancel(eid) == "cancellation_requested"
@@ -166,14 +171,14 @@ def test_completed_artifacts_are_preserved_and_cannot_be_cancelled(local_home, m
     monkeypatch.setattr(main, "df_for", lambda *_args: frame)
     monkeypatch.setattr(main.engine, "run_training",
                         lambda *_args, **_kwargs: (
-                            {"task": "classification", "models": []},
-                            {"model": object()}, frame, frame["Outcome"]))
+                            {"task": "classification", "models": [{"key": "logistic_regression", "status": "ready"}]},
+                            {"logistic_regression": object()}, frame, frame["Outcome"]))
     monkeypatch.setattr(main.joblib, "dump",
-                        lambda _object,target: Path(target).write_bytes(b"complete artifact"))
+                        lambda _object,target: target.write(b"complete artifact"))
     main.train_background(eid, pid, config())
     assert storage.get_experiment(eid)["status"] == "completed"
     artifacts = sorted(p.name for p in (home / "models" / eid).glob("*.joblib"))
-    assert artifacts == ["model.joblib", "test_set.joblib"]
+    assert artifacts == ["logistic_regression.joblib", "test_set.joblib"]
     assert storage.request_training_cancel(eid) == "already_finished"
     assert sorted(p.name for p in (home / "models" / eid).glob("*.joblib")) == artifacts
 
@@ -185,9 +190,9 @@ def test_failed_artifact_write_does_not_leave_partial_files(local_home, monkeypa
     monkeypatch.setattr(main, "df_for", lambda *_args: frame)
     monkeypatch.setattr(main.engine, "run_training",
                         lambda *_args, **_kwargs: (
-                            {"models": []}, {"bad": object()}, frame, frame["Outcome"]))
+                            {"task": "classification", "models": [{"key": "logistic_regression", "status": "ready"}]}, {"logistic_regression": object()}, frame, frame["Outcome"]))
     def fail_dump(_object,target):
-        Path(target).write_bytes(b"incomplete")
+        target.write(b"incomplete")
         raise OSError("synthetic disk full")
     monkeypatch.setattr(main.joblib, "dump", fail_dump)
     main.train_background(eid, pid, config())

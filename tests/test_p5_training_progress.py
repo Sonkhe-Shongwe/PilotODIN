@@ -5,12 +5,13 @@ No real dataset or offline model is opened; all tests run under tmp_path.
 from __future__ import annotations
 
 from pathlib import Path
+from hashlib import sha256
 
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from backend import main, storage
+from backend import main, quality, storage
 
 
 @pytest.fixture
@@ -21,9 +22,13 @@ def home(tmp_path, monkeypatch):
     monkeypatch.setattr(storage, "HOME", workspace)
     monkeypatch.setattr(storage, "DB_PATH", workspace / "pilotodin.sqlite3")
     storage.init()
+    quality._init_tables()
+    source = workspace / "datasets" / "synthetic.csv"
+    raw = b"Metric,Outcome\n0,Y\n1,N\n"
+    source.write_bytes(raw)
     project_id = storage.save_project(
         "Synthetic", "synthetic.csv", ".csv",
-        workspace / "datasets" / "synthetic.csv", {"rows": 50},
+        source, {"rows": 50}, original_sha256=sha256(raw).hexdigest(),
     )
     return project_id, workspace
 
@@ -158,10 +163,11 @@ def test_worker_milestones_are_observed_not_estimated(home, monkeypatch):
 
     def simulated_training(_frame, **_kwargs):
         observed.append(("engine", storage.get_experiment(eid)["progress"]["stage"]))
-        return {"models": [], "task": "classification"}, {"fake": object()}, frame, frame["Outcome"]
+        return {"models": [{"key": "logistic_regression", "status": "ready"}], "task": "classification"}, {"logistic_regression": object()}, frame, frame["Outcome"]
 
-    def simulated_save(*_args, **_kwargs):
+    def simulated_save(_object, target):
         observed.append(("save", storage.get_experiment(eid)["progress"]["stage"]))
+        target.write(b"inert synthetic artifact")
 
     monkeypatch.setattr(main.engine, "run_training", simulated_training)
     monkeypatch.setattr(main.joblib, "dump", simulated_save)
@@ -172,7 +178,7 @@ def test_worker_milestones_are_observed_not_estimated(home, monkeypatch):
         "queued", "loading_data", "training_models", "saving_artifacts", "completed",
     ]
     assert storage.get_experiment(eid)["status"] == "completed"
-    assert not list((workspace / "models" / eid).glob("*.joblib"))  # Only synthetic stub.
+    assert sorted(p.name for p in (workspace / "models" / eid).glob("*.joblib")) == ["logistic_regression.joblib", "test_set.joblib"]
     assert storage.get_experiment(eid)["results"]["task"] == "classification"
 
 

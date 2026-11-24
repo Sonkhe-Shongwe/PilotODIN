@@ -10,7 +10,6 @@ import json
 import math
 import os
 import re
-import shutil
 import traceback
 import hmac
 from fastapi.responses import JSONResponse, FileResponse, Response
@@ -24,9 +23,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
-    from . import dataset_publication, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
+    from . import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 except ImportError:
-    import dataset_publication, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
+    import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -36,6 +35,9 @@ async def _lifespan(_app:FastAPI):
     interrupted=dataset_publication.recover_pending()
     if interrupted:
         logging.warning("Reconciled %s incomplete dataset publication(s)", interrupted)
+    model_receipts=storage.recover_model_publications()
+    if model_receipts:
+        logging.warning("Reconciled %s unfinished model publication receipt(s)",model_receipts)
     recovered=storage.recover_interrupted_experiments()
     if recovered:
         logging.warning("Marked %s unfinished ML experiment(s) failed after backend restart",recovered)
@@ -267,11 +269,9 @@ def train_background(eid:str,pid:str,config:dict):
     # Compare-and-set: never resurrect a job marked terminal or interrupted.
     if not storage.claim_queued_experiment(eid):
         return
-    artifact_path = None
-    artifact_identity = None
-    finished = False
     try:
         storage.check_training_interruption(eid)
+        source_sha256=storage.model_training_source(eid,pid,config)
         p=storage.get_project(pid)
         df=df_for(p,config["quality_version"])
         if not storage.advance_running_experiment(
@@ -288,53 +288,12 @@ def train_background(eid:str,pid:str,config:dict):
             eid,"saving_artifacts","Model comparisons finished; saving fitted pipelines and held-out evaluation data."
         ):
             return
-        # Only locally produced artifacts are loaded; untrusted model uploads
-        # are prohibited. This directory belongs exclusively to the new ID.
-        path=storage.HOME / "models" / eid
-        storage.check_training_interruption(eid)
-        storage.check_write_path(path, directory=True, absent=True)
-        path.mkdir(exist_ok=False)
-        artifact_identity = path.lstat()
-        storage.check_write_path(path, directory=True, expected=artifact_identity)
-        with storage.pin_model_directory(path, expected=artifact_identity) as verify_artifacts:
-            # Admission failure leaves an unverified directory untouched.
-            # Release the scoped pin before intentional failed-job cleanup.
-            artifact_path = path
-            for name,pipe in pipes.items():
-                storage.check_training_interruption(eid)
-                verify_artifacts()
-                storage.check_write_path(path, directory=True, expected=artifact_identity)
-                destination = path/f"{name}.joblib"
-                storage.check_write_path(destination, absent=True)
-                joblib.dump(pipe,destination)
-                verify_artifacts()
-                storage.check_write_path(destination)
-            storage.check_training_interruption(eid)
-            verify_artifacts()
-            storage.check_write_path(path, directory=True, expected=artifact_identity)
-            destination = path/"test_set.joblib"
-            storage.check_write_path(destination, absent=True)
-            joblib.dump((x_test,y_test),destination)
-            verify_artifacts()
-            storage.check_write_path(destination)
-            storage.check_training_interruption(eid)
-            verify_artifacts()
-            finished = storage.finish_running_experiment(eid,"completed",results=result)
+        model_artifacts.publish(eid,config,source_sha256,result,pipes,(x_test,y_test))
     except storage.TrainingInterrupted as e:
         storage.finish_interrupted_experiment(eid,e.status)
     except Exception as e:
+        # A committed experiment cannot be downgraded by a lost acknowledgement.
         storage.finish_running_experiment(eid,"failed",error=f"{type(e).__name__}: {str(e)[:600]}")
-    finally:
-        # A failed/cancelled run never exposes partial fitted pipelines to
-        # the model-library paths used by completed experiments.
-        if artifact_path is not None and not finished:
-            try:
-                storage.check_write_path(artifact_path, directory=True, expected=artifact_identity)
-                for entry in artifact_path.iterdir():
-                    storage.check_write_path(entry)
-                shutil.rmtree(artifact_path,ignore_errors=True)
-            except (OSError, storage.WorkspaceBoundaryError):
-                logging.warning("Retained unsafe or unverifiable model artifact cleanup destination")
 
 
 @app.post("/api/projects/{project_id}/experiments",status_code=202)
