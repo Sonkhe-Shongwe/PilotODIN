@@ -1,0 +1,63 @@
+# PilotODIN local source derivative of shell-v2.6.0; see UPSTREAM.json.
+# Workspace fields are resolved from the exact upstream root Cargo.toml.
+[package]
+name = "tauri-plugin-shell"
+version = "2.6.0"
+description = "Access the system shell. Allows you to spawn child processes and manage files and URLs using their default application."
+edition = "2024"
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+rust-version = "1.90"
+repository = "https://github.com/tauri-apps/plugins-workspace"
+links = "tauri-plugin-shell"
+exclude = [
+  "/banner.png",
+  "/guest-js",
+  "/package.json",
+  "/rollup.config.js",
+  "/test",
+  "/tsconfig.json",
+]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "partial", notes = "Only allows to open URLs via `open`" }
+ios = { level = "partial", notes = "Only allows to open URLs via `open`" }
+
+[build-dependencies]
+tauri-plugin = { version = "2.7.1", features = ["build"] }
+schemars = "0.8"
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+tauri = { version = "2.12", default-features = false, features = ["wry"] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2.12", default-features = false }
+tokio = { version = "1", features = ["time"] }
+log = "0.4.21"
+thiserror = "2"
+regex = "1"
+open = { version = "5", features = ["shellexecute-on-windows"] }
+encoding_rs = "0.8"
+os_pipe = "1"
+shared_child = { version = "1", default-features = false }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.60", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_Threading",
+  "Win32_System_JobObjects",
+  "Win32_System_Diagnostics_ToolHelp",
+] }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+tauri = { version = "2.12", default-features = false, features = ["wry"] }

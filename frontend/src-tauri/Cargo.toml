@@ -24,3 +24,8 @@ percent-encoding = "2"
 [target.'cfg(windows)'.dependencies]
 webview2-com = "=0.39.1"
 windows-core = "=0.62.2"
+
+# Owner-approved source derivative; exact upstream shell 2.6.0 version retained.
+# See third_party/tauri-plugin-shell-2.6.0/UPSTREAM.json for source provenance.
+[patch.crates-io]
+tauri-plugin-shell = { path = "../../third_party/tauri-plugin-shell-2.6.0" }

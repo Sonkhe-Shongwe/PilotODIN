@@ -1,0 +1,127 @@
+// Copyright 2019-2023 Tauri Programme within The Commons Conservancy
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
+
+// Modified by PilotODIN (2026-11-24): retained own-job accounting query and
+// best-effort termination on a failed resume. Upstream licence retained.
+
+//! Job object backing `process_group` on Windows, adapted from
+//! [process-wrap](https://github.com/watchexec/process-wrap) (Apache-2.0 OR MIT).
+
+use std::{io, mem, os::windows::io::AsRawHandle, process::Child, ptr};
+
+use windows_sys::Win32::{
+    Foundation::{CloseHandle, HANDLE, INVALID_HANDLE_VALUE},
+    System::{
+        Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, TH32CS_SNAPTHREAD, THREADENTRY32, Thread32First, Thread32Next,
+        },
+        JobObjects::{
+            AssignProcessToJobObject, CreateJobObjectW, TerminateJobObject,
+            QueryInformationJobObject, JobObjectBasicAccountingInformation,
+            JOBOBJECT_BASIC_ACCOUNTING_INFORMATION,
+        },
+        Threading::{OpenThread, ResumeThread, THREAD_SUSPEND_RESUME},
+    },
+};
+
+/// Owned job object handle. Closing it leaves the processes in the job running.
+#[derive(Debug)]
+pub(crate) struct JobObject(HANDLE);
+
+// SAFETY: the handle is only ever passed to thread-safe Win32 calls.
+unsafe impl Send for JobObject {}
+unsafe impl Sync for JobObject {}
+
+impl JobObject {
+    /// Creates a job object, assigns the `CREATE_SUSPENDED` `child` to it and resumes the child.
+    pub(crate) fn assign(child: &Child) -> io::Result<Self> {
+        let job = unsafe { CreateJobObjectW(ptr::null(), ptr::null()) };
+        if job.is_null() {
+            return Err(io::Error::last_os_error());
+        }
+        let job = Self(job);
+        if unsafe { AssignProcessToJobObject(job.0, child.as_raw_handle()) } == 0 {
+            return Err(io::Error::last_os_error());
+        }
+        if let Err(error) = resume_threads(child.id()) {
+            // Some threads could already have resumed. Do not merely close
+            // the job and leave descendants behind; the caller still treats
+            // this spawn as uncertain, even if termination succeeds.
+            let _ = job.terminate();
+            return Err(error);
+        }
+        Ok(job)
+    }
+
+    /// Query only this already-owned unnamed job; no PID or handle lookup.
+    /// A failed or incomplete accounting query is never interpreted as zero.
+    pub(crate) fn active_processes(&self) -> io::Result<u32> {
+        let mut info: JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = unsafe { mem::zeroed() };
+        let size = mem::size_of::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() as u32;
+        let mut returned = 0u32;
+        if unsafe {
+            QueryInformationJobObject(
+                self.0,
+                JobObjectBasicAccountingInformation,
+                (&mut info as *mut JOBOBJECT_BASIC_ACCOUNTING_INFORMATION).cast(),
+                size,
+                &mut returned,
+            )
+        } == 0 {
+            return Err(io::Error::last_os_error());
+        }
+        if returned != size {
+            return Err(io::Error::new(io::ErrorKind::InvalidData,
+                "Incomplete owned job accounting information"));
+        }
+        Ok(info.ActiveProcesses)
+    }
+
+    pub(crate) fn terminate(&self) -> io::Result<()> {
+        if unsafe { TerminateJobObject(self.0, 1) } == 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+}
+
+impl Drop for JobObject {
+    fn drop(&mut self) {
+        unsafe { CloseHandle(self.0) };
+    }
+}
+
+/// `std` closes the main thread handle right after `CreateProcess`, so a suspended
+/// child can only be resumed by looking its threads up again.
+fn resume_threads(pid: u32) -> io::Result<()> {
+    let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) };
+    if snapshot == INVALID_HANDLE_VALUE {
+        return Err(io::Error::last_os_error());
+    }
+    let result = resume_snapshot_threads(snapshot, pid);
+    unsafe { CloseHandle(snapshot) };
+    result
+}
+
+fn resume_snapshot_threads(snapshot: HANDLE, pid: u32) -> io::Result<()> {
+    let mut entry: THREADENTRY32 = unsafe { mem::zeroed() };
+    entry.dwSize = mem::size_of::<THREADENTRY32>() as u32;
+    let mut found = unsafe { Thread32First(snapshot, &mut entry) } != 0;
+    while found {
+        if entry.th32OwnerProcessID == pid {
+            let thread = unsafe { OpenThread(THREAD_SUSPEND_RESUME, 0, entry.th32ThreadID) };
+            if thread.is_null() {
+                return Err(io::Error::last_os_error());
+            }
+            if unsafe { ResumeThread(thread) } == u32::MAX {
+                let err = io::Error::last_os_error();
+                unsafe { CloseHandle(thread) };
+                return Err(err);
+            }
+            unsafe { CloseHandle(thread) };
+        }
+        found = unsafe { Thread32Next(snapshot, &mut entry) } != 0;
+    }
+    Ok(())
+}
