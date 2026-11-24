@@ -17,3 +17,7 @@ G2 is **not complete**. The original file-handle-to-FileObject/IRP relation rema
 Next decisive step is a single, separately approved, source-pinned disposable hosted Windows baseline with the integrated reducer, existing calibration and write/restore arms, no arbitrary handle duplication, no owner data, no installers, no raw evidence upload. This can establish which original blockers actually remain. It cannot be promised to close G2 if the original file-handle witness is absent. Consumed native permissions are not reusable. Do not change G2 exit criteria without an explicit review.
 
 Scores unchanged: four-gate 1/4 (25%), official R02.5 0/5, N12 0/2, P4 14/20 (70%).
+
+## Exact source verification
+
+[Source `8c2d456a1978145d10af1da86caf97053b07a1b3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8c2d456a1978145d10af1da86caf97053b07a1b3) passed [R02.5 source-only CI #45341086645](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45341086645), including regressions for unchanged strict gap/violation counts, candidate count reconciliation, privacy-safe fixed labels, loss blocking and pair-limit exhaustion. No actual native Windows capture was executed. G2 remains OPEN. The source is ready for a separately scoped baseline approval; this is NOT an assurance of G2 exit.
