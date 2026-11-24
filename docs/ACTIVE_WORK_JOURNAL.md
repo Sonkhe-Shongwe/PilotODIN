@@ -6,21 +6,21 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | C-SPECIFICATION-20261124 |
-| State | PREPARED |
+| Task ID | C1-RESOURCE-ADMISSION-20261124 |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c033242d47ff1aed688c9aed84c695668160052a |
+| Observed starting HEAD | a12328650a42528a18a462ac0197640725e45309 (specification preparation; verify live publication) |
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
-| Scope | Publish integrated C1–C5 research, design decisions, implementation and acceptance matrix; documentation only |
-| Operation ID | C-SPECIFICATION-20261124-publish |
-| Operation state | PREPARED |
-| Intended files | docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md; docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md; active journal, compact handoff, index and directive |
+| Scope | C1 exact heavy route/lifetime inventory and bounded coordinator/host admission source implementation, no native execution |
+| Operation ID | NONE |
+| Operation state | NONE |
+| Intended files | Review C1 spec/actual route map before selecting source/test files; preserve B5 and A boundaries |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Reviewed current resource policy, main entrypoints, storage, workspace lock, host launch, API, AI settings and build scripts; normative blueprint and primary technical references; no source or native execution |
-| Pending runs | None from B5; verify live HEAD |
+| Verification | Integrated C1–C5 design published; code baseline 8e3cc91 unchanged; no C implementation/tests yet |
+| Pending runs | None from documentation task; verify actual publication |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Inspect exact operation commit before repeating. Publish bounded design and outstanding compatibility checks; C1 implementation only after targeted route/lifetime and bridge review. |
-| Resume after closure | C1 source implementation, C2–C5 in order; D after C source closure |
+| Recovery action | Read integrated C spec and ledger; classify all heavy routes and worker ownership, check exact framework/pipe compatibility, then implement C1 in bounded source batches; do not claim closure before shared admission evidence |
+| Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
 
@@ -29,3 +29,5 @@ CONT-RESILIENCE-20261124/preparation was published at [`89cb4b5`](https://github
 ## Unresolved or interrupted operations
 
 B5 V1 failed before jobs; V2 terminal SUCCESS and disarm Windows SKIPPED. Both approvals consumed. No restricted operation pending. B closure operation B-CLOSURE-20261124-documentation; [audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). Do not replay; preserve unknown local state.
+
+C specification publication operation C-SPECIFICATION-20261124-publish; see [specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) and [active ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md). No restricted operation pending.

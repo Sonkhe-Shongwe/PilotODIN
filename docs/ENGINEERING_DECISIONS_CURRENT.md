@@ -24,3 +24,7 @@ This is an index of decisions, not a parallel requirements document. The Master 
 ## Decision recording rule
 
 For a material design, safety, scope or evidence-method decision, record an ID, date, status (proposed/accepted/superseded/blocked), question, selected option, rejected alternatives, rationale, affected invariants, limitations, evidence, approval requirement and reopen condition. Write it before a consequential action where feasible; link from the journal. If an existing specification already owns it, update that specification and add a link here only if cross-cutting navigation needs it. Preserve superseded decisions and point to the replacement. A proposed method or agent recommendation never substitutes for owner acceptance or new authority.
+
+## Package C decision references
+
+[Integrated Package C specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) owns C-D01 through C-D08: coordinator, owned control bridge, data priority, async inference, explicit dev trust, settings writer, consent correction and build inputs. These are bounded engineering design decisions with compatibility gates, not implementation/acceptance or new authority. [Evidence ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md).

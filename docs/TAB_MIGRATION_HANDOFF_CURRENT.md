@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current tab migration handoff
 
-**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B5 SOURCE CLOSED; Package C integrated specification preparation ACTIVE (C1–C5 pending implementation), D1–D2 pending. Source remediation 10/17 (58.8%); Package B 5/5 (100%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No new restricted operations authorized.
+**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B5 SOURCE CLOSED; Package C ACTIVE (integrated specification published; C1 implementation next), D1–D2 pending. Source remediation 10/17 (58.8%); Package B 5/5 (100%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No new restricted operations authorized.
 
 **Standing continuation process:** [Seamless continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md) and [active work journal](./ACTIVE_WORK_JOURNAL.md). Recover in-flight work before starting the next task. [Decision index](./ENGINEERING_DECISIONS_CURRENT.md). Update this handoff in place and record each meaningful receipt once in the active ledger; no duplicate chronology.
 
@@ -8,8 +8,8 @@
 
 - Repository: [Sonkhe-Shongwe/PilotODIN](https://github.com/Sonkhe-Shongwe/PilotODIN); active branch `feature/live-dev-workspace-20261023`, not default main. Verify live HEAD before every edit; documentation HEAD can advance beyond product source.
 - Latest product source: `8e3cc9112073b9744ff18ffa3e4e549662504a97`. Owner local tree `C:\Users\Lenovo\Development\PilotODIN-Codex` is not inspected; do not overwrite unpublished work.
-- Owner Master Reconstruction Blueprint DOCX and explicit decisions remain normative; [phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) governs permissions. [Live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) governs engineering order. [closed Package B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) defines scope; [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) defines earned acceptance points.
-- [Session next action](./SESSION_HANDOFF_CURRENT.md#next-engineering-action), [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md), [documentation index](./DOCUMENTATION_INDEX.md), [current closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). Read historical detail only when relevant.
+- Owner Master Reconstruction Blueprint DOCX and explicit decisions remain normative; [phase policy](./PHASE_FOCUS_AND_CLOSURE_POLICY_2026-10-28.md) governs permissions. [Live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) governs engineering order. [active Package C specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) defines current scope; [closed Package B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) retained; [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) defines earned acceptance points.
+- [Session next action](./SESSION_HANDOFF_CURRENT.md#next-engineering-action), [active C evidence ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md), [closed B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md), [documentation index](./DOCUMENTATION_INDEX.md), [current closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). Read historical detail only when relevant.
 
 ## 2. Progress and implementation evidence
 
@@ -17,7 +17,7 @@
 | --- | --- |
 | A storage/lifecycle | 5/5 source closed; one locked host check [#45380098568](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45380098568) passed, consumed/disarmed |
 | B durable data integrity | 5/5 source closed: B1 dataset publication, B2 verified models, B3 backup/restore, B4 bounded Quality replay, B5 verified export |
-| C resource/trust | 0/5; active specification preparation, C1 first |
+| C resource/trust | 0/5; integrated specification published, C1 first |
 | D consolidated verification | 0/2 pending |
 
 B5 source exit satisfied: exact `8e3cc91` source CI 4/4 and Windows library 7/7 PASS; no desktop app launch or physical destination acceptance. [Closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md) and [terminal receipt](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). Deferred D evidence remains mandatory.
@@ -30,9 +30,9 @@ Historical P2 browser failure at `39b8e5f` remains recorded in the [B4 audit](./
 
 ## 4. Immediate next work (in order)
 
-1. Prepare integrated Package C specification using [architecture C1–C5](./PILOTODIN_PRODUCT_ARCHITECTURE_REVIEW_AND_REMEDIATION_2026-11-24.md) and directive. Review current resource policy, heavy-work admission, inference, dev capability, settings/consent and build input contracts. C1 first; C2–C5 in order. Establish active C ledger when specification ready.
-2. Implement C1 under reviewed source scope, direct/broad CI; no physical 8 GB or native acceptance claim. D after C source closure only.
-3. Retain B5 production IPC/dialog/physical destination and all G2/R02/R03/R06 outstanding evidence for separately approved D. [B5 native #45442066752](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45442066752) PASS 7/7, [disarm #45442158067](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45442158067) Windows SKIPPED. Approvals consumed. [Closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md).
+1. [Integrated Package C specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) published; C1 exact heavy route/call/lifetime inventory and bounded coordinator implementation next. Review exact framework parser and owned pipe bridge compatibility before changing those boundaries. One authoritative lane, existing ML slot retained, no premature release, no independent host bypass. [Active C ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md).
+2. C2 asynchronous single-flight and grant/drain integration, then C3 explicit dev trust, C4 durable settings/consent, C5 reproducible inputs. Consolidate any required native verification only under fresh exact approval; no source credit until required evidence. D after C source closed.
+3. Retain B5 production IPC/dialog/physical destination and all G2/R02/R03/R06 outstanding evidence. B5 7/7 native library run succeeded, approvals consumed. No replay or installer.
 
 ## 5. Native evidence and immutable acceptance boundary
 
