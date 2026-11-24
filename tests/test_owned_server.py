@@ -47,6 +47,61 @@ class OwnedServerTests(unittest.TestCase):
                 self.assertFalse((home / "pilotodin.sqlite3").exists())
                 self.assertFalse((home / "datasets").exists())
 
+    def test_local_devqa_seed_to_owned_app_and_competing_writer(self):
+        from tools.qa_foundation import create_run
+        from backend.server_entry import LOCAL_FIXTURES
+        from backend.workspace_boundary import LOCK_NAME
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp).resolve()
+            phase = "P3-NATIVE-SEMANTIC-CONTEXT"
+            run, _ = create_run(base / "PilotODIN" / "DevQA", phase, repo=ROOT)
+            home = run / "workspace"
+            filename, _, _ = LOCAL_FIXTURES[phase]
+            seed = run / "fixtures" / filename
+            env = {**os.environ, "LOCALAPPDATA": str(base),
+                   "PILOTODIN_SERVER_MODE": "local-devqa",
+                   "PILOTODIN_HOME": str(home), "PILOTODIN_DESKTOP_SESSION": ""}
+            # The allocator alone must not admit a server before seeding.
+            with self.assertRaises(WorkspaceBoundaryError):
+                admitted_home(env)
+            result = subprocess.run(
+                [sys.executable, "-B", str(ROOT / "tools" / "Seed_P3_Native_Semantic_Context_Local.py"), str(seed)],
+                cwd=ROOT, env=env, capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(admitted_home(env), home)
+            self.assertTrue((home / LOCK_NAME).is_file())
+            for invalid in ({"LOCALAPPDATA": str(base / "other")},
+                            {"PILOTODIN_HOME": str(run / "fixtures")},
+                            {"PILOTODIN_DESKTOP_SESSION": "secret"}):
+                with self.assertRaises(WorkspaceBoundaryError):
+                    admitted_home({**env, **invalid})
+            code = ("from backend.server_entry import owned_app; "
+                    "owned_app(); from backend import storage; "
+                    "assert len(storage.list_projects()) == 2")
+            with engine_workspace(str(home)):
+                result = subprocess.run([sys.executable, "-B", "-c", code],
+                    cwd=ROOT, env=env, capture_output=True, text=True, timeout=20)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Workspace already in use", result.stderr)
+            result = subprocess.run([sys.executable, "-B", "-c", code],
+                cwd=ROOT, env=env, capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            seed.write_text("{}", encoding="utf-8")
+            with self.assertRaises(WorkspaceBoundaryError):
+                admitted_home(env)
+
+    def test_local_qa_launchers_use_owned_factory_and_restore_mode(self):
+        for name in ("Run_P2_Native_Deliver_Consent_Local.ps1",
+                     "Run_P2_Native_Two_Window_Local.ps1",
+                     "Run_P3_Native_Semantic_QA_Local.ps1",
+                     "Run_P3_Native_Quality_W5_QA_Local.ps1"):
+            with self.subTest(name=name):
+                source = (ROOT / "tools" / name).read_text(encoding="utf-8")
+                self.assertIn("'PILOTODIN_SERVER_MODE'", source)
+                self.assertIn("$env:PILOTODIN_SERVER_MODE='local-devqa'", source)
+                self.assertIn("'backend.server_entry:owned_app','--factory'", source)
+                self.assertNotIn("'backend.main:app'", source)
+
     def test_owned_pipe_accepts_fragmented_stop_without_eof(self):
         server = SimpleNamespace(should_exit=False)
         rd, wr = os.pipe()

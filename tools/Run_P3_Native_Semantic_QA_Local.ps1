@@ -27,7 +27,7 @@ $record=[ordered]@{
  scope='P3_OWNER_NATIVE_WEBVIEW2_SYNTHETIC_TWO_PROJECTS_ONLY'
  failure_category=''
 }
-$ownedNames=@('PILOTODIN_HOME','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
+$ownedNames=@('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
  'VITE_PILOTODIN_NATIVE_SMOKE','VITE_P3_NATIVE_SEMANTIC_QA',
  'VITE_P3_NATIVE_QA_PROJECT_A','VITE_P3_NATIVE_QA_PROJECT_B','CARGO_NET_OFFLINE')
 $previousEnvironment=@{}
@@ -132,6 +132,7 @@ try{
  $nativeLog=Join-Path $runDir 'logs\native-shell.log'
  Write-Host ('Isolated P3 native QA run: '+$runDir) -ForegroundColor Cyan
  $env:PILOTODIN_HOME=$workspaceDir
+ $env:PILOTODIN_SERVER_MODE='local-devqa'
  Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
  Remove-Item Env:\PILOTODIN_DESKTOP_ALLOW_DEV -ErrorAction SilentlyContinue
  $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
@@ -155,7 +156,7 @@ try{
  $env:VITE_P3_NATIVE_QA_PROJECT_A=$ids[0]
  $env:VITE_P3_NATIVE_QA_PROJECT_B=$ids[1]
  $backendProcess=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
-  '-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--lifespan','off'
+  '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--lifespan','off'
  ) -PassThru -NoNewWindow -RedirectStandardOutput $backendStdout -RedirectStandardError $backendStderr
  foreach($id in $ids){
   if(-not(Wait-Project $id)){throw 'Synthetic local FastAPI backend failed to start.'}

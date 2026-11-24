@@ -28,7 +28,7 @@ $record=[ordered]@{
 }
 $exitCode=1
 $oldEnv=@{}
-foreach($name in @('PILOTODIN_HOME','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
+foreach($name in @('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
     'VITE_PILOTODIN_NATIVE_SMOKE','VITE_P2_NATIVE_DELIVER_QA',
     'VITE_P2_NATIVE_DELIVER_PROJECT_ID','CARGO_NET_OFFLINE')){
   $oldEnv[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
@@ -114,6 +114,7 @@ try {
   Write-Host ('P2 NATIVE CONSENT QA RUN: '+$runDir) -ForegroundColor Cyan
   Write-Host 'This is NOT the normal PilotODIN installed desktop or your real project catalogue.'
   $env:PILOTODIN_HOME=$isolatedWorkspaceHome
+  $env:PILOTODIN_SERVER_MODE='local-devqa'
   Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
   Remove-Item Env:\PILOTODIN_DESKTOP_ALLOW_DEV -ErrorAction SilentlyContinue
   $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
@@ -135,7 +136,7 @@ try {
   }
   $env:VITE_P2_NATIVE_DELIVER_PROJECT_ID=[string]$manifest.project_id
   $backend=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
-    '-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--lifespan','off'
+    '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--lifespan','off'
   ) -PassThru -NoNewWindow -RedirectStandardOutput $backendLog -RedirectStandardError $backendErr
   if(-not(Wait-SyntheticProject $manifest.project_id)){
     throw 'Owned isolated FastAPI failed its synthetic project health gate.'

@@ -43,7 +43,7 @@ $record=[ordered]@{
  scope='SYNTHETIC_NATIVE_P3_W5_ONLY'
  failure_category=''
 }
-$ownedNames=@('PILOTODIN_HOME','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
+$ownedNames=@('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
  'VITE_PILOTODIN_NATIVE_SMOKE','VITE_P3_NATIVE_QUALITY_W5_QA',
  'VITE_P3_NATIVE_W5_PROJECT','VITE_P3_NATIVE_W5_ISSUE','CARGO_NET_OFFLINE')
 $previousEnvironment=@{}
@@ -141,6 +141,7 @@ try{
  $nativeLog=Join-Path $runDir 'logs\native-shell.log'
  Write-Host ('Isolated native W5 QA: '+$runDir) -ForegroundColor Cyan
  $env:PILOTODIN_HOME=$workspaceDir
+ $env:PILOTODIN_SERVER_MODE='local-devqa'
  Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
  Remove-Item Env:\PILOTODIN_DESKTOP_ALLOW_DEV -ErrorAction SilentlyContinue
  $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
@@ -170,7 +171,7 @@ try{
   throw 'Synthetic original checksum mismatch before launch.'
  }
  $backendProcess=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
-  '-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--lifespan','off'
+  '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--lifespan','off'
  ) -PassThru -NoNewWindow -RedirectStandardOutput $backendStdout -RedirectStandardError $backendStderr
  if(-not(Wait-Project $id)){throw 'Isolated FastAPI backend did not become available.'}
  # Start an independent data verifier WHILE the native QA window is open.

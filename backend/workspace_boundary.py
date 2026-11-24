@@ -235,6 +235,19 @@ def existing_fixture_home(value):
         raise WorkspaceBoundaryError("Fixture workspace unavailable or unsafe") from exc
 
 
+def existing_fixture_file(path):
+    """Check a regular single-link file under an existing nonredirected parent."""
+    try:
+        parent = existing_fixture_home(str(path.parent))
+        if parent != path.parent:
+            raise WorkspaceBoundaryError("Fixture file parent identity changed")
+        info = path.lstat()
+        _regular(info)
+        return info
+    except OSError as exc:
+        raise WorkspaceBoundaryError("Fixture file unavailable or unsafe") from exc
+
+
 def hold_fresh_fixture_workspace(value, expected):
     """Called only after a seeder's existing manifest and scope checks."""
     if existing_fixture_home(value) != expected:

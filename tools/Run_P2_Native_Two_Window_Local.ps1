@@ -28,7 +28,7 @@ $record=[ordered]@{
  failure_category=''
 }
 $oldEnv=@{}
-foreach($name in @('PILOTODIN_HOME','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
+foreach($name in @('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DESKTOP_SESSION','PILOTODIN_DESKTOP_ALLOW_DEV',
  'VITE_PILOTODIN_NATIVE_SMOKE','VITE_P2_NATIVE_DELIVER_QA',
  'VITE_P2_NATIVE_DELIVER_PROJECT_ID','VITE_P2_NATIVE_TWO_WINDOW_PROJECT_B',
  'VITE_P2_NATIVE_TWO_WINDOW_QA','CARGO_NET_OFFLINE')){
@@ -113,6 +113,7 @@ try{
  $nativeLog=Join-Path $logDir 'native-two-window.log'
  Write-Host ('Isolated P2 two-window QA: '+$runDir) -ForegroundColor Cyan
  $env:PILOTODIN_HOME=$isolatedWorkspaceHome
+ $env:PILOTODIN_SERVER_MODE='local-devqa'
  Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
  Remove-Item Env:\PILOTODIN_DESKTOP_ALLOW_DEV -ErrorAction SilentlyContinue
  $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
@@ -137,7 +138,7 @@ try{
  $env:VITE_P2_NATIVE_DELIVER_PROJECT_ID=$ids[0]
  $env:VITE_P2_NATIVE_TWO_WINDOW_PROJECT_B=$ids[1]
  $backend=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
-  '-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--lifespan','off'
+  '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port','8000','--lifespan','off'
  ) -PassThru -NoNewWindow -RedirectStandardOutput $backendLog -RedirectStandardError $backendErr
  foreach($id in $ids){if(-not(Wait-Project $id)){throw 'Isolated FastAPI project GET readiness failed.'}}
  Write-Host 'read-only-isolated-backend-two-projects: PASS' -ForegroundColor Green
