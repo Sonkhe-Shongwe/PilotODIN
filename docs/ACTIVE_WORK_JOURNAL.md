@@ -6,21 +6,21 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | C1-C2-OWNED-HOST-LOADER-DIAGNOSIS-20261125 |
-| State | VERIFYING |
+| Task ID | C2-SOURCE-EXIT-AUDIT-20261125 |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 35b5c3fdba9d2740e14f3f5610a197062a665050 |
+| Observed starting HEAD | 400eb2a27db53b2887e5e71a37288f4d44111624 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890; test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
-| Scope | Diagnose the exact integrated test executable loader failure using existing source, config, lock and logs. Correct only evidence-supported fixture/source defects. |
-| Operation ID | C1-OWNED-HOST-MANIFEST-20261125-V2-ONE-USE |
-| Operation state | ISSUED |
-| Intended files | Disabled .github/workflows/p4-c1-c2-owned-host-once.yml and qa/c1_c2_owned_host_preflight.rb; continuity records. No product source or fixture assertions change. |
-| Approval | Exact V2 owner approval CONSUMED on confirmed dispatch #45506268334, attempt 1 only. Byte-identical disabled guard restored and verified at e46c74c. No production launch, OS/DLL modification, real model, cloud, owner data, installer, activation, upload or retry. |
-| Verification | #45504677702 FAILURE: Windows 138836833294 locked all-targets check and no-run compile PASS; mt.exe c101008c failed extracting resource #1, reported image did not contain a resource section (documented Windows error 1812). Guard recognized only missing type/name/language, refused before embed or launch. Cleanup PASS. Exact executable path shape matches previous Cargo test launch. #45504749595 SUCCESS, source 138838740910 both fingerprints verified, native 138838903403 SKIPPED. Earlier static candidate comctl32.dll TaskDialogIndirect remains leading hypothesis, not proven cause. |
-| Pending runs | [#45506268334](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45506268334), armed `05dcc9027842ce3a48aee877b3cb0735026cc5dd`, attempt 1; source 138842158064 SUCCESS, Windows 138842413106 IN_PROGRESS. Disarm `e46c74c5946fae6ca99b04c882958acf00877dbd` verified byte-identical disabled blob 71323fabb0c41ccd45e0fc05fc42e8871098eabe; [#45506332204](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45506332204) PENDING. |
+| Scope | Audit C2 separately against existing section 10 exit and C-D02/C-D03 lifecycle contract; reuse qualifying C1/C2 integration and exact-source evidence, no redundant native tests. |
+| Operation ID | C1-SOURCE-EXIT-AUDIT-20261125-close |
+| Operation state | RECONCILED |
+| Intended files | Continuity records only for C1 closure; C2 audit next. |
+| Approval | All six prior native approvals consumed and disarmed; no new restricted action authorized. Source review permitted; no production activation, native retry, model, owner data, OS modification or installer. |
+| Verification | C1 SOURCE CLOSED: section 10 route/call/lifetime map and bridge compatibility, atomic admission/pre-allocation, training handoff, stream/failure cleanup, race/refusal/cancellation/ownership/stale coverage and exact CI satisfied at source scope. #45506268334 SUCCESS native 138842413106 exact 1/1 shared-host synthetic integration with real pipes, actual owned job descendant and zero, shared lane, joined saves and graceful STOP; original manifest absent, v6 copy verified, original unchanged; cleanup PASS. #45506332204 SUCCESS source 138844584697, native 138844862693 SKIPPED; byte-identical disarm e46c74c. Prior 388b357 ten routine workflows and native library 40/40 remain applicable; fixture differences test-only. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Verify published byte-identical disarm and reconcile exact #45506268334 jobs/logs. Confirm tested absence classifier, manifest v6 copy/readback, original hash preservation, exact 1/1 test, shared lane, real pipes, inference group zero, joined writers, STOP and cleanup. C1 remains open if evidence missing; no retry or activation. On qualifying evidence audit C1, then C2 separately. |
-| Resume after closure | C1/C2 exit audit, C3–C5; D separately approved. |
+| Recovery action | Audit C2 exit separately using current product source, exact test logs and existing integrated evidence. Close only when bounded async single-flight, grant/drain/context lifecycle, duplicate/shutdown/late-result tests, frontend states and exact CI are demonstrated. No new native execution unless independently necessary and explicitly approved. |
+| Resume after closure | C3, C4, C5 in order; D separately approved. |
 
 ## Prior operation
 
@@ -28,4 +28,4 @@ C-DOCUMENTATION-AUDIT-20261125-clean: owner-requested documentation audit prepar
 
 ## Unresolved or interrupted operations
 
-C1/C2 integrated shared-host witness is missing; loader failure above is the sole immediate investigation, not permission to rerun. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
+C1 shared-host source witness obtained and C1 source closed; C2 exit audit outstanding. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
