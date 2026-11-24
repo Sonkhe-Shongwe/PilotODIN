@@ -1,11 +1,11 @@
-name: P4 N12 No-CDP FileIO (G2.20 fresh one-use approved baseline)
+name: P4 N12 No-CDP FileIO (DISARMED, 22 Nov 2026 approval consumed)
 
 on:
   push:
     branches:
       - feature/live-dev-workspace-20261023
     paths:
-      - qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL_20261124_G220_ONE_USE.txt
+      - qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL_20261122_FRESH_ONE_USE.txt
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   no-cdp-fileio:
-    if: ${{ github.event_name == 'push' && github.run_attempt == 1 }} # One-use G2.20 approved source only.
+    if: ${{ false }} # One-use approval consumed by activation 58f72bf3e226b2a1d87ab11a6fe3727f424268b4; never rerun.
     runs-on: windows-2022
     timeout-minutes: 110
     env:
@@ -33,7 +33,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          $marker = 'qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL_20261124_G220_ONE_USE.txt'
+          $marker = 'qa/p4_research/N12_NO_CDP_FILEIO_OWNER_APPROVAL_20261122_FRESH_ONE_USE.txt'
           $workflow = '.github/workflows/p4-n12-no-cdp-fileio.yml'
           if ($env:GITHUB_EVENT_NAME -cne 'push' -or $env:GITHUB_RUN_ATTEMPT -cne '1' -or
               $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
