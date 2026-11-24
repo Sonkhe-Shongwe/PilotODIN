@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 46d5f0121deadaf8c0de45f39f7de50aace8a372 |
-| Product baseline | eb89356dad89c7b1637d30bef287c60561ed2b23 |
-| Scope | Explicit owned runner bootstrap and frontend demand mode, paired with private native mode selection. Compile-time gate remains false; no partial grant activation. |
+| Product baseline | a6ec84c784152d7ab5f357a9083ca6eb34cdeb92 |
+| Scope | Explicit private runner bootstrap and frontend demand-first mode published; Windows compile-time gate remains false. |
 | Operation ID | C1-C2-INTEGRATION-20261124-runner-frontend |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/desktop_runner.py; frontend/src-tauri/src/lib.rs; frontend/src/api.ts; frontend/src/desktopBootstrap.ts; tests/test_c1_resource_host.py; frontend/tests/desktop-ai-boundaries.test.cjs; continuity docs |
-| Approval | Standing P4 source authority; no native product compilation/run, model operations, installer, owner data or activation. |
-| Verification | Previous exact P4 #45484468091 and P2 #45484468092 SUCCESS, logs reconciled. All 82 workflow definitions unchanged; planned paths match P1 backend/frontend, P2 report, P3 real HTTP and P4 routine source/synthetic workflows only; restricted P4 probe false. |
-| Pending runs | None before publication. |
+| Approval | Standing P4 source authority. No native product compile/run, model operations, installer, owner data, partial activation or new OS operations authorized. |
+| Verification | Exact published a6ec84c784152d7ab5f357a9083ca6eb34cdeb92, static changed-path/source review; all 82 workflow definitions unchanged from reviewed 81de01d. Previous exact P4/P2 runs SUCCESS reconciled in evidence ledger. Fourteen Python fixture cases and two Node tests added, execution pending. |
+| Pending runs | Exact a6ec84c784152d7ab5f357a9083ca6eb34cdeb92: P1 backend #45488434322, P1 frontend #45488434647, P2 #45488434273, P3 #45488434316, P4 #45488434305 all IN_PROGRESS at last observation. Reconcile terminal jobs before further source publication. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish explicit owned mode runner before analytical imports, authenticated frontend mode metadata and no launch-before-POST in owned path, regression fixtures. Reconcile CI; preserve native Save As shared admission and cloud compatibility before activation. |
+| Recovery action | Reconcile five exact routine CI runs. Integrate private native report/dataset binary Save As admission with the same backend resource lane and actual writer lifetime; no separate lock, browser-provided grant, or timeout release. Preserve existing payload/receipt/path verification and explicit consent. Review explicit cloud provider routing/consent compatibility and production readiness before activation. Candidate native saves remain deliberately refused. Native verification requires fresh scope approval only after coherent source readiness. |
 | Resume after closure | C1/C2 verification then C3–C5; D separately approved. |
 
 ## Prior operation
