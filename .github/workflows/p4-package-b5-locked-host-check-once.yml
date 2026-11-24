@@ -1,0 +1,110 @@
+name: P4 Package B5 ONE locked Windows host type-check (approval required)
+
+# DISARMED: fresh explicit owner approval required; not approved or consumed.
+# Proposed single compile-only attempt of the exact reviewed product source.
+# No workflow_dispatch, no reruns, no application linking or running, no installer.
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: ['.github/workflows/p4-package-b5-locked-host-check-once.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-package-b5-one-approved-host-check-20261124
+  cancel-in-progress: false
+
+jobs:
+  locked-host-check:
+    if: ${{ false }} # DISARMED; only a fresh explicit one-use owner approval may arm this job.
+    runs-on: windows-2022
+    timeout-minutes: 55
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Checkout exact reviewed source, no retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 7789f8499709b06d0c944fc3bd91e90c47b5a708
+          persist-credentials: false
+      - name: Verify source and locked dependency identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ((git rev-parse HEAD).Trim() -ne '7789f8499709b06d0c944fc3bd91e90c47b5a708') { throw 'Wrong reviewed source' }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne '1aaa20850762ba0054b1dbd56139a248da6eba25') { throw 'Cargo lock identity changed' }
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          rustc +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Rust unavailable' }
+          cargo +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Cargo unavailable' }
+          $targets = rustup target list --installed --toolchain stable
+          if ($LASTEXITCODE -ne 0 -or 'x86_64-pc-windows-msvc' -notin $targets) { throw 'Hosted MSVC target unavailable' }
+          python --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Python unavailable' }
+          Write-Host "REVIEWED-SOURCE 7789f8499709b06d0c944fc3bd91e90c47b5a708"
+          Write-Host "LOCK-SHA256 $((Get-FileHash frontend/src-tauri/Cargo.lock -Algorithm SHA256).Hash)"
+      - name: Stage intentionally invalid compile-only fixtures
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json"
+          )
+          foreach ($file in ($assets + @($marker, 'frontend/dist'))) {
+            if (Test-Path -LiteralPath $file) { throw "Refusing to overwrite existing asset: $file" }
+          }
+          Set-Content -LiteralPath $marker -Value 'NEVER DISTRIBUTE - ONE COMPILE CHECK ONLY'
+          foreach ($file in $assets) {
+            [System.IO.File]::WriteAllBytes((Join-Path $PWD $file), [byte[]](0,1,2))
+          }
+          New-Item -ItemType Directory -Path 'frontend/dist' | Out-Null
+          Set-Content -LiteralPath 'frontend/dist/index.html' -Value 'INVALID COMPILE-ONLY FRONTEND; NEVER LAUNCH'
+          python desktop/verify_inference_assets.py
+          if ($LASTEXITCODE -ne 2) { throw 'Release preflight did not reject invalid fixtures' }
+          Write-Host 'RELEASE-PREFLIGHT-REJECTED; no real runtime/model assets'
+          exit 0
+      - name: Full locked Windows Tauri type-check including test targets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:CARGO_TARGET_DIR = Join-Path $env:RUNNER_TEMP 'pilotodin-package-b5-check-target'
+          cargo +stable check --locked --all-targets --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { throw "Locked host type-check failed: $LASTEXITCODE" }
+          if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne '1aaa20850762ba0054b1dbd56139a248da6eba25') { throw 'Cargo lock changed during check' }
+          git diff --exit-code
+          if ($LASTEXITCODE -ne 0) { throw 'Tracked source changed during check' }
+          Write-Host 'LOCKED-HOST-TYPE-CHECK-PASS (not a runtime or acceptance result)'
+      - name: Remove only owned compile-only placeholders
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tauri = 'frontend/src-tauri'
+          $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+          if (-not (Test-Path -LiteralPath $marker)) { return }
+          $assets = @(
+            "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+            "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+            "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+            "$tauri/resources/models/model-manifest.json",
+            'frontend/dist/index.html'
+          )
+          foreach ($file in $assets) {
+            if (Test-Path -LiteralPath $file) {
+              if ((Get-Item -LiteralPath $file).Length -gt 256) { throw "Unexpected content; refusing cleanup: $file" }
+              Remove-Item -LiteralPath $file -Force
+            }
+          }
+          if (Test-Path -LiteralPath 'frontend/dist') {
+            if (@(Get-ChildItem -LiteralPath 'frontend/dist' -Force).Count -ne 0) { throw 'Unexpected frontend fixture content' }
+            Remove-Item -LiteralPath 'frontend/dist'
+          }
+          Remove-Item -LiteralPath $marker
+          Write-Host 'COMPILE-ONLY-FIXTURES-REMOVED; no artifact upload or application execution'
