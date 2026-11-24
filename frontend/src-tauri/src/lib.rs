@@ -758,14 +758,29 @@ mod native_close_ticket_tests {
 }
 
 pub fn run() {
+    // Defer only the production window in the in-memory configuration.
+    // Several QA identities inherit the base window list. Changing the base
+    // JSON create flag would inadvertently disable their existing windows.
+    let mut context = tauri::generate_context!();
+    if context.config().identifier == "com.pilotodin.studio" {
+        let config = context.config_mut();
+        if config.app.app_directories_override.is_some()
+            || config.app.windows.len() != 1
+            || config.app.windows[0].label != "main"
+            || config.app.windows[0].data_directory.is_some()
+            || config.app.windows[0].additional_browser_args.is_some() {
+            panic!("Unexpected production desktop startup configuration");
+        }
+        config.app.windows[0].create = false;
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(DesktopState::default())
         .manage(NativeCloseState::default())
         .setup(|app| {
-            // Only the production main window is deferred in tauri.conf.json.
-            // Isolated QA configurations retain their own existing startup paths.
+            // Only the production main window was deferred above.
+            // Isolated QA configurations retain their existing startup paths.
             if app.config().identifier == "com.pilotodin.studio" {
                 let config = app.config().app.windows.iter()
                     .find(|window| window.label == "main")
@@ -821,7 +836,7 @@ pub fn run() {
                 }
             }
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("Could not initialise PilotODIN desktop")
         .run(|app, event| {
             if let RunEvent::Exit = event {

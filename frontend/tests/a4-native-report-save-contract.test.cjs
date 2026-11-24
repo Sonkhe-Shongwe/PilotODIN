@@ -10,7 +10,7 @@ test('A4 Tauri Save As plugin stays Rust-side behind an explicit command',()=>{
  const cargo=native('Cargo.toml');
  const rust=native('src/lib.rs');
  const capabilities=JSON.parse(native('capabilities/default.json'));
- assert.match(cargo,/tauri-plugin-dialog\s*=\s*"2"/);
+ assert.match(cargo,/tauri-plugin-dialog\s*=\s*"=2\.8\.4"/); // Pinned previously compiled Tauri v2 dialog.
  assert.match(rust,/\.plugin\(tauri_plugin_dialog::init\(\)\)/);
  assert.match(rust,/fn save_report_as\(/);
  assert.match(rust,/tauri::generate_handler!\[\s*launch_backend, launch_bundled_ai, save_report_as\b/);

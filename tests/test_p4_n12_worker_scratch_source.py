@@ -75,7 +75,12 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         config = json.loads(CONFIG.read_text(encoding="utf-8"))
         main = config["app"]["windows"][0]
         self.assertNotIn("dataDirectory", main)
-        self.assertIs(main.get("create"), False)
+        self.assertNotIn("create", main)  # QA may inherit the base window list.
+        run = src.split("pub fn run() {", 1)[1]
+        self.assertLess(run.index("context.config_mut()"), run.index("config.app.windows[0].create = false"))
+        self.assertLess(run.index("config.app.windows[0].create = false"), run.index("tauri::Builder::default()"))
+        self.assertIn("config.app.app_directories_override.is_some()", run)
+        self.assertIn(".build(context)", run)
         setup = slice_between(src, ".setup(|app| {", ".invoke_handler(")
         self.assertIn('app.config().identifier == "com.pilotodin.studio"', setup)
         self.assertLess(setup.index("prepare_production_profile(&root)"), setup.index("app.manage(lease)"))
