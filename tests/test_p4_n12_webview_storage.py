@@ -156,7 +156,9 @@ class StorageProbeTests(unittest.TestCase):
             for key in ("TEMP", "TMP", "TMPDIR"):
                 self.assertEqual(backend_env[key], str(scratch))
                 self.assertEqual(environment[key], inherited)
-            self.assertEqual(set(backend_env) - set(environment), set())
+            self.assertEqual(set(backend_env) - set(environment), {"PILOTODIN_SERVER_MODE"})
+            self.assertEqual(backend_env["PILOTODIN_SERVER_MODE"], "hosted-fixture")
+            self.assertNotIn("PILOTODIN_SERVER_MODE", environment)
 
     def test_focused_backend_refuses_symlinked_qa_home_scratch(self):
         with TemporaryDirectory() as folder:

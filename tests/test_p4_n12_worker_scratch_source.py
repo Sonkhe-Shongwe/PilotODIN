@@ -105,7 +105,7 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertLess(close.index("stop_owned_workers"), close.index("window.destroy()"))
         shutdown = slice_between(src, "fn stop_owned_workers(", "#[tauri::command]\nasync fn launch_backend")
         self.assertLess(shutdown.index("stopping.store(true"), shutdown.index("child.write("))
-        self.assertLess(shutdown.index("child.write("), shutdown.index("drop(worker.child.take())"))
+        self.assertLess(shutdown.index("child.write("), shutdown.index("terminate_owned_child(worker.child.take())"))
         self.assertIn("wait_for_worker(&worker.exit", shutdown)
         self.assertIn("exit is not confirmed", shutdown)
         self.assertNotIn("appDirectoriesOverride", config["app"])

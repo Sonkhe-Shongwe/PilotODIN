@@ -40,7 +40,6 @@ struct InferenceSettings {
 
 struct ActiveInference {
     child: Option<CommandChild>,
-    token: String,
     exit: Arc<AtomicU8>,
 }
 
@@ -357,6 +356,20 @@ fn ensure_desktop_admission(app: &AppHandle, state: &DesktopState) -> Result<(),
     Ok(())
 }
 
+// Windows uses the already-owned job and non-waiting kill-on-drop.
+// Preserve the previous explicit child/group cleanup on other platforms;
+// the bounded normal shutdown contract is for our Windows desktop.
+fn terminate_owned_child(child: Option<CommandChild>) {
+    if let Some(child) = child {
+        #[cfg(windows)]
+        drop(child);
+        #[cfg(not(windows))]
+        if let Err(error) = child.kill() {
+            eprintln!("Owned worker cleanup failed: {error}");
+        }
+    }
+}
+
 // 0 = no termination witness, 1 = normal zero exit, 2 = other exit.
 // Missing child handles are not exit evidence.
 fn wait_for_worker(exit: &AtomicU8, timeout: Duration) -> u8 {
@@ -396,7 +409,7 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
             if status == 0 {
                 // Windows owned job group kill-on-drop is non-waiting.
                 // Keep the termination witness even after the handle is dropped.
-                drop(worker.child.take());
+                terminate_owned_child(worker.child.take());
                 interrupted = true;
                 status = wait_for_worker(&worker.exit, Duration::from_secs(4));
             }
@@ -412,7 +425,7 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
         if let Some(worker) = active.as_mut() {
             // There is no reviewed inference shutdown endpoint. Terminate
             // only the owned group once analytical work has drained.
-            drop(worker.child.take());
+            terminate_owned_child(worker.child.take());
             if wait_for_worker(&worker.exit, Duration::from_secs(4)) == 0 {
                 return Err("Local inference exit is not confirmed; retry close".into());
             }
@@ -486,7 +499,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
                             *active = None;
                             if let Ok(mut ai) = state.inference.lock() {
                                 // Keep the inference exit witness while its group stops.
-                                if let Some(worker) = ai.as_mut() { drop(worker.child.take()); }
+                                if let Some(worker) = ai.as_mut() { terminate_owned_child(worker.child.take()); }
                             }
                             if let Ok(mut settings) = state.inference_settings.lock() {*settings = None;}
                         }
@@ -580,7 +593,7 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
         .kill_on_drop(cfg!(windows));
     let (mut events, child) = command.spawn().map_err(|e| format!("Could not launch local model: {e}"))?;
     let exit = Arc::new(AtomicU8::new(0));
-    *active = Some(ActiveInference { child: Some(child), token: token.clone(), exit: exit.clone() });
+    *active = Some(ActiveInference { child: Some(child), exit: exit.clone() });
     drop(active);
     let owner = app.clone();
     tauri::async_runtime::spawn(async move {
@@ -1005,15 +1018,15 @@ pub fn run() {
                 state.stopping.store(true, Ordering::Release);
                 // Emergency/non-ticket exit is not a verified graceful drain.
                 if let Ok(mut ai) = state.inference.lock() {
-                    if let Some(worker) = ai.take() {
+                    if let Some(mut worker) = ai.take() {
                         eprintln!("Emergency inference cleanup");
-                        drop(worker);
+                        terminate_owned_child(worker.child.take());
                     }
                 }
                 if let Ok(mut backend) = state.backend.lock() {
-                    if let Some(worker) = backend.take() {
+                    if let Some(mut worker) = backend.take() {
                         eprintln!("Emergency analytical cleanup");
-                        drop(worker);
+                        terminate_owned_child(worker.child.take());
                     }
                 };
             }
