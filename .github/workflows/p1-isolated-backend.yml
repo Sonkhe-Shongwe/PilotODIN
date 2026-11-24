@@ -8,6 +8,9 @@ on:
     paths:
       - .github/workflows/p1-isolated-backend.yml
       - backend/main.py
+      - backend/resource_admission.py
+      - backend/resource_routes.py
+      - tests/test_c1_resource_admission.py
       - backend/quality.py
       - backend/requirements.txt
       - backend/requirements-test.txt
@@ -57,3 +60,6 @@ jobs:
           tests/test_p1_import_recovery.py
           tests/test_p1_upload_atomic_staging.py
           tests/test_p1_real_api_failed_switch.py
+
+      - name: Exercise C1 pure coordinator and exact route inventory
+        run: python -m pytest -q tests/test_c1_resource_admission.py
