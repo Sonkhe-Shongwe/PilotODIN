@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import math
 import re
 from codecs import BOM_UTF8
@@ -51,18 +52,18 @@ def native(value: Any) -> Any:
     return value
 
 
-def read_csv_with_identifiers(path: str, is_identifier: Callable[[str], bool]) -> pd.DataFrame:
+def read_csv_with_identifiers(path: str | bytes, is_identifier: Callable[[str], bool]) -> pd.DataFrame:
     """Retry the full CSV on a decoding error, keeping caller-specific text columns."""
     def parse(encoding: str) -> pd.DataFrame:
-        header = pd.read_csv(path, encoding=encoding, nrows=0)
+        header = pd.read_csv(io.BytesIO(path) if isinstance(path, bytes) else path, encoding=encoding, nrows=0)
         protected = {name: str for name in header.columns if is_identifier(str(name))}
-        return pd.read_csv(path, encoding=encoding, dtype=protected, low_memory=False)
+        return pd.read_csv(io.BytesIO(path) if isinstance(path, bytes) else path, encoding=encoding, dtype=protected, low_memory=False)
 
     try:
         return parse("utf-8-sig")
     except UnicodeDecodeError:
         # An explicit UTF-8 BOM declares the encoding even if later bytes are invalid.
-        with open(path, "rb") as source:
+        with import_preflight.binary_input(path) as source:
             if source.read(len(BOM_UTF8)) == BOM_UTF8:
                 raise
         return parse("cp1252")
@@ -85,19 +86,19 @@ def is_identifier_column(name: str) -> bool:
 _import_identifier = is_identifier_column
 
 
-def read_xlsx_with_identifiers(path: str, is_identifier: Callable[[str], bool]) -> pd.DataFrame:
+def read_xlsx_with_identifiers(path: str | bytes, is_identifier: Callable[[str], bool]) -> pd.DataFrame:
     """Preserve text-formatted identifier values in the first XLSX worksheet.
 
     For genuine text cells like '0007', dtype=str prevents pandas numeric
     inference. A numeric cell with a '0000' display format has no literal
     zero-padded text to recover; that requires separate schema review.
     """
-    header = pd.read_excel(path, engine="openpyxl", sheet_name=0, nrows=0)
+    header = pd.read_excel(io.BytesIO(path) if isinstance(path, bytes) else path, engine="openpyxl", sheet_name=0, nrows=0)
     protected = {name: str for name in header.columns if is_identifier(str(name))}
-    return pd.read_excel(path, engine="openpyxl", sheet_name=0, dtype=protected)
+    return pd.read_excel(io.BytesIO(path) if isinstance(path, bytes) else path, engine="openpyxl", sheet_name=0, dtype=protected)
 
 
-def read_data(path: str, ext: str) -> pd.DataFrame:
+def read_data(path: str | bytes, ext: str) -> pd.DataFrame:
     import_preflight.preflight_dataset(path, ext)
     if ext == ".csv":
         df = read_csv_with_identifiers(path, is_identifier_column)

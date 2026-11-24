@@ -17,9 +17,9 @@ from typing import Any
 import pandas as pd
 
 try:
-    from . import engine, storage
+    from . import artifact_publication, engine, storage
 except ImportError:
-    import engine, storage
+    import artifact_publication, engine, storage
 
 
 class QualityError(ValueError):
@@ -113,6 +113,25 @@ def _ensure(con, p: dict) -> None:
             "The original dataset has no recorded checksum. Import a verified original as a new project to continue. "
             "This project and its history were preserved.", 409,
         )
+    receipt = None
+    # Legacy projects have no receipt and keep their original checksum
+    # contract. New publication receipts must agree with preserved lineage.
+    try:
+        row = con.execute(
+            "SELECT operation_id FROM artifact_publications_v1 WHERE kind='dataset' AND subject_id=?",
+            (pid,)).fetchone()
+        if row is not None:
+            receipt = artifact_publication.read(con, row[0])
+            original = con.execute(
+                "SELECT operations_json,event FROM quality_versions WHERE project_id=? AND version=0",
+                (pid,)).fetchone()
+            if (receipt is None or receipt.state != "committed"
+                    or receipt.sha256 != state["original_sha256"]
+                    or receipt.suffix != p["file_ext"]
+                    or original is None or tuple(original) != ("[]", "original")):
+                raise artifact_publication.PublicationError("Dataset receipt disagrees with lineage")
+    except artifact_publication.PublicationError as exc:
+        raise QualityError("Dataset publication integrity cannot be confirmed. Original and history preserved.", 409) from exc
     try:
         sha = _digest(p["dataset_path"])
     except FileNotFoundError as exc:
@@ -130,6 +149,12 @@ def _ensure(con, p: dict) -> None:
         ) from exc
     if state["original_sha256"] != sha:
         raise QualityError("Uploaded source file has changed outside PilotODIN. Quality history cannot be replayed safely.", 409)
+    if receipt is not None:
+        try:
+            if Path(p["dataset_path"]).stat().st_size != receipt.expected_bytes:
+                raise QualityError("Dataset publication integrity cannot be confirmed. Original and history preserved.", 409)
+        except OSError as exc:
+            raise QualityError("Dataset publication source cannot be confirmed.", 409) from exc
 
 
 def _state(con, pid: str) -> tuple[int, list[str]]:

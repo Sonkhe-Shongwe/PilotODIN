@@ -7,6 +7,7 @@ No original file is modified and no worksheet content is cached here.
 from __future__ import annotations
 
 import csv
+import io
 import posixpath
 import re
 from threading import Lock
@@ -46,7 +47,12 @@ def _check_shape(rows: int, columns: int) -> None:
         raise ValueError(_LIMIT_ERROR)
 
 
-def _csv_dimensions(path: str | Path, encoding: str) -> None:
+def binary_input(source: str | Path | bytes):
+    """Fresh read handle for a path or immutable, bounded upload snapshot."""
+    return io.BytesIO(source) if isinstance(source, bytes) else open(source, "rb")
+
+
+def _csv_dimensions(path: str | Path | bytes, encoding: str) -> None:
     # csv.reader defaults to a 128 KiB field ceiling, while pandas accepts
     # valid larger text fields. Do not introduce silent data rejection as a
     # side effect of the new dimension preflight. Keep any temporary override
@@ -55,10 +61,10 @@ def _csv_dimensions(path: str | Path, encoding: str) -> None:
     # preflights must not race each other's saved values.
     with _CSV_FIELD_LIMIT_LOCK:
         original_limit = csv.field_size_limit()
-        requested = max(original_limit, min(Path(path).stat().st_size, MAX_CSV_FIELD_BYTES))
+        requested = max(original_limit, min(len(path) if isinstance(path, bytes) else Path(path).stat().st_size, MAX_CSV_FIELD_BYTES))
         try:
             csv.field_size_limit(requested)
-            with open(path, "r", encoding=encoding, errors="strict", newline="") as source:
+            with io.TextIOWrapper(binary_input(path), encoding=encoding, errors="strict", newline="") as source:
                 reader = csv.reader(source)
                 # pandas ignores blank physical lines unless quoted into a cell.
                 header = next((row for row in reader if row), [])
@@ -74,13 +80,13 @@ def _csv_dimensions(path: str | Path, encoding: str) -> None:
             csv.field_size_limit(original_limit)
 
 
-def _preflight_csv(path: str | Path) -> None:
+def _preflight_csv(path: str | Path | bytes) -> None:
     try:
         _csv_dimensions(path, "utf-8-sig")
     except UnicodeDecodeError:
         # Match read_csv_with_identifiers: an explicit UTF-8 BOM forbids a
         # fallback that could reinterpret malformed source bytes as CP1252.
-        with open(path, "rb") as source:
+        with binary_input(path) as source:
             if source.read(len(BOM_UTF8)) == BOM_UTF8:
                 raise
         _csv_dimensions(path, "cp1252")
@@ -169,9 +175,9 @@ def _excel_column(cell_ref: str) -> tuple[int, int]:
     return col, int(match.group(2))
 
 
-def _preflight_xlsx(path: str | Path) -> None:
+def _preflight_xlsx(path: str | Path | bytes) -> None:
     try:
-        with ZipFile(path) as archive:
+        with binary_input(path) as source_file, ZipFile(source_file) as archive:
             entries = archive.infolist()
             if len(entries) > MAX_XLSX_MEMBERS:
                 raise ValueError("XLSX has too many archive members")
@@ -238,7 +244,7 @@ def _preflight_xlsx(path: str | Path) -> None:
         raise ValueError("Invalid or unsafe XLSX workbook") from exc
 
 
-def preflight_dataset(path: str | Path, ext: str) -> None:
+def preflight_dataset(path: str | Path | bytes, ext: str) -> None:
     """Fail closed on shape/expansion before any pandas CSV/XLSX materialization."""
     if ext == ".csv":
         _preflight_csv(path)

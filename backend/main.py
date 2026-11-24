@@ -24,15 +24,18 @@ from pydantic import BaseModel, Field, ConfigDict
 from starlette.background import BackgroundTask
 
 try:
-    from . import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
+    from . import dataset_publication, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 except ImportError:
-    import ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
+    import dataset_publication, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
     """Start responsive: verify configured cloud providers in background only after consent."""
     # FastAPI BackgroundTasks do not survive a backend restart. Explicitly
     # fail orphaned ML records before admitting new work; never auto-retrain.
+    interrupted=dataset_publication.recover_pending()
+    if interrupted:
+        logging.warning("Reconciled %s incomplete dataset publication(s)", interrupted)
     recovered=storage.recover_interrupted_experiments()
     if recovered:
         logging.warning("Marked %s unfinished ML experiment(s) failed after backend restart",recovered)
@@ -180,18 +183,6 @@ def health():
 def projects(): return storage.list_projects()
 
 
-def _remove_uncommitted_dataset(path: Path, expected=None) -> None:
-    """Remove a failed upload only after ruling out a committed project reference."""
-    storage.check_write_path(path, missing=True, expected=expected)
-    if not path.exists():
-        return
-    with closing(storage.connect()) as con:
-        referenced = con.execute("SELECT 1 FROM projects WHERE dataset_path=? LIMIT 1", (str(path),)).fetchone()
-    if referenced is not None:
-        raise RuntimeError("The import source is already referenced by a project")
-    storage.guarded_unlink(path, expected=expected)
-
-
 @app.post("/api/projects",status_code=201)
 async def create_project(file: UploadFile = File(...)):
     filename=Path(file.filename or "dataset").name
@@ -203,54 +194,12 @@ async def create_project(file: UploadFile = File(...)):
     if len(b)>MAX_BYTES:
         raise HTTPException(status_code=413,detail="File exceeds local 40 MB limit")
     if not b: raise HTTPException(status_code=400,detail="Empty file")
-    path=storage.HOME / "datasets" / f"{storage.uid()}{ext}"
-    # Publish only a complete, validated file. The subsequent database commit
-    # makes its catalogue entry, checksum and original version visible together.
-    staging=path.with_name(path.name+".uploading")
-    staging_created=False
-    published=False
-    staging_identity=None
     try:
-        storage.check_write_path(path, absent=True)
-        storage.check_write_path(staging, absent=True)
-        with staging.open("xb") as output:
-            staging_created=True
-            staging_identity=os.fstat(output.fileno())
-            output.write(b)
-            output.flush()
-            os.fsync(output.fileno())
-        storage.check_write_path(staging, expected=staging_identity)
-        df=engine.read_data(str(staging),ext)
-        prof=engine.profile(df,filename)
-        original_sha256=hashlib.sha256(b).hexdigest()
-        storage.check_write_path(staging, expected=staging_identity)
-        storage.check_write_path(path, absent=True)
-        os.replace(staging,path)
-        published=True
-        storage.check_write_path(path, expected=staging_identity)
-        pid=storage.save_project(Path(filename).stem,filename,ext,path,prof,original_sha256=original_sha256)
+        pid,prof=dataset_publication.publish(filename,ext,b)
+    except dataset_publication.UnconfirmedPublication as e:
+        raise HTTPException(status_code=500,
+                            detail="Import could not be confirmed. Refresh projects and check local logs before retrying.") from e
     except Exception as e:
-        staging_cleanup_failed=False
-        try:
-            if staging_created:
-                storage.guarded_unlink(staging, expected=staging_identity)
-        except (OSError, storage.WorkspaceBoundaryError):
-            staging_cleanup_failed=True
-            logging.exception("Failed to remove interrupted upload staging file")
-        try:
-            if published:
-                _remove_uncommitted_dataset(path, staging_identity)
-        except Exception:
-            # The catalogue check may be unavailable after a commit error.
-            # Retain any published bytes in case the database references them.
-            logging.exception("Import source cleanup could not be verified")
-            raise HTTPException(status_code=500,
-                                detail="Import could not be confirmed. Refresh projects and check local logs before retrying.") from e
-        if staging_cleanup_failed:
-            raise HTTPException(
-                status_code=500,
-                detail="Import failed and temporary upload cleanup was incomplete. Check local logs before retrying.",
-            ) from e
         raise HTTPException(status_code=422,detail=f"Could not process dataset: {str(e)[:280]}") from e
     return {"id":pid,"name":Path(filename).stem,"profile":prof}
 

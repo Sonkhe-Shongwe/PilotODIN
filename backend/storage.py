@@ -260,6 +260,42 @@ def advance_dataset_publication(receipt, state, *, reason=None):
         return artifact_publication.advance(con, receipt, state, reason=reason)
 
 
+def publication_reference_conflict(con, receipt, paths, *, allow_subject=False):
+    """Conservative, bounded catalogue reference admission, archives included.
+
+    Never open dataset contents here. Resolve path aliases and compare physical
+    identity where available. Unreadable or ambiguous references block cleanup.
+    """
+    candidates = [Path(p) for p in paths]
+    names = {os.path.normcase(os.path.abspath(p)).casefold() for p in candidates}
+    resolved = {os.path.normcase(str(p.resolve(strict=False))).casefold() for p in candidates}
+    identities = []
+    for path in candidates:
+        try:
+            identities.append(path.stat())
+        except FileNotFoundError:
+            pass
+    rows = con.execute("SELECT id,dataset_path FROM projects LIMIT 10001").fetchall()
+    if len(rows) > 10000:
+        raise artifact_publication.PublicationError("Publication reference inventory limit")
+    for row in rows:
+        if row["id"] == receipt.subject_id and not allow_subject:
+            return True
+        source = Path(row["dataset_path"])
+        if not source.is_absolute():
+            raise artifact_publication.PublicationError("Ambiguous catalogue source location")
+        if (os.path.normcase(os.path.abspath(source)).casefold() in names
+                or os.path.normcase(str(source.resolve(strict=False))).casefold() in resolved):
+            return True
+        try:
+            info = source.stat()
+        except FileNotFoundError:
+            continue
+        if any(os.path.samestat(info, expected) for expected in identities):
+            return True
+    return False
+
+
 def commit_dataset_publication(receipt, filename, profile, *, verify_final):
     """Atomic catalogue, original Quality version and publication receipt.
 
@@ -290,9 +326,7 @@ def commit_dataset_publication(receipt, filename, profile, *, verify_final):
         artifact_publication.begin_durable(con)
         if artifact_publication.read(con, receipt.operation_id) != receipt:
             raise artifact_publication.PublicationError("Publication receipt changed")
-        if con.execute(
-                "SELECT 1 FROM projects WHERE id=? OR dataset_path=? COLLATE NOCASE LIMIT 1",
-                (receipt.subject_id, str(path))).fetchone() is not None:
+        if publication_reference_conflict(con, receipt, (path,)):
             raise artifact_publication.PublicationError("Publication reference conflict")
         checked_identity(identity)
         verify_final()

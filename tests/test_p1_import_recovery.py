@@ -149,31 +149,41 @@ def test_unknown_commit_state_keeps_source_for_recovery(monkeypatch, tmp_path):
     home = _temporary_store(monkeypatch, tmp_path)
     quality._init_tables()
 
-    with patch.object(storage, "connect", side_effect=OSError("Synthetic storage failure")):
+    original_commit = storage.commit_dataset_publication
+    def fail_and_disable(*args, **kwargs):
+        monkeypatch.setattr(storage, "connect", lambda: (_ for _ in ()).throw(OSError("Synthetic storage failure")))
+        raise OSError("Synthetic commit failure")
+    connect = storage.connect
+    monkeypatch.setattr(storage, "commit_dataset_publication", fail_and_disable)
+    try:
         response = TestClient(app).post(
             "/api/projects", files={"file": ("recoverable.csv", _csv(), "text/csv")},
         )
+    finally:
+        monkeypatch.setattr(storage, "connect", connect)
+        monkeypatch.setattr(storage, "commit_dataset_publication", original_commit)
     assert response.status_code == 500, response.text
-    retained, = (home / "datasets").iterdir()
-    assert retained.suffix == ".csv"
-    assert retained.read_bytes() == _csv()
+    retained = list((home / "datasets").iterdir())
+    assert len(retained) == 2
+    assert {p.read_bytes() for p in retained} == {_csv()}
     assert storage.list_projects() == []
 
 
 def test_error_after_commit_preserves_catalogue_and_source(monkeypatch, tmp_path):
     _temporary_store(monkeypatch, tmp_path)
     quality._init_tables()
-    save = storage.save_project
+    save = storage.commit_dataset_publication
 
     def save_then_fail(*args, **kwargs):
         save(*args, **kwargs)
         raise OSError("Synthetic acknowledgement failure")
 
-    monkeypatch.setattr(storage, "save_project", save_then_fail)
+    monkeypatch.setattr(storage, "commit_dataset_publication", save_then_fail)
     client = TestClient(app)
     response = client.post("/api/projects", files={"file": ("generated.csv", _csv(), "text/csv")})
-    assert response.status_code == 500, response.text
+    assert response.status_code == 201, response.text
     row, = client.get("/api/projects").json()
+    assert response.json()["id"] == row["id"]
     assert Path(storage.get_project(row["id"])["dataset_path"]).read_bytes() == _csv()
     assert client.get(f"/api/projects/{row['id']}/live-profile").json()["version"] == 0
 
@@ -198,11 +208,12 @@ import os
 import sys
 from unittest.mock import patch
 from fastapi.testclient import TestClient
-from backend import main, storage
+from backend import main, storage, dataset_publication
 
 boundary, raw = sys.argv[1:]
 original_connect = storage.connect
-original_save = storage.save_project
+original_save = storage.commit_dataset_publication
+original_write = dataset_publication._write_exclusive
 
 def connect():
     con = original_connect()
@@ -216,12 +227,17 @@ def save_and_stop(*args, **kwargs):
     original_save(*args, **kwargs)
     os._exit(73)
 
+def stop_before_final(path, *args):
+    if not path.name.endswith(".uploading"):
+        os._exit(73)
+    return original_write(path, *args)
+
 if boundary == 'replace':
-    interruption = patch.object(main.os, 'replace', side_effect=lambda *_: os._exit(73))
+    interruption = patch.object(dataset_publication, '_write_exclusive', stop_before_final)
 elif boundary == 'version':
     interruption = patch.object(storage, 'connect', connect)
 else:
-    interruption = patch.object(storage, 'save_project', save_and_stop)
+    interruption = patch.object(storage, 'commit_dataset_publication', save_and_stop)
 
 with interruption:
     response = TestClient(main.app).post('/api/projects', files={'file': ('generated.csv', raw, 'text/csv')})
@@ -236,21 +252,23 @@ with interruption:
         self.assertEqual(result.returncode, 73, result.stderr)
 
     def assert_precommit_restart(self, suffix):
-        retained, = self.datasets.iterdir()
-        self.assertTrue(retained.name.endswith(suffix), retained.name)
-        self.assertEqual(retained.read_bytes(), _csv())
+        retained = list(self.datasets.iterdir())
+        self.assertEqual(len(retained), 1 if suffix == ".csv.uploading" else 2)
+        self.assertTrue(any(p.name.endswith(suffix) for p in retained))
+        self.assertTrue(all(p.read_bytes() == _csv() for p in retained))
         with TestClient(app) as client:
             self.assertEqual(client.get("/api/projects").json(), [])
             self.assertEqual(client.get("/api/projects/manage").json(), [])
             with storage.connect() as con:
+                self.assertEqual(con.execute("SELECT state FROM artifact_publications_v1").fetchone()[0], "interrupted")
                 for table in ("projects", "quality_state", "quality_versions"):
                     self.assertEqual(con.execute("SELECT COUNT(*) FROM " + table).fetchone()[0], 0)
             uploaded = client.post("/api/projects", files={"file": ("generated.csv", _csv(), "text/csv")})
             self.assertEqual(uploaded.status_code, 201, uploaded.text)
             self.assertEqual(len(client.get("/api/projects").json()), 1)
-        self.assertEqual(retained.read_bytes(), _csv())
+        self.assertTrue(all(p.read_bytes() == _csv() for p in retained))
 
-    def test_restart_before_rename_keeps_staging_bytes_out_of_catalogue(self):
+    def test_restart_before_final_creation_keeps_staging_bytes_out_of_catalogue(self):
         self.interrupt_child("replace")
         self.assert_precommit_restart(".csv.uploading")
 
@@ -273,6 +291,8 @@ with interruption:
             self.assertIsNotNone(state)
             self.assertEqual(tuple(state), (hashlib.sha256(_csv()).hexdigest(), 0))
             self.assertEqual(tuple(version), (0, "original"))
+            with storage.connect() as con:
+                self.assertEqual(con.execute("SELECT state FROM artifact_publications_v1 WHERE subject_id=?", (pid,)).fetchone()[0], "committed")
             response = client.get(f"/api/projects/{pid}/live-profile")
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(response.json()["version"], 0)

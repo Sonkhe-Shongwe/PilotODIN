@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from backend import engine, main, quality, storage
+from backend import dataset_publication, engine, main, quality, storage
 
 
 def _isolated(monkeypatch, tmp_path):
@@ -57,14 +57,17 @@ def test_fsync_failure_cleans_partial_upload_before_metadata(monkeypatch,tmp_pat
     _empty(home)
 
 
-def test_replace_failure_cleans_temporary_upload(monkeypatch,tmp_path):
+def test_final_creation_failure_cleans_temporary_upload(monkeypatch,tmp_path):
     home=_isolated(monkeypatch,tmp_path)
-    def interrupted(_src,_dst):
-        raise OSError("Synthetic atomic rename failure")
-    monkeypatch.setattr(main.os,"replace",interrupted)
+    write=dataset_publication._write_exclusive
+    def interrupted(path,*args):
+        if not path.name.endswith(".uploading"):
+            raise OSError("Synthetic final creation failure")
+        return write(path,*args)
+    monkeypatch.setattr(dataset_publication,"_write_exclusive",interrupted)
     response=_upload()
     assert response.status_code==422,response.text
-    assert "Synthetic atomic rename failure" in response.json()["detail"]
+    assert "Synthetic final creation failure" in response.json()["detail"]
     _empty(home)
 
 
@@ -161,3 +164,56 @@ class CsvEncodingTests(unittest.TestCase):
         response = self._upload_bytes(BOM_UTF8 + _late_windows_csv())
         self.assertEqual(response.status_code, 422, response.text)
         _empty(self.home)
+
+
+def test_final_collision_does_not_overwrite_or_remove_foreign_bytes(monkeypatch,tmp_path):
+    home=_isolated(monkeypatch,tmp_path)
+    original=dataset_publication._write_exclusive
+    collision=b"existing immutable bytes"
+    def create_collision(path,raw,owned,verify):
+        if not path.name.endswith(".uploading"):
+            path.write_bytes(collision)
+        return original(path,raw,owned,verify)
+    monkeypatch.setattr(dataset_publication,"_write_exclusive",create_collision)
+    response=_upload()
+    assert response.status_code==422,response.text
+    assert storage.list_projects()==[]
+    retained,=list((home/"datasets").iterdir())
+    assert retained.read_bytes()==collision
+    with storage.connect() as con:
+        assert con.execute("SELECT state FROM artifact_publications_v1").fetchone()[0]=="interrupted"
+
+
+def test_parser_uses_verified_immutable_bytes_and_final_digest(monkeypatch,tmp_path):
+    home=_isolated(monkeypatch,tmp_path)
+    original=engine.read_data
+    def parse(raw,ext):
+        assert isinstance(raw,bytes)
+        assert raw==_data()
+        return original(raw,ext)
+    monkeypatch.setattr(engine,"read_data",parse)
+    response=_upload()
+    assert response.status_code==201,response.text
+    pid=response.json()["id"]
+    with storage.connect() as con:
+        row=con.execute("SELECT state,sha256,expected_bytes FROM artifact_publications_v1 WHERE subject_id=?",(pid,)).fetchone()
+        assert tuple(row)==("committed",hashlib.sha256(_data()).hexdigest(),len(_data()))
+    source,=list((home/"datasets").iterdir())
+    assert source.read_bytes()==_data()
+
+
+def test_recovery_preserves_unreferenced_and_unknown_bytes_twice(monkeypatch,tmp_path):
+    home=_isolated(monkeypatch,tmp_path)
+    raw=_data()
+    receipt=storage.begin_dataset_publication(".csv",len(raw),hashlib.sha256(raw).hexdigest())
+    partial=home/"datasets"/receipt.staging_name
+    partial.write_bytes(raw[:8])
+    unknown=home/"datasets"/"legacy.csv"
+    unknown.write_bytes(b"unknown original")
+    assert dataset_publication.recover_pending()==1
+    assert dataset_publication.recover_pending()==0
+    assert partial.read_bytes()==raw[:8]
+    assert unknown.read_bytes()==b"unknown original"
+    assert storage.list_projects()==[]
+    with storage.connect() as con:
+        assert con.execute("SELECT state FROM artifact_publications_v1").fetchone()[0]=="interrupted"
