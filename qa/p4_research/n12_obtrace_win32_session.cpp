@@ -1,6 +1,6 @@
 // G2.25 dormant Windows source candidate, no executable entrypoint.
 // No source path can start a session until a separate reviewed activation.
-// This translation unit is not yet MSVC-compiled or native-validated.
+// Compilation alone cannot verify native capture or provider semantics.
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <evntrace.h>
@@ -49,7 +49,7 @@ public:
         wcscpy_s(p_.logger, unique_name);
         wcscpy_s(p_.filename, private_etl);
         auto& p = p_.props;
-        p.Wnode.BufferSize = sizeof(p_);
+        p.Wnode.BufferSize = static_cast<ULONG>(sizeof(p_));
         p.Wnode.Flags = WNODE_FLAG_TRACED_GUID;
         p.Wnode.ClientContext = 1;  // QPC; consumer must convert to shared system time.
         p.LogFileMode = EVENT_TRACE_SYSTEM_LOGGER_MODE | EVENT_TRACE_FILE_MODE_SEQUENTIAL;
@@ -57,8 +57,8 @@ public:
         p.MinimumBuffers = 8;
         p.MaximumBuffers = kMaxBuffers;
         p.MaximumFileSize = kMaxTraceMiB;
-        p.LoggerNameOffset = offsetof(Properties, logger);
-        p.LogFileNameOffset = offsetof(Properties, filename);
+        p.LoggerNameOffset = static_cast<ULONG>(offsetof(Properties, logger));
+        p.LogFileNameOffset = static_cast<ULONG>(offsetof(Properties, filename));
         TRACEHANDLE candidate{};
         const ULONG result = StartTraceW(&candidate, unique_name, &p);
         if (result != ERROR_SUCCESS) return result; // Includes collision; never stop it.

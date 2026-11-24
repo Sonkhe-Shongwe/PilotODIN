@@ -63,6 +63,7 @@ on:
       - qa/p4_research/n12_obtrace_feasibility.py
       - qa/p4_research/n12_obtrace_win32_session.cpp
       - tests/test_p4_n12_g2_25_obtrace_feasibility.py
+      - .github/workflows/p4-r025-g213-msvc-compile-only.yml
 
 permissions:
   contents: read

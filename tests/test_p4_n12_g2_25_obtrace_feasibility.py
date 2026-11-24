@@ -133,6 +133,16 @@ class ObTraceFeasibilityTests(unittest.TestCase):
         self.assertEqual(self.review(controls=(self.a, b))["reason"],
                          "FILEIO_OBJECT_OR_NAME_EPOCH_UNVERIFIED")
 
+    def test_windows_check_compiles_objects_only(self):
+        root = Path(__file__).resolve().parents[1]
+        wf = (root / ".github/workflows/p4-r025-g213-msvc-compile-only.yml").read_text(encoding="utf-8")
+        self.assertIn("qa/p4_research/n12_obtrace_win32_session.cpp", wf)
+        self.assertIn("g225_obtrace_abi.obj", wf)
+        self.assertEqual(wf.count("cl /nologo /c /std:c++17 /W4 /WX"), 2)
+        self.assertNotIn("workflow_dispatch", wf)
+        self.assertNotIn("/link", wf)
+        self.assertIn("Remove-Item -LiteralPath $scratch -Recurse -Force", wf)
+
     def test_native_source_dormant_and_no_name_or_foreign_handle_query(self):
         path = Path(__file__).resolve().parents[1] / "qa/p4_research/n12_obtrace_win32_session.cpp"
         source = path.read_text(encoding="utf-8")

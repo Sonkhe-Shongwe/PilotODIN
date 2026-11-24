@@ -1,4 +1,4 @@
-name: P4 R02.5 G2.13 Windows MSVC compile-only ABI check
+name: P4 R02.5 Windows MSVC compile-only ABI check
 
 # Ordinary source-only Windows CI. Compile to a disposable object file, ONLY.
 # Never link, execute the PSS probe, launch PilotODIN/WebView2, use Sysmon/ETW,
@@ -11,6 +11,8 @@ on:
       - .github/workflows/p4-r025-g213-msvc-compile-only.yml
       - qa/p4_native/g213_generated_pss_probe.cpp
       - tests/test_p4_n12_g2_13_source_contract.py
+      - qa/p4_research/n12_obtrace_win32_session.cpp
+      - tests/test_p4_n12_g2_25_obtrace_feasibility.py
 
 permissions:
   contents: read
@@ -64,6 +66,15 @@ jobs:
             }
             '### G2.13 Windows SDK compile-only: PASS (object, no executable)' >> $env:GITHUB_STEP_SUMMARY
             'No PSS snapshot executed, no WebView2 or product capture, no R02.5 acceptance credit.' >> $env:GITHUB_STEP_SUMMARY
+            $obj = Join-Path $scratch 'g225_obtrace_abi.obj'
+            $cpp = 'qa/p4_research/n12_obtrace_win32_session.cpp'
+            $command = '"' + $vcvars + '" && cl /nologo /c /std:c++17 /W4 /WX /Fo:"' + $obj + '" "' + $cpp + '"'
+            cmd.exe /D /S /C $command
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $obj -PathType Leaf)) {
+              throw 'G2.25 ObTrace Windows SDK compile-only ABI check failed'
+            }
+            '### G2.25 Windows SDK compile-only: PASS (object, no executable)' >> $env:GITHUB_STEP_SUMMARY
+            'No object-manager session, ETW consumer, generated writer or app executed.' >> $env:GITHUB_STEP_SUMMARY
           } finally {
             Remove-Item -LiteralPath $scratch -Recurse -Force -ErrorAction Stop
           }
