@@ -302,7 +302,16 @@ def train_background(eid:str,pid:str,config:dict):
 
 
 @app.post("/api/projects/{project_id}/experiments",status_code=202)
-def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:BackgroundTasks):
+def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:BackgroundTasks,request:Request=None):
+    # Dormant C1 seam: only the trusted server ASGI wrapper supplies an owner.
+    # Existing live and direct-call paths are unchanged until unified activation.
+    owner = None
+    if request is not None:
+        try:
+            from .resource_training import optional_training_owner
+        except ImportError:
+            from resource_training import optional_training_owner
+        owner = optional_training_owner(request.scope)
     p=project_or_404(project_id)
     if body.split_strategy not in ('random','group','time'):
         raise HTTPException(status_code=422,detail='Choose random, group, or time validation')
@@ -338,15 +347,16 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
     # reserve the same atomic workstation-wide ML fitting slot, so switching
     # to Adaptive or Performance cannot queue concurrent expensive training.
     # Existing engine model/row/matrix and leakage caps remain independent.
-    admission = resource_policy.admit_new_work("training")
-    if admission["decision"] == "defer":
-        raise HTTPException(status_code=503, detail={
-            "code": admission["code"], "operation": "training",
-            "message": admission["note"],
-            "available_gib": admission["available_gib"],
-            "required_free_gib": admission["required_free_gib"],
-            "retryable": True,
-        })
+    if owner is None:
+        admission = resource_policy.admit_new_work("training")
+        if admission["decision"] == "defer":
+            raise HTTPException(status_code=503, detail={
+                "code": admission["code"], "operation": "training",
+                "message": admission["note"],
+                "available_gib": admission["available_gib"],
+                "required_free_gib": admission["required_free_gib"],
+                "retryable": True,
+            })
     config={"target":body.target,"task":body.task,"excluded":body.excluded_features,"models":body.models,
             "quality_version":version,"split_strategy":body.split_strategy,"split_column":body.split_column,
             "acknowledge_feature_risks":bool(body.acknowledge_feature_risks),
@@ -354,20 +364,38 @@ def new_experiment(project_id:str,body:ExperimentRequest,background_tasks:Backgr
             "categorical_imputation":body.categorical_imputation,
             "reviewed_high_risk_features":included_risks,
             "max_duration_seconds":body.max_duration_seconds}
+    if owner is not None:
+        # Load the exact storage witnesses before entering the queue transaction.
+        try:
+            from . import resource_training_store as durable_training
+        except ImportError:
+            import resource_training_store as durable_training
+        owner.publication_started()
     try:
         eid=storage.new_experiment_with_capacity(
             project_id,config,expected_quality_version=version)
     except project_lifecycle.ProjectLifecycleError as exc:
+        if owner is not None:
+            owner.publication_refused()  # Known pre-insert transaction refusal.
         raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
     except storage.TrainingVersionConflict as exc:
+        if owner is not None:
+            owner.publication_refused()  # Known pre-insert transaction refusal.
         raise HTTPException(status_code=409,detail=str(exc)) from exc
     except storage.TrainingSlotBusy as exc:
+        if owner is not None:
+            owner.publication_refused()  # Known pre-insert transaction refusal.
         raise HTTPException(status_code=503,detail={
             "code": "ml_training_slot_busy", "operation": "training",
             "message": str(exc)+" Retry when that training finishes.",
             "retryable": True,
         }) from exc
-    background_tasks.add_task(train_background,eid,project_id,config)
+    if owner is None:
+        background_tasks.add_task(train_background,eid,project_id,config)
+    else:
+        callback = owner.bind(eid, lambda exact_id: train_background(exact_id,project_id,config),
+                              durable_training.settle_unstarted,durable_training.terminal)
+        background_tasks.add_task(callback)
     return {"id":eid,"status":"queued"}
 
 

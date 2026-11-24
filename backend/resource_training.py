@@ -14,7 +14,7 @@ from starlette.responses import JSONResponse
 try:
     from .resource_admission import Coordinator, Operation, GIB
 except ImportError:
-    from resource_admission import Coordinator, Operation
+    from resource_admission import Coordinator, Operation, GIB
 
 
 class TrainingOwnership:
@@ -82,6 +82,8 @@ class TrainingOwnership:
 
     def _complete(self, witness):
         with self._lock:
+            if self._state == "blocked":
+                return  # Late completion cannot clear an uncertain finalizer.
             if witness is not True:
                 self._block_locked()
                 return
@@ -155,10 +157,20 @@ class TrainingOwnership:
 _OWNER_SCOPE_KEY = "pilotodin.training_ownership"
 
 
+def optional_training_owner(scope):
+    """Absent only for the existing unregistered path; malformed owner fails closed."""
+    if _OWNER_SCOPE_KEY not in scope:
+        return None
+    owner = scope[_OWNER_SCOPE_KEY]
+    if not isinstance(owner, TrainingOwnership) or not owner.admission.allowed:
+        raise RuntimeError("Training route has invalid resource ownership")
+    return owner
+
+
 def training_owner(scope):
     """Read only the server-injected owner from the trusted matched route."""
-    owner = scope.get(_OWNER_SCOPE_KEY)
-    if not isinstance(owner, TrainingOwnership):
+    owner = optional_training_owner(scope)
+    if owner is None:
         raise RuntimeError("Training route has no trusted resource owner")
     return owner
 

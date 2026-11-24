@@ -5,7 +5,10 @@ A terminal database row never proves worker exit on its own. The caller must
 own the actual synchronous worker and establish its return before using that
 witness. No schema change, global recovery, retry, or model work.
 """
-from . import storage
+try:
+    from . import storage
+except ImportError:
+    import storage
 
 _TERMINAL = frozenset(("completed", "failed", "cancelled", "timed_out"))
 

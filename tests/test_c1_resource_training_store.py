@@ -223,3 +223,125 @@ def test_worker_exception_retains_actual_running_record(project):
         asyncio.run(post(app))
     assert storage.get_experiment(ids[0])["status"] == "running"
     assert c.status()["phase"] == "blocked"
+
+
+def production_fixture(project, c, monkeypatch, *, queue_error=None):
+    """Use actual endpoint body, real SQLite queue and an inert worker."""
+    from backend import main
+    import pandas as pd
+    frame = pd.DataFrame({"feature": [1,2,3], "target": [0,1,0]})
+    calls = []
+    def current_data(pid):
+        assert pid == project
+        assert c.status()["phase"] == "reserved"
+        return frame, 0
+    monkeypatch.setattr(main.quality, "current_data", current_data)
+    monkeypatch.setattr(main.engine, "validate_config",
+                        lambda *args, **kwargs: (frame[["feature"]], None, None))
+    monkeypatch.setattr(main.engine, "check_categorical_missing_marker", lambda *args: None)
+    monkeypatch.setattr(main.engine, "preparation", lambda *args: {"high_risk_features":[]})
+    monkeypatch.setattr(main.resource_policy, "admit_new_work",
+                        lambda *args: pytest.fail("Owned route must not use parallel admission"))
+    monkeypatch.setattr(main.engine, "run_training",
+                        lambda *args, **kwargs: pytest.fail("Model fit prohibited"))
+    # Fixture project is metadata-only; the test verifies queue/worker binding,
+    # not Quality materialization or model publication.
+    with storage.connect() as con:
+        con.execute("CREATE TABLE IF NOT EXISTS quality_state "
+                    "(project_id TEXT PRIMARY KEY, original_sha256 TEXT, current_version INTEGER)")
+        con.execute("INSERT INTO quality_state VALUES (?, ?, 0)", (project, "0"*64))
+    def worker(eid, pid, config):
+        assert pid == project and config["quality_version"] == 0
+        assert c.status()["phase"] == "running"
+        assert storage.claim_queued_experiment(eid)
+        calls.append(eid)
+        assert storage.finish_running_experiment(eid,"failed",error="Inert fixture stopped")
+    monkeypatch.setattr(main,"train_background",worker)
+    if queue_error is not None:
+        monkeypatch.setattr(storage,"new_experiment_with_capacity",queue_error)
+    # Register the existing endpoint on an isolated FastAPI router, not the
+    # production app. The trusted wrapper is supplied only by this fixture.
+    app = FastAPI()
+    app.post("/api/projects/{project_id}/experiments", status_code=202)(main.new_experiment)
+    return TrainingHTTP(app,c), calls
+
+
+async def production_post(app, project):
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
+                                 base_url="http://testserver") as client:
+        return await client.post(f"/api/projects/{project}/experiments",json={
+            "target":"target","task":"classification","models":["logistic"],
+            "acknowledge_random_split":True,"expected_quality_version":0})
+
+
+def test_actual_production_endpoint_binds_existing_worker(project, monkeypatch):
+    c = coordinator()
+    app,calls = production_fixture(project,c,monkeypatch)
+    result = asyncio.run(production_post(app,project))
+    assert result.status_code == 202, result.text
+    eid = result.json()["id"]
+    assert calls == [eid] and durable.terminal(eid)
+    assert not c.status()["active"]
+
+
+def test_actual_production_endpoint_known_slot_refusal_releases(project, monkeypatch):
+    c = coordinator()
+    existing = queue(project)
+    app,calls = production_fixture(project,c,monkeypatch)
+    result = asyncio.run(production_post(app,project))
+    assert result.status_code == 503, result.text
+    assert result.json()["detail"]["code"] == "ml_training_slot_busy"
+    assert not calls and storage.get_experiment(existing)["status"] == "queued"
+    assert not c.status()["active"]
+
+
+def test_actual_production_endpoint_unknown_queue_ack_blocks(project, monkeypatch):
+    c = coordinator()
+    real = storage.new_experiment_with_capacity
+    ids = []
+    def lost_ack(*args, **kwargs):
+        ids.append(real(*args, **kwargs))
+        raise OSError("synthetic queue acknowledgement loss")
+    app,calls = production_fixture(project,c,monkeypatch,queue_error=lost_ack)
+    with pytest.raises(OSError,match="acknowledgement"):
+        asyncio.run(production_post(app,project))
+    assert len(ids) == 1 and not calls
+    assert storage.get_experiment(ids[0])["status"] == "queued"
+    assert c.status()["phase"] == "blocked"
+
+
+def test_raw_task_cancellation_during_finalizer_retains_unknown_lane(project, monkeypatch):
+    async def scenario():
+        c = coordinator()
+        entered, resume, settled = Event(), Event(), Event()
+        real = durable.settle_unstarted
+        def paused(eid):
+            entered.set()
+            try:
+                assert resume.wait(10)
+                return real(eid)
+            finally:
+                settled.set()
+        monkeypatch.setattr(durable,"settle_unstarted",paused)
+        app,ids = make_app(project,c,lambda eid: pytest.fail("worker"),register=False)
+        task = asyncio.create_task(post(app))
+        try:
+            assert await asyncio.to_thread(entered.wait,5)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await asyncio.wait_for(task,5)
+            assert c.status()["phase"] == "blocked"
+            assert c.try_acquire(Operation.DATA).code == "ownership_unknown"
+        finally:
+            resume.set()
+        assert await asyncio.to_thread(settled.wait,5)
+        assert durable.terminal(ids[0])
+        assert c.status()["phase"] == "blocked"
+    asyncio.run(scenario())
+
+
+def test_invalid_server_scope_owner_fails_closed():
+    from backend.resource_training import optional_training_owner
+    assert optional_training_owner({}) is None
+    with pytest.raises(RuntimeError):
+        optional_training_owner({"pilotodin.training_ownership": None})
