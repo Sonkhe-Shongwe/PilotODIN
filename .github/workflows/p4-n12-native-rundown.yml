@@ -22,6 +22,7 @@ permissions:
 
 jobs:
   native-rundown:
+    if: ${{ false }} # Native fixture requires fresh explicit approval; never auto-run on source edits.
     name: Native ProcessTrace rundown and strict reducer integration
     runs-on: windows-latest
     timeout-minutes: 25
