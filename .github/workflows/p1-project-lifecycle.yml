@@ -110,6 +110,8 @@ jobs:
           done
           exit "$status"
       - name: Verify typed export receipt transitions and existing cleaned exports
+        env:
+          PILOTODIN_B5_FIXTURE_DIR: ${{ runner.temp }}/pilotodin-b5-native-fixture-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           status=0
           for suite in test_b5_export_publication test_b5_export_startup test_b5_bounded_export_writer test_b5_live_export_transfer test_build_e_cleaned_exports; do
@@ -118,3 +120,12 @@ jobs:
             echo "::endgroup::"
           done
           exit "$status"
+
+      - name: Publish generated synthetic workbook fixture (not native acceptance)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: B5-backend-generated-xlsx-SYNTHETIC-ONLY
+          path: ${{ runner.temp }}/pilotodin-b5-native-fixture-${{ github.run_id }}-${{ github.run_attempt }}/
+          if-no-files-found: error
+          retention-days: 7

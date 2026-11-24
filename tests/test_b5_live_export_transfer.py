@@ -367,3 +367,78 @@ def test_live_attestation_binds_receipt_and_response(project, monkeypatch, fmt):
     assert key not in str(response.headers) and secret not in str(response.headers)
     assert "x-pilotodin-export-mac" in response.headers["access-control-expose-headers"].lower()
     assert path.read_bytes()==raw and list((home/"export_tmp").iterdir())==[]
+
+
+def test_actual_backend_workbook_native_zip_contract(project):
+    """Generate through the live route, not a mock ZIP or another XLSX writer."""
+    import io
+    import json
+    import struct
+    from zipfile import ZipFile
+    from openpyxl import load_workbook
+    pid,home,path,raw=project
+    with TestClient(main.app) as client:
+        result=client.post(f"/api/projects/{pid}/quality/export",
+                           json={"version":0,"format":"xlsx"})
+    assert result.status_code==200
+    data=result.content
+    digest=hashlib.sha256(data).hexdigest()
+    receipt,=receipts()
+    assert receipt.state=="released" and receipt.sha256==digest
+    assert result.headers["x-pilotodin-export-sha256"]==digest
+    assert result.headers["content-disposition"]=='attachment; filename="Generated_cleaned_v0.xlsx"'
+    names={"docProps/app.xml","docProps/core.xml","xl/theme/theme1.xml",
+           "xl/worksheets/sheet1.xml","xl/styles.xml","_rels/.rels",
+           "xl/workbook.xml","xl/_rels/workbook.xml.rels","[Content_Types].xml"}
+    with ZipFile(io.BytesIO(data)) as archive:
+        assert archive.testzip() is None
+        assert set(archive.namelist())==names and len(archive.infolist())==9
+        assert archive.comment==b""
+        ranges=[]
+        for member in archive.infolist():
+            assert member.flag_bits==0 and member.compress_type==8
+            assert member.extra==member.comment==b""
+            offset=member.header_offset
+            (sig,version,flags,method,_,_,crc,compressed,expanded,
+             name_len,extra_len)=struct.unpack_from("<4s5H3I2H",data,offset)
+            assert sig==b"PK\x03\x04" and flags==0 and method==8 and crc==member.CRC
+            start=offset+30
+            assert data[start:start+name_len]==member.filename.encode("ascii")
+            extra=data[start+name_len:start+name_len+extra_len]
+            if member.filename=="xl/worksheets/sheet1.xml":
+                assert compressed==expanded==0xffffffff and len(extra)==20
+                assert struct.unpack("<HHQQ",extra)==(1,16,member.file_size,member.compress_size)
+            else:
+                assert extra==b"" and compressed==member.compress_size and expanded==member.file_size
+            ranges.append((offset,start+name_len+extra_len+member.compress_size))
+        end=0
+        for start,finish in sorted(ranges):
+            assert start==end
+            end=finish
+        assert end==archive.start_dir
+    book=load_workbook(io.BytesIO(data),read_only=True,data_only=False)
+    try:
+        assert book.sheetnames==["Cleaned data"]
+        rows=list(book.active.values)
+        assert rows[0]==("OrderID","Note","Amount")
+        assert rows[1][1]=="'=SUM(1)" and rows[2][1]=="Normal"
+        assert rows[1][2]==12 and rows[2][2]==3
+    finally:
+        book.close()
+    assert path.read_bytes()==raw and list((home/"export_tmp").iterdir())==[]
+    # Optional CI-only artifact: never use a project/source directory or
+    # overwrite an existing fixture. The workflow supplies a fresh runner path.
+    if os.environ.get("PILOTODIN_B5_FIXTURE_DIR"):
+        fixture=Path(os.environ["PILOTODIN_B5_FIXTURE_DIR"])
+        runner=Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
+        assert fixture.parent.resolve(strict=True)==runner
+        assert fixture.name.startswith("pilotodin-b5-native-fixture-")
+        fixture.mkdir(exist_ok=False)
+        with (fixture/"Generated_cleaned_v0.xlsx").open("xb") as out:
+            out.write(data)
+        manifest={"source_sha":os.environ["GITHUB_SHA"],"sha256":digest,
+                  "size":len(data),"filename":"Generated_cleaned_v0.xlsx",
+                  "classification":"synthetic-only; not Windows acceptance"}
+        with (fixture/"manifest.json").open("x",encoding="utf-8") as out:
+            json.dump(manifest,out,indent=2)
+        print("B5_NATIVE_FIXTURE",json.dumps(manifest,sort_keys=True))

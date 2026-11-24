@@ -50,6 +50,10 @@ fn u32_at(bytes: &[u8], at: usize) -> Option<usize> {
     Some(u32::from_le_bytes(bytes.get(at..at.checked_add(4)?)?.try_into().ok()?) as usize)
 }
 
+fn u64_at(bytes: &[u8], at: usize) -> Option<u64> {
+    Some(u64::from_le_bytes(bytes.get(at..at.checked_add(8)?)?.try_into().ok()?))
+}
+
 /// Structural admission for the exact single-sheet openpyxl export contract.
 /// No decompression or XML execution. The authenticated backend must provide
 /// the exact receipt digest; this is not a general XLSX parser or malware scan.
@@ -76,11 +80,16 @@ fn workbook_directory(bytes: &[u8]) -> Option<()> {
     for _ in MEMBERS {
         if pos.checked_add(46)? > end || bytes.get(pos..pos+4)? != b"PK\x01\x02"
             || u16_at(bytes,pos+8)? != 0 || u16_at(bytes,pos+10)? != 8
-            || u16_at(bytes,pos+34)? != 0 || u16_at(bytes,pos+32)? != 0 {
+            || u16_at(bytes,pos+34)? != 0 || u16_at(bytes,pos+32)? != 0
+            || u16_at(bytes,pos+30)? != 0 {
             return None;
         }
         let compressed = u32_at(bytes,pos+20)?;
-        if compressed == 0 || u32_at(bytes,pos+24)? == 0 { return None; }
+        let uncompressed = u32_at(bytes,pos+24)?;
+        if compressed == 0 || uncompressed == 0
+            || compressed == u32::MAX as usize || uncompressed == u32::MAX as usize {
+            return None;
+        }
         let name_end = pos.checked_add(46)?.checked_add(u16_at(bytes,pos+28)?)?;
         let next = name_end.checked_add(u16_at(bytes,pos+30)?)?;
         if next > end { return None; }
@@ -95,7 +104,26 @@ fn workbook_directory(bytes: &[u8]) -> Option<()> {
         }
         let local_name_end = local.checked_add(30)?.checked_add(u16_at(bytes,local+26)?)?;
         if bytes.get(local+30..local_name_end)? != name { return None; }
-        let data_end = local_name_end.checked_add(u16_at(bytes,local+28)?)?.checked_add(compressed)?;
+        if u32_at(bytes,local+14)? != u32_at(bytes,pos+16)? { return None; }
+        let extra_len = u16_at(bytes,local+28)?;
+        let extra_end = local_name_end.checked_add(extra_len)?;
+        if extra_end > central { return None; }
+        if name == b"xl/worksheets/sheet1.xml" {
+            // Python's seekable force_zip64 writer patches local CRC and
+            // emits the two 64-bit sizes, even for a tiny worksheet.
+            if u32_at(bytes,local+18)? != u32::MAX as usize
+                || u32_at(bytes,local+22)? != u32::MAX as usize
+                || extra_len != 20 || u16_at(bytes,local_name_end)? != 1
+                || u16_at(bytes,local_name_end+2)? != 16
+                || u64_at(bytes,local_name_end+4)? != uncompressed as u64
+                || u64_at(bytes,local_name_end+12)? != compressed as u64 {
+                return None;
+            }
+        } else if extra_len != 0 || u32_at(bytes,local+18)? != compressed
+            || u32_at(bytes,local+22)? != uncompressed {
+            return None;
+        }
+        let data_end = extra_end.checked_add(compressed)?;
         if data_end > central { return None; }
         ranges.push((local,data_end));
         pos = next;
@@ -314,8 +342,19 @@ fn remove_owned(pins:&DestinationPins,path:&Path,expected:Stamp,links:u64)->Resu
 /// If post-publication identity/bytes are uncertain, retain both names and do
 /// not certify success. Directory pins and observed file identities do not
 /// constitute hostile-process-proof atomic confinement.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PublicationPoint { StageWritten, BeforeLink, AfterLink, BeforeCleanup }
+
 pub(crate) fn publish_new(path:&Path,payload:&Validated<'_>,id:u128,
     allowed:&[PathBuf],protected:&[PathBuf])->Result<(),String>{
+    publish_checked(path,payload,id,allowed,protected,|_|Ok(()))
+}
+
+// The production caller supplies only a no-op. Tests inject failures without
+// chmod, real disk exhaustion, or altering any non-fixture directory.
+fn publish_checked(path:&Path,payload:&Validated<'_>,id:u128,
+    allowed:&[PathBuf],protected:&[PathBuf],
+    mut checkpoint:impl FnMut(PublicationPoint)->Result<(),String>)->Result<(),String>{
     let pins=admit(path,payload.format,allowed,protected)?;
     let staging=path.with_file_name(format!(".pilotodin-dataset-{id:032x}.tmp"));
     let mut options=OpenOptions::new();
@@ -331,11 +370,13 @@ pub(crate) fn publish_new(path:&Path,payload:&Validated<'_>,id:u128,
         pins.verify()?;
         identity_at(&staging,initial,1)?;
         file.write_all(payload.bytes).map_err(|_|"Dataset write failed")?;
+        checkpoint(PublicationPoint::StageWritten)?;
         file.sync_all().map_err(|_|"Dataset flush failed")?;
         verify_bytes(&mut file,payload.bytes)?;
         pins.verify()?;
         identity_at(&staging,initial,1)?;
         target_absent(path)?;
+        checkpoint(PublicationPoint::BeforeLink)?;
         Ok::<(),String>(())
     })();
     drop(file);
@@ -350,20 +391,25 @@ pub(crate) fn publish_new(path:&Path,payload:&Validated<'_>,id:u128,
         remove_owned(&pins,&staging,initial,1)?;
         return Err("Dataset destination could not be published without overwrite".into());
     }
-    pins.verify()?;
-    identity_at(&staging,initial,2)?;
-    let mut final_file=open_named(path)?;
-    let final_stamp=stamp(&final_file)?;
-    if final_stamp.volume!=initial.volume||final_stamp.id!=initial.id||final_stamp.links!=2 {
-        return Err(UNSAFE.into());
-    }
-    verify_bytes(&mut final_file,payload.bytes)?;
-    drop(final_file);
-    identity_at(path,initial,2)?;
-    remove_owned(&pins,&staging,initial,2)?;
-    pins.verify()?;
-    identity_at(path,initial,1)?;
-    Ok(())
+    let confirmed=(||{
+        checkpoint(PublicationPoint::AfterLink)?;
+        pins.verify()?;
+        identity_at(&staging,initial,2)?;
+        let mut final_file=open_named(path)?;
+        let final_stamp=stamp(&final_file)?;
+        if final_stamp.volume!=initial.volume||final_stamp.id!=initial.id||final_stamp.links!=2 {
+            return Err(UNSAFE.into());
+        }
+        verify_bytes(&mut final_file,payload.bytes)?;
+        drop(final_file);
+        identity_at(path,initial,2)?;
+        checkpoint(PublicationPoint::BeforeCleanup)?;
+        remove_owned(&pins,&staging,initial,2)?;
+        pins.verify()?;
+        identity_at(path,initial,1)?;
+        Ok::<(),String>(())
+    })();
+    confirmed.map_err(|_|"Dataset publication could not be confirmed. The destination or staging file may remain; review before retrying.".into())
 }
 
 #[cfg(test)]
@@ -387,6 +433,76 @@ mod tests {
             &format!("{:x}",Sha256::digest(bad)),bad).is_err());
         assert!(workbook_directory(b"PK\x03\x04not a workbook").is_none());
         let _=checked();
+    }
+    #[test]
+    #[ignore = "requires generated B5 CI workbook and manifest; native execution separately authorized"]
+    fn backend_generated_xlsx_fixture_matches_native_contract(){
+        let path=std::env::var_os("PILOTODIN_B5_XLSX_FIXTURE").expect("approved synthetic fixture path");
+        let hash=std::env::var("PILOTODIN_B5_XLSX_SHA256").expect("fixture manifest digest");
+        let path=PathBuf::from(path);
+        assert!(fs::metadata(&path).unwrap().len()<=MAX_BYTES as u64);
+        let bytes=fs::read(path).unwrap();
+        let payload=validate(Format::Xlsx,"Generated_cleaned_v0.xlsx",0,bytes.len(),&hash,&bytes).unwrap();
+        // First local header CRC must agree with central metadata.
+        let mut changed=bytes.clone();
+        changed[14]^=1;
+        assert!(workbook_directory(&changed).is_none());
+        let end=bytes.len()-22;
+        let mut pos=u32_at(&bytes,end+16).unwrap();
+        let mut sheet=None;
+        for _ in 0..9 {
+            let name_end=pos+46+u16_at(&bytes,pos+28).unwrap();
+            if &bytes[pos+46..name_end]==b"xl/worksheets/sheet1.xml"{
+                sheet=Some(u32_at(&bytes,pos+42).unwrap());break;
+            }
+            pos=name_end+u16_at(&bytes,pos+30).unwrap()+u16_at(&bytes,pos+32).unwrap();
+        }
+        let local=sheet.unwrap();
+        let extra=local+30+u16_at(&bytes,local+26).unwrap();
+        let mut changed=bytes.clone();changed[extra+4]^=1;
+        assert!(workbook_directory(&changed).is_none());
+        assert!(workbook_directory(&bytes[..bytes.len()-1]).is_none());
+        let root=std::env::temp_dir().join(format!("pilotodin-b5-xlsx-{}",uuid::Uuid::new_v4()));
+        fs::create_dir(&root).unwrap();
+        let allowed=root.join("exports");let protected=root.join("protected");
+        fs::create_dir(&allowed).unwrap();fs::create_dir(&protected).unwrap();
+        let target=allowed.join("chosen.xlsx");
+        publish_new(&target,&payload,1,&[allowed.clone()],&[protected.clone()]).unwrap();
+        assert_eq!(fs::read(&target).unwrap(),bytes);
+        fs::remove_file(target).unwrap();fs::remove_dir(allowed).unwrap();
+        fs::remove_dir(protected).unwrap();fs::remove_dir(root).unwrap();
+    }
+    #[test]
+    fn publication_failures_do_not_clobber_or_certify_uncertain_destination(){
+        let root=std::env::temp_dir().join(format!("pilotodin-b5-fault-{}",uuid::Uuid::new_v4()));
+        fs::create_dir(&root).unwrap();
+        let allowed=root.join("exports");let protected=root.join("protected");
+        fs::create_dir(&allowed).unwrap();fs::create_dir(&protected).unwrap();
+        let a=[allowed.clone()];let p=[protected.clone()];
+        let target=allowed.join("chosen.csv");let payload=checked();
+        let stage=|id:u128|allowed.join(format!(".pilotodin-dataset-{id:032x}.tmp"));
+        let failed=publish_checked(&target,&payload,1,&a,&p,|point|{
+            if point==PublicationPoint::StageWritten {return Err("injected stage failure".into());}
+            Ok(())
+        });
+        assert!(failed.is_err());assert!(!target.exists());assert!(!stage(1).exists());
+        let failed=publish_checked(&target,&payload,2,&a,&p,|point|{
+            if point==PublicationPoint::BeforeLink {fs::write(&target,b"foreign").unwrap();}
+            Ok(())
+        });
+        assert!(failed.is_err());assert_eq!(fs::read(&target).unwrap(),b"foreign");
+        assert!(!stage(2).exists());fs::remove_file(&target).unwrap();
+        for (id,stop) in [(3,PublicationPoint::AfterLink),(4,PublicationPoint::BeforeCleanup)]{
+            let failed=publish_checked(&target,&payload,id,&a,&p,|point|{
+                if point==stop {return Err("injected post-link failure".into());}
+                Ok(())
+            });
+            assert!(failed.unwrap_err().contains("could not be confirmed"));
+            assert_eq!(fs::read(&target).unwrap(),CSV);
+            assert_eq!(fs::read(stage(id)).unwrap(),CSV);
+            fs::remove_file(&target).unwrap();fs::remove_file(stage(id)).unwrap();
+        }
+        fs::remove_dir(allowed).unwrap();fs::remove_dir(protected).unwrap();fs::remove_dir(root).unwrap();
     }
     #[test]
     fn new_file_publication_refuses_existing_and_protected_paths(){
