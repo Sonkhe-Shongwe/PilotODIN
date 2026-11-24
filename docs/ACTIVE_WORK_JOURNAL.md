@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | f2c46b75642e53c158b51544aa5c9b2da7bd82f0 |
 | Product baseline | ea524b2113e5d2aece9f434d383b5ca47f34baf2 |
 | Scope | C1 single outstanding request and reply-write boundary, staged Python and matching standalone Rust wire codec; no live transport/native compile. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-host-wire |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45459951336 SUCCESS: 166 regression + 2 subtests, 146 C1, 20 legacy autonomy. Next Python reply-boundary fault fixtures, standalone Rust unit tests staged only. |
-| Pending runs | None; #45459951336/job 138679486033 terminal SUCCESS, exact checkout and counts confirmed. |
+| Verification | Python single-outstanding/reply boundary with seven additional fixtures and standalone Rust codec with five staged unit tests published. Python CI pending; Rust uncompiled and unregistered. |
+| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before shell transport work. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish staged wire contract, reconcile Python exact CI, then exact shell transport compatibility and native integration under standing scope. Rust compile/test requires fresh approval. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

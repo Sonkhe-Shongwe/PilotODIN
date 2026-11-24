@@ -41,6 +41,10 @@ class FrameReader:
         self._pending = bytearray()
         self._failed = False
 
+    @property
+    def partial(self):
+        return bool(self._pending)
+
     def feed(self, chunk):
         if self._failed or type(chunk) is not bytes or not 0 < len(chunk) <= MAX_FRAME:
             self._failed = True
@@ -107,8 +111,8 @@ def parse_request(frame, generation, capability):
 class HostBroker:
     """One reader, one generation, one grant, no durable queue or timeout release.
 
-    Call receive() only from the owner of the ordered input stream, and call
-    transport_lost() on EOF, write/flush failure or uncertain reply delivery.
+    Call receive() only from the owner of the ordered input stream, then
+    reply_written() after complete write and flush; call transport_lost() on EOF, write/flush failure or uncertain reply delivery.
     Neither a frontend message nor a mere elapsed timeout can release a grant.
     Not wired to desktop_runner or Tauri yet.
     """
@@ -125,6 +129,8 @@ class HostBroker:
         self._grant = None
         self._stopping = False
         self._faulted = False
+        self._pending_reply = None
+        self._release_after_reply = False
 
     def transport_lost(self):
         self._faulted = True
@@ -154,7 +160,7 @@ class HostBroker:
         seq = request.sequence
         if request.command == "STOP":
             self._stop()
-            return self._reply(seq,"STOPPED")
+            return self._reply(seq,"ADMISSION_STOPPED")
         if request.command == "GRANT_REQUEST":
             if self._stopping:
                 return self._reply(seq,"GRANT_REPLY","DENIED","shutting_down")
@@ -184,25 +190,50 @@ class HostBroker:
         if request.command == "RELEASE":
             # Actual start/exit evidence is the responsibility of the
             # trusted native owner. The wire enum is NOT an exit witness.
-            if not self.coordinator.release(self._lease):
-                raise _fault()
-            grant = self._grant
-            self._lease = None
-            self._grant = None
-            return self._reply(seq,"RELEASED",grant)
+            self._release_after_reply = True
+            return self._reply(seq,"RELEASED",self._grant)
         raise _fault()
 
     def receive(self, chunk):
-        """Return bounded replies; caller must write/flush before next read."""
+        """One request, one reply; writer must confirm exact flush before reading."""
         if self._faulted:
             raise _fault()
         try:
-            replies = []
-            for frame in self._reader.feed(chunk):
-                reply = self._dispatch(frame)
-                if reply is not None:
-                    replies.append(reply)
-            return replies
+            if self._pending_reply is not None:
+                raise _fault()
+            frames = self._reader.feed(chunk)
+            if len(frames) > 1 or (frames and self._reader.partial):
+                raise _fault()  # reject pipelining before any command executes
+            if not frames:
+                return []
+            reply = self._dispatch(frames[0])
+            if reply is None:
+                return []
+            self._pending_reply = reply
+            return [reply]
+        except BaseException:
+            self.transport_lost()
+            raise
+
+    def reply_written(self, reply):
+        """Trusted writer acknowledgement after complete write AND flush.
+
+        A release remains owned until this boundary. A write/flush failure
+        must instead call transport_lost; never manufacture an acknowledgement.
+        """
+        if self._faulted:
+            raise _fault()
+        try:
+            if (self._pending_reply is None or type(reply) is not bytes
+                    or reply != self._pending_reply):
+                raise _fault()
+            if self._release_after_reply:
+                if self._lease is None or not self.coordinator.release(self._lease):
+                    raise _fault()
+                self._lease = None
+                self._grant = None
+                self._release_after_reply = False
+            self._pending_reply = None
         except BaseException:
             self.transport_lost()
             raise
