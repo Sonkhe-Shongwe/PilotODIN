@@ -195,13 +195,16 @@ class VerifiedAnswersTests(unittest.TestCase):
         model_result = {'answer': 'Model answer', 'fallback': False}
         with (patch.object(ai_provider, 'respond', return_value=model_result) as respond,
               patch.object(main.verified_answers, 'answer', side_effect=AssertionError('Computed rules after model success')),
-              patch.object(quality, '_materialize', wraps=quality._materialize) as materialize):
+              patch.object(quality, '_snapshot_frame', wraps=quality._snapshot_frame) as materialize):
             result = self.ask(project, 'What is the dataset overview?', selected_provider='ollama')
         self.assertEqual(result['answer'], 'Model answer')
         self.assertFalse(result['fallback'])
         self.assertNotIn('facts', result)
         respond.assert_called_once()
         self.assertEqual(materialize.call_count, 1, 'A provider request should materialize one working version')
+        snapshot = materialize.call_args.args[0]
+        self.assertEqual(snapshot['project']['id'], project)
+        self.assertEqual(snapshot['version'], result['dataset_version'])
 
     def test_offline_model_deferral_preserves_the_verified_filtered_answer(self):
         project = self.import_frame(pd.DataFrame({
