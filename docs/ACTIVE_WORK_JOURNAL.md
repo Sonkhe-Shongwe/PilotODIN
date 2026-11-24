@@ -7,20 +7,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 46d5f0121deadaf8c0de45f39f7de50aace8a372 |
+| Observed starting HEAD | a2013f555812eee86a08769c8934aeb10c6527e2 |
 | Product baseline | a6ec84c784152d7ab5f357a9083ca6eb34cdeb92 |
-| Scope | Explicit private runner bootstrap and frontend demand-first mode published; Windows compile-time gate remains false. |
-| Operation ID | C1-C2-INTEGRATION-20261124-runner-frontend |
-| Operation state | RECONCILED |
-| Intended files | backend/desktop_runner.py; frontend/src-tauri/src/lib.rs; frontend/src/api.ts; frontend/src/desktopBootstrap.ts; tests/test_c1_resource_host.py; frontend/tests/desktop-ai-boundaries.test.cjs; continuity docs |
-| Approval | Standing P4 source authority. No native product compile/run, model operations, installer, owner data, partial activation or new OS operations authorized. |
-| Verification | Exact published a6ec84c784152d7ab5f357a9083ca6eb34cdeb92, static changed-path/source review; all 82 workflow definitions unchanged from reviewed 81de01d. Previous exact P4/P2 runs SUCCESS reconciled in evidence ledger. Fourteen Python fixture cases and two Node tests added, execution pending. |
-| Pending runs | Exact a6ec84c784152d7ab5f357a9083ca6eb34cdeb92: P1 backend #45488434322, P1 frontend #45488434647, P2 #45488434273, P3 #45488434316, P4 #45488434305 all IN_PROGRESS at last observation. Reconcile terminal jobs before further source publication. |
+| Scope | Private native REPORT/EXPORT grant and joined writer lifetime on the existing POD1 lane; preserve native save checks and legacy mode; compile-time gate remains false. |
+| Operation ID | C1-C2-INTEGRATION-20261124-native-save |
+| Operation state | PREPARED |
+| Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; resource_transport.rs; resource_shell.rs; resource_supervisor.rs; resource_desktop.rs; resource_save.rs; lib.rs; continuity docs |
+| Approval | Standing P4 source authority. No product native compilation/run, live save, model operations, installer, owner data, new OS operations or partial activation. |
+| Verification | Prior five exact routine workflows SUCCESS, seven executed jobs and logs reconciled. All 82 workflows unchanged from 81de01d; planned paths match P1 backend, P2 report and P4 routine synthetic/source jobs only; restricted P4 probe disabled. |
+| Pending runs | None before publication. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile five exact routine CI runs. Integrate private native report/dataset binary Save As admission with the same backend resource lane and actual writer lifetime; no separate lock, browser-provided grant, or timeout release. Preserve existing payload/receipt/path verification and explicit consent. Review explicit cloud provider routing/consent compatibility and production readiness before activation. Candidate native saves remain deliberately refused. Native verification requires fresh scope approval only after coherent source readiness. |
-| Resume after closure | C1/C2 verification then C3–C5; D separately approved. |
+| Recovery action | Extend typed POD1 grant and release for native saves, one retained pre-copy reservation and actual writer join, no timeout release; connect both existing save commands behind disabled gate, preserve legacy source contracts. Reconcile exact CI then cloud consent compatibility and native readiness. |
+| Resume after closure | C1/C2 verification, then C3–C5; D separately approved. |
 
 ## Prior operation
 
