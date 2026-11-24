@@ -5,8 +5,8 @@ require 'open3'
 WORKFLOW = ".github/workflows/p4-c1-c2-owned-host-once.yml"
 SCRIPT = "qa/c1_c2_owned_host_preflight.rb"
 DISABLED = "    if: ${{ false }} # DISARMED OWNED HOST; fresh exact approval required.\n"
-ARMED = "    if: >-\n      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-C2-OWNED-HOST-SYNTHETIC-20261124-ONE-USE' }}\n"
-MARKER = "C1-C2-OWNED-HOST-SYNTHETIC-20261124-ONE-USE"
+ARMED = "    if: >-\n      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-OWNED-HOST-MANIFEST-20261125-ONE-USE' }}\n"
+MARKER = "C1-OWNED-HOST-MANIFEST-20261125-ONE-USE"
 PRODUCT = "1d23ea139762d94d25e689c4c3489b72fb34acc9"
 BRANCH = "feature/live-dev-workspace-20261023"
 JOB = "c1-c2-owned-host-integration"
@@ -58,7 +58,12 @@ check(steps[-1]['if'] == 'always()', 'cleanup condition')
 body = steps.map { |s| s['run'].to_s }.join("\n")
 check(body.scan(/cargo \+stable check --locked --all-targets/).length == 1, 'locked check count')
 check(body.scan(/cargo \+stable test --locked/).length == 1, 'locked test count')
-check(body.include?('--lib -- --ignored --exact --test-threads=1 --nocapture $expected'), 'nonexact selection')
+check(body.scan(/cargo \+stable test --locked --no-run --message-format=json/).length == 1, 'compile only')
+check(body.scan(/& \$copy --ignored --exact --test-threads=1 --nocapture \$expected/).length == 1, 'single exact corrected executable selection')
+check(body.include?('pilotodin_owned_host_manifest_fixture.exe') && body.include?('Copy-Item -LiteralPath $original -Destination $copy'), 'isolated executable copy')
+check(body.include?('C1-FIXTURE-MANIFEST-V6-VERIFIED') && body.include?('Common Controls dependency already declared; hypothesis requires review'), 'manifest hypothesis guard')
+check(body.include?('version="6.0.0.0"') && body.include?('publicKeyToken="6595b64144ccf1df"') && body.include?('processorArchitecture="amd64"'), 'manifest dependency identity')
+check(body.include?('Original generated executable changed') && body.include?('Unexpected fixture privilege request'), 'preservation and privilege guard')
 check(!body.match?(/\bcargo\s+(?:\+stable\s+)?(?:run|build|install)\b/i), 'unapproved Cargo action')
 check(!source.include?('actions/upload-artifact') && !body.match?(/Invoke-WebRequest|Start-Process|cargo tauri/), 'unapproved artifact/process action')
 check(body.include?("git rev-parse HEAD).Trim() -ne '#{PRODUCT}'"), 'source identity')
