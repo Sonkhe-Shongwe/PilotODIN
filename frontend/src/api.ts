@@ -151,3 +151,30 @@ export async function saveReportNative(blob:Blob, filename:string, format:'html'
  if(result.status!=='saved'&&result.status!=='cancelled')throw new Error('Unexpected result from native Save As.');
  return result;
 }
+
+
+/** Verified binary IPC only. The host chooses the destination through Save As. */
+export async function saveDatasetNative(download:VerifiedDatasetDownload,isCurrent:()=>boolean):Promise<NativeReportSaveStatus>{
+ if(!('__TAURI_INTERNALS__' in window)||!download.receipt)
+   throw new Error('Native dataset receipt unavailable. No Save As dialog was opened.');
+ if(!isCurrent())throw new Error('Dataset export is no longer current.');
+ if(download.blob.size!==download.expectedBytes||download.blob.size<1||download.blob.size>75*1024*1024)
+   throw new Error('Dataset bytes do not match the verified receipt.');
+ const bytes=await download.blob.arrayBuffer();
+ if(!isCurrent())throw new Error('Dataset export is no longer current.');
+ if(bytes.byteLength!==download.expectedBytes)throw new Error('Dataset bytes changed.');
+ const result=await invoke<NativeReportSaveStatus>('save_dataset_as',bytes,{headers:{
+   'x-pilotodin-export-project':download.receipt.project,
+   'x-pilotodin-export-operation':download.receipt.operation,
+   'x-pilotodin-export-mac':download.receipt.mac,
+   'x-pilotodin-dataset-format':download.format,
+   'x-pilotodin-dataset-filename':download.filename,
+   'x-pilotodin-dataset-version':String(download.version),
+   'x-pilotodin-export-size':String(download.expectedBytes),
+   'x-pilotodin-export-sha256':download.sha256,
+   'x-pilotodin-exported-rows':String(download.rows)
+ }});
+ if(result.status==='cancelled'&&result.filename===null)return result;
+ if(result.status==='saved'&&typeof result.filename==='string'&&result.filename.length>0)return result;
+ throw new Error('Unexpected native dataset Save As result.');
+}

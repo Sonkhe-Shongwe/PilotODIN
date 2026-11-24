@@ -19,6 +19,8 @@ use tauri_plugin_dialog::DialogExt;
 mod report_file;
 mod storage_boundary;
 mod desktop_profile;
+mod dataset_file;
+mod dataset_attestation;
 
 #[derive(Clone, Serialize)]
 struct BackendConnection {
@@ -52,6 +54,7 @@ const INFERENCE_IDLE_SLEEP_SECONDS: &str = "30";
 #[derive(Default)]
 struct DesktopState {
     profile_verified: AtomicBool,
+    dataset_save_busy: AtomicBool,
     stopping: AtomicBool,
     launch_gate: Mutex<()>,
     backend: Mutex<Option<ActiveBackend>>,
@@ -697,6 +700,123 @@ fn report_save_bytes(body: &InvokeBody) -> Result<Cow<'_, [u8]>, String> {
     }
 }
 
+// Dataset Save As is separate from report publication and never accepts
+// a destination path from IPC. The guard covers consent and publication.
+struct DatasetSaveLease(AppHandle);
+impl Drop for DatasetSaveLease {
+    fn drop(&mut self) {
+        self.0.state::<DesktopState>().dataset_save_busy.store(false, Ordering::Release);
+    }
+}
+
+fn current_dataset_export_key(app: &AppHandle) -> Result<String,String> {
+    let state=app.state::<DesktopState>();
+    ensure_desktop_admission(app,&state)?;
+    let backend=state.backend.lock().map_err(|_| "Engine state unavailable")?;
+    let active=backend.as_ref().filter(|b| !b.stop_requested && b.exit.load(Ordering::Acquire)==0)
+        .ok_or("Active analytical engine required for dataset Save As")?;
+    active._storage_pins.verify()?;
+    Ok(active.dataset_export_key.clone())
+}
+
+fn dataset_destination_roots(app:&AppHandle)->Result<(Vec<PathBuf>,Vec<PathBuf>),String>{
+    let paths=app.path();
+    let home=paths.home_dir().map_err(|_| "Home directory unavailable")?;
+    storage_boundary::validate_existing_directory(&home)?;
+    let mut allowed=Vec::new();
+    // Reject relocated known folders rather than granting new permissions.
+    // Missing or redirected standard local home children are not admitted.
+    for (root,name) in [(paths.document_dir(),"Documents"),(paths.download_dir(),"Downloads"),
+                        (paths.desktop_dir(),"Desktop")] {
+        if let Ok(root)=root {
+            let standard=home.join(name);
+            if storage_boundary::validate_existing_directory(&root).is_ok()
+                && storage_boundary::validate_existing_directory(&standard).is_ok()
+                && root.canonicalize().ok().zip(standard.canonicalize().ok())
+                    .is_some_and(|(a,b)|a==b) {
+                allowed.push(root);
+            }
+        }
+    }
+    if allowed.is_empty() {return Err("No standard local Documents, Downloads or Desktop directory is available".into());}
+    let mut protected=Vec::new();
+    // Protect app-data bases, config overrides, cache/logs and packaged
+    // resources. An absent protected root protects its existing parent;
+    // admission never creates a directory.
+    for root in [paths.local_data_dir(),paths.data_dir(),paths.config_dir(),
+                 paths.app_local_data_dir(),paths.app_data_dir(),paths.app_config_dir(),
+                 paths.app_cache_dir(),paths.app_log_dir(),paths.resource_dir()] {
+        let mut root=root.map_err(|_| "Protected desktop root unavailable")?;
+        loop {
+            match std::fs::symlink_metadata(&root) {
+                Ok(_)=>break,
+                Err(e) if e.kind()==std::io::ErrorKind::NotFound=>{
+                    root=root.parent().ok_or("Protected desktop root unavailable")?.to_path_buf();
+                }
+                Err(_)=>return Err("Protected desktop root unavailable".into()),
+            }
+        }
+        storage_boundary::validate_existing_directory(&root)?;
+        if !protected.contains(&root){protected.push(root);}
+    }
+    Ok((allowed,protected))
+}
+
+#[tauri::command]
+async fn save_dataset_as(window:tauri::WebviewWindow, request:Request<'_>)
+    ->Result<NativeReportSave,String> {
+    if window.label()!="main" {return Err("Unexpected desktop window".into());}
+    let app=window.app_handle().clone();
+    let key=current_dataset_export_key(&app)?;
+    let metadata=dataset_attestation::Metadata::from_headers(request.headers())?;
+    // No large JSON fallback. Only exact bounded raw binary IPC.
+    let bytes=match request.body(){
+        InvokeBody::Raw(bytes) if bytes.len()==metadata.size && bytes.len()<=dataset_file::MAX_BYTES=>bytes,
+        _=>return Err("Dataset Save As requires exact bounded binary payload".into()),
+    };
+    if app.state::<DesktopState>().dataset_save_busy
+        .compare_exchange(false,true,Ordering::AcqRel,Ordering::Acquire).is_err(){
+        return Err("Another dataset Save As is already active".into());
+    }
+    let lease=DatasetSaveLease(app.clone());
+    let bytes=bytes.to_vec();
+    tauri::async_runtime::spawn_blocking(move||->Result<NativeReportSave,String>{
+        let _lease=lease;
+        metadata.verify(&key)?;
+        let payload=dataset_file::validate(metadata.format,&metadata.filename,metadata.version,
+            metadata.size,&metadata.sha256,&bytes)?;
+        if current_dataset_export_key(&app)?!=key {return Err("Analytical engine changed; export again".into());}
+        let (allowed,protected)=dataset_destination_roots(&app)?;
+        // Pin each root independently, including roots on other volumes.
+        // Retain these pins across consent rather than trusting path strings.
+        let mut root_pins=Vec::new();
+        for root in allowed.iter().chain(&protected) {
+            let mut pin=storage_boundary::DirectoryPins::default();
+            pin.admit_existing(root)?;
+            root_pins.push(pin);
+        }
+        let extension=metadata.format.extension();
+        let chosen=window.dialog().file().set_parent(&window)
+            .set_title("Save PilotODIN cleaned dataset (new file only)")
+            .set_directory(allowed[0].clone()).set_file_name(&metadata.filename)
+            .add_filter(if extension=="csv"{"CSV dataset"}else{"Excel workbook"},&[extension])
+            .blocking_save_file();
+        let path=match chosen {
+            None=>return Ok(NativeReportSave{status:"cancelled",filename:None}),
+            Some(path)=>path.into_path().map_err(|_|"Choose a local dataset destination")?,
+        };
+        for pin in &root_pins {pin.verify()?;}
+        let (allowed_now,protected_now)=dataset_destination_roots(&app)?;
+        if allowed_now!=allowed || protected_now!=protected {
+            return Err("Dataset destination roots changed; export again".into());
+        }
+        if current_dataset_export_key(&app)?!=key {return Err("Analytical engine changed; export again".into());}
+        dataset_file::publish_new(&path,&payload,uuid::Uuid::new_v4().as_u128(),
+            &allowed_now,&protected_now)?;
+        Ok(NativeReportSave{status:"saved",filename:path.file_name().and_then(|n|n.to_str()).map(str::to_owned)})
+    }).await.map_err(|_|"Native dataset Save As could not finish".to_string())?
+}
+
 #[tauri::command]
 async fn save_report_as(app: AppHandle, request: Request<'_>)
     -> Result<NativeReportSave, String> {
@@ -993,7 +1113,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            launch_backend, launch_bundled_ai, save_report_as,
+            launch_backend, launch_bundled_ai, save_report_as, save_dataset_as,
             resolve_native_close_request, confirm_native_close, confirm_native_project_switch,
             acknowledge_n12_no_cdp_close_listener_ready,
             finish_p3_w5_synthetic_qa, confirm_native_deliver_exit

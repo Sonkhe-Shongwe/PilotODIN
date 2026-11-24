@@ -1,7 +1,8 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, History, LoaderCircle, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Download, FileSpreadsheet, X} from 'lucide-react';
-import {downloadCleanedData,get,post} from './api';
+import {downloadCleanedData,get,post,saveDatasetNative} from './api';
+import {isDesktop} from './desktopBootstrap';
 import {resolveQualityFocus} from './qualityHandoff';
 import {canReviewCorrection,actionDescription,medianTreatmentHint} from './qualityActionGuide';
 import {qualityPreviewLabel} from './qualityPreviewLabel';
@@ -50,6 +51,10 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
   const [exportFilterColumn,setExportFilterColumn]=useState('');
   const [exportFilterValue,setExportFilterValue]=useState('');
   const [exporting,setExporting]=useState(false);
+  const exportRequest=useRef(0);
+  const exportProject=useRef(projectId);
+  exportProject.current=projectId;
+  useEffect(()=>{setExporting(false);return()=>{exportRequest.current++}},[projectId]);
   const [busy,setBusy]=useState(false);
   const approvalDialogRef=useRef<HTMLElement|null>(null);
   // Capture the initiating button before setBusy disables it. Browsers may
@@ -214,20 +219,30 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
     finally{setBusy(false)}
   }
   async function exportCleanedData(){
+    const ticket=++exportRequest.current;
+    const isCurrent=()=>exportRequest.current===ticket&&exportProject.current===projectId;
     setExporting(true);setError('');setNotice('');
     try{
       const filters=exportFilterColumn&&exportFilterValue?[
         {column:exportFilterColumn,operator:'contains',value:exportFilterValue}
       ]:[];
-      const {blob,filename}=await downloadCleanedData(`/projects/${projectId}/quality/export`,{
+      const download=await downloadCleanedData(`/projects/${projectId}/quality/export`,{
         version:exportVersion,format:exportFormat,columns:exportColumns.length?exportColumns:null,filters
       });
+      if(!isCurrent())return;
+      const {blob,filename}=download;
+      if(isDesktop()){
+        const outcome=await saveDatasetNative(download,isCurrent);
+        if(isCurrent())setNotice(outcome.status==='cancelled'?'Dataset Save As cancelled. No destination file was written.':
+          'Saved '+outcome.filename+'. Your original dataset remains unchanged.');
+        return;
+      }
       const url=URL.createObjectURL(blob);
       try{const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;
         document.body.appendChild(anchor);anchor.click();anchor.remove();}
       finally{setTimeout(()=>URL.revokeObjectURL(url),60000)}
       setNotice(`Prepared ${filename}. Your original dataset remains unchanged.`);
-    }catch(e){setError((e as Error).message)}finally{setExporting(false)}
+    }catch(e){if(isCurrent())setError((e as Error).message)}finally{if(isCurrent())setExporting(false)}
   }
   async function diagnoseMissing(column:string){
     const ticket=++missingnessRequest.current;

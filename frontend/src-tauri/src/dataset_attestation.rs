@@ -1,4 +1,4 @@
-//! Unregistered B5 native receipt verifier; requires locked Windows host review.
+//! B5 native receipt verifier; requires locked Windows host review.
 //! The API session token is not the MAC key. No new crates or network access.
 use crate::dataset_file::{self, Format, MAX_BYTES};
 const INVALID: &str = "Dataset export receipt authentication failed";
@@ -18,7 +18,36 @@ pub(crate) struct Metadata {
 fn hex(value: &str, len: usize) -> bool {
     value.len() == len && value.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
 }
+fn decimal(value: &str) -> Result<u64, String> {
+    let n = value.parse::<u64>().map_err(|_| INVALID)?;
+    if n > MAX_SAFE || n.to_string() != value { return Err(INVALID.into()); }
+    Ok(n)
+}
+fn one<'a>(headers: &'a tauri::http::HeaderMap, name: &str) -> Result<&'a str, String> {
+    let all = headers.get_all(name);
+    let mut values = all.iter();
+    let value = values.next().and_then(|v| v.to_str().ok()).ok_or(INVALID)?;
+    if values.next().is_some() || value.len() > 160 { return Err(INVALID.into()); }
+    Ok(value)
+}
 impl Metadata {
+    pub(crate) fn from_headers(headers: &tauri::http::HeaderMap) -> Result<Self, String> {
+        let size = usize::try_from(decimal(one(headers, "x-pilotodin-export-size")?)?)
+            .map_err(|_| INVALID)?;
+        let value = Self {
+            project: one(headers, "x-pilotodin-export-project")?.into(),
+            operation: one(headers, "x-pilotodin-export-operation")?.into(),
+            version: decimal(one(headers, "x-pilotodin-dataset-version")?)?,
+            format: Format::parse(one(headers, "x-pilotodin-dataset-format")?)?,
+            size,
+            sha256: one(headers, "x-pilotodin-export-sha256")?.into(),
+            filename: one(headers, "x-pilotodin-dataset-filename")?.into(),
+            rows: decimal(one(headers, "x-pilotodin-exported-rows")?)?,
+            mac: one(headers, "x-pilotodin-export-mac")?.into(),
+        };
+        value.message()?;
+        Ok(value)
+    }
     fn message(&self) -> Result<String, String> {
         if !hex(&self.project,32) || !hex(&self.operation,32)
             || !hex(&self.sha256,64) || !hex(&self.mac,64)
@@ -92,6 +121,31 @@ mod tests {
         assert!(m.message().is_ok());
         m.version=8; assert!(m.message().is_err());
         m.version=7; m.size=MAX_BYTES+1; assert!(m.message().is_err());
+    }
+    #[test]
+    fn rejects_duplicate_and_noncanonical_headers() {
+        use tauri::http::{HeaderMap,HeaderValue};
+        let mut headers=HeaderMap::new();
+        let m=fixture();
+        for (name,value) in [
+            ("x-pilotodin-export-project",m.project.clone()),
+            ("x-pilotodin-export-operation",m.operation.clone()),
+            ("x-pilotodin-dataset-version",m.version.to_string()),
+            ("x-pilotodin-dataset-format",m.format.extension().to_string()),
+            ("x-pilotodin-export-size",m.size.to_string()),
+            ("x-pilotodin-export-sha256",m.sha256.clone()),
+            ("x-pilotodin-dataset-filename",m.filename.clone()),
+            ("x-pilotodin-exported-rows",m.rows.to_string()),
+            ("x-pilotodin-export-mac",m.mac.clone()),
+        ] { headers.insert(name,HeaderValue::from_str(&value).unwrap()); }
+        assert!(Metadata::from_headers(&headers).is_ok());
+        headers.append("x-pilotodin-export-size",HeaderValue::from_static("25"));
+        assert!(Metadata::from_headers(&headers).is_err());
+        headers.insert("x-pilotodin-export-size",HeaderValue::from_static("025"));
+        assert!(Metadata::from_headers(&headers).is_err());
+        headers.insert("x-pilotodin-export-size",HeaderValue::from_static("25"));
+        headers.remove("x-pilotodin-export-mac");
+        assert!(Metadata::from_headers(&headers).is_err());
     }
     #[cfg(windows)]
     #[test]

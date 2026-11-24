@@ -1,6 +1,6 @@
-//! B5 native dataset Save As source candidate. Not registered in the host yet.
+//! B5 native dataset Save As publication; source registered, native verification pending.
 //!
-//! Only the future OS-dialog command may supply a destination and trusted root
+//! Only the OS-dialog command may supply a destination and trusted root
 //! lists. Existing files are deliberately refused. No arbitrary IPC path,
 //! overwrite, directory creation, archive extraction or broad file capability.
 //! Requires separate approved host compile before integration is certified.
@@ -176,27 +176,40 @@ fn target_name(path: &Path, format: Format) -> bool {
 
 /// Only admitted existing user export directories; reject app-owned roots and
 /// redirected paths. The caller supplies trusted OS directory roots, not IPC.
+struct DestinationPins(Vec<DirectoryPins>);
+impl DestinationPins {
+    fn verify(&self)->Result<(),String>{
+        for pin in &self.0 {pin.verify()?;}
+        Ok(())
+    }
+    fn admit(&mut self,path:&Path)->Result<(),String>{
+        let mut pin=DirectoryPins::default();
+        pin.admit_existing(path)?;
+        self.0.push(pin);
+        Ok(())
+    }
+}
 fn admit(path: &Path, format: Format, allowed: &[PathBuf], protected: &[PathBuf])
-    -> Result<DirectoryPins, String> {
+    -> Result<DestinationPins, String> {
     if !path.is_absolute() || !target_name(path,format) || allowed.is_empty() || protected.is_empty() {
         return Err(UNSAFE.into());
     }
     let parent = path.parent().ok_or(UNSAFE)?;
-    let mut pins = DirectoryPins::default();
-    pins.admit_existing(parent)?;
+    let mut pins = DestinationPins(Vec::new());
+    pins.admit(parent)?;
     let resolved = parent.canonicalize().map_err(|_|UNSAFE)?;
     let mut permitted = false;
     for root in allowed {
         // Refuse redirected/unavailable roots rather than resolving them into
         // a new permission. Exact canonical components avoid granting a
         // differently cased sibling on a case-sensitive Windows directory.
-        pins.admit_existing(root)?;
+        pins.admit(root)?;
         let root = root.canonicalize().map_err(|_|UNSAFE)?;
         permitted |= resolved.ancestors().any(|part| part == root.as_path());
     }
     if !permitted { return Err(UNSAFE.into()); }
     for root in protected {
-        pins.admit_existing(root)?;
+        pins.admit(root)?;
         let root = root.canonicalize().map_err(|_|UNSAFE)?;
         if within(&resolved,&root) { return Err(UNSAFE.into()); }
     }
@@ -289,7 +302,7 @@ fn verify_bytes(file:&mut File, bytes:&[u8])->Result<(),String>{
     }
     Ok(())
 }
-fn remove_owned(pins:&DirectoryPins,path:&Path,expected:Stamp,links:u64)->Result<(),String>{
+fn remove_owned(pins:&DestinationPins,path:&Path,expected:Stamp,links:u64)->Result<(),String>{
     pins.verify()?;
     identity_at(path,expected,links)?;
     fs::remove_file(path).map_err(|_|"Dataset staging cleanup refused; review retained file".into())

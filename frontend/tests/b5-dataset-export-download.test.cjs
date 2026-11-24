@@ -82,3 +82,52 @@ test('signed receipt metadata must match the requested project and be complete',
   await assert.rejects(verifyDatasetDownload(response(csv,{...headers,'x-pilotodin-export-mac':''}),req,project));
   assert.equal((await verifyDatasetDownload(response(),req)).receipt,null);
 });
+
+test('native binary IPC is separate, authenticated, current and cancellation-aware',async()=>{
+  const api=fs.readFileSync(path.join(__dirname,'../src/api.ts'),'utf8');
+  const js=ts.transpileModule(api,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2021}}).outputText;
+  const calls=[];
+  let outcome={status:'cancelled',filename:null};
+  const module={exports:{}};
+  const mockRequire=name=>{
+    if(name==='@tauri-apps/api/core')return {invoke:async(...args)=>{calls.push(args);return outcome}};
+    if(name==='./datasetExportDownload')return mod.exports;
+    throw Error('Unexpected import '+name);
+  };
+  new Function('module','exports','require','window',js)(module,module.exports,mockRequire,{__TAURI_INTERNALS__:{}});
+  const save=module.exports.saveDatasetNative;
+  const project='a'.repeat(32);
+  const headers={'x-pilotodin-export-project':project,'x-pilotodin-export-operation':'b'.repeat(32),'x-pilotodin-export-mac':'c'.repeat(64)};
+  const signed=await verifyDatasetDownload(response(csv,headers),req,project);
+  await assert.rejects(save({...signed,receipt:null},()=>true));
+  await assert.rejects(save(signed,()=>false));
+  let checks=0;
+  await assert.rejects(save(signed,()=>++checks===1));
+  await assert.rejects(save({...signed,expectedBytes:1},()=>true));
+  assert.equal(calls.length,0);
+  assert.deepEqual(await save(signed,()=>true),outcome);
+  assert.equal(calls[0][0],'save_dataset_as');
+  assert.deepEqual(Buffer.from(calls[0][1]),csv);
+  assert.equal(calls[0][2].headers['x-pilotodin-export-mac'],headers['x-pilotodin-export-mac']);
+  assert.equal(Object.keys(calls[0][2].headers).length,9);
+  outcome={status:'saved',filename:'chosen.csv'};
+  assert.deepEqual(await save(signed,()=>true),outcome);
+  outcome={status:'saved',filename:null};
+  await assert.rejects(save(signed,()=>true));
+});
+test('native dataset consent gates precede publication and do not broaden capabilities',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'../src/QualityWorkspace.tsx'),'utf8');
+  const host=fs.readFileSync(path.join(__dirname,'../src-tauri/src/lib.rs'),'utf8');
+  const caps=JSON.parse(fs.readFileSync(path.join(__dirname,'../src-tauri/capabilities/default.json'),'utf8'));
+  assert.match(ui,/if\(isDesktop\(\)\)\{\s*const outcome=await saveDatasetNative\(download,isCurrent\)/);
+  assert.match(ui,/Dataset Save As cancelled\. No destination file was written/);
+  assert.ok(ui.indexOf('saveDatasetNative(download,isCurrent)')<ui.indexOf('URL.createObjectURL(blob)'));
+  const command=host.slice(host.indexOf('async fn save_dataset_as('),host.indexOf('async fn save_report_as('));
+  for(const marker of ['window.label()!="main"','Metadata::from_headers','InvokeBody::Raw','compare_exchange','metadata.verify(&key)?','dataset_file::validate','blocking_save_file','None=>return Ok','dataset_file::publish_new']){
+    assert.ok(command.includes(marker),marker);
+  }
+  assert.ok(command.indexOf('metadata.verify(&key)?')<command.indexOf('blocking_save_file'));
+  assert.ok(command.indexOf('None=>return Ok')<command.indexOf('dataset_file::publish_new'));
+  assert.deepEqual(caps.permissions,['core:default']);
+  assert.match(host,/save_report_as, save_dataset_as,/);
+});
