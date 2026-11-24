@@ -30,9 +30,12 @@ class NoCdpFileIOReviewTests(TestCase):
         self.called = []
 
     def run_check(self, *, violation=None, gap=None, issues=None, role=True,
-                  two_roles=False, calibrated=False, restore_verified=None):
+                  two_roles=False, calibrated=False, restore_verified=None,
+                  path_candidates=None):
         def strict(*a, **kwargs):
             self.called.append((a, kwargs))
+            if path_candidates is not None:
+                kwargs["webview_write_candidates"].update(path_candidates)
             return (Counter({"webview:write": 5}), Counter(violation or {}),
                     set(), dict(gap or {}))
         from datetime import timedelta
@@ -95,7 +98,10 @@ class NoCdpFileIOReviewTests(TestCase):
         result = self.run_check()
         self.assertEqual(len(self.called), 1)
         args, kwargs = self.called[0]
-        self.assertEqual(kwargs, {})
+        self.assertEqual(kwargs, {
+            "webview_write_candidates": {}, "webview_dominant_writes": True})
+        self.assertNotIn("webview_write_credit", kwargs)
+        self.assertNotIn("credit_webview_path", kwargs)
         self.assertIn(r"c:\qa\source.csv", args[6])
         self.assertEqual(args[7]["webview-network"], [r"C:\qa"])
         self.assertEqual(result["blocker"],
@@ -107,6 +113,92 @@ class NoCdpFileIOReviewTests(TestCase):
         self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
         self.assertEqual(result["file_mutation_acceptance"], "NOT_EVALUATED")
         self.assertFalse(result["owner_native_execution_authorized"])
+
+    def sample_candidates(self):
+        return {
+            "eligible": 8,
+            "dominant": {
+                "status": "partial", "eligible": 8,
+                "eligible_outside_selected_pairs": 2,
+                "pairs": [{
+                    "eligible": 6, "checked": 5, "supported": 3,
+                    "blocked": 2, "unchecked": 1,
+                    "outcomes": {
+                        "webview-network:write:request-time:candidate-permitted": 1,
+                        "webview-network:write:request-time:candidate-outside-scope": 2,
+                        "webview-network:write:request-time:private-unknown-path": 2,
+                    },
+                }],
+            },
+        }
+
+    def test_same_reducer_passive_path_counts_never_credit_strict_gaps(self):
+        result = self.run_check(
+            gap={"webview-network:write:path-missing": 10},
+            violation={"outside-scope:webview-network:write": 3},
+            path_candidates=self.sample_candidates())
+        summary = result["passive_request_time_path_candidates"]
+        self.assertEqual(summary["status"], "BOUNDED_DIAGNOSTIC_ONLY")
+        self.assertEqual(summary["strict_missing_write_paths"], 10)
+        self.assertEqual(summary["eligible_bounded_candidates"], 8)
+        self.assertEqual(summary["checked_candidates"], 5)
+        self.assertEqual(summary["candidate_scope_counts"],
+                         {"protected": 0, "permitted": 1, "outside-scope": 2})
+        self.assertEqual(summary["checked_without_candidate_path"], 2)
+        self.assertEqual(summary["eligible_unchecked"], 3)
+        self.assertEqual(summary["strict_gaps_not_eligible"], 2)
+        self.assertEqual(summary["strict_path_credit_awarded"], 0)
+        self.assertFalse(summary["physical_destination_verified"])
+        self.assertFalse(summary["original_file_handle_verified"])
+        self.assertEqual(result["remaining_webview_network_write_path_gaps"], 10)
+        self.assertEqual(result["observed_prohibited_operations"], 3)
+        self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+        self.assertNotIn("private-unknown-path", json.dumps(result))
+
+    def test_passive_path_diagnostic_rejects_missing_and_conflicting_count_totals(self):
+        for edit in (
+            lambda x: x["dominant"].update(eligible=11),
+            lambda x: x["dominant"].update(eligible_outside_selected_pairs=9),
+            lambda x: x["dominant"]["pairs"][0].update(supported=True),
+            lambda x: x["dominant"]["pairs"][0].update(checked=6),
+            lambda x: x["dominant"]["pairs"][0]["outcomes"].update(
+                {"webview-network:write:request-time:candidate-protected": 1}),
+            lambda x: x["dominant"]["pairs"][0]["outcomes"].update(
+                {"secret": "private"}),
+        ):
+            candidates = self.sample_candidates()
+            edit(candidates)
+            result = self.run_check(
+                gap={"webview-network:write:path-missing": 10},
+                path_candidates=candidates)
+            summary = result["passive_request_time_path_candidates"]
+            self.assertEqual(summary["status"], "BLOCKED_INCONSISTENT_DIAGNOSTIC")
+            self.assertEqual(summary["strict_path_credit_awarded"], 0)
+            self.assertEqual(result["remaining_webview_network_write_path_gaps"], 10)
+            self.assertNotIn("secret", json.dumps(result))
+
+    def test_passive_path_diagnostic_loss_blocks_candidate_counts(self):
+        self.manifest["etw"]["counters"]["events_lost"] = 2
+        result = self.run_check(
+            gap={"webview-network:write:path-missing": 10},
+            path_candidates=self.sample_candidates())
+        summary = result["passive_request_time_path_candidates"]
+        self.assertEqual(summary["status"], "BLOCKED_ETW_LOSS_OR_UNVERIFIED")
+        self.assertEqual(summary["checked_candidates"], 0)
+        self.assertEqual(result["remaining_webview_network_write_path_gaps"], 10)
+
+    def test_passive_pair_limit_retains_all_unchecked_candidates(self):
+        result = self.run_check(
+            gap={"webview-network:write:path-missing": 10},
+            path_candidates={
+                "eligible": 8, "dominant": {"status": "pair-limit-reached",
+                "eligible": 8, "pairs": [], "eligible_outside_selected_pairs": None},
+            })
+        summary = result["passive_request_time_path_candidates"]
+        self.assertEqual(summary["status"], "BLOCKED_PAIR_LIMIT")
+        self.assertEqual(summary["eligible_unchecked"], 8)
+        self.assertEqual(summary["strict_gaps_not_eligible"], 2)
+        self.assertEqual(summary["strict_path_credit_awarded"], 0)
 
     def test_prohibited_write_is_retained_and_not_reclassified(self):
         result = self.run_check(violation={"outside-scope:webview-network:write": 113})

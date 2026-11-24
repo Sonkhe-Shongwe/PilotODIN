@@ -14,11 +14,115 @@ ROLES = ("webview", "webview-network", "backend", "app", "helper",
          "driver", "calibration", "unattributed", "other")
 
 
+# Redact the existing bounded request-time name-epoch diagnostic. Do not
+# publish raw collector outcome keys (which can contain untrusted input).
+# These labels are lexical ETW path candidates, NEVER physical-handle proof.
+_PATH_PREFIX = "webview-network:write:request-time:"
+_PATH_LABELS = {
+    _PATH_PREFIX + "candidate-protected": "protected",
+    _PATH_PREFIX + "candidate-permitted": "permitted",
+    _PATH_PREFIX + "candidate-outside-scope": "outside-scope",
+}
+
+
+def _path_candidate_summary(raw, gaps, loss):
+    """Full-count reconciliation of the bounded dominant-pair comparison.
+
+    Existing correlator checks at most two dominant pairs without a credit
+    callback. No other pairs, missing write identities, or unchecked requests
+    can be silently called resolved. Strict counts remain untouched.
+    """
+    result = {
+        "status": "NOT_EVALUATED",
+        "strict_missing_write_paths": gaps,
+        "eligible_bounded_candidates": 0,
+        "checked_candidates": 0,
+        "candidate_scope_counts": {
+            "protected": 0, "permitted": 0, "outside-scope": 0,
+        },
+        "checked_without_candidate_path": 0,
+        "eligible_unchecked": 0,
+        "strict_gaps_not_eligible": gaps,
+        "physical_destination_verified": False,
+        "original_file_handle_verified": False,
+        "strict_path_credit_awarded": 0,
+    }
+    if loss:
+        result["status"] = "BLOCKED_ETW_LOSS_OR_UNVERIFIED"
+        return result
+    if type(raw) is not dict:
+        return result
+    dominant = raw.get("dominant")
+    if type(dominant) is not dict:
+        return result
+    # Nonnegative exact integers only, including all totals and count sums.
+    def count(value):
+        return type(value) is int and value >= 0
+    eligible = dominant.get("eligible")
+    pairs = dominant.get("pairs")
+    status = dominant.get("status")
+    if (not count(gaps) or not count(eligible) or eligible > gaps
+            or type(pairs) is not list or len(pairs) > 2
+            or raw.get("eligible") != eligible
+            or type(status) is not str):
+        result["status"] = "BLOCKED_INCONSISTENT_DIAGNOSTIC"
+        return result
+    if status == "pair-limit-reached":
+        result.update(status="BLOCKED_PAIR_LIMIT",
+                      eligible_bounded_candidates=eligible,
+                      eligible_unchecked=eligible,
+                      strict_gaps_not_eligible=gaps - eligible)
+        return result
+    if status not in {"complete", "partial"}:
+        result["status"] = "BLOCKED_INCONSISTENT_DIAGNOSTIC"
+        return result
+    checked = selected = 0
+    counts = dict(result["candidate_scope_counts"])
+    for pair in pairs:
+        if type(pair) is not dict:
+            result["status"] = "BLOCKED_INCONSISTENT_DIAGNOSTIC"
+            return result
+        total, seen, supported, blocked, unchecked = (
+            pair.get(k) for k in ("eligible", "checked", "supported", "blocked", "unchecked"))
+        outcomes = pair.get("outcomes")
+        if (not all(count(n) for n in (total, seen, supported, blocked, unchecked))
+                or total != seen + unchecked or seen != supported + blocked
+                or type(outcomes) is not dict
+                or not all(type(k) is str and count(n) for k, n in outcomes.items())
+                or sum(outcomes.values()) != seen):
+            result["status"] = "BLOCKED_INCONSISTENT_DIAGNOSTIC"
+            return result
+        scoped = sum(outcomes.get(label, 0) for label in _PATH_LABELS)
+        if scoped != supported:
+            result["status"] = "BLOCKED_INCONSISTENT_DIAGNOSTIC"
+            return result
+        for label, scope in _PATH_LABELS.items():
+            counts[scope] += outcomes.get(label, 0)
+        checked += seen
+        selected += total
+    if (selected > eligible or checked > selected
+            or dominant.get("eligible_outside_selected_pairs") != eligible - selected):
+        result["status"] = "BLOCKED_INCONSISTENT_DIAGNOSTIC"
+        return result
+    resolved = sum(counts.values())
+    result.update(
+        status=("NO_STRICT_NETWORK_WRITE_GAPS" if gaps == 0
+                else "BOUNDED_DIAGNOSTIC_ONLY"),
+        eligible_bounded_candidates=eligible,
+        checked_candidates=checked,
+        candidate_scope_counts=counts,
+        checked_without_candidate_path=checked - resolved,
+        eligible_unchecked=eligible - checked,
+        strict_gaps_not_eligible=gaps - eligible,
+    )
+    return result
+
+
 def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_issues=0,
                   scoped_roles=None, snapshot_state="NOT_EVALUATED", app_identity="NOT_VERIFIED",
                   capture_loss="NOT_EVALUATED", child_handles="NOT_EVALUATED",
                   browser_profile="NOT_EVALUATED", restore_status="NOT_COLLECTED",
-                  calibration_status="NOT_COLLECTED"):
+                  calibration_status="NOT_COLLECTED", path_candidates=None):
     violations = Counter(violations or {})
     gaps = Counter(gaps or {})
     counts = Counter(counts or {})
@@ -39,6 +143,9 @@ def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_is
         "missing_mutation_path_credits": sum(gaps.values()),
         "remaining_webview_network_write_path_gaps": gaps.get(
             "webview-network:write:path-missing", 0),
+        "passive_request_time_path_candidates": _path_candidate_summary(
+            path_candidates, gaps.get("webview-network:write:path-missing", 0),
+            capture_loss != "ZERO_REPORTED_NOT_FULL_COMPLETENESS"),
         "reducer_issue_count": source_issues,
         "scoped_role_count": scoped_roles,
         "protected_endpoints": snapshot_state,
@@ -93,9 +200,15 @@ def reduce(manifest, sysmon, events, app_witness, binary, *,
         protected, permitted = trace.scope(manifest)
         protected.extend(trace.windows_path(manifest["observed_roots"][name])
                          for name in manifest["immutable_observed"])
+        # Same digest-verified strict reducer, with the existing bounded
+        # request-time name-epoch diagnostics enabled. NO credit callback:
+        # no candidate may subtract a missing path or change the verdict.
+        path_candidates = {}
         file_counts, violations, calibration_files, gaps = trace.inspect_etw_files(
             manifest, events, start, end, processes, roles,
-            protected, permitted, issues)
+            protected, permitted, issues,
+            webview_write_candidates=path_candidates,
+            webview_dominant_writes=True)
         full_role_count = sum(1 for role in roles.values()
                               if role in {"webview", "webview-network"})
         app_identity = (
@@ -243,6 +356,7 @@ def reduce(manifest, sysmon, events, app_witness, binary, *,
             snapshot_state=state, app_identity=app_identity, capture_loss=loss,
             child_handles=child_review, browser_profile=profile_review,
             restore_status=restore_status, calibration_status=calibration_status,
+            path_candidates=path_candidates,
         )
     except (trace.EvidenceValidationError, KeyError, ValueError, TypeError, OSError,
             UnicodeError):
