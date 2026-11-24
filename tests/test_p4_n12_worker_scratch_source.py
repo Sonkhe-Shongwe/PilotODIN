@@ -60,7 +60,12 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
     def test_inference_retains_runtime_dll_cwd_and_its_own_temp_directory(self):
         src = RUST.read_text(encoding="utf-8")
         launch = slice_between(src, "fn launch_bundled_ai(", "const MAX_REPORT_EXPORT_BYTES")
-        self.assertIn('worker_temp_directory(&worker_data_home(&app)?, "inference-temp")?', launch)
+        self.assertIn("let mut storage_pins = storage_boundary::DirectoryPins::default();", launch)
+        data_home = "let data_dir = worker_data_home(&app, &mut storage_pins)?;"
+        scratch = 'let worker_temp = worker_temp_directory(&data_dir, "inference-temp", &mut storage_pins)?;'
+        self.assertIn(data_home, launch)
+        self.assertIn(scratch, launch)
+        self.assertLess(launch.index(data_home), launch.index(scratch))
         for key in ("TEMP", "TMP", "TMPDIR"):
             self.assertIn(f'.env("{key}", worker_temp.as_os_str())', launch)
         self.assertIn('.env("PATH", runtime_path)', launch)
