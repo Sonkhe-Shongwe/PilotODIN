@@ -64,8 +64,14 @@ test('real HTTP B5 export browser click produces exact CSV and XLSX receipts',as
   const section=page.getByRole('region',{name:'Export cleaned data'});
   await expect(section.getByRole('button',{name:'Export dataset'})).toBeEnabled();
   expect(audit(pid).receipts).toEqual([]);
+  // Implicit wrapping labels can include the select's option text.
+  // Identify the unique format control by its exact two offered choices.
+  const format=section.getByRole('combobox').filter({has:page.locator('option[value="xlsx"]')});
+  await expect(format).toHaveCount(1);
+  await expect(format.locator('option')).toHaveText(['CSV','Excel XLSX']);
   for(const fmt of ['csv','xlsx']){
-    await section.getByLabel('Format',{exact:true}).selectOption(fmt);
+    await format.selectOption(fmt);
+    await expect(format).toHaveValue(fmt);
     permitted=fmt;
     const waiting=page.waitForEvent('download');
     await section.getByRole('button',{name:'Export dataset'}).click();
