@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | e9298e028524b0f65e040c90406b3302e2457288 |
+| Observed starting HEAD | 5838ee91c26ffd27fa2da09051238474e947e6a5 |
 | Product baseline | 58d89a18cbb1cd5fae05695c576a752a23f4287f |
-| Scope | Repair source-only N12 product topology reviewer for actual async inference call chain, retain existing containment/no-credit contract; no native acceptance changes. |
-| Operation ID | C1-C2-INTEGRATION-20261124-topology-repair |
-| Operation state | RECONCILED |
-| Intended files | qa/p4_research/n12_product_tree_isolation_review.py; tests/test_p4_n12_product_tree_isolation_review.py; continuity docs |
+| Scope | Consolidated backend-driven inference demand after DATA, correlated host poll/grant/readiness/drain/release, actual desktop composition callbacks. Dormant until native group proof and launcher integration. Source/synthetic only. |
+| Operation ID | C1-C2-INTEGRATION-20261124-demand-bridge |
+| Operation state | PREPARED |
+| Intended files | backend/resource_host.py; backend/resource_session.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; frontend/src-tauri/src/resource_transport.rs; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Reviewer follows actual async command and owned blocking spawn, preserves original checks and adds ordered fences plus 12 drift subtests. Native acceptance unchanged; exact P4 CI pending. |
-| Pending runs | [P4 #45471525211](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45471525211), exact 58d89a18cbb1cd5fae05695c576a752a23f4287f, IN_PROGRESS at observation. |
+| Verification | Prior P4 #45471525211 SUCCESS, 1058 Python + 544 subtests, 104 Node, 6 skipped; restricted probe skipped. Next P1 synthetic demand/grant/cleanup fixtures; Rust uncompiled. |
+| Pending runs | None; exact topology repair CI terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact P4 CI. Then consolidate backend-driven inference demand after DATA, review supported owned group-empty witness mechanism; seek narrowly scoped decision if needed; unify runner/frontend and one scoped native verification. No partial activation. |
+| Recovery action | Publish correlated one-demand host protocol and actual app/autonomy callbacks, no live registration. Resolve locked shell job-empty evidence by explicit owner decision if dependency design change required. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
