@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 8c7cc01d9920e598d5295fbf9b5b7c57bd3dad86 |
-| Product baseline | 2322c4aa72cd2aa541ea4d99992d7ee8dbaf2605 |
-| Scope | Windows application composition, retained independent timer and trusted startup factory, exact generation gate and shutdown. Register source behind compile-time false activation gate; preserve legacy behavior until runner/frontend and remaining admission/consent compatibility are coherent. |
+| Product baseline | eb89356dad89c7b1637d30bef287c60561ed2b23 |
+| Scope | Windows source registration and retained independent timer/factory behind compile-time false gate; no shared grant activation. |
 | Operation ID | C1-C2-INTEGRATION-20261124-desktop-registration |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_desktop.rs; continuity docs |
-| Approval | Standing P4 source authority; no native compile/run, partial grant activation, model/download, installer or owner-data/OS operations authorized. |
-| Verification | Prior product 2322c4a has zero CI runs. All 82 workflows unchanged from 81de01d reviewed set; lib.rs triggers only existing P4 routine synthetic/source and P2 export-source workflows, jobs reviewed (restricted Windows probe false). No workflow or approval marker edits. |
-| Pending runs | None before publication. |
+| Approval | Standing P4 source authority. No native compile/run, partial activation, model/download, installer, owner data or OS operations authorized. |
+| Verification | Published eb89356dad89c7b1637d30bef287c60561ed2b23; lib blob f821f0fb7c883aeaa548f7127aadb4a1b60a2ab1; desktop blob 6a66612e04e5def6d0d08db197ffe5561fc04c10; exact changed-path and source review. One additional uncompiled Rust fixture definition. All 82 workflow definitions unchanged since previous review; P4 and P2 routine source workflows triggered, no restricted execution authorized. |
+| Pending runs | P4 #45484468091 and P2 #45484468092 both IN_PROGRESS at last observation on exact eb89356dad89c7b1637d30bef287c60561ed2b23. Reconcile terminal jobs and any regressions before further source publication. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Publish actual guarded host composition, preserve pre-spawn vs uncertain factory distinction, retain timer/owner on fault, no legacy launch bypass. Reconcile routine CI; runner/frontend and resource save/cloud compatibility remain mandatory before activation. |
+| Recovery action | Reconcile exact routine CI, then wire explicit Python desktop_runner owned bootstrap (consume credentials before analytical imports, no legacy fallback on partial configuration) and frontend backend-driven request mode. Preserve explicit cloud consent/provider behavior and native binary Save As shared admission before activation; both native Save As paths currently deliberately refuse in the disabled candidate mode. Review existing lifecycle tests and exact source; no partial activation. Fresh native approval only after coherent source readiness. |
 | Resume after closure | C1/C2 verification then C3–C5; D separately approved. |
 
 ## Prior operation
