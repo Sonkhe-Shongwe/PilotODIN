@@ -19,3 +19,7 @@ The source-only FileIO workflow now watches the new workflow path and its existi
 This probe cannot prove original WebView2 handle ownership, PSS handle reuse exclusion, ETW Kernel-File FileObject/IRP writer joins, effective UDF, actual prohibited write physical destination or strict N12. Do not award official R02.5 or G2 completion from a generated TypeName result. All native approval and installer safety restrictions still apply.
 
 **Scores remain** P4 14/20, R02.5 0/5, N12 0/2, file mutation preparation 3/4, R02.5 four-gate delivery 1/4.
+
+## Completed G2.14 Windows result and follow-up | 24 November 2026
+
+[Actual G2.14 Windows run #45299036681](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45299036681) **COMPLETED SUCCESS at activation `1237c27`**, with native generated-only `G213_GENERATED_FILE_TYPE_UNAVAILABLE` diagnostic. A bounded PSS walk located the generated handle but could not authenticate its `File` TypeName. The [new G2.14 full result and design decision](./P4_R02_5_G2_14_GENERATED_PSS_RUNTIME_RESULT_2026-11-24.md) supersedes preparation wording above. Immediate disarm `5988ca8` retains consumed marker; no retry. Full original WebView2 FileObject/IRP/path/mutation evidence still absent. G2 stays OPEN, 1/4 four-gate, R02.5 0/5, P4 14/20.

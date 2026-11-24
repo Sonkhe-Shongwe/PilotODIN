@@ -90,6 +90,29 @@ class G210PssCandidateTests(unittest.TestCase):
             f[group]["rows"][0][key] = value
             self.assertEqual(gate.review_candidate(**f)["blocker"], "TYPE")
 
+    def test_actual_generated_g214_unverified_file_type_never_earns_candidate_credit(self):
+        # Actual GitHub-hosted Windows G2.14 run 45299036681 reported:
+        # G213_GENERATED_FILE_TYPE_UNAVAILABLE. This says the generated
+        # handle was seen but a valid PSS "File" type was not authenticated.
+        # Do not turn an empty type name or missing TYPE flag into "File".
+        for scope, name, flag in (
+            ("before", "", 0),
+            ("after", "", 0),
+            ("before", "", 1),
+            ("after", "", 1),
+        ):
+            with self.subTest(scope=scope, name=name, flag=flag):
+                f = sample()
+                f[scope]["rows"][0]["type_name"] = name
+                f[scope]["rows"][0]["flags"] = flag
+                result = gate.review_candidate(**f)
+                self.assertEqual(result["status"], "BLOCKED")
+                self.assertEqual(result["blocker"], "TYPE")
+                self.assertFalse(result["handle_reuse_excluded"])
+                self.assertEqual(result["kernel_fileobject_etw_join"], "NOT_ESTABLISHED")
+                self.assertEqual(result["original_file_handle_provenance"], "NOT_VERIFIED")
+                self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+
     def test_noninteger_or_reused_unknown_handle_does_not_pass(self):
         for h in (True, "32", 0, -1, 999):
             f = sample()
