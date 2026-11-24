@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | f2c46b75642e53c158b51544aa5c9b2da7bd82f0 |
-| Product baseline | ea524b2113e5d2aece9f434d383b5ca47f34baf2 |
+| Product baseline | b6426147dccd94747924abbd5ba4c3be6133d7b8 |
 | Scope | C1 single outstanding request and reply-write boundary, staged Python and matching standalone Rust wire codec; no live transport/native compile. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-host-wire |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Python single-outstanding/reply boundary with seven additional fixtures and standalone Rust codec with five staged unit tests published. Python CI pending; Rust uncompiled and unregistered. |
-| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before shell transport work. |
+| Pending runs | [P1 #45460620652](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45460620652), exact b6426147dccd94747924abbd5ba4c3be6133d7b8, IN_PROGRESS at last observation; reconcile exact job/logs. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish staged wire contract, reconcile Python exact CI, then exact shell transport compatibility and native integration under standing scope. Rust compile/test requires fresh approval. |
+| Recovery action | Reconcile exact Python CI; review Rust wire source and exact locked shell transport compatibility, stage owned reader/writer and bounded handshake; native compile requires distinct approval. No live registration or native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
