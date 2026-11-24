@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e2107144928a9e2070fc72bee8374ef68d8fef2a |
 | Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-REQUEST-TRUST-KERNEL-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/request_auth.py, tests/test_owned_server.py, C3 specification refinement and continuity records. Staged immutable strict request contract only; no existing launcher/guard activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | C1 and C2 SOURCE CLOSED. C2 bounded async single-flight, shared grant/drain/context lifecycle, fake worker/duplicate/shutdown/late-result tests, frontend request fence and truthful status all meet section 10 at source scope. Native library 40/40 and synthetic shared-host 1/1 from unchanged native/backend baseline; exact frontend e0f944d P1 #45508634788 SUCCESS (197 Node, 7 browser, Vite), P4 #45508634884 SUCCESS (1058 Python, 6 skips, 544 subtests, 112 Node including four C2 tests, 15 standalone Rust, Vite, 48 Windows Python + 15 subtests, 13 browser); restricted job SKIPPED. |
-| Pending runs | None. |
+| Pending runs | Staged C3 request trust contract and five source-test methods published in this checkpoint; exact routine P4 CI pending. No live guard or startup change. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Establish strict immutable desktop/non-desktop request boundary with exact mode, port, private token, origin, raw duplicate headers, loopback peer/bind and bounded CORS preflight; test in existing disposable source suite. Existing auth remains unchanged until launcher/direct-call/browser compatibility complete. Review Vite proxy and explicit in-process adapter next; never add a public no-secret runtime fallback. No native operation. |
 | Resume after closure | C4, C5 in order; D separately approved. |

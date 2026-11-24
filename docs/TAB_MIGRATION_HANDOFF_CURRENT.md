@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current tab migration handoff
 
-**CURRENT | 25 November 2026.** P4 active. Packages A and B SOURCE CLOSED. Package C active: **C1 and C2 SOURCE CLOSED**, C3 explicit startup/authentication next; exact synthetic shared-host integration and final C2 frontend regression passed. Package D pending. Source remediation **12/17 (70.6%)**, C 2/5; official P4 **14/20 (70%)**. All six native approvals consumed and disarmed, no pending runs or new restricted operations authorized. G2 BLOCKED, P5 unauthorized, P8 installer frozen.
+**CURRENT | 25 November 2026.** P4 active. Packages A and B SOURCE CLOSED. Package C active: **C1 and C2 SOURCE CLOSED**, C3 active, staged strict request trust contract published; exact synthetic shared-host integration and final C2 frontend regression passed. Package D pending. Source remediation **12/17 (70.6%)**, C 2/5; official P4 **14/20 (70%)**. All six native approvals consumed and disarmed, no pending runs or new restricted operations authorized. G2 BLOCKED, P5 unauthorized, P8 installer frozen.
 
 ## 1. Identity and reading order
 
@@ -37,7 +37,7 @@ C1/C2 source-closed composition includes shared Python admission/ASGI lifetimes,
 
 ## 4. Immediate next work (in order)
 
-1. **C3 explicit startup/authentication:** read section 5 C-D05 and section 10. Inventory existing production/dev/hosted/in-process modes, exact route/direct-call auth compatibility, Vite bootstrap and source/real HTTP negative fixtures before selecting smallest coherent patch. No unsafe fallback, no production activation.
+1. **C3 explicit startup/authentication:** read section 5 C-D05 and section 10. Staged strict request trust contract and pure transport/header tests published; reconcile routine CI, complete exact launcher/direct-call compatibility and Vite bootstrap before integrating live guard. No unsafe fallback, no production activation.
 2. **C4, C5** in order: durable settings and strict consent; reproducible dependencies and provenance. D follows C source closure and separate approval. No intermediate installer.
 
 ## 5. Native evidence and immutable acceptance boundary

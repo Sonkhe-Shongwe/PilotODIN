@@ -213,5 +213,115 @@ class OwnedServerTests(unittest.TestCase):
                 os.close(rd)
 
 
+
+class C3RequestTrustTests(unittest.TestCase):
+    """Pure transport/header fixtures; no actual server, model or owner files."""
+
+    def setUp(self):
+        from backend.request_auth import RequestTrust
+        self.secret = "a" * 64
+        self.desktop = RequestTrust("desktop", 9012, self.secret)
+        self.dev = RequestTrust("dev", 8000, "b" * 64, "http://127.0.0.1:5173")
+
+    def scope(self, trust=None, method="GET", origin=None):
+        trust = trust or self.desktop
+        headers = [(b"host", f"127.0.0.1:{trust.port}".encode()),
+                   (trust.header, trust.secret.encode())]
+        if origin is not None:
+            headers.append((b"origin", origin.encode()))
+        return {"type": "http", "scheme": "http", "method": method,
+                "client": ("127.0.0.1", 50000), "server": ("127.0.0.1", trust.port),
+                "headers": headers}
+
+    def test_c3_contract_is_explicit_immutable_and_secret_not_repr(self):
+        from dataclasses import FrozenInstanceError
+        from backend.request_auth import RequestTrust, authorize
+        self.assertNotIn(self.secret, repr(self.desktop))
+        with self.assertRaises(FrozenInstanceError):
+            self.desktop.secret = "c" * 64
+        for mode, port, secret, origin in (
+                ("", 9012, self.secret, None), ("test", 9012, self.secret, None),
+                ("desktop", 9012, "", None), ("desktop", 9012, "x" * 64, None),
+                ("desktop", 9012, self.secret, "http://127.0.0.1:5173"),
+                ("desktop", True, self.secret, None),
+                ("dev", 8000, self.secret, None),
+                ("dev", 8000, self.secret, "https://evil.example")):
+            with self.subTest(mode=mode, port=port, origin=origin):
+                with self.assertRaises(ValueError):
+                    RequestTrust(mode, port, secret, origin)
+        self.assertEqual(authorize(self.scope(), None).status, 503)
+
+    def test_c3_transport_and_exact_origin(self):
+        from backend.request_auth import authorize
+        for origin in (None, "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"):
+            self.assertTrue(authorize(self.scope(origin=origin), self.desktop).allowed)
+        for changes in ({"client": ("192.0.2.1", 50000)},
+                        {"client": ("testclient", 50000)}, {"client": None},
+                        {"server": ("0.0.0.0", 9012)}, {"server": ("127.0.0.1", 8000)},
+                        {"server": ("testserver", 80)}, {"scheme": "https"},
+                        {"type": "websocket"}):
+            with self.subTest(changes=changes):
+                self.assertEqual(authorize({**self.scope(), **changes}, self.desktop).status, 403)
+        for origin in ("null", "https://evil.example", "http://127.0.0.1:5173"):
+            self.assertEqual(authorize(self.scope(origin=origin), self.desktop).status, 403)
+        self.assertTrue(authorize(self.scope(self.dev, origin=self.dev.dev_origin), self.dev).allowed)
+        self.assertEqual(authorize(self.scope(self.dev, origin="http://127.0.0.1:5174"), self.dev).status, 403)
+        self.assertEqual(authorize(self.scope(self.dev, origin="http://tauri.localhost"), self.dev).status, 403)
+
+    def test_c3_missing_wrong_duplicate_and_malformed_credentials(self):
+        from backend.request_auth import authorize
+        original = self.scope()
+        host, token = original["headers"]
+        for headers, status in (
+                ([host], 401), ([host, (token[0], b"b"*64)], 401),
+                ([host, (token[0], b"")], 401), ([host, (token[0], b"\xff")], 400),
+                ([host, (token[0], b" "+token[1])], 400),
+                ([host, (token[0], b"a"*257)], 400), ([host, token, token], 400),
+                ([host, token, (b"X-PilotODIN-Session", token[1])], 400),
+                ([host, token, (b"x-pilotodin-dev-capability", b"b"*64)], 401),
+                ([token], 403), ([host, host, token], 400),
+                ([(b"host", b"testserver"), token], 403),
+                ([(b"host", b"127.0.0.1:8000"), token], 403),
+                ([(b"host", b"localhost.evil:9012"), token], 403),
+                ([host, token, (b"origin", b"http://tauri.localhost"),
+                  (b"origin", b"http://tauri.localhost")], 400),
+                ([host, token, (b"x-forwarded-for", b"127.0.0.1")], 403),
+                ([host, token, (b"forwarded", b"for=127.0.0.1")], 403)):
+            with self.subTest(status=status):
+                self.assertEqual(authorize({**original, "headers": headers}, self.desktop).status, status)
+
+    def test_c3_preflight_is_only_bounded_cors_negotiation(self):
+        from backend.request_auth import authorize
+        for trust, origin in ((self.desktop, "http://tauri.localhost"),
+                              (self.dev, self.dev.dev_origin)):
+            raw = self.scope(trust, "OPTIONS", origin)
+            raw["headers"] = [pair for pair in raw["headers"] if pair[0] != trust.header]
+            raw["headers"] += [(b"access-control-request-method", b"POST"),
+                               (b"access-control-request-headers", b"content-type, "+trust.header)]
+            decision = authorize(raw, trust)
+            self.assertTrue(decision.allowed)
+            self.assertTrue(decision.preflight)
+            self.assertFalse(authorize({**raw, "method": "POST"}, trust).allowed)
+            for headers in (
+                    raw["headers"][:-1],
+                    raw["headers"][:-1] + [(b"access-control-request-headers", b"content-type")],
+                    raw["headers"][:-1] + [(b"access-control-request-headers", trust.header+b", x-extra")],
+                    raw["headers"][:-1] + [(b"access-control-request-headers", trust.header+b", "+trust.header)],
+                    raw["headers"][:-2] + [(b"access-control-request-method", b"CONNECT"), raw["headers"][-1]],
+                    raw["headers"] + [(trust.header, trust.secret.encode())],
+                    [pair for pair in raw["headers"] if pair[0] != b"origin"]):
+                self.assertFalse(authorize({**raw, "headers": headers}, trust).allowed)
+
+    def test_c3_all_actual_methods_require_capability(self):
+        from backend.request_auth import RequestTrust, authorize
+        for mode in ("dev", "hosted-fixture", "local-devqa"):
+            trust = RequestTrust(mode, 8000, "b"*64, "http://127.0.0.1:5178")
+            for method in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"):
+                scope = self.scope(trust, method, trust.dev_origin)
+                with self.subTest(mode=mode, method=method):
+                    self.assertTrue(authorize(scope, trust).allowed)
+                    self.assertEqual(authorize({**scope, "headers": [scope["headers"][0], scope["headers"][2]]}, trust).status, 401)
+
+
 if __name__ == "__main__":
     unittest.main()
