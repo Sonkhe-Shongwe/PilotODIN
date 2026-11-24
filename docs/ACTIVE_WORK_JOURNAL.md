@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5838ee91c26ffd27fa2da09051238474e947e6a5 |
 | Product baseline | 58d89a18cbb1cd5fae05695c576a752a23f4287f |
 | Scope | Consolidated backend-driven inference demand after DATA, correlated host poll/grant/readiness/drain/release, actual desktop composition callbacks. Dormant until native group proof and launcher integration. Source/synthetic only. |
 | Operation ID | C1-C2-INTEGRATION-20261124-demand-bridge |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_host.py; backend/resource_session.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; frontend/src-tauri/src/resource_transport.rs; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior P4 #45471525211 SUCCESS, 1058 Python + 544 subtests, 104 Node, 6 skipped; restricted probe skipped. Next P1 synthetic demand/grant/cleanup fixtures; Rust uncompiled. |
-| Pending runs | None; exact topology repair CI terminal SUCCESS. |
+| Verification | Actual owned app/autonomy demand callbacks, correlated host poll/grant/ready/return/release state, eight Python cases and one staged Rust test. CI pending; no actual launcher registration or native execution. |
+| Pending runs | Exact-source P1 source CI pending discovery. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish correlated one-demand host protocol and actual app/autonomy callbacks, no live registration. Resolve locked shell job-empty evidence by explicit owner decision if dependency design change required. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

@@ -19,11 +19,12 @@ except ImportError:
 class DesktopResourceSession:
     """Own one control thread and coordinator for the entire server lifetime."""
     def __init__(self, bootstrap, read_mode, read_available_bytes, *,
-                 build_autonomy, build_app, build_server):
+                 build_autonomy, build_app, build_server, demand=None):
         if not isinstance(bootstrap, ControlBootstrap):
             raise TypeError("Trusted control bootstrap required")
         self.coordinator = Coordinator(read_mode, read_available_bytes)
         self._bootstrap = bootstrap
+        self._demand = demand
         self._guard = Lock()
         self._used = False
         self._stopping = False
@@ -48,6 +49,8 @@ class DesktopResourceSession:
     def _stop(self):
         # Do not hold a lock across shutdown callbacks, DB work or joins.
         self.coordinator.begin_shutdown()
+        if self._demand is not None:
+            self._demand.stop()
         with self._guard:
             self._stopping = True
         self.server.should_exit = True
@@ -56,7 +59,7 @@ class DesktopResourceSession:
     def _control(self):
         try:
             self._bootstrap.run(self.coordinator, self._stop, ready=self._ready,
-                                exit_on_shutdown=True)
+                                exit_on_shutdown=True, demand=self._demand)
         except BaseException:
             # Fixed failure state; no raw transport or capability logging.
             try:
@@ -207,3 +210,78 @@ def bind_product_routes(source, coordinator, autonomy_owner, owned_insight, *,
             raise RuntimeError("Unclassified resource lifetime")
         target.router.routes.append(route)
     return target
+
+
+def compose_owned_desktop(bootstrap, build_server):
+    """Actual app/autonomy callbacks for the private demand bridge.
+
+    Not selected by the current launcher; no provider call until the trusted
+    host grants, launches and acknowledges the exact demand.
+    """
+    try:
+        from . import main, autonomy, ai_provider, bundled_inference, resource_policy
+        from .resource_host import InferenceDemand
+        from .resource_autonomy import AutonomyStages, ResourceDeferred, bounded_context_bytes
+    except ImportError:
+        import main, autonomy, ai_provider, bundled_inference, resource_policy
+        from resource_host import InferenceDemand
+        from resource_autonomy import AutonomyStages, ResourceDeferred, bounded_context_bytes
+    import json
+    demand = InferenceDemand()
+
+    def generate(system, prompt, timeout):
+        if not ai_provider.offline_inference_enabled():
+            raise ResourceDeferred("policy_unavailable")
+        def invoke():
+            if not ai_provider.offline_inference_enabled():
+                raise ResourceDeferred("policy_unavailable")
+            return bundled_inference.generate(system,prompt,timeout)
+        return demand.run(invoke)
+
+    def planner(payload):
+        prompt = payload.decode("utf-8")
+        if len(prompt) > bundled_inference.USER_PROMPT_LIMIT:
+            raise ResourceDeferred("context_limit")
+        text,incomplete,_ = generate(autonomy.SYSTEM_PROMPT,prompt,75)
+        if incomplete:
+            raise ValueError("Local AI response was incomplete")
+        return bounded_context_bytes(json.loads(text))
+
+    def insight(payload):
+        value = json.loads(payload)
+        fallback = ai_provider.local_rules_result(value["local"])
+        # C4 must establish exact explicit cloud consent and destination;
+        # do not route to cloud or switch providers through this owned seam.
+        if value["selected_provider"] in ai_provider.PROVIDERS or value["selected_provider"] == "local":
+            fallback["reason"] = "Requested provider unavailable in owned local session"
+            return fallback
+        prompt = ai_provider._encode_insight_prompt(value["context"],value["task"],
+                    value["question"],value["continuation_text"],
+                    limit=bundled_inference.USER_PROMPT_LIMIT)
+        if prompt is None:
+            fallback["reason"] = "Verified context exceeds local prompt limit"
+            return fallback
+        cfg = ai_provider._read_config()
+        if ai_provider._resolve_provider(cfg,value["task"],value["selected_provider"]) not in ("ollama","auto"):
+            return fallback
+        try:
+            text,incomplete,reason = generate(ai_provider.SYSTEM,prompt,cfg["local_timeout_seconds"])
+        except ResourceDeferred as exc:
+            fallback["local_status"] = str(exc)
+            fallback["reason"] = "Local inference deferred; verified deterministic analysis used"
+            return fallback
+        except Exception:
+            fallback["local_status"] = "generation_failed"
+            fallback["reason"] = "Local generation failed; verified deterministic analysis used"
+            return fallback
+        return {"answer":text,"source":"local_llm","provider":"bundled",
+                "model":bundled_inference.MODEL_ALIAS,"fallback":False,"reason":None,
+                "attempts":[],"intelligence_mode":cfg["intelligence_mode"],
+                "local_status":"ready","incomplete":incomplete,"finish_reason":reason}
+
+    return DesktopResourceSession(bootstrap,
+        lambda:resource_policy.read_policy()["mode"],
+        lambda:resource_policy.memory_status()["available_bytes"],
+        build_autonomy=lambda c:autonomy.OwnedAutonomy(AutonomyStages(c,planner)),
+        build_app=lambda c,a:main.build_owned_app(c,a,insight),
+        build_server=build_server,demand=demand)

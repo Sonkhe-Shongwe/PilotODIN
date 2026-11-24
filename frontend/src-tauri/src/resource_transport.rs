@@ -10,7 +10,7 @@ const DEADLINE: Duration = Duration::from_secs(5);
 const FAULT: &str = "Owned resource transport unavailable";
 
 #[derive(Clone, Copy)]
-pub(crate) enum Command { Ready, Grant, Drain, Release(ExitEvidence), Stop }
+pub(crate) enum Command { Ready, PollDemand, GrantDemand, WorkerReady, Grant, Drain, Release(ExitEvidence), Stop }
 
 pub(crate) struct Transport {
     wire: Wire,
@@ -51,6 +51,9 @@ impl Transport {
         let deadline = now.checked_add(DEADLINE).ok_or(FAULT)?;
         let bytes = match command {
             Command::Ready => self.wire.ready(),
+            Command::PollDemand => self.wire.poll_demand(),
+            Command::GrantDemand => self.wire.grant_demand(),
+            Command::WorkerReady => self.wire.worker_ready(),
             Command::Grant => self.wire.grant(),
             Command::Drain => self.wire.drain(),
             Command::Release(proof) => self.wire.release(proof),

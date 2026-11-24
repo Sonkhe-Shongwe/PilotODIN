@@ -15,10 +15,10 @@ fn hex(value: &str, n: usize) -> bool {
 pub(crate) enum ExitEvidence { NeverStarted, Exited }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Pending { Ready, Grant, Drain, Release, Stop }
+enum Pending { Ready, PollDemand, Grant, WorkerReady, Drain, Release, Stop }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) enum Reply { Ready, NotReady, Granted, Denied(&'static str), Draining, Released, AdmissionStopped }
+pub(crate) enum Reply { Ready, NotReady, DemandNone, DemandPending, DemandWaiting, DemandFinished, Granted, Denied(&'static str), WorkerReady, Draining, Released, AdmissionStopped }
 
 pub(crate) struct Wire {
     generation: String,
@@ -26,6 +26,7 @@ pub(crate) struct Wire {
     sequence: u32,
     pending: Option<Pending>,
     grant: Option<String>,
+    demand: Option<String>,
     buffer: Vec<u8>,
     stopping: bool,
     ready: bool,
@@ -35,7 +36,7 @@ pub(crate) struct Wire {
 impl Wire {
     pub(crate) fn new(generation: String, capability: String) -> Result<Self, &'static str> {
         if !hex(&generation, 32) || !hex(&capability, 64) { return Err(FAULT); }
-        Ok(Self { generation, capability, sequence: 0, pending: None, grant: None,
+        Ok(Self { generation, capability, sequence: 0, pending: None, grant: None, demand: None,
             buffer: Vec::new(), stopping: false, ready: false, faulted: false })
     }
 
@@ -74,6 +75,23 @@ impl Wire {
         let mut wire = Self::new(generation, capability).unwrap();
         wire.ready = true;
         wire
+    }
+
+    pub(crate) fn poll_demand(&mut self) -> Result<Vec<u8>, &'static str> {
+        if !self.ready { return Err(FAULT); }
+        self.request(Pending::PollDemand, "POLL_DEMAND")
+    }
+
+    pub(crate) fn grant_demand(&mut self) -> Result<Vec<u8>, &'static str> {
+        if !self.ready || self.stopping || self.grant.is_some() { return Err(FAULT); }
+        let demand = self.demand.clone().ok_or(FAULT)?;
+        self.request(Pending::Grant, &format!("GRANT_REQUEST LOCAL_INFERENCE {demand}"))
+    }
+
+    pub(crate) fn worker_ready(&mut self) -> Result<Vec<u8>, &'static str> {
+        if self.stopping || self.demand.is_none() { return Err(FAULT); }
+        let grant = self.grant.clone().ok_or(FAULT)?;
+        self.request(Pending::WorkerReady, &format!("WORKER_READY {grant}"))
     }
 
     pub(crate) fn grant(&mut self) -> Result<Vec<u8>, &'static str> {
@@ -124,6 +142,19 @@ impl Wire {
         let reply = match (self.pending, &parts[3..]) {
             (Some(Pending::Ready), ["READY"]) => { self.ready = true; Reply::Ready },
             (Some(Pending::Ready), ["NOT_READY"]) => { self.ready = false; Reply::NotReady },
+            (Some(Pending::PollDemand), ["DEMAND_NONE"]) if self.grant.is_none() => {
+                self.demand = None; Reply::DemandNone
+            },
+            (Some(Pending::PollDemand), ["DEMAND_PENDING", id])
+                if self.grant.is_none() && hex(id,32) => {
+                    self.demand = Some((*id).to_owned()); Reply::DemandPending
+                },
+            (Some(Pending::PollDemand), ["DEMAND_WAITING", id])
+                if self.grant.is_some() && self.demand.as_deref() == Some(*id) => Reply::DemandWaiting,
+            (Some(Pending::PollDemand), ["DEMAND_FINISHED", id])
+                if self.grant.is_some() && self.demand.as_deref() == Some(*id) => Reply::DemandFinished,
+            (Some(Pending::WorkerReady), ["WORKER_READY", id])
+                if self.grant.as_deref() == Some(*id) => Reply::WorkerReady,
             (Some(Pending::Grant), ["GRANT_REPLY", "GRANTED", id]) if hex(id,32) => {
                 if self.grant.is_some() { return self.reject(); }
                 self.grant = Some((*id).to_owned());
@@ -142,6 +173,7 @@ impl Wire {
                     _ => return self.reject(),
                 };
                 if denial == "shutting_down" { self.stopping = true; }
+                self.demand = None;
                 Reply::Denied(denial)
             },
             (Some(Pending::Drain), ["DRAINING", id])
@@ -149,6 +181,7 @@ impl Wire {
             (Some(Pending::Release), ["RELEASED", id])
                 if self.grant.as_deref() == Some(*id) => {
                     self.grant = None;
+                    self.demand = None;
                     Reply::Released
                 },
             (Some(Pending::Stop), ["ADMISSION_STOPPED"]) => Reply::AdmissionStopped,
@@ -168,6 +201,20 @@ mod tests {
     fn wire() -> Wire { Wire::fixture_ready(GEN.into(), KEY.into()) }
     fn reply(seq: u32, body: &str) -> Vec<u8> {
         format!("POD1 {GEN} {seq} {body}\n").into_bytes()
+    }
+
+    #[test]
+    fn exact_demand_poll_grant_worker_ready_and_finish() {
+        let mut w=wire();
+        assert!(w.grant_demand().is_err());
+        w.poll_demand().unwrap();
+        assert_eq!(w.receive(&reply(1,&format!("DEMAND_PENDING {GRANT}"))).unwrap(),Some(Reply::DemandPending));
+        assert_eq!(w.grant_demand().unwrap(),format!("POD1 {GEN} {KEY} 2 GRANT_REQUEST LOCAL_INFERENCE {GRANT}\n").into_bytes());
+        w.receive(&reply(2,&format!("GRANT_REPLY GRANTED {GRANT}"))).unwrap();
+        w.worker_ready().unwrap();
+        assert_eq!(w.receive(&reply(3,&format!("WORKER_READY {GRANT}"))).unwrap(),Some(Reply::WorkerReady));
+        w.poll_demand().unwrap();
+        assert_eq!(w.receive(&reply(4,&format!("DEMAND_FINISHED {GRANT}"))).unwrap(),Some(Reply::DemandFinished));
     }
 
     #[test]

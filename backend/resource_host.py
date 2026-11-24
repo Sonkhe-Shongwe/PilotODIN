@@ -10,11 +10,15 @@ from dataclasses import dataclass
 import hmac
 import re
 from uuid import uuid4
+from threading import Condition
+from time import monotonic
 
 try:
     from .resource_admission import Operation
+    from .resource_autonomy import ResourceDeferred
 except ImportError:
     from resource_admission import Operation
+    from resource_autonomy import ResourceDeferred
 
 MAX_FRAME = 4096
 MAX_SEQUENCE = 2147483647
@@ -98,6 +102,13 @@ def parse_request(frame, generation, capability):
     sequence = int(seq)
     if command == "GRANT_REQUEST" and args == ["LOCAL_INFERENCE"]:
         return Request(sequence,command)
+    if (command == "GRANT_REQUEST" and len(args) == 2
+            and args[0] == "LOCAL_INFERENCE" and _HEX32.fullmatch(args[1])):
+        return Request(sequence,command,args[1])
+    if command == "POLL_DEMAND" and not args:
+        return Request(sequence,command)
+    if command == "WORKER_READY" and len(args) == 1 and _HEX32.fullmatch(args[0]):
+        return Request(sequence,command,args[0])
     if command == "DRAIN" and len(args) == 1 and _HEX32.fullmatch(args[0]):
         return Request(sequence,command,args[0])
     if (command == "RELEASE" and len(args) == 2 and _HEX32.fullmatch(args[0])
@@ -110,6 +121,162 @@ def parse_request(frame, generation, capability):
     raise _fault()
 
 
+@dataclass(eq=False, repr=False)
+class _Demand:
+    identity: str
+    phase: str = "pending"
+    abandoned: bool = False
+    ready_seen: bool = False
+    reason: str = "not_ready"
+
+
+class InferenceDemand:
+    """Single ephemeral backend demand, never a queue or a second RAM lease.
+
+    Only the private host broker calls the transition methods. A synchronous
+    callback is retained through its actual return; timeouts never release
+    native ownership. The host must still prove the entire group exited.
+    """
+    def __init__(self):
+        self._cv = Condition()
+        self._slot = None
+        self._stopping = False
+        self._faulted = False
+
+    def _abandon(self, item, reason):
+        item.abandoned = True
+        item.reason = reason
+        if item.phase == "pending":
+            item.phase = "denied"
+            self._slot = None
+        elif item.phase in ("granted","ready"):
+            item.phase = "finished"
+        self._cv.notify_all()
+
+    def stop(self):
+        with self._cv:
+            self._stopping = True
+            if self._slot is not None:
+                self._abandon(self._slot,"shutting_down")
+
+    def fault(self):
+        with self._cv:
+            self._faulted = True
+            self._stopping = True
+            if self._slot is not None:
+                self._abandon(self._slot,"ownership_unknown")
+            self._cv.notify_all()
+
+    def poll(self):
+        with self._cv:
+            item = self._slot
+            if item is None:
+                return ("DEMAND_NONE",)
+            phase = ("DEMAND_PENDING" if item.phase == "pending" else
+                     "DEMAND_FINISHED" if item.phase == "finished" else "DEMAND_WAITING")
+            return (phase,item.identity)
+
+    def claim(self, identity):
+        with self._cv:
+            item = self._slot
+            if (self._stopping or item is None or item.identity != identity
+                    or item.phase != "pending"):
+                return False
+            item.phase = "claiming"
+            return True
+
+    def grant_result(self, allowed, reason):
+        with self._cv:
+            item = self._slot
+            if item is None or item.phase != "claiming":
+                raise _fault()
+            if allowed:
+                item.phase = "finished" if item.abandoned else "granted"
+            else:
+                item.phase = "denied"
+                item.reason = reason
+                self._slot = None
+            self._cv.notify_all()
+
+    def worker_ready(self):
+        with self._cv:
+            item = self._slot
+            if (item is None or item.ready_seen or
+                    item.phase not in ("granted","finished")):
+                raise _fault()
+            item.ready_seen = True
+            if not item.abandoned and not self._stopping:
+                item.phase = "ready"
+            else:
+                item.phase = "finished"
+            self._cv.notify_all()
+
+    def can_drain(self):
+        with self._cv:
+            return self._slot is not None and self._slot.phase in ("finished","granted")
+
+    def begin_release(self, evidence):
+        with self._cv:
+            item = self._slot
+            if item is None or item.phase not in ("granted","finished"):
+                raise _fault()
+            if evidence == "NEVER_STARTED" and item.ready_seen:
+                raise _fault()
+            if item.phase == "granted":
+                item.abandoned = True
+                item.reason = "not_ready"
+            item.phase = "releasing"
+
+    def released(self):
+        with self._cv:
+            item = self._slot
+            if item is None or item.phase != "releasing":
+                raise _fault()
+            item.phase = "released"
+            self._slot = None
+            self._cv.notify_all()
+
+    def run(self, callback, *, timeout=240):
+        if not callable(callback) or type(timeout) not in (int,float) or not 0 < timeout <= 300:
+            raise ValueError("Invalid inference demand")
+        deadline = monotonic() + timeout
+        with self._cv:
+            if self._stopping:
+                raise ResourceDeferred("shutting_down")
+            if self._slot is not None:
+                raise ResourceDeferred("resource_busy")
+            item = _Demand(uuid4().hex)
+            self._slot = item
+            while item.phase != "ready":
+                if item.abandoned or item.phase in ("denied","released") or self._faulted:
+                    raise ResourceDeferred(item.reason)
+                remaining = deadline - monotonic()
+                if remaining <= 0:
+                    self._abandon(item,"not_ready")
+                    raise ResourceDeferred(item.reason)
+                self._cv.wait(remaining)
+            if self._stopping or item.abandoned or monotonic() >= deadline:
+                self._abandon(item,"shutting_down" if self._stopping else "not_ready")
+                raise ResourceDeferred(item.reason)
+            item.phase = "running"
+        try:
+            result = callback()
+        finally:
+            # No host release can race the actual callback return.
+            with self._cv:
+                item.phase = "finished"
+                self._cv.notify_all()
+                while item.phase != "released" and not self._faulted:
+                    remaining = deadline - monotonic()
+                    if remaining <= 0:
+                        self._abandon(item,"not_ready")
+                        break
+                    self._cv.wait(remaining)
+                if item.phase != "released" or item.abandoned or self._faulted:
+                    raise ResourceDeferred(item.reason)
+        return result
+
+
 class HostBroker:
     """One reader, one generation, one grant, no durable queue or timeout release.
 
@@ -118,7 +285,7 @@ class HostBroker:
     Neither a frontend message nor a mere elapsed timeout can release a grant.
     Not wired to desktop_runner or Tauri yet.
     """
-    def __init__(self, coordinator, generation, capability, *, ready=None):
+    def __init__(self, coordinator, generation, capability, *, ready=None, demand=None):
         if (type(generation) is not str or not _HEX32.fullmatch(generation)
                 or type(capability) is not str or not _HEX64.fullmatch(capability)):
             raise ValueError("Invalid owned resource session identity")
@@ -136,6 +303,10 @@ class HostBroker:
         self._ready_check = ready
         self._ready_confirmed = ready is None
         self._ready_after_reply = False
+        if demand is not None and not isinstance(demand, InferenceDemand):
+            raise TypeError("Trusted inference demand required")
+        self._demand = demand
+        self._demand_ack = None
 
     @property
     def shutdown_ready(self):
@@ -146,12 +317,16 @@ class HostBroker:
         self._faulted = True
         self._stopping = True
         self.coordinator.begin_shutdown()
+        if self._demand is not None:
+            self._demand.fault()
         if self._lease is not None:
             self.coordinator.block(self._lease)
 
     def _stop(self):
         self._stopping = True
         self.coordinator.begin_shutdown()
+        if self._demand is not None:
+            self._demand.stop()
         if self._lease is not None:
             if not self.coordinator.drain(self._lease):
                 raise _fault()
@@ -180,19 +355,38 @@ class HostBroker:
         if request.command == "STOP":
             self._stop()
             return self._reply(seq,"ADMISSION_STOPPED")
+        if request.command == "POLL_DEMAND":
+            if self._demand is None:
+                raise _fault()
+            return self._reply(seq,*self._demand.poll())
         if request.command == "GRANT_REQUEST":
+            claimed = False
+            if self._demand is not None:
+                if request.grant is None:
+                    raise _fault()
+                claimed = self._demand.claim(request.grant)
+                if not claimed:
+                    return self._reply(seq,"GRANT_REPLY","DENIED","not_ready")
+            elif request.grant is not None:
+                raise _fault()
+
+            def deny(reason):
+                if claimed:
+                    self._demand_ack = ("grant",False,reason)
+                return self._reply(seq,"GRANT_REPLY","DENIED",reason)
+
             if self._stopping:
-                return self._reply(seq,"GRANT_REPLY","DENIED","shutting_down")
+                return deny("shutting_down")
             if not self._ready_confirmed or (
                     self._ready_check is not None and self._ready_check() is not True):
-                return self._reply(seq,"GRANT_REPLY","DENIED","not_ready")
+                return deny("not_ready")
             if self._lease is not None:
-                return self._reply(seq,"GRANT_REPLY","DENIED","resource_busy")
+                return deny("resource_busy")
             admission = self.coordinator.try_acquire(Operation.LOCAL_INFERENCE)
             if not admission.allowed:
                 if admission.code not in _DENIALS:
                     raise _fault()
-                return self._reply(seq,"GRANT_REPLY","DENIED",admission.code)
+                return deny(admission.code)
             self._lease = admission.lease
             # The host may perform integrity verification immediately after
             # the grant. The lane is RUNNING before the reply is sent.
@@ -200,18 +394,29 @@ class HostBroker:
                 if not self.coordinator.release(self._lease):
                     raise _fault()
                 self._lease = None
-                return self._reply(seq,"GRANT_REPLY","DENIED","shutting_down")
+                return deny("shutting_down")
             self._grant = uuid4().hex
+            if claimed:
+                self._demand_ack = ("grant",True,"reserved")
             return self._reply(seq,"GRANT_REPLY","GRANTED",self._grant)
         if self._lease is None or request.grant != self._grant:
             raise _fault()
+        if request.command == "WORKER_READY":
+            if self._demand is None:
+                raise _fault()
+            self._demand_ack = ("ready",)
+            return self._reply(seq,"WORKER_READY",self._grant)
         if request.command == "DRAIN":
+            if self._demand is not None and not self._demand.can_drain():
+                raise _fault()
             if not self.coordinator.drain(self._lease):
                 raise _fault()
             return self._reply(seq,"DRAINING",self._grant)
         if request.command == "RELEASE":
             # Actual start/exit evidence is the responsibility of the
             # trusted native owner. The wire enum is NOT an exit witness.
+            if self._demand is not None:
+                self._demand.begin_release(request.evidence)
             self._release_after_reply = True
             return self._reply(seq,"RELEASED",self._grant)
         raise _fault()
@@ -255,6 +460,17 @@ class HostBroker:
                 self._lease = None
                 self._grant = None
                 self._release_after_reply = False
+                if self._demand is not None:
+                    self._demand.released()
+            if self._demand_ack is not None:
+                action,*args = self._demand_ack
+                self._demand_ack = None
+                if action == "grant":
+                    self._demand.grant_result(*args)
+                elif action == "ready":
+                    self._demand.worker_ready()
+                else:
+                    raise _fault()
             if self._ready_after_reply:
                 self._ready_confirmed = True
                 self._ready_after_reply = False
@@ -424,11 +640,11 @@ class ControlBootstrap:
         self._ops = ops
         self._used = False
 
-    def run(self, coordinator, on_shutdown, *, ready=None, exit_on_shutdown=False):
+    def run(self, coordinator, on_shutdown, *, ready=None, exit_on_shutdown=False, demand=None):
         if self._used:
             raise _fault()
         self._used = True
-        broker = HostBroker(coordinator, self._generation, self._capability, ready=ready)
+        broker = HostBroker(coordinator, self._generation, self._capability, ready=ready, demand=demand)
         self._capability = None
         try:
             serve_owned(broker, lambda cap: self._ops.read(self._descriptor, cap),

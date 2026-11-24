@@ -670,3 +670,178 @@ def test_desktop_drain_refusal_prevents_success():
     session,_=_session_fixture(Ops(),run,drain=False)
     assert not session.run(join_timeout=2)
     assert not session.control_alive()
+
+
+def _demand_fixture(memory=3*GIB):
+    from backend.resource_host import InferenceDemand
+    c=Coordinator(lambda:"adaptive",lambda:memory)
+    d=InferenceDemand()
+    return c,d,HostBroker(c,GEN,KEY,demand=d)
+
+
+def _run_demand(d,callback,timeout=3):
+    from threading import Thread
+    result=[]
+    def run():
+        try:
+            result.append(d.run(callback,timeout=timeout))
+        except Exception as exc:
+            result.append(exc)
+    thread=Thread(target=run)
+    thread.start()
+    return thread,result
+
+
+def _wait_demand(d,phase):
+    from time import monotonic,sleep
+    deadline=monotonic()+2
+    while monotonic()<deadline:
+        fields=d.poll()
+        if fields[0]==phase:
+            return fields
+        sleep(.001)
+    pytest.fail("Expected demand phase was not observed")
+
+
+def _grant_demand(b,d,seq=1):
+    pending=_wait_demand(d,"DEMAND_PENDING")
+    assert exchange(b,frame(seq,"POLL_DEMAND"))[0].decode().split()[3:]==list(pending)
+    reply=exchange(b,frame(seq+1,"GRANT_REQUEST LOCAL_INFERENCE "+pending[1]))[0]
+    return reply.decode().split()[-1]
+
+
+def test_correlated_demand_runs_only_after_ready_ack_and_returns_after_release_ack():
+    from threading import Event
+    c,d,b=_demand_fixture()
+    entered,resume=Event(),Event()
+    def work():
+        assert c.status()["operation"]=="local_inference"
+        entered.set()
+        assert resume.wait(2)
+        return "fixture answer"
+    thread,result=_run_demand(d,work)
+    try:
+        gid=_grant_demand(b,d)
+        assert not entered.is_set()
+        ready=b.receive(frame(3,"WORKER_READY "+gid))[0]
+        assert not entered.is_set()
+        b.reply_written(ready)
+        assert entered.wait(2)
+        assert c.try_acquire(Operation.DATA).code=="resource_busy"
+        resume.set()
+        _wait_demand(d,"DEMAND_FINISHED")
+        assert thread.is_alive()
+        exchange(b,frame(4,"DRAIN "+gid))
+        reply=b.receive(frame(5,"RELEASE "+gid+" EXITED"))[0]
+        assert thread.is_alive() and c.status()["active"]
+        b.reply_written(reply)
+        thread.join(2)
+        assert result==["fixture answer"] and not c.status()["active"]
+    finally:
+        resume.set()
+        if thread.is_alive():
+            b.transport_lost()
+        thread.join(3)
+
+
+def test_data_priority_denies_exact_pending_inference_without_retry():
+    from backend.resource_autonomy import ResourceDeferred
+    c,d,b=_demand_fixture()
+    lease=c.try_acquire(Operation.DATA).lease
+    assert c.start(lease)
+    thread,result=_run_demand(d,lambda:pytest.fail("Denied generation"))
+    try:
+        pending=_wait_demand(d,"DEMAND_PENDING")
+        reply=exchange(b,frame(1,"GRANT_REQUEST LOCAL_INFERENCE "+pending[1]))[0]
+        assert reply.endswith(b"DENIED resource_busy\n")
+        thread.join(2)
+        assert isinstance(result[0],ResourceDeferred) and str(result[0])=="resource_busy"
+        assert d.poll()==("DEMAND_NONE",)
+        assert c.release(lease)
+    finally:
+        b.transport_lost()
+        thread.join(3)
+
+
+def test_demand_bound_broker_refuses_unsolicited_legacy_grant():
+    c,d,b=_demand_fixture()
+    with pytest.raises(ProtocolFault):
+        exchange(b,frame(1,"GRANT_REQUEST LOCAL_INFERENCE"))
+    assert c.status()["stopping"] and not c.status()["active"]
+
+
+def test_wrong_demand_does_not_acquire_lane():
+    c,d,b=_demand_fixture()
+    thread,result=_run_demand(d,lambda:pytest.fail("Unexpected generation"))
+    try:
+        pending=_wait_demand(d,"DEMAND_PENDING")
+        wrong=("0" if pending[1][0]!="0" else "1")+pending[1][1:]
+        assert exchange(b,frame(1,"GRANT_REQUEST LOCAL_INFERENCE "+wrong))[0].endswith(b"DENIED not_ready\n")
+        assert not c.status()["active"]
+        assert d.poll()==pending
+    finally:
+        b.transport_lost()
+        thread.join(3)
+
+
+def test_running_callback_cannot_be_released_by_host():
+    from threading import Event
+    c,d,b=_demand_fixture()
+    entered,resume=Event(),Event()
+    def work():
+        entered.set()
+        assert resume.wait(2)
+        return "fixture"
+    thread,result=_run_demand(d,work)
+    try:
+        gid=_grant_demand(b,d)
+        exchange(b,frame(3,"WORKER_READY "+gid))
+        assert entered.wait(2)
+        with pytest.raises(ProtocolFault):
+            exchange(b,frame(4,"RELEASE "+gid+" EXITED"))
+        assert c.status()["phase"]=="blocked"
+        assert thread.is_alive()
+    finally:
+        resume.set()
+        thread.join(3)
+    assert c.status()["phase"]=="blocked"
+
+
+def test_stop_while_granted_never_starts_callback_and_waits_for_release():
+    from backend.resource_autonomy import ResourceDeferred
+    c,d,b=_demand_fixture()
+    thread,result=_run_demand(d,lambda:pytest.fail("Stopped generation"))
+    try:
+        gid=_grant_demand(b,d)
+        exchange(b,frame(3,"STOP"))
+        thread.join(2)
+        assert isinstance(result[0],ResourceDeferred)
+        assert c.status()["active"] and not b.shutdown_ready
+        exchange(b,frame(4,"RELEASE "+gid+" NEVER_STARTED"))
+        assert b.shutdown_ready and not c.status()["active"]
+    finally:
+        b.transport_lost()
+        thread.join(3)
+
+
+def test_unclaimed_demand_timeout_leaves_no_queue():
+    from backend.resource_autonomy import ResourceDeferred
+    c,d,b=_demand_fixture()
+    with pytest.raises(ResourceDeferred,match="not_ready"):
+        d.run(lambda:pytest.fail("Unclaimed generation"),timeout=.01)
+    assert d.poll()==("DEMAND_NONE",) and not c.status()["active"]
+
+
+def test_lost_ready_ack_blocks_grant_without_running_callback():
+    c,d,b=_demand_fixture()
+    thread,result=_run_demand(d,lambda:pytest.fail("Unconfirmed readiness"))
+    try:
+        gid=_grant_demand(b,d)
+        b.receive(frame(3,"WORKER_READY "+gid))
+        b.transport_lost()
+        thread.join(2)
+        assert c.status()["phase"]=="blocked"
+        assert len(result)==1
+    finally:
+        b.transport_lost()
+        thread.join(3)
