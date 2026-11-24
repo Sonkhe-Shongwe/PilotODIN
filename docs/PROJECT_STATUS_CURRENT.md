@@ -1,8 +1,10 @@
 # PilotODIN 1.0 | Current project status
 
-**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B3 SOURCE CLOSED; B4 ACTIVE (report capture staged, mixed CI); B5, C1–C5 and D1–D2 pending. Source remediation 8/17 (47.1%); Package B 3/5 (60%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
+**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B3 SOURCE CLOSED; B4 ACTIVE (report capture staged; P2 browser regression green, dedicated suites pending); B5, C1–C5 and D1–D2 pending. Source remediation 8/17 (47.1%); Package B 3/5 (60%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
 
 [Current compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) | [Migration audit](./DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md) | [Complete prior document and dated receipts at immutable source](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/39b8e5f8286f6b17122ddd0f9d1e72f31d87ff44/docs/PROJECT_STATUS_CURRENT.md). Historical records below are not competing instructions.
+
+**24 November | B4 scoped browser regression resolved in test-only CI.** [test-only `4eea7f2`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4eea7f2bd092d9599cdf5ce8ddeab9122c38cdee) waits for saved revision 2 and checks the exact narrative and dirty marker before navigation. Original consent, preservation and immutability assertions are unchanged. [P1 #45415220053](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45415220053) PASS 187 source tests, TypeScript/Vite and 7 browser; [P2 #45415220268](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45415220268) PASS 7/7, including the former failure. Both completed at exact `4eea7f2`. This supports the test-timing explanation, not proof that every possible hydration race is eliminated. No production source change, native execution or acceptance credit. The earlier failure remains historical evidence.
 
 ## Historical 21 November source chronology (not current work orders)
 
