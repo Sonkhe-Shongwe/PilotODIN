@@ -15,12 +15,9 @@ except ImportError:
     import sqlite_fk_gate
     from workspace_boundary import storage_home, validate_process_database
 
-# Avoid an independent path normalization after the owner has admitted the
-# workspace. Legacy direct imports still use the existing fallback.
-_home_value = os.environ.get("PILOTODIN_HOME")
-if _home_value is None:
-    _home_value = str(Path(__file__).resolve().parents[1] / "data")
-HOME = storage_home(_home_value)
+# No implicit checkout data root. Product entrypoints establish ownership
+# before import; isolated in-process tests must supply an explicit home.
+HOME = storage_home(os.environ.get("PILOTODIN_HOME"))
 DB_PATH = HOME / "pilotodin.sqlite3"
 validate_process_database(HOME, DB_PATH)
 HOME.mkdir(parents=True,exist_ok=True)

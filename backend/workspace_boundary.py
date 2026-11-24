@@ -261,9 +261,20 @@ def hold_fresh_fixture_workspace(value, expected):
 
 
 def storage_home(value):
-    """Use the single admitted path for leased storage; preserve legacy callers."""
+    """Require an explicit home; leased storage uses the admitted path."""
+    if not isinstance(value, str) or not value:
+        raise WorkspaceBoundaryError("Explicit local workspace required")
     if _process_workspace is None:
-        return Path(value).resolve()
+        # Compatibility for isolated in-process callers. Never resolve away
+        # a redirect before validating the supplied spelling and ancestors.
+        # This preflight is not an exclusive lease.
+        try:
+            supplied = _home(value)
+            canonical = existing_fixture_home(str(supplied))
+            _verify_entries(canonical)
+            return canonical
+        except OSError as exc:
+            raise WorkspaceBoundaryError("Workspace storage unavailable or unsafe") from exc
     owned = _process_workspace[0]
     if Path(value) != owned:
         raise WorkspaceBoundaryError("Database outside owned workspace")

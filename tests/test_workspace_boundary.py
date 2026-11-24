@@ -276,6 +276,51 @@ else:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual({p.name for p in self.home.iterdir()}, {LOCK_NAME})
 
+    def test_direct_storage_import_refuses_implicit_empty_and_relative_home(self):
+        code = r"""
+import os, sys
+from backend.workspace_boundary import WorkspaceBoundaryError
+try:
+    from backend import storage
+except WorkspaceBoundaryError as exc:
+    assert str(exc) == "Explicit local workspace required"
+else:
+    raise AssertionError("Implicit or relative storage home admitted")
+"""
+        for value in (None, "", "unadmitted-relative"):
+            with self.subTest(value=value):
+                env = os.environ.copy()
+                env.pop("PILOTODIN_HOME", None)
+                if value is not None:
+                    env["PILOTODIN_HOME"] = value
+                result = subprocess.run(
+                    [sys.executable, "-B", "-c", code], cwd=self.root,
+                    env={**env, "PYTHONPATH": str(self.root_source)},
+                    capture_output=True, text=True, timeout=15, check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_direct_storage_refuses_redirected_home_before_creation(self):
+        from backend.workspace_boundary import storage_home
+        outside = self.root / "outside"
+        outside.mkdir()
+        redirect = self.root / "redirect"
+        try:
+            redirect.symlink_to(outside, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"Symlink unsupported in fixture: {exc}")
+        with self.assertRaises(WorkspaceBoundaryError):
+            storage_home(str(redirect / "data"))
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_legacy_launcher_has_no_implicit_backend_start(self):
+        source = (self.root_source / "Start_PilotODIN.bat").read_text(encoding="utf-8")
+        self.assertNotIn("backend.main:app", source)
+        self.assertNotIn("uvicorn", source)
+        self.assertIn("Start_PilotODIN_Live_Dev.bat", source)
+        self.assertIn("not migrated", source)
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()
