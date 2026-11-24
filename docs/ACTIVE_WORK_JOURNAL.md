@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | e5272d6652fdd6905e45fde4dd7005a3fdbab1ff |
+| Observed starting HEAD | b342a2a37f6d9abbbe51ef6887f0eefe4d708713 |
 | Product baseline | 7402529265880683a72345b418f235307bf26625 |
-| Scope | C1 next bounded source batch: prepare ASGI-owned request/stream lifetime adapter and synthetic framework tests. No live activation until upload parser, training/autonomy handoff and native bridge reviewed/integrated. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-asgi-lifetime |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_http.py; tests/test_c1_resource_http.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, active evidence ledger |
+| Scope | C1 staged owned upload adapter: before-parser DATA lease, streamed bounded multipart envelope, exact file cap, explicit parser spool cleanup; no live registration. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-upload-envelope |
+| Operation state | PREPARED |
+| Intended files | backend/resource_upload.py; backend/resource_http.py; tests/test_c1_resource_upload.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Staged full-ASGI lifetime adapter and inert framework fixtures; not registered in live app. Exact-source CI pending, no closure. |
-| Pending runs | [P1 #45451870974](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45451870974), job 138650845769, IN_PROGRESS at last observation, exact product 7402529265880683a72345b418f235307bf26625; reconcile result before further integration. |
+| Verification | Prior #45451870974 exact source SUCCESS: 166 regression + 2 subtests, 42 C1. Next inert parser tests must verify actual framework API, bounded receive, denied read, overflow, disconnect, cleanup and normal success. |
+| Pending runs | None; #45451870974/job 138650845769 terminal SUCCESS, checkout and counts verified. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact ASGI adapter CI; then implement bounded pre-parser upload receive and cleanup with exact resolved framework tests, followed by queued training/worker handoff and staged autonomy/inference. Do not activate an incomplete guard. |
+| Recovery action | Publish staged upload adapter and exact framework synthetic tests. Verify actual parser spool ownership contract; no live registration until remaining training/autonomy/host integration. If API/cleanup incompatible, retain existing product and record exact failure. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
