@@ -401,6 +401,56 @@ assert storage.list_projects() == []
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_owned_publication_crash_recovery_after_lease_release(self):
+        # Two actual disposable Python owners, never a native app.
+        child = r"""
+import os, sys
+from unittest.mock import patch
+from backend.workspace_boundary import hold_process_workspace
+home = hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+from backend import main, storage, dataset_publication
+from fastapi.testclient import TestClient
+raw = b"A,B\\n1,2\\n"
+boundary = sys.argv[2]
+original = dataset_publication._write_exclusive
+def stop(path, payload, owned, verify):
+    final = not path.name.endswith(".uploading")
+    if (boundary == "partial-stage" and not final) or (boundary == "partial-final" and final):
+        dataset_publication._require_absent(path, verify)
+        with path.open("xb") as f:
+            f.write(payload[:3])
+            f.flush()
+            os.fsync(f.fileno())
+        os._exit(73)
+    return original(path, payload, owned, verify)
+if boundary != "recover":
+    with patch.object(dataset_publication, "_write_exclusive", stop):
+        response = TestClient(main.app).post("/api/projects", files={"file": ("new.csv",raw,"text/csv")})
+        raise AssertionError(response.text)
+else:
+    paths = list((home/"datasets").iterdir())
+    before = {p.name:p.read_bytes() for p in paths}
+    assert len(before) in (1,2)
+    assert b"A,B" in before.values()
+    assert dataset_publication.recover_pending()==1
+    assert dataset_publication.recover_pending()==0
+    assert storage.list_projects()==[]
+    with storage.connect() as con:
+        assert tuple(con.execute("SELECT state,reason_code FROM artifact_publications_v1").fetchone())==("interrupted","interrupted_before_commit")
+    assert {p.name:p.read_bytes() for p in paths}==before
+"""
+        for boundary in ("partial-stage", "partial-final"):
+            with self.subTest(boundary=boundary):
+                home = self.root / boundary
+                for step, expected in ((boundary, 73), ("recover", 0)):
+                    result = subprocess.run(
+                        [sys.executable, "-B", "-c", child, str(home), step],
+                        cwd=self.root_source, capture_output=True, text=True,
+                        timeout=30, check=False,
+                    )
+                    self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+
     def test_maintenance_never_creates_missing_home_or_database(self):
         from backend.workspace_boundary import existing_maintenance_workspace
         with self.assertRaises(WorkspaceBoundaryError):

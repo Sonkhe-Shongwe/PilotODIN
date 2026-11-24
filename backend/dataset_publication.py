@@ -39,9 +39,40 @@ def _same_bytes_metadata(a, b):
             and a.st_mtime_ns == b.st_mtime_ns and a.st_ctime_ns == b.st_ctime_ns)
 
 
-def _write_exclusive(path, raw, owned, verify_parent):
+def _require_absent(path, verify_parent):
+    """Distinguish a known name collision from an unsafe workspace."""
     verify_parent()
-    storage.check_write_path(path, absent=True)
+    storage.check_write_path(path.parent, directory=True)
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        pass
+    else:
+        raise FileExistsError("Dataset publication destination already exists")
+    try:
+        storage.check_write_path(path, absent=True)
+    except storage.WorkspaceBoundaryError:
+        # A name may appear between lstat and the managed absence check.
+        # Revalidate the parent before treating that rejection as a collision.
+        verify_parent()
+        storage.check_write_path(path.parent, directory=True)
+        try:
+            path.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            raise FileExistsError("Dataset publication destination already exists") from None
+        raise
+
+
+def _check_unreferenced(receipt, paths):
+    with closing(storage.connect()) as con:
+        if storage.publication_reference_conflict(con, receipt, paths):
+            raise ledger.PublicationError("Publication reference conflict")
+
+
+def _write_exclusive(path, raw, owned, verify_parent):
+    _require_absent(path, verify_parent)
     with path.open("xb") as output:
         # Track only files opened by this operation; never a collision target.
         owned[path] = os.fstat(output.fileno())
@@ -145,7 +176,14 @@ def _settle_failure(receipt, final, staging, owned, verify_parent, error):
                 return None
             # Missing Quality schema is a known rollback, not a committed import.
             _cleanup_owned(con, current, owned, (final, staging), verify_parent)
-            reason = "collision" if isinstance(error, FileExistsError) else "validation_failed"
+            if isinstance(error, FileExistsError):
+                reason = "collision"
+            elif isinstance(error, storage.WorkspaceBoundaryError):
+                reason = "unsafe_identity"
+            elif isinstance(error, OSError):
+                reason = "storage_unavailable"
+            else:
+                reason = "validation_failed"
             ledger.advance(con, current, "interrupted", reason=reason)
             return None
     except Exception as exc:
@@ -167,6 +205,9 @@ def publish(filename: str, suffix: str, raw: bytes):
     try:
         with pinned_existing_directory(parent) as verify_parent:
             try:
+                _require_absent(final, verify_parent)
+                _require_absent(staging, verify_parent)
+                _check_unreferenced(receipt, (final, staging))
                 _write_exclusive(staging, raw, owned, verify_parent)
                 _verified_file(staging, receipt, owned[staging], verify_parent)
                 # The original immutable upload bytes have the same size and
@@ -176,6 +217,7 @@ def publish(filename: str, suffix: str, raw: bytes):
                 del frame
                 receipt = storage.advance_dataset_publication(receipt, "staged")
                 receipt = storage.advance_dataset_publication(receipt, "publishing")
+                _check_unreferenced(receipt, (final, staging))
                 _write_exclusive(final, raw, owned, verify_parent)
                 verified = _verified_file(final, receipt, owned[final], verify_parent)
                 _sync_parent(parent, verify_parent)

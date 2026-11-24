@@ -232,7 +232,26 @@ def stop_before_final(path, *args):
         os._exit(73)
     return original_write(path, *args)
 
-if boundary == 'replace':
+def stop_after_intent(*args, **kwargs):
+    original_intent(*args, **kwargs)
+    os._exit(73)
+
+def stop_after_staged(receipt, state, **kwargs):
+    result = original_advance(receipt, state, **kwargs)
+    if state == "staged":
+        os._exit(73)
+    return result
+
+original_intent = storage.begin_dataset_publication
+original_advance = storage.advance_dataset_publication
+
+if boundary == 'intent':
+    interruption = patch.object(storage, 'begin_dataset_publication', stop_after_intent)
+elif boundary == 'staged':
+    interruption = patch.object(storage, 'advance_dataset_publication', stop_after_staged)
+elif boundary == 'before-commit':
+    interruption = patch.object(storage, 'commit_dataset_publication', side_effect=lambda *a, **kw: os._exit(73))
+elif boundary == 'replace':
     interruption = patch.object(dataset_publication, '_write_exclusive', stop_before_final)
 elif boundary == 'version':
     interruption = patch.object(storage, 'connect', connect)
@@ -267,6 +286,23 @@ with interruption:
             self.assertEqual(uploaded.status_code, 201, uploaded.text)
             self.assertEqual(len(client.get("/api/projects").json()), 1)
         self.assertTrue(all(p.read_bytes() == _csv() for p in retained))
+
+    def test_restart_after_intent_before_payload_creation(self):
+        self.interrupt_child("intent")
+        self.assertEqual(list(self.datasets.iterdir()), [])
+        with TestClient(app) as client:
+            self.assertEqual(client.get("/api/projects").json(), [])
+            with storage.connect() as con:
+                self.assertEqual(con.execute("SELECT state FROM artifact_publications_v1").fetchone()[0], "interrupted")
+        self.assertEqual(list(self.datasets.iterdir()), [])
+
+    def test_restart_after_staged_receipt(self):
+        self.interrupt_child("staged")
+        self.assert_precommit_restart(".csv.uploading")
+
+    def test_restart_after_final_fsync_before_business_commit(self):
+        self.interrupt_child("before-commit")
+        self.assert_precommit_restart(".csv")
 
     def test_restart_before_final_creation_keeps_staging_bytes_out_of_catalogue(self):
         self.interrupt_child("replace")
