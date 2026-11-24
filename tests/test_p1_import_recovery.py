@@ -850,3 +850,94 @@ def test_model_publication_aggregate_byte_boundary(monkeypatch, tmp_path, overfl
         assert receipt.state == "committed"
         assert sum(item["size"] for item in receipt.files.values()) == 12
         assert storage.get_experiment(eid)["status"] == "completed"
+
+@pytest.mark.parametrize("journal_mode", ["delete", "wal"])
+def test_b3_stage_database_snapshot_is_standalone_and_preserves_source(tmp_path, journal_mode):
+    import sqlite3
+    from backend import maintenance_backup
+    home = tmp_path / "source"
+    home.mkdir()
+    db = home / "pilotodin.sqlite3"
+    target = tmp_path / "stage"
+    con = sqlite3.connect(db)
+    try:
+        assert con.execute("PRAGMA journal_mode=" + journal_mode).fetchone()[0] == journal_mode
+        con.execute("CREATE TABLE records(id INTEGER PRIMARY KEY, label TEXT)")
+        con.execute("INSERT INTO records VALUES(1, '0001')")
+        con.commit()
+        if journal_mode == "wal":
+            assert (home / "pilotodin.sqlite3-wal").stat().st_size > 0
+        original = db.read_bytes()
+        wal = home / "pilotodin.sqlite3-wal"
+        wal_before = wal.read_bytes() if wal.exists() else None
+        receipt = maintenance_backup.stage_database_snapshot(home, target, confirmed=True)
+        copied = target / "pilotodin.sqlite3"
+        assert receipt.size == copied.stat().st_size
+        assert receipt.sha256 == hashlib.sha256(copied.read_bytes()).hexdigest()
+        assert {p.name for p in target.iterdir()} == {"pilotodin.sqlite3"}
+        with sqlite3.connect(copied.as_uri() + "?mode=ro", uri=True) as restored:
+            assert restored.execute("SELECT * FROM records").fetchall() == [(1, "0001")]
+            assert restored.execute("PRAGMA journal_mode").fetchone() == ("delete",)
+            assert restored.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+        assert db.read_bytes() == original
+        if wal_before is not None:
+            assert wal.read_bytes() == wal_before
+    finally:
+        con.close()
+
+
+def test_b3_snapshot_refuses_missing_confirmation_collision_and_active_lease(tmp_path):
+    import sqlite3
+    from backend import maintenance_backup
+    from backend.workspace_boundary import existing_maintenance_workspace
+    home = tmp_path / "source"
+    home.mkdir()
+    db = home / "pilotodin.sqlite3"
+    with sqlite3.connect(db) as con:
+        con.execute("CREATE TABLE records(id INTEGER PRIMARY KEY)")
+    con.close()
+    target = tmp_path / "stage"
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="confirmation"):
+        maintenance_backup.stage_database_snapshot(home, target)
+    assert not target.exists()
+    with existing_maintenance_workspace(str(home)):
+        with pytest.raises(maintenance_backup.SnapshotBlocked):
+            maintenance_backup.stage_database_snapshot(home, target, confirmed=True)
+    assert not target.exists()
+    target.mkdir()
+    (target / "foreign").write_bytes(b"preserve")
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="already exists"):
+        maintenance_backup.stage_database_snapshot(home, target, confirmed=True)
+    assert (target / "foreign").read_bytes() == b"preserve"
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="outside"):
+        maintenance_backup.stage_database_snapshot(home, home / "stage", confirmed=True)
+
+
+def test_b3_snapshot_legacy_fk_violation_does_not_repair_or_certify(tmp_path):
+    import sqlite3
+    from backend import maintenance_backup
+    home = tmp_path / "source"
+    home.mkdir()
+    db = home / "pilotodin.sqlite3"
+    with sqlite3.connect(db) as con:
+        con.executescript("CREATE TABLE parent(id INTEGER PRIMARY KEY);"
+                          "CREATE TABLE child(pid REFERENCES parent(id));"
+                          "INSERT INTO child VALUES(42);")
+    con.close()
+    before = db.read_bytes()
+    stage = tmp_path / "stage"
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="foreign-key violations"):
+        maintenance_backup.stage_database_snapshot(home, stage, confirmed=True)
+    assert db.read_bytes() == before
+    assert (stage / "pilotodin.sqlite3").is_file()
+    assert not (stage / "manifest.json").exists()
+
+
+def test_b3_snapshot_refuses_missing_source_without_creating_database(tmp_path):
+    from backend import maintenance_backup
+    home = tmp_path / "source"
+    home.mkdir()
+    with pytest.raises(maintenance_backup.SnapshotBlocked):
+        maintenance_backup.stage_database_snapshot(home, tmp_path / "stage", confirmed=True)
+    assert not list(home.iterdir())
+    assert not (tmp_path / "stage").exists()
