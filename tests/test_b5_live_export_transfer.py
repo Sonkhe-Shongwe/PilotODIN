@@ -265,3 +265,24 @@ def test_real_75_mib_output_extent_and_one_byte_refusal(tmp_path):
             output.write(b"x")
         assert exc.value.status==413
         assert os.fstat(stream.fileno()).st_size==limit
+
+def test_unconfirmed_close_preserves_scratch_and_blocks_release(project):
+    pid,home,path,raw=project
+    transfer=export_transfer.Transfer()
+    transfer.prepare(pid,data_exports.ExportRequest(version=0))
+    original=transfer.stream
+    class CloseRefusal:
+        def fileno(self):
+            return original.fileno()
+        def close(self):
+            raise PermissionError("synthetic close refusal")
+    transfer.stream=CloseRefusal()
+    try:
+        transfer.finish(True)
+        r,=receipts()
+        assert r.state=="blocked" and r.reason_code=="storage_unavailable"
+        assert transfer.path.exists()
+        assert hashlib.sha256(transfer.path.read_bytes()).hexdigest()==r.sha256
+        assert path.read_bytes()==raw
+    finally:
+        original.close()

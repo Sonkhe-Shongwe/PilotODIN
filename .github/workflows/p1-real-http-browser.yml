@@ -12,6 +12,11 @@ on:
       - frontend/e2e/p1-real-http.spec.ts
       - frontend/e2e/p1-real-http-quality-approval.spec.ts
       - frontend/e2e/p1-real-http-project-management.spec.ts
+      - frontend/e2e/p1-real-http-export.spec.ts
+      - tools/p1_real_http_export_audit.py
+      - backend/export_transfer.py
+      - backend/export_publication.py
+      - backend/data_exports.py
       - frontend/src/ProjectManager.tsx
       - frontend/src/UnifiedShell.tsx
       - frontend/src/unified-shell.css
@@ -97,3 +102,9 @@ jobs:
           npx --no-install playwright test
           --config=playwright.p1-real-http.config.ts
           -g "real HTTP reversible project management"
+      - name: Verify browser exports and interrupted real HTTP transfer
+        working-directory: frontend
+        run: >-
+          npx --no-install playwright test
+          --config=playwright.p1-real-http.config.ts
+          -g "real HTTP B5 export"
