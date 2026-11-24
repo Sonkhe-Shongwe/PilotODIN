@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 238d6c39f65c404ec6cd6bef21e96363b00793ed |
-| Product baseline | 819670c758c2e6aca591ef581df0d69577b07c34 |
+| Product baseline | 77be5cb51fc77dd9b56aa87577d35a9d57b1a8a0 |
 | Scope | C1 dormant explicit control bootstrap, raw descriptor ownership, shutdown notification and bounded shell receiver driver. No desktop activation/native compilation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-host-bootstrap |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_shell.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Dormant explicit bootstrap, raw descriptor owner, shutdown notification and bounded Rust shell receiver driver published; eight additional Python cases, CI pending. Rust uncompiled/unregistered. |
-| Pending runs | Exact-source P1 CI pending discovery; reconcile before desktop composition. |
+| Pending runs | [P1 #45465804193](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45465804193), exact 77be5cb51fc77dd9b56aa87577d35a9d57b1a8a0, IN_PROGRESS at last observation. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish startup/receiver driver seams and reconcile Python CI before actual composition and grant/exit integration. |
+| Recovery action | Reconcile Python CI; compose dormant desktop startup with one coordinator and retained driver, explicit readiness and shutdown/EOF handshake, then actual native grant/exit and route integration. Review driver timer and bootstrap thread lifetime, Windows bootloader/cached handle isolation. No live activation or native run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
