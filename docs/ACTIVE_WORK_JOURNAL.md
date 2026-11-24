@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | e2107144928a9e2070fc72bee8374ef68d8fef2a |
+| Observed starting HEAD | 926c095d460fa53a03c25b9b9bf33c2e161351a2 |
 | Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-REQUEST-TRUST-KERNEL-20261125-source |
-| Operation state | ISSUED |
-| Intended files | backend/request_auth.py, tests/test_owned_server.py, C3 specification refinement and continuity records. Staged immutable strict request contract only; no existing launcher/guard activation. |
+| Operation ID | C3-DESKTOP-OUTER-GUARD-20261125-source |
+| Operation state | PREPARED |
+| Intended files | backend/request_auth.py, backend/desktop_runner.py, backend/main.py, tests/test_owned_server.py, tests/test_desktop_runner_process_smoke.py, tests/test_c1_resource_host.py, continuity records. No native Rust/model changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job IN_PROGRESS at observation; restricted 138854871137 SKIPPED. No live auth integration. |
-| Pending runs | #45509974347 Windows 138854868350 IN_PROGRESS; source and browser terminal SUCCESS, restricted SKIPPED. Reconcile final Windows logs before triggering another P4 push (concurrency cancels in-flight run). |
+| Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job SUCCESS 53 passed, 66 subtests; restricted 138854871137 SKIPPED. No live auth integration. |
+| Pending runs | None. #45509974347 terminal SUCCESS: Windows 138854868350 53 passed, 66 subtests; browser 138854868635 13 passed; source 138854868629 all five C3 tests, 48 unittest, 1058 Python + 544 subtests, 112 Node, Vite PASS; restricted SKIPPED. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact remaining Windows job, then implement outer ASGI guard for desktop legacy and POD1 server construction with strict immutable launcher contract, explicit debug compatibility (existing Rust sets DESKTOP_ALLOW_DEV based on debug_assertions; no shipped dev-origin bypass), bounded preflight handled without calling product, proxy_headers=False. Existing test_desktop_runner_process_smoke and test_c1_resource_host use non-hex synthetic tokens; update fixtures to exact production format, preserve prior negative and shutdown tests. Next migrate Vite/paired launcher and real-HTTP direct clients; no new token in browser bundle/URL/trace. Do not cancel prior CI or claim live guard complete. |
+| Recovery action | Integrate immutable desktop outer ASGI guard in both runner paths before route/storage work; strict 64-hex token and mixed-mode refusal before workspace; explicit desktop-debug mode from existing Rust flag with only existing fixed development ports; no release-origin exception. Disable Uvicorn proxy rewriting, terminate preflight at guard, use private in-process proof to skip mutable legacy check only after authorization; keep old non-desktop/test compatibility until migration. Expand actual disposable process negatives, pure ASGI and bootstrap tests; reconcile matching exact CI. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation

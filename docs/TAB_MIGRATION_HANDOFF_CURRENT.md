@@ -37,7 +37,7 @@ C1/C2 source-closed composition includes shared Python admission/ASGI lifetimes,
 
 ## 4. Immediate next work (in order)
 
-1. **C3 explicit startup/authentication:** read section 5 C-D05 and section 10. Staged strict request trust contract `5fc531e`; [#45509974347](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45509974347) source and browser SUCCESS, all five C3 tests PASS, Windows IN_PROGRESS, restricted SKIPPED. Next outer ASGI guard and desktop launcher integration (legacy/POD1), explicit debug compatibility, then dev/QA bootstrap and exact route/direct-call tests. Preserve previous P4 run (cancel-in-progress); no production activation.
+1. **C3 explicit startup/authentication:** read section 5 C-D05 and section 10. Staged strict request trust contract `5fc531e`; [#45509974347](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45509974347) source and browser SUCCESS, all five C3 tests PASS, Windows SUCCESS (53 tests, 66 subtests), restricted SKIPPED. Next prepared outer ASGI guard and desktop launcher integration (legacy/POD1), explicit debug compatibility, then dev/QA bootstrap and exact route/direct-call tests. Preserve previous P4 run (cancel-in-progress); no production activation.
 2. **C4, C5** in order: durable settings and strict consent; reproducible dependencies and provenance. D follows C source closure and separate approval. No intermediate installer.
 
 ## 5. Native evidence and immutable acceptance boundary
