@@ -29,7 +29,7 @@ class WorkspaceBoundaryTests(unittest.TestCase):
 
     def test_second_process_refused_before_database_import(self):
         env = {**os.environ, "PILOTODIN_HOME": str(self.home),
-               "PILOTODIN_DESKTOP_SESSION": "s" * 64,
+               "PILOTODIN_DESKTOP_SESSION": "a" * 64,
                "PILOTODIN_DESKTOP_PORT": "12345"}
         env.pop("PILOTODIN_DESKTOP_WATCH_STDIN", None)
         with engine_workspace(str(self.home)):
