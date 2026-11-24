@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-NATIVE-VERIFICATION-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | dc12e608e8b8fbda544a93bd4ee28698dd35bdb2 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 |
 | Scope | Prepare disabled one-use Windows locked all-targets type-check and 40 exact library tests; validate both workflow variants without executing native code. |
 | Operation ID | C1-C2-NATIVE-SYNTHETIC-20261124-prepare |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | .github/workflows/p4-package-c1-c2-native-synthetic-once.yml; qa/c1_c2_native_workflow_preflight.rb; continuity docs |
 | Approval | Standing source-only preparation and parse-only CI. Native job must be false. No native execution, installer, model, cloud, owner data, activation or actual OS/process experiment. |
 | Verification | Ten exact 388b357 routines SUCCESS, 13 executed jobs, one restricted skipped. No workflow changes since reviewed 81de01d; new workflow will be disarmed. |
