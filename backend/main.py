@@ -1140,10 +1140,11 @@ def resource_status(request: Request):
     # Protect preference metadata with the same local-only trust boundary
     # as the existing settings controls, including session-auth desktop.
     _local_request(request)
-    status = resource_policy.status()
     owned = request.scope.get('pilotodin.owned_session')
-    if owned is not None:
-        status["workload"] = owned.coordinator.status()
+    if owned is None:
+        return resource_policy.status()
+    status = resource_policy.status()
+    status["workload"] = owned.coordinator.status()
     return status
 
 

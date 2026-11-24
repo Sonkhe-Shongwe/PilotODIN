@@ -34,7 +34,8 @@ class Transfer:
         self.stream = None
         self.identity = None
         self.staged = None
-        self.uncertain = False
+        self.uncertain = False  # durable receipt acknowledgement
+        self.close_unconfirmed = False  # independent handle ownership
         self.finished = False
         self.publication_attempted = False
         self.reason = "cancelled"
@@ -142,9 +143,12 @@ class Transfer:
     def ownership_settled(self):
         # A terminal HTTP response does not establish a closed handle or
         # durable scratch settlement. Conservative on ambiguous receipts.
-        if not self.finished or self.uncertain:
+        if not self.finished or self.uncertain or self.close_unconfirmed:
             return False
-        if self.stream is not None and not self.stream.closed:
+        try:
+            if self.stream is not None and self.stream.closed is not True:
+                return False
+        except Exception:
             return False
         if not self.publication_attempted:
             return self.receipt is None and self.stream is None
@@ -181,10 +185,14 @@ class Transfer:
             if self.stream is not None:
                 try:
                     self.stream.close()
+                    if self.stream.closed is not True:
+                        raise RuntimeError("Export handle close unconfirmed")
                 except Exception:
-                    # Never unlink or certify release when close is unconfirmed.
+                    # A close fault is not a lost SQLite acknowledgement.
+                    # Preserve scratch and settle the known receipt as blocked,
+                    # while independently withholding the resource witness.
                     safe = False
-                    self.uncertain = True
+                    self.close_unconfirmed = True
                     self.reason = "storage_unavailable"
                     log.warning("Export handle close failed; scratch preserved")
         if self.receipt is None or self.uncertain:

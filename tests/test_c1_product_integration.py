@@ -121,3 +121,70 @@ def test_export_settlement_rejects_uncertain_receipt_or_open_handle():
     assert tr.ownership_settled()
     tr.uncertain=True
     assert not tr.ownership_settled()
+
+
+@pytest.mark.parametrize("close_fault",["raises","returns_without_close","closes_then_raises"])
+def test_actual_export_close_fault_settles_receipt_but_retains_lane(product,monkeypatch,close_fault):
+    from backend.export_transfer import Transfer
+    from backend import export_publication as ledger
+    client,c,_,_=product
+    response=upload(client)
+    assert response.status_code==201,response.text
+    pid=response.json()["id"]
+    original_prepare=Transfer.prepare
+    observed=[]
+    class FaultyClose:
+        def __init__(self,stream):
+            self.stream=stream
+        def __getattr__(self,name):
+            return getattr(self.stream,name)
+        def close(self):
+            if close_fault=="returns_without_close":
+                return
+            if close_fault=="closes_then_raises":
+                self.stream.close()
+            raise OSError("Fixture close acknowledgement unavailable")
+    def prepare(self,*args):
+        original_prepare(self,*args)
+        observed.append((self,self.stream))
+        self.stream=FaultyClose(self.stream)
+    monkeypatch.setattr(Transfer,"prepare",prepare)
+    try:
+        response=client.post(f"/api/projects/{pid}/quality/export",json={"version":0,"format":"csv"})
+        assert response.status_code==200,response.text
+        transfer,stream=observed[0]
+        with storage.connect() as con:
+            receipt=ledger.read(con,transfer.receipt.operation_id)
+        assert receipt.state=="blocked" and receipt.reason_code=="storage_unavailable"
+        assert transfer.path.exists()
+        assert transfer.close_unconfirmed and not transfer.uncertain
+        assert not transfer.ownership_settled()
+        assert c.status()["phase"]=="blocked"
+        assert client.get(f"/api/projects/{pid}/preparation").status_code==503
+        assert client.get("/api/projects").status_code==200
+    finally:
+        for _,stream in observed:
+            stream.close()
+
+
+def test_actual_successful_export_releases_receipt_and_lane(product):
+    from backend.export_transfer import Transfer
+    client,c,_,_=product
+    r=upload(client)
+    assert r.status_code==201,r.text
+    pid=r.json()["id"]
+    r=client.post(f"/api/projects/{pid}/quality/export",json={"version":0,"format":"csv"})
+    assert r.status_code==200,r.text
+    assert not c.status()["active"]
+    assert list((storage.HOME/"export_tmp").iterdir())==[]
+    assert client.get("/api/resource/status").json()["workload"]["active"] is False
+
+
+def test_resource_status_legacy_shape_and_owned_auth(product,monkeypatch):
+    client,c,_,_=product
+    with TestClient(main.app) as legacy:
+        assert "workload" not in legacy.get("/api/resource/status").json()
+    assert client.get("/api/resource/status").json()["workload"]==c.status()
+    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION","fixture-secret")
+    assert client.get("/api/resource/status").status_code==401
+    assert client.get("/api/resource/status",headers={"X-PilotODIN-Session":"fixture-secret"}).json()["workload"]==c.status()

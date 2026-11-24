@@ -35,8 +35,14 @@ test('resource mode API reuses local-only controls and saves only validated valu
  assert.ok(readRoute,'Resource status handler must exist');
  assert.ok(writeRoute,'Resource policy handler must exist');
  assert.match(readRoute,/_local_request\(request\)/);
- assert.match(readRoute,/return resource_policy\.status\(\)/);
- assert.ok(readRoute.indexOf('_local_request(request)')<readRoute.indexOf('return resource_policy.status()'),'Authorize before reading status');
+ assert.match(readRoute,/if owned is None:\s*return resource_policy\.status\(\)/);
+ assert.match(readRoute,/owned = request\.scope\.get\('pilotodin\.owned_session'\)/);
+ assert.match(readRoute,/status\["workload"\] = owned\.coordinator\.status\(\)/);
+ assert.match(readRoute,/return status\b/);
+ const auth=readRoute.indexOf('_local_request(request)');
+ assert.ok(auth>=0&&auth<readRoute.indexOf('resource_policy.status()')&&
+    auth<readRoute.indexOf("request.scope.get('pilotodin.owned_session')"),
+    'Authorize before reading legacy or owned status');
  assert.match(writeRoute,/_local_request\(request\)/);
  assert.match(writeRoute,/resource_policy\.save_policy\(body\.mode\)/);
  assert.ok(writeRoute.indexOf('_local_request(request)')<writeRoute.indexOf('resource_policy.save_policy(body.mode)'),'Authorize before writing policy');
