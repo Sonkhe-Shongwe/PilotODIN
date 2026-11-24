@@ -12,7 +12,7 @@ import os
 import re
 import traceback
 import hmac
-from fastapi.responses import JSONResponse, FileResponse, Response
+from fastapi.responses import JSONResponse, Response
 from pathlib import Path
 from typing import Literal
 
@@ -20,12 +20,11 @@ import joblib
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
-from starlette.background import BackgroundTask
 
 try:
-    from . import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
+    from . import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, export_transfer, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 except ImportError:
-    import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
+    import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, export_transfer, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 
 @asynccontextmanager
 async def _lifespan(_app:FastAPI):
@@ -521,18 +520,8 @@ def get_quality_preview(project_id: str, issue_id: str | None = None,
 
 @app.post("/api/projects/{project_id}/quality/export")
 def export_cleaned_dataset(project_id: str, body: data_exports.ExportRequest):
-    """Export a specific immutable version without changing the working dataset."""
-    try:
-        path, filename, count, version = data_exports.prepare(project_id, body)
-    except quality.QualityError as exc:
-        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
-    return FileResponse(
-        path, filename=filename,
-        media_type='text/csv' if body.format == 'csv' else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'X-PilotODIN-Dataset-Version': str(version), 'X-PilotODIN-Exported-Rows': str(count),
-                 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'},
-        background=BackgroundTask(storage.guarded_unlink, path,
-                                  expected=storage.check_write_path(path)))
+    """The response owns preparation, verified streaming and terminal cleanup."""
+    return export_transfer.ExportResponse(project_id, body)
 
 
 @app.get("/api/projects/{project_id}/quality/history")

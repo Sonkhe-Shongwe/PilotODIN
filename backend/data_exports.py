@@ -241,12 +241,8 @@ def _filter(df: pd.DataFrame, item: ExportFilter) -> pd.DataFrame:
     return df[mask.fillna(False)]
 
 
-def prepare(pid: str, request: ExportRequest) -> tuple[Path, str, int, int]:
-    """Return (temporary path, download name, row count, version).
-
-    Callers must remove the temporary file after transfer. Files are staged in
-    private local storage, never beside the uploaded source.
-    """
+def _prepare_data(pid: str, request: ExportRequest):
+    """Validate and materialize a historical export before creating scratch."""
     project = quality._project(pid)
     df = quality.data_at_version(pid, request.version)
     if request.columns is not None:
@@ -270,10 +266,46 @@ def prepare(pid: str, request: ExportRequest) -> tuple[Path, str, int, int]:
     if len(set(headers)) != len(headers):
         raise quality.QualityError('Spreadsheet-safe header escaping would create duplicate column names')
     df.columns = headers
+    safe_stem = re.sub(r'[^a-zA-Z0-9_-]+','_',str(project['name']))[:70].strip('_') or 'Dataset'
+    suffix = '_filtered' if request.filters else ''
+    filename = f'{safe_stem}_cleaned_v{request.version}{suffix}.{request.format}'
+    return df, filename
+
+
+def _scratch_directory():
     dest_dir = storage.HOME / 'export_tmp'
     storage.check_write_path(dest_dir, directory=True, missing=True)
     dest_dir.mkdir(parents=True, exist_ok=True)
     storage.check_write_path(dest_dir, directory=True)
+    return dest_dir
+
+
+def _same_metadata(a, b):
+    return (os.path.samestat(a,b) and a.st_size == b.st_size
+            and a.st_mtime_ns == b.st_mtime_ns and a.st_ctime_ns == b.st_ctime_ns)
+
+
+def _serialize(df, fmt, path, stream, identity):
+    _identity(path, identity)
+    output = _BoundedOutput(stream, MAX_EXPORT_BYTES)
+    if fmt == 'csv':
+        _write_csv(df, output)
+    else:
+        _write_xlsx(df, output)
+    output.flush()
+    os.fsync(stream.fileno())
+    observed = os.fstat(stream.fileno())
+    if observed.st_size != output.extent or not 1 <= observed.st_size <= MAX_EXPORT_BYTES:
+        raise _size_error()
+    if not _same_metadata(observed, _identity(path, identity)):
+        raise quality.QualityError("Export scratch changed during serialization",409)
+    return observed
+
+
+def prepare(pid: str, request: ExportRequest) -> tuple[Path, str, int, int]:
+    """Legacy internal serializer adapter; the HTTP route uses owned transfer."""
+    df, filename = _prepare_data(pid, request)
+    dest_dir = _scratch_directory()
     fd, name = tempfile.mkstemp(prefix='pilotodin-', suffix='.'+request.format, dir=dest_dir)
     path = Path(name)
     identity = None
@@ -282,21 +314,7 @@ def prepare(pid: str, request: ExportRequest) -> tuple[Path, str, int, int]:
         # the exact file object created by mkstemp, even in unleased fixtures.
         with os.fdopen(fd, 'w+b') as stream:
             identity = os.fstat(stream.fileno())
-            _identity(path, identity)
-            output = _BoundedOutput(stream, MAX_EXPORT_BYTES)
-            if request.format == 'csv':
-                _write_csv(df, output)
-            else:
-                _write_xlsx(df, output)
-            output.flush()
-            os.fsync(stream.fileno())
-            observed = os.fstat(stream.fileno())
-            if (observed.st_size != output.extent or not 1 <= observed.st_size <= MAX_EXPORT_BYTES):
-                raise _size_error()
-            final = _identity(path, identity)
-            if (final.st_size != observed.st_size or final.st_mtime_ns != observed.st_mtime_ns
-                    or final.st_ctime_ns != observed.st_ctime_ns):
-                raise quality.QualityError("Export scratch changed during serialization",409)
+            _serialize(df, request.format, path, stream, identity)
         _identity(path, identity)
     except BaseException:
         # Release the handle before unlink (Windows). Refuse a swapped name;
@@ -305,7 +323,4 @@ def prepare(pid: str, request: ExportRequest) -> tuple[Path, str, int, int]:
             _identity(path, identity)
             storage.guarded_unlink(path, expected=identity)
         raise
-    safe_stem = re.sub(r'[^a-zA-Z0-9_-]+','_',str(project['name']))[:70].strip('_') or 'Dataset'
-    suffix = '_filtered' if request.filters else ''
-    filename = f'{safe_stem}_cleaned_v{request.version}{suffix}.{request.format}'
     return path, filename, len(df), request.version

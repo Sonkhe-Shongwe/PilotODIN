@@ -145,6 +145,15 @@ def read(con, operation_id):
     return Receipt(*row).validate() if row is not None else None
 
 
+def _require_version(con, project_id, quality_version):
+    row = con.execute("SELECT 1 FROM projects p JOIN quality_versions v ON p.id=v.project_id "
+                      "LEFT JOIN project_lifecycle l ON p.id=l.project_id "
+                      "WHERE p.id=? AND v.version=? AND l.archived_at IS NULL",
+                      (project_id,quality_version)).fetchone()
+    if row is None:
+        raise PublicationError("Export version is unavailable")
+
+
 def insert_intent(con, operation_id, project_id, quality_version, format):
     _write_required(con)
     now = _now()
@@ -152,12 +161,7 @@ def insert_intent(con, operation_id, project_id, quality_version, format):
                       None, None, "intent", None, now, now).validate()
     # No FK to projects: export receipts remain evidence after a separately
     # authorized project deletion. Admission still requires an existing version.
-    row = con.execute("SELECT 1 FROM projects p JOIN quality_versions v ON p.id=v.project_id "
-                      "LEFT JOIN project_lifecycle l ON p.id=l.project_id "
-                      "WHERE p.id=? AND v.version=? AND l.archived_at IS NULL",
-                      (project_id,quality_version)).fetchone()
-    if row is None:
-        raise PublicationError("Export version is unavailable")
+    _require_version(con, project_id, quality_version)
     pending = con.execute(f"SELECT COUNT(*) FROM (SELECT operation_id FROM {TABLE} "
                           "WHERE state IN ('intent','staged','ready','transferring') LIMIT ?)",
                           (MAX_PENDING,)).fetchone()[0]
@@ -185,6 +189,8 @@ def advance(con, expected, state, *, expected_bytes=None, sha256=None, reason=No
     updated.validate()
     if read(con,expected.operation_id) != expected:
         raise PublicationError("Export receipt changed")
+    if state in ("ready","transferring"):
+        _require_version(con, expected.subject_id, expected.quality_version)
     changed = con.execute(f"UPDATE {TABLE} SET expected_bytes=?,sha256=?,state=?,reason_code=?,updated_at=? "
                           "WHERE operation_id=? AND state=? AND updated_at=?",
                           (updated.expected_bytes,updated.sha256,updated.state,updated.reason_code,
