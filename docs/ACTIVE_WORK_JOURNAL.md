@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-LOADER-DIAGNOSIS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 030b9bf9afdf184258c2fe635cac8d57149022d7 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890; test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | Diagnose the exact integrated test executable loader failure using existing source, config, lock and logs. Correct only evidence-supported fixture/source defects. |
-| Operation ID | C1-C2-LOADER-IMPORT-DIAGNOSIS-20261125-V2-ONE-USE |
-| Operation state | ISSUED |
-| Intended files | .github/workflows/p4-c1-c2-loader-diagnosis-once.yml; qa/c1_c2_loader_preflight.rb; continuity docs |
-| Approval | Owner explicitly approved one V2 execution, attempt 1 only; CONSUMED on confirmed dispatch #45502494558. Byte-identical disabled guard restored and verified at 2e53e85. No test executable launch, OS/DLL modification, actual model, cloud, owner files, installer, activation, upload or retry. |
-| Verification | Original diagnosis #45500320101 failed staging before compile; both expected release refusal/cleanup markers observed; disarm #45500461085 SUCCESS native SKIPPED. Corrected proposal b378fd1 #45500673071 SUCCESS parse 138822789989, native 138822905433 SKIPPED; three parser tests and three synthetic exit-code cases PASS (2 accepted; 0/3 refused). Disabled SHA256 f1b2da95b69bf5f867b2dd9b7d96e458dbb97c9ba45a8d046bb4812cb4636bba; armed SHA256 231dd245fa4618d11cf399ab741df0a9c0ae23c5da9a74e1bb1aa23c7ef226ec. |
-| Pending runs | [#45502494558](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45502494558), exact armed `267827db33c9ad1e75f621a256cb32d0a48eeb0d`, attempt 1; source-preflight 138829106098 SUCCESS (both SHA256 fingerprints, parser and expected refusal cases verified in logs), Windows 138829258389 IN_PROGRESS: pinned checkouts/host identity and both staging refusals SUCCESS; paired no-run compile/diagnosis in progress. Disarm `2e53e858bb8de310bd5e11295496bfa2ec269dd6` verified byte-identical disabled blob 7872b0122df810550f0dd484d58a8a7fc3b65ec8, [#45502607711](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45502607711) PENDING. |
+| Operation ID | C1-OWNED-HOST-MANIFEST-CORRECTION-20261125-source |
+| Operation state | PREPARED |
+| Intended files | Disabled .github/workflows/p4-c1-c2-owned-host-once.yml and qa/c1_c2_owned_host_preflight.rb; continuity records. No product source or fixture assertions change. |
+| Approval | V2 static approval CONSUMED and disarmed. Source-only correction permitted; fresh explicit approval required for any compile/manifest embedding/execution of the one exact ignored synthetic test. No production executable or OS/DLL modification, actual model, cloud, owner files, installer, activation, upload or retry. |
+| Verification | #45502494558 SUCCESS: paired locked no-run builds, baseline 12 DLLs/155 named imports, fixture 20/241, sole direct missing export candidate comctl32.dll TaskDialogIndirect; API-set math unresolved; both cleanups PASS. #45502607711 SUCCESS native SKIPPED, both fingerprints match. Microsoft documents TaskDialogIndirect requires common controls v6 and application manifest selection. Candidate, not established loader cause. |
+| Pending runs | None. Prior diagnostic fully reconciled. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Verify published disarm HEAD and byte-identical disabled workflow, reconcile exact run #45502494558 and disarm source-preflight/jobs. Inspect actual no-run compile/import/export logs and cleanup; neither executable may launch. Do not replay approval. Correct only evidence-supported defects, then C1 closure audit (shared-host witness still outstanding), followed by C2 separately. |
+| Recovery action | Prepare one disabled source-only correction targeting generated test executable manifest (Common Controls v6, asInvoker), preserve exact test assertions and pinned source. Verify YAML/scripts and guard; no launch without fresh approval. If candidate already present in embedded manifest, stop rather than retry blindly. |
 | Resume after closure | C1/C2 exit audit, C3–C5; D separately approved. |
 
 ## Prior operation
