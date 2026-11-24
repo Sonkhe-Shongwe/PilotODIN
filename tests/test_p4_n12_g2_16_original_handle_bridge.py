@@ -279,7 +279,11 @@ class G216NativeSourceTests(unittest.TestCase):
                 acquisition_rights=p.PROCESS_RIGHTS)
         self.assertNotIn(("close_process",), api.events)
         self.assertNotIn(("open_process", 501), api.events)
-        self.assertIn(("close_duplicate", 31), api.events)
+        # Marker cleanup failed before classification, so no duplicate is
+        # attempted. Snapshot release still runs; original remains owned.
+        self.assertIn(("marker_close",), api.events)
+        self.assertIn(("free_snapshot",), api.events)
+        self.assertFalse(any(event[0] == "duplicate" for event in api.events))
 
     def test_ctypes_file_type_unknown_error_captured_and_not_native_invoked(self):
         api = object.__new__(p._Win32PssApi)
