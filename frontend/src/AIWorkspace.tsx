@@ -1,6 +1,7 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {createInsightRequestFence} from './insightRequestFence';
 import {BrainCircuit,CheckCircle2,Cloud,KeyRound,LoaderCircle,LockKeyhole,RefreshCw,ShieldCheck,Sparkles,WifiOff} from 'lucide-react';
-import {get,post,put} from './api';
+import {get,post,put,usesOwnedInference} from './api';
 import {RichText} from './RichText';
 import {ResourceSettings} from './ResourceSettings';
 
@@ -73,36 +74,37 @@ const pendingInsights=new Map<string,Promise<Analysis>>();
 export function AIInsight({projectId,scope,version,target,experimentId,prediction,onOpenSettings}:{projectId:string;scope:string;version:number;target?:string;experimentId?:string;prediction?:{prediction:string|number;probabilities?:{class:string|number;probability:number}[]}|null;onOpenSettings:()=>void}){
   const [result,setResult]=useState<Analysis|null>(null);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
   const [investigation,setInvestigation]=useState('');const [investigationResult,setInvestigationResult]=useState('');
-  const [auto,setAuto]=useState(false);const [selectedProvider,setSelectedProvider]=useState('auto');const latest=useRef(0);const [elapsed,setElapsed]=useState(0);
-  const fingerprint=JSON.stringify([projectId,scope,version,target,experimentId,prediction?.prediction,selectedProvider]);
+  const [auto,setAuto]=useState(false);const [selectedProvider,setSelectedProvider]=useState('auto');const fence=useRef(createInsightRequestFence()).current;const [elapsed,setElapsed]=useState(0);
+  const fingerprint=JSON.stringify([projectId,scope,version,target,experimentId,prediction??null,selectedProvider]);
+  useLayoutEffect(()=>fence.enter(),[fence,fingerprint]);
   useEffect(()=>{let live=true;get<Settings>('/ai/settings').then(r=>{if(live){setAuto(r.auto_insights&&(r.local_model_enabled||r.cloud_enabled&&r.share_aggregates));setSelectedProvider(localStorage.getItem('pilotodin-ai-provider-'+scope)??r.workspace_preferences?.[scope]??r.preferred_provider??'auto')}}).catch(()=>{});return()=>{live=false}},[fingerprint]);
-  useEffect(()=>{setResult(cachedInsight(fingerprint));setError('');},[fingerprint]);
+  useLayoutEffect(()=>{setResult(cachedInsight(fingerprint));setError('');setInvestigationResult('');},[fingerprint]);
   useEffect(()=>{if(!busy){setElapsed(0);return;}const start=Date.now();const t=window.setInterval(()=>setElapsed(Math.floor((Date.now()-start)/1000)),1000);return()=>window.clearInterval(t)},[busy]);
-  async function run(deep=false){if(busy)return;const request=++latest.current;setBusy(true);setError('');try{
+  async function run(deep=false){if(busy)return;const ticket=fence.begin();if(!ticket)return;setBusy(true);setError('');try{
     const cacheKey=fingerprint+(deep?':deep':'');
     let call=pendingInsights.get(cacheKey);
     if(!call){call=post<Analysis>(`/projects/${projectId}/ai/insight`,{context:scope,question:questions[scope]??'',target:target||null,experiment_id:experimentId||null,prediction:prediction||null,deep,selected_provider:selectedProvider});pendingInsights.set(cacheKey,call)}
     let r:Analysis;
     try{r=await call}finally{if(pendingInsights.get(cacheKey)===call)pendingInsights.delete(cacheKey)}
-    if(request===latest.current){insightCache.set(fingerprint,r);insightTimestamps.set(fingerprint,Date.now());setResult(r)}
-  }catch(e){if(request===latest.current)setError((e as Error).message)}finally{if(request===latest.current)setBusy(false)}}
+    if(fence.isCurrent(ticket)){insightCache.set(fingerprint,r);insightTimestamps.set(fingerprint,Date.now());setResult(r)}
+  }catch(e){if(fence.isCurrent(ticket))setError((e as Error).message)}finally{if(fence.finish(ticket))setBusy(false)}}
   useEffect(()=>{if(auto&&!cachedInsight(fingerprint))void run(false)},[auto,fingerprint]);
-  async function continueInsight(){if(!result||busy)return;setBusy(true);setError('');try{
+  async function continueInsight(){if(!result||busy)return;const ticket=fence.begin();if(!ticket)return;setBusy(true);setError('');try{
     const continuationProvider = result.source === 'local_llm' ? 'ollama' : selectedProvider;
     const r=await post<Analysis>(`/projects/${projectId}/ai/insight`,{context:scope,question:'Continue the previous explanation.',target:target||null,experiment_id:experimentId||null,deep:true,selected_provider:continuationProvider,continuation_text:result.answer});
-    setResult({...r,answer:result.answer+'\n\n'+r.answer});
-  }catch(e){setError((e as Error).message)}finally{setBusy(false)}}
-  async function investigate(){if(!investigation)return;setBusy(true);try{const outcome=await post<Record<string,unknown>>(`/projects/${projectId}/investigate`,{operation:investigation});setInvestigationResult(JSON.stringify(outcome,null,2))}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
+    if(fence.isCurrent(ticket))setResult({...r,answer:result.answer+'\n\n'+r.answer});
+  }catch(e){if(fence.isCurrent(ticket))setError((e as Error).message)}finally{if(fence.finish(ticket))setBusy(false)}}
+  async function investigate(){if(!investigation||busy)return;const ticket=fence.begin();if(!ticket)return;setBusy(true);setError('');try{const outcome=await post<Record<string,unknown>>(`/projects/${projectId}/investigate`,{operation:investigation});if(fence.isCurrent(ticket))setInvestigationResult(JSON.stringify(outcome,null,2))}catch(e){if(fence.isCurrent(ticket))setError((e as Error).message)}finally{if(fence.finish(ticket))setBusy(false)}}
   if(!labels[scope])return null;
   return <section className="panel ai-intelligence-panel"><div className="panel-title"><BrainCircuit size={20}/><h2>ODIN Intelligence · {labels[scope]}</h2><span className="pill">{result?(result.fallback?'VERIFIED LOCAL RULES':`${result.provider.toUpperCase()} · ${result.model}`):'READY'}</span></div>
     {!result&&<p className="body-muted">AI recommendations grounded in current dataset calculations. Click to investigate; no cleaning or training is executed automatically.</p>}
     {result&&<div className="ai-answer"><RichText text={result.answer}/>{result.incomplete&&<div className="ai-incomplete"><span>Response limit reached; this explanation may be incomplete.</span><button className="btn small" disabled={busy} onClick={()=>void continueInsight()}>Continue answer →</button></div>}</div>}
     {result?.fallback&&<p className="muted-caption"><WifiOff size={14}/> Local fallback: {result.attempts?.some(a=>a.status.includes('503'))?'Cloud capacity temporarily unavailable (503). Retrying later may succeed.':result.reason}</p>}
-    {busy&&<div className="ai-working" role="status" aria-live="polite"><LoaderCircle size={18} className="spin"/><span><strong>{selectedProvider==='local'?'Computing verified local analysis…':`Requesting ${selectedProvider==='auto'?'Hybrid intelligence':selectedProvider}…`}</strong><small>{elapsed}s elapsed · automatic fallback may be attempted · no dataset rows are sent</small></span></div>}
+    {busy&&<div className="ai-working" role="status" aria-live="polite"><LoaderCircle size={18} className="spin"/><span><strong>{selectedProvider==='local'?'Computing verified local analysis…':usesOwnedInference()&&selectedProvider==='auto'?'Preparing context and requesting offline resource admission…':`Requesting ${selectedProvider==='auto'?'Hybrid intelligence':selectedProvider}…`}</strong><small>{elapsed}s elapsed · {usesOwnedInference()?'waiting for the selected route; verified fallback will be labelled if used':'automatic fallback may be attempted'} · no dataset rows are sent</small></span></div>}
     {error&&<div className="alert-error">{error}</div>}
-    <div className="ai-choice"><label htmlFor={'odin-provider-'+scope}>Intelligence</label><select id={'odin-provider-'+scope} className="input" value={selectedProvider} onChange={e=>{setSelectedProvider(e.target.value);localStorage.setItem('pilotodin-ai-provider-'+scope,e.target.value);setResult(null)}}><option value="auto">Hybrid routing (default)</option><option value="ollama">Ollama only</option><option value="gemini">Gemini first</option><option value="groq">GroqCloud first</option><option value="openrouter">OpenRouter first</option><option value="local">Verified local analytics (no LLM)</option></select></div>
+    <div className="ai-choice"><label htmlFor={'odin-provider-'+scope}>Intelligence</label><select id={'odin-provider-'+scope} className="input" value={selectedProvider} disabled={busy} onChange={e=>{setSelectedProvider(e.target.value);localStorage.setItem('pilotodin-ai-provider-'+scope,e.target.value);setResult(null)}}><option value="auto">{usesOwnedInference()?"Smart Auto (local only)":"Hybrid routing (default)"}</option><option value="ollama">Ollama only</option><option value="gemini">Gemini first</option><option value="groq">GroqCloud first</option><option value="openrouter">OpenRouter first</option><option value="local">Verified local analytics (no LLM)</option></select></div>
     <div className="ai-panel-actions"><button className="btn primary" disabled={busy} onClick={()=>void run(false)}>{busy?<LoaderCircle className="spin" size={16}/>:<Sparkles size={16}/>} {result?'Refresh analysis':'Investigate with ODIN'}</button><button className="btn" disabled={busy} onClick={()=>void run(true)}>Deeper reasoning</button><button className="btn" onClick={onOpenSettings}><RefreshCw size={15}/> AI Settings</button></div>
-    <details className="odin-toolbox"><summary>Verified local investigations · no AI code execution</summary><div className="ai-choice"><select className="input" value={investigation} onChange={e=>setInvestigation(e.target.value)} aria-label="Choose analytical investigation"><option value="">Choose investigation…</option><option value="overview">Dataset facts</option><option value="quality_summary">Quality and outlier warnings</option><option value="recommend_charts">Recommended charts</option></select><button className="btn" disabled={!investigation||busy} onClick={()=>void investigate()}>Run investigation</button></div>{investigationResult&&<pre className="investigation-output">{investigationResult}</pre>}</details>
+    <details className="odin-toolbox"><summary>Verified local investigations · no AI code execution</summary><div className="ai-choice"><select className="input" value={investigation} disabled={busy} onChange={e=>setInvestigation(e.target.value)} aria-label="Choose analytical investigation"><option value="">Choose investigation…</option><option value="overview">Dataset facts</option><option value="quality_summary">Quality and outlier warnings</option><option value="recommend_charts">Recommended charts</option></select><button className="btn" disabled={!investigation||busy} onClick={()=>void investigate()}>Run investigation</button></div>{investigationResult&&<pre className="investigation-output">{investigationResult}</pre>}</details>
     <p className="muted-caption">Ollama runs on this device. Consented cloud requests include bounded statistics and your typed question. AI explanations are suggestions, never verified computations or authorisation to change data.</p>
   </section>
 }

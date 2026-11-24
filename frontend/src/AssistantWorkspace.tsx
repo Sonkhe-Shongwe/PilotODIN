@@ -1,4 +1,5 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {createInsightRequestFence} from './insightRequestFence';
 import {BrainCircuit, Send, ShieldCheck, Sparkles, LoaderCircle} from 'lucide-react';
 import {usesOwnedInference,post} from './api';
 import {RichText} from './RichText';
@@ -47,6 +48,8 @@ export function AssistantWorkspace({projectId,onSettings}:{projectId:string;onSe
   const [template,setTemplate]=useState<(typeof localTemplates)[number]|null>(null);
   const questionInput=useRef<HTMLInputElement>(null);
   const localFollowUp=useRef<LocalFollowUp|null>(null);
+  const fence=useRef(createInsightRequestFence()).current;
+  useLayoutEffect(()=>fence.enter(),[fence,projectId]);
   const templateIncomplete=template?.fields.some(field=>question.includes(`"${field}"`))??false;
   function fillTemplate(next:(typeof localTemplates)[number]){
     setTemplate(next);
@@ -62,11 +65,13 @@ export function AssistantWorkspace({projectId,onSettings}:{projectId:string;onSe
   const [provider,setProvider]=useState(localStorage.getItem('pilotodin-ai-provider-assistant')??'auto');
   async function ask(q:string,continuation?:string){
     if(busy||(!q.trim()&&!continuation))return;
+    const ticket=fence.begin();if(!ticket)return;
     setBusy(true);if(!continuation){setQuestion('');setTemplate(null);setMessages(a=>[...a,{role:'user',content:q}])}
     try{
       const r=await post<{answer:string;provider:string;model:string;fallback:boolean;reason:string;local_status?:string;local_startup_issue?:string;incomplete?:boolean;finish_reason?:string;investigation?:MissingReport;facts?:LocalFacts;dataset_version?:number;follow_up?:LocalFollowUp|null}>(`/projects/${projectId}/ai/insight`,
         {context:'assistant',question:q||'Continue the previous explanation.',selected_provider:provider,continuation_text:continuation??null,
           ...(provider==='local'&&localFollowUp.current?{local_follow_up:localFollowUp.current}:{})});
+      if(!fence.isCurrent(ticket))return;
       localFollowUp.current=provider==='local'?r.follow_up??null:null;
       const diagnostic=r.fallback&&provider!=='local'
         ? 'No language-model answer was generated. PilotODIN used verified local rules instead. '+(r.local_startup_issue?'Desktop startup: '+r.local_startup_issue+'. ':r.local_status&&r.local_status!=='not_requested'?'Local inference: '+r.local_status+'. ':'')+(r.reason??'')
@@ -79,8 +84,8 @@ export function AssistantWorkspace({projectId,onSettings}:{projectId:string;onSe
         return [...a,{role:'assistant',content:r.answer,source:r.fallback?'VERIFIED RULES · NO LLM':`${r.provider.toUpperCase()} · ${r.model}`,
           incomplete:r.incomplete,investigation:r.investigation,diagnostic,facts:r.facts,version:r.dataset_version}];
       });
-    }catch(e){localFollowUp.current=null;setMessages(a=>[...a,{role:'assistant',content:(e as Error).message,source:'ERROR'}])}
-    finally{setBusy(false)}
+    }catch(e){if(fence.isCurrent(ticket)){localFollowUp.current=null;setMessages(a=>[...a,{role:'assistant',content:(e as Error).message,source:'ERROR'}])}}
+    finally{if(fence.finish(ticket))setBusy(false)}
   }
   return <div className="assistant-page"><section className="quality-banner"><div><div className="eyebrow">DATA SCIENCE COPILOT · HYBRID AI</div><h2>Ask your dataset</h2><p>{usesOwnedInference()?'Explicit cloud provider selection or offline analytics. Bounded statistics, column names and your typed question may be sent to the selected provider.':'Opt-in cloud reasoning grounded in local computations, with automatic provider failover and offline analytics.'}</p></div><BrainCircuit size={43}/></section>
     <div className="panel chat-panel"><div className="ai-choice"><label htmlFor="assistant-provider">Choose intelligence</label><select id="assistant-provider" className="input" value={provider} disabled={busy} onChange={e=>{localFollowUp.current=null;setProvider(e.target.value);localStorage.setItem('pilotodin-ai-provider-assistant',e.target.value)}}><option value="auto">{usesOwnedInference()?'Smart Auto (local only)':'Smart Auto'}</option><option value="ollama">Offline Qwen3 (desktop) / Ollama (dev)</option><option value="gemini">Gemini</option><option value="groq">GroqCloud</option><option value="openrouter">OpenRouter</option><option value="local">Local analytics</option></select></div><div className="chat-messages">{messages.map((m,i)=><div key={i} className={'chat-message '+m.role}><span className="chat-role">{m.role==='assistant'?<Sparkles size={15}/>:null}{m.role==='assistant'?'PilotODIN':'You'} {m.source&&<small>· {m.source}</small>}</span><div className="chat-body">{m.role==='user'||m.facts?<p>{m.content}</p>:<RichText text={m.content}/>}

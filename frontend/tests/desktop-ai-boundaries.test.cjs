@@ -173,3 +173,55 @@ test('native report and dataset share one pre-copy save guard',async()=>{
   assert.equal(invoked,2);
  }finally{if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;}
 });
+
+// Execute the actual shared panel request fence against controlled deferred work.
+function loadInsightFence(){
+ const source=fs.readFileSync(path.join(__dirname,'../src/insightRequestFence.ts'),'utf8');
+ const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2021,module:ts.ModuleKind.CommonJS}}).outputText;
+ const mod={exports:{}};
+ new Function('module','exports',output)(mod,mod.exports);
+ return mod.exports.createInsightRequestFence;
+}
+test('C2 request fence refuses synchronous duplicate and keeps ownership until actual settlement',async()=>{
+ const fence=loadInsightFence()();const leave=fence.enter();const first=fence.begin();
+ assert.ok(first);assert.equal(fence.begin(),null);
+ let resolve;const pending=new Promise(r=>{resolve=r});
+ let published=false;
+ const work=pending.then(()=>{if(fence.isCurrent(first))published=true}).finally(()=>fence.finish(first));
+ assert.equal(fence.begin(),null);resolve();await work;
+ assert.equal(published,true);assert.ok(fence.begin());leave();
+});
+test('C2 old context completion cannot publish even after returning to the same context',async()=>{
+ const fence=loadInsightFence()();const leaveA=fence.enter();const old=fence.begin();
+ let resolve;const pending=new Promise(r=>{resolve=r});let published=false;
+ const work=pending.then(()=>{if(fence.isCurrent(old))published=true}).finally(()=>fence.finish(old));
+ leaveA();const leaveB=fence.enter();leaveB();fence.enter();
+ assert.equal(fence.isCurrent(old),false);assert.equal(fence.begin(),null);
+ resolve();await work;assert.equal(published,false);
+ const next=fence.begin();assert.ok(next);assert.equal(fence.finish(old),false);
+ assert.equal(fence.isCurrent(next),true);assert.equal(fence.finish(next),true);
+});
+test('C2 unmount invalidates late error and old cleanup cannot clear newer scope',()=>{
+ const fence=loadInsightFence()();const oldCleanup=fence.enter();const old=fence.begin();
+ const cleanup=fence.enter();oldCleanup();
+ assert.equal(fence.isCurrent(old),false);assert.equal(fence.finish(old),true);
+ const next=fence.begin();assert.ok(next);cleanup();
+ assert.equal(fence.isCurrent(next),false);assert.equal(fence.finish(next),false);
+ assert.equal(fence.begin(),null);
+});
+test('C2 both actual panels bind request ownership, late results and truthful owned waiting',()=>{
+ const assistant=fs.readFileSync(path.join(__dirname,'../src/AssistantWorkspace.tsx'),'utf8');
+ const insight=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
+ assert.match(assistant,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,projectId\]\)/);
+ assert.match(assistant,/const ticket=fence.begin\(\);if\(!ticket\)return/);
+ assert.match(assistant,/if\(!fence.isCurrent\(ticket\)\)return/);
+ assert.match(assistant,/finally\{if\(fence.finish\(ticket\)\)setBusy\(false\)\}/);
+ assert.match(insight,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,fingerprint\]\)/);
+ assert.equal((insight.match(/const ticket=fence.begin\(\);if\(!ticket\)return/g)||[]).length,3);
+ assert.equal((insight.match(/finally\{if\(fence.finish\(ticket\)\)setBusy\(false\)\}/g)||[]).length,3);
+ assert.match(insight,/if\(fence.isCurrent\(ticket\)\)\{insightCache.set/);
+ assert.match(insight,/if\(fence.isCurrent\(ticket\)\)setResult\(/);
+ assert.match(insight,/if\(fence.isCurrent\(ticket\)\)setInvestigationResult\(/);
+ assert.match(insight,/usesOwnedInference\(\)\?'waiting for the selected route/);
+ assert.match(insight,/usesOwnedInference\(\)\?"Smart Auto \(local only\)"/);
+});
