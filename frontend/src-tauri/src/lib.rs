@@ -97,6 +97,8 @@ struct DesktopState {
     stopping: AtomicBool,
     #[cfg(windows)]
     owned_engine_uncertain: AtomicBool,
+    #[cfg(windows)]
+    owned_engine_uncertain_pins: Mutex<Option<storage_boundary::DirectoryPins>>,
     launch_gate: Mutex<()>,
     backend: Mutex<Option<ActiveBackend>>,
     inference: Mutex<Option<ActiveInference>>,
@@ -551,14 +553,13 @@ fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
 #[tauri::command]
 async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: State<'_, DesktopState>) -> Result<BackendConnection, String> {
     verify_effective_desktop_profile(&window).await?;
+    // The synchronous launch section owns all short state locks. The READY
+    // wait below must never hold a native launch/backend lock across await.
+    let connection = (|| -> Result<BackendConnection, String> {
     let _launch = state.launch_gate.lock().map_err(|_| "Worker launch unavailable")?;
     ensure_desktop_admission(&app, &state)?;
     let mut guard = state.backend.lock().map_err(|_| "Engine state unavailable".to_string())?;
     if let Some(existing) = guard.as_ref() {
-        #[cfg(windows)]
-        if let Some(owner) = &existing.owned {
-            owner.check_available()?;
-        }
         return Ok(existing.connection.clone());
     }
     let port = free_loopback_port()?;
@@ -602,14 +603,16 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         let capability = new_token();
         let wire = resource_wire::Wire::new(generation.clone(), capability.clone())
             .map_err(str::to_owned)?;
-        let (events, child) = match command
+        let (events, child) = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| command
             .env("PILOTODIN_CONTROL_MODE", "pod1")
             .env("PILOTODIN_CONTROL_GENERATION", generation.as_str())
             .env("PILOTODIN_CONTROL_CAPABILITY", capability.as_str())
-            .set_raw_out(true).spawn() {
-                Ok(value) => value,
-                Err(_) => {
+            .set_raw_out(true).spawn())) {
+                Ok(Ok(value)) => value,
+                _ => {
                     // Spawn may have created an unobserved process group.
+                    // Keep the original storage witness while launch is uncertain.
+                    *state.owned_engine_uncertain_pins.lock().unwrap_or_else(|e| e.into_inner()) = Some(storage_pins);
                     state.owned_engine_uncertain.store(true, Ordering::Release);
                     state.stopping.store(true, Ordering::Release);
                     return Err("Owned engine launch outcome unconfirmed".into());
@@ -675,6 +678,19 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
             }
         }
     });
+    Ok(connection)
+    })()?;
+    #[cfg(windows)]
+    if connection.backend_driven_inference {
+        let owner = {
+            let backend = state.backend.lock().map_err(|_| "Engine state unavailable")?;
+            backend.as_ref().filter(|worker| worker.connection.token == connection.token)
+                .and_then(|worker| worker.owned.clone()).ok_or("Owned analytical session unavailable")?
+        };
+        tauri::async_runtime::spawn_blocking(move || owner.wait_ready())
+            .await.map_err(|_| "Owned analytical readiness unavailable".to_owned())??;
+        ensure_desktop_admission(&app, &state)?;
+    }
     Ok(connection)
 }
 
@@ -1173,7 +1189,9 @@ async fn save_report_as(app: AppHandle, request: Request<'_>)
         };
         // Only the OS dialog may choose the destination. Never accept a path
         // from JavaScript. Standard Save As handles overwrite confirmation.
-        ensure_desktop_admission(&app, &app.state::<DesktopState>())?;
+        let state = app.state::<DesktopState>();
+        let _publication = state.launch_gate.lock().map_err(|_| "Desktop publication unavailable")?;
+        ensure_desktop_admission(&app, &state)?;
         *entered_publication = true;
         write_verified_report(&path, &format, &bytes)
     };

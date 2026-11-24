@@ -44,8 +44,10 @@ async def _lifespan(_app:FastAPI):
     if recovered:
         logging.warning("Marked %s unfinished ML experiment(s) failed after backend restart",recovered)
     checks=[]
+    # The owned application explicitly disables background provider probes.
+    # The old app retains legacy behavior until its C4 migration.
     try:
-        cfg=ai_provider.config_status()
+        cfg={} if getattr(_app.state,"owned_resource_session",False) else ai_provider.config_status()
         if cfg.get('cloud_enabled') and cfg.get('share_aggregates'):
             for provider in cfg['providers']:
                 if provider['connected']:
@@ -1263,13 +1265,18 @@ def local_ai_status(request:Request):
 def verify_ai_providers(request:Request):
     """Bounded health check for opt-in configured providers, never dataset rows."""
     _local_request(request)
+    if request.scope.get('pilotodin.owned_session') is not None:
+        return ai_provider.owned_provider_status()
     return ai_provider.verify_connected()
 
 
 @app.post('/api/ai/test/{provider}')
 def test_ai_provider(provider:str,request:Request):
     _local_request(request)
-    try:return ai_provider.test_connection(provider)
+    try:
+        if request.scope.get('pilotodin.owned_session') is not None:
+            return ai_provider.owned_test_connection(provider)
+        return ai_provider.test_connection(provider)
     except ValueError as exc:raise HTTPException(status_code=422,detail=str(exc)) from exc
 
 @app.get('/api/projects/{project_id}/live-profile')

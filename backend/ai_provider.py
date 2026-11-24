@@ -41,6 +41,7 @@ _memory_keys:dict[str,str] = {}
 _cooldowns:dict[str,float] = {}
 _health:dict[str,dict] = {}
 _last_background_check:float = 0.0
+_consent_revision = 0
 DEFAULTS = {'cloud_enabled':False,'share_aggregates':False,'auto_insights':False,
             'provider_order':['gemini','groq','openrouter'],'timeout_seconds':20,
             'preferred_provider':'auto','workspace_preferences':{},
@@ -164,7 +165,9 @@ def update_settings(*,cloud_enabled:bool,share_aggregates:bool,auto_insights:boo
          'preferred_provider':preferred_provider,'workspace_preferences':workspace_preferences,
          'intelligence_mode':intelligence_mode,'local_model':local_model,
          'local_model_enabled':local_model_enabled,'local_timeout_seconds':local_timeout_seconds}
+    global _consent_revision
     with _lock:
+        _consent_revision += 1  # even an ambiguous write invalidates pending consent
         temporary=CONFIG_PATH.with_suffix('.tmp')
         storage.check_write_path(CONFIG_PATH, missing=True)
         storage.check_write_path(temporary, missing=True)
@@ -177,12 +180,13 @@ def update_settings(*,cloud_enabled:bool,share_aggregates:bool,auto_insights:boo
 
 
 def set_key(provider:str,key:str|None=None,remove:bool=False)->dict:
-    global _last_background_check
+    global _last_background_check, _consent_revision
     if provider not in PROVIDERS:raise ValueError('Unknown AI provider')
     if not remove:
         if not key or len(key.strip())<12 or len(key)>512 or any(c.isspace() for c in key):
             raise ValueError('Enter a valid API key without whitespace')
     with _lock:
+        _consent_revision += 1
         current=_stored_keys()
         if remove: current.pop(provider,None)
         else:current[provider]=key.strip()
@@ -207,7 +211,7 @@ class ProviderText(str):
         return obj
 
 
-def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:int)->str:
+def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:int,*,strict=False,still_authorized=None)->str:
     if provider=='gemini':
         url=f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
         payload={'systemInstruction':{'parts':[{'text':system}]},
@@ -221,8 +225,21 @@ def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:in
         headers={'Authorization':'Bearer '+key}
     request=urllib.request.Request(url,data=json.dumps(payload,ensure_ascii=False).encode('utf-8'),
              headers={**headers,'Content-Type':'application/json','User-Agent':'PilotODIN/0.8'},method='POST')
-    with urllib.request.urlopen(request,timeout=timeout) as response:
-        raw=response.read(256_000)
+    if strict:
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                return None
+        # Explicit destination, no cross-provider redirect or ambient proxy.
+        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
+        if still_authorized is None or not still_authorized():
+            raise RuntimeError("Cloud request no longer authorized")
+        connection=opener.open(request,timeout=timeout)
+    else:
+        connection=urllib.request.urlopen(request,timeout=timeout)
+    with connection as response:
+        raw=response.read(256_001)
+    if len(raw)>256_000:
+        raise ValueError("Provider response exceeds limit")
     value=json.loads(raw)
     if provider=='gemini':
         candidate=(value.get('candidates') or [{}])[0]
@@ -602,3 +619,104 @@ def verify_connected(background_cache_seconds:int=900)->dict:
     with ThreadPoolExecutor(max_workers=min(3,len(connected))) as pool:
         results=list(pool.map(test_connection,connected))
     return {'status':'checked','providers':results}
+
+
+# The owned desktop path deliberately does not call the legacy respond()
+# router. Saved settings permit egress; only the explicit request chooses it.
+def _owned_consent(provider):
+    if provider not in PROVIDERS:
+        return None
+    try:
+        with _lock:
+            cfg=_read_config()
+            if (cfg.get("cloud_enabled") is not True
+                    or cfg.get("share_aggregates") is not True
+                    or cfg.get("intelligence_mode") not in ("hybrid","cloud")):
+                return None
+            timeout=cfg.get("timeout_seconds")
+            if type(timeout) is not int or not 3<=timeout<=45:
+                return None
+            key=_get_key(provider)
+            if not isinstance(key,str) or not 12<=len(key)<=512 or any(c.isspace() for c in key):
+                return None
+            return (_consent_revision,timeout,key)
+    except (ValueError,TypeError,OSError,RuntimeError):
+        return None
+
+
+def owned_cloud_insight(context,task,question,local_answer,deep,selected_provider,
+                        continuation_text=None,*,still_current=lambda:True):
+    """One explicit destination, one bounded request, no implicit escalation.
+
+    Recheck consent and version immediately before transport entry and before
+    result publication. Do not hold settings locks across network I/O. Bytes
+    already submitted cannot be recalled by a later revocation.
+    """
+    fallback=local_rules_result(local_answer,reason="Explicit cloud consent or provider unavailable")
+    consent=_owned_consent(selected_provider)
+    if consent is None or not still_current():
+        return fallback
+    # Never send the individual prediction or previous generated text (which
+    # may contain copied rows, predictions or sensitive details).
+    cloud_context={k:v for k,v in context.items() if k!="prediction"}
+    user=_encode_insight_prompt(cloud_context,task,question,None,limit=CLOUD_PROMPT_LIMIT)
+    if user is None or len(user.encode("utf-8"))>CLOUD_PROMPT_LIMIT:
+        fallback["reason"]="Verified context exceeds cloud prompt limit"
+        return fallback
+    provider=selected_provider
+    model=MODELS[provider]["deep" if deep else "routine"]
+    system=SYSTEM
+    if task=="predict":
+        system+="\nExplain aggregate model evidence only; individual prediction remains local."
+    if continuation_text:
+        fallback["reason"]="Cloud continuation requires a new explicit question; previous answer was not sent"
+        return fallback
+    if not still_current() or _owned_consent(provider)!=consent:
+        return fallback
+    try:
+        answer=_call_provider(provider,model,system,user,consent[2],consent[1],strict=True,
+                              still_authorized=lambda:still_current() and _owned_consent(provider)==consent)
+        if not isinstance(answer,str) or not answer.strip():
+            raise ValueError("Empty provider response")
+    except Exception:
+        fallback["reason"]="Selected cloud provider unavailable; verified deterministic analysis used"
+        fallback["attempts"]=[{"provider":provider,"status":"unavailable"}]
+        return fallback
+    if not still_current() or _owned_consent(provider)!=consent:
+        fallback["reason"]="Cloud consent or context changed; response discarded"
+        return fallback
+    return {"answer":str(answer),"source":"cloud_llm","provider":provider,"model":model,
+            "fallback":False,"reason":None,"attempts":[],"intelligence_mode":"cloud",
+            "local_status":"not_requested","incomplete":bool(getattr(answer,"incomplete",False)),
+            "finish_reason":getattr(answer,"finish_reason","unknown")}
+
+
+def owned_provider_status():
+    """Passive status only; no startup or verify-connected network probe."""
+    with _lock:
+        return {"status":"cached","providers":[{"provider":p,**_health.get(p,{"status":"unverified"})}
+                for p in PROVIDERS]}
+
+
+def owned_test_connection(provider):
+    if provider not in PROVIDERS:
+        raise ValueError("Unknown AI provider")
+    consent=_owned_consent(provider)
+    if consent is None:
+        return {"provider":provider,"status":"not_configured"}
+    if _owned_consent(provider)!=consent:
+        return {"provider":provider,"status":"unavailable"}
+    try:
+        answer=_call_provider(provider,MODELS[provider]["routine"],
+                              "You are testing an API connection. Reply READY.","Say READY",
+                              consent[2],consent[1],strict=True,
+                              still_authorized=lambda:_owned_consent(provider)==consent)
+        status="connected" if isinstance(answer,str) and answer.strip() else "unavailable"
+    except Exception:
+        status="unavailable"
+    with _lock:
+        if _owned_consent(provider)!=consent:
+            return {"provider":provider,"status":"unavailable"}
+        result={"provider":provider,"status":status}
+        _health[provider]=result
+        return result

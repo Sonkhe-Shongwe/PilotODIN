@@ -79,6 +79,8 @@ impl OwnedSession {
                         break;
                     } else if supervisor.ready() {
                         owner.status.store(READY, Ordering::Release);
+                    } else {
+                        owner.status.store(BOOT, Ordering::Release);
                     }
                     drop(supervisor);
                     thread::sleep(TICK);
@@ -102,8 +104,20 @@ impl OwnedSession {
 
     pub(super) fn check_available(&self) -> Result<(), String> {
         match self.status.load(Ordering::Acquire) {
-            BOOT | READY if !self.stop.load(Ordering::Acquire) => Ok(()),
+            READY if !self.stop.load(Ordering::Acquire) => Ok(()),
             _ => Err("Owned analytical session unavailable".into()),
+        }
+    }
+
+    pub(super) fn wait_ready(&self) -> Result<(), String> {
+        let deadline = Instant::now() + Duration::from_secs(32);
+        loop {
+            match self.status.load(Ordering::Acquire) {
+                READY if !self.stop.load(Ordering::Acquire) => return Ok(()),
+                BOOT if !self.stop.load(Ordering::Acquire) && Instant::now() < deadline =>
+                    thread::sleep(TICK),
+                _ => return Err("Owned analytical session did not become ready".into()),
+            }
         }
     }
 
@@ -230,11 +244,12 @@ fn start_inference(app: &AppHandle, backend_token: &str, port: u16, token: &str,
         attempt.check(&state.stopping).is_err() {
         return StartupOutcome::NeverStarted;
     }
-    match command.spawn() {
-        Ok((events, child)) => StartupOutcome::Started(InferenceGroup::new(child, events), pins),
-        Err(_) => {
+    // Keep the pins outside the potentially panicking spawn boundary.
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| command.spawn())) {
+        Ok(Ok((events, child))) => StartupOutcome::Started(InferenceGroup::new(child, events), pins),
+        _ => {
             state.stopping.store(true, Ordering::Release);
-            StartupOutcome::Uncertain
+            StartupOutcome::Uncertain(pins)
         },
     }
 }

@@ -24,7 +24,7 @@ const ENGINE_EXIT_LIMIT: Duration = Duration::from_secs(12);
 pub(crate) enum StartupOutcome<R> {
     Started(InferenceGroup, R),
     NeverStarted,
-    Uncertain,
+    Uncertain(R),
 }
 
 pub(crate) type Factory<R> = Arc<dyn Fn(Arc<AtomicBool>) -> StartupOutcome<R> + Send + Sync>;
@@ -61,6 +61,7 @@ enum Worker<R> {
     None,
     NeverStarted,
     Owned(InferenceGroup, R),
+    Uncertain(R),
 }
 
 pub(crate) struct Supervisor<R: Send + 'static> {
@@ -161,7 +162,10 @@ impl<R: Send + 'static> Supervisor<R> {
                 self.worker = Worker::Owned(group, pins);
             },
             StartupOutcome::NeverStarted => self.worker = Worker::NeverStarted,
-            StartupOutcome::Uncertain => return Err(FAULT),
+            StartupOutcome::Uncertain(pins) => {
+                self.worker = Worker::Uncertain(pins);
+                return Err(FAULT);
+            },
         }
         if late { return Err(FAULT); }
         Ok(())
@@ -208,7 +212,7 @@ impl<R: Send + 'static> Supervisor<R> {
                         self.phase = Phase::Exit;
                     },
                     Worker::NeverStarted => self.phase = Phase::Release,
-                    Worker::None => return Err(FAULT),
+                    Worker::None | Worker::Uncertain(_) => return Err(FAULT),
                 }
             },
             (Pending::Release, Reply::Released) if self.phase == Phase::Release => {
@@ -295,6 +299,7 @@ impl<R: Send + 'static> Supervisor<R> {
                     Worker::NeverStarted => self.phase = Phase::Drain,
                     Worker::Owned(_, _) if self.stopping => self.phase = Phase::Drain,
                     Worker::Owned(_, _) => self.send(Pending::WorkerReady, Command::WorkerReady, now)?,
+                    Worker::Uncertain(_) => return Err(FAULT),
                 }
             },
             Phase::Running => {
@@ -312,7 +317,7 @@ impl<R: Send + 'static> Supervisor<R> {
                 let evidence = match &self.worker {
                     Worker::NeverStarted => ExitEvidence::NeverStarted,
                     Worker::Owned(_, _) => ExitEvidence::Exited,
-                    Worker::None => return Err(FAULT),
+                    Worker::None | Worker::Uncertain(_) => return Err(FAULT),
                 };
                 self.send(Pending::Release, Command::Release(evidence), now)?;
             },

@@ -15,6 +15,7 @@ export function configureDesktopAPI(connection:DesktopConnection) {
   }
   desktopEndpoint = {...connection};
 }
+export function usesOwnedInference():boolean {return desktopEndpoint?.backend_driven_inference===true;}
 export function apiBase():string {return `http://127.0.0.1:${desktopEndpoint?.port ?? 8000}/api`;}
 function authHeaders(): Record<string,string> {
   return desktopEndpoint ? {'X-PilotODIN-Session': desktopEndpoint.token} : {};
@@ -145,7 +146,11 @@ export async function downloadReportFile(path:string):Promise<{blob:Blob;filenam
 
 /** Native Tauri-only Save As. Browser downloads remain a separate path. */
 export type NativeReportSaveStatus = {status:'saved'|'cancelled';filename:string|null};
+let nativeSaveActive=false;
 export async function saveReportNative(blob:Blob, filename:string, format:'html'|'pdf'):Promise<NativeReportSaveStatus> {
+ if(nativeSaveActive)throw new Error('Another native Save As is active.');
+ nativeSaveActive=true;
+ try {
  if(!('__TAURI_INTERNALS__' in window))throw new Error('Native Save As is only available inside the PilotODIN desktop application.');
  if(!filename.toLowerCase().endsWith('.'+format))throw new Error('Report filename does not match its file type.');
  const maxBytes=12*1024*1024;
@@ -156,11 +161,15 @@ export async function saveReportNative(blob:Blob, filename:string, format:'html'
  });
  if(result.status!=='saved'&&result.status!=='cancelled')throw new Error('Unexpected result from native Save As.');
  return result;
+ } finally {nativeSaveActive=false;}
 }
 
 
 /** Verified binary IPC only. The host chooses the destination through Save As. */
 export async function saveDatasetNative(download:VerifiedDatasetDownload,isCurrent:()=>boolean):Promise<NativeReportSaveStatus>{
+ if(nativeSaveActive)throw new Error('Another native Save As is active.');
+ nativeSaveActive=true;
+ try {
  if(!('__TAURI_INTERNALS__' in window)||!download.receipt)
    throw new Error('Native dataset receipt unavailable. No Save As dialog was opened.');
  if(!isCurrent())throw new Error('Dataset export is no longer current.');
@@ -183,4 +192,5 @@ export async function saveDatasetNative(download:VerifiedDatasetDownload,isCurre
  if(result.status==='cancelled'&&result.filename===null)return result;
  if(result.status==='saved'&&typeof result.filename==='string'&&result.filename.length>0)return result;
  throw new Error('Unexpected native dataset Save As result.');
+ } finally {nativeSaveActive=false;}
 }

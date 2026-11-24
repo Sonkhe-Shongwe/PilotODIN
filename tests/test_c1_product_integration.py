@@ -188,3 +188,84 @@ def test_resource_status_legacy_shape_and_owned_auth(product,monkeypatch):
     monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION","fixture-secret")
     assert client.get("/api/resource/status").status_code==401
     assert client.get("/api/resource/status",headers={"X-PilotODIN-Session":"fixture-secret"}).json()["workload"]==c.status()
+
+
+@pytest.fixture
+def owned_cloud(monkeypatch):
+    from backend import ai_provider as ai
+    cfg={**ai.DEFAULTS,"cloud_enabled":True,"share_aggregates":True}
+    calls=[]
+    monkeypatch.setattr(ai,"_read_config",lambda:dict(cfg))
+    monkeypatch.setattr(ai,"_get_key",lambda provider:"fixture-secret-key")
+    def call(provider,model,system,user,key,timeout,*,strict=False,still_authorized=None):
+        assert strict is True and still_authorized()
+        calls.append((provider,json.loads(user)))
+        return ai.ProviderText("Inert provider result","stop",False)
+    monkeypatch.setattr(ai,"_call_provider",call)
+    return ai,cfg,calls
+
+@pytest.mark.parametrize("selected",[None,"auto","ollama","local"])
+def test_owned_cloud_no_implicit_provider(owned_cloud,selected):
+    ai,cfg,calls=owned_cloud
+    result=ai.owned_cloud_insight({"row_count":3},"assistant","Question","Rules",False,selected)
+    assert result["fallback"] and calls==[]
+
+@pytest.mark.parametrize("field,value",[("cloud_enabled",False),("share_aggregates",False),
+                                        ("share_aggregates","true"),("intelligence_mode","local")])
+def test_owned_cloud_requires_exact_consent(owned_cloud,field,value):
+    ai,cfg,calls=owned_cloud
+    cfg[field]=value
+    assert ai.owned_cloud_insight({},"assistant","Question","Rules",False,"gemini")["fallback"]
+    assert calls==[]
+
+@pytest.mark.parametrize("selected",["gemini","groq","openrouter"])
+def test_owned_cloud_selected_destination_only_and_prediction_omitted(owned_cloud,selected):
+    ai,cfg,calls=owned_cloud
+    result=ai.owned_cloud_insight({"row_count":3,"prediction":{"outcome":"private"}},
+                                  "predict","Question","Rules",False,selected)
+    assert result["provider"]==selected and not result["fallback"]
+    assert len(calls)==1 and calls[0][0]==selected
+    assert calls[0][1]["verified_context"]=={"row_count":3}
+
+def test_owned_cloud_provider_failure_never_fans_out(owned_cloud,monkeypatch):
+    ai,cfg,calls=owned_cloud
+    def fail(provider,*args,**kwargs):
+        calls.append(provider)
+        raise RuntimeError("fixture failure")
+    monkeypatch.setattr(ai,"_call_provider",fail)
+    result=ai.owned_cloud_insight({},"assistant","Question","Rules",False,"gemini")
+    assert result["fallback"] and calls==["gemini"]
+
+def test_owned_cloud_revocation_discards_returned_response(owned_cloud,monkeypatch):
+    ai,cfg,calls=owned_cloud
+    def revoke(provider,*args,**kwargs):
+        calls.append(provider)
+        cfg["share_aggregates"]=False
+        return "Stale response"
+    monkeypatch.setattr(ai,"_call_provider",revoke)
+    result=ai.owned_cloud_insight({},"assistant","Question","Rules",False,"gemini")
+    assert result["fallback"] and result["answer"]=="Rules" and calls==["gemini"]
+
+def test_owned_cloud_stale_context_and_continuation_do_not_send(owned_cloud):
+    ai,cfg,calls=owned_cloud
+    for args,kwargs in [((None,),{"still_current":lambda:False}),(("Old private answer",),{})]:
+        assert ai.owned_cloud_insight({},"assistant","Question","Rules",False,"gemini",*args,**kwargs)["fallback"]
+    assert calls==[]
+
+def test_owned_lifespan_and_verify_connected_do_not_probe(product,monkeypatch):
+    from backend import ai_provider as ai
+    client,*_=product
+    monkeypatch.setattr(ai,"verify_connected",lambda:pytest.fail("Automatic external probe"))
+    monkeypatch.setattr(ai,"test_connection",lambda *a:pytest.fail("Legacy probe"))
+    assert client.post("/api/ai/verify-connected").json()["status"]=="cached"
+
+
+def test_owned_transport_rechecks_at_actual_dispatch(monkeypatch):
+    from backend import ai_provider as ai
+    class NeverOpen:
+        def open(self,*args,**kwargs):
+            pytest.fail("Revoked request reached transport")
+    monkeypatch.setattr(ai.urllib.request,"build_opener",lambda *a:NeverOpen())
+    with pytest.raises(RuntimeError,match="no longer authorized"):
+        ai._call_provider("gemini",ai.MODELS["gemini"]["routine"],"System","Question",
+                          "fixture-secret-key",10,strict=True,still_authorized=lambda:False)

@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-READINESS-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 2aa335473a14f5c399997f2657b49e7d0df64de8 |
 | Product baseline | b940527853deca476470d436b6819e518aad0e49 |
 | Scope | Consolidated owned cloud consent/provider compatibility, native readiness and uncertain pin retention, frontend bounded single-flight. Gate stays false. C4 durable settings and C3/C5 separate. |
 | Operation ID | C1-C2-READINESS-20261124-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/ai_provider.py; backend/main.py; backend/resource_session.py; tests/test_c1_product_integration.py; frontend/src-tauri/src/lib.rs; resource_desktop.rs; resource_supervisor.rs; frontend/src/api.ts; frontend/src/AssistantWorkspace.tsx; frontend/tests/desktop-ai-boundaries.test.cjs; continuity docs |
 | Approval | Standing source-only; no native build/run, external provider calls, owner data, activation, installer or model operation. |
 | Verification | Previous exact three routine runs SUCCESS, five executed jobs, restricted skipped. All 82 workflow definitions unchanged since 81de01d; inspected matching ten routine workflow scopes (P1 backend/frontend/lifecycle/HTTP, P2 report comparison/idempotency/export, P3 semantic/HTTP, P4 source), no restricted job. |

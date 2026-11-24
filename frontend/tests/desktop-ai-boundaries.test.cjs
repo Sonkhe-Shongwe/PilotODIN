@@ -143,3 +143,33 @@ test('owned mode does not retry a refused demand or trust request-body routing f
  assert.deepEqual(events,['/api/investigations/id/autonomy/start']);
  assert.throws(()=>api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:'true'}));
 });
+
+
+test('owned routing mode is explicit metadata and not inferred from request',()=>{
+ const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async()=>assert.fail('Unexpected fetch'));
+ assert.equal(api.usesOwnedInference(),false);
+ api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:true});
+ assert.equal(api.usesOwnedInference(),true);
+ api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:false});
+ assert.equal(api.usesOwnedInference(),false);
+});
+
+
+test('native report and dataset share one pre-copy save guard',async()=>{
+ const oldWindow=globalThis.window;
+ globalThis.window={__TAURI_INTERNALS__:{}};
+ try {
+  let finish;
+  const held=new Promise(resolve=>{finish=resolve;});
+  let invoked=0;
+  const api=loadAPI(async command=>{assert.equal(command,'save_report_as');invoked++;await held;return {status:'cancelled',filename:null};});
+  const blob=new Blob(['%PDF-test']);
+  const pending=api.saveReportNative(blob,'test.pdf','pdf');
+  await assert.rejects(api.saveDatasetNative({},()=>true),/Another native Save As/);
+  await assert.rejects(api.saveReportNative(blob,'test.pdf','pdf'),/Another native Save As/);
+  finish();
+  assert.equal((await pending).status,'cancelled');
+  assert.equal((await api.saveReportNative(blob,'test.pdf','pdf')).status,'cancelled');
+  assert.equal(invoked,2);
+ }finally{if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;}
+});

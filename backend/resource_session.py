@@ -170,6 +170,7 @@ def bind_product_routes(source, coordinator, autonomy_owner, owned_insight, *,
     target=FastAPI(title=source.title,version=source.version,lifespan=lifespan,
                    docs_url=None,redoc_url=None,openapi_url=None,
                    exception_handlers=dict(source.exception_handlers))
+    target.state.owned_resource_session=True
     target.user_middleware=list(source.user_middleware)
 
     async def upload(scope,receive,send):
@@ -215,8 +216,8 @@ def bind_product_routes(source, coordinator, autonomy_owner, owned_insight, *,
 def compose_owned_desktop(bootstrap, build_server):
     """Actual app/autonomy callbacks for the private demand bridge.
 
-    Not selected by the current launcher; no provider call until the trusted
-    host grants, launches and acknowledges the exact demand.
+    Not selected by the current launcher. Local inference requires the exact
+    host grant; cloud reasoning requires a separately selected provider and consent.
     """
     try:
         from . import main, autonomy, ai_provider, bundled_inference, resource_policy
@@ -250,10 +251,15 @@ def compose_owned_desktop(bootstrap, build_server):
     def insight(payload):
         value = json.loads(payload)
         fallback = ai_provider.local_rules_result(value["local"])
-        # C4 must establish exact explicit cloud consent and destination;
-        # do not route to cloud or switch providers through this owned seam.
-        if value["selected_provider"] in ai_provider.PROVIDERS or value["selected_provider"] == "local":
-            fallback["reason"] = "Requested provider unavailable in owned local session"
+        if value["selected_provider"] in ai_provider.PROVIDERS:
+            return ai_provider.owned_cloud_insight(
+                value["context"],value["task"],value["question"],value["local"],
+                value["deep"],value["selected_provider"],value["continuation_text"],
+                still_current=lambda: (
+                    not session.coordinator.status()["stopping"]
+                    and main.quality.current_version(value["project_id"])==value["dataset_version"]))
+        if value["selected_provider"] == "local":
+            fallback["reason"] = "Deterministic local analysis selected"
             return fallback
         prompt = ai_provider._encode_insight_prompt(value["context"],value["task"],
                     value["question"],value["continuation_text"],
@@ -262,7 +268,11 @@ def compose_owned_desktop(bootstrap, build_server):
             fallback["reason"] = "Verified context exceeds local prompt limit"
             return fallback
         cfg = ai_provider._read_config()
-        if ai_provider._resolve_provider(cfg,value["task"],value["selected_provider"]) not in ("ollama","auto"):
+        selected=value["selected_provider"]
+        # Saved provider preferences alone do not authorize egress. Auto is
+        # local-only; cloud-only mode without explicit destination defers.
+        if selected not in (None,"ollama","auto") or (
+                selected!="ollama" and cfg.get("intelligence_mode")=="cloud"):
             return fallback
         try:
             text,incomplete,reason = generate(ai_provider.SYSTEM,prompt,cfg["local_timeout_seconds"])
@@ -279,9 +289,10 @@ def compose_owned_desktop(bootstrap, build_server):
                 "attempts":[],"intelligence_mode":cfg["intelligence_mode"],
                 "local_status":"ready","incomplete":incomplete,"finish_reason":reason}
 
-    return DesktopResourceSession(bootstrap,
+    session = DesktopResourceSession(bootstrap,
         lambda:resource_policy.read_policy()["mode"],
         lambda:resource_policy.memory_status()["available_bytes"],
         build_autonomy=lambda c:autonomy.OwnedAutonomy(AutonomyStages(c,planner)),
         build_app=lambda c,a:main.build_owned_app(c,a,insight),
         build_server=build_server,demand=demand)
+    return session
