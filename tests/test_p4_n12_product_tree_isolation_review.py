@@ -84,6 +84,28 @@ class ProductTreeIsolationReviewTests(unittest.TestCase):
                 self.assertIn(issue, result["issues"])
                 self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
 
+    def test_desktop_authentication_topology_drift_blocks(self):
+        for key, before, after in (
+                ("runner", "trust = desktop_trust_from_environ(os.environ)", "trust = unknown_trust()"),
+                ("runner", 'RequestGuard(app, trust), host="127.0.0.1"', 'app, host="127.0.0.1"'),
+                ("runner", "proxy_headers=False", "proxy_headers=True"),
+                ("runner", "return _desktop_server(app, trust)", "return unreviewed_server(app)"),
+                ("runner", "server = _desktop_server(app, trust)", "server = unreviewed_server(app)"),
+                ("request_auth", 'environ.get("PILOTODIN_DESKTOP_SESSION", "")', 'environ.get("OTHER_TOKEN", "")'),
+                ("request_auth", "decision = authorize(scope, self._trust)", "decision = allow_all(scope)"),
+                ("request_auth", "admitted[_SCOPE_KEY] = _AUTHORIZED", "admitted[_SCOPE_KEY] = None")):
+            with self.subTest(key=key, before=before):
+                sources = dict(self.original)
+                self.assertIn(before, sources[key])
+                sources[key] = sources[key].replace(before, after, 1)
+                result = review.review_source_topology(sources)
+                self.assertEqual(result["review_status"], "SOURCE_DRIFT_BLOCKED")
+                self.assertIn("desktop-backend-session-source-drift", result["issues"])
+                self.assertEqual(result["native_N12_acceptance"], "NOT_EVALUATED")
+                self.assertEqual(result["file_mutation_acceptance"], "NOT_EVALUATED")
+                self.assertEqual(result["fileio_complete_runtime_evidence"], "NOT_COLLECTED")
+                self.assertFalse(result["owner_native_execution_authorized"])
+
     def test_duplicate_worker_or_command_is_not_accepted(self):
         for function, issue in (
                 ("launch_bundled_ai", "inference-async-dispatch-source-drift"),

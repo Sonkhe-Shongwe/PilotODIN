@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 00410aa2a6a01054163e159ffdbdb2b412c66e3a |
 | Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-DESKTOP-TOPOLOGY-CONTRACT-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | qa/p4_research/n12_product_tree_isolation_review.py, tests/test_p4_n12_product_tree_isolation_review.py and continuity only. Read-only source topology compatibility, not G2 evidence-method or acceptance change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job SUCCESS 53 passed, 66 subtests; restricted 138854871137 SKIPPED. No live auth integration. |
-| Pending runs | None. Exact 9c5ce6e #45511476665 terminal FAILURE: source 138859992562 all nine C3 and 52 unittest PASS, 1057 pytest passed, one source topology failure, six skips, 544 subtests. Windows 138859993163 SUCCESS 57 passed, 73 subtests; browser 138859992976 SUCCESS; restricted 138859994929 SKIPPED. |
+| Pending runs | Exact source-map compatibility patch published here; routine P4 CI dispatch pending. Prior #45511476665 desktop process verification SUCCESS; source failure recorded. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Update read-only desktop-backend-session literal topology check to follow actual new request_auth module and shared _desktop_server builder; retain failure on drift and all NOT_COLLECTED/NOT_EVALUATED/CONTROL_ONLY output boundaries. Add mutation negatives, no runtime or evidence-method change. Run routine CI. Then dev/QA capability integration. |
 | Resume after closure | C4, C5 in order; D separately approved. |

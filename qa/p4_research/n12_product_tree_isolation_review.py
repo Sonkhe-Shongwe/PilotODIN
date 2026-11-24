@@ -13,6 +13,7 @@ FILES = {
     "rust": "frontend/src-tauri/src/lib.rs",
     "config": "frontend/src-tauri/tauri.conf.json",
     "runner": "backend/desktop_runner.py",
+    "request_auth": "backend/request_auth.py",
     "qa_ambient": "qa/p4_research/n12_ambient_local_candidate.py",
     "token_probe": "qa/p4_research/n12_token_capability_preflight.py",
     "fixture": "qa/p4_research/n12_protected_fixture_contract.py",
@@ -118,9 +119,37 @@ def review_source_topology(sources):
         "application-owned-worker-home": _all(
             rust, "app.path().app_local_data_dir()", "worker_temp_directory(",
             '"backend-temp"', '"inference-temp"'),
-        "desktop-backend-session": _all(
-            sources["runner"], "PILOTODIN_DESKTOP_SESSION",
-            "PILOTODIN_HOME", 'host="127.0.0.1"'),
+        # C3 moved the credential read into an immutable trust constructor.
+        # Follow both source modules and both actual server construction paths.
+        # Still a literal source map, never transport or containment evidence.
+        "desktop-backend-session": (
+            _ordered(sources["runner"],
+                "def _desktop_server(app, trust):",
+                "from backend.request_auth import RequestGuard",
+                'RequestGuard(app, trust), host="127.0.0.1", port=trust.port',
+                'proxy_headers=False, ws="none"',
+                "def _run_owned(bootstrap, trust):",
+                "return _desktop_server(app, trust)",
+                "compose_owned_desktop(bootstrap, build_server)",
+                "def main() -> int:",
+                "from backend.request_auth import desktop_trust_from_environ",
+                'os.environ.get("PILOTODIN_HOME", "")',
+                "trust = desktop_trust_from_environ(os.environ)",
+                "owned_home = hold_process_workspace(home)",
+                "return _run_owned(bootstrap, trust)",
+                "server = _desktop_server(app, trust)")
+            and sources["runner"].count("uvicorn.Config(") == 1
+            and _ordered(sources["request_auth"],
+                "def desktop_trust_from_environ(environ):",
+                'return RequestTrust("desktop-debug" if debug == "1" else "desktop",',
+                'int(port), environ.get("PILOTODIN_DESKTOP_SESSION", ""))',
+                "class RequestGuard:",
+                "decision = authorize(scope, self._trust)",
+                "if not decision.allowed:",
+                "if decision.preflight:",
+                "admitted[_SCOPE_KEY] = _AUTHORIZED",
+                "await self._app(admitted, receive, send)")
+        ),
         "qa-only-ambient-variant": _all(
             sources["qa_ambient"], "QA-only", "apply_to_app_env(",
             '"LOCALAPPDATA"', '"APPDATA"', '"native_filesystem_containment": "NOT_VERIFIED"'),
