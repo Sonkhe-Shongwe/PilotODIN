@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-LOADER-DIAGNOSIS-20261125 |
-| State | PREPARED |
+| State | IN_PROGRESS |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | bb3e971fce93590b9bed7c5116cfe7eba4a5e2d3 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890; test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | Diagnose the exact integrated test executable loader failure using existing source, config, lock and logs. Correct only evidence-supported fixture/source defects. |
 | Operation ID | C1-OWNED-HOST-MANIFEST-20261125-ONE-USE |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | Disabled .github/workflows/p4-c1-c2-owned-host-once.yml and qa/c1_c2_owned_host_preflight.rb; continuity records. No product source or fixture assertions change. |
 | Approval | Owner explicitly approved 25 November 2026 one execution C1-OWNED-HOST-MANIFEST-20261125-ONE-USE, attempt 1 only, exact recorded corrected manifest and synthetic owned-host scope. No production launch, OS/DLL modification, real model, cloud, owner data, installer, activation, upload or retry. Prior approvals consumed. |
 | Verification | #45502494558 SUCCESS: paired locked no-run builds, baseline 12 DLLs/155 named imports, fixture 20/241, sole direct missing export candidate comctl32.dll TaskDialogIndirect; API-set math unresolved; both cleanups PASS. #45502607711 SUCCESS native SKIPPED, both fingerprints match. Microsoft documents TaskDialogIndirect requires common controls v6 and application manifest selection. Candidate, not established loader cause. |
-| Pending runs | None; approval prepared. Exact disabled proposal 7cec4ee preflight #45503873646 SUCCESS native SKIPPED; workflow/preflight and pinned fixture identities independently matched, both SHA256 fingerprints matched 9e2c3d9892d917dd0d2822a12d748491c1cb2ac2c779d3eb67bef697b246ac9d and 7f5921654446ba0d9b7fe58079ff51691bcdb18926eccc4546879142c93a7b95. |
+| Pending runs | Arm commit pending dispatch reconciliation; exact attempt 1 only. Treat approval as potentially consumed; never re-arm. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Source preflight and both workflow fingerprints verified. Before arming, recheck exact HEAD, source identities and independently compute both fingerprints. Fresh exact approval recorded; arm once, confirm dispatch and disarm byte-identically. Exact fixture 1d23ea1 unchanged; compile no-run, copy only generated test executable, inspect original manifest, append v6 Common Controls dependency only if absent, embed/read back in copy, verify original hash, run one exact ignored test. Existing dependency, unknown extraction, privilege request or manifest error refuses before launch. No production/OS change. |
+| Recovery action | Source preflight and both workflow fingerprints verified. Before arming, recheck exact HEAD, source identities and independently compute both fingerprints. Recover exact marker commit and actual run, confirm dispatch and disarm byte-identically; never re-arm. Exact fixture 1d23ea1 unchanged; compile no-run, copy only generated test executable, inspect original manifest, append v6 Common Controls dependency only if absent, embed/read back in copy, verify original hash, run one exact ignored test. Existing dependency, unknown extraction, privilege request or manifest error refuses before launch. No production/OS change. |
 | Resume after closure | C1/C2 exit audit, C3–C5; D separately approved. |
 
 ## Prior operation
