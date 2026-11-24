@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `8e3cc9112073b9744ff18ffa3e4e549662504a97`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `766d352ca5036529b9aa8d1bc091b8f0b0276090`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -8,4 +8,4 @@ Reviewed current published code and approved Master Reconstruction Blueprint (re
 
 ## 24 November | C1 first core source batch
 
-Operation C1-RESOURCE-ADMISSION-20261124-core; parent `3e5f15d`. Added dependency-free Coordinator, explicit 76-route inventory and pure race, handoff, stale sample, drain/blocked, shutdown and all-mode floor tests. Tests included in existing P1 isolated backend workflow. No live admission integration yet. Current FastAPI 0.165.0, Starlette 1.10.0, python-multipart 0.0.34, AnyIO 4.16.0 observed in #45440551176 job 138610154665 install log; not locks. Tauri shell 2.6.0 public command docs confirm raw output and stdin write primitives; full runtime framing/ownership still unverified. Prior native approvals consumed. C0/5 unchanged; exact CI pending. No new native/model/installer/owner operation.
+Operation C1-RESOURCE-ADMISSION-20261124-core; parent `3e5f15d`. Added dependency-free Coordinator, explicit 76-route inventory and pure race, handoff, stale sample, drain/blocked, shutdown and all-mode floor tests. Tests included in existing P1 isolated backend workflow. No live admission integration yet. Current FastAPI 0.165.0, Starlette 1.10.0, python-multipart 0.0.34, AnyIO 4.16.0 observed in #45440551176 job 138610154665 install log; not locks. Tauri shell 2.6.0 public command docs confirm raw output and stdin write primitives; full runtime framing/ownership still unverified. Prior native approvals consumed. C0/5 unchanged; exact product [`766d352`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/766d352ca5036529b9aa8d1bc091b8f0b0276090), [P1 source CI #45446217250](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45446217250) IN_PROGRESS. No new native/model/installer/owner operation.
