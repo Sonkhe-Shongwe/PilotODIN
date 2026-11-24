@@ -8,8 +8,11 @@ provide exact queued-only settlement and a durable terminal-state witness.
 """
 from threading import Lock
 
+import anyio
+from starlette.responses import JSONResponse
+
 try:
-    from .resource_admission import Coordinator, Operation
+    from .resource_admission import Coordinator, Operation, GIB
 except ImportError:
     from resource_admission import Coordinator, Operation
 
@@ -140,3 +143,66 @@ class TrainingOwnership:
             self._release_if_complete_locked()
         if settle:
             self._settle_unstarted()
+
+
+    def block_unconfirmed_finalization(self):
+        """Finalizer itself escaped; do not manufacture a completion witness."""
+        with self._lock:
+            if self._state not in ("denied", "released"):
+                self._block_locked()
+
+
+_OWNER_SCOPE_KEY = "pilotodin.training_ownership"
+
+
+def training_owner(scope):
+    """Read only the server-injected owner from the trusted matched route."""
+    owner = scope.get(_OWNER_SCOPE_KEY)
+    if not isinstance(owner, TrainingOwnership):
+        raise RuntimeError("Training route has no trusted resource owner")
+    return owner
+
+
+class TrainingHTTP:
+    """Staged full ASGI training lifetime, after auth and trusted route match.
+
+    Downstream synchronous preparation must not detach work. The endpoint
+    calls publication_started, binds the returned experiment ID and adds the
+    returned callback to BackgroundTasks. No middleware-only header witness.
+    Not registered in the live application.
+    """
+    def __init__(self, app, coordinator):
+        self.app = app
+        self.coordinator = coordinator
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") != "http" or _OWNER_SCOPE_KEY in scope:
+            raise ValueError("TrainingHTTP requires a fresh trusted HTTP scope")
+        owner = TrainingOwnership(self.coordinator)
+        admission = owner.admission
+        if not admission.allowed:
+            await JSONResponse({"detail": {
+                "code": admission.code, "operation": "training",
+                "message": "Local resources unavailable. Review status before retrying.",
+                "available_gib": (None if admission.available_bytes is None
+                                  else admission.available_bytes / GIB),
+                "required_free_gib": admission.required_bytes / GIB,
+                "retryable": True,
+            }}, status_code=503)(scope, receive, send)
+            return
+        completed = False
+        try:
+            owned_scope = dict(scope)
+            owned_scope[_OWNER_SCOPE_KEY] = owner
+            await self.app(owned_scope, receive, send)
+            completed = True
+        finally:
+            try:
+                # DB settlement is synchronous and may wait on SQLite. Never
+                # block the event loop or abandon its thread intentionally.
+                with anyio.CancelScope(shield=True):
+                    await anyio.to_thread.run_sync(
+                        lambda: owner.finish_request(preparation_completed=completed))
+            except BaseException:
+                owner.block_unconfirmed_finalization()
+                raise

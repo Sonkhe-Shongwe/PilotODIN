@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 06ff8df5ab5b5a58f775dcfe5a05a78cf0410871 |
 | Product baseline | a3ae7af641de83442fd566666f29cba68caebbca |
 | Scope | C1 targeted durable queued settlement and terminal witness, staged full ASGI training adapter and real framework/SQLite synthetic integration tests; no live activation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-training-durable-asgi |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_training.py; backend/resource_training_store.py; tests/test_c1_resource_training_store.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45453690745 SUCCESS: 166 regression + 2 subtests, 77 C1. Next real disposable SQLite exact queued CAS, rollback/race/terminal checks and actual FastAPI BackgroundTasks with inert worker. |
-| Pending runs | None; #45453690745/job 138657295121 terminal SUCCESS, exact checkout and counts confirmed. |
+| Verification | Staged durable training and actual FastAPI background fixtures published; exact-source CI pending. No live registration. |
+| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before integration. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish staged durable adapter and ASGI binding, then reconcile exact CI; no live registration until production route/worker, autonomous and host seam integrated. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
