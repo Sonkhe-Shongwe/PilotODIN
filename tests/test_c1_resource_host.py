@@ -885,3 +885,84 @@ def test_duplicate_worker_ready_faults_before_reply():
         resume.set()
         b.transport_lost()
         thread.join(3)
+
+
+@pytest.mark.parametrize("env,expected",[
+    ({}, "legacy"),
+    ({"PILOTODIN_CONTROL_MODE":"legacy"}, "legacy"),
+    ({"PILOTODIN_CONTROL_MODE":"pod1","PILOTODIN_DESKTOP_WATCH_STDIN":"1",
+      "PILOTODIN_CONTROL_GENERATION":GEN,"PILOTODIN_CONTROL_CAPABILITY":KEY}, "pod1"),
+])
+def test_runner_explicit_control_selection(env,expected):
+    from backend.desktop_runner import _control_mode
+    assert _control_mode(env)==expected
+
+@pytest.mark.parametrize("env",[
+    {"PILOTODIN_CONTROL_MODE":"pod1"},
+    {"PILOTODIN_CONTROL_GENERATION":GEN},
+    {"PILOTODIN_CONTROL_CAPABILITY":""},
+    {"PILOTODIN_CONTROL_MODE":"legacy","PILOTODIN_CONTROL_GENERATION":GEN},
+    {"PILOTODIN_CONTROL_MODE":"other"},
+    {"PILOTODIN_CONTROL_MODE":"pod1","PILOTODIN_CONTROL_GENERATION":GEN,
+     "PILOTODIN_CONTROL_CAPABILITY":KEY},
+    {"PILOTODIN_CONTROL_MODE":"pod1","PILOTODIN_DESKTOP_WATCH_STDIN":"1",
+     "PILOTODIN_CONTROL_GENERATION":GEN.upper(),"PILOTODIN_CONTROL_CAPABILITY":KEY},
+])
+def test_runner_partial_or_invalid_control_never_selects_legacy(env):
+    from backend.desktop_runner import _control_mode
+    with pytest.raises(ValueError):
+        _control_mode(env)
+
+@pytest.mark.parametrize("outcome",[0,3,"raise"])
+def test_runner_owns_bootstrap_before_composition_without_fallback(monkeypatch,capsys,outcome):
+    from backend import desktop_runner,resource_host,workspace_boundary
+    env={"PILOTODIN_HOME":"fixture-home","PILOTODIN_DESKTOP_PORT":"12345",
+         "PILOTODIN_DESKTOP_SESSION":"s"*64,"PILOTODIN_DESKTOP_WATCH_STDIN":"1",
+         "PILOTODIN_CONTROL_MODE":"pod1","PILOTODIN_CONTROL_GENERATION":GEN,
+         "PILOTODIN_CONTROL_CAPABILITY":KEY}
+    # No OS descriptors, workspace lock, analytical import or server startup.
+    monkeypatch.setattr(desktop_runner.os,"environ",env)
+    events=[]
+    bootstrap=object()
+    def hold(home):
+        events.append("workspace")
+        return home
+    def scratch(home):
+        events.append("scratch")
+    def prepare(environ,*streams):
+        events.append("bootstrap")
+        assert environ.pop("PILOTODIN_CONTROL_GENERATION")==GEN
+        assert environ.pop("PILOTODIN_CONTROL_CAPABILITY")==KEY
+        return bootstrap
+    def run(value,port):
+        events.append("compose")
+        assert value is bootstrap and port==12345
+        assert not any(k.startswith("PILOTODIN_CONTROL_") for k in env)
+        if outcome=="raise":
+            raise RuntimeError(KEY)
+        return outcome
+    monkeypatch.setattr(workspace_boundary,"hold_process_workspace",hold)
+    monkeypatch.setattr(workspace_boundary,"configure_process_scratch",scratch)
+    monkeypatch.setattr(resource_host,"prepare_owned_control",prepare)
+    monkeypatch.setattr(desktop_runner,"_run_owned",run)
+    monkeypatch.setattr(desktop_runner,"Thread",lambda *a,**kw:pytest.fail("Legacy watcher"))
+    assert desktop_runner.main()==(3 if outcome=="raise" else outcome)
+    assert events==["workspace","scratch","bootstrap","compose"]
+    assert KEY not in capsys.readouterr().err
+
+def test_runner_bootstrap_failure_cannot_enter_legacy(monkeypatch,capsys):
+    from backend import desktop_runner,resource_host,workspace_boundary
+    env={"PILOTODIN_HOME":"fixture-home","PILOTODIN_DESKTOP_PORT":"12345",
+         "PILOTODIN_DESKTOP_SESSION":"s"*64,"PILOTODIN_DESKTOP_WATCH_STDIN":"1",
+         "PILOTODIN_CONTROL_MODE":"pod1","PILOTODIN_CONTROL_GENERATION":GEN,
+         "PILOTODIN_CONTROL_CAPABILITY":KEY}
+    monkeypatch.setattr(desktop_runner.os,"environ",env)
+    monkeypatch.setattr(workspace_boundary,"hold_process_workspace",lambda h:h)
+    monkeypatch.setattr(workspace_boundary,"configure_process_scratch",lambda h:None)
+    def fail(*args):
+        raise ProtocolFault(KEY)
+    monkeypatch.setattr(resource_host,"prepare_owned_control",fail)
+    monkeypatch.setattr(desktop_runner,"_run_owned",lambda *a:pytest.fail("Composed after fault"))
+    monkeypatch.setattr(desktop_runner,"Thread",lambda *a,**kw:pytest.fail("Legacy watcher"))
+    assert desktop_runner.main()==3
+    assert KEY not in capsys.readouterr().err

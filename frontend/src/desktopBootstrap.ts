@@ -1,7 +1,6 @@
 import {invoke} from '@tauri-apps/api/core';
 import {configureDesktopAPI, get} from './api';
-
-type DesktopConnection = {port:number;token:string};
+import type {DesktopConnection} from './api';
 
 // Tauri only makes this property available inside the native webview.
 export function isDesktop(): boolean {

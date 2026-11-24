@@ -108,3 +108,38 @@ test('continuing an offline workspace explanation pins the request to the local 
  assert.match(workspace,/const continuationProvider = result\.source === 'local_llm' \? 'ollama' : selectedProvider/);
  assert.match(workspace,/selected_provider:continuationProvider,continuation_text:result\.answer/);
 });
+
+
+test('owned desktop posts demand directly without preflight or launch IPC',async()=>{
+ for(const [path,body] of [
+  ['/projects/id/ai/insight',{selected_provider:'ollama',question:'How many rows?'}],
+  ['/projects/id/ai/insight',{selected_provider:'gemini'}],
+  ['/investigations/id/autonomy/start',{}],
+  ['/investigations/id/autonomy/resume',{}],
+ ]){
+  const events=[];
+  const api=loadAPI(async()=>assert.fail('Owned mode must never invoke legacy launch'),async(url,options)=>{
+   events.push(new URL(url).pathname);
+   assert.equal(options.method,'POST');
+   assert.equal(options.headers['X-PilotODIN-Session'],'test-session');
+   assert.deepEqual(JSON.parse(options.body),body);
+   return Response.json({answer:'Verified rules',fallback:true,local_status:'resource_busy'});
+  });
+  api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:true});
+  const result=await api.post(path,body);
+  assert.deepEqual(events,['/api'+path]);
+  assert.equal(result.local_status,'resource_busy');
+  assert.equal(result.local_startup_issue,undefined);
+ }
+});
+test('owned mode does not retry a refused demand or trust request-body routing flags',async()=>{
+ const events=[];
+ const api=loadAPI(async()=>assert.fail('Unexpected launch'),async(url,options)=>{
+  events.push(new URL(url).pathname);
+  return Response.json({detail:'resource_busy'},{status:503});
+ });
+ api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:true});
+ await assert.rejects(api.post('/investigations/id/autonomy/start',{backend_driven_inference:false}),{message:'resource_busy'});
+ assert.deepEqual(events,['/api/investigations/id/autonomy/start']);
+ assert.throws(()=>api.configureDesktopAPI({port:12345,token:'test-session',backend_driven_inference:'true'}));
+});

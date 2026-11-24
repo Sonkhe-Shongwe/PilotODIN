@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 46d5f0121deadaf8c0de45f39f7de50aace8a372 |
 | Product baseline | eb89356dad89c7b1637d30bef287c60561ed2b23 |
 | Scope | Explicit owned runner bootstrap and frontend demand mode, paired with private native mode selection. Compile-time gate remains false; no partial grant activation. |
 | Operation ID | C1-C2-INTEGRATION-20261124-runner-frontend |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/desktop_runner.py; frontend/src-tauri/src/lib.rs; frontend/src/api.ts; frontend/src/desktopBootstrap.ts; tests/test_c1_resource_host.py; frontend/tests/desktop-ai-boundaries.test.cjs; continuity docs |
 | Approval | Standing P4 source authority; no native product compilation/run, model operations, installer, owner data or activation. |
 | Verification | Previous exact P4 #45484468091 and P2 #45484468092 SUCCESS, logs reconciled. All 82 workflow definitions unchanged; planned paths match P1 backend/frontend, P2 report, P3 real HTTP and P4 routine source/synthetic workflows only; restricted P4 probe false. |

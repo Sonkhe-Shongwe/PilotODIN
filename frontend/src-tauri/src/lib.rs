@@ -36,6 +36,8 @@ mod resource_desktop;
 struct BackendConnection {
     port: u16,
     token: String,
+    // Routing metadata only; never a resource lease or control capability.
+    backend_driven_inference: bool,
 }
 
 struct ActiveBackend {
@@ -579,6 +581,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         .env("PILOTODIN_DESKTOP_SESSION", token.as_str())
         .env("PILOTODIN_DATASET_EXPORT_KEY", dataset_export_key.as_str())
         .env("PILOTODIN_DESKTOP_WATCH_STDIN", "1")
+        .env("PILOTODIN_CONTROL_MODE", "legacy")
         .env("PILOTODIN_BUNDLED_LLM_PORT", inference_port.to_string())
         .env("PILOTODIN_BUNDLED_LLM_TOKEN", inference_token.as_str())
         .env("PILOTODIN_DESKTOP_ALLOW_DEV", if cfg!(debug_assertions) { "1" } else { "0" })
@@ -598,6 +601,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         let wire = resource_wire::Wire::new(generation.clone(), capability.clone())
             .map_err(str::to_owned)?;
         let (events, child) = match command
+            .env("PILOTODIN_CONTROL_MODE", "pod1")
             .env("PILOTODIN_CONTROL_GENERATION", generation.as_str())
             .env("PILOTODIN_CONTROL_CAPABILITY", capability.as_str())
             .set_raw_out(true).spawn() {
@@ -609,7 +613,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
                     return Err("Owned engine launch outcome unconfirmed".into());
                 },
             };
-        let connection = BackendConnection { port, token: token.clone() };
+        let connection = BackendConnection { port, token: token.clone(), backend_driven_inference: true };
         let exit = Arc::new(AtomicU8::new(0));
         let owner = Arc::new(resource_desktop::OwnedSession::new(
             app.clone(), wire, events, child, token.clone(), inference_port, inference_token));
@@ -627,7 +631,7 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
     }
     let (mut events, child) = command.spawn()
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
-    let connection = BackendConnection { port, token: token.clone() };
+    let connection = BackendConnection { port, token: token.clone(), backend_driven_inference: false };
     let exit = Arc::new(AtomicU8::new(0));
     *guard = Some(ActiveBackend { connection: connection.clone(), dataset_export_key, child: Some(child),
         exit: exit.clone(), stop_requested: false, _storage_pins: storage_pins,

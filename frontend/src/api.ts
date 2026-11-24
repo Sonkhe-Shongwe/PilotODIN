@@ -4,12 +4,16 @@ import type {DatasetExportRequest,VerifiedDatasetDownload} from './datasetExport
 
 // Development remains on :8000; production uses an authenticated, per-launch
 // local port provided privately by the Rust desktop process supervisor.
-let desktopEndpoint: {port:number;token:string}|null = null;
-export function configureDesktopAPI(connection:{port:number;token:string}) {
+export type DesktopConnection = {port:number;token:string;backend_driven_inference?:boolean};
+let desktopEndpoint: DesktopConnection|null = null;
+export function configureDesktopAPI(connection:DesktopConnection) {
   if (!Number.isInteger(connection.port) || connection.port < 1024 || connection.port > 65535 || !connection.token) {
     throw new Error('Invalid desktop API connection details');
   }
-  desktopEndpoint = connection;
+  if (connection.backend_driven_inference !== undefined && typeof connection.backend_driven_inference !== "boolean") {
+    throw new Error("Invalid desktop inference routing mode");
+  }
+  desktopEndpoint = {...connection};
 }
 export function apiBase():string {return `http://127.0.0.1:${desktopEndpoint?.port ?? 8000}/api`;}
 function authHeaders(): Record<string,string> {
@@ -63,7 +67,9 @@ function bundledStartIssue(error:unknown):string {
  return 'worker_launch_failed';
 }
 async function requestLocalAI(path:string,method:'GET'|'POST',body?:unknown):Promise<string|null>{
- if(!desktopEndpoint || !shouldLaunchBundledAI(path,method,body))return null;
+ if(!desktopEndpoint || desktopEndpoint.backend_driven_inference === true || !shouldLaunchBundledAI(path,method,body))return null;
+ // Owned mode posts first. Only the backend may request a native grant
+ // after DATA preparation; no preflight/launch IPC or implicit retry here.
  // The Rust command can start a memory-hungry model BEFORE Python receives
  // the AI request. Check offline AI settings and memory admission first.
  let startupQuery = '&investigation_autonomy=true';
