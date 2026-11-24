@@ -7,20 +7,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a2013f555812eee86a08769c8934aeb10c6527e2 |
-| Product baseline | a6ec84c784152d7ab5f357a9083ca6eb34cdeb92 |
-| Scope | Private native REPORT/EXPORT grant and joined writer lifetime on the existing POD1 lane; preserve native save checks and legacy mode; compile-time gate remains false. |
+| Product baseline | b940527853deca476470d436b6819e518aad0e49 |
+| Scope | Shared typed native save grant, pre-copy reservation and retained joined writer wired to both save commands behind disabled compile-time gate. |
 | Operation ID | C1-C2-INTEGRATION-20261124-native-save |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; resource_transport.rs; resource_shell.rs; resource_supervisor.rs; resource_desktop.rs; resource_save.rs; lib.rs; continuity docs |
-| Approval | Standing P4 source authority. No product native compilation/run, live save, model operations, installer, owner data, new OS operations or partial activation. |
-| Verification | Prior five exact routine workflows SUCCESS, seven executed jobs and logs reconciled. All 82 workflows unchanged from 81de01d; planned paths match P1 backend, P2 report and P4 routine synthetic/source jobs only; restricted P4 probe disabled. |
-| Pending runs | None before publication. |
+| Approval | Standing P4 source authority. No native product compile/run, live save, installer, model operations, owner data, new OS operations or partial activation authorized. |
+| Verification | Exact source b940527853deca476470d436b6819e518aad0e49, static source/changed-path review, gate false. All 82 workflows unchanged from reviewed 81de01d. Prior five workflows SUCCESS recorded in ledger. Ten Python regression cases, five uncompiled Rust fixture definitions added. |
+| Pending runs | Exact b940527853deca476470d436b6819e518aad0e49: P1 backend #45489764832, P2 report #45489765030, P4 #45489764772 IN_PROGRESS. Reconcile terminal jobs and failures before further source publication. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Extend typed POD1 grant and release for native saves, one retained pre-copy reservation and actual writer join, no timeout release; connect both existing save commands behind disabled gate, preserve legacy source contracts. Reconcile exact CI then cloud consent compatibility and native readiness. |
-| Resume after closure | C1/C2 verification, then C3–C5; D separately approved. |
+| Recovery action | Reconcile three routine runs; complete explicit cloud-provider consent and routing compatibility in owned insight/autonomy path without automatic fallback or network execution. Review actual native registration readiness, frontend single-flight/busy UX and the Save As lifetime/IPC bounds; new Rust source still uncompiled, request fresh consolidated native verification approval only after coherent source readiness. No activation or closure on source alone. |
+| Resume after closure | C1/C2 verification then C3–C5; D separately approved. |
 
 ## Prior operation
 
