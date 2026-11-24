@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `2ac816310dbcbc96c42da87b54e3bfefc96ad2fb`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `a3ae7af641de83442fd566666f29cba68caebbca`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -29,3 +29,7 @@ Operation C1-RESOURCE-ADMISSION-20261124-upload-envelope, prepared at `d4b0220`,
 ## 24 November | C1 upload exact-source CI reconciled
 
 [P1 #45453053138](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45453053138), job 138655089874, terminal SUCCESS, checkout `2ac816310dbcbc96c42da87b54e3bfefc96ad2fb`, compile, 166 regression + 2 subtests and 58 C1 (42 prior + 16 upload). Same FastAPI 0.165.0 / Starlette 1.10.0 / python-multipart 0.0.34 / AnyIO 4.16.0 resolution. Actual parser synthetic fixtures passed; full app/browser route and disk rollover/fault remain unverified. Reviewed frontend api.ts uses FormData single `file` part; source compatible with one-part contract, not browser acceptance. No live registration or native/model operation. C0/5, source 10/17, P4 14/20 unchanged.
+
+## 24 November | C1 staged training ownership and upload fault verification published
+
+Operation C1-RESOURCE-ADMISSION-20261124-training-ownership, prepared at `1c6376a`, published [`a3ae7af`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a3ae7af641de83442fd566666f29cba68caebbca). New staged TrainingOwnership reserves before preparation, distinguishes confirmed refusal from ambiguous queue publication, binds exact experiment ID, transfers identity, excludes duplicate/late worker callbacks, and holds the lane until both actual callback return with terminal witness and request completion; exact unstarted settlement or confirmed refusal may release, uncertain outcome blocks. 15 new inert training tests and four additional actual parser spool rollover/close-fault tests. No model fitting or actual storage CAS/ASGI background integration yet; callbacks require a trusted adapter and durable witness. Existing fitting slot and product endpoints unchanged. Workflow inventory compared against 82 inspected definitions; only P1 source workflow changed. [Exact CI #45453690745](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45453690745) QUEUED at last observation; counts/actual result pending. No live registration, native/model/installer/owner operation; C0/5, source 10/17, P4 14/20 unchanged.

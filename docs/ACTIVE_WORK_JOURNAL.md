@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 1da795a773a304862fdc88703a686fea0689d263 |
-| Product baseline | 2ac816310dbcbc96c42da87b54e3bfefc96ad2fb |
+| Product baseline | a3ae7af641de83442fd566666f29cba68caebbca |
 | Scope | C1 staged upload disk rollover/cleanup fault tests and identity-bound training preparation-to-worker handoff foundation; no live registration or model work. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-training-ownership |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | tests/test_c1_resource_upload.py; backend/resource_training.py; tests/test_c1_resource_training.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Staged training ownership foundation and upload disk/fault cases published; exact-source CI pending. No live registration. |
-| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before integration. |
+| Pending runs | [P1 #45453690745](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45453690745), exact a3ae7af641de83442fd566666f29cba68caebbca, QUEUED at last observation; reconcile job/logs before integration. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Stage upload additional tests and training ownership seam; verify exact CI before actual storage CAS, route/background binding, autonomous/host integration. No actual model execution. |
+| Recovery action | Reconcile exact training ownership and upload disk/fault CI; next implement targeted queued-only storage CAS and terminal witness, then bind the full ASGI lifetime to existing worker with inert integration tests, followed by autonomous/host seam. No live registration or native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
