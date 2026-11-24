@@ -32,13 +32,20 @@ def _control_mode(environ):
     raise ValueError("Invalid private desktop control configuration")
 
 
-def _run_owned(bootstrap, port):
-    # The caller has already isolated protocol stdout and acquired workspace.
+def _desktop_server(app, trust):
     import uvicorn
+    from backend.request_auth import RequestGuard
+    return uvicorn.Server(uvicorn.Config(
+        RequestGuard(app, trust), host="127.0.0.1", port=trust.port,
+        access_log=False, log_level="warning", server_header=False,
+        proxy_headers=False, ws="none"))
+
+
+def _run_owned(bootstrap, trust):
+    # The caller has already isolated protocol stdout and acquired workspace.
     from backend.resource_session import compose_owned_desktop
     def build_server(app):
-        return uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port,
-                              access_log=False, log_level="warning", server_header=False))
+        return _desktop_server(app, trust)
     session = compose_owned_desktop(bootstrap, build_server)
     return 0 if session.run() is True else 3
 
@@ -61,18 +68,14 @@ def _watch_desktop_pipe(server: Server, descriptor: int) -> None:
 
 
 def main() -> int:
-    session = os.environ.get("PILOTODIN_DESKTOP_SESSION", "")
+    from backend.request_auth import desktop_trust_from_environ
     home = os.environ.get("PILOTODIN_HOME", "")
-    if len(session) < 32 or not home:
-        print("Desktop session environment is missing; refusing to start.", file=sys.stderr)
-        return 2
     try:
-        port = int(os.environ.get("PILOTODIN_DESKTOP_PORT", ""))
+        trust = desktop_trust_from_environ(os.environ)
+        if not home:
+            raise ValueError("Missing workspace")
     except ValueError:
-        print("Invalid desktop port.", file=sys.stderr)
-        return 2
-    if not 1024 <= port <= 65535:
-        print("Desktop port is outside the supported range.", file=sys.stderr)
+        print("Invalid desktop serving configuration; refusing to start.", file=sys.stderr)
         return 2
     try:
         mode = _control_mode(os.environ)
@@ -103,7 +106,7 @@ def main() -> int:
             from backend.resource_host import prepare_owned_control
             bootstrap = prepare_owned_control(os.environ, sys.stdin, sys.stdout, sys.stderr)
             os.environ.pop("PILOTODIN_CONTROL_MODE", None)
-            return _run_owned(bootstrap, port)
+            return _run_owned(bootstrap, trust)
         except Exception:
             # No raw exception text, no second app/server, no legacy watcher.
             # This single-use process exits on failed composition; bootstrap
@@ -111,12 +114,8 @@ def main() -> int:
             print("Owned desktop control startup or session failed.", file=sys.stderr)
             return 3
     os.environ.pop("PILOTODIN_CONTROL_MODE", None)
-    import uvicorn
     from backend.main import app
-
-    options = dict(host="127.0.0.1", port=port, access_log=False,
-                   log_level="warning", server_header=False)
-    server = uvicorn.Server(uvicorn.Config(app, **options))
+    server = _desktop_server(app, trust)
     if owner_stdin is not None:
         Thread(target=_watch_desktop_pipe, args=(server, owner_stdin),
                name="pilotodin-desktop-owner", daemon=True).start()

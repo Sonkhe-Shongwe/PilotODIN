@@ -323,5 +323,94 @@ class C3RequestTrustTests(unittest.TestCase):
                     self.assertEqual(authorize({**scope, "headers": [scope["headers"][0], scope["headers"][2]]}, trust).status, 401)
 
 
+    def test_c3_desktop_launcher_captures_mode_and_rejects_mixed_config(self):
+        from backend.request_auth import desktop_trust_from_environ, authorize
+        env = {"PILOTODIN_DESKTOP_PORT": "9012", "PILOTODIN_DESKTOP_SESSION": self.secret,
+               "PILOTODIN_DESKTOP_ALLOW_DEV": "0"}
+        release = desktop_trust_from_environ(env)
+        env["PILOTODIN_DESKTOP_SESSION"] = "b"*64
+        env["PILOTODIN_DESKTOP_ALLOW_DEV"] = "1"
+        debug = desktop_trust_from_environ(env)
+        self.assertEqual(release.secret, self.secret)
+        self.assertEqual(release.mode, "desktop")
+        self.assertEqual(debug.mode, "desktop-debug")
+        self.assertTrue(authorize(self.scope(debug, origin="http://127.0.0.1:5173"), debug).allowed)
+        self.assertFalse(authorize(self.scope(release, origin="http://127.0.0.1:5173"), release).allowed)
+        self.assertFalse(authorize(self.scope(debug, origin="http://127.0.0.1:5187"), debug).allowed)
+        for change in ({"PILOTODIN_SERVER_MODE":"dev"}, {"PILOTODIN_DEV_CAPABILITY":"c"*64},
+                       {"PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5173"},
+                       {"PILOTODIN_DESKTOP_ALLOW_DEV":"true"}, {"PILOTODIN_DESKTOP_PORT":"+9012"},
+                       {"PILOTODIN_DESKTOP_PORT":"99999"}, {"PILOTODIN_DESKTOP_SESSION":""}):
+            with self.subTest(change=tuple(change)):
+                with self.assertRaises(ValueError):
+                    desktop_trust_from_environ({**env, **change})
+
+    def test_c3_outer_guard_never_reads_body_or_calls_product_for_refusal_or_preflight(self):
+        import asyncio
+        from backend.request_auth import RequestGuard, request_authorized
+        seen = []
+        async def product(scope, receive, send):
+            self.assertTrue(request_authorized(scope))
+            seen.append(scope["method"])
+            await send({"type":"http.response.start","status":200,"headers":[]})
+            await send({"type":"http.response.body","body":b"ok"})
+        guard = RequestGuard(product, self.desktop)
+        async def exchange(scope):
+            sent = []
+            async def receive():
+                self.fail("Denied/preflight request must not read body")
+            async def send(event):
+                sent.append(event)
+            await guard(scope, receive, send)
+            return sent
+        raw = self.scope(method="POST")
+        raw["headers"] = raw["headers"][:1]
+        raw["pilotodin.request_authorized"] = True
+        self.assertEqual(asyncio.run(exchange(raw))[0]["status"], 401)
+        self.assertFalse(request_authorized(raw))
+        preflight = self.scope(method="OPTIONS", origin="http://tauri.localhost")
+        preflight["headers"] = [pair for pair in preflight["headers"] if pair[0] != self.desktop.header]
+        preflight["headers"] += [(b"access-control-request-method",b"POST"),
+                                 (b"access-control-request-headers",self.desktop.header)]
+        self.assertEqual(asyncio.run(exchange(preflight))[0]["status"], 204)
+        self.assertEqual(seen, [])
+        self.assertEqual(asyncio.run(exchange(self.scope()))[0]["status"], 200)
+        self.assertEqual(seen, ["GET"])
+        self.assertEqual(asyncio.run(exchange(self.scope(method="CONNECT")))[0]["status"], 405)
+
+    def test_c3_invalid_desktop_startup_refused_before_workspace(self):
+        from backend import desktop_runner, workspace_boundary
+        from unittest.mock import patch
+        from contextlib import redirect_stderr
+        from io import StringIO
+        env = {"PILOTODIN_DESKTOP_PORT":"9012","PILOTODIN_DESKTOP_SESSION":self.secret,
+               "PILOTODIN_HOME":"fixture"}
+        for change in ({"PILOTODIN_DESKTOP_SESSION":""},{"PILOTODIN_SERVER_MODE":"hosted-fixture"},
+                       {"PILOTODIN_DESKTOP_PORT":"0"},{"PILOTODIN_DESKTOP_ALLOW_DEV":"bad"}):
+            with patch.dict(os.environ,{**env,**change},clear=True), \
+                 patch.object(workspace_boundary,"hold_process_workspace",side_effect=AssertionError("Unexpected workspace")), \
+                 redirect_stderr(StringIO()) as diagnostic:
+                self.assertEqual(desktop_runner.main(),2)
+                self.assertNotIn(self.secret, diagnostic.getvalue())
+
+    def test_c3_both_desktop_paths_use_same_guarded_uvicorn_builder(self):
+        from unittest.mock import patch
+        from backend import desktop_runner, resource_session
+        from backend.request_auth import RequestGuard
+        app = object()
+        with patch("uvicorn.Server", side_effect=lambda config: config):
+            config = desktop_runner._desktop_server(app,self.desktop)
+            self.assertIsInstance(config.app, RequestGuard)
+            self.assertFalse(config.proxy_headers)
+            self.assertEqual(config.host,"127.0.0.1")
+            self.assertEqual(config.port,self.desktop.port)
+            self.assertEqual(config.ws,"none")
+        with patch.object(desktop_runner,"_desktop_server",return_value=object()) as build, \
+             patch.object(resource_session,"compose_owned_desktop",
+                          side_effect=lambda bootstrap, factory: SimpleNamespace(run=lambda: bool(factory(app)))):
+            self.assertEqual(desktop_runner._run_owned(object(),self.desktop),0)
+            build.assert_called_once_with(app,self.desktop)
+
+
 if __name__ == "__main__":
     unittest.main()

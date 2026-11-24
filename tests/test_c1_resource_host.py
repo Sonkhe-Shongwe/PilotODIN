@@ -917,7 +917,7 @@ def test_runner_partial_or_invalid_control_never_selects_legacy(env):
 def test_runner_owns_bootstrap_before_composition_without_fallback(monkeypatch,capsys,outcome):
     from backend import desktop_runner,resource_host,workspace_boundary
     env={"PILOTODIN_HOME":"fixture-home","PILOTODIN_DESKTOP_PORT":"12345",
-         "PILOTODIN_DESKTOP_SESSION":"s"*64,"PILOTODIN_DESKTOP_WATCH_STDIN":"1",
+         "PILOTODIN_DESKTOP_SESSION":"a"*64,"PILOTODIN_DESKTOP_WATCH_STDIN":"1",
          "PILOTODIN_CONTROL_MODE":"pod1","PILOTODIN_CONTROL_GENERATION":GEN,
          "PILOTODIN_CONTROL_CAPABILITY":KEY}
     # No OS descriptors, workspace lock, analytical import or server startup.
@@ -934,9 +934,10 @@ def test_runner_owns_bootstrap_before_composition_without_fallback(monkeypatch,c
         assert environ.pop("PILOTODIN_CONTROL_GENERATION")==GEN
         assert environ.pop("PILOTODIN_CONTROL_CAPABILITY")==KEY
         return bootstrap
-    def run(value,port):
+    def run(value,trust):
         events.append("compose")
-        assert value is bootstrap and port==12345
+        assert value is bootstrap and trust.port==12345
+        assert trust.mode=="desktop" and trust.secret=="a"*64
         assert not any(k.startswith("PILOTODIN_CONTROL_") for k in env)
         if outcome=="raise":
             raise RuntimeError(KEY)
@@ -953,7 +954,7 @@ def test_runner_owns_bootstrap_before_composition_without_fallback(monkeypatch,c
 def test_runner_bootstrap_failure_cannot_enter_legacy(monkeypatch,capsys):
     from backend import desktop_runner,resource_host,workspace_boundary
     env={"PILOTODIN_HOME":"fixture-home","PILOTODIN_DESKTOP_PORT":"12345",
-         "PILOTODIN_DESKTOP_SESSION":"s"*64,"PILOTODIN_DESKTOP_WATCH_STDIN":"1",
+         "PILOTODIN_DESKTOP_SESSION":"a"*64,"PILOTODIN_DESKTOP_WATCH_STDIN":"1",
          "PILOTODIN_CONTROL_MODE":"pod1","PILOTODIN_CONTROL_GENERATION":GEN,
          "PILOTODIN_CONTROL_CAPABILITY":KEY}
     monkeypatch.setattr(desktop_runner.os,"environ",env)

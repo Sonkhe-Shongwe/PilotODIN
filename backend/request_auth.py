@@ -2,13 +2,16 @@
 
 No environment lookup or framework dependency. A trusted launcher constructs
 one contract before app creation; no contract means no runtime authorization.
-This module is not yet installed on the existing app.
+The desktop runner installs this boundary outside both product compositions.
 """
 from dataclasses import dataclass, field
 from hmac import compare_digest
 import re
 
 _DESKTOP = frozenset(("http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"))
+_DESKTOP_MODES = frozenset(("desktop", "desktop-debug"))
+_DEBUG_ORIGINS = frozenset(f"http://{host}:{port}" for host in ("127.0.0.1", "localhost")
+                           for port in range(5173, 5180))
 _DEV_MODES = frozenset(("dev", "hosted-fixture", "local-devqa"))
 _DESKTOP_HEADER = b"x-pilotodin-session"
 _DEV_HEADER = b"x-pilotodin-dev-capability"
@@ -26,12 +29,12 @@ class RequestTrust:
 
     def __post_init__(self):
         if (type(self.mode) is not str or
-                self.mode not in _DEV_MODES | {"desktop"} or
+                self.mode not in _DEV_MODES | _DESKTOP_MODES or
                 type(self.port) is not int or not 1024 <= self.port <= 65535 or
                 type(self.secret) is not str or
                 re.fullmatch(r"[0-9a-f]{64}", self.secret) is None):
             raise ValueError("Invalid serving trust configuration")
-        if self.mode == "desktop":
+        if self.mode in _DESKTOP_MODES:
             if self.dev_origin is not None:
                 raise ValueError("Mixed serving trust configuration")
         elif (type(self.dev_origin) is not str or re.fullmatch(
@@ -40,10 +43,12 @@ class RequestTrust:
 
     @property
     def header(self):
-        return _DESKTOP_HEADER if self.mode == "desktop" else _DEV_HEADER
+        return _DESKTOP_HEADER if self.mode in _DESKTOP_MODES else _DEV_HEADER
 
     @property
     def origins(self):
+        if self.mode == "desktop-debug":
+            return _DESKTOP | _DEBUG_ORIGINS
         return _DESKTOP if self.mode == "desktop" else frozenset((self.dev_origin,))
 
 
@@ -120,6 +125,8 @@ def authorize(scope, trust):
                 not set(requested) <= allowed):
             return Authorization(403)
         return Authorization(200, preflight=True)
+    if scope.get("method") not in _METHODS:
+        return Authorization(405)
     if (b"access-control-request-method" in values or
             b"access-control-request-headers" in values):
         return Authorization(400)
@@ -127,3 +134,76 @@ def authorize(scope, trust):
     if not compare_digest(supplied.encode("ascii"), trust.secret.encode("ascii")):
         return Authorization(401)
     return Authorization(200)
+
+
+def desktop_trust_from_environ(environ):
+    """Capture launcher inputs once, before workspace or analytical imports.
+
+    Rust explicitly supplies the existing debug flag from debug_assertions.
+    A release launch supplies 0; absent flag is strict desktop (old verifier).
+    No dev capability or non-desktop serving mode is admitted here.
+    """
+    if any(environ.get(key) for key in ("PILOTODIN_SERVER_MODE",
+                                       "PILOTODIN_DEV_CAPABILITY",
+                                       "PILOTODIN_DEV_ORIGIN")):
+        raise ValueError("Mixed serving trust configuration")
+    debug = environ.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0")
+    port = environ.get("PILOTODIN_DESKTOP_PORT", "")
+    if debug not in ("0", "1") or not isinstance(port, str) or not re.fullmatch(r"[0-9]{4,5}", port):
+        raise ValueError("Invalid desktop serving trust configuration")
+    return RequestTrust("desktop-debug" if debug == "1" else "desktop",
+                        int(port), environ.get("PILOTODIN_DESKTOP_SESSION", ""))
+
+
+# In-process identity witness, never a request header or serialized token.
+# The outer guard overwrites any incoming value on the admitted HTTP scope.
+_AUTHORIZED = object()
+_SCOPE_KEY = "pilotodin.request_authorized"
+
+
+def request_authorized(scope):
+    return scope.get(_SCOPE_KEY) is _AUTHORIZED
+
+
+class RequestGuard:
+    """Outer ASGI boundary; never call analytical code for denied HTTP or OPTIONS."""
+
+    def __init__(self, app, trust):
+        if not isinstance(trust, RequestTrust):
+            raise ValueError("Explicit serving trust required")
+        self._app = app
+        self._trust = trust
+
+    async def __call__(self, scope, receive, send):
+        kind = scope.get("type")
+        if kind == "lifespan":
+            await self._app(scope, receive, send)
+            return
+        if kind == "websocket":
+            await send({"type": "websocket.close", "code": 1008})
+            return
+        if kind != "http":
+            raise ValueError("Unsupported transport")
+        decision = authorize(scope, self._trust)
+        if not decision.allowed:
+            body = b'{"detail":"Local API request refused"}'
+            await send({"type": "http.response.start", "status": decision.status,
+                        "headers": [(b"content-type", b"application/json"),
+                                    (b"content-length", str(len(body)).encode("ascii")),
+                                    (b"cache-control", b"no-store")]})
+            await send({"type": "http.response.body", "body": body})
+            return
+        if decision.preflight:
+            headers = {name.lower(): value for name, value in scope["headers"]}
+            await send({"type": "http.response.start", "status": 204,
+                        "headers": [(b"access-control-allow-origin", headers[b"origin"]),
+                                    (b"access-control-allow-methods", headers[b"access-control-request-method"]),
+                                    (b"access-control-allow-headers",
+                                     b"content-type, " + self._trust.header),
+                                    (b"vary", b"Origin, Access-Control-Request-Method, Access-Control-Request-Headers"),
+                                    (b"cache-control", b"no-store")]})
+            await send({"type": "http.response.body", "body": b""})
+            return
+        admitted = dict(scope)
+        admitted[_SCOPE_KEY] = _AUTHORIZED
+        await self._app(admitted, receive, send)

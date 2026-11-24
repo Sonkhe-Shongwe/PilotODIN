@@ -22,6 +22,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 
 try:
+    from .request_auth import request_authorized
+except ImportError:
+    from request_auth import request_authorized
+
+try:
     from . import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, export_transfer, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
 except ImportError:
     import dataset_publication, model_artifacts, ai_provider, ai_context, engine, storage, project_lifecycle, quality, quality_investigations, analytics, explore_filters, explore_inspector, column_intelligence, saved_analyses, data_exports, export_transfer, quality_approvals, reports, project_delete_impact, resource_policy, semantic_profile, semantic_review, target_opportunities, verified_answers
@@ -96,6 +101,14 @@ async def workspace_scratch_guard(request: Request, call_next):
 
 @app.middleware("http")
 async def desktop_session_guard(request: Request, call_next):
+    # Desktop serving entrypoints have already authorized raw transport and
+    # credential against their immutable contract. Preserve the archive gate.
+    if request_authorized(request.scope):
+        archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
+        if archived is not None:
+            return JSONResponse({"detail": "Project is archived. Restore it in Manage projects before making changes."},status_code=409)
+        return await call_next(request)
+    # Non-desktop and in-process compatibility remains pending C3 migration.
     secret = os.environ.get("PILOTODIN_DESKTOP_SESSION", "")
     if not secret:
         archived = project_lifecycle.archived_mutation_project(request.method, request.url.path)
@@ -1120,6 +1133,8 @@ class AIInsightRequest(BaseModel):
 
 
 def _local_request(request:Request):
+    if request_authorized(getattr(request, "scope", {})):
+        return
     # CORS is not an authorization boundary. Forbid cross-site browsers from
     # writing keys or triggering paid/external calls on localhost.
     origin=request.headers.get('origin','')

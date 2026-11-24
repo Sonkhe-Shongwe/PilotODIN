@@ -25,7 +25,7 @@ def _status(url, headers=None):
 def test_desktop_runner_process_local_token_and_isolated_storage(tmp_path):
     root = Path(__file__).resolve().parents[1]
     port = _port()
-    token = 'pilotodin-session-' + '5' * 64
+    token = '5' * 64
     home = tmp_path / 'personal-workspace'
     home.mkdir()
     # The real Tauri sidecar now starts with this app-data directory as CWD.
@@ -62,6 +62,35 @@ def test_desktop_runner_process_local_token_and_isolated_storage(tmp_path):
         assert _status(url, authorised)[0] == 200
         assert _status(url, {**authorised, 'Origin': 'https://untrusted.example'})[0] == 403
         assert _status(f'http://127.0.0.1:{port}/api/projects', authorised)[0] == 200
+        assert _status(url, {**authorised, 'Origin': 'http://127.0.0.1:5173'})[0] == 403
+        assert _status(url, {**authorised, 'Host': 'testserver'})[0] == 403
+        assert _status(url, {**authorised, 'X-Forwarded-For': '127.0.0.1'})[0] == 403
+        assert _status(url, {**authorised, 'X-PilotODIN-Dev-Capability': 'b'*64})[0] == 401
+        # Preserve duplicate raw headers, unlike urllib's mapping.
+        import http.client
+        def raw(method, headers, path='/api/health'):
+            con = http.client.HTTPConnection('127.0.0.1', port, timeout=3)
+            try:
+                con.putrequest(method, path, skip_accept_encoding=True)
+                for name, value in headers:
+                    con.putheader(name, value)
+                con.endheaders()
+                response = con.getresponse()
+                body = response.read()
+                return response.status, dict(response.getheaders()), body
+            finally:
+                con.close()
+        session = [('X-PilotODIN-Session', token)]
+        assert raw('GET', session+session)[0] == 400
+        assert raw('POST', [], '/api/projects')[0] == 401
+        cors = [('Origin', 'http://tauri.localhost'),
+                ('Access-Control-Request-Method', 'POST'),
+                ('Access-Control-Request-Headers', 'content-type,x-pilotodin-session')]
+        status, headers, body = raw('OPTIONS', cors, '/api/projects')
+        assert status == 204 and not body
+        assert headers['access-control-allow-origin'] == 'http://tauri.localhost'
+        assert raw('OPTIONS', cors[:-1], '/api/projects')[0] == 403
+        assert raw('POST', cors, '/api/projects')[0] == 400
         assert home.joinpath('pilotodin.sqlite3').exists()
         assert home.joinpath('datasets').is_dir()
     finally:
@@ -80,7 +109,7 @@ def test_desktop_explicit_stop_drains_while_parent_pipe_stays_open(tmp_path):
     home = tmp_path.resolve() / "stop-workspace"
     home.mkdir()
     port = _port()
-    token = "stop-session-" + "a" * 64
+    token = "a" * 64
     env = {**os.environ, "PYTHONPATH": str(root),
            "PILOTODIN_DESKTOP_SESSION": token, "PILOTODIN_HOME": str(home),
            "PILOTODIN_DESKTOP_PORT": str(port), "PILOTODIN_DESKTOP_ALLOW_DEV": "0",
