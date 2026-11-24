@@ -15,6 +15,7 @@ use tauri_plugin_shell::{process::{CommandChild, CommandEvent}, ShellExt};
 use tauri_plugin_dialog::DialogExt;
 
 mod report_file;
+mod storage_boundary;
 
 #[derive(Clone, Serialize)]
 struct BackendConnection {
@@ -257,41 +258,34 @@ fn new_token() -> String {
     format!("{}{}", uuid::Uuid::new_v4().simple(), uuid::Uuid::new_v4().simple())
 }
 
-// Keep both worker families in the *same app-local data home*. The R03 QA
-// identity has separate baseline/candidate stores, as it already did for
-// analytics. Do not redirect the application-wide WebView2 or owner temp.
+// Keep both worker families in the same identifier-scoped app-local data
+// home. Admit each component before creating descendants; preserve the
+// existing layout and the R03 baseline/candidate isolation contract.
 fn worker_data_home(app: &AppHandle) -> Result<PathBuf, String> {
-    let mut home = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("data");
-    if app.config().identifier == "com.pilotodin.p4r03benchmark" {
-        let profile = std::env::var("PILOTODIN_R03_BENCHMARK").unwrap_or_default();
-        match profile.as_str() {
-            "baseline" | "candidate" => home.push(profile),
+    let app_root = app.path().app_local_data_dir()
+        .map_err(|_| "App-local storage unavailable".to_string())?;
+    let profile = if app.config().identifier == "com.pilotodin.p4r03benchmark" {
+        match std::env::var("PILOTODIN_R03_BENCHMARK").unwrap_or_default().as_str() {
+            "baseline" => Some("baseline"),
+            "candidate" => Some("candidate"),
             _ => return Err("Select a valid R03 QA benchmark profile".into()),
         }
+    } else {
+        None
+    };
+    let root = storage_boundary::prepare_directory(&app_root)?;
+    let home = storage_boundary::prepare_directory(&root.join("data"))?;
+    match profile {
+        Some(profile) => storage_boundary::prepare_directory(&home.join(profile)),
+        None => Ok(home),
     }
-    std::fs::create_dir_all(&home)
-        .map_err(|e| format!("Could not prepare user storage: {e}"))?;
-    Ok(home)
 }
 
-// Product-level containment for temporary files created by bundled workers.
-// Unlike inherited Windows TEMP/TMP, this path is inside the worker's owned
-// app data directory. Reject a pre-existing symlink/junction which escapes it.
+// Prepare only named owned scratch, before either child is spawned. No
+// application-wide environment changes and no canonical verbatim path
+// handed to the Python workspace admission contract.
 fn worker_temp_directory(home: &Path, name: &str) -> Result<PathBuf, String> {
-    if !matches!(name, "backend-temp" | "inference-temp") {
-        return Err("Unexpected worker temporary directory".into());
-    }
-    let root = home.canonicalize()
-        .map_err(|_| "Worker data directory unavailable".to_string())?;
-    let candidate = root.join(name);
-    std::fs::create_dir_all(&candidate)
-        .map_err(|_| "Could not prepare worker temporary storage".to_string())?;
-    let resolved = candidate.canonicalize()
-        .map_err(|_| "Worker temporary storage unavailable".to_string())?;
-    if resolved.parent() != Some(root.as_path()) {
-        return Err("Worker temporary storage escapes app data".into());
-    }
-    Ok(resolved)
+    storage_boundary::prepare_worker_temp(home, name)
 }
 
 #[tauri::command]
@@ -662,7 +656,7 @@ mod worker_temp_directory_tests {
         let run = (|| -> Result<(), String> {
             let backend = worker_temp_directory(&root, "backend-temp")?;
             let inference = worker_temp_directory(&root, "inference-temp")?;
-            let home = root.canonicalize().map_err(|e| e.to_string())?;
+            let home = root.clone();
             if backend.parent() != Some(home.as_path()) ||
                 inference.parent() != Some(home.as_path()) ||
                 backend == inference || !backend.is_dir() || !inference.is_dir() {

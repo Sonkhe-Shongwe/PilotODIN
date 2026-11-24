@@ -14,6 +14,7 @@ on:
       - backend/desktop_runner.py
       - backend/workspace_boundary.py
       - tests/test_workspace_boundary.py
+      - frontend/src-tauri/src/storage_boundary.rs
       - desktop/verify_packaged_engine.py
       - tests/test_packaged_engine_smoke.py
       - tests/test_desktop_runner_process_smoke.py
@@ -191,6 +192,11 @@ jobs:
         run: |
           python -m pip install -r backend/requirements-test.txt
           npm ci --prefix frontend --no-audit --no-fund
+      - name: Exercise standalone Rust storage policy on disposable Linux paths
+        run: |
+          rustc --edition=2021 --test frontend/src-tauri/src/storage_boundary.rs -o "$RUNNER_TEMP/pilotodin-storage-policy-tests"
+          "$RUNNER_TEMP/pilotodin-storage-policy-tests"
+          rm -f "$RUNNER_TEMP/pilotodin-storage-policy-tests"
       - name: Verify Python-only workspace writer lease
         run: python -B -m unittest -v tests.test_workspace_boundary
       - name: Compile changed backend code
@@ -323,6 +329,17 @@ jobs:
           python-version: "3.11"
       - name: Install existing backend test requirements
         run: python -m pip install -r backend/requirements-test.txt
+      - name: Compile Windows storage-policy code and tests to object only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $object = Join-Path $env:RUNNER_TEMP 'pilotodin-storage-policy.obj'
+          try {
+            rustc --edition=2021 --test --emit=obj frontend/src-tauri/src/storage_boundary.rs -o $object
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $object)) { throw 'Rust object compilation failed' }
+          } finally {
+            if (Test-Path -LiteralPath $object) { Remove-Item -LiteralPath $object -Force }
+          }
       - name: Measure exact local answers at simulated laptop headroom
         run: python -B qa/p4_research/measure_local_answers.py
       - name: Verify engine shutdown with and without a desktop owner

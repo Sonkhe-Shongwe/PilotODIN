@@ -9,6 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 RUST = ROOT / "frontend" / "src-tauri" / "src" / "lib.rs"
 CONFIG = ROOT / "frontend" / "src-tauri" / "tauri.conf.json"
+BOUNDARY = RUST.with_name("storage_boundary.rs")
 
 
 def slice_between(content, before, after):
@@ -23,17 +24,28 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertIn("app.path().app_local_data_dir()", helper)
         self.assertIn('.join("data")', helper)
         self.assertIn('com.pilotodin.p4r03benchmark', helper)
-        self.assertIn('"baseline" | "candidate"', helper)
-        self.assertIn("std::fs::create_dir_all(&home)", helper)
+        self.assertIn('"baseline" => Some("baseline")', helper)
+        self.assertIn('"candidate" => Some("candidate")', helper)
+        self.assertIn("storage_boundary::prepare_directory(&app_root)?", helper)
+        self.assertIn('storage_boundary::prepare_directory(&root.join("data"))?', helper)
+        self.assertIn("storage_boundary::prepare_directory(&home.join(profile))", helper)
+        self.assertNotIn("create_dir_all", helper)
 
     def test_rejects_junction_escape_and_nonliteral_worker_directory_names(self):
         src = RUST.read_text(encoding="utf-8")
         helper = slice_between(src, "fn worker_temp_directory(", "#[tauri::command]\nfn launch_backend")
-        self.assertIn('matches!(name, "backend-temp" | "inference-temp")', helper)
-        self.assertIn("home.canonicalize()", helper)
-        self.assertIn("candidate.canonicalize()", helper)
-        self.assertIn("resolved.parent() != Some(root.as_path())", helper)
-        self.assertIn("Worker temporary storage escapes app data", helper)
+        self.assertIn("storage_boundary::prepare_worker_temp(home, name)", helper)
+        policy = BOUNDARY.read_text(encoding="utf-8")
+        self.assertIn('matches!(name, "backend-temp" | "inference-temp")', policy)
+        prepare = slice_between(policy, "pub fn prepare_directory(", "pub fn prepare_worker_temp(")
+        self.assertLess(prepare.index("validate_existing_directory(parent)?"),
+                        prepare.index("fs::create_dir(path)"))
+        self.assertLess(prepare.index("fs::symlink_metadata(path)"),
+                        prepare.index("fs::create_dir(path)"))
+        self.assertIn("validate_existing_directory(path)?", prepare)
+        self.assertIn("resolved.parent() != Some(after.as_path())", prepare)
+        self.assertIn("metadata.file_attributes() & 0x400", policy)
+        self.assertNotIn("create_dir_all", policy)
 
     def test_backend_uses_own_temp_and_retains_project_data_home_and_cwd(self):
         src = RUST.read_text(encoding="utf-8")
