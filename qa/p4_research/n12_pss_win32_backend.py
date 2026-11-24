@@ -171,6 +171,8 @@ class _PrivateDiskCandidates:
     def __str__(self) -> str:
         return "<G2.16 private handle candidates, no public receipt>"
 
+    __repr__ = __str__
+
 
 class _Win32PssApi:
     """Direct Win32 ABI, constructed only AFTER strict scope authorization."""

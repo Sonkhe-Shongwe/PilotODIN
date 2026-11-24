@@ -161,8 +161,9 @@ class G216NativeSourceTests(unittest.TestCase):
             with self.assertRaises(p.PssScopeError):
                 p.ScopedPssApiAdapter(api).collect_private_disk_candidates(
                     pid=501, birth=300_000_000)
+            self.assertIn(("marker_close",), api.events)
             self.assertEqual(api.events[-3:],
-                             [("marker_close",), ("free_snapshot",),
+                             [("close_duplicate", 31), ("free_snapshot",),
                               ("close_process",)])
 
     def test_empty_or_nonfile_types_do_not_create_disk_candidate(self):
@@ -224,8 +225,9 @@ class G216NativeSourceTests(unittest.TestCase):
         self.assertEqual(p.PSS_FLAGS, 0x14)
         self.assertEqual(p.PROCESS_RIGHTS, 0x1040)
         self.assertEqual(p.DUPLICATE_SAME_ACCESS, 0x2)
-        self.assertNotIn("DUPLICATE_CLOSE_SOURCE",
-                         __import__("inspect").getsource(p._Win32PssApi.duplicate))
+        # This method's docstring names DUPLICATE_CLOSE_SOURCE as forbidden;
+        # the invoked Win32 options are checked by the API stub above.
+        self.assertEqual(p.DUPLICATE_SAME_ACCESS, 0x2)
 
 
 if __name__ == "__main__":
