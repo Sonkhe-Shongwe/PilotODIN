@@ -65,6 +65,7 @@ jobs:
           tests/p1-quality-retry-reconnect.test.cjs
           tests/p1-quality-approval-focus.test.cjs
           tests/p1-quality-investigation-staleness.test.cjs
+          tests/b5-dataset-export-download.test.cjs
           tests/project-operation-guard.test.cjs
           tests/project-manager.test.cjs
           tests/p4-native-empty-catalogue-archive-banner.test.cjs

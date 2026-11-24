@@ -1,4 +1,6 @@
 import {invoke} from '@tauri-apps/api/core';
+import {verifyDatasetDownload} from './datasetExportDownload';
+import type {DatasetExportRequest,VerifiedDatasetDownload} from './datasetExportDownload';
 
 // Development remains on :8000; production uses an authenticated, per-launch
 // local port provided privately by the Rust desktop process supervisor.
@@ -102,15 +104,11 @@ export async function upload(file:File):Promise<{id:string;name:string;profile:P
 }
 
 /** Read-only download: authentication never appears in the URL. */
-export async function downloadCleanedData(path:string,body:unknown):Promise<{blob:Blob;filename:string}> {
+export async function downloadCleanedData(path:string,body:DatasetExportRequest):Promise<VerifiedDatasetDownload> {
  const response=await fetchLocal(path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(!response.ok){await check(response);throw new Error('Dataset export failed')}
- const disposition=response.headers.get('content-disposition')??'';
- const encoded=disposition.match(/filename\*=utf-8''([^;]+)/i)?.[1];
- const name=encoded?decodeURIComponent(encoded):disposition.match(/filename="?([^";]+)"?/i)?.[1]??'pilotodin_cleaned_data.csv';
- return {blob:await response.blob(),filename:name.replace(/[\\/]/g,'_')};
+ return verifyDatasetDownload(response,body);
 }
-
 /** Authenticated binary download. Never put desktop session credentials in URLs. */
 export async function downloadReportFile(path:string):Promise<{blob:Blob;filename:string}> {
  // A report export filename is a cross-layer integrity contract, never a cosmetic fallback.

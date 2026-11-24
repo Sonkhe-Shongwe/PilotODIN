@@ -73,12 +73,18 @@ test('real HTTP B5 export browser click produces exact CSV and XLSX receipts',as
     await format.selectOption(fmt);
     await expect(format).toHaveValue(fmt);
     permitted=fmt;
+    const metadata=page.waitForResponse(r=>r.url()===API+exportPath&&r.request().method()==='POST');
     const waiting=page.waitForEvent('download');
     await section.getByRole('button',{name:'Export dataset'}).click();
     const download=await waiting;
     expect(await download.failure()).toBeNull();
     expect(download.suggestedFilename()).toBe('pilotodin_b5_browser_cleaned_v0.'+fmt);
     const bytes=readFileSync(await download.path());
+    const headers=(await metadata).headers();
+    expect(headers['x-pilotodin-export-sha256']).toBe(createHash('sha256').update(bytes).digest('hex'));
+    expect(headers['content-length']).toBe(String(bytes.length));
+    expect(headers['x-pilotodin-dataset-version']).toBe('0');
+    expect(headers['x-pilotodin-exported-rows']).toBe('2');
     if(fmt==='csv'){
       expect(bytes.subarray(0,3).toString('hex')).toBe('efbbbf');
       expect(bytes.toString('utf8')).toContain("A001,'=SUM(1),12");
