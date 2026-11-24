@@ -26,19 +26,6 @@ def case(monkeypatch, tmp_path):
     storage.init()
     quality._init_tables()
     approvals._init_tables()
-    with storage.connect() as con:
-        con.execute('CREATE TABLE IF NOT EXISTS project_lifecycle (project_id TEXT PRIMARY KEY, archived_at TEXT)')
-
-    # Older Build D reference lacks this fence, so the historical adapter
-    # uses the same active/archive contract as the current source.
-    if not hasattr(quality,'_require_active_for_write'):
-        def require_active(con,pid):
-            assert con.in_transaction
-            row=con.execute('SELECT archived_at FROM project_lifecycle WHERE project_id=?',(pid,)).fetchone()
-            if row is not None and row['archived_at'] is not None:
-                raise quality.QualityError('Project is archived',409)
-        monkeypatch.setattr(quality,'_require_active_for_write',require_active,raising=False)
-
     lines=['CustomerID,Region,Revenue']
     for i in range(36):
         region='Gauteng' if i<18 else ' Gauteng ' if i<21 else 'Mpumalanga'
@@ -46,23 +33,8 @@ def case(monkeypatch, tmp_path):
         lines.append(f'{i:04d},{region},{revenue}')
     raw=('\n'.join(lines)+'\n').encode()
     path=home/'datasets'/'generated.csv'; path.write_bytes(raw)
-    pid=storage.save_project('Generated','generated.csv','.csv',path,{'rows':36})
-    if hasattr(quality,'register'):
-        quality.register(pid)
-    else:
-        with storage.connect() as con:
-            con.execute('INSERT INTO quality_state VALUES (?,?,0)',(pid,hashlib.sha256(raw).hexdigest()))
-            con.execute('INSERT INTO quality_versions VALUES (?,?,?,?,?,?)',(pid,0,'[]','original','{}',storage.now()))
-    # Source-revision compatibility shim: October Build D used self-healing
-    # _ensure; the current November source fails closed for missing hashes.
-    historical_ensure=quality._ensure
-    def no_legacy_backfill(con,p):
-        row=con.execute('SELECT original_sha256 FROM quality_state WHERE project_id=?',
-                        (p['id'],)).fetchone()
-        if row is None:
-            raise quality.QualityError('The original dataset has no recorded checksum',409)
-        return historical_ensure(con,p)
-    monkeypatch.setattr(quality,'_ensure',no_legacy_backfill)
+    pid=storage.save_project('Generated','generated.csv','.csv',path,{'rows':36},
+                             original_sha256=hashlib.sha256(raw).hexdigest())
     return pid,path,raw
 
 
@@ -185,14 +157,18 @@ def test_commit_never_calls_slow_record_action_or_replays_under_writer_lock(case
     receipt=make_receipt(pid,issue_id=issue(pid,'whitespace')['id'])
     def never(*_a,**_kw):raise AssertionError('old replay under lock')
     monkeypatch.setattr(quality,'_record_action',never)
-    original=quality._source_df
-    def spy(*args,**kwargs):
+    original=quality.engine.read_csv_with_identifiers
+    parsed=[]
+    def spy(raw,identifier):
+        assert isinstance(raw,bytes)
+        parsed.append(True)
         with sqlite3.connect(storage.DB_PATH,timeout=0.3) as other:
             other.execute('BEGIN IMMEDIATE')
             other.execute('ROLLBACK')
-        return original(*args,**kwargs)
-    monkeypatch.setattr(quality,'_source_df',spy)
+        return original(raw,identifier)
+    monkeypatch.setattr(quality.engine,'read_csv_with_identifiers',spy)
     assert commit(pid,receipt)['version']==1
+    assert parsed==[True]
 
 
 def test_median_imputation_matches_reviewed_count(case):
@@ -220,18 +196,23 @@ def test_undo_and_restore_do_not_replay_during_write_lock(case,monkeypatch):
     one=make_receipt(pid,issue_id=target)
     action=commit(pid,one)['applied'][0]['id']
     undo=make_receipt(pid,'undo',version=1,action_id=action)
-    original=quality._source_df
-    def spy(*args,**kwargs):
+    original=quality.engine.read_csv_with_identifiers
+    parsed=[]
+    def spy(raw,identifier):
+        assert isinstance(raw,bytes)
+        parsed.append(True)
         with sqlite3.connect(storage.DB_PATH,timeout=0.3) as other:
             other.execute('BEGIN IMMEDIATE')
             other.execute('ROLLBACK')
-        return original(*args,**kwargs)
-    monkeypatch.setattr(quality,'_source_df',spy)
+        return original(raw,identifier)
+    monkeypatch.setattr(quality.engine,'read_csv_with_identifiers',spy)
     assert commit(pid,undo)['version']==2
-    monkeypatch.setattr(quality,'_source_df',original)
+    assert parsed==[True]
+    monkeypatch.setattr(quality.engine,'read_csv_with_identifiers',original)
     restore=make_receipt(pid,'restore',version=2,target_version=1)
-    monkeypatch.setattr(quality,'_source_df',spy)
+    monkeypatch.setattr(quality.engine,'read_csv_with_identifiers',spy)
     assert commit(pid,restore)['version']==3
+    assert parsed==[True,True]
     assert quality.current_data(pid)[0]['Region'].str.startswith(' ').sum()==0
     assert path.read_bytes()==raw
 
@@ -318,16 +299,17 @@ def test_expiry_during_preflight_rejects_before_write(case,monkeypatch):
 def test_real_dataset_replay_does_not_hold_writer_lock(case,monkeypatch):
     pid,_,_=case
     rec=make_receipt(pid,issue_id=issue(pid,'whitespace')['id'])
-    original=quality._source_df
+    original=quality.engine.read_csv_with_identifiers
     count=[0]
-    def probe(*args,**kwargs):
+    def probe(raw,identifier):
+        assert isinstance(raw,bytes)
         with sqlite3.connect(storage.DB_PATH,timeout=0.3) as other:
             other.execute('BEGIN IMMEDIATE')
             other.execute('CREATE TABLE IF NOT EXISTS proof_of_writer (value INT)')
             other.execute('INSERT INTO proof_of_writer VALUES (1)')
         count[0]+=1
-        return original(*args,**kwargs)
-    monkeypatch.setattr(quality,'_source_df',probe)
+        return original(raw,identifier)
+    monkeypatch.setattr(quality.engine,'read_csv_with_identifiers',probe)
     assert commit(pid,rec)['version']==1 and count[0]>=1
 
 

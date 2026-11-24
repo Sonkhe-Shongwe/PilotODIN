@@ -56,6 +56,18 @@ def test_real_preview_releases_writer_lock_during_replay(monkeypatch, proposal_c
     pid, body, dataset, original = proposal_case
     real_make = quality_approvals._make
     observed = []
+    parsed = []
+    real_reader = quality.engine.read_csv_with_identifiers
+
+    def unlocked_reader(raw, identifier):
+        assert isinstance(raw, bytes) and raw == original
+        with _other_connection() as competing_writer:
+            competing_writer.execute("BEGIN IMMEDIATE")
+            parsed.append(True)
+            competing_writer.execute("ROLLBACK")
+        return real_reader(raw, identifier)
+
+    monkeypatch.setattr(quality.engine, "read_csv_with_identifiers", unlocked_reader)
 
     def unlocked_make(con, project, request):
         assert not con.in_transaction, "Pandas work must happen before BEGIN IMMEDIATE"
@@ -69,6 +81,7 @@ def test_real_preview_releases_writer_lock_during_replay(monkeypatch, proposal_c
     monkeypatch.setattr(quality_approvals, "_make", unlocked_make)
     response = quality_approvals.prepare(pid, body)
     assert observed == [True]
+    assert parsed == [True], "The actual typed CSV parser must run outside the writer lock"
     assert response["changed_cells"] >= 1
     assert _receipt_count() == 1
     assert quality.current_version(pid) == 0

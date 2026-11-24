@@ -16,6 +16,19 @@ on:
       - backend/project_delete_impact.py
       - backend/main.py
       - tests/test_p1_project_lifecycle.py
+      - backend/dataset_publication.py
+      - backend/artifact_publication.py
+      - backend/import_preflight.py
+      - backend/engine.py
+      - backend/workspace_boundary.py
+      - backend/report_charts.py
+      - backend/pdf_release_font_loader.py
+      - backend/requirements.txt
+      - backend/requirements-test.txt
+      - tests/test_cf04_quality_preview_transaction.py
+      - tests/test_cf04_quality_commit_transaction.py
+      - tests/test_build_e_approval_receipts.py
+      - tests/test_a4_quality_audit_reporting.py
 
 permissions:
   contents: read
@@ -48,3 +61,12 @@ jobs:
         run: python -m compileall -q backend/project_lifecycle.py backend/project_delete_impact.py backend/storage.py backend/main.py backend/quality.py backend/quality_approvals.py backend/reports.py backend/saved_analyses.py backend/investigations.py tests/test_p1_project_lifecycle.py
       - name: Exercise reversible synthetic project lifecycle
         run: python -m pytest -q tests/test_p1_project_lifecycle.py tests/test_p1_real_api_failed_switch.py tests/test_p1_import_recovery.py
+      - name: Exercise B4 approval transactions and immutable audit reports in separate disposable stores
+        run: |
+          status=0
+          for suite in test_cf04_quality_preview_transaction test_cf04_quality_commit_transaction test_build_e_approval_receipts test_a4_quality_audit_reporting; do
+            echo "::group::${suite}"
+            PILOTODIN_HOME="${RUNNER_TEMP}/pilotodin-b4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${suite}" python -m pytest -q "tests/${suite}.py" || status=1
+            echo "::endgroup::"
+          done
+          exit "$status"
