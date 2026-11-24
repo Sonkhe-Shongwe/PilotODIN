@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | b9a9181313b709abe729b3bddac3ac4e10709e59 |
 | Scope | ONE authorised Windows-2022 locked library test-harness build/run; seven existing B5 tests, artifact 14937864793, no app launch |
 | Operation ID | B5-NATIVE-SYNTHETIC-PROPOSAL-20261124/approved-one-use-dispatch |
-| Operation state | ISSUED |
+| Operation state | UNKNOWN |
 | Intended files | .github/workflows/p4-package-b5-native-synthetic-once.yml; docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; active B5 evidence ledger; optional scoped proposal documentation |
 | Approval | Owner explicitly approved ONE build/run of b9a9181313b709abe729b3bddac3ac4e10709e59, seven existing tests, artifact 14937864793 and locked dependencies; no app launch, installer, owner data, real model/runtime downloads, executable upload or reruns. Dispatch consumes approval; uncertain outcome potentially consumed. |
 | Verification | Exact P4 source CI #45434780210 passed on product baseline; corrected product not yet host-compiled; native tests remain unexecuted |
-| Pending runs | Dispatch identified by exact commit message ci(b5): B5-NATIVE-SYNTHETIC-PROPOSAL-20261124/approved-one-use-dispatch and parent c73b9d6368985521e8b0ee534f7d4f9a90823473; discover run ID before replay or disarm. Approval consumed on dispatch. |
+| Pending runs | Exact dispatch 10f371b47dac02c68ade00a1adc502fe2818819c; run ID not yet visible; reconcile exact dispatch SHA, no replay. Disarm in this commit; no new attempt. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Verify exact dispatch commit marker and run attempt 1 before any action. If issued or ambiguous, never replay; disarm owned workflow immediately and reconcile actual run. If PREPARED and no dispatch exists, check fresh approval in this conversation before activation. |
+| Recovery action | Verify disarmed guard and exact dispatch run, inspect final logs and record outcome. No rerun even if run ID remains absent or job fails. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation
@@ -28,4 +28,4 @@ CONT-RESILIENCE-20261124/preparation was published at [`89cb4b5`](https://github
 
 ## Unresolved or interrupted operations
 
-This commit is the one-use dispatch. Verify actual published SHA and run ID, then disarm immediately. Treat uncertain dispatch as consumed; no replay. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
+Approval consumed by exact published dispatch; this commit disarms the workflow. Reconcile the dispatch outcome, including any missing run ID. No replay. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
