@@ -138,3 +138,116 @@ def test_metadata_heavy_history_measurement(case):
     print("B4_METADATA " + json.dumps({"decisions": count, "history_seconds": elapsed,
           "process_peak_rss_mib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024}))
     assert path.read_bytes() == raw
+
+def test_receipt_exact_payload_cap_not_row_allowance(case, monkeypatch):
+    pid, _, _ = case
+    receipt = review(pid)
+    request = approvals.ApprovalCommit(proposal_id=receipt["proposal_id"],
+                                      proposal_hash=receipt["proposal_hash"])
+    with storage.connect() as con:
+        size = len(con.execute("SELECT payload_json FROM quality_approval_receipts WHERE proposal_id=?",
+                               (receipt["proposal_id"],)).fetchone()[0].encode("utf-8"))
+        monkeypatch.setattr(quality, "MAX_REPLAY_METADATA_BYTES", size)
+        assert approvals._receipt_for_commit(con, pid, request)[1]["operation"] == "autopilot"
+        monkeypatch.setattr(quality, "MAX_REPLAY_METADATA_BYTES", size-1)
+        with pytest.raises(quality.QualityError, match="metadata safety budget"):
+            approvals._receipt_for_commit(con, pid, request)
+    assert counts(pid) == (1, 0, 0)
+
+
+def test_read_only_historical_replay_survives_unrelated_metadata_overflow(case, monkeypatch):
+    pid, path, raw = case
+    assert commit(pid, review(pid))["version"] == 1
+    with storage.connect() as con:
+        con.executemany("INSERT INTO quality_decisions VALUES(?,?,?,?)",
+                        [(pid, f"{i:024x}", "rejected", storage.now()) for i in range(3)])
+    monkeypatch.setattr(quality, "MAX_HISTORY_ROWS", 2)
+    with pytest.raises(quality.QualityError, match="metadata safety budget"):
+        quality.current_data(pid)
+    assert quality.data_at_version(pid, 0)["Region"].iloc[1] == " North "
+    assert quality.data_at_version(pid, 1)["Region"].iloc[1] == "North"
+    metadata = quality._read_metadata(pid, target_version=1, historical_read=True)
+    with storage.connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        with pytest.raises(RuntimeError, match="read-only"):
+            quality._verify_staged_write(con, pid, metadata, None)
+    assert path.read_bytes() == raw
+
+
+def test_near_limit_history_approval_writer_intervals(case, monkeypatch):
+    # Synthetic audit metadata, not a replay of 16,000 actual UI operations.
+    # Both histories hit the configured row ceiling on the next real approval.
+    pid, path, raw = case
+    limit = quality.MAX_HISTORY_ROWS
+    previous = limit - 2
+    timestamp = storage.now()
+    with storage.connect() as con:
+        con.executemany("INSERT INTO quality_versions VALUES(?,?,?,?,?,?)",
+                        ((pid, version, "[]", "restore",
+                          json.dumps({"from_version": 0, "prior_version": version-1}), timestamp)
+                         for version in range(1, previous+1)))
+        con.execute("UPDATE quality_state SET current_version=? WHERE project_id=?", (previous, pid))
+        con.executemany("INSERT INTO quality_decisions VALUES(?,?,?,?)",
+                        ((pid, f"{i:024x}", "rejected", timestamp) for i in range(limit-1)))
+    assert counts(pid) == (limit-1, 0, limit-1)
+    real_connect = storage.connect
+    intervals = []
+    budget_times = []
+    real_budget = quality._check_history_budget
+
+    class TimedConnection:
+        def __init__(self, connection):
+            self.connection = connection
+            self.started = None
+
+        def __getattr__(self, name):
+            return getattr(self.connection, name)
+
+        def __enter__(self):
+            self.connection.__enter__()
+            return self
+
+        def execute(self, sql, *args):
+            cursor = self.connection.execute(sql, *args)
+            if sql.strip().upper() == "BEGIN IMMEDIATE":
+                assert self.started is None
+                self.started = perf_counter()
+            return cursor
+
+        def __exit__(self, *args):
+            try:
+                return self.connection.__exit__(*args)
+            finally:
+                if self.started is not None:
+                    intervals.append(perf_counter() - self.started)
+
+    def timed_budget(*args):
+        start = perf_counter()
+        try:
+            return real_budget(*args)
+        finally:
+            budget_times.append(perf_counter() - start)
+
+    monkeypatch.setattr(storage, "connect", lambda: TimedConnection(real_connect()))
+    monkeypatch.setattr(quality, "_check_history_budget", timed_budget)
+    start = perf_counter()
+    receipt = approvals.prepare(pid, approvals.ProposalRequest(operation="autopilot", expected_version=previous))
+    preview_elapsed = perf_counter() - start
+    assert len(intervals) == 1
+    start = perf_counter()
+    result = commit(pid, receipt)
+    commit_elapsed = perf_counter() - start
+    assert len(intervals) == 2 and len(budget_times) == 1
+    assert result["version"] == limit-1 and result["count"] == 1
+    assert counts(pid) == (limit, 1, limit)
+    assert quality.current_data(pid)[0]["Region"].iloc[1] == "North"
+    assert quality.data_at_version(pid, previous)["Region"].iloc[1] == " North "
+    history = quality.history(pid)
+    assert len(history["versions"]) == len(history["decisions"]) == limit
+    assert path.read_bytes() == raw
+    print("B4_HEAVY_MUTATION " + json.dumps({
+        "versions": limit, "decisions": limit,
+        "preview_seconds": preview_elapsed, "commit_seconds": commit_elapsed,
+        "preview_writer_seconds": intervals[0], "commit_writer_seconds": intervals[1],
+        "postwrite_budget_seconds": budget_times[0],
+    }))

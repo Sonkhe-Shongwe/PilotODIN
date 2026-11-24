@@ -254,7 +254,12 @@ def _receipt_for_commit(con, pid: str, body: ApprovalCommit):
         raise quality.QualityError('Approval has already been used',409)
     if datetime.fromisoformat(rec['expires_at'])<=datetime.now(timezone.utc):
         raise quality.QualityError('Approval expired; review a new preview',409)
-    payload=json.loads(rec['payload_json'])
+    if len(rec['payload_json'].encode('utf-8')) > quality.MAX_REPLAY_METADATA_BYTES:
+        raise quality._metadata_limit()
+    try:
+        payload=json.loads(rec['payload_json'])
+    except (ValueError, RecursionError) as exc:
+        raise quality.QualityError('Approval contents failed integrity verification',409) from exc
     if rec['proposal_hash']!=_hash(payload):
         raise quality.QualityError('Approval contents failed integrity verification',409)
     return rec,payload

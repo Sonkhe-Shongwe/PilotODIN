@@ -490,8 +490,8 @@ def _issues(df: pd.DataFrame) -> list[dict]:
 
 
 def _decisions(con, pid: str) -> dict[str, str]:
-    return {r["issue_id"]: r["status"] for r in con.execute(
-        "SELECT issue_id,status FROM quality_decisions WHERE project_id=?", (pid,)).fetchall()}
+    return {r["issue_id"]: r["status"] for r in _bounded_rows(con,
+        "SELECT issue_id,status FROM quality_decisions WHERE project_id=?", (pid,))}
 
 
 def _reviewed_issues(frame: pd.DataFrame, choices: dict[str, str]) -> list[dict]:
@@ -549,19 +549,33 @@ def _apply(df: pd.DataFrame, action: dict, *, expected_affected: int | None = No
 
 
 def _materialize(con, p: dict, ops: list[str], *, raw: bytes | None = None) -> pd.DataFrame:
+    # Legacy internal adapter: enforce the same replay limits before parsing.
+    encoded = _json(ops)
+    _operation_ids(encoded)
+    remaining = MAX_REPLAY_METADATA_BYTES - len(encoded.encode("utf-8"))
+    actions = []
+    for action_id in ops:
+        rows = _bounded_rows(con, "SELECT * FROM quality_actions WHERE project_id=? AND id=?",
+                             (p["id"],action_id), max_rows=1, max_bytes=remaining)
+        if not rows:
+            raise QualityError("Missing transformation from history", 409)
+        remaining -= _row_bytes(rows[0])
+        actions.append(dict(rows[0]))
     if raw is None:
         raw = _ensure(con, p, capture=True)
     df = _source_df(p, raw=raw)
     del raw
-    for action_id in ops:
-        row = con.execute("SELECT * FROM quality_actions WHERE project_id=? AND id=?", (p["id"],action_id)).fetchone()
-        if row is None: raise QualityError("Missing transformation from history", 409)
-        df,_ = _apply(df, json.loads(row["params_json"]), expected_affected=row["affected_rows"])
-    return df
+    return _replay_snapshot(df, {"actions":actions})
 
 
-def _metadata_snapshot(con, pid, *, target_version=None):
-    """Capture metadata only in the caller's short explicit transaction."""
+def _metadata_snapshot(con, pid, *, target_version=None, historical_read=False):
+    """Capture metadata only in the caller's short explicit transaction.
+
+    Historical reads need only the selected immutable operations, not current
+    decisions or current operations. Never use that reduced snapshot to write.
+    """
+    if historical_read and target_version is None:
+        raise RuntimeError("Historical read requires an explicit version")
     row = con.execute(
         "SELECT p.*, l.revision AS lifecycle_revision,l.archived_at AS lifecycle_archived "
         "FROM projects p LEFT JOIN project_lifecycle l ON p.id=l.project_id WHERE p.id=?", (pid,)
@@ -572,7 +586,10 @@ def _metadata_snapshot(con, pid, *, target_version=None):
         raise QualityArchivedError("Project is archived. Restore it in Manage projects before making Quality changes.", 409)
     p = dict(row)
     contract = _source_contract(con, p)
-    version, ops = _state(con, pid)
+    if historical_read:
+        version, ops = target_version, []
+    else:
+        version, ops = _state(con, pid)
     selected_version = version if target_version is None else target_version
     selected = _bounded_rows(con, "SELECT * FROM quality_versions WHERE project_id=? AND version=?",
                              (pid, selected_version), max_rows=1, max_bytes=MAX_REPLAY_METADATA_BYTES)
@@ -592,19 +609,23 @@ def _metadata_snapshot(con, pid, *, target_version=None):
         action = actions[0]
         remaining -= _row_bytes(action)
         rows.append(dict(action))
-    decisions = [dict(r) for r in _bounded_rows(con,
+    decisions = [] if historical_read else [dict(r) for r in _bounded_rows(con,
         "SELECT * FROM quality_decisions WHERE project_id=? ORDER BY issue_id", (pid,),
         max_bytes=remaining)]
-    return {"project": p, "contract": contract, "version": version, "ops": ops,
-            "selected_version": selected_version, "version_row": dict(version_row),
-            "actions": rows, "decisions": decisions}
+    snapshot = {"project": p, "contract": contract, "version": version, "ops": ops,
+                "selected_version": selected_version, "version_row": dict(version_row),
+                "actions": rows, "decisions": decisions}
+    if historical_read:
+        snapshot["historical_read_only"] = True
+    return snapshot
 
 
-def _read_metadata(pid, *, target_version=None):
+def _read_metadata(pid, *, target_version=None, historical_read=False):
     _project(pid)
     with storage.connect() as con:
         con.execute("BEGIN")
-        return _metadata_snapshot(con, pid, target_version=target_version)
+        return _metadata_snapshot(con, pid, target_version=target_version,
+                                  historical_read=historical_read)
 
 
 def _replay_snapshot(frame, metadata):
@@ -633,6 +654,8 @@ def _stage_current(pid, expected_version):
 
 
 def _verify_staged_write(con, pid, metadata, identity):
+    if metadata.get("historical_read_only"):
+        raise RuntimeError("Historical read-only snapshot cannot authorize a write")
     _require_active_for_write(con, pid)
     current = _metadata_snapshot(con, pid, target_version=metadata["selected_version"])
     _check_version(current["version"], metadata["version"])
@@ -958,7 +981,7 @@ def data_at_version(pid: str, version: int) -> pd.DataFrame:
     """Read an exact historical working version without holding a DB lock."""
     if version < 0:
         raise QualityError("Dataset version must be nonnegative")
-    metadata = _read_metadata(pid, target_version=version)
+    metadata = _read_metadata(pid, target_version=version, historical_read=True)
     _, frame, _ = _snapshot_frame(metadata)
     return frame
 

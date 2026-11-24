@@ -31,6 +31,12 @@ on:
       - tests/test_a4_quality_audit_reporting.py
       - tests/test_b4_quality_resource_measurement.py
       - tests/test_b4_quality_metadata_bounds.py
+      - tests/test_quality_increment1.py
+      - tests/test_quality_deep_investigations.py
+      - tests/test_p3_semantic_profile.py
+      - tests/test_p3_semantic_business_context.py
+      - tests/test_p3_human_semantic_review.py
+      - tests/test_a4_model_evidence_reports.py
       - tests/test_cf01_import_preflight.py
 
 permissions:
@@ -85,3 +91,12 @@ jobs:
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-b4-metadata-${{ github.run_id }}-${{ github.run_attempt }}
         run: python -m pytest -q -s tests/test_b4_quality_metadata_bounds.py
+      - name: Verify downstream Quality, semantic and stored report evidence compatibility
+        run: |
+          status=0
+          for suite in test_quality_increment1 test_quality_deep_investigations test_p3_semantic_profile test_p3_semantic_business_context test_p3_human_semantic_review test_a4_model_evidence_reports; do
+            echo "::group::${suite}"
+            PILOTODIN_HOME="${RUNNER_TEMP}/pilotodin-b4-compat-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${suite}" python -m pytest -q "tests/${suite}.py" || status=1
+            echo "::endgroup::"
+          done
+          exit "$status"
