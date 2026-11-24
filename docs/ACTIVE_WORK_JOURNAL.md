@@ -7,20 +7,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 1a1ba06037f6916d0007d855a25defb90de8260e |
+| Observed starting HEAD | 81de01d65e7b070bba38f0d5060992b690ba9c32 |
 | Product baseline | 8ce75779d74eb9820ab94d168a2b7e053489791c |
-| Scope | Owner-approved source-only pinned shell 2.6.0 patch: own-job retained witness, no raw handles or browser API; exact source provenance and local path pin, metadata-only CI. No native compile/run or live grant activation. |
-| Operation ID | C1-C2-INTEGRATION-20261124-owned-job-api |
-| Operation state | RECONCILED |
-| Intended files | third_party/tauri-plugin-shell-2.6.0/**; frontend/src-tauri/Cargo.toml; frontend/src-tauri/Cargo.lock; continuity docs |
-| Approval | Owner: "i approve next" in direct response to narrow source-only pinned shell dependency modification. No native compile/run, model download, installer, owner data or OS operations authorized; B5 approvals consumed. |
-| Verification | 36 upstream tag blobs exact before modifications; 33 unchanged after patch. P4 metadata-only #45482016627/job 138757366105 SUCCESS exact 8ce7577; locked core versions retained, 457 packages, lock SHA256 f9f386f75fee57b20ebf25d24ac25849c74b424e47c08f674d3b6988d3c9d0bf. No target directory/native compile/run. |
-| Pending runs | None; [#45482016627](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45482016627) terminal success, exact checkout verified. |
-| Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Actual consolidated native host integration: retain OwnedJob on backend/inference ownership before moving child to writer, terminate exact job without consuming witness, join startup/leader/pipe/writer, drop leader references then bounded successful ActiveProcesses==0 before EXITED, no release on timeout/error. Wire demand poll/start/ready/drain/release with runner and frontend in coherent source batch; no partial activation or new native approval. Recheck actual Windows API compile compatibility and group-exit semantics in later separately approved native verification. |
-| Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
+| Scope | Source-only retained exact job ownership and bounded exit fence for the staged host transport and inference receiver. No activation of the shared grant bridge or legacy path changes. This is an incomplete sub-batch of the consolidated C1/C2 integration, not source closure. |
+| Operation ID | C1-C2-INTEGRATION-20261124-retained-job-drain |
+| Operation state | PREPARED |
+| Intended files | frontend/src-tauri/src/resource_shell.rs; continuity docs |
+| Approval | Standing P4 source authority and existing C-D09 source-only dependency decision. No native compile/run, grant activation, model/download, installer, owner data or OS operations authorized. |
+| Verification | Prior exact 8ce7577 metadata-only CI #45482016627/job 138757366105 independently reconciled, SUCCESS. Review all 82 workflow definitions at observed HEAD: no matching push/PR trigger for resource_shell.rs or these continuity docs; no workflow edits or marker changes. New Rust fixtures remain uncompiled. |
+| Pending runs | None expected for this staged source sub-batch. |
+| Unpublished work | Owner-local tree not inspected; never assume clean or published. |
+| Recovery action | Retain exact job before moving the child to writer/receiver ownership, close admission, terminate exact owned job, retain child/receiver through real joins, drop returned child, check bounded successful zero ActiveProcesses; missing/failed/late proof retains ownership. Then integrate actual native host demand/runner/frontend together, with exact grant identity and separately approved verification. |
+| Resume after closure | Complete C1/C2 composition, then C3–C5; D separately approved. |
 
 ## Prior operation
 
