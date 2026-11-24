@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-INTEGRATION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c02258c6bbdd129528ee0f2a714544ab06ffd87e |
+| Observed starting HEAD | 98a6e9916eece8cb26483fdc382e2cca44ad8e24 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 (runtime source verified); fixture candidate 5af71b893c6b7939356b13e37d4a0fc9d6114f38 (test-only Cargo feature/module registration) |
 | Scope | Ignored actual private pipe, Python broker/session, Windows shell job, supervisor and writer lifecycle integration; no real app, network or model. |
-| Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-source |
-| Operation state | RECONCILED |
-| Intended files | frontend/src-tauri/Cargo.toml; frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_integration_fixture.rs; qa/c1_c2_owned_host_fixture.py; continuity docs |
+| Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-prepare-once |
+| Operation state | PREPARED |
+| Intended files | qa/c1_c2_owned_host_fixture.py; frontend/src-tauri/src/resource_integration_fixture.rs; .github/workflows/p4-c1-c2-owned-host-once.yml; qa/c1_c2_owned_host_preflight.rb; continuity docs |
 | Approval | Previous one-use 40-test native run CONSUMED, SUCCESS and disarmed. New native compilation or process fixture run requires fresh scoped approval. Standing source only; no installer, model, network, owner data or activation. |
 | Verification | Exact 388b357 Windows all-targets check and 40/40 synthetic tests SUCCESS, disarm SUCCESS native SKIPPED. Test-only dev feature locked metadata PASS #45494710822, 457 packages unchanged. New ignored fixture not compiled or executed. Production gate false. |
-| Pending runs | p4-target-ranking.yml #45494710902 IN_PROGRESS; p2-report-export-draft-safety.yml #45494710748 COMPLETED SUCCESS; p4-product-cargo-resolution.yml #45494710822 COMPLETED SUCCESS. Reconcile terminal results. |
+| Pending runs | None. P2, P4 and locked Cargo metadata exact 5af71b8 SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile P2/P4 regressions; fix fixture-only Windows path spelling if necessary (canonical comparisons may return verbatim prefix; workspace guard accepts ordinary drive path), then prepare one disarmed exact native integrated fixture workflow with parse-only preflight and fresh owner approval. Use actual supervisor/shell/descriptor/broker/session and owned generated job descendant; no live UI, real inference or app launch. No source closure based on library-only test evidence. |
+| Recovery action | Preserve ordinary drive spelling after canonical identity comparison, strengthen fixture boundaries. Publish corrected test-only source, then disabled exact one-use workflow and source-only preflight. No native compilation, process launch or dependency acquisition under this preparation. Reconcile before fresh approval. |
 | Resume after closure | C1/C2 closure audit, C3–C5; D separately approved. |
 
 ## Prior operation
