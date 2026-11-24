@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-LOADER-DIAGNOSIS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | bb3e971fce93590b9bed7c5116cfe7eba4a5e2d3 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890; test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | Diagnose the exact integrated test executable loader failure using existing source, config, lock and logs. Correct only evidence-supported fixture/source defects. |
-| Operation ID | C1-OWNED-HOST-MANIFEST-20261125-ONE-USE |
-| Operation state | ISSUED |
+| Operation ID | C1-OWNED-HOST-MANIFEST-ABSENCE-20261125-source |
+| Operation state | PREPARED |
 | Intended files | Disabled .github/workflows/p4-c1-c2-owned-host-once.yml and qa/c1_c2_owned_host_preflight.rb; continuity records. No product source or fixture assertions change. |
-| Approval | Exact owner approval CONSUMED on confirmed dispatch #45504677702, attempt 1 only. Byte-identical disabled guard restored and verified at 2cd17d0. No production launch, OS/DLL modification, real model, cloud, owner data, installer, activation, upload or retry. |
-| Verification | #45502494558 SUCCESS: paired locked no-run builds, baseline 12 DLLs/155 named imports, fixture 20/241, sole direct missing export candidate comctl32.dll TaskDialogIndirect; API-set math unresolved; both cleanups PASS. #45502607711 SUCCESS native SKIPPED, both fingerprints match. Microsoft documents TaskDialogIndirect requires common controls v6 and application manifest selection. Candidate, not established loader cause. |
-| Pending runs | [#45504677702](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45504677702), armed `faef15c1e3b86799223294085358daf3bbf3d17d`, attempt 1; source 138836686444 SUCCESS (both fingerprints and pinned identities verified), Windows 138836833294 IN_PROGRESS: checkout/toolchain and staging SUCCESS, locked check/manifest/test step underway. Disarm `2cd17d0d75313318ccf194123126a9e210ad827d` verified byte-identical disabled blob 14a63df5f0b5a1cdbd8a60d19f96843019953db4; [#45504749595](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45504749595) PENDING. |
+| Approval | All five prior native approvals CONSUMED and disarmed. Ordinary source-only correction and synthetic preflight allowed. Fresh explicit one-use approval required before compiling, embedding in test copy or running exact integration. No production launch, OS/DLL modification, real model, cloud, owner data, installer, activation, upload or retry. |
+| Verification | #45504677702 FAILURE: Windows 138836833294 locked all-targets check and no-run compile PASS; mt.exe c101008c failed extracting resource #1, reported image did not contain a resource section (documented Windows error 1812). Guard recognized only missing type/name/language, refused before embed or launch. Cleanup PASS. Exact executable path shape matches previous Cargo test launch. #45504749595 SUCCESS, source 138838740910 both fingerprints verified, native 138838903403 SKIPPED. Earlier static candidate comctl32.dll TaskDialogIndirect remains leading hypothesis, not proven cause. |
+| Pending runs | None. Both runs terminal and reconciled. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Verify published byte-identical disarm and exact #45504677702 jobs/logs. Confirm original manifest evidence, verified v6 copy, original hash preservation, exact 1/1 synthetic test, pipe/shared lane, inference group zero, joined writers, STOP and cleanup. If any evidence missing, retain C1 open; no retry or production activation. If successful audit C1 against existing specification, then C2 separately, reuse evidence. |
+| Recovery action | Prepare narrow source-only correction for documented missing resource section and exact missing resource messages; require expected mt.exe diagnostic and absence of extracted file, retain all unrelated error refusals. Exercise actual predicate in source preflight with observed output, known missing-resource cases and negative cases. New unique one-use marker after correction; no native execution without fresh approval. Exact fixture and manifest readback assertions unchanged. |
 | Resume after closure | C1/C2 exit audit, C3–C5; D separately approved. |
 
 ## Prior operation
