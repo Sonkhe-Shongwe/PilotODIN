@@ -12,8 +12,8 @@ permissions:
 
 jobs:
   recorder-dwell:
-    if: >-
-      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): observe N12 lazy writes before recorder stop'
+    # Historical guard (not fresh approval): github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): observe N12 lazy writes before recorder stop'
+    if: ${{ false }} # Legacy native diagnostic disarmed; new source-pinned one-use approval required.
     name: Observe generated controls while the recorder stays active
     runs-on: windows-latest
     timeout-minutes: 15

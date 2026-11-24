@@ -58,6 +58,8 @@ on:
       - qa/p4_research/n12_no_cdp_native_path.py
       - qa/p4_native/n12_etw_probe.py
       - .github/workflows/p4-n12-generated-sysmon-bookends.yml
+      - .github/workflows/p4-n12-*.yml
+      - tests/test_p4_n12_g2_24_native_workflow_guards.py
 
 permissions:
   contents: read
@@ -162,3 +164,5 @@ jobs:
           python -B -m unittest discover -s tests -p 'test_p4_n12_app_lifetime.py' -v
           python -B -m unittest discover -s tests -p 'test_p4_n12_no_cdp_child_handles.py' -v
           python -B -m unittest discover -s tests -p 'test_p4_n12_private_child_pipe.py' -v
+      - name: G2.24 N12 native workflow disarm guard, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_24_native_workflow_guards.py' -v

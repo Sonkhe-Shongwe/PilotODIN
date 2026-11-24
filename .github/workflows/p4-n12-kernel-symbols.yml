@@ -12,8 +12,8 @@ permissions:
 
 jobs:
   kernel-symbols:
-    if: >-
-      github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): diagnose N12 public PDB compatibility'
+    # Historical guard (not fresh approval): github.run_attempt == '1' && github.event.head_commit.message == 'test(p4): diagnose N12 public PDB compatibility'
+    if: ${{ false }} # Legacy native diagnostic disarmed; new source-pinned one-use approval required.
     name: Resolve matched Windows kernel stack frames
     runs-on: windows-latest
     timeout-minutes: 15

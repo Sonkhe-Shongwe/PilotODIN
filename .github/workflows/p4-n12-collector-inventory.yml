@@ -11,6 +11,7 @@ permissions: {}
 
 jobs:
   windows-collector-inventory:
+    if: ${{ false }} # Native collector inventory requires fresh explicit approval.
     runs-on: windows-2022
     timeout-minutes: 5
     steps:
