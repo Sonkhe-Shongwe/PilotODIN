@@ -7,20 +7,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PUBLISHED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e17d9caef9044f5d90f14916233a7882dd5d2ea9 |
-| Product baseline | bbb328fbea7fcee4bf583dcd80f9e932c51b7c92 |
-| Scope | Source-only host supervisor composition and terminal acknowledgement fence. Connect private demand/grant sequencing to exact joined startup and retained group exit, including STOP with outstanding grant. Keep production registration inactive until runner/frontend and compatibility are coherent. |
+| Product baseline | 2322c4aa72cd2aa541ea4d99992d7ee8dbaf2605 |
+| Scope | C1/C2 source-only host driver composed against actual ShellDriver and InferenceGroup; final acknowledgement/exit fence corrected. Registration remains inactive. |
 | Operation ID | C1-C2-INTEGRATION-20261124-supervisor-drive |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | frontend/src-tauri/src/resource_supervisor.rs; frontend/src-tauri/src/resource_shell.rs; continuity docs |
-| Approval | Standing P4 source authority. No native build/run, model operations, installer, owner data, OS changes or activation of incomplete bridge. |
-| Verification | Previous product SHA has zero CI runs; all 82 workflow definitions unchanged since reviewed 81de01d, compare confirms only continuity docs and resource_shell.rs changed. Planned paths match no automatic workflow. Static review and uncompiled synthetic Rust fixtures only. |
-| Pending runs | None expected. |
-| Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Review exact broker STOP/RELEASE semantics and terminal event race. Publish bounded supervisor drive with retained exact startup join, worker ownership, no grant release on failure/timeout, final acknowledgement separate from process exit. Then actual application registration and runner/frontend coherent integration, separately approved native verification. |
-| Resume after closure | Complete C1/C2; C3–C5 then D. |
+| Approval | Standing P4 source authority. No native build/run, grant activation, model/download, installer, owner data or OS operations authorized. |
+| Verification | Exact published source 2322c4aa72cd2aa541ea4d99992d7ee8dbaf2605, shell blob 895f197de6e915f0388cd71a6bbe20ab0d7234b3, supervisor blob ab1209083635ab279af6290115cf5348fa8dc3df. Five new Rust fixture definitions, not compiled/run; static scope and code inspection only. All 82 workflow definitions unchanged since 81de01d review; zero matching CI runs observed for product SHA. Prior metadata CI pertains only to 8ce7577. |
+| Pending runs | None observed. |
+| Unpublished work | Owner-local tree not inspected; no local state assumed. |
+| Recovery action | Actual lib.rs registration: construct a single retained Windows Supervisor from exact raw engine receiver and POD1 generation/capability, drive it independently on a timer, enforce one session/no legacy bypass, implement trusted factory returning StartupOutcome with exact pre-spawn refusal vs uncertain spawn and retained model/storage pins. Connect stop request/exit and preserve fault ownership. Wire desktop_runner explicit bootstrap before analytical imports and frontend backend-demand path together. Review cloud/consent compatibility and native binary save admission before activation; existing explicit cloud behavior must not silently regress. No partial activation. New native approval only after coherent source readiness. |
+| Resume after closure | C1/C2 verification, then C3–C5; D separately approved. |
 
 ## Prior operation
 
