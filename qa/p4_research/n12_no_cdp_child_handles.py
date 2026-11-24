@@ -102,17 +102,41 @@ class ScopedQaChildHandleObserver:
             self.process_times = self.process_times or process_times
             self.process_images = self.process_images or process_images
 
-    def _verify_root(self):
+    def _root_times(self):
         times = self.process_times(self.root, allow_running=True)
-        images = self.process_images(self.root)
         trace.require(times["pid"] == self.root.pid and type(times["birth"]) is int
                       and times["birth"] > 0
-                      and trace.windows_path(images["image_dos"]) == self.expected_app_image,
+                      and (times["exit"] is None or (type(times["exit"]) is int
+                           and times["exit"] >= times["birth"])),
+                      "no-cdp-child-root-identity-unverified")
+        trace.require(self._root_birth is None or times["birth"] == self._root_birth,
+                      "no-cdp-child-root-birth-changed")
+        return times
+
+    def _verify_root(self):
+        times = self._root_times()
+        # Once the original retained Popen handle has established the root
+        # image and birth, an exact same-handle exit ends sampling normally.
+        # Do not depend on QueryFullProcessImageName after termination.
+        if times["exit"] is not None:
+            trace.require(self._root_birth is not None,
+                          "no-cdp-child-root-exited-before-identity")
+            return times
+        try:
+            images = self.process_images(self.root)
+        except (OSError, trace.EvidenceValidationError):
+            # Exit can occur between GetProcessTimes and the image query.
+            # Only an already verified root and a fresh exact same-handle
+            # exit can classify this as normal shutdown, never a live fault.
+            if self._root_birth is not None:
+                ended = self._root_times()
+                if ended["exit"] is not None:
+                    return ended
+            raise
+        trace.require(trace.windows_path(images["image_dos"]) == self.expected_app_image,
                       "no-cdp-child-root-identity-unverified")
         if self._root_birth is None:
             self._root_birth = times["birth"]
-        trace.require(times["birth"] == self._root_birth,
-                      "no-cdp-child-root-birth-changed")
         return times
 
     def sample_once(self, rows=None):

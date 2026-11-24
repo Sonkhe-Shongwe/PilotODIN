@@ -85,6 +85,84 @@ class ChildObserverTests(unittest.TestCase):
         for private in (APP, WEB, "601", '"pid"', "private"):
             self.assertNotIn(private, json.dumps(self.observer.redacted_receipt()))
 
+    def test_known_root_normal_exit_does_not_query_image_again(self):
+        self.observer.sample_once(self.rows)
+        self.backend.timing[600]["exit"] = ORIGIN + 700_000
+        original_images = self.observer.process_images
+
+        def images(handle):
+            if handle.pid == 600:
+                self.fail("terminated root must not be queried for its image")
+            return original_images(handle)
+
+        self.observer.process_images = images
+        self.observer.sample_once(self.rows)
+        self.assertEqual(self.observer.samples, 1)
+        self.assertEqual(len(self.finish()), 2)
+        self.assertEqual(self.observer.redacted_receipt()["status"], "SAMPLING_FINISHED_UNVERIFIED")
+        self.assertEqual(self.observer.redacted_receipt()["faults"], {})
+
+    def test_root_exit_during_image_query_requires_same_original_birth(self):
+        self.observer.sample_once(self.rows)
+        original_images = self.observer.process_images
+
+        def images(handle):
+            if handle.pid == 600:
+                self.backend.timing[600]["exit"] = ORIGIN + 700_000
+                raise trace.EvidenceValidationError("windows-process-image_dos-unavailable")
+            return original_images(handle)
+
+        self.observer.process_images = images
+        self.observer.sample_once(self.rows)
+        self.assertEqual(self.observer.samples, 1)
+        self.assertEqual(len(self.finish()), 2)
+        self.assertEqual(self.observer.redacted_receipt()["status"], "SAMPLING_FINISHED_UNVERIFIED")
+
+    def test_live_root_image_failure_or_mismatch_remains_blocked(self):
+        self.observer.sample_once(self.rows)
+
+        def unavailable(handle):
+            raise trace.EvidenceValidationError("windows-process-image_dos-unavailable")
+
+        self.observer.process_images = unavailable
+        self.observer.sample_once(self.rows)
+        self.observer.process_images = lambda handle: {"image_dos": WEB}
+        self.observer.sample_once(self.rows)
+        self.finish()
+        self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
+        self.assertEqual(self.observer.redacted_receipt()["faults"], {"root-identity-unverified": 2})
+
+    def test_unverified_exited_root_cannot_start_sampling(self):
+        self.backend.timing[600]["exit"] = ORIGIN + 700_000
+        self.observer.sample_once(self.rows)
+        self.assertEqual(self.observer.samples, 0)
+        self.assertEqual(self.backend.opened, [])
+        self.finish()
+        self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
+
+    def test_root_exit_with_changed_birth_is_not_a_normal_shutdown(self):
+        self.observer.sample_once(self.rows)
+        self.backend.timing[600]["birth"] += 10
+        self.backend.timing[600]["exit"] = ORIGIN + 700_000
+        self.observer.sample_once(self.rows)
+        self.finish()
+        self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
+        self.assertEqual(self.observer.redacted_receipt()["faults"], {"root-identity-unverified": 1})
+
+    def test_root_exit_race_with_changed_birth_remains_blocked(self):
+        self.observer.sample_once(self.rows)
+
+        def images(handle):
+            self.backend.timing[600]["birth"] += 10
+            self.backend.timing[600]["exit"] = ORIGIN + 700_000
+            raise OSError("fixture image query failure")
+
+        self.observer.process_images = images
+        self.observer.sample_once(self.rows)
+        self.finish()
+        self.assertEqual(self.observer.redacted_receipt()["status"], "BLOCKED")
+        self.assertEqual(self.observer.redacted_receipt()["faults"], {"root-identity-unverified": 1})
+
     def test_missing_child_sample_remains_detectable_at_sysmon_join(self):
         self.observer.sample_once([self.rows[0], self.rows[1]])
         witnesses = self.finish()
