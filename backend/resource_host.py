@@ -127,6 +127,7 @@ class _Demand:
     phase: str = "pending"
     abandoned: bool = False
     ready_seen: bool = False
+    draining: bool = False
     reason: str = "not_ready"
 
 
@@ -198,22 +199,36 @@ class InferenceDemand:
                 self._slot = None
             self._cv.notify_all()
 
+    def begin_ready(self):
+        with self._cv:
+            item = self._slot
+            if (item is None or item.ready_seen or item.draining or
+                    item.phase not in ("granted","finished")):
+                raise _fault()
+            # Reserve this exact readiness transition before the reply.
+            # No callback runs until the reply has actually been written.
+            item.ready_seen = True
+
     def worker_ready(self):
         with self._cv:
             item = self._slot
-            if (item is None or item.ready_seen or
-                    item.phase not in ("granted","finished")):
+            if (item is None or not item.ready_seen or item.draining
+                    or item.phase not in ("granted","finished")):
                 raise _fault()
-            item.ready_seen = True
             if not item.abandoned and not self._stopping:
                 item.phase = "ready"
             else:
                 item.phase = "finished"
             self._cv.notify_all()
 
-    def can_drain(self):
+    def begin_drain(self):
         with self._cv:
-            return self._slot is not None and self._slot.phase in ("finished","granted")
+            item = self._slot
+            if item is None or item.phase not in ("finished","granted"):
+                raise _fault()
+            item.draining = True
+            if item.phase == "granted":
+                self._abandon(item,"not_ready")
 
     def begin_release(self, evidence):
         with self._cv:
@@ -404,11 +419,12 @@ class HostBroker:
         if request.command == "WORKER_READY":
             if self._demand is None:
                 raise _fault()
+            self._demand.begin_ready()
             self._demand_ack = ("ready",)
             return self._reply(seq,"WORKER_READY",self._grant)
         if request.command == "DRAIN":
-            if self._demand is not None and not self._demand.can_drain():
-                raise _fault()
+            if self._demand is not None:
+                self._demand.begin_drain()
             if not self.coordinator.drain(self._lease):
                 raise _fault()
             return self._reply(seq,"DRAINING",self._grant)

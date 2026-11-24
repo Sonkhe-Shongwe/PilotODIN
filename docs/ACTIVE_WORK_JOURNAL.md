@@ -16,8 +16,8 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Operation state | ISSUED |
 | Intended files | backend/resource_host.py; backend/resource_session.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; frontend/src-tauri/src/resource_transport.rs; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Actual owned app/autonomy demand callbacks, correlated host poll/grant/ready/return/release state, eight Python cases and one staged Rust test. CI pending; no actual launcher registration or native execution. |
-| Pending runs | Exact-source P1 source CI pending discovery. |
+| Verification | Actual owned app/autonomy demand callbacks, correlated host poll/grant/ready/return/release state, ten Python cases (including irreversible drain and duplicate READY fences) and one staged Rust test. CI pending; no actual launcher registration or native execution. |
+| Pending runs | Initial #45476857824 observed running at 36712cfa; follow-up same operation closes reviewed drain/READY race. Reconcile exact final source CI; initial run may be superseded. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish correlated one-demand host protocol and actual app/autonomy callbacks, no live registration. Resolve locked shell job-empty evidence by explicit owner decision if dependency design change required. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

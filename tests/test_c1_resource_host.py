@@ -845,3 +845,43 @@ def test_lost_ready_ack_blocks_grant_without_running_callback():
     finally:
         b.transport_lost()
         thread.join(3)
+
+
+def test_drain_before_worker_ready_is_irreversible():
+    from backend.resource_autonomy import ResourceDeferred
+    c,d,b=_demand_fixture()
+    thread,result=_run_demand(d,lambda:pytest.fail("Draining worker cannot become ready"))
+    try:
+        gid=_grant_demand(b,d)
+        exchange(b,frame(3,"DRAIN "+gid))
+        thread.join(2)
+        assert len(result)==1 and isinstance(result[0],ResourceDeferred)
+        assert c.status()["phase"]=="draining"
+        with pytest.raises(ProtocolFault):
+            b.receive(frame(4,"WORKER_READY "+gid))
+        assert c.status()["phase"]=="blocked"
+    finally:
+        b.transport_lost()
+        thread.join(3)
+
+
+def test_duplicate_worker_ready_faults_before_reply():
+    from threading import Event
+    c,d,b=_demand_fixture()
+    entered,resume=Event(),Event()
+    def work():
+        entered.set()
+        assert resume.wait(2)
+        return "fixture"
+    thread,result=_run_demand(d,work)
+    try:
+        gid=_grant_demand(b,d)
+        exchange(b,frame(3,"WORKER_READY "+gid))
+        assert entered.wait(2)
+        with pytest.raises(ProtocolFault):
+            b.receive(frame(4,"WORKER_READY "+gid))
+        assert c.status()["phase"]=="blocked"
+    finally:
+        resume.set()
+        b.transport_lost()
+        thread.join(3)
