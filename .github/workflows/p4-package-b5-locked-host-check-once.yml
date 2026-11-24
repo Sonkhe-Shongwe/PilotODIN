@@ -1,6 +1,6 @@
-name: P4 Package B5 ONE locked Windows host type-check (approval required)
+name: P4 Package B5 ONE approved locked Windows host type-check
 
-# DISARMED: fresh explicit owner approval required; not approved or consumed.
+# Owner explicitly approved ONE locked compile-only attempt of 7789f84 on 24 November 2026.
 # Proposed single compile-only attempt of the exact reviewed product source.
 # No workflow_dispatch, no reruns, no application linking or running, no installer.
 on:
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   locked-host-check:
-    if: ${{ false }} # DISARMED; only a fresh explicit one-use owner approval may arm this job.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' }} # Single approved push; disarm immediately.
     runs-on: windows-2022
     timeout-minutes: 55
     env:
