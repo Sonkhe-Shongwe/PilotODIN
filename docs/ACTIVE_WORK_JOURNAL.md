@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-LOADER-DIAGNOSIS-20261125 |
-| State | IN_PROGRESS |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 35b5c3fdba9d2740e14f3f5610a197062a665050 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890; test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
@@ -15,11 +15,11 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Operation ID | C1-OWNED-HOST-MANIFEST-20261125-V2-ONE-USE |
 | Operation state | ISSUED |
 | Intended files | Disabled .github/workflows/p4-c1-c2-owned-host-once.yml and qa/c1_c2_owned_host_preflight.rb; continuity records. No product source or fixture assertions change. |
-| Approval | Owner explicitly approved one execution C1-OWNED-HOST-MANIFEST-20261125-V2-ONE-USE, attempt 1 only, exact corrected manifest and synthetic owned-host integration scope. No production launch, OS/DLL modification, real model, cloud, owner data, installer, activation, upload or retry. Prior five approvals consumed/disarmed. |
+| Approval | Exact V2 owner approval CONSUMED on confirmed dispatch #45506268334, attempt 1 only. Restore byte-identical disabled guard in this checkpoint. No production launch, OS/DLL modification, real model, cloud, owner data, installer, activation, upload or retry. |
 | Verification | #45504677702 FAILURE: Windows 138836833294 locked all-targets check and no-run compile PASS; mt.exe c101008c failed extracting resource #1, reported image did not contain a resource section (documented Windows error 1812). Guard recognized only missing type/name/language, refused before embed or launch. Cleanup PASS. Exact executable path shape matches previous Cargo test launch. #45504749595 SUCCESS, source 138838740910 both fingerprints verified, native 138838903403 SKIPPED. Earlier static candidate comctl32.dll TaskDialogIndirect remains leading hypothesis, not proven cause. |
-| Pending runs | Arm commit pending dispatch reconciliation; exact attempt 1 only. Treat approval as potentially consumed; never re-arm. |
+| Pending runs | [#45506268334](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45506268334), armed `05dcc9027842ce3a48aee877b3cb0735026cc5dd`, attempt 1 IN_PROGRESS; jobs not yet reconciled. Disarm source preflight run ID pending. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Exact approval recorded for fixture 1d23ea1; identities and fingerprints verified. Recover exact marker commit and actual run, confirm dispatch and disarm byte-identically; never re-arm. Locked all-targets and no-run compile, inspect original manifest with tested classifier, embed/read back v6 dependency in generated test copy only, verify original unchanged, run exact ignored shared-host integration test and cleanup. No production launch, OS/DLL change or unrestricted retry. Audit C1 on qualifying evidence; C2 separately. |
+| Recovery action | Verify published byte-identical disarm and reconcile exact #45506268334 jobs/logs. Confirm tested absence classifier, manifest v6 copy/readback, original hash preservation, exact 1/1 test, shared lane, real pipes, inference group zero, joined writers, STOP and cleanup. C1 remains open if evidence missing; no retry or activation. On qualifying evidence audit C1, then C2 separately. |
 | Resume after closure | C1/C2 exit audit, C3–C5; D separately approved. |
 
 ## Prior operation

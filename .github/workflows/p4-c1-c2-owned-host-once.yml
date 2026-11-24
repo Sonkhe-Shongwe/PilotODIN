@@ -31,8 +31,7 @@ jobs:
         run: ruby qa/c1_c2_owned_host_preflight.rb
   c1-c2-owned-host-integration:
     needs: source-preflight
-    if: >-
-      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-OWNED-HOST-MANIFEST-20261125-V2-ONE-USE' }}
+    if: ${{ false }} # DISARMED OWNED HOST; fresh exact approval required.
     runs-on: windows-2022
     timeout-minutes: 65
     env:
