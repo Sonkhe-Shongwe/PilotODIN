@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 02da9c0ae21d921705769a78a063b68312e48ce6 |
-| Product baseline | 992f1f73d52e48047b5c0331d44b5f36271b1b51 |
+| Product baseline | 819670c758c2e6aca591ef581df0d69577b07c34 |
 | Scope | C1 dormant owned shell child writer/join and event adapter; Python pre-import control stdout isolation seam. No actual app registration or native compilation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-host-owned-io |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_shell.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Dormant descriptor isolation seam (12 inert fixtures) and actual shell API writer/event adapter (3 staged Rust tests) published. Python CI pending; Rust uncompiled/unregistered. |
-| Pending runs | Exact-source P1 CI pending discovery; reconcile before actual startup composition. |
+| Pending runs | [P1 #45462108603](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45462108603), exact 819670c758c2e6aca591ef581df0d69577b07c34, IN_PROGRESS at last observation. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish dormant owned shell adapter and descriptor isolation seam; reconcile Python CI, then actual startup composition and native grant/exit design. |
+| Recovery action | Reconcile Python CI, review descriptor fdopen error ownership and Win32/bootloader stdout isolation, stage actual desktop startup composition and event-loop retention, then native grant/exit integration. No live registration or native run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
