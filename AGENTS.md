@@ -1,6 +1,6 @@
 # PilotODIN repository continuation instructions
 
-For any PilotODIN task, start with [the current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) and follow [the seamless continuation protocol](docs/CONTINUATION_PROTOCOL_CURRENT.md). Verify live branch HEAD; the active development branch is `feature/live-dev-workspace-20261023`, not default main. Read the linked live directive, relevant package specification/evidence, official scorecard and phase policy before work.
+For any PilotODIN task, start with [the current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) and follow [the seamless continuation protocol](docs/CONTINUATION_PROTOCOL_CURRENT.md). Read the [active work journal](docs/ACTIVE_WORK_JOURNAL.md) before any consequential operation. Verify live branch HEAD; the active development branch is `feature/live-dev-workspace-20261023`, not default main. Read the linked live directive, relevant package specification/evidence, official scorecard and phase policy before work.
 
 The owner's Master Reconstruction Blueprint and explicit owner decisions remain normative. The handoff gives the first outstanding task, not permission to broaden scope. Generic "next" means continue authorised work. Preserve unpublished local work and original data. Do not replay consumed approvals, execute restricted native/model/installer/owner-data/OS/network operations, or advance phases without specific authority. Source-only tests and compile/runtime/physical acceptance are distinct.
 
