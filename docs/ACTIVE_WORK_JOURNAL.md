@@ -6,20 +6,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | B5-CLOSURE-AUDIT-20261124 |
-| State | VERIFYING |
+| Task ID | B5-WORKFLOW-PREFLIGHT-20261124 |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 4c9863dbf4bf8215e142680431c69daf1ebf846a |
+| Observed starting HEAD | 213e0fdc054a3e89300d6506a4a55ce539848909 |
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
-| Scope | Consolidated source/workflow audit; bounded export input and destination safety corrections, ordinary source CI only; no native execution |
-| Operation ID | B5-CLOSURE-AUDIT-20261124-source-hardening |
-| Operation state | RECONCILED |
-| Intended files | frontend/src-tauri/src/dataset_file.rs; frontend/src-tauri/src/lib.rs; frontend/src/QualityWorkspace.tsx; frontend/tests/b5-dataset-export-download.test.cjs; handoff and evidence ledger |
+| Scope | Prepare fresh disabled native workflow pinned to 8e3cc91 and source-only complete YAML preflight; previous approval remains consumed; no native run |
+| Operation ID | B5-WORKFLOW-PREFLIGHT-20261124-prepare |
+| Operation state | PREPARED |
+| Intended files | .github/workflows/p4-package-b5-native-synthetic-v2-once.yml; qa/b5_native_workflow_preflight.rb; active journal, compact handoff, evidence ledger and new proposal |
 | Approval | One-use native test approval consumed by dispatch 10f371b; no new approval, no reruns. |
-| Verification | Published source 8e3cc9112073b9744ff18ffa3e4e549662504a97; [P1 Isolated Frontend Verification #45440551353](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551353) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45440551176](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551176) IN_PROGRESS; [P2 Report Export Draft Safety #45440550975](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440550975) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45440551376](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551376) IN_PROGRESS. Earlier native dispatch failed before job creation, remains consumed. New native code uncompiled. |
-| Pending runs | [P1 Isolated Frontend Verification #45440551353](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551353) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45440551176](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551176) IN_PROGRESS; [P2 Report Export Draft Safety #45440550975](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440550975) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45440551376](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551376) IN_PROGRESS; exact source only |
+| Verification | All four exact source CI #45440551353, #45440551376, #45440550975, #45440551176 SUCCESS. Backend tree and actual fixture generator unchanged from fixture producer 7789f84; artifact 14937864793 available. Native remains uncompiled. |
+| Pending runs | None from exact corrected source; new preflight source-only job may run after preparation |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact source CI, audit all seven test expectations and complete fresh disabled workflow candidate pinned to corrected product. Parse complete proposed armed YAML before any fresh approval. No native action or replay. |
+| Recovery action | Inspect new preparation commit and preflight job; compare complete hypothetical armed YAML SHA256 and actual disabled guard, review source-only validation. Never arm without new owner approval; preserve consumed original workflow. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation
