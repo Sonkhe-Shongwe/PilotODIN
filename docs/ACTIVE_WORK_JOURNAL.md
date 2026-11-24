@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | b342a2a37f6d9abbbe51ef6887f0eefe4d708713 |
+| Observed starting HEAD | 1da795a773a304862fdc88703a686fea0689d263 |
 | Product baseline | 2ac816310dbcbc96c42da87b54e3bfefc96ad2fb |
-| Scope | C1 staged owned upload adapter: before-parser DATA lease, streamed bounded multipart envelope, exact file cap, explicit parser spool cleanup; no live registration. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-upload-envelope |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_upload.py; backend/resource_http.py; tests/test_c1_resource_upload.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
+| Scope | C1 staged upload disk rollover/cleanup fault tests and identity-bound training preparation-to-worker handoff foundation; no live registration or model work. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-training-ownership |
+| Operation state | PREPARED |
+| Intended files | tests/test_c1_resource_upload.py; backend/resource_training.py; tests/test_c1_resource_training.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Staged bounded upload adapter and real parser fixtures published atomically with journal; exact-source tests pending. No live registration. |
-| Pending runs | [P1 #45453053138](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45453053138), exact 2ac816310dbcbc96c42da87b54e3bfefc96ad2fb, QUEUED at last observation; reconcile actual job and logs. |
+| Verification | Prior #45453053138 SUCCESS: 166 regression + 2 subtests, 58 C1. Next test actual rolled disk spool closure and fault, plus inert training ownership handoff, worker/response races and exact unstarted settlement. |
+| Pending runs | None; #45453053138/job 138655089874 terminal SUCCESS, exact checkout and counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact upload adapter CI, including parser spool ownership on resolved Starlette, then test disk rollover/cleanup failure and browser compatibility as needed before integration. Next training handoff and autonomous/host seam. No live registration or native run. |
+| Recovery action | Stage upload additional tests and training ownership seam; verify exact CI before actual storage CAS, route/background binding, autonomous/host integration. No actual model execution. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
