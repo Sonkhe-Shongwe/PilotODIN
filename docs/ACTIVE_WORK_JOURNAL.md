@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | B5-WORKFLOW-PREFLIGHT-20261124 |
-| State | VERIFYING |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 213e0fdc054a3e89300d6506a4a55ce539848909 |
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
@@ -16,10 +16,10 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Operation state | RECONCILED |
 | Intended files | .github/workflows/p4-package-b5-native-synthetic-v2-once.yml; qa/b5_native_workflow_preflight.rb; active journal, compact handoff, evidence ledger and new proposal |
 | Approval | One-use native test approval consumed by dispatch 10f371b; no new approval, no reruns. |
-| Verification | All four exact source CI #45440551353, #45440551376, #45440550975, #45440551176 SUCCESS. Backend tree and actual fixture generator unchanged from fixture producer 7789f84; artifact 14937864793 available. Native remains uncompiled. |
-| Pending runs | [V2 source preflight #45441506809](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45441506809) COMPLETED/SUCCESS; exact QA commit 3609bf27f69c1469262b134af0ad249a9d1e16b3; Windows job disabled; reconcile final log and both full YAML digests before approval |
+| Verification | Four exact product source CI PASS; [V2 source preflight #45441506809](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45441506809) PASS on QA 3609bf27f69c1469262b134af0ad249a9d1e16b3. Complete disabled and armed YAML, five PowerShell ASTs, Python AST, seven exact source names and pinned identities PASS. Windows job SKIPPED; native product uncompiled. |
+| Pending runs | None; exact V2 source preflight completed SUCCESS, Windows job SKIPPED |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Confirm exact preflight log and full prospective armed YAML SHA256, native job skipped; if green, request fresh precise owner approval. If preflight fails, correct only source-level defect; no native activation, no replay of consumed V1. |
+| Recovery action | Await fresh exact approval for V2 product 8e3cc91. Verify full armed YAML SHA256 b9ac0b53b049fc9c9d6a28cbb24c783e08a8e10933dc1a33d8b52da553f2afb5 before dispatch; use unique colon-free marker B5-NATIVE-SYNTHETIC-V2-20261124-ONE-USE, record intent, disarm immediately, reconcile run. No old approval replay. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation

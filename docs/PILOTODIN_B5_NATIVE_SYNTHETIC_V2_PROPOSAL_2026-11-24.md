@@ -1,6 +1,6 @@
 # PilotODIN | B5 V2 one-use Windows synthetic library test proposal
 
-**DISARMED. No new approval.** Exact product `8e3cc9112073b9744ff18ffa3e4e549662504a97`. Four source CI workflows PASS; native code uncompiled. Previous V1 run #45439476190 failed before job creation, approval consumed; its workflow remains disabled and must not be reused. [Evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md).
+**DISARMED. Preflight PASSED; no new approval.** Exact product `8e3cc9112073b9744ff18ffa3e4e549662504a97`. Four source CI workflows PASS; native code uncompiled. Previous V1 run #45439476190 failed before job creation, approval consumed; its workflow remains disabled and must not be reused. [Evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md).
 
 ## Preflight before approval
 
@@ -32,3 +32,7 @@ One `cargo +stable test --locked --manifest-path frontend/src-tauri/Cargo.toml -
 - `dataset_file::tests::new_file_publication_refuses_existing_and_protected_paths`
 
 Includes the superscript-device pure predicate cases added to existing test. Expected seven named successes, zero failure/ignored, exact lock/source unchanged, generated temp empty and owned placeholder cleanup. Library harness linking and execution only, no actual application launch, installer, owner data, real model/runtime downloads, executable upload, capture, policy changes or reruns. Actual dialog/IPC, physical persistence, disk-full and emergency exit remain separate. No P4 acceptance or B5 closure credit from preparation. C stays pending and installer frozen.
+
+## Exact preflight result and approval boundary
+
+[V2 source preflight #45441506809](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45441506809) SUCCESS, exact QA `3609bf27f69c1469262b134af0ad249a9d1e16b3`, job 138613585121 PASS and Windows job 138613848912 SKIPPED. Disabled YAML SHA256 `9c6d24ddb6b79ace16a33260049fd2b05dee6d39828bea7271911f1269d9fd72`; complete prospective armed YAML SHA256 `b9ac0b53b049fc9c9d6a28cbb24c783e08a8e10933dc1a33d8b52da553f2afb5`. Actual log confirms both YAML variants, all five PowerShell ASTs, Python AST, seven exact test names and source/artifact identities. No Windows compilation or execution. Before activation, independently compare exact bytes/hash against the recorded digest. A source parser pass does not guarantee Windows test success. Await fresh exact owner approval; old approvals remain consumed.
