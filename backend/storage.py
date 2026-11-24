@@ -10,10 +10,12 @@ from pathlib import Path
 
 try:
     from . import sqlite_fk_gate
-    from .workspace_boundary import storage_home, validate_process_database
+    from .workspace_boundary import (WorkspaceBoundaryError, storage_home,
+                                     validate_process_database, validate_process_write)
 except ImportError:
     import sqlite_fk_gate
-    from workspace_boundary import storage_home, validate_process_database
+    from workspace_boundary import (WorkspaceBoundaryError, storage_home,
+                                    validate_process_database, validate_process_write)
 
 # No implicit checkout data root. Product entrypoints establish ownership
 # before import; isolated in-process tests must supply an explicit home.
@@ -21,8 +23,22 @@ HOME = storage_home(os.environ.get("PILOTODIN_HOME"))
 DB_PATH = HOME / "pilotodin.sqlite3"
 validate_process_database(HOME, DB_PATH)
 HOME.mkdir(parents=True,exist_ok=True)
-(HOME / "datasets").mkdir(exist_ok=True)
-(HOME / "models").mkdir(exist_ok=True)
+
+
+def check_write_path(path, **options):
+    return validate_process_write(HOME, path, **options)
+
+
+def guarded_unlink(path, *, expected=None):
+    check_write_path(path, missing=True, expected=expected)
+    path.unlink(missing_ok=True)
+
+
+for _directory_name in ("datasets", "models"):
+    _path = HOME / _directory_name
+    check_write_path(_path, directory=True, missing=True)
+    _path.mkdir(exist_ok=True)
+    check_write_path(_path, directory=True)
 
 
 class _ClosingSQLiteConnection(sqlite3.Connection):

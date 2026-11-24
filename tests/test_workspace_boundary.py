@@ -321,6 +321,77 @@ else:
         self.assertIn("Start_PilotODIN_Live_Dev.bat", source)
         self.assertIn("not migrated", source)
 
+    def test_owned_write_boundaries_refuse_replacement_and_links(self):
+        code = r"""
+import os, sys
+from pathlib import Path
+from backend.workspace_boundary import hold_process_workspace, WorkspaceBoundaryError
+home = hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+from backend import storage
+from backend import resource_policy
+def refuse(call):
+    try:
+        call()
+    except WorkspaceBoundaryError:
+        return
+    raise AssertionError("Unsafe write admitted")
+original = home / "original"
+original.write_bytes(b"preserve")
+target = home / "resource_preferences.json"
+try:
+    os.link(original, target)
+except OSError:
+    sys.exit(77)
+refuse(lambda: resource_policy.save_policy("performance"))
+assert original.read_bytes() == b"preserve"
+target.unlink()
+resource_policy.save_policy("performance")
+assert resource_policy.read_policy()["mode"] == "performance"
+datasets = home / "datasets"
+datasets.rename(home / "old-datasets")
+datasets.mkdir()
+refuse(lambda: storage.check_write_path(datasets / "new.csv", absent=True))
+assert list(datasets.iterdir()) == []
+refuse(lambda: storage.check_write_path(home.parent / "outside.csv", absent=True))
+refuse(lambda: storage.check_write_path(home / "models" / ".." / "escape", absent=True))
+assert not (home.parent / "outside.csv").exists()
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=15, check=False,
+        )
+        if result.returncode == 77:
+            self.skipTest("Hard links unsupported in fixture")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_owned_upload_rejects_existing_destination_and_preserves_bytes(self):
+        code = r"""
+import os, sys
+from unittest.mock import patch
+from backend.workspace_boundary import hold_process_workspace
+home = hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+from backend import main, storage
+from fastapi.testclient import TestClient
+uid = "a" * 32
+target = home / "datasets" / (uid + ".csv")
+target.write_bytes(b"original")
+with patch.object(storage, "uid", return_value=uid):
+    response = TestClient(main.app).post("/api/projects", files={"file": ("new.csv", b"A,B\n1,2\n", "text/csv")})
+assert response.status_code == 422, response.text
+assert target.read_bytes() == b"original"
+assert not target.with_name(target.name + ".uploading").exists()
+assert storage.list_projects() == []
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=30, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()

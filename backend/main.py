@@ -169,15 +169,16 @@ def health():
 def projects(): return storage.list_projects()
 
 
-def _remove_uncommitted_dataset(path: Path) -> None:
+def _remove_uncommitted_dataset(path: Path, expected=None) -> None:
     """Remove a failed upload only after ruling out a committed project reference."""
+    storage.check_write_path(path, missing=True, expected=expected)
     if not path.exists():
         return
     with closing(storage.connect()) as con:
         referenced = con.execute("SELECT 1 FROM projects WHERE dataset_path=? LIMIT 1", (str(path),)).fetchone()
     if referenced is not None:
         raise RuntimeError("The import source is already referenced by a project")
-    path.unlink(missing_ok=True)
+    storage.guarded_unlink(path, expected=expected)
 
 
 @app.post("/api/projects",status_code=201)
@@ -197,29 +198,37 @@ async def create_project(file: UploadFile = File(...)):
     staging=path.with_name(path.name+".uploading")
     staging_created=False
     published=False
+    staging_identity=None
     try:
+        storage.check_write_path(path, absent=True)
+        storage.check_write_path(staging, absent=True)
         with staging.open("xb") as output:
             staging_created=True
+            staging_identity=os.fstat(output.fileno())
             output.write(b)
             output.flush()
             os.fsync(output.fileno())
+        storage.check_write_path(staging, expected=staging_identity)
         df=engine.read_data(str(staging),ext)
         prof=engine.profile(df,filename)
         original_sha256=hashlib.sha256(b).hexdigest()
+        storage.check_write_path(staging, expected=staging_identity)
+        storage.check_write_path(path, absent=True)
         os.replace(staging,path)
         published=True
+        storage.check_write_path(path, expected=staging_identity)
         pid=storage.save_project(Path(filename).stem,filename,ext,path,prof,original_sha256=original_sha256)
     except Exception as e:
         staging_cleanup_failed=False
         try:
             if staging_created:
-                staging.unlink(missing_ok=True)
-        except OSError:
+                storage.guarded_unlink(staging, expected=staging_identity)
+        except (OSError, storage.WorkspaceBoundaryError):
             staging_cleanup_failed=True
             logging.exception("Failed to remove interrupted upload staging file")
         try:
             if published:
-                _remove_uncommitted_dataset(path)
+                _remove_uncommitted_dataset(path, staging_identity)
         except Exception:
             # The catalogue check may be unavailable after a commit error.
             # Retain any published bytes in case the database references them.
@@ -299,6 +308,7 @@ def train_background(eid:str,pid:str,config:dict):
     if not storage.claim_queued_experiment(eid):
         return
     artifact_path = None
+    artifact_identity = None
     finished = False
     try:
         storage.check_training_interruption(eid)
@@ -322,13 +332,23 @@ def train_background(eid:str,pid:str,config:dict):
         # are prohibited. This directory belongs exclusively to the new ID.
         path=storage.HOME / "models" / eid
         storage.check_training_interruption(eid)
+        storage.check_write_path(path, directory=True, absent=True)
         path.mkdir(parents=True,exist_ok=False)
         artifact_path = path
+        artifact_identity = storage.check_write_path(path, directory=True)
         for name,pipe in pipes.items():
             storage.check_training_interruption(eid)
-            joblib.dump(pipe,path/f"{name}.joblib")
+            storage.check_write_path(path, directory=True, expected=artifact_identity)
+            destination = path/f"{name}.joblib"
+            storage.check_write_path(destination, absent=True)
+            joblib.dump(pipe,destination)
+            storage.check_write_path(destination)
         storage.check_training_interruption(eid)
-        joblib.dump((x_test,y_test),path/"test_set.joblib")
+        storage.check_write_path(path, directory=True, expected=artifact_identity)
+        destination = path/"test_set.joblib"
+        storage.check_write_path(destination, absent=True)
+        joblib.dump((x_test,y_test),destination)
+        storage.check_write_path(destination)
         storage.check_training_interruption(eid)
         finished = storage.finish_running_experiment(eid,"completed",results=result)
     except storage.TrainingInterrupted as e:
@@ -339,7 +359,13 @@ def train_background(eid:str,pid:str,config:dict):
         # A failed/cancelled run never exposes partial fitted pipelines to
         # the model-library paths used by completed experiments.
         if artifact_path is not None and not finished:
-            shutil.rmtree(artifact_path,ignore_errors=True)
+            try:
+                storage.check_write_path(artifact_path, directory=True, expected=artifact_identity)
+                for entry in artifact_path.iterdir():
+                    storage.check_write_path(entry)
+                shutil.rmtree(artifact_path,ignore_errors=True)
+            except (OSError, storage.WorkspaceBoundaryError):
+                logging.warning("Retained unsafe or unverifiable model artifact cleanup destination")
 
 
 @app.post("/api/projects/{project_id}/experiments",status_code=202)
@@ -567,7 +593,8 @@ def export_cleaned_dataset(project_id: str, body: data_exports.ExportRequest):
         media_type='text/csv' if body.format == 'csv' else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers={'X-PilotODIN-Dataset-Version': str(version), 'X-PilotODIN-Exported-Rows': str(count),
                  'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'},
-        background=BackgroundTask(path.unlink, missing_ok=True))
+        background=BackgroundTask(storage.guarded_unlink, path,
+                                  expected=storage.check_write_path(path)))
 
 
 @app.get("/api/projects/{project_id}/quality/history")

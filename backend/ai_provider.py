@@ -106,12 +106,18 @@ def _save_keys(keys:dict[str,str])->None:
         return
     import tempfile
     protected=base64.b64encode(_dpapi(json.dumps(keys).encode('utf-8')))
+    storage.check_write_path(SECRETS_PATH, missing=True)
     fd,temporary=tempfile.mkstemp(dir=SECRETS_PATH.parent,prefix='.secrets-',suffix='.tmp')
+    identity=None
     try:
-        with os.fdopen(fd,'wb') as fp:fp.write(protected)
+        with os.fdopen(fd,'wb') as fp:
+            identity=os.fstat(fp.fileno())
+            fp.write(protected)
+        storage.check_write_path(Path(temporary), expected=identity)
+        storage.check_write_path(SECRETS_PATH, missing=True)
         os.replace(temporary,SECRETS_PATH)
     finally:
-        if os.path.exists(temporary):os.unlink(temporary)
+        storage.guarded_unlink(Path(temporary), expected=identity)
 
 
 def _read_config()->dict:
@@ -160,7 +166,12 @@ def update_settings(*,cloud_enabled:bool,share_aggregates:bool,auto_insights:boo
          'local_model_enabled':local_model_enabled,'local_timeout_seconds':local_timeout_seconds}
     with _lock:
         temporary=CONFIG_PATH.with_suffix('.tmp')
+        storage.check_write_path(CONFIG_PATH, missing=True)
+        storage.check_write_path(temporary, missing=True)
         temporary.write_text(json.dumps(cfg,indent=2),encoding='utf-8')
+        identity=storage.check_write_path(temporary)
+        storage.check_write_path(temporary, expected=identity)
+        storage.check_write_path(CONFIG_PATH, missing=True)
         os.replace(temporary,CONFIG_PATH)
     return config_status()
 

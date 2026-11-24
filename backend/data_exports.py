@@ -133,11 +133,17 @@ def prepare(pid: str, request: ExportRequest) -> tuple[Path, str, int, int]:
         raise quality.QualityError('Spreadsheet-safe header escaping would create duplicate column names')
     df.columns = headers
     dest_dir = storage.HOME / 'export_tmp'
+    storage.check_write_path(dest_dir, directory=True, missing=True)
     dest_dir.mkdir(parents=True, exist_ok=True)
+    storage.check_write_path(dest_dir, directory=True)
     fd, name = tempfile.mkstemp(prefix='pilotodin-', suffix='.'+request.format, dir=dest_dir)
-    os.close(fd)
+    try:
+        identity = os.fstat(fd)
+    finally:
+        os.close(fd)
     path = Path(name)
     try:
+        storage.check_write_path(path, expected=identity)
         if request.format == 'csv':
             df.to_csv(path, index=False, encoding='utf-8-sig', lineterminator='\r\n')
         else:
@@ -165,11 +171,13 @@ def prepare(pid: str, request: ExportRequest) -> tuple[Path, str, int, int]:
                     else:
                         values.append(item)
                 sheet.append(values)
+            storage.check_write_path(path, expected=identity)
             book.save(path)
+        storage.check_write_path(path, expected=identity)
         if path.stat().st_size > MAX_EXPORT_BYTES:
             raise quality.QualityError('Export exceeds the 75 MB size limit; select fewer rows or columns',413)
     except Exception:
-        path.unlink(missing_ok=True)
+        storage.guarded_unlink(path, expected=identity)
         raise
     safe_stem = re.sub(r'[^a-zA-Z0-9_-]+','_',str(project['name']))[:70].strip('_') or 'Dataset'
     suffix = '_filtered' if request.filters else ''

@@ -155,6 +155,7 @@ def engine_workspace(value):
 # executor threads have finished, rather than only through server.run().
 _process_lease = None
 _process_workspace = None
+_process_directories = {}
 
 
 def _database_identity(home, previous=None):
@@ -209,6 +210,12 @@ def hold_process_workspace(value):
         _same_lock(fd, home / LOCK_NAME)
         _verify_entries(canonical)
         database_identity = _database_identity(canonical)
+        directory_identities = {}
+        for name in DIRECTORIES:
+            try:
+                directory_identities[name] = _directory(canonical / name)
+            except FileNotFoundError:
+                pass
     except BaseException as exc:
         lease.__exit__(None, None, None)
         if isinstance(exc, (OSError, RuntimeError)) and not isinstance(exc, WorkspaceBoundaryError):
@@ -216,6 +223,7 @@ def hold_process_workspace(value):
         raise
     _process_lease = lease
     _process_workspace = (canonical, fd, root_identity, database_identity)
+    _process_directories.update(directory_identities)
     atexit.register(lease.__exit__, None, None, None)
     return canonical
 
@@ -307,3 +315,70 @@ def validate_process_database(home, database):
         raise WorkspaceBoundaryError("Workspace database unavailable or unsafe") from exc
     if previous is None and identity is not None:
         _process_workspace = (owned, fd, root_identity, identity)
+
+
+def validate_process_write(home, path, *, directory=False, missing=False,
+                           absent=False, expected=None):
+    """Bounded observed-identity preflight, not atomic OS handle confinement.
+
+    The active product lease is authoritative. Unleased in-process test/legacy
+    callers still use their existing explicit fixture paths. Only known product
+    write families are admitted; missing parents are never created here.
+    """
+    if _process_workspace is None:
+        return None
+    owned, fd, root_identity, _ = _process_workspace
+    path = Path(path)
+    if Path(home) != owned or not path.is_relative_to(owned) or path == owned:
+        raise WorkspaceBoundaryError("Write outside owned workspace")
+    parts = path.relative_to(owned).parts
+    if any(part in ("", ".", "..") or ":" in part or part.endswith((" ", "."))
+           for part in parts):
+        raise WorkspaceBoundaryError("Invalid workspace write path")
+    root = parts[0]
+    root_file = (len(parts) == 1 and not directory and
+                 (root in ("ai_settings.json", "ai_settings.tmp", "ai_secrets.dpapi",
+                           "resource_preferences.json", "r03-benchmark.jsonl")
+                  or re.fullmatch(r"\.(?:secrets|resource-policy)-[A-Za-z0-9_-]+\.tmp", root)))
+    if not root_file and root not in ("datasets", "models", "export_tmp"):
+        raise WorkspaceBoundaryError("Unexpected workspace write path")
+    if not root_file and len(parts) == 1 and not directory:
+        raise WorkspaceBoundaryError("Expected workspace directory")
+    try:
+        for parent in reversed(owned.parents):
+            _directory(parent)
+        current = _directory(owned)
+        if not current.st_ino or not os.path.samestat(root_identity, current):
+            raise WorkspaceBoundaryError("Workspace identity changed")
+        _same_lock(fd, owned / LOCK_NAME)
+        # Recheck every existing parent without following redirects.
+        for i in range(1, len(parts)):
+            node = owned.joinpath(*parts[:i])
+            info = _directory(node)
+            if i == 1:
+                previous = _process_directories.setdefault(root, info)
+                if not info.st_ino or not os.path.samestat(previous, info):
+                    raise WorkspaceBoundaryError("Workspace subdirectory identity changed")
+        try:
+            info = path.lstat()
+        except FileNotFoundError:
+            if directory and len(parts) == 1 and root in _process_directories:
+                raise WorkspaceBoundaryError("Owned workspace subdirectory disappeared")
+            if absent or missing:
+                return None
+            raise
+        if absent:
+            raise WorkspaceBoundaryError("Workspace write destination already exists")
+        if directory:
+            info = _directory(path)
+            if len(parts) == 1:
+                previous = _process_directories.setdefault(root, info)
+                if not info.st_ino or not os.path.samestat(previous, info):
+                    raise WorkspaceBoundaryError("Workspace subdirectory identity changed")
+        else:
+            _regular(info)
+        if expected is not None and (not info.st_ino or not os.path.samestat(expected, info)):
+            raise WorkspaceBoundaryError("Workspace write identity changed")
+        return info
+    except OSError as exc:
+        raise WorkspaceBoundaryError("Workspace write path unavailable or unsafe") from exc

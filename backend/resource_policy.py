@@ -57,18 +57,22 @@ def save_policy(mode: str) -> dict:
         raise ValueError("Unknown resource policy")
     with _lock:
         target = _path()
+        storage.check_write_path(target, missing=True)
         target.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temporary = tempfile.mkstemp(prefix=".resource-policy-",
                                                 suffix=".tmp", dir=str(target.parent))
+        identity = None
         try:
             with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+                identity = os.fstat(file.fileno())
                 json.dump({"schema_version": 1, "mode": mode}, file, separators=(",", ":"))
                 file.flush()
                 os.fsync(file.fileno())
+            storage.check_write_path(Path(temporary), expected=identity)
+            storage.check_write_path(target, missing=True)
             os.replace(temporary, target)
         finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
+            storage.guarded_unlink(Path(temporary), expected=identity)
         return {"mode": mode, "source": "saved", "warning": None}
 
 
@@ -157,9 +161,12 @@ def record_r03_event(stage: str, **fields) -> None:
     event = {"at_utc": datetime.now(timezone.utc).isoformat(), "profile": profile,
              "stage": stage, **fields}
     try:
-        with _lock, (storage.HOME / "r03-benchmark.jsonl").open("a", encoding="utf-8") as stream:
-            stream.write(json.dumps(event, separators=(",", ":")) + "\n")
-    except OSError:
+        with _lock:
+            path = storage.HOME / "r03-benchmark.jsonl"
+            storage.check_write_path(path, missing=True)
+            with path.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(event, separators=(",", ":")) + "\n")
+    except (OSError, storage.WorkspaceBoundaryError):
         # Measurement is optional and must not change the admission decision.
         return
 
