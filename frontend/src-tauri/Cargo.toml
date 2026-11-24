@@ -21,6 +21,10 @@ sha2 = "0.10"
 serde_json = "1"
 percent-encoding = "2"
 
+[dev-dependencies]
+# Mock runtime only for the separately approved, ignored native integration fixture.
+tauri = { version = "=2.12.7", features = ["test"] }
+
 [target.'cfg(windows)'.dependencies]
 webview2-com = "=0.39.1"
 windows-core = "=0.62.2"

@@ -33,6 +33,8 @@ mod resource_supervisor;
 mod resource_save;
 #[cfg(windows)]
 mod resource_desktop;
+#[cfg(all(windows, test))]
+mod resource_integration_fixture;
 
 #[derive(Clone, Serialize)]
 struct BackendConnection {

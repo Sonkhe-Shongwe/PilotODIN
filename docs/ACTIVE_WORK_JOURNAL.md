@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-INTEGRATION-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c02258c6bbdd129528ee0f2a714544ab06ffd87e |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 |
 | Scope | Test-only actual private pipe, Python broker/session, Windows shell job, supervisor and writer lifecycle integration; no real app, network or model. |
 | Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | frontend/src-tauri/Cargo.toml; frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_integration_fixture.rs; qa/c1_c2_owned_host_fixture.py; continuity docs |
 | Approval | Standing source-only. Prior 40-test Windows approval CONSUMED, disarmed and terminal. New native process execution or compilation requires fresh exact approval. No installer, model, network, owner data or activation. |
 | Verification | Exact 388b357 Windows all-targets check and 40/40 synthetic library tests SUCCESS; disarm run SUCCESS, native SKIPPED. Matching routine P2 export, P4 synthetic and Cargo metadata scopes reviewed; restricted probe disabled. Tauri test feature only in dev-dependencies, no new version or lock change proposed. |
