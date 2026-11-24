@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e9298e028524b0f65e040c90406b3302e2457288 |
-| Product baseline | 7f123cf57a9cfa775ccb7fee8d0ad06fdc371007 |
+| Product baseline | 58d89a18cbb1cd5fae05695c576a752a23f4287f |
 | Scope | Repair source-only N12 product topology reviewer for actual async inference call chain, retain existing containment/no-credit contract; no native acceptance changes. |
 | Operation ID | C1-C2-INTEGRATION-20261124-topology-repair |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | qa/p4_research/n12_product_tree_isolation_review.py; tests/test_p4_n12_product_tree_isolation_review.py; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Reviewer follows actual async command and owned blocking spawn, preserves original checks and adds ordered fences plus 12 drift subtests. Native acceptance unchanged; exact P4 CI pending. |
-| Pending runs | Exact-source P4 routine CI pending discovery. |
+| Pending runs | [P4 #45471525211](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45471525211), exact 58d89a18cbb1cd5fae05695c576a752a23f4287f, IN_PROGRESS at observation. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Correct exact source topology assertion, reconcile P4 source CI, then consolidated backend demand bridge and supported owned group-empty witness decision. No live activation. |
+| Recovery action | Reconcile exact P4 CI. Then consolidate backend-driven inference demand after DATA, review supported owned group-empty witness mechanism; seek narrowly scoped decision if needed; unify runner/frontend and one scoped native verification. No partial activation. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
