@@ -30,7 +30,7 @@ Historical P2 browser failure at `39b8e5f` remains recorded in the [B4 audit](./
 
 ## 4. Immediate next work (in order)
 
-1. Prepare a disabled, scope-pinned native synthetic test proposal for receipt authentication, actual backend-generated XLSX and isolated publication failures. Request separate explicit approval before native compilation/linking or execution. No app launch, installer or owner data.
+1. [Prepared B5 native synthetic test proposal](./PILOTODIN_B5_NATIVE_SYNTHETIC_TEST_PROPOSAL_2026-11-24.md) is DISARMED. Verify its skipped workflow, then obtain fresh explicit one-use approval for the exact source, seven library tests and synthetic fixture download. No native linking/execution, app launch, installer or owner data without stated approval.
 2. Review exact results if approved; retain unresolved actual WebView IPC/dialog and physical destination persistence for separately approved verification. B5 closure needs its defined evidence; C does not start until B5 source closure. G2 proof-method decision is deferred until product readiness, not reopened.
 
 ## 5. Native evidence and immutable acceptance boundary
