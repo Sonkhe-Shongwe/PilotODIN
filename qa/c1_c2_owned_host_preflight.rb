@@ -1,12 +1,13 @@
-# Source-only. Parse; never execute Cargo, PowerShell script bodies or application.
+# Source-only. Parse full scripts; execute only isolated classifier with synthetic text; no Cargo, mt.exe or application.
 require 'psych'
 require 'digest'
 require 'open3'
+require 'tmpdir'
 WORKFLOW = ".github/workflows/p4-c1-c2-owned-host-once.yml"
 SCRIPT = "qa/c1_c2_owned_host_preflight.rb"
 DISABLED = "    if: ${{ false }} # DISARMED OWNED HOST; fresh exact approval required.\n"
-ARMED = "    if: >-\n      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-OWNED-HOST-MANIFEST-20261125-ONE-USE' }}\n"
-MARKER = "C1-OWNED-HOST-MANIFEST-20261125-ONE-USE"
+ARMED = "    if: >-\n      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-OWNED-HOST-MANIFEST-20261125-V2-ONE-USE' }}\n"
+MARKER = "C1-OWNED-HOST-MANIFEST-20261125-V2-ONE-USE"
 PRODUCT = "1d23ea139762d94d25e689c4c3489b72fb34acc9"
 BRANCH = "feature/live-dev-workspace-20261023"
 JOB = "c1-c2-owned-host-integration"
@@ -93,6 +94,43 @@ steps.drop(1).each do |step|
   _, err, status = Open3.capture3('pwsh', '-NoProfile', '-NonInteractive', '-Command', parser, stdin_data: step.fetch('run'))
   check(status.success?, "PowerShell parse failed: #{step['name']}: #{err}")
 end
+# Run the exact two-line absence classifier, not the native workflow.
+# Use documented Windows resource messages and the actual wrapped runner diagnostic.
+normalize = body.lines.select { |line| line.include?('$detail =') }
+absence = body.lines.select { |line| line.include?('Cannot establish original manifest absence:') }
+check(normalize.length == 1 && absence.length == 1, 'unique manifest absence classifier')
+check(normalize[0].include?("Out-String") && absence[0].include?("c101008c") && absence[0].include?("Test-Path -LiteralPath $before"), 'manifest absence guard identity')
+prefix = "mt.exe : general error c101008c: Failed to read the manifest from\n the resource of file \"synthetic.exe\". "
+messages = [
+  'The specified image file did not contain a resource section.',
+  'The specified resource type cannot be found in the image file.',
+  'The specified resource name cannot be found in the image file.',
+  'The specified resource language ID cannot be found in the image file.'
+]
+cases = messages.map.with_index { |message, index| ["resource-#{1812 + index}", prefix + message, 1, false, 0] }
+cases.concat([
+  ['wrapped-runner-message', prefix + "The specified image file did not contain a\n resource section.", 1, false, 0],
+  ['access-denied', prefix + 'Access is denied.', 1, false, 17],
+  ['file-missing', prefix + 'The system cannot find the file specified.', 1, false, 17],
+  ['wrong-mt-code', prefix.sub('c101008c', 'c1010001') + messages[0], 1, false, 17],
+  ['unrelated-message', messages[0], 1, false, 17],
+  ['partial-extraction', prefix + messages[0], 1, true, 17],
+  ['unexpected-success', prefix + messages[0], 0, false, 17],
+  ['empty-diagnostic', '', 1, false, 17]
+])
+# Execute only the extracted guard with controlled synthetic data and a disposable sentinel.
+Dir.mktmpdir('pilotodin-manifest-classifier-') do |dir|
+  before = File.join(dir, 'original.manifest')
+  cases.each do |name, detail, code, existing, expected_exit|
+    File.write(before, 'synthetic partial extraction') if existing
+    File.delete(before) if !existing && File.exist?(before)
+    script = '$ErrorActionPreference = "Stop"; $extract = @($env:C1_TEST_DETAIL); $extractCode = [int]$env:C1_TEST_CODE; $before = $env:C1_TEST_BEFORE;' + "\ntry {\n" + normalize[0] + absence[0] + "\nexit 0\n} catch { exit 17 }\n"
+    env = {'C1_TEST_DETAIL'=>detail, 'C1_TEST_CODE'=>code.to_s, 'C1_TEST_BEFORE'=>before}
+    _, err, status = Open3.capture3(env, 'pwsh', '-NoProfile', '-NonInteractive', '-Command', script)
+    check(status.exitstatus == expected_exit, "manifest absence case #{name}: #{err}")
+  end
+end
+puts "C1-MANIFEST-ABSENCE-CLASSIFIER-PASS: #{cases.length} cases; 5 known absence accepted, 7 unrelated/ambiguous refused"
 puts "C1-C2-HOST-PREFLIGHT-DISABLED-SHA256 #{Digest::SHA256.hexdigest(disabled)}"
 puts "C1-C2-HOST-PREFLIGHT-ARMED-SHA256 #{Digest::SHA256.hexdigest(armed)}"
 puts 'C1-C2-HOST-PREFLIGHT-PASS: both full YAML variants; four PowerShell bodies; pinned source; one exact ignored native integration test; Python AST; no native execution'

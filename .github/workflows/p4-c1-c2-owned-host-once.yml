@@ -146,8 +146,8 @@ jobs:
               }
               Write-Host 'FIXTURE-ORIGINAL-MANIFEST-PRESENT; no Common Controls dependency'
             } else {
-              $detail = $extract | Out-String
-              if ($detail -notmatch '(?i)specified resource (type|name|language) cannot be found in the image file' -or (Test-Path -LiteralPath $before)) { throw "Cannot establish original manifest absence: $detail" }
+              $detail = (($extract | Out-String) -replace '\s+', ' ').Trim()
+              if ($extractCode -eq 0 -or $detail -notmatch '(?i)\bgeneral error c101008c:\s*Failed to read the manifest from the resource of file\b' -or $detail -notmatch '(?i)\bThe specified (?:image file did not contain a resource section|resource (?:type|name|language ID) cannot be found in the image file)\.' -or (Test-Path -LiteralPath $before)) { throw "Cannot establish original manifest absence: $detail" }
               [xml]$manifest = '<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0"><assemblyIdentity type="win32" name="PilotODIN.OwnedHostSyntheticFixture" version="1.0.0.0" processorArchitecture="amd64"/><trustInfo xmlns="urn:schemas-microsoft-com:asm.v3"><security><requestedPrivileges><requestedExecutionLevel level="asInvoker" uiAccess="false"/></requestedPrivileges></security></trustInfo></assembly>'
               Write-Host 'FIXTURE-ORIGINAL-MANIFEST-ABSENT'
             }
