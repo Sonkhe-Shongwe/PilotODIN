@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-NATIVE-VERIFICATION-20261124 |
-| State | AWAITING_APPROVAL |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | dc12e608e8b8fbda544a93bd4ee28698dd35bdb2 |
+| Observed starting HEAD | 5c6073361c7c404e6dd0ab5c0d2a48074fffa1dd |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 |
 | Scope | One Windows x64 locked all-targets type-check and forty exact synthetic library tests against fixed product SHA, then disarm. |
-| Operation ID | C1-C2-NATIVE-SYNTHETIC-20261124-prepare |
-| Operation state | RECONCILED |
+| Operation ID | C1-C2-NATIVE-SYNTHETIC-20261124-approved-once |
+| Operation state | PREPARED |
 | Intended files | .github/workflows/p4-package-c1-c2-native-synthetic-once.yml; qa/c1_c2_native_workflow_preflight.rb; continuity docs |
-| Approval | NOT GRANTED. Source-only proposal prepared and validated. Fresh explicit one-use approval required for native type-check/test and ordinary locked Cargo dependency resolution on disposable GitHub runner. No app launch, real inference/ML, cloud call, owner data, installer, production activation, executable upload, or unrestricted retry. |
+| Approval | Explicit owner approval received in chat 24 Nov 2026: one Windows locked all-targets type-check and 40 exact synthetic library tests against 388b357, including locked Cargo dependency resolution on disposable GitHub runner. Disarm after execution. No retry, app launch, real inference/ML, cloud, owner data, installer, activation or executable upload. |
 | Verification | Ten exact routine workflows SUCCESS. Disabled proposal 340220e, run #45492757896 SUCCESS: parse job 138795114070, native job 138795323920 SKIPPED. Disabled SHA256 ff66d127eacba5c08a57d651b6cb313bb512cb4bc7420213e985c8cd4cfe30db; prospective armed SHA256 d602fa7069bf10bded087cad36a413332eede64fcb8a64f566d385c85c16a4e1. Both full YAML variants, four PowerShell bodies, pinned source identities, forty exact tests validated. |
-| Pending runs | None. No native operation issued. |
+| Pending runs | None. One-use execution prepared, not yet issued. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Stop before arming until explicit owner approval of this exact scope. If approved, write ahead separate operation, reverify HEAD, identities, complete armed hash, trigger and commit marker C1-C2-NATIVE-SYNTHETIC-20261124-ONE-USE; execute once (attempt 1), reconcile result, then disarm even on failure. Do not infer actual desktop pipe/job integration or physical acceptance from type-check and synthetic tests. |
+| Recovery action | Disabled and prospective armed SHA256 independently verified; exact product tree and gate unchanged. Arm only the verified guard with exact commit marker C1-C2-NATIVE-SYNTHETIC-20261124-ONE-USE. Reconcile actual dispatch, consume approval once, disarm and record terminal evidence. Never replay uncertain dispatch. |
 | Resume after closure | Audit C1/C2 against remaining actual shared host admission and lifecycle evidence, then C3–C5; D separately approved. |
 
 ## Prior operation
