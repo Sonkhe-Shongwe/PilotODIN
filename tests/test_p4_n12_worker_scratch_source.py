@@ -75,6 +75,7 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         config = json.loads(CONFIG.read_text(encoding="utf-8"))
         main = config["app"]["windows"][0]
         self.assertNotIn("dataDirectory", main)
+        self.assertNotIn("appDirectoriesOverride", config["app"])
         self.assertNotIn("create", main)  # QA may inherit the base window list.
         run = src.split("pub fn run() {", 1)[1]
         self.assertLess(run.index("context.config_mut()"), run.index("config.app.windows[0].create = false"))
@@ -108,7 +109,6 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertLess(shutdown.index("child.write("), shutdown.index("terminate_owned_child(worker.child.take())"))
         self.assertIn("wait_for_worker(&worker.exit", shutdown)
         self.assertIn("exit is not confirmed", shutdown)
-        self.assertNotIn("appDirectoriesOverride", config["app"])
 
 
 if __name__ == "__main__":

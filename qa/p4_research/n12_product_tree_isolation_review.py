@@ -27,12 +27,12 @@ def load_sources(root=ROOT):
 
 
 def _function(source, name):
-    match = re.search(r"(?m)^fn " + re.escape(name) + r"\(", source)
+    match = re.search(r"(?m)^(?:async )?fn " + re.escape(name) + r"\(", source)
     if match is None:
         return ""
     # Only audit the named Rust function, not comments or a different worker.
     tail = source[match.start():]
-    boundary = re.search(r"(?m)^(?:fn |pub fn |const )", tail[len(match.group(0)):])
+    boundary = re.search(r"(?m)^(?:(?:pub )?(?:async )?fn |const )", tail[len(match.group(0)):])
     return tail[:len(match.group(0)) + boundary.start()] if boundary else tail
 
 
