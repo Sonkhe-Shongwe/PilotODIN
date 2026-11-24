@@ -25,8 +25,10 @@ class OwnedHTTP:
     Normal ASGI return is a witness only under that reviewed contract; an
     escaping exception or cancellation is deliberately not proof of cleanup.
     """
+    _lifetimes = ("request", "stream")
+
     def __init__(self, app, coordinator: Coordinator, plan: RoutePlan):
-        if (plan not in ROUTES.values() or plan.lifetime not in ("request", "stream")
+        if (plan not in ROUTES.values() or plan.lifetime not in self._lifetimes
                 or plan.operation is None):
             raise ValueError("Route requires a different admission lifetime")
         self.app = app

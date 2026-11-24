@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | b342a2a37f6d9abbbe51ef6887f0eefe4d708713 |
 | Product baseline | 7402529265880683a72345b418f235307bf26625 |
 | Scope | C1 staged owned upload adapter: before-parser DATA lease, streamed bounded multipart envelope, exact file cap, explicit parser spool cleanup; no live registration. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-upload-envelope |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_upload.py; backend/resource_http.py; tests/test_c1_resource_upload.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45451870974 exact source SUCCESS: 166 regression + 2 subtests, 42 C1. Next inert parser tests must verify actual framework API, bounded receive, denied read, overflow, disconnect, cleanup and normal success. |
-| Pending runs | None; #45451870974/job 138650845769 terminal SUCCESS, checkout and counts verified. |
+| Verification | Staged bounded upload adapter and real parser fixtures published atomically with journal; exact-source tests pending. No live registration. |
+| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before further integration. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish staged upload adapter and exact framework synthetic tests. Verify actual parser spool ownership contract; no live registration until remaining training/autonomy/host integration. If API/cleanup incompatible, retain existing product and record exact failure. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
