@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `766d352ca5036529b9aa8d1bc091b8f0b0276090`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `7402529265880683a72345b418f235307bf26625`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -13,3 +13,7 @@ Operation C1-RESOURCE-ADMISSION-20261124-core; parent `3e5f15d`. Added dependenc
 ## 24 November | C1 core exact-source CI reconciled
 
 [P1 source CI #45446217250](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45446217250), job 138630596234, terminal SUCCESS. Job log confirms checkout `766d352ca5036529b9aa8d1bc091b8f0b0276090`, backend compile, 166 existing regression tests + 2 subtests and 31 pure coordinator/route inventory tests, zero failures. No live admission, worker exit, native or physical acceptance. Source 10/17, C0/5 and P4 14/20 unchanged. Next staged ASGI request/stream lifetime adapter; existing decorator middleware does not itself witness actual background/stream completion. No restricted approval pending.
+
+## 24 November | C1 staged full-ASGI lifetime adapter published
+
+Operation C1-RESOURCE-ADMISSION-20261124-asgi-lifetime, prepared at `2b44892`, published at [`7402529`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7402529265880683a72345b418f235307bf26625). New `backend/resource_http.py` holds the same coordinator lease before downstream invocation through the entire ASGI call; denies before allocation and blocks on escaping cancellation/error rather than certifying unknown cleanup. Restricts to reviewed request/stream plans; special lifetimes explicitly refused. New inert FastAPI/Starlette fixtures exercise refusal, background/stream barriers, handled errors, escaping failure/cancellation and special-lifetime rejection. Existing P1 workflow includes tests. All 82 workflow triggers inspected at initial HEAD; preparation was docs-only; only P1 source workflow matches this source batch. [Exact CI #45451870974](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45451870974), job 138650845769, IN_PROGRESS. No live registration, route matcher, actual B5 export transfer verification, parser envelope, training or host ownership integration. ASGI return is a completion witness only for a reviewed non-detached downstream; unresolved error deliberately retains lane. No native/model/installer/owner operation; C0/5, source 10/17, P4 14/20 unchanged.
