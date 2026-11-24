@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | a12328650a42528a18a462ac0197640725e45309 (specification preparation; verify live publication) |
+| Observed starting HEAD | c5c6815d75d8f967278f5d2c7d94978a3e506fd6 |
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
-| Scope | C1 exact heavy route/lifetime inventory and bounded coordinator/host admission source implementation, no native execution |
-| Operation ID | NONE |
-| Operation state | NONE |
-| Intended files | Review C1 spec/actual route map before selecting source/test files; preserve B5 and A boundaries |
+| Scope | C1 first bounded source batch: dependency-free admission coordinator, exhaustive main.py route classification and direct synthetic tests; no activation of runtime admission until real lifetimes and host bridge integrated |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-core |
+| Operation state | PREPARED |
+| Intended files | backend/resource_admission.py; backend/resource_routes.py; tests/test_c1_resource_admission.py; .github/workflows/p1-isolated-backend.yml; C spec, evidence ledger, handoff, journal |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Integrated C1–C5 design published; code baseline 8e3cc91 unchanged; no C implementation/tests yet |
+| Verification | Direct source inventory and prior CI dependency resolution verified; new deterministic test suite and existing P1 source recovery only; no native, actual model or owner access |
 | Pending runs | None from documentation task; verify actual publication |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Read integrated C spec and ledger; classify all heavy routes and worker ownership, check exact framework/pipe compatibility, then implement C1 in bounded source batches; do not claim closure before shared admission evidence |
+| Recovery action | Reconcile exact core commit and source CI before further wiring. Core not used by live routes yet; next integrate before-allocation lifetimes and owned host bridge. No C1 closure credit. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
