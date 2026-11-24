@@ -1,10 +1,10 @@
 # PilotODIN 1.0
 
-**24 NOVEMBER 2026 | B2 MODEL PUBLICATION INTEGRATED:** All six foundation workflows at `4c4f3ca` passed. [Publication source beb9490](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/beb9490bd307fd06db201e7b07e7d5bd40460bdd) published; integrated CI and trusted load outstanding. See the [current B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) for exact evidence and limitations. B1 source closed, B2 active, no acceptance change.
+**24 NOVEMBER 2026 | B2 VERIFIED LOAD INTEGRATED:** [Source 88711e4](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/88711e4a9e29747786fd42ad89056db57edc4237) connects selection/prediction to verified private scratch loading; corrects previous no-fit fixture. Integrated CI and B2 exit review pending. See [current B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) for exact evidence and limitations. B1 source closed; B2 active; no acceptance change.
 
-[Previous B1 closure/B2 foundation checkpoint](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/c9eb1d3bcdc9df0fe11acda480d69935fb620e5e/README.md).
+[Previous B2 publication checkpoint](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/2bb2aaa57f3eec1a8cb7b36213ab4d2839e142c7/README.md).
 
-**CURRENT ENGINEERING FOCUS (24 November):** Package A source CLOSED; Package B ACTIVE, B1 source CLOSED; B2 model publication integrated, CI and verified load outstanding. [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) | [Tab handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). G2 BLOCKED, four-gate 1/4 (25%), P4 14/20 (70%), R02.5 0/5, N12 0/2, mutation preparation 3/4 (75%). No native collector or installer.
+**CURRENT ENGINEERING FOCUS (24 November):** Package A source CLOSED; Package B ACTIVE, B1 source CLOSED; B2 verified loading integrated, CI and exit review outstanding. [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) | [Tab handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). G2 BLOCKED, four-gate 1/4 (25%), P4 14/20 (70%), R02.5 0/5, N12 0/2, mutation preparation 3/4 (75%). No native collector or installer.
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
@@ -13,7 +13,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 
 ## Read this first
 - **[Current product-first implementation directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md)**: sole live work order, fixed A–D scope, readiness specification and permissions.
-- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: B1 source closed; B2 model publication integrated; B3–B5 pending.
+- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: B1 source closed; B2 verified loading integrated; exit review pending; B3–B5 pending.
 - **[24 November documentation audit](docs/DOCUMENTATION_AUDIT_PACKAGE_B_ACTIVATION_2026-11-24.md)**: current authority, evidence and historical preservation.
 - **[Current tab migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md)**: single starting point, latest evidence, exact next action, safe scope and source references.
 - **[Stage 1 golden-reference verification contract](docs/P4_N12_STAGE1_GOLDEN_REFERENCE_AND_BACKWARD_VERIFICATION_2026-11-21.md)** for retained native evidence requirements, not the current development sequence.

@@ -1,10 +1,10 @@
 # PilotODIN 1.0 | Current continuation checkpoint
 
-**24 NOVEMBER 2026 | B2 MODEL PUBLICATION INTEGRATED:** All six foundation workflows at `4c4f3ca` passed. [Publication source beb9490](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/beb9490bd307fd06db201e7b07e7d5bd40460bdd) published; integrated CI and trusted load outstanding. See the [current B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) for exact evidence and limitations. B1 source closed, B2 active, no acceptance change.
+**24 NOVEMBER 2026 | B2 VERIFIED LOAD INTEGRATED:** [Source 88711e4](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/88711e4a9e29747786fd42ad89056db57edc4237) connects selection/prediction to verified private scratch loading; corrects previous no-fit fixture. Integrated CI and B2 exit review pending. See [current B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) for exact evidence and limitations. B1 source closed; B2 active; no acceptance change.
 
-[Previous B1 closure/B2 foundation checkpoint](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/c9eb1d3bcdc9df0fe11acda480d69935fb620e5e/docs/SESSION_HANDOFF_CURRENT.md).
+[Previous B2 publication checkpoint](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/2bb2aaa57f3eec1a8cb7b36213ab4d2839e142c7/docs/SESSION_HANDOFF_CURRENT.md).
 
-**CURRENT | 24 November 2026.** P4 active. Package A source CLOSED; Package B ACTIVE, B1 source CLOSED; B2 model publication integrated, CI and verified load outstanding. [Live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) · [Package B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) · [Documentation audit](./DOCUMENTATION_AUDIT_PACKAGE_B_ACTIVATION_2026-11-24.md). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. All eight exact-source workflows at `60041f1` passed; [complete locked Windows host check #45380098568](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45380098568) passed, approval consumed and permanently disabled; [retirement run #45382351664](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45382351664) skipped. No native runtime acceptance, owner data, installer or P5 approval.
+**CURRENT | 24 November 2026.** P4 active. Package A source CLOSED; Package B ACTIVE, B1 source CLOSED; B2 verified loading integrated, CI and exit review outstanding. [Live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) · [Package B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) · [Documentation audit](./DOCUMENTATION_AUDIT_PACKAGE_B_ACTIVATION_2026-11-24.md). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. All eight exact-source workflows at `60041f1` passed; [complete locked Windows host check #45380098568](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45380098568) passed, approval consumed and permanently disabled; [retirement run #45382351664](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45382351664) skipped. No native runtime acceptance, owner data, installer or P5 approval.
 
 [Preserved complete pre-audit document, including all dated checkpoint receipts and earlier directions](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/a5f85047fc8224a0d926de9cf449ca5279fdd1c3/docs/SESSION_HANDOFF_CURRENT.md). Earlier directions are historical; current action is governed by the live directive.
 
@@ -28,7 +28,7 @@ In each continuation update, show the official score, the previous and current c
 
 ## Next engineering action
 
-**Package B (active), B2:** [Specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md). Verify integrated B2 publication CI, then implement trusted same-handle scratch deserialization with resource/provenance checks; retain legacy metadata and reject unverified binary loads. Do not restart collectors, rerun consumed native checks, access owner data or perform a live migration.
+**Package B (active), B2:** [Specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md). Verify integrated B2 CI, resolve confirmed defects, complete bounded publication/load and resource compatibility exit review, then proceed to B3. Do not restart collectors, rerun consumed native checks, access owner data or perform a live migration.
 
 ### Historical next-action records (superseded; retained for audit)
 
