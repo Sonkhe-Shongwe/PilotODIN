@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   locked-host-check:
-    if: ${{ github.event_name == 'push' && github.run_attempt == '1' && github.event.before == '0764deb3a35bcf2a369852cd48df7c4c6661946a' }}
+    if: ${{ false }} # Consumed by successful run 45380098568; never reuse.
     runs-on: windows-2022
     timeout-minutes: 55
     env:
