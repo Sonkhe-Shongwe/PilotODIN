@@ -6,21 +6,21 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | C1-C2-NATIVE-VERIFICATION-20261124 |
-| State | VERIFYING |
+| Task ID | C1-C2-OWNED-HOST-INTEGRATION-20261124 |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5c6073361c7c404e6dd0ab5c0d2a48074fffa1dd |
+| Observed starting HEAD | c02258c6bbdd129528ee0f2a714544ab06ffd87e |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 |
-| Scope | One Windows x64 locked all-targets type-check and forty exact synthetic library tests against fixed product SHA, then disarm. |
-| Operation ID | C1-C2-NATIVE-SYNTHETIC-20261124-approved-once |
-| Operation state | RECONCILED |
-| Intended files | .github/workflows/p4-package-c1-c2-native-synthetic-once.yml; qa/c1_c2_native_workflow_preflight.rb; continuity docs |
-| Approval | CONSUMED: exact one-use owner approval dispatched once, run #45493317784 attempt 1. Restore disarmed guard after verified native job start (immutable run continues), no retry or further native work without new approval. No app/model/ML/cloud/owner data/installer/activation/upload. |
-| Verification | Ten exact routine workflows SUCCESS. Disabled proposal 340220e, run #45492757896 SUCCESS: parse job 138795114070, native job 138795323920 SKIPPED. Disabled SHA256 ff66d127eacba5c08a57d651b6cb313bb512cb4bc7420213e985c8cd4cfe30db; prospective armed SHA256 d602fa7069bf10bded087cad36a413332eede64fcb8a64f566d385c85c16a4e1. Both full YAML variants, four PowerShell bodies, pinned source identities, forty exact tests validated. |
-| Pending runs | Armed commit d6b610f9c42bd44c2a43b49204ce6a099675df11 run #45493317784 IN_PROGRESS; parse job 138797124098 SUCCESS; Windows job 138797272828 IN_PROGRESS. Disarm commit parse-only run to reconcile separately; no native rerun. |
+| Scope | Test-only actual private pipe, Python broker/session, Windows shell job, supervisor and writer lifecycle integration; no real app, network or model. |
+| Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-source |
+| Operation state | PREPARED |
+| Intended files | frontend/src-tauri/Cargo.toml; frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_integration_fixture.rs; qa/c1_c2_owned_host_fixture.py; continuity docs |
+| Approval | Standing source-only. Prior 40-test Windows approval CONSUMED, disarmed and terminal. New native process execution or compilation requires fresh exact approval. No installer, model, network, owner data or activation. |
+| Verification | Exact 388b357 Windows all-targets check and 40/40 synthetic library tests SUCCESS; disarm run SUCCESS, native SKIPPED. Matching routine P2 export, P4 synthetic and Cargo metadata scopes reviewed; restricted probe disabled. Tauri test feature only in dev-dependencies, no new version or lock change proposed. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Verify live HEAD/disarmed guard and exact disarm run (native SKIPPED). Reconcile terminal original #45493317784 attempt 1 and job logs, compile/test counts and cleanup; no claim of pass or closure yet. If failure, record exact cause and correct source only; fresh native approval required for repeat. Audit real shared host admission and lifecycle evidence separately. |
-| Resume after closure | Audit C1/C2 against remaining actual shared host admission and lifecycle evidence, then C3–C5; D separately approved. |
+| Recovery action | Prepare ignored integration fixture source only; use existing shell API via mock runtime and actual Python private control bootstrap, not production activation. Prove real pipe grant/release and job zero through generated disposable files. Reconcile source/metadata CI and prepare one exact separately approved fixture run. |
+| Resume after closure | C1/C2 closure audit, C3–C5; D separately approved. |
 
 ## Prior operation
 
