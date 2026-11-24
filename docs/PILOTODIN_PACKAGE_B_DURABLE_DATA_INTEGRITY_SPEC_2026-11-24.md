@@ -1,6 +1,8 @@
 # PilotODIN | Package B durable data integrity implementation specification
 
-**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B4 SOURCE CLOSED; B5 ACTIVE (browser export and disconnect verified; unregistered native dataset publisher source awaiting integration); C1–C5 and D1–D2 pending. Source remediation 9/17 (52.9%); Package B 4/5 (80%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
+**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B4 SOURCE CLOSED; B5 ACTIVE (browser export and backend fixture verified; Windows type-check passed at `7789f84`; FFI correction `b9a9181` not yet host-compiled). C1–C5 and D1–D2 pending. Source remediation 9/17 (52.9%); Package B 4/5 (80%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
+
+Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Latest engineering receipts: [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Documentation audit](./DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md). Latest product source [`b9a9181`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/b9a9181313b709abe729b3bddac3ac4e10709e59): FFI declaration correction, [P4 source CI #45434780210](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45434780210) SUCCESS at audit. Prior exact source `7789f84` passed [338-test lifecycle and workbook fixture CI #45433050726](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45433050726) and [one-use locked Windows all-targets type-check #45433836700](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45433836700). Disarm [#45433927780](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45433927780) skipped. The compile approval is consumed; corrected source has not been host-compiled.
 
 [Current compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) | [Migration audit](./DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md) | [Complete prior document and dated receipts at immutable source](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/39b8e5f8286f6b17122ddd0f9d1e72f31d87ff44/docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md). Historical records below are not competing instructions.
 
@@ -108,7 +110,11 @@ Extend ledger with typed export kind and separate transfer lifecycle (intent -> 
 
 Package B technical design refined across B1–B5. No broad research phase remains. B1's exact mechanisms, schema, legal transitions, startup order and failure matrix are implementation-ready; B2–B5 use the same protocol but require the small explicit compatibility checks above at implementation time. Implement B1 first, not a generic artifact framework; stop and revise this decision record only for a concrete incompatibility or failed test. No application source, dependency, workflow, owner data, native runtime or acceptance change in this refinement. A source closed; B active; C/D pending. P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 remains BLOCKED.
 
-## B4 completed source exit evidence and current B5 action
+<a name="b4-completed-source-exit-evidence-and-current-b5-action"></a>
+
+## Historical B4 completed source exit evidence and B5 implementation chronology
+
+Current B5 implementation state and next action are in the evidence ledger and handoff above; dated next-action lines below are superseded.
 
 | Exact product source `39b8e5f` | Final status | Evidence |
 | --- | --- | --- |

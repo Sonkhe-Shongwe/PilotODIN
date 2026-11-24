@@ -1,8 +1,15 @@
 # PilotODIN | Continue development
 
-**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B3 SOURCE CLOSED; B4 ACTIVE (report capture staged, mixed CI); B5, C1–C5 and D1–D2 pending. Source remediation 8/17 (47.1%); Package B 3/5 (60%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
+**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B4 SOURCE CLOSED; B5 ACTIVE (browser export and backend fixture verified; Windows type-check passed at `7789f84`; FFI correction `b9a9181` not yet host-compiled). C1–C5 and D1–D2 pending. Source remediation 9/17 (52.9%); Package B 4/5 (80%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
 
 **Start with [current tab migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).** The sole live sequence is the [product-first directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md). Earlier P3 directions are historical. [Preserved prior continuation document](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/39b8e5f8286f6b17122ddd0f9d1e72f31d87ff44/docs/CONTINUE_HERE.md).
+
+
+**Current action:** [Migration handoff, section 4](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order). [B5 evidence](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md).
+
+## Historical continuation records (superseded instructions)
+
+[Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/CONTINUE_HERE.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
 
 ## 6 November 2026 | P3 W5 native acceptance now checks historical v0 note retention
 - **Specific acceptance gap:** The earlier native W5 runner proved **v1 does not inherit v0 descriptions**, but did not independently assert that **the original v0 descriptions remain stored after Quality approval**. The existing synthetic backend test covered that invariant, not the new native runner's own database.
