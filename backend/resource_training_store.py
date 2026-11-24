@@ -71,4 +71,30 @@ def terminal(eid):
     with storage.connect() as con:
         row = _state(con, eid)
         return (row is not None and row["status"] in _TERMINAL
-                and row["latest_stage"] == row["status"])
+                and row["latest_stage"] == row["status"]
+                and _publication_settled(con, eid, row["status"]))
+
+
+def _publication_settled(con, eid, status):
+    """Only after actual worker return; no recovery or deletion here."""
+    receipt = con.execute("SELECT state FROM model_publications_v1 WHERE experiment_id=?",
+                          (eid,)).fetchone()
+    if receipt is None:
+        return status != "completed"
+    if receipt[0] != ("committed" if status == "completed" else "interrupted"):
+        return False
+    # A retained stage means cleanup was deferred or uncertain. Never certify
+    # resource settlement from a terminal experiment alone.
+    parent = storage.HOME / "models"
+    paths = [parent / (eid + ".publishing")]
+    if status != "completed":
+        paths.append(parent / eid)
+    for path in paths:
+        try:
+            path.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError:
+            return False
+        return False
+    return True

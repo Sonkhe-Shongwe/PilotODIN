@@ -36,6 +36,7 @@ class Transfer:
         self.staged = None
         self.uncertain = False
         self.finished = False
+        self.publication_attempted = False
         self.reason = "cancelled"
 
     def advance(self, state, **metadata):
@@ -63,6 +64,7 @@ class Transfer:
         df, self.filename = exports._prepare_data(pid,request)
         self.count, self.version = len(df), request.version
         self.format = request.format
+        self.publication_attempted = True
         self.receipt = storage.begin_export_publication(pid,request.version,request.format)
         self.path = exports._scratch_directory() / self.receipt.filename
         try:
@@ -137,6 +139,17 @@ class Transfer:
         self.verify()
         return chunk
 
+    def ownership_settled(self):
+        # A terminal HTTP response does not establish a closed handle or
+        # durable scratch settlement. Conservative on ambiguous receipts.
+        if not self.finished or self.uncertain:
+            return False
+        if self.stream is not None and not self.stream.closed:
+            return False
+        if not self.publication_attempted:
+            return self.receipt is None and self.stream is None
+        return self.receipt is not None and self.receipt.state in ("released","interrupted")
+
     def finish(self, completed):
         if self.finished:
             return
@@ -171,6 +184,7 @@ class Transfer:
                 except Exception:
                     # Never unlink or certify release when close is unconfirmed.
                     safe = False
+                    self.uncertain = True
                     self.reason = "storage_unavailable"
                     log.warning("Export handle close failed; scratch preserved")
         if self.receipt is None or self.uncertain:
@@ -215,6 +229,13 @@ class ExportResponse(Response):
         self.pid, self.request = pid, request
 
     async def __call__(self, scope, receive, send):
+        try:
+            from .resource_http import settlement
+        except ImportError:
+            from resource_http import settlement
+        witness = settlement(scope)
+        if witness is not None:
+            witness.begin()
         transfer = Transfer()
         body = None
         try:
@@ -248,3 +269,5 @@ class ExportResponse(Response):
         finally:
             with anyio.CancelScope(shield=True):
                 await anyio.to_thread.run_sync(transfer.finish, bool(body and body.completed))
+                if witness is not None and transfer.ownership_settled():
+                    witness.confirm()

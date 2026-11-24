@@ -17,6 +17,27 @@ except ImportError:
     from resource_routes import RoutePlan, ROUTES
 
 
+_SETTLEMENT = "pilotodin.resource_settlement"
+
+class Settlement:
+    """Trusted route-local witness for operations that can swallow cleanup errors."""
+    def __init__(self):
+        self.confirmed = True
+
+    def begin(self):
+        self.confirmed = False
+
+    def confirm(self):
+        self.confirmed = True
+
+
+def settlement(scope):
+    value = scope.get(_SETTLEMENT)
+    if value is not None and not isinstance(value, Settlement):
+        raise RuntimeError("Invalid resource settlement")
+    return value
+
+
 class OwnedHTTP:
     """Retain one admission through the complete downstream ASGI lifetime.
 
@@ -63,14 +84,22 @@ class OwnedHTTP:
                 None, "shutting_down", admission.required_bytes,
                 admission.available_bytes))
             return
+        witness = Settlement()
         try:
+            if _SETTLEMENT in scope:
+                raise RuntimeError("Duplicate resource ownership")
+            owned_scope = dict(scope)
+            owned_scope[_SETTLEMENT] = witness
             # Includes background callbacks and streaming finalizers only if
             # the downstream actually awaits them. Never release on headers.
-            await self.app(scope, receive, send)
+            await self.app(owned_scope, receive, send)
         except BaseException:
             self.coordinator.block(lease)
             raise
         else:
+            if not witness.confirmed:
+                self.coordinator.block(lease)
+                return  # preserve original response; no cleanup proof
             if not self.coordinator.release(lease):
                 self.coordinator.block(lease)
                 raise RuntimeError("Resource ownership could not be settled")

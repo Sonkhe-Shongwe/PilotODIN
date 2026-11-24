@@ -102,3 +102,108 @@ class DesktopResourceSession:
 
     def control_alive(self):
         return self._thread is not None and self._thread.is_alive()
+
+
+class _ProductBinding:
+    def __init__(self, coordinator, autonomy, insight):
+        self.coordinator = coordinator
+        self.autonomy = autonomy
+        self.insight = insight
+
+    def scope_app(self, app):
+        async def dispatch(scope, receive, send):
+            if "pilotodin.owned_session" in scope:
+                raise RuntimeError("Duplicate desktop session binding")
+            owned = dict(scope)
+            owned["pilotodin.owned_session"] = self
+            await app(owned,receive,send)
+        return dispatch
+
+
+def bind_product_routes(source, coordinator, autonomy_owner, owned_insight, *,
+                        upload_endpoint, lifespan):
+    """Bind the actual endpoint ASGI apps after route match, inside existing
+    auth/workspace middleware, before FastAPI reads request bodies.
+
+    The clone is separate from the legacy server. Exact inventory mismatch
+    fails startup before publishing any route. No native adapter default.
+    """
+    from copy import copy
+    from fastapi import FastAPI, HTTPException
+    from fastapi.routing import APIRoute
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    try:
+        from .resource_routes import ROUTES
+        from .resource_http import OwnedHTTP, settlement
+        from .resource_upload import bounded_upload, UploadRefusal
+        from .resource_training import TrainingHTTP
+    except ImportError:
+        from resource_routes import ROUTES
+        from resource_http import OwnedHTTP, settlement
+        from resource_upload import bounded_upload, UploadRefusal
+        from resource_training import TrainingHTTP
+    if (not isinstance(coordinator,Coordinator)
+            or autonomy_owner.stages.coordinator is not coordinator
+            or not callable(owned_insight)):
+        raise ValueError("Owned product requires one shared coordinator and host insight adapter")
+    observed = {}
+    for route in source.router.routes:
+        if not isinstance(route, APIRoute):
+            if route.path.startswith("/api/"):
+                raise RuntimeError("Unclassified product ASGI route")
+            continue
+        for method in route.methods:
+            key=(method,route.path)
+            plan=ROUTES.get(key)
+            if key in observed or plan is None or route.endpoint.__name__ != plan.endpoint:
+                raise RuntimeError("Product resource route inventory changed")
+            observed[key]=route
+    if set(observed)!=set(ROUTES) or len(set(map(id,observed.values())))!=len(observed):
+        raise RuntimeError("Incomplete product resource route inventory")
+    if observed[("POST","/api/projects")].endpoint is not upload_endpoint:
+        raise RuntimeError("Upload publication endpoint identity changed")
+    binding=_ProductBinding(coordinator,autonomy_owner,owned_insight)
+    target=FastAPI(title=source.title,version=source.version,lifespan=lifespan,
+                   docs_url=None,redoc_url=None,openapi_url=None,
+                   exception_handlers=dict(source.exception_handlers))
+    target.user_middleware=list(source.user_middleware)
+
+    async def upload(scope,receive,send):
+        from starlette.requests import Request
+        witness=settlement(scope)
+        try:
+            async with bounded_upload(Request(scope,receive=receive)) as file:
+                witness.begin()
+                try:
+                    result=await upload_endpoint(file)
+                except HTTPException as exc:
+                    if exc.status_code < 500:
+                        witness.confirm()
+                    response=JSONResponse({"detail":exc.detail},status_code=exc.status_code)
+                else:
+                    witness.confirm()
+                    response=JSONResponse(jsonable_encoder(result),status_code=201)
+        except UploadRefusal as exc:
+            response=JSONResponse({"detail":str(exc)},status_code=exc.status)
+        await response(scope,receive,send)
+
+    for original in source.router.routes:
+        if not isinstance(original,APIRoute):
+            continue
+        route=copy(original)
+        plan=ROUTES[(next(iter(route.methods)),route.path)]
+        if plan.lifetime in ("request","stream"):
+            route.app=OwnedHTTP(original.app,coordinator,plan)
+        elif plan.lifetime=="training_handoff":
+            route.app=TrainingHTTP(original.app,coordinator)
+        elif plan.lifetime=="upload":
+            class UploadRoute(OwnedHTTP):
+                _lifetimes=("upload",)
+            route.app=UploadRoute(upload,coordinator,plan)
+        elif plan.lifetime in ("autonomy_handoff","staged_inference","control"):
+            route.app=binding.scope_app(original.app)
+        elif plan.lifetime not in ("metadata","integrity_status"):
+            raise RuntimeError("Unclassified resource lifetime")
+        target.router.routes.append(route)
+    return target

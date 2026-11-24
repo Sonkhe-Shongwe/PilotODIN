@@ -16,6 +16,9 @@ on:
       - backend/resource_training_store.py
       - backend/resource_autonomy.py
       - backend/resource_host.py
+      - backend/resource_session.py
+      - backend/export_transfer.py
+      - tests/test_c1_product_integration.py
       - tests/test_c1_resource_host.py
       - backend/autonomy.py
       - tests/test_c1_resource_autonomy.py
@@ -89,3 +92,8 @@ jobs:
 
       - name: Exercise staged C1 owned host protocol without native processes
         run: python -m pytest -q tests/test_c1_resource_host.py
+
+      - name: Exercise actual product route composition with inert inference and synthetic data
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-c1-product-${{ github.run_id }}
+        run: python -m pytest -q tests/test_c1_product_integration.py

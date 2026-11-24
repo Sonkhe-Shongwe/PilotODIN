@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 437b74ea0e59c490d6c69164922141c0007756b9 |
 | Product baseline | aa74fb3436c9071ea2297565f1687fd7a761bcfb |
 | Scope | Consolidated C1/C2 actual Python application route binding, direct AI staged preparation, export/training cleanup witnesses, route integration fixtures. Source only, no live activation or native execution. |
 | Operation ID | C1-C2-INTEGRATION-20261124-product-routes |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/main.py; backend/resource_session.py; backend/resource_http.py; backend/resource_training_store.py; backend/export_transfer.py; tests/test_c1_product_integration.py; P1 workflow; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45466603286 SUCCESS 166 regression + 2 subtests, 192 C1, 20 legacy autonomy. Next exact actual FastAPI route registry/ASGI admission fixtures, no native/model execution. |
-| Pending runs | None; #45466603286/job 138703045729 terminal SUCCESS exact checkout/counts confirmed. |
+| Verification | Actual product route composition, staged direct insight, export and training witness changes; seven new product fixtures. Exact CI pending. No native execution or live activation. |
+| Pending runs | Exact-source routine P1/P2/P3/P4 CI discovery pending; reconcile all. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Consolidate C1/C2 rather than extend isolated modules. Publish actual product route binding and staged AI split; review native host architecture and seek coherent C1/C2 native approval only at integration readiness. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

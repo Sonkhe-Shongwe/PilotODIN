@@ -1140,7 +1140,11 @@ def resource_status(request: Request):
     # Protect preference metadata with the same local-only trust boundary
     # as the existing settings controls, including session-auth desktop.
     _local_request(request)
-    return resource_policy.status()
+    status = resource_policy.status()
+    owned = request.scope.get('pilotodin.owned_session')
+    if owned is not None:
+        status["workload"] = owned.coordinator.status()
+    return status
 
 
 @app.get('/api/resource/preflight')
@@ -1200,6 +1204,9 @@ def save_ai_key(body:AIKeyRequest,request:Request):
 @app.post('/api/projects/{project_id}/ai/insight')
 def ai_insight(project_id:str,body:AIInsightRequest,request:Request):
     _local_request(request)
+    owned = request.scope.get('pilotodin.owned_session')
+    if owned is not None:
+        return _owned_ai_insight(project_id, body, owned)
     project_or_404(project_id)
     if body.context not in ai_context.TASKS:
         raise HTTPException(status_code=422,detail='Unsupported workspace context')
@@ -1343,7 +1350,15 @@ def get_autonomous_run(investigation_id: str):
     return autonomy.for_investigation(investigation_id)
 
 @app.post('/api/investigations/{investigation_id}/autonomy/start',status_code=202)
-def start_autonomous_run(investigation_id: str,body:AutonomousStartRequest):
+def start_autonomous_run(investigation_id: str,body:AutonomousStartRequest,request:Request=None):
+    owned = request.scope.get('pilotodin.owned_session') if request is not None else None
+    if owned is not None:
+        if not ai_provider.offline_inference_enabled():
+            raise HTTPException(status_code=403,detail='Enable local inference before starting autonomy')
+        try:
+            return owned.autonomy.start(investigation_id,max_steps=body.max_steps)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409,detail=str(exc)) from exc
     try:return autonomy.start(investigation_id,max_steps=body.max_steps)
     except KeyError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
     except PermissionError as exc:raise HTTPException(status_code=403,detail=str(exc)) from exc
@@ -1351,7 +1366,15 @@ def start_autonomous_run(investigation_id: str,body:AutonomousStartRequest):
     except ValueError as exc:raise HTTPException(status_code=422,detail=str(exc)) from exc
 
 @app.post('/api/investigations/{investigation_id}/autonomy/resume',status_code=202)
-def resume_autonomous_run(investigation_id: str):
+def resume_autonomous_run(investigation_id: str,request:Request=None):
+    owned = request.scope.get('pilotodin.owned_session') if request is not None else None
+    if owned is not None:
+        if not ai_provider.offline_inference_enabled():
+            raise HTTPException(status_code=403,detail='Enable local inference before resuming autonomy')
+        try:
+            return owned.autonomy.resume(investigation_id)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409,detail=str(exc)) from exc
     try:return autonomy.resume(investigation_id)
     except KeyError as exc:raise HTTPException(status_code=404,detail=str(exc)) from exc
     except RuntimeError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
@@ -1461,3 +1484,102 @@ def export_saved_report(report_id: str,format: str,revision: int | None = Query(
         'X-Content-Type-Options':'nosniff',
         'Cache-Control':'no-store'
     })
+
+
+def _owned_ai_insight(project_id, body, owned):
+    """Actual direct insight path: DATA preparation, bounded host stage,
+    then version validation. No dataframe retained across inference."""
+    try:
+        from .resource_autonomy import ResourceDeferred, ContextLimit, bounded_context_bytes
+    except ImportError:
+        from resource_autonomy import ResourceDeferred, ContextLimit, bounded_context_bytes
+    stages = owned.autonomy.stages
+
+    def prepare():
+        try:
+            project_or_404(project_id)
+            if body.context not in ai_context.TASKS:
+                raise HTTPException(status_code=422,detail='Unsupported workspace context')
+            question = body.question.strip() or ai_context.TASKS[body.context]
+            if body.context == 'assistant' and body.selected_provider == 'local':
+                df, version = quality.current_data(project_id)
+                previous = (verified_answers.FollowUp(**body.local_follow_up.model_dump())
+                            if body.local_follow_up and not body.continuation_text else None)
+                verified = verified_answers.answer(df,version,project_id,question,previous)
+                return {"direct": {**ai_provider.local_rules_result(verified['answer'],
+                        reason='Verified local analytics selected'), **verified,
+                        'dataset_version':version, 'privacy':'summary_only_no_rows',
+                        'scope':body.context,'investigation':None,'investigation_steps':[],
+                        'limitations':'Facts describe the current working dataset or saved experiment evidence.'}}, None
+            working = quality.current_data_with_findings(project_id)
+            df,version,_ = working
+            context = ai_context.build(project_id,body.context,question,body.target,
+                        body.experiment_id,body.prediction,working_data=working)
+            local = (analytics.answer(df,version,question[:350])['answer']
+                     if body.context == 'assistant' else ai_context.local_advice(context,body.context))
+            plan = None if body.continuation_text else analytics.plan_investigation(df,version,question,body.context)
+            if plan:
+                context['verified_investigation'] = plan['safe_context']
+                local = (f"Inspected {plan['local_report']['missing_rows']} missing values in {plan['column']}. "
+                         "Compared available groups; no treatment applied. Associations do not prove mechanism.")
+            fallback = None
+            if body.context == 'assistant' and plan is None and not body.continuation_text:
+                verified = verified_answers.answer(df,version,project_id,question)
+                if verified['analysis'] is not None:
+                    fallback = {k:verified[k] for k in ('answer','facts','analysis')}
+            # Encode only verified structural context, not dataframe/rows.
+            payload = bounded_context_bytes({
+                "project_id":project_id,"dataset_version":version,"context":context,
+                "task":body.context,"question":question,"local":local,"deep":body.deep,
+                "selected_provider":body.selected_provider,"continuation_text":body.continuation_text})
+            # Roundtrip caps the retained evidence as well as the host context.
+            tail = json.loads(bounded_context_bytes({
+                "fallback":fallback,"investigation":plan['local_report'] if plan else None,
+                "investigation_steps":plan['steps'] if plan else []}))
+            return {"payload":payload,"version":version,"tail":tail},None
+        except HTTPException as exc:
+            return None,(exc.status_code,exc.detail)
+        except (ValueError,quality.QualityError,ContextLimit) as exc:
+            return None,(422,str(exc))
+
+    try:
+        prepared, refusal = stages.data(prepare)
+        if refusal is not None:
+            raise HTTPException(status_code=refusal[0],detail=refusal[1])
+        if "direct" in prepared:
+            return prepared["direct"]
+        version = prepared["version"]
+        if quality.current_version(project_id) != version:
+            raise HTTPException(status_code=409,detail='Dataset version changed before inference')
+        if owned.coordinator.status()["stopping"]:
+            raise ResourceDeferred("shutting_down")
+        # Trusted, required adapter; never invoke legacy respond as fallback.
+        result = owned.insight(prepared["payload"])
+        if type(result) is not dict:
+            raise RuntimeError("Owned insight returned an invalid result")
+        result = json.loads(bounded_context_bytes(result))
+        if owned.coordinator.status()["stopping"] or quality.current_version(project_id) != version:
+            raise HTTPException(status_code=409,detail='Insight became stale; request a new result')
+        tail=prepared["tail"]
+        if result.get("fallback") and tail["fallback"] is not None:
+            result={**result,**tail["fallback"]}
+        return {**result,'dataset_version':version,'privacy':'summary_only_no_rows',
+                'scope':body.context,'investigation':tail["investigation"],
+                'investigation_steps':tail["investigation_steps"],
+                'limitations':'AI suggestions are advisory; verified local engines perform calculations and modifications.'}
+    except ResourceDeferred as exc:
+        raise HTTPException(status_code=503,detail={"code":str(exc),"operation":"local_inference",
+                             "retryable":True}) from exc
+    except ContextLimit as exc:
+        raise HTTPException(status_code=422,detail='Insight exceeds bounded context limit') from exc
+
+
+def build_owned_app(coordinator, autonomy_owner, owned_insight):
+    """Desktop composition target. Original app remains unchanged until
+    the native launch/control path is reviewed and activated together."""
+    try:
+        from .resource_session import bind_product_routes
+    except ImportError:
+        from resource_session import bind_product_routes
+    return bind_product_routes(app, coordinator, autonomy_owner, owned_insight,
+                               upload_endpoint=create_project, lifespan=_lifespan)
