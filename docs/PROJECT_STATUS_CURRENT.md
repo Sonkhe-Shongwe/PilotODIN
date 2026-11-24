@@ -1,5 +1,8 @@
 # PilotODIN 1.0 | Current project status
 
+**24 NOVEMBER 2026 | R02.5 G2.16 VERIFIED SOURCE BRIDGE:** [Dated technical report](./P4_R02_5_G2_16_ORIGINAL_WEBVIEW_HANDLE_BRIDGE_SOURCE_2026-11-24.md). Real Win32 `DuplicateHandle` + `GetFileType` methods now extend the existing dormant process-verified PSS adapter; private candidate results have fixed redacted representations and scoped cleanup. The initial source CI #45305626926 and follow-up #45305720455 failed the new test assertions; the final [exact-source R02.5 CI #45305819600](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45305819600) **COMPLETED SUCCESS** at [`95de092`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/95de09286ed6bb55206d3cd242182dacd0b461f9). No native WebView2 process was opened, no ETW original-handle/FileObject/IRP/path join was proven, and no native workflow was enabled. G2 OPEN, four-gate **1/4 (25%)**; official R02.5 **0/5**, P4 **14/20 (70%)**, N12 **0/2** unchanged.
+
+
 **24 NOVEMBER 2026 | G2.16 REAL WIN32 ORIGINAL-HANDLE CLASSIFICATION BRIDGE, DORMANT SOURCE ONLY:** [Engineering contract](./P4_R02_5_G2_16_ORIGINAL_WEBVIEW_HANDLE_BRIDGE_SOURCE_2026-11-24.md). Existing verified WebView2 PID/birth/image and bounded PSS snapshot adapter now has source-bound Win32 `DuplicateHandle` + `GetFileType` classification of ephemeral disk candidates, with close-on-failure and no filename queries. This has **not** opened any real WebView2 process or verified original FileObject/IRP/write/path identity. The previous G2.15 generated Windows positive is not app evidence. Source CI to be verified separately; native G2.13/14/15 workflows remain disabled and consumed. R02.5 0/5, G1–G4 1/4, P4 14/20 unchanged.
 
 
