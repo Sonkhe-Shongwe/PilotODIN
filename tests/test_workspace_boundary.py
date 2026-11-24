@@ -178,6 +178,70 @@ elif operation == "different-path":
     def test_owned_database_rejects_different_path_before_sqlite_open(self):
         self._owned_database_case("different-path")
 
+    def test_owned_storage_uses_single_admitted_spelling(self):
+        code = r"""
+import os, sys
+from pathlib import Path
+from unittest.mock import patch
+from backend.workspace_boundary import hold_process_workspace, storage_home, WorkspaceBoundaryError
+supplied = Path(sys.argv[1])
+owned = hold_process_workspace(str(supplied))
+assert owned == supplied.resolve(strict=True)
+os.environ["PILOTODIN_HOME"] = str(owned)
+original_resolve = Path.resolve
+def guarded_resolve(path, *args, **kwargs):
+    if path == owned:
+        raise AssertionError("Storage independently resolved the admitted home")
+    return original_resolve(path, *args, **kwargs)
+with patch.object(Path, "resolve", guarded_resolve):
+    from backend import storage
+    assert storage.HOME == owned
+    with storage.connect() as conn:
+        assert conn.execute("SELECT 1").fetchone()[0] == 1
+try:
+    storage_home(str(owned / "unadmitted"))
+except WorkspaceBoundaryError:
+    pass
+else:
+    raise AssertionError("Unadmitted storage home accepted")
+"""
+        # Match the existing engine smoke: use the original temporary
+        # directory spelling, not the already resolved fixture root.
+        home = Path(self.temp.name) / "raw-storage-home"
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=15, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_canonicalization_refuses_different_physical_directory(self):
+        code = r"""
+import sys
+from pathlib import Path
+from unittest.mock import patch
+from backend.workspace_boundary import hold_process_workspace, engine_workspace, WorkspaceBoundaryError
+home, other = map(Path, sys.argv[1:])
+with patch.object(Path, "resolve", return_value=other):
+    try:
+        hold_process_workspace(str(home))
+    except WorkspaceBoundaryError:
+        pass
+    else:
+        raise AssertionError("Different physical root admitted")
+assert list(other.iterdir()) == []
+with engine_workspace(str(home)):
+    pass
+"""
+        other = self.root / "unrelated-root"
+        other.mkdir()
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home), str(other)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=15, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()

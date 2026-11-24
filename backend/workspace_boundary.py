@@ -180,14 +180,52 @@ def hold_process_workspace(value):
     lease = _workspace_lease(value)
     home, fd, root_identity = lease.__enter__()
     try:
-        database_identity = _database_identity(home)
-    except BaseException:
+        # Resolve only AFTER the supplied path and lock have passed the
+        # no-redirect checks. Windows short names may differ from the long
+        # path previously used by storage. Require the original directory
+        # and lock identities at the resolved spelling, not just a string.
+        canonical = home.resolve(strict=True)
+        if not canonical.is_absolute() or ".." in canonical.parts:
+            raise WorkspaceBoundaryError("Workspace identity changed")
+        if os.name == "nt" and (not re.fullmatch(r"[A-Za-z]:", canonical.drive)
+                                or any(":" in part or part.endswith((" ", "."))
+                                       for part in canonical.parts[1:])):
+            raise WorkspaceBoundaryError("Workspace identity changed")
+        for parent in reversed(canonical.parents):
+            _directory(parent)
+        current = _directory(canonical)
+        if (not current.st_ino or not root_identity.st_ino
+                or not os.path.samestat(root_identity, current)):
+            raise WorkspaceBoundaryError("Workspace identity changed")
+        _same_lock(fd, canonical / LOCK_NAME)
+        # Recheck the original spelling as well; never normalize an
+        # unchecked redirect into an apparently safe path.
+        for parent in reversed(home.parents):
+            _directory(parent)
+        if not os.path.samestat(root_identity, _directory(home)):
+            raise WorkspaceBoundaryError("Workspace identity changed")
+        _same_lock(fd, home / LOCK_NAME)
+        _verify_entries(canonical)
+        database_identity = _database_identity(canonical)
+    except BaseException as exc:
         lease.__exit__(None, None, None)
+        if isinstance(exc, (OSError, RuntimeError)) and not isinstance(exc, WorkspaceBoundaryError):
+            raise WorkspaceBoundaryError("Workspace storage unavailable or unsafe") from exc
         raise
     _process_lease = lease
-    _process_workspace = (home, fd, root_identity, database_identity)
+    _process_workspace = (canonical, fd, root_identity, database_identity)
     atexit.register(lease.__exit__, None, None, None)
-    return home
+    return canonical
+
+
+def storage_home(value):
+    """Use the single admitted path for leased storage; preserve legacy callers."""
+    if _process_workspace is None:
+        return Path(value).resolve()
+    owned = _process_workspace[0]
+    if Path(value) != owned:
+        raise WorkspaceBoundaryError("Database outside owned workspace")
+    return owned
 
 
 def validate_process_database(home, database):
