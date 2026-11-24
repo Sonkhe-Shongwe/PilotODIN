@@ -1539,3 +1539,60 @@ def test_b4_history_transition_replays_outside_lock_and_fences_history(monkeypat
         assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?", (pid,)).fetchone()[0] == 2
         assert con.execute("SELECT COUNT(*) FROM quality_decisions WHERE project_id=? AND status='undone'", (pid,)).fetchone()[0] == (1 if fault == "none" else 0)
     assert path.read_bytes() == raw
+
+
+@pytest.mark.parametrize("fault", ["none", "revision", "decision", "same_bytes_replacement", "legacy_receipt"])
+def test_b4_explicit_receipt_binds_review_source_and_metadata(monkeypatch, tmp_path, fault):
+    import json
+    from backend import quality_approvals as approvals
+    pid,path,raw=_b4_autopilot_fixture(monkeypatch,tmp_path)
+    issue=next(x for x in quality.snapshot(pid)["issues"] if x["automatic"])
+    response=approvals.prepare(pid,approvals.ProposalRequest(operation="approve",expected_version=0,issue_id=issue["id"]))
+    if fault in ("revision","decision","legacy_receipt"):
+        with storage.connect() as con:
+            if fault=="revision":
+                con.execute("INSERT INTO project_lifecycle VALUES(?,?,?) ON CONFLICT(project_id) DO UPDATE SET revision=1",(pid,1,None))
+            elif fault=="decision":
+                con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",(pid,issue["id"],"rejected",storage.now()))
+            else:
+                row=con.execute("SELECT payload_json FROM quality_approval_receipts WHERE proposal_id=?",(response["proposal_id"],)).fetchone()
+                payload=json.loads(row[0])
+                payload.pop("review_binding")
+                response["proposal_hash"]=approvals._hash(payload)
+                con.execute("UPDATE quality_approval_receipts SET payload_json=?,proposal_hash=? WHERE proposal_id=?",
+                            (quality._json(payload),response["proposal_hash"],response["proposal_id"]))
+    elif fault=="same_bytes_replacement":
+        replacement=path.with_name("replacement.csv")
+        replacement.write_bytes(raw)
+        replacement.replace(path)
+    body=approvals.ApprovalCommit(proposal_id=response["proposal_id"],proposal_hash=response["proposal_hash"])
+    if fault=="none":
+        assert approvals.commit(pid,body)["version"]==1
+    else:
+        with pytest.raises(quality.QualityError,match="review state changed"):
+            approvals.commit(pid,body)
+    with storage.connect() as con:
+        consumed=con.execute("SELECT consumed_at FROM quality_approval_receipts WHERE proposal_id=?",(body.proposal_id,)).fetchone()[0]
+        assert (consumed is not None)==(fault=="none")
+        assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?",(pid,)).fetchone()[0]==(1 if fault=="none" else 0)
+    assert path.read_bytes()==raw
+
+
+def test_b4_receipt_preview_refuses_source_change_before_publication(monkeypatch,tmp_path):
+    from backend import quality_approvals as approvals
+    pid,path,raw=_b4_autopilot_fixture(monkeypatch,tmp_path)
+    issue=next(x for x in quality.snapshot(pid)["issues"] if x["automatic"])
+    original=approvals._compare_rows
+    injected=[]
+    def mutate(*args,**kwargs):
+        result=original(*args,**kwargs)
+        path.write_bytes(raw.replace(b",80",b",81"))
+        injected.append(True)
+        return result
+    monkeypatch.setattr(approvals,"_compare_rows",mutate)
+    with pytest.raises(quality.QualityError,match="changed outside PilotODIN"):
+        approvals.prepare(pid,approvals.ProposalRequest(operation="approve",expected_version=0,issue_id=issue["id"]))
+    assert injected==[True]
+    with storage.connect() as con:
+        assert con.execute("SELECT COUNT(*) FROM quality_approval_receipts WHERE project_id=?",(pid,)).fetchone()[0]==0
+        assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?",(pid,)).fetchone()[0]==0

@@ -185,11 +185,13 @@ def test_commit_never_calls_slow_record_action_or_replays_under_writer_lock(case
     receipt=make_receipt(pid,issue_id=issue(pid,'whitespace')['id'])
     def never(*_a,**_kw):raise AssertionError('old replay under lock')
     monkeypatch.setattr(quality,'_record_action',never)
-    original=quality._materialize
-    def spy(con,p,ops):
-        assert not con.in_transaction, 'dataset replay occurred inside writer transaction'
-        return original(con,p,ops)
-    monkeypatch.setattr(quality,'_materialize',spy)
+    original=quality._source_df
+    def spy(*args,**kwargs):
+        with sqlite3.connect(storage.DB_PATH,timeout=0.3) as other:
+            other.execute('BEGIN IMMEDIATE')
+            other.execute('ROLLBACK')
+        return original(*args,**kwargs)
+    monkeypatch.setattr(quality,'_source_df',spy)
     assert commit(pid,receipt)['version']==1
 
 
@@ -218,17 +220,17 @@ def test_undo_and_restore_do_not_replay_during_write_lock(case,monkeypatch):
     one=make_receipt(pid,issue_id=target)
     action=commit(pid,one)['applied'][0]['id']
     undo=make_receipt(pid,'undo',version=1,action_id=action)
-    original=quality._materialize
-    def spy(con,p,ops):
-        assert not con.in_transaction
-        return original(con,p,ops)
-    monkeypatch.setattr(quality,'_materialize',spy)
+    original=quality._source_df
+    def spy(*args,**kwargs):
+        with sqlite3.connect(storage.DB_PATH,timeout=0.3) as other:
+            other.execute('BEGIN IMMEDIATE')
+            other.execute('ROLLBACK')
+        return original(*args,**kwargs)
+    monkeypatch.setattr(quality,'_source_df',spy)
     assert commit(pid,undo)['version']==2
-    # The published current branch has a separate preview path, which may
-    # legitimately replay while preparing a receipt. Inspect commit only.
-    monkeypatch.setattr(quality,'_materialize',original)
+    monkeypatch.setattr(quality,'_source_df',original)
     restore=make_receipt(pid,'restore',version=2,target_version=1)
-    monkeypatch.setattr(quality,'_materialize',spy)
+    monkeypatch.setattr(quality,'_source_df',spy)
     assert commit(pid,restore)['version']==3
     assert quality.current_data(pid)[0]['Region'].str.startswith(' ').sum()==0
     assert path.read_bytes()==raw
@@ -316,17 +318,16 @@ def test_expiry_during_preflight_rejects_before_write(case,monkeypatch):
 def test_real_dataset_replay_does_not_hold_writer_lock(case,monkeypatch):
     pid,_,_=case
     rec=make_receipt(pid,issue_id=issue(pid,'whitespace')['id'])
-    original=quality._materialize
+    original=quality._source_df
     count=[0]
-    def probe(con,p,ops):
-        assert not con.in_transaction
+    def probe(*args,**kwargs):
         with sqlite3.connect(storage.DB_PATH,timeout=0.3) as other:
             other.execute('BEGIN IMMEDIATE')
             other.execute('CREATE TABLE IF NOT EXISTS proof_of_writer (value INT)')
             other.execute('INSERT INTO proof_of_writer VALUES (1)')
         count[0]+=1
-        return original(con,p,ops)
-    monkeypatch.setattr(quality,'_materialize',probe)
+        return original(*args,**kwargs)
+    monkeypatch.setattr(quality,'_source_df',probe)
     assert commit(pid,rec)['version']==1 and count[0]>=1
 
 
