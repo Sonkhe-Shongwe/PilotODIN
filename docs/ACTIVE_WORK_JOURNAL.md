@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | dd731bf38ce09ab84854905b8548a43b9792a3a1 |
+| Observed starting HEAD | cd4c9d19a4682e02226fc9e292ed39b32ebe0352 |
 | Product baseline | 4c2f7bf5c936f08eda1df56f499e059c72aa3c25 |
-| Scope | C1 staged autonomous data/inference boundary and actual dormant worker integration; no native or model work, no live registration. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-stages |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
+| Scope | C1 staged autonomy atomic cancellation/terminal settlement, bounded context encoding and owned context history reads; preserve legacy behavior except cancellation CAS. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-fences |
+| Operation state | PREPARED |
+| Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Staged actual autonomous worker/data boundary and seven disposable/inert tests published; CI pending. No live registration. |
-| Pending runs | [P1 #45457035697](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45457035697), exact 4c2f7bf5c936f08eda1df56f499e059c72aa3c25, IN_PROGRESS at last observation; reconcile exact job/logs. |
+| Verification | Prior #45457035697 SUCCESS: 166 regression + 2 subtests, 95 C1 foundation, 7 new autonomy + 20 legacy autonomy. Next deterministic cancellation/version races and pre-encoding limits. |
+| Pending runs | None; #45457035697/job 138669177942 terminal SUCCESS, exact checkout and counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact autonomy stage CI; review atomic cancel/terminal status race and bounded context serialization, then trusted start/resume launch ownership and host grant/exit bridge. No live registration or native/model run. |
+| Recovery action | Publish staged race fences and bounded context, reconcile exact CI, then start/resume worker launch identity and host bridge. No native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
