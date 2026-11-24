@@ -31,8 +31,7 @@ jobs:
         run: ruby qa/c1_c2_native_workflow_preflight.rb
   c1-c2-synthetic-library-tests:
     needs: source-preflight
-    if: >-
-      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-C2-NATIVE-SYNTHETIC-20261124-ONE-USE' }}
+    if: ${{ false }} # DISARMED C1/C2; fresh exact approval required.
     runs-on: windows-2022
     timeout-minutes: 65
     env:
