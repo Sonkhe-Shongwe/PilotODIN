@@ -1,0 +1,98 @@
+// Private server-side Vite middleware for the explicitly paired Live Dev launcher.
+// A local dev frontdoor, not authentication against a hostile process running
+// as the developer. Browser cross-site/DNS rebinding requests are refused.
+import http from 'node:http';
+
+const ORIGIN='http://127.0.0.1:5173';
+const HOST='127.0.0.1:5173';
+const METHODS=new Set(['GET','HEAD','POST','PUT','PATCH','DELETE']);
+const UNIQUE=new Set(['host','origin','referer','sec-fetch-site','x-pilotodin-dev-request',
+  'content-type','content-length','transfer-encoding']);
+const REQUEST_HEADERS=['accept','content-type','content-length'];
+const RESPONSE_HEADERS=['content-type','content-length','content-disposition','content-encoding',
+  'x-pilotodin-dataset-version','x-pilotodin-exported-rows','x-pilotodin-export-sha256',
+  'x-pilotodin-export-project','x-pilotodin-export-operation','x-pilotodin-export-mac'];
+
+export function liveDevProxyTrust(env){
+  if(env.PILOTODIN_SERVER_MODE!=='dev'||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
+     env.PILOTODIN_DEV_ORIGIN!==ORIGIN||env.PILOTODIN_DEV_PORT!=='8000'||
+     !/^[0-9a-f]{64}$/.test(env.PILOTODIN_DEV_CAPABILITY??'')||
+     env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
+     (env.PILOTODIN_DESKTOP_ALLOW_DEV??'0')!=='0'){
+    throw new Error('Invalid isolated Live Dev proxy configuration');
+  }
+  return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY});
+}
+
+// Raw headers are used before Node's combined-header view. Never forward
+// credentials supplied by a browser/client, cookies, arbitrary destinations,
+// proxy metadata, or hop-by-hop headers.
+export function liveDevProxyPlan(req,trust){
+  const url=req.url??'';
+  if(!url.startsWith('/api/'))return url==='/api'||url.startsWith('/api?')?{status:403}:null;
+  if(!METHODS.has(req.method)||req.socket?.remoteAddress!=='127.0.0.1'||
+     /[\x00-\x20\x7f\\#]/.test(url)||!trust||!/^[0-9a-f]{64}$/.test(trust.capability??'')){
+    return {status:403};
+  }
+  const raw=req.rawHeaders;
+  if(!Array.isArray(raw)||raw.length%2!==0)return {status:400};
+  const headers=Object.create(null);
+  for(let i=0;i<raw.length;i+=2){
+    const key=raw[i].toLowerCase(),value=raw[i+1];
+    if(key==='forwarded'||key.startsWith('x-forwarded-')||
+       key==='x-pilotodin-session'||key==='x-pilotodin-dev-capability'||key==='authorization'){
+      return {status:403};
+    }
+    if(UNIQUE.has(key)&&Object.hasOwn(headers,key))return {status:400};
+    headers[key]=value;
+  }
+  if(headers.host!==HOST||headers['x-pilotodin-dev-request']!=='1'||
+     (headers.origin!==undefined&&headers.origin!==ORIGIN)||
+     (headers['sec-fetch-site']!==undefined&&headers['sec-fetch-site']!=='same-origin')||
+     (headers['sec-fetch-site']!=='same-origin'&&headers.origin!==ORIGIN)){
+    return {status:403};
+  }
+  if(headers.referer!==undefined){
+    try{if(new URL(headers.referer).origin!==ORIGIN)return {status:403};}
+    catch{return {status:403};}
+  }
+  if(headers['content-length']!==undefined&&headers['transfer-encoding']!==undefined)return {status:400};
+  const outgoing={host:'127.0.0.1:8000',origin:ORIGIN,
+    'x-pilotodin-dev-capability':trust.capability};
+  for(const key of REQUEST_HEADERS)if(headers[key]!==undefined)outgoing[key]=headers[key];
+  return {status:200,options:{hostname:'127.0.0.1',port:8000,path:url,
+    method:req.method,headers:outgoing}};
+}
+
+function refuse(res,status){
+  if(res.headersSent){res.destroy();return;}
+  const body='{"detail":"Isolated Live Dev API request refused"}';
+  res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});
+  res.end(body);
+}
+
+export function createLiveDevProxy(trust,request=http.request){
+  return (req,res,next)=>{
+    const plan=liveDevProxyPlan(req,trust);
+    if(plan===null){next();return;}
+    if(plan.status!==200){refuse(res,plan.status);return;}
+    let upstream;
+    try{
+      upstream=request(plan.options,reply=>{
+        // Never propagate a redirect (or arbitrary headers) to the browser.
+        if(!reply.statusCode||(reply.statusCode>=300&&reply.statusCode<400)){
+          reply.resume();refuse(res,502);return;
+        }
+        const headers={'cache-control':'no-store'};
+        for(const key of RESPONSE_HEADERS)if(reply.headers[key]!==undefined)headers[key]=reply.headers[key];
+        res.writeHead(reply.statusCode,headers);
+        reply.on('error',()=>res.destroy());
+        reply.pipe(res);
+      });
+      upstream.on('error',()=>refuse(res,502));
+      req.on('aborted',()=>upstream.destroy());
+      res.on('close',()=>{if(!res.writableEnded)upstream.destroy();});
+      req.pipe(upstream);
+    }catch{upstream?.destroy();refuse(res,502);}
+  };
+}

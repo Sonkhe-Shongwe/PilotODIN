@@ -6,6 +6,14 @@ import type {DatasetExportRequest,VerifiedDatasetDownload} from './datasetExport
 // local port provided privately by the Rust desktop process supervisor.
 export type DesktopConnection = {port:number;token:string;backend_driven_inference?:boolean};
 let desktopEndpoint: DesktopConnection|null = null;
+let developmentOrigin:string|null = null;
+// Called only by the explicit Vite development bootstrap; never receives a secret.
+export function configureDevelopmentAPI(origin:string) {
+  if(origin!=='http://127.0.0.1:5173' || desktopEndpoint) {
+    throw new Error('Invalid Live Dev API configuration');
+  }
+  developmentOrigin=origin;
+}
 export function configureDesktopAPI(connection:DesktopConnection) {
   if (!Number.isInteger(connection.port) || connection.port < 1024 || connection.port > 65535 || !connection.token) {
     throw new Error('Invalid desktop API connection details');
@@ -13,12 +21,14 @@ export function configureDesktopAPI(connection:DesktopConnection) {
   if (connection.backend_driven_inference !== undefined && typeof connection.backend_driven_inference !== "boolean") {
     throw new Error("Invalid desktop inference routing mode");
   }
+  if(developmentOrigin)throw new Error('Mixed API configuration');
   desktopEndpoint = {...connection};
 }
 export function usesOwnedInference():boolean {return desktopEndpoint?.backend_driven_inference===true;}
-export function apiBase():string {return `http://127.0.0.1:${desktopEndpoint?.port ?? 8000}/api`;}
+export function apiBase():string {return developmentOrigin ? `${developmentOrigin}/api` : `http://127.0.0.1:${desktopEndpoint?.port ?? 8000}/api`;}
 function authHeaders(): Record<string,string> {
-  return desktopEndpoint ? {'X-PilotODIN-Session': desktopEndpoint.token} : {};
+  return desktopEndpoint ? {'X-PilotODIN-Session': desktopEndpoint.token} :
+    developmentOrigin ? {'X-PilotODIN-Dev-Request':'1'} : {};
 }
 export type Col = {name:string;kind:'numeric'|'categorical';missing:number;missing_pct:number;unique:number;identifier_risk:boolean;leakage_risk:boolean;sample_values:(string|number|null)[]};
 export type Profile = {filename:string;rows:number;columns_count:number;missing_cells:number;duplicate_rows:number;columns:Col[];preview:Record<string,unknown>[];target_candidates:string[];warnings:string[];summary:string;summary_source:string;guidance:string[]};

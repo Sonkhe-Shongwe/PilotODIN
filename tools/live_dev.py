@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import secrets
 import socket
 import subprocess
 import sys
@@ -53,19 +54,27 @@ def is_listening(port: int) -> bool:
         return False
 
 
-def is_healthy(url: str) -> bool:
+def is_healthy(url: str, capability: str | None = None) -> bool:
+    if capability is not None and url != API_URL:
+        raise ValueError("Private capability is limited to backend readiness")
+    headers = {"X-PilotODIN-Dev-Capability": capability} if capability is not None else {}
+    # Disable proxy routing and redirects for the private readiness probe.
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     try:
-        with urllib.request.urlopen(url, timeout=1.2) as response:
+        with opener.open(urllib.request.Request(url, headers=headers), timeout=1.2) as response:
             return response.status == 200
     except (OSError, urllib.error.URLError):
         return False
 
 
-def wait_for(label: str, url: str, *, seconds: int = 60) -> None:
+def wait_for(label: str, url: str, *, seconds: int = 60, capability: str | None = None) -> None:
     started = time.monotonic()
     last_notice = -1
     while time.monotonic() - started < seconds:
-        if is_healthy(url):
+        if is_healthy(url, capability):
             print(f"    {label}: ready after {round(time.monotonic() - started)} seconds.", flush=True)
             return
         elapsed = int(time.monotonic() - started)
@@ -137,7 +146,17 @@ def main() -> int:
     announce(4, "Launching two live-reloading consoles")
     env = dict(os.environ)
     env["PILOTODIN_HOME"] = str(DEV_HOME)
-    env.pop("PILOTODIN_DESKTOP_SESSION", None)
+    for key in ("PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_PORT",
+                "PILOTODIN_DESKTOP_WATCH_STDIN", "PILOTODIN_CONTROL_MODE",
+                "PILOTODIN_CONTROL_GENERATION", "PILOTODIN_CONTROL_CAPABILITY",
+                "PILOTODIN_BUNDLED_LLM_PORT", "PILOTODIN_BUNDLED_LLM_TOKEN",
+                "PILOTODIN_DATASET_EXPORT_KEY"):
+        env.pop(key, None)
+    capability = secrets.token_hex(32)
+    env.update(PILOTODIN_SERVER_MODE="dev", PILOTODIN_DESKTOP_ALLOW_DEV="0",
+               PILOTODIN_DEV_CAPABILITY=capability, PILOTODIN_DEV_PORT="8000",
+               PILOTODIN_DEV_ORIGIN=PREVIEW_URL.rstrip("/"),
+               VITE_PILOTODIN_AUTH_DEV="1")
     powershell = shutil.which("powershell.exe") or "powershell.exe"
     for path in ("run_live_backend.ps1", "run_live_frontend.ps1"):
         script = ROOT / "tools" / path
@@ -148,7 +167,7 @@ def main() -> int:
             creationflags=subprocess.CREATE_NEW_CONSOLE,
         )
     announce(5, "Waiting for real HTTP readiness checks")
-    wait_for("Python analytics", API_URL)
+    wait_for("Python analytics", API_URL, capability=capability)
     wait_for("Vite UI", PREVIEW_URL)
     print("\nREADY: " + PREVIEW_URL)
     print("DATA:  " + str(DEV_HOME))

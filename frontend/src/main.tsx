@@ -2,6 +2,7 @@ import React, {useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {UnifiedShell} from './UnifiedShell';
 import {isDesktop, startDesktopBackend} from './desktopBootstrap';
+import {configureDevelopmentAPI} from './api';
 import './studio-fonts.css';
 import './styles.css';
 import './studio.css';
@@ -30,6 +31,10 @@ async function initialise() {
       showStarting(error instanceof Error ? error.message : 'An unexpected error occurred starting the desktop engine.', true);
       return;
     }
+  }
+  else if(import.meta.env.DEV && import.meta.env.VITE_PILOTODIN_AUTH_DEV==='1'){
+    try {configureDevelopmentAPI(window.location.origin);}
+    catch {showStarting('Invalid isolated Live Dev connection. Restart both launcher consoles.',true);return;}
   }
   root.render(<React.StrictMode><UnifiedShell/></React.StrictMode>);
 }

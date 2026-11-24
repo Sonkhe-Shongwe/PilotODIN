@@ -12,7 +12,7 @@ For the active phase and next task, see the [current handoff](./SESSION_HANDOFF_
 4. The launcher prepares `.venv-live`, installs missing frontend dependencies, then starts two visible PowerShell consoles. It opens **http://127.0.0.1:5173** after the backend and frontend both respond.
 5. Keep the two consoles running while you edit. Save a React/CSS file for Vite hot reload; save a Python file for backend reload. **Neither operation produces an installer.**
 
-The launcher shows elapsed startup time at five-second intervals; this is actual elapsed time, **not** an invented percentage. It reports failures instead of silently proceeding. The backend health endpoint is http://127.0.0.1:8000/api/health.
+The launcher shows elapsed startup time at five-second intervals; this is actual elapsed time, **not** an invented percentage. It reports failures instead of silently proceeding. The backend readiness probe uses a fresh private capability passed to both launcher children. The browser uses the same-origin Vite API proxy at `http://127.0.0.1:5173/api/`; opening the backend health URL directly without the private capability is intentionally refused.
 
 ### Files to edit
 
@@ -33,7 +33,7 @@ Some older workspaces still have hard-coded colours and typography. Check the ce
 - The installed Tauri app's app-local-data store is **not** opened or migrated by this workflow.
 - Development env `.venv-live`, cache `.pilotodin-dev-cache` and the dev data folder are gitignored.
 - Never put production credentials or confidential datasets in test projects. Do not copy a production `data` directory into this folder.
-- Backend binds to `127.0.0.1:8000`; frontend binds to `127.0.0.1:5173`. Browser development is intentionally **not** the authenticated Tauri production shell. Keep this developer server on your own trusted computer; do not expose it to your network.
+- Backend binds to `127.0.0.1:8000`; frontend binds to `127.0.0.1:5173`. The paired Live Dev launcher now authenticates the backend with a separate ephemeral capability held in the child environments, never the frontend bundle or URL. Vite is a trusted loopback development frontdoor, checks the exact browser origin and explicit request marker, and injects the private capability only to the fixed local backend. It is not protection against another same-user local process forging local request headers. Keep this developer server on your own trusted computer; do not expose it to your network. Browser development remains separate from the authenticated Tauri production shell.
 - Browser Vite exercises the development ODIN settings and local rules. The bundled Qwen3 path requires separately approved native evidence for Rust resource verification, model launch and session authentication. Installer-based validation is reserved for the final release stage under the phase policy.
 - The [Local analytics smoke check](#local-analytics-smoke-check) reuses the synthetic Ask ODIN project in Live Dev. Current-source physical desktop measurements require an isolated app build on the approved Windows route.
 - Developer dependency installation and runtime model loading are separate operations. Live reload does not update an already-installed EXE.
@@ -68,7 +68,7 @@ When a feature changes, verify the live preview first, then run regression tests
 
 - **Port already in use:** close both previous development PowerShell windows. The launcher will not kill or replace an existing server.
 - **Launcher failed before opening browser:** inspect its explicit error and the two PowerShell consoles. Python/Node missing or incomplete initial dependencies are common causes.
-- **A view says backend unavailable:** check http://127.0.0.1:8000/api/health and backend console for traceback.
+- **A view says backend unavailable:** restart both paired launcher consoles and check their readiness diagnostics. A direct unauthenticated request to `:8000/api/health` should fail.
 - **Edits don't appear:** confirm you edited the checked-out branch and the source folder used by the launcher, not the already-installed PilotODIN EXE. Hard refresh the browser if needed.
 - **Need the native Tauri shell during development.** `npm run desktop:dev` refuses by default and uses the isolated `com.pilotodin.p4isolatednativedev` identity only with its own recorded owner approval and local opt-in. The previous direct `tauri dev` command could reach the production `com.pilotodin.studio` app-data and WebView directories. The default Tauri configuration has source-level hooks that refuse raw development and packaging commands. The completed Local analytics session used its own approved runner and disposable workspace. For its tested scope, see the [physical Windows session record](./P4_LOCAL_ANALYTICS_IMPLEMENTATION_PLAN_2026-11-15.md#physical-windows-session-record). Use `Start_PilotODIN_Live_Dev.bat` for routine source preview. The installer freeze applies through P4–P7.
 - **Stopping:** close the backend and frontend PowerShell windows. Do not delete `.pilotodin-dev-data` unless you intentionally want to reset only your isolated development projects.

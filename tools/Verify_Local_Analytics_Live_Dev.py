@@ -14,7 +14,7 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 
 
 ROOT = Path(__file__).resolve().parents[1]
-API = 'http://127.0.0.1:8000/api'
+API = 'http://127.0.0.1:5173/api'
 FIXTURE = [
     {'id': '1', 'outcome': 'Yes', 'premium': 20},
     {'id': '2', 'outcome': 'No', 'premium': None},
@@ -50,7 +50,10 @@ class NoRedirects(HTTPRedirectHandler):
 
 def request(opener, path: str, body: dict | None = None):
     data = json.dumps(body).encode() if body is not None else None
-    req = Request(API + path, data=data, headers={'Content-Type': 'application/json'} if data else {})
+    headers = {'X-PilotODIN-Dev-Request': '1', 'Origin': 'http://127.0.0.1:5173'}
+    if data is not None:
+        headers['Content-Type'] = 'application/json'
+    req = Request(API + path, data=data, headers=headers)
     with opener.open(req, timeout=10) as response:
         return json.load(response)
 

@@ -145,7 +145,8 @@ def desktop_trust_from_environ(environ):
     """
     if any(environ.get(key) for key in ("PILOTODIN_SERVER_MODE",
                                        "PILOTODIN_DEV_CAPABILITY",
-                                       "PILOTODIN_DEV_ORIGIN")):
+                                       "PILOTODIN_DEV_ORIGIN",
+                                       "PILOTODIN_DEV_PORT")):
         raise ValueError("Mixed serving trust configuration")
     debug = environ.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0")
     port = environ.get("PILOTODIN_DESKTOP_PORT", "")
@@ -153,6 +154,21 @@ def desktop_trust_from_environ(environ):
         raise ValueError("Invalid desktop serving trust configuration")
     return RequestTrust("desktop-debug" if debug == "1" else "desktop",
                         int(port), environ.get("PILOTODIN_DESKTOP_SESSION", ""))
+
+
+def live_dev_trust_from_environ(environ):
+    """Explicit paired Live Dev only; no inherited desktop or QA capability."""
+    if (environ.get("PILOTODIN_SERVER_MODE") != "dev"
+            or environ.get("PILOTODIN_DEV_PORT") != "8000"
+            or environ.get("PILOTODIN_DEV_ORIGIN") != "http://127.0.0.1:5173"
+            or environ.get("PILOTODIN_DESKTOP_ALLOW_DEV", "0") != "0"
+            or any(environ.get(key) for key in (
+                "PILOTODIN_DESKTOP_SESSION", "PILOTODIN_DESKTOP_PORT",
+                "PILOTODIN_DESKTOP_WATCH_STDIN", "PILOTODIN_CONTROL_MODE",
+                "PILOTODIN_CONTROL_GENERATION", "PILOTODIN_CONTROL_CAPABILITY"))):
+        raise ValueError("Invalid Live Dev serving configuration")
+    return RequestTrust("dev", 8000, environ.get("PILOTODIN_DEV_CAPABILITY", ""),
+                        "http://127.0.0.1:5173")
 
 
 # In-process identity witness, never a request header or serialized token.

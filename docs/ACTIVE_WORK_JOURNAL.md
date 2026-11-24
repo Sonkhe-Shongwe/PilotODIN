@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 36b88e4d98cfc47658342d12a8275b0242cfc66a |
 | Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-LIVE-DEV-CAPABILITY-20261125-source |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | request_auth, server_entry, Live Dev paired launcher and smoke caller, Vite private local proxy, frontend API bootstrap, focused tests and continuity. Dev mode only; hosted and local-devqa migration pending. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job SUCCESS 53 passed, 66 subtests; restricted 138854871137 SKIPPED. No live auth integration. |
-| Pending runs | None. #45511936699 terminal SUCCESS: source 138861582049 52 unittest, 1059 pytest + 552 subtests, 112 Node, Vite; Windows 138861582266 57+73 subtests; browser 138861581805 SUCCESS; restricted SKIPPED. |
+| Pending runs | Exact Live Dev capability and proxy source published with this checkpoint; matching routine CI pending. No live local owner/dev execution. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Implement paired Live Dev ephemeral private capability; explicit dev RequestGuard before workspace, exact Vite origin/loopback/marker proxy with fixed destination and secret server-side, explicit frontend mode, local smoke uses same checked frontdoor. No capability in VITE vars, URL, bundle or log. Proxy is a trusted isolated local development frontdoor, not protection against another same-user process forging local headers; no network exposure. Test strict startup, proxy negative header/path cases and API binding. Hosted/local-devqa and bare app fallback remain open until migrated. |
 | Resume after closure | C4, C5 in order; D separately approved. |

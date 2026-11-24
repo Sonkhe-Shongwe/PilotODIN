@@ -412,5 +412,39 @@ class C3RequestTrustTests(unittest.TestCase):
             build.assert_called_once_with(app,self.desktop)
 
 
+    def test_c3_live_dev_contract_is_captured_and_mixed_modes_refused(self):
+        from backend.request_auth import live_dev_trust_from_environ, authorize
+        env={"PILOTODIN_SERVER_MODE":"dev", "PILOTODIN_DEV_PORT":"8000",
+             "PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5173",
+             "PILOTODIN_DEV_CAPABILITY":self.secret}
+        trust=live_dev_trust_from_environ(env)
+        self.assertEqual(trust.mode,"dev")
+        scope=self.scope(trust,origin=trust.dev_origin)
+        self.assertTrue(authorize(scope,trust).allowed)
+        self.assertEqual(authorize({**scope,"headers":scope["headers"][:1]},trust).status,401)
+        for change in ({"PILOTODIN_DEV_CAPABILITY":""},{"PILOTODIN_DEV_PORT":"8001"},
+                       {"PILOTODIN_DEV_ORIGIN":"http://localhost:5173"},
+                       {"PILOTODIN_SERVER_MODE":"hosted-fixture"},
+                       {"PILOTODIN_DESKTOP_SESSION":self.secret},
+                       {"PILOTODIN_DESKTOP_ALLOW_DEV":"1"},
+                       {"PILOTODIN_CONTROL_MODE":"pod1"}):
+            with self.subTest(change=tuple(change)):
+                with self.assertRaises(ValueError):
+                    live_dev_trust_from_environ({**env,**change})
+
+    def test_c3_live_dev_missing_capability_refuses_before_workspace(self):
+        from backend import server_entry
+        from unittest.mock import patch
+        with patch.dict(os.environ,{"PILOTODIN_SERVER_MODE":"dev"},clear=True), \
+             patch.object(server_entry,"admitted_home",side_effect=AssertionError("Workspace inspected")):
+            with self.assertRaises(ValueError):
+                server_entry.owned_app()
+        with patch.dict(os.environ,{"PILOTODIN_SERVER_MODE":"hosted-fixture",
+                                   "PILOTODIN_DEV_CAPABILITY":self.secret},clear=True), \
+             patch.object(server_entry,"admitted_home",side_effect=AssertionError("Workspace inspected")):
+            with self.assertRaises(WorkspaceBoundaryError):
+                server_entry.owned_app()
+
+
 if __name__ == "__main__":
     unittest.main()

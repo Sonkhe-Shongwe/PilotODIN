@@ -181,6 +181,14 @@ def admitted_home(env):
 
 
 def owned_app():
+    # The paired Live Dev launcher is migrated first. Existing hosted/local
+    # QA paths are still legacy pending their explicit capability migration.
+    from backend.request_auth import RequestGuard, live_dev_trust_from_environ
+    mode = os.environ.get("PILOTODIN_SERVER_MODE")
+    trust = live_dev_trust_from_environ(os.environ) if mode == "dev" else None
+    if trust is None and any(os.environ.get(key) for key in (
+            "PILOTODIN_DEV_CAPABILITY", "PILOTODIN_DEV_ORIGIN", "PILOTODIN_DEV_PORT")):
+        raise WorkspaceBoundaryError("Mixed non-desktop serving configuration")
     home = admitted_home(os.environ)
     owned = hold_process_workspace(str(home))
     if os.environ.get("PILOTODIN_SERVER_MODE") == "local-devqa":
@@ -189,4 +197,4 @@ def owned_app():
     os.environ["PILOTODIN_HOME"] = str(owned)
     configure_process_scratch(owned)
     from backend.main import app
-    return app
+    return RequestGuard(app, trust) if trust is not None else app

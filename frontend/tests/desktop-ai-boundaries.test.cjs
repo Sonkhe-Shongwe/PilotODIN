@@ -225,3 +225,54 @@ test('C2 both actual panels bind request ownership, late results and truthful ow
  assert.match(insight,/usesOwnedInference\(\)\?'waiting for the selected route/);
  assert.match(insight,/usesOwnedInference\(\)\?"Smart Auto \(local only\)"/);
 });
+
+
+test('C3 explicit Live Dev API uses only same-origin proxy marker, never a credential',async()=>{
+ const seen=[];
+ const api=loadAPI(async()=>{},async(url,options)=>{
+   seen.push({url,headers:options.headers});
+   return {ok:true,json:async()=>({status:'ok'})};
+ });
+ assert.throws(()=>api.configureDevelopmentAPI('http://127.0.0.1:5178'));
+ api.configureDevelopmentAPI('http://127.0.0.1:5173');
+ assert.equal(api.apiBase(),'http://127.0.0.1:5173/api');
+ await api.get('/health');
+ assert.deepEqual(seen,[{url:'http://127.0.0.1:5173/api/health',headers:{'X-PilotODIN-Dev-Request':'1'}}]);
+ assert.throws(()=>api.configureDesktopAPI({port:12345,token:'fixture'}));
+});
+
+test('C3 Live Dev proxy enforces local origin, marker and fixed private backend',async()=>{
+ const {liveDevProxyTrust,liveDevProxyPlan}=await import('../scripts/live-dev-api-proxy.mjs');
+ const env={PILOTODIN_SERVER_MODE:'dev',VITE_PILOTODIN_AUTH_DEV:'1',
+   PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5173',PILOTODIN_DEV_PORT:'8000',PILOTODIN_DEV_CAPABILITY:'a'.repeat(64)};
+ const trust=liveDevProxyTrust(env);
+ assert.ok(Object.isFrozen(trust));
+ for(const change of [{PILOTODIN_DEV_CAPABILITY:''},{PILOTODIN_DEV_ORIGIN:'http://localhost:5173'},
+   {PILOTODIN_DEV_PORT:'8001'},{PILOTODIN_DESKTOP_SESSION:'a'.repeat(64)},{PILOTODIN_SERVER_MODE:'hosted-fixture'}]){
+   assert.throws(()=>liveDevProxyTrust({...env,...change}));
+ }
+ const raw=['Host','127.0.0.1:5173','X-PilotODIN-Dev-Request','1','Sec-Fetch-Site','same-origin'];
+ const req={url:'/api/projects?version=0',method:'GET',socket:{remoteAddress:'127.0.0.1'},rawHeaders:raw};
+ const plan=liveDevProxyPlan(req,trust);
+ assert.equal(plan.status,200);
+ assert.equal(plan.options.hostname,'127.0.0.1');
+ assert.equal(plan.options.port,8000);
+ assert.equal(plan.options.path,req.url);
+ assert.equal(plan.options.headers['x-pilotodin-dev-capability'],'a'.repeat(64));
+ assert.equal(plan.options.headers.origin,'http://127.0.0.1:5173');
+ assert.equal(liveDevProxyPlan({...req,url:'/src/main.tsx'},trust),null);
+ const cli=['Host','127.0.0.1:5173','X-PilotODIN-Dev-Request','1','Origin','http://127.0.0.1:5173'];
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:cli},trust).status,200);
+ for(const bad of [{socket:{remoteAddress:'192.0.2.1'}},{method:'OPTIONS'},
+   {rawHeaders:raw.slice(0,2)},{rawHeaders:['Host','evil.example',...raw.slice(2)]},
+   {rawHeaders:[...raw,'Origin','https://evil.example']},
+   {rawHeaders:[...raw,'X-PilotODIN-Dev-Request','1']},
+   {rawHeaders:[...raw,'X-Forwarded-For','127.0.0.1']},
+   {rawHeaders:[...raw,'X-PilotODIN-Dev-Capability','a'.repeat(64)]},
+   {rawHeaders:[...raw,'Referer','https://evil.example/path']},
+   {rawHeaders:[...raw,'Content-Length','10','Transfer-Encoding','chunked']},
+   {rawHeaders:[...raw.slice(0,4),'Sec-Fetch-Site','cross-site']},
+   {rawHeaders:raw.slice(0,4)},{url:'/api/\\evil'},{url:'/api'}]){
+   assert.ok([400,403].includes(liveDevProxyPlan({...req,...bad},trust).status));
+ }
+});
