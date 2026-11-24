@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import closing, ExitStack
+import errno
 import hashlib
 import logging
 import os
@@ -442,4 +443,9 @@ def load_verified(experiment, model_key, *, holdout=False):
     except LoadRefused:
         raise
     except (Error,OSError,storage.WorkspaceBoundaryError,ValueError,KeyError,TypeError) as exc:
+        # Free space can change after the admission check or during a copy.
+        # Do not tell the user to retrain a valid model for a resource failure.
+        if isinstance(exc, OSError) and (exc.errno in {errno.ENOSPC, getattr(errno, "EDQUOT", errno.ENOSPC)}
+                                        or getattr(exc, "winerror", None) in (39, 112)):
+            raise LoadDeferred("Insufficient scratch disk space for verified model loading. Free space and retry.") from exc
         raise LoadRefused("Model integrity or runtime compatibility could not be confirmed. Historical results are preserved; retrain before use.") from exc

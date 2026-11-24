@@ -783,3 +783,48 @@ def test_verified_prediction_requires_selected_model(monkeypatch,tmp_path):
     experiment=storage.get_experiment(experiment["id"])
     monkeypatch.setattr(model_artifacts.joblib,"load",lambda stream,**kw:stream.read())
     assert model_artifacts.load_verified(experiment,"ridge")==b"inert model"
+
+@pytest.mark.parametrize("failure", ["disk_full", "permission"])
+def test_model_publication_final_copy_failure_preserves_foreign_bytes(monkeypatch, tmp_path, failure):
+    import errno
+    home, eid, config, results, digest = _fresh_model_worker(monkeypatch, tmp_path)
+    foreign = home / "models" / "unrelated"
+    foreign.mkdir()
+    (foreign / "keep").write_bytes(b"preserve")
+    original = model_artifacts._stream_verified
+    def interrupted_copy(path, expected, verify, **kwargs):
+        output = kwargs.get("output")
+        if output is not None:
+            output.write(b"partial")
+            code = errno.ENOSPC if failure == "disk_full" else errno.EACCES
+            raise OSError(code, "Injected final copy failure")
+        return original(path, expected, verify, **kwargs)
+    monkeypatch.setattr(model_artifacts, "_stream_verified", interrupted_copy)
+    with pytest.raises(OSError):
+        model_artifacts.publish(eid, config, digest, results, {"ridge": b"inert model"}, b"inert holdout")
+    assert storage.get_experiment(eid)["status"] == "running"
+    with storage.connect() as con:
+        receipt = model_publication.read(con, eid)
+        assert receipt.state == "interrupted"
+        assert receipt.reason_code == "storage_unavailable"
+    assert not (home / "models" / eid).exists()
+    assert not (home / "models" / (eid + ".publishing")).exists()
+    assert (foreign / "keep").read_bytes() == b"preserve"
+
+
+def test_verified_load_disk_fills_after_admission_defers_without_deserializing(monkeypatch, tmp_path):
+    import errno
+    from types import SimpleNamespace
+    home, experiment, receipt = _verified_load_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(model_artifacts.shutil, "disk_usage", lambda _: SimpleNamespace(free=2**30))
+    monkeypatch.setattr(model_artifacts.resource_policy, "admit_new_work", lambda _: {"decision": "allow"})
+    def interrupted_copy(path, expected, verify, **kwargs):
+        kwargs["output"].write(b"partial")
+        raise OSError(errno.ENOSPC, "Injected scratch capacity failure")
+    monkeypatch.setattr(model_artifacts, "_stream_verified", interrupted_copy)
+    monkeypatch.setattr(model_artifacts.joblib, "load", lambda *a, **kw: pytest.fail("Unexpected deserialization"))
+    with pytest.raises(model_artifacts.LoadDeferred, match="disk space"):
+        model_artifacts.load_verified(experiment, "ridge", holdout=True)
+    assert storage.get_experiment(experiment["id"])["status"] == "completed"
+    assert not list((home / "backend-temp").iterdir())
+    assert (home / "models" / experiment["id"] / "ridge.joblib").read_bytes() == b"inert model"
