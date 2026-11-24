@@ -140,7 +140,7 @@ class G213SourceContractTests(unittest.TestCase):
               ).read_text(encoding="utf-8")
         new_marker = (ROOT / "qa/p4_research"
                       / "N12_G214_GENERATED_PSS_RUNTIME_OWNER_APPROVAL_FRESH_ONE_USE.txt")
-        self.assertRegex(wf, r"(?m)^\\s+if: \\$\\{\\{ false \\$\\}\\}")
+        self.assertIn("    if: ${{ false }}", wf)
         self.assertNotIn("workflow_dispatch", wf)
         self.assertNotIn("cargo ", wf)
         self.assertNotIn("tauri", wf.lower().split(
@@ -154,8 +154,7 @@ class G213SourceContractTests(unittest.TestCase):
         self.assertIn("RUNNER_TEMP", wf)
         self.assertIn("PILOTODIN_G213_GENERATED_CONSENT", wf)
         self.assertIn("No raw handle, PID, filename", wf)
-        self.assertIn("No native PSS", wf) if "No native PSS" in wf else self.assertIn(
-            "NOT PilotODIN", wf)
+        self.assertIn("NOT PilotODIN", wf)
         if new_marker.exists():
             lines = new_marker.read_text(encoding="utf-8").splitlines()
             self.assertEqual(len(lines), 2)
