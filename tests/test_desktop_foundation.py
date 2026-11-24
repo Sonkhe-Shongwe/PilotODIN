@@ -79,19 +79,21 @@ def synthetic_old_workspace(tmp_path: Path) -> Path:
     return old
 
 
-def test_migrate_workspace_copies_then_rewrites_paths(tmp_path):
+def test_suspended_migration_preserves_source_and_never_creates_destination(tmp_path):
     old = synthetic_old_workspace(tmp_path)
     target = tmp_path / "userAppData" / "com.pilotodin.studio" / "data"
-    before = (old / "data" / "pilotodin.sqlite3").read_bytes()
-    assert migrate(old, target) == (1, 1)
-    with sqlite3.connect(target / "pilotodin.sqlite3") as con:
-        saved = con.execute("SELECT dataset_path FROM projects").fetchone()[0]
-    assert saved == str(target / "datasets" / "sample.csv")
-    assert (target / "models" / "exp1" / "model.joblib").read_bytes() == b"fixture-model"
-    assert (old / "data" / "pilotodin.sqlite3").read_bytes() == before
+    before = {p.relative_to(old): p.read_bytes() for p in old.rglob("*") if p.is_file()}
+    try:
+        migrate(old, target)
+    except ValueError as exc:
+        assert "suspended" in str(exc)
+    else:
+        raise AssertionError("Legacy desktop migration must remain disabled")
+    assert not target.parent.exists()
+    assert before == {p.relative_to(old): p.read_bytes() for p in old.rglob("*") if p.is_file()}
 
 
-def test_migrate_refuses_existing_destination(tmp_path):
+def test_suspended_migration_preserves_existing_destination(tmp_path):
     old = synthetic_old_workspace(tmp_path)
     target = tmp_path / "existing" / "data"
     target.mkdir(parents=True)
@@ -99,10 +101,11 @@ def test_migrate_refuses_existing_destination(tmp_path):
     try:
         migrate(old, target)
     except ValueError as exc:
-        assert 'already exists' in str(exc) or 'overwrite' in str(exc)
+        assert "suspended" in str(exc)
     else:
-        raise AssertionError("Should refuse to touch existing work")
+        raise AssertionError("Legacy desktop migration must remain disabled")
     assert (target / "keep.txt").read_text() == "important"
+    assert sorted(p.name for p in target.iterdir()) == ["keep.txt"]
 
 
 def test_frontend_all_fetch_methods_include_session_header():

@@ -160,6 +160,29 @@ class OwnedServerTests(unittest.TestCase):
         self.assertIn("$env:PILOTODIN_SERVER_MODE='local-devqa'", managed)
         self.assertNotIn("'backend.main:app'", managed)
 
+    def test_legacy_desktop_migration_refuses_before_any_io(self):
+        from desktop.Migrate_Existing_Workspace import migrate, main
+        from contextlib import redirect_stderr
+        from io import StringIO
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "old"
+            target = root / "new"
+            target.mkdir()
+            marker = target / "keep.txt"
+            marker.write_bytes(b"preserve")
+            # Both entrypoints must refuse even without inspecting the paths.
+            with patch.object(Path, "resolve", side_effect=AssertionError("unexpected path inspection")), \
+                 patch.object(Path, "exists", side_effect=AssertionError("unexpected path inspection")):
+                with self.assertRaisesRegex(ValueError, "suspended"):
+                    migrate(source, target)
+                with redirect_stderr(StringIO()):
+                    self.assertEqual(main(), 2)
+            self.assertEqual(marker.read_bytes(), b"preserve")
+            self.assertFalse(source.exists())
+            self.assertEqual(list(target.iterdir()), [marker])
+
     def test_owned_pipe_accepts_fragmented_stop_without_eof(self):
         server = SimpleNamespace(should_exit=False)
         rd, wr = os.pipe()
