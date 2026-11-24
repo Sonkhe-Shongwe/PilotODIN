@@ -1,0 +1,171 @@
+name: P4 C1 C2 paired static loader import diagnosis (one-use proposal)
+
+'on':
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths: ['.github/workflows/p4-c1-c2-loader-diagnosis-once.yml', 'qa/c1_c2_loader_preflight.rb', 'qa/c1_c2_loader_imports.py']
+
+permissions:
+  contents: read
+concurrency:
+  group: pilotodin-c1-c2-loader-diagnosis-20261125
+  cancel-in-progress: false
+
+jobs:
+  source-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact proposal source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate YAML and PowerShell and test text parsers only
+        shell: bash
+        env:
+          C1_C2_LOADER_EVENT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: ruby qa/c1_c2_loader_preflight.rb
+  paired-static-import-diagnosis:
+    needs: source-preflight
+    if: ${{ false }} # DISARMED LOADER DIAGNOSIS; fresh exact approval required.
+    runs-on: windows-2022
+    timeout-minutes: 65
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Checkout diagnostic source without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Checkout exact successful baseline without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 388b35750316b9c5a060d603c35c7d728d5c0890
+          path: baseline
+          persist-credentials: false
+      - name: Checkout exact failed fixture without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 1d23ea139762d94d25e689c4c3489b72fb34acc9
+          path: fixture
+          persist-credentials: false
+      - name: Verify paired identities and hosted tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_RUN_ATTEMPT -ne '1') { throw 'Approval consumed' }
+          foreach ($pair in @(@('baseline','388b35750316b9c5a060d603c35c7d728d5c0890'),@('fixture','1d23ea139762d94d25e689c4c3489b72fb34acc9'))) {
+            $checkout = $pair[0]
+            if ((git -C $checkout rev-parse HEAD).Trim() -ne $pair[1]) { throw 'Wrong exact checkout' }
+            if ((git -C $checkout hash-object frontend/src-tauri/Cargo.lock).Trim() -ne 'f635ba1f8257266c242429e2b44ae94b039329b9') { throw 'Cargo lock drift' }
+            if ((git -C $checkout rev-parse HEAD:third_party/tauri-plugin-shell-2.6.0).Trim() -ne '54514a2feed82db5a61e9c37e8d43f6fe99b7696') { throw 'Shell source drift' }
+          }
+          rustc +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Rust unavailable' }
+          cargo +stable --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Cargo unavailable' }
+          python --version
+          if ($LASTEXITCODE -ne 0) { throw 'Hosted Python unavailable' }
+      - name: Stage intentionally invalid compile-only fixtures
+        shell: pwsh
+        run: |
+          foreach ($checkout in @('baseline','fixture')) {
+            Push-Location -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $checkout)
+            try {
+                $ErrorActionPreference = 'Stop'
+                $tauri = 'frontend/src-tauri'
+                $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+                $assets = @(
+                  "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+                  "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+                  "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+                  "$tauri/resources/models/model-manifest.json"
+                )
+                foreach ($file in ($assets + @($marker, 'frontend/dist'))) {
+                  if (Test-Path -LiteralPath $file) { throw "Refusing to overwrite existing asset: $file" }
+                }
+                Set-Content -LiteralPath $marker -Value 'NEVER DISTRIBUTE - C1 C2 SYNTHETIC COMPILE AND LIBRARY TEST ONLY'
+                foreach ($file in $assets) {
+                  [System.IO.File]::WriteAllBytes((Join-Path $PWD $file), [byte[]](0,1,2))
+                }
+                New-Item -ItemType Directory -Path 'frontend/dist' | Out-Null
+                Set-Content -LiteralPath 'frontend/dist/index.html' -Value 'INVALID COMPILE-ONLY FRONTEND; NEVER LAUNCH'
+                python desktop/verify_inference_assets.py
+                if ($LASTEXITCODE -ne 2) { throw 'Release preflight did not reject invalid fixtures' }
+                Write-Host 'RELEASE-PREFLIGHT-REJECTED; no real runtime/model assets'
+            } finally { Pop-Location }
+          }
+      - name: Compile exact paired library test executables without running them
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $root = Join-Path $env:RUNNER_TEMP "pilotodin-c1-c2-loader-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          if (Test-Path -LiteralPath $root) { throw 'Existing diagnostic root refused' }
+          New-Item -ItemType Directory -Path $root | Out-Null
+          $executables = @{}
+          foreach ($checkout in @('baseline','fixture')) {
+            Push-Location -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $checkout)
+            try {
+              $env:CARGO_TARGET_DIR = Join-Path $root $checkout
+              $json = Join-Path $root "$checkout-cargo.jsonl"
+              cargo +stable test --locked --no-run --message-format=json --manifest-path frontend/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc --lib > $json
+              if ($LASTEXITCODE -ne 0) { throw "Paired test executable compile failed: $checkout" }
+              $exe = @(Get-Content -LiteralPath $json | ForEach-Object {
+                $msg = $_ | ConvertFrom-Json
+                if ($msg.reason -eq 'compiler-artifact' -and $msg.target.name -eq 'pilotodin_desktop' -and $msg.profile.test -eq $true -and $msg.executable) { $msg.executable }
+              } | Select-Object -Unique)
+              if ($exe.Count -ne 1) { throw 'Expected exactly one library test executable' }
+              $executables[$checkout] = $exe[0]
+              if ((git hash-object frontend/src-tauri/Cargo.lock).Trim() -ne 'f635ba1f8257266c242429e2b44ae94b039329b9') { throw 'Lock changed' }
+              git diff --exit-code
+              if ($LASTEXITCODE -ne 0) { throw 'Tracked source changed' }
+              Write-Host "PAIRED-NO-RUN-COMPILE-PASS $checkout"
+            } finally { Pop-Location }
+          }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          if (-not (Test-Path -LiteralPath $vswhere)) { throw 'Hosted vswhere unavailable' }
+          $vs = @(& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
+          if ($LASTEXITCODE -ne 0 -or $vs.Count -ne 1) { throw 'Hosted MSVC unavailable' }
+          $tools = @(Get-ChildItem -LiteralPath (Join-Path $vs[0] 'VC/Tools/MSVC') -Directory | Sort-Object Name -Descending)
+          if ($tools.Count -eq 0) { throw 'No hosted MSVC tools' }
+          $dumpbin = Join-Path $tools[0].FullName 'bin/Hostx64/x64/dumpbin.exe'
+          if (-not (Test-Path -LiteralPath $dumpbin)) { throw 'Hosted dumpbin unavailable' }
+          $env:PILOTODIN_C1_C2_LOADER_APPROVAL = 'STATIC_IMPORT_DIAGNOSIS_ONCE'
+          try {
+            python -I -B qa/c1_c2_loader_imports.py --root $root --baseline $executables.baseline --fixture $executables.fixture --dumpbin $dumpbin
+            if ($LASTEXITCODE -ne 0) { throw 'Static import diagnosis failed' }
+          } finally { Remove-Item Env:PILOTODIN_C1_C2_LOADER_APPROVAL -ErrorAction SilentlyContinue }
+          Write-Host 'PAIRED-STATIC-DIAGNOSIS-FINISHED; neither test executable launched'
+      - name: Remove only owned compile-only placeholders
+        if: always()
+        shell: pwsh
+        run: |
+          foreach ($checkout in @('baseline','fixture')) {
+            Push-Location -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $checkout)
+            try {
+                $ErrorActionPreference = 'Stop'
+                $tauri = 'frontend/src-tauri'
+                $marker = "$tauri/NATIVE_COMPILE_PROBE_ONLY.txt"
+                if (-not (Test-Path -LiteralPath $marker)) { continue }
+                $assets = @(
+                  "$tauri/binaries/pilotodin-engine-x86_64-pc-windows-msvc.exe",
+                  "$tauri/binaries/pilotodin-inference-x86_64-pc-windows-msvc.exe",
+                  "$tauri/resources/models/qwen3-1.7b-q4_k_m.gguf",
+                  "$tauri/resources/models/model-manifest.json",
+                  'frontend/dist/index.html'
+                )
+                foreach ($file in $assets) {
+                  if (Test-Path -LiteralPath $file) {
+                    if ((Get-Item -LiteralPath $file).Length -gt 256) { throw "Unexpected content; refusing cleanup: $file" }
+                    Remove-Item -LiteralPath $file -Force
+                  }
+                }
+                if (Test-Path -LiteralPath 'frontend/dist') {
+                  if (@(Get-ChildItem -LiteralPath 'frontend/dist' -Force).Count -ne 0) { throw 'Unexpected frontend fixture content' }
+                  Remove-Item -LiteralPath 'frontend/dist'
+                }
+                Remove-Item -LiteralPath $marker
+                Write-Host 'COMPILE-ONLY-FIXTURES-REMOVED; no executable artifact upload or application launch'
+            } finally { Pop-Location }
+          }
