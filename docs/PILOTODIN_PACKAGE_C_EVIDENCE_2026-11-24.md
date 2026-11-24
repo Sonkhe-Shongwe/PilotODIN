@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `4faf696e16bd9380d9407d2f3a3b95be6386d42c`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `a7b55ecebb56c259c2b93e07d4a683c54d74a558`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -69,3 +69,7 @@ Operation C1-RESOURCE-ADMISSION-20261124-autonomy-fences, prepared at `d6cbbbb`,
 ## 24 November | C1 autonomy cancellation/context exact-source CI reconciled
 
 [P1 #45458364195](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45458364195), job 138673835302, terminal SUCCESS; checkout `4faf696e16bd9380d9407d2f3a3b95be6386d42c`, compile, 166 regression + 2 subtests, 77 C1 foundation + 18 training + 18 autonomy = 113 C1, 20 legacy autonomy (299 tests total, 2 subtests). No real inference or live registration. C0/5, source 10/17, P4 14/20 unchanged.
+
+## 24 November | C1 dormant owned autonomy launch published
+
+Operation C1-RESOURCE-ADMISSION-20261124-autonomy-launch, prepared at `15283e5`, published [`a7b55ec`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a7b55ecebb56c259c2b93e07d4a683c54d74a558). New dormant OwnedAutonomy single pending/active slot per trusted supervisor; exact start/resume queue/version/lifecycle transaction under DATA, known refusal without lane leak, no automatic waiting/replay, non-daemon actual worker identity retained until join plus durable terminal/exit settlement. Ambiguous launch acknowledgement blocks further launches, unknown publication blocks both lane and supervisor; shutdown before launch settles only the exact queued run. Ten new fixtures including duplicate pending, terminal-before-exit, lost acknowledgement, resource refusal, cancellation, shutdown and resume receipt preservation. Existing public entrypoints remain unchanged. Future composition must instantiate exactly one supervisor and exclude legacy entrypoints; shutdown after launch decision and before actual start, lifecycle reconciliation, native grant/exit and full tool artifact materialization require further review. Workflow inventory unchanged across 82 definitions, existing P1 trigger only. [Exact CI #45459206888](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45459206888) IN_PROGRESS at observation; no test pass claimed. No native/model/installer/owner operation; C0/5, source 10/17, P4 14/20 unchanged.

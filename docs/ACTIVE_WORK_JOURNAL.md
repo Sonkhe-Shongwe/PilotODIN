@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | cca26c98456c183ad607107133b82f09437879a8 |
-| Product baseline | 4faf696e16bd9380d9407d2f3a3b95be6386d42c |
+| Product baseline | a7b55ecebb56c259c2b93e07d4a683c54d74a558 |
 | Scope | C1 dormant trusted autonomy start/resume, single pending/active worker ownership and exact thread join, transactional durable queue settlement; no live activation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-launch |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Dormant owned autonomy start/resume, exact thread retention/reap and 10 new fixture cases published; exact CI pending. No live registration. |
-| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before host work. |
+| Pending runs | [P1 #45459206888](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45459206888), exact a7b55ecebb56c259c2b93e07d4a683c54d74a558, IN_PROGRESS at last observation; reconcile exact job/logs. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish dormant start/resume boundary; reconcile exact CI before host bridge. No native/model run. |
+| Recovery action | Reconcile exact owned launch CI; review shutdown/launch race and singleton composition, then owned host grant/exit bridge and unified route activation design. Residual full artifact materialization in tool path remains open. No live registration or native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
