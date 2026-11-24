@@ -1008,11 +1008,26 @@ def test_b3_invalid_references_do_not_publish_manifest(monkeypatch, tmp_path, fa
         os.link(foreign, source)
     target = tmp_path / "backup"
     before = (home / "pilotodin.sqlite3").read_bytes()
-    with pytest.raises(maintenance_backup.SnapshotBlocked):
+    expected_message = {
+        "missing": "unavailable or unsafe",
+        "digest": "Referenced payload digest mismatch",
+        "external": "outside the admitted source layout",
+        "legacy_model": "Legacy or unverified completed model",
+        "model_digest": "Referenced payload digest mismatch",
+        "extra_model": "Unexpected model directory entry",
+        "hardlink": "unavailable or unsafe",
+    }[failure]
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match=expected_message):
         maintenance_backup.stage_workspace_backup(home, target, confirmed=True)
     assert not (target / "manifest.json").exists()
     assert (home / "pilotodin.sqlite3").read_bytes() == before
     assert foreign.read_bytes() == _csv()
+    if failure in ("digest", "model_digest"):
+        # A prior, unrelated refusal must not count as digest coverage.
+        copied = target / ("datasets/source.csv" if failure == "digest"
+                           else f"models/{experiment['id']}/ridge.joblib")
+        assert copied.is_file()
+        assert copied.read_bytes() == (source if failure == "digest" else model).read_bytes()
 
 def test_b3_replaced_stage_parent_blocks_nested_creation(monkeypatch, tmp_path):
     from backend import maintenance_backup
@@ -1036,8 +1051,9 @@ def test_b3_replaced_stage_parent_blocks_nested_creation(monkeypatch, tmp_path):
             yield verify
 
     monkeypatch.setattr(maintenance_backup, "pinned_existing_directory", replaced)
-    with pytest.raises(maintenance_backup.SnapshotBlocked):
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="unavailable or unsafe"):
         maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    assert (stage / "displaced-models").is_dir(), "Replacement must actually have been injected"
     assert not (stage / "manifest.json").exists()
     assert not (stage / "models" / experiment["id"]).exists()
     assert not list(unrelated.iterdir())

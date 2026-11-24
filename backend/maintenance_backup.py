@@ -352,7 +352,7 @@ def _stage_payloads(source, destination, database_receipt, verify, checkpoint):
     records = {_DB: {"size": database_receipt.size, "sha256": database_receipt.sha256}}
     # All destinations derive from admitted names and are exclusive.
     directories = {}
-    for key, (expected, identity) in sorted(plan.items()):
+    for key, (expected, source_identity) in sorted(plan.items()):
         relative = Path(key)
         path = source / relative
         target = destination / relative
@@ -369,12 +369,12 @@ def _stage_payloads(source, destination, database_receipt, verify, checkpoint):
                     verify()
                     verify_parent()
                     directory.mkdir(exist_ok=False)
-                    identity = directory.lstat()
-                    with pinned_existing_directory(directory, expected=identity) as verify_created:
+                    directory_identity = directory.lstat()
+                    with pinned_existing_directory(directory, expected=directory_identity) as verify_created:
                         verify_parent()
                         verify_created()
                         verify()
-                    directories[directory] = identity
+                    directories[directory] = directory_identity
             else:
                 with pinned_existing_directory(directory, expected=directories[directory]) as verify_existing:
                     verify()
@@ -386,7 +386,7 @@ def _stage_payloads(source, destination, database_receipt, verify, checkpoint):
                     verify_input()
                     verify_output()
                 verify_copy()
-                if not _same(identity, existing_fixture_file(path)):
+                if not _same(source_identity, existing_fixture_file(path)):
                     raise SnapshotBlocked("Referenced payload changed after inventory")
                 with target.open("xb") as output:
                     target_id = os.fstat(output.fileno())
