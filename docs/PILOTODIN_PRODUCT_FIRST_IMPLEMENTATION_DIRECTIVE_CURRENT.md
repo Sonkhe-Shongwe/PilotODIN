@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current product-first implementation directive
 
-**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B4 SOURCE CLOSED; B5 ACTIVE (browser export and backend fixture verified; Windows type-check passed at `7789f84`; FFI correction `b9a9181` not yet host-compiled). C1–C5 and D1–D2 pending. Source remediation 9/17 (52.9%); Package B 4/5 (80%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
+**CURRENT | Live reference.** Consult the [current handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) for changing source status and next action, and the [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) for acceptance. [Continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md). Historical evidence below is not a current work order.
 
 Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Latest engineering receipts: [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Documentation audit](./DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md). [Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
 
@@ -36,6 +36,8 @@ One integrated specification must contain: decision records with alternatives an
 Logical storage design is not a migration instruction: retain existing on-disk locations and user preferences unless explicitly reviewed and separately authorized. No sandbox claim from path validation alone. Product remediation can proceed before G2 closes; formal G3 credit cannot. Do not start new phases or certify release. CF-01/02 preflight and shared typing, CF-03 certified new-DB FK enforcement, CF-13 managed closure, CF-04 receipt staging and CF-05 all-mode fitting slot are already present in current source. Track remaining limitations, not duplicate fixes. Preserve existing immutable originals, version lineage, authentication, consent, report staging and task controls.
 
 ## 5. Authority, verification and stopping rules
+
+Apply the [seamless continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md) at each meaningful checkpoint. It governs documentation and handoff discipline only; all authority and exit requirements below remain binding.
 
 Routine GitHub source, documentation and source/synthetic CI within P4 are permitted. Before every push verify current HEAD, inspect every matching workflow trigger and actual job scope; no accidental native/installer activation. Use non-force conditional updates and exact-source test evidence. New native capture, model execution/download, installer, owner workspace access/migration, OS/security/network operations or acceptance-method changes need distinct explicit approval. Consumed markers cannot be reused. Keep legacy native workflows disabled. No arbitrary foreign handle duplication or raw private evidence upload.
 

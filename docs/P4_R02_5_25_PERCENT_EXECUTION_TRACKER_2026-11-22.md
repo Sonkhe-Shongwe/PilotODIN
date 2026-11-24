@@ -1,6 +1,6 @@
 # PilotODIN R02.5 | GitHub-first remaining-work 25% execution ledger
 
-**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B4 SOURCE CLOSED; B5 ACTIVE (browser export and backend fixture verified; Windows type-check passed at `7789f84`; FFI correction `b9a9181` not yet host-compiled). C1–C5 and D1–D2 pending. Source remediation 9/17 (52.9%); Package B 4/5 (80%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
+**CURRENT | Live reference.** Consult the [current handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) for changing source status and next action, and the [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) for acceptance. [Continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md). Historical evidence below is not a current work order.
 
 Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Latest engineering receipts: [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Documentation audit](./DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md). [Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/P4_R02_5_25_PERCENT_EXECUTION_TRACKER_2026-11-22.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
 

@@ -1,6 +1,6 @@
 # PilotODIN 1.0
 
-**CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B4 SOURCE CLOSED; B5 ACTIVE (browser export and backend fixture verified; Windows type-check passed at `7789f84`; FFI correction `b9a9181` not yet host-compiled). C1–C5 and D1–D2 pending. Source remediation 9/17 (52.9%); Package B 4/5 (80%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
+**CURRENT | Live reference.** Consult the [current handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) for changing source status and next action, and the [official scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) for acceptance. [Continuation protocol](docs/CONTINUATION_PROTOCOL_CURRENT.md). Historical evidence below is not a current work order.
 
 **Resume development:** [Current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) | [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Current documentation audit](docs/DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md).
 
@@ -11,7 +11,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 
 ## Read this first
 - **[Current product-first implementation directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md)**: sole live work order, fixed A–D scope, readiness specification and permissions.
-- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: B1–B4 source closed; B5 active; native type-check passed on the preceding exact source.
+- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: durable-data scope and exit criteria; live completion state is in the handoff.
 - **[24 November migration audit](docs/DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md)**: current authority, evidence and historical preservation.
 - **[Current tab migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md)**: single starting point, latest evidence, exact next action, safe scope and source references.
 - **[Stage 1 golden-reference verification contract](docs/P4_N12_STAGE1_GOLDEN_REFERENCE_AND_BACKWARD_VERIFICATION_2026-11-21.md)** for retained native evidence requirements, not the current development sequence.
@@ -28,7 +28,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 
 ## Verified development evidence
 
-**Latest product source:** `b9a9181`; P4 source CI #45434780210 SUCCESS at audit. Prior exact source `7789f84` passed backend fixture CI and one-use locked Windows type-check. See [B5 evidence ledger](docs/PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for exact evidence and limits.
+**Current product identity and verification:** [Live migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) and its linked active package evidence ledger. Exact-source receipts are not repeated in this README.
 
 **Historical Package A source/integration baseline:** `60041f144a29e0c18db9c8ad1b9e07651309c7d9`: eight source workflows passed, including [P4 regression](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45378250732). [One-time locked Windows host check](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45380098568) passed; [retired workflow](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45382351664) skipped. This closes Package A at source level, not native runtime acceptance.
 **Latest actual native evidence baseline, 24 November:** [G2.20 source CI #45341086645](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45341086645) passed at `8c2d456a1978145d10af1da86caf97053b07a1b3`. A subsequent [one-use actual Windows diagnostic #45342345634](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45342345634) built, started and closed the isolated app, verified both calibration bookends and write/restore, reported zero lost events/buffers, and returned BLOCKED evidence: 23 prohibited operations, 4,921 unresolved mutation credits (125 network write-path gaps); 102 bounded lexical outside-scope candidates without original-file-handle/physical destination credit. Original process identity and private child inventory remain blocked. [Full result](docs/P4_R02_5_G2_20_INTEGRATED_PASSIVE_FILEIO_PATH_DIAGNOSTIC_2026-11-24.md). The earlier [complete N12 journey #44838416004](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/44838416004) still governs official filesystem FAIL, network FAIL and mutation coverage BLOCKED. Neither endpoint matches nor this scoped diagnostic close acceptance. File-mutation workstream 3/4; official P4 14/20 (70%). Native workflows disarmed; the latest consent is consumed.

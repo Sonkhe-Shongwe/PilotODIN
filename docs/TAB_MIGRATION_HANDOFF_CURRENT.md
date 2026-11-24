@@ -2,6 +2,8 @@
 
 **CURRENT | 24 November 2026.** P4 active. A1–A5 and B1–B4 SOURCE CLOSED; B5 ACTIVE (browser export and backend fixture verified; Windows type-check passed at `7789f84`; FFI correction `b9a9181` not yet host-compiled). C1–C5 and D1–D2 pending. Source remediation 9/17 (52.9%); Package B 4/5 (80%). Official P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%); G2 BLOCKED. P5 unauthorized; P8 installer frozen. No owner data or native operations authorized by this documentation update.
 
+**Standing continuation process:** [Seamless continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md). Update this handoff in place and record each meaningful receipt once in the active ledger; no duplicate chronology.
+
 ## 1. Identity and reading order
 
 - Repository: [Sonkhe-Shongwe/PilotODIN](https://github.com/Sonkhe-Shongwe/PilotODIN); active branch `feature/live-dev-workspace-20261023`, not default main. Verify live HEAD before every edit; documentation HEAD can advance beyond product source.
@@ -28,9 +30,8 @@ Historical P2 browser failure at `39b8e5f` remains recorded in the [B4 audit](./
 
 ## 4. Immediate next work (in order)
 
-1. P4 source CI for `b9a9181` passed; retain exact result.
-2. Prepare a disabled, scope-pinned native synthetic test proposal for receipt authentication, actual backend-generated XLSX and isolated publication failures. Request separate explicit approval before native compilation/linking or execution. No app launch, installer or owner data.
-3. Review exact results if approved; retain unresolved actual WebView IPC/dialog and physical destination persistence for separately approved verification. B5 closure needs its defined evidence; C does not start until B5 source closure. G2 proof-method decision is deferred until product readiness, not reopened.
+1. Prepare a disabled, scope-pinned native synthetic test proposal for receipt authentication, actual backend-generated XLSX and isolated publication failures. Request separate explicit approval before native compilation/linking or execution. No app launch, installer or owner data.
+2. Review exact results if approved; retain unresolved actual WebView IPC/dialog and physical destination persistence for separately approved verification. B5 closure needs its defined evidence; C does not start until B5 source closure. G2 proof-method decision is deferred until product readiness, not reopened.
 
 ## 5. Native evidence and immutable acceptance boundary
 
@@ -46,6 +47,6 @@ Report Completed, Verification (exact source/run IDs and scope), Evidence, Progr
 
 ## 7. Migration prompt
 
-Verify live HEAD and exact source CI; read the live directive and relevant specification. Continue the first outstanding action in section 4 under standing scope, with exact evidence and no new authority inferred from generic continuation. Earlier next-action paragraphs are not current instructions.
+Use the [standard new-chat prompt](./CONTINUATION_PROTOCOL_CURRENT.md#4-user-facing-continuation-format). The completed P4 source CI has been reconciled; the first outstanding task is section 4. Verify live HEAD and exact source CI; read the live directive and relevant specification. Continue the first outstanding action in section 4 under standing scope, with exact evidence and no new authority inferred from generic continuation. Earlier next-action paragraphs are not current instructions.
 
 [Complete pre-cleanup handoff, with all original dated evidence and instructions at their historical scope](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/TAB_MIGRATION_HANDOFF_CURRENT.md).
