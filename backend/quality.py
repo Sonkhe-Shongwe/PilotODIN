@@ -620,24 +620,30 @@ def snapshot(pid: str, preview_limit: int = 7) -> dict:
 
 
 def autopilot(pid: str, expected_version: int) -> dict:
-    p=_project(pid)
-    completed=[]
-    # Each validated operation becomes a durable version and audit event.
+    metadata, frame, identity = _stage_current(pid, expected_version)
+    decisions = _snapshot_decisions(metadata)
+    staged = []
+    # Preserve original finding order and sequential validation. Do not
+    # recalculate candidate findings mid-batch or silently skip failures.
+    for issue in _issues(frame):
+        if not issue["automatic"] or not issue["proposal"] or issue["id"] in decisions:
+            continue
+        frame, affected = _apply(frame, issue["proposal"])
+        staged.append((issue["id"], issue["proposal"], affected))
+        decisions[issue["id"]] = "applied"
+    del frame
+    version, ops = metadata["version"], list(metadata["ops"])
+    completed = []
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
-        _require_active_for_write(con,pid)
-        _ensure(con,p)
-        version,ops=_state(con,pid)
-        _check_version(version,expected_version)
-        for issue in _issues(_materialize(con,p,ops)):
-            if not issue["automatic"] or not issue["proposal"]: continue
-            if _decisions(con,pid).get(issue["id"]) is not None: continue
-            version,action=_record_action(con,p,ops,issue["proposal"],"autopilot",issue["id"])
+        _verify_staged_write(con, pid, metadata, identity)
+        for issue_id, proposal, affected in staged:
+            version, action = _record_validated_action(con, metadata["project"], ops, proposal,
+                                                        "autopilot", issue_id, affected)
             ops.append(action["id"])
             completed.append(action)
         return {"version":version,"applied":completed,"count":len(completed),
                 "message":f"{len(completed)} narrowly safe correction(s) applied; see history for details."}
-
 
 def decide(pid: str, issue_id: str, expected_version: int, decision: str) -> dict:
     if decision not in ("approve","reject"):
@@ -708,53 +714,71 @@ def history(pid: str) -> dict:
         return {"current_version":current,"versions":versions,"actions":actions,"decisions":decisions}
 
 
-def undo(pid: str, action_id: str, expected_version: int) -> dict:
-    p=_project(pid)
+def _apply_event_rows(con, pid):
+    return [tuple(row) for row in con.execute(
+        "SELECT version,details_json FROM quality_versions WHERE project_id=? AND event='apply' ORDER BY version",
+        (pid,))]
+
+
+def _stage_history_transition(pid, expected_version, *, action_id=None, target_version=None):
+    _project(pid)
+    with storage.connect() as con:
+        con.execute("BEGIN")
+        current = _metadata_snapshot(con, pid)
+        _check_version(current["version"], expected_version)
+        if action_id is not None:
+            if action_id not in current["ops"]:
+                raise QualityError("Action is not active in the current dataset version",409)
+            target = [x for x in current["ops"] if x != action_id]
+            replay = {**current, "actions": [r for r in current["actions"] if r["id"] != action_id]}
+            historical = None
+        else:
+            historical = _metadata_snapshot(con, pid, target_version=target_version)
+            target = json.loads(historical["version_row"]["operations_json"])
+            replay = historical
+        events = _apply_event_rows(con, pid)
+    # Validate the remaining operations against a single verified original,
+    # not against the already-transformed working frame.
+    _, frame, identity = _snapshot_frame(replay, with_identity=True)
+    del frame
+    removed = set(current["ops"]) - set(target)
+    suppress = {}
+    for _, raw in events:
+        detail = json.loads(raw)
+        aid = detail.get("action_id")
+        if aid in removed and detail.get("issue_id") and aid not in suppress:
+            suppress[aid] = detail["issue_id"]
+    return current, historical, target, events, suppress, identity
+
+
+def _commit_history_transition(pid, expected_version, *, action_id=None, target_version=None):
+    current, historical, target, events, suppress, identity = _stage_history_transition(
+        pid, expected_version, action_id=action_id, target_version=target_version)
     with storage.connect() as con:
         con.execute("BEGIN IMMEDIATE")
-        _require_active_for_write(con,pid)
-        _ensure(con,p)
-        version,ops=_state(con,pid)
-        _check_version(version,expected_version)
-        if action_id not in ops:
-            raise QualityError("Action is not active in the current dataset version",409)
-        remaining=[x for x in ops if x!=action_id]
-        _materialize(con,p,remaining)  # Verify all later dependent transformations still apply.
-        nxt=_add_version(con,pid,remaining,"undo",{"action_id":action_id,"prior_version":version})
-        # Suppress re-autoapplication of an undone automatic action.
-        record=con.execute("SELECT details_json FROM quality_versions WHERE project_id=? AND event='apply' ORDER BY version",(pid,)).fetchall()
-        for r in record:
-            detail=json.loads(r["details_json"])
-            if detail.get("action_id")==action_id and detail.get("issue_id"):
-                con.execute("INSERT OR REPLACE INTO quality_decisions VALUES(?,?,?,?)",
-                            (pid,detail["issue_id"],"undone",storage.now()))
-                break
-        return {"version":nxt,"undone":action_id,"active_actions":len(remaining)}
+        _verify_staged_write(con, pid, current, identity)
+        if historical is not None and _metadata_snapshot(con, pid, target_version=target_version) != historical:
+            raise QualityError("Restore target history changed. Review the updated findings.",409)
+        if _apply_event_rows(con, pid) != events:
+            raise QualityError("Quality action audit history changed. Review the updated findings.",409)
+        if action_id is not None:
+            nxt = _add_version(con, pid, target, "undo", {"action_id":action_id,"prior_version":expected_version})
+        else:
+            nxt = _add_version(con, pid, target, "restore", {"from_version":target_version,"prior_version":expected_version})
+        for issue_id in suppress.values():
+            con.execute("INSERT OR REPLACE INTO quality_decisions VALUES(?,?,?,?)",
+                        (pid,issue_id,"undone",storage.now()))
+        if action_id is not None:
+            return {"version":nxt,"undone":action_id,"active_actions":len(target)}
+        return {"version":nxt,"restored_from":target_version,"active_actions":len(target)}
+
+
+def undo(pid: str, action_id: str, expected_version: int) -> dict:
+    return _commit_history_transition(pid, expected_version, action_id=action_id)
 
 
 def restore(pid: str, target_version: int, expected_version: int) -> dict:
-    p=_project(pid)
-    with storage.connect() as con:
-        con.execute("BEGIN IMMEDIATE")
-        _require_active_for_write(con,pid)
-        _ensure(con,p)
-        current,ops=_state(con,pid)
-        _check_version(current,expected_version)
-        chosen=con.execute("SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?",(pid,target_version)).fetchone()
-        if chosen is None: raise QualityError("Requested version does not exist",404)
-        restored_ops=json.loads(chosen["operations_json"])
-        _materialize(con,p,restored_ops)
-        nxt=_add_version(con,pid,restored_ops,"restore",{"from_version":target_version,"prior_version":current})
-        # Prevent automatic reapplication of corrections that the user deliberately restored away.
-        for removed in set(ops)-set(restored_ops):
-            for r in con.execute("SELECT details_json FROM quality_versions WHERE project_id=? AND event='apply'",(pid,)):
-                d=json.loads(r["details_json"])
-                if d.get("action_id")==removed and d.get("issue_id"):
-                    con.execute("INSERT OR REPLACE INTO quality_decisions VALUES(?,?,?,?)",
-                                (pid,d["issue_id"],"undone",storage.now()))
-                    break
-        return {"version":nxt,"restored_from":target_version,"active_actions":len(restored_ops)}
-
+    return _commit_history_transition(pid, expected_version, target_version=target_version)
 
 def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int = 20,
             expected_version: int | None = None) -> dict:

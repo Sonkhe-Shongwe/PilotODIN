@@ -1460,3 +1460,82 @@ def test_b4_read_snapshot_releases_metadata_transaction_before_parse(monkeypatch
     assert called == [True]
     assert version == 0
     assert frame["CustomerID"].tolist() == ["0001", "0002", "0003"]
+
+
+def _b4_autopilot_fixture(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    raw = b"Region,Segment,Revenue\n North, Retail,10\nNorth,Retail,20\nNorth,Retail,30\nNorth,Retail,40\nNorth,Retail,50\nNorth,Retail,60\nNorth,Retail,70\nNorth,Retail,80\n"
+    path = home / "datasets" / "source.csv"
+    path.write_bytes(raw)
+    pid = storage.save_project("Source", path.name, ".csv", path, {},
+                               original_sha256=hashlib.sha256(raw).hexdigest())
+    assert quality.snapshot(pid)["summary"]["automatic_available"] == 2
+    return pid, path, raw
+
+
+@pytest.mark.parametrize("fault", ["none", "source", "decision"])
+def test_b4_autopilot_stages_entire_batch_before_write(monkeypatch, tmp_path, fault):
+    pid, path, raw = _b4_autopilot_fixture(monkeypatch, tmp_path)
+    apply = quality._apply
+    calls = []
+    def stage(frame, proposal, **kwargs):
+        result = apply(frame, proposal, **kwargs)
+        calls.append(proposal["column"])
+        if len(calls) == 2:
+            with storage.connect() as con:
+                con.execute("PRAGMA busy_timeout=200")
+                con.execute("BEGIN IMMEDIATE")
+                if fault == "decision":
+                    con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",
+                                (pid, "later-review", "rejected", storage.now()))
+            if fault == "source":
+                path.write_bytes(raw.replace(b",80", b",81"))
+        return result
+    monkeypatch.setattr(quality, "_apply", stage)
+    if fault == "none":
+        result = quality.autopilot(pid, 0)
+        assert result["version"] == result["count"] == 2
+    else:
+        with pytest.raises(quality.QualityError, match="changed"):
+            quality.autopilot(pid, 0)
+    assert len(calls) == 2
+    with storage.connect() as con:
+        expected = 2 if fault == "none" else 0
+        assert con.execute("SELECT current_version FROM quality_state WHERE project_id=?", (pid,)).fetchone()[0] == expected
+        assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?", (pid,)).fetchone()[0] == expected
+
+
+@pytest.mark.parametrize("operation", ["undo", "restore"])
+@pytest.mark.parametrize("fault", ["none", "audit", "target"])
+def test_b4_history_transition_replays_outside_lock_and_fences_history(monkeypatch, tmp_path, operation, fault):
+    pid, path, raw = _b4_autopilot_fixture(monkeypatch, tmp_path)
+    batch = quality.autopilot(pid, 0)
+    action = batch["applied"][-1]["id"]
+    parse = quality._source_df
+    injected = []
+    def stage(*args, **kwargs):
+        with storage.connect() as con:
+            con.execute("PRAGMA busy_timeout=200")
+            con.execute("BEGIN IMMEDIATE")
+            if fault == "audit":
+                con.execute("UPDATE quality_versions SET details_json='{}' WHERE project_id=? AND version=2", (pid,))
+            elif fault == "target":
+                con.execute("UPDATE quality_actions SET source='tampered' WHERE project_id=? AND id=?",
+                            (pid, batch["applied"][0]["id"]))
+        injected.append(True)
+        return parse(*args, **kwargs)
+    monkeypatch.setattr(quality, "_source_df", stage)
+    call = (lambda: quality.undo(pid, action, 2)) if operation == "undo" else (lambda: quality.restore(pid, 1, 2))
+    if fault == "none":
+        outcome = call()
+        assert outcome["version"] == 3 and outcome["active_actions"] == 1
+    else:
+        with pytest.raises(quality.QualityError, match="changed"):
+            call()
+    assert injected == [True]
+    with storage.connect() as con:
+        assert con.execute("SELECT current_version FROM quality_state WHERE project_id=?", (pid,)).fetchone()[0] == (3 if fault == "none" else 2)
+        assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?", (pid,)).fetchone()[0] == 2
+        assert con.execute("SELECT COUNT(*) FROM quality_decisions WHERE project_id=? AND status='undone'", (pid,)).fetchone()[0] == (1 if fault == "none" else 0)
+    assert path.read_bytes() == raw
