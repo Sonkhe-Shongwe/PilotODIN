@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | f2c46b75642e53c158b51544aa5c9b2da7bd82f0 |
+| Observed starting HEAD | 00329dc82127eb7c8466fd0dda7610117981f2e4 |
 | Product baseline | b6426147dccd94747924abbd5ba4c3be6133d7b8 |
-| Scope | C1 single outstanding request and reply-write boundary, staged Python and matching standalone Rust wire codec; no live transport/native compile. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-wire |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; journal, handoff, C evidence/spec |
+| Scope | C1 staged Python owned stream pump and Rust transport deadline state; review exact locked shell source; no actual transport registration or native compilation. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-transport |
+| Operation state | PREPARED |
+| Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_transport.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Python single-outstanding/reply boundary with seven additional fixtures and standalone Rust codec with five staged unit tests published. Python CI pending; Rust uncompiled and unregistered. |
-| Pending runs | [P1 #45460620652](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45460620652), exact b6426147dccd94747924abbd5ba4c3be6133d7b8, IN_PROGRESS at last observation; reconcile exact job/logs. |
+| Verification | Prior #45460620652 SUCCESS 166 regression + 2 subtests, 153 C1, 20 legacy autonomy. Next inert binary stream fixtures and staged Rust deadline tests (uncompiled). |
+| Pending runs | None; #45460620652/job 138681866579 terminal SUCCESS, exact checkout/counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact Python CI; review Rust wire source and exact locked shell transport compatibility, stage owned reader/writer and bounded handshake; native compile requires distinct approval. No live registration or native/model run. |
+| Recovery action | Stage owned binary pump and Rust independent deadline/write/reply state; reconcile Python CI, then actual owned shell writer/event lifecycle and native grant integration. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
