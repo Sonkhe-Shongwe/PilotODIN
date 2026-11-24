@@ -6,7 +6,9 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::net::TcpListener;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::time::{Duration, Instant};
 use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State};
@@ -26,7 +28,9 @@ struct BackendConnection {
 
 struct ActiveBackend {
     connection: BackendConnection,
-    child: CommandChild,
+    child: Option<CommandChild>,
+    exit: Arc<AtomicU8>,
+    stop_requested: bool,
 }
 
 struct InferenceSettings {
@@ -35,14 +39,18 @@ struct InferenceSettings {
 }
 
 struct ActiveInference {
-    child: CommandChild,
+    child: Option<CommandChild>,
     token: String,
+    exit: Arc<AtomicU8>,
 }
 
 const INFERENCE_IDLE_SLEEP_SECONDS: &str = "30";
 
 #[derive(Default)]
 struct DesktopState {
+    profile_verified: AtomicBool,
+    stopping: AtomicBool,
+    launch_gate: Mutex<()>,
     backend: Mutex<Option<ActiveBackend>>,
     inference: Mutex<Option<ActiveInference>>,
     inference_settings: Mutex<Option<InferenceSettings>>,
@@ -68,20 +76,24 @@ fn consume_native_close_ticket(pending: &mut Option<String>, provided: &str) -> 
 }
 
 #[tauri::command]
-fn resolve_native_close_request(
+async fn resolve_native_close_request(
     window: tauri::WebviewWindow,
     state: State<'_, NativeCloseState>,
     token: String,
     approve: bool,
 ) -> Result<(), String> {
     if window.label() != "main" { return Err("Unexpected desktop window".into()); }
-    let mut pending = state.pending.lock()
-        .map_err(|_| "Native close state unavailable".to_string())?;
-    if !consume_native_close_ticket(&mut pending, &token) {
-        return Err("Native close request expired or was not issued".into());
+    {
+        let mut pending = state.pending.lock()
+            .map_err(|_| "Native close state unavailable".to_string())?;
+        if !consume_native_close_ticket(&mut pending, &token) {
+            return Err("Native close request expired or was not issued".into());
+        }
     }
-    drop(pending);
     if approve {
+        let app = window.app_handle().clone();
+        tauri::async_runtime::spawn_blocking(move || stop_owned_workers(&app))
+            .await.map_err(|_| "Desktop shutdown task did not finish".to_string())??;
         // close() would re-enter CloseRequested and loop. destroy() is only
         // reachable with a one-use ticket issued by an actual OS close event.
         window.destroy().map_err(|e| format!("Could not close window: {e}"))?;
@@ -289,8 +301,136 @@ fn worker_temp_directory(home: &Path, name: &str) -> Result<PathBuf, String> {
     storage_boundary::prepare_worker_temp(home, name)
 }
 
+// Verify the actual production environment rather than repeating the requested
+// Tauri path. The COM query runs on the WebView UI thread; waiting does not.
+async fn verify_effective_desktop_profile(window: &tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "main" { return Err("Unexpected desktop window".into()); }
+    let app = window.app_handle();
+    if app.config().identifier != "com.pilotodin.studio" { return Ok(()); }
+    let state = app.state::<DesktopState>();
+    state.profile_verified.store(false, Ordering::Release);
+    let root = app.path().app_local_data_dir()
+        .map_err(|_| "Desktop profile path unavailable".to_string())?;
+    #[cfg(windows)]
+    {
+        use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Environment7;
+        use windows_core::{Interface, PWSTR};
+        let (tx, rx) = std::sync::mpsc::sync_channel(1);
+        window.with_webview(move |webview| {
+            let observed = (|| -> Result<(), String> {
+                let environment = webview.environment().cast::<ICoreWebView2Environment7>()
+                    .map_err(|_| "Effective WebView2 profile interface unavailable".to_string())?;
+                let mut value = PWSTR::null();
+                let outcome = unsafe { environment.UserDataFolder(&mut value) };
+                // The COM allocator's returned buffer must be freed on every path.
+                let folder = if value.is_null() { None } else {
+                    Some(webview2_com::take_pwstr(value))
+                };
+                outcome.map_err(|_| "Effective WebView2 profile unavailable".to_string())?;
+                let folder = folder.ok_or("Effective WebView2 profile unavailable")?;
+                desktop_profile::verify_effective_directory(&root, Path::new(&folder))
+            })();
+            let _ = tx.send(observed);
+        }).map_err(|_| "WebView2 profile observation could not be scheduled".to_string())?;
+        tauri::async_runtime::spawn_blocking(move || {
+            rx.recv_timeout(Duration::from_secs(5))
+                .map_err(|_| "Effective WebView2 profile verification timed out".to_string())?
+        }).await.map_err(|_| "Profile verification task did not finish".to_string())??;
+        state.profile_verified.store(true, Ordering::Release);
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = root;
+        Err("Production desktop profile verification requires Windows".into())
+    }
+}
+
+fn ensure_desktop_admission(app: &AppHandle, state: &DesktopState) -> Result<(), String> {
+    if state.stopping.load(Ordering::Acquire) {
+        return Err("Desktop is shutting down; no new work can start".into());
+    }
+    if app.config().identifier == "com.pilotodin.studio"
+        && !state.profile_verified.load(Ordering::Acquire) {
+        return Err("Desktop browser profile has not been verified".into());
+    }
+    Ok(())
+}
+
+// 0 = no termination witness, 1 = normal zero exit, 2 = other exit.
+// Missing child handles are not exit evidence.
+fn wait_for_worker(exit: &AtomicU8, timeout: Duration) -> u8 {
+    let deadline = Instant::now() + timeout;
+    loop {
+        let status = exit.load(Ordering::Acquire);
+        if status != 0 || Instant::now() >= deadline { return status; }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
+fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
+    let state = app.state::<DesktopState>();
+    state.stopping.store(true, Ordering::Release);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let _launch = loop {
+        match state.launch_gate.try_lock() {
+            Ok(guard) => break guard,
+            Err(std::sync::TryLockError::WouldBlock) if Instant::now() < deadline =>
+                std::thread::sleep(Duration::from_millis(25)),
+            _ => return Err("Worker launch is not finished; retry close".into()),
+        }
+    };
+    let mut interrupted = false;
+    {
+        let mut active = state.backend.lock().map_err(|_| "Engine state unavailable")?;
+        if let Some(worker) = active.as_mut() {
+            if worker.exit.load(Ordering::Acquire) == 0 && !worker.stop_requested {
+                worker.stop_requested = true;
+                if let Some(child) = worker.child.as_mut() {
+                    if child.write(b"PILOTODIN_STOP\n").is_err() {
+                        eprintln!("Analytical engine shutdown request failed");
+                    }
+                }
+            }
+            let mut status = wait_for_worker(&worker.exit, Duration::from_secs(12));
+            if status == 0 {
+                // Windows owned job group kill-on-drop is non-waiting.
+                // Keep the termination witness even after the handle is dropped.
+                drop(worker.child.take());
+                interrupted = true;
+                status = wait_for_worker(&worker.exit, Duration::from_secs(4));
+            }
+            if status == 0 {
+                return Err("Analytical engine exit is not confirmed; retry close".into());
+            }
+            if status != 1 { interrupted = true; }
+        }
+        *active = None;
+    }
+    {
+        let mut active = state.inference.lock().map_err(|_| "AI state unavailable")?;
+        if let Some(worker) = active.as_mut() {
+            // There is no reviewed inference shutdown endpoint. Terminate
+            // only the owned group once analytical work has drained.
+            drop(worker.child.take());
+            if wait_for_worker(&worker.exit, Duration::from_secs(4)) == 0 {
+                return Err("Local inference exit is not confirmed; retry close".into());
+            }
+        }
+        *active = None;
+    }
+    *state.inference_settings.lock().map_err(|_| "AI state unavailable")? = None;
+    if interrupted {
+        return Err("Analytical engine was interrupted during shutdown. Retry close to finish exiting.".into());
+    }
+    Ok(())
+}
+
 #[tauri::command]
-fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<BackendConnection, String> {
+async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: State<'_, DesktopState>) -> Result<BackendConnection, String> {
+    verify_effective_desktop_profile(&window).await?;
+    let _launch = state.launch_gate.lock().map_err(|_| "Worker launch unavailable")?;
+    ensure_desktop_admission(&app, &state)?;
     let mut guard = state.backend.lock().map_err(|_| "Engine state unavailable".to_string())?;
     if let Some(existing) = guard.as_ref() {
         return Ok(existing.connection.clone());
@@ -321,11 +461,14 @@ fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<Back
         // installation or source-checkout working directory: relative cache
         // writes must land under the created application data directory.
         .current_dir(&data_dir)
-        .set_process_group(true);
+        .set_process_group(true)
+        .kill_on_drop(cfg!(windows));
     let (mut events, child) = command.spawn()
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
     let connection = BackendConnection { port, token: token.clone() };
-    *guard = Some(ActiveBackend { connection: connection.clone(), child });
+    let exit = Arc::new(AtomicU8::new(0));
+    *guard = Some(ActiveBackend { connection: connection.clone(), child: Some(child),
+        exit: exit.clone(), stop_requested: false });
     *state.inference_settings.lock().map_err(|_| "AI state unavailable".to_string())? =
         Some(InferenceSettings { port: inference_port, token: inference_token });
     drop(guard);
@@ -334,13 +477,16 @@ fn launch_backend(app: AppHandle, state: State<'_, DesktopState>) -> Result<Back
     tauri::async_runtime::spawn(async move {
         while let Some(event) = events.recv().await {
             match event {
-                CommandEvent::Terminated(_) => {
+                CommandEvent::Terminated(payload) => {
+                    exit.store(if payload.code == Some(0) { 1 } else { 2 }, Ordering::Release);
                     let state = owner.state::<DesktopState>();
                     if let Ok(mut active) = state.backend.lock() {
-                        if active.as_ref().map(|b| b.connection.token == token).unwrap_or(false) {
+                        if !state.stopping.load(Ordering::Acquire)
+                            && active.as_ref().map(|b| b.connection.token == token).unwrap_or(false) {
                             *active = None;
                             if let Ok(mut ai) = state.inference.lock() {
-                                if let Some(worker) = ai.take() {let _ = worker.child.kill();}
+                                // Keep the inference exit witness while its group stops.
+                                if let Some(worker) = ai.as_mut() { drop(worker.child.take()); }
                             }
                             if let Ok(mut settings) = state.inference_settings.lock() {*settings = None;}
                         }
@@ -386,9 +532,17 @@ fn verify_bundled_model(app: &AppHandle) -> Result<std::path::PathBuf, String> {
 
 #[tauri::command]
 fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(), String> {
+    let _launch = state.launch_gate.lock().map_err(|_| "Worker launch unavailable")?;
+    ensure_desktop_admission(&app, &state)?;
     // Only one local inference worker is permitted on constrained hardware.
     let mut active = state.inference.lock().map_err(|_| "AI state unavailable".to_string())?;
-    if active.is_some() {return Ok(());}
+    if let Some(worker) = active.as_ref() {
+        if worker.exit.load(Ordering::Acquire) == 0 {
+            return if worker.child.is_some() { Ok(()) }
+                else { Err("Previous inference worker is still stopping".into()) };
+        }
+        *active = None;
+    }
     // Copy the settings before doing model integrity checks or spawning the worker.
     // A borrowed settings reference cannot be dropped to release the mutex.
     let (token, port) = {
@@ -422,17 +576,22 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
         // working directory, not PATH, for version-specific CPU backends.
         // Keep the runtime DLL directory as the process working directory.
         .current_dir(&runtime_dlls)
-        .set_process_group(true);
+        .set_process_group(true)
+        .kill_on_drop(cfg!(windows));
     let (mut events, child) = command.spawn().map_err(|e| format!("Could not launch local model: {e}"))?;
-    *active = Some(ActiveInference { child, token: token.clone() });
+    let exit = Arc::new(AtomicU8::new(0));
+    *active = Some(ActiveInference { child: Some(child), token: token.clone(), exit: exit.clone() });
     drop(active);
     let owner = app.clone();
     tauri::async_runtime::spawn(async move {
         while let Some(event) = events.recv().await {
             match event {
-                CommandEvent::Terminated(_) => {
-                    if let Ok(mut active) = owner.state::<DesktopState>().inference.lock() {
-                        if active.as_ref().map(|w| w.token == token).unwrap_or(false) {*active = None;}
+                CommandEvent::Terminated(payload) => {
+                    exit.store(if payload.code == Some(0) { 1 } else { 2 }, Ordering::Release);
+                    let state = owner.state::<DesktopState>();
+                    if let Ok(mut active) = state.inference.lock() {
+                        if !state.stopping.load(Ordering::Acquire)
+                            && active.as_ref().map(|w| Arc::ptr_eq(&w.exit, &exit)).unwrap_or(false) {*active = None;}
                     }
                     break;
                 }
@@ -516,6 +675,7 @@ fn report_save_bytes(body: &InvokeBody) -> Result<Cow<'_, [u8]>, String> {
 #[tauri::command]
 async fn save_report_as(app: AppHandle, request: Request<'_>)
     -> Result<NativeReportSave, String> {
+    ensure_desktop_admission(&app, &app.state::<DesktopState>())?;
     let (format, filename, bytes) = {
         let (format, filename) = report_save_headers(request.headers())?;
         let bytes = report_save_bytes(request.body())?;
@@ -540,6 +700,7 @@ async fn save_report_as(app: AppHandle, request: Request<'_>)
         };
         // Only the OS dialog may choose the destination. Never accept a path
         // from JavaScript. Standard Save As handles overwrite confirmation.
+        ensure_desktop_admission(&app, &app.state::<DesktopState>())?;
         write_verified_report(&path, &format, &bytes)
     }).await.map_err(|_| "The native Save As task could not finish".to_string())?
 }
@@ -841,11 +1002,19 @@ pub fn run() {
         .run(|app, event| {
             if let RunEvent::Exit = event {
                 let state = app.state::<DesktopState>();
+                state.stopping.store(true, Ordering::Release);
+                // Emergency/non-ticket exit is not a verified graceful drain.
                 if let Ok(mut ai) = state.inference.lock() {
-                    if let Some(worker) = ai.take() {let _ = worker.child.kill();}
+                    if let Some(worker) = ai.take() {
+                        eprintln!("Emergency inference cleanup");
+                        drop(worker);
+                    }
                 }
                 if let Ok(mut backend) = state.backend.lock() {
-                    if let Some(worker) = backend.take() {let _ = worker.child.kill();}
+                    if let Some(worker) = backend.take() {
+                        eprintln!("Emergency analytical cleanup");
+                        drop(worker);
+                    }
                 };
             }
         });

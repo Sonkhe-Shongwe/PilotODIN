@@ -2470,6 +2470,8 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-shell",
  "uuid",
+ "webview2-com",
+ "windows-core",
 ]
 
 [[package]]

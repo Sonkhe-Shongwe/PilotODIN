@@ -174,6 +174,19 @@ pub fn prepare_production_profile(root: &Path) -> Result<(PathBuf, DesktopProfil
     Ok((root, lease))
 }
 
+/// Compare actual reported UDF with the existing requested root, without
+/// creating directories or silently following aliases.
+pub fn verify_effective_directory(expected: &Path, reported: &Path) -> Result<(), String> {
+    validate_existing_directory(expected)?;
+    validate_existing_directory(reported)?;
+    let expected = expected.canonicalize().map_err(|_| UNSAFE.to_string())?;
+    let reported = reported.canonicalize().map_err(|_| UNSAFE.to_string())?;
+    if expected != reported {
+        return Err("Effective WebView2 profile differs from the owned workspace".into());
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -242,6 +255,17 @@ mod tests {
         symlink(&root.0, &alias).unwrap();
         assert!(acquire(&alias).is_err());
         assert_eq!(fs::metadata(target).unwrap().len(), 0);
+    }
+    #[test]
+    fn effective_profile_requires_existing_same_directory() {
+        let root = Fixture::new();
+        let other = Fixture::new();
+        assert!(verify_effective_directory(&root.0, &root.0).is_ok());
+        assert!(verify_effective_directory(&root.0, &other.0).is_err());
+        let absent = root.0.join("missing");
+        assert!(verify_effective_directory(&root.0, &absent).is_err());
+        assert!(!absent.exists());
+        assert!(verify_effective_directory(&root.0, Path::new("")).is_err());
     }
     #[test]
     fn environment_override_is_rejected_case_insensitively() {

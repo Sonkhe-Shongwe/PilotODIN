@@ -33,7 +33,7 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
 
     def test_rejects_junction_escape_and_nonliteral_worker_directory_names(self):
         src = RUST.read_text(encoding="utf-8")
-        helper = slice_between(src, "fn worker_temp_directory(", "#[tauri::command]\nfn launch_backend")
+        helper = slice_between(src, "fn worker_temp_directory(", "// Verify the actual production environment")
         self.assertIn("storage_boundary::prepare_worker_temp(home, name)", helper)
         policy = BOUNDARY.read_text(encoding="utf-8")
         self.assertIn('matches!(name, "backend-temp" | "inference-temp")', policy)
@@ -69,7 +69,7 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
     def test_no_application_wide_environment_or_production_webview_override(self):
         import json
         src = RUST.read_text(encoding="utf-8")
-        helper = slice_between(src, "fn worker_temp_directory(", "#[tauri::command]\nfn launch_backend")
+        helper = slice_between(src, "fn worker_temp_directory(", "// Verify the actual production environment")
         self.assertNotIn("set_var(", helper)
         self.assertNotIn("remove_var(", helper)
         config = json.loads(CONFIG.read_text(encoding="utf-8"))
@@ -91,6 +91,23 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertIn(".share_mode(0)", profile)
         self.assertIn("info.links != 1", profile)
         self.assertNotIn("set_var(", profile)
+
+    def test_effective_profile_is_checked_before_launch_and_close_drains_owned_workers(self):
+        src = RUST.read_text(encoding="utf-8")
+        launch = slice_between(src, "async fn launch_backend(", "fn verify_bundled_model(")
+        self.assertLess(launch.index("verify_effective_desktop_profile(&window).await?"),
+                        launch.index("command.spawn()"))
+        self.assertIn("ICoreWebView2Environment7", src)
+        self.assertIn("environment.UserDataFolder(&mut value)", src)
+        self.assertIn("verify_effective_directory(&root", src)
+        close = slice_between(src, "async fn resolve_native_close_request(", "// This command acknowledges QA")
+        self.assertLess(close.index("consume_native_close_ticket"), close.index("stop_owned_workers"))
+        self.assertLess(close.index("stop_owned_workers"), close.index("window.destroy()"))
+        shutdown = slice_between(src, "fn stop_owned_workers(", "#[tauri::command]\nasync fn launch_backend")
+        self.assertLess(shutdown.index("stopping.store(true"), shutdown.index("child.write("))
+        self.assertLess(shutdown.index("child.write("), shutdown.index("drop(worker.child.take())"))
+        self.assertIn("wait_for_worker(&worker.exit", shutdown)
+        self.assertIn("exit is not confirmed", shutdown)
         self.assertNotIn("appDirectoriesOverride", config["app"])
 
 
