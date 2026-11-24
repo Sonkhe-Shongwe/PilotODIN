@@ -10,13 +10,13 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 try:
-    from . import artifact_publication, sqlite_fk_gate
+    from . import artifact_publication, model_publication, sqlite_fk_gate
     from .workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                      validate_process_database, validate_process_write,
                                      configure_process_scratch, validate_process_scratch,
                                      pin_process_model_directory)
 except ImportError:
-    import artifact_publication, sqlite_fk_gate
+    import artifact_publication, model_publication, sqlite_fk_gate
     from workspace_boundary import (WorkspaceBoundaryError, storage_home,
                                     validate_process_database, validate_process_write,
                                     configure_process_scratch, validate_process_scratch,
@@ -170,6 +170,7 @@ def init():
         );
         """)
         artifact_publication.ensure_schema(conn)
+        model_publication.ensure_schema(conn)
         if fresh_database:
             sqlite_fk_gate.certify_new_schema(conn)
 
@@ -733,6 +734,84 @@ def advance_running_experiment(eid, stage, detail):
             return False
         _append_progress(con, eid, stage, detail)
         return True
+
+
+def _model_publication_context(con, eid):
+    """Fence model publication against cancellation, archive and version changes."""
+    try:
+        from .project_lifecycle import require_active_for_write
+    except ImportError:
+        from project_lifecycle import require_active_for_write
+    row = con.execute(
+        "SELECT project_id,status,config FROM experiments WHERE id=?", (eid,)
+    ).fetchone()
+    if row is None or row["status"] != "running":
+        raise TrainingInterrupted("cancelled")
+    reason = _requested_interruption(con, eid)
+    if reason:
+        raise TrainingInterrupted(reason)
+    pid = row["project_id"]
+    require_active_for_write(con, pid)
+    config = json.loads(row["config"])
+    state = con.execute(
+        "SELECT original_sha256,current_version FROM quality_state WHERE project_id=?", (pid,)
+    ).fetchone()
+    if state is None or state["current_version"] != config.get("quality_version"):
+        raise TrainingVersionConflict("Dataset version changed before model publication")
+    return pid, config, state["original_sha256"]
+
+
+def begin_model_publication(eid, *, config, source_sha256):
+    """Create a receipt before writing any model artifacts."""
+    runtime = model_publication.runtime_versions()
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        pid, persisted, digest = _model_publication_context(con, eid)
+        if model_publication.config_digest(persisted) != model_publication.config_digest(config) or digest != source_sha256:
+            raise artifact_publication.PublicationError("Model training provenance changed")
+        return model_publication.insert_intent(con, eid, pid, persisted, digest, runtime)
+
+
+def stage_model_publication(receipt, results, files):
+    """Persist the complete verified inventory before final-file publication."""
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        pid, config, digest = _model_publication_context(con, receipt.experiment_id)
+        receipt.verify_binding(pid, config, digest)
+        return model_publication.stage(con, receipt, config, results, files)
+
+
+def advance_model_publication(receipt, state, *, reason=None):
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        if state == "publishing":
+            pid, config, digest = _model_publication_context(con, receipt.experiment_id)
+            receipt.verify_binding(pid, config, digest)
+        return model_publication.advance(con, receipt, state, reason=reason)
+
+
+def commit_model_publication(receipt, results, *, verify_final):
+    """Atomically commit an experiment's completion and its typed manifest.
+
+    The caller must already have verified all files and supply a bounded final
+    identity recheck. This function does not serialize or deserialize models.
+    """
+    with connect() as con:
+        artifact_publication.begin_durable(con)
+        pid, config, digest = _model_publication_context(con, receipt.experiment_id)
+        receipt.verify_binding(pid, config, digest, results)
+        if receipt.state != "publishing" or model_publication.read(con, receipt.experiment_id) != receipt:
+            raise artifact_publication.PublicationError("Model publication receipt changed")
+        verify_final()
+        changed = con.execute(
+            "UPDATE experiments SET status='completed',results=?,error=NULL WHERE id=? AND status='running'",
+            (json.dumps(results), receipt.experiment_id))
+        if changed.rowcount != 1:
+            raise artifact_publication.PublicationError("Model completion transition conflict")
+        _append_progress(con, receipt.experiment_id, "completed", "Training and model artifacts saved.")
+        committed = model_publication.commit(con, receipt, results, config, digest)
+        verify_final()
+        return committed
 
 
 def finish_running_experiment(eid, status, *, results=None, error=None):

@@ -42,6 +42,8 @@ COUNTS: tuple[tuple[str, str, str, str], ...] = (
      "SELECT COUNT(*) FROM semantic_human_review_events WHERE project_id=?"),
     ("target_business_context", "Target business context", "target_business_context",
      "SELECT COUNT(*) FROM target_business_context WHERE project_id=?"),
+    ("model_publications_v1", "Model publication receipts", "model_publications_v1",
+     "SELECT COUNT(*) FROM model_publications_v1 WHERE project_id=?"),
     ("experiments", "Model experiments", "experiments",
      "SELECT COUNT(*) FROM experiments WHERE project_id=?"),
     ("experiment_progress_events", "Training progress events", "experiment_progress_events",

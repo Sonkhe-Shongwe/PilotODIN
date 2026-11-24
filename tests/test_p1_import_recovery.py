@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 
 import pytest
 
-from backend import artifact_publication, quality, storage
+from backend import artifact_publication, model_publication, quality, storage
 from backend.main import app
 
 
@@ -522,3 +522,116 @@ def test_publication_commit_requires_existing_expected_size_payload(monkeypatch,
     assert storage.list_projects() == []
     with storage.connect() as con:
         assert artifact_publication.read(con, receipt.operation_id) == receipt
+
+
+# B2 metadata-only regressions: no fitting or Joblib loading, inert byte digests.
+def _model_receipt_fixture(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    source = home / "datasets" / "source.csv"
+    source.write_bytes(_csv())
+    digest = hashlib.sha256(_csv()).hexdigest()
+    pid = storage.save_project("Source", "source.csv", ".csv", source, {}, original_sha256=digest)
+    config = {"task": "regression", "models": ["ridge", "linear_regression"], "quality_version": 0}
+    results = {"task": "regression", "models": [
+        {"key": "ridge", "status": "ready"},
+        {"key": "linear_regression", "status": "failed"},
+    ]}
+    eid = storage.new_experiment(pid, config, expected_quality_version=0)
+    assert storage.claim_queued_experiment(eid)
+    files = {name: {"size": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+             for name, raw in {"ridge.joblib": b"inert-pipeline", "test_set.joblib": b"inert-holdout"}.items()}
+    intent = storage.begin_model_publication(eid, config=config, source_sha256=digest)
+    return home, pid, eid, config, results, files, intent
+
+
+def test_model_receipt_binds_provenance_ready_keys_and_runtime(monkeypatch, tmp_path):
+    home, pid, eid, config, results, files, intent = _model_receipt_fixture(monkeypatch, tmp_path)
+    assert intent.project_id == pid
+    assert intent.state == "intent"
+    assert intent.runtime == model_publication.runtime_versions()
+    assert not list((home / "models").iterdir())
+    with storage.connect() as con:
+        assert model_publication.read(con, eid) == intent
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.stage_model_publication(intent, results, {"ridge.joblib": files["ridge.joblib"]})
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.stage_model_publication(intent, results, {**files, "linear_regression.joblib": files["ridge.joblib"]})
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.stage_model_publication(intent, results, {**files, "../escape.joblib": files["ridge.joblib"]})
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.stage_model_publication(intent, results, {**files, "ridge.joblib": {"size": model_publication.MAX_FILE_BYTES+1, "sha256": "a"*64}})
+    staged = storage.stage_model_publication(intent, results, files)
+    assert staged.files == files
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.stage_model_publication(intent, results, files)
+    with pytest.raises(artifact_publication.PublicationError):
+        staged.verify_binding(pid, {**config, "quality_version": 1}, intent.source_sha256, results)
+    with pytest.raises(artifact_publication.PublicationError):
+        staged.verify_binding(pid, config, "0"*64, results)
+    with pytest.raises(artifact_publication.PublicationError):
+        staged.verify_binding(pid, config, intent.source_sha256, results, runtime={**intent.runtime, "joblib": "0.0"})
+    assert not list((home / "models").iterdir())
+
+
+def test_model_manifest_commit_and_experiment_terminal_are_atomic(monkeypatch, tmp_path):
+    home, pid, eid, config, results, files, intent = _model_receipt_fixture(monkeypatch, tmp_path)
+    staged = storage.stage_model_publication(intent, results, files)
+    publishing = storage.advance_model_publication(staged, "publishing")
+    seen = []
+    def fail_final():
+        seen.append(True)
+        if len(seen) == 2:
+            raise OSError("Synthetic final verification failure")
+    with pytest.raises(OSError, match="Synthetic final verification failure"):
+        storage.commit_model_publication(publishing, results, verify_final=fail_final)
+    assert storage.get_experiment(eid)["status"] == "running"
+    with storage.connect() as con:
+        assert model_publication.read(con, eid) == publishing
+    committed = storage.commit_model_publication(publishing, results, verify_final=lambda: None)
+    assert committed.state == "committed"
+    assert storage.get_experiment(eid)["status"] == "completed"
+    with storage.connect() as con:
+        assert model_publication.read(con, eid) == committed
+    with pytest.raises(artifact_publication.PublicationError):
+        storage.advance_model_publication(committed, "interrupted", reason="unknown_commit")
+    from backend import project_delete_impact
+    inventory = project_delete_impact.impact(pid, 0)
+    assert {row["key"]: row["count"] for row in inventory["records"]}["model_publications_v1"] == 1
+    assert inventory["deletion_available"] is False
+
+
+@pytest.mark.parametrize("boundary", ["cancel", "version", "archive"])
+def test_model_completion_refuses_cancelled_stale_or_archived_run(monkeypatch, tmp_path, boundary):
+    home, pid, eid, config, results, files, intent = _model_receipt_fixture(monkeypatch, tmp_path)
+    staged = storage.stage_model_publication(intent, results, files)
+    publishing = storage.advance_model_publication(staged, "publishing")
+    if boundary == "cancel":
+        storage.request_training_cancel(eid)
+        error = storage.TrainingInterrupted
+    elif boundary == "version":
+        with storage.connect() as con:
+            con.execute("UPDATE quality_state SET current_version=1 WHERE project_id=?", (pid,))
+        error = storage.TrainingVersionConflict
+    else:
+        from backend.project_lifecycle import ProjectLifecycleError
+        with storage.connect() as con:
+            con.execute("INSERT INTO project_lifecycle VALUES (?,?,?)", (pid, 1, storage.now()))
+        error = ProjectLifecycleError
+    with pytest.raises(error):
+        storage.commit_model_publication(publishing, results, verify_final=lambda: pytest.fail("Unexpected final verification"))
+    assert storage.get_experiment(eid)["status"] == "running"
+    with storage.connect() as con:
+        assert model_publication.read(con, eid) == publishing
+
+
+def test_legacy_model_metadata_is_not_retroactively_certified(monkeypatch, tmp_path):
+    home, pid, eid, config, results, files, intent = _model_receipt_fixture(monkeypatch, tmp_path)
+    legacy = storage.new_experiment(pid, config, expected_quality_version=0)
+    assert storage.claim_queued_experiment(legacy)
+    assert storage.finish_running_experiment(legacy, "completed", results=results)
+    storage.init()
+    assert storage.get_experiment(legacy)["results"] == results
+    with storage.connect() as con:
+        assert model_publication.read(con, legacy) is None
+        assert model_publication.read(con, eid) == intent
