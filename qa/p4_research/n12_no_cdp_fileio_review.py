@@ -5,9 +5,11 @@ real evidence. This reducer does not launch anything, change FileIO policies,
 weaken path-missing blockers, or certify mutation containment.
 """
 from collections import Counter
+import ntpath
 
 from qa.p4_native import n12_trace as trace
 from qa.p4_research import n12_app_journey as journey
+from qa.p4_research.n12_journey_diagnostics import WEBVIEW_LOCAL_FOLDERS
 
 
 ROLES = ("webview", "webview-network", "backend", "app", "helper",
@@ -118,14 +120,102 @@ def _path_candidate_summary(raw, gaps, loss):
     return result
 
 
+# Lexical families derived from capture-manifest roots only. No host filesystem
+# access, path strings, basenames, hashes or acceptance authority in the receipt.
+class DestinationFamilies:
+    def __init__(self, manifest):
+        observed = manifest.get("observed_roots", {})
+        self.roots = []
+        for label, key in (("immutable-input", None), ("protected-app-data", None),
+                           ("qa-webview-profile", "qa-webview"),
+                           ("qa-home", "qa-home"), ("qa-local-profile", "qa-local"),
+                           ("qa-roaming-profile", "qa-roaming")):
+            values = ([observed[k] for k in manifest.get("immutable_observed", ())] if label == "immutable-input"
+                      else list(manifest.get("protected_roots", {}).values()) if label == "protected-app-data"
+                      else [observed[key]] if key in observed else [])
+            self.roots.extend((label, trace.windows_path(value)) for value in values)
+        if "qa-local" in observed:
+            local = ntpath.dirname(trace.windows_path(observed["qa-local"]))
+            self.roots.append(("user-local-temp", ntpath.join(local, "temp")))
+            self.roots.extend((label, trace.windows_path(ntpath.join(local, directory)))
+                              for label, directory in WEBVIEW_LOCAL_FOLDERS)
+            self.roots.append(("other-user-local", local))
+        if "qa-roaming" in observed:
+            self.roots.append(("other-user-roaming", ntpath.dirname(
+                trace.windows_path(observed["qa-roaming"]))))
+        self.violations = Counter()
+        self.candidates = Counter()
+
+    def family(self, path):
+        return next((label for label, root in self.roots if trace.inside(path, root)), "other-path")
+
+    def violation(self, scope, role, operation, targets):
+        # One count per existing strict violation credit, even for a rename
+        # involving multiple targets. Preserve distinct families as one group.
+        operations = {"create", "overwrite", "write", "resize", "allocate", "rename",
+                      "delete", "metadata", "compression", "security"}
+        self.violations[scope, role if role in ROLES else "unattributed",
+                        operation if operation in operations else "other-operation",
+                        tuple(sorted({self.family(path) for path in targets}))] += 1
+
+    def candidate(self, scope, path):
+        if scope in _PATH_LABELS.values():
+            raise ValueError("unexpected candidate scope representation")
+        if _PATH_PREFIX + scope in _PATH_LABELS:
+            self.candidates[_PATH_LABELS[_PATH_PREFIX + scope], self.family(path)] += 1
+
+    def report(self, violations, path_summary, loss):
+        observed = sum(violations.values())
+        candidate_counts = path_summary["candidate_scope_counts"]
+        actual = Counter()
+        for (scope, _role, _op, _families), count in self.violations.items():
+            actual[scope] += count
+        # Reconcile against strict credit counts, including protected + outside
+        # credits on the same operation. A diagnostic mismatch is never a pass.
+        expected = Counter()
+        for key, count in violations.items():
+            expected[key.split(":", 1)[0]] += count
+        valid = actual == expected
+        candidate_actual = Counter()
+        for (scope, _family), count in self.candidates.items():
+            candidate_actual[scope] += count
+        candidate_valid = (not loss and path_summary["status"] == "BOUNDED_DIAGNOSTIC_ONLY"
+                           and all(candidate_actual[scope] == count
+                                   for scope, count in candidate_counts.items()))
+        return {
+            "strict_observation_status": "RECONCILED_REDUCER_CREDITS_ONLY" if valid
+                                         else "BLOCKED_INCONSISTENT_DIAGNOSTIC",
+            "strict_violation_credits": observed,
+            "strict_observed_families": [
+                {"scope": scope, "role": role, "operation": op,
+                 "destination_families": list(families), "count": count}
+                for (scope, role, op, families), count in sorted(self.violations.items())
+            ] if valid else [],
+            "lexical_candidate_status": "RECONCILED_CANDIDATES_ONLY" if candidate_valid
+                                        else "NOT_VERIFIED",
+            "lexical_candidate_families": [
+                {"scope": scope, "destination_family": family, "count": count}
+                for (scope, family), count in sorted(self.candidates.items())
+            ] if candidate_valid else [],
+            "capture_loss_or_completeness_unverified": True,
+            "physical_destination_verified": False,
+            "original_file_handle_verified": False,
+            "strict_path_credit_awarded": 0,
+        }
+
+
 def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_issues=0,
                   scoped_roles=None, snapshot_state="NOT_EVALUATED", app_identity="NOT_VERIFIED",
                   capture_loss="NOT_EVALUATED", child_handles="NOT_EVALUATED",
                   browser_profile="NOT_EVALUATED", restore_status="NOT_COLLECTED",
-                  calibration_status="NOT_COLLECTED", path_candidates=None):
+                  calibration_status="NOT_COLLECTED", path_candidates=None,
+                  destination_families=None):
     violations = Counter(violations or {})
     gaps = Counter(gaps or {})
     counts = Counter(counts or {})
+    path_summary = _path_candidate_summary(
+        path_candidates, gaps.get("webview-network:write:path-missing", 0),
+        capture_loss != "ZERO_REPORTED_NOT_FULL_COMPLETENESS")
     # Fixed labels only. Never serialize a raw process ID, GUID, path, event
     # payload, original user folder, thread, source data or arbitrary dict key.
     return {
@@ -143,9 +233,11 @@ def _fixed_report(*, blocker, violations=None, gaps=None, counts=None, source_is
         "missing_mutation_path_credits": sum(gaps.values()),
         "remaining_webview_network_write_path_gaps": gaps.get(
             "webview-network:write:path-missing", 0),
-        "passive_request_time_path_candidates": _path_candidate_summary(
-            path_candidates, gaps.get("webview-network:write:path-missing", 0),
-            capture_loss != "ZERO_REPORTED_NOT_FULL_COMPLETENESS"),
+        "passive_request_time_path_candidates": path_summary,
+        "destination_family_attribution": (
+            destination_families.report(violations, path_summary,
+                capture_loss != "ZERO_REPORTED_NOT_FULL_COMPLETENESS")
+            if destination_families is not None else {"status": "NOT_EVALUATED"}),
         "reducer_issue_count": source_issues,
         "scoped_role_count": scoped_roles,
         "protected_endpoints": snapshot_state,
@@ -204,11 +296,14 @@ def reduce(manifest, sysmon, events, app_witness, binary, *,
         # request-time name-epoch diagnostics enabled. NO credit callback:
         # no candidate may subtract a missing path or change the verdict.
         path_candidates = {}
+        destination_families = DestinationFamilies(manifest)
         file_counts, violations, calibration_files, gaps = trace.inspect_etw_files(
             manifest, events, start, end, processes, roles,
             protected, permitted, issues,
             webview_write_candidates=path_candidates,
-            webview_dominant_writes=True)
+            webview_dominant_writes=True,
+            observe_violation=destination_families.violation,
+            observe_webview_candidate=destination_families.candidate)
         full_role_count = sum(1 for role in roles.values()
                               if role in {"webview", "webview-network"})
         app_identity = (
@@ -356,7 +451,7 @@ def reduce(manifest, sysmon, events, app_witness, binary, *,
             snapshot_state=state, app_identity=app_identity, capture_loss=loss,
             child_handles=child_review, browser_profile=profile_review,
             restore_status=restore_status, calibration_status=calibration_status,
-            path_candidates=path_candidates,
+            path_candidates=path_candidates, destination_families=destination_families,
         )
     except (trace.EvidenceValidationError, KeyError, ValueError, TypeError, OSError,
             UnicodeError):

@@ -31,11 +31,15 @@ class NoCdpFileIOReviewTests(TestCase):
 
     def run_check(self, *, violation=None, gap=None, issues=None, role=True,
                   two_roles=False, calibrated=False, restore_verified=None,
-                  path_candidates=None):
+                  path_candidates=None, observed_violations=(), observed_candidates=()):
         def strict(*a, **kwargs):
             self.called.append((a, kwargs))
             if path_candidates is not None:
                 kwargs["webview_write_candidates"].update(path_candidates)
+            for row in observed_violations:
+                kwargs["observe_violation"](*row)
+            for row in observed_candidates:
+                kwargs["observe_webview_candidate"](*row)
             return (Counter({"webview:write": 5}), Counter(violation or {}),
                     set(), dict(gap or {}))
         from datetime import timedelta
@@ -98,8 +102,11 @@ class NoCdpFileIOReviewTests(TestCase):
         result = self.run_check()
         self.assertEqual(len(self.called), 1)
         args, kwargs = self.called[0]
-        self.assertEqual(kwargs, {
-            "webview_write_candidates": {}, "webview_dominant_writes": True})
+        self.assertEqual(set(kwargs), {
+            "webview_write_candidates", "webview_dominant_writes",
+            "observe_violation", "observe_webview_candidate"})
+        self.assertEqual(kwargs["webview_write_candidates"], {})
+        self.assertTrue(kwargs["webview_dominant_writes"])
         self.assertNotIn("webview_write_credit", kwargs)
         self.assertNotIn("credit_webview_path", kwargs)
         self.assertIn(r"c:\qa\source.csv", args[6])
@@ -199,6 +206,55 @@ class NoCdpFileIOReviewTests(TestCase):
         self.assertEqual(summary["eligible_unchecked"], 8)
         self.assertEqual(summary["strict_gaps_not_eligible"], 2)
         self.assertEqual(summary["strict_path_credit_awarded"], 0)
+
+    def test_destination_families_reconcile_separately_without_leaking_paths(self):
+        self.manifest["observed_roots"]["qa-local"] = r"C:\Users\private\AppData\Local\qa"
+        local = r"c:\users\private\appdata\local"
+        candidates = self.sample_candidates()
+        # Use the existing candidate fixture's own fixed scope counts.
+        sample = review._path_candidate_summary(candidates, candidates["eligible"] + 3, False)
+        self.assertEqual(sample["status"], "BOUNDED_DIAGNOSTIC_ONLY")
+        observed = [(f"candidate-{scope}", local + r"\temp\secret.tmp")
+                    for scope, count in sample["candidate_scope_counts"].items()
+                    for _ in range(count)]
+        result = self.run_check(
+            violation={"outside-scope:webview:rename": 1, "protected:other:write": 1},
+            gap={"webview-network:write:path-missing": candidates["eligible"] + 3},
+            path_candidates=candidates,
+            observed_violations=[
+                ("outside-scope", "webview", "rename",
+                 [local + r"\temp\a.tmp", local + r"\microsoft\edgewebview\secret.db"]),
+                ("protected", "other", "write", [r"c:\qa\source.csv"]),
+            ], observed_candidates=observed)
+        families = result["destination_family_attribution"]
+        self.assertEqual(families["strict_observation_status"], "RECONCILED_REDUCER_CREDITS_ONLY")
+        self.assertEqual(families["strict_violation_credits"], 2)
+        self.assertEqual(families["strict_observed_families"][0]["destination_families"],
+                         ["edge-webview", "user-local-temp"])
+        self.assertEqual(families["strict_observed_families"][1]["destination_families"],
+                         ["immutable-input"])
+        self.assertEqual(families["lexical_candidate_status"], "RECONCILED_CANDIDATES_ONLY")
+        self.assertEqual(sum(row["count"] for row in families["lexical_candidate_families"]),
+                         sum(sample["candidate_scope_counts"].values()))
+        self.assertEqual(result["observed_prohibited_operations"], 2)
+        self.assertEqual(result["missing_mutation_path_credits"], candidates["eligible"] + 3)
+        self.assertEqual(families["strict_path_credit_awarded"], 0)
+        self.assertFalse(families["physical_destination_verified"])
+        self.assertNotIn("secret", json.dumps(families))
+        self.assertNotIn("private", json.dumps(families))
+
+    def test_destination_families_reject_missing_observer_counts_and_loss(self):
+        result = self.run_check(violation={"outside-scope:webview:write": 1})
+        self.assertEqual(result["destination_family_attribution"]["strict_observation_status"],
+                         "BLOCKED_INCONSISTENT_DIAGNOSTIC")
+        self.assertEqual(result["observed_prohibited_operations"], 1)
+        self.manifest["etw"]["counters"]["events_lost"] = 1
+        result = self.run_check(
+            gap={"webview-network:write:path-missing": 10},
+            path_candidates=self.sample_candidates(),
+            observed_candidates=[("candidate-outside-scope", r"c:\private\test.tmp")])
+        self.assertEqual(result["destination_family_attribution"]["lexical_candidate_families"], [])
+        self.assertEqual(result["destination_family_attribution"]["lexical_candidate_status"], "NOT_VERIFIED")
 
     def test_prohibited_write_is_retained_and_not_reclassified(self):
         result = self.run_check(violation={"outside-scope:webview-network:write": 113})

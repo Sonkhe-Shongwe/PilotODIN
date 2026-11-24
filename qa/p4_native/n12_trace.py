@@ -875,7 +875,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                       calibration_diagnostics=None, disputed_exits=None, observe_lifetimes=None,
                       webview_write_candidates=None, webview_dominant_writes=False,
                       webview_write_credit=None, rundown_credit=None, background_rundown=None,
-                      observe_create=None):
+                      observe_create=None, observe_violation=None, observe_webview_candidate=None):
     if __package__:
         from .n12_etw_correlate import canonical_file_path, correlate_requests, number
     else:
@@ -976,6 +976,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                              if any(inside(target, root) for root in protected)]
         if protected_targets:
             violations[f"protected:{role}:{operation}"] += 1
+            if observe_violation is not None:
+                observe_violation("protected", role, operation, protected_targets)
             if details is not None and role in {"other", "unattributed"}:
                 label = identity if role == "other" and identity else "scoped-unattributed"
                 details[f"protected-writer:{label}:{operation}"] += 1
@@ -989,6 +991,8 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
                         if not any(inside(target, root) for root in permitted.get(role, ())))
         if outside:
             violations[f"outside-scope:{role}:{operation}"] += 1
+            if observe_violation is not None:
+                observe_violation("outside-scope", role, operation, outside)
             if record_outside_scope is not None:
                 record_outside_scope(role, operation, outside)
             if record_outside_writer is not None:
@@ -1067,7 +1071,7 @@ def inspect_etw_files(manifest, path, start, end, processes, roles, protected, p
             rundown_credit=rundown_credit,
             background_rundown=background_rundown,
             background_write_window=(start_ticks, end_ticks) if background_rundown is not None else None,
-            observe_create=observe_create,
+            observe_create=observe_create, observe_webview_candidate=observe_webview_candidate,
         )
     if unresolved:
         issues.add("etw-mutation-coverage-unresolved")

@@ -94,7 +94,8 @@ class DominantWebViewWrites:
             self.requests[pair].append((request, completed, issue, credit_identity))
             self.retained += 1
 
-    def report(self, eligible, events, resolve_path, tracked, classify_path, credit_path=None):
+    def report(self, eligible, events, resolve_path, tracked, classify_path, credit_path=None,
+               *, observe_candidate=None):
         if self.pair_limit_reached:
             return {"status": "pair-limit-reached", "eligible": eligible, "pairs": [],
                     "eligible_outside_selected_pairs": None}
@@ -130,10 +131,17 @@ class DominantWebViewWrites:
                 if outcomes is smaller_outcomes:
                     smaller_credited += 1
 
+        def observe_indexed_path(request, completed, path):
+            if observe_candidate is not None:
+                observe_candidate(classify_path(path), path)
+            if credit_path is not None:
+                credit_verified_path(request, completed, path)
+
         summarize_calibration_path_gaps(
             events, gaps, resolve_path, tracked, {}, set(), None, classify_path=classify_path,
             record_request_outcome=count_outcome, index_request_paths=True,
-            record_indexed_path=credit_verified_path if credit_path is not None else None,
+            record_indexed_path=observe_indexed_path if (
+                credit_path is not None or observe_candidate is not None) else None,
         )
         def pair_summary(total, retained, outcomes):
             unchecked_by_reason = {"retention-limit": total - retained} if retained < total else {}
@@ -164,7 +172,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
                        calibration_diagnostics=None,
                        calibration_end=None, diagnostic_rundown_stop=None,
                        rundown_verification_start=None, rundown_credit=None, background_rundown=None,
-                       background_write_window=None, observe_create=None):
+                       background_write_window=None, observe_create=None, observe_webview_candidate=None):
     """Keep file paths and identities private until the report callback reduces them."""
     active = dict(initial_process_births or {})
     thread_owners = {}
@@ -870,6 +878,7 @@ def correlate_requests(events, resolve_path, classify_process, tracked, record, 
             webview_write_candidates["dominant"] = dominant_writes.report(
                 webview_gaps_seen, ordered_events, resolve_path, tracked, classify_webview_path,
                 credit_compared_path if credit_webview_path is not None else None,
+                observe_candidate=observe_webview_candidate,
             )
     if calibration_diagnostics is not None:
         credited_paths = Counter()
