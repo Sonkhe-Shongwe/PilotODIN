@@ -195,8 +195,8 @@ fn target_name(path: &Path, format: Format) -> bool {
     }
     let stem = name.split('.').next().unwrap_or("").trim_end_matches(' ').to_ascii_uppercase();
     if stem.is_empty() || matches!(stem.as_str(),"CON"|"PRN"|"AUX"|"NUL"|"CONIN$"|"CONOUT$")
-        || (stem.len()==4 && (stem.starts_with("COM")||stem.starts_with("LPT"))
-            && stem.as_bytes()[3].is_ascii_digit()) {
+        || ["COM","LPT"].iter().any(|prefix| stem.strip_prefix(*prefix)
+            .is_some_and(|suffix| matches!(suffix,"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"|"¹"|"²"|"³"))) {
         return false;
     }
     path.extension().and_then(|v|v.to_str()).is_some_and(|v|v.eq_ignore_ascii_case(format.extension()))
@@ -423,6 +423,12 @@ mod tests {
         assert!(validate(Format::Csv,"Generated_cleaned_v0.csv",0,bad.len(),
             &format!("{:x}",Sha256::digest(bad)),bad).is_err());
         assert!(workbook_directory(b"PK\x03\x04not a workbook").is_none());
+        // Windows treats superscript 1, 2 and 3 as device-name digits.
+        // Test the pure refusal predicate: never open a real device path.
+        for name in ["COM¹.csv","com².csv","LPT³.csv","COM1.csv","NUL.csv","CON .csv"] {
+            assert!(!target_name(Path::new(name),Format::Csv),"{name}");
+        }
+        assert!(target_name(Path::new("COM10.csv"),Format::Csv));
         let _=checked();
     }
     #[test]

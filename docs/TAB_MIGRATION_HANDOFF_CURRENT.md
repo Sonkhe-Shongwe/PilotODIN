@@ -30,6 +30,8 @@ Historical P2 browser failure at `39b8e5f` remains recorded in the [B4 audit](./
 
 ## 4. Immediate next work (in order)
 
+Consolidated source audit correction published in the same commit as this handoff (parent `f0c0196`, operation `B5-CLOSURE-AUDIT-20261124-source-hardening`). Resolve the new product SHA from Git history; do not treat preceding `b9a9181` CI as verification of the correction. Current source changes: freeze export selectors during transfer, reject Windows superscript device names, explicitly protect executable directory, serialize final publication admission and prevent normal shutdown with active Save As. First reconcile exact source CI; then validate the entire future disabled/armed workflow before any fresh approval.
+
 1. One-use B5 dispatch [#45439476190](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45439476190) FAILED before job creation; disarm [#45439603207](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45439603207) SKIPPED. Approval consumed. Corrected activation convention (colon-free marker and exact YAML parser validation) recorded; review source and prepare a fresh scoped proposal before asking for any new approval. No replay.
 2. Seven native library tests remain unexecuted; actual WebView IPC/dialog and physical destination persistence separately unverified. B5 closure needs its defined evidence; C does not start until B5 source closure. G2 proof-method decision remains deferred.
 

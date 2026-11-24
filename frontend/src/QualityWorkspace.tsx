@@ -306,23 +306,23 @@ export function QualityWorkspace({projectId,onChanged,initialFocus}:{projectId:s
       <div className="panel-title"><Download size={18}/><h2>Export cleaned dataset</h2><span className="pill muted">Original preserved</span></div>
       <p className="muted-caption">Download an approved current or historical version. Optional text filtering affects the export only; it never changes your project.</p>
       <div className="quality-toolbar" style={{display:'flex',flexWrap:'wrap',gap:10,alignItems:'center'}}>
-        <label>Version <select value={exportVersion} onChange={e=>setExportVersion(Number(e.target.value))}>
+        <label>Version <select disabled={exporting} value={exportVersion} onChange={e=>setExportVersion(Number(e.target.value))}>
           {history?.versions.map(v=><option key={v.version} value={v.version}>v{v.version} · {v.event}</option>)}
         </select></label>
-        <label>Format <select value={exportFormat} onChange={e=>setExportFormat(e.target.value as 'csv'|'xlsx')}>
+        <label>Format <select disabled={exporting} value={exportFormat} onChange={e=>setExportFormat(e.target.value as 'csv'|'xlsx')}>
           <option value="csv">CSV</option><option value="xlsx">Excel XLSX</option>
         </select></label>
-        <label>Optional text filter <select value={exportFilterColumn} onChange={e=>setExportFilterColumn(e.target.value)}>
+        <label>Optional text filter <select disabled={exporting} value={exportFilterColumn} onChange={e=>setExportFilterColumn(e.target.value)}>
           <option value="">All rows</option>{Object.keys(verifiedPreview?.rows[0]?.working??{}).map(c=><option key={c} value={c}>{c}</option>)}
         </select></label>
-        {exportFilterColumn&&<input aria-label="Filter contains" placeholder="Contains…" value={exportFilterValue} onChange={e=>setExportFilterValue(e.target.value)} />}
+        {exportFilterColumn&&<input disabled={exporting} aria-label="Filter contains" placeholder="Contains…" value={exportFilterValue} onChange={e=>setExportFilterValue(e.target.value)} />}
         <button className="btn primary" disabled={!quality||exporting||busy} onClick={()=>void exportCleanedData()}><FileSpreadsheet size={15}/>{exporting?'Exporting…':'Export dataset'}</button>
       </div>
       <details style={{marginTop:8}}><summary>Choose specific columns (optional)</summary>
         <p className="muted-caption">If none are selected, every column will be exported.</p>
         <div style={{display:'flex',flexWrap:'wrap',gap:12,marginTop:8}}>
           {Object.keys(verifiedPreview?.rows[0]?.working??{}).map(column=><label key={column} style={{display:'flex',gap:5,alignItems:'center'}}>
-            <input type="checkbox" checked={exportColumns.includes(column)} onChange={e=>setExportColumns(cols=>e.target.checked?[...cols,column]:cols.filter(c=>c!==column))}/>{column}
+            <input type="checkbox" disabled={exporting} checked={exportColumns.includes(column)} onChange={e=>setExportColumns(cols=>e.target.checked?[...cols,column]:cols.filter(c=>c!==column))}/>{column}
           </label>)}
         </div>
       </details>

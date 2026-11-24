@@ -131,3 +131,21 @@ test('native dataset consent gates precede publication and do not broaden capabi
   assert.deepEqual(caps.permissions,['core:default']);
   assert.match(host,/save_report_as, save_dataset_as,/);
 });
+
+test('B5 export selection stays fixed during transfer and normal close waits for active save',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'../src/QualityWorkspace.tsx'),'utf8');
+  const host=fs.readFileSync(path.join(__dirname,'../src-tauri/src/lib.rs'),'utf8');
+  for(const name of ['exportVersion','exportFormat','exportFilterColumn'])assert.ok(ui.includes('<select disabled={exporting} value={'+name+'}'),name);
+  assert.ok(ui.includes('<input disabled={exporting} aria-label="Filter contains"'));
+  assert.ok(ui.includes('type="checkbox" disabled={exporting} checked={exportColumns.includes(column)}'));
+  const stop=host.slice(host.indexOf('fn stop_owned_workers('),host.indexOf('async fn launch_backend('));
+  assert.ok(stop.indexOf('state.stopping.store(true')<stop.indexOf('state.dataset_save_busy.load'));
+  assert.ok(stop.indexOf('state.dataset_save_busy.load')<stop.indexOf('state.launch_gate.try_lock'));
+  const roots=host.slice(host.indexOf('fn dataset_destination_roots('),host.indexOf('async fn save_dataset_as('));
+  assert.ok(roots.includes('std::env::current_exe()'));
+  assert.ok(roots.includes('protected.push(executable_parent)'));
+  const save=host.slice(host.indexOf('async fn save_dataset_as('),host.indexOf('async fn save_report_as('));
+  assert.ok(save.indexOf('blocking_save_file')<save.indexOf('state.launch_gate.lock()'));
+  assert.ok(save.indexOf('state.launch_gate.lock()')<save.lastIndexOf('current_dataset_export_key(&app)?'));
+  assert.ok(save.lastIndexOf('current_dataset_export_key(&app)?')<save.indexOf('dataset_file::publish_new'));
+});

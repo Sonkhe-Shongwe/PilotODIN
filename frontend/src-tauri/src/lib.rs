@@ -392,6 +392,12 @@ fn wait_for_worker(exit: &AtomicU8, timeout: Duration) -> u8 {
 fn stop_owned_workers(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<DesktopState>();
     state.stopping.store(true, Ordering::Release);
+    // Do not certify graceful exit while a consented dataset save is active.
+    // Setting stopping first blocks its final admission if still in the dialog.
+    // A publication already admitted must finish before retrying close.
+    if state.dataset_save_busy.load(Ordering::Acquire) {
+        return Err("Dataset Save As is still active; finish or cancel it, then retry close".into());
+    }
     let deadline = Instant::now() + Duration::from_secs(5);
     let _launch = loop {
         match state.launch_gate.try_lock() {
@@ -740,6 +746,12 @@ fn dataset_destination_roots(app:&AppHandle)->Result<(Vec<PathBuf>,Vec<PathBuf>)
     }
     if allowed.is_empty() {return Err("No standard local Documents, Downloads or Desktop directory is available".into());}
     let mut protected=Vec::new();
+    // Explicitly protect the running executable directory as well as resources.
+    // The resource resolver is not a substitute for the executable location.
+    let executable=std::env::current_exe().map_err(|_|"Executable location unavailable")?;
+    let executable_parent=executable.parent().ok_or("Executable directory unavailable")?.to_path_buf();
+    storage_boundary::validate_existing_directory(&executable_parent)?;
+    protected.push(executable_parent);
     // Protect app-data bases, config overrides, cache/logs and packaged
     // resources. An absent protected root protects its existing parent;
     // admission never creates a directory.
@@ -810,6 +822,11 @@ async fn save_dataset_as(window:tauri::WebviewWindow, request:Request<'_>)
         if allowed_now!=allowed || protected_now!=protected {
             return Err("Dataset destination roots changed; export again".into());
         }
+        // Serialize final admission with owned worker launch/normal shutdown.
+        // Never hold the gate across the interactive dialog. An emergency
+        // process exit is still not a verified graceful drain.
+        let state=app.state::<DesktopState>();
+        let _publication=state.launch_gate.lock().map_err(|_|"Desktop publication unavailable")?;
         if current_dataset_export_key(&app)?!=key {return Err("Analytical engine changed; export again".into());}
         dataset_file::publish_new(&path,&payload,uuid::Uuid::new_v4().as_u128(),
             &allowed_now,&protected_now)?;
