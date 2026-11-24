@@ -10,6 +10,8 @@ on:
       - backend/main.py
       - backend/resource_admission.py
       - backend/resource_routes.py
+      - backend/resource_http.py
+      - tests/test_c1_resource_http.py
       - tests/test_c1_resource_admission.py
       - backend/quality.py
       - backend/requirements.txt
@@ -62,4 +64,4 @@ jobs:
           tests/test_p1_real_api_failed_switch.py
 
       - name: Exercise C1 pure coordinator and exact route inventory
-        run: python -m pytest -q tests/test_c1_resource_admission.py
+        run: python -m pytest -q tests/test_c1_resource_admission.py tests/test_c1_resource_http.py
