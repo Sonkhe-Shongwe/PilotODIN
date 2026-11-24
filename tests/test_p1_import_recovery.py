@@ -1215,3 +1215,55 @@ def test_b3_interrupted_restore_retains_uncompleted_stage(monkeypatch, tmp_path)
     assert (target / "pilotodin.sqlite3").read_bytes() == before
     assert not (target / "restore_receipt.json").exists()
     assert (stage / "pilotodin.sqlite3").read_bytes() == before
+
+
+@pytest.mark.parametrize("fault", ["disk_full", "permission", "interrupted"])
+def test_b3_restore_fault_retains_nonactivatable_stage(monkeypatch, tmp_path, fault):
+    import errno
+    from backend import maintenance_backup, workspace_boundary
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage = tmp_path / "backup"
+    maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    before = {p.relative_to(stage): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
+    target = tmp_path / "restored"
+    original = maintenance_backup._fingerprint
+    injected = []
+
+    def fail_copy(path, verify, checkpoint, **kwargs):
+        if path == stage / "datasets" / "source.csv" and kwargs.get("output") is not None:
+            assert (target / workspace_boundary.RESTORE_STAGE_NAME).is_file()
+            with pytest.raises(workspace_boundary.WorkspaceBoundaryError, match="activation approval"):
+                with workspace_boundary.engine_workspace(str(target)):
+                    pytest.fail("Restore stage admitted")
+            injected.append(fault)
+            kwargs["output"].write(b"partial")
+            code = {"disk_full": errno.ENOSPC, "permission": errno.EACCES,
+                    "interrupted": errno.EIO}[fault]
+            raise OSError(code, "Injected restore write failure")
+        return original(path, verify, checkpoint, **kwargs)
+
+    monkeypatch.setattr(maintenance_backup, "_fingerprint", fail_copy)
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="Restore unavailable"):
+        maintenance_backup.restore_staged_backup(stage, target, recorded_source_home=home, confirmed=True)
+    assert injected == [fault]
+    assert (target / "datasets" / "source.csv").read_bytes() == b"partial"
+    assert not (target / "restore_receipt.json").exists()
+    with pytest.raises(workspace_boundary.WorkspaceBoundaryError, match="activation approval"):
+        with workspace_boundary.engine_workspace(str(target)):
+            pytest.fail("Interrupted restore stage admitted")
+    assert before == {p.relative_to(stage): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
+
+
+def test_b3_completed_restore_still_requires_separate_activation(monkeypatch, tmp_path):
+    from backend import maintenance_backup, workspace_boundary
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage, target = tmp_path / "backup", tmp_path / "restored"
+    maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    outcome = maintenance_backup.restore_staged_backup(stage, target, recorded_source_home=home, confirmed=True)
+    assert outcome["status"] == "staged_not_activated"
+    assert (target / workspace_boundary.RESTORE_STAGE_NAME).is_file()
+    before = (target / "pilotodin.sqlite3").read_bytes()
+    with pytest.raises(workspace_boundary.WorkspaceBoundaryError, match="activation approval"):
+        with workspace_boundary.engine_workspace(str(target)):
+            pytest.fail("Completed restore stage admitted")
+    assert (target / "pilotodin.sqlite3").read_bytes() == before

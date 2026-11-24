@@ -45,6 +45,18 @@ class WorkspaceBoundaryTests(unittest.TestCase):
         with engine_workspace(str(self.home)):
             pass
 
+    def test_restore_marker_blocks_normal_and_unleased_admission(self):
+        from backend.workspace_boundary import RESTORE_STAGE_NAME, storage_home
+        self.home.mkdir()
+        (self.home / RESTORE_STAGE_NAME).write_bytes(b"")
+        with self.assertRaisesRegex(WorkspaceBoundaryError, "activation approval"):
+            with engine_workspace(str(self.home)):
+                self.fail("Restore stage admitted")
+        with self.assertRaisesRegex(WorkspaceBoundaryError, "activation approval"):
+            storage_home(str(self.home))
+        self.assertFalse((self.home / LOCK_NAME).exists())
+        self.assertFalse((self.home / "pilotodin.sqlite3").exists())
+
     def test_independent_workspaces_can_run(self):
         with engine_workspace(str(self.home)):
             with engine_workspace(str(self.root / "other")):

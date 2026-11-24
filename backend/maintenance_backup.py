@@ -22,6 +22,7 @@ try:
     from .workspace_boundary import (
         existing_fixture_home, existing_fixture_file,
         existing_maintenance_workspace, pinned_existing_directory,
+        fresh_restore_stage, LOCK_NAME, RESTORE_STAGE_NAME,
         WorkspaceBoundaryError,
     )
 except ImportError:
@@ -30,6 +31,7 @@ except ImportError:
     from workspace_boundary import (
         existing_fixture_home, existing_fixture_file,
         existing_maintenance_workspace, pinned_existing_directory,
+        fresh_restore_stage, LOCK_NAME, RESTORE_STAGE_NAME,
         WorkspaceBoundaryError,
     )
 
@@ -467,9 +469,9 @@ def _parse_manifest(raw):
     return manifest, entries
 
 
-def _exact_stage_tree(root, keys, verify, checkpoint):
+def _exact_stage_tree(root, keys, verify, checkpoint, *, root_names=("manifest.json",)):
     """Check just the bounded expected tree; never descend into unknown entries."""
-    expected = {Path("."): {"manifest.json"}}
+    expected = {Path("."): set(root_names)}
     for key in keys:
         parts = key.split("/")
         for i, part in enumerate(parts):
@@ -727,7 +729,7 @@ def restore_staged_backup(backup: Path, destination: Path, *,
                 verify_backup()
                 verify_parent()
                 destination.mkdir(exist_ok=False)
-                with pinned_existing_directory(destination, expected=destination.lstat()) as verify_stage:
+                with fresh_restore_stage(str(destination), expected=destination.lstat()) as (_, verify_stage):
                     def verify():
                         checkpoint()
                         verify_backup()
@@ -742,36 +744,36 @@ def restore_staged_backup(backup: Path, destination: Path, *,
                     if _fingerprint(root / "manifest.json", verify, checkpoint,
                                     expected_size=manifest_hash.size) != manifest_hash:
                         raise SnapshotBlocked("Backup manifest changed during restore")
-                    # Shared maintenance lease protects the newly allocated
-                    # destination while the metadata transaction is performed.
-                    with existing_maintenance_workspace(str(destination)) as (_, verify_lease):
-                        def verify_owned():
-                            verify()
-                            verify_lease()
-                        if _fingerprint(destination / _DB, verify_owned, checkpoint,
-                                        expected_size=entries[_DB].size) != entries[_DB]:
-                            raise SnapshotBlocked("Restore database changed before mapping")
-                        mappings = _restore_references(destination, recorded, entries, verify_owned, checkpoint)
-                        for key, expected in entries.items():
-                            if key != _DB and _fingerprint(destination / key, verify_owned, checkpoint,
-                                                          expected_size=expected.size) != expected:
-                                raise SnapshotBlocked("Restored payload changed")
-                        final_db = _fingerprint(destination / _DB, verify_owned, checkpoint)
-                        receipt = {"schema_version": 1, "status": "staged_not_activated",
-                                   "source_manifest_sha256": manifest_hash.sha256,
-                                   "database": {"size": final_db.size, "sha256": final_db.sha256},
-                                   "mappings": mappings}
-                        raw_receipt = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode("ascii")
-                        if len(raw_receipt) > _MAX_MANIFEST_BYTES:
-                            raise SnapshotBlocked("Restore receipt limit exceeded")
-                        verify_owned()
-                        with (destination / "restore_receipt.json").open("xb") as output:
-                            if output.write(raw_receipt) != len(raw_receipt):
-                                raise SnapshotBlocked("Incomplete restore receipt")
-                            output.flush()
-                            os.fsync(output.fileno())
-                        verify_owned()
-                        return receipt
+                    # Destination ownership and nonactivation marker remain
+                    # held continuously from before the first payload write.
+                    if _fingerprint(destination / _DB, verify, checkpoint,
+                                    expected_size=entries[_DB].size) != entries[_DB]:
+                        raise SnapshotBlocked("Restore database changed before mapping")
+                    _exact_stage_tree(destination, entries, verify, checkpoint,
+                                      root_names=(LOCK_NAME, RESTORE_STAGE_NAME))
+                    mappings = _restore_references(destination, recorded, entries, verify, checkpoint)
+                    for key, expected in entries.items():
+                        if key != _DB and _fingerprint(destination / key, verify, checkpoint,
+                                                      expected_size=expected.size) != expected:
+                            raise SnapshotBlocked("Restored payload changed")
+                    _exact_stage_tree(destination, entries, verify, checkpoint,
+                                      root_names=(LOCK_NAME, RESTORE_STAGE_NAME))
+                    final_db = _fingerprint(destination / _DB, verify, checkpoint)
+                    receipt = {"schema_version": 1, "status": "staged_not_activated",
+                               "source_manifest_sha256": manifest_hash.sha256,
+                               "database": {"size": final_db.size, "sha256": final_db.sha256},
+                               "mappings": mappings}
+                    raw_receipt = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode("ascii")
+                    if len(raw_receipt) > _MAX_MANIFEST_BYTES:
+                        raise SnapshotBlocked("Restore receipt limit exceeded")
+                    verify()
+                    with (destination / "restore_receipt.json").open("xb") as output:
+                        if output.write(raw_receipt) != len(raw_receipt):
+                            raise SnapshotBlocked("Incomplete restore receipt")
+                        output.flush()
+                        os.fsync(output.fileno())
+                    verify()
+                    return receipt
     except SnapshotBlocked:
         raise
     except (OSError, sqlite3.Error, WorkspaceBoundaryError, artifact_publication.PublicationError,
