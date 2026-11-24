@@ -1,6 +1,6 @@
 # PilotODIN 1.0
 
-**CURRENT ENGINEERING FOCUS (24 November):** [Product-first directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package A specification](docs/PILOTODIN_PACKAGE_A_STORAGE_LIFECYCLE_IMPLEMENTATION_SPEC_2026-11-24.md) | [Migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). Backend writer lease and Rust pre-spawn storage policy source-tested; next pre-window/profile ownership and reproducible Cargo resolution. G2 BLOCKED, four-gate 1/4 (25%), P4 14/20, R02.5 0/5, N12 0/2. No native collector or installer.
+**CURRENT ENGINEERING FOCUS (24 November):** [Product-first directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package A specification](docs/PILOTODIN_PACKAGE_A_STORAGE_LIFECYCLE_IMPLEMENTATION_SPEC_2026-11-24.md) | [Migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). Backend lease, Rust storage guard and production startup/profile admission implemented in source; Cargo.lock published and verified. Remaining effective profile check, graceful shutdown and entrypoint ownership. G2 BLOCKED, four-gate 1/4 (25%), P4 14/20, R02.5 0/5, N12 0/2. No native collector or installer.
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
