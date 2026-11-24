@@ -132,6 +132,11 @@ class HostBroker:
         self._pending_reply = None
         self._release_after_reply = False
 
+    @property
+    def shutdown_ready(self):
+        return (self._stopping and not self._faulted and self._lease is None
+                and self._pending_reply is None)
+
     def transport_lost(self):
         self._faulted = True
         self._stopping = True
@@ -239,7 +244,7 @@ class HostBroker:
             raise
 
 
-def serve_owned(broker, read_chunk, write_reply, flush_reply):
+def serve_owned(broker, read_chunk, write_reply, flush_reply, *, on_shutdown=None):
     """Staged single-reader/writer pump over already owned binary streams.
 
     The caller provides read-at-most, write and flush functions. No descriptor
@@ -250,6 +255,15 @@ def serve_owned(broker, read_chunk, write_reply, flush_reply):
     """
     if not isinstance(broker, HostBroker):
         raise TypeError("Trusted resource broker required")
+    notified = False
+
+    def notify():
+        nonlocal notified
+        if not notified:
+            notified = True
+            if on_shutdown is not None:
+                on_shutdown()
+
     try:
         while True:
             chunk = read_chunk(MAX_FRAME)
@@ -261,8 +275,15 @@ def serve_owned(broker, read_chunk, write_reply, flush_reply):
                     raise _fault()
                 flush_reply()
                 broker.reply_written(reply)
+            if broker.shutdown_ready:
+                notify()
     except BaseException as exc:
         broker.transport_lost()
+        try:
+            notify()
+        except Exception:
+            # A faulty notification cannot clear ownership or mask the fault.
+            pass
         if isinstance(exc, Exception):
             raise _fault() from None
         raise
@@ -275,12 +296,59 @@ def _binary_descriptor(fd):
         msvcrt.setmode(fd, os.O_BINARY)
 
 
-def prepare_control_stdio(stdin, stdout, stderr, *, ops=None, binary_mode=None):
+class _ControlWriter:
+    """Exactly one private descriptor, no buffered stream or fdopen transfer."""
+    def __init__(self, ops, fd):
+        self._ops = ops
+        self._fd = fd
+
+    def write(self, payload):
+        if self._fd is None:
+            raise _fault()
+        return self._ops.write(self._fd, payload)
+
+    def flush(self):
+        if self._fd is None:
+            raise _fault()
+        # Raw os.write has no user-space buffer to flush.
+
+    def close(self):
+        fd = self._fd
+        if fd is not None:
+            self._fd = None  # never retry an ambiguous close
+            self._ops.close(fd)
+
+
+def _redirect_native_stdout(fd):
+    import os
+    if os.name != "nt":
+        return
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    get = kernel.GetStdHandle
+    get.argtypes = [wintypes.DWORD]
+    get.restype = wintypes.HANDLE
+    set_handle = kernel.SetStdHandle
+    set_handle.argtypes = [wintypes.DWORD, wintypes.HANDLE]
+    set_handle.restype = wintypes.BOOL
+    target = msvcrt.get_osfhandle(fd)
+    if target in (-1, 0):
+        raise _fault()
+    stdout_id = 0xfffffff5  # STD_OUTPUT_HANDLE ((DWORD)-11)
+    if not set_handle(stdout_id, target) or get(stdout_id) != target:
+        raise _fault()
+
+
+def prepare_control_stdio(stdin, stdout, stderr, *, ops=None, binary_mode=None,
+                          native_redirect=None):
     """Dormant pre-import desktop startup seam; never call on browser/dev paths.
 
     Retain a private, non-inheritable duplicate of owned stdout for POD1.
     Redirect the CRT stdout descriptor to stderr before analytical imports.
-    This does NOT establish Win32 GetStdHandle or bootloader log isolation.
+    Redirect the current Win32 standard stdout handle too. Cached native
+    handles and bootloader pre-entry output still require physical verification.
     The caller must fail startup on any exception, not fall back to legacy.
     No process-global descriptor operations run merely by importing this module.
     """
@@ -289,6 +357,8 @@ def prepare_control_stdio(stdin, stdout, stderr, *, ops=None, binary_mode=None):
         ops = os
     if binary_mode is None:
         binary_mode = _binary_descriptor
+    if native_redirect is None:
+        native_redirect = _redirect_native_stdout
     duplicate = None
     try:
         descriptors = (stdin.fileno(), stdout.fileno(), stderr.fileno())
@@ -304,10 +374,11 @@ def prepare_control_stdio(stdin, stdout, stderr, *, ops=None, binary_mode=None):
         # Redirect before any subsequent Python/CRT stdout writes. Do not
         # restore stdout on failure: this startup must terminate instead.
         ops.dup2(2, 1, inheritable=False)
+        native_redirect(1)
         binary_mode(0)
         binary_mode(duplicate)
-        writer = ops.fdopen(duplicate, "wb", buffering=0)
-        duplicate = None  # ownership transferred to the binary stream
+        writer = _ControlWriter(ops, duplicate)
+        duplicate = None  # sole descriptor owner now the raw writer
         return 0, writer
     except BaseException as exc:
         if duplicate is not None:
@@ -318,3 +389,62 @@ def prepare_control_stdio(stdin, stdout, stderr, *, ops=None, binary_mode=None):
         if isinstance(exc, Exception):
             raise _fault() from None
         raise
+
+
+class ControlBootstrap:
+    """Single-use, trusted startup ownership; not registered in desktop_runner."""
+    def __init__(self, generation, capability, descriptor, writer, ops):
+        self._generation = generation
+        self._capability = capability
+        self._descriptor = descriptor
+        self._writer = writer
+        self._ops = ops
+        self._used = False
+
+    def run(self, coordinator, on_shutdown):
+        if self._used:
+            raise _fault()
+        self._used = True
+        broker = HostBroker(coordinator, self._generation, self._capability)
+        self._capability = None
+        try:
+            serve_owned(broker, lambda cap: self._ops.read(self._descriptor, cap),
+                        self._writer.write, self._writer.flush, on_shutdown=on_shutdown)
+        finally:
+            try:
+                self._writer.close()
+            except Exception:
+                broker.transport_lost()
+                raise _fault() from None
+
+    def discard_unstarted(self):
+        if self._used:
+            raise _fault()
+        self._used = True
+        self._capability = None
+        try:
+            self._writer.close()
+        except Exception:
+            raise _fault() from None
+
+
+def prepare_owned_control(environ, stdin, stdout, stderr, *, ops=None,
+                          binary_mode=None, native_redirect=None):
+    """Explicit desktop-owned control configuration. No legacy/dev fallback.
+
+    Consume the control-only environment fields before analytical imports or
+    descendant launches. The caller must already own the desktop workspace and
+    must stop startup if this raises. Never expose this object to the browser.
+    """
+    import os
+    generation = environ.pop("PILOTODIN_CONTROL_GENERATION", None)
+    capability = environ.pop("PILOTODIN_CONTROL_CAPABILITY", None)
+    if (environ.get("PILOTODIN_DESKTOP_WATCH_STDIN") != "1"
+            or type(generation) is not str or not _HEX32.fullmatch(generation)
+            or type(capability) is not str or not _HEX64.fullmatch(capability)):
+        raise _fault()
+    ops = os if ops is None else ops
+    descriptor, writer = prepare_control_stdio(stdin, stdout, stderr, ops=ops,
+                                              binary_mode=binary_mode,
+                                              native_redirect=native_redirect)
+    return ControlBootstrap(generation, capability, descriptor, writer, ops)

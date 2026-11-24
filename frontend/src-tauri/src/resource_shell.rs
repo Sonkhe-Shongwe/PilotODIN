@@ -157,6 +157,84 @@ impl ShellChannel {
     }
 }
 
+/// Retains the exact receiver even after a failed handshake. The desktop
+/// owner must drive poll independently (including when no events arrive).
+/// No task may abandon or replace this driver on cancellation.
+pub(crate) struct ShellDriver {
+    channel: ShellChannel,
+    receiver: tauri::async_runtime::Receiver<CommandEvent>,
+    reply: Option<Reply>,
+    closed: bool,
+}
+
+impl ShellDriver {
+    pub(crate) fn new(channel: ShellChannel,
+                      receiver: tauri::async_runtime::Receiver<CommandEvent>) -> Self {
+        Self { channel, receiver, reply: None, closed: false }
+    }
+
+    pub(crate) fn begin(&mut self, command: Command, now: Instant) -> Result<(), &'static str> {
+        if self.reply.is_some() || self.closed { return Err(FAULT); }
+        self.channel.begin(command, now)
+    }
+
+    fn record(&mut self, result: Result<Option<Reply>, &'static str>) {
+        match result {
+            Ok(Some(reply)) if self.reply.is_none() && !self.channel.faulted() => {
+                self.reply = Some(reply);
+            },
+            Ok(None) => {},
+            _ => {
+                self.channel.transport.lost();
+                self.reply = None;
+            }
+        }
+    }
+
+    /// Bound work even under a stderr flood; never skip the writer/deadline
+    /// tick and never stop consuming the exact receiver merely on a fault.
+    pub(crate) fn poll(&mut self, now: Instant) -> Result<(), &'static str> {
+        let result = self.channel.tick(now);
+        self.record(result);
+        for _ in 0..32 {
+            match self.receiver.try_recv() {
+                Ok(event) => {
+                    let result = self.channel.event(event, Instant::now());
+                    self.record(result);
+                },
+                Err(_) => {
+                    if self.receiver.is_closed() && self.receiver.is_empty() {
+                        self.closed = true;
+                        self.channel.receiver_closed();
+                        self.reply = None;
+                    }
+                    break;
+                }
+            }
+        }
+        if self.channel.faulted() {
+            self.reply = None;
+            return Err(FAULT);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn take_reply(&mut self) -> Option<Reply> {
+        if self.channel.faulted() { return None; }
+        self.reply.take()
+    }
+
+    pub(crate) fn writer_pending(&self) -> bool { self.channel.writer_pending() }
+    pub(crate) fn receiver_closed(&self) -> bool { self.closed }
+    pub(crate) fn leader_terminated(&self) -> bool { self.channel.leader_terminated() }
+    pub(crate) fn has_grant(&self) -> bool { self.channel.has_grant() }
+
+    pub(crate) fn take_for_cleanup(&mut self) -> Option<CommandChild> {
+        self.reply = None;
+        self.channel.take_for_cleanup()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 238d6c39f65c404ec6cd6bef21e96363b00793ed |
 | Product baseline | 819670c758c2e6aca591ef581df0d69577b07c34 |
 | Scope | C1 dormant explicit control bootstrap, raw descriptor ownership, shutdown notification and bounded shell receiver driver. No desktop activation/native compilation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-host-bootstrap |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_shell.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45462108603 SUCCESS 166 regression + 2 subtests, 176 C1, 20 legacy autonomy. Next injected bootstrap/descriptor/shutdown tests; Rust driver staged only. |
-| Pending runs | None; #45462108603/job 138687192247 terminal SUCCESS, exact checkout/counts confirmed. |
+| Verification | Dormant explicit bootstrap, raw descriptor owner, shutdown notification and bounded Rust shell receiver driver published; eight additional Python cases, CI pending. Rust uncompiled/unregistered. |
+| Pending runs | Exact-source P1 CI pending discovery; reconcile before desktop composition. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish startup/receiver driver seams and reconcile Python CI before actual composition and grant/exit integration. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

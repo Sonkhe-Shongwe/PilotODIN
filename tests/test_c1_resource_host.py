@@ -305,7 +305,8 @@ class _FixtureDescriptors:
     def __init__(self, fail=None):
         self.calls = []
         self.fail = fail
-        self.writer = object()
+        self.chunks = []
+        self.replies = []
 
     def _record(self, name, *args):
         self.calls.append((name,*args))
@@ -329,9 +330,17 @@ class _FixtureDescriptors:
     def binary(self, fd):
         self._record("binary",fd)
 
-    def fdopen(self, fd, mode, *, buffering):
-        self._record("fdopen",fd,mode,buffering)
-        return self.writer
+    def native(self, fd):
+        self._record("native",fd)
+
+    def write(self, fd, payload):
+        self._record("write",fd,payload)
+        self.replies.append(payload)
+        return len(payload)
+
+    def read(self, fd, cap):
+        self._record("read",fd,cap)
+        return self.chunks.pop(0) if self.chunks else b""
 
     def close(self, fd):
         self._record("close",fd)
@@ -339,15 +348,22 @@ class _FixtureDescriptors:
 
 def _prepare_fixture(ops, fds=(0,1,2)):
     from backend.resource_host import prepare_control_stdio
-    return prepare_control_stdio(*map(_Descriptor,fds),ops=ops,binary_mode=ops.binary)
+    return prepare_control_stdio(*map(_Descriptor,fds),ops=ops,binary_mode=ops.binary,
+                                 native_redirect=ops.native)
 
 
 def test_control_stdio_isolates_only_owned_standard_descriptors():
     ops=_FixtureDescriptors()
-    assert _prepare_fixture(ops)==(0,ops.writer)
+    fd,writer=_prepare_fixture(ops)
+    assert fd==0
     assert ops.calls==[("dup",1),("set_inheritable",9,False),
-                       ("get_inheritable",9),("dup2",2,1,False),
-                       ("binary",0),("binary",9),("fdopen",9,"wb",0)]
+                       ("get_inheritable",9),("dup2",2,1,False),("native",1),
+                       ("binary",0),("binary",9)]
+    assert writer.write(b"POD1")==4
+    writer.flush()
+    writer.close()
+    writer.close()
+    assert ops.calls[-2:]==[("write",9,b"POD1"),("close",9)]
 
 
 @pytest.mark.parametrize("fds",[(0,4,2),(1,1,2),(0,True,2),(0,1,0)])
@@ -358,7 +374,7 @@ def test_control_stdio_refuses_unexpected_descriptors_before_mutation(fds):
     assert ops.calls==[]
 
 
-@pytest.mark.parametrize("stage",["set_inheritable","get_inheritable","inherited","dup2","binary","fdopen"])
+@pytest.mark.parametrize("stage",["set_inheritable","get_inheritable","inherited","dup2","binary","native"])
 def test_control_stdio_failure_closes_only_private_duplicate(stage):
     ops=_FixtureDescriptors(stage)
     with pytest.raises(ProtocolFault) as exc:
@@ -373,3 +389,97 @@ def test_control_stdio_failed_dup_never_closes_standard_descriptors():
     with pytest.raises(ProtocolFault):
         _prepare_fixture(ops)
     assert ops.calls==[("dup",1)]
+
+
+def _bootstrap(ops, env):
+    from backend.resource_host import prepare_owned_control
+    return prepare_owned_control(env,*map(_Descriptor,(0,1,2)),ops=ops,
+                                 binary_mode=ops.binary,native_redirect=ops.native)
+
+
+def _control_env():
+    return {"PILOTODIN_DESKTOP_WATCH_STDIN":"1",
+            "PILOTODIN_CONTROL_GENERATION":GEN,
+            "PILOTODIN_CONTROL_CAPABILITY":KEY}
+
+
+@pytest.mark.parametrize("missing",["PILOTODIN_CONTROL_GENERATION",
+                                    "PILOTODIN_CONTROL_CAPABILITY",
+                                    "PILOTODIN_DESKTOP_WATCH_STDIN"])
+def test_bootstrap_refuses_partial_environment_and_consumes_secrets(missing):
+    ops=_FixtureDescriptors()
+    env=_control_env()
+    del env[missing]
+    with pytest.raises(ProtocolFault):
+        _bootstrap(ops,env)
+    assert ops.calls==[]
+    assert "PILOTODIN_CONTROL_GENERATION" not in env
+    assert "PILOTODIN_CONTROL_CAPABILITY" not in env
+
+
+def test_bootstrap_discard_single_use_closes_only_private_writer():
+    ops=_FixtureDescriptors()
+    env=_control_env()
+    boot=_bootstrap(ops,env)
+    assert env=={"PILOTODIN_DESKTOP_WATCH_STDIN":"1"}
+    boot.discard_unstarted()
+    assert ops.calls[-1]==("close",9)
+    with pytest.raises(ProtocolFault):
+        boot.discard_unstarted()
+    with pytest.raises(ProtocolFault):
+        boot.run(setup()[0],lambda:pytest.fail("Reused bootstrap"))
+    assert ops.calls.count(("close",9))==1
+
+
+def test_bootstrap_runs_owned_stream_and_notifies_stop_once():
+    ops=_FixtureDescriptors()
+    ops.chunks=[frame(1,"STOP"),b""]
+    boot=_bootstrap(ops,_control_env())
+    c,_=setup()
+    notified=[]
+    with pytest.raises(ProtocolFault):
+        boot.run(c,lambda:notified.append(c.status()))
+    assert len(notified)==1 and notified[0]["stopping"]
+    assert ops.replies[0].endswith(b"ADMISSION_STOPPED\n")
+    assert ops.calls[-1]==("close",9)
+
+
+def test_stop_notification_waits_for_exact_release_reply():
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    gid=grant(b)
+    pending=iter([frame(2,"STOP"),frame(3,"RELEASE "+gid+" EXITED"),b""])
+    notifications=[]
+    replies=[]
+    def write(reply):
+        assert not notifications
+        replies.append(reply)
+        return len(reply)
+    def notify():
+        assert len(replies)==2 and not c.status()["active"]
+        notifications.append(True)
+    with pytest.raises(ProtocolFault):
+        serve_owned(b,lambda _:next(pending),write,lambda:None,on_shutdown=notify)
+    assert notifications==[True]
+
+
+def test_transport_fault_notifies_shutdown_without_releasing_grant():
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    grant(b)
+    notifications=[]
+    with pytest.raises(ProtocolFault):
+        serve_owned(b,lambda _:b"",lambda _:pytest.fail("write"),lambda:None,
+                    on_shutdown=lambda:notifications.append(c.status()))
+    assert len(notifications)==1 and notifications[0]["phase"]=="blocked"
+
+
+def test_control_writer_close_error_not_retried():
+    ops=_FixtureDescriptors("close")
+    _,writer=_prepare_fixture(ops)
+    with pytest.raises(OSError):
+        writer.close()
+    writer.close()
+    assert ops.calls.count(("close",9))==1
+    with pytest.raises(ProtocolFault):
+        writer.write(b"POD1")
