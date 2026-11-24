@@ -1057,3 +1057,74 @@ def test_b3_replaced_stage_parent_blocks_nested_creation(monkeypatch, tmp_path):
     assert not (stage / "manifest.json").exists()
     assert not (stage / "models" / experiment["id"]).exists()
     assert not list(unrelated.iterdir())
+
+def test_b3_independent_verification_without_original_workspace(monkeypatch, tmp_path):
+    from backend import maintenance_backup
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage = tmp_path / "backup"
+    manifest = maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    # Verification must rely on the explicit recorded location, not on
+    # opening the old location or matching arbitrary source basenames.
+    moved = tmp_path / "moved-source"
+    home.rename(moved)
+    before = {p.relative_to(stage): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
+    monkeypatch.setattr(model_artifacts.joblib, "load", lambda *a, **kw: pytest.fail("Unexpected deserialization"))
+    assert maintenance_backup.verify_staged_backup(stage, recorded_source_home=home) == manifest
+    assert not home.exists()
+    assert before == {p.relative_to(stage): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="outside the admitted source layout"):
+        maintenance_backup.verify_staged_backup(stage, recorded_source_home=moved)
+
+
+@pytest.mark.parametrize("failure,message", [
+    ("duplicate", "Duplicate backup manifest key"),
+    ("traversal", "Invalid relative backup payload name"),
+    ("extra", "Unexpected backup tree entry"),
+    ("missing", "Missing backup tree entry"),
+    ("digest", "Backup payload digest mismatch"),
+    ("forged_digest", "disagrees with database provenance"),
+    ("foreign_key", "foreign-key violations"),
+    ("hardlink", "unavailable or unsafe"),
+    ("case_collision", "Case-colliding backup payload names"),
+])
+def test_b3_independent_verification_rejects_tampering(monkeypatch, tmp_path, failure, message):
+    from backend import maintenance_backup
+    import json
+    import sqlite3
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage = tmp_path / "backup"
+    manifest = maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    path = stage / "manifest.json"
+    source = stage / "datasets" / "source.csv"
+    if failure == "duplicate":
+        path.write_text('{"schema_version":1,' + path.read_text()[1:])
+    elif failure == "traversal":
+        manifest["files"]["../escape.csv"] = manifest["files"]["datasets/source.csv"]
+        path.write_text(json.dumps(manifest))
+    elif failure == "extra":
+        (stage / "unknown").mkdir()
+    elif failure == "missing":
+        source.unlink()
+    elif failure in ("digest", "forged_digest"):
+        source.write_bytes(b"x" * len(_csv()))
+        if failure == "forged_digest":
+            manifest["files"]["datasets/source.csv"]["sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+            path.write_text(json.dumps(manifest))
+    elif failure == "foreign_key":
+        db = stage / "pilotodin.sqlite3"
+        with sqlite3.connect(db) as con:
+            con.execute("PRAGMA foreign_keys=OFF")
+            con.execute("UPDATE project_lifecycle SET project_id=?", ("f"*32,))
+        con.close()
+        manifest["files"]["pilotodin.sqlite3"] = {"size": db.stat().st_size, "sha256": hashlib.sha256(db.read_bytes()).hexdigest()}
+        path.write_text(json.dumps(manifest))
+    elif failure == "hardlink":
+        foreign = tmp_path / "foreign"
+        source.rename(foreign)
+        os.link(foreign, source)
+    elif failure == "case_collision":
+        manifest["files"]["datasets/SOURCE.csv"] = manifest["files"]["datasets/source.csv"]
+        path.write_text(json.dumps(manifest))
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match=message):
+        maintenance_backup.verify_staged_backup(stage, recorded_source_home=home)
+    assert (home / "datasets" / "source.csv").read_bytes() == _csv()

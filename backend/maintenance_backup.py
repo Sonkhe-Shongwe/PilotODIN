@@ -9,6 +9,7 @@ from __future__ import annotations
 from contextlib import closing
 from dataclasses import dataclass
 import hashlib
+import io
 import json
 import re
 import os
@@ -249,8 +250,11 @@ def _bounded_rows(con, sql, args=()):
     return rows
 
 
-def _inventory(con, source, verify, checkpoint):
+def _inventory(con, source, verify, checkpoint, *, recorded_source=None):
     """Derive exact paths from authoritative records, never from a tree scan."""
+    # During independent verification the recorded absolute location is a
+    # logical binding only: never resolve or open the original workspace.
+    recorded_source = source if recorded_source is None else recorded_source
     plan = {}
     projects = {}
     folded = set()
@@ -279,7 +283,7 @@ def _inventory(con, source, verify, checkpoint):
             if con.execute("SELECT 1 FROM quality_versions WHERE project_id=? AND version=?", (pid, v)).fetchone() is None:
                 raise SnapshotBlocked("Missing Quality history")
         path = Path(stored)
-        if (not path.is_absolute() or path.parent != source / "datasets"
+        if (not path.is_absolute() or path.parent != recorded_source / "datasets"
                 or not _DATASET_NAME.fullmatch(path.name)
                 or path.name.split(".")[0].upper() in _RESERVED
                 or suffix not in (".csv", ".xlsx") or path.suffix.lower() != suffix):
@@ -415,3 +419,151 @@ def _stage_payloads(source, destination, database_receipt, verify, checkpoint):
         raise SnapshotBlocked("Staged database changed")
     return {"schema_version": 1, "scope": "recorded_project_payloads",
             "files": records}
+
+
+def _unique_json(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise SnapshotBlocked("Duplicate backup manifest key")
+        result[key] = value
+    return result
+
+
+def _parse_manifest(raw):
+    manifest = json.loads(raw, object_pairs_hook=_unique_json)
+    if (not isinstance(manifest, dict) or set(manifest) != {"schema_version", "scope", "files"}
+            or type(manifest["schema_version"]) is not int or manifest["schema_version"] != 1
+            or manifest["scope"] != "recorded_project_payloads"
+            or not isinstance(manifest["files"], dict)
+            or not 1 <= len(manifest["files"]) <= _MAX_FILES + 1
+            or _DB not in manifest["files"]):
+        raise SnapshotBlocked("Invalid backup manifest schema")
+    folded = set()
+    entries = {}
+    for key, item in manifest["files"].items():
+        parts = key.split("/")
+        if key == _DB:
+            limit = None
+        elif (len(parts) == 2 and parts[0] == "datasets"
+              and _DATASET_NAME.fullmatch(parts[1])
+              and parts[1].split(".")[0].upper() not in _RESERVED):
+            limit = artifact_publication.MAX_DATASET_BYTES
+        elif (len(parts) == 3 and parts[0] == "models"
+              and _ID.fullmatch(parts[1])
+              and re.fullmatch(r"[a-z][a-z0-9_]{0,63}\.joblib", parts[2])):
+            limit = model_publication.MAX_FILE_BYTES
+        else:
+            raise SnapshotBlocked("Invalid relative backup payload name")
+        if key.casefold() in folded:
+            raise SnapshotBlocked("Case-colliding backup payload names")
+        folded.add(key.casefold())
+        if (not isinstance(item, dict) or set(item) != {"size", "sha256"}
+                or type(item["size"]) is not int or item["size"] < 1
+                or (limit is not None and item["size"] > limit)
+                or not isinstance(item["sha256"], str) or not _SHA.fullmatch(item["sha256"])):
+            raise SnapshotBlocked("Invalid backup payload metadata")
+        entries[key] = StagedDatabase(item["size"], item["sha256"])
+    return manifest, entries
+
+
+def _exact_stage_tree(root, keys, verify, checkpoint):
+    """Check just the bounded expected tree; never descend into unknown entries."""
+    expected = {Path("."): {"manifest.json"}}
+    for key in keys:
+        parts = key.split("/")
+        for i, part in enumerate(parts):
+            parent = Path(*parts[:i])
+            expected.setdefault(parent, set()).add(part)
+    for relative, names in expected.items():
+        checkpoint()
+        directory = root / relative
+        with pinned_existing_directory(directory) as verify_dir:
+            verify()
+            verify_dir()
+            observed = set()
+            with os.scandir(directory) as children:
+                for child in children:
+                    if child.name not in names:
+                        raise SnapshotBlocked("Unexpected backup tree entry")
+                    observed.add(child.name)
+            if observed != names:
+                raise SnapshotBlocked("Missing backup tree entry")
+            verify_dir()
+            verify()
+
+
+def verify_staged_backup(backup: Path, *, recorded_source_home: Path):
+    """Read-only, independent verification of a staged backup.
+
+    The explicit historical source root is interpreted using this platform's
+    path syntax, never accessed on disk. Cross-platform relocation is not yet
+    supported. A valid result proves internal consistency, not authenticity
+    against someone able to rewrite both database and manifest. No loading of
+    executable model bytes, source relink, writes or activation occurs.
+    """
+    deadline = time.monotonic() + 120.0
+
+    def checkpoint():
+        if time.monotonic() > deadline:
+            raise SnapshotBlocked("Backup verification time budget exceeded")
+
+    try:
+        recorded = Path(recorded_source_home)
+        if not recorded.is_absolute() or ".." in recorded.parts or len(recorded.parts) < 2:
+            raise SnapshotBlocked("Explicit historical source root required")
+        root = existing_fixture_home(str(backup))
+        with pinned_existing_directory(root) as verify_root:
+            def verify():
+                checkpoint()
+                verify_root()
+
+            manifest_path = root / "manifest.json"
+            info = existing_fixture_file(manifest_path)
+            if not 1 <= info.st_size <= _MAX_MANIFEST_BYTES:
+                raise SnapshotBlocked("Backup manifest size limit exceeded")
+            raw = io.BytesIO()
+            fingerprint = _fingerprint(manifest_path, verify, checkpoint,
+                                       output=raw, expected_size=info.st_size)
+            manifest, entries = _parse_manifest(raw.getvalue())
+            _exact_stage_tree(root, entries, verify, checkpoint)
+            # Check all bytes before interpreting the database. Reject WAL or
+            # rollback sidecars, rather than replaying any source state.
+            for key, expected in entries.items():
+                with pinned_existing_directory((root / key).parent) as verify_dir:
+                    def verify_file():
+                        verify()
+                        verify_dir()
+                    if _fingerprint(root / key, verify_file, checkpoint,
+                                    expected_size=expected.size) != expected:
+                        raise SnapshotBlocked("Backup payload digest mismatch")
+            if _source_files(root) != (root / _DB,):
+                raise SnapshotBlocked("Staged backup database is not standalone")
+            with closing(sqlite3.connect((root / _DB).as_uri() + "?mode=ro", uri=True, timeout=2)) as con:
+                con.execute("PRAGMA query_only=ON")
+                con.execute("PRAGMA trusted_schema=OFF")
+                con.set_progress_handler(lambda: int(time.monotonic() > deadline), 1000)
+                if con.execute("PRAGMA integrity_check").fetchone() != ("ok",):
+                    raise SnapshotBlocked("Backup database integrity check failed")
+                if con.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                    raise SnapshotBlocked("Backup database foreign-key violations")
+                plan = _inventory(con, root, verify, checkpoint, recorded_source=recorded)
+            expected_payloads = {key: item for key, (item, _) in plan.items()}
+            if expected_payloads != {key: item for key, item in entries.items() if key != _DB}:
+                raise SnapshotBlocked("Backup manifest disagrees with database provenance")
+            # Verify again after database interpretation. No trust in a prior
+            # read or in a manifest updated independently of the actual bytes.
+            for key, expected in entries.items():
+                if _fingerprint(root / key, verify, checkpoint, expected_size=expected.size) != expected:
+                    raise SnapshotBlocked("Backup payload changed during verification")
+            if _fingerprint(manifest_path, verify, checkpoint,
+                            expected_size=fingerprint.size) != fingerprint:
+                raise SnapshotBlocked("Backup manifest changed during verification")
+            _exact_stage_tree(root, entries, verify, checkpoint)
+            verify()
+            return manifest
+    except SnapshotBlocked:
+        raise
+    except (OSError, sqlite3.Error, WorkspaceBoundaryError, artifact_publication.PublicationError,
+            ValueError, TypeError, KeyError, RecursionError) as exc:
+        raise SnapshotBlocked("Backup verification unavailable or unsafe") from exc
