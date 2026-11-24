@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | cd4c9d19a4682e02226fc9e292ed39b32ebe0352 |
+| Observed starting HEAD | cca26c98456c183ad607107133b82f09437879a8 |
 | Product baseline | 4faf696e16bd9380d9407d2f3a3b95be6386d42c |
-| Scope | C1 staged autonomy atomic cancellation/terminal settlement, bounded context encoding and owned context history reads; preserve legacy behavior except cancellation CAS. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-fences |
-| Operation state | RECONCILED |
+| Scope | C1 dormant trusted autonomy start/resume, single pending/active worker ownership and exact thread join, transactional durable queue settlement; no live activation. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-launch |
+| Operation state | PREPARED |
 | Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Staged cancellation/terminal CAS and bounded context/history source with 11 new fixtures published; exact CI pending. No live registration. |
-| Pending runs | [P1 #45458364195](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45458364195), exact 4faf696e16bd9380d9407d2f3a3b95be6386d42c, IN_PROGRESS at last observation; reconcile exact job/logs. |
+| Verification | Prior #45458364195 SUCCESS: 166 regression + 2 subtests, 113 C1, 20 legacy autonomy. Next deterministic worker launch/exit, bounded pending, durable start/resume CAS and launch fault tests. |
+| Pending runs | None; #45458364195/job 138673835302 terminal SUCCESS, exact checkout and counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact cancellation/context CI; next trusted start/resume worker launch/exit identity and bounded pending intent, then owned host grant/exit bridge. Review residual full artifact materialization in tool path; no live registration or native/model run. |
+| Recovery action | Publish dormant start/resume boundary; reconcile exact CI before host bridge. No native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
