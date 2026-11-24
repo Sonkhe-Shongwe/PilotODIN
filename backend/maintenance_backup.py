@@ -22,7 +22,7 @@ try:
     from .workspace_boundary import (
         existing_fixture_home, existing_fixture_file,
         existing_maintenance_workspace, pinned_existing_directory,
-        fresh_restore_stage, LOCK_NAME, RESTORE_STAGE_NAME,
+        fresh_restore_stage, fresh_backup_stage, LOCK_NAME, RESTORE_STAGE_NAME, BACKUP_STAGE_NAME,
         WorkspaceBoundaryError,
     )
 except ImportError:
@@ -31,7 +31,7 @@ except ImportError:
     from workspace_boundary import (
         existing_fixture_home, existing_fixture_file,
         existing_maintenance_workspace, pinned_existing_directory,
-        fresh_restore_stage, LOCK_NAME, RESTORE_STAGE_NAME,
+        fresh_restore_stage, fresh_backup_stage, LOCK_NAME, RESTORE_STAGE_NAME, BACKUP_STAGE_NAME,
         WorkspaceBoundaryError,
     )
 
@@ -173,7 +173,7 @@ def _stage(home, destination, *, confirmed, include_payloads):
                 verify_parent()
                 destination.mkdir(exist_ok=False)
                 stage_id = destination.lstat()
-                with pinned_existing_directory(destination, expected=stage_id) as verify_stage:
+                with fresh_backup_stage(str(destination), expected=stage_id) as (_, verify_stage):
                     def verify():
                         checkpoint()
                         verify_source()
@@ -212,7 +212,7 @@ def _stage(home, destination, *, confirmed, include_payloads):
                         if not os.path.samestat(identity, os.fstat(stream.fileno())):
                             raise SnapshotBlocked("Staged database identity changed")
                         os.fsync(stream.fileno())
-                    if set(p.name for p in destination.iterdir()) != {_DB}:
+                    if set(p.name for p in destination.iterdir()) != {_DB, LOCK_NAME, BACKUP_STAGE_NAME}:
                         raise SnapshotBlocked("Unexpected staged database sidecars or files")
                     receipt = _fingerprint(db, verify, checkpoint)
                     manifest = None
@@ -224,6 +224,8 @@ def _stage(home, destination, *, confirmed, include_payloads):
                         raise SnapshotBlocked("Source database or WAL changed during snapshot")
                     verify()
                     if manifest is not None:
+                        _exact_stage_tree(destination, manifest["files"], verify, checkpoint,
+                                          root_names=(LOCK_NAME, BACKUP_STAGE_NAME))
                         # Last staged record, not a certification marker. A
                         # later restore must independently verify every byte.
                         raw = json.dumps(manifest, sort_keys=True, separators=(",", ":"),
@@ -235,6 +237,7 @@ def _stage(home, destination, *, confirmed, include_payloads):
                                 raise SnapshotBlocked("Incomplete backup manifest")
                             output.flush()
                             os.fsync(output.fileno())
+                        _exact_stage_tree(destination, manifest["files"], verify, checkpoint)
                         verify()
                         return manifest
                     return receipt
@@ -281,16 +284,19 @@ def _inventory(con, source, verify, checkpoint, *, recorded_source=None):
             raise SnapshotBlocked("Missing or invalid original provenance")
         if type(version) is not int or version < 0:
             raise SnapshotBlocked("Missing Quality version")
-        for v in {0, version}:
-            if con.execute("SELECT 1 FROM quality_versions WHERE project_id=? AND version=?", (pid, v)).fetchone() is None:
-                raise SnapshotBlocked("Missing Quality history")
+        original = con.execute("SELECT operations_json,event FROM quality_versions WHERE project_id=? AND version=0",
+                               (pid,)).fetchone()
+        if original != ("[]", "original"):
+            raise SnapshotBlocked("Invalid original Quality history")
+        if con.execute("SELECT 1 FROM quality_versions WHERE project_id=? AND version=?", (pid, version)).fetchone() is None:
+            raise SnapshotBlocked("Missing Quality history")
         path = Path(stored)
         if (not path.is_absolute() or path.parent != recorded_source / "datasets"
                 or not _DATASET_NAME.fullmatch(path.name)
                 or path.name.split(".")[0].upper() in _RESERVED
                 or suffix not in (".csv", ".xlsx") or path.suffix.lower() != suffix):
             raise SnapshotBlocked("Recorded dataset is outside the admitted source layout")
-        rows = con.execute("SELECT operation_id FROM artifact_publications_v1 WHERE subject_id=?", (pid,)).fetchall()
+        rows = con.execute("SELECT operation_id FROM artifact_publications_v1 WHERE subject_id=? LIMIT 2", (pid,)).fetchall()
         expected_size = None
         if rows:
             if len(rows) != 1:
@@ -469,7 +475,8 @@ def _parse_manifest(raw):
     return manifest, entries
 
 
-def _exact_stage_tree(root, keys, verify, checkpoint, *, root_names=("manifest.json",)):
+def _exact_stage_tree(root, keys, verify, checkpoint, *,
+                      root_names=("manifest.json", LOCK_NAME, BACKUP_STAGE_NAME)):
     """Check just the bounded expected tree; never descend into unknown entries."""
     expected = {Path("."): set(root_names)}
     for key in keys:
@@ -520,6 +527,14 @@ def verify_staged_backup(backup: Path, *, recorded_source_home: Path):
                 checkpoint()
                 verify_root()
 
+            # These are new destination coordination files, never included
+            # in the payload manifest. They must be real empty files.
+            coordination = {}
+            for name in (LOCK_NAME, BACKUP_STAGE_NAME):
+                info = existing_fixture_file(root / name)
+                if not info.st_ino or info.st_size != 0:
+                    raise SnapshotBlocked("Invalid backup coordination marker")
+                coordination[name] = info
             manifest_path = root / "manifest.json"
             info = existing_fixture_file(manifest_path)
             if not 1 <= info.st_size <= _MAX_MANIFEST_BYTES:
@@ -562,6 +577,9 @@ def verify_staged_backup(backup: Path, *, recorded_source_home: Path):
                             expected_size=fingerprint.size) != fingerprint:
                 raise SnapshotBlocked("Backup manifest changed during verification")
             _exact_stage_tree(root, entries, verify, checkpoint)
+            for name, identity in coordination.items():
+                if not _same(identity, existing_fixture_file(root / name)):
+                    raise SnapshotBlocked("Backup coordination marker changed")
             verify()
             return manifest
     except SnapshotBlocked:

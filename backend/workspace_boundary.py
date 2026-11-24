@@ -17,6 +17,7 @@ from threading import RLock
 
 LOCK_NAME = ".pilotodin-engine.lock"
 RESTORE_STAGE_NAME = ".pilotodin-restore-stage"
+BACKUP_STAGE_NAME = ".pilotodin-backup-stage"
 DIRECTORIES = ("datasets", "models", "backend-temp", "inference-temp", "export_tmp")
 FILES = ("pilotodin.sqlite3", "pilotodin.sqlite3-journal", "pilotodin.sqlite3-wal",
          "pilotodin.sqlite3-shm", "ai_settings.json", "ai_settings.tmp",
@@ -249,6 +250,14 @@ def _reject_restore_stage(home):
     raise WorkspaceBoundaryError("Restore stage requires separate activation approval")
 
 
+def _reject_backup_stage(home):
+    try:
+        (home / BACKUP_STAGE_NAME).lstat()
+    except FileNotFoundError:
+        return
+    raise WorkspaceBoundaryError("Backup stage is not an active workspace")
+
+
 @contextmanager
 def _workspace_lease(value, *, create=True):
     """Retain the descriptor and original workspace identity for runtime checks."""
@@ -258,6 +267,7 @@ def _workspace_lease(value, *, create=True):
             home = _home(value, create=create)
             root_identity = _directory(home)
             _reject_restore_stage(home)
+            _reject_backup_stage(home)
             _verify_entries(home)
             path = home / LOCK_NAME
             try:
@@ -279,6 +289,7 @@ def _workspace_lease(value, *, create=True):
             if not os.path.samestat(root_identity, _directory(home)):
                 raise WorkspaceBoundaryError("Workspace identity changed")
             _reject_restore_stage(home)
+            _reject_backup_stage(home)
             _verify_entries(home)
         except OSError as exc:
             raise WorkspaceBoundaryError("Workspace storage unavailable or unsafe") from exc
@@ -340,11 +351,24 @@ def pinned_existing_directory(value, *, expected=None, workspace_children=False)
 
 @contextmanager
 def fresh_restore_stage(value, *, expected):
-    """Own a new empty destination before writing any restored payload.
+    """Own an empty restore destination; retain its nonactivation marker."""
+    with _fresh_maintenance_stage(value, expected=expected, marker_name=RESTORE_STAGE_NAME) as stage:
+        yield stage
 
-    Retain a permanent nonactivation marker, even on failure or success.
-    Normal engine/maintenance leases refuse the marker. No activation or
-    marker-removal operation is supplied here.
+
+@contextmanager
+def fresh_backup_stage(value, *, expected):
+    """Own an empty backup destination; never admit it as a runtime workspace."""
+    with _fresh_maintenance_stage(value, expected=expected, marker_name=BACKUP_STAGE_NAME) as stage:
+        yield stage
+
+
+@contextmanager
+def _fresh_maintenance_stage(value, *, expected, marker_name):
+    """Use a new lease and marker, not a copy of the source lock file.
+
+    Keep the marker after success/failure. No activation or removal is
+    supplied here. The lock only excludes cooperating product writers.
     """
     canonical = existing_fixture_home(value)
     if not os.path.samestat(expected, _directory(canonical)):
@@ -356,7 +380,7 @@ def fresh_restore_stage(value, *, expected):
             verify_root()
             if {entry.name for entry in home.iterdir()} != {LOCK_NAME}:
                 raise WorkspaceBoundaryError("Restore destination is not empty")
-            marker = home / RESTORE_STAGE_NAME
+            marker = home / marker_name
             with marker.open("xb") as output:
                 identity = os.fstat(output.fileno())
                 os.fsync(output.fileno())
@@ -588,6 +612,7 @@ def storage_home(value):
             canonical = existing_fixture_home(value)
             _reject_unleased_runtime(canonical)
             _reject_restore_stage(canonical)
+            _reject_backup_stage(canonical)
             try:
                 (canonical / LOCK_NAME).lstat()
             except FileNotFoundError:

@@ -874,7 +874,8 @@ def test_b3_stage_database_snapshot_is_standalone_and_preserves_source(tmp_path,
         copied = target / "pilotodin.sqlite3"
         assert receipt.size == copied.stat().st_size
         assert receipt.sha256 == hashlib.sha256(copied.read_bytes()).hexdigest()
-        assert {p.name for p in target.iterdir()} == {"pilotodin.sqlite3"}
+        from backend.workspace_boundary import LOCK_NAME, BACKUP_STAGE_NAME
+        assert {p.name for p in target.iterdir()} == {"pilotodin.sqlite3", LOCK_NAME, BACKUP_STAGE_NAME}
         with sqlite3.connect(copied.as_uri() + "?mode=ro", uri=True) as restored:
             assert restored.execute("SELECT * FROM records").fetchall() == [(1, "0001")]
             assert restored.execute("PRAGMA journal_mode").fetchone() == ("delete",)
@@ -1267,3 +1268,76 @@ def test_b3_completed_restore_still_requires_separate_activation(monkeypatch, tm
         with workspace_boundary.engine_workspace(str(target)):
             pytest.fail("Completed restore stage admitted")
     assert (target / "pilotodin.sqlite3").read_bytes() == before
+
+
+def test_b3_backup_directory_refuses_runtime_and_excludes_coordination_from_manifest(monkeypatch, tmp_path):
+    from backend import maintenance_backup, workspace_boundary
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    target = tmp_path / "backup"
+    manifest = maintenance_backup.stage_workspace_backup(home, target, confirmed=True)
+    assert workspace_boundary.LOCK_NAME not in manifest["files"]
+    assert workspace_boundary.BACKUP_STAGE_NAME not in manifest["files"]
+    assert (target / workspace_boundary.BACKUP_STAGE_NAME).read_bytes() == b""
+    with pytest.raises(workspace_boundary.WorkspaceBoundaryError, match="not an active workspace"):
+        with workspace_boundary.engine_workspace(str(target)):
+            pytest.fail("Backup directory admitted")
+    assert maintenance_backup.verify_staged_backup(target, recorded_source_home=home) == manifest
+
+
+@pytest.mark.parametrize("fault", ["disk_full", "permission"])
+def test_b3_backup_copy_failure_retains_blocked_stage(monkeypatch, tmp_path, fault):
+    import errno
+    from backend import maintenance_backup, workspace_boundary
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    target = tmp_path / "backup"
+    before = (home / "pilotodin.sqlite3").read_bytes()
+    original = maintenance_backup._fingerprint
+    injected = []
+    def fail(path, verify, checkpoint, **kwargs):
+        if path == home / "datasets" / "source.csv" and kwargs.get("output") is not None:
+            assert (target / workspace_boundary.BACKUP_STAGE_NAME).is_file()
+            with pytest.raises(workspace_boundary.WorkspaceBoundaryError, match="not an active workspace"):
+                with workspace_boundary.engine_workspace(str(target)):
+                    pytest.fail("Backup directory admitted during copy")
+            injected.append(fault)
+            kwargs["output"].write(b"partial")
+            raise OSError(errno.ENOSPC if fault == "disk_full" else errno.EACCES, "Injected backup write failure")
+        return original(path, verify, checkpoint, **kwargs)
+    monkeypatch.setattr(maintenance_backup, "_fingerprint", fail)
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="snapshot unavailable"):
+        maintenance_backup.stage_workspace_backup(home, target, confirmed=True)
+    assert injected == [fault]
+    assert (target / "datasets" / "source.csv").read_bytes() == b"partial"
+    assert not (target / "manifest.json").exists()
+    with pytest.raises(workspace_boundary.WorkspaceBoundaryError, match="not an active workspace"):
+        with workspace_boundary.engine_workspace(str(target)):
+            pytest.fail("Incomplete backup directory admitted")
+    assert (home / "pilotodin.sqlite3").read_bytes() == before
+
+
+@pytest.mark.parametrize("fault", ["missing_marker", "nonempty_marker", "original_history"])
+def test_b3_backup_verifier_rejects_invalid_coordination_or_origin(monkeypatch, tmp_path, fault):
+    import json
+    import sqlite3
+    from backend import maintenance_backup, workspace_boundary
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    target = tmp_path / "backup"
+    manifest = maintenance_backup.stage_workspace_backup(home, target, confirmed=True)
+    marker = target / workspace_boundary.BACKUP_STAGE_NAME
+    if fault == "missing_marker":
+        marker.unlink()
+        message = "unavailable or unsafe"
+    elif fault == "nonempty_marker":
+        marker.write_bytes(b"invalid")
+        message = "Invalid backup coordination marker"
+    else:
+        db = target / "pilotodin.sqlite3"
+        with sqlite3.connect(db) as con:
+            con.execute("UPDATE quality_versions SET event='tampered' WHERE version=0")
+        con.close()
+        manifest["files"]["pilotodin.sqlite3"] = {"size": db.stat().st_size,
+                                                  "sha256": hashlib.sha256(db.read_bytes()).hexdigest()}
+        (target / "manifest.json").write_text(json.dumps(manifest))
+        message = "Invalid original Quality history"
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match=message):
+        maintenance_backup.verify_staged_backup(target, recorded_source_home=home)
