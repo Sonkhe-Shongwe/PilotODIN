@@ -7,20 +7,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | e17d9caef9044f5d90f14916233a7882dd5d2ea9 |
+| Observed starting HEAD | 8c7cc01d9920e598d5295fbf9b5b7c57bd3dad86 |
 | Product baseline | 2322c4aa72cd2aa541ea4d99992d7ee8dbaf2605 |
-| Scope | C1/C2 source-only host driver composed against actual ShellDriver and InferenceGroup; final acknowledgement/exit fence corrected. Registration remains inactive. |
-| Operation ID | C1-C2-INTEGRATION-20261124-supervisor-drive |
-| Operation state | RECONCILED |
-| Intended files | frontend/src-tauri/src/resource_supervisor.rs; frontend/src-tauri/src/resource_shell.rs; continuity docs |
-| Approval | Standing P4 source authority. No native build/run, grant activation, model/download, installer, owner data or OS operations authorized. |
-| Verification | Exact published source 2322c4aa72cd2aa541ea4d99992d7ee8dbaf2605, shell blob 895f197de6e915f0388cd71a6bbe20ab0d7234b3, supervisor blob ab1209083635ab279af6290115cf5348fa8dc3df. Five new Rust fixture definitions, not compiled/run; static scope and code inspection only. All 82 workflow definitions unchanged since 81de01d review; zero matching CI runs observed for product SHA. Prior metadata CI pertains only to 8ce7577. |
-| Pending runs | None observed. |
-| Unpublished work | Owner-local tree not inspected; no local state assumed. |
-| Recovery action | Actual lib.rs registration: construct a single retained Windows Supervisor from exact raw engine receiver and POD1 generation/capability, drive it independently on a timer, enforce one session/no legacy bypass, implement trusted factory returning StartupOutcome with exact pre-spawn refusal vs uncertain spawn and retained model/storage pins. Connect stop request/exit and preserve fault ownership. Wire desktop_runner explicit bootstrap before analytical imports and frontend backend-demand path together. Review cloud/consent compatibility and native binary save admission before activation; existing explicit cloud behavior must not silently regress. No partial activation. New native approval only after coherent source readiness. |
-| Resume after closure | C1/C2 verification, then C3–C5; D separately approved. |
+| Scope | Windows application composition, retained independent timer and trusted startup factory, exact generation gate and shutdown. Register source behind compile-time false activation gate; preserve legacy behavior until runner/frontend and remaining admission/consent compatibility are coherent. |
+| Operation ID | C1-C2-INTEGRATION-20261124-desktop-registration |
+| Operation state | PREPARED |
+| Intended files | frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_desktop.rs; continuity docs |
+| Approval | Standing P4 source authority; no native compile/run, partial grant activation, model/download, installer or owner-data/OS operations authorized. |
+| Verification | Prior product 2322c4a has zero CI runs. All 82 workflows unchanged from 81de01d reviewed set; lib.rs triggers only existing P4 routine synthetic/source and P2 export-source workflows, jobs reviewed (restricted Windows probe false). No workflow or approval marker edits. |
+| Pending runs | None before publication. |
+| Unpublished work | Owner-local tree not inspected. |
+| Recovery action | Publish actual guarded host composition, preserve pre-spawn vs uncertain factory distinction, retain timer/owner on fault, no legacy launch bypass. Reconcile routine CI; runner/frontend and resource save/cloud compatibility remain mandatory before activation. |
+| Resume after closure | C1/C2 verification then C3–C5; D separately approved. |
 
 ## Prior operation
 
