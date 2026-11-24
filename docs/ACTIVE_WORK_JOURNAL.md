@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 09e1685e2534704adfd6ccb5e668f533990a2c5c |
+| Observed starting HEAD | f2c46b75642e53c158b51544aa5c9b2da7bd82f0 |
 | Product baseline | ea524b2113e5d2aece9f434d383b5ca47f34baf2 |
-| Scope | C1 staged Python host control codec and grant state machine, autonomous worker entry shutdown fence. No actual pipe registration or native code execution. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-broker |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_host.py; backend/autonomy.py; tests/test_c1_resource_host.py; tests/test_c1_resource_autonomy.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
+| Scope | C1 single outstanding request and reply-write boundary, staged Python and matching standalone Rust wire codec; no live transport/native compile. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-wire |
+| Operation state | PREPARED |
+| Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Staged Python host codec/broker and worker-entry shutdown fence with 22 new host cases and one autonomy case published; exact CI pending. No live registration. |
-| Pending runs | [P1 #45459951336](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45459951336), exact ea524b2113e5d2aece9f434d383b5ca47f34baf2, IN_PROGRESS at last observation; reconcile exact job/logs. |
+| Verification | Prior #45459951336 SUCCESS: 166 regression + 2 subtests, 146 C1, 20 legacy autonomy. Next Python reply-boundary fault fixtures, standalone Rust unit tests staged only. |
+| Pending runs | None; #45459951336/job 138679486033 terminal SUCCESS, exact checkout and counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact host protocol CI; next enforce single outstanding wire request and reply delivery boundary, matching Rust codec/transport review and host generation/exit evidence. No live registration or native/model run. |
+| Recovery action | Publish staged wire contract, reconcile Python exact CI, then exact shell transport compatibility and native integration under standing scope. Rust compile/test requires fresh approval. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
