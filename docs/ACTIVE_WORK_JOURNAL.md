@@ -15,11 +15,11 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Operation ID | B5-NATIVE-SYNTHETIC-V2-20261124-ONE-USE |
 | Operation state | ISSUED |
 | Intended files | .github/workflows/p4-package-b5-native-synthetic-v2-once.yml; active journal, handoff, evidence ledger |
-| Approval | Fresh explicit owner approval received for ONE V2 run of 8e3cc9112073b9744ff18ffa3e4e549662504a97, seven exact tests, artifact 14937864793 and locked Cargo dependencies. No application launch, installer, owner data, real model/runtime downloads, executable upload or reruns. Consumed on dispatch; uncertain outcome treated as consumed. |
+| Approval | V2 fresh one-use approval consumed by exact dispatch e5f553f; no replay or reruns. V1 also consumed. |
 | Verification | Four exact product source CI PASS; [V2 source preflight #45441506809](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45441506809) PASS on QA 3609bf27f69c1469262b134af0ad249a9d1e16b3. Complete disabled and armed YAML, five PowerShell ASTs, Python AST, seven exact source names and pinned identities PASS. Windows job SKIPPED; native product uncompiled. |
-| Pending runs | Exact dispatch commit message B5-NATIVE-SYNTHETIC-V2-20261124-ONE-USE, parent b7f2dc80dfe6be87ed9dca60ddfdd525a9ad5974; resolve actual SHA and run ID, then disarm; approval consumed |
+| Pending runs | Exact dispatch e5f553f411c95ab4c4fc70b0ab44fde6289905fd; [run #45442066752](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45442066752) in_progress. This checkpoint restores exact validated disabled YAML; reconcile disarm run separately. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Verify live HEAD and exact validated armed SHA256 b9ac0b53b049fc9c9d6a28cbb24c783e08a8e10933dc1a33d8b52da553f2afb5; commit marker B5-NATIVE-SYNTHETIC-V2-20261124-ONE-USE. If dispatch issued or uncertain, never repeat; disarm and reconcile exact run. |
+| Recovery action | Verify disarm guard and exact dispatch run, review preflight then seven native test results and cleanup if reached. No rerun even if job fails or run ID unavailable. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation
@@ -28,4 +28,4 @@ CONT-RESILIENCE-20261124/preparation was published at [`89cb4b5`](https://github
 
 ## Unresolved or interrupted operations
 
-Dispatch 10f371b terminal FAILURE with zero jobs; disarm 2c50faa terminal SKIPPED. V1 failure remains closed. This commit is the one-use V2 dispatch; inspect actual branch and CI before any further action. No replay. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
+Dispatch 10f371b terminal FAILURE with zero jobs; disarm 2c50faa terminal SKIPPED. V1 remains closed; V2 dispatch published and consumed. This checkpoint disarms V2. Reconcile exact dispatch/disarm CI; do not repeat. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
