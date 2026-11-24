@@ -18,9 +18,9 @@ from typing import Any, Callable
 import pandas as pd
 
 try:
-    from . import ai_provider, bundled_inference, investigations, quality, resource_policy, storage
+    from . import ai_provider, bundled_inference, investigations, quality, resource_policy, storage, project_lifecycle
 except ImportError:
-    import ai_provider, bundled_inference, investigations, quality, resource_policy, storage
+    import ai_provider, bundled_inference, investigations, quality, resource_policy, storage, project_lifecycle
 
 MAX_STEPS = 8
 MAX_REASON = 240
@@ -52,9 +52,9 @@ _HEAVY_SLOT = threading.Semaphore(1)  # also prevents two ODIN runs fighting for
 Planner = Callable[[dict[str, Any]], dict[str, Any]]
 
 try:
-    from .resource_autonomy import AutonomyStages, ResourceDeferred, ContextLimit, MAX_EVIDENCE_BYTES
+    from .resource_autonomy import AutonomyStages, ResourceDeferred, ContextLimit, MAX_EVIDENCE_BYTES, LaunchRefused
 except ImportError:
-    from resource_autonomy import AutonomyStages, ResourceDeferred, ContextLimit, MAX_EVIDENCE_BYTES
+    from resource_autonomy import AutonomyStages, ResourceDeferred, ContextLimit, MAX_EVIDENCE_BYTES, LaunchRefused
 
 
 def init() -> None:
@@ -317,7 +317,7 @@ def _owned_finish_step(run_id, sid, state, outcome, reason):
         return True
 
 
-def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None):
+def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None, *, retain_thread=False):
     acquired=False
 
     def terminal(status, *, reason=None, error=None):
@@ -448,7 +448,8 @@ def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None)
             terminal('failed',error=('Unexpected investigation failure: '+type(exc).__name__)[:350])
     finally:
         if acquired:_HEAVY_SLOT.release()
-        with _LOCK:_ACTIVE.pop(run_id,None)
+        if not retain_thread:
+            with _LOCK:_ACTIVE.pop(run_id,None)
 
 
 def start(investigation_id: str, *, max_steps: int=5, planner: Planner|None=None) -> dict:
@@ -507,6 +508,248 @@ def cancel(investigation_id: str)->dict:
         _set(run['id'],'cancelled',reason='Cancelled by user',
              only=('queued','waiting_for_resources','running','interrupted'))
     return _row(run['id'])
+
+
+# Dormant C1 start/resume entrypoints. The future composition root must own
+# exactly one supervisor per backend session; it is not a request factory.
+_OWNED_RESUMABLE = ('interrupted','failed','needs_review')
+_OWNED_TERMINAL = frozenset((*_OWNED_RESUMABLE,'cancelled','stale',
+    'ready_for_review','needs_clarification','unsupported','needs_approval'))
+
+
+def _owned_identity(investigation_id):
+    if not isinstance(investigation_id,str) or not re.fullmatch(r'[a-f0-9]{32}',investigation_id):
+        raise LaunchRefused("Invalid investigation identity")
+
+
+def _owned_prepare(investigation_id, *, resume, max_steps=5):
+    """Synchronous DATA stage. All known refusals precede the write."""
+    _owned_identity(investigation_id)
+    if not resume and (type(max_steps) is not int or not 1 <= max_steps <= MAX_STEPS):
+        raise LaunchRefused("Invalid step budget")
+    with storage.connect() as con:
+        con.execute('BEGIN')
+        inv=con.execute("SELECT id,project_id,dataset_version,"
+                        "length(CAST(objective AS BLOB)) AS objective_bytes "
+                        "FROM investigations_v1 WHERE id=?",(investigation_id,)).fetchone()
+        if inv is None:
+            raise LaunchRefused("Investigation not found")
+        if inv['objective_bytes'] is None or inv['objective_bytes'] > MAX_EVIDENCE_BYTES:
+            raise LaunchRefused("Investigation objective exceeds context limit")
+        objective=con.execute("SELECT objective FROM investigations_v1 WHERE id=?",
+                              (investigation_id,)).fetchone()[0]
+    if _write_request(objective):
+        raise LaunchRefused("Data changes require explicit Quality approval")
+    if quality.current_version(inv['project_id']) != inv['dataset_version']:
+        raise LaunchRefused("Dataset version changed; create a new investigation")
+    ident=storage.uid()
+    now=storage.now()
+    with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        try:
+            project_lifecycle.require_active_for_write(con,inv['project_id'])
+        except project_lifecycle.ProjectLifecycleError as exc:
+            raise LaunchRefused(str(exc)) from exc
+        # Recheck immutable investigation identity and version under the writer
+        # transaction; no version check or queue claim is delegated to the UI.
+        current=con.execute("SELECT i.project_id,i.dataset_version,q.current_version "
+                            "FROM investigations_v1 i JOIN quality_state q ON q.project_id=i.project_id "
+                            "WHERE i.id=?",(investigation_id,)).fetchone()
+        if (current is None or current['project_id'] != inv['project_id']
+                or current['dataset_version'] != inv['dataset_version']
+                or current['current_version'] != inv['dataset_version']):
+            raise LaunchRefused("Dataset version changed before launch")
+        old=con.execute("SELECT id,status,dataset_version,project_id FROM odin_runs "
+                        "WHERE investigation_id=?",(investigation_id,)).fetchone()
+        if resume:
+            if (old is None or old['status'] not in _OWNED_RESUMABLE
+                    or old['dataset_version'] != inv['dataset_version']
+                    or old['project_id'] != inv['project_id']):
+                raise LaunchRefused("Only interrupted or review-required runs can resume")
+            ident=old['id']
+            changed=con.execute("UPDATE odin_runs SET status='queued',last_error=NULL,"
+                                "stop_reason=NULL,updated_at=? WHERE id=? AND status=?",
+                                (now,ident,old['status']))
+            if changed.rowcount != 1:
+                raise LaunchRefused("Run changed before resume")
+        else:
+            if old is not None:
+                raise LaunchRefused("Investigation already has an autonomous run")
+            con.execute('INSERT INTO odin_runs VALUES (?,?,?,?,?,?,?,?,?,?)',
+                        (ident,investigation_id,inv['project_id'],inv['dataset_version'],
+                         'queued',max_steps,None,None,now,now))
+    return ident
+
+
+def _settle_owned_exit(run_id, *, never_started=False):
+    """Only after a confirmed no-start or join; exact metadata CAS, no replay."""
+    with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        row=con.execute("SELECT status FROM odin_runs WHERE id=?",(run_id,)).fetchone()
+        if row is None:
+            return False
+        if row['status'] in _OWNED_TERMINAL:
+            return True
+        allowed=('queued',) if never_started else ('queued','waiting_for_resources','running')
+        if row['status'] not in allowed:
+            return False
+        changed=con.execute("UPDATE odin_runs SET status='interrupted',stop_reason=?,updated_at=? "
+                            "WHERE id=? AND status=?",
+                            ("Owned worker did not start" if never_started else
+                             "Owned worker exited without a terminal checkpoint",
+                             storage.now(),run_id,row['status']))
+        return changed.rowcount == 1
+
+
+def _no_legacy_planner(_):
+    raise RuntimeError("Owned autonomy cannot call the legacy planner")
+
+
+class OwnedAutonomy:
+    """Single pending or active intent, no unbounded waiting queue.
+
+    The control slot is not a resource lease. Each actual heavy stage still
+    requires the shared coordinator; the native planner seam remains separate.
+    The composition root must use one instance and prohibit legacy entrypoints
+    at unified activation. No instance is registered here.
+    """
+    def __init__(self, stages: AutonomyStages):
+        if not isinstance(stages,AutonomyStages):
+            raise TypeError("Trusted autonomy stages required")
+        self.stages=stages
+        self._guard=threading.Lock()
+        self._pending=False
+        self._thread=None
+        self._run_id=None
+        self._blocked=False
+        self._stopping=False
+
+    def status(self):
+        with self._guard:
+            return {"pending":self._pending,"active":self._thread is not None,
+                    "blocked":self._blocked,"stopping":self._stopping}
+
+    def _block(self):
+        with self._guard:
+            self._pending=False
+            self._blocked=True
+
+    def reap(self):
+        """Never release the slot merely because the durable run is terminal."""
+        with self._guard:
+            if self._blocked or self._pending:
+                return False
+            thread=self._thread
+            run_id=self._run_id
+            if thread is None:
+                return True
+            if thread.ident is None or thread.is_alive():
+                return False
+            self._pending=True
+        try:
+            thread.join(0)
+            if thread.is_alive() or not _settle_owned_exit(run_id):
+                self._block()
+                return False
+            with _LOCK:
+                if _ACTIVE.get(run_id) is not thread:
+                    self._block()
+                    return False
+                del _ACTIVE[run_id]
+        except BaseException:
+            self._block()
+            raise
+        with self._guard:
+            self._thread=None
+            self._run_id=None
+            self._pending=False
+        return True
+
+    def _submit(self, investigation_id, *, resume, max_steps=5):
+        self.reap()
+        with self._guard:
+            if self._stopping:
+                raise ResourceDeferred("shutting_down")
+            if self._blocked:
+                raise ResourceDeferred("autonomy_ownership_unknown")
+            if self._pending or self._thread is not None:
+                raise ResourceDeferred("autonomy_busy")
+            self._pending=True
+
+        def prepare():
+            try:
+                return _owned_prepare(investigation_id,resume=resume,max_steps=max_steps),None
+            except LaunchRefused as exc:
+                # Known pre-publication refusal: no escaping heavy callback.
+                return None,str(exc)
+
+        try:
+            run_id,refusal=self.stages.data(prepare)
+        except ResourceDeferred:
+            with self._guard:self._pending=False
+            raise
+        except BaseException:
+            # Ambiguous durable publication or cleanup; never auto-retry.
+            self._block()
+            raise
+        if refusal is not None:
+            with self._guard:self._pending=False
+            raise LaunchRefused(refusal)
+
+        with self._guard:
+            self._run_id=run_id
+            stopping=self._stopping
+        if stopping:
+            try:
+                settled=_settle_owned_exit(run_id,never_started=True)
+            except BaseException:
+                self._block()
+                raise
+            if not settled:
+                self._block()
+                raise ResourceDeferred("autonomy_ownership_unknown")
+            with self._guard:
+                self._run_id=None
+                self._pending=False
+            raise ResourceDeferred("shutting_down")
+        try:
+            thread=threading.Thread(target=_worker,
+                args=(run_id,_no_legacy_planner,self.stages),
+                kwargs={"retain_thread":True},name="odin-owned-investigation",daemon=False)
+            with self._guard:self._thread=thread
+            with _LOCK:
+                old=_ACTIVE.get(run_id)
+                if old is not None:
+                    raise RuntimeError("Run already has a worker identity")
+                _ACTIVE[run_id]=thread
+                thread.start()
+        except BaseException:
+            # Thread.start failure can have an ambiguous acknowledgement.
+            # Keep the exact record/identity and refuse subsequent launches.
+            self._block()
+            raise
+        with self._guard:self._pending=False
+        return _row(run_id)
+
+    def start(self, investigation_id, *, max_steps=5):
+        return self._submit(investigation_id,resume=False,max_steps=max_steps)
+
+    def resume(self, investigation_id):
+        return self._submit(investigation_id,resume=True)
+
+    def stop_admission(self):
+        with self._guard:self._stopping=True
+
+    def drain(self, timeout=0):
+        """Stop new launches; wait boundedly, never claim exit on timeout."""
+        self.stop_admission()
+        with self._guard:
+            if self._pending or self._blocked:
+                return False
+            thread=self._thread
+        if thread is not None:
+            thread.join(timeout)
+        return self.reap()
 
 
 init()

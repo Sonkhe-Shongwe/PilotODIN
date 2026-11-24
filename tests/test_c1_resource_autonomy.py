@@ -280,3 +280,213 @@ def test_terminal_step_rollback_is_atomic(fixture):
     with storage.connect() as con:
         assert con.execute("SELECT status FROM odin_runs WHERE id=?",(eid,)).fetchone()[0]=="running"
         assert con.execute("SELECT status FROM odin_run_steps WHERE id=?",(sid,)).fetchone()[0]=="proposed"
+
+
+def _owned_fixture(fixture, planner):
+    return autonomy.OwnedAutonomy(AutonomyStages(coordinator(),planner))
+
+
+def _delete_seeded_run(eid):
+    with storage.connect() as con:
+        con.execute("DELETE FROM odin_runs WHERE id=?",(eid,))
+
+
+def _join_owned(owner):
+    thread=owner._thread
+    assert thread is not None
+    thread.join(10)
+    assert not thread.is_alive()
+    assert owner.reap()
+
+
+def test_owned_start_and_exact_thread_reap(fixture):
+    _,inv,eid=fixture
+    _delete_seeded_run(eid)
+    owner=_owned_fixture(fixture,lambda payload:proposal("suggest_finish"))
+    try:
+        state=owner.start(inv,max_steps=2)
+        assert state["id"]!=eid
+        thread=owner._thread
+        assert thread is not None and not thread.daemon
+        thread.join(10)
+        assert not thread.is_alive()
+        assert autonomy._ACTIVE[state["id"]] is thread
+        assert owner.status()["active"]
+        assert owner.reap()
+        assert state["id"] not in autonomy._ACTIVE
+        assert autonomy.for_investigation(inv)["status"]=="needs_review"
+    finally:
+        owner.drain(10)
+
+
+def test_owned_resume_preserves_receipt_and_run_identity(fixture):
+    _,inv,eid=fixture
+    autonomy._claim_step(eid,0,proposal())
+    autonomy._set(eid,"interrupted")
+    owner=_owned_fixture(fixture,lambda _:proposal("suggest_finish"))
+    try:
+        assert owner.resume(inv)["id"]==eid
+        _join_owned(owner)
+        state=autonomy.for_investigation(inv)
+        assert state["status"]=="ready_for_review"
+        assert state["steps"][0]["status"]=="completed"
+        assert len(investigations.load(inv)["artifacts"])==1
+    finally:
+        owner.drain(10)
+
+
+def test_terminal_status_does_not_release_owned_worker_slot(fixture,monkeypatch):
+    _,inv,eid=fixture
+    autonomy._set(eid,"interrupted")
+    entered,resume=threading.Event(),threading.Event()
+    real=autonomy._worker
+    def worker(*args,**kwargs):
+        real(*args,**kwargs)
+        entered.set()
+        assert resume.wait(10)
+    monkeypatch.setattr(autonomy,"_worker",worker)
+    owner=_owned_fixture(fixture,lambda _:proposal("suggest_finish"))
+    try:
+        owner.resume(inv)
+        assert entered.wait(5)
+        assert autonomy.for_investigation(inv)["status"]=="needs_review"
+        assert not owner.reap()
+        with pytest.raises(ResourceDeferred,match="autonomy_busy"):
+            owner.resume(inv)
+        assert not owner.drain(0)
+    finally:
+        resume.set()
+        assert owner.drain(10)
+    assert not owner.status()["active"]
+
+
+def test_pending_preparation_refuses_second_intent(fixture,monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    _,inv,eid=fixture
+    _delete_seeded_run(eid)
+    entered,resume=threading.Event(),threading.Event()
+    real=autonomy._owned_prepare
+    def prepare(*args,**kwargs):
+        entered.set()
+        assert resume.wait(10)
+        return real(*args,**kwargs)
+    monkeypatch.setattr(autonomy,"_owned_prepare",prepare)
+    owner=_owned_fixture(fixture,lambda _:proposal("suggest_finish"))
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            first=executor.submit(owner.start,inv)
+            try:
+                assert entered.wait(5)
+                with pytest.raises(ResourceDeferred,match="autonomy_busy"):
+                    owner.start(inv)
+                assert autonomy.for_investigation(inv) is None
+            finally:
+                resume.set()
+            first.result(timeout=10)
+        _join_owned(owner)
+        with storage.connect() as con:
+            assert con.execute("SELECT COUNT(*) FROM odin_runs WHERE investigation_id=?",(inv,)).fetchone()[0]==1
+    finally:
+        owner.drain(10)
+
+
+def test_owned_busy_resource_creates_no_run(fixture):
+    _,inv,eid=fixture
+    _delete_seeded_run(eid)
+    c=coordinator()
+    owner=autonomy.OwnedAutonomy(AutonomyStages(c,lambda _:pytest.fail("Denied planner")))
+    lease=c.try_acquire(Operation.TRAINING).lease
+    assert c.start(lease)
+    try:
+        with pytest.raises(ResourceDeferred,match="resource_busy"):
+            owner.start(inv)
+        assert autonomy.for_investigation(inv) is None
+        assert not owner.status()["pending"]
+        assert c.status()["operation"]=="training"
+    finally:
+        assert c.release(lease)
+        owner.drain(10)
+
+
+def test_owned_cancelled_resume_refusal_releases_control_and_data(fixture):
+    from backend.resource_autonomy import LaunchRefused
+    _,inv,eid=fixture
+    assert autonomy.cancel(inv)["status"]=="cancelled"
+    c=coordinator()
+    owner=autonomy.OwnedAutonomy(AutonomyStages(c,lambda _:pytest.fail("Cancelled planner")))
+    with pytest.raises(LaunchRefused,match="resume"):
+        owner.resume(inv)
+    assert autonomy.for_investigation(inv)["status"]=="cancelled"
+    assert not c.status()["active"] and not owner.status()["pending"]
+
+
+def test_owned_shutdown_during_preparation_settles_unstarted_run(fixture,monkeypatch):
+    _,inv,eid=fixture
+    _delete_seeded_run(eid)
+    owner=_owned_fixture(fixture,lambda _:pytest.fail("Shutdown planner"))
+    real=autonomy._owned_prepare
+    def prepare(*args,**kwargs):
+        ident=real(*args,**kwargs)
+        owner.stop_admission()
+        return ident
+    monkeypatch.setattr(autonomy,"_owned_prepare",prepare)
+    with pytest.raises(ResourceDeferred,match="shutting_down"):
+        owner.start(inv)
+    state=autonomy.for_investigation(inv)
+    assert state["status"]=="interrupted"
+    assert state["id"] not in autonomy._ACTIVE
+    assert owner.drain()
+
+
+def test_owned_lost_launch_ack_blocks_new_intent(fixture,monkeypatch):
+    _,inv,eid=fixture
+    autonomy._set(eid,"interrupted")
+    owner=_owned_fixture(fixture,lambda _:pytest.fail("No worker started"))
+    def failed_start(self):
+        raise OSError("fixture launch acknowledgement lost")
+    with monkeypatch.context() as m:
+        m.setattr(threading.Thread,"start",failed_start)
+        with pytest.raises(OSError,match="acknowledgement"):
+            owner.resume(inv)
+    try:
+        assert owner.status()["blocked"]
+        assert not owner.reap()
+        with pytest.raises(ResourceDeferred,match="ownership_unknown"):
+            owner.resume(inv)
+        assert autonomy.for_investigation(inv)["status"]=="queued"
+        assert autonomy._ACTIVE[eid] is owner._thread
+    finally:
+        # Fixture owns the patched never-started thread, not a real exit proof.
+        with autonomy._LOCK:
+            autonomy._ACTIVE.pop(eid,None)
+
+
+def test_owned_unknown_publication_blocks_lane_and_control(fixture,monkeypatch):
+    _,inv,eid=fixture
+    _delete_seeded_run(eid)
+    c=coordinator()
+    owner=autonomy.OwnedAutonomy(AutonomyStages(c,lambda _:pytest.fail("No planner")))
+    real=autonomy._owned_prepare
+    def lost_ack(*args,**kwargs):
+        real(*args,**kwargs)
+        raise OSError("fixture queue acknowledgement lost")
+    monkeypatch.setattr(autonomy,"_owned_prepare",lost_ack)
+    with pytest.raises(OSError,match="acknowledgement"):
+        owner.start(inv)
+    assert c.status()["phase"]=="blocked" and owner.status()["blocked"]
+    assert autonomy.for_investigation(inv)["status"]=="queued"
+    with pytest.raises(ResourceDeferred,match="ownership_unknown"):
+        owner.start(inv)
+
+
+def test_owned_exit_without_terminal_checkpoint_is_interrupted(fixture,monkeypatch):
+    _,inv,eid=fixture
+    autonomy._set(eid,"interrupted")
+    monkeypatch.setattr(autonomy,"_worker",lambda *a,**k:None)
+    owner=_owned_fixture(fixture,lambda _:pytest.fail("No planner"))
+    try:
+        assert owner.resume(inv)["id"]==eid
+        _join_owned(owner)
+        assert autonomy.for_investigation(inv)["status"]=="interrupted"
+    finally:
+        owner.drain(10)

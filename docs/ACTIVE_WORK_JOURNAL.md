@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | cca26c98456c183ad607107133b82f09437879a8 |
 | Product baseline | 4faf696e16bd9380d9407d2f3a3b95be6386d42c |
 | Scope | C1 dormant trusted autonomy start/resume, single pending/active worker ownership and exact thread join, transactional durable queue settlement; no live activation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-autonomy-launch |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_autonomy.py; backend/autonomy.py; tests/test_c1_resource_autonomy.py; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45458364195 SUCCESS: 166 regression + 2 subtests, 113 C1, 20 legacy autonomy. Next deterministic worker launch/exit, bounded pending, durable start/resume CAS and launch fault tests. |
-| Pending runs | None; #45458364195/job 138673835302 terminal SUCCESS, exact checkout and counts confirmed. |
+| Verification | Dormant owned autonomy start/resume, exact thread retention/reap and 10 new fixture cases published; exact CI pending. No live registration. |
+| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before host work. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Publish dormant start/resume boundary; reconcile exact CI before host bridge. No native/model run. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

@@ -23,6 +23,10 @@ class ResourceDeferred(RuntimeError):
     """No heavy stage began; preserve the existing resumable checkpoint."""
 
 
+class LaunchRefused(RuntimeError):
+    """Known refusal before durable publication, or confirmed no launch."""
+
+
 class ContextLimit(ValueError):
     """Known context size refusal, with no detached work."""
 
