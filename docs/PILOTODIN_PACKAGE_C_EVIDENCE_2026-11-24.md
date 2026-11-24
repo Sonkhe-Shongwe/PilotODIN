@@ -387,3 +387,5 @@ Exact 75481eb [P4 #45511096778](https://github.com/Sonkhe-Shongwe/PilotODIN/acti
 ## 25 November | C3 desktop lease fixture correction
 
 Terminal Windows 138858698599 from #45511096778 confirms identical sole failure, 56 passed, 1 failed, 73 subtests. Other seven exact desktop-integration workflows SUCCESS; P4 browser SUCCESS, restricted SKIPPED. Prepared 9d1430b; change only tests/test_workspace_boundary.py synthetic desktop session s*64 to a*64, matching new exact hex contract. Existing competing writer, exit status, no database/dataset creation and subsequent lease reacquisition assertions unchanged. No product source or policy change. Routine CI pending, C3 remains open. No native execution or activation.
+
+Exact test-only correction `9c5ce6e09fb5b05c0e6f3da445c0e161cb78b7fb`, [P4 #45511476665](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45511476665) IN_PROGRESS. Reconcile terminal results before next overlapping push.
