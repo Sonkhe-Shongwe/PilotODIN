@@ -6,21 +6,21 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | C2-SOURCE-EXIT-AUDIT-20261125 |
-| State | VERIFYING |
+| Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 75a1aebd9fe0a5b1d35cab5129ba6cc7bc288089 |
-| Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890; test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
-| Scope | Audit C2 separately against existing section 10 exit and C-D02/C-D03 lifecycle contract; reuse qualifying C1/C2 integration and exact-source evidence, no redundant native tests. |
-| Operation ID | C2-FRONTEND-REQUEST-OWNERSHIP-20261125-source |
-| Operation state | ISSUED |
-| Intended files | frontend/src/AIWorkspace.tsx, AssistantWorkspace.tsx, insightRequestFence.ts, frontend/tests/desktop-ai-boundaries.test.cjs; continuity records. No native/backend/model changes. |
-| Approval | All six prior native approvals consumed and disarmed; no new restricted action authorized. Source review permitted; no production activation, native retry, model, owner data, OS modification or installer. |
-| Verification | C1 SOURCE CLOSED: section 10 route/call/lifetime map and bridge compatibility, atomic admission/pre-allocation, training handoff, stream/failure cleanup, race/refusal/cancellation/ownership/stale coverage and exact CI satisfied at source scope. #45506268334 SUCCESS native 138842413106 exact 1/1 shared-host synthetic integration with real pipes, actual owned job descendant and zero, shared lane, joined saves and graceful STOP; original manifest absent, v6 copy verified, original unchanged; cleanup PASS. #45506332204 SUCCESS source 138844584697, native 138844862693 SKIPPED; byte-identical disarm e46c74c. Prior 388b357 ten routine workflows and native library 40/40 remain applicable; fixture differences test-only. |
-| Pending runs | Exact frontend correction `e0f944d2a9c14c4ae470c38c929bae249f35373c`: [P1 #45508634788](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45508634788) IN_PROGRESS; [P4 #45508634884](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45508634884) IN_PROGRESS, routine jobs 138850278146/138850278536/138850278602, restricted job 138850280289 SKIPPED. Only these two workflows observed. |
+| Observed starting HEAD | da1733c3127cb36e938e5c6e464647d38dddae5e |
+| Product baseline | e0f944d2a9c14c4ae470c38c929bae249f35373c (frontend delta); native/backend runtime 388b35750316b9c5a060d603c35c7d728d5c0890; test-only native fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
+| Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
+| Operation ID | C2-SOURCE-EXIT-AUDIT-20261125-close |
+| Operation state | RECONCILED |
+| Intended files | Continuity records for C2 closure; C3 source inventory before selecting patch scope. |
+| Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
+| Verification | C1 and C2 SOURCE CLOSED. C2 bounded async single-flight, shared grant/drain/context lifecycle, fake worker/duplicate/shutdown/late-result tests, frontend request fence and truthful status all meet section 10 at source scope. Native library 40/40 and synthetic shared-host 1/1 from unchanged native/backend baseline; exact frontend e0f944d P1 #45508634788 SUCCESS (197 Node, 7 browser, Vite), P4 #45508634884 SUCCESS (1058 Python, 6 skips, 544 subtests, 112 Node including four C2 tests, 15 standalone Rust, Vite, 48 Windows Python + 15 subtests, 13 browser); restricted job SKIPPED. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact P1/P4 CI logs for 4 new C2 tests, existing tests and Vite build. Confirm source-only delta and absence of native/backend changes, then close C2 against section 10 if all qualifying evidence passes. If failure, correct only evidence-supported defect. No duplicate native test, activation or scope expansion. |
-| Resume after closure | C3, C4, C5 in order; D separately approved. |
+| Recovery action | Begin C3 by mapping startup modes, session/host/origin/peer checks, actual route/direct-call consumers and Vite/hosted/in-process fixture bootstrap; implement only the agreed C-D05 contract and verify source/disposable HTTP tests. Preserve production gate false. |
+| Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
 
@@ -28,4 +28,4 @@ C-DOCUMENTATION-AUDIT-20261125-clean: owner-requested documentation audit prepar
 
 ## Unresolved or interrupted operations
 
-C1 shared-host source witness obtained and C1 source closed; C2 exit audit outstanding. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
+C1/C2 source closed; C3 explicit authentication work next. No actual application/production or physical hardware acceptance. G2 proof blocker and physical D evidence remain outstanding. Earlier B5 approvals consumed; preserve local work. [Pre-audit journal](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/bcd3a979b1bbd30ab8cd2f60ad16b9c9e25c40cf/docs/ACTIVE_WORK_JOURNAL.md) retains prior operation detail.
