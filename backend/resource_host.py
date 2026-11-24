@@ -266,3 +266,55 @@ def serve_owned(broker, read_chunk, write_reply, flush_reply):
         if isinstance(exc, Exception):
             raise _fault() from None
         raise
+
+
+def _binary_descriptor(fd):
+    import os
+    if os.name == "nt":
+        import msvcrt
+        msvcrt.setmode(fd, os.O_BINARY)
+
+
+def prepare_control_stdio(stdin, stdout, stderr, *, ops=None, binary_mode=None):
+    """Dormant pre-import desktop startup seam; never call on browser/dev paths.
+
+    Retain a private, non-inheritable duplicate of owned stdout for POD1.
+    Redirect the CRT stdout descriptor to stderr before analytical imports.
+    This does NOT establish Win32 GetStdHandle or bootloader log isolation.
+    The caller must fail startup on any exception, not fall back to legacy.
+    No process-global descriptor operations run merely by importing this module.
+    """
+    import os
+    if ops is None:
+        ops = os
+    if binary_mode is None:
+        binary_mode = _binary_descriptor
+    duplicate = None
+    try:
+        descriptors = (stdin.fileno(), stdout.fileno(), stderr.fileno())
+        if any(type(fd) is not int for fd in descriptors) or descriptors != (0, 1, 2):
+            raise _fault()
+        duplicate = ops.dup(1)
+        if type(duplicate) is not int or duplicate <= 2:
+            duplicate = None
+            raise _fault()
+        ops.set_inheritable(duplicate, False)
+        if ops.get_inheritable(duplicate):
+            raise _fault()
+        # Redirect before any subsequent Python/CRT stdout writes. Do not
+        # restore stdout on failure: this startup must terminate instead.
+        ops.dup2(2, 1, inheritable=False)
+        binary_mode(0)
+        binary_mode(duplicate)
+        writer = ops.fdopen(duplicate, "wb", buffering=0)
+        duplicate = None  # ownership transferred to the binary stream
+        return 0, writer
+    except BaseException as exc:
+        if duplicate is not None:
+            try:
+                ops.close(duplicate)
+            except OSError:
+                pass
+        if isinstance(exc, Exception):
+            raise _fault() from None
+        raise

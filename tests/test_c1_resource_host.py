@@ -290,3 +290,86 @@ def test_owned_pump_read_exception_sanitized():
         serve_owned(b,read,lambda _:pytest.fail("write"),lambda:pytest.fail("flush"))
     assert KEY not in str(err.value)
     assert c.status()["phase"]=="blocked"
+
+
+class _Descriptor:
+    def __init__(self, fd):
+        self.fd = fd
+
+    def fileno(self):
+        return self.fd
+
+
+class _FixtureDescriptors:
+    """Inert call recorder; never touches process-global descriptors."""
+    def __init__(self, fail=None):
+        self.calls = []
+        self.fail = fail
+        self.writer = object()
+
+    def _record(self, name, *args):
+        self.calls.append((name,*args))
+        if self.fail == name:
+            raise OSError(KEY)
+
+    def dup(self, fd):
+        self._record("dup",fd)
+        return 9
+
+    def set_inheritable(self, fd, value):
+        self._record("set_inheritable",fd,value)
+
+    def get_inheritable(self, fd):
+        self._record("get_inheritable",fd)
+        return self.fail == "inherited"
+
+    def dup2(self, src, dst, *, inheritable):
+        self._record("dup2",src,dst,inheritable)
+
+    def binary(self, fd):
+        self._record("binary",fd)
+
+    def fdopen(self, fd, mode, *, buffering):
+        self._record("fdopen",fd,mode,buffering)
+        return self.writer
+
+    def close(self, fd):
+        self._record("close",fd)
+
+
+def _prepare_fixture(ops, fds=(0,1,2)):
+    from backend.resource_host import prepare_control_stdio
+    return prepare_control_stdio(*map(_Descriptor,fds),ops=ops,binary_mode=ops.binary)
+
+
+def test_control_stdio_isolates_only_owned_standard_descriptors():
+    ops=_FixtureDescriptors()
+    assert _prepare_fixture(ops)==(0,ops.writer)
+    assert ops.calls==[("dup",1),("set_inheritable",9,False),
+                       ("get_inheritable",9),("dup2",2,1,False),
+                       ("binary",0),("binary",9),("fdopen",9,"wb",0)]
+
+
+@pytest.mark.parametrize("fds",[(0,4,2),(1,1,2),(0,True,2),(0,1,0)])
+def test_control_stdio_refuses_unexpected_descriptors_before_mutation(fds):
+    ops=_FixtureDescriptors()
+    with pytest.raises(ProtocolFault):
+        _prepare_fixture(ops,fds)
+    assert ops.calls==[]
+
+
+@pytest.mark.parametrize("stage",["set_inheritable","get_inheritable","inherited","dup2","binary","fdopen"])
+def test_control_stdio_failure_closes_only_private_duplicate(stage):
+    ops=_FixtureDescriptors(stage)
+    with pytest.raises(ProtocolFault) as exc:
+        _prepare_fixture(ops)
+    assert KEY not in str(exc.value)
+    assert ops.calls[-1]==("close",9)
+    assert [call for call in ops.calls if call[0]=="close"]==[("close",9)]
+
+
+def test_control_stdio_failed_dup_never_closes_standard_descriptors():
+    ops=_FixtureDescriptors("dup")
+    with pytest.raises(ProtocolFault):
+        _prepare_fixture(ops)
+    assert ops.calls==[("dup",1)]
