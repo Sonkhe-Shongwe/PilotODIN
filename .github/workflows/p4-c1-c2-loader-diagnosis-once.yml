@@ -69,6 +69,8 @@ jobs:
       - name: Stage intentionally invalid compile-only fixtures
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
           foreach ($checkout in @('baseline','fixture')) {
             Push-Location -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $checkout)
             try {
@@ -95,6 +97,9 @@ jobs:
                 Write-Host 'RELEASE-PREFLIGHT-REJECTED; no real runtime/model assets'
             } finally { Pop-Location }
           }
+          # Both release preflights returned the required nonzero status.
+          # Do not propagate that intentional refusal into the CI step exit.
+          exit 0
       - name: Compile exact paired library test executables without running them
         shell: pwsh
         run: |

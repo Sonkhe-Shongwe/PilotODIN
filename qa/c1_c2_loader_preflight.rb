@@ -6,8 +6,8 @@ WORKFLOW = ".github/workflows/p4-c1-c2-loader-diagnosis-once.yml"
 SCRIPT = "qa/c1_c2_loader_preflight.rb"
 PARSER = "qa/c1_c2_loader_imports.py"
 DISABLED = "    if: ${{ false }} # DISARMED LOADER DIAGNOSIS; fresh exact approval required.\n"
-ARMED = "    if: >-\n      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-C2-LOADER-IMPORT-DIAGNOSIS-20261125-ONE-USE' }}\n"
-MARKER = "C1-C2-LOADER-IMPORT-DIAGNOSIS-20261125-ONE-USE"
+ARMED = "    if: >-\n      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'C1-C2-LOADER-IMPORT-DIAGNOSIS-20261125-V2-ONE-USE' }}\n"
+MARKER = "C1-C2-LOADER-IMPORT-DIAGNOSIS-20261125-V2-ONE-USE"
 BRANCH = "feature/live-dev-workspace-20261023"
 JOB = "paired-static-import-diagnosis"
 BASE = "388b35750316b9c5a060d603c35c7d728d5c0890"
@@ -63,6 +63,18 @@ steps.drop(3).each do |step|
   _,err,status=Open3.capture3('pwsh','-NoProfile','-NonInteractive','-Command',parser,stdin_data:step.fetch('run'))
   check(status.success?,"PowerShell parse: #{err}")
 end
+# Exercise the actual expected-nonzero handling, with synthetic exit codes only.
+stage=steps[4].fetch('run')
+check(stage.include?("$PSNativeCommandUseErrorActionPreference = $false"),'expected native exit preference')
+check(stage.lines.last.strip=='exit 0','explicit staging success exit')
+expected=stage.lines.find{|line|line.include?("if ($LASTEXITCODE -ne 2)")}.to_s.strip
+check(expected=="if ($LASTEXITCODE -ne 2) { throw 'Release preflight did not reject invalid fixtures' }",'required refusal check')
+[2,0,3].each do |code|
+  synthetic="$ErrorActionPreference = 'Stop'\n$PSNativeCommandUseErrorActionPreference = $false\nforeach ($checkout in @('baseline','fixture')) {\n  python3 -I -B -c 'import sys; sys.exit(#{code})'\n  #{expected}\n}\n#{stage.lines.last.strip}\n"
+  _,_,status=Open3.capture3('pwsh','-NoProfile','-NonInteractive','-Command',synthetic)
+  check(status.success? == (code==2),"synthetic expected refusal handling: #{code}")
+end
+puts 'C1-C2-LOADER-STAGE-EXIT-PASS: expected exit 2 accepted; unexpected 0 and 3 refused'
 out,err,status=Open3.capture3('python3','-I','-B',PARSER,'--self-test')
 check(status.success?,"parser self-test: #{err}")
 puts out,err
