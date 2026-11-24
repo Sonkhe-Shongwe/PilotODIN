@@ -47,23 +47,30 @@ def main() -> int:
         except (AttributeError, ValueError, OSError):
             print("Desktop ownership pipe is missing; refusing to start.", file=sys.stderr)
             return 2
-    # Import only after confirming PILOTODIN_HOME so storage cannot accidentally
-    # initialise a database inside the installed application directory.
-    import uvicorn
-    from backend.main import app
+    # The writer lease must precede backend.main/storage import, schema
+    # initialization and interrupted-experiment recovery, and outlive server.run.
+    from backend.workspace_boundary import WorkspaceBoundaryError, engine_workspace
+    try:
+        with engine_workspace(home) as owned_home:
+            os.environ["PILOTODIN_HOME"] = str(owned_home)
+            import uvicorn
+            from backend.main import app
 
-    options = dict(host="127.0.0.1", port=port, access_log=False,
-                   log_level="warning", server_header=False)
-    if owner_stdin is None:
-        uvicorn.run(app, **options)
-    else:
-        server = uvicorn.Server(uvicorn.Config(app, **options))
-        Thread(target=_watch_desktop_pipe, args=(server, owner_stdin),
-               name="pilotodin-desktop-owner", daemon=True).start()
-        server.run()
-        if not server.started:
-            return 3  # Uvicorn's startup-failure exit status.
-    return 0
+            options = dict(host="127.0.0.1", port=port, access_log=False,
+                           log_level="warning", server_header=False)
+            if owner_stdin is None:
+                uvicorn.run(app, **options)
+            else:
+                server = uvicorn.Server(uvicorn.Config(app, **options))
+                Thread(target=_watch_desktop_pipe, args=(server, owner_stdin),
+                       name="pilotodin-desktop-owner", daemon=True).start()
+                server.run()
+                if not server.started:
+                    return 3  # Uvicorn's startup-failure exit status.
+            return 0
+    except WorkspaceBoundaryError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
