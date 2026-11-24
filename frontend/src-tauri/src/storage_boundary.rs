@@ -1,7 +1,7 @@
 //! Shared pre-spawn directory policy for app-owned worker storage.
 //! Existing components are inspected without following reparse points.
-//! This is a static preflight, not an OS sandbox or a race-proof handle walk.
-use std::fs;
+//! Retained original directory handles supplement path checks, not an OS sandbox.
+use std::fs::{self, File};
 use std::path::{Component, Path, PathBuf};
 
 const INVALID: &str = "Worker storage directory unavailable or unsafe";
@@ -83,6 +83,145 @@ pub fn validate_existing_directory(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(windows)]
+mod handles {
+    use super::*;
+    use std::ffi::c_void;
+    use std::fs::OpenOptions;
+    use std::os::windows::fs::OpenOptionsExt;
+    use std::os::windows::io::AsRawHandle;
+
+    #[repr(C)]
+    struct AttributeTag { attributes: u32, tag: u32 }
+    #[repr(C)]
+    struct FileId { volume: u64, identifier: [u8; 16] }
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetFileInformationByHandleEx(file: *mut c_void, class: i32,
+            buffer: *mut c_void, size: u32) -> i32;
+    }
+
+    pub type Identity = (u64, [u8; 16]);
+
+    pub fn open(path: &Path) -> Result<File, String> {
+        // FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES; no delete sharing.
+        // OPEN_EXISTING, BACKUP_SEMANTICS | OPEN_REPARSE_POINT.
+        OpenOptions::new().read(true).access_mode(0x81).share_mode(0x3)
+            .custom_flags(0x02200000).open(path).map_err(|_| INVALID.into())
+    }
+
+    pub fn identity(file: &File) -> Result<Identity, String> {
+        let mut attr = AttributeTag { attributes: 0, tag: 0 };
+        let mut id = FileId { volume: 0, identifier: [0; 16] };
+        let handle = file.as_raw_handle();
+        let ok = unsafe {
+            GetFileInformationByHandleEx(handle, 9, (&mut attr as *mut AttributeTag).cast(),
+                std::mem::size_of::<AttributeTag>() as u32) != 0
+            && GetFileInformationByHandleEx(handle, 18, (&mut id as *mut FileId).cast(),
+                std::mem::size_of::<FileId>() as u32) != 0
+        };
+        if !ok || attr.attributes & 0x10 == 0 || attr.attributes & 0x400 != 0
+            || id.identifier.iter().all(|byte| *byte == 0) {
+            return Err(INVALID.into());
+        }
+        Ok((id.volume, id.identifier))
+    }
+}
+
+#[cfg(unix)]
+mod handles {
+    use super::*;
+    use std::os::unix::fs::MetadataExt;
+    pub type Identity = (u64, u64);
+    // Named entry checked before/after open; POSIX does not block rename.
+    pub fn open(path: &Path) -> Result<File, String> {
+        File::open(path).map_err(|_| INVALID.into())
+    }
+    pub fn identity(file: &File) -> Result<Identity, String> {
+        let info = file.metadata().map_err(|_| INVALID.to_string())?;
+        if !info.is_dir() || info.ino() == 0 { return Err(INVALID.into()); }
+        Ok((info.dev(), info.ino()))
+    }
+}
+
+struct DirectoryPin {
+    path: PathBuf,
+    file: File,
+    identity: handles::Identity,
+}
+impl DirectoryPin {
+    fn open(path: &Path) -> Result<Self, String> {
+        check_directory(path)?;
+        let file = handles::open(path)?;
+        let identity = handles::identity(&file)?;
+        let pin = Self { path: path.to_path_buf(), file, identity };
+        pin.verify()?;
+        Ok(pin)
+    }
+    fn verify(&self) -> Result<(), String> {
+        check_directory(&self.path)?;
+        let named = handles::open(&self.path)?;
+        if handles::identity(&self.file)? != self.identity
+            || handles::identity(&named)? != self.identity {
+            return Err("Owned directory identity changed".into());
+        }
+        check_directory(&self.path)
+    }
+}
+
+/// Retain the actual directories used by one profile or worker. Windows
+/// prevents ordinary deletion/rename while held; POSIX detects observed
+/// identity changes. RAII closes handles including on admission failure.
+#[derive(Default)]
+pub struct DirectoryPins {
+    entries: Vec<DirectoryPin>,
+}
+impl DirectoryPins {
+    pub fn verify(&self) -> Result<(), String> {
+        for pin in &self.entries { pin.verify()?; }
+        Ok(())
+    }
+    pub fn admit_existing(&mut self, path: &Path) -> Result<(), String> {
+        check_path_shape(path)?;
+        let mut current = PathBuf::new();
+        for part in path.components() {
+            current.push(part.as_os_str());
+            if matches!(part, Component::Prefix(_)) { continue; }
+            if let Some(pin) = self.entries.iter().find(|pin| pin.path == current) {
+                pin.verify()?;
+                continue;
+            }
+            let pin = DirectoryPin::open(&current)?;
+            if self.entries.first().is_some_and(|first| first.identity.0 != pin.identity.0) {
+                return Err("Owned directory volume changed".into());
+            }
+            self.entries.push(pin);
+        }
+        self.verify()
+    }
+    pub fn prepare(&mut self, path: &Path) -> Result<PathBuf, String> {
+        check_path_shape(path)?;
+        let parent = path.parent().ok_or_else(|| INVALID.to_string())?;
+        self.admit_existing(parent)?;
+        let prepared = prepare_directory(path)?;
+        self.admit_existing(&prepared)?;
+        Ok(prepared)
+    }
+    pub fn prepare_worker_temp(&mut self, home: &Path, name: &str) -> Result<PathBuf, String> {
+        if !matches!(name, "backend-temp" | "inference-temp") {
+            return Err("Unexpected worker temporary directory".into());
+        }
+        self.prepare(&home.join(name))
+    }
+    pub fn verify_path(&self, path: &Path) -> Result<(), String> {
+        if !self.entries.iter().any(|pin| pin.path == path) {
+            return Err("Directory was not admitted".into());
+        }
+        self.verify()
+    }
+}
+
 /// Admit an existing directory or create ONLY its missing final component
 /// after verifying all ancestors. Return the original spelling; Windows
 /// canonicalize uses a verbatim prefix unsuitable for some child interfaces.
@@ -144,6 +283,44 @@ mod tests {
     }
     impl Drop for Fixture {
         fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); }
+    }
+
+    #[test]
+    fn retained_chain_preserves_identity_and_releases_handles() {
+        let fixture = Fixture::new();
+        let parent = fixture.0.join("app");
+        let mut pins = DirectoryPins::default();
+        pins.prepare(&parent).unwrap();
+        let scratch = pins.prepare_worker_temp(&parent, "backend-temp").unwrap();
+        pins.verify_path(&scratch).unwrap();
+        assert!(pins.verify_path(&parent.join("unadmitted")).is_err());
+        let moved = fixture.0.join("moved");
+        #[cfg(windows)]
+        {
+            assert!(fs::rename(&parent, &moved).is_err());
+            pins.verify().unwrap();
+        }
+        #[cfg(unix)]
+        {
+            fs::rename(&parent, &moved).unwrap();
+            fs::create_dir(&parent).unwrap();
+            assert!(pins.verify().is_err());
+            fs::remove_dir(&parent).unwrap();
+            fs::rename(&moved, &parent).unwrap();
+            pins.verify().unwrap();
+        }
+        drop(pins);
+        fs::rename(&parent, &moved).unwrap();
+        assert!(moved.join("backend-temp").is_dir());
+    }
+
+    #[test]
+    fn retained_chain_rejects_missing_parent_without_creation() {
+        let fixture = Fixture::new();
+        let mut pins = DirectoryPins::default();
+        let absent = fixture.0.join("missing");
+        assert!(pins.prepare(&absent.join("data")).is_err());
+        assert!(!absent.exists());
     }
 
     #[test]

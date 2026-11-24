@@ -31,6 +31,7 @@ struct ActiveBackend {
     child: Option<CommandChild>,
     exit: Arc<AtomicU8>,
     stop_requested: bool,
+    _storage_pins: storage_boundary::DirectoryPins,
 }
 
 struct InferenceSettings {
@@ -41,6 +42,7 @@ struct InferenceSettings {
 struct ActiveInference {
     child: Option<CommandChild>,
     exit: Arc<AtomicU8>,
+    _storage_pins: storage_boundary::DirectoryPins,
 }
 
 const INFERENCE_IDLE_SLEEP_SECONDS: &str = "30";
@@ -273,7 +275,7 @@ fn new_token() -> String {
 // Keep both worker families in the same identifier-scoped app-local data
 // home. Admit each component before creating descendants; preserve the
 // existing layout and the R03 baseline/candidate isolation contract.
-fn worker_data_home(app: &AppHandle) -> Result<PathBuf, String> {
+fn worker_data_home(app: &AppHandle, pins: &mut storage_boundary::DirectoryPins) -> Result<PathBuf, String> {
     let app_root = app.path().app_local_data_dir()
         .map_err(|_| "App-local storage unavailable".to_string())?;
     let profile = if app.config().identifier == "com.pilotodin.p4r03benchmark" {
@@ -285,10 +287,10 @@ fn worker_data_home(app: &AppHandle) -> Result<PathBuf, String> {
     } else {
         None
     };
-    let root = storage_boundary::prepare_directory(&app_root)?;
-    let home = storage_boundary::prepare_directory(&root.join("data"))?;
+    let root = pins.prepare(&app_root)?;
+    let home = pins.prepare(&root.join("data"))?;
     match profile {
-        Some(profile) => storage_boundary::prepare_directory(&home.join(profile)),
+        Some(profile) => pins.prepare(&home.join(profile)),
         None => Ok(home),
     }
 }
@@ -296,8 +298,8 @@ fn worker_data_home(app: &AppHandle) -> Result<PathBuf, String> {
 // Prepare only named owned scratch, before either child is spawned. No
 // application-wide environment changes and no canonical verbatim path
 // handed to the Python workspace admission contract.
-fn worker_temp_directory(home: &Path, name: &str) -> Result<PathBuf, String> {
-    storage_boundary::prepare_worker_temp(home, name)
+fn worker_temp_directory(home: &Path, name: &str, pins: &mut storage_boundary::DirectoryPins) -> Result<PathBuf, String> {
+    pins.prepare_worker_temp(home, name)
 }
 
 // Verify the actual production environment rather than repeating the requested
@@ -310,6 +312,7 @@ async fn verify_effective_desktop_profile(window: &tauri::WebviewWindow) -> Resu
     state.profile_verified.store(false, Ordering::Release);
     let root = app.path().app_local_data_dir()
         .map_err(|_| "Desktop profile path unavailable".to_string())?;
+    app.state::<desktop_profile::DesktopProfileLease>().verify_root(&root)?;
     #[cfg(windows)]
     {
         use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Environment7;
@@ -453,8 +456,9 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
     if port == inference_port {return Err("Port reservation collision".into());}
     let token = new_token();
     let inference_token = new_token();
-    let data_dir = worker_data_home(&app)?;
-    let worker_temp = worker_temp_directory(&data_dir, "backend-temp")?;
+    let mut storage_pins = storage_boundary::DirectoryPins::default();
+    let data_dir = worker_data_home(&app, &mut storage_pins)?;
+    let worker_temp = worker_temp_directory(&data_dir, "backend-temp", &mut storage_pins)?;
 
     // Supplying a dedicated port and key does not start or load a model.
     // Only a deliberate local AI request invokes launch_bundled_ai.
@@ -476,12 +480,13 @@ async fn launch_backend(window: tauri::WebviewWindow, app: AppHandle, state: Sta
         .current_dir(&data_dir)
         .set_process_group(true)
         .kill_on_drop(cfg!(windows));
+    storage_pins.verify()?;
     let (mut events, child) = command.spawn()
         .map_err(|e| format!("Could not start analytical engine: {e}"))?;
     let connection = BackendConnection { port, token: token.clone() };
     let exit = Arc::new(AtomicU8::new(0));
     *guard = Some(ActiveBackend { connection: connection.clone(), child: Some(child),
-        exit: exit.clone(), stop_requested: false });
+        exit: exit.clone(), stop_requested: false, _storage_pins: storage_pins });
     *state.inference_settings.lock().map_err(|_| "AI state unavailable".to_string())? =
         Some(InferenceSettings { port: inference_port, token: inference_token });
     drop(guard);
@@ -565,7 +570,9 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
         (settings.token.clone(), settings.port)
     };
     let model = verify_bundled_model(&app)?;
-    let worker_temp = worker_temp_directory(&worker_data_home(&app)?, "inference-temp")?;
+    let mut storage_pins = storage_boundary::DirectoryPins::default();
+    let data_dir = worker_data_home(&app, &mut storage_pins)?;
+    let worker_temp = worker_temp_directory(&data_dir, "inference-temp", &mut storage_pins)?;
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
     let runtime_dlls = resources.join("llama-runtime");
     let old_path = std::env::var_os("PATH").unwrap_or_default();
@@ -591,9 +598,10 @@ fn launch_bundled_ai(app: AppHandle, state: State<'_, DesktopState>) -> Result<(
         .current_dir(&runtime_dlls)
         .set_process_group(true)
         .kill_on_drop(cfg!(windows));
+    storage_pins.verify()?;
     let (mut events, child) = command.spawn().map_err(|e| format!("Could not launch local model: {e}"))?;
     let exit = Arc::new(AtomicU8::new(0));
-    *active = Some(ActiveInference { child: Some(child), exit: exit.clone() });
+    *active = Some(ActiveInference { child: Some(child), exit: exit.clone(), _storage_pins: storage_pins });
     drop(active);
     let owner = app.clone();
     tauri::async_runtime::spawn(async move {
@@ -829,15 +837,16 @@ mod worker_temp_directory_tests {
         ));
         fs::create_dir(&root).unwrap();
         let run = (|| -> Result<(), String> {
-            let backend = worker_temp_directory(&root, "backend-temp")?;
-            let inference = worker_temp_directory(&root, "inference-temp")?;
+            let mut pins = super::storage_boundary::DirectoryPins::default();
+            let backend = worker_temp_directory(&root, "backend-temp", &mut pins)?;
+            let inference = worker_temp_directory(&root, "inference-temp", &mut pins)?;
             let home = root.clone();
             if backend.parent() != Some(home.as_path()) ||
                 inference.parent() != Some(home.as_path()) ||
                 backend == inference || !backend.is_dir() || !inference.is_dir() {
                 return Err("Worker scratch directory was not isolated".into());
             }
-            if worker_temp_directory(&root, "..").is_ok() {
+            if worker_temp_directory(&root, "..", &mut pins).is_ok() {
                 return Err("Unreviewed worker directory was accepted".into());
             }
             Ok(())
@@ -859,7 +868,10 @@ mod worker_temp_directory_tests {
         fs::create_dir(&home).unwrap();
         fs::create_dir(&outside).unwrap();
         symlink(&outside, home.join("backend-temp")).unwrap();
-        assert!(worker_temp_directory(&home, "backend-temp").is_err());
+        {
+            let mut pins = super::storage_boundary::DirectoryPins::default();
+            assert!(worker_temp_directory(&home, "backend-temp", &mut pins).is_err());
+        }
         fs::remove_dir_all(&outer).unwrap();
     }
 }

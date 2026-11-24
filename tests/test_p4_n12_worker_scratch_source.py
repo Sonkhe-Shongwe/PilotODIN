@@ -26,15 +26,15 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
         self.assertIn('com.pilotodin.p4r03benchmark', helper)
         self.assertIn('"baseline" => Some("baseline")', helper)
         self.assertIn('"candidate" => Some("candidate")', helper)
-        self.assertIn("storage_boundary::prepare_directory(&app_root)?", helper)
-        self.assertIn('storage_boundary::prepare_directory(&root.join("data"))?', helper)
-        self.assertIn("storage_boundary::prepare_directory(&home.join(profile))", helper)
+        self.assertIn("pins.prepare(&app_root)?", helper)
+        self.assertIn('pins.prepare(&root.join("data"))?', helper)
+        self.assertIn("pins.prepare(&home.join(profile))", helper)
         self.assertNotIn("create_dir_all", helper)
 
     def test_rejects_junction_escape_and_nonliteral_worker_directory_names(self):
         src = RUST.read_text(encoding="utf-8")
         helper = slice_between(src, "fn worker_temp_directory(", "// Verify the actual production environment")
-        self.assertIn("storage_boundary::prepare_worker_temp(home, name)", helper)
+        self.assertIn("pins.prepare_worker_temp(home, name)", helper)
         policy = BOUNDARY.read_text(encoding="utf-8")
         self.assertIn('matches!(name, "backend-temp" | "inference-temp")', policy)
         prepare = slice_between(policy, "pub fn prepare_directory(", "pub fn prepare_worker_temp(")
@@ -50,8 +50,8 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
     def test_backend_uses_own_temp_and_retains_project_data_home_and_cwd(self):
         src = RUST.read_text(encoding="utf-8")
         launch = slice_between(src, "fn launch_backend(", "fn verify_bundled_model(")
-        self.assertIn("worker_data_home(&app)?", launch)
-        self.assertIn('worker_temp_directory(&data_dir, "backend-temp")?', launch)
+        self.assertIn("worker_data_home(&app, &mut storage_pins)?", launch)
+        self.assertIn('worker_temp_directory(&data_dir, "backend-temp", &mut storage_pins)?', launch)
         for key in ("TEMP", "TMP", "TMPDIR"):
             self.assertIn(f'.env("{key}", worker_temp.as_os_str())', launch)
         self.assertIn('.env("PILOTODIN_HOME", data_dir.to_string_lossy().to_string())', launch)
@@ -65,6 +65,24 @@ class BundledWorkerProductFilesystemContract(unittest.TestCase):
             self.assertIn(f'.env("{key}", worker_temp.as_os_str())', launch)
         self.assertIn('.env("PATH", runtime_path)', launch)
         self.assertIn(".current_dir(&runtime_dlls)", launch)
+
+    def test_retained_directory_handles_precede_creation_and_spawn(self):
+        src = RUST.read_text(encoding="utf-8")
+        policy = BOUNDARY.read_text(encoding="utf-8")
+        prepare = slice_between(policy, "pub fn prepare(&mut self", "pub fn prepare_worker_temp(&mut self")
+        self.assertLess(prepare.index("self.admit_existing(parent)?"), prepare.index("prepare_directory(path)?"))
+        self.assertLess(prepare.index("prepare_directory(path)?"), prepare.index("self.admit_existing(&prepared)?"))
+        self.assertIn(".share_mode(0x3)", policy)
+        self.assertIn("GetFileInformationByHandleEx", policy)
+        for start, end in (("fn launch_backend(", "fn verify_bundled_model("),
+                           ("fn launch_bundled_ai(", "const MAX_REPORT_EXPORT_BYTES")):
+            launch = slice_between(src, start, end)
+            self.assertLess(launch.index("storage_pins.verify()?"), launch.index("command.spawn()"))
+            self.assertIn("_storage_pins: storage_pins", launch)
+        profile = RUST.with_name("desktop_profile.rs").read_text(encoding="utf-8")
+        self.assertIn("pins: DirectoryPins", profile)
+        self.assertIn("pins.prepare(root)?", profile)
+        self.assertIn("verify_root(&root)?", src)
 
     def test_no_application_wide_environment_or_production_webview_override(self):
         import json

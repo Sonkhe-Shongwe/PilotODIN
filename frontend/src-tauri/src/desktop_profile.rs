@@ -1,7 +1,7 @@
 //! Production desktop profile admission. This coordinates cooperating
 //! desktops and rejects existing redirects/override configuration; it does
 //! not establish independent browser FileIO coverage or an OS sandbox.
-use crate::storage_boundary::{prepare_directory, validate_existing_directory};
+use crate::storage_boundary::{DirectoryPins, validate_existing_directory};
 use std::ffi::OsStr;
 use std::fs::{self, File, OpenOptions};
 use std::path::{Path, PathBuf};
@@ -13,6 +13,12 @@ const OVERRIDE: &str = "Unsupported WebView2 startup override; review configurat
 
 pub struct DesktopProfileLease {
     _file: File,
+    pins: DirectoryPins,
+}
+impl DesktopProfileLease {
+    pub fn verify_root(&self, root: &Path) -> Result<(), String> {
+        self.pins.verify_path(root)
+    }
 }
 
 fn reject_environment<'a>(keys: impl IntoIterator<Item = &'a OsStr>) -> Result<(), String> {
@@ -150,8 +156,8 @@ mod windows {
     pub fn reject_registry_overrides() -> Result<(), String> { Ok(()) }
 }
 
-fn acquire(root: &Path) -> Result<DesktopProfileLease, String> {
-    validate_existing_directory(root)?;
+fn acquire_with_pins(root: &Path, mut pins: DirectoryPins) -> Result<DesktopProfileLease, String> {
+    pins.admit_existing(root)?;
     let marker = root.join(LOCK_NAME);
     match fs::symlink_metadata(&marker) {
         Ok(info) => windows::check_named_file(&info)?,
@@ -159,8 +165,13 @@ fn acquire(root: &Path) -> Result<DesktopProfileLease, String> {
         Err(_) => return Err(UNSAFE.into()),
     }
     let file = windows::open_lease(&marker)?;
-    validate_existing_directory(root)?;
-    Ok(DesktopProfileLease { _file: file })
+    pins.verify_path(root)?;
+    Ok(DesktopProfileLease { _file: file, pins })
+}
+
+#[cfg(test)]
+fn acquire(root: &Path) -> Result<DesktopProfileLease, String> {
+    acquire_with_pins(root, DirectoryPins::default())
 }
 
 /// Use exactly the existing Tauri app-local profile root. No relocation,
@@ -169,8 +180,9 @@ pub fn prepare_production_profile(root: &Path) -> Result<(PathBuf, DesktopProfil
     let keys: Vec<_> = std::env::vars_os().map(|(key, _)| key).collect();
     reject_environment(keys.iter().map(|key| key.as_os_str()))?;
     windows::reject_registry_overrides()?;
-    let root = prepare_directory(root)?;
-    let lease = acquire(&root)?;
+    let mut pins = DirectoryPins::default();
+    let root = pins.prepare(root)?;
+    let lease = acquire_with_pins(&root, pins)?;
     Ok((root, lease))
 }
 
@@ -212,6 +224,7 @@ mod tests {
     fn competing_lease_refused_then_reusable_without_marker_removal() {
         let root = Fixture::new();
         let first = acquire(&root.0).unwrap();
+        first.verify_root(&root.0).unwrap();
         assert!(acquire(&root.0).is_err());
         drop(first);
         let second = acquire(&root.0).unwrap();
