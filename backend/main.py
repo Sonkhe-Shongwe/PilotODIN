@@ -395,6 +395,17 @@ def cancel_training(experiment_id:str, request:Request):
     }
 
 
+def verified_model_load(experiment, model_key, *, holdout=False):
+    try:
+        return model_artifacts.load_verified(experiment,model_key,holdout=holdout)
+    except model_artifacts.LoadDeferred as exc:
+        raise HTTPException(status_code=503,detail=str(exc)) from exc
+    except model_artifacts.LoadRefused as exc:
+        raise HTTPException(status_code=409,detail=str(exc)) from exc
+    except project_lifecycle.ProjectLifecycleError as exc:
+        raise HTTPException(status_code=exc.status,detail=str(exc)) from exc
+
+
 @app.post("/api/experiments/{experiment_id}/select")
 def choose_model(experiment_id:str,body:SelectionRequest):
     e=experiment_or_404(experiment_id)
@@ -407,9 +418,7 @@ def choose_model(experiment_id:str,body:SelectionRequest):
         raise HTTPException(status_code=409,detail="This experiment already has a final selected model. Create a new experiment to compare final outcomes.")
     ready={m["key"] for m in e["results"]["models"] if m["status"]=="ready"}
     if body.model_key not in ready: raise HTTPException(status_code=422,detail="Select a successfully trained model")
-    base=storage.HOME/"models"/experiment_id
-    model=joblib.load(base/f"{body.model_key}.joblib")
-    x_test,y_test=joblib.load(base/"test_set.joblib")
+    model,(x_test,y_test)=verified_model_load(e,body.model_key,holdout=True)
     predictions=model.predict(x_test)
     prob=None
     if e["results"]["task"]=="classification" and hasattr(model,"predict_proba"):
@@ -466,9 +475,7 @@ def predict(experiment_id:str,body:PredictRequest):
     if not e["selected_model"]: raise HTTPException(status_code=409,detail="Select and evaluate a model first")
     if e["config"].get("quality_version",0)!=quality.current_version(e["project_id"]):
         raise HTTPException(status_code=409,detail="This model was trained on an older dataset version. Retrain before new predictions.")
-    artifact=storage.HOME/"models"/experiment_id/f"{e['selected_model']}.joblib"
-    if not artifact.is_file(): raise HTTPException(status_code=500,detail="Selected model artifact not found")
-    pipe=joblib.load(artifact)
+    pipe=verified_model_load(e,e["selected_model"])
     try:
         result=engine.predict_one(pipe,e["results"]["input_schema"],body.values)
         result["target"]=e["config"]["target"]

@@ -132,6 +132,7 @@ def memory_status() -> dict:
 # Existing per-model/row/matrix caps remain the authoritative ML limits.
 LOW_MEMORY_MIN_FREE_GIB = {
     "training": 0.75,
+    "model_load": 0.75,
     "local_inference": 2.0,
 }
 
@@ -226,5 +227,6 @@ def status() -> dict:
         "policy_effect": "low_memory_new_work_preflight_only_no_scheduler",
         "offline_8gb_ai_feasibility": "NOT_TESTED",
         "low_memory_training_min_free_gib": LOW_MEMORY_MIN_FREE_GIB["training"],
+        "low_memory_model_load_min_free_gib": LOW_MEMORY_MIN_FREE_GIB["model_load"],
         "low_memory_local_inference_min_free_gib": _minimum_free_gib("local_inference"),
     }

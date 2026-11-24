@@ -176,18 +176,17 @@ def _completed_selection_fixture(workspace, monkeypatch, before_prediction):
     })
     targets = [11.0, 22.0, 33.0]
 
-    def load(path):
-        if path.name == "test_set.joblib":
-            return [[1.0], [2.0], [3.0]], targets
-
+    # This fixture tests transactional selection races, not artifact trust.
+    # The verified loader has its own independent receipt/byte tests.
+    def load(experiment, key, *, holdout=False):
+        assert holdout and experiment["id"] == eid
         def predict(_rows):
             before_prediction()
-            offset = {"ridge": 1, "linear_regression": 2}[path.stem]
+            offset = {"ridge": 1, "linear_regression": 2}[key]
             return [value + offset for value in targets]
+        return SimpleNamespace(predict=predict), ([[1.0], [2.0], [3.0]], targets)
 
-        return SimpleNamespace(predict=predict)
-
-    monkeypatch.setattr(main.joblib, "load", load)
+    monkeypatch.setattr(main.model_artifacts, "load_verified", load)
     monkeypatch.setattr(main.engine, "bounded_feature_sensitivity", lambda *_: {"status": "fixture"})
     return client, pid, eid
 

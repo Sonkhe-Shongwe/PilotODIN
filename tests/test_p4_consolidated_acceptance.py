@@ -521,6 +521,7 @@ def test_p4_76_worker_forwards_persisted_strategy_without_fitting(monkeypatch):
     captured = {}
     monkeypatch.setattr(main.storage, "claim_queued_experiment", lambda eid: True)
     monkeypatch.setattr(main.storage, "check_training_interruption", lambda eid: None)
+    monkeypatch.setattr(main.storage, "model_training_source", lambda eid,pid,config: "a"*64)
     monkeypatch.setattr(main.storage, "get_project", lambda pid: {"id": pid})
     monkeypatch.setattr(main, "df_for", lambda project, version: frame)
     monkeypatch.setattr(main.storage, "advance_running_experiment",

@@ -704,3 +704,82 @@ def test_model_recovery_preserves_partial_artifacts_without_promoting(monkeypatc
     assert (final/"ridge.joblib").read_bytes()==b"partial"
     with storage.connect() as con:
         assert model_publication.read(con,eid).state=="interrupted"
+
+
+def _verified_load_fixture(monkeypatch,tmp_path):
+    home,eid,config,results,digest=_fresh_model_worker(monkeypatch,tmp_path)
+    receipt=model_artifacts.publish(eid,config,digest,results,{"ridge":b"inert model"},b"inert holdout")
+    return home,storage.get_experiment(eid),receipt
+
+
+def test_verified_load_rewinds_same_private_handle_after_original_changes(monkeypatch,tmp_path):
+    home,experiment,receipt=_verified_load_fixture(monkeypatch,tmp_path)
+    final=home/"models"/experiment["id"]
+    loaded=[]
+    def load(stream,mmap_mode=None):
+        assert mmap_mode is None
+        assert stream.tell()==0
+        if not loaded:
+            (final/"ridge.joblib").write_bytes(b"unverified replacement")
+            (final/"test_set.joblib").write_bytes(b"unverified holdout")
+        value=stream.read()
+        loaded.append(value)
+        return value
+    monkeypatch.setattr(model_artifacts.joblib,"load",load)
+    assert model_artifacts.load_verified(experiment,"ridge",holdout=True)==(b"inert model",b"inert holdout")
+    assert loaded==[b"inert model",b"inert holdout"]
+    assert not list((home/"backend-temp").iterdir())
+
+
+@pytest.mark.parametrize("failure",["legacy","missing","digest","holdout","extra","runtime","config","disk","memory","link"])
+def test_unverified_artifact_never_reaches_deserializer(monkeypatch,tmp_path,failure):
+    home,experiment,receipt=_verified_load_fixture(monkeypatch,tmp_path)
+    eid=experiment["id"]
+    directory=home/"models"/eid
+    source=directory/"ridge.joblib"
+    if failure=="legacy":
+        with storage.connect() as con:
+            con.execute("DELETE FROM model_publications_v1 WHERE experiment_id=?",(eid,))
+    elif failure=="missing":
+        source.unlink()
+    elif failure=="digest":
+        source.write_bytes(b"X"*len(b"inert model"))
+    elif failure=="holdout":
+        (directory/"test_set.joblib").write_bytes(b"X"*len(b"inert holdout"))
+    elif failure=="extra":
+        (directory/"unexpected.joblib").write_bytes(b"unknown")
+    elif failure=="runtime":
+        monkeypatch.setattr(model_publication,"runtime_versions",lambda:{**receipt.runtime,"joblib":"0.0"})
+    elif failure=="config":
+        with storage.connect() as con:
+            con.execute("UPDATE model_publications_v1 SET config_sha256=? WHERE experiment_id=?",("0"*64,eid))
+    elif failure=="disk":
+        from types import SimpleNamespace
+        monkeypatch.setattr(model_artifacts.shutil,"disk_usage",lambda _:SimpleNamespace(free=0))
+    elif failure=="memory":
+        monkeypatch.setattr(model_artifacts.resource_policy,"admit_new_work",lambda _:{"decision":"defer"})
+    elif failure=="link":
+        foreign=tmp_path/"foreign-model"
+        source.rename(foreign)
+        os.link(foreign,source)
+    monkeypatch.setattr(model_artifacts.joblib,"load",lambda *a,**kw:pytest.fail("Unverified deserialization"))
+    expected=model_artifacts.LoadDeferred if failure in ("disk","memory") else model_artifacts.LoadRefused
+    with pytest.raises(expected):
+        model_artifacts.load_verified(experiment,"ridge",holdout=True)
+    assert storage.get_experiment(eid)["status"]=="completed"
+    scratch=home/"backend-temp"
+    assert not scratch.exists() or not list(scratch.iterdir())
+    if failure=="link":
+        assert foreign.read_bytes()==b"inert model"
+
+
+def test_verified_prediction_requires_selected_model(monkeypatch,tmp_path):
+    home,experiment,receipt=_verified_load_fixture(monkeypatch,tmp_path)
+    monkeypatch.setattr(model_artifacts.joblib,"load",lambda *a,**kw:pytest.fail("Unexpected load"))
+    with pytest.raises(model_artifacts.LoadRefused,match="selected"):
+        model_artifacts.load_verified(experiment,"ridge")
+    with storage.connect() as con:
+        con.execute("UPDATE experiments SET selected_model='ridge' WHERE id=?",(experiment["id"],))
+    experiment=storage.get_experiment(experiment["id"])
+    monkeypatch.setattr(model_artifacts.joblib,"load",lambda stream,**kw:stream.read())
+    assert model_artifacts.load_verified(experiment,"ridge")==b"inert model"

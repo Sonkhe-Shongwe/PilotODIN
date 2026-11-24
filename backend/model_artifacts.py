@@ -6,15 +6,19 @@ import hashlib
 import logging
 import os
 import stat
+import json
+import shutil
+import tempfile
 
 import joblib
 
 try:
-    from . import artifact_publication, model_publication as ledger, storage
+    from . import artifact_publication, model_publication as ledger, resource_policy, storage
     from .workspace_boundary import pinned_existing_directory
 except ImportError:
     import artifact_publication
     import model_publication as ledger
+    import resource_policy
     import storage
     from workspace_boundary import pinned_existing_directory
 
@@ -315,3 +319,127 @@ def publish(eid, config, source_sha256, results, pipes, holdout):
         except Exception:
             logging.warning("Model staging cleanup deferred")
         return receipt
+
+
+class LoadRefused(Error):
+    """Controlled refusal; no unverified artifact is passed to Joblib."""
+
+
+class LoadDeferred(LoadRefused):
+    """Insufficient resources for a verified snapshot."""
+
+
+def _load_receipt(experiment, model_key, *, holdout):
+    eid=experiment["id"]
+    with storage.connect() as con:
+        con.execute("BEGIN")
+        receipt=ledger.read(con,eid)
+        if receipt is None:
+            raise LoadRefused("Legacy model has no verified manifest. Historical results are preserved; retrain to use this model.")
+        row=con.execute("SELECT project_id,status,config,results,selected_model FROM experiments WHERE id=?",(eid,)).fetchone()
+        if row is None or row["status"]!="completed" or receipt.state!="committed":
+            raise LoadRefused("Model publication is not committed. Retrain before using artifacts.")
+        config=json.loads(row["config"])
+        results=json.loads(row["results"])
+        if (row["project_id"]!=experiment["project_id"] or config!=experiment["config"]
+                or results!=experiment["results"] or row["selected_model"]!=experiment["selected_model"]):
+            raise LoadRefused("Experiment changed. Refresh before using artifacts.")
+        state=con.execute("SELECT original_sha256,current_version FROM quality_state WHERE project_id=?",
+                          (receipt.project_id,)).fetchone()
+        if state is None or state["current_version"]!=receipt.quality_version:
+            raise LoadRefused("Dataset changed since training. Retrain on the current version.")
+        try:
+            from .project_lifecycle import require_active_for_write
+        except ImportError:
+            from project_lifecycle import require_active_for_write
+        require_active_for_write(con,receipt.project_id)
+        receipt.verify_binding(row["project_id"],config,state["original_sha256"],results,
+                               runtime=ledger.runtime_versions())
+        names=[model_key+".joblib"]
+        if model_key not in {m["key"] for m in results["models"] if m["status"]=="ready"}:
+            raise LoadRefused("Requested model is not a ready candidate.")
+        if holdout:
+            names.append("test_set.joblib")
+        elif row["selected_model"]!=model_key:
+            raise LoadRefused("Requested model is not the selected model.")
+        if any(name not in receipt.files for name in names):
+            raise LoadRefused("Requested artifact is absent from the manifest.")
+        return receipt,names
+
+
+def load_verified(experiment, model_key, *, holdout=False):
+    """Verify all requested snapshots before invoking any deserializer.
+
+    TemporaryFile owns the exclusive scratch handle and deletes it on close.
+    The exact copied, hashed stream is rewound and supplied to Joblib, never
+    its original filename. This protects against byte substitution, not an
+    attacker controlling the database and the local process together.
+    """
+    try:
+        receipt,names=_load_receipt(experiment,model_key,holdout=holdout)
+        admission=resource_policy.admit_new_work("model_load")
+        if admission["decision"]=="defer":
+            raise LoadDeferred("Insufficient available memory for model loading. Retry when more memory is available.")
+        total=sum(receipt.files[name]["size"] for name in names)
+        scratch=storage.HOME/"backend-temp"
+        directory=storage.HOME/"models"/receipt.experiment_id
+        storage.check_scratch()
+        with ExitStack() as stack:
+            verify_home=stack.enter_context(pinned_existing_directory(storage.HOME))
+            verify_home()
+            storage.check_write_path(scratch,directory=True,missing=True)
+            scratch.mkdir(exist_ok=True)
+            storage.check_write_path(scratch,directory=True)
+            verify_scratch=stack.enter_context(pinned_existing_directory(scratch))
+            verify_models=stack.enter_context(pinned_existing_directory(directory))
+            def verify_source():
+                verify_models()
+                _directory(directory)
+            def verify_temp():
+                verify_home()
+                verify_scratch()
+                storage.check_scratch()
+                storage.check_write_path(scratch,directory=True)
+            verify_temp()
+            if shutil.disk_usage(scratch).free<total+8*1024*1024:
+                raise LoadDeferred("Insufficient scratch disk space for verified model loading.")
+            _inventory(directory,receipt.files,verify_source)
+            snapshots=[]
+            for name in names:
+                verify_temp()
+                stream=stack.enter_context(tempfile.TemporaryFile(mode="w+b",dir=scratch))
+                _stream_verified(directory/name,None,verify_source,output=stream,
+                                 manifest=receipt.files[name])
+                stream.flush()
+                stream.seek(0)
+                if os.fstat(stream.fileno()).st_size!=receipt.files[name]["size"]:
+                    raise LoadRefused("Verified scratch snapshot size mismatch.")
+                # Check the actual snapshot bytes too, rather than relying on
+                # successful buffered writes as a checksum proof.
+                digest=hashlib.sha256()
+                remaining=receipt.files[name]["size"]
+                while remaining:
+                    data=stream.read(min(_CHUNK,remaining))
+                    if not data:
+                        raise LoadRefused("Incomplete verified scratch snapshot.")
+                    digest.update(data)
+                    remaining-=len(data)
+                if stream.read(1) or digest.hexdigest()!=receipt.files[name]["sha256"]:
+                    raise LoadRefused("Verified scratch snapshot digest mismatch.")
+                stream.seek(0)
+                snapshots.append(stream)
+            verify_temp()
+            _inventory(directory,receipt.files,verify_source)
+            current,current_names=_load_receipt(experiment,model_key,holdout=holdout)
+            if current!=receipt or current_names!=names:
+                raise LoadRefused("Model receipt changed during verification.")
+            # All requested files have passed validation before first load.
+            try:
+                objects=[joblib.load(stream,mmap_mode=None) for stream in snapshots]
+            except Exception as exc:
+                raise LoadRefused("Verified model could not be decoded. Retrain before using artifacts.") from exc
+            return tuple(objects) if holdout else objects[0]
+    except LoadRefused:
+        raise
+    except (Error,OSError,storage.WorkspaceBoundaryError,ValueError,KeyError,TypeError) as exc:
+        raise LoadRefused("Model integrity or runtime compatibility could not be confirmed. Historical results are preserved; retrain before use.") from exc

@@ -47,9 +47,7 @@ def test_selection_records_comparable_heldout_baseline_and_warns_on_a_tie(monkey
     exp_id="small-frozen-test"
     p=tmp_path/"models"/exp_id
     p.mkdir(parents=True)
-    joblib.dump(AlwaysNo(),p/"logistic_regression.joblib")
     yt=pd.Series(["Yes","No"]*20)
-    joblib.dump((pd.DataFrame({"Signal":list(range(40))}),yt),p/"test_set.joblib")
     experiment={
         "id":exp_id,"project_id":"isolated-project","status":"completed",
         "config":{"quality_version":2,"target":"Flagged","task":"classification"},
@@ -63,6 +61,10 @@ def test_selection_records_comparable_heldout_baseline_and_warns_on_a_tie(monkey
     monkeypatch.setattr(main,"experiment_or_404",lambda _:experiment)
     monkeypatch.setattr(main.quality,"current_version",lambda _:2)
     monkeypatch.setattr(main.storage,"HOME",tmp_path)
+    # Metric and optional-diagnostic contract only; artifact verification is
+    # tested independently with real receipts and controlled byte streams.
+    monkeypatch.setattr(main.model_artifacts,"load_verified",
+        lambda e,key,holdout=False: (AlwaysNo(),(pd.DataFrame({"Signal":list(range(40))}),yt)))
     monkeypatch.setattr(main.storage,"select_model",lambda eid,key,result:store.append(result) or True)
     response=main.choose_model(exp_id,main.SelectionRequest(model_key="logistic_regression"))
     final=response["final_results"]
