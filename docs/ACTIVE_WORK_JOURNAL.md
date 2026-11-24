@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 0869b5fac07e6050e7e39b9a75bc5e403a58319e |
-| Product baseline | 355694b0c69832e6908f5c0eca0ab95e831087da |
+| Product baseline | 0a2419893c25e6575e9ce381c6d62f6abc0e3a2b |
 | Scope | Correct two exact C1/C2 integration CI failures, preserve B5 durable blocked receipt and local-only resource status contract; real owned export fault fixtures. Source only. |
 | Operation ID | C1-C2-INTEGRATION-20261124-regression-repair |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/export_transfer.py; backend/main.py; frontend/tests/p1-resource-settings.test.cjs; tests/test_c1_product_integration.py; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Separate close vs receipt uncertainty, explicit legacy status branch and stronger source contract, five added actual product fixture cases. Exact CI pending; no native execution. |
-| Pending runs | Exact-source routine CI discovery pending; reconcile all. |
+| Pending runs | Exact-source [#45469394026](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394026), [#45469394021](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394021), [#45469394483](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394483), [#45469394279](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394279), [#45469394311](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394311), [#45469394394](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394394), [#45469394333](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394333), [#45469394076](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394076), [#45469394211](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45469394211); IN_PROGRESS at discovery. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Publish targeted correction, verify exact regression workflows before consolidated native single-flight/host integration. No partial activation. |
+| Recovery action | Reconcile all nine CI results and any failures. Then complete consolidated C1/C2 native async single-flight, grant demand direction, data priority and group exit, actual launcher/frontend composition. Do not expand isolated foundations or activate partial enforcement. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
