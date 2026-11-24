@@ -6,20 +6,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 
 | Field | Value |
 | --- | --- |
-| Task ID | B5-NATIVE-V2-20261124 |
-| State | VERIFYING |
+| Task ID | B-CLOSURE-20261124 |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 4bc7ef6171081d9f9bfc8d753654c8786a12a8af |
+| Observed starting HEAD | 85c3dbbe3bb5dfc209834a83108558da91136097 |
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
-| Scope | ONE approved locked Windows library test build/run; exact product 8e3cc91, seven exact tests, artifact 14937864793 and locked dependencies; validated V2 only |
-| Operation ID | B5-NATIVE-SYNTHETIC-V2-20261124-ONE-USE |
-| Operation state | ISSUED |
-| Intended files | .github/workflows/p4-package-b5-native-synthetic-v2-once.yml; active journal, handoff, evidence ledger |
-| Approval | V2 fresh one-use approval consumed by exact dispatch e5f553f; no replay or reruns. V1 also consumed. |
-| Verification | Four exact product source CI PASS; [V2 source preflight #45441506809](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45441506809) PASS on QA 3609bf27f69c1469262b134af0ad249a9d1e16b3. Complete disabled and armed YAML, five PowerShell ASTs, Python AST, seven exact source names and pinned identities PASS. Windows job SKIPPED; native product uncompiled. |
-| Pending runs | Exact dispatch #45442066752 in_progress; preflight job 138615635454 success; Windows job 138615856340 in_progress; successful steps: Set up job, Checkout exact reviewed source, no retained credentials, Verify source and locked dependency identity, Stage intentionally invalid compile-only fixtures, Fetch and verify the exact synthetic workbook artifact. Disarm #45442158067 pending at e92c926; exact disabled bytes confirmed. Final logs/cleanup must be reconciled before any closure. |
+| Scope | Reconcile successful V2 evidence, assess Package B source exit and publish bounded documentation closure audit; no product or workflow change, no native operations |
+| Operation ID | B-CLOSURE-20261124-documentation |
+| Operation state | PREPARED |
+| Intended files | active journal; compact handoff; B5 ledger; package B spec; directive; navigation/current status labels; package closure audit |
+| Approval | V2 approval consumed; exact run #45442066752 SUCCESS; V1 consumed; no fresh restricted approval |
+| Verification | Actual native log 7 passed, 0 failed, 0 ignored, 26 filtered; source/lock and cleanup checks passed. Disarm #45442158067 source preflight PASS and Windows job SKIPPED. Source 8e3cc91 unchanged. |
+| Pending runs | None from V2 or disarm; review closure criteria, then record outcome |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Verify disarm guard and exact dispatch run, review preflight then seven native test results and cleanup if reached. No rerun even if job fails or run ID unavailable. |
+| Recovery action | Recover closure operation by exact commit marker and verify documentation-only diff; no native rerun. If closure criteria met, transition journal to C bounded specification preparation; preserve D acceptance obligations. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation
