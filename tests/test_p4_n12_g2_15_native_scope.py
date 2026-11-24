@@ -14,8 +14,17 @@ class G215NativeScopeTests(unittest.TestCase):
         cls.cpp = CPP.read_text(encoding="utf-8")
         cls.wf = WF.read_text(encoding="utf-8")
 
-    def test_native_is_disabled_and_fresh_marker_does_not_exist(self):
-        self.assertFalse(MARKER.exists())
+    def test_one_use_marker_consumed_and_native_workflow_stays_disabled(self):
+        # Successful generated-only Windows run 45300245828 consumed this
+        # precise approval; the marker is retained as auditable evidence.
+        self.assertTrue(MARKER.is_file())
+        self.assertEqual(
+            MARKER.read_text(encoding="utf-8"),
+            "reviewed_source=f3962d21ab739f0d217457213e8809c82034a4e8\n"
+            "scope=g215-one-generated-self-process-duplicate-type\n",
+        )
+        self.assertIn("1975e71be4e0335966f7b421a426d0b1877d1b60", self.wf)
+        self.assertNotIn("    if: ${{ true }}", self.wf)
         self.assertIn("    if: ${{ false }}", self.wf)
         self.assertNotIn("workflow_dispatch", self.wf)
         self.assertIn("scope=g215-one-generated-self-process-duplicate-type", self.wf)

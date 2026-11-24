@@ -21,3 +21,7 @@ Microsoft [DuplicateHandle](https://learn.microsoft.com/en-us/windows/win32/api/
 The generated probe, even if later executed successfully, does **not** identify an original WebView2 writer. Full G2 requires separately authorised real-app original process/file-handle provenance, ETW FileObject/IRP request/completion path, physical destination, complete process lifetimes and calibrated loss review. G3 fixes observed product writes; G4 requires an independent complete strict pass.
 
 **Scores unchanged:** R02.5 0/5; N12 0/2; P4 14/20 (70%); file-mutation engineering 3/4 (75%); remaining G1-G4 delivery 1/4 (25%). Intermediate installer freeze retained; P5 not authorised.
+
+## G2.15 actual hosted Windows result and consumed approval | 24 November 2026
+
+[Exact first-attempt generated-only Windows G2.15 #45300245828](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45300245828) **SUCCESS** with `G215_GENERATED_DISK_TYPE_PRESENT`. The fresh reviewed-source approval was consumed at activation `1975e71be4e0335966f7b421a426d0b1877d1b60` and the workflow immediately disarmed in `6b2aeba57ee70214bbc019165d45b1568233c4e5`; source-only tests updated to enforce this historical state. This positive result is **generated self-process only** and does not prove real WebView2 original handle provenance, FileObject/IRP association or storage root containment. [Full evidence review](./P4_R02_5_G2_15_GENERATED_DUPLICATE_TYPE_WINDOWS_RESULT_2026-11-24.md). Official R02.5 0/5, P4 14/20, G1-G4 1/4 unchanged.
