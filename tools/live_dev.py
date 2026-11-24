@@ -104,7 +104,7 @@ def main() -> int:
             return 2
 
     announce(2, "Preparing isolated Python environment")
-    DEV_HOME.mkdir(exist_ok=True)
+    # The owned ASGI factory validates and creates the final data directory.
     CACHE.mkdir(exist_ok=True)
     python = VENV / "Scripts" / "python.exe"
     if not python.is_file():

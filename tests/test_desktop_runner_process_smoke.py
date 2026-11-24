@@ -71,3 +71,46 @@ def test_desktop_runner_process_local_token_and_isolated_storage(tmp_path):
         except subprocess.TimeoutExpired:
             process.kill()
             process.communicate(timeout=7)
+
+
+def test_desktop_explicit_stop_drains_while_parent_pipe_stays_open(tmp_path):
+    from backend.desktop_runner import SHUTDOWN_REQUEST
+    from backend.workspace_boundary import engine_workspace
+    root = Path(__file__).resolve().parents[1]
+    home = tmp_path.resolve() / "stop-workspace"
+    home.mkdir()
+    port = _port()
+    token = "stop-session-" + "a" * 64
+    env = {**os.environ, "PYTHONPATH": str(root),
+           "PILOTODIN_DESKTOP_SESSION": token, "PILOTODIN_HOME": str(home),
+           "PILOTODIN_DESKTOP_PORT": str(port), "PILOTODIN_DESKTOP_ALLOW_DEV": "0",
+           "PILOTODIN_DESKTOP_WATCH_STDIN": "1"}
+    env.pop("PILOTODIN_BUNDLED_LLM_PORT", None)
+    env.pop("PILOTODIN_BUNDLED_LLM_TOKEN", None)
+    child = subprocess.Popen([sys.executable, "-B", "-m", "backend.desktop_runner"],
+        cwd=home, env=env, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE)
+    try:
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            if child.poll() is not None:
+                raise AssertionError("Engine exited before readiness")
+            try:
+                if _status(f"http://127.0.0.1:{port}/api/health",
+                           {"X-PilotODIN-Session": token})[0] == 200:
+                    break
+            except (OSError, TimeoutError):
+                pass
+            time.sleep(.12)
+        else:
+            raise AssertionError("Engine readiness failed")
+        child.stdin.write(SHUTDOWN_REQUEST)
+        child.stdin.flush()
+        assert child.wait(timeout=10) == 0
+        assert not child.stdin.closed
+        with engine_workspace(str(home)):
+            assert (home / "pilotodin.sqlite3").is_file()
+    finally:
+        if child.poll() is None:
+            child.kill()
+        child.communicate(timeout=7)

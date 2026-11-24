@@ -536,7 +536,8 @@ def backend_environment(env, home=None):
                   and scratch.is_dir() and not scratch.is_symlink()
                   and scratch.resolve(strict=True).parent == home.resolve(strict=True),
                   "n12-backend-temp-home-unverified")
-    return {**result, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch)}
+    return {**result, "TEMP": str(scratch), "TMP": str(scratch), "TMPDIR": str(scratch),
+            "PILOTODIN_SERVER_MODE": "hosted-fixture"}
 
 
 def app_environment(env, profile, label):
@@ -908,7 +909,7 @@ def capture(root, staged, source, expected_hash, node, egress_programs=None):
         with driver_handles, journey_processes(source, expected_hash) as stack:
             python = sys.executable if egress_programs is None else egress_programs["backend"]
             backend = spawn(stack, manifest, "backend", [python, "-B", "-m", "uvicorn",
-                "qa.p4_research.n12_backend_wakeup:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
+                "qa.p4_research.n12_backend_wakeup:owned_wakeup_app", "--factory", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"],
                 backend_environment(env, home), home, root / "backend.log")
             vite = spawn(stack, manifest, "driver", [node, str(FRONTEND / "node_modules/vite/bin/vite.js"),
                 "--host", "127.0.0.1", "--port", "5173", "--strictPort", "--configLoader", "runner"],

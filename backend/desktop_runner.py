@@ -14,14 +14,22 @@ if TYPE_CHECKING:
     from uvicorn import Server
 
 
+SHUTDOWN_REQUEST = b"PILOTODIN_STOP\n"
+
+
 def _watch_desktop_pipe(server: Server, descriptor: int) -> None:
-    # The desktop holds the only write end. EOF also arrives if Windows
-    # terminates the desktop before it can run the normal exit callback.
+    # A bounded fixed stop message over the already-owned stdin pipe.
+    # EOF, malformed data or an unreadable pipe also stop the server.
+    pending = b""
     try:
-        while os.read(descriptor, 4096):
-            pass
+        while len(pending) < len(SHUTDOWN_REQUEST):
+            chunk = os.read(descriptor, len(SHUTDOWN_REQUEST) - len(pending))
+            if not chunk:
+                break
+            pending += chunk
+            if not SHUTDOWN_REQUEST.startswith(pending):
+                break
     except OSError:
-        # An unreadable ownership channel cannot establish a live owner.
         pass
     server.should_exit = True
 
@@ -49,28 +57,26 @@ def main() -> int:
             return 2
     # The writer lease must precede backend.main/storage import, schema
     # initialization and interrupted-experiment recovery, and outlive server.run.
-    from backend.workspace_boundary import WorkspaceBoundaryError, engine_workspace
+    from backend.workspace_boundary import WorkspaceBoundaryError, hold_process_workspace
     try:
-        with engine_workspace(home) as owned_home:
-            os.environ["PILOTODIN_HOME"] = str(owned_home)
-            import uvicorn
-            from backend.main import app
-
-            options = dict(host="127.0.0.1", port=port, access_log=False,
-                           log_level="warning", server_header=False)
-            if owner_stdin is None:
-                uvicorn.run(app, **options)
-            else:
-                server = uvicorn.Server(uvicorn.Config(app, **options))
-                Thread(target=_watch_desktop_pipe, args=(server, owner_stdin),
-                       name="pilotodin-desktop-owner", daemon=True).start()
-                server.run()
-                if not server.started:
-                    return 3  # Uvicorn's startup-failure exit status.
-            return 0
+        owned_home = hold_process_workspace(home)
     except WorkspaceBoundaryError as exc:
         print(str(exc), file=sys.stderr)
         return 2
+    os.environ["PILOTODIN_HOME"] = str(owned_home)
+    import uvicorn
+    from backend.main import app
+
+    options = dict(host="127.0.0.1", port=port, access_log=False,
+                   log_level="warning", server_header=False)
+    server = uvicorn.Server(uvicorn.Config(app, **options))
+    if owner_stdin is not None:
+        Thread(target=_watch_desktop_pipe, args=(server, owner_stdin),
+               name="pilotodin-desktop-owner", daemon=True).start()
+    server.run()
+    if not server.started:
+        return 3
+    return 0
 
 
 if __name__ == "__main__":

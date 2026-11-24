@@ -7,6 +7,7 @@ replacement. Full Rust/desktop and per-write path admission are separate.
 """
 from __future__ import annotations
 
+import atexit
 from contextlib import contextmanager
 import os
 from pathlib import Path
@@ -136,3 +137,19 @@ def engine_workspace(value):
         # Closing the original non-inheritable descriptor releases the OS lock.
         if fd is not None:
             os.close(fd)
+
+
+# Keep runtime ownership through interpreter shutdown, after non-daemon
+# executor threads have finished, rather than only through server.run().
+_process_lease = None
+
+
+def hold_process_workspace(value):
+    global _process_lease
+    if _process_lease is not None:
+        raise WorkspaceBoundaryError("Workspace ownership already established")
+    lease = engine_workspace(value)
+    home = lease.__enter__()
+    _process_lease = lease
+    atexit.register(lease.__exit__, None, None, None)
+    return home

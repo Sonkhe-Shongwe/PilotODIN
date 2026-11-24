@@ -52,10 +52,10 @@ export async function startDisposableBackend():Promise<DisposableBackend>{
     throw new Error('Refuse backend launch outside the test frontend directory.');
   }
   const child=spawn('python',
-    ['-m','uvicorn','backend.main:app','--host','127.0.0.1',
+    ['-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1',
      '--port','8000','--no-access-log'],
     {cwd:repoRoot,env:{...process.env,PILOTODIN_DESKTOP_SESSION:'',
-       PILOTODIN_DESKTOP_ALLOW_DEV:'0'},stdio:['ignore','pipe','pipe']});
+       PILOTODIN_DESKTOP_ALLOW_DEV:'0',PILOTODIN_SERVER_MODE:'hosted-fixture'},stdio:['ignore','pipe','pipe']});
   if(!child.pid)throw new Error('Temporary backend process did not start.');
   let recent='';
   for(const stream of [child.stdout,child.stderr]){

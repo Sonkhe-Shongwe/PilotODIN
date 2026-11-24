@@ -111,7 +111,7 @@ def launch_and_close(root, staged, node, source, expected_hash, *, storage_manif
         with journey.checkpoint_stage("app-lifetime-services", source, expected_hash):
             backend_env, backend_cwd = backend_launch_context(env, home)
             backend = journey.spawn(stack, manifest, "backend", [
-                sys.executable, "-B", "-m", "uvicorn", "backend.main:app",
+                sys.executable, "-B", "-m", "uvicorn", "backend.server_entry:owned_app", "--factory",
                 "--host", "127.0.0.1", "--port", "8000", "--no-access-log",
             ], backend_env, backend_cwd, root / "backend.log")
             vite = journey.spawn(stack, manifest, "driver", [

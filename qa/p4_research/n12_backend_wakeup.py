@@ -29,9 +29,16 @@ def loop_wakeup_sockets(loop):
     return sockets
 
 
-async def app(scope, receive, send):
-    from backend.main import app as backend_app
+def owned_wakeup_app():
+    from backend.server_entry import owned_app
+    backend_app = owned_app()
 
+    async def wrapped(scope, receive, send):
+        await _wakeup_app(backend_app, scope, receive, send)
+    return wrapped
+
+
+async def _wakeup_app(backend_app, scope, receive, send):
     if scope["type"] == "lifespan":
         try:
             sockets = loop_wakeup_sockets(asyncio.get_running_loop())

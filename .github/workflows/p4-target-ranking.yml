@@ -13,6 +13,8 @@ on:
       - frontend/src-tauri/src/lib.rs
       - backend/desktop_runner.py
       - backend/workspace_boundary.py
+      - backend/server_entry.py
+      - tests/test_owned_server.py
       - tests/test_workspace_boundary.py
       - frontend/src-tauri/src/storage_boundary.rs
       - frontend/src-tauri/src/desktop_profile.rs
@@ -200,7 +202,7 @@ jobs:
           "$RUNNER_TEMP/pilotodin-storage-policy-tests"
           rm -f "$RUNNER_TEMP/pilotodin-storage-policy-tests"
       - name: Verify Python-only workspace writer lease
-        run: python -B -m unittest -v tests.test_workspace_boundary
+        run: python -B -m unittest -v tests.test_workspace_boundary tests.test_owned_server
       - name: Compile changed backend code
         run: python -m py_compile backend/target_opportunities.py backend/target_timing_review.py
       - name: Run focused existing and new P4 backend suites on synthetic data
@@ -345,7 +347,7 @@ jobs:
       - name: Measure exact local answers at simulated laptop headroom
         run: python -B qa/p4_research/measure_local_answers.py
       - name: Verify engine shutdown with and without a desktop owner
-        run: python -m pytest -q tests/test_packaged_engine_smoke.py tests/test_desktop_runner_process_smoke.py tests/test_workspace_boundary.py
+        run: python -m pytest -q tests/test_packaged_engine_smoke.py tests/test_desktop_runner_process_smoke.py tests/test_workspace_boundary.py tests/test_owned_server.py
 
   p4-readonly-windows-probe:
     if: ${{ false }} # Real Windows ETW fixtures require fresh explicit native scope; retain job body.
