@@ -60,6 +60,9 @@ on:
       - .github/workflows/p4-n12-generated-sysmon-bookends.yml
       - .github/workflows/p4-n12-*.yml
       - tests/test_p4_n12_g2_24_native_workflow_guards.py
+      - qa/p4_research/n12_obtrace_feasibility.py
+      - qa/p4_research/n12_obtrace_win32_session.cpp
+      - tests/test_p4_n12_g2_25_obtrace_feasibility.py
 
 permissions:
   contents: read
@@ -166,3 +169,5 @@ jobs:
           python -B -m unittest discover -s tests -p 'test_p4_n12_private_child_pipe.py' -v
       - name: G2.24 N12 native workflow disarm guard, source-only
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_24_native_workflow_guards.py' -v
+      - name: G2.25 dormant ObTrace feasibility, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_25_obtrace_feasibility.py' -v
