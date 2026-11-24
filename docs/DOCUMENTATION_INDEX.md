@@ -8,7 +8,7 @@ Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Latest en
 
 ## Current authoritative route, in reading order
 
-**Continuation rule:** [AGENTS.md](../AGENTS.md) and [seamless continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md) define the chat/agent handoff procedure and canonical document ownership.
+**Continuation rule:** [AGENTS.md](../AGENTS.md) and [seamless continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md) define the chat/agent handoff procedure and canonical document ownership. [Active work journal](./ACTIVE_WORK_JOURNAL.md) owns in-flight recovery; [decision index](./ENGINEERING_DECISIONS_CURRENT.md) and [recovery checks](./CONTINUATION_RECOVERY_CHECKS.md) record material choices and verification rules.
 
 **Start here:** [Compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md), [live directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md), [active Package B specification](./PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md), [closed Package A specification](./PILOTODIN_PACKAGE_A_STORAGE_LIFECYCLE_IMPLEMENTATION_SPEC_2026-11-24.md), [architecture finding register](./PILOTODIN_PRODUCT_ARCHITECTURE_REVIEW_AND_REMEDIATION_2026-11-24.md) and [current documentation audit](./DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md), [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). G1–G4 and native evidence are acceptance/history references, not the live sequence.
 
