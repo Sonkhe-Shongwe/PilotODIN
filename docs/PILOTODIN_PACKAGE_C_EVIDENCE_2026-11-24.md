@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `7402529265880683a72345b418f235307bf26625`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `2ac816310dbcbc96c42da87b54e3bfefc96ad2fb`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -21,3 +21,7 @@ Operation C1-RESOURCE-ADMISSION-20261124-asgi-lifetime, prepared at `2b44892`, p
 ## 24 November | C1 ASGI lifetime exact-source CI reconciled
 
 [P1 #45451870974](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45451870974), job 138650845769, terminal SUCCESS. Checkout `7402529265880683a72345b418f235307bf26625`, backend compile, 166 regression + 2 subtests, 42 C1 (31 core + 11 adapter), zero failures. FastAPI 0.165.0 / Starlette 1.10.0 / python-multipart 0.0.34 / AnyIO 4.16.0 observed, not locked. Exact public Starlette tag source retrieval unavailable; staged upload adapter will test parser ownership/cleanup on actual resolved framework before any live integration. No native or physical credit. C0/5, source 10/17, P4 14/20 unchanged.
+
+## 24 November | C1 staged bounded upload adapter published
+
+Operation C1-RESOURCE-ADMISSION-20261124-upload-envelope, prepared at `d4b0220`, published [`2ac8163`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/2ac816310dbcbc96c42da87b54e3bfefc96ad2fb). Staged `OwnedUpload` acquires same DATA lane before request receive or parser allocation, counts streamed bytes (41 MiB envelope, existing 40 MiB exact-file ceiling), rejects invalid length/framing, requires single file, owns parser spools across success/refusal/disconnect/cancellation, and blocks on unconfirmed cleanup/unwind. Existing live endpoint unchanged. Sixteen synthetic pytest cases including actual Starlette parser, httpx browser-style multipart, chunked boundary, overflow, malformed inputs, disconnect, cancellation and consumer failure. Actual framework compatibility and counts pending; real disk rollover and cleanup failure not yet explicitly exercised, full browser/product route not registered. Workflow inventory compared against previously inspected 82 definitions: only P1 source workflow changed, no restricted trigger matches. [Exact CI #45453053138](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45453053138) QUEUED at last observation. No native/model/installer/owner operation; C0/5, source 10/17, P4 14/20 unchanged.
