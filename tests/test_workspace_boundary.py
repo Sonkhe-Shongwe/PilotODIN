@@ -349,9 +349,18 @@ target.unlink()
 resource_policy.save_policy("performance")
 assert resource_policy.read_policy()["mode"] == "performance"
 datasets = home / "datasets"
-datasets.rename(home / "old-datasets")
-datasets.mkdir()
-refuse(lambda: storage.check_write_path(datasets / "new.csv", absent=True))
+if os.name == "nt":
+    try:
+        datasets.rename(home / "old-datasets")
+    except OSError:
+        pass
+    else:
+        raise AssertionError("Pinned dataset directory could be renamed")
+    storage.check_write_path(datasets / "new.csv", absent=True)
+else:
+    datasets.rename(home / "old-datasets")
+    datasets.mkdir()
+    refuse(lambda: storage.check_write_path(datasets / "new.csv", absent=True))
 assert list(datasets.iterdir()) == []
 refuse(lambda: storage.check_write_path(home.parent / "outside.csv", absent=True))
 refuse(lambda: storage.check_write_path(home / "models" / ".." / "escape", absent=True))
@@ -457,10 +466,19 @@ assert client.get("/api/health").status_code == 200
 os.environ["TMP"] = str(home.parent)
 assert client.get("/api/health").status_code == 503
 os.environ["TMP"] = str(scratch)
-scratch.rename(home / "original-backend-temp")
-scratch.mkdir()
-response = client.post("/api/projects", files={"file": ("fixture.csv", b"a,b\n1,2\n", "text/csv")})
-assert response.status_code == 503, response.text
+if os.name == "nt":
+    try:
+        scratch.rename(home / "original-backend-temp")
+    except OSError:
+        pass
+    else:
+        raise AssertionError("Pinned scratch directory could be renamed")
+    assert client.get("/api/health").status_code == 200
+else:
+    scratch.rename(home / "original-backend-temp")
+    scratch.mkdir()
+    response = client.post("/api/projects", files={"file": ("fixture.csv", b"a,b\n1,2\n", "text/csv")})
+    assert response.status_code == 503, response.text
 assert not list((home / "datasets").iterdir())
 assert not list(scratch.iterdir())
 """
@@ -495,6 +513,77 @@ with patch.object(boundary, "_directory", side_effect=changed):
         else:
             raise AssertionError("Changed ancestor admitted")
 assert not (home / "datasets" / "x.csv").exists()
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=30, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_retained_directory_handles_and_release_on_process_exit(self):
+        code = r"""
+import os, sys
+from pathlib import Path
+from backend import workspace_boundary as boundary
+home = boundary.hold_process_workspace(sys.argv[1])
+os.environ["PILOTODIN_HOME"] = str(home)
+from backend import storage
+for path in (home, home.parent, home / "datasets", home / "models", home / "backend-temp"):
+    pin = boundary._process_pins[path]
+    assert pin.handle is not None
+    pin.verify(path.lstat())
+    assert pin.identity[0] == boundary._process_pins[home].identity[0]
+if os.name == "nt":
+    for path in (home, home.parent):
+        target = path.with_name(path.name + "-moved")
+        try:
+            path.rename(target)
+        except OSError:
+            assert path.is_dir() and not target.exists()
+        else:
+            raise AssertionError("Pinned workspace or parent could be renamed")
+assert storage.connect().execute("SELECT 1").fetchone()[0] == 1
+"""
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code, str(self.home)],
+            cwd=self.root_source, capture_output=True, text=True,
+            timeout=30, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        # The original handles must not survive interpreter shutdown.
+        moved = self.root / "renamed-after-exit"
+        self.home.rename(moved)
+        self.assertTrue((moved / "pilotodin.sqlite3").is_file())
+        with engine_workspace(str(moved)):
+            pass
+
+    def test_partial_directory_pin_failure_releases_lease(self):
+        code = r"""
+import sys
+from pathlib import Path
+from unittest.mock import patch
+from backend import workspace_boundary as boundary
+home = Path(sys.argv[1])
+original = boundary._DirectoryPin._open
+opened = []
+def fail_last(pin):
+    if pin.path == home:
+        raise OSError("injected pin failure")
+    result = original(pin)
+    opened.append(pin)
+    return result
+with patch.object(boundary._DirectoryPin, "_open", fail_last):
+    try:
+        boundary.hold_process_workspace(str(home))
+    except boundary.WorkspaceBoundaryError:
+        pass
+    else:
+        raise AssertionError("Partial pin failure admitted")
+assert opened and all(pin.handle is None for pin in opened)
+assert not (home / "pilotodin.sqlite3").exists()
+with boundary.engine_workspace(str(home)):
+    pass
 """
         result = subprocess.run(
             [sys.executable, "-B", "-c", code, str(self.home)],

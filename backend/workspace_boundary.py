@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import stat
+from threading import RLock
 
 LOCK_NAME = ".pilotodin-engine.lock"
 DIRECTORIES = ("datasets", "models", "backend-temp", "inference-temp", "export_tmp")
@@ -35,6 +36,137 @@ def _directory(path):
     if _redirected(info) or not stat.S_ISDIR(info.st_mode):
         raise WorkspaceBoundaryError("Workspace directory is redirected or invalid")
     return info
+
+
+class _DirectoryPin:
+    """Retain an original directory handle; never grant Windows delete sharing.
+
+    Windows uses the full handle-derived volume/file identity. POSIX retains
+    the directory descriptor for identity checks, but does not prevent rename.
+    Neither implementation confines arbitrary third-party path-based opens.
+    """
+
+    def __init__(self, path, observed):
+        self.handle = None
+        self.path = path
+        try:
+            self.handle = self._open()
+            self.identity = self._identity(self.handle)
+            self.verify(observed)
+        except BaseException:
+            self.close()
+            raise
+
+    def _open(self):
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+            create = kernel.CreateFileW
+            create.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                               wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD,
+                               wintypes.HANDLE)
+            create.restype = wintypes.HANDLE
+            # FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES participates in
+            # sharing checks; FILE_SHARE_READ | FILE_SHARE_WRITE, no DELETE.
+            # OPEN_EXISTING, BACKUP_SEMANTICS | OPEN_REPARSE_POINT.
+            # Null security attributes make the handle non-inheritable.
+            handle = create(str(self.path), 0x81, 0x3, None, 3, 0x02200000, None)
+            if handle is None or handle == ctypes.c_void_p(-1).value:
+                raise OSError("Directory handle unavailable")
+            return handle
+        if os.name == "posix":
+            return os.open(self.path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+                           | getattr(os, "O_CLOEXEC", 0))
+        raise WorkspaceBoundaryError("Directory handle protection unavailable")
+
+    @staticmethod
+    def _identity(handle):
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+
+            class AttributeTag(ctypes.Structure):
+                _fields_ = [("attributes", wintypes.DWORD), ("tag", wintypes.DWORD)]
+
+            class FileId(ctypes.Structure):
+                _fields_ = [("volume", ctypes.c_uint64), ("identifier", ctypes.c_ubyte * 16)]
+
+            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+            query = kernel.GetFileInformationByHandleEx
+            query.argtypes = (wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD)
+            query.restype = wintypes.BOOL
+            attr = AttributeTag()
+            identity = FileId()
+            # FileAttributeTagInfo (9), FileIdInfo (18). Reject directory
+            # handles with reparse attributes and missing physical identity.
+            if (not query(handle, 9, ctypes.byref(attr), ctypes.sizeof(attr))
+                    or not attr.attributes & 0x10 or attr.attributes & 0x400
+                    or not query(handle, 18, ctypes.byref(identity), ctypes.sizeof(identity))
+                    or not any(identity.identifier)):
+                raise WorkspaceBoundaryError("Directory handle identity unverified")
+            return identity.volume, bytes(identity.identifier)
+        info = os.fstat(handle)
+        if not stat.S_ISDIR(info.st_mode) or not info.st_ino:
+            raise WorkspaceBoundaryError("Directory handle identity unverified")
+        return info.st_dev, info.st_ino
+
+    @staticmethod
+    def _close(handle):
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+            close = ctypes.WinDLL("kernel32", use_last_error=True).CloseHandle
+            close.argtypes = (wintypes.HANDLE,)
+            close.restype = wintypes.BOOL
+            close(handle)
+        else:
+            os.close(handle)
+
+    def close(self):
+        if self.handle is not None:
+            handle, self.handle = self.handle, None
+            self._close(handle)
+
+    def verify(self, observed):
+        before = _directory(self.path)
+        if not before.st_ino or not os.path.samestat(observed, before):
+            raise WorkspaceBoundaryError("Directory name identity changed")
+        if self._identity(self.handle) != self.identity:
+            raise WorkspaceBoundaryError("Original directory handle identity changed")
+        # Compare a fresh handle opened at the current name against the
+        # original handle rather than assuming Python's stat layout matches
+        # the Windows 128-bit file ID representation.
+        named = self._open()
+        try:
+            if self._identity(named) != self.identity:
+                raise WorkspaceBoundaryError("Directory handle identity changed")
+        finally:
+            self._close(named)
+        after = _directory(self.path)
+        if not os.path.samestat(before, after):
+            raise WorkspaceBoundaryError("Directory name identity changed")
+
+
+def _close_directory_pins(pins):
+    for pin in reversed(tuple(pins.values())):
+        pin.close()
+
+
+def _pin_directory_chain(home, root_identity, ancestors, children):
+    pins = {}
+    try:
+        for path, identity in (*ancestors.items(), (home, root_identity),
+                               *((home / name, info) for name, info in children.items())):
+            pin = _DirectoryPin(path, identity)
+            pins[path] = pin
+        volume = pins[home].identity[0]
+        if any(pin.identity[0] != volume for pin in pins.values()):
+            raise WorkspaceBoundaryError("Workspace directory volume changed")
+        return pins
+    except BaseException:
+        _close_directory_pins(pins)
+        raise
 
 
 def _regular(info, *, empty=False):
@@ -180,6 +312,8 @@ _process_workspace = None
 _process_directories = {}
 _process_ancestors = {}
 _process_scratch = None
+_process_pins = {}
+_pin_lock = RLock()
 
 
 def _database_identity(home, previous=None):
@@ -206,6 +340,7 @@ def hold_process_workspace(value):
         raise WorkspaceBoundaryError("Workspace ownership already established")
     lease = _workspace_lease(value)
     home, fd, root_identity = lease.__enter__()
+    pins = {}
     try:
         # Resolve only AFTER the supplied path and lock have passed the
         # no-redirect checks. Windows short names may differ from the long
@@ -246,7 +381,12 @@ def hold_process_workspace(value):
                 directory_identities[name] = _directory(canonical / name)
             except FileNotFoundError:
                 pass
+        pins = _pin_directory_chain(canonical, root_identity,
+                                    ancestor_identities, directory_identities)
+        _same_lock(fd, canonical / LOCK_NAME)
+        _verify_entries(canonical)
     except BaseException as exc:
+        _close_directory_pins(pins)
         lease.__exit__(None, None, None)
         if isinstance(exc, (OSError, RuntimeError)) and not isinstance(exc, WorkspaceBoundaryError):
             raise WorkspaceBoundaryError("Workspace storage unavailable or unsafe") from exc
@@ -255,7 +395,10 @@ def hold_process_workspace(value):
     _process_workspace = (canonical, fd, root_identity, database_identity)
     _process_directories.update(directory_identities)
     _process_ancestors.update(ancestor_identities)
+    _process_pins.update(pins)
     atexit.register(lease.__exit__, None, None, None)
+    # LIFO shutdown: close directory handles before releasing writer lease.
+    atexit.register(_close_directory_pins, _process_pins)
     return canonical
 
 
@@ -372,6 +515,25 @@ def _validate_owned_ancestors(owned):
         previous = _process_ancestors.get(parent)
         if previous is None or not current.st_ino or not os.path.samestat(previous, current):
             raise WorkspaceBoundaryError("Workspace ancestor identity changed")
+        _process_pins[parent].verify(current)
+    _process_pins[owned].verify(_process_workspace[2])
+
+
+def _validate_owned_subdirectory(owned, name, info):
+    path = owned / name
+    with _pin_lock:
+        previous = _process_directories.setdefault(name, info)
+        if not info.st_ino or not os.path.samestat(previous, info):
+            raise WorkspaceBoundaryError("Workspace subdirectory identity changed")
+        pin = _process_pins.get(path)
+        if pin is None:
+            pin = _DirectoryPin(path, info)
+            if pin.identity[0] != _process_pins[owned].identity[0]:
+                pin.close()
+                raise WorkspaceBoundaryError("Workspace directory volume changed")
+            _process_pins[path] = pin
+        else:
+            pin.verify(info)
 
 
 def validate_process_database(home, database):
@@ -439,9 +601,7 @@ def validate_process_write(home, path, *, directory=False, missing=False,
             node = owned.joinpath(*parts[:i])
             info = _directory(node)
             if i == 1:
-                previous = _process_directories.setdefault(root, info)
-                if not info.st_ino or not os.path.samestat(previous, info):
-                    raise WorkspaceBoundaryError("Workspace subdirectory identity changed")
+                _validate_owned_subdirectory(owned, root, info)
         try:
             info = path.lstat()
         except FileNotFoundError:
@@ -455,9 +615,7 @@ def validate_process_write(home, path, *, directory=False, missing=False,
         if directory:
             info = _directory(path)
             if len(parts) == 1:
-                previous = _process_directories.setdefault(root, info)
-                if not info.st_ino or not os.path.samestat(previous, info):
-                    raise WorkspaceBoundaryError("Workspace subdirectory identity changed")
+                _validate_owned_subdirectory(owned, root, info)
         else:
             _regular(info)
         if expected is not None and (not info.st_ino or not os.path.samestat(expected, info)):
