@@ -410,6 +410,56 @@ class AppLifetimeTests(unittest.TestCase):
                 self.assertEqual(report["no_cdp_private_child_handle_diagnostic"]["status"], "BLOCKED")
                 self.assertEqual(report["native_N12_acceptance"], "NOT_EVALUATED")
 
+    def test_rejected_private_inventory_reports_only_fixed_counts_without_credit(self):
+        from dataclasses import replace
+        full = self.child_bundle()
+        strict = self.reduce(no_cdp_profile=True)
+        for changes, expected in (
+            ({"status": "BLOCKED", "faults": {"child-query-unavailable": 2}},
+             {"collector_status": "BLOCKED", "sample_count": 3,
+              "reported_witness_count": 2, "known_fault_counts": {"child-query-unavailable": 2},
+              "fault_inventory_valid": True}),
+            ({"sample_count": 0}, {"sample_count": 0}),
+            ({"retained_original_handle_count": 1}, {"reported_witness_count": 1}),
+            ({"status": "BLOCKED", "faults": {"private-path-or-pid": 7,
+                                             "snapshot-unavailable": 1,
+                                             "child-query-unavailable": True},
+              "sample_count": True},
+             {"sample_count": None, "known_fault_counts": {"snapshot-unavailable": 1},
+              "fault_inventory_valid": False}),
+        ):
+            with self.subTest(changes=changes):
+                bundle = replace(full, collector_receipt={**full.collector_receipt, **changes})
+                report = self.reduce(no_cdp_profile=True, child_handle_evidence=bundle)
+                join = report["no_cdp_private_child_handle_diagnostic"]
+                self.assertEqual(join["status"], "BLOCKED")
+                self.assertEqual(join["failed_checks"], ["private-evidence-inventory-unverified"])
+                self.assertEqual(join["native_N12_acceptance"], "NOT_EVALUATED")
+                inventory = join["inventory_diagnostic"]
+                self.assertEqual(inventory["witness_count"], 2)
+                for key, value in expected.items():
+                    self.assertEqual(inventory[key], value)
+                self.assertNotIn("private-path-or-pid", json.dumps(join))
+                self.assertEqual(report["verdict"], strict["verdict"])
+                self.assertEqual(report["issues"], strict["issues"])
+                self.assertEqual(report["handle_comparison"], strict["handle_comparison"])
+
+    def test_g220_millisecond_scale_exit_disagreement_remains_blocked(self):
+        # The observed launcher delta was 34,799 ticks; the Sysmon datetime
+        # fixture is microsecond-representable, so use 34,800 ticks here.
+        for _, kind, fields in self.rows:
+            if kind == 5 and fields["ProcessId"] == "700":
+                fields["UtcTime"] = payload(800_000 - 34_800)[:-1]
+            if kind == 5 and fields["ProcessId"] == "701":
+                fields["UtcTime"] = payload(520_000 - 53_810)[:-1]
+        report = self.reduce(no_cdp_profile=True)
+        self.assertEqual(report["verdict"], "BLOCKED")
+        self.assertIn("no-cdp-sysmon-lifetime-unverified", report["issues"])
+        shadow = report["no_cdp_shadow_handle_witness_review"]
+        self.assertEqual(shadow["launcher"]["status"], "REVIEWABLE_ONLY")
+        self.assertEqual(shadow["app"]["status"], "REVIEWABLE_ONLY")
+        self.assertEqual(shadow["native_N12_acceptance"], "NOT_EVALUATED")
+
     def test_private_bundle_missing_and_misordered_stage_markers_block_shadow(self):
         good = self.child_bundle()
         del self.manifest["markers"]["ready"]

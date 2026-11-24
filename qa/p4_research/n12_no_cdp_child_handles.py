@@ -288,6 +288,46 @@ class PrivateChildHandleEvidence:
     collector_receipt: dict
 
 
+def _inventory_diagnostic(evidence):
+    """Fixed-schema receipt for a rejected inventory; never grants admission."""
+    witnesses = evidence.witnesses
+    collector = evidence.collector_receipt
+    report = {
+        "witness_count": len(witnesses) if type(witnesses) is tuple
+                         and len(witnesses) <= MAX_HANDLES else None,
+        "collector_status": "UNVERIFIED",
+        "sample_count": None,
+        "reported_witness_count": None,
+        "known_fault_counts": {},
+        "fault_inventory_valid": False,
+    }
+    if type(collector) is not dict:
+        return report
+    status = collector.get("status")
+    if type(status) is str and status in {"BLOCKED", "SAMPLING_FINISHED_UNVERIFIED"}:
+        report["collector_status"] = status
+    for source, target, limit in (
+        ("sample_count", "sample_count", 1_000_000),
+        ("retained_original_handle_count", "reported_witness_count", MAX_HANDLES),
+    ):
+        count = collector.get(source)
+        if type(count) is int and 0 <= count <= limit:
+            report[target] = count
+    faults = collector.get("faults")
+    if type(faults) is dict:
+        # Never serialize unknown labels or arbitrary values from the private
+        # bundle, even when transport authentication has succeeded.
+        report["known_fault_counts"] = {
+            label: faults[label] for label in sorted(SAFE_FAULTS)
+            if label in faults and type(faults[label]) is int
+            and 0 <= faults[label] <= 1_000_000
+        }
+        report["fault_inventory_valid"] = (
+            len(faults) == len(report["known_fault_counts"])
+        )
+    return report
+
+
 def private_child_handle_diagnostic(*, evidence, manifest, processes, roles, app_guid,
                                     app_witness, lifetimes, source_issues, capture_start,
                                     capture_end):
@@ -363,6 +403,8 @@ def private_child_handle_diagnostic(*, evidence, manifest, processes, roles, app
             "private-evidence-child-outside-sampling-or-profile",
             "private-evidence-source-unverified",
         }
+        if reason == "private-evidence-inventory-unverified":
+            receipt["inventory_diagnostic"] = _inventory_diagnostic(evidence)
         return {**receipt, "failed_checks": [reason if reason in allowed else "private-evidence-invalid"]}
     return review_scoped_children(
         processes=processes, roles=roles, app_guid=app_guid,

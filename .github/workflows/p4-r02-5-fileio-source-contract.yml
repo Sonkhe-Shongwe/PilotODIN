@@ -50,6 +50,10 @@ on:
       - .github/workflows/p4-r025-g215-generated-duplicate-type.yml
       - tests/test_p4_n12_g2_15_native_scope.py
       - qa/p4_research/n12_no_cdp_child_handles.py
+      - tests/test_p4_n12_app_lifetime.py
+      - tests/test_p4_n12_no_cdp_child_handles.py
+      - tests/test_p4_n12_private_child_pipe.py
+      - qa/p4_native/n12_exit_corroboration.py
       - qa/p4_research/n12_private_child_pipe.py
       - qa/p4_research/n12_no_cdp_native_path.py
       - qa/p4_native/n12_etw_probe.py
@@ -153,3 +157,8 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_16_original_handle_bridge.py' -v
       - name: G2.19 passive same-capture WebView write request completeness and redaction
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_19_passive_write_coverage.py' -v
+      - name: G2.21 private child inventory and lifetime fail-closed regressions
+        run: |
+          python -B -m unittest discover -s tests -p 'test_p4_n12_app_lifetime.py' -v
+          python -B -m unittest discover -s tests -p 'test_p4_n12_no_cdp_child_handles.py' -v
+          python -B -m unittest discover -s tests -p 'test_p4_n12_private_child_pipe.py' -v
