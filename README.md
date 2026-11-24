@@ -1,6 +1,6 @@
 # PilotODIN 1.0
 
-**CURRENT ENGINEERING FOCUS (24 November):** Package A source CLOSED; Package B ACTIVE, B1 durable dataset publication/reconciliation first. [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) | [Tab handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). G2 BLOCKED, four-gate 1/4 (25%), P4 14/20 (70%), R02.5 0/5, N12 0/2, mutation preparation 3/4 (75%). No native collector or installer.
+**CURRENT ENGINEERING FOCUS (24 November):** Package A source CLOSED; Package B ACTIVE, B1 durable dataset publication/reconciliation first; technical design refined and implementation-ready. [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md) | [Tab handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). G2 BLOCKED, four-gate 1/4 (25%), P4 14/20 (70%), R02.5 0/5, N12 0/2, mutation preparation 3/4 (75%). No native collector or installer.
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
@@ -9,7 +9,7 @@ PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytic
 
 ## Read this first
 - **[Current product-first implementation directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md)**: sole live work order, fixed A–D scope, readiness specification and permissions.
-- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: B1 implementation next; B2–B5 pending.
+- **[Active Package B specification](docs/PILOTODIN_PACKAGE_B_DURABLE_DATA_INTEGRITY_SPEC_2026-11-24.md)**: B1 implementation next, with refined schema, state machine and failure matrix; B2–B5 pending.
 - **[24 November documentation audit](docs/DOCUMENTATION_AUDIT_PACKAGE_B_ACTIVATION_2026-11-24.md)**: current authority, evidence and historical preservation.
 - **[Current tab migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md)**: single starting point, latest evidence, exact next action, safe scope and source references.
 - **[Stage 1 golden-reference verification contract](docs/P4_N12_STAGE1_GOLDEN_REFERENCE_AND_BACKWARD_VERIFICATION_2026-11-21.md)** for retained native evidence requirements, not the current development sequence.
