@@ -52,9 +52,9 @@ _HEAVY_SLOT = threading.Semaphore(1)  # also prevents two ODIN runs fighting for
 Planner = Callable[[dict[str, Any]], dict[str, Any]]
 
 try:
-    from .resource_autonomy import AutonomyStages, ResourceDeferred
+    from .resource_autonomy import AutonomyStages, ResourceDeferred, ContextLimit, MAX_EVIDENCE_BYTES
 except ImportError:
-    from resource_autonomy import AutonomyStages, ResourceDeferred
+    from resource_autonomy import AutonomyStages, ResourceDeferred, ContextLimit, MAX_EVIDENCE_BYTES
 
 
 def init() -> None:
@@ -218,13 +218,50 @@ def _claim_step(run_id: str, ordinal: int, plan: dict, status='proposed') -> str
 
 
 def _owned_context(state, prior):
-    inv = investigations.load(state['investigation_id'])
-    if inv is None or inv['stale'] or state['stale']:
+    # Limit persisted JSON before fetching/decoding it in Python. Snapshot
+    # both length and content under the same read transaction.
+    with storage.connect() as con:
+        con.execute('BEGIN')
+        row = con.execute("SELECT id,project_id,dataset_version,"
+                          "length(CAST(objective AS BLOB)) AS objective_bytes "
+                          "FROM investigations_v1 WHERE id=?",
+                          (state['investigation_id'],)).fetchone()
+        if row is None or state['stale'] or row['dataset_version'] != state['dataset_version']:
+            return None
+        if row['objective_bytes'] is None or row['objective_bytes'] > MAX_EVIDENCE_BYTES:
+            raise ContextLimit("objective size")
+        records = con.execute(
+            "SELECT rowid AS rid,length(CAST(id AS BLOB))+length(CAST(operation AS BLOB))+"
+            "length(CAST(params AS BLOB))+length(CAST(result AS BLOB)) AS payload_bytes "
+            "FROM evidence_v1 WHERE investigation_id=? "
+            "ORDER BY created_at DESC,rowid DESC LIMIT ?",
+            (row['id'],MAX_STEPS)).fetchall()
+        if any(x['payload_bytes'] is None for x in records) or (
+                row['objective_bytes'] + sum(x['payload_bytes'] for x in records) > MAX_EVIDENCE_BYTES):
+            raise ContextLimit("stored evidence size")
+        objective = con.execute("SELECT objective FROM investigations_v1 WHERE id=?",
+                                (row['id'],)).fetchone()[0]
+        artifacts = []
+        for record in reversed(records):
+            evidence = con.execute("SELECT id,operation,params,result FROM evidence_v1 WHERE rowid=?",
+                                   (record['rid'],)).fetchone()
+            artifacts.append({"id":evidence['id'],"operation":evidence['operation'],
+                              "params":json.loads(evidence['params']),
+                              "result":json.loads(evidence['result'])})
+        inv = {"id":row['id'],"project_id":row['project_id'],"version":row['dataset_version'],
+               "objective":objective,"artifacts":artifacts}
+    if quality.current_version(inv['project_id']) != inv['version']:
         return None
     return _model_context(inv, prior)
 
 
 def _owned_tool_receipt(state, proposal, params, sid):
+    # Check again AFTER acquiring the data lease. Once admitted, a read-only
+    # tool may finish cooperatively and its committed receipt is preserved.
+    with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        if not _owned_running(con,state['id'],state['dataset_version']):
+            return None
     evidence = investigations.run(state['investigation_id'], proposal['tool'],
                                   params, state['dataset_version'], execution_key=sid)
     artifact = next((a for a in evidence['artifacts'] if a.get('execution_key') == sid), None)
@@ -233,29 +270,60 @@ def _owned_tool_receipt(state, proposal, params, sid):
     return artifact['id']
 
 
+def _owned_running(con, run_id, expected_version):
+    """Caller owns BEGIN IMMEDIATE; version/status fence on the exact run."""
+    row = con.execute("SELECT status,dataset_version,project_id FROM odin_runs WHERE id=?",
+                      (run_id,)).fetchone()
+    if row is None or row['status'] != 'running':
+        return False
+    version = con.execute('SELECT current_version FROM quality_state WHERE project_id=?',
+                          (row['project_id'],)).fetchone()
+    if (version is None or row['dataset_version'] != expected_version
+            or version[0] != expected_version):
+        con.execute("UPDATE odin_runs SET status='stale',updated_at=? WHERE id=? AND status='running'",
+                    (storage.now(),run_id))
+        return False
+    return True
+
+
 def _owned_claim_step(run_id, ordinal, plan, state):
     """Never record a returned plan after cancel or version supersession."""
     sid = f'{run_id}:{ordinal}'
     with storage.connect() as con:
         con.execute('BEGIN IMMEDIATE')
-        row = con.execute("SELECT status,dataset_version,project_id FROM odin_runs WHERE id=?",
-                          (run_id,)).fetchone()
-        if row is None or row['status'] != 'running':
-            return None
-        version = con.execute('SELECT current_version FROM quality_state WHERE project_id=?',
-                              (row['project_id'],)).fetchone()
-        if (version is None or row['dataset_version'] != state['dataset_version']
-                or version[0] != state['dataset_version']):
-            con.execute("UPDATE odin_runs SET status='stale',updated_at=? WHERE id=? AND status='running'",
-                        (storage.now(),run_id))
+        if not _owned_running(con,run_id,state['dataset_version']):
             return None
         con.execute('INSERT INTO odin_run_steps VALUES (?,?,?,?,?,?,?,?)',
                     (sid,run_id,ordinal,plan['intent'],json.dumps(plan),'proposed',None,storage.now()))
     return sid
 
 
+def _owned_finish_step(run_id, sid, state, outcome, reason):
+    """Commit the non-tool journal receipt and terminal state together."""
+    with storage.connect() as con:
+        con.execute('BEGIN IMMEDIATE')
+        if not _owned_running(con,run_id,state['dataset_version']):
+            return False
+        changed = con.execute("UPDATE odin_run_steps SET status='recorded' "
+                              "WHERE id=? AND run_id=? AND status='proposed'",
+                              (sid,run_id))
+        if changed.rowcount != 1:
+            raise RuntimeError("Non-tool step ownership unconfirmed")
+        changed = con.execute("UPDATE odin_runs SET status=?,stop_reason=?,last_error=NULL,updated_at=? "
+                              "WHERE id=? AND status='running'",
+                              (outcome,reason,storage.now(),run_id))
+        if changed.rowcount != 1:
+            raise RuntimeError("Non-tool terminal ownership unconfirmed")
+        return True
+
+
 def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None):
     acquired=False
+
+    def terminal(status, *, reason=None, error=None):
+        _set(run_id,status,reason=reason,error=error,
+             only=('running','waiting_for_resources') if stages is not None else None)
+
     try:
         _set(run_id,'waiting_for_resources',only=('queued','interrupted','waiting_for_resources'))
         while stages is None and not acquired:
@@ -290,7 +358,7 @@ def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None)
                     context=json.loads(payload)
                 intent,params=validate(pending['proposal'],context)
                 if intent!='run_tool':
-                    _set(run_id,'needs_review',reason='Pending step is not a read-only operation');return
+                    terminal('needs_review',reason='Pending step is not a read-only operation');return
                 if stages is None:
                     evidence=investigations.run(inv['id'],pending['proposal']['tool'],params,inv['version'],
                                                 execution_key=pending['id'])
@@ -303,12 +371,13 @@ def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None)
                     if current['stale']:
                         _set(run_id,'stale',reason='Dataset version has changed',only=('running',));return
                     receipt_id=stages.data(_owned_tool_receipt,state,pending['proposal'],params,pending['id'])
+                    if receipt_id is None:return
                 with storage.connect() as con:
                     con.execute('UPDATE odin_run_steps SET status=?,evidence_id=? WHERE id=?',
                                 ('completed',receipt_id,pending['id']))
                 continue
             if len(state['steps'])>=state['max_steps']:
-                _set(run_id,'needs_review',reason='Step budget reached; investigation may be incomplete');return
+                terminal('needs_review',reason='Step budget reached; investigation may be incomplete');return
             prior=[{'intent':s['intent'],'tool':s['proposal']['tool'],
                        'columns':s['proposal']['columns'],'status':s['status']} for s in state['steps']]
             if stages is None:
@@ -333,18 +402,23 @@ def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None)
             signature=(plan['tool'],tuple(plan['columns']))
             if intent=='run_tool' and any((s['proposal']['tool'],tuple(s['proposal']['columns']))==signature
                 and s['status']=='completed' for s in state['steps']):
-                _set(run_id,'needs_review',reason='Planner repeated an already verified operation');return
+                terminal('needs_review',reason='Planner repeated an already verified operation');return
             sid=(_claim_step(run_id,ordinal,plan) if stages is None else
                  _owned_claim_step(run_id,ordinal,plan,state))
             if sid is None:return
             if intent!='run_tool':
                 outcomes={'suggest_finish':'ready_for_review','clarify':'needs_clarification',
                           'unsupported':'unsupported','propose_change':'needs_approval'}
-                with storage.connect() as con:
-                    con.execute('UPDATE odin_run_steps SET status=? WHERE id=?',('recorded',sid))
                 if intent=='suggest_finish' and not any(s['status']=='completed' for s in state['steps']):
-                    _set(run_id,'needs_review',reason='Planner proposed completion without verified evidence')
-                else:_set(run_id,outcomes[intent],reason=plan['reason'])
+                    outcome, reason = 'needs_review','Planner proposed completion without verified evidence'
+                else:
+                    outcome, reason = outcomes[intent],plan['reason']
+                if stages is None:
+                    with storage.connect() as con:
+                        con.execute('UPDATE odin_run_steps SET status=? WHERE id=?',('recorded',sid))
+                    terminal(outcome,reason=reason)
+                else:
+                    _owned_finish_step(run_id,sid,state,outcome,reason)
                 return
             # Independently enforced boundary: proposals can never invoke write APIs.
             with storage.connect() as con:
@@ -357,6 +431,7 @@ def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None)
                 receipt_id=artifact['id']
             else:
                 receipt_id=stages.data(_owned_tool_receipt,state,plan,params,sid)
+                if receipt_id is None:return
             with storage.connect() as con:
                 con.execute('UPDATE odin_run_steps SET status=?, evidence_id=? WHERE id=?',
                             ('completed',receipt_id,sid))
@@ -366,11 +441,11 @@ def _worker(run_id: str, planner: Planner, stages: AutonomyStages | None = None)
         # Don't hide planner failures or fall back to invented analyses.
         current=_row(run_id)
         if current and current['status']!='cancelled':
-            _set(run_id,'failed',error=str(exc)[:350])
+            terminal('failed',error=str(exc)[:350])
     except Exception as exc:
         current=_row(run_id)
         if current and current['status']!='cancelled':
-            _set(run_id,'failed',error=('Unexpected investigation failure: '+type(exc).__name__)[:350])
+            terminal('failed',error=('Unexpected investigation failure: '+type(exc).__name__)[:350])
     finally:
         if acquired:_HEAVY_SLOT.release()
         with _LOCK:_ACTIVE.pop(run_id,None)
@@ -429,7 +504,8 @@ def cancel(investigation_id: str)->dict:
     run=for_investigation(investigation_id)
     if not run:raise KeyError('Autonomous investigation not found')
     if run['status'] in ('queued','waiting_for_resources','running','interrupted'):
-        _set(run['id'],'cancelled',reason='Cancelled by user')
+        _set(run['id'],'cancelled',reason='Cancelled by user',
+             only=('queued','waiting_for_resources','running','interrupted'))
     return _row(run['id'])
 
 
