@@ -1,0 +1,104 @@
+name: P4 R02.5 G2.15 generated-only duplicate handle type (DISARMED)
+
+on:
+  push:
+    branches:
+      - feature/live-dev-workspace-20261023
+    paths:
+      - qa/p4_research/N12_G215_GENERATED_DUPLICATE_OWNER_APPROVAL_FRESH_ONE_USE.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilotodin-p4-n12-app-journey
+  cancel-in-progress: false
+
+jobs:
+  generated-duplicate-only:
+    if: ${{ false }} # Fresh G2.15 one-use approval absent; native probe DISARMED.
+    runs-on: windows-2022
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+    steps:
+      - name: Checkout exact source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify first-attempt source-pinned one-use owner approval
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $marker = 'qa/p4_research/N12_G215_GENERATED_DUPLICATE_OWNER_APPROVAL_FRESH_ONE_USE.txt'
+          $workflow = '.github/workflows/p4-r025-g215-generated-duplicate-type.yml'
+          if ($env:GITHUB_EVENT_NAME -cne 'push' -or
+              $env:GITHUB_RUN_ATTEMPT -cne '1' -or
+              $env:GITHUB_REF_NAME -cne 'feature/live-dev-workspace-20261023' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or
+              $env:RUNNER_OS -cne 'Windows' -or
+              (git rev-parse HEAD).Trim() -cne $env:GITHUB_SHA) {
+            throw 'G2.15 hosted Windows source or first-attempt scope mismatch'
+          }
+          if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
+            throw 'Missing fresh G2.15 one-use marker'
+          }
+          $approval = @(Get-Content -LiteralPath $marker)
+          if ($approval.Count -ne 2 -or
+              $approval[0] -cnotmatch '^reviewed_source=([0-9a-f]{40})$' -or
+              $approval[1] -cne 'scope=g215-one-generated-self-process-duplicate-type') {
+            throw 'Invalid G2.15 approval marker or scope'
+          }
+          $source = $Matches[1]
+          $parents = (git rev-list --parents -n 1 HEAD) -split ' '
+          $changed = @(git diff --name-only $source HEAD)
+          $added = @(git diff --name-only --diff-filter=A $source HEAD -- $marker)
+          if ($parents.Count -ne 2 -or $parents[1] -cne $source -or
+              $changed.Count -ne 2 -or $workflow -cnotin $changed -or
+              $marker -cnotin $changed -or $added.Count -ne 1 -or
+              $added[0] -cne $marker) {
+            throw 'Only workflow activation and one fresh source-pinned marker permitted'
+          }
+          git checkout --detach $source
+          'PILOTODIN_G215_GENERATED_CONSENT=I_APPROVE_ONE_G215_GENERATED_DUPLICATE_TYPE' >> $env:GITHUB_ENV
+      - name: Build and execute one disposable generated handle-type probe only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ($env:PILOTODIN_G215_GENERATED_CONSENT -cne 'I_APPROVE_ONE_G215_GENERATED_DUPLICATE_TYPE') {
+            throw 'G2.15 generated-only consent missing'
+          }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          if (-not (Test-Path -LiteralPath $vswhere)) { throw 'MSVC unavailable' }
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'MSVC x64 unavailable' }
+          $vcvars = Join-Path $vs 'VC/Auxiliary/Build/vcvars64.bat'
+          if (-not (Test-Path -LiteralPath $vcvars)) { throw 'MSVC x64 environment unavailable' }
+          $exe = Join-Path $env:RUNNER_TEMP ('pilotodin-g215-generated-only-' + $env:GITHUB_RUN_ID + '.exe')
+          if (Test-Path -LiteralPath $exe) { throw 'Generated exe already exists' }
+          try {
+            $cpp = 'qa/p4_native/g215_generated_duplicate_type.cpp'
+            $command = '"' + $vcvars + '" && cl /nologo /EHsc /std:c++17 /W4 /WX "' + $cpp + '" /link /out:"' + $exe + '"'
+            cmd.exe /D /S /C $command
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+              throw 'G2.15 compilation blocked'
+            }
+            & $exe
+            if ($LASTEXITCODE -ne 0) { throw 'Generated duplicate/type negative diagnostic' }
+            '### G2.15 generated duplicate/type: executable completed' >> $env:GITHUB_STEP_SUMMARY
+            'This does not prove original writer, FileObject, path, or R02.5 acceptance.' >> $env:GITHUB_STEP_SUMMARY
+          } finally {
+            if (Test-Path -LiteralPath $exe) {
+              Remove-Item -LiteralPath $exe -Force -ErrorAction Stop
+            }
+          }
+      - name: Fixed-label scope summary, never raw evidence
+        if: always()
+        shell: pwsh
+        run: |
+          '### G2.15 one-use generated-only Windows feasibility' >> $env:GITHUB_STEP_SUMMARY
+          'No raw handle, PID, filename, original owner file, private trace or installer is uploaded.' >> $env:GITHUB_STEP_SUMMARY
+          'PilotODIN and WebView2 are not launched. Official R02.5 remains NOT_EVALUATED.' >> $env:GITHUB_STEP_SUMMARY

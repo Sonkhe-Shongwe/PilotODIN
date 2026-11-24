@@ -42,6 +42,11 @@ on:
       - qa/p4_native/g213_generated_pss_probe.cpp
       - .github/workflows/p4-r025-g213-generated-pss.yml
       - .github/workflows/p4-r025-g214-generated-pss-runtime.yml
+      - qa/p4_research/n12_duplicate_handle_type.py
+      - tests/test_p4_n12_g2_15_duplicate_handle_type.py
+      - qa/p4_native/g215_generated_duplicate_type.cpp
+      - .github/workflows/p4-r025-g215-generated-duplicate-type.yml
+      - tests/test_p4_n12_g2_15_native_scope.py
       - qa/p4_research/n12_no_cdp_child_handles.py
       - qa/p4_research/n12_private_child_pipe.py
       - qa/p4_research/n12_no_cdp_native_path.py
@@ -97,6 +102,9 @@ jobs:
               "qa/p4_research/n12_pss_win32_backend.py",
               "tests/test_p4_n12_g2_12_pss_win32_backend.py",
               "tests/test_p4_n12_g2_13_source_contract.py",
+              "qa/p4_research/n12_duplicate_handle_type.py",
+              "tests/test_p4_n12_g2_15_duplicate_handle_type.py",
+              "tests/test_p4_n12_g2_15_native_scope.py",
           )
           for filename in sources:
               ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
@@ -133,3 +141,7 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_12_pss_win32_backend.py' -v
       - name: G2.13 generated Windows PSS feasibility scope, source-only
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_13_source_contract.py' -v
+      - name: G2.15 scoped duplicated handle type candidate, synthetic only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_15_duplicate_handle_type.py' -v
+      - name: G2.15 fresh native source workflow disarmed, no execution
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_15_native_scope.py' -v
