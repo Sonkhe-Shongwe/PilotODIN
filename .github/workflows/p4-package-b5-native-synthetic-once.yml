@@ -1,6 +1,6 @@
 name: P4 Package B5 ONE Windows synthetic library test (approval required)
 
-# DISARMED: requires fresh explicit owner approval. Prior compile permission is consumed.
+# Explicit owner approval for one exact B5 synthetic library run; disarm immediately after dispatch.
 # Proposed single locked library test-harness build/run on disposable generated fixtures.
 # No workflow_dispatch, no reruns, no application launch, installer, or owner data.
 on:
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   b5-synthetic-library-tests:
-    if: ${{ false }} # DISARMED until a fresh, exact one-use approval.
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'ci(b5): B5-NATIVE-SYNTHETIC-PROPOSAL-20261124/approved-one-use-dispatch' }} # Exact single approved dispatch.
     runs-on: windows-2022
     timeout-minutes: 55
     env:

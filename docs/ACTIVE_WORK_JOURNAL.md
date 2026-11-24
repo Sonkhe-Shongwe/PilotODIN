@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | B5-NATIVE-SYNTHETIC-PROPOSAL-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 7f5654d1e87c781f1b227d49392ebba71bd065fd |
 | Product baseline | b9a9181313b709abe729b3bddac3ac4e10709e59 |
 | Scope | ONE authorised Windows-2022 locked library test-harness build/run; seven existing B5 tests, artifact 14937864793, no app launch |
 | Operation ID | B5-NATIVE-SYNTHETIC-PROPOSAL-20261124/approved-one-use-dispatch |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | .github/workflows/p4-package-b5-native-synthetic-once.yml; docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; active B5 evidence ledger; optional scoped proposal documentation |
 | Approval | Owner explicitly approved ONE build/run of b9a9181313b709abe729b3bddac3ac4e10709e59, seven existing tests, artifact 14937864793 and locked dependencies; no app launch, installer, owner data, real model/runtime downloads, executable upload or reruns. Dispatch consumes approval; uncertain outcome potentially consumed. |
 | Verification | Exact P4 source CI #45434780210 passed on product baseline; corrected product not yet host-compiled; native tests remain unexecuted |
-| Pending runs | Disabled preparation #45438422947 SKIPPED; approved dispatch not yet issued |
+| Pending runs | Dispatch identified by exact commit message ci(b5): B5-NATIVE-SYNTHETIC-PROPOSAL-20261124/approved-one-use-dispatch and parent c73b9d6368985521e8b0ee534f7d4f9a90823473; discover run ID before replay or disarm. Approval consumed on dispatch. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Verify exact dispatch commit marker and run attempt 1 before any action. If issued or ambiguous, never replay; disarm owned workflow immediately and reconcile actual run. If PREPARED and no dispatch exists, check fresh approval in this conversation before activation. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
@@ -28,4 +28,4 @@ CONT-RESILIENCE-20261124/preparation was published at [`89cb4b5`](https://github
 
 ## Unresolved or interrupted operations
 
-Preparation skipped as expected. Fresh approval is recorded above; dispatch not yet issued at this checkpoint. Do not infer permission for any other action. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
+This commit is the one-use dispatch. Verify actual published SHA and run ID, then disarm immediately. Treat uncertain dispatch as consumed; no replay. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
