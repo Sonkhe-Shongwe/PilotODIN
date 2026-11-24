@@ -200,3 +200,59 @@ def test_parser_cancellation_closes_spool_and_retains_lane(spools):
             await pending
         assert spools[0].closed and c.status()["phase"] == "blocked"
     asyncio.run(scenario())
+
+@pytest.mark.parametrize("outcome", ["success", "overflow", "disconnect"])
+def test_actual_disk_rollover_and_cleanup(outcome, spools, monkeypatch, tmp_path):
+    # Actual rolled temporary file in a disposable runner-owned directory.
+    import tempfile
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    value = b"x" * (2 * 1024 * 1024)
+    first = multipart(value, ending=False)
+    c = coordinator()
+    async def consumer(file):
+        assert outcome == "success"
+        assert file.file._rolled
+        assert await file.read() == value
+        return JSONResponse({}, status_code=201)
+    if outcome == "success":
+        events = [event(first, True), event(b"\r\n--abc--\r\n")]
+        expected = 201
+    elif outcome == "overflow":
+        monkeypatch.setattr(upload, "ENVELOPE_LIMIT", len(first) + 1)
+        events = [event(first, True), event(b"overflow")]
+        expected = 413
+    else:
+        events = [event(first, True), {"type":"http.disconnect"}]
+        expected = 400
+    status, _ = asyncio.run(invoke(upload.OwnedUpload(consumer,c),events))
+    assert status == expected
+    assert len(spools) == 1 and spools[0]._rolled and spools[0].closed
+    assert not list(tmp_path.iterdir())
+    assert not c.status()["active"]
+
+
+def test_cleanup_failure_retains_lane_and_does_not_send_success(monkeypatch):
+    real = formparsers.SpooledTemporaryFile
+    allocated = []
+    def fail_close(*args, **kwargs):
+        spool = real(*args, **kwargs)
+        close = spool.close
+        allocated.append((spool,close))
+        def failure():
+            raise OSError("simulated close failure")
+        spool.close = failure
+        return spool
+    monkeypatch.setattr(formparsers, "SpooledTemporaryFile", fail_close)
+    c = coordinator()
+    async def consumer(file):
+        return JSONResponse({},status_code=201)
+    try:
+        with pytest.raises(RuntimeError, match="cleanup unconfirmed"):
+            asyncio.run(invoke(upload.OwnedUpload(consumer,c),[event(multipart())]))
+        assert allocated and not allocated[0][0].closed
+        assert c.status()["phase"] == "blocked"
+        assert c.try_acquire(Operation.TRAINING).code == "ownership_unknown"
+    finally:
+        for spool,close in allocated:
+            spool.close = close
+            close()

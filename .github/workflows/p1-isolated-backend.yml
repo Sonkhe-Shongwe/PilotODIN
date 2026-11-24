@@ -12,6 +12,8 @@ on:
       - backend/resource_routes.py
       - backend/resource_http.py
       - backend/resource_upload.py
+      - backend/resource_training.py
+      - tests/test_c1_resource_training.py
       - tests/test_c1_resource_upload.py
       - tests/test_c1_resource_http.py
       - tests/test_c1_resource_admission.py
@@ -66,4 +68,4 @@ jobs:
           tests/test_p1_real_api_failed_switch.py
 
       - name: Exercise C1 pure coordinator and exact route inventory
-        run: python -m pytest -q tests/test_c1_resource_admission.py tests/test_c1_resource_http.py tests/test_c1_resource_upload.py
+        run: python -m pytest -q tests/test_c1_resource_admission.py tests/test_c1_resource_http.py tests/test_c1_resource_upload.py tests/test_c1_resource_training.py

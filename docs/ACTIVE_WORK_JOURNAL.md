@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 1da795a773a304862fdc88703a686fea0689d263 |
 | Product baseline | 2ac816310dbcbc96c42da87b54e3bfefc96ad2fb |
 | Scope | C1 staged upload disk rollover/cleanup fault tests and identity-bound training preparation-to-worker handoff foundation; no live registration or model work. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-training-ownership |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | tests/test_c1_resource_upload.py; backend/resource_training.py; tests/test_c1_resource_training.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45453053138 SUCCESS: 166 regression + 2 subtests, 58 C1. Next test actual rolled disk spool closure and fault, plus inert training ownership handoff, worker/response races and exact unstarted settlement. |
-| Pending runs | None; #45453053138/job 138655089874 terminal SUCCESS, exact checkout and counts confirmed. |
+| Verification | Staged training ownership foundation and upload disk/fault cases published; exact-source CI pending. No live registration. |
+| Pending runs | New exact-source P1 run discoverable by operation marker and parent; reconcile before integration. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Stage upload additional tests and training ownership seam; verify exact CI before actual storage CAS, route/background binding, autonomous/host integration. No actual model execution. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
