@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   generated-duplicate-only:
-    if: ${{ true }} # One fresh owner-authorised G2.15 generated-only run. Immediately disarm.
+    if: ${{ false }} # G2.15 generated-only approval consumed by 1975e71be4e0335966f7b421a426d0b1877d1b60; no retry.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
