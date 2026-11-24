@@ -1,6 +1,6 @@
 """B3 offline maintenance: stage SQLite and referenced payloads, never activate.
 
-No application entrypoint, automatic migration, restore or final certification.
+No application entrypoint, automatic migration, activation or final certification.
 Only cooperating workspace writers are excluded by the shared lease;
 filesystem checks are not a sandbox. Unknown files and secrets are not copied.
 """
@@ -567,3 +567,213 @@ def verify_staged_backup(backup: Path, *, recorded_source_home: Path):
     except (OSError, sqlite3.Error, WorkspaceBoundaryError, artifact_publication.PublicationError,
             ValueError, TypeError, KeyError, RecursionError) as exc:
         raise SnapshotBlocked("Backup verification unavailable or unsafe") from exc
+
+
+def _restore_destination(value, backup, recorded):
+    destination = Path(value)
+    if not destination.is_absolute() or ".." in destination.parts or not destination.name:
+        raise SnapshotBlocked("Choose a fresh absolute restore destination")
+    parent = existing_fixture_home(str(destination.parent))
+    if (destination.name.split(".")[0].upper() in _RESERVED
+            or (os.name == "nt" and (":" in destination.name or destination.name.endswith((" ", "."))))):
+        raise SnapshotBlocked("Invalid restore directory name")
+    destination = parent / destination.name
+    if any(destination.is_relative_to(root) or root.is_relative_to(destination)
+           for root in (backup, recorded)):
+        raise SnapshotBlocked("Restore must be outside backup and historical source")
+    if not _absent(destination):
+        raise SnapshotBlocked("Restore destination already exists")
+    return destination
+
+
+def _restore_copy(root, destination, entries, verify, checkpoint):
+    """Copy only verified relative names; leave uncertain stages untouched."""
+    directories = {destination: destination.lstat()}
+    for key, expected in sorted(entries.items()):
+        checkpoint()
+        relative = Path(key)
+        source, target = root / relative, destination / relative
+        for parent in reversed(relative.parents):
+            directory = destination / parent
+            if directory == destination:
+                continue
+            if directory not in directories:
+                with pinned_existing_directory(directory.parent,
+                                               expected=directories[directory.parent]) as verify_parent:
+                    verify()
+                    verify_parent()
+                    directory.mkdir(exist_ok=False)
+                    directories[directory] = directory.lstat()
+                    with pinned_existing_directory(directory, expected=directories[directory]) as verify_created:
+                        verify_created()
+                        verify_parent()
+                        verify()
+        with pinned_existing_directory(source.parent) as verify_source:
+            with pinned_existing_directory(target.parent, expected=directories[target.parent]) as verify_target:
+                def verify_copy():
+                    verify()
+                    verify_source()
+                    verify_target()
+                verify_copy()
+                with target.open("xb") as output:
+                    identity = os.fstat(output.fileno())
+                    copied = _fingerprint(source, verify_copy, checkpoint, output=output,
+                                          expected_size=expected.size)
+                    output.flush()
+                    os.fsync(output.fileno())
+                if (copied != expected or not os.path.samestat(identity, existing_fixture_file(target))
+                        or _fingerprint(target, verify_copy, checkpoint, expected_size=expected.size) != expected):
+                    raise SnapshotBlocked("Restore copy digest mismatch")
+    for key, expected in entries.items():
+        if _fingerprint(destination / key, verify, checkpoint, expected_size=expected.size) != expected:
+            raise SnapshotBlocked("Restored copy changed")
+
+
+def _restore_references(destination, recorded, entries, verify, checkpoint):
+    """Update only exact original project references, inside a new DB."""
+    db = destination / _DB
+    original = existing_fixture_file(db)
+    with closing(sqlite3.connect(db.as_uri() + "?mode=rw", uri=True,
+                                 timeout=2, isolation_level=None)) as con:
+        con.execute("PRAGMA trusted_schema=OFF")
+        con.execute("PRAGMA foreign_keys=ON")
+        if con.execute("PRAGMA foreign_keys").fetchone() != (1,):
+            raise SnapshotBlocked("Restore foreign-key enforcement unavailable")
+        con.execute("PRAGMA synchronous=FULL")
+        # Current product does not require triggers for project updates.
+        # Refuse any trigger on projects rather than running unreviewed code.
+        if con.execute("SELECT 1 FROM sqlite_master WHERE type='trigger' AND tbl_name='projects' COLLATE NOCASE LIMIT 1").fetchone():
+            raise SnapshotBlocked("Unreviewed project trigger blocks restore")
+        con.execute("BEGIN IMMEDIATE")
+        try:
+            verify()
+            before = _inventory(con, destination, verify, checkpoint, recorded_source=recorded)
+            expected_payloads = {k: v for k, v in entries.items() if k != _DB}
+            if {k: v for k, (v, _) in before.items()} != expected_payloads:
+                raise SnapshotBlocked("Restore provenance mismatch")
+            rows = _bounded_rows(con, "SELECT id,dataset_path FROM projects ORDER BY id")
+            mappings = []
+            for pid, old in rows:
+                checkpoint()
+                relative = Path(old).relative_to(recorded)
+                key = relative.as_posix()
+                if key not in expected_payloads:
+                    raise SnapshotBlocked("Missing exact restore reference")
+                new = str(destination / relative)
+                changed = con.execute("UPDATE projects SET dataset_path=? WHERE id=? AND dataset_path=?",
+                                      (new, pid, old))
+                if changed.rowcount != 1:
+                    raise SnapshotBlocked("Restore reference compare-and-set failed")
+                mappings.append({"project_id": pid, "relative_path": key})
+            after = _inventory(con, destination, verify, checkpoint)
+            if {k: v for k, (v, _) in after.items()} != expected_payloads:
+                raise SnapshotBlocked("Restored reference provenance mismatch")
+            if con.total_changes != len(rows):
+                raise SnapshotBlocked("Unexpected restore database changes")
+            if con.execute("PRAGMA integrity_check").fetchone() != ("ok",):
+                raise SnapshotBlocked("Restored database integrity check failed")
+            if con.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                raise SnapshotBlocked("Restored database foreign-key violations")
+            verify()
+            if not os.path.samestat(original, existing_fixture_file(db)):
+                raise SnapshotBlocked("Restore database identity changed")
+            con.execute("COMMIT")
+        except BaseException:
+            if con.in_transaction:
+                con.execute("ROLLBACK")
+            raise
+    if _source_files(destination) != (db,):
+        raise SnapshotBlocked("Restored database is not standalone")
+    if not os.path.samestat(original, existing_fixture_file(db)):
+        raise SnapshotBlocked("Restore database identity changed")
+    return mappings
+
+
+def restore_staged_backup(backup: Path, destination: Path, *,
+                          recorded_source_home: Path, confirmed=False):
+    """Restore to a fresh isolated directory, without any activation.
+
+    The original backup is unchanged. An incomplete stage is retained and
+    must not be activated. The final receipt records source manifest digest,
+    exact mapped project IDs and new database digest, not release approval.
+    """
+    if confirmed is not True:
+        raise SnapshotBlocked("Explicit restore destination confirmation required")
+    deadline = time.monotonic() + 120.0
+
+    def checkpoint():
+        if time.monotonic() > deadline:
+            raise SnapshotBlocked("Restore time budget exceeded")
+
+    try:
+        root = existing_fixture_home(str(backup))
+        recorded = Path(recorded_source_home)
+        if not recorded.is_absolute() or ".." in recorded.parts or len(recorded.parts) < 2:
+            raise SnapshotBlocked("Explicit historical source root required")
+        destination = _restore_destination(destination, root, recorded)
+        with pinned_existing_directory(root) as verify_backup:
+            with pinned_existing_directory(destination.parent) as verify_parent:
+                manifest = verify_staged_backup(root, recorded_source_home=recorded)
+                raw = io.BytesIO()
+                manifest_size = existing_fixture_file(root / "manifest.json").st_size
+                if not 1 <= manifest_size <= _MAX_MANIFEST_BYTES:
+                    raise SnapshotBlocked("Backup manifest size limit exceeded")
+                manifest_hash = _fingerprint(root / "manifest.json", verify_backup, checkpoint, output=raw,
+                                             expected_size=manifest_size)
+                parsed, entries = _parse_manifest(raw.getvalue())
+                if parsed != manifest:
+                    raise SnapshotBlocked("Backup manifest changed before restore")
+                checkpoint()
+                verify_backup()
+                verify_parent()
+                destination.mkdir(exist_ok=False)
+                with pinned_existing_directory(destination, expected=destination.lstat()) as verify_stage:
+                    def verify():
+                        checkpoint()
+                        verify_backup()
+                        verify_parent()
+                        verify_stage()
+
+                    _restore_copy(root, destination, entries, verify, checkpoint)
+                    # Revalidate original staging independently after the
+                    # copy, before allowing any metadata changes.
+                    if verify_staged_backup(root, recorded_source_home=recorded) != manifest:
+                        raise SnapshotBlocked("Backup changed during restore")
+                    if _fingerprint(root / "manifest.json", verify, checkpoint,
+                                    expected_size=manifest_hash.size) != manifest_hash:
+                        raise SnapshotBlocked("Backup manifest changed during restore")
+                    # Shared maintenance lease protects the newly allocated
+                    # destination while the metadata transaction is performed.
+                    with existing_maintenance_workspace(str(destination)) as (_, verify_lease):
+                        def verify_owned():
+                            verify()
+                            verify_lease()
+                        if _fingerprint(destination / _DB, verify_owned, checkpoint,
+                                        expected_size=entries[_DB].size) != entries[_DB]:
+                            raise SnapshotBlocked("Restore database changed before mapping")
+                        mappings = _restore_references(destination, recorded, entries, verify_owned, checkpoint)
+                        for key, expected in entries.items():
+                            if key != _DB and _fingerprint(destination / key, verify_owned, checkpoint,
+                                                          expected_size=expected.size) != expected:
+                                raise SnapshotBlocked("Restored payload changed")
+                        final_db = _fingerprint(destination / _DB, verify_owned, checkpoint)
+                        receipt = {"schema_version": 1, "status": "staged_not_activated",
+                                   "source_manifest_sha256": manifest_hash.sha256,
+                                   "database": {"size": final_db.size, "sha256": final_db.sha256},
+                                   "mappings": mappings}
+                        raw_receipt = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode("ascii")
+                        if len(raw_receipt) > _MAX_MANIFEST_BYTES:
+                            raise SnapshotBlocked("Restore receipt limit exceeded")
+                        verify_owned()
+                        with (destination / "restore_receipt.json").open("xb") as output:
+                            if output.write(raw_receipt) != len(raw_receipt):
+                                raise SnapshotBlocked("Incomplete restore receipt")
+                            output.flush()
+                            os.fsync(output.fileno())
+                        verify_owned()
+                        return receipt
+    except SnapshotBlocked:
+        raise
+    except (OSError, sqlite3.Error, WorkspaceBoundaryError, artifact_publication.PublicationError,
+            ValueError, TypeError, KeyError, RecursionError) as exc:
+        raise SnapshotBlocked("Restore unavailable or unsafe; any stage retained") from exc

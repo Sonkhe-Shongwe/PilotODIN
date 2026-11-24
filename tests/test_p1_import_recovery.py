@@ -1128,3 +1128,90 @@ def test_b3_independent_verification_rejects_tampering(monkeypatch, tmp_path, fa
     with pytest.raises(maintenance_backup.SnapshotBlocked, match=message):
         maintenance_backup.verify_staged_backup(stage, recorded_source_home=home)
     assert (home / "datasets" / "source.csv").read_bytes() == _csv()
+
+def test_b3_restore_archived_workspace_preserves_all_rows_except_exact_paths(monkeypatch, tmp_path):
+    from backend import maintenance_backup
+    import json
+    import sqlite3
+    from contextlib import closing
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage = tmp_path / "backup"
+    maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    before = {p.relative_to(stage): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
+    original = (home / "pilotodin.sqlite3").read_bytes()
+    target = tmp_path / "restored"
+    monkeypatch.setattr(model_artifacts.joblib, "load", lambda *a, **kw: pytest.fail("Unexpected deserialization"))
+    outcome = maintenance_backup.restore_staged_backup(stage, target, recorded_source_home=home, confirmed=True)
+    assert outcome["status"] == "staged_not_activated"
+    assert outcome["mappings"] == [{"project_id": experiment["project_id"], "relative_path": "datasets/source.csv"}]
+    assert json.loads((target / "restore_receipt.json").read_text()) == outcome
+    assert outcome["source_manifest_sha256"] == hashlib.sha256((stage / "manifest.json").read_bytes()).hexdigest()
+    db = target / "pilotodin.sqlite3"
+    assert outcome["database"]["sha256"] == hashlib.sha256(db.read_bytes()).hexdigest()
+    assert (target / "datasets" / "source.csv").read_bytes() == _csv()
+    assert (target / "models" / experiment["id"] / "ridge.joblib").read_bytes() == b"inert model"
+    with closing(sqlite3.connect((stage / "pilotodin.sqlite3").as_uri() + "?mode=ro", uri=True)) as old:
+        with closing(sqlite3.connect(db.as_uri() + "?mode=ro", uri=True)) as new:
+            assert new.execute("PRAGMA foreign_key_check").fetchall() == []
+            tables = old.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()
+            for (table,) in tables:
+                quoted = '"' + table.replace('"', '""') + '"'
+                previous = old.execute("SELECT * FROM " + quoted).fetchall()
+                current = new.execute("SELECT * FROM " + quoted).fetchall()
+                if table == "projects":
+                    assert len(previous) == len(current) == 1
+                    row = list(previous[0])
+                    row[4] = str(target / "datasets" / "source.csv")
+                    assert current == [tuple(row)]
+                else:
+                    assert previous == current, table
+    assert before == {p.relative_to(stage): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
+    assert (home / "pilotodin.sqlite3").read_bytes() == original
+
+
+@pytest.mark.parametrize("failure,message", [
+    ("unconfirmed", "confirmation required"),
+    ("collision", "already exists"),
+    ("inside_backup", "outside backup and historical source"),
+    ("inside_source", "outside backup and historical source"),
+    ("tamper", "Backup payload digest mismatch"),
+])
+def test_b3_restore_refuses_before_destination_creation(monkeypatch, tmp_path, failure, message):
+    from backend import maintenance_backup
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage = tmp_path / "backup"
+    maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    target = tmp_path / "restored"
+    if failure == "collision":
+        target.mkdir()
+        (target / "keep").write_bytes(b"preserve")
+    elif failure == "inside_backup":
+        target = stage / "restore"
+    elif failure == "inside_source":
+        target = home / "restore"
+    elif failure == "tamper":
+        (stage / "datasets" / "source.csv").write_bytes(b"x" * len(_csv()))
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match=message):
+        maintenance_backup.restore_staged_backup(stage, target, recorded_source_home=home,
+                                                 confirmed=failure != "unconfirmed")
+    if failure == "collision":
+        assert (target / "keep").read_bytes() == b"preserve"
+    else:
+        assert not target.exists()
+
+
+def test_b3_interrupted_restore_retains_uncompleted_stage(monkeypatch, tmp_path):
+    from backend import maintenance_backup
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    stage = tmp_path / "backup"
+    maintenance_backup.stage_workspace_backup(home, stage, confirmed=True)
+    target = tmp_path / "restored"
+    before = (stage / "pilotodin.sqlite3").read_bytes()
+    def interrupted(*args, **kwargs):
+        raise OSError("Injected interruption before reference mapping")
+    monkeypatch.setattr(maintenance_backup, "_restore_references", interrupted)
+    with pytest.raises(maintenance_backup.SnapshotBlocked, match="Restore unavailable"):
+        maintenance_backup.restore_staged_backup(stage, target, recorded_source_home=home, confirmed=True)
+    assert (target / "pilotodin.sqlite3").read_bytes() == before
+    assert not (target / "restore_receipt.json").exists()
+    assert (stage / "pilotodin.sqlite3").read_bytes() == before
