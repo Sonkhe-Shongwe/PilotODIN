@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from qa.p4_research.n12_fileio_pair_contract import (
     PrivateWriterSpan, PrivateWriteIdentity, index_private_kernel_file_events,
 )
-from qa.p4_research.n12_physical_destination import PrivateHandlePath
+from qa.p4_research.n12_physical_destination import PrivateHandlePath, _strict_dos_components
 
 OBTRACE = "89497f50-effe-4440-8cf2-ce6b1cdcaca7"
 VERSION = 2
@@ -145,7 +145,8 @@ def review_generated_controls(*, obtrace_rows, file_events, writer, controls,
                 < w.completion_tick < writer.thread_end_tick
                 or type(path) is not PrivateHandlePath
                 or path.acquisition != "original_file_handle"
-                or type(path.final_path) is not str or not path.final_path
+                or type(path.final_path) is not str
+                or _strict_dos_components(path.final_path) is None
                 or not positive(path.volume_serial, 2**32 - 1)):
             return receipt("SELF_FILE_WITNESS_INVALID")
     a, b = controls

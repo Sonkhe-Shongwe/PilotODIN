@@ -38,7 +38,7 @@ class ObTraceFeasibilityTests(unittest.TestCase):
         self.writer = PrivateWriterSpan(77, 10, 190, 88, 20, 180)
         self.path = PrivateHandlePath(r"C:\private\generated.bin", 123, "original_file_handle")
         self.a = SelfFileControl(16, 40, PrivateWriteIdentity(100, 0x100000001, 300, 77, 88, 60, 70), self.path)
-        self.b = SelfFileControl(20, 50, PrivateWriteIdentity(200, 0x100000002, 300, 77, 88, 80, 90), self.path)
+        self.b = SelfFileControl(20, 75, PrivateWriteIdentity(200, 0x100000002, 300, 77, 88, 80, 90), self.path)
         self.rows = [ob(32, 25, 16, self.a.write.file_object),
                      ob(32, 30, 20, self.b.write.file_object),
                      ob(33, 100, 16, self.a.write.file_object),
@@ -122,6 +122,16 @@ class ObTraceFeasibilityTests(unittest.TestCase):
                          "WRITER_WRITE_INVENTORY_UNVERIFIED")
         b = dataclasses.replace(self.b, final_path=dataclasses.replace(self.path, acquisition="reopened"))
         self.assertEqual(self.review(controls=(self.a, b))["reason"], "SELF_FILE_WITNESS_INVALID")
+        b = dataclasses.replace(self.b, final_path=dataclasses.replace(self.path, final_path="relative"))
+        self.assertEqual(self.review(controls=(self.a, b))["reason"], "SELF_FILE_WITNESS_INVALID")
+
+    def test_shared_filekey_prior_write_is_not_evidence_for_other_open(self):
+        # Shared FileKey is expected to be possible for two opens of one file.
+        # Do not credit an observation interval contaminated by another
+        # object's write; the generated witness can be sampled later.
+        b = dataclasses.replace(self.b, observation_tick=50)
+        self.assertEqual(self.review(controls=(self.a, b))["reason"],
+                         "FILEIO_OBJECT_OR_NAME_EPOCH_UNVERIFIED")
 
     def test_native_source_dormant_and_no_name_or_foreign_handle_query(self):
         path = Path(__file__).resolve().parents[1] / "qa/p4_research/n12_obtrace_win32_session.cpp"

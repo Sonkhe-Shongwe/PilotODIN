@@ -9,6 +9,8 @@
 #include <tdh.h>
 #include <array>
 #include <cstdint>
+#include <cstddef>
+#include <climits>
 #include <cwchar>
 
 namespace pilotodin::g225 {
