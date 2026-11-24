@@ -941,3 +941,75 @@ def test_b3_snapshot_refuses_missing_source_without_creating_database(tmp_path):
         maintenance_backup.stage_database_snapshot(home, tmp_path / "stage", confirmed=True)
     assert not list(home.iterdir())
     assert not (tmp_path / "stage").exists()
+
+def _backup_model_fixture(monkeypatch, tmp_path):
+    home, experiment, receipt = _verified_load_fixture(monkeypatch, tmp_path)
+    # The helper creates an earlier running experiment, so settle it using
+    # existing startup recovery before the offline maintenance fixture.
+    storage.recover_model_publications()
+    storage.recover_interrupted_experiments()
+    with storage.connect() as con:
+        con.execute("INSERT INTO project_lifecycle VALUES (?,?,?)",
+                    (experiment["project_id"], 1, storage.now()))
+    return home, experiment, receipt
+
+
+def test_b3_stage_referenced_archived_payloads_and_exclude_unknown_files(monkeypatch, tmp_path):
+    from backend import maintenance_backup
+    import json
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    (home / "ai_secrets.dpapi").write_bytes(b"synthetic-secret")
+    (home / "datasets" / "unreferenced.csv").write_bytes(b"unknown")
+    (home / "models" / "unreferenced").mkdir()
+    before = (home / "pilotodin.sqlite3").read_bytes()
+    target = tmp_path / "backup"
+    manifest = maintenance_backup.stage_workspace_backup(home, target, confirmed=True)
+    expected = {"pilotodin.sqlite3", "datasets/source.csv",
+                f"models/{experiment['id']}/ridge.joblib",
+                f"models/{experiment['id']}/test_set.joblib"}
+    assert set(manifest["files"]) == expected
+    assert json.loads((target / "manifest.json").read_text()) == manifest
+    for name, item in manifest["files"].items():
+        raw = (target / name).read_bytes()
+        assert item == {"size": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+    assert (target / "datasets" / "source.csv").read_bytes() == _csv()
+    assert (target / "models" / experiment["id"] / "ridge.joblib").read_bytes() == b"inert model"
+    assert not (target / "ai_secrets.dpapi").exists()
+    assert not (target / "datasets" / "unreferenced.csv").exists()
+    assert (home / "pilotodin.sqlite3").read_bytes() == before
+    assert (home / "ai_secrets.dpapi").read_bytes() == b"synthetic-secret"
+
+
+@pytest.mark.parametrize("failure", ["missing", "digest", "external", "legacy_model", "model_digest", "extra_model", "hardlink"])
+def test_b3_invalid_references_do_not_publish_manifest(monkeypatch, tmp_path, failure):
+    from backend import maintenance_backup
+    home, experiment, receipt = _backup_model_fixture(monkeypatch, tmp_path)
+    source = home / "datasets" / "source.csv"
+    foreign = tmp_path / "foreign.csv"
+    foreign.write_bytes(_csv())
+    model = home / "models" / experiment["id"] / "ridge.joblib"
+    if failure == "missing":
+        source.unlink()
+    elif failure == "digest":
+        source.write_bytes(b"x" * len(_csv()))
+    elif failure == "external":
+        with storage.connect() as con:
+            con.execute("UPDATE projects SET dataset_path=? WHERE id=?",
+                        (str(foreign), experiment["project_id"]))
+    elif failure == "legacy_model":
+        with storage.connect() as con:
+            con.execute("DELETE FROM model_publications_v1 WHERE experiment_id=?", (experiment["id"],))
+    elif failure == "model_digest":
+        model.write_bytes(b"x" * len(b"inert model"))
+    elif failure == "extra_model":
+        (model.parent / "unexpected.joblib").write_bytes(b"unknown")
+    elif failure == "hardlink":
+        source.unlink()
+        os.link(foreign, source)
+    target = tmp_path / "backup"
+    before = (home / "pilotodin.sqlite3").read_bytes()
+    with pytest.raises(maintenance_backup.SnapshotBlocked):
+        maintenance_backup.stage_workspace_backup(home, target, confirmed=True)
+    assert not (target / "manifest.json").exists()
+    assert (home / "pilotodin.sqlite3").read_bytes() == before
+    assert foreign.read_bytes() == _csv()
