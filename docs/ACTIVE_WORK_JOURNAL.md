@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c5c6815d75d8f967278f5d2c7d94978a3e506fd6 |
+| Observed starting HEAD | e5272d6652fdd6905e45fde4dd7005a3fdbab1ff |
 | Product baseline | 766d352ca5036529b9aa8d1bc091b8f0b0276090 |
-| Scope | C1 first bounded source batch: dependency-free admission coordinator, exhaustive main.py route classification and direct synthetic tests; no activation of runtime admission until real lifetimes and host bridge integrated |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-core |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_admission.py; backend/resource_routes.py; tests/test_c1_resource_admission.py; .github/workflows/p1-isolated-backend.yml; C spec, evidence ledger, handoff, journal |
+| Scope | C1 next bounded source batch: prepare ASGI-owned request/stream lifetime adapter and synthetic framework tests. No live activation until upload parser, training/autonomy handoff and native bridge reviewed/integrated. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-asgi-lifetime |
+| Operation state | PREPARED |
+| Intended files | backend/resource_http.py; tests/test_c1_resource_http.py; .github/workflows/p1-isolated-backend.yml; journal, handoff, active evidence ledger |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Pure coordinator, 76-route map, race/handoff/unknown-state tests published in same commit; actual CI pending; not yet wired to live routes or host |
-| Pending runs | [P1 source CI #45446217250](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45446217250) IN_PROGRESS, exact product 766d352ca5036529b9aa8d1bc091b8f0b0276090, job 138630596234; reconcile actual result and test counts before next integration |
+| Verification | Core exact CI SUCCESS: 166 regression + 2 subtests, 31 C1 tests. Next adapter must retain lease until full ASGI callable returns, fail closed if unwinding is uncertain, and deny before downstream allocation. Test isolated Starlette/FastAPI framework with synthetic requests and no live registration. |
+| Pending runs | None for core; run #45446217250/job 138630596234 terminal SUCCESS, exact checkout confirmed in logs. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile exact C1 core CI, then integrate before-allocation admission with actual request, training and export lifetimes; audit staged AI/autonomy and host bridge separately. Core not yet live. No C1 closure or native run. |
+| Recovery action | Inspect actual source/commit after preparation; implement and verify staged ASGI request/stream adapter, then review before-parser bounded upload and training queued/worker reconciliation. Do not activate an incomplete guard or run native work. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
