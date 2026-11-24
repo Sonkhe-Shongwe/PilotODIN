@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 4c9863dbf4bf8215e142680431c69daf1ebf846a |
-| Product baseline | b9a9181313b709abe729b3bddac3ac4e10709e59 |
+| Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
 | Scope | Consolidated source/workflow audit; bounded export input and destination safety corrections, ordinary source CI only; no native execution |
 | Operation ID | B5-CLOSURE-AUDIT-20261124-source-hardening |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | frontend/src-tauri/src/dataset_file.rs; frontend/src-tauri/src/lib.rs; frontend/src/QualityWorkspace.tsx; frontend/tests/b5-dataset-export-download.test.cjs; handoff and evidence ledger |
 | Approval | One-use native test approval consumed by dispatch 10f371b; no new approval, no reruns. |
-| Verification | Narrow source fixes published with this journal; previous native dispatch failed before job creation and remains consumed. Exact-source CI pending; native source uncompiled. |
-| Pending runs | Reconcile exact source publication by commit message fix(b5) B5-CLOSURE-AUDIT-20261124-source-hardening and parent f0c0196; source CI only |
+| Verification | Published source 8e3cc9112073b9744ff18ffa3e4e549662504a97; [P1 Isolated Frontend Verification #45440551353](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551353) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45440551176](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551176) IN_PROGRESS; [P2 Report Export Draft Safety #45440550975](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440550975) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45440551376](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551376) IN_PROGRESS. Earlier native dispatch failed before job creation, remains consumed. New native code uncompiled. |
+| Pending runs | [P1 Isolated Frontend Verification #45440551353](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551353) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45440551176](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551176) IN_PROGRESS; [P2 Report Export Draft Safety #45440550975](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440550975) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45440551376](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45440551376) IN_PROGRESS; exact source only |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Inspect exact source commit/diff and matching source CI before repeating; preserve consumed native approval and disabled workflow; after source verification review entire fresh activation configuration before requesting new approval |
+| Recovery action | Reconcile exact source CI, audit all seven test expectations and complete fresh disabled workflow candidate pinned to corrected product. Parse complete proposed armed YAML before any fresh approval. No native action or replay. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation
