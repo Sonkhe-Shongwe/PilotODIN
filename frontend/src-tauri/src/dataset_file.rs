@@ -262,31 +262,22 @@ fn stamp(file: &File) -> Result<Stamp,String> {
     use std::ffi::c_void;
     use std::os::windows::io::AsRawHandle;
     #[repr(C)]
-    struct Info {
-        attrs:u32, created:[u32;2], accessed:[u32;2], written:[u32;2],
-        volume:u32, size_high:u32, size_low:u32, links:u32, index_high:u32,index_low:u32,
-    }
-    #[repr(C)]
     struct FileId { volume:u64, identifier:[u8;16] }
     #[link(name="kernel32")]
     extern "system" {
-        fn GetFileInformationByHandle(file:*mut c_void, info:*mut Info)->i32;
         fn GetFileInformationByHandleEx(file:*mut c_void, class:i32,
             buffer:*mut c_void, size:u32)->i32;
     }
-    let mut info=std::mem::MaybeUninit::<Info>::uninit();
-    if unsafe {GetFileInformationByHandle(file.as_raw_handle(),info.as_mut_ptr())}==0 {
-        return Err(UNSAFE.into());
-    }
-    let info=unsafe {info.assume_init()};
+    let (attributes,links)=crate::desktop_profile::file_attributes_and_links(file)
+        .map_err(|_|UNSAFE)?;
     let mut full=FileId{volume:0,identifier:[0;16]};
     if unsafe {GetFileInformationByHandleEx(file.as_raw_handle(),18,
         (&mut full as *mut FileId).cast(),std::mem::size_of::<FileId>() as u32)}==0 {
         return Err(UNSAFE.into());
     }
     let id=u128::from_le_bytes(full.identifier);
-    if id==0 || info.attrs & (0x10|0x400)!=0 { return Err(UNSAFE.into()); }
-    Ok(Stamp{volume:full.volume,id,links:info.links as u64})
+    if id==0 || attributes & (0x10|0x400)!=0 { return Err(UNSAFE.into()); }
+    Ok(Stamp{volume:full.volume,id,links:links as u64})
 }
 
 fn open_named(path:&Path)->Result<File,String> {

@@ -58,6 +58,16 @@ mod windows {
         fn RegCloseKey(key: *mut c_void) -> i32;
     }
 
+    // Use one ABI declaration for both profile lease and B5 dataset handles.
+    pub(crate) fn file_attributes_and_links(file: &File) -> Result<(u32,u32),String> {
+        let mut information=std::mem::MaybeUninit::<FileInformation>::uninit();
+        if unsafe {GetFileInformationByHandle(file.as_raw_handle(),information.as_mut_ptr())}==0 {
+            return Err(UNSAFE.into());
+        }
+        let info=unsafe{information.assume_init()};
+        Ok((info.attributes,info.links))
+    }
+
     pub fn check_named_file(info: &fs::Metadata) -> Result<(), String> {
         if !info.is_file() || info.file_type().is_symlink()
             || info.file_attributes() & 0x400 != 0 || info.len() != 0 {
@@ -122,6 +132,9 @@ mod windows {
         Ok(())
     }
 }
+
+#[cfg(windows)]
+pub(crate) use windows::file_attributes_and_links;
 
 #[cfg(not(windows))]
 mod windows {
