@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 238d6c39f65c404ec6cd6bef21e96363b00793ed |
+| Observed starting HEAD | 29e5a6d720779c72cbc7699de32b20cf7bd44cf1 |
 | Product baseline | 77be5cb51fc77dd9b56aa87577d35a9d57b1a8a0 |
-| Scope | C1 dormant explicit control bootstrap, raw descriptor ownership, shutdown notification and bounded shell receiver driver. No desktop activation/native compilation. |
-| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-bootstrap |
-| Operation state | RECONCILED |
-| Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_shell.rs; journal, handoff, C evidence/spec |
+| Scope | C1 dormant desktop session composition, single coordinator and control thread, explicit authenticated readiness and STOP/release completion. No live registration or native compilation. |
+| Operation ID | C1-RESOURCE-ADMISSION-20261124-host-session |
+| Operation state | PREPARED |
+| Intended files | backend/resource_host.py; backend/resource_session.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_wire.rs; frontend/src-tauri/src/resource_transport.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Dormant explicit bootstrap, raw descriptor owner, shutdown notification and bounded Rust shell receiver driver published; eight additional Python cases, CI pending. Rust uncompiled/unregistered. |
-| Pending runs | [P1 #45465804193](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45465804193), exact 77be5cb51fc77dd9b56aa87577d35a9d57b1a8a0, IN_PROGRESS at last observation. |
+| Verification | Prior #45465804193 SUCCESS 166 regression + 2 subtests, 184 C1, 20 legacy autonomy. Next staged readiness, exact control join, shutdown and shared coordinator fixtures. |
+| Pending runs | None; #45465804193/job 138700256121 terminal SUCCESS, exact checkout/counts confirmed. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Reconcile Python CI; compose dormant desktop startup with one coordinator and retained driver, explicit readiness and shutdown/EOF handshake, then actual native grant/exit and route integration. Review driver timer and bootstrap thread lifetime, Windows bootloader/cached handle isolation. No live activation or native run. |
+| Recovery action | Publish dormant session composition and handshake, reconcile Python CI, then native inference grant/exit and route registration design. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
