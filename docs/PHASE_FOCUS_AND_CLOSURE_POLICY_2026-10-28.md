@@ -1,5 +1,7 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
+**24 NOVEMBER 2026 | CURRENT WORK PRIORITY (supersedes all older next-action instructions):** [current product-first implementation directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) is the sole live implementation sequence. P4 remains ACTIVE; G2 remains BLOCKED, not passed. Product corrections within existing P4 scope precede any new native evidence campaign; this is a work-priority change, not a change to G1–G4 acceptance, permitted roots, or formal phase progression. Complete targeted Package A research and one integrated implementation specification (storage ownership, supported WebView2 profile selection/override and continuity, exclusive workspace ownership before DB initialization/recovery, worker lifecycle, production/development isolation, failure scenarios and tests); then implement in dependency order under existing source authority. No new collector, native run or installer. All dated evidence below is historical where it conflicts with this pointer. P4 14/20, R02.5 0/5, N12 0/2, four-gate delivery 1/4 (25%) unchanged.
+
 P4 is the active phase. The dated entries preserve decisions and results as recorded at the time. The active work, scope and score are maintained in the [handoff](./SESSION_HANDOFF_CURRENT.md) and [phase ledger](./PROJECT_STATUS_CURRENT.md).
 
 ## 13 November 2026 | Owner decision on Gate C

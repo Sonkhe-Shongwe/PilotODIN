@@ -1,6 +1,6 @@
 # PilotODIN 1.0
 
-**CURRENT ENGINEERING FOCUS (24 November):** [Migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) | R02.5 four-gate delivery, **G2 OPEN at 1/4 (25%)**. The [actual Windows baseline #45342345634](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45342345634) completed with blocked evidence. Next: diagnose the measured Sysmon exit discrepancy and private child-handle inventory failure, then original writer/destination attribution. Product-first correction principles and the [CF defect backlog](docs/PILOTODIN_CODE_FIRST_REMEDIATION_DIRECTIVE_AND_DOCUMENTATION_AUDIT_2026-11-22.md) remain in force; CF-01 is not the immediate task. Official P4 14/20, R02.5 0/5, N12 0/2.
+**CURRENT ENGINEERING FOCUS (24 November):** [Product-first implementation directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md). Package A storage/lifecycle research and integrated specification, then product source corrections. G2 BLOCKED, four-gate 1/4 (25%); no new collector or native run. P4 14/20, R02.5 0/5, N12 0/2.
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)
@@ -8,9 +8,10 @@
 PilotODIN combines a React/TypeScript workspace, a local FastAPI/SQLite analytical engine, and a Tauri desktop shell. The 1.0 roadmap covers versioned data-quality approval, evidence-backed investigation, model evaluation, reports and a bundled local ODIN assistant. [Roadmap and scope](docs/PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md)
 
 ## Read this first
+- **[Current product-first implementation directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md)**: sole live work order, fixed A–D scope, readiness specification and permissions.
 - **[Current tab migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md)**: single starting point, latest evidence, exact next action, safe scope and source references.
-- **[Stage 1 golden-reference verification contract](docs/P4_N12_STAGE1_GOLDEN_REFERENCE_AND_BACKWARD_VERIFICATION_2026-11-21.md)** for the current correctness-first direction, evidence matrix, positive/negative test plan and boundaries.
-- **[Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)** for the current G2 next action and historical engineering chronology.
+- **[Stage 1 golden-reference verification contract](docs/P4_N12_STAGE1_GOLDEN_REFERENCE_AND_BACKWARD_VERIFICATION_2026-11-21.md)** for retained native evidence requirements, not the current development sequence.
+- **[Current engineering checkpoint](docs/SESSION_HANDOFF_CURRENT.md)** for current product-first next action and historical engineering chronology.
 - **[21 November documentation-direction audit](docs/DOCUMENTATION_DIRECTION_AUDIT_GOLDEN_REFERENCE_2026-11-21.md)** for the changes, preserved chronology and unresolved evidence.
 - **[P0–P8 development and release status](docs/PROJECT_STATUS_CURRENT.md)** for accepted development slices and remaining limits.
 - **[P4 acceptance worklist](docs/P4_80_ACCEPTANCE_WORKLIST_AND_EVIDENCE_INTAKE_2026-11-12.md)** for gate status and Windows evidence. **[N12 runbook](qa/p4_native/N12_TRACE.md)** for the collector and trace procedure.
