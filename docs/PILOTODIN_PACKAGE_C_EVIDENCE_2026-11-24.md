@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `a7b55ecebb56c259c2b93e07d4a683c54d74a558`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `ea524b2113e5d2aece9f434d383b5ca47f34baf2`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -77,3 +77,7 @@ Operation C1-RESOURCE-ADMISSION-20261124-autonomy-launch, prepared at `15283e5`,
 ## 24 November | C1 owned autonomy launch exact-source CI reconciled
 
 [P1 #45459206888](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45459206888), job 138676819018, terminal SUCCESS; checkout `a7b55ecebb56c259c2b93e07d4a683c54d74a558`, compile, 166 regression + 2 subtests, 77 C1 foundation + 18 training + 28 autonomy = 123 C1, 20 legacy autonomy (309 tests total, 2 subtests). No real inference or live registration. C0/5, source 10/17, P4 14/20 unchanged.
+
+## 24 November | C1 staged Python owned host broker published
+
+Operation C1-RESOURCE-ADMISSION-20261124-host-broker, prepared at `44cc996`, published [`ea524b2`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ea524b2113e5d2aece9f434d383b5ca47f34baf2). Dependency-free bounded ASCII LF codec with private capability, engine generation, consecutive sequence and strict fixed commands; single reader broker uses shared LOCAL_INFERENCE reservation, opaque wire grant, drain and exact grant release, retains blocked ownership on protocol fault/lost transport. Legacy STOP stops admissions without certifying exit. Autonomous actual thread entry rechecks stop and identity, settles queued record after join if shutdown wins. 22 host fixture cases and one autonomy shutdown race case; no real transport or native process. Current parser accepts coalesced requests and returns a batch of replies; actual transport must enforce one outstanding host control request and reply delivery sequencing, clarify STOPPED means admission stopped only, not exit. Rust adapter, physical owned exit evidence, data-priority drain and bounded handshake remain open. Workflow definitions compared with prior 82 inspected definitions; only P1 source workflow modified, dedicated pure tests; no native workflow activated. [Exact CI #45459951336](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45459951336) IN_PROGRESS at last observation. No native/model/installer/owner operation; C0/5, source 10/17, P4 14/20 unchanged.
