@@ -134,6 +134,34 @@ class G213SourceContractTests(unittest.TestCase):
         self.assertNotIn("/link", source)
         self.assertNotIn("cargo build", source)
 
+    def test_g214_fresh_generated_pss_runtime_workflow_scope(self):
+        # Source-only review; this test NEVER builds or runs a Windows probe.
+        wf = (ROOT / ".github/workflows/p4-r025-g214-generated-pss-runtime.yml"
+              ).read_text(encoding="utf-8")
+        new_marker = (ROOT / "qa/p4_research"
+                      / "N12_G214_GENERATED_PSS_RUNTIME_OWNER_APPROVAL_FRESH_ONE_USE.txt")
+        self.assertRegex(wf, r"(?m)^\\s+if: \\$\\{\\{ false \\$\\}\\}")
+        self.assertNotIn("workflow_dispatch", wf)
+        self.assertNotIn("cargo ", wf)
+        self.assertNotIn("tauri", wf.lower().split(
+            "- name: compile windows sdk")[1].split("- name: execute generated")[0])
+        self.assertIn("scope=g214-one-generated-process-one-pss-runtime", wf)
+        self.assertIn("git diff --name-only $source HEAD", wf)
+        self.assertIn("$changed.Count -ne 2", wf)
+        self.assertIn("$added.Count -ne 1", wf)
+        self.assertIn("git checkout --detach $source", wf)
+        self.assertIn("$env:GITHUB_RUN_ATTEMPT -cne '1'", wf)
+        self.assertIn("RUNNER_TEMP", wf)
+        self.assertIn("PILOTODIN_G213_GENERATED_CONSENT", wf)
+        self.assertIn("No raw handle, PID, filename", wf)
+        self.assertIn("No native PSS", wf) if "No native PSS" in wf else self.assertIn(
+            "NOT PilotODIN", wf)
+        if new_marker.exists():
+            lines = new_marker.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(len(lines), 2)
+            self.assertRegex(lines[0], r"^reviewed_source=[0-9a-f]{40}$")
+            self.assertEqual(lines[1], "scope=g214-one-generated-process-one-pss-runtime")
+
     def test_no_native_execution_in_source_contract_suite(self):
         source = Path(native.__file__).read_text(encoding="utf-8")
         self.assertIn("def prepare_native_backend", source)

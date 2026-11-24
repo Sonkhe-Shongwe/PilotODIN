@@ -41,6 +41,7 @@ on:
       - tests/test_p4_n12_g2_13_source_contract.py
       - qa/p4_native/g213_generated_pss_probe.cpp
       - .github/workflows/p4-r025-g213-generated-pss.yml
+      - .github/workflows/p4-r025-g214-generated-pss-runtime.yml
       - qa/p4_research/n12_no_cdp_child_handles.py
       - qa/p4_research/n12_private_child_pipe.py
       - qa/p4_research/n12_no_cdp_native_path.py
