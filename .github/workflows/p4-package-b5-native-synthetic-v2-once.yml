@@ -33,7 +33,8 @@ jobs:
         run: ruby qa/b5_native_workflow_preflight.rb
   b5-synthetic-library-tests:
     needs: source-preflight
-    if: ${{ false }} # DISARMED V2; fresh exact approval required.
+    if: >-
+      ${{ github.run_attempt == 1 && github.event_name == 'push' && github.ref == 'refs/heads/feature/live-dev-workspace-20261023' && github.event.head_commit.message == 'B5-NATIVE-SYNTHETIC-V2-20261124-ONE-USE' }}
     runs-on: windows-2022
     timeout-minutes: 55
     env:
