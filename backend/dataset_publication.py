@@ -127,7 +127,7 @@ def _verified_file(path, receipt, expected, verify_parent):
     return after
 
 
-def read_verified_source(path, sha256, *, size=None, capture=False):
+def read_verified_source(path, sha256, *, size=None, capture=False, with_identity=False):
     """Verify a recorded source, including legacy exact-digest relinks.
 
     Read only the exact recorded absolute path, not a guessed basename.
@@ -144,8 +144,10 @@ def read_verified_source(path, sha256, *, size=None, capture=False):
             if path.parent == storage.HOME / "datasets":
                 storage.check_write_path(path)
             return existing_fixture_file(path)
-        _, raw = _read_verified(path, sha256=sha256, size=size, identity=identity,
-                                verify_parent=verify_parent, capture=capture)
+        observed, raw = _read_verified(path, sha256=sha256, size=size, identity=identity,
+                                       verify_parent=verify_parent, capture=capture)
+        if with_identity:
+            return raw, observed
         return raw
 
 

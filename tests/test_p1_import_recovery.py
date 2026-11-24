@@ -1394,3 +1394,69 @@ def test_b4_legacy_source_over_limit_refused_before_parser(monkeypatch, tmp_path
     with pytest.raises(quality.QualityError, match="40 MiB"):
         quality.current_data(pid)
     assert path.read_bytes() == raw
+
+
+@pytest.mark.parametrize("fault", ["none", "source", "revision", "decision", "archive"])
+def test_b4_direct_imputation_stages_without_sqlite_write_lock(monkeypatch, tmp_path, fault):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    raw = b"CustomerID,Revenue\n0001,10\n0002,\n0003,30\n"
+    path = home / "datasets" / "source.csv"
+    path.write_bytes(raw)
+    pid = storage.save_project("Source", path.name, ".csv", path, {},
+                               original_sha256=hashlib.sha256(raw).hexdigest())
+    issue = next(x for x in quality.snapshot(pid)["issues"]
+                 if x["kind"] == "missing" and x["column"] == "Revenue")
+    apply = quality._apply
+    injected = []
+    def stage(frame, proposal, **kwargs):
+        result = apply(frame, proposal, **kwargs)
+        if proposal["kind"] == "impute_numeric_median":
+            with storage.connect() as con:
+                con.execute("PRAGMA busy_timeout=200")
+                con.execute("BEGIN IMMEDIATE")
+                if fault in ("revision", "archive"):
+                    con.execute("INSERT INTO project_lifecycle VALUES(?,?,?)",
+                                (pid, 1, storage.now() if fault == "archive" else None))
+                elif fault == "decision":
+                    con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",
+                                (pid, issue["id"], "rejected", storage.now()))
+            if fault == "source":
+                path.write_bytes(raw.replace(b",30", b",40"))
+            injected.append(fault)
+        return result
+    monkeypatch.setattr(quality, "_apply", stage)
+    if fault == "none":
+        assert quality.approve_imputation(pid, "Revenue", issue["id"], 0)["version"] == 1
+    else:
+        with pytest.raises(quality.QualityError, match="changed|archived"):
+            quality.approve_imputation(pid, "Revenue", issue["id"], 0)
+    assert injected == [fault]
+    with storage.connect() as con:
+        assert con.execute("SELECT current_version FROM quality_state WHERE project_id=?", (pid,)).fetchone()[0] == (1 if fault == "none" else 0)
+        assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?", (pid,)).fetchone()[0] == (1 if fault == "none" else 0)
+
+
+def test_b4_read_snapshot_releases_metadata_transaction_before_parse(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    raw = _csv()
+    path = home / "datasets" / "source.csv"
+    path.write_bytes(raw)
+    pid = storage.save_project("Source", path.name, ".csv", path, {},
+                               original_sha256=hashlib.sha256(raw).hexdigest())
+    original = quality._source_df
+    called = []
+    def parse(*args, **kwargs):
+        with storage.connect() as con:
+            con.execute("PRAGMA busy_timeout=200")
+            con.execute("BEGIN IMMEDIATE")
+            con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",
+                        (pid, "synthetic-later-decision", "rejected", storage.now()))
+        called.append(True)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(quality, "_source_df", parse)
+    frame, version = quality.current_data(pid)
+    assert called == [True]
+    assert version == 0
+    assert frame["CustomerID"].tolist() == ["0001", "0002", "0003"]

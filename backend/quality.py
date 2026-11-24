@@ -105,7 +105,7 @@ def _project(pid: str) -> dict:
     return project
 
 
-def _ensure(con, p: dict, *, capture=False) -> bytes | None:
+def _source_contract(con, p: dict):
     pid = p["id"]
     state = con.execute("SELECT original_sha256 FROM quality_state WHERE project_id=?", (pid,)).fetchone()
     if state is None:
@@ -132,11 +132,16 @@ def _ensure(con, p: dict, *, capture=False) -> bytes | None:
                 raise artifact_publication.PublicationError("Dataset receipt disagrees with lineage")
     except artifact_publication.PublicationError as exc:
         raise QualityError("Dataset publication integrity cannot be confirmed. Original and history preserved.", 409) from exc
+    return state["original_sha256"], receipt
+
+
+def _read_source(p, contract, *, capture=False, with_identity=False):
+    digest, receipt = contract
     try:
         return dataset_publication.read_verified_source(
-            p["dataset_path"], state["original_sha256"],
+            p["dataset_path"], digest,
             size=receipt.expected_bytes if receipt is not None else None,
-            capture=capture)
+            capture=capture, with_identity=with_identity)
     except (OSError, storage.WorkspaceBoundaryError, artifact_publication.PublicationError) as exc:
         # Physical validation can wrap missing or inaccessible parents.
         cause = exc
@@ -159,6 +164,10 @@ def _ensure(con, p: dict, *, capture=False) -> bytes | None:
         raise QualityError(
             "The original dataset cannot be safely read at its recorded location. "
             "Original and history preserved.", 409) from exc
+
+
+def _ensure(con, p: dict, *, capture=False) -> bytes | None:
+    return _read_source(p, _source_contract(con, p), capture=capture)
 
 
 def _state(con, pid: str) -> tuple[int, list[str]]:
@@ -474,6 +483,82 @@ def _materialize(con, p: dict, ops: list[str], *, raw: bytes | None = None) -> p
     return df
 
 
+def _metadata_snapshot(con, pid, *, target_version=None):
+    """Capture metadata only in the caller's short explicit transaction."""
+    row = con.execute(
+        "SELECT p.*, l.revision AS lifecycle_revision,l.archived_at AS lifecycle_archived "
+        "FROM projects p LEFT JOIN project_lifecycle l ON p.id=l.project_id WHERE p.id=?", (pid,)
+    ).fetchone()
+    if row is None:
+        raise QualityError("Project not found", 404)
+    if row["lifecycle_archived"] is not None:
+        raise QualityError("Project is archived. Restore it in Manage projects before making Quality changes.", 409)
+    p = dict(row)
+    contract = _source_contract(con, p)
+    version, ops = _state(con, pid)
+    selected_version = version if target_version is None else target_version
+    version_row = con.execute("SELECT * FROM quality_versions WHERE project_id=? AND version=?",
+                              (pid, selected_version)).fetchone()
+    if version_row is None:
+        raise QualityError("Requested dataset version does not exist", 404)
+    selected_ops = json.loads(version_row["operations_json"])
+    rows = []
+    for action_id in selected_ops:
+        action = con.execute("SELECT * FROM quality_actions WHERE project_id=? AND id=?",
+                             (pid, action_id)).fetchone()
+        if action is None:
+            raise QualityError("Missing transformation from history", 409)
+        rows.append(dict(action))
+    decisions = [dict(r) for r in con.execute(
+        "SELECT * FROM quality_decisions WHERE project_id=? ORDER BY issue_id", (pid,))]
+    return {"project": p, "contract": contract, "version": version, "ops": ops,
+            "selected_version": selected_version, "version_row": dict(version_row),
+            "actions": rows, "decisions": decisions}
+
+
+def _read_metadata(pid, *, target_version=None):
+    _project(pid)
+    with storage.connect() as con:
+        con.execute("BEGIN")
+        return _metadata_snapshot(con, pid, target_version=target_version)
+
+
+def _replay_snapshot(frame, metadata):
+    for row in metadata["actions"]:
+        frame, _ = _apply(frame, json.loads(row["params_json"]), expected_affected=row["affected_rows"])
+    return frame
+
+
+def _snapshot_frame(metadata, *, original=False, with_identity=False):
+    raw, identity = _read_source(metadata["project"], metadata["contract"], capture=True, with_identity=True)
+    base = _source_df(metadata["project"], raw=raw)
+    del raw
+    frame = _replay_snapshot(base, metadata)
+    return (base if original else None), frame, identity if with_identity else None
+
+
+def _snapshot_decisions(metadata):
+    return {row["issue_id"]: row["status"] for row in metadata["decisions"]}
+
+
+def _stage_current(pid, expected_version):
+    metadata = _read_metadata(pid)
+    _check_version(metadata["version"], expected_version)
+    _, frame, identity = _snapshot_frame(metadata, with_identity=True)
+    return metadata, frame, identity
+
+
+def _verify_staged_write(con, pid, metadata, identity):
+    _require_active_for_write(con, pid)
+    current = _metadata_snapshot(con, pid, target_version=metadata["selected_version"])
+    _check_version(current["version"], metadata["version"])
+    if current != metadata:
+        raise QualityError("Quality project, history or decisions changed. Review the updated findings.", 409)
+    _, observed = _read_source(current["project"], current["contract"], with_identity=True)
+    if not dataset_publication._same_bytes_metadata(identity, observed):
+        raise QualityError("Original dataset identity changed during Quality review. No changes applied.", 409)
+
+
 def _check_version(actual: int, expected: int) -> None:
     if actual!=expected:
         raise QualityError(f"Dataset version changed from {expected} to {actual}. Review the updated findings before applying changes.",409)
@@ -516,20 +601,18 @@ def _record_action(con, p: dict, ops: list[str], proposal: dict, source: str,
 
 
 def snapshot(pid: str, preview_limit: int = 7) -> dict:
-    p=_project(pid)
-    with storage.connect() as con:
-        _ensure(con,p)
-        version,ops=_state(con,pid)
-        df=_materialize(con,p,ops)
-        issues=_reviewed_issues(df, _decisions(con,pid))
-        actionable=[x for x in issues if x["decision"]=="pending"]
-        return {"project_id":pid,"version":version,"rows":len(df),"columns":len(df.columns),
-                "summary":{"issues":len(issues),"automatic_available":sum(x["automatic"] for x in actionable),
-                           "review_required":sum(x["severity"]=="review" for x in actionable),
-                           "information":sum(x["severity"]=="information" for x in actionable),
-                           "applied_actions":len(ops)},
-                "issues":issues,"preview":engine.native(df.head(min(preview_limit,20)).to_dict(orient="records")),
-                "integration_note":"Approved working versions are now used for new analysis and ML experiments."}
+    metadata = _read_metadata(pid)
+    version, ops = metadata["version"], metadata["ops"]
+    _, df, _ = _snapshot_frame(metadata)
+    issues = _reviewed_issues(df, _snapshot_decisions(metadata))
+    actionable=[x for x in issues if x["decision"]=="pending"]
+    return {"project_id":pid,"version":version,"rows":len(df),"columns":len(df.columns),
+            "summary":{"issues":len(issues),"automatic_available":sum(x["automatic"] for x in actionable),
+                       "review_required":sum(x["severity"]=="review" for x in actionable),
+                       "information":sum(x["severity"]=="information" for x in actionable),
+                       "applied_actions":len(ops)},
+            "issues":issues,"preview":engine.native(df.head(min(preview_limit,20)).to_dict(orient="records")),
+            "integration_note":"Approved working versions are now used for new analysis and ML experiments."}
 
 
 def autopilot(pid: str, expected_version: int) -> dict:
@@ -553,54 +636,53 @@ def autopilot(pid: str, expected_version: int) -> dict:
 
 
 def decide(pid: str, issue_id: str, expected_version: int, decision: str) -> dict:
-    p=_project(pid)
     if decision not in ("approve","reject"):
         raise QualityError("Decision must be approve or reject")
-    with storage.connect() as con:
-        con.execute("BEGIN IMMEDIATE")
-        _require_active_for_write(con,pid)
-        _ensure(con,p)
-        version,ops=_state(con,pid)
-        _check_version(version,expected_version)
-        matching=next((x for x in _issues(_materialize(con,p,ops)) if x["id"]==issue_id),None)
-        if matching is None: raise QualityError("Finding no longer exists; refresh quality scan",409)
-        prior = _decisions(con,pid).get(issue_id)
-        # Undo and rejection suppress automation, not a later explicit user approval.
-        if prior == "applied" or (prior is not None and decision == "reject"):
-            raise QualityError("This finding has already been decided; review its audit entry",409)
-        if decision=="reject":
-            con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",(pid,issue_id,"rejected",storage.now()))
-            return {"version":version,"decision":"rejected","issue_id":issue_id,"applied":False}
+    metadata, frame, identity = _stage_current(pid, expected_version)
+    matching = next((x for x in _issues(frame) if x["id"] == issue_id), None)
+    if matching is None:
+        raise QualityError("Finding no longer exists; refresh quality scan",409)
+    prior = _snapshot_decisions(metadata).get(issue_id)
+    if prior == "applied" or (prior is not None and decision == "reject"):
+        raise QualityError("This finding has already been decided; review its audit entry",409)
+    affected = None
+    if decision == "approve":
         if not matching["proposal"]:
             raise QualityError("This issue is investigation-only; no executable correction was proposed")
-        version,action=_record_action(con,p,ops,matching["proposal"],"user_approved",issue_id)
+        transformed, affected = _apply(frame, matching["proposal"])
+        del transformed
+    del frame
+    version, ops = metadata["version"], metadata["ops"]
+    with storage.connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        _verify_staged_write(con, pid, metadata, identity)
+        if decision == "reject":
+            con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",(pid,issue_id,"rejected",storage.now()))
+            return {"version":version,"decision":"rejected","issue_id":issue_id,"applied":False}
+        version, action = _record_validated_action(con, metadata["project"], ops, matching["proposal"],
+                                                    "user_approved", issue_id, affected)
         return {"version":version,"decision":"approved","issue_id":issue_id,"applied":True,"action":action}
 
 
 def approve_imputation(pid:str,column:str,issue_id:str,expected_version:int,strategy:str='median')->dict:
-    """Versioned, explicitly approved numeric imputation, never Smart Autopilot.
-
-    Replays alongside prior transformations, preserves original, supports undo.
-    No blanket category/missing-data treatment and no silently added columns.
-    """
+    """Stage approved numeric imputation outside the metadata write lock."""
     if strategy!='median':raise QualityError('Only reviewed numeric median imputation is supported')
-    p=_project(pid)
+    metadata, df, identity = _stage_current(pid, expected_version)
+    matching=next((x for x in _issues(df) if x['id']==issue_id and x['kind']=='missing' and x['column']==column),None)
+    if matching is None:raise QualityError('Missing-value issue changed; refresh findings',409)
+    if column not in df or not pd.api.types.is_numeric_dtype(df[column]) or pd.api.types.is_bool_dtype(df[column]):
+        raise QualityError('Only numeric columns are eligible for median imputation')
+    if not df[column].notna().any():raise QualityError('No observed numeric values to impute from')
+    median=float(df[column].dropna().median())
+    if not math.isfinite(median):raise QualityError('Median is not finite')
+    proposal={'kind':'impute_numeric_median','column':column,'value':median}
+    transformed, affected = _apply(df, proposal)
+    del transformed, df
     with storage.connect() as con:
-        con.execute('BEGIN IMMEDIATE')
-        _require_active_for_write(con,pid)
-        _ensure(con,p)
-        version,ops=_state(con,pid)
-        _check_version(version,expected_version)
-        df=_materialize(con,p,ops)
-        matching=next((x for x in _issues(df) if x['id']==issue_id and x['kind']=='missing' and x['column']==column),None)
-        if matching is None:raise QualityError('Missing-value issue changed; refresh findings',409)
-        if column not in df or not pd.api.types.is_numeric_dtype(df[column]) or pd.api.types.is_bool_dtype(df[column]):
-            raise QualityError('Only numeric columns are eligible for median imputation')
-        if not df[column].notna().any():raise QualityError('No observed numeric values to impute from')
-        median=float(df[column].dropna().median())
-        if not math.isfinite(median):raise QualityError('Median is not finite')
-        proposal={'kind':'impute_numeric_median','column':column,'value':median}
-        nxt,action=_record_action(con,p,ops,proposal,'user_approved',issue_id)
+        con.execute("BEGIN IMMEDIATE")
+        _verify_staged_write(con, pid, metadata, identity)
+        nxt, action = _record_validated_action(con, metadata["project"], metadata["ops"], proposal,
+                                                "user_approved", issue_id, affected)
         return {'version':nxt,'decision':'approved','strategy':'median','filled_value':median,
                 'affected_rows':action['affected_rows'],'action':action,
                 'note':'Reviewed working-version imputation. Original retained; use History to undo. An imputation indicator column was not added.'}
@@ -674,103 +756,81 @@ def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int =
             expected_version: int | None = None) -> dict:
     if offset < 0 or limit < 1 or limit > 200:
         raise QualityError("Offset must be nonnegative; limit must be 1–200")
-    p=_project(pid)
-    with storage.connect() as con:
-        _ensure(con,p)
-        version,ops=_state(con,pid)
-        if expected_version is not None and expected_version!=version:
-            raise QualityError('Working dataset changed. Refresh Quality before inspecting rows.',409)
-        raw = _ensure(con, p, capture=True)
-        original = _source_df(p, raw=raw)
-        current = _materialize(con,p,ops,raw=raw)
-        del raw
-        issue=None
-        if issue_id is not None:
-            issue=next((x for x in _issues(current) if x["id"]==issue_id),None)
-            if issue is None: raise QualityError("Finding no longer exists",404)
-            col=issue["column"]
-            if col and issue["proposal"]:
-                prop=issue["proposal"]
-                if prop["kind"]=="replace_exact":
-                    indexes=current.index[current[col].map(lambda v: isinstance(v,str) and v==prop["from"])].tolist()
-                elif prop["kind"]=="trim_whitespace":
-                    indexes=current.index[current[col].map(lambda v: isinstance(v,str) and bool(v.strip()) and v!=v.strip())].tolist()
-                else: indexes=list(current.index)
-            elif issue["kind"]=="missing" and col:
-                indexes=current.index[current[col].map(lambda v: pd.isna(v) or (isinstance(v,str) and not v.strip()))].tolist()
-            elif issue["kind"]=="outliers" and col:
-                outlier_profile=_outlier_profile(current[col])
-                indexes=current.index[outlier_profile["mask"]].tolist() if outlier_profile else []
-            elif issue["kind"]=="exact_duplicates":
-                indexes=current.index[current.duplicated(keep="first")].tolist()
-            elif issue["kind"]=="identifier" and col:
-                # Include missing identifier cells in the same review population
-                # represented by the finding's affected row count.
-                indexes=list(current.index)
-            else:
-                indexes=list(current.index)
+    metadata = _read_metadata(pid)
+    version = metadata["version"]
+    if expected_version is not None and expected_version != version:
+        raise QualityError('Working dataset changed. Refresh Quality before inspecting rows.',409)
+    original, current, _ = _snapshot_frame(metadata, original=True)
+    issue=None
+    if issue_id is not None:
+        issue=next((x for x in _issues(current) if x["id"]==issue_id),None)
+        if issue is None: raise QualityError("Finding no longer exists",404)
+        col=issue["column"]
+        if col and issue["proposal"]:
+            prop=issue["proposal"]
+            if prop["kind"]=="replace_exact":
+                indexes=current.index[current[col].map(lambda v: isinstance(v,str) and v==prop["from"])].tolist()
+            elif prop["kind"]=="trim_whitespace":
+                indexes=current.index[current[col].map(lambda v: isinstance(v,str) and bool(v.strip()) and v!=v.strip())].tolist()
+            else: indexes=list(current.index)
+        elif issue["kind"]=="missing" and col:
+            indexes=current.index[current[col].map(lambda v: pd.isna(v) or (isinstance(v,str) and not v.strip()))].tolist()
+        elif issue["kind"]=="outliers" and col:
+            outlier_profile=_outlier_profile(current[col])
+            indexes=current.index[outlier_profile["mask"]].tolist() if outlier_profile else []
+        elif issue["kind"]=="exact_duplicates":
+            indexes=current.index[current.duplicated(keep="first")].tolist()
+        elif issue["kind"]=="identifier" and col:
+            # Include missing identifier cells in the same review population
+            # represented by the finding's affected row count.
+            indexes=list(current.index)
         else:
             indexes=list(current.index)
-        selected=indexes[offset:offset+limit]
-        rows=[]
-        for i in selected:
-            before=engine.native(original.loc[i].to_dict())
-            after=engine.native(current.loc[i].to_dict())
-            proposed=dict(after)
-            if issue and issue["proposal"]:
-                prop=issue["proposal"]
-                col=prop["column"]
-                if prop["kind"]=="replace_exact" and after[col]==prop["from"]:
-                    proposed[col]=prop["to"]
-                if prop["kind"]=="trim_whitespace" and isinstance(after[col],str):
-                    proposed[col]=after[col].strip()
-            rows.append({"row_number":int(i)+1,"original":before,"working":after,
-                         "proposed":proposed if issue and issue["proposal"] else None})
-        return {"version":version,"total_matching_rows":len(indexes),"offset":offset,
-                "limit":limit,"issue_id":issue_id,"rows":rows}
+    else:
+        indexes=list(current.index)
+    selected=indexes[offset:offset+limit]
+    rows=[]
+    for i in selected:
+        before=engine.native(original.loc[i].to_dict())
+        after=engine.native(current.loc[i].to_dict())
+        proposed=dict(after)
+        if issue and issue["proposal"]:
+            prop=issue["proposal"]
+            col=prop["column"]
+            if prop["kind"]=="replace_exact" and after[col]==prop["from"]:
+                proposed[col]=prop["to"]
+            if prop["kind"]=="trim_whitespace" and isinstance(after[col],str):
+                proposed[col]=after[col].strip()
+        rows.append({"row_number":int(i)+1,"original":before,"working":after,
+                     "proposed":proposed if issue and issue["proposal"] else None})
+    return {"version":version,"total_matching_rows":len(indexes),"offset":offset,
+            "limit":limit,"issue_id":issue_id,"rows":rows}
 
 
 _init_tables()
 
 
 def current_data(pid: str) -> tuple[pd.DataFrame,int]:
-    """Materialise an immutable-version snapshot for analytics / new ML training.
-
-    Models record the version used at training time so their results cannot be
-    silently treated as valid on newer versions.
-    """
-    p = _project(pid)
-    with storage.connect() as con:
-        _ensure(con,p)
-        version,ops=_state(con,pid)
-        return _materialize(con,p,ops),version
+    """Materialize the exact captured working version outside a database lock."""
+    metadata = _read_metadata(pid)
+    _, frame, _ = _snapshot_frame(metadata)
+    return frame, metadata["version"]
 
 
 def current_data_with_findings(pid: str) -> tuple[pd.DataFrame, int, list[dict]]:
-    """Read one working version and its reviewed findings for AI context."""
-    project = _project(pid)
-    with storage.connect() as con:
-        # Pin the version, history and decisions together while materializing.
-        con.execute("BEGIN")
-        _ensure(con, project)
-        version, actions = _state(con, pid)
-        choices = _decisions(con, pid)
-        frame = _materialize(con, project, actions)
-    return frame, version, _reviewed_issues(frame, choices)
+    """Read one working version and its captured review decisions."""
+    metadata = _read_metadata(pid)
+    _, frame, _ = _snapshot_frame(metadata)
+    return frame, metadata["version"], _reviewed_issues(frame, _snapshot_decisions(metadata))
 
 
 def data_at_version(pid: str, version: int) -> pd.DataFrame:
-    """Read an exact immutable historical working version without changing state."""
+    """Read an exact historical working version without holding a DB lock."""
     if version < 0:
         raise QualityError("Dataset version must be nonnegative")
-    p = _project(pid)
-    with storage.connect() as con:
-        _ensure(con, p)
-        row = con.execute("SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?",
-                          (pid, version)).fetchone()
-        if row is None:
-            raise QualityError("Requested dataset version does not exist", 404)
-        return _materialize(con, p, json.loads(row["operations_json"]))
+    metadata = _read_metadata(pid, target_version=version)
+    _, frame, _ = _snapshot_frame(metadata)
+    return frame
 
 
 def current_version(pid: str) -> int:
