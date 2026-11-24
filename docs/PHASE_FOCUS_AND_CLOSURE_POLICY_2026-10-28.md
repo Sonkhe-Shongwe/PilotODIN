@@ -1,8 +1,8 @@
 # PilotODIN 1.0 — one-primary-phase development and closure policy
 
-**24 NOVEMBER 2026 | CURRENT WORK PRIORITY:** [Live product-first directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) governs. A and B source CLOSED; C specification preparation active, C1 first. [Closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%). G2 BLOCKED; no change to acceptance, permitted roots, owner approval requirements, installer freeze or formal phase progression. Dated directions below are historical. No new native run, collector or owner-data operation authorised.
+**25 NOVEMBER 2026 | CURRENT WORK PRIORITY:** [Live product-first directive](./PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) governs. A and B source CLOSED; Package C active. Current C1/C2 blocker and next action are owned by the migration handoff. [Closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md). P4 14/20 (70%), R02.5 0/5, N12 0/2, four-gate 1/4 (25%), mutation preparation 3/4 (75%). G2 BLOCKED; no change to acceptance, permitted roots, owner approval requirements, installer freeze or formal phase progression. Dated directions below are historical. No new native run, collector or owner-data operation authorised.
 
-P4 is the active phase. The dated entries preserve decisions and results as recorded at the time. The active work, scope and score are maintained in the [handoff](./SESSION_HANDOFF_CURRENT.md) and [phase ledger](./PROJECT_STATUS_CURRENT.md).
+P4 is the active phase. The dated entries preserve decisions and results as recorded at the time. The active work and exact permission state are maintained in the [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) and [active journal](./ACTIVE_WORK_JOURNAL.md); official points remain in the [phase ledger](./PROJECT_STATUS_CURRENT.md).
 
 ## 13 November 2026 | Owner decision on Gate C
 

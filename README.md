@@ -2,7 +2,7 @@
 
 **CURRENT | Live reference.** Consult the [current handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) for changing source status and next action, and the [official scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) for acceptance. [Continuation protocol](docs/CONTINUATION_PROTOCOL_CURRENT.md). Historical evidence below is not a current work order.
 
-**Resume development:** [Current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) | [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Package B closure audit](docs/DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md).
+**Resume development:** [Current migration handoff](docs/TAB_MIGRATION_HANDOFF_CURRENT.md) | [Live directive](docs/PILOTODIN_PRODUCT_FIRST_IMPLEMENTATION_DIRECTIVE_CURRENT.md) | [Active Package C specification](docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md) | [Active evidence ledger](docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md) | [Current documentation audit](docs/DOCUMENTATION_AUDIT_C_CONTINUITY_2026-11-25.md).
 
 **Local-first Windows data investigation, analytics and predictive modelling.**  
 **Development status.** P1, P2 and P3 have bounded development closure records. **P4 Target Intelligence is active.** P5 is unauthorised and P8 release certification is pending. [Current engineering scorecard](docs/PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard)

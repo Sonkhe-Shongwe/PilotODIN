@@ -2,7 +2,7 @@
 
 **CURRENT | Official acceptance scorecard.** Consult the scorecard below for earned acceptance and the [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) for source progress, latest product identity and next action.
 
-Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Latest engineering receipts: [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Documentation audit](./DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md). [Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/PROJECT_STATUS_CURRENT.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
+Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Active engineering receipts: [Package C evidence ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md); [closed B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Current documentation audit](./DOCUMENTATION_AUDIT_C_CONTINUITY_2026-11-25.md). [Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/PROJECT_STATUS_CURRENT.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
 
 [Current compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) | [Migration audit](./DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md) | [Complete prior document and dated receipts at immutable source](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/39b8e5f8286f6b17122ddd0f9d1e72f31d87ff44/docs/PROJECT_STATUS_CURRENT.md). Historical records below are not competing instructions.
 
@@ -60,7 +60,7 @@ The [no-CDP browser identity verifier](./P4_N12_NO_CDP_BROWSER_IDENTITY_2026-11-
 | P1 · Data, projects and workspace reliability | Bounded development closed. [Closure register](./P1_CLOSURE_REGISTER_2026-10-28.md) |
 | P2 · Deliver and reporting | Bounded development closed. End-user Unicode PDF and associated font-distribution approval remain deferred. [Closure record](./P2_DEVELOPMENT_CLOSURE_2026-11-06.md) |
 | P3 · Deterministic semantic context | Bounded development closed. [Closure record](./P3_DEVELOPMENT_CLOSURE_2026-11-09.md) |
-| P4 · Target Intelligence | Active. Packages A and B source closed; C specification preparation active. Remaining technical gates and owner signoff are tracked below. |
+| P4 · Target Intelligence | Active. Packages A and B source closed; Package C active; current source status is in the migration handoff. Remaining technical gates and owner signoff are tracked below. |
 | P5 · Durable execution and resource coordination | Later phase, unauthorised. Earlier implementation slices are recorded in history. |
 | P6 · Master Analyst and Master Scientist | Later phase. [Roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) |
 | P7 · Autonomous ODIN and orchestration | Later phase. [Roadmap](./PILOTODIN_CONSOLIDATED_ROADMAP_COMPLEXITY_LAST.md) |

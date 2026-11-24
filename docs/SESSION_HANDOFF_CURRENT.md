@@ -2,11 +2,13 @@
 
 **CURRENT | Live reference.** Consult the [current handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) for changing source status and next action, and the [official scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard) for acceptance. [Continuation protocol](./CONTINUATION_PROTOCOL_CURRENT.md). Historical evidence below is not a current work order.
 
-Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Latest engineering receipts: [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Documentation audit](./DOCUMENTATION_AUDIT_B5_CONTINUITY_2026-11-24.md). [Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/SESSION_HANDOFF_CURRENT.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
+Current work: [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Active engineering receipts: [Package C evidence ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md); [closed B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md). [Current documentation audit](./DOCUMENTATION_AUDIT_C_CONTINUITY_2026-11-25.md). [Exact pre-cleanup snapshot](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/b9a9181313b709abe729b3bddac3ac4e10709e59/docs/SESSION_HANDOFF_CURRENT.md). Historical material is preserved; current action is in [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md).
 
 [Current compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) | [Migration audit](./DOCUMENTATION_AUDIT_B4_MIGRATION_2026-11-24.md) | [Complete prior document and dated receipts at immutable source](https://github.com/Sonkhe-Shongwe/PilotODIN/blob/39b8e5f8286f6b17122ddd0f9d1e72f31d87ff44/docs/SESSION_HANDOFF_CURRENT.md). Historical records below are not competing instructions.
 
 ## Engineering progress and next checkpoints
+
+**Historical workstream snapshot.** The table below retains earlier evidence; the [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md#4-immediate-next-work-in-order) and [active journal](./ACTIVE_WORK_JOURNAL.md) own today's next action. Do not treat table next-checkpoint text as an independent live task.
 
 The official P4 score is **14/20 (70%)**. Each bar below counts evidenced checkpoints in that workstream. A filled circle marks a completed checkpoint at the stated scope. Percentages are rounded from the counts. Workstream percentages guide the next work, and acceptance points come from the [P4 scorecard](./PROJECT_STATUS_CURRENT.md#p4-engineering-scorecard).
 
