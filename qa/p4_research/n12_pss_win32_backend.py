@@ -1,11 +1,11 @@
-"""G2.12 dormant Windows PSS API adapter. NOT connected to N12 or acceptance.
+"""G2.18 safety-corrected dormant Windows PSS API adapter.
 
-This module can name and sample handles of exactly one pre-verified WebView2
-process, but cannot authenticate the writer-owned ORIGINAL handle, exclude
-reuse across snapshots, or link a handle to Kernel-File FileObject/IRP.
-No existing runner imports/starts the native backend. Any live use requires
-fresh source-pinned one-use approval and an independently reviewed caller.
-No owner paths, process IDs, handle values or OS errors in public receipts.
+Can inspect a bounded PSS type inventory for one verified process only when
+a separately approved native caller acquires a snapshot. Does NOT duplicate
+WebView2 handles. Earlier G2.16/G2.17 generic duplicate classification is
+DISARMED: sockets can be File objects and DuplicateHandle is unsafe for them.
+This file is not wired into N12 native collection or acceptance.
+No owner paths, raw handle numbers, PIDs or errors in public receipts.
 """
 from __future__ import annotations
 
@@ -31,11 +31,6 @@ PROCESS_DUP_HANDLE = 0x0040
 PROCESS_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_DUP_HANDLE
 PSS_HANDLE_HAVE_TYPE = 0x01
 PSS_HANDLE_HAVE_NAME = 0x02
-DUPLICATE_SAME_ACCESS = 0x00000002
-FILE_TYPE_UNKNOWN = 0
-FILE_TYPE_DISK = 1
-FILE_TYPE_CHAR = 2
-FILE_TYPE_PIPE = 3
 ERROR_NO_MORE_ITEMS = 259
 TYPE_NAME_MAX_BYTES = 128
 CONSENT = "I_APPROVE_ONE_N12_PSS_FILE_HANDLE_FEASIBILITY"
@@ -157,19 +152,19 @@ class _PrivateSnapshot:
 
 
 @dataclass(frozen=True, repr=False)
-class _PrivateDiskCandidates:
-    """Private, ephemeral PSS handle numbers. NEVER serialize or log instances.
+class _PrivatePssTypeInventory:
+    """Private count-only inventory; NEVER a file, socket or writer witness.
 
-    A disk classification is not a claim about the original object at write
-    time. PSS values may be reused before DuplicateHandle can inspect them.
+    On Windows, IFS sockets can have kernel object type "File". Even a PSS
+    TypeName of "File" cannot safely select a handle for DuplicateHandle.
     """
-    handles: tuple[int, ...]
-    snapshot_tick: int
     total_rows: int
-    unclassified_rows: int
+    untyped_rows: int
+    file_or_socket_ambiguous_rows: int
+    known_nonfile_rows: int
 
     def __str__(self) -> str:
-        return "<G2.16 private handle candidates, no public receipt>"
+        return "<G2.18 PSS type availability only; no file handle evidence>"
 
     __repr__ = __str__
 
@@ -196,10 +191,6 @@ class _Win32PssApi:
             [ptr, dword, ptr, pdword])
         self.now_fn = _binding(kernel, "GetSystemTimeAsFileTime", None, [ptime])
         self.get_current_process_fn = _binding(kernel, "GetCurrentProcess", ptr, [])
-        self.duplicate_fn = _binding(
-            kernel, "DuplicateHandle", ctypes.c_int32,
-            [ptr, ptr, ptr, pptr, dword, ctypes.c_int32, dword])
-        self.file_type_fn = _binding(kernel, "GetFileType", dword, [ptr])
         self.capture_fn = _binding(
             kernel, "PssCaptureSnapshot", dword, [ptr, dword, dword, pptr])
         self.free_fn = _binding(kernel, "PssFreeSnapshot", dword, [ptr, ptr])
@@ -218,39 +209,6 @@ class _Win32PssApi:
     def close_process(self, handle: int) -> None:
         if not self.close_handle_fn(handle):
             raise PssScopeError("TARGET_PROCESS_CLOSE_UNVERIFIED")
-
-    @contextmanager
-    def duplicate(self, process_handle: int, original_handle: int) -> Iterator[int]:
-        """Duplicate one preselected foreign handle into THIS process only.
-
-        DUPLICATE_CLOSE_SOURCE must never be set: that would close WebView2's
-        original handle. Even partial/native-error returns close any LOCAL
-        duplicate before reporting a fixed-label blocker.
-        """
-        if (type(process_handle) is not int or process_handle <= 0
-                or type(original_handle) is not int
-                or not 0 < original_handle < 2**64):
-            raise PssScopeError("DUPLICATE_HANDLE_SCOPE_UNVERIFIED")
-        duplicate = ctypes.c_void_p()
-        try:
-            success = self.duplicate_fn(
-                process_handle, original_handle, self.get_current_process_fn(),
-                ctypes.byref(duplicate), 0, 0, DUPLICATE_SAME_ACCESS)
-            if not success or not duplicate.value:
-                raise PssScopeError("DUPLICATE_HANDLE_UNAVAILABLE")
-            yield int(duplicate.value)
-        finally:
-            if duplicate.value and not self.close_handle_fn(int(duplicate.value)):
-                raise PssScopeError("DUPLICATE_HANDLE_CLEANUP_UNVERIFIED")
-
-    def file_type(self, local_handle: int) -> tuple[int, int]:
-        """No file contents, filename resolution, or metadata/name queries."""
-        if type(local_handle) is not int or local_handle <= 0:
-            raise PssScopeError("FILE_TYPE_SCOPE_UNVERIFIED")
-        ctypes.set_last_error(0)  # Save true Win32 last-error through WinDLL.
-        kind = int(self.file_type_fn(local_handle))
-        error = int(ctypes.get_last_error())
-        return kind, error
 
     def identity(self, handle: int) -> tuple[int, int, str]:
         pid = self.process_id_fn(handle)
@@ -391,25 +349,62 @@ class ScopedPssApiAdapter:
         finally:
             self._api.marker_close(marker)
 
-    def collect_private_disk_candidates(self, *, pid: int, birth: int) -> _PrivateDiskCandidates:
-        """Legacy dormant PID-opened source candidate, not the retained HANDLE.
+    def inspect_private_pss_type_availability(
+            self, snapshot: _PrivateSnapshot) -> _PrivatePssTypeInventory:
+        """Read-only type availability for an already-approved PSS snapshot.
 
-        The new process handle is verified by PID/birth/image, but is NOT the
-        original process query handle retained by the N12 child observer.
+        Never duplicates a foreign handle. PSS ObjectType UNKNOWN includes
+        unsupported kernel object kinds. Both untyped and "File"-typed rows
+        remain UNSAFE for duplication because IFS sockets are possible.
         """
-        with self.open_verified_child(pid=pid, birth=birth) as process:
-            return self._disk_candidates_on_process_handle(process)
+        rows = self.collect_private_rows(snapshot)
+        if not rows:
+            raise PssScopeError("PSS_SNAPSHOT_ROW_LIMIT")
+        seen = set()
+        untyped = ambiguous = known_nonfile = 0
+        for row in rows:
+            if (type(row) is not dict
+                    or set(row) != {"handle", "type_name", "object_type", "flags"}):
+                raise PssScopeError("PSS_ROW_SCHEMA_UNVERIFIED")
+            handle, name, kind, flags = (
+                row["handle"], row["type_name"], row["object_type"], row["flags"])
+            if (type(handle) is not int or not 0 < handle < 2**64
+                    or handle in seen
+                    or type(flags) is not int or flags & ~0x0F
+                    or flags & PSS_HANDLE_HAVE_NAME
+                    or type(name) is not str
+                    or type(kind) is not int or not 0 <= kind <= 6
+                    or (not flags & PSS_HANDLE_HAVE_TYPE and name)
+                    or (flags & PSS_HANDLE_HAVE_TYPE and not name)
+                    or (name == "File" and kind != 0)):
+                raise PssScopeError("PSS_ROW_SCHEMA_UNVERIFIED")
+            seen.add(handle)
+            if not flags & PSS_HANDLE_HAVE_TYPE:
+                untyped += 1
+            elif name == "File":
+                # Windows sockets may also be IFS File objects.
+                ambiguous += 1
+            else:
+                known_nonfile += 1
+        return _PrivatePssTypeInventory(
+            len(rows), untyped, ambiguous, known_nonfile)
+
+    def collect_private_disk_candidates(self, *, pid: int, birth: int):
+        """G2.18 safe refusal: a PID reopen must not duplicate unknown handles.
+
+        The earlier G2.16 test-positive method was not evidence of safety on
+        actual WebView2 processes. Keep this entrypoint for callers to receive
+        a stable fixed-label blocker, without opening any process.
+        """
+        raise PssScopeError("PSS_SOCKET_UNSAFE_DUPLICATION_BLOCKED")
 
     def collect_from_retained_original_process(
             self, *, process_handle: int, pid: int, birth: int,
-            acquisition_rights: int) -> _PrivateDiskCandidates:
-        """Classify using a caller-owned, still-open original process HANDLE.
+            acquisition_rights: int):
+        """G2.18 safe refusal: retained identity or rights cannot exclude sockets.
 
-        Rights declaration is necessary but NOT independently validated;
-        Win32 enforces them. Current N12 observer retains only query 0x1000
-        handles, so those do not qualify for DuplicateHandle 0x1040 here.
-        The caller retains ownership and MUST close the original HANDLE.
-        There is no live caller, no original FileObject/IRP/path proof.
+        The existing N12 original process observer remains query-only.
+        No original process/file handle is opened, closed or duplicated here.
         """
         if (type(process_handle) is not int or process_handle <= 0
                 or type(pid) is not int or pid <= 0
@@ -417,53 +412,7 @@ class ScopedPssApiAdapter:
                 or type(acquisition_rights) is not int
                 or acquisition_rights != PROCESS_RIGHTS):
             raise PssScopeError("RETAINED_PROCESS_SCOPE_OR_RIGHTS_UNVERIFIED")
-        expected = (pid, birth, "msedgewebview2.exe")
-        if self._api.identity(process_handle) != expected:
-            raise PssScopeError("TARGET_PROCESS_IDENTITY_UNVERIFIED")
-        result = self._disk_candidates_on_process_handle(process_handle)
-        if self._api.identity(process_handle) != expected:
-            raise PssScopeError("TARGET_PROCESS_IDENTITY_UNVERIFIED")
-        return result
-
-    def _disk_candidates_on_process_handle(self, process: int) -> _PrivateDiskCandidates:
-        """No names, system scans, original handle closure or acceptance."""
-        with self.snapshot(process) as capture:
-            rows = self.collect_private_rows(capture)
-            if not rows:
-                raise PssScopeError("PSS_SNAPSHOT_ROW_LIMIT")
-            seen = set()
-            private_disk = []
-            unclassified = 0
-            for row in rows:
-                if (type(row) is not dict
-                        or set(row) != {"handle", "type_name",
-                                        "object_type", "flags"}):
-                    raise PssScopeError("PSS_ROW_SCHEMA_UNVERIFIED")
-                handle = row["handle"]
-                flags = row["flags"]
-                if (type(handle) is not int or not 0 < handle < 2**64
-                        or handle in seen
-                        or type(flags) is not int or flags & ~0x0F
-                        or flags & PSS_HANDLE_HAVE_NAME
-                        or type(row["type_name"]) is not str
-                        or type(row["object_type"]) is not int):
-                    raise PssScopeError("PSS_ROW_SCHEMA_UNVERIFIED")
-                seen.add(handle)
-                with self._api.duplicate(process, handle) as local:
-                    kind, error = self._api.file_type(local)
-                    if type(kind) is not int or type(error) is not int:
-                        raise PssScopeError("FILE_TYPE_SCOPE_UNVERIFIED")
-                    if kind == FILE_TYPE_UNKNOWN:
-                        unclassified += 1
-                    elif error != 0 or kind not in (
-                            FILE_TYPE_DISK, FILE_TYPE_CHAR, FILE_TYPE_PIPE):
-                        raise PssScopeError("FILE_TYPE_SCOPE_UNVERIFIED")
-                    elif kind == FILE_TYPE_DISK:
-                        private_disk.append(handle)
-            # Ephemeral original handle numbers, NOT kernel FileObject
-            # identity. Numeric handle reuse after snapshot is unresolved.
-            return _PrivateDiskCandidates(
-                tuple(private_disk), capture.tick, len(rows), unclassified)
+        raise PssScopeError("PSS_SOCKET_UNSAFE_DUPLICATION_BLOCKED")
 
 
 def prepare_native_backend(env: object) -> ScopedPssApiAdapter:
@@ -489,6 +438,7 @@ def redacted_blocker(reason: str) -> dict:
         "PSS_SNAPSHOT_ROW_LIMIT", "PSS_ROW_SCHEMA_UNVERIFIED",
         "DUPLICATE_HANDLE_SCOPE_UNVERIFIED", "DUPLICATE_HANDLE_UNAVAILABLE",
         "DUPLICATE_HANDLE_CLEANUP_UNVERIFIED", "FILE_TYPE_SCOPE_UNVERIFIED",
+        "PSS_SOCKET_UNSAFE_DUPLICATION_BLOCKED",
     })
     return {
         "scope": "g2-12-unactivated-windows-pss-candidate",
