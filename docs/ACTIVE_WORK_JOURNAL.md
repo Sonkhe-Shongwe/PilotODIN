@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-INTEGRATION-20261124 |
-| State | PUBLISHED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c02258c6bbdd129528ee0f2a714544ab06ffd87e |
-| Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 |
-| Scope | Test-only actual private pipe, Python broker/session, Windows shell job, supervisor and writer lifecycle integration; no real app, network or model. |
+| Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 (runtime source verified); fixture candidate 5af71b893c6b7939356b13e37d4a0fc9d6114f38 (test-only Cargo feature/module registration) |
+| Scope | Ignored actual private pipe, Python broker/session, Windows shell job, supervisor and writer lifecycle integration; no real app, network or model. |
 | Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-source |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | frontend/src-tauri/Cargo.toml; frontend/src-tauri/src/lib.rs; frontend/src-tauri/src/resource_integration_fixture.rs; qa/c1_c2_owned_host_fixture.py; continuity docs |
-| Approval | Standing source-only. Prior 40-test Windows approval CONSUMED, disarmed and terminal. New native process execution or compilation requires fresh exact approval. No installer, model, network, owner data or activation. |
-| Verification | Exact 388b357 Windows all-targets check and 40/40 synthetic library tests SUCCESS; disarm run SUCCESS, native SKIPPED. Matching routine P2 export, P4 synthetic and Cargo metadata scopes reviewed; restricted probe disabled. Tauri test feature only in dev-dependencies, no new version or lock change proposed. |
-| Pending runs | None. |
+| Approval | Previous one-use 40-test native run CONSUMED, SUCCESS and disarmed. New native compilation or process fixture run requires fresh scoped approval. Standing source only; no installer, model, network, owner data or activation. |
+| Verification | Exact 388b357 Windows all-targets check and 40/40 synthetic tests SUCCESS, disarm SUCCESS native SKIPPED. Test-only dev feature locked metadata PASS #45494710822, 457 packages unchanged. New ignored fixture not compiled or executed. Production gate false. |
+| Pending runs | p4-target-ranking.yml #45494710902 IN_PROGRESS; p2-report-export-draft-safety.yml #45494710748 COMPLETED SUCCESS; p4-product-cargo-resolution.yml #45494710822 COMPLETED SUCCESS. Reconcile terminal results. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Prepare ignored integration fixture source only; use existing shell API via mock runtime and actual Python private control bootstrap, not production activation. Prove real pipe grant/release and job zero through generated disposable files. Reconcile source/metadata CI and prepare one exact separately approved fixture run. |
+| Recovery action | Reconcile P2/P4 regressions; fix fixture-only Windows path spelling if necessary (canonical comparisons may return verbatim prefix; workspace guard accepts ordinary drive path), then prepare one disarmed exact native integrated fixture workflow with parse-only preflight and fresh owner approval. Use actual supervisor/shell/descriptor/broker/session and owned generated job descendant; no live UI, real inference or app launch. No source closure based on library-only test evidence. |
 | Resume after closure | C1/C2 closure audit, C3–C5; D separately approved. |
 
 ## Prior operation
