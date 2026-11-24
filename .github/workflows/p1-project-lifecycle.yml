@@ -29,6 +29,8 @@ on:
       - tests/test_cf04_quality_commit_transaction.py
       - tests/test_build_e_approval_receipts.py
       - tests/test_a4_quality_audit_reporting.py
+      - tests/test_b4_quality_resource_measurement.py
+      - tests/test_cf01_import_preflight.py
 
 permissions:
   contents: read
@@ -70,3 +72,11 @@ jobs:
             echo "::endgroup::"
           done
           exit "$status"
+      - name: Verify existing CSV and XLSX admission limits
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-b4-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+        run: python -m pytest -q tests/test_cf01_import_preflight.py
+      - name: Measure B4 source-boundary approval memory and SQLite writer intervals
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-b4-measurement-${{ github.run_id }}-${{ github.run_attempt }}
+        run: python -m pytest -q -s tests/test_b4_quality_resource_measurement.py

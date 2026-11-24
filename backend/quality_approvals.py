@@ -71,10 +71,10 @@ def _compare_rows(before:pd.DataFrame,after:pd.DataFrame)->tuple[int,list[dict]]
         equal=(lhs.eq(rhs) | (lhs.isna() & rhs.isna())).fillna(False)
         indices=equal.index[~equal]
         count+=len(indices)
-        for i in indices:
-            if len(changed)<12:
-                changed.append({'row_number':int(i)+1,'column':str(column),
-                                'before':quality._native(lhs.loc[i]),'after':quality._native(rhs.loc[i])})
+        # The count covers every changed cell; only the first 12 are examples.
+        for i in indices[:max(0,12-len(changed))]:
+            changed.append({'row_number':int(i)+1,'column':str(column),
+                            'before':quality._native(lhs.loc[i]),'after':quality._native(rhs.loc[i])})
     return count,changed
 
 
@@ -87,10 +87,13 @@ def _make(con,p:dict,body:ProposalRequest):
     current=observed['current']
     version,ops=current['version'],current['ops']
     quality._check_version(version,body.expected_version)
-    base,before,identity=quality._snapshot_frame(current,original=True,with_identity=True)
-    after=before.copy()
-    decisions=quality._snapshot_decisions(current)
     op=body.operation
+    # Only history transitions replay a second branch from the original frame.
+    # _apply returns a new frame; do not create a redundant full-size copy here.
+    base,before,identity=quality._snapshot_frame(
+        current,original=op in ('undo','restore'),with_identity=True)
+    after=before
+    decisions=quality._snapshot_decisions(current)
     steps=[]
     if op=='autopilot':
         # Fix the candidate set at preview time. Do not discover and execute
@@ -259,7 +262,8 @@ def _stage_commit(con, p:dict, version:int, ops:list[str], payload:dict):
     current=observed['current']
     operation=payload['operation']
     steps=payload['steps']
-    base,df,identity=quality._snapshot_frame(current,original=True,with_identity=True)
+    base,df,identity=quality._snapshot_frame(
+        current,original=operation in ('undo','restore'),with_identity=True)
     if payload.get('review_binding')!=_review_binding(observed,identity):
         raise quality.QualityError('Approval source or review state changed; prepare a new preview',409)
     if operation in ('approve','impute','autopilot'):
