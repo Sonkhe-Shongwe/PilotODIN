@@ -23,3 +23,7 @@ The existing `n12_etw_correlate.py`, `n12_fileio_pair_contract.py` and strict `n
 Any new original WebView2 observation requires a fresh, separately scoped, first-attempt, exact-source one-use owner approval and must not access original user files or produce an installer. Do not reenable G2.13, G2.14, G2.15 or previous consumed native scopes.
 
 **Scores unchanged:** P4 **14/20 (70%)**; official R02.5 **0/5**; N12 **0/2**; G1–G4 **1/4 (25%)**; internal mutation preparation **3/4 (75%)**. Historical filesystem FAIL, network FAIL, mutation coverage BLOCKED remain governing.
+
+## Exact-source regression completion | 24 November 2026
+
+[G2.18 source commit `1ae6229`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1ae62299b8e1abbea1024f8973fca11a8f3db81f) passed [FileIO source-only CI #45331514180](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45331514180) **COMPLETED SUCCESS**. The new tests show previous WebView2 entrypoints refuse before any native operation, all foreign-process duplication bindings removed, count-only PSS summaries for untyped and `File`-ambiguous rows, no private handles or path output, unchanged query-only observer and disarmed generated-only Windows workflow. Historical G2.16 and G2.17 positive injected-source tests have been superseded by the new safety correction and **must not be cited as permission to enable native arbitrary WebView2 duplication**. No live original WebView2 process has been captured. Official G2/R02.5 acceptance remains blocked.
