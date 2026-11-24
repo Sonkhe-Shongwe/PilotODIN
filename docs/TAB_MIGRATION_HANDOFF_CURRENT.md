@@ -30,8 +30,8 @@ Historical P2 browser failure at `39b8e5f` remains recorded in the [B4 audit](./
 
 ## 4. Immediate next work (in order)
 
-1. Owner-approved one-use B5 library test dispatch [`10f371b`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/10f371b47dac02c68ade00a1adc502fe2818819c); run ID not yet visible; reconcile exact dispatch SHA, no replay. Approval consumed; workflow disarmed in this checkpoint. Reconcile exact result and cleanup; no reruns.
-2. Review the seven exact test results if executed; retain unresolved actual WebView IPC/dialog and physical destination persistence for separately approved verification. B5 closure needs its defined evidence; C does not start until B5 source closure. G2 proof-method decision is deferred until product readiness, not reopened.
+1. One-use B5 dispatch [#45439476190](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45439476190) FAILED before job creation; disarm [#45439603207](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45439603207) SKIPPED. Approval consumed. Corrected activation convention (colon-free marker and exact YAML parser validation) recorded; review source and prepare a fresh scoped proposal before asking for any new approval. No replay.
+2. Seven native library tests remain unexecuted; actual WebView IPC/dialog and physical destination persistence separately unverified. B5 closure needs its defined evidence; C does not start until B5 source closure. G2 proof-method decision remains deferred.
 
 ## 5. Native evidence and immutable acceptance boundary
 

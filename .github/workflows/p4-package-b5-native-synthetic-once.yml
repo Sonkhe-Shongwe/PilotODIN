@@ -1,6 +1,9 @@
 name: P4 Package B5 ONE Windows synthetic library test (consumed)
 
 # DISARMED: approval consumed by dispatch 10f371b; do not replay.
+# Attempt #45439476190 had zero jobs. Plain YAML scalar rejected colon-space in marker.
+# Any separately approved future activation must use a unique colon-free commit marker
+# and parse the exact armed YAML before push. No activation or retry here.
 # Proposed single locked library test-harness build/run on disposable generated fixtures.
 # No workflow_dispatch, no reruns, no application launch, installer, or owner data.
 on:

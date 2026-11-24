@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | B5-NATIVE-SYNTHETIC-PROPOSAL-20261124 |
-| State | VERIFYING |
+| State | BLOCKED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 7f5654d1e87c781f1b227d49392ebba71bd065fd |
 | Product baseline | b9a9181313b709abe729b3bddac3ac4e10709e59 |
-| Scope | ONE authorised Windows-2022 locked library test-harness build/run; seven existing B5 tests, artifact 14937864793, no app launch |
+| Scope | Reconciled failed one-use dispatch; source-only preparation permitted; native execution blocked pending fresh approval |
 | Operation ID | B5-NATIVE-SYNTHETIC-PROPOSAL-20261124/approved-one-use-dispatch |
-| Operation state | UNKNOWN |
+| Operation state | RECONCILED |
 | Intended files | .github/workflows/p4-package-b5-native-synthetic-once.yml; docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; active B5 evidence ledger; optional scoped proposal documentation |
-| Approval | Owner explicitly approved ONE build/run of b9a9181313b709abe729b3bddac3ac4e10709e59, seven existing tests, artifact 14937864793 and locked dependencies; no app launch, installer, owner data, real model/runtime downloads, executable upload or reruns. Dispatch consumes approval; uncertain outcome potentially consumed. |
-| Verification | Exact P4 source CI #45434780210 passed on product baseline; corrected product not yet host-compiled; native tests remain unexecuted |
-| Pending runs | Exact dispatch 10f371b47dac02c68ade00a1adc502fe2818819c; run ID not yet visible; reconcile exact dispatch SHA, no replay. Disarm in this commit; no new attempt. |
+| Approval | One-use native test approval consumed by dispatch 10f371b; no new approval, no reruns. |
+| Verification | #45439476190 FAILURE before job creation; zero jobs; YAML colon-space parse failure independently reproduced. Disarm #45439603207 SKIPPED. Exact product source CI remains PASS; native test not run. |
+| Pending runs | None from this attempt; terminal failure and disarm verified |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Verify disarmed guard and exact dispatch run, inspect final logs and record outcome. No rerun even if run ID remains absent or job fails. |
+| Recovery action | Review source and prepare corrected activation syntax with colon-free marker and exact YAML parse validation; obtain fresh approval before any future dispatch. No replay. |
 | Resume after closure | Reconcile separately approved results only if approval given; actual dialog/IPC and physical destination remain separately unverified |
 
 ## Prior operation
@@ -28,4 +28,4 @@ CONT-RESILIENCE-20261124/preparation was published at [`89cb4b5`](https://github
 
 ## Unresolved or interrupted operations
 
-Approval consumed by exact published dispatch; this commit disarms the workflow. Reconcile the dispatch outcome, including any missing run ID. No replay. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.
+Dispatch 10f371b terminal FAILURE with zero jobs; disarm 2c50faa terminal SKIPPED. No pending issued operation or permission; retain failure and never replay. Any later PREPARED/ISSUED/UNKNOWN record overrides this statement. Reconcile exact Git/CI evidence before retrying; restricted dispatch with uncertain outcome is potentially consumed. Never overwrite unpublished owner work or treat this journal as a fresh approval.

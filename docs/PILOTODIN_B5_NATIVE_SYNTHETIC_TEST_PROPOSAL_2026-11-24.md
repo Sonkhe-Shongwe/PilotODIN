@@ -1,6 +1,6 @@
 # PilotODIN | B5 one-use Windows synthetic library test proposal
 
-**Status: DISARMED / approval not granted.** Product `b9a9181313b709abe729b3bddac3ac4e10709e59`, Cargo.lock Git blob `1aaa20850762ba0054b1dbd56139a248da6eba25`. Previous locked type-check `7789f84` [#45433836700](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45433836700) passed and its approval was consumed. Corrected product P4 source CI [#45434780210](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45434780210) passed, but no current-source host linking or test execution. This proposal does not constitute authority.
+**Historical proposal: DISARMED / one-use approval consumed, dispatch failed before job creation.** See [B5 evidence ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for terminal result. This wording is not reusable authority. Product `b9a9181313b709abe729b3bddac3ac4e10709e59`, Cargo.lock Git blob `1aaa20850762ba0054b1dbd56139a248da6eba25`. Previous locked type-check `7789f84` [#45433836700](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45433836700) passed and its approval was consumed. Corrected product P4 source CI [#45434780210](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45434780210) passed, but no current-source host linking or test execution. This proposal does not constitute authority.
 
 ## Exact proposed scope
 
@@ -25,7 +25,7 @@
 
 No native UI or actual Windows selected path/consent IPC evidence, physical durability/power loss, disk-full or broad OS confinement claim from this isolated test. B5 source closure still requires reviewed evidence; C remains pending. G2 blocked, P4 14/20, source 9/17, B 4/5; installer frozen.
 
-## Explicit approval wording
+## Historical approval wording (consumed; not reusable)
 
 I explicitly authorise ONE B5 locked Windows synthetic library test-harness build/run of product `b9a9181313b709abe729b3bddac3ac4e10709e59`, limited to the seven existing B5 tests, pinned synthetic artifact 14937864793 and existing locked Cargo dependencies on disposable Windows CI. No application launch, installer, owner data access, real model/runtime downloads, executable upload or reruns.
 
