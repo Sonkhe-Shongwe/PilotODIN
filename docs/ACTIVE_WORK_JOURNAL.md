@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C-SPECIFICATION-20261124 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | cff1ffe1cb5087498ef1abd43c8822ceaebcda68 (closure preparation; resolve closure commit from operation marker) |
+| Observed starting HEAD | c033242d47ff1aed688c9aed84c695668160052a |
 | Product baseline | 8e3cc9112073b9744ff18ffa3e4e549662504a97 |
-| Scope | One integrated C resource/trust specification, source review; C1 first; no restricted operations |
-| Operation ID | NONE |
-| Operation state | NONE |
-| Intended files | C specification and evidence ledger when scoped; inspect current code first |
+| Scope | Publish integrated C1–C5 research, design decisions, implementation and acceptance matrix; documentation only |
+| Operation ID | C-SPECIFICATION-20261124-publish |
+| Operation state | PREPARED |
+| Intended files | docs/PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md; docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md; active journal, compact handoff, index and directive |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | B source CLOSED; exact 8e3cc91 four source CI and Windows library 7/7 PASS; production acceptance pending |
+| Verification | Reviewed current resource policy, main entrypoints, storage, workspace lock, host launch, API, AI settings and build scripts; normative blueprint and primary technical references; no source or native execution |
 | Pending runs | None from B5; verify live HEAD |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Read B closure audit and architecture C1–C5; inspect resource policy, heavy work entrypoints, inference/dev/settings/build contracts; prepare integrated C specification then C1 only |
+| Recovery action | Inspect exact operation commit before repeating. Publish bounded design and outstanding compatibility checks; C1 implementation only after targeted route/lifetime and bridge review. |
 | Resume after closure | C1 source implementation, C2–C5 in order; D after C source closure |
 
 ## Prior operation
