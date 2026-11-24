@@ -302,10 +302,18 @@ test('P2 real HTTP Deliver shows immutable v1-v2 differences without browser wri
   await page.locator('button.po-nav-item[aria-label="Deliver"]').click();
   await expect(primary.getByRole('heading',{name:'Saved, evidence-backed reports'})).toBeVisible();
 
+  // Returning to Deliver mounts its editor before the latest saved revision
+  // has been restored. Establish the saved baseline before replacing text:
+  // otherwise async hydration can race the browser's selection/insert action.
+  await expect(primary.getByText('Saved revision 2')).toBeVisible();
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(newNarrative);
   // A dirty Deliver primary view must not unmount when the shell rail selects
   // Explore and the user denies the browser/native-compatible confirmation.
   const draftLeavingDeliver='Unfinished analyst interpretation for this synthetic report.';
   await primary.getByLabel('Interpretation and limitations').fill(draftLeavingDeliver);
+  // Establish the exact pre-navigation draft independently of the consent guard.
+  await expect(primary.getByLabel('Interpretation and limitations')).toHaveValue(draftLeavingDeliver);
+  await expect(unsavedNotice).toContainText('Unsaved changes. Exports remain linked to the saved revision until you save again.');
 
   // A refused shell New project must not hide dirty Deliver or arm an
   // importer that appears after the next ordinary visit to Home.
