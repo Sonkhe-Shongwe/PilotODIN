@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current tab migration handoff
 
-**CURRENT | 25 November 2026.** P4 active. Packages A and B SOURCE CLOSED. Package C active: **C1 SOURCE CLOSED**, C2 exit audit found frontend request-ownership/status gap; narrow source correction published, CI pending; exact synthetic shared-host integration passed. Package D pending. Source remediation **11/17 (64.7%)**, C 1/5; official P4 **14/20 (70%)**. All six native approvals consumed and disarmed, no pending runs or new restricted operations authorized. G2 BLOCKED, P5 unauthorized, P8 installer frozen.
+**CURRENT | 25 November 2026.** P4 active. Packages A and B SOURCE CLOSED. Package C active: **C1 SOURCE CLOSED**, C2 exit audit found frontend request-ownership/status gap; narrow frontend correction `e0f944d` published, P1/P4 CI in progress; exact synthetic shared-host integration passed. Package D pending. Source remediation **11/17 (64.7%)**, C 1/5; official P4 **14/20 (70%)**. All six native approvals consumed and disarmed, no pending runs or new restricted operations authorized. G2 BLOCKED, P5 unauthorized, P8 installer frozen.
 
 ## 1. Identity and reading order
 
@@ -36,7 +36,7 @@ C1/C2 candidate includes shared Python admission/ASGI lifetimes, training/autono
 
 ## 4. Immediate next work (in order)
 
-1. **C2 exit audit:** C1 source closed; use exact runtime `388b357`, test-only `1d23ea1`, ten routine source workflows, 40/40 native library tests and successful shared-host integration #45506268334. Bounded async, grant/drain lifecycle and native tests verified. Correct narrow frontend request-ownership/context fence and truthful waiting labels, run routine synthetic CI, then reconcile C2 exit. No duplicate native testing without a concrete missing criterion and fresh approval.
+1. **C2 exit audit:** C1 source closed; use exact runtime `388b357`, test-only `1d23ea1`, ten routine source workflows, 40/40 native library tests and successful shared-host integration #45506268334. Bounded async, grant/drain lifecycle and native tests verified. Frontend request ownership and truthful waiting corrected at `e0f944d`; [P1 #45508634788](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45508634788) and [P4 #45508634884](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45508634884) IN_PROGRESS; restricted P4 job SKIPPED. Reconcile exact logs and close C2 if all exit evidence qualifies. No duplicate native testing without a concrete missing criterion and fresh approval.
 2. **C3, C4, C5** in order: explicit dev/production authorization; durable settings and strict consent; reproducible dependencies and provenance. D follows C source closure and separate approval. No intermediate installer.
 
 ## 5. Native evidence and immutable acceptance boundary
