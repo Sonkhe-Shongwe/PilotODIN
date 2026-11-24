@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 437b74ea0e59c490d6c69164922141c0007756b9 |
-| Product baseline | aa74fb3436c9071ea2297565f1687fd7a761bcfb |
+| Product baseline | 355694b0c69832e6908f5c0eca0ab95e831087da |
 | Scope | Consolidated C1/C2 actual Python application route binding, direct AI staged preparation, export/training cleanup witnesses, route integration fixtures. Source only, no live activation or native execution. |
 | Operation ID | C1-C2-INTEGRATION-20261124-product-routes |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/main.py; backend/resource_session.py; backend/resource_http.py; backend/resource_training_store.py; backend/export_transfer.py; tests/test_c1_product_integration.py; P1 workflow; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Actual product route composition, staged direct insight, export and training witness changes; seven new product fixtures. Exact CI pending. No native execution or live activation. |
-| Pending runs | Exact-source routine P1/P2/P3/P4 CI discovery pending; reconcile all. |
+| Pending runs | Exact-source [#45468340653](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340653), [#45468340743](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340743), [#45468340271](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340271), [#45468340327](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340327), [#45468340411](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340411), [#45468340415](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340415), [#45468340469](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340469), [#45468340857](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45468340857); all IN_PROGRESS at last observation. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Consolidate C1/C2 rather than extend isolated modules. Publish actual product route binding and staged AI split; review native host architecture and seek coherent C1/C2 native approval only at integration readiness. |
+| Recovery action | Reconcile eight exact CI runs; correct failures before subsequent source. Complete actual native C2 single-flight, host request direction/data priority, exact worker/group exit and runner/frontend binding in consolidated batch. Do not activate partial route enforcement. Review metadata/integrity materialization and export/training receipt certainty before unified acceptance. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
