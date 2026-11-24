@@ -98,8 +98,13 @@ class G216NativeSourceTests(unittest.TestCase):
         self.assertEqual([event for event in api.events
                           if event[0] == "close_duplicate"],
                          [("close_duplicate", 31), ("close_duplicate", 32)])
+        # The PSS walk marker is released BEFORE private duplicate
+        # classification begins; the last duplicate closes before snapshot.
+        self.assertIn(("marker_close",), api.events)
+        self.assertLess(api.events.index(("marker_close",)),
+                        api.events.index(("duplicate", 31)))
         self.assertEqual(api.events[-3:],
-                         [("marker_close",), ("free_snapshot",),
+                         [("close_duplicate", 32), ("free_snapshot",),
                           ("close_process",)])
 
     def test_process_birth_and_image_mismatch_refused_before_snapshot(self):
