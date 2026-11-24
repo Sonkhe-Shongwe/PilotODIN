@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5a9ca712ded15fd1167d24a77c09a8a1e7204f4e |
-| Product baseline | 950bfed7b4a8393a656f82adfe37f7ae4df5337c |
+| Product baseline | 9ed3b52c8ccbb224d1a644c1d7cdca1dae4d2d7e |
 | Scope | C1 dormant production training endpoint binding to trusted server scope owner, preserve existing unregistered behavior; cancellation finalizer fixtures and script-mode imports. No partial live enforcement. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-training-production-seam |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | backend/main.py; backend/resource_training.py; backend/resource_training_store.py; tests/test_c1_resource_training_store.py; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Dormant actual production endpoint binding, cancellation fixture and script-mode import corrections published; exact source CI pending. No live wrapper registration. |
-| Pending runs | New exact-source routine runs discoverable by operation marker and parent; reconcile all matching source CI. |
+| Pending runs | [P1 recovery #45455828292](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828292), [P1 lifecycle #45455828413](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828413), [P1 browser #45455828338](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828338), [P2 comparison #45455828739](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828739), [P2 revisions #45455828377](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828377), [P3 browser #45455828237](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828237), [P3 semantic #45455828360](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828360), [P4 ranking #45455828796](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45455828796); all queued/in progress at observation; exact 9ed3b52c8ccbb224d1a644c1d7cdca1dae4d2d7e. Reconcile all terminal results and job scope. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Bind actual endpoint only when a trusted scope owner exists; preserve old unregistered path until unified activation. Verify source and matching CI before autonomy/host work. No actual fitting. |
+| Recovery action | Reconcile exact production seam and broad routine CI; correct any cancellation/endpoint failure, then integrate autonomy ownership and host bridge. No live wrapper registration or restricted operation. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
