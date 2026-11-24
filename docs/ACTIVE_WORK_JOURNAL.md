@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-INTEGRATION-20261124 |
-| State | AWAITING_APPROVAL |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 98a6e9916eece8cb26483fdc382e2cca44ad8e24 |
+| Observed starting HEAD | e640501344f92ef01aa84383288c5e36b8c06ef6 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 (runtime verified); corrected test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
 | Scope | One Windows hosted x64 locked all-targets type-check and one exact ignored native integration fixture (real owned pipe, inert Python broker/session, actual shell job leader and descendant, joined report/export writers, STOP), then disarm. Generated runner-only roots. |
-| Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-prepare-once |
-| Operation state | RECONCILED |
+| Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-approved-once |
+| Operation state | PREPARED |
 | Intended files | .github/workflows/p4-c1-c2-owned-host-once.yml; qa/c1_c2_owned_host_preflight.rb; continuity docs |
-| Approval | NOT GRANTED. Prior 40-test approval consumed and disarmed. Fresh explicit one-use approval required for exact 1d23ea1 locked compilation/dependency resolution and one ignored test with actual inert Python child processes, private pipe/owned Windows job observation/termination and generated fixture files. No real desktop launch, model, cloud, personal files, installer, activation or executable upload; no unrestricted retry. |
+| Approval | Explicit owner approval received in chat 24 Nov 2026: one-time exact 1d23ea1 Windows locked Cargo resolution, all-targets type-check and exact ignored owned-host integration test with inert Python processes, private pipes, owned job accounting and termination, generated fixture files on disposable GitHub runner. Disarm after execution. No retry, product launch, model, cloud, owner files, installer, activation or upload. |
 | Verification | Exact 5af71b8 P2/P4/metadata SUCCESS; fixture-only path correction 1d23ea1; disabled workflow 27bf2ec, run #45495528020 SUCCESS, parse 138804863330 SUCCESS, native 138805056747 SKIPPED. Disabled SHA256 0e21c3907fed5e3924122ebe2ba758489f8785a62b0a8076b599c279afc9f08e; prospective armed SHA256 52ec6930ec06e6d869047187e05e9c4a0663df5a45af6e0fc5773c07bd94168c. Both complete YAML variants, four PowerShell bodies, nine source identities, Python AST and exact ignored test validated; no fixture compile/run. |
-| Pending runs | None. No native execution issued. |
+| Pending runs | None. Exact one-use dispatch prepared, not issued. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Stop before arming until explicit owner approval. If approved, write ahead, verify HEAD, pinned identities, exact disabled/armed fingerprints and marker C1-C2-OWNED-HOST-SYNTHETIC-20261124-ONE-USE, execute attempt 1 once and disarm after confirmed dispatch. Reconcile terminal actual evidence; assess C1/C2 exit against spec, no automatic activation or closure. If failure, preserve logs, no native retry without fresh approval. |
+| Recovery action | Both SHA256 fingerprints and nine identities independently matched; arm exact guard only with C1-C2-OWNED-HOST-SYNTHETIC-20261124-ONE-USE marker; reconcile attempt 1, disarm after confirmed dispatch, never replay. |
 | Resume after closure | C3–C5; D separately approved. |
 
 ## Prior operation
