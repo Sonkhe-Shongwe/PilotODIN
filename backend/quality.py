@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import re
+import sqlite3
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,75 @@ class QualityError(ValueError):
 
 class QualityArchivedError(QualityError):
     """Archive observed during metadata snapshot; adapters preserve HTTP 409."""
+
+
+# Provisional defensive metadata budgets, not native memory acceptance.
+# Retain all evidence; refuse rather than truncate, compact or rewrite history.
+MAX_ACTIVE_ACTIONS = 4096
+MAX_HISTORY_ROWS = 16384
+MAX_HISTORY_BYTES = 32 * 1024 * 1024
+MAX_REPLAY_METADATA_BYTES = 16 * 1024 * 1024
+
+
+def _metadata_limit():
+    return QualityError(
+        "Quality history exceeds the supported metadata safety budget. "
+        "Original and history preserved; use a reviewed recovery or backup workflow. "
+        "No Quality changes were applied.", 409)
+
+
+def _row_bytes(row):
+    return sum(len(str(value).encode("utf-8")) if value is not None else 0
+               for value in row)
+
+
+def _bounded_rows(con, sql, params, *, max_rows=None, max_bytes=None, collect=True, validate=None):
+    """Bound SQLite row allocation and aggregate transfer without truncating results.
+
+    Only internal fixed SELECT statements are accepted. A connection-local
+    length limit prevents a single huge row crossing into Python; restore it
+    even on failure. Count one extra row to distinguish overflow from success.
+    """
+    max_rows = MAX_HISTORY_ROWS if max_rows is None else max_rows
+    max_bytes = MAX_HISTORY_BYTES if max_bytes is None else max_bytes
+    previous = con.getlimit(sqlite3.SQLITE_LIMIT_LENGTH)
+    con.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, min(previous, max(65536, max_bytes + 1024)))
+    result = []
+    total = 0
+    cursor = None
+    try:
+        cursor = con.execute("SELECT * FROM (" + sql + ") LIMIT ?", (*params, max_rows + 1))
+        for index, row in enumerate(cursor):
+            total += _row_bytes(row)
+            if index >= max_rows or total > max_bytes:
+                raise _metadata_limit()
+            if validate is not None:
+                validate(row)
+            if collect:
+                result.append(row)
+    except sqlite3.DataError as exc:
+        raise _metadata_limit() from exc
+    finally:
+        if cursor is not None:
+            cursor.close()
+        con.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, previous)
+    return result
+
+
+def _operation_ids(raw):
+    if len(raw.encode("utf-8")) > MAX_REPLAY_METADATA_BYTES:
+        raise _metadata_limit()
+    try:
+        ops = json.loads(raw)
+    except (ValueError, RecursionError) as exc:
+        raise QualityError("Invalid Quality operation history. Original and history preserved.", 409) from exc
+    if not isinstance(ops, list):
+        raise QualityError("Invalid Quality operation history. Original and history preserved.", 409)
+    if len(ops) > MAX_ACTIVE_ACTIONS:
+        raise _metadata_limit()
+    if any(not isinstance(item, str) or not item for item in ops):
+        raise QualityError("Invalid Quality operation history. Original and history preserved.", 409)
+    return ops
 
 
 def _json(value: Any) -> str:
@@ -179,8 +249,11 @@ def _state(con, pid: str) -> tuple[int, list[str]]:
     if state is None:
         raise QualityError("Quality state not initialized", 500)
     version = state["current_version"]
-    row = con.execute("SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?", (pid, version)).fetchone()
-    return version, json.loads(row["operations_json"])
+    rows = _bounded_rows(con, "SELECT operations_json FROM quality_versions WHERE project_id=? AND version=?",
+                         (pid, version), max_rows=1, max_bytes=MAX_REPLAY_METADATA_BYTES)
+    if not rows:
+        raise QualityError("Missing current Quality version. Original and history preserved.", 409)
+    return version, _operation_ids(rows[0]["operations_json"])
 
 
 def _source_df(p: dict, *, raw: bytes | None = None) -> pd.DataFrame:
@@ -501,20 +574,27 @@ def _metadata_snapshot(con, pid, *, target_version=None):
     contract = _source_contract(con, p)
     version, ops = _state(con, pid)
     selected_version = version if target_version is None else target_version
-    version_row = con.execute("SELECT * FROM quality_versions WHERE project_id=? AND version=?",
-                              (pid, selected_version)).fetchone()
-    if version_row is None:
+    selected = _bounded_rows(con, "SELECT * FROM quality_versions WHERE project_id=? AND version=?",
+                             (pid, selected_version), max_rows=1, max_bytes=MAX_REPLAY_METADATA_BYTES)
+    if not selected:
         raise QualityError("Requested dataset version does not exist", 404)
-    selected_ops = json.loads(version_row["operations_json"])
+    version_row = selected[0]
+    selected_ops = _operation_ids(version_row["operations_json"])
+    remaining = MAX_REPLAY_METADATA_BYTES - _row_bytes(version_row) - len(_json(ops).encode("utf-8"))
+    if remaining < 0:
+        raise _metadata_limit()
     rows = []
     for action_id in selected_ops:
-        action = con.execute("SELECT * FROM quality_actions WHERE project_id=? AND id=?",
-                             (pid, action_id)).fetchone()
-        if action is None:
+        actions = _bounded_rows(con, "SELECT * FROM quality_actions WHERE project_id=? AND id=?",
+                                (pid, action_id), max_rows=1, max_bytes=remaining)
+        if not actions:
             raise QualityError("Missing transformation from history", 409)
+        action = actions[0]
+        remaining -= _row_bytes(action)
         rows.append(dict(action))
-    decisions = [dict(r) for r in con.execute(
-        "SELECT * FROM quality_decisions WHERE project_id=? ORDER BY issue_id", (pid,))]
+    decisions = [dict(r) for r in _bounded_rows(con,
+        "SELECT * FROM quality_decisions WHERE project_id=? ORDER BY issue_id", (pid,),
+        max_bytes=remaining)]
     return {"project": p, "contract": contract, "version": version, "ops": ops,
             "selected_version": selected_version, "version_row": dict(version_row),
             "actions": rows, "decisions": decisions}
@@ -570,9 +650,11 @@ def _check_version(actual: int, expected: int) -> None:
 
 def _add_version(con, pid: str, ops: list[str], event: str, detail: dict) -> int:
     # Never reuse a version number after restore/undo.
+    encoded = _json(ops)
+    _operation_ids(encoded)
     new = con.execute("SELECT COALESCE(MAX(version), -1)+1 FROM quality_versions WHERE project_id=?",(pid,)).fetchone()[0]
     con.execute("INSERT INTO quality_versions VALUES(?,?,?,?,?,?)",
-                (pid,new,_json(ops),event,_json(detail),storage.now()))
+                (pid,new,encoded,event,_json(detail),storage.now()))
     con.execute("UPDATE quality_state SET current_version=? WHERE project_id=?",(new,pid))
     return new
 
@@ -642,6 +724,7 @@ def autopilot(pid: str, expected_version: int) -> dict:
                                                         "autopilot", issue_id, affected)
             ops.append(action["id"])
             completed.append(action)
+        _check_history_budget(con, pid)
         return {"version":version,"applied":completed,"count":len(completed),
                 "message":f"{len(completed)} narrowly safe correction(s) applied; see history for details."}
 
@@ -668,9 +751,11 @@ def decide(pid: str, issue_id: str, expected_version: int, decision: str) -> dic
         _verify_staged_write(con, pid, metadata, identity)
         if decision == "reject":
             con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",(pid,issue_id,"rejected",storage.now()))
+            _check_history_budget(con, pid)
             return {"version":version,"decision":"rejected","issue_id":issue_id,"applied":False}
         version, action = _record_validated_action(con, metadata["project"], ops, matching["proposal"],
                                                     "user_approved", issue_id, affected)
+        _check_history_budget(con, pid)
         return {"version":version,"decision":"approved","issue_id":issue_id,"applied":True,"action":action}
 
 
@@ -693,29 +778,45 @@ def approve_imputation(pid:str,column:str,issue_id:str,expected_version:int,stra
         _verify_staged_write(con, pid, metadata, identity)
         nxt, action = _record_validated_action(con, metadata["project"], metadata["ops"], proposal,
                                                 "user_approved", issue_id, affected)
+        _check_history_budget(con, pid)
         return {'version':nxt,'decision':'approved','strategy':'median','filled_value':median,
                 'affected_rows':action['affected_rows'],'action':action,
                 'note':'Reviewed working-version imputation. Original retained; use History to undo. An imputation indicator column was not added.'}
+
+
+def _check_history_budget(con, pid):
+    """Fence the resulting state inside the same mutation transaction.
+
+    Do not publish a new version that the bounded replay/history paths cannot
+    read. Legacy over-budget records remain intact, including on refusal.
+    """
+    _metadata_snapshot(con, pid)
+    _bounded_rows(con, "SELECT * FROM quality_versions WHERE project_id=?", (pid,),
+                  collect=False, validate=lambda row: _operation_ids(row["operations_json"]))
+    for table in ("quality_actions", "quality_decisions"):
+        _bounded_rows(con, f"SELECT * FROM {table} WHERE project_id=?", (pid,), collect=False)
 
 
 def history(pid: str) -> dict:
     p=_project(pid)
     with storage.connect() as con:
         _ensure(con,p)
+        con.execute("BEGIN")
         current,ops=_state(con,pid)
-        versions=[{"version":r["version"],"operations":json.loads(r["operations_json"]),
+        active = set(ops)
+        versions=[{"version":r["version"],"operations":_operation_ids(r["operations_json"]),
                    "event":r["event"],"details":json.loads(r["details_json"]),"created_at":r["created_at"]}
-                  for r in con.execute("SELECT * FROM quality_versions WHERE project_id=? ORDER BY version",(pid,))]
+                  for r in _bounded_rows(con,"SELECT * FROM quality_versions WHERE project_id=? ORDER BY version",(pid,))]
         actions=[{"id":r["id"],"kind":r["kind"],"column":r["column_name"],
                   "params":json.loads(r["params_json"]),"source":r["source"],
-                  "affected_rows":r["affected_rows"],"created_at":r["created_at"],"active":r["id"] in ops}
-                 for r in con.execute("SELECT * FROM quality_actions WHERE project_id=? ORDER BY created_at, id",(pid,))]
-        decisions=[dict(r) for r in con.execute("SELECT * FROM quality_decisions WHERE project_id=? ORDER BY created_at",(pid,))]
+                  "affected_rows":r["affected_rows"],"created_at":r["created_at"],"active":r["id"] in active}
+                 for r in _bounded_rows(con,"SELECT * FROM quality_actions WHERE project_id=? ORDER BY created_at, id",(pid,))]
+        decisions=[dict(r) for r in _bounded_rows(con,"SELECT * FROM quality_decisions WHERE project_id=? ORDER BY created_at",(pid,))]
         return {"current_version":current,"versions":versions,"actions":actions,"decisions":decisions}
 
 
 def _apply_event_rows(con, pid):
-    return [tuple(row) for row in con.execute(
+    return [tuple(row) for row in _bounded_rows(con,
         "SELECT version,details_json FROM quality_versions WHERE project_id=? AND event='apply' ORDER BY version",
         (pid,))]
 
@@ -768,6 +869,7 @@ def _commit_history_transition(pid, expected_version, *, action_id=None, target_
         for issue_id in suppress.values():
             con.execute("INSERT OR REPLACE INTO quality_decisions VALUES(?,?,?,?)",
                         (pid,issue_id,"undone",storage.now()))
+        _check_history_budget(con, pid)
         if action_id is not None:
             return {"version":nxt,"undone":action_id,"active_actions":len(target)}
         return {"version":nxt,"restored_from":target_version,"active_actions":len(target)}

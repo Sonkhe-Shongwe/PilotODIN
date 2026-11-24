@@ -217,7 +217,10 @@ def prepare(pid:str,body:ProposalRequest)->dict:
             raise quality.QualityError('This action would not change the working dataset',409)
         if _preview_state(con, pid, body) != observed:
             raise quality.QualityError('Quality state changed while preparing the preview. Review it again.',409)
-        digest=_hash(payload)
+        encoded = quality._json(payload)
+        if len(encoded.encode('utf-8')) > quality.MAX_REPLAY_METADATA_BYTES:
+            raise quality._metadata_limit()
+        digest=hashlib.sha256(encoded.encode('utf-8')).hexdigest()
         proposal_id=secrets.token_hex(24)
         issued=datetime.now(timezone.utc)
         expires=issued+timedelta(minutes=10)
@@ -231,7 +234,7 @@ def prepare(pid:str,body:ProposalRequest)->dict:
         con.execute('''INSERT INTO quality_approval_receipts
                      (proposal_id,project_id,expected_version,proposal_hash,payload_json,issued_at,expires_at)
                      VALUES(?,?,?,?,?,?,?)''',(
-                      proposal_id,pid,body.expected_version,digest,quality._json(payload),issued.isoformat(),expires.isoformat()))
+                      proposal_id,pid,body.expected_version,digest,encoded,issued.isoformat(),expires.isoformat()))
         return {'proposal_id':proposal_id,'proposal_hash':digest,'project_id':pid,
                 'expected_version':body.expected_version,'operation':body.operation,
                 'steps':payload['steps'],'changed_cells':changed,'preview':examples,
@@ -240,9 +243,12 @@ def prepare(pid:str,body:ProposalRequest)->dict:
 
 
 def _receipt_for_commit(con, pid: str, body: ApprovalCommit):
-    rec=con.execute('SELECT * FROM quality_approval_receipts WHERE proposal_id=? AND project_id=?',
-                    (body.proposal_id,pid)).fetchone()
-    if rec is None or rec['proposal_hash']!=body.proposal_hash:
+    rows=quality._bounded_rows(con,
+        'SELECT * FROM quality_approval_receipts WHERE proposal_id=? AND project_id=? AND proposal_hash=?',
+        (body.proposal_id,pid,body.proposal_hash),max_rows=1,
+        max_bytes=quality.MAX_REPLAY_METADATA_BYTES+1024)
+    rec=rows[0] if rows else None
+    if rec is None:
         raise quality.QualityError('Approval receipt is invalid or belongs to another project',403)
     if rec['consumed_at']:
         raise quality.QualityError('Approval has already been used',409)
@@ -365,6 +371,7 @@ def commit(pid:str,body:ApprovalCommit)->dict:
                         break
         else:
             raise RuntimeError('Unrecognized validated approval state')
+        quality._check_history_budget(con,pid)
         updated=con.execute('UPDATE quality_approval_receipts SET consumed_at=? WHERE proposal_id=? AND consumed_at IS NULL',
                             (storage.now(),body.proposal_id))
         if updated.rowcount!=1:

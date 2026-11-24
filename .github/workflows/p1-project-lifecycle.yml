@@ -30,6 +30,7 @@ on:
       - tests/test_build_e_approval_receipts.py
       - tests/test_a4_quality_audit_reporting.py
       - tests/test_b4_quality_resource_measurement.py
+      - tests/test_b4_quality_metadata_bounds.py
       - tests/test_cf01_import_preflight.py
 
 permissions:
@@ -80,3 +81,7 @@ jobs:
         env:
           PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-b4-measurement-${{ github.run_id }}-${{ github.run_attempt }}
         run: python -m pytest -q -s tests/test_b4_quality_resource_measurement.py
+      - name: Exercise B4 history admission and refusal with disposable metadata
+        env:
+          PILOTODIN_HOME: ${{ runner.temp }}/pilotodin-b4-metadata-${{ github.run_id }}-${{ github.run_attempt }}
+        run: python -m pytest -q -s tests/test_b4_quality_metadata_bounds.py
