@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 00329dc82127eb7c8466fd0dda7610117981f2e4 |
 | Product baseline | b6426147dccd94747924abbd5ba4c3be6133d7b8 |
 | Scope | C1 staged Python owned stream pump and Rust transport deadline state; review exact locked shell source; no actual transport registration or native compilation. |
 | Operation ID | C1-RESOURCE-ADMISSION-20261124-host-transport |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | backend/resource_host.py; tests/test_c1_resource_host.py; frontend/src-tauri/src/resource_transport.rs; journal, handoff, C evidence/spec |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
-| Verification | Prior #45460620652 SUCCESS 166 regression + 2 subtests, 153 C1, 20 legacy autonomy. Next inert binary stream fixtures and staged Rust deadline tests (uncompiled). |
-| Pending runs | None; #45460620652/job 138681866579 terminal SUCCESS, exact checkout/counts confirmed. |
+| Verification | Staged binary pump, 11 new Python fixtures and seven Rust deadline tests published. Python CI pending, Rust uncompiled/unregistered. |
+| Pending runs | Exact-source P1 CI pending discovery; reconcile before actual shell wiring. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
 | Recovery action | Stage owned binary pump and Rust independent deadline/write/reply state; reconcile Python CI, then actual owned shell writer/event lifecycle and native grant integration. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |

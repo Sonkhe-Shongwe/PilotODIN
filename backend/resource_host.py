@@ -237,3 +237,32 @@ class HostBroker:
         except BaseException:
             self.transport_lost()
             raise
+
+
+def serve_owned(broker, read_chunk, write_reply, flush_reply):
+    """Staged single-reader/writer pump over already owned binary streams.
+
+    The caller provides read-at-most, write and flush functions. No descriptor
+    is opened or closed here. STOP stops admission, not the control channel:
+    a host may still need to drain/release its exact grant. EOF is a terminal
+    transport fault. An independent host deadline must cover blocking I/O;
+    this synchronous pump never asserts that a blocked call has completed.
+    """
+    if not isinstance(broker, HostBroker):
+        raise TypeError("Trusted resource broker required")
+    try:
+        while True:
+            chunk = read_chunk(MAX_FRAME)
+            if type(chunk) is not bytes or not 0 < len(chunk) <= MAX_FRAME:
+                raise _fault()
+            for reply in broker.receive(chunk):
+                count = write_reply(reply)
+                if type(count) is not int or count != len(reply):
+                    raise _fault()
+                flush_reply()
+                broker.reply_written(reply)
+    except BaseException as exc:
+        broker.transport_lost()
+        if isinstance(exc, Exception):
+            raise _fault() from None
+        raise

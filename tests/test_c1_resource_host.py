@@ -202,3 +202,91 @@ def test_duplicate_reply_ack_fails_closed():
     with pytest.raises(ProtocolFault):
         b.reply_written(reply)
     assert c.status()["phase"]=="blocked"
+
+
+def test_owned_pump_split_stop_release_and_eof():
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    replies=[]
+    pending=[frame(1,"GRANT_REQUEST LOCAL_INFERENCE")[:12],
+             frame(1,"GRANT_REQUEST LOCAL_INFERENCE")[12:],
+             frame(2,"STOP")]
+    def read(cap):
+        assert cap==MAX_FRAME
+        if pending:
+            return pending.pop(0)
+        if len(replies)==2:
+            gid=replies[0].decode().split()[-1]
+            return frame(3,"RELEASE "+gid+" EXITED")
+        return b""
+    def write(reply):
+        replies.append(reply)
+        assert c.status()["active"]
+        return len(reply)
+    def flush():
+        assert c.status()["active"]
+    with pytest.raises(ProtocolFault):
+        serve_owned(b,read,write,flush)
+    assert len(replies)==3
+    assert b"GRANTED" in replies[0]
+    assert b"ADMISSION_STOPPED" in replies[1]
+    assert b"RELEASED" in replies[2]
+    assert not c.status()["active"] and c.status()["stopping"]
+
+
+@pytest.mark.parametrize("fault",["short","none","bool","write","flush"])
+def test_owned_pump_failed_release_delivery_retains_grant(fault):
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    gid=grant(b)
+    def read(cap):
+        return frame(2,"RELEASE "+gid+" EXITED")
+    def write(reply):
+        if fault=="short":
+            return len(reply)-1
+        if fault=="none":
+            return None
+        if fault=="bool":
+            return True
+        if fault=="write":
+            raise OSError("secret "+KEY)
+        return len(reply)
+    def flush():
+        if fault=="flush":
+            raise OSError("secret "+KEY)
+        pytest.fail("Invalid write must not flush")
+    with pytest.raises(ProtocolFault) as err:
+        serve_owned(b,read,write,flush)
+    assert KEY not in str(err.value)
+    assert c.status()["phase"]=="blocked" and c.status()["stopping"]
+
+
+@pytest.mark.parametrize("chunk",[b"",b"x"*(MAX_FRAME+1),None])
+def test_owned_pump_invalid_read_fails_closed(chunk):
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    grant(b)
+    with pytest.raises(ProtocolFault):
+        serve_owned(b,lambda _:chunk,lambda _:pytest.fail("write"),lambda:pytest.fail("flush"))
+    assert c.status()["phase"]=="blocked"
+
+
+def test_owned_pump_partial_eof_never_dispatches():
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    chunks=iter([frame(1,"GRANT_REQUEST LOCAL_INFERENCE")[:-1],b""])
+    with pytest.raises(ProtocolFault):
+        serve_owned(b,lambda _:next(chunks),lambda _:pytest.fail("write"),lambda:pytest.fail("flush"))
+    assert not c.status()["active"] and c.status()["stopping"]
+
+
+def test_owned_pump_read_exception_sanitized():
+    from backend.resource_host import serve_owned
+    c,b=setup()
+    grant(b)
+    def read(_):
+        raise OSError(KEY)
+    with pytest.raises(ProtocolFault) as err:
+        serve_owned(b,read,lambda _:pytest.fail("write"),lambda:pytest.fail("flush"))
+    assert KEY not in str(err.value)
+    assert c.status()["phase"]=="blocked"
