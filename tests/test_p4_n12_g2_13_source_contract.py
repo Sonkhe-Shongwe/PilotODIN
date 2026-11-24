@@ -116,6 +116,24 @@ class G213SourceContractTests(unittest.TestCase):
         self.assertNotIn('%p', self.cpp)
         self.assertNotIn('std::wprintf', self.cpp)
 
+    def test_msvc_compile_only_ci_cannot_activate_pss_or_link_executables(self):
+        compile_workflow = (ROOT / ".github/workflows/p4-r025-g213-msvc-compile-only.yml")
+        source = compile_workflow.read_text(encoding="utf-8")
+        self.assertIn("runs-on: windows-2022", source)
+        self.assertIn("github-hosted", source)
+        self.assertIn("(git rev-parse HEAD).Trim() -cne $env:GITHUB_SHA", source)
+        self.assertIn("cl /nologo /c /std:c++17 /W4 /WX", source)
+        self.assertIn("g213_pss_abi.obj", source)
+        self.assertIn("RUNNER_TEMP", source)
+        self.assertIn("Remove-Item -LiteralPath $scratch -Recurse -Force", source)
+        self.assertIn("persist-credentials: false", source)
+        self.assertNotIn("workflow_dispatch", source)
+        self.assertNotIn("PILOTODIN_G213_GENERATED_CONSENT", source)
+        self.assertNotIn("PssCaptureSnapshot(", source)
+        self.assertNotIn("pilotodin-g213-generated-only.exe", source)
+        self.assertNotIn("/link", source)
+        self.assertNotIn("cargo build", source)
+
     def test_no_native_execution_in_source_contract_suite(self):
         source = Path(native.__file__).read_text(encoding="utf-8")
         self.assertIn("def prepare_native_backend", source)
