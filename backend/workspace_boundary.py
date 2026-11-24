@@ -107,12 +107,12 @@ def _acquire(fd):
 
 
 @contextmanager
-def _workspace_lease(value):
+def _workspace_lease(value, *, create=True):
     """Retain the descriptor and original workspace identity for runtime checks."""
     fd = None
     try:
         try:
-            home = _home(value)
+            home = _home(value, create=create)
             root_identity = _directory(home)
             _verify_entries(home)
             path = home / LOCK_NAME
@@ -149,6 +149,28 @@ def engine_workspace(value):
     """Hold a non-inheritable exclusive writer lease until the caller exits."""
     with _workspace_lease(value) as (home, _, _root_identity):
         yield home
+
+
+@contextmanager
+def existing_maintenance_workspace(value):
+    """Acquire the shared lease for an existing, physically checked workspace.
+
+    Unlike startup, maintenance must never create a missing workspace or DB.
+    This coordinates cooperating writers; it is not a filesystem sandbox.
+    """
+    canonical = existing_fixture_home(value)
+    database = canonical / "pilotodin.sqlite3"
+    before = existing_fixture_file(database)
+    with _workspace_lease(value, create=False) as (home, fd, root_identity):
+        if existing_fixture_home(str(home)) != canonical:
+            raise WorkspaceBoundaryError("Maintenance workspace identity changed")
+        if not os.path.samestat(root_identity, _directory(canonical)):
+            raise WorkspaceBoundaryError("Maintenance workspace identity changed")
+        _same_lock(fd, canonical / LOCK_NAME)
+        current = existing_fixture_file(database)
+        if not before.st_ino or not current.st_ino or not os.path.samestat(before, current):
+            raise WorkspaceBoundaryError("Maintenance database identity changed")
+        yield canonical
 
 
 # Keep runtime ownership through interpreter shutdown, after non-daemon

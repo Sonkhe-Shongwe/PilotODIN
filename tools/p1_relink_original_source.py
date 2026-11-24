@@ -17,6 +17,16 @@ import subprocess
 import sqlite3
 import sys
 
+# CLI invocation by filename must resolve the same backend boundary module
+# as the normal application, without importing storage or initializing SQLite.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from backend.workspace_boundary import (
+    LOCK_NAME, WorkspaceBoundaryError, existing_fixture_home,
+    existing_fixture_file, existing_maintenance_workspace,
+)
+
 
 class RecoveryBlocked(RuntimeError):
     """A precondition failed; leave existing project and Quality history alone."""
@@ -46,11 +56,14 @@ def _readonly_db(db: Path):
 
 def inspect(home: Path, project_name: str) -> Inspection:
     """Check both metadata and candidate bytes, without opening the DB writable."""
-    home = home.resolve()
-    db = home / "pilotodin.sqlite3"
-    dataset_dir = home / "datasets"
-    if not db.is_file() or db.is_symlink() or not dataset_dir.is_dir() or dataset_dir.is_symlink():
-        raise RecoveryBlocked("Isolated workspace database or datasets directory is missing/unsafe.")
+    try:
+        home = existing_fixture_home(str(home))
+        db = home / "pilotodin.sqlite3"
+        dataset_dir = home / "datasets"
+        existing_fixture_file(db)
+        existing_fixture_home(str(dataset_dir))
+    except WorkspaceBoundaryError as exc:
+        raise RecoveryBlocked("Isolated workspace database or datasets directory is missing/unsafe.") from exc
     with _readonly_db(db) as con:
         projects = con.execute(
             "SELECT id,dataset_path FROM projects WHERE name=?", (project_name,)
@@ -77,8 +90,10 @@ def inspect(home: Path, project_name: str) -> Inspection:
     if not filename or filename in (".", "..") or not filename.lower().endswith((".csv", ".xlsx")):
         raise RecoveryBlocked("Stored original source reference is invalid.")
     candidate = dataset_dir / filename
-    if candidate.is_symlink() or not candidate.is_file():
-        raise RecoveryBlocked("Original candidate is missing or a symbolic link.")
+    try:
+        existing_fixture_file(candidate)
+    except WorkspaceBoundaryError as exc:
+        raise RecoveryBlocked("Original candidate is missing or unsafe.") from exc
     if candidate.resolve().parent != dataset_dir.resolve():
         raise RecoveryBlocked("Candidate is not directly inside isolated datasets directory.")
     if Path(old_path).is_file():
@@ -155,28 +170,49 @@ def _manifest(root: Path) -> dict[str, str]:
     entries: dict[str, str] = {}
     for directory, names, files in os.walk(root, followlinks=False):
         d = Path(directory)
-        for name in names + files:
-            item = d / name
-            if item.is_symlink():
-                raise RecoveryBlocked("Workspace contains a symlink; backup safely blocked.")
-        for name in files:
-            file = d / name
-            entries[file.relative_to(root).as_posix()] = _sha256(file)
+        try:
+            for name in names:
+                existing_fixture_home(str(d / name))
+            for name in files:
+                file = d / name
+                existing_fixture_file(file)
+                # A persistent empty coordination marker is not project data.
+                # Never copy its OS lock into a backup or treat it as proof.
+                if d == root and name == LOCK_NAME:
+                    continue
+                entries[file.relative_to(root).as_posix()] = _sha256(file)
+        except WorkspaceBoundaryError as exc:
+            raise RecoveryBlocked("Workspace contains an unsafe entry; backup blocked.") from exc
     return entries
 
 
 def apply(home: Path, plan: Inspection, backup_to: Path, confirm_id: str, repo_root: Path) -> None:
     """Backup everything, then atomically relink one metadata field only."""
-    home = home.resolve()
-    repo_root = repo_root.resolve()
-    backup_to = backup_to.resolve()
     if confirm_id != plan.project_id:
         raise RecoveryBlocked("Explicit project ID confirmation does not match.")
-    if backup_to.exists() or not backup_to.parent.is_dir():
+    try:
+        home = existing_fixture_home(str(home))
+        repo_root = existing_fixture_home(str(repo_root))
+        if not backup_to.is_absolute() or ".." in backup_to.parts:
+            raise RecoveryBlocked("Choose a new absolute backup folder.")
+        backup_to = existing_fixture_home(str(backup_to.parent)) / backup_to.name
+    except WorkspaceBoundaryError as exc:
+        raise RecoveryBlocked("Unsafe maintenance or backup location.") from exc
+    if home != repo_root / ".pilotodin-dev-data":
+        raise RecoveryBlocked("Only the isolated development workspace is supported.")
+    if backup_to.exists() or backup_to.is_symlink():
         raise RecoveryBlocked("Choose a new backup folder under an existing parent directory.")
     if backup_to.is_relative_to(repo_root) or backup_to.is_relative_to(home):
         raise RecoveryBlocked("Backups must be outside the repository and workspace.")
     _check_backend_stopped()
+    try:
+        with existing_maintenance_workspace(str(home)) as owned:
+            _apply_owned(owned, plan, backup_to)
+    except WorkspaceBoundaryError as exc:
+        raise RecoveryBlocked("Workspace ownership or physical admission refused.") from exc
+
+
+def _apply_owned(home: Path, plan: Inspection, backup_to: Path) -> None:
     initial_manifest = _manifest(home)
     size = sum((home / key).stat().st_size for key in initial_manifest)
     if shutil.disk_usage(backup_to.parent).free < size + 64 * 1024 * 1024:
@@ -190,7 +226,10 @@ def apply(home: Path, plan: Inspection, backup_to: Path, confirm_id: str, repo_r
             raise RecoveryBlocked("Project identity, source or Quality state changed. Reinspect.")
         if _manifest(home) != initial_manifest:
             raise RecoveryBlocked("Workspace changed during preflight. No relink.")
-        shutil.copytree(home, backup_to)
+        def ignore_coordination(directory, names):
+            return {LOCK_NAME} if Path(directory) == home and LOCK_NAME in names else set()
+
+        shutil.copytree(home, backup_to, ignore=ignore_coordination)
         if _manifest(backup_to) != initial_manifest:
             raise RecoveryBlocked("Full backup comparison failed. Metadata unchanged.")
         if _sha256(plan.candidate) != plan.pinned_sha256:

@@ -80,6 +80,11 @@ def test_backup_first_relinks_only_path_and_preserves_history(tmp_path, monkeypa
     assert (backup / "datasets" / "synthetic.csv").read_bytes() == DATA
     assert (backup / "models" / "marker.txt").read_text() == "keep this"
     assert rows(backup / "pilotodin.sqlite3") == before
+    from backend.workspace_boundary import LOCK_NAME, engine_workspace
+    assert (home / LOCK_NAME).is_file()
+    assert not (backup / LOCK_NAME).exists()
+    with engine_workspace(str(home)):
+        pass
     with pytest.raises(relocation.RecoveryBlocked, match="already reachable"):
         relocation.inspect(home, "day")
 
@@ -128,6 +133,21 @@ def test_backend_listener_refuses_relink(tmp_path, monkeypatch):
         relocation.apply(home, relocation.inspect(home, "day"),
                          tmp_path / "backup", ID, repo)
     assert not (tmp_path / "backup").exists()
+
+
+def test_competing_writer_refuses_relink_before_backup(tmp_path, monkeypatch):
+    from backend.workspace_boundary import engine_workspace
+    repo, home, db, _, original = workspace(tmp_path)
+    plan = relocation.inspect(home, "day")
+    before = rows(db)
+    backup = tmp_path / "backup"
+    monkeypatch.setattr(relocation, "_check_backend_stopped", lambda: None)
+    with engine_workspace(str(home)):
+        with pytest.raises(relocation.RecoveryBlocked, match="ownership"):
+            relocation.apply(home, plan, backup, ID, repo)
+        assert rows(db) == before
+        assert not backup.exists()
+        assert original.read_bytes() == DATA
 
 
 def test_missing_quality_version_blocks(tmp_path):

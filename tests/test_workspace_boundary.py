@@ -392,6 +392,18 @@ assert storage.list_projects() == []
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_maintenance_never_creates_missing_home_or_database(self):
+        from backend.workspace_boundary import existing_maintenance_workspace
+        with self.assertRaises(WorkspaceBoundaryError):
+            with existing_maintenance_workspace(str(self.home)):
+                self.fail("Missing workspace admitted")
+        self.assertFalse(self.home.exists())
+        self.home.mkdir()
+        with self.assertRaises(WorkspaceBoundaryError):
+            with existing_maintenance_workspace(str(self.home)):
+                self.fail("Missing database admitted")
+        self.assertEqual(list(self.home.iterdir()), [])
+
     def test_static_redirected_ancestor_refused(self):
         outside = self.root / "outside"
         outside.mkdir()
