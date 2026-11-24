@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   generated-duplicate-only:
-    if: ${{ false }} # Fresh G2.15 one-use approval absent; native probe DISARMED.
+    if: ${{ true }} # One fresh owner-authorised G2.15 generated-only run. Immediately disarm.
     runs-on: windows-2022
     timeout-minutes: 25
     env:
