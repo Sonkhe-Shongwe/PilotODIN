@@ -49,7 +49,7 @@ def _fixture_manifest(path):
         raise WorkspaceBoundaryError("Invalid local fixture manifest") from exc
 
 
-def _local_fixture_home(env, home):
+def _local_fixture_allocation(env, home):
     base = Path(env.get("LOCALAPPDATA", ""))
     if not base.is_absolute() or ".." in base.parts or home.name != "workspace":
         raise WorkspaceBoundaryError("Unexpected local fixture workspace")
@@ -60,7 +60,7 @@ def _local_fixture_home(env, home):
     run = owned.parent
     if run.parent != runs or owned.name != "workspace":
         raise WorkspaceBoundaryError("Unexpected local fixture workspace")
-    phase = next((key for key in LOCAL_FIXTURES
+    phase = next((key for key in (*LOCAL_FIXTURES, "P2-NATIVE-CHAIN")
                   if re.fullmatch(re.escape(key) + r"-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}", run.name)), None)
     if phase is None:
         raise WorkspaceBoundaryError("Unexpected local fixture workspace")
@@ -72,6 +72,61 @@ def _local_fixture_home(env, home):
             or allocation.get("relative_paths") != {"backend": "workspace", "exports": "exports", "logs": "logs"}
             or allocation.get("rules") != {"synthetic_only": True, "no_auto_delete": True, "no_model_or_installer": True}):
         raise WorkspaceBoundaryError("Invalid local fixture allocation")
+    return owned, phase
+
+
+def report_chain_seed_home(env):
+    """Admit the existing managed P2 allocator only, before any seed writes."""
+    if (env.get("PILOTODIN_SERVER_MODE") != "local-devqa"
+            or env.get("RL_invariant") != "1"
+            or env.get("PILOTODIN_DESKTOP_SESSION")):
+        raise WorkspaceBoundaryError("Explicit managed report fixture required")
+    home = Path(env.get("PILOTODIN_HOME", ""))
+    owned, phase = _local_fixture_allocation(env, home)
+    if phase != "P2-NATIVE-CHAIN":
+        raise WorkspaceBoundaryError("Unexpected report fixture phase")
+    return owned
+
+
+def _local_fixture_home(env, home):
+    owned, phase = _local_fixture_allocation(env, home)
+    run = owned.parent
+    if phase == "P2-NATIVE-CHAIN":
+        if env.get("RL_invariant") != "1":
+            raise WorkspaceBoundaryError("Explicit managed report fixture required")
+        seed = _fixture_manifest(owned / "synthetic-manifest.json")
+        if (seed.get("phase") != phase or seed.get("run_id") != run.name
+                or seed.get("scope") != "SYNTHETIC_REPORT_CHAIN_ONLY"
+                or seed.get("revision") != 2):
+            raise WorkspaceBoundaryError("Invalid report fixture seed")
+        for key in ("project_id", "report_id"):
+            if not isinstance(seed.get(key), str) or not re.fullmatch(r"[a-f0-9]{32}", seed[key]):
+                raise WorkspaceBoundaryError("Invalid report fixture identity")
+        exports = seed.get("exports")
+        if not isinstance(exports, dict) or set(exports) != {"html", "pdf"}:
+            raise WorkspaceBoundaryError("Invalid report fixture exports")
+        for kind, record in exports.items():
+            if (not isinstance(record, dict)
+                    or record.get("filename") != f"pilotodin_report_{seed['report_id'][:12]}_rev2.{kind}"
+                    or not isinstance(record.get("sha256"), str)
+                    or not re.fullmatch(r"[a-f0-9]{64}", record["sha256"])
+                    or type(record.get("bytes")) is not int or record["bytes"] <= 0):
+                raise WorkspaceBoundaryError("Invalid report fixture exports")
+        relative = seed.get("source_relative")
+        if not isinstance(relative, str):
+            raise WorkspaceBoundaryError("Invalid report fixture source")
+        source = Path(relative)
+        if len(source.parts) != 2 or source.parts[0] != "datasets" or not re.fullmatch(r"[a-f0-9]{32}\.csv", source.name):
+            raise WorkspaceBoundaryError("Invalid report fixture source")
+        existing_fixture_file(owned / source)
+        if (not isinstance(seed.get("source_sha256"), str)
+                or not re.fullmatch(r"[a-f0-9]{64}", seed["source_sha256"])):
+            raise WorkspaceBoundaryError("Invalid report fixture source")
+        if existing_fixture_file(owned / LOCK_NAME).st_size != 0:
+            raise WorkspaceBoundaryError("Invalid local fixture writer marker")
+        if existing_fixture_file(owned / "pilotodin.sqlite3").st_size == 0:
+            raise WorkspaceBoundaryError("Invalid local fixture database")
+        return owned
     filename, scope, count = LOCAL_FIXTURES[phase]
     seed = _fixture_manifest(run / "fixtures" / filename)
     if seed.get("phase") != phase or seed.get("run_id") != run.name or seed.get("scope") != scope:

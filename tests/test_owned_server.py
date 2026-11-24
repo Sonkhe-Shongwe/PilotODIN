@@ -102,6 +102,64 @@ class OwnedServerTests(unittest.TestCase):
                 self.assertIn("'backend.server_entry:owned_app','--factory'", source)
                 self.assertNotIn("'backend.main:app'", source)
 
+    def test_managed_report_chain_seed_and_owned_server_handoff(self):
+        import json
+        from tools.qa_foundation import create_run
+        from backend.server_entry import report_chain_seed_home
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp).resolve()
+            run, _ = create_run(base / "PilotODIN" / "DevQA", "P2-NATIVE-CHAIN", repo=ROOT)
+            home = run / "workspace"
+            manifest = home / "synthetic-manifest.json"
+            env = {**os.environ, "LOCALAPPDATA": str(base),
+                   "PILOTODIN_SERVER_MODE": "local-devqa", "RL_invariant": "1",
+                   "PILOTODIN_HOME": str(home), "PILOTODIN_DESKTOP_SESSION": ""}
+            self.assertEqual(report_chain_seed_home(env), home)
+            with self.assertRaises(WorkspaceBoundaryError):
+                admitted_home(env)
+            for change in ({"PILOTODIN_HOME": str(base)}, {"RL_invariant": ""},
+                           {"PILOTODIN_SERVER_MODE": ""}):
+                with self.assertRaises(WorkspaceBoundaryError):
+                    report_chain_seed_home({**env, **change})
+            command = [sys.executable, "-B", str(ROOT / "tools" / "Seed_P2_Native_Live_Chain_Local.py")]
+            result = subprocess.run(command + [str(base / "wrong.json")], cwd=ROOT,
+                env=env, capture_output=True, text=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(list(home.iterdir()), [])
+            result = subprocess.run(command + [str(manifest)], cwd=ROOT,
+                env=env, capture_output=True, text=True, timeout=45)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(admitted_home(env), home)
+            record = json.loads(manifest.read_text(encoding="utf-8"))
+            code = ("from backend.server_entry import owned_app; "
+                    "from fastapi.testclient import TestClient; "
+                    "import sys; client=TestClient(owned_app()); "
+                    "assert client.get('/api/reports/'+sys.argv[1]+'?revision=2').status_code == 200")
+            result = subprocess.run([sys.executable, "-B", "-c", code, record["report_id"]],
+                cwd=ROOT, env=env, capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            record["run_id"] = "other"
+            manifest.write_text(json.dumps(record), encoding="utf-8")
+            with self.assertRaises(WorkspaceBoundaryError):
+                admitted_home(env)
+
+    def test_retired_migration_and_unmanaged_launcher_fail_closed(self):
+        from Migrate_From_Old_PilotODIN import migrate
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaisesRegex(ValueError, "retired"):
+                migrate(root / "old", root / "new")
+            self.assertEqual(list(root.iterdir()), [])
+        legacy = (ROOT / "tools" / "Verify_P2_Native_Live_Report_Local.ps1").read_text(encoding="utf-8")
+        self.assertNotIn("Start-Process", legacy)
+        self.assertNotIn("backend.main:app", legacy)
+        self.assertIn("exit 2", legacy)
+        managed = (ROOT / "tools" / "Verify_P2_DevQA_Native_Chain_Local.ps1").read_text(encoding="utf-8")
+        self.assertIn("'backend.server_entry:owned_app','--factory'", managed)
+        self.assertIn("'PILOTODIN_SERVER_MODE'", managed)
+        self.assertIn("$env:PILOTODIN_SERVER_MODE='local-devqa'", managed)
+        self.assertNotIn("'backend.main:app'", managed)
+
     def test_owned_pipe_accepts_fragmented_stop_without_eof(self):
         server = SimpleNamespace(should_exit=False)
         rd, wr = os.pipe()

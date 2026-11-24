@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fixture ONLY: two synthetic saved revisions plus expected backend HTML/PDF hashes.
 
-The caller MUST set PILOTODIN_HOME to a fresh empty temporary directory before
-launch. This tool does not write outside that directory or load ML/AI models.
+The caller MUST use a fresh managed P2-NATIVE-CHAIN DevQA workspace.
+This tool does not write outside that directory or load ML/AI models.
 """
 from __future__ import annotations
 import hashlib
@@ -24,17 +24,15 @@ def main()->int:
     home_value=os.environ.get("PILOTODIN_HOME","")
     if not home_value:
         raise RuntimeError("PILOTODIN_HOME must be an isolated temporary directory.")
-    home=Path(home_value).resolve()
-    manifest=Path(sys.argv[1]).resolve()
-    if not home.is_dir() or not manifest.parent.is_dir() or home not in manifest.parents:
-        raise RuntimeError("Refusing to write outside explicitly isolated temporary home.")
-    if list(home.iterdir()):
-        # A created staging manifest directory is okay, existing actual data isn't.
-        allowed={"logs","datasets","models"}
-        if any(p.name not in allowed for p in home.iterdir()):
-            raise RuntimeError("Isolated home is not empty; refusing to touch existing content.")
-    os.environ.pop("PILOTODIN_DESKTOP_SESSION",None)
     sys.path.insert(0,str(ROOT))
+    from backend.server_entry import report_chain_seed_home
+    from backend.workspace_boundary import hold_fresh_fixture_workspace
+    home=report_chain_seed_home(os.environ)
+    if Path(sys.argv[1]) != Path(home_value) / "synthetic-manifest.json":
+        raise RuntimeError("Refusing unexpected report seed manifest destination.")
+    home=hold_fresh_fixture_workspace(home_value, home)
+    manifest=home / "synthetic-manifest.json"
+    os.environ["PILOTODIN_HOME"]=str(home)
     from fastapi.testclient import TestClient
     from backend.main import app
     from backend import storage
@@ -101,13 +99,16 @@ def main()->int:
             "bytes":len(response.content),
         }
     record={
+        "phase":"P2-NATIVE-CHAIN","run_id":home.parent.name,
+        "scope":"SYNTHETIC_REPORT_CHAIN_ONLY",
         "project_id":project_id,"report_id":report_id,"revision":2,
         "title":second.json()["title"],
         "source_sha256":hashlib.sha256(csv).hexdigest(),
         "source_relative":str(source.relative_to(home)),
         "exports":exports
     }
-    manifest.write_text(json.dumps(record,indent=2),encoding="utf-8")
+    with manifest.open("x",encoding="utf-8") as output:
+        output.write(json.dumps(record,indent=2))
     print("Synthetic project/report v1 and v2 created; PDF/HTML twice-rendered digest checks PASS.")
     return 0
 

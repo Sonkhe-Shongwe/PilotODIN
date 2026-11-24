@@ -1,6 +1,6 @@
 # DevQA P2: isolated real saved-report -> FastAPI -> Tauri native Save As.
 # This test-only runner uses ONE new DevQA run allocated by qa_foundation.py.
-# Historic Verify_P2_Native_Live_Report_Local.ps1 remains untouched.
+# Historical temporary launcher is retired; managed DevQA is the only supported chain.
 [CmdletBinding()]
 param([Parameter(Mandatory=$true)][string]$QaRunDir)
 $ErrorActionPreference='Stop'
@@ -60,7 +60,7 @@ $backend=$null
 $nativeCompleted=$false
 $manifest=$null
 $oldEnv=@{}
-foreach($name in @('RL_invariant','PILOTODIN_HOME','PILOTODIN_DESKTOP_SESSION','CARGO_NET_OFFLINE','VITE_PILOTODIN_NATIVE_SMOKE',
+foreach($name in @('RL_invariant','PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DESKTOP_SESSION','CARGO_NET_OFFLINE','VITE_PILOTODIN_NATIVE_SMOKE',
  'VITE_P2_CHAIN_API_PORT','VITE_P2_CHAIN_PROJECT_ID','VITE_P2_CHAIN_REPORT_ID',
  'VITE_P2_CHAIN_HTML_NAME','VITE_P2_CHAIN_PDF_NAME','VITE_P2_CHAIN_SAVE_FOLDER')){
     $oldEnv[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
@@ -138,6 +138,7 @@ try{
     # This affects both the fixture seed and its child live Uvicorn process.
     $env:RL_invariant='1'
     $env:PILOTODIN_HOME=$isolatedWorkspaceHome
+    $env:PILOTODIN_SERVER_MODE='local-devqa'
     Remove-Item Env:\PILOTODIN_DESKTOP_SESSION -ErrorAction SilentlyContinue
     $env:CARGO_NET_OFFLINE='true'
     $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
@@ -153,7 +154,7 @@ try{
        $manifest.project_id -notmatch '^[a-f0-9]{32}$'){throw 'Synthetic report manifest invalid.'}
     $backendPort=Free-Port
     $backend=Start-Process -FilePath $pythonExe -WorkingDirectory $root -ArgumentList @(
-        '-m','uvicorn','backend.main:app','--host','127.0.0.1','--port',"$backendPort",
+        '-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1','--port',"$backendPort",
         '--lifespan','off') -NoNewWindow -PassThru -RedirectStandardOutput $backendOut -RedirectStandardError $backendErr
     $up=Check-Live-Report $backendPort $manifest.report_id
     Mark 'p2-isolated-real-fastapi' $up
