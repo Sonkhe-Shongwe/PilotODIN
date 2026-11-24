@@ -238,6 +238,7 @@ class ExportResponse(Response):
                          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                          headers={"Content-Disposition":f'attachment; filename="{transfer.filename}"',
                                   "Content-Length":str(transfer.receipt.expected_bytes),
+                                  "X-PilotODIN-Export-SHA256":transfer.receipt.sha256,
                                   "X-PilotODIN-Dataset-Version":str(transfer.version),
                                   "X-PilotODIN-Exported-Rows":str(transfer.count),
                                   "Cache-Control":"no-store","X-Content-Type-Options":"nosniff"})

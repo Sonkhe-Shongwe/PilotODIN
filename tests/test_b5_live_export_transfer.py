@@ -38,12 +38,18 @@ def receipts():
 def test_live_route_binds_exact_bytes_and_releases_scratch(project,fmt):
     pid,home,path,raw=project
     with TestClient(main.app) as client:
-        response=client.post(f"/api/projects/{pid}/quality/export",json={"version":0,"format":fmt})
+        response=client.post(f"/api/projects/{pid}/quality/export",
+                             json={"version":0,"format":fmt},
+                             headers={"Origin":"https://tauri.localhost"})
     assert response.status_code==200,response.text
     r,=receipts()
     assert r.state=="released" and r.project_id==pid and r.quality_version==0 and r.format==fmt
     assert r.expected_bytes==len(response.content)==int(response.headers["content-length"])
-    assert r.sha256==hashlib.sha256(response.content).hexdigest()
+    assert r.sha256==hashlib.sha256(response.content).hexdigest()==response.headers["x-pilotodin-export-sha256"]
+    assert response.headers["access-control-allow-origin"]=="https://tauri.localhost"
+    exposed={name.strip().lower() for name in response.headers["access-control-expose-headers"].split(",")}
+    assert {"content-disposition","content-length","x-pilotodin-dataset-version",
+            "x-pilotodin-exported-rows","x-pilotodin-export-sha256"} <= exposed
     assert response.headers["x-pilotodin-dataset-version"]=="0"
     assert response.headers["x-pilotodin-exported-rows"]=="2"
     assert list((home/"export_tmp").iterdir())==[]
@@ -286,3 +292,29 @@ def test_unconfirmed_close_preserves_scratch_and_blocks_release(project):
         assert path.read_bytes()==raw
     finally:
         original.close()
+
+
+def test_export_metadata_requires_desktop_session_and_allowed_origin(project,monkeypatch):
+    pid,home,path,raw=project
+    secret="synthetic-export-session"
+    monkeypatch.setenv("PILOTODIN_DESKTOP_SESSION",secret)
+    monkeypatch.delenv("PILOTODIN_DESKTOP_ALLOW_DEV",raising=False)
+    endpoint=f"/api/projects/{pid}/quality/export"
+    with TestClient(main.app) as client:
+        for headers,version,status in (
+            ({"Origin":"https://tauri.localhost"},0,401),
+            ({"Origin":"https://untrusted.invalid","X-PilotODIN-Session":secret},0,403),
+            ({"Origin":"https://tauri.localhost","X-PilotODIN-Session":secret},99,404),
+        ):
+            rejected=client.post(endpoint,json={"version":version},headers=headers)
+            assert rejected.status_code==status,rejected.text
+            assert "x-pilotodin-export-sha256" not in rejected.headers
+        assert receipts()==[] and not (home/"export_tmp").exists()
+        accepted=client.post(endpoint,json={"version":0},headers={
+            "Origin":"https://tauri.localhost","X-PilotODIN-Session":secret})
+    assert accepted.status_code==200,accepted.text
+    receipt,=receipts()
+    assert receipt.state=="released"
+    assert accepted.headers["x-pilotodin-export-sha256"]==receipt.sha256==hashlib.sha256(accepted.content).hexdigest()
+    assert accepted.headers["access-control-allow-origin"]=="https://tauri.localhost"
+    assert path.read_bytes()==raw and list((home/"export_tmp").iterdir())==[]

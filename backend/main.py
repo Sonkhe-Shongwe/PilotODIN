@@ -61,7 +61,9 @@ app = FastAPI(title="PilotODIN", version="0.8.0",description="Local-first intell
 app.add_middleware(CORSMiddleware,
                    allow_origin_regex=r"(?:http://(?:localhost|127\.0\.0\.1):517[3-9]|https?://tauri\.localhost|tauri://localhost)",
                    allow_credentials=False,allow_methods=["*"],allow_headers=["*"],
-                   expose_headers=["Content-Disposition"])
+                   expose_headers=["Content-Disposition","Content-Length",
+                                   "X-PilotODIN-Dataset-Version","X-PilotODIN-Exported-Rows",
+                                   "X-PilotODIN-Export-SHA256"])
 MAX_BYTES = 40 * 1024 * 1024
 
 # Desktop mode uses a randomly generated per-launch secret supplied by the
