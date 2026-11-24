@@ -38,6 +38,7 @@ on:
       - tests/test_p4_n12_g2_11_pss_scoped_source_plan.py
       - qa/p4_research/n12_pss_win32_backend.py
       - tests/test_p4_n12_g2_12_pss_win32_backend.py
+      - tests/test_p4_n12_g2_16_original_handle_bridge.py
       - tests/test_p4_n12_g2_13_source_contract.py
       - qa/p4_native/g213_generated_pss_probe.cpp
       - .github/workflows/p4-r025-g213-generated-pss.yml
@@ -101,6 +102,7 @@ jobs:
               "tests/test_p4_n12_g2_11_pss_scoped_source_plan.py",
               "qa/p4_research/n12_pss_win32_backend.py",
               "tests/test_p4_n12_g2_12_pss_win32_backend.py",
+              "tests/test_p4_n12_g2_16_original_handle_bridge.py",
               "tests/test_p4_n12_g2_13_source_contract.py",
               "qa/p4_research/n12_duplicate_handle_type.py",
               "tests/test_p4_n12_g2_15_duplicate_handle_type.py",
@@ -145,3 +147,5 @@ jobs:
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_15_duplicate_handle_type.py' -v
       - name: G2.15 fresh native source workflow disarmed, no execution
         run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_15_native_scope.py' -v
+      - name: G2.16 real Win32 duplicate API bridge and process-scope mocks, source-only
+        run: python -B -m unittest discover -s tests -p 'test_p4_n12_g2_16_original_handle_bridge.py' -v

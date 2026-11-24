@@ -31,6 +31,11 @@ PROCESS_DUP_HANDLE = 0x0040
 PROCESS_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_DUP_HANDLE
 PSS_HANDLE_HAVE_TYPE = 0x01
 PSS_HANDLE_HAVE_NAME = 0x02
+DUPLICATE_SAME_ACCESS = 0x00000002
+FILE_TYPE_UNKNOWN = 0
+FILE_TYPE_DISK = 1
+FILE_TYPE_CHAR = 2
+FILE_TYPE_PIPE = 3
 ERROR_NO_MORE_ITEMS = 259
 TYPE_NAME_MAX_BYTES = 128
 CONSENT = "I_APPROVE_ONE_N12_PSS_FILE_HANDLE_FEASIBILITY"
@@ -151,6 +156,22 @@ class _PrivateSnapshot:
     tick: int
 
 
+@dataclass(frozen=True, repr=False)
+class _PrivateDiskCandidates:
+    """Private, ephemeral PSS handle numbers. NEVER serialize or log instances.
+
+    A disk classification is not a claim about the original object at write
+    time. PSS values may be reused before DuplicateHandle can inspect them.
+    """
+    handles: tuple[int, ...]
+    snapshot_tick: int
+    total_rows: int
+    unclassified_rows: int
+
+    def __str__(self) -> str:
+        return "<G2.16 private handle candidates, no public receipt>"
+
+
 class _Win32PssApi:
     """Direct Win32 ABI, constructed only AFTER strict scope authorization."""
 
@@ -173,6 +194,10 @@ class _Win32PssApi:
             [ptr, dword, ptr, pdword])
         self.now_fn = _binding(kernel, "GetSystemTimeAsFileTime", None, [ptime])
         self.get_current_process_fn = _binding(kernel, "GetCurrentProcess", ptr, [])
+        self.duplicate_fn = _binding(
+            kernel, "DuplicateHandle", ctypes.c_int32,
+            [ptr, ptr, ptr, pptr, dword, ctypes.c_int32, dword])
+        self.file_type_fn = _binding(kernel, "GetFileType", dword, [ptr])
         self.capture_fn = _binding(
             kernel, "PssCaptureSnapshot", dword, [ptr, dword, dword, pptr])
         self.free_fn = _binding(kernel, "PssFreeSnapshot", dword, [ptr, ptr])
@@ -191,6 +216,39 @@ class _Win32PssApi:
     def close_process(self, handle: int) -> None:
         if not self.close_handle_fn(handle):
             raise PssScopeError("TARGET_PROCESS_CLOSE_UNVERIFIED")
+
+    @contextmanager
+    def duplicate(self, process_handle: int, original_handle: int) -> Iterator[int]:
+        """Duplicate one preselected foreign handle into THIS process only.
+
+        DUPLICATE_CLOSE_SOURCE must never be set: that would close WebView2's
+        original handle. Even partial/native-error returns close any LOCAL
+        duplicate before reporting a fixed-label blocker.
+        """
+        if (type(process_handle) is not int or process_handle <= 0
+                or type(original_handle) is not int
+                or not 0 < original_handle < 2**64):
+            raise PssScopeError("DUPLICATE_HANDLE_SCOPE_UNVERIFIED")
+        duplicate = ctypes.c_void_p()
+        try:
+            success = self.duplicate_fn(
+                process_handle, original_handle, self.get_current_process_fn(),
+                ctypes.byref(duplicate), 0, 0, DUPLICATE_SAME_ACCESS)
+            if not success or not duplicate.value:
+                raise PssScopeError("DUPLICATE_HANDLE_UNAVAILABLE")
+            yield int(duplicate.value)
+        finally:
+            if duplicate.value and not self.close_handle_fn(int(duplicate.value)):
+                raise PssScopeError("DUPLICATE_HANDLE_CLEANUP_UNVERIFIED")
+
+    def file_type(self, local_handle: int) -> tuple[int, int]:
+        """No file contents, filename resolution, or metadata/name queries."""
+        if type(local_handle) is not int or local_handle <= 0:
+            raise PssScopeError("FILE_TYPE_SCOPE_UNVERIFIED")
+        ctypes.set_last_error(0)  # Save true Win32 last-error through WinDLL.
+        kind = int(self.file_type_fn(local_handle))
+        error = int(ctypes.get_last_error())
+        return kind, error
 
     def identity(self, handle: int) -> tuple[int, int, str]:
         pid = self.process_id_fn(handle)
@@ -331,6 +389,58 @@ class ScopedPssApiAdapter:
         finally:
             self._api.marker_close(marker)
 
+    def collect_private_disk_candidates(self, *, pid: int, birth: int) -> _PrivateDiskCandidates:
+        """Dormant, one verified WebView2 child, at most 256 PSS handle rows.
+
+        This method is NOT integrated with N12's live native runner. A future
+        caller must separately authenticate parent/child ancestry and ETW
+        lifetime; pid/image/birth checks here are necessary but insufficient.
+
+        FILE_TYPE_UNKNOWN is unclassified, not file evidence. Duplicate
+        failure, incomplete PSS walk or cleanup failure blocks the WHOLE
+        result. Never expose private handles via a public receipt.
+        """
+        with self.open_verified_child(pid=pid, birth=birth) as process:
+            with self.snapshot(process) as capture:
+                rows = self.collect_private_rows(capture)
+                if not rows:
+                    raise PssScopeError("PSS_SNAPSHOT_ROW_LIMIT")
+                seen = set()
+                private_disk = []
+                unclassified = 0
+                for row in rows:
+                    if (type(row) is not dict
+                            or set(row) != {"handle", "type_name",
+                                            "object_type", "flags"}):
+                        raise PssScopeError("PSS_ROW_SCHEMA_UNVERIFIED")
+                    handle = row["handle"]
+                    flags = row["flags"]
+                    if (type(handle) is not int or not 0 < handle < 2**64
+                            or handle in seen
+                            or type(flags) is not int or flags & ~0x0F
+                            or flags & PSS_HANDLE_HAVE_NAME
+                            or type(row["type_name"]) is not str
+                            or type(row["object_type"]) is not int):
+                        raise PssScopeError("PSS_ROW_SCHEMA_UNVERIFIED")
+                    seen.add(handle)
+                    with self._api.duplicate(process, handle) as local:
+                        kind, error = self._api.file_type(local)
+                        if type(kind) is not int or type(error) is not int:
+                            raise PssScopeError("FILE_TYPE_SCOPE_UNVERIFIED")
+                        if kind == FILE_TYPE_UNKNOWN:
+                            # Handles for events, threads, etc. are expected to
+                            # be unclassifiable as file/pipe/console. A nonzero
+                            # GetLastError does not authenticate a disk file.
+                            unclassified += 1
+                        elif error != 0 or kind not in (
+                                FILE_TYPE_DISK, FILE_TYPE_CHAR, FILE_TYPE_PIPE):
+                            raise PssScopeError("FILE_TYPE_SCOPE_UNVERIFIED")
+                        elif kind == FILE_TYPE_DISK:
+                            private_disk.append(handle)
+                return _PrivateDiskCandidates(
+                    tuple(private_disk), capture.tick,
+                    len(rows), unclassified)
+
 
 def prepare_native_backend(env: object) -> ScopedPssApiAdapter:
     """Dormant until a NEW approved source-pinned native workflow exists.
@@ -353,6 +463,8 @@ def redacted_blocker(reason: str) -> dict:
         "PSS_HANDLE_WALK_INCOMPLETE", "PSS_PRIVATE_NAME_CAPTURE_UNEXPECTED",
         "PSS_HANDLE_ENTRY_INVALID", "PSS_HANDLE_TYPE_UNVERIFIED",
         "PSS_SNAPSHOT_ROW_LIMIT", "PSS_ROW_SCHEMA_UNVERIFIED",
+        "DUPLICATE_HANDLE_SCOPE_UNVERIFIED", "DUPLICATE_HANDLE_UNAVAILABLE",
+        "DUPLICATE_HANDLE_CLEANUP_UNVERIFIED", "FILE_TYPE_SCOPE_UNVERIFIED",
     })
     return {
         "scope": "g2-12-unactivated-windows-pss-candidate",
