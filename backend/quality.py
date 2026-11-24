@@ -17,9 +17,9 @@ from typing import Any
 import pandas as pd
 
 try:
-    from . import artifact_publication, engine, storage
+    from . import artifact_publication, dataset_publication, engine, storage
 except ImportError:
-    import artifact_publication, engine, storage
+    import artifact_publication, dataset_publication, engine, storage
 
 
 class QualityError(ValueError):
@@ -105,7 +105,7 @@ def _project(pid: str) -> dict:
     return project
 
 
-def _ensure(con, p: dict) -> None:
+def _ensure(con, p: dict, *, capture=False) -> bytes | None:
     pid = p["id"]
     state = con.execute("SELECT original_sha256 FROM quality_state WHERE project_id=?", (pid,)).fetchone()
     if state is None:
@@ -133,28 +133,32 @@ def _ensure(con, p: dict) -> None:
     except artifact_publication.PublicationError as exc:
         raise QualityError("Dataset publication integrity cannot be confirmed. Original and history preserved.", 409) from exc
     try:
-        sha = _digest(p["dataset_path"])
-    except FileNotFoundError as exc:
-        # An older workspace may hold absolute paths from before it was moved.
-        # Never silently bind a same-named replacement or reset Quality history.
+        return dataset_publication.read_verified_source(
+            p["dataset_path"], state["original_sha256"],
+            size=receipt.expected_bytes if receipt is not None else None,
+            capture=capture)
+    except (OSError, storage.WorkspaceBoundaryError, artifact_publication.PublicationError) as exc:
+        # Physical validation can wrap missing or inaccessible parents.
+        cause = exc
+        while cause.__cause__ is not None:
+            cause = cause.__cause__
+        if isinstance(cause, FileNotFoundError):
+            raise QualityError(
+                "The original dataset is missing from its recorded location. "
+                "Restore or verify the exact original source before retrying. "
+                "No Quality changes were applied.", 409) from exc
+        if isinstance(cause, PermissionError):
+            raise QualityError(
+                "The original dataset cannot be read at its recorded location. "
+                "Check file access before retrying. No Quality changes were applied.", 409) from exc
+        if isinstance(exc, artifact_publication.PublicationError):
+            raise QualityError(
+                "Uploaded source file has changed outside PilotODIN or exceeds the supported "
+                "40 MiB source limit. Restore the exact original or review its size. "
+                "Quality history cannot be replayed safely.", 409) from exc
         raise QualityError(
-            "The original dataset is missing from its recorded location. "
-            "Restore or verify the exact original source before retrying. "
-            "No Quality changes were applied.", 409,
-        ) from exc
-    except PermissionError as exc:
-        raise QualityError(
-            "The original dataset cannot be read at its recorded location. "
-            "Check file access before retrying. No Quality changes were applied.", 409,
-        ) from exc
-    if state["original_sha256"] != sha:
-        raise QualityError("Uploaded source file has changed outside PilotODIN. Quality history cannot be replayed safely.", 409)
-    if receipt is not None:
-        try:
-            if Path(p["dataset_path"]).stat().st_size != receipt.expected_bytes:
-                raise QualityError("Dataset publication integrity cannot be confirmed. Original and history preserved.", 409)
-        except OSError as exc:
-            raise QualityError("Dataset publication source cannot be confirmed.", 409) from exc
+            "The original dataset cannot be safely read at its recorded location. "
+            "Original and history preserved.", 409) from exc
 
 
 def _state(con, pid: str) -> tuple[int, list[str]]:
@@ -166,9 +170,13 @@ def _state(con, pid: str) -> tuple[int, list[str]]:
     return version, json.loads(row["operations_json"])
 
 
-def _source_df(p: dict) -> pd.DataFrame:
-    """Use the same CSV decoder and identifier typing as initial import."""
-    path, ext = p["dataset_path"], p["file_ext"]
+def _source_df(p: dict, *, raw: bytes | None = None) -> pd.DataFrame:
+    """Use the same CSV decoder and identifier typing as initial import.
+
+    Production replay supplies verified immutable bytes. The direct path
+    form is retained for isolated reader-compatibility tests.
+    """
+    path, ext = (raw if raw is not None else p["dataset_path"]), p["file_ext"]
     if ext in (".csv", ".xlsx"):
         try:
             engine.import_preflight.preflight_dataset(path, ext)
@@ -454,8 +462,11 @@ def _apply(df: pd.DataFrame, action: dict, *, expected_affected: int | None = No
     return result,affected
 
 
-def _materialize(con, p: dict, ops: list[str]) -> pd.DataFrame:
-    df = _source_df(p)
+def _materialize(con, p: dict, ops: list[str], *, raw: bytes | None = None) -> pd.DataFrame:
+    if raw is None:
+        raw = _ensure(con, p, capture=True)
+    df = _source_df(p, raw=raw)
+    del raw
     for action_id in ops:
         row = con.execute("SELECT * FROM quality_actions WHERE project_id=? AND id=?", (p["id"],action_id)).fetchone()
         if row is None: raise QualityError("Missing transformation from history", 409)
@@ -669,8 +680,10 @@ def preview(pid: str, issue_id: str | None = None, offset: int = 0, limit: int =
         version,ops=_state(con,pid)
         if expected_version is not None and expected_version!=version:
             raise QualityError('Working dataset changed. Refresh Quality before inspecting rows.',409)
-        original=_source_df(p)
-        current=_materialize(con,p,ops)
+        raw = _ensure(con, p, capture=True)
+        original = _source_df(p, raw=raw)
+        current = _materialize(con,p,ops,raw=raw)
+        del raw
         issue=None
         if issue_id is not None:
             issue=next((x for x in _issues(current) if x["id"]==issue_id),None)

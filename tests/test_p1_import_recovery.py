@@ -1341,3 +1341,56 @@ def test_b3_backup_verifier_rejects_invalid_coordination_or_origin(monkeypatch, 
         message = "Invalid original Quality history"
     with pytest.raises(maintenance_backup.SnapshotBlocked, match=message):
         maintenance_backup.verify_staged_backup(target, recorded_source_home=home)
+
+
+@pytest.mark.parametrize("ext", [".csv", ".xlsx"])
+def test_b4_quality_parser_uses_identical_verified_bytes_after_source_replaced(monkeypatch, tmp_path, ext):
+    import io
+    from backend import dataset_publication
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    frame = pd.DataFrame({"CustomerID": ["0001", "0002"], "Revenue": [12, 34]})
+    altered = pd.DataFrame({"CustomerID": ["9999", "8888"], "Revenue": [90, 80]})
+    def encode(value):
+        if ext == ".csv":
+            return value.to_csv(index=False).encode()
+        buffer = io.BytesIO()
+        value.to_excel(buffer, index=False, engine="openpyxl")
+        return buffer.getvalue()
+    original = encode(frame)
+    changed = encode(altered)
+    path = home / "datasets" / ("source" + ext)
+    path.write_bytes(original)
+    pid = storage.save_project("Source", path.name, ext, path, {},
+                               original_sha256=hashlib.sha256(original).hexdigest())
+    real = dataset_publication.read_verified_source
+    injected = []
+    def replace_after_read(*args, **kwargs):
+        raw = real(*args, **kwargs)
+        if kwargs.get("capture"):
+            injected.append(True)
+            path.write_bytes(changed)
+        return raw
+    monkeypatch.setattr(dataset_publication, "read_verified_source", replace_after_read)
+    actual, version = quality.current_data(pid)
+    assert injected == [True]
+    assert version == 0
+    assert actual["CustomerID"].tolist() == ["0001", "0002"]
+    assert actual["Revenue"].tolist() == [12, 34]
+    with pytest.raises(quality.QualityError, match="changed outside PilotODIN"):
+        quality.current_data(pid)
+
+
+def test_b4_legacy_source_over_limit_refused_before_parser(monkeypatch, tmp_path):
+    home = _temporary_store(monkeypatch, tmp_path)
+    quality._init_tables()
+    raw = _csv()
+    path = home / "datasets" / "source.csv"
+    path.write_bytes(raw)
+    pid = storage.save_project("Source", path.name, ".csv", path, {},
+                               original_sha256=hashlib.sha256(raw).hexdigest())
+    monkeypatch.setattr(artifact_publication, "MAX_DATASET_BYTES", len(raw) - 1)
+    monkeypatch.setattr(quality, "_source_df", lambda *a, **kw: pytest.fail("Oversized source parsed"))
+    with pytest.raises(quality.QualityError, match="40 MiB"):
+        quality.current_data(pid)
+    assert path.read_bytes() == raw

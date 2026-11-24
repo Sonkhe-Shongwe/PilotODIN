@@ -10,12 +10,12 @@ import stat
 
 try:
     from . import artifact_publication as ledger, engine, storage
-    from .workspace_boundary import pinned_existing_directory
+    from .workspace_boundary import pinned_existing_directory, existing_fixture_file
 except ImportError:
     import artifact_publication as ledger
     import engine
     import storage
-    from workspace_boundary import pinned_existing_directory
+    from workspace_boundary import pinned_existing_directory, existing_fixture_file
 
 _CHUNK = 1024 * 1024
 
@@ -86,34 +86,67 @@ def _write_exclusive(path, raw, owned, verify_parent):
     _identity(path, owned[path])
 
 
-def _verified_file(path, receipt, expected, verify_parent):
+def _read_verified(path, *, sha256, size, identity, verify_parent, capture=False):
+    """Shared B1/B4 bounded verified read, optionally retain the exact bytes."""
     verify_parent()
-    before = _identity(path, expected)
-    if before.st_size != receipt.expected_bytes:
-        raise ledger.PublicationError("Dataset publication size mismatch")
+    before = identity()
+    if (not before.st_ino or not 1 <= before.st_size <= ledger.MAX_DATASET_BYTES
+            or (size is not None and before.st_size != size)):
+        raise ledger.PublicationError("Dataset publication size mismatch or supported limit exceeded")
     digest = hashlib.sha256()
     count = 0
+    parts = [] if capture else None
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
     with os.fdopen(os.open(path, flags), "rb") as source:
         opened = os.fstat(source.fileno())
         if not _same_bytes_metadata(before, opened):
             raise ledger.PublicationError("Dataset publication identity changed")
         while True:
-            chunk = source.read(_CHUNK)
+            chunk = source.read(min(_CHUNK, before.st_size - count + 1))
             if not chunk:
                 break
             count += len(chunk)
-            if count > receipt.expected_bytes:
+            if count > before.st_size:
                 raise ledger.PublicationError("Dataset publication size mismatch")
             digest.update(chunk)
+            if parts is not None:
+                parts.append(chunk)
         if not _same_bytes_metadata(opened, os.fstat(source.fileno())):
             raise ledger.PublicationError("Dataset publication bytes changed")
-    after = _identity(path, before)
+    after = identity()
     verify_parent()
-    if (not _same_bytes_metadata(before, after) or count != receipt.expected_bytes
-            or digest.hexdigest() != receipt.sha256):
+    if (not _same_bytes_metadata(before, after) or count != before.st_size
+            or digest.hexdigest() != sha256):
         raise ledger.PublicationError("Dataset publication digest mismatch")
+    return after, b"".join(parts) if parts is not None else None
+
+
+def _verified_file(path, receipt, expected, verify_parent):
+    after, _ = _read_verified(path, sha256=receipt.sha256, size=receipt.expected_bytes,
+                              identity=lambda: _identity(path, expected), verify_parent=verify_parent)
     return after
+
+
+def read_verified_source(path, sha256, *, size=None, capture=False):
+    """Verify a recorded source, including legacy exact-digest relinks.
+
+    Read only the exact recorded absolute path, not a guessed basename.
+    Retain no raw bytes for metadata-only checks. Physical path checks and
+    digest verification are not a sandbox against hostile OS mutation.
+    """
+    path = Path(path)
+    if not path.is_absolute() or ".." in path.parts:
+        raise ledger.PublicationError("Invalid recorded dataset path")
+    with pinned_existing_directory(path.parent) as verify_parent:
+        def identity():
+            # Preserve missing/unreadable error category for Quality recovery.
+            path.lstat()
+            if path.parent == storage.HOME / "datasets":
+                storage.check_write_path(path)
+            return existing_fixture_file(path)
+        _, raw = _read_verified(path, sha256=sha256, size=size, identity=identity,
+                                verify_parent=verify_parent, capture=capture)
+        return raw
 
 
 def _sync_parent(parent, verify_parent):

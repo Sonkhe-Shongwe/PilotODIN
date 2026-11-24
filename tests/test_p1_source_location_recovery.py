@@ -85,11 +85,11 @@ def test_unreadable_original_is_a_safe_conflict(monkeypatch, tmp_path):
     client, pid, source = _fixture(monkeypatch, tmp_path)
     original_state = _state(pid)
 
-    def cannot_open(path):
+    def cannot_open(path, *args, **kwargs):
         assert path == str(source)
         raise PermissionError("private machine path must not be returned")
 
-    monkeypatch.setattr(quality, "_digest", cannot_open)
+    monkeypatch.setattr(quality.dataset_publication, "read_verified_source", cannot_open)
     response = client.get(f"/api/projects/{pid}/live-profile")
     assert response.status_code == 409, response.text
     assert "cannot be read" in response.json()["detail"]
