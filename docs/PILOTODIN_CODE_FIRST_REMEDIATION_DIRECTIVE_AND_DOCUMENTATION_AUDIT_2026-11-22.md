@@ -1,6 +1,9 @@
 # PilotODIN 1.0 | Code-first remediation directive and documentation audit
 
-**22 November 2026 | ACTIVE WORK PRIORITY | SOURCE AUDIT, NOT A CODE FIX**
+**24 November priority reconciliation:** The owner has selected the [R02.5 G2 native-evidence closure workstream](./TAB_MIGRATION_HANDOFF_CURRENT.md) as the immediate task. This 22 November directive continues to govern code-first root-cause triage and preserves the general defect register. CF-01 remains the previously queued general code task, not the active next action. The latest actual baseline completed BLOCKED; no new execution permission follows from this note. The historical directive below is retained, not a competing instruction.
+
+
+**22 November 2026 | HISTORICAL GENERAL REMEDIATION PRIORITY | SOURCE AUDIT, NOT A CODE FIX**
 
 **Reviewed source:** [ad48bc58](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ad48bc58e7d38757c4eac608be773e3f9bebee2e) on feature/live-dev-workspace-20261023. The owner instructed a top-to-bottom audit of defects, dangerous code and poor implementation choices, then requested this documentation reconciliation.
 
@@ -73,7 +76,7 @@ For every package: (1) find and explain the root cause; (2) produce the smallest
 
 **Hierarchy:** The original 22 October Master Reconstruction Blueprint governs product behavior; the phase policy and official P4 scorecard govern scope and acceptance; this directive governs *engineering work priority and defect triage*; historical N12 and QA logs remain immutable evidence.
 
-## 5. Next action and permission boundary
+## 5. Historical general-backlog next action and permission boundary
 
 **R1 / CF-02 completed for new CSV imports at product commit `502d84f`, verified by corrected exact-source P1 CI #45057052836. Next code task: R1 / CF-01 pre-parse CSV/XLSX input limits.** Use disposable generated inputs and measure bounded CPU/memory; do not modify original projects or start native collectors. A correction may require routine source-only product tests, but it does not authorize Windows native collection.
 

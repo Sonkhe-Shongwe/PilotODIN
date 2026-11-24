@@ -1,5 +1,8 @@
 # PilotODIN — Consolidated Feature Inventory & Complexity-Last Roadmap
 
+> **24 November 2026 current pointer:** P4 Target Intelligence remains active; R02.5 G2 is the owner's immediate focus, with four-gate delivery 1/4 (25%) and official P4 14/20 (70%). Read the [current migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md) before continuing. This roadmap governs sequencing, not live next-action instructions. Earlier phase priorities below are historical.
+
+
 > **Current phase, 13 November 2026.** P4 is active. P1, P2 and P3 have bounded development closure records. Use the [current status](./PROJECT_STATUS_CURRENT.md) for phase disposition and the [current handoff](./SESSION_HANDOFF_CURRENT.md) for the next action. The roadmap below preserves the complexity-last sequence and historical checkpoints.
 
 

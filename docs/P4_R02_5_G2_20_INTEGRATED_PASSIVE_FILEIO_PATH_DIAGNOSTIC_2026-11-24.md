@@ -1,6 +1,9 @@
 # R02.5 G2.20 | Integrate bounded passive name-epoch evidence in actual no-CDP FileIO reducer
 
-24 November 2026. Source-only change. No native execution or new permission.
+**CURRENT CONTINUATION (24 November 2026, after G2.20):** Start with the [compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). The owner has selected R02.5 G2 closure as the active workstream; general code-first remediation remains an important separate backlog, not the immediate next action. The [actual-app diagnostic #45342345634](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45342345634) completed with BLOCKED evidence, not a build or startup crash. Both calibration bookends and write/restore were corroborated. Resolve the measured process-lifetime/child-evidence blockers first, then destination-family attribution and the independent original-file-handle proof. No additional native capture is authorised by this documentation audit. G2 OPEN, four-gate **1/4 (25%)**, P4 **14/20 (70%)**, N12 **0/2**, official R02.5 **0/5**. Earlier instructions below are historical where they conflict with this checkpoint.
+
+
+24 November 2026. Initial source-only change; subsequently the owner separately approved one native baseline, now completed BLOCKED. The terminal outcome below governs the current status.
 
 ## Why this is different from another standalone feasibility checkpoint
 
@@ -14,13 +17,13 @@ The new fixed-schema receipt reconciles strict network missing write-path count,
 
 G2 is **not complete**. The original file-handle-to-FileObject/IRP relation remains unproved. G2.18's socket-unsafe foreign duplication route remains blocked. The current passive lexical path mechanism is useful for prioritizing G3 investigations, not sufficient for the existing G2 original-file-handle or full-coverage requirements.
 
-Next decisive step is a single, separately approved, source-pinned disposable hosted Windows baseline with the integrated reducer, existing calibration and write/restore arms, no arbitrary handle duplication, no owner data, no installers, no raw evidence upload. This can establish which original blockers actually remain. It cannot be promised to close G2 if the original file-handle witness is absent. Consumed native permissions are not reusable. Do not change G2 exit criteria without an explicit review.
+At the original source checkpoint, the proposed decisive step was a single, separately approved, source-pinned disposable hosted Windows baseline with the integrated reducer, existing calibration and write/restore arms, no arbitrary handle duplication, no owner data, no installers, no raw evidence upload. This can establish which original blockers actually remain. It cannot be promised to close G2 if the original file-handle witness is absent. Consumed native permissions are not reusable. Do not change G2 exit criteria without an explicit review.
 
 Scores unchanged: four-gate 1/4 (25%), official R02.5 0/5, N12 0/2, P4 14/20 (70%).
 
 ## Exact source verification
 
-[Source `8c2d456a1978145d10af1da86caf97053b07a1b3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8c2d456a1978145d10af1da86caf97053b07a1b3) passed [R02.5 source-only CI #45341086645](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45341086645), including regressions for unchanged strict gap/violation counts, candidate count reconciliation, privacy-safe fixed labels, loss blocking and pair-limit exhaustion. No actual native Windows capture was executed. G2 remains OPEN. The source is ready for a separately scoped baseline approval; this is NOT an assurance of G2 exit.
+[Source `8c2d456a1978145d10af1da86caf97053b07a1b3`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/8c2d456a1978145d10af1da86caf97053b07a1b3) passed [R02.5 source-only CI #45341086645](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45341086645), including regressions for unchanged strict gap/violation counts, candidate count reconciliation, privacy-safe fixed labels, loss blocking and pair-limit exhaustion. No native capture was executed by that source-only CI. The subsequent actual baseline is recorded below and remains BLOCKED. G2 is OPEN.
 
 ## Owner-approved native execution
 

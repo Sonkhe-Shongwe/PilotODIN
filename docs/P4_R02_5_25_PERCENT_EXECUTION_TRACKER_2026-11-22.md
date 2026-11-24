@@ -1,5 +1,8 @@
 # PilotODIN R02.5 | GitHub-first remaining-work 25% execution ledger
 
+**CURRENT CONTINUATION (24 November 2026, after G2.20):** Start with the [compact migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). The owner has selected R02.5 G2 closure as the active workstream; general code-first remediation remains an important separate backlog, not the immediate next action. The [actual-app diagnostic #45342345634](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45342345634) completed with BLOCKED evidence, not a build or startup crash. Both calibration bookends and write/restore were corroborated. Resolve the measured process-lifetime/child-evidence blockers first, then destination-family attribution and the independent original-file-handle proof. No additional native capture is authorised by this documentation audit. G2 OPEN, four-gate **1/4 (25%)**, P4 **14/20 (70%)**, N12 **0/2**, official R02.5 **0/5**. Earlier instructions below are historical where they conflict with this checkpoint.
+
+
 **Initial GitHub ledger: 22 November 2026.** This is a *new* four-gate engineering-delivery score, not the 20-point P4 acceptance register, N12 results or the earlier 3/4 file-mutation preparation tracker.
 
 ## Rules for incrementing
@@ -129,8 +132,8 @@
 
 ## Last verified milestone
 
-- **G1 complete: 25%.** Published source integrates *tests and contract semantics*, **not a native path-credit hook**. The strict no-CDP FileIO decision continues to block unresolved WebView2 writes.
-- **Next gate G2: 25% -> 50%.** Requires a fresh, separately approved hosted Windows native capture, original file handles, independently proven writer/FileObject/IRP/path joins, calibrations and loss review. Do not attempt under source-only standing authority.
+- **G1 complete: 25%. G2.20 actual native baseline completed BLOCKED:** [#45342345634](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45342345634). Both calibration bookends and write/restore corroborated; original app/launcher process and child inventory blocked, original file-handle and physical path proof missing. No additional gate credit.
+- **Next proposed G2.21:** diagnose the actual Sysmon exit and private child evidence blockers from this receipt before another capture. Existing G2 exit criteria remain binding. Read the [migration handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). No new approval exists; all earlier one-use permissions are consumed.
 
 ## Source references
 
