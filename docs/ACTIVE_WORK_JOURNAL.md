@@ -7,20 +7,20 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-C2-OWNED-HOST-INTEGRATION-20261124 |
-| State | PUBLISHED |
+| State | AWAITING_APPROVAL |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 98a6e9916eece8cb26483fdc382e2cca44ad8e24 |
 | Product baseline | 388b35750316b9c5a060d603c35c7d728d5c0890 (runtime verified); corrected test-only fixture 1d23ea139762d94d25e689c4c3489b72fb34acc9 |
-| Scope | Ignored actual private pipe, Python broker/session, Windows shell job, supervisor and writer lifecycle integration; no real app, network or model. |
+| Scope | One Windows hosted x64 locked all-targets type-check and one exact ignored native integration fixture (real owned pipe, inert Python broker/session, actual shell job leader and descendant, joined report/export writers, STOP), then disarm. Generated runner-only roots. |
 | Operation ID | C1-C2-OWNED-HOST-INTEGRATION-20261124-prepare-once |
-| Operation state | ISSUED |
-| Intended files | qa/c1_c2_owned_host_fixture.py; frontend/src-tauri/src/resource_integration_fixture.rs; .github/workflows/p4-c1-c2-owned-host-once.yml; qa/c1_c2_owned_host_preflight.rb; continuity docs |
-| Approval | Previous one-use 40-test native run CONSUMED, SUCCESS and disarmed. New native compilation or process fixture run requires fresh scoped approval. Standing source only; no installer, model, network, owner data or activation. |
-| Verification | Exact 388b357 Windows all-targets check and 40/40 synthetic tests SUCCESS, disarm SUCCESS native SKIPPED. Test-only dev feature locked metadata PASS #45494710822, 457 packages unchanged. New ignored fixture not compiled or executed. Production gate false. |
-| Pending runs | Disabled owned-host proposal parse-only run to reconcile; native must skip. |
+| Operation state | RECONCILED |
+| Intended files | .github/workflows/p4-c1-c2-owned-host-once.yml; qa/c1_c2_owned_host_preflight.rb; continuity docs |
+| Approval | NOT GRANTED. Prior 40-test approval consumed and disarmed. Fresh explicit one-use approval required for exact 1d23ea1 locked compilation/dependency resolution and one ignored test with actual inert Python child processes, private pipe/owned Windows job observation/termination and generated fixture files. No real desktop launch, model, cloud, personal files, installer, activation or executable upload; no unrestricted retry. |
+| Verification | Exact 5af71b8 P2/P4/metadata SUCCESS; fixture-only path correction 1d23ea1; disabled workflow 27bf2ec, run #45495528020 SUCCESS, parse 138804863330 SUCCESS, native 138805056747 SKIPPED. Disabled SHA256 0e21c3907fed5e3924122ebe2ba758489f8785a62b0a8076b599c279afc9f08e; prospective armed SHA256 52ec6930ec06e6d869047187e05e9c4a0663df5a45af6e0fc5773c07bd94168c. Both complete YAML variants, four PowerShell bodies, nine source identities, Python AST and exact ignored test validated; no fixture compile/run. |
+| Pending runs | None. No native execution issued. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Preserve ordinary drive spelling after canonical identity comparison, strengthen fixture boundaries. Publish corrected test-only source, then disabled exact one-use workflow and source-only preflight. No native compilation, process launch or dependency acquisition under this preparation. Reconcile before fresh approval. |
-| Resume after closure | C1/C2 closure audit, C3–C5; D separately approved. |
+| Recovery action | Stop before arming until explicit owner approval. If approved, write ahead, verify HEAD, pinned identities, exact disabled/armed fingerprints and marker C1-C2-OWNED-HOST-SYNTHETIC-20261124-ONE-USE, execute attempt 1 once and disarm after confirmed dispatch. Reconcile terminal actual evidence; assess C1/C2 exit against spec, no automatic activation or closure. If failure, preserve logs, no native retry without fresh approval. |
+| Resume after closure | C3–C5; D separately approved. |
 
 ## Prior operation
 
