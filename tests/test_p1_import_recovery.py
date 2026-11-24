@@ -1596,3 +1596,54 @@ def test_b4_receipt_preview_refuses_source_change_before_publication(monkeypatch
     with storage.connect() as con:
         assert con.execute("SELECT COUNT(*) FROM quality_approval_receipts WHERE project_id=?",(pid,)).fetchone()[0]==0
         assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?",(pid,)).fetchone()[0]==0
+
+
+@pytest.mark.parametrize("fault", ["none", "source", "revision", "decision", "version", "archive", "action"])
+def test_b4_quality_audit_stages_without_database_lock_and_fences_state(monkeypatch,tmp_path,fault):
+    import json
+    from backend import reports
+    pid,path,raw=_b4_autopilot_fixture(monkeypatch,tmp_path)
+    batch=quality.autopilot(pid,0)
+    reports.init()
+    original=quality._issues
+    injected=[]
+    def stage(frame):
+        result=original(frame)
+        with storage.connect() as con:
+            con.execute("PRAGMA busy_timeout=200")
+            con.execute("BEGIN IMMEDIATE")
+            if fault in ("revision","archive"):
+                con.execute("INSERT INTO project_lifecycle VALUES(?,?,?) ON CONFLICT(project_id) DO UPDATE SET revision=excluded.revision,archived_at=excluded.archived_at",
+                            (pid,1,storage.now() if fault=="archive" else None))
+            elif fault=="decision":
+                con.execute("INSERT INTO quality_decisions VALUES(?,?,?,?)",
+                            (pid,"later-decision","rejected",storage.now()))
+            elif fault=="version":
+                quality._add_version(con,pid,[],"restore",{"synthetic":True})
+            elif fault=="action":
+                con.execute("UPDATE quality_actions SET source='tampered' WHERE id=?",
+                            (batch["applied"][0]["id"],))
+        if fault=="source":
+            path.write_bytes(raw.replace(b",80",b",81"))
+        injected.append(fault)
+        return result
+    monkeypatch.setattr(quality,"_issues",stage)
+    if fault=="none":
+        result=reports.capture_quality(pid,2)
+        assert result["dataset_version"]==2
+        with storage.connect() as con:
+            row=con.execute("SELECT * FROM report_quality_audits_v1 WHERE id=?",(result["id"],)).fetchone()
+        audit=json.loads(row["snapshot_json"])
+        assert row["sha256"]==hashlib.sha256(row["snapshot_json"].encode()).hexdigest()
+        assert audit["summary"]["Approved working corrections active"]==2
+        assert audit["source_original_sha256"]==hashlib.sha256(raw).hexdigest()
+        assert '"preview"' not in row["snapshot_json"] and '"proposal"' not in row["snapshot_json"]
+    else:
+        with pytest.raises(reports.ReportError,match="changed|archived") as err:
+            reports.capture_quality(pid,2)
+        assert err.value.status==409
+    assert injected==[fault]
+    with storage.connect() as con:
+        assert con.execute("SELECT COUNT(*) FROM report_quality_audits_v1 WHERE project_id=?",(pid,)).fetchone()[0]==(1 if fault=="none" else 0)
+        assert con.execute("SELECT COUNT(*) FROM quality_actions WHERE project_id=?",(pid,)).fetchone()[0]==2
+    assert path.read_bytes()==(raw.replace(b",80",b",81") if fault=="source" else raw)

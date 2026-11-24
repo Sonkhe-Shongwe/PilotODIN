@@ -162,94 +162,87 @@ def capture_quality(project_id: str, expected_version: int) -> dict:
     """Explicitly freeze a read-only, aggregate Quality audit from one approved version.
 
     No browser-supplied findings or per-record previews enter this snapshot.
-    Holding the single SQLite write transaction while reading the source and
-    its version prevents a concurrent approval from mixing audit states.
+    Stage the aggregate from a coherent metadata snapshot and verified bytes
+    outside SQLite locks; recheck the exact state before publishing evidence.
     """
     p = storage.get_project(project_id)
     if p is None:
         raise ReportError('Project does not exist', 404)
     if isinstance(expected_version, bool) or not isinstance(expected_version, int) or expected_version < 0:
         raise ReportError('Expected dataset version must be nonnegative', 422)
-    with storage.connect() as con:
-        con.execute('BEGIN IMMEDIATE')
-        try:
+    try:
+        metadata, frame, identity = quality._stage_current(project_id, expected_version)
+        version, active = metadata['version'], metadata['ops']
+        issues = quality._issues(frame)
+        decisions = quality._snapshot_decisions(metadata)
+        original_digest = metadata['contract'][0]
+        current_event = metadata['version_row']
+        captured = storage.now()
+        # Proposals, detailed raw evidence and record previews are excluded.
+        safe_explanations = {
+            'exact_duplicates':'Repeated records may be legitimate; assess business grain before any removal.',
+            'missing':'Missing or blank values require domain review before imputation.',
+            'identifier':'Possible identifier; preserve for traceability where needed.',
+            'outliers':'Values outside IQR fences may be legitimate extreme observations.',
+            'whitespace':'Review surrounding whitespace before normalization.',
+            'ambiguous_dates':'Review ambiguous day/month ordering before conversion.',
+            'numeric_text':'Review numerical text formatting and measurement units.',
+            'case_variant':'Possible capitalization mismatch; examine in Quality before merging.',
+            'spelling':'Possible spelling mismatch; examine in Quality before merging.',
+        }
+        findings = [{
+            'kind': item['kind'],
+            'column': item['column'],
+            'affected_rows': int(item['affected_rows']),
+            'severity': item['severity'],
+            'decision': decisions.get(item['id'], 'pending'),
+            'title': item['title'],
+            'detail': safe_explanations.get(item['kind'], 'Review this finding in Quality before treatment.'),
+        } for item in issues[:MAX_QUALITY_FINDINGS]]
+        raw = {
+            'dataset_version': version,
+            'source_original_sha256': original_digest,
+            'captured_at': captured,
+            'summary': {
+                'Rows in approved dataset': int(len(frame)),
+                'Columns in approved dataset': int(len(frame.columns)),
+                'Quality findings detected': int(len(issues)),
+                'Findings shown': len(findings),
+                'Approved working corrections active': int(len(active)),
+                'Version event': current_event['event'],
+                'Source original SHA-256': original_digest,
+            },
+            'findings': findings,
+            'note': ('Read-only audit of the selected approved dataset version. '
+                     'Findings are screening observations, not confirmed errors; '
+                     'no corrections were applied by this capture.'),
+            'limitations': [
+                ('Only the first 35 findings are displayed; counts cover all detected findings.'
+                 if len(issues) > MAX_QUALITY_FINDINGS
+                 else 'All detected findings are included for this version.'),
+                'No record-level values, row identifiers, source previews or proposed replacement values are exported.',
+                'Working corrections shown are version-scoped, and the uploaded source remains immutable.',
+            ],
+        }
+        canonical = json.dumps(raw, sort_keys=True, ensure_ascii=False,
+                               allow_nan=False, separators=(',',':'))
+        if len(canonical.encode('utf-8')) > MAX_SNAPSHOT:
+            raise ReportError('Quality audit is too large to capture safely', 422)
+        digest = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+        ident = storage.uid()
+        del frame
+        with storage.connect() as con:
+            con.execute('BEGIN IMMEDIATE')
             project_lifecycle.require_active_for_write(con, project_id)
-            quality._ensure(con, p)
-            version, active = quality._state(con, project_id)
-            if version != expected_version:
-                raise ReportError('Dataset version changed. Refresh Quality before capturing an audit.', 409)
-            frame = quality._materialize(con, p, active)
-            issues = quality._issues(frame)
-            decisions = quality._decisions(con, project_id)
-            original_digest = con.execute(
-                'SELECT original_sha256 FROM quality_state WHERE project_id=?',
-                (project_id,)
-            ).fetchone()['original_sha256']
-            current_event = con.execute(
-                'SELECT event,created_at FROM quality_versions WHERE project_id=? AND version=?',
-                (project_id,version)
-            ).fetchone()
-            captured = storage.now()
-            # Proposals, detailed raw evidence and record previews are excluded.
-            safe_explanations = {
-                'exact_duplicates':'Repeated records may be legitimate; assess business grain before any removal.',
-                'missing':'Missing or blank values require domain review before imputation.',
-                'identifier':'Possible identifier; preserve for traceability where needed.',
-                'outliers':'Values outside IQR fences may be legitimate extreme observations.',
-                'whitespace':'Review surrounding whitespace before normalization.',
-                'ambiguous_dates':'Review ambiguous day/month ordering before conversion.',
-                'numeric_text':'Review numerical text formatting and measurement units.',
-                'case_variant':'Possible capitalization mismatch; examine in Quality before merging.',
-                'spelling':'Possible spelling mismatch; examine in Quality before merging.',
-            }
-            findings = [{
-                'kind': item['kind'],
-                'column': item['column'],
-                'affected_rows': int(item['affected_rows']),
-                'severity': item['severity'],
-                'decision': decisions.get(item['id'], 'pending'),
-                'title': item['title'],
-                'detail': safe_explanations.get(item['kind'], 'Review this finding in Quality before treatment.'),
-            } for item in issues[:MAX_QUALITY_FINDINGS]]
-            raw = {
-                'dataset_version': version,
-                'source_original_sha256': original_digest,
-                'captured_at': captured,
-                'summary': {
-                    'Rows in approved dataset': int(len(frame)),
-                    'Columns in approved dataset': int(len(frame.columns)),
-                    'Quality findings detected': int(len(issues)),
-                    'Findings shown': len(findings),
-                    'Approved working corrections active': int(len(active)),
-                    'Version event': current_event['event'],
-                    'Source original SHA-256': original_digest,
-                },
-                'findings': findings,
-                'note': ('Read-only audit of the selected approved dataset version. '
-                         'Findings are screening observations, not confirmed errors; '
-                         'no corrections were applied by this capture.'),
-                'limitations': [
-                    ('Only the first 35 findings are displayed; counts cover all detected findings.'
-                     if len(issues) > MAX_QUALITY_FINDINGS
-                     else 'All detected findings are included for this version.'),
-                    'No record-level values, row identifiers, source previews or proposed replacement values are exported.',
-                    'Working corrections shown are version-scoped, and the uploaded source remains immutable.',
-                ],
-            }
-            canonical = json.dumps(raw, sort_keys=True, ensure_ascii=False,
-                                   allow_nan=False, separators=(',',':'))
-            if len(canonical.encode('utf-8')) > MAX_SNAPSHOT:
-                raise ReportError('Quality audit is too large to capture safely', 422)
-            digest = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
-            ident = storage.uid()
+            quality._verify_staged_write(con, project_id, metadata, identity)
             con.execute(
                 '''INSERT INTO report_quality_audits_v1
                    (id,project_id,dataset_version,snapshot_json,sha256,captured_at)
                    VALUES(?,?,?,?,?,?)''',
                 (ident, project_id, version, canonical, digest, captured)
             )
-        except (quality.QualityError, project_lifecycle.ProjectLifecycleError) as exc:
-            raise ReportError(str(exc), exc.status) from exc
+    except (quality.QualityError, project_lifecycle.ProjectLifecycleError) as exc:
+        raise ReportError(str(exc), exc.status) from exc
     return {'id':ident,'project_id':project_id,'dataset_version':version,
             'source_snapshot_sha256':digest,'captured_at':captured,
             'findings_total':len(issues),'findings_shown':len(findings)}
