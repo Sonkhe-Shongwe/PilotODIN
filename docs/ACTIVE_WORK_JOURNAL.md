@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C1-RESOURCE-ADMISSION-20261124 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e17d9caef9044f5d90f14916233a7882dd5d2ea9 |
 | Product baseline | bbb328fbea7fcee4bf583dcd80f9e932c51b7c92 |
 | Scope | Source-only host supervisor composition and terminal acknowledgement fence. Connect private demand/grant sequencing to exact joined startup and retained group exit, including STOP with outstanding grant. Keep production registration inactive until runner/frontend and compatibility are coherent. |
 | Operation ID | C1-C2-INTEGRATION-20261124-supervisor-drive |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | frontend/src-tauri/src/resource_supervisor.rs; frontend/src-tauri/src/resource_shell.rs; continuity docs |
 | Approval | Standing P4 source authority. No native build/run, model operations, installer, owner data, OS changes or activation of incomplete bridge. |
 | Verification | Previous product SHA has zero CI runs; all 82 workflow definitions unchanged since reviewed 81de01d, compare confirms only continuity docs and resource_shell.rs changed. Planned paths match no automatic workflow. Static review and uncompiled synthetic Rust fixtures only. |

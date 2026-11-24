@@ -27,6 +27,22 @@ struct ExitWitnesses {
 const JOB_EXIT_LIMIT: Duration = Duration::from_secs(4);
 const JOB_FAULT: &str = "Owned process group exit is unconfirmed";
 
+fn final_command(command: Command, has_grant: bool, stop_sent: bool) -> bool {
+    match command {
+        Command::Stop => !has_grant,
+        Command::Release(_) => stop_sent,
+        _ => false,
+    }
+}
+
+fn final_reply_matches(reply: &Reply, final_expected: bool) -> bool {
+    final_expected && matches!(reply, Reply::AdmissionStopped | Reply::Released)
+}
+
+fn allow_terminal_close(final_expected: bool, leader_terminated: bool) -> bool {
+    final_expected && leader_terminated
+}
+
 #[derive(Default)]
 struct ExitFence {
     deadline: Option<Instant>,
@@ -172,8 +188,10 @@ pub(crate) struct ShellChannel {
     transport: Transport,
     writer: Writer<CommandChild>,
     leader_terminated: bool,
+    leader_success: bool,
     receiver_closed: bool,
     event_fault: bool,
+    final_reply_expected: bool,
     #[cfg(windows)]
     cleanup: OwnedJobDrain,
     #[cfg(windows)]
@@ -189,7 +207,8 @@ impl ShellChannel {
         #[cfg(windows)]
         if !cleanup.admission_open() { transport.lost(); }
         Self { transport, writer: Writer::new(child),
-            leader_terminated: false, receiver_closed: false, event_fault: false,
+            leader_terminated: false, leader_success: false, receiver_closed: false,
+            event_fault: false, final_reply_expected: false,
             #[cfg(windows)]
             cleanup,
             #[cfg(windows)]
@@ -248,10 +267,16 @@ impl ShellChannel {
                 self.transport.stdout(&bytes, now)
             },
             CommandEvent::Stderr(_) => Ok(None),
-            CommandEvent::Terminated(_) => {
+            CommandEvent::Terminated(payload) => {
                 self.leader_terminated = true;
-                self.transport.lost();
-                Err(FAULT)
+                self.leader_success = payload.code == Some(0);
+                // A final STOP or RELEASE may be flushed before the writer
+                // thread joins and followed immediately by process exit.
+                // Keep the pending reply/deadline intact, never invent it.
+                if self.final_reply_expected { Ok(None) } else {
+                    self.transport.lost();
+                    Err(FAULT)
+                }
             },
             CommandEvent::Error(_) => {
                 self.event_fault = true;
@@ -268,7 +293,9 @@ impl ShellChannel {
 
     pub(crate) fn receiver_closed(&mut self) {
         self.receiver_closed = true;
-        self.transport.lost();
+        if !allow_terminal_close(self.final_reply_expected, self.leader_terminated) {
+            self.transport.lost();
+        }
     }
 
     pub(crate) fn writer_pending(&self) -> bool { self.writer.pending() }
@@ -318,17 +345,25 @@ pub(crate) struct ShellDriver {
     receiver: tauri::async_runtime::Receiver<CommandEvent>,
     reply: Option<Reply>,
     closed: bool,
+    stop_sent: bool,
+    final_ack: bool,
 }
 
 impl ShellDriver {
     pub(crate) fn new(channel: ShellChannel,
                       receiver: tauri::async_runtime::Receiver<CommandEvent>) -> Self {
-        Self { channel, receiver, reply: None, closed: false }
+        Self { channel, receiver, reply: None, closed: false, stop_sent: false, final_ack: false }
     }
 
     pub(crate) fn begin(&mut self, command: Command, now: Instant) -> Result<(), &'static str> {
-        if self.reply.is_some() || self.closed { return Err(FAULT); }
-        self.channel.begin(command, now)
+        if self.reply.is_some() || self.closed || self.channel.final_reply_expected {
+            return Err(FAULT);
+        }
+        let terminal = final_command(command, self.channel.has_grant(), self.stop_sent);
+        self.channel.begin(command, now)?;
+        if matches!(command, Command::Stop) { self.stop_sent = true; }
+        self.channel.final_reply_expected = terminal;
+        Ok(())
     }
 
     fn record(&mut self, result: Result<Option<Reply>, &'static str>) {
@@ -359,7 +394,6 @@ impl ShellDriver {
                     if self.receiver.is_closed() && self.receiver.is_empty() {
                         self.closed = true;
                         self.channel.receiver_closed();
-                        self.reply = None;
                     }
                     break;
                 }
@@ -374,7 +408,11 @@ impl ShellDriver {
 
     pub(crate) fn take_reply(&mut self) -> Option<Reply> {
         if self.channel.faulted() { return None; }
-        self.reply.take()
+        let reply = self.reply.take();
+        if reply.as_ref().is_some_and(|reply| final_reply_matches(reply, self.channel.final_reply_expected)) {
+            self.final_ack = true;
+        }
+        reply
     }
 
     pub(crate) fn writer_pending(&self) -> bool { self.channel.writer_pending() }
@@ -388,6 +426,20 @@ impl ShellDriver {
         self.channel.begin_owned_cleanup()
     }
 
+    #[cfg(windows)]
+    pub(crate) fn graceful_exit_observable(&self) -> bool {
+        self.final_ack && !self.channel.faulted() && self.channel.leader_terminated &&
+            self.channel.leader_success && self.closed && !self.channel.writer_pending()
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn begin_graceful_exit_observation(&mut self) -> Result<(), &'static str> {
+        if !self.graceful_exit_observable() { return Err(FAULT); }
+        // Do not terminate a normally exiting engine to manufacture a
+        // graceful shutdown result. Close admission and observe its job.
+        self.channel.cleanup.fence.begin(Instant::now())
+    }
+
     /// Continue draining the retained receiver and reaping the actual writer
     /// even after protocol fault. The returned boolean certifies only this
     /// owned engine job, never an inference grant or another generation.
@@ -396,6 +448,30 @@ impl ShellDriver {
         -> Result<bool, &'static str> {
         let _ = self.poll(Instant::now());
         self.channel.poll_owned_cleanup(startup_joined)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn poll_graceful_exit(&mut self) -> Result<bool, &'static str> {
+        self.poll(Instant::now())?;
+        if !self.graceful_exit_observable() { return Err(FAULT); }
+        // CommandChild has kill_on_drop. Do not drop it while descendants
+        // remain active on this graceful path. Observe zero first under the
+        // same deadline, then drop the child and independently query again.
+        let cleanup = &mut self.channel.cleanup;
+        let deadline = cleanup.fence.deadline.ok_or(JOB_FAULT)?;
+        if cleanup.fence.faulted || Instant::now() >= deadline {
+            return cleanup.fence.fail();
+        }
+        if !self.channel.child_dropped {
+            let active = match cleanup.job.as_ref().map(|job| job.active_processes()) {
+                Some(Ok(value)) => value,
+                _ => return cleanup.fence.fail(),
+            };
+            if Instant::now() >= deadline { return cleanup.fence.fail(); }
+            if active != 0 { return Ok(false); }
+        }
+        // The engine spawn was synchronous before this owner was created.
+        self.channel.poll_owned_cleanup(true)
     }
 
     pub(crate) fn take_for_cleanup(&mut self) -> Option<CommandChild> {
@@ -486,6 +562,27 @@ mod tests {
     use super::*;
     use std::sync::mpsc;
     use std::time::Duration;
+
+    #[test]
+    fn only_stop_without_grant_or_release_after_stop_is_terminal() {
+        use crate::resource_wire::ExitEvidence;
+        assert!(final_command(Command::Stop, false, false));
+        assert!(!final_command(Command::Stop, true, false));
+        assert!(!final_command(Command::Release(ExitEvidence::Exited), true, false));
+        assert!(final_command(Command::Release(ExitEvidence::Exited), true, true));
+        assert!(!final_command(Command::Drain, true, true));
+    }
+
+    #[test]
+    fn terminal_close_does_not_manufacture_a_reply() {
+        assert!(!allow_terminal_close(false, true));
+        assert!(!allow_terminal_close(true, false));
+        assert!(allow_terminal_close(true, true));
+        assert!(!final_reply_matches(&Reply::Released, false));
+        assert!(!final_reply_matches(&Reply::Draining, true));
+        assert!(final_reply_matches(&Reply::Released, true));
+        assert!(final_reply_matches(&Reply::AdmissionStopped, true));
+    }
 
     fn witnesses() -> ExitWitnesses {
         ExitWitnesses { startup_joined: true, leader_terminated: true,
