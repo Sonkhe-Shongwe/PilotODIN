@@ -10,16 +10,16 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 73c3c951e48f26da85f62843c79921a32407e08c |
-| Product baseline | 0a2419893c25e6575e9ce381c6d62f6abc0e3a2b |
+| Product baseline | 7f123cf57a9cfa775ccb7fee8d0ad06fdc371007 |
 | Scope | Actual native inference command async single-flight, retained blocking job/join, cancellation and exact engine generation final fence, model file read pin; source tests only. Shared grant activation and job-empty proof still gated. |
 | Operation ID | C1-C2-INTEGRATION-20261124-native-singleflight |
-| Operation state | ISSUED |
+| Operation state | RECONCILED |
 | Intended files | frontend/src-tauri/src/lib.rs; tests/test_p4_n12_worker_scratch_source.py; continuity docs |
 | Approval | B5 V1/V2 consumed/disarmed; ordinary source authority only |
 | Verification | Actual async command and retained startup generation, final engine/settings fences, read-only model pin, shutdown join fence, two source assertions. No app Rust compile/run or shared grant activation. |
-| Pending runs | Exact-source P2 report safety and P4 source/synthetic CI pending discovery. |
+| Pending runs | Exact-source [#45470399036](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45470399036) IN_PROGRESS; [#45470398868](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45470398868) QUEUED at observation. |
 | Unpublished work | Owner-local tree not inspected; never assume clean or published |
-| Recovery action | Refactor actual native command rather than add another independent module. Preserve existing launcher/frontend protocol for now; no partially enforced shared lane. Source-review backend-demand bridge and whole-group proof before combined activation/approval. |
+| Recovery action | Reconcile P2/P4 CI. Complete actual demand-after-DATA bridge (private bounded polling/request/ready/drain with exact correlation), review supported owned Windows job-empty witness; locked shell private job offers no group-empty query, never synthesize EXITED. If exact safe mechanism needs dependency/OS design authority, present specific owner decision. Then unify runner/frontend and one scoped native C1/C2 verification. No partial activation. |
 | Resume after closure | C2 async single-flight integration; C3–C5 in order; D separately approved |
 
 ## Prior operation
