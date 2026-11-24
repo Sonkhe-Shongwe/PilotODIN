@@ -1,6 +1,6 @@
 # PilotODIN | Package C evidence ledger
 
-**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `4c2f7bf5c936f08eda1df56f499e059c72aa3c25`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
+**Active source package.** [Integrated specification](./PILOTODIN_PACKAGE_C_RESOURCE_TRUST_SPEC_2026-11-24.md), [live handoff](./TAB_MIGRATION_HANDOFF_CURRENT.md). Current exact product `4faf696e16bd9380d9407d2f3a3b95be6386d42c`. Retain [B5 ledger](./PILOTODIN_PACKAGE_B5_EVIDENCE_2026-11-24.md) for closed source evidence. This record owns new C receipts only.
 
 ## 24 November 2026 | Integrated design and source review
 
@@ -61,3 +61,7 @@ Operation C1-RESOURCE-ADMISSION-20261124-autonomy-stages, prepared at `4b117e5`,
 ## 24 November | C1 autonomy staged worker exact-source CI reconciled
 
 [P1 #45457035697](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45457035697), job 138669177942, terminal SUCCESS; checkout `4c2f7bf5c936f08eda1df56f499e059c72aa3c25`, compile, 166 regression + 2 subtests, 77 C1 foundation + 18 durable/production + 7 staged autonomy = 102 C1, 20 existing autonomy (288 tests total, 2 subtests). No real inference, host exit evidence or live registration. C0/5, source 10/17, P4 14/20 unchanged.
+
+## 24 November | C1 staged autonomy cancellation/context fences published
+
+Operation C1-RESOURCE-ADMISSION-20261124-autonomy-fences, prepared at `d6cbbbb`, published [`4faf696`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/4faf696e16bd9380d9407d2f3a3b95be6386d42c). Staged terminal status CAS, atomic non-tool receipt+terminal update with version fence, tool check inside acquired data stage, cancellation CAS, preserve committed receipt on cooperative cancel. Pre-encoding node/depth/character/integer bounds and incremental UTF-8 cap 64 KiB; staged planner history reads at most last 8 records with 256 KiB aggregate stored JSON/objective ceiling before decode. Oversized history is refused, never deleted or truncated. Eleven new fixture cases including race/rollback, UTF-8 exact limit, oversized history, cooperative receipt preservation. Legacy worker remains default; cancellation status CAS also protects legacy cancel from stale terminal overwrite. Residual full artifact load in tool path and start/resume/host ownership remain open, no total process RAM or token-budget proof. Workflow inventory identical to prior 82 inspected definitions; same P1 source trigger only. [Exact CI #45458364195](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45458364195) IN_PROGRESS at last observation; no test result claimed. No native/model/installer/owner operation; C0/5, source 10/17, P4 14/20 unchanged.
