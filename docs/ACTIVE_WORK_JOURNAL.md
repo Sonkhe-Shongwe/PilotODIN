@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 2347b2c8cb1dba8b65c1664d06d0708ca223b4ef |
+| Observed starting HEAD | f3cd114551a47cfe73d7cf86cfb77e96f393ce0e |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-B6-POSITIVE-CLOUD-PROJECTION-20261125 |
-| Operation state | RECONCILED: exact B6 source [1a1799d](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/1a1799d6cc6cdc01173a9fe700c2f8b41128f136); no replay |
-| Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py, canonical records. No workflow changes. |
+| Operation ID | C4-B6-FINITE-CV-SUPPORT-20261125 |
+| Operation state | PREPARED; earlier B6 scoped CI SUCCESS; support refinement not issued |
+| Intended files | backend/ai_context.py, backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py and canonical records. No model training/schema/workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 1a1799d P1 #45634055861 SUCCESS (108 combined C4/settings/intent and selected historical tests; eight added projection cases), P4 #45634055287 SUCCESS (1086 passed, 6 skipped, 552 subtests); browser and scoped Windows passed, restricted collector skipped. |
 | Pending runs | None; both exact runs terminal SUCCESS. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | B6 scoped pass reconciled; source review identified support-witness gaps: analytics.describe counts non-null unique values including infinities while numeric aggregates use finite-only data; held-out sample_count is not a CV-fold support witness. Correct finite support provenance and separate CV evidence conservatively within B6/B7 before final privacy exit. B7 generation-at-request-admission, shared single-slot lifecycle, revocation and stale-result barriers; B8 mandatory strict registry/whole body/deadline/status/shape/error cleanup; historical fake-test migration and C UI intent/disclosure/cache. OpenRouter remains held. No actual provider/model/native/owner-data operation. |
+| Recovery action | Attach internal finite-count and finite-distinct witnesses using analytics.finite_numeric on same working data as numeric statistics; patterns require own matching support. Enforce witness >=5 and consistency with structural counts; omit metadata from wire and local prompt. Hold-out sample_count only gates held-out metrics; withhold all numeric CV fields until independent fold support provenance exists; retain model/status and local CV. Add inert actual dataframe and malformed/missing witness negatives, update superseded synthetic CV-positive assertions with local retention witnesses. Reconcile exact CI before B7. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
