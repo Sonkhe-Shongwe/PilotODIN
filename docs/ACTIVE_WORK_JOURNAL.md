@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | Frontend version/draft integration ee5985c exact P1/P4 SUCCESS; backend pin d16cfd6 exact eight workflows SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-C3-FRONTEND-VERSION-DRAFT-20261125 |
-| Operation state | RECONCILED; exact frontend integration verified; real project sends still held. |
-| Intended files | frontend/src/cloudConsentSession.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, existing frontend/e2e and Node consent/audit tests; canonical records. |
+| Operation ID | C4-C3-DESKTOP-PROJECT-CLOUD-SOURCE-GATE-20261125 |
+| Operation state | PREPARED; narrow authenticated desktop source gate plus existing intercepted fixture. Development/QA proxy origins held. No real cloud operation. |
+| Intended files | frontend/src/api.ts, cloudConsentSession.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, frontend/tests/desktop-ai-boundaries.test.cjs; C specification and canonical records. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact frontend integration `ee5985c5722935dd91f9a896f7d728d20df098fe`: P1 #45672477038 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium including all four C4 mounted scenarios; job 139411144989); P4 #45672477045 SUCCESS (routine source/frontend, disposable HTTP and simulated Windows jobs 139411146680, 139411146523, 139411146169; restricted collector 139411148643 skipped). Prior exact d16cfd6 eight workflows SUCCESS; selected C4 backend 252 passed. |
 | Pending runs | None for ee5985c. |
