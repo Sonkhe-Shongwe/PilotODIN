@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | a40aea099b4281952abaca8afd53bdf8074ef9d8 |
+| Observed starting HEAD | 5a92f89793204b7fbdfe37110ffd5a4d767896b4 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-A-RESOURCE-SETTINGS-INTEGRATION-20261125 |
-| Operation state | RECONCILED: exact resource source [a6e4b3b](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/a6e4b3b57d7bdd8c689833225b64f1aa29287b5f); no replay |
-| Intended files | backend/resource_policy.py, settings_storage.py, workspace_boundary.py, main.py; explicit disposable fixture adapter and resource regression tests, P1 workflow scope, continuity records. Resource preferences only; no AI settings/credential writer or cloud routing change yet. |
+| Operation ID | C4-A-AI-PREFERENCES-CREDENTIALS-20261125 |
+| Operation state | PREPARED; eight resource CI runs reconciled SUCCESS; new source operation not issued |
+| Intended files | backend/ai_provider.py, settings_storage.py, workspace_boundary.py, main.py; disposable AI fixture adapter, direct mocked settings/credential and strict API validation tests, migrated historical path fixtures, P1 workflow and continuity records. Raw request bounds and common consent transport follow separately. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Resource preferences integrated with strict bounded store and mandatory production lease; explicit disposable test adapters, existing route error reporting corrected and new fault cases added. Exact CI pending. |
-| Pending runs | [P2 Real HTTP Saved Revision Comparison #45622774439](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774439) IN_PROGRESS; [P3 User-Described Semantic Business Context #45622774211](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774211) IN_PROGRESS; [P2 Immutable Report Revision Idempotency #45622774298](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774298) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45622774379](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774379) IN_PROGRESS; [P3 Real HTTP Semantic Context Browser Acceptance #45622774288](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774288) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45622774358](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774358) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45622774207](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774207) IN_PROGRESS; [P1 Project Lifecycle Disposable Backend Acceptance #45622774508](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622774508) IN_PROGRESS. All at exact a6e4b3b. |
+| Verification | Exact a6e4b3b eight workflows SUCCESS; P1 206 recovery + 2 subtests, 48 foundation; P4 63 workspace, 1086 pass/6 skip/552 subtests, Windows 68 pass/133 subtests; restricted collector skipped. |
+| Pending runs | None; all eight prior resource runs terminal. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile all eight exact source workflows, particularly P1 new resource tests and P4 owned boundary/R03 fixture checks. Preserve failures, correct within authorised scope. Then integrate AI config and encrypted credential store with remaining caller inventory, strict validation/redaction and local-only fallback. No actual DPAPI/provider/native/owner data. |
+| Recovery action | Integrate AI and credential fixed targets with shared lock/lease, invalid original preservation, bounded DPAPI, no ambient credential fallback, inhibit cloud after failed mutations, strict API models and fixed errors. Reconcile exact CI; raw request bounds and common consent transport follow. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
