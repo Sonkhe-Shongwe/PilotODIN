@@ -45,11 +45,16 @@ def main() -> int:
             raise RuntimeError("Refusing redirected DevQA path")
     home = hold_fresh_fixture_workspace(explicit_home, home)
     os.environ["PILOTODIN_HOME"] = str(home)
-    from fastapi.testclient import TestClient
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
     from backend.main import app
     from backend import storage
 
-    response = TestClient(app).post(
+    client = fixture_client(app, trust=RequestTrust(
+        "local-devqa", 8000, token_hex(32), "http://127.0.0.1:5177"
+    ))
+    response = client.post(
         "/api/projects",
         files={"file": ("p2-native-consent-synthetic.csv", CSV, "text/csv")},
     )

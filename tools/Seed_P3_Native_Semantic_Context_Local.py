@@ -45,12 +45,16 @@ def main() -> int:
     # Import only after the confirmed isolated env is in effect.
     workspace = hold_fresh_fixture_workspace(os.environ["PILOTODIN_HOME"], workspace)
     os.environ["PILOTODIN_HOME"] = str(workspace)
-    from fastapi.testclient import TestClient
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
     from backend import storage
     from backend.main import app
 
     projects = []
-    client = TestClient(app)
+    client = fixture_client(app, trust=RequestTrust(
+        "local-devqa", 8000, token_hex(32), "http://127.0.0.1:5178"
+    ))
     for filename in SOURCES:
         source = ROOT / "tests" / "fixtures" / filename
         if source.is_symlink() or not source.is_file():

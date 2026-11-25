@@ -52,7 +52,11 @@ test('seed refuses non-empty and redirected workspace, validates true bytes and 
  assert.match(python,/P2-NATIVE-DELIVER-CONSENT/);
  assert.match(python,/any\(home\.iterdir\(\)\)/);
  assert.match(python,/is_junction/);
- assert.match(python,/TestClient\(app\)\.post\(/);
+ assert.match(python,/from tests\.fixture_http import fixture_client/);
+ assert.match(python,/fixture_client\(app, trust=RequestTrust\(/);
+ assert.match(python,/"local-devqa", 8000, token_hex\(32\), "http:\/\/127\.0\.0\.1:5177"/);
+ assert.match(python,/response = client\.post\(/);
+ assert.doesNotMatch(python,/TestClient\(app\)/);
  assert.match(python,/source\.read_bytes\(\) != CSV/);
  assert.match(python,/output\.write_text\(json\.dumps\(/);
  assert.doesNotMatch(python,/shutil\.rmtree|os\.remove|unlink\(|\btrain\(|\bfit\(/);

@@ -33,11 +33,15 @@ def main()->int:
     home=hold_fresh_fixture_workspace(home_value, home)
     manifest=home / "synthetic-manifest.json"
     os.environ["PILOTODIN_HOME"]=str(home)
-    from fastapi.testclient import TestClient
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    from tests.fixture_http import fixture_client
     from backend.main import app
     from backend import storage
     csv=b"OrderID,Region,Revenue\nA0001,North,140\nA0002,South,210\nA0003,North,310\nA0004,South,440\n"
-    client=TestClient(app)
+    client=fixture_client(app, trust=RequestTrust(
+        "local-devqa", 8000, token_hex(32), "http://127.0.0.1:5176"
+    ))
     created=client.post("/api/projects",files={"file":("native-chain-synthetic.csv",csv,"text/csv")})
     if created.status_code!=201:
         raise RuntimeError("Creating synthetic project failed, HTTP "+str(created.status_code))
