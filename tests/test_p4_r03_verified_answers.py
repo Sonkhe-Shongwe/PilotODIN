@@ -10,7 +10,9 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from secrets import token_hex
+from tests.fixture_http import fixture_client
+from backend.request_auth import RequestTrust
 
 from backend import ai_context, ai_provider, main, quality, resource_policy, storage
 
@@ -22,7 +24,7 @@ with patch.object(sys, 'path', [str(ROOT / 'desktop'), *sys.path]):
 
 class VerifiedAnswersTests(unittest.TestCase):
     def setUp(self):
-        self.client = TestClient(main.app)
+        self.client = fixture_client(main.app)
         self.addCleanup(self.client.close)
 
     def import_frame(self, frame):
@@ -293,10 +295,14 @@ class VerifiedAnswersTests(unittest.TestCase):
 
     def test_qa_records_distinct_preflight_and_generation_observations(self):
         project = self.import_frame(pd.DataFrame({'premium': [10, None, 30, 40], 'outcome': ['Yes', 'No', 'Yes', 'No']}))
-        headers = {'Origin': 'http://tauri.localhost', 'X-PilotODIN-Session': 'qa-test'}
+        secret = token_hex(32)
+        trust = RequestTrust('desktop', 8000, secret)
+        desktop_client = fixture_client(main.app, trust=trust)
+        self.addCleanup(desktop_client.close)
+        headers = {'Origin': 'http://tauri.localhost', 'X-PilotODIN-Session': secret}
         prompt = 'What is the dataset overview?'
         with TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            'PILOTODIN_R03_BENCHMARK': 'candidate', 'PILOTODIN_DESKTOP_SESSION': 'qa-test',
+            'PILOTODIN_R03_BENCHMARK': 'candidate', 'PILOTODIN_DESKTOP_SESSION': secret,
         }), patch.object(resource_policy.sys, 'platform', 'win32'):
             home = Path(tmp) / 'com.pilotodin.p4r03benchmark' / 'data' / 'candidate'
             with patch.object(storage, 'HOME', home), patch.object(
@@ -305,11 +311,19 @@ class VerifiedAnswersTests(unittest.TestCase):
                 (8 * 1024**3, 1536 * 1024**2, 'test'), (8 * 1024**3, 1536 * 1024**2 - 4096, 'test'),
             ]), patch.object(ai_provider.bundled_inference, 'generate') as generate:
                 resource_policy.save_policy('low_memory')
-                preflight = self.client.get('/api/resource/preflight', headers=headers, params={
+                denied = fixture_client(main.app, trust=trust, authenticated=False)
+                self.addCleanup(denied.close)
+                for bad_headers, status in (({'Origin': 'http://tauri.localhost'}, 401),
+                                            ({**headers, 'X-PilotODIN-Session': 'invalid'}, 401),
+                                            ({**headers, 'Origin': 'https://untrusted.example'}, 403)):
+                    self.assertEqual(denied.get('/api/resource/preflight', headers=bad_headers,
+                                                params={'operation': 'local_inference'}).status_code, status)
+                preflight = desktop_client.get('/api/resource/preflight', headers=headers, params={
                     'operation': 'local_inference', 'insight_context': 'assistant', 'selected_provider': 'ollama',
                 })
+                self.assertEqual(preflight.status_code, 200, preflight.text)
                 self.assertEqual(preflight.json()['decision'], 'allow')
-                result = self.client.post(f'/api/projects/{project}/ai/insight', headers=headers, json={
+                result = desktop_client.post(f'/api/projects/{project}/ai/insight', headers=headers, json={
                     'question': prompt, 'selected_provider': 'ollama',
                 })
                 self.assertEqual(result.status_code, 200, result.text)
@@ -338,7 +352,7 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.enterContext(patch.object(storage, 'DB_PATH', home / 'pilotodin.sqlite3'))
         storage.init()
         quality._init_tables()
-        self.client = TestClient(main.app)
+        self.client = fixture_client(main.app)
         self.addCleanup(self.client.close)
         uploaded = self.client.post('/api/projects', files={
             'file': ('generated.csv', 'feature,outcome\n0,No\n1,Yes\n2,No\n3,Yes\n', 'text/csv'),

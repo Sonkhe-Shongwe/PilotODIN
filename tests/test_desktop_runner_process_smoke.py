@@ -1,54 +1,62 @@
 """Run the real analytical engine as a separate process and validate its loopback API."""
 from __future__ import annotations
+import http.client
 import os
 from pathlib import Path
+import secrets
 import socket
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.request
 
 def _port():
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         return sock.getsockname()[1]
 
-def _status(url, headers=None):
-    request = urllib.request.Request(url, headers=headers or {})
+def _status(port, path='/api/health', headers=None):
+    # Keep intentional invalid Host/forwarded/mixed-header probes, but never
+    # let the transport select a proxy, redirect or alternate destination.
+    if type(port) is not int or not 1024 <= port <= 65535 or path not in (
+            '/api/health', '/api/projects'):
+        raise ValueError('Invalid process smoke destination')
+    connection = http.client.HTTPConnection('127.0.0.1', port, timeout=1.5)
     try:
-        with urllib.request.urlopen(request, timeout=1.5) as response:
-            return response.status, response.read(1024)
-    except urllib.error.HTTPError as error:
-        return error.code, error.read(1024)
+        connection.request('GET', path, headers=headers or {})
+        response = connection.getresponse()
+        assert not 300 <= response.status < 400, 'Unexpected process smoke redirect'
+        return response.status, response.read(1024)
+    finally:
+        connection.close()
+
+
+def _child_environment():
+    return {key: value for key, value in os.environ.items()
+            if not key.upper().startswith(('PILOTODIN_', 'VITE_PILOTODIN_'))}
 
 def test_desktop_runner_process_local_token_and_isolated_storage(tmp_path):
     root = Path(__file__).resolve().parents[1]
     port = _port()
-    token = '5' * 64
+    token = secrets.token_hex(32)
     home = tmp_path / 'personal-workspace'
     home.mkdir()
     # The real Tauri sidecar now starts with this app-data directory as CWD.
     # Python -m still needs the absolute source location while testing; the
     # packaged PyInstaller executable resolves its own modules internally.
     python_path = str(root) + (os.pathsep + os.environ["PYTHONPATH"] if os.environ.get("PYTHONPATH") else "")
-    env = {**os.environ, 'PYTHONPATH': python_path,
+    env = {**_child_environment(), 'PYTHONPATH': python_path,
            'PILOTODIN_DESKTOP_SESSION': token, 'PILOTODIN_HOME': str(home),
            'PILOTODIN_DESKTOP_PORT': str(port), 'PILOTODIN_DESKTOP_ALLOW_DEV': '0'}
-    env.pop('PILOTODIN_BUNDLED_LLM_PORT', None)
-    env.pop('PILOTODIN_BUNDLED_LLM_TOKEN', None)
-    env.pop('PILOTODIN_DESKTOP_WATCH_STDIN', None)
     process = subprocess.Popen([sys.executable, '-B', '-m', 'backend.desktop_runner'],
                                cwd=home, env=env, stdout=subprocess.DEVNULL,
                                stderr=subprocess.PIPE)
-    url = f'http://127.0.0.1:{port}/api/health'
     try:
         deadline = time.monotonic() + 18
         while time.monotonic() < deadline:
             if process.poll() is not None:
                 raise AssertionError(f'Engine exited with code {process.returncode}')
             try:
-                status, _ = _status(url)
+                status, _ = _status(port)
                 if status == 401:
                     break
             except (OSError, TimeoutError):
@@ -56,18 +64,17 @@ def test_desktop_runner_process_local_token_and_isolated_storage(tmp_path):
             time.sleep(0.12)
         else:
             raise AssertionError('Desktop engine failed to listen on loopback')
-        assert _status(url)[0] == 401
-        assert _status(url, {'X-PilotODIN-Session': 'wrong'})[0] == 401
+        assert _status(port)[0] == 401
+        assert _status(port, headers={'X-PilotODIN-Session': 'wrong'})[0] == 401
         authorised = {'X-PilotODIN-Session': token, 'Origin': 'http://tauri.localhost'}
-        assert _status(url, authorised)[0] == 200
-        assert _status(url, {**authorised, 'Origin': 'https://untrusted.example'})[0] == 403
-        assert _status(f'http://127.0.0.1:{port}/api/projects', authorised)[0] == 200
-        assert _status(url, {**authorised, 'Origin': 'http://127.0.0.1:5173'})[0] == 403
-        assert _status(url, {**authorised, 'Host': 'testserver'})[0] == 403
-        assert _status(url, {**authorised, 'X-Forwarded-For': '127.0.0.1'})[0] == 403
-        assert _status(url, {**authorised, 'X-PilotODIN-Dev-Capability': 'b'*64})[0] == 401
-        # Preserve duplicate raw headers, unlike urllib's mapping.
-        import http.client
+        assert _status(port, headers=authorised)[0] == 200
+        assert _status(port, headers={**authorised, 'Origin': 'https://untrusted.example'})[0] == 403
+        assert _status(port, '/api/projects', authorised)[0] == 200
+        assert _status(port, headers={**authorised, 'Origin': 'http://127.0.0.1:5173'})[0] == 403
+        assert _status(port, headers={**authorised, 'Host': 'testserver'})[0] == 403
+        assert _status(port, headers={**authorised, 'X-Forwarded-For': '127.0.0.1'})[0] == 403
+        assert _status(port, headers={**authorised, 'X-PilotODIN-Dev-Capability': 'b'*64})[0] == 401
+        # Preserve duplicate raw headers, unlike a header mapping.
         def raw(method, headers, path='/api/health'):
             con = http.client.HTTPConnection('127.0.0.1', port, timeout=3)
             try:
@@ -109,13 +116,11 @@ def test_desktop_explicit_stop_drains_while_parent_pipe_stays_open(tmp_path):
     home = tmp_path.resolve() / "stop-workspace"
     home.mkdir()
     port = _port()
-    token = "a" * 64
-    env = {**os.environ, "PYTHONPATH": str(root),
+    token = secrets.token_hex(32)
+    env = {**_child_environment(), "PYTHONPATH": str(root),
            "PILOTODIN_DESKTOP_SESSION": token, "PILOTODIN_HOME": str(home),
            "PILOTODIN_DESKTOP_PORT": str(port), "PILOTODIN_DESKTOP_ALLOW_DEV": "0",
            "PILOTODIN_DESKTOP_WATCH_STDIN": "1"}
-    env.pop("PILOTODIN_BUNDLED_LLM_PORT", None)
-    env.pop("PILOTODIN_BUNDLED_LLM_TOKEN", None)
     child = subprocess.Popen([sys.executable, "-B", "-m", "backend.desktop_runner"],
         cwd=home, env=env, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE)
@@ -125,8 +130,7 @@ def test_desktop_explicit_stop_drains_while_parent_pipe_stays_open(tmp_path):
             if child.poll() is not None:
                 raise AssertionError("Engine exited before readiness")
             try:
-                if _status(f"http://127.0.0.1:{port}/api/health",
-                           {"X-PilotODIN-Session": token})[0] == 200:
+                if _status(port, headers={"X-PilotODIN-Session": token})[0] == 200:
                     break
             except (OSError, TimeoutError):
                 pass
