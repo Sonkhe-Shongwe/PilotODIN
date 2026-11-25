@@ -12,6 +12,7 @@ from types import SimpleNamespace
 
 import pytest
 from tools import live_dev, build_input_preflight as preflight
+from desktop import verify_inference_assets as assets
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -376,3 +377,162 @@ def test_observed_inventory_is_not_an_expected_lock_or_authority():
         sets.append({row["name"] for row in rows})
     assert sets[0] - sets[1] == {"colorama"}
     assert sets[1] - sets[0] == {"uvloop"}
+
+
+@pytest.mark.parametrize("name,reason", [
+    ("Build_Python_Sidecar.ps1", "C5_SIDECAR_BUILD_BLOCKED"),
+    ("Stage_Pinned_Offline_AI.ps1", "C5_AI_ACQUISITION_BLOCKED"),
+    ("Stage_Bundled_Inference.ps1", "C5_AI_STAGING_BLOCKED"),
+])
+def test_mutating_entrypoints_are_unconditionally_frozen(name, reason):
+    body = (ROOT / "desktop" / name).read_text()
+    lines = [line.strip() for line in body.splitlines()
+             if line.strip() and not line.lstrip().startswith("#")]
+    assert len(lines) == 2
+    assert lines[0].startswith("Write-Error 'STOP: " + reason)
+    assert lines[0].endswith("-ErrorAction Continue")
+    assert lines[1] == "exit 2"
+
+
+def test_production_inference_preflight_cannot_bless_any_root(tmp_path):
+    with patch.object(assets, "checked_directory") as check, \
+            patch.object(assets, "read_exact") as read, \
+            patch.dict(os.environ, {"PILOTODIN_ALLOW_BUILD": "1",
+                                    "PILOTODIN_EXPECTED_MODEL_SHA256": "0" * 64}):
+        with pytest.raises(preflight.Blocked, match="C5_INFERENCE_PROVENANCE_BLOCKED"):
+            assets.verify(tmp_path)
+        check.assert_not_called()
+        read.assert_not_called()
+    assert not list(tmp_path.iterdir())
+
+
+def inert_pe(*, dll=False, machine=0x8664):
+    # Header-only inert synthetic data. No executable sections or machine code.
+    data = bytearray(128)
+    data[:2] = b"MZ"
+    data[60:64] = (64).to_bytes(4, "little")
+    data[64:68] = b"PE\0\0"
+    data[68:70] = machine.to_bytes(2, "little")
+    data[84:86] = (2).to_bytes(2, "little")
+    data[86:88] = (0x2002 if dll else 0x0002).to_bytes(2, "little")
+    data[88:90] = (0x20b).to_bytes(2, "little")
+    return bytes(data)
+
+
+def inference_fixture(root):
+    base = root / "frontend" / "src-tauri"
+    models = base / "resources" / "models"
+    dlls = base / "resources" / "llama-runtime"
+    notices = base / "resources" / "licenses"
+    binary = base / "binaries"
+    for directory in (models, dlls, notices, binary):
+        directory.mkdir(parents=True)
+    def put(path, data):
+        path.write_bytes(data)
+        return {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    expected = {
+        "model": put(models / assets.MODEL_FILE, b"GGUF\x03\0\0\0fixture"),
+        "server": put(binary / assets.SERVER_FILE, inert_pe()),
+        "dlls": {"mock.dll": put(dlls / "mock.dll", inert_pe(dll=True))},
+        "notices": {name: put(notices / name, b"inert synthetic notice")
+                    for name in assets.REQUIRED_NOTICES},
+    }
+    (models / assets.RECEIPT).write_text(json.dumps(assets.expected_receipt(expected)),
+                                         encoding="utf-8")
+    return expected, models, binary, dlls, notices
+
+
+def test_candidate_inference_independent_exact_inventory_is_read_only(tmp_path):
+    expected, *_ = inference_fixture(tmp_path)
+    before = snapshot(tmp_path)
+    with patch.object(subprocess, "run") as run, patch.object(subprocess, "Popen") as popen:
+        assets.verify_candidate_bundle(tmp_path, expected)
+        run.assert_not_called()
+        popen.assert_not_called()
+    assert snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("kind", [
+    "model_changed", "server_changed", "dll_changed", "notice_changed",
+    "extra_model", "extra_dll", "extra_notice", "missing_dll", "missing_notice",
+    "empty_expected_dlls", "case_collision", "unsafe_dll", "receipt_duplicate",
+    "receipt_unknown", "receipt_bool", "self_blessed_hash", "wrong_machine",
+    "wrong_dll_role", "wrong_gguf",
+])
+def test_candidate_inference_refuses_unreviewed_or_mismatched_bytes(tmp_path, kind):
+    expected, models, binary, dlls, notices = inference_fixture(tmp_path)
+    receipt = models / assets.RECEIPT
+    model = models / assets.MODEL_FILE
+    server = binary / assets.SERVER_FILE
+    dll = dlls / "mock.dll"
+    notice = notices / "THIRD-PARTY-SOURCES.txt"
+    paths = {"model_changed": model, "server_changed": server,
+             "dll_changed": dll, "notice_changed": notice}
+    if kind in paths:
+        path = paths[kind]
+        path.write_bytes(b"x" * path.stat().st_size)
+    elif kind in ("extra_model", "extra_dll", "extra_notice"):
+        {"extra_model": models, "extra_dll": dlls, "extra_notice": notices}[kind].joinpath("unknown.txt").write_bytes(b"x")
+    elif kind == "missing_dll":
+        dll.unlink()
+    elif kind == "missing_notice":
+        notice.unlink()
+    elif kind == "empty_expected_dlls":
+        expected["dlls"] = {}
+    elif kind == "case_collision":
+        expected["dlls"]["MOCK.DLL"] = expected["dlls"]["mock.dll"]
+    elif kind == "unsafe_dll":
+        expected["dlls"]["../bad.dll"] = expected["dlls"]["mock.dll"]
+    elif kind == "receipt_duplicate":
+        receipt.write_text(receipt.read_text().replace("{", '{"schema_version":1,', 1))
+    elif kind == "receipt_unknown":
+        doc = json.loads(receipt.read_text())
+        doc["approval"] = True
+        receipt.write_text(json.dumps(doc))
+    elif kind == "receipt_bool":
+        doc = json.loads(receipt.read_text())
+        doc["schema_version"] = True
+        receipt.write_text(json.dumps(doc))
+    elif kind == "self_blessed_hash":
+        dll.write_bytes(b"x" * dll.stat().st_size)
+        doc = json.loads(receipt.read_text())
+        doc["runtime_dll_sha256"]["mock.dll"] = hashlib.sha256(dll.read_bytes()).hexdigest()
+        receipt.write_text(json.dumps(doc))
+    else:
+        path, row, data = {
+            "wrong_machine": (server, expected["server"], inert_pe(machine=0x14c)),
+            "wrong_dll_role": (dll, expected["dlls"]["mock.dll"], inert_pe()),
+            "wrong_gguf": (model, expected["model"], b"GGUF\xff\0\0\0fixture"),
+        }[kind]
+        path.write_bytes(data)
+        row.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+        receipt.write_text(json.dumps(assets.expected_receipt(expected)))
+    before = snapshot(tmp_path)
+    with pytest.raises(preflight.Blocked):
+        assets.verify_candidate_bundle(tmp_path, expected)
+    assert snapshot(tmp_path) == before
+
+
+def test_candidate_inference_rejects_linked_dll(tmp_path):
+    expected, _, _, dlls, _ = inference_fixture(tmp_path)
+    dll = dlls / "mock.dll"
+    outside = tmp_path.parent / (tmp_path.name + "-outside.dll")
+    try:
+        os.link(dll, outside)
+    except OSError:
+        pytest.skip("hardlink unavailable")
+    try:
+        with pytest.raises(preflight.Blocked):
+            assets.verify_candidate_bundle(tmp_path, expected)
+    finally:
+        outside.unlink()
+
+
+def test_read_exact_prefix_is_bounded_and_from_hashed_bytes(tmp_path):
+    path = tmp_path / "inert"
+    content = b"header" + b"x" * 70000
+    path.write_bytes(content)
+    assert preflight.read_exact(path, size=len(content), prefix_bytes=6) == (
+        hashlib.sha256(content).hexdigest(), b"header")
+    with pytest.raises(preflight.Blocked):
+        preflight.read_exact(path, size=len(content), prefix_bytes=65537)

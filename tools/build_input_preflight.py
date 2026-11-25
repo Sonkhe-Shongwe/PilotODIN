@@ -94,9 +94,11 @@ def identity(info):
             info.st_ctime_ns, info.st_nlink)
 
 
-def read_exact(path, *, size, collect=False, limit=None):
+def read_exact(path, *, size, collect=False, limit=None, prefix_bytes=0):
     """Open a bounded regular single-link file and detect observable drift."""
     require(type(size) is int and size > 0, "INVALID_SIZE")
+    require(type(prefix_bytes) is int and 0 <= prefix_bytes <= 65536
+            and not (collect and prefix_bytes), "INVALID_PREFIX_LIMIT")
     if limit is not None:
         require(size <= limit, "INPUT_TOO_LARGE")
     before = path.lstat()
@@ -111,6 +113,7 @@ def read_exact(path, *, size, collect=False, limit=None):
                 and not reparse(opened), "FILE_CHANGED")
         digest = hashlib.sha256()
         chunks = [] if collect else None
+        prefix = bytearray() if prefix_bytes else None
         remaining = size
         while remaining:
             chunk = os.read(fd, min(remaining, 1024 * 1024))
@@ -118,13 +121,16 @@ def read_exact(path, *, size, collect=False, limit=None):
             digest.update(chunk)
             if chunks is not None:
                 chunks.append(chunk)
+            if prefix is not None and len(prefix) < prefix_bytes:
+                prefix.extend(chunk[:prefix_bytes - len(prefix)])
             remaining -= len(chunk)
         require(not os.read(fd, 1), "FILE_GREW")
         after = path.lstat()
         require(identity(os.fstat(fd)) == identity(opened)
                 and identity(after) == identity(opened) and not reparse(after),
                 "FILE_CHANGED")
-        return digest.hexdigest(), b"".join(chunks) if chunks is not None else None
+        payload = b"".join(chunks) if chunks is not None else bytes(prefix) if prefix is not None else None
+        return digest.hexdigest(), payload
     finally:
         os.close(fd)
 

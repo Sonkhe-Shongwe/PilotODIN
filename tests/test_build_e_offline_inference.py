@@ -127,7 +127,7 @@ def test_missing_bundle_falls_back_to_deterministic_analysis_not_ollama(monkeypa
 
 
 def test_bundle_preflight_refuses_missing_model(tmp_path):
-    with pytest.raises(ValueError, match='not staged'):
+    with pytest.raises(ValueError, match='C5_INFERENCE_PROVENANCE_BLOCKED'):
         verify(tmp_path)
 
 
@@ -143,11 +143,11 @@ def test_bundle_preflight_rejects_wrong_hashes(tmp_path):
         'model_file':'qwen3-1.7b-q4_k_m.gguf','model_alias':'pilotodin-qwen3-1.7b',
         'model_sha256':'0'*64,'server_sha256':'0'*64,'runtime_dll_sha256':{}
     }))
-    with pytest.raises(ValueError, match='small'):
+    with pytest.raises(ValueError, match='C5_INFERENCE_PROVENANCE_BLOCKED'):
         verify(root)
 
 
-def test_bundle_preflight_accepts_verified_offline_assets(tmp_path):
+def test_bundle_preflight_rejects_self_described_offline_assets(tmp_path):
     import hashlib
     root = tmp_path / 'pilotodin'
     root_model = root / 'frontend' / 'src-tauri' / 'resources' / 'models'
@@ -174,9 +174,12 @@ def test_bundle_preflight_accepts_verified_offline_assets(tmp_path):
         'server_sha256': digest(exe.read_bytes()),
         'runtime_dll_sha256': {'mock.dll': digest(dll.read_bytes())},
     }))
-    verify(root)
+    # A self-described receipt cannot authorize production. Independent
+    # positive and tamper fixtures live in test_c5_build_input_preflight.py.
+    with pytest.raises(ValueError, match='C5_INFERENCE_PROVENANCE_BLOCKED'):
+        verify(root)
     dll.write_bytes(b'corrupted')
-    with pytest.raises(ValueError, match='DLL checksum'):
+    with pytest.raises(ValueError, match='C5_INFERENCE_PROVENANCE_BLOCKED'):
         verify(root)
 
 
