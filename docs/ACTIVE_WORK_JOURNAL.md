@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5588dc7e80f939771fa432c2da35d48ecd3d6de5 |
 | Product baseline | B8 strict transport 970a158; exact P1 and P4 failures reconciled below. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B8-WIRE-FIXTURES-20261125 |
-| Operation state | PREPARED; test-only correction not issued. |
+| Operation state | ISSUED; reconcile source commit from prepared parent 27490c1; do not replay |
 | Intended files | tests/test_c4_cloud_intent.py, tests/test_p4_r03_verified_answers.py and canonical records only. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 970a158 P1 failed 1/171 (literal backslash-r key); P4 synthetic failed 3/1086 (outdated response double); Windows and browser success, restricted collector skipped. No product defect established by these failures. |

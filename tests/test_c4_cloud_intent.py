@@ -594,7 +594,7 @@ def test_cloud_wire_fixed_registry_and_headers(monkeypatch,provider,model):
     ("gemini","../bad",True,"fixture-secret-key",10,"Question"),
     ("groq","gemini-3-flash-preview",True,"fixture-secret-key",10,"Question"),
     ("gemini","gemini-3-flash-preview",False,"fixture-secret-key",10,"Question"),
-    ("gemini","gemini-3-flash-preview",True,"fixture-secret-\\rkey",10,"Question"),
+    ("gemini","gemini-3-flash-preview",True,"fixture-secret-"+chr(13)+"key",10,"Question"),
     ("gemini","gemini-3-flash-preview",True,"fixture-secret-key",True,"Question"),
     ("gemini","gemini-3-flash-preview",True,"fixture-secret-key",10,"é"*5501),
     ("gemini","gemini-3-flash-preview",True,"fixture-secret-key",10,"\ud800"),

@@ -388,8 +388,25 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.enterContext(patch.object(ai_provider, '_health', {}))
         self.opener = self.enterContext(patch.object(ai_provider.urllib.request, 'build_opener'))
         self.transport = self.opener.return_value.open
-        self.transport.return_value.__enter__.return_value.read.return_value = (
+        # Inert response with the same interface as urllib's strict reader.
+        import io
+        from email.message import Message
+        self.wire_body = (
             b'{"candidates":[{"content":{"parts":[{"text":"Generated explanation."}]},"finishReason":"STOP"}]}'
+        )
+        self.wire_reply = self.transport.return_value.__enter__.return_value
+        self.wire_reply.status = 200
+        self.wire_reply.geturl.return_value = (
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent'
+        )
+        self.wire_reply.headers = Message()
+        self.wire_reply.headers['Content-Type'] = 'application/json'
+        self.wire_reply.headers['Content-Length'] = str(len(self.wire_body))
+        self.wire_stream = io.BytesIO(self.wire_body)
+        self.addCleanup(self.wire_stream.close)
+        self.wire_reply.read1.side_effect = self.wire_stream.read
+        self.transport.return_value.__exit__.side_effect = (
+            lambda *_: self.wire_stream.close()
         )
 
     def insight(self, context='evaluate', provider='gemini', **kwargs):
@@ -402,7 +419,11 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
 
     def sent_prompt(self):
         self.transport.assert_called_once()
-        envelope = json.loads(self.transport.call_args.args[0].data)
+        wire = self.transport.call_args.args[0].data
+        self.assertLessEqual(len(wire), 16384)
+        self.assertTrue(self.wire_stream.closed)
+        self.transport.return_value.__exit__.assert_called_once()
+        envelope = json.loads(wire)
         text = envelope['contents'][0]['parts'][0]['text']
         self.assertLessEqual(len(text.encode('utf-8')), 11000)
         return json.loads(text)
