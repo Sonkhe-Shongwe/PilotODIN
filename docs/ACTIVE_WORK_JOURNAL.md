@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | IN_PROGRESS |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 59fb56bbacb13947668611e6b405fcee7122b0d5 (documentation only; product baseline unchanged). |
+| Observed starting HEAD | 03553c68b6988d36c62e9114779718f2e42f9873 |
 | Product baseline | a949684360d99ea052ace639afa11aa2222e4d83; exact P1/P4 terminal SUCCESS independently rechecked. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-SEMANTIC-DIRECT-REFERENCES-AUDIT-20261125 |
-| Operation state | RECONCILED (read-only partial audit; checkpoint commit identified by parent and operation marker) |
-| Intended files | Journal, compact handoff, single C evidence receipt only. No product, tests, workflows, authority or score change. |
+| Operation ID | C3-INDIRECT-CALLER-SCANNER-20261125 |
+| Operation state | PREPARED (source-audit tooling only; identify publication by parent and operation marker) |
+| Intended files | tools/c3_source_caller_inventory.py; new tests/test_c3_source_caller_inventory.py; .github/workflows/p1-isolated-backend.yml (register pure scanner tests only); canonical journal, handoff and one evidence receipt. No product guard, route, approval, dependency or native workflow changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Exact P1/P4 run head SHA `a949684` and all job conclusions rechecked; restricted collector SKIPPED. All 11 scanner-flagged direct route-reference files inspected (34 lexical references; tests only, including one isolated router registration). Reviewed RequestGuard, desktop runner, fixture adapter, Live Dev readiness and both bundled inference transport paths. Bare main HTTP fallback remains. Wider indirect transport/launcher/credential inventory incomplete; full workflow enumeration attempt hit connector per-call limit. Three one-use C1/C2 workflow guards and production activation confirmed false. See latest C evidence receipt; no new tests executed. |
+| Verification | Prior direct-reference subset remains recorded. Reviewed all 85 workflow trigger definitions at starting HEAD in bounded batches; only P1 isolated backend matches intended source/test/workflow and documentation paths. Existing P1 job scope reviewed: disposable/synthetic, model-free historical selection, no native run. Expected new tests: lexical indirect transport, aliases, assigned clients, dynamic imports, launchers, credential references, no execution/excerpts; exact scanner and existing P1 CI. No new results yet. |
 | Pending runs | None at observed HEAD; prior exact P1/P4 terminal SUCCESS; restricted collector SKIPPED. Documentation HEAD had zero Actions runs. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Resume remaining indirect transport/launcher/credential audit, using exact committed tree and batched workflow inspection; retain already classified 11 direct-reference files. Expand scanner coverage and review remaining actual paths before modifying bare main guard; then full route/caller matrix and exact regression CI. No activation. |
+| Recovery action | Verify prepared journal and expected HEAD; publish bounded scanner expansion and pure fixture tests, then reconcile exact CI and use new candidate output for semantic classification. Retain bare main guard unchanged until compatibility audit complete. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
