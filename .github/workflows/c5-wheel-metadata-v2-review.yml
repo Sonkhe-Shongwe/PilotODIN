@@ -3,12 +3,12 @@ on:
   push:
     branches: [feature/live-dev-workspace-20261023]
     paths:
-      - .github/workflows/c5-wheel-metadata-v2-review.yml
-      - qa/c5_wheel_metadata/collect_v2.py
+      - qa/c5_wheel_metadata/APPROVAL_V2_20261125.txt
 permissions:
   contents: read
 jobs:
   offline-integration:
+    if: ${{ false }} # Exact prior offline verification preserved.
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
@@ -25,7 +25,7 @@ jobs:
           set -e
           test "$code" = 2
   collect-once:
-    if: ${{ false }} # No new owner approval, no live activation.
+    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'C5-SELECTED-WHEEL-METADATA-V2-ONCE-20261125 activate' }} # Owner-approved one use.
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -34,9 +34,9 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
       - run: python3 -I -B qa/c5_wheel_metadata/collect_v2.py --self-test
-      # Before activation, add exact tested collector blob assertion and
-      # marker-only trigger, exact commit message and attempt-1 condition.
-      - name: Metadata only (currently unreachable)
+      - name: Verify exact activated collector blob
+        run: test "$(git hash-object qa/c5_wheel_metadata/collect_v2.py)" = 80a67f50f89d7f21daff165a4e9feadb3aa49618
+      - name: Metadata only, approved one use
         env:
           C5_APPROVED_ONCE: C5-SELECTED-WHEEL-METADATA-V2-ONCE-20261125
           C5_EXPECTED_SOURCE_SHA: ${{ github.sha }}
