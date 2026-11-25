@@ -146,18 +146,45 @@ if(-not $msvcLinker){
     Stop-With 'Microsoft MSVC link.exe is missing. Open Visual Studio Installer, select Build Tools > Modify > Desktop development with C++ (MSVC x64/x86 compiler and Windows SDK). Rust alone or VS Code is not enough. Restart Windows terminal after setup.'
 }
 $results.checks['backend_8000_running']=Port-Open 8000
+$results.checks['live_dev_5173_running']=Port-Open 5173
 $results.checks['vite_5174_free']=-not (Port-Open 5174)
-if(-not $results.checks['backend_8000_running']){
-    Stop-With 'The normal local Python backend is not listening on 127.0.0.1:8000. Start PilotODIN Live Dev first.'
+if(-not $results.checks['backend_8000_running'] -or -not $results.checks['live_dev_5173_running']){
+    Stop-With 'Start both paired PilotODIN Live Dev consoles first (frontend 5173 and backend 8000).'
+}
+# Independent launcher: never inherit, copy or expose a backend capability.
+foreach($name in @('PILOTODIN_HOME','PILOTODIN_SERVER_MODE','PILOTODIN_DEV_CAPABILITY',
+    'PILOTODIN_DEV_PORT','PILOTODIN_DEV_ORIGIN','PILOTODIN_DESKTOP_SESSION',
+    'PILOTODIN_DESKTOP_PORT','PILOTODIN_DESKTOP_WATCH_STDIN','PILOTODIN_CONTROL_MODE',
+    'PILOTODIN_CONTROL_GENERATION','PILOTODIN_CONTROL_CAPABILITY')){
+    if([Environment]::GetEnvironmentVariable($name,'Process')){
+        Stop-With 'A4 requires a separate launcher without inherited serving credentials or workspace.'
+    }
+}
+if($env:PILOTODIN_DESKTOP_ALLOW_DEV -and $env:PILOTODIN_DESKTOP_ALLOW_DEV -ne '0'){
+    Stop-With 'A4 refuses mixed desktop development configuration.'
 }
 try {
-    $health=Invoke-RestMethod -Uri 'http://127.0.0.1:8000/api/health' -TimeoutSec 5
+    # Read only through the existing authenticated frontdoor. Never contact
+    # the bare backend or send a capability through a proxy or redirect.
+    $request=[Net.HttpWebRequest]::Create('http://127.0.0.1:5173/api/health')
+    $request.Proxy=$null
+    $request.AllowAutoRedirect=$false
+    $request.Timeout=5000
+    $request.ReadWriteTimeout=5000
+    $request.Headers.Add('Origin','http://127.0.0.1:5173')
+    $request.Headers.Add('X-PilotODIN-Dev-Request','1')
+    $reply=$request.GetResponse()
+    try {
+        if([int]$reply.StatusCode -ne 200){throw 'Authenticated readiness refused.'}
+        $reader=[IO.StreamReader]::new($reply.GetResponseStream())
+        try {$health=($reader.ReadToEnd() | ConvertFrom-Json)} finally {$reader.Dispose()}
+    } finally {$reply.Dispose()}
     $results.checks['backend_healthy']=($health.status -eq 'ok')
 } catch {
     $results.checks['backend_healthy']=$false
 }
 if(-not $results.checks['backend_healthy']){
-    Stop-With 'A process uses port 8000, but it is not a healthy PilotODIN API.'
+    Stop-With 'The authenticated Live Dev frontdoor is not healthy. Restart both paired consoles.'
 }
 if(-not $results.checks['vite_5174_free']){
     Stop-With 'Temporary native smoke frontend port 5174 is already in use. Close the old A4 native smoke window.'
@@ -212,7 +239,11 @@ Write-Host '  5. Close the native PilotODIN window to return here.'
 Write-Host 'You can leave the normal Live Dev Chrome/browser/backend open.'
 Write-Host ''
 $priorSmoke=$env:VITE_PILOTODIN_NATIVE_SMOKE
+$priorAuth=$env:VITE_PILOTODIN_AUTH_DEV
+$priorRelay=$env:PILOTODIN_A4_RELAY
 $env:VITE_PILOTODIN_NATIVE_SMOKE='1'
+$env:VITE_PILOTODIN_AUTH_DEV='1'
+$env:PILOTODIN_A4_RELAY='1'
 $exitCode=1
 $previousErrorActionPreference=$ErrorActionPreference
 Push-Location $frontend
@@ -234,6 +265,8 @@ try {
     Pop-Location
     if($null -eq $priorSmoke){Remove-Item Env:\VITE_PILOTODIN_NATIVE_SMOKE -ErrorAction SilentlyContinue}
     else {$env:VITE_PILOTODIN_NATIVE_SMOKE=$priorSmoke}
+    [Environment]::SetEnvironmentVariable('VITE_PILOTODIN_AUTH_DEV',$priorAuth,'Process')
+    [Environment]::SetEnvironmentVariable('PILOTODIN_A4_RELAY',$priorRelay,'Process')
     # Tee-Object uses UTF-16LE by default on Windows PowerShell 5.1.
     # Make the native diagnostics readable in any standard ZIP/log viewer,
     # without changing the outcome if log conversion itself fails.

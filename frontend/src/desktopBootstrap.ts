@@ -1,5 +1,5 @@
 import {invoke} from '@tauri-apps/api/core';
-import {configureDesktopAPI, get} from './api';
+import {configureDesktopAPI, configureDevelopmentAPI, get} from './api';
 import type {DesktopConnection} from './api';
 
 // Tauri only makes this property available inside the native webview.
@@ -16,13 +16,23 @@ export function isNativeA4SmokeMode(): boolean {
 export async function startDesktopBackend(): Promise<void> {
   if (!isDesktop()) return;
   if (isNativeA4SmokeMode()) {
-    // The explicitly launched dev backend already listens on 127.0.0.1:8000.
-    // Do not spawn an unbundled sidecar or touch the installed app data dir.
-    // The native Tauri commands (including Save As) remain fully functional.
-    return;
+    // A4 uses the existing paired Live Dev frontdoor through its isolated
+    // Vite relay. Other explicitly migrated native QA uses the paired proxy.
+    // Never spawn a bundled sidecar for a native smoke page.
+    if (window.location.origin === 'http://127.0.0.1:5174' ||
+        import.meta.env.VITE_PILOTODIN_AUTH_DEV === '1') {
+      if (import.meta.env.VITE_PILOTODIN_AUTH_DEV !== '1') {
+        throw new Error('A4 requires the authenticated Live Dev relay.');
+      }
+      configureDevelopmentAPI(window.location.origin);
+    } else {
+      // Remaining hosted native smoke callers are migrated separately in C3.
+      return;
+    }
+  } else {
+    const connection = await invoke<DesktopConnection>('launch_backend');
+    configureDesktopAPI(connection);
   }
-  const connection = await invoke<DesktopConnection>('launch_backend');
-  configureDesktopAPI(connection);
   // A Windows-packed Python runtime can take several seconds to initialise.
   // We actively check its health and give a useful failure message at timeout.
   const deadline = Date.now() + 45_000;

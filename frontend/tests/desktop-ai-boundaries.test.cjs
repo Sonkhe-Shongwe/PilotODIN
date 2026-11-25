@@ -228,14 +228,14 @@ test('C2 both actual panels bind request ownership, late results and truthful ow
 
 
 test('C3 explicit development API accepts only approved origins and sends only a same-origin proxy marker',async()=>{
- for(const port of [5173,5176,5177,5178]){
+ for(const port of [5173,5174,5176,5177,5178]){
    const origin='http://127.0.0.1:'+port;
    const seen=[];
    const api=loadAPI(async()=>{throw Error('Unexpected native IPC');},async(url,options)=>{
      seen.push({url,headers:options.headers});
      return {ok:true,json:async()=>({status:'ok'})};
    });
-   for(const invalid of ['http://127.0.0.1:5174','http://127.0.0.1:5175',
+   for(const invalid of ['http://127.0.0.1:5175',
      'http://127.0.0.1:5179','http://127.0.0.1:8000','http://localhost:'+port,
      'http://192.0.2.1:'+port,'https://127.0.0.1:'+port,origin+'/',origin+'/api','']){
      assert.throws(()=>api.configureDevelopmentAPI(invalid),invalid);
@@ -248,7 +248,7 @@ test('C3 explicit development API accepts only approved origins and sends only a
  }
  const desktop=loadAPI();
  desktop.configureDesktopAPI({port:12345,token:'fixture'});
- for(const port of [5173,5176,5177,5178])
+ for(const port of [5173,5174,5176,5177,5178])
    assert.throws(()=>desktop.configureDevelopmentAPI('http://127.0.0.1:'+port));
 });
 

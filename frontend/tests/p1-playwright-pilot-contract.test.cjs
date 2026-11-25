@@ -484,3 +484,47 @@ test('fixed-port local DevQA proxy binds exact phase and refuses mixed credentia
  assert.match(w5,/X-PilotODIN-Dev-Request/);
  assert.doesNotMatch(w5,/PILOTODIN_DEV_CAPABILITY/);
 });
+
+
+test('A4 relay preserves separate origin without inheriting or sending a private backend credential',async()=>{
+ const {liveDevProxyTrust,liveDevProxyPlan}=await import('../scripts/live-dev-api-proxy.mjs');
+ const env={PILOTODIN_A4_RELAY:'1',VITE_PILOTODIN_AUTH_DEV:'1',VITE_PILOTODIN_NATIVE_SMOKE:'1'};
+ const relay=liveDevProxyTrust(env);
+ assert.ok(Object.isFrozen(relay));
+ assert.deepEqual(relay,{kind:'a4-relay',origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174',port:5174});
+ const req={url:'/api/projects/example?expected_version=0',method:'GET',socket:{remoteAddress:'127.0.0.1'},
+   rawHeaders:['Host','127.0.0.1:5174','Sec-Fetch-Site','same-origin','X-PilotODIN-Dev-Request','1']};
+ const first=liveDevProxyPlan(req,relay);
+ assert.equal(first.status,200);
+ assert.equal(first.options.hostname,'127.0.0.1');
+ assert.equal(first.options.port,5173);
+ assert.deepEqual(first.options.headers,{host:'127.0.0.1:5173',origin:'http://127.0.0.1:5173','x-pilotodin-dev-request':'1'});
+ const live=liveDevProxyTrust({PILOTODIN_SERVER_MODE:'dev',VITE_PILOTODIN_AUTH_DEV:'1',
+   PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5173',PILOTODIN_DEV_PORT:'8000',PILOTODIN_DEV_CAPABILITY:'b'.repeat(64)});
+ const second=liveDevProxyPlan({...req,rawHeaders:Object.entries(first.options.headers).flat()},live);
+ assert.equal(second.status,200);
+ assert.equal(second.options.port,8000);
+ assert.equal(second.options.headers['x-pilotodin-dev-capability'],'b'.repeat(64));
+ for(const change of [{PILOTODIN_A4_RELAY:'0'},{VITE_PILOTODIN_NATIVE_SMOKE:'0'},{VITE_PILOTODIN_AUTH_DEV:'0'},
+   {PILOTODIN_DEV_CAPABILITY:'a'.repeat(64)},{PILOTODIN_DEV_PORT:'8000'},{PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5173'},
+   {PILOTODIN_HOME:'foreign'},{PILOTODIN_SERVER_MODE:'dev'},{PILOTODIN_DESKTOP_SESSION:'a'.repeat(64)}]){
+   assert.throws(()=>liveDevProxyTrust({...env,...change}),/Invalid isolated A4 relay configuration/);
+ }
+ for(const change of [{socket:{remoteAddress:'192.0.2.1'}},{rawHeaders:req.rawHeaders.slice(0,-2)},
+   {rawHeaders:[...req.rawHeaders,'Origin','http://127.0.0.1:5173']},
+   {rawHeaders:[...req.rawHeaders,'X-PilotODIN-Dev-Capability','a'.repeat(64)]},
+   {rawHeaders:[...req.rawHeaders,'X-Forwarded-For','127.0.0.1']},{url:'/api/\\evil'},{method:'OPTIONS'}]){
+   assert.ok([400,403].includes(liveDevProxyPlan({...req,...change},relay).status));
+ }
+ assert.equal(liveDevProxyPlan(req,{...relay,backendPort:8000}).status,403);
+ const runner=fs.readFileSync(path.resolve(__dirname,'../../tools/Verify_A4_Native_Windows.ps1'),'utf8');
+ const boot=fs.readFileSync(path.resolve(__dirname,'../src/desktopBootstrap.ts'),'utf8');
+ assert.match(runner,/HttpWebRequest\]::Create\('http:\/\/127\.0\.0\.1:5173\/api\/health'\)/);
+ assert.match(runner,/\$request\.Proxy=\$null/);
+ assert.match(runner,/\$request\.AllowAutoRedirect=\$false/);
+ assert.doesNotMatch(runner,/8000\/api\/health/);
+ assert.match(runner,/\$env:PILOTODIN_A4_RELAY='1'/);
+ assert.match(runner,/SetEnvironmentVariable\('PILOTODIN_A4_RELAY',\$priorRelay,'Process'\)/);
+ assert.match(boot,/configureDevelopmentAPI\(window\.location\.origin\)/);
+ assert.match(boot,/A4 requires the authenticated Live Dev relay/);
+});

@@ -5,6 +5,7 @@ import http from 'node:http';
 import {isAbsolute, basename, dirname, resolve} from 'node:path';
 
 const LIVE_ORIGIN='http://127.0.0.1:5173';
+const A4_ORIGIN='http://127.0.0.1:5174';
 const HOSTED_ORIGIN='http://127.0.0.1:5178';
 const REPORT_CHAIN_ORIGIN='http://127.0.0.1:5176';
 const METHODS=new Set(['GET','HEAD','POST','PUT','PATCH','DELETE']);
@@ -16,6 +17,21 @@ const RESPONSE_HEADERS=['content-type','content-length','content-disposition','c
   'x-pilotodin-export-project','x-pilotodin-export-operation','x-pilotodin-export-mac'];
 
 export function liveDevProxyTrust(env){
+  // The independently launched A4 native smoke uses the existing paired Live
+  // Dev frontdoor. Its relay does not receive or discover a backend secret.
+  if(env.PILOTODIN_A4_RELAY!==undefined){
+    if(env.PILOTODIN_A4_RELAY!=='1'||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
+       env.VITE_PILOTODIN_NATIVE_SMOKE!=='1'||env.PILOTODIN_HOME||
+       env.PILOTODIN_SERVER_MODE||env.PILOTODIN_DEV_ORIGIN||
+       env.PILOTODIN_DEV_PORT||env.PILOTODIN_DEV_CAPABILITY||
+       env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
+       env.PILOTODIN_DESKTOP_WATCH_STDIN||env.PILOTODIN_CONTROL_MODE||
+       env.PILOTODIN_CONTROL_GENERATION||env.PILOTODIN_CONTROL_CAPABILITY||
+       (env.PILOTODIN_DESKTOP_ALLOW_DEV??'0')!=='0'){
+      throw new Error('Invalid isolated A4 relay configuration');
+    }
+    return Object.freeze({kind:'a4-relay',origin:A4_ORIGIN,host:'127.0.0.1:5174',port:5174});
+  }
   const live=env.PILOTODIN_SERVER_MODE==='dev'&&env.PILOTODIN_DEV_ORIGIN===LIVE_ORIGIN;
   const hosted=env.PILOTODIN_SERVER_MODE==='hosted-fixture'&&env.PILOTODIN_DEV_ORIGIN===HOSTED_ORIGIN&&
     env.CI==='true'&&env.GITHUB_ACTIONS==='true'&&env.P1_REAL_HTTP_E2E==='1'&&
@@ -61,8 +77,11 @@ export function liveDevProxyTrust(env){
 export function liveDevProxyPlan(req,trust){
   const url=req.url??'';
   if(!url.startsWith('/api/'))return url==='/api'||url.startsWith('/api?')?{status:403}:null;
+  const relay=trust?.kind==='a4-relay'&&trust.origin===A4_ORIGIN&&
+    trust.host==='127.0.0.1:5174'&&trust.port===5174&&
+    trust.capability===undefined&&trust.backendPort===undefined;
   if(!METHODS.has(req.method)||req.socket?.remoteAddress!=='127.0.0.1'||
-     /[\x00-\x20\x7f\\#]/.test(url)||!trust||!/^[0-9a-f]{64}$/.test(trust.capability??'')){
+     /[\x00-\x20\x7f\\#]/.test(url)||!trust||(!relay&&(trust.kind!==undefined||!/^[0-9a-f]{64}$/.test(trust.capability??'')))){
     return {status:403};
   }
   const raw=req.rawHeaders;
@@ -88,6 +107,14 @@ export function liveDevProxyPlan(req,trust){
     catch{return {status:403};}
   }
   if(headers['content-length']!==undefined&&headers['transfer-encoding']!==undefined)return {status:400};
+  if(relay){
+    // Both hops use the same local raw-header/marker checks. Only the paired
+    // Live Dev server adds its private capability; no redirect or target input.
+    const outgoing={host:'127.0.0.1:5173',origin:LIVE_ORIGIN,'x-pilotodin-dev-request':'1'};
+    for(const key of REQUEST_HEADERS)if(headers[key]!==undefined)outgoing[key]=headers[key];
+    return {status:200,options:{hostname:'127.0.0.1',port:5173,path:url,
+      method:req.method,headers:outgoing}};
+  }
   const backendPort=trust.backendPort??8000;
   if(!Number.isInteger(backendPort)||backendPort<1024||backendPort>65535||
      (trust.backendPort!==undefined&&(trust.origin!==REPORT_CHAIN_ORIGIN||backendPort===5176)))return {status:403};
