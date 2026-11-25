@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | C4 C3 frontend witness/fence 35d2bd2 + test-only a931ff9 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-MOUNTED-NAVIGATION-CORRECTION-20261125 |
-| Operation state | PREPARED; test-only use actual unified shell Home and Settings navigation; no product send activation. |
+| Operation state | ISSUED from prepared parent 37332481571c947cf7485da274dd6878e46f7f51; exact navigation fixture correction. Reconcile mounted CI before enabling real cloud. |
 | Intended files | frontend/e2e/isolated-workspace.spec.ts and canonical records only. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 222084c: P4 #45670110565 SUCCESS (1086 Python/6 skipped/552 subtests, 15 Rust, 143 Node/Vite, 13 browser, 68 Windows/133 subtests; collector skipped); P1 #45670110570 FAILURE (206 Node and Vite passed, seven existing browser cases passed, both new C4 cases timed out at UI navigation). 97817ee P1 cancelled by supersession. |

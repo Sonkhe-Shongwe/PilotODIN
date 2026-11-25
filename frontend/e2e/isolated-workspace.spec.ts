@@ -1552,7 +1552,8 @@ test('C4 mounted consent requires explicit confirmation and a reviewed witness i
   await expect(page.getByRole('button',{name:'Continue answer →'})).toHaveCount(0);
   await select.selectOption('openrouter');await question.fill('Synthetic project question');
   await expect(page.getByRole('button',{name:'Send to OpenRouter',exact:true})).toBeDisabled();
-  await page.getByRole('button',{name:/ODIN companion/}).click();
+  await page.getByRole('button',{name:'Home',exact:true}).click();
+  await page.getByRole('button',{name:'Investigate with ODIN',exact:true}).click();
   const drawer=page.getByRole('complementary',{name:'ODIN intelligence panel'});
   await drawer.getByLabel('Intelligence',{exact:true}).selectOption('groq');
   const deepSend=drawer.getByRole('button',{name:'Send to GroqCloud',exact:true});
@@ -1579,9 +1580,12 @@ test('C4 mounted consent revocation in a second renderer suppresses an in-flight
     page.once('dialog',async dialog=>{expect(dialog.message()).toContain('Google Gemini');expect(dialog.message()).toContain('Synthetic late question');expect(dialog.message()).toContain('Confirm only this request');await dialog.accept()});await send.click();
     await expect.poll(()=>posted.length).toBe(1);
     const other=await context.newPage();
-    await other.goto('/#/studio/ai_settings');
+    await other.goto('/#/studio/assistant');
+    await expect(other.getByLabel('Choose intelligence')).toBeVisible();
+    await other.getByRole('button',{name:'Settings',exact:true}).click();
     const enable=other.getByRole('checkbox',{name:/Enable cloud reasoning/});
     await expect(enable).toBeChecked();
+    await expect(enable).toBeEnabled();
     await enable.uncheck();
     await other.getByRole('button',{name:'Save AI preferences',exact:true}).click();
     await expect(other.getByText('AI preferences saved. Cloud permission disabled.',{exact:true})).toBeVisible();
