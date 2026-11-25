@@ -7,7 +7,7 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 01afb52106f3245f7ce03129965f03107d7a1e56 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
@@ -16,10 +16,10 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Operation state | RECONCILED: exact B1 source [d43c9a4](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/d43c9a4d853a9ee282500f74c652d81159e83eb5); no replay |
 | Intended files | backend/ai_provider.py, backend/main.py, backend/resource_session.py, tests/test_c1_product_integration.py, tests/test_p4_r03_verified_answers.py, tests/test_c4_cloud_intent.py, P1 isolated backend workflow, canonical records. Transient request intent only, no settings schema or native change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Common selected-provider routing, strict transient HTTP intent, passive status, no startup probes/fanout/implicit worker wake, OpenRouter project context held; direct mocked tests and updated P4 regressions. Exact CI pending. |
-| Pending runs | [P2 Immutable Report Revision Idempotency #45629538624](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538624) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45629538810](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538810) IN_PROGRESS; [P3 Real HTTP Semantic Context Browser Acceptance #45629538228](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538228) IN_PROGRESS; [P3 User-Described Semantic Business Context #45629538785](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538785) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45629538426](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538426) IN_PROGRESS; [P1 Project Lifecycle Disposable Backend Acceptance #45629538709](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538709) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45629538813](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538813) IN_PROGRESS; [P2 Real HTTP Saved Revision Comparison #45629538565](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538565) IN_PROGRESS. All at exact d43c9a4. |
+| Verification | Exact d43c9a4: 7/8 workflows SUCCESS; P1 93 combined C4/settings/selected historical tests, 50 foundation, 206 recovery + 2 subtests, 37 composition. [P4 #45629538813](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45629538813) FAILURE, two cloud evaluation privacy cases (1084 passed, 6 skipped, 552 subtests). P4 browser and Windows scoped jobs passed; restricted collector skipped. |
+| Pending runs | None; all eight terminal. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile eight exact CI workflows, preserve failures, check B1 fake transport and historical P4 updates. Next complete positive nested payload projection, mandatory strict transport registry/deadline and generation/dispatch/concurrency lifecycle, revise superseded historical cloud tests with inert adapters, then UI explicit intent/warnings/cache. Existing frontend cloud requests fail closed pending C wiring; OpenRouter project sharing held pending disclosure. No actual provider/native/owner-data operation. |
+| Recovery action | Before B6, prepare narrow correction for two P4 privacy failures: cloud prompt has continuation:null (test expected absent), and wide Unicode evidence exceeds 11000 UTF-8 byte ceiling because legacy prompt fitter budgets character length. Preserve local continuation, required evidence and no-cloud-continuation negatives; implement byte-aware cloud fitting/omit history field and keep hard byte ceiling, no bypass. Verify exact scoped CI. Then positive nested projection, mandatory strict transport registry/deadline, generation/concurrency, historical test migration and UI. OpenRouter project sharing held pending disclosure; no actual provider/native/owner-data operation. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
