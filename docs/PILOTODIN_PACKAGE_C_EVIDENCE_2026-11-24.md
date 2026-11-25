@@ -1221,3 +1221,8 @@ Prepared parent `3455b3acc21529b7379189616f7a33ea1f8102ce`. Shared confirmed pro
 
 
 Exact published frontend version/draft source `ee5985c5722935dd91f9a896f7d728d20df098fe`; observed CI: #45672477038 P1 Isolated Frontend Verification in_progress; #45672477045 P4 Target Review Queue and Transparent Ranking in_progress. Static review confirms 27/27 isolated scenario origin audit assertions and 11 approved dialog titles; no browser pass claimed. Preserve prior nine successful runs separately. Reconcile exact P1/P4, correct concrete failures if any, and only then consider narrow project-send source enablement under C-D07. No restricted execution or formal source/acceptance credit.
+
+
+### 25 November | C4 frontend integration exact CI reconciled
+
+Exact frontend integration `ee5985c5722935dd91f9a896f7d728d20df098fe`: P1 #45672477038 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium including all four C4 mounted scenarios; job 139411144989); P4 #45672477045 SUCCESS (routine source/frontend, disposable HTTP and simulated Windows jobs 139411146680, 139411146523, 139411146169; restricted collector 139411148643 skipped). Mounted job explicitly passed both panel confirmation/version checks, second renderer revocation, newer assistant draft preservation and missed witness/mismatched response cases. Prior backend pin evidence remains separately recorded. No pending workflows at this exact SHA. No actual provider request, native acceptance, installer or owner data. Real project send held; next narrow source gate review, synthetic verification and formal closure. Source 13/17, official P4 14/20 unchanged.
