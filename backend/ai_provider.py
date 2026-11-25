@@ -260,50 +260,178 @@ class ProviderText(str):
         return obj
 
 
+# Exact existing destinations. Do not derive a URL from caller-supplied model text.
+_CLOUD_DESTINATIONS = {
+    ("gemini", "gemini-3.1-flash-lite"):
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent",
+    ("gemini", "gemini-3-flash-preview"):
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+    ("groq", "openai/gpt-oss-120b"):
+        "https://api.groq.com/openai/v1/chat/completions",
+    ("openrouter", "openrouter/free"):
+        "https://openrouter.ai/api/v1/chat/completions",
+}
+_CLOUD_WIRE_LIMIT = 16384
+_CLOUD_RESPONSE_LIMIT = 256000
+
+
+class _CloudNoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _cloud_remaining(deadline):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Cloud request deadline exceeded")
+    return remaining
+
+
+def _cloud_read_response(response, destination, deadline):
+    _cloud_remaining(deadline)
+    if response.status != 200 or response.geturl() != destination:
+        raise ValueError("Unexpected cloud response")
+    # urllib returns dechunked bytes; prohibit other encodings and ambiguous
+    # framing, and never decode compressed provider data.
+    headers = response.headers
+    def single(name):
+        values = headers.get_all(name, [])
+        if len(values) > 1:
+            raise ValueError("Ambiguous cloud response header")
+        return values[0].strip() if values else None
+    content_type = single("Content-Type")
+    encoding = single("Content-Encoding")
+    transfer = single("Transfer-Encoding")
+    length = single("Content-Length")
+    if (content_type is None or content_type.split(";",1)[0].strip().lower() != "application/json"
+            or (encoding is not None and encoding.lower() != "identity")
+            or (transfer is not None and (transfer.lower() != "chunked" or length is not None))):
+        raise ValueError("Unexpected cloud response encoding")
+    expected = None
+    if length is not None:
+        if not re.fullmatch(r"[0-9]{1,6}", length):
+            raise ValueError("Invalid cloud response length")
+        expected = int(length)
+        if not 0 < expected <= _CLOUD_RESPONSE_LIMIT:
+            raise ValueError("Cloud response exceeds limit")
+    body = bytearray()
+    # read1 avoids requesting a single large multi-read buffer. The absolute
+    # elapsed fence rejects late bytes/results, but stdlib DNS, headers and
+    # individual blocking reads still depend on the OS/socket timeout.
+    while True:
+        _cloud_remaining(deadline)
+        size = min(8192, _CLOUD_RESPONSE_LIMIT + 1 - len(body))
+        chunk = response.read1(size)
+        _cloud_remaining(deadline)
+        if type(chunk) is not bytes or len(chunk) > size:
+            raise ValueError("Invalid cloud response bytes")
+        if not chunk:
+            break
+        body.extend(chunk)
+        if len(body) > _CLOUD_RESPONSE_LIMIT or (expected is not None and len(body) > expected):
+            raise ValueError("Cloud response exceeds limit")
+    if expected is not None and len(body) != expected:
+        raise ValueError("Truncated cloud response")
+    return settings_storage.strict_object(bytes(body), _CLOUD_RESPONSE_LIMIT)
+
+
+def _cloud_answer(provider, value):
+    # Reject malformed or ambiguous response envelopes. Only known textual
+    # finish states are published; provider tool calls are not instructions.
+    if "error" in value:
+        raise ValueError("Provider rejected request")
+    if provider == "gemini":
+        candidates = value.get("candidates")
+        if type(candidates) is not list or len(candidates) != 1 or type(candidates[0]) is not dict:
+            raise ValueError("Invalid provider candidates")
+        candidate = candidates[0]
+        content = candidate.get("content")
+        if type(content) is not dict:
+            raise ValueError("Invalid provider content")
+        parts = content.get("parts")
+        if type(parts) is not list or not 0 < len(parts) <= 256:
+            raise ValueError("Invalid provider parts")
+        if any(type(part) is not dict or type(part.get("text")) is not str
+               or any(key in part for key in ("functionCall","functionResponse","inlineData","executableCode","codeExecutionResult"))
+               for part in parts):
+            raise ValueError("Invalid provider text")
+        text = "\n".join(part["text"] for part in parts if part.get("thought") is not True)
+        finish = candidate.get("finishReason")
+        if finish not in ("STOP","MAX_TOKENS","OTHER"):
+            raise ValueError("Unexpected provider finish")
+        incomplete = finish != "STOP"
+    else:
+        choices = value.get("choices")
+        if type(choices) is not list or len(choices) != 1 or type(choices[0]) is not dict:
+            raise ValueError("Invalid provider choices")
+        choice = choices[0]
+        message = choice.get("message")
+        if type(message) is not dict or message.get("tool_calls") or message.get("function_call") or message.get("refusal"):
+            raise ValueError("Invalid provider message")
+        text = message.get("content")
+        finish = choice.get("finish_reason")
+        if finish not in ("stop","length","max_tokens"):
+            raise ValueError("Unexpected provider finish")
+        incomplete = finish != "stop"
+    if type(text) is not str or not text.strip():
+        raise ValueError("Empty provider text")
+    text.encode("utf-8")  # reject lone escaped surrogates
+    return ProviderText(text.strip()[:16000], finish, incomplete or len(text.strip()) > 16000)
+
+
 def _call_provider(provider:str,model:str,system:str,user:str,key:str,timeout:int,*,strict=False,still_authorized=None)->str:
-    if provider=='gemini':
-        url=f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
-        payload={'systemInstruction':{'parts':[{'text':system}]},
-                 'contents':[{'role':'user','parts':[{'text':user}]}],
-                 'generationConfig':{'maxOutputTokens':2600,'temperature':0.25}}
-        headers={'x-goog-api-key':key}
-    else:
-        url='https://api.groq.com/openai/v1/chat/completions' if provider=='groq' else 'https://openrouter.ai/api/v1/chat/completions'
-        payload={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':user}],
-                 'max_tokens':2600,'temperature':0.25}
-        headers={'Authorization':'Bearer '+key}
-    request=urllib.request.Request(url,data=json.dumps(payload,ensure_ascii=False).encode('utf-8'),
-             headers={**headers,'Content-Type':'application/json','User-Agent':'PilotODIN/0.8'},method='POST')
-    if strict:
-        class NoRedirect(urllib.request.HTTPRedirectHandler):
-            def redirect_request(self, req, fp, code, msg, headers, newurl):
-                return None
-        # Explicit destination, no cross-provider redirect or ambient proxy.
-        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
-        if still_authorized is None or not still_authorized():
-            raise RuntimeError("Cloud request no longer authorized")
-        connection=opener.open(request,timeout=timeout)
-    else:
-        connection=urllib.request.urlopen(request,timeout=timeout)
-    with connection as response:
-        raw=response.read(256_001)
-    if len(raw)>256_000:
-        raise ValueError("Provider response exceeds limit")
-    value=json.loads(raw)
-    if provider=='gemini':
-        candidate=(value.get('candidates') or [{}])[0]
-        text='\n'.join(part.get('text','') for part in candidate.get('content',{}).get('parts',[]) if isinstance(part.get('text'),str))
-        finish=str(candidate.get('finishReason') or '').upper()
-        incomplete=finish in ('MAX_TOKENS','OTHER')
-    else:
-        choice=value['choices'][0]
-        text=choice['message']['content']
-        finish=str(choice.get('finish_reason') or '').lower()
-        incomplete=finish in ('length','max_tokens')
-    if not isinstance(text,str) or not text.strip():raise RuntimeError('Provider returned no explanatory text')
-    # Safe response-size ceiling with explicit continuation metadata, not silent truncation.
-    clipped=len(text)>16000
-    return ProviderText(text.strip()[:16000], finish, incomplete or clipped)
+    # Keep the historical keyword for fixture compatibility, but there is
+    # no longer a non-strict transport path.
+    if strict is not True or not callable(still_authorized):
+        raise RuntimeError("Cloud request no longer authorized")
+    if type(provider) is not str or type(model) is not str:
+        raise ValueError("Unsupported cloud destination")
+    destination = _CLOUD_DESTINATIONS.get((provider, model))
+    if destination is None:
+        raise ValueError("Unsupported cloud destination")
+    if (type(timeout) is not int or not 3 <= timeout <= 45 or
+            type(key) is not str or not 12 <= len(key) <= 512 or
+            any(not 33 <= ord(c) <= 126 for c in key)):
+        raise ValueError("Invalid cloud request settings")
+    deadline = time.monotonic() + timeout
+    try:
+        if type(system) is not str or type(user) is not str or len(user.encode("utf-8")) > CLOUD_PROMPT_LIMIT:
+            raise ValueError("Cloud prompt exceeds limit")
+        if provider == "gemini":
+            payload = {"systemInstruction":{"parts":[{"text":system}]},
+                       "contents":[{"role":"user","parts":[{"text":user}]}],
+                       "generationConfig":{"maxOutputTokens":2600,"temperature":0.25}}
+            headers = {"x-goog-api-key":key}
+        else:
+            payload = {"model":model,"messages":[{"role":"system","content":system},{"role":"user","content":user}],
+                       "max_tokens":2600,"temperature":0.25}
+            headers = {"Authorization":"Bearer "+key}
+        wire = json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")).encode("utf-8")
+        if len(wire) > _CLOUD_WIRE_LIMIT:
+            raise ValueError("Cloud request exceeds limit")
+        request = urllib.request.Request(destination,data=wire,
+            headers={**headers,"Content-Type":"application/json","Accept":"application/json",
+                     "Accept-Encoding":"identity","User-Agent":"PilotODIN/0.8"},method="POST")
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),_CloudNoRedirects())
+        _cloud_remaining(deadline)
+    except Exception:
+        raise ValueError("Invalid bounded cloud request") from None
+    if still_authorized() is not True:
+        raise RuntimeError("Cloud request no longer authorized")
+    try:
+        with opener.open(request,timeout=_cloud_remaining(deadline)) as response:
+            value = _cloud_read_response(response,destination,deadline)
+        answer = _cloud_answer(provider,value)
+        _cloud_remaining(deadline)
+        return answer
+    except urllib.error.HTTPError as exc:
+        try:
+            exc.close()
+        finally:
+            raise RuntimeError("Selected cloud provider unavailable") from None
+    except Exception:
+        raise RuntimeError("Selected cloud provider unavailable") from None
+
 
 class _LocalNoRedirects(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):

@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e5710cf0a7a880d1afbf6149b6499ba7467dd276 |
 | Product baseline | B7 route fence 821c50a; all eight exact CI workflows SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B8-STRICT-WIRE-20261125 |
-| Operation state | PREPARED; strict transport source not yet issued |
+| Operation state | ISSUED; reconcile exact source commit from prepared parent 2c47d8f; do not replay |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, tests/test_c4_ai_settings.py, tests/test_multi_ai.py and canonical records. No workflow/schema/activation change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | B7 134 focused cases, all eight exact workflows passed. B8 pending. |

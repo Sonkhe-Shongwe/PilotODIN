@@ -164,3 +164,35 @@ def test_unleased_real_adapter_refuses_ai_mutation(tmp_path,monkeypatch):
     with pytest.raises(OSError):
         ai.set_key("gemini","generated-fixture-key")
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("mutation",["settings","credential"])
+def test_actual_failed_mutation_discards_admitted_cloud_result(home,monkeypatch,mutation):
+    # Exercise real save/key revision and inhibition on the disposable store,
+    # not a simulated generation increment. Transport is entirely inert.
+    monkeypatch.setattr(ai,"_persistent_secrets",lambda:True)
+    monkeypatch.setattr(ai,"_consent_revision",ai.cloud_consent_revision())
+    save(cloud_enabled=True,share_aggregates=True)
+    ai.set_key("gemini","prior-synthetic-key")
+    revision=ai.cloud_consent_revision()
+    calls=[]
+    def fail_replace(*args,**kwargs):
+        raise OSError("PRIVATE_SAVE_ERROR")
+    def transport(*args,**kwargs):
+        assert kwargs["still_authorized"]()
+        calls.append(1)
+        with monkeypatch.context() as fault:
+            fault.setattr(store.os,"replace",fail_replace)
+            with pytest.raises(OSError):
+                if mutation=="settings":
+                    save(cloud_enabled=False,share_aggregates=False)
+                else:
+                    ai.set_key("gemini",remove=True)
+        assert not ai.cloud_consent_current(revision)
+        return ai.ProviderText("Late private result","stop",False)
+    monkeypatch.setattr(ai,"_call_provider",transport)
+    result=ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)
+    assert result["fallback"] and result["answer"]=="Rules" and calls==[1]
+    assert ai._cloud_slot is None
+    assert ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)["fallback"]
+    assert calls==[1] and ai.config_status()["cloud_enabled"] is False

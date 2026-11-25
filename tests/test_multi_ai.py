@@ -240,20 +240,34 @@ def test_prompt_never_contains_secret(pid,monkeypatch):
     monkeypatch.setattr(ai_provider,'_call_provider',fake)
     assert client.post(f'/api/projects/{pid}/ai/insight',json={'context':'quality'}).status_code==200
 
+# B8: retain the historical wire-format assertions, but use the mandatory
+# strict transport and bounded response seam instead of the removed urlopen path.
 class _HTTPReply:
-    def __init__(self,data):self.data=json.dumps(data).encode('utf-8')
+    def __init__(self,data,url):
+        from email.message import Message
+        import io
+        raw=json.dumps(data).encode("utf-8")
+        self.data=io.BytesIO(raw)
+        self.url=url
+        self.status=200
+        self.headers=Message()
+        self.headers["Content-Type"]="application/json"
+        self.headers["Content-Length"]=str(len(raw))
+    def geturl(self):return self.url
     def __enter__(self):return self
-    def __exit__(self,*_):return False
-    def read(self,limit):return self.data[:limit]
+    def __exit__(self,*_):self.data.close()
+    def read1(self,limit):return self.data.read(limit)
 
 
 def test_real_gemini_wire_format_without_network(monkeypatch):
+    from types import SimpleNamespace
     sent=[]
     def fake(request,timeout):
         sent.append(request)
-        return _HTTPReply({'candidates':[{'content':{'parts':[{'text':'Evidence-based Gemini answer.'}]}}]})
-    monkeypatch.setattr(ai_provider.urllib.request,'urlopen',fake)
-    value=ai_provider._call_provider('gemini','gemini-3.1-flash-lite','system','question','test-secret-key',7)
+        return _HTTPReply({'candidates':[{'content':{'parts':[{'text':'Evidence-based Gemini answer.'}]},'finishReason':'STOP'}]},request.full_url)
+    monkeypatch.setattr(ai_provider.urllib.request,'build_opener',lambda *_:SimpleNamespace(open=fake))
+    value=ai_provider._call_provider('gemini','gemini-3.1-flash-lite','system','question','test-secret-key',7,
+                                    strict=True,still_authorized=lambda:True)
     assert value=='Evidence-based Gemini answer.'
     assert '/models/gemini-3.1-flash-lite:generateContent' in sent[0].full_url
     assert sent[0].get_header('X-goog-api-key')=='test-secret-key'
@@ -267,15 +281,17 @@ def test_real_gemini_wire_format_without_network(monkeypatch):
     ('groq','api.groq.com'),('openrouter','openrouter.ai')
 ])
 def test_openai_compatible_wire_format_without_network(monkeypatch,provider,expected_domain):
+    from types import SimpleNamespace
     sent=[]
     def fake(request,timeout):
         sent.append(request)
-        return _HTTPReply({'choices':[{'message':{'content':'Validated response'}}]})
-    monkeypatch.setattr(ai_provider.urllib.request,'urlopen',fake)
-    txt=ai_provider._call_provider(provider,ai_provider.MODELS[provider]['routine'],'instructions','context','secret',5)
+        return _HTTPReply({'choices':[{'message':{'content':'Validated response'},'finish_reason':'stop'}]},request.full_url)
+    monkeypatch.setattr(ai_provider.urllib.request,'build_opener',lambda *_:SimpleNamespace(open=fake))
+    txt=ai_provider._call_provider(provider,ai_provider.MODELS[provider]['routine'],'instructions','context','fixture-secret-key',5,
+                                  strict=True,still_authorized=lambda:True)
     assert txt=='Validated response'
     req=sent[0];assert expected_domain in req.full_url
-    assert req.get_header('Authorization')=='Bearer secret'
+    assert req.get_header('Authorization')=='Bearer fixture-secret-key'
     assert json.loads(req.data)['messages'][1]['content']=='context'
 
 

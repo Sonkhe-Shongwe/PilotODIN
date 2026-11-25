@@ -4,6 +4,8 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from types import SimpleNamespace
+from email.message import Message
+import io
 
 import pytest
 import pandas as pd
@@ -517,3 +519,167 @@ def test_cloud_expected_revision_refuses_invalid_witness_before_projection(dispa
     monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Invalid witness reached credentials"))
     result=ai.owned_cloud_insight({},"assistant","Question","Rules",False,"gemini",expected_revision=witness)
     assert result["fallback"] and not dispatch[1] and ai._cloud_slot is None
+
+
+# B8 strict transport: inert HTTP responses only. No socket or provider call.
+class _WireReply:
+    def __init__(self, url, body, *, status=200, headers=None):
+        self.url=url
+        self.status=status
+        self.headers=Message()
+        for key,value in (headers if headers is not None else
+                          [("Content-Type","application/json"),("Content-Length",str(len(body)))]):
+            self.headers[key]=value
+        self.stream=io.BytesIO(body)
+        self.closed=False
+
+    def geturl(self):
+        return self.url
+
+    def read1(self,size):
+        assert 0 < size <= 8192
+        return self.stream.read(size)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self,*args):
+        self.closed=True
+        self.stream.close()
+
+
+def _wire_payload(provider,finish=None):
+    if provider=="gemini":
+        return {"candidates":[{"content":{"parts":[{"text":"Fixture answer"}]},
+                               "finishReason":finish or "STOP"}]}
+    return {"choices":[{"message":{"content":"Fixture answer"},"finish_reason":finish or "stop"}]}
+
+
+@pytest.mark.parametrize("provider,model",[
+    ("gemini","gemini-3.1-flash-lite"),("gemini","gemini-3-flash-preview"),
+    ("groq","openai/gpt-oss-120b"),("openrouter","openrouter/free")])
+def test_cloud_wire_fixed_registry_and_headers(monkeypatch,provider,model):
+    opened=[]
+    replies=[]
+    def opener(*handlers):
+        assert handlers[0].proxies=={}
+        assert handlers[1].redirect_request(None,None,302,"",{}, "https://invalid.test") is None
+        def open_request(request,timeout):
+            opened.append(request)
+            assert 0 < timeout <= 10
+            reply=_WireReply(request.full_url,json.dumps(_wire_payload(provider)).encode())
+            replies.append(reply)
+            return reply
+        return SimpleNamespace(open=open_request)
+    monkeypatch.setattr(ai.urllib.request,"build_opener",opener)
+    monkeypatch.setattr(ai.urllib.request,"urlopen",lambda *_:pytest.fail("Non-strict transport"))
+    answer=ai._call_provider(provider,model,"System","Question","fixture-secret-key",10,
+                             strict=True,still_authorized=lambda:True)
+    assert answer=="Fixture answer" and not answer.incomplete and replies[0].closed
+    req=opened[0]
+    assert req.full_url==ai._CLOUD_DESTINATIONS[(provider,model)]
+    assert req.get_method()=="POST" and len(req.data)<=ai._CLOUD_WIRE_LIMIT
+    assert req.get_header("Accept-encoding")=="identity"
+    assert "fixture-secret-key" not in req.data.decode()
+    if provider=="gemini":
+        assert req.get_header("X-goog-api-key")=="fixture-secret-key"
+        assert json.loads(req.data)["contents"][0]["parts"][0]["text"]=="Question"
+    else:
+        assert req.get_header("Authorization")=="Bearer fixture-secret-key"
+        assert json.loads(req.data)["messages"][1]["content"]=="Question"
+
+
+@pytest.mark.parametrize("provider,model,strict,key,timeout,user",[
+    ("unknown","x",True,"fixture-secret-key",10,"Question"),
+    ("gemini","../bad",True,"fixture-secret-key",10,"Question"),
+    ("groq","gemini-3-flash-preview",True,"fixture-secret-key",10,"Question"),
+    ("gemini","gemini-3-flash-preview",False,"fixture-secret-key",10,"Question"),
+    ("gemini","gemini-3-flash-preview",True,"fixture-secret-\\rkey",10,"Question"),
+    ("gemini","gemini-3-flash-preview",True,"fixture-secret-key",True,"Question"),
+    ("gemini","gemini-3-flash-preview",True,"fixture-secret-key",10,"é"*5501),
+    ("gemini","gemini-3-flash-preview",True,"fixture-secret-key",10,"\ud800"),
+    ("gemini","gemini-3-flash-preview",True,"fixture-secret-key",10,"\u0001"*10000)])
+def test_cloud_wire_refuses_invalid_request_before_opener(monkeypatch,provider,model,strict,key,timeout,user):
+    monkeypatch.setattr(ai.urllib.request,"build_opener",lambda *_:pytest.fail("Invalid request reached opener"))
+    with pytest.raises((ValueError,RuntimeError)):
+        ai._call_provider(provider,model,"System",user,key,timeout,strict=strict,still_authorized=lambda:True)
+
+
+@pytest.mark.parametrize("fault",["redirect","status","gzip","content_type","duplicate_length",
+    "oversize_declared","oversize_actual","truncated","ambiguous_framing","bad_json","duplicate_json",
+    "nonfinite","wrong_shape","tool_call","blocked_finish","surrogate","deadline"])
+def test_cloud_wire_rejects_response_and_closes(monkeypatch,fault):
+    provider="groq"
+    model=ai.MODELS[provider]["routine"]
+    url=ai._CLOUD_DESTINATIONS[(provider,model)]
+    body=json.dumps(_wire_payload(provider)).encode()
+    headers=[("Content-Type","application/json")]
+    status=200
+    response_url=url
+    if fault=="redirect":
+        response_url="https://invalid.test"
+    elif fault=="status":
+        status=302
+    elif fault=="gzip":
+        headers.append(("Content-Encoding","gzip"))
+    elif fault=="content_type":
+        headers=[("Content-Type","text/html")]
+    elif fault=="duplicate_length":
+        headers.extend([("Content-Length","10"),("Content-Length","10")])
+    elif fault=="oversize_declared":
+        headers.append(("Content-Length","256001"))
+    elif fault=="oversize_actual":
+        body=b"x"*256001
+    elif fault=="truncated":
+        headers.append(("Content-Length",str(len(body)+1)))
+    elif fault=="ambiguous_framing":
+        headers.extend([("Content-Length",str(len(body))),("Transfer-Encoding","chunked")])
+    elif fault=="bad_json":
+        body=b"PRIVATE_PROVIDER_BODY"
+    elif fault=="duplicate_json":
+        body=b'{"choices":[],"choices":[]}'
+    elif fault=="nonfinite":
+        body=b'{"choices":[],"value":NaN}'
+    elif fault=="wrong_shape":
+        body=b'{"choices":[42]}'
+    elif fault=="tool_call":
+        body=b'{"choices":[{"message":{"content":"Text","tool_calls":[{}]},"finish_reason":"stop"}]}'
+    elif fault=="blocked_finish":
+        body=json.dumps(_wire_payload(provider,"content_filter")).encode()
+    elif fault=="surrogate":
+        body=b'{"choices":[{"message":{"content":"\\ud800"},"finish_reason":"stop"}]}'
+    reply=_WireReply(response_url,body,status=status,headers=headers)
+    if fault=="deadline":
+        now=[0.0]
+        monkeypatch.setattr(ai.time,"monotonic",lambda:now[0])
+        original=reply.read1
+        def late(size):
+            now[0]=11.0
+            return original(size)
+        reply.read1=late
+    monkeypatch.setattr(ai.urllib.request,"build_opener",lambda *_:SimpleNamespace(open=lambda *a,**k:reply))
+    with pytest.raises(RuntimeError,match="Selected cloud provider unavailable") as error:
+        ai._call_provider(provider,model,"System","Question","fixture-secret-key",10,
+                          strict=True,still_authorized=lambda:True)
+    assert reply.closed and "PRIVATE_PROVIDER_BODY" not in str(error.value)
+
+
+@pytest.mark.parametrize("status",[301,401,429,503])
+def test_cloud_wire_closes_http_error(monkeypatch,status):
+    stream=io.BytesIO(b"PRIVATE_PROVIDER_BODY")
+    def fail(request,timeout):
+        raise ai.urllib.error.HTTPError(request.full_url,status,"PRIVATE_REASON",None,stream)
+    monkeypatch.setattr(ai.urllib.request,"build_opener",lambda *_:SimpleNamespace(open=fail))
+    with pytest.raises(RuntimeError,match="Selected cloud provider unavailable") as error:
+        ai._call_provider("groq",ai.MODELS["groq"]["routine"],"System","Question",
+                          "fixture-secret-key",10,strict=True,still_authorized=lambda:True)
+    assert stream.closed and "PRIVATE" not in str(error.value)
+
+
+def test_cloud_wire_preserves_incomplete_metadata(monkeypatch):
+    url=ai._CLOUD_DESTINATIONS[("groq",ai.MODELS["groq"]["routine"])]
+    reply=_WireReply(url,json.dumps(_wire_payload("groq","length")).encode())
+    monkeypatch.setattr(ai.urllib.request,"build_opener",lambda *_:SimpleNamespace(open=lambda *a,**k:reply))
+    answer=ai._call_provider("groq",ai.MODELS["groq"]["routine"],"System","Question",
+                             "fixture-secret-key",10,strict=True,still_authorized=lambda:True)
+    assert answer.incomplete and answer.finish_reason=="length" and reply.closed
