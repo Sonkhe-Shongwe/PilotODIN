@@ -873,7 +873,9 @@ test('P4-79 real HTTP: reopened experiment settings are read from saved record, 
     const req=route.request(),url=new URL(req.url());
     if(req.method()!=='GET'||url.origin!==API){await route.fallback();return}
     if(url.pathname===`/api/projects/${projectId}`){
-      const actual=await route.fetch();
+      // route.fetch uses a separate HTTP client, not the browser fetch metadata.
+      // The exact read-only fixture client supplies the explicit proxy witness.
+      const actual=await request.get(req.url(),{maxRedirects:0});
       expect(actual.status()).toBe(200);
       const genuine=await actual.json();
       intercepted.push('project-list');
@@ -982,7 +984,7 @@ test('P4 N11 real HTTP: compact approval, archive, reviewed Undo v2 and persiste
       await verifyN12ArchiveDraft(page,peer,API+'/api',projectId,read,(approved:{id:string;action:string;revision:number})=>{
         expect(permit).toBeNull();
         permit=approved;
-      });
+      },{hostedProxy:true});
       expect(permit).toBeNull();
       expect(lifecycleWrites).toEqual(['archive','restore']);
       await peer.close();

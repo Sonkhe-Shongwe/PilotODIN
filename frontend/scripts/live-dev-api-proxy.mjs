@@ -72,7 +72,9 @@ export function liveDevProxyPlan(req,trust){
 
 function refuse(res,status){
   if(res.headersSent){res.destroy();return;}
-  const body='{"detail":"Isolated Live Dev API request refused"}';
+  const body=JSON.stringify({detail:status===502
+    ?'Could not connect to PilotODIN\'s local analytics service. Check that the PilotODIN Backend window is running, then try again.'
+    :'Isolated Live Dev API request refused'});
   res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});
   res.end(body);
 }

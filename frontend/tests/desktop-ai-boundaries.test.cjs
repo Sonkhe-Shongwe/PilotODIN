@@ -299,3 +299,36 @@ test('C3 hosted browser proxy uses distinct exact origin and keeps private capab
  api.configureDevelopmentAPI('http://127.0.0.1:5178');await api.get('/health');
  assert.deepEqual(seen,[{url:'http://127.0.0.1:5178/api/health',headers:{'X-PilotODIN-Dev-Request':'1'}}]);
 });
+
+
+test('C3 proxy distinguishes denied requests from unavailable upstream without exposing capability',async()=>{
+ const {createLiveDevProxy,liveDevProxyTrust}=await import('../scripts/live-dev-api-proxy.mjs');
+ const {EventEmitter}=require('node:events');
+ const env={PILOTODIN_SERVER_MODE:'dev',VITE_PILOTODIN_AUTH_DEV:'1',
+   PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5173',PILOTODIN_DEV_PORT:'8000',PILOTODIN_DEV_CAPABILITY:'a'.repeat(64)};
+ const trust=liveDevProxyTrust(env);
+ function response(){
+   const res=new EventEmitter();
+   res.writeHead=(status)=>{res.status=status;res.headersSent=true};
+   res.end=body=>{res.body=body;res.writableEnded=true};
+   return res;
+ }
+ const upstream=new EventEmitter();
+ upstream.destroy=()=>{};
+ let calls=0;
+ const proxy=createLiveDevProxy(trust,()=>{calls++;return upstream});
+ const req=new EventEmitter();
+ Object.assign(req,{url:'/api/health',method:'GET',socket:{remoteAddress:'127.0.0.1'},
+   rawHeaders:['Host','127.0.0.1:5173','X-PilotODIN-Dev-Request','1','Origin','http://127.0.0.1:5173'],
+   pipe:()=>{}});
+ const denied=response();
+ proxy({...req,rawHeaders:req.rawHeaders.slice(0,2)},denied,()=>assert.fail('unexpected next'));
+ assert.equal(denied.status,403);assert.equal(calls,0);
+ assert.match(JSON.parse(denied.body).detail,/request refused/);
+ const unavailable=response();
+ proxy(req,unavailable,()=>assert.fail('unexpected next'));
+ upstream.emit('error',Error('private upstream failure '+trust.capability));
+ assert.equal(unavailable.status,502);assert.equal(calls,1);
+ assert.match(JSON.parse(unavailable.body).detail,/Could not connect to PilotODIN/);
+ assert.ok(!unavailable.body.includes(trust.capability));
+});

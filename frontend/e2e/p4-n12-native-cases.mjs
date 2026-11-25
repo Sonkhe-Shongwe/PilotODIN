@@ -59,7 +59,11 @@ export function matchesN12LifecycleRequest(request, api, permit) {
   }
 }
 
-export async function verifyN12ArchiveDraft(page, peer, api, projectId, read, permitOnce) {
+export async function verifyN12ArchiveDraft(page, peer, api, projectId, read, permitOnce, options={}) {
+  // Only the explicitly migrated hosted browser fixture needs the proxy
+  // marker. Keep the existing native QA default untouched.
+  const hostedProxy=options.hostedProxy===true;
+  if(hostedProxy&&api!=='http://127.0.0.1:5178/api')throw Error('Unexpected hosted lifecycle fixture API');
   const primary = page.locator('.po-primary-pane .po-pane-content');
   const target = page.getByLabel('TARGET VARIABLE');
   const chooser = page.getByRole('combobox', { name: 'Switch project' });
@@ -80,9 +84,14 @@ export async function verifyN12ArchiveDraft(page, peer, api, projectId, read, pe
     // Use the real lifecycle signal, so the observing Studio re-reads live metadata.
     for (const [revision, action] of ['archive', 'restore'].entries()) {
       permitOnce({ id: projectId, action, revision });
-      expect(await peer.evaluate(async ({ projectUrl, action, revision }) => {
+      expect(await peer.evaluate(async ({ projectUrl, action, revision, hostedProxy }) => {
+        const headers={'Content-Type':'application/json'};
+        if(hostedProxy){
+          if(location.origin!=='http://127.0.0.1:5178')throw Error('Unexpected hosted lifecycle peer');
+          headers['X-PilotODIN-Dev-Request']='1';
+        }
         const response = await fetch(`${projectUrl}/lifecycle`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          method: 'PUT', headers,
           body: JSON.stringify({ action, expected_revision: revision }),
         });
         if (!response.ok) return { status: response.status };
@@ -90,7 +99,7 @@ export async function verifyN12ArchiveDraft(page, peer, api, projectId, read, pe
         const { publishProjectLifecycleSignal } = await import('/src/projectLifecycleSignal.ts');
         publishProjectLifecycleSignal({ id: row.id, revision: row.revision, archived: row.archived_at !== null });
         return { status: response.status, id: row.id, revision: row.revision, archived: row.archived_at !== null };
-      }, { projectUrl, action, revision })).toEqual({
+      }, { projectUrl, action, revision, hostedProxy })).toEqual({
         status: 200, id: projectId, revision: revision + 1, archived: action === 'archive',
       });
       if (action === 'archive') {
