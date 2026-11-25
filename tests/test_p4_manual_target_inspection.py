@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, storage, target_opportunities
 
@@ -87,7 +87,7 @@ def test_p4_12_local_version_project_and_invalid_column_rejection(tmp_path, monk
     })}
     monkeypatch.setattr(main.quality, "current_data",
                         lambda pid: (frames[pid], version[pid]))
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     a, b = ids
     path = f"/api/projects/{a}/target-opportunities/inspect"
     good = client.get(path, params={"expected_version": 3, "column": "outcome_21"})

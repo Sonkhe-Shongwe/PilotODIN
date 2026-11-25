@@ -9,7 +9,7 @@ import hashlib
 from pathlib import Path
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import engine, main, quality, storage
 
@@ -87,7 +87,7 @@ def test_categorical_bike_disposable_api_import_target_and_prepare(tmp_path, mon
     quality._init_tables()
 
     source = TYPED.read_bytes()
-    with TestClient(main.app) as client:
+    with fixture_client(main.app) as client:
         uploaded = client.post(
             "/api/projects",
             files={"file": (TYPED.name, source, "text/csv")},

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, storage, target_opportunities
 
@@ -44,7 +44,7 @@ def _client_with_projects(tmp_path,monkeypatch):
             )
     monkeypatch.setattr(main.quality,"current_data",lambda pid: (_frame(),2)
                         if pid in ids else (_ for _ in ()).throw(AssertionError("wrong project")))
-    return TestClient(main.app),ids
+    return fixture_client(main.app),ids
 
 
 def test_user_description_persists_and_ranks_without_overriding_technical_screening(tmp_path,monkeypatch):
@@ -86,6 +86,16 @@ def test_local_security_bad_columns_and_empty_or_too_long_descriptions(tmp_path,
     path=f"/api/projects/{pid}/target-business-context"
     payload=_payload()
     assert client.post(path,json=payload,headers={"Origin":"https://remote.example"}).status_code==403
+    # A local Origin is not authentication. Rejected writes must leave the
+    # version-bound business context untouched.
+    header = "X-PilotODIN-Dev-Capability"
+    capability = client.headers.pop(header)
+    try:
+        assert client.post(path, json=payload, headers={"Origin": "http://127.0.0.1:5173"}).status_code == 401
+    finally:
+        client.headers[header] = capability
+    assert client.post(path, json=payload, headers={header: "invalid"}).status_code == 401
+    assert client.post(path, json=payload, headers={"X-PilotODIN-Session": "invalid"}).status_code == 401
     assert storage.target_contexts(pid,2)=={}
     assert client.post(path,json=_payload(target="unknown")).status_code==422
     invalid=_payload()

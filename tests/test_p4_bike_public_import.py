@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, quality, storage
 
@@ -46,7 +46,7 @@ def test_public_bike_csv_disposable_import_review_and_prepare(tmp_path, monkeypa
     storage.init()
     quality._init_tables()
     origin = {"Origin": "http://127.0.0.1:5173"}
-    with TestClient(main.app) as client:
+    with fixture_client(main.app) as client:
         uploaded = client.post(
             "/api/projects",
             files={"file": (FIXTURE.name, source, "text/csv")},

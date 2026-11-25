@@ -12,7 +12,7 @@ import sys
 
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, storage, target_opportunities
 
@@ -22,10 +22,10 @@ def test_local_analytics_does_not_load_the_modelling_stack(tmp_path, monkeypatch
     monkeypatch.delenv("PILOTODIN_DESKTOP_SESSION", raising=False)
     script = """
 import sys
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import main
 
-with TestClient(main.app) as client:
+with fixture_client(main.app) as client:
     csv = "value,target\\n" + "".join(f"{i},{i % 2}\\n" for i in range(80))
     imported = client.post("/api/projects", files={"file": ("fixture.csv", csv, "text/csv")})
     assert imported.status_code == 201, imported.text
@@ -194,7 +194,7 @@ def test_p4_15_api_project_version_description_origin_and_no_training(
     }
     monkeypatch.setattr(main.quality, "current_data",
                         lambda pid: (frames[pid], versions[pid]))
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     base_a = f"/api/projects/{a}"
     base_b = f"/api/projects/{b}"
     base_c = f"/api/projects/{c}"
@@ -353,7 +353,7 @@ def test_p4_64_prepare_and_feature_advice_enforce_quality_version_without_traini
     state = {"version": 0}
     monkeypatch.setattr(main.quality, "current_data",
                         lambda _pid: (frame, state["version"]))
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     base = f"/api/projects/{pid}"
     for path in ("/preparation", "/features"):
         response = client.get(base + path,

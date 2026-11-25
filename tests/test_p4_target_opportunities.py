@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, storage, target_opportunities
 
@@ -197,13 +197,23 @@ def test_project_version_and_origin_guards_are_enforced(tmp_path, monkeypatch):
     monkeypatch.setattr(main.quality,"current_data",lambda id: (
         insurance_frame(),4
     ) if id==pid else (_ for _ in ()).throw(AssertionError("wrong project")))
-    client=TestClient(main.app)
+    client=fixture_client(main.app)
     path=f"/api/projects/{pid}/target-opportunities?expected_version=4"
     local=client.get(path,headers={"Origin":"http://127.0.0.1:5173"})
     assert local.status_code==200,local.text
     assert local.json()["version"]==4
     assert any(item["column"]=="fraud_reported" for item in local.json()["suggestions"])
     assert client.get(path,headers={"Origin":"https://external.example"}).status_code==403
+    # The request guard must refuse missing or incorrect credentials before
+    # reading target evidence, even from an allowed local browser origin.
+    header = "X-PilotODIN-Dev-Capability"
+    capability = client.headers.pop(header)
+    try:
+        assert client.get(path, headers={"Origin": "http://127.0.0.1:5173"}).status_code == 401
+    finally:
+        client.headers[header] = capability
+    assert client.get(path, headers={header: "invalid"}).status_code == 401
+    assert client.get(path, headers={"X-PilotODIN-Session": "invalid"}).status_code == 401
     assert client.get(f"/api/projects/{pid}/target-opportunities?expected_version=3").status_code==409
     assert client.get(f"/api/projects/{pid}/target-opportunities").status_code==422
     assert client.get("/api/projects/missing/target-opportunities?expected_version=4").status_code==404

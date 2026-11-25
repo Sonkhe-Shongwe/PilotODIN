@@ -9,7 +9,7 @@ import json
 
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, storage, target_opportunities
 
@@ -117,7 +117,7 @@ def test_p4_09_project_and_quality_version_isolation_and_stale_rejection(
     frames = {a: _frame("classification"), b: _frame("regression")}
     monkeypatch.setattr(main.quality, "current_data",
                         lambda pid: (frames[pid], version[pid]))
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     a0 = f"/api/projects/{a}/target-opportunities?expected_version=0"
     b0 = f"/api/projects/{b}/target-opportunities?expected_version=0"
     assert client.get(a0).status_code == 200
@@ -238,7 +238,7 @@ def test_p4_quality_commit_during_target_review_fails_closed(
         "recommend" if review_path == "queue" else "inspect_manual_target",
         concurrent_revision,
     )
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     suffix = (
         "/target-opportunities"
         if review_path == "queue"
@@ -295,7 +295,7 @@ def test_p4_missing_committed_quality_state_refuses_false_review(
         main.quality, "current_data",
         lambda _: (_frame("classification"), 0),
     )
-    response = TestClient(main.app).get(
+    response = fixture_client(main.app).get(
         f"/api/projects/{pid}/target-opportunities",
         params={"expected_version": 0},
     )
