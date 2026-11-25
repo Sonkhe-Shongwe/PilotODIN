@@ -65,6 +65,12 @@ class Tests(unittest.TestCase):
             self.deny('FRESH_APPROVAL_REQUIRED',h.collect)
             conn.assert_not_called()
 
+    def test_direct_real_factory_refused(self):
+        raw,row=candidate()
+        with patch.object(h.http.client,'HTTPSConnection') as conn:
+            self.deny('FRESH_APPROVAL_REQUIRED',lambda:h._request(row,conn))
+            conn.assert_not_called()
+
     def test_env_cannot_activate(self):
         with patch.dict(h.os.environ,{'C5_APPROVED_ONCE':h.OP,'GITHUB_ACTIONS':'true'}):
             self.deny('FRESH_APPROVAL_REQUIRED',h.authorize)

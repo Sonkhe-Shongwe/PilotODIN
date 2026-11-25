@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 82262af7e2c08b87fe65e3a11543977448c845bf |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-WHEEL-HOSTED-GATE-HARDENING-20261126 |
-| Operation state | PREPARED: exact 82371ce run 45724172997 SUCCESS, Ubuntu 117/117, Windows 115 PASS/2 POSIX skips; all four CLI refusals and large receipt roundtrip PASS. Add a direct gate check at the actual HTTPS factory seam, without activating it, plus regression fixture. |
+| Operation state | PUBLISHED/VERIFYING if live HEAD confirmed: direct real HTTPS factory gate plus regression test. Original hosted run 45724172997 succeeded. No activation, live calls or external upload. |
 | Intended files | qa/c5_wheel_metadata/wheel_hosted_proposal.py and test_wheel_hosted_proposal.py only plus journal/handoff/ledger; dedicated synthetic workflow unchanged. No live workflow/marker. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | Initial synthetic run reconciled; hardening source not issued. |
+| Pending runs | Inspect exact source push (parent a9813c01d885cb49e128f203fbac9bce4f4f3d5b), dedicated archive synthetic workflow only. |
 | Unpublished work | Owner-local tree not inspected; QA implementation and correction published and exact CI reconciled. |
 | Recovery action | Reconcile actual branch, exact CI, limitations and failure evidence. Keep collection disabled; external artifact transfer/one-use activation separate and requires fresh approval. Remaining checksum proposal separately awaits approval. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |

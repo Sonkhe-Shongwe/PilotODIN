@@ -103,7 +103,9 @@ class _Response:
 
 
 def _request(row, factory):
-    """Internal transport seam; production caller must authorize first."""
+    """Trusted fixture seam; actual HTTPS factory must independently authorize."""
+    if factory is http.client.HTTPSConnection:
+        authorize()
     host,port,path,headers = request_parts(row)
     tls = ssl.create_default_context()
     need(tls.check_hostname and tls.verify_mode == ssl.CERT_REQUIRED,'TLS_POLICY')
