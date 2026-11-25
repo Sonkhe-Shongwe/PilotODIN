@@ -217,10 +217,13 @@ test('C2 unmount invalidates late error and old cleanup cannot clear newer scope
 test('C2 both actual panels bind request ownership, late results and truthful owned waiting',()=>{
  const assistant=fs.readFileSync(path.join(__dirname,'../src/AssistantWorkspace.tsx'),'utf8');
  const insight=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
- assert.match(assistant,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,projectId,session\.generation\]\)/);
+ assert.match(assistant,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,projectId,version,provider,session\.generation\]\)/);
+ assert.match(assistant,/const current=\(\)=>fence.isCurrent\(ticket\)&&cloudConsentIsCurrent\(session\.generation\)/);
  assert.match(assistant,/const ticket=fence.begin\(\);if\(!ticket\)return/);
- assert.match(assistant,/if\(!fence.isCurrent\(ticket\)\)return/);
+ assert.match(assistant,/if\(!current\(\)\)return/);
  assert.match(assistant,/finally\{if\(fence.finish\(ticket\)\)setBusy\(false\)\}/);
+ assert.match(insight,/const current=\(\)=>fence.isCurrent\(ticket\)&&cloudConsentIsCurrent\(session\.generation\)/);
+ assert.match(insight,/if\(current\(\)&&r.source!=='cloud_llm'\)setResult\(r\)/);
  assert.match(insight,/useLayoutEffect\(\(\)=>fence.enter\(\),\[fence,fingerprint\]\)/);
  assert.equal((insight.match(/const ticket=fence.begin\(\);if\(!ticket\)return/g)||[]).length,3);
  assert.equal((insight.match(/finally\{if\(fence.finish\(ticket\)\)setBusy\(false\)\}/g)||[]).length,3);
