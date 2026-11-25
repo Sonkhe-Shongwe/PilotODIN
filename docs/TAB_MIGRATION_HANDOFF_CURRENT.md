@@ -1,6 +1,6 @@
 # PilotODIN 1.0 | Current tab migration handoff
 
-**CURRENT | 25 November 2026.** P4 active. A/B and C1–C4 SOURCE CLOSED. **C5 compatibility correction verified; one-use PyPI metadata collection SUCCESS, receipt verified and disarmed (C-D08).** C5 not source closed. Source remediation **14/17 (82.4%)**; official P4 **14/20 (70%)**. G2 BLOCKED; D pending; P5 unauthorized; P8 installer frozen. All six native approvals consumed/disarmed; no new restricted operation authorized.
+**CURRENT | 25 November 2026.** P4 active. A/B and C1–C4 SOURCE CLOSED. **C5 offline candidate graph checker published; exact CI outstanding (C-D08).** C5 not source closed. Source remediation **14/17 (82.4%)**; official P4 **14/20 (70%)**. G2 BLOCKED; D pending; P5 unauthorized; P8 installer frozen. All six native approvals consumed/disarmed; no new restricted operation authorized.
 
 ## 1. Identity and reading order
 
@@ -14,7 +14,7 @@
 | --- | ---: | --- |
 | A storage/lifecycle | 5/5 | Source closed; production evidence deferred |
 | B durable data integrity | 5/5 | Source closed; B5 library 7/7; [closure audit](./DOCUMENTATION_AUDIT_PACKAGE_B_SOURCE_CLOSURE_2026-11-24.md) |
-| C resource/trust | 4/5 | C1–C4 source closed; C5 active, compatibility correction verified; 50-release metadata receipt complete, exact provenance unresolved |
+| C resource/trust | 4/5 | C1–C4 source closed; C5 active, offline candidate graph checker published, exact provenance unresolved |
 | D consolidated verification | 0/2 | C readiness, G2 method resolution and fresh approval required |
 | Total | 14/17 | 82.4%; independent of P4 acceptance |
 
@@ -22,12 +22,13 @@ C1/C2 source closed: shared admission, owned host bridge, asynchronous inference
 
 ### Latest source checkpoint (25 November)
 
-[Compatibility correction](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/9163e6c6a4c55dae3b021aa8be90205c8fa6250d): exact P4 #45684953141 SUCCESS. Owner explicitly approved one metadata-only collection (reply "i approve"); [prepared approval](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/7b0da51b6833ec2a6afad152a81ab0dad91b1a11), [activation](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/48e3bfa4769e8750d38b811b6bffdb7fa26a09ac), [run #45686334903](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45686334903) attempt 1 SUCCESS. One-use approval consumed; workflow and CLI disarmed. [Verified release metadata receipt](../qa/c5_metadata/release_metadata_receipt_20261125.jsonl): 50/50 releases, 62 distinct wheels, 98 platform rows, no yanked files, no artifact requests; release-level metadata only. No resolver/install, owner data or native. Latest fully verified product 9163e6c; no product source changes from collection. Upstream archive provenance partial; all build profiles remain BLOCKED.
+[Offline graph review](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ec74f49487dc7748cba85db874a12263c473649c) published from the verified 50-release receipt, exact observed inventory and pinned requirements. Preliminary declared graph review: 14 direct roots, 49 reachable packages and 59 active edges per platform; no named missing or unreachable distribution. Exact packaging parser, version constraints, markers and candidate tag policy implementation awaiting [P4 #45687344896](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45687344896) IN_PROGRESS. 23 Windows/22 Linux null release Requires-Dist fields, pytz missing Requires-Python on both; no selected-wheel METADATA or byte proof. All profiles remain BLOCKED. Last fully verified product 9163e6c. [One-use metadata #45686334903](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45686334903) SUCCESS, consumed/disarmed, receipt verified; no new request or artifact acquisition.
 
 ## 3. Product-source CI and historical failure
 
 | Exact source | Result |
 | --- | --- |
+| [P4 #45687344896](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45687344896) (ec74f49) | IN_PROGRESS: offline graph review and existing synthetic regression; reconcile exact result |
 | [P4 #45684953141](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45684953141) (9163e6c) | SUCCESS: 1166 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 bundle refusal, 13 HTTP browser, 79 Windows C5/1 skipped and parser, 3 bundle refusal, 68 Windows/133 subtests |
 | [P4 #45684550154](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45684550154) (40d0e13) | FAILURE: removed compatibility import; Windows C5 and refusal tests passed, HTTP 13 passed |
 | [C5 metadata #45686334903](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45686334903) (48e3bfa) | SUCCESS: 50 releases, 62 distinct wheel files, 98 platform rows, receipt digest verified; consumed/disarmed |
@@ -38,7 +39,7 @@ Earlier exact successes, failures, cancellations and corrective runs are preserv
 ## 4. Immediate next work (in order)
 
 1. **C5.0 design/readiness recorded.** [C5.0 implementation-readiness specification](./PILOTODIN_C5_REPRODUCIBLE_BUILD_INPUTS_IMPLEMENTATION_SPEC_2026-11-25.md) maps the inspected build/DevQA entrypoints, 85 workflow triggers, existing npm/Cargo pins, platform locks, toolchain, independent assets/licenses, failure and test plan. Exact Tauri CLI 2.12.4 source performs a Microsoft HEAD even for cached offlineInstaller input; later offline-build consumption unresolved. Full provenance and complete implementation inventory validation remain outstanding. No source or acceptance credit.
-2. **C5 implementation (next):** use [verified release metadata receipt](../qa/c5_metadata/release_metadata_receipt_20261125.jsonl) and [observed selections](../contracts/c5_observed_python_wheels_2026-11-25.json) to review exact candidate graph/markers, platform tags, yanked/Requires-Python and declared license fields. 23 releases have null Requires-Dist; release-level data not selected-wheel METADATA. No repeat metadata run, .metadata or actual artifact acquisition authorized. Continue independent archive validation, exact toolchain/license/patch provenance and safe staging. No executable fake locks, native/installer build or activation.
+2. **C5 implementation (next):** reconcile exact offline graph CI. [Graph checker](../qa/c5_metadata/graph_review.py) uses existing packaging parser, pinned release receipt and source requirements; candidate CP311 x64 environment/tag assumptions and unknown metadata remain explicit. Derive non-executable candidate inventory and complete toolchain/license review; selected-wheel METADATA and bytes not proven. Continue independent safe archive validation and atomic staging source work. No further metadata request, acquisition, native/installer build or activation authorized.
 3. **C5 closure then D:** exact scoped synthetic checks and complete verified input provenance before C5 credit; 15/17 (88.2%) only once earned. D requires separate G2 proof-method decision and fresh required approvals. No P5 progression.
 
 Five unsupported historical P2/P3 native overlays remain frozen and refuse before setup. No native launch, model execution, activation, migration or release authority is created by planning or cleanup.

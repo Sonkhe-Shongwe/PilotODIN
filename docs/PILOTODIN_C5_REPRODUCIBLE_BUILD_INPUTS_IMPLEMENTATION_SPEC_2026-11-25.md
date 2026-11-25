@@ -149,3 +149,8 @@ The owner separately approved the bounded hosted metadata-only scope in the prev
 
 
 The one-use run completed SUCCESS; exact [receipt](../qa/c5_metadata/release_metadata_receipt_20261125.jsonl) and [terminal evidence](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#terminal-reconciliation-of-one-use-collection-25-november) preserve the 50 public release records, 62 distinct expected file identities and 98 platform matches. Use as candidate input provenance, not a lock or artifact/redistribution approval. Preserve null release dependency fields and distinguish release metadata from selected-wheel METADATA; approval consumed/disarmed, no further requests authorized.
+
+
+### Offline candidate graph review (25 November)
+
+[Graph reviewer](../qa/c5_metadata/graph_review.py) uses existing packaging parser for exact pinned release receipt and source-intent requirements, explicit observed CP311 Windows/Linux candidate marker environments, requested extras closure, PEP 440 constraints, candidate wheel tags and known yanked state. Linux tag baseline manylinux_2_28 is a conservative review assumption, not measured target glibc; unknown platform-release/version markers refuse. Both profile results remain BLOCKED; null dependency declarations and missing Requires-Python are unknown, actual selected-wheel METADATA, bytes, license, interpreter/pip/native inventory and installation verification remain outstanding. No executable lock or resolver and no new network operation. See [C evidence](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md#25-november--c5-offline-candidate-python-graph-review-partial-source) for observed graph counts and exact CI.
