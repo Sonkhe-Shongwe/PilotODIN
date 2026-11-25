@@ -332,6 +332,48 @@ class C3RequestTrustTests(unittest.TestCase):
                                     capture_output=True,text=True,timeout=30)
             self.assertEqual(result.returncode,0,result.stderr)
 
+    def test_c3_p2_full_stack_owned_seed_contract(self):
+        from backend.request_auth import authorize
+        from tools import Verify_P2_Real_API_Integration_Local as integration
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(prefix="pilotodin-p2-full-stack-") as tmp:
+            home=Path(tmp).resolve()/"workspace"
+            home.mkdir()
+            private,trust=integration.service_environment({"PYTHONDONTWRITEBYTECODE":"1"},home,19281,5176)
+            self.assertTrue(authorize(self.scope(trust,origin="http://127.0.0.1:5176"),trust).allowed)
+            for change in ({"PILOTODIN_HOME":str(home.parent/"data")},{"PILOTODIN_DEV_CAPABILITY":""},
+                           {"PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5175"},{"PILOTODIN_DEV_PORT":"5176"},
+                           {"VITE_PILOTODIN_P2_FULL_STACK":"0"},
+                           {"PILOTODIN_DESKTOP_SESSION":self.secret},{"PILOTODIN_HOSTED_NATIVE_AUTH":"1"}):
+                with self.subTest(change=tuple(change)):
+                    with patch.dict(os.environ,{**private,**change},clear=True), \
+                         patch("backend.workspace_boundary.existing_fixture_home",side_effect=AssertionError("Workspace inspected")):
+                        with self.assertRaises(ValueError):
+                            integration.owned_full_stack_app()
+            request=integration.private_request(trust,"/api/health")
+            self.assertEqual(request.full_url,"http://127.0.0.1:19281/api/health")
+            self.assertEqual(request.get_header("X-pilotodin-dev-capability"),trust.secret)
+            self.assertIsNone(integration.NoRedirect().redirect_request(None,None,302,"",{},"https://example.invalid"))
+            env={key:value for key,value in os.environ.items()
+                 if not key.upper().startswith(("PILOTODIN_","VITE_"))}
+            env.update(private)
+            env.pop("RL_invariant",None)
+            fixture,items=integration.seed_subprocess(home,env)
+            self.assertEqual(len(items),2)
+            self.assertEqual(fixture["project_a"],items[0][0])
+            self.assertTrue(all(path.is_file() for _,path,_ in items))
+            # The seed has exited; a new guarded serving process can acquire the workspace.
+            code=("from tools.Verify_P2_Real_API_Integration_Local import owned_full_stack_app; "
+                  "from fastapi.testclient import TestClient; import os; "
+                  "client=TestClient(owned_full_stack_app(),base_url='http://127.0.0.1:19281',"
+                  "client=('127.0.0.1',50000)); "
+                  "assert client.get('/api/projects').status_code==401; "
+                  "h={'X-PilotODIN-Dev-Capability':os.environ['PILOTODIN_DEV_CAPABILITY']}; "
+                  "assert len(client.get('/api/projects',headers=h).json())==2")
+            result=subprocess.run([sys.executable,"-B","-c",code],cwd=ROOT,env=env,
+                                  capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stderr)
+
     def test_c3_transport_and_exact_origin(self):
         from backend.request_auth import authorize
         for origin in (None, "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"):

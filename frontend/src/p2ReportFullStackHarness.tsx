@@ -1,30 +1,35 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {ReportWorkspace} from './ReportWorkspace';
+import {configureDevelopmentAPI} from './api';
 
 /** Test-only: real FastAPI on a temporary loopback port with synthetic SQLite. */
 const query=new URLSearchParams(location.search);
-const backendPort=Number(query.get('backend_port'));
 const projectA=query.get('project_a')||'';
 const projectB=query.get('project_b')||'';
 const reportId=query.get('report_id')||'';
 const auditId=query.get('audit_id')||'';
 const result=document.getElementById('p2-live-result');
-if(!result||!Number.isInteger(backendPort)||backendPort<1024||backendPort>65535||
+if(!result||!import.meta.env.DEV||import.meta.env.VITE_PILOTODIN_AUTH_DEV!=='1'||
+   import.meta.env.VITE_PILOTODIN_P2_FULL_STACK!=='1'||
+   !['http://127.0.0.1:5174','http://127.0.0.1:5176','http://127.0.0.1:5177','http://127.0.0.1:5178'].includes(location.origin)||
+   query.has('backend_port')||
    !/^[a-f0-9]{32}$/.test(projectA)||!/^[a-f0-9]{32}$/.test(projectB)||
    !/^[a-f0-9]{32}$/.test(reportId)||!/^[a-f0-9]{32}$/.test(auditId))
  throw new Error('Invalid isolated full-stack fixture parameters');
 
+configureDevelopmentAPI(location.origin);
 const directFetch=window.fetch.bind(window);
 const networkTrace:string[]=[];
 window.fetch=((resource:RequestInfo|URL,init?:RequestInit)=>{
  const target=new URL(String(resource),location.href);
- if(target.hostname!=='127.0.0.1'||target.port!=='8000'||!target.pathname.startsWith('/api/'))
+ if(target.origin!==location.origin||!target.pathname.startsWith('/api/')||target.hash||target.username||target.password)
   return Promise.reject(new Error('Unexpected API destination blocked by P2 integration harness'));
- target.port=String(backendPort);
+ const headers=new Headers(init?.headers);
+ headers.set('X-PilotODIN-Dev-Request','1');
  const method=init?.method??'GET';
  const label=method+' '+target.pathname.replace(/\/[a-f0-9]{32}(?=\/|$)/g,'/{synthetic-id}')+target.search;
- return directFetch(target.toString(),init).then(response=>{
+ return directFetch(target.toString(),{...init,headers,redirect:'error'}).then(response=>{
    networkTrace.push(label+' => HTTP '+response.status+' / '+(response.headers.get('content-type')??'no-content-type'));
    return response;
  },error=>{
@@ -60,7 +65,7 @@ function setInput(el:HTMLInputElement|HTMLTextAreaElement,value:string){
  el.dispatchEvent(new Event('change',{bubbles:true}));
 }
 async function readJSON(path:string){
- const r=await fetch('http://127.0.0.1:8000/api'+path);
+ const r=await fetch('/api'+path);
  expect(r.ok,'Real backend rejected GET '+path+' '+r.status);
  return r.json();
 }
@@ -100,7 +105,7 @@ await trial('Mounted React writes a revision; frozen HTML evidence remains acces
  expect(revised.evidence[0].id===auditId,'frozen evidence ID changed');
  for(const revision of [1,2]){
   stage='GET HTML export revision '+revision;
-  const html=await fetch('http://127.0.0.1:8000/api/reports/'+reportId+'/export/html?revision='+revision);
+  const html=await fetch('/api/reports/'+reportId+'/export/html?revision='+revision);
   stage='validate HTML HTTP response for revision '+revision;
   expect(html.status===200,'HTML export failed for revision '+revision);
   stage='read HTML export body for revision '+revision;

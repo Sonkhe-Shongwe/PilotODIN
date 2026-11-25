@@ -10,6 +10,8 @@ import hashlib
 import html.parser
 import json
 import os
+import re
+import secrets
 import shutil
 import socket
 import subprocess
@@ -24,6 +26,74 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT=Path(__file__).resolve().parents[1]
 FRONTEND=ROOT/"frontend"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0,str(ROOT))
+
+VITE_PORTS=(5174,5176,5177,5178)
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+HTTP=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
+
+
+def full_stack_contract(env):
+    from backend.request_auth import RequestTrust
+    home=Path(env.get("PILOTODIN_HOME",""))
+    temp=Path(tempfile.gettempdir()).resolve()
+    origin=env.get("PILOTODIN_DEV_ORIGIN","")
+    port=env.get("PILOTODIN_DEV_PORT","")
+    if (env.get("PILOTODIN_SERVER_MODE")!="p2-full-stack"
+            or env.get("VITE_PILOTODIN_AUTH_DEV")!="1"
+            or env.get("VITE_PILOTODIN_P2_FULL_STACK")!="1"
+            or env.get("PYTHONDONTWRITEBYTECODE")!="1"
+            or origin not in tuple(f"http://127.0.0.1:{p}" for p in VITE_PORTS)
+            or re.fullmatch(r"[1-9][0-9]{3,4}",port) is None
+            or int(port) in (5173,5174,5175,5176,5177,5178,5179)
+            or any(value for key,value in env.items()
+                   if key.upper().startswith(("PILOTODIN_DESKTOP_","PILOTODIN_CONTROL_"))
+                   and key.upper()!="PILOTODIN_DESKTOP_ALLOW_DEV")
+            or env.get("PILOTODIN_DESKTOP_ALLOW_DEV","0")!="0"
+            or any(env.get(key) for key in ("PILOTODIN_HOSTED_NATIVE_AUTH","P1_REAL_HTTP_E2E",
+                                           "PILOTODIN_A4_RELAY","RL_invariant","VITE_PILOTODIN_NATIVE_SMOKE"))
+            or not home.is_absolute() or ".." in home.parts
+            or home.name!="workspace" or home.parent.parent!=temp
+            or re.fullmatch(r"pilotodin-p2-full-stack-[a-z0-9_]{8}",home.parent.name) is None):
+        raise ValueError("Invalid isolated P2 full-stack serving configuration")
+    return RequestTrust("local-devqa",int(port),env.get("PILOTODIN_DEV_CAPABILITY",""),origin),home
+
+
+def owned_full_stack_app():
+    from backend.request_auth import RequestGuard
+    from backend.workspace_boundary import existing_fixture_home,hold_process_workspace,configure_process_scratch
+    trust,home=full_stack_contract(os.environ)
+    owned=hold_process_workspace(str(existing_fixture_home(str(home))))
+    os.environ["PILOTODIN_HOME"]=str(owned)
+    configure_process_scratch(owned)
+    from backend.main import app
+    return RequestGuard(app,trust)
+
+
+def service_environment(env,home,backend_port,vite_port):
+    private={**env,"PILOTODIN_HOME":str(home),"PILOTODIN_SERVER_MODE":"p2-full-stack",
+             "PILOTODIN_DEV_PORT":str(backend_port),"PILOTODIN_DEV_ORIGIN":f"http://127.0.0.1:{vite_port}",
+             "PILOTODIN_DEV_CAPABILITY":secrets.token_hex(32),"VITE_PILOTODIN_AUTH_DEV":"1",
+             "VITE_PILOTODIN_P2_FULL_STACK":"1"}
+    trust,_=full_stack_contract(private)
+    return private,trust
+
+
+def private_request(trust,path,headers=None):
+    from backend.request_auth import RequestTrust
+    if (not isinstance(trust,RequestTrust) or trust.mode!="local-devqa"
+            or trust.dev_origin not in tuple(f"http://127.0.0.1:{p}" for p in VITE_PORTS)
+            or not path.startswith("/api/") or any(ch in path for ch in ("#", "\\", "\r", "\n"))):
+        raise ValueError("Invalid P2 private HTTP destination")
+    return urllib.request.Request(f"http://127.0.0.1:{trust.port}"+path,
+        headers={**(headers or {}),"X-PilotODIN-Dev-Capability":trust.secret})
 
 class ResultParser(html.parser.HTMLParser):
     def __init__(self):
@@ -59,40 +129,46 @@ def choose_browser():
 def free_backend_port()->int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1",0))
-        return sock.getsockname()[1]
+        port=sock.getsockname()[1]
+        if port in range(5173,5180):
+            raise RuntimeError("Ephemeral backend port overlaps a reserved frontend port.")
+        return port
 
 def free_vite_port()->int:
-    # Real FastAPI only permits these development-origin ports for CORS.
-    for port in range(5174,5180):
+    # Select only previously admitted explicit frontend origins.
+    for port in VITE_PORTS:
         with socket.socket() as sock:
             try:
                 sock.bind(("127.0.0.1",port))
             except OSError:
                 continue
             return port
-    raise RuntimeError("All permitted isolated Vite ports 5174-5179 are busy.")
+    raise RuntimeError("All admitted isolated Vite ports 5174, 5176, 5177 and 5178 are busy.")
 
-def ready(url:str,seconds=45)->None:
+def ready(url,seconds=45)->None:
     deadline=time.monotonic()+seconds
     while time.monotonic()<deadline:
         try:
-            with urllib.request.urlopen(url,timeout=1) as result:
+            with HTTP.open(url,timeout=1) as result:
                 if result.status==200:
                     return
         except (urllib.error.URLError,OSError):
             pass
         time.sleep(0.3)
-    raise RuntimeError("Isolated local service unavailable: "+url)
+    raise RuntimeError("Isolated local service unavailable.")
 
 def create_fixture(home:Path):
-    # Set environment BEFORE importing backend modules.
-    os.environ["PILOTODIN_HOME"]=str(home)
-    os.environ.pop("PILOTODIN_DESKTOP_SESSION",None)
-    sys.path.insert(0,str(ROOT))
+    # The seed subprocess holds the exact same workspace ownership and
+    # request guard as the later server; it exits before the server starts.
+    trust,admitted=full_stack_contract(os.environ)
+    if home!=admitted:
+        raise ValueError("Unexpected P2 seed workspace")
+    app=owned_full_stack_app()
     from fastapi.testclient import TestClient
-    from backend.main import app
     from backend import storage
-    client=TestClient(app)
+    client=TestClient(app,base_url=f"http://127.0.0.1:{trust.port}",
+                      client=("127.0.0.1",50000),
+                      headers={"X-PilotODIN-Dev-Capability":trust.secret})
     source_a=b"OrderID,Region,Revenue,Optional\n0001,North,120,yes\n0002,South,230,\n0003,North,250,yes\n0004,South,300,no\n"
     source_b=b"OrderID,Region,Revenue,Optional\n0001,East,45,no\n0002,West,50,\n0003,East,70,yes\n0004,West,90,no\n"
     items=[]
@@ -125,21 +201,38 @@ def create_fixture(home:Path):
         "report_id":saved.json()["id"],"audit_id":aid,
     },items
 
-def verify_pdf_responses(backend_port: int, vite_port: int, report_id: str) -> list[str]:
+def seed_subprocess(home,private):
+    receipt=home.parent/"seed-receipt.json"
+    with (home.parent/"seed.log").open("xb") as log:
+        completed=subprocess.run([sys.executable,"-B",str(Path(__file__).resolve()),"--seed"],
+            cwd=ROOT,env=private,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,
+            timeout=90,check=False)
+    if completed.returncode!=0:
+        raise RuntimeError("Guarded fixture seed failed; inspect seed.log.")
+    data=json.loads(receipt.read_text(encoding="utf-8"))
+    fixture=data["fixture"]
+    items=[(pid,Path(path).resolve(strict=True),digest) for pid,path,digest in data["originals"]]
+    if (set(fixture)!={"project_a","project_b","report_id","audit_id"}
+            or any(re.fullmatch(r"[a-f0-9]{32}",value) is None for value in fixture.values())
+            or len(items)!=2 or [pid for pid,_,_ in items]!=[fixture["project_a"],fixture["project_b"]]
+            or any(not path.is_relative_to((home/"datasets").resolve())
+                   or re.fullmatch(r"[a-f0-9]{64}",digest) is None for _,path,digest in items)):
+        raise RuntimeError("Invalid isolated fixture receipt")
+    return fixture,items
+
+
+def verify_pdf_responses(trust, report_id: str) -> list[str]:
     """Real HTTP, binary and CORS checks for actual PDF attachment responses.
 
     Headless Chromium's fetch/download handling is deliberately not part of this
     PDF check. The real FastAPI endpoint and existing attachment headers are.
     """
     findings=[]
-    origin=f"http://127.0.0.1:{vite_port}"
+    origin=trust.dev_origin
     for revision in (1,2):
-        uri=(f"http://127.0.0.1:{backend_port}/api/reports/{report_id}"
-             f"/export/pdf?revision={revision}")
-        request=urllib.request.Request(
-            uri,headers={"Origin":origin,"Accept":"application/pdf"},method="GET"
-        )
-        with urllib.request.urlopen(request,timeout=15) as response:
+        request=private_request(trust,f"/api/reports/{report_id}/export/pdf?revision={revision}",
+                                {"Origin":origin,"Accept":"application/pdf"})
+        with HTTP.open(request,timeout=15) as response:
             status=response.status
             content_type=response.headers.get("Content-Type","")
             disposition=response.headers.get("Content-Disposition","")
@@ -180,14 +273,15 @@ def stop(proc):
             proc.wait(timeout=7)
 
 def main()->int:
-    output=Path(tempfile.mkdtemp(prefix="pilotodin-p2-full-stack-"))
+    if any(value for key,value in os.environ.items()
+           if key.upper().startswith(("PILOTODIN_","VITE_")) or key.upper()=="RL_INVARIANT"):
+        raise RuntimeError("Inherited PilotODIN serving configuration refused.")
+    output=Path(tempfile.mkdtemp(prefix="pilotodin-p2-full-stack-",dir=Path(tempfile.gettempdir()).resolve()))
     home=output/"workspace"
     for d in (home,home/"datasets",home/"models"):
         d.mkdir(exist_ok=True)
     env=os.environ.copy()
-    env["PILOTODIN_HOME"]=str(home)
     env["PYTHONDONTWRITEBYTECODE"]="1"
-    env.pop("PILOTODIN_DESKTOP_SESSION",None)
     # No cloud inference, installer, model loading or hosted CI.
     results=[]
     artifacts=[]
@@ -230,9 +324,11 @@ def main()->int:
     try:
         if buildrc!=0:
             raise RuntimeError("Frontend build failed; browser and backend tests not started.")
-        fixture,originals=create_fixture(home)
         backend_port=free_backend_port()
         vite_port=free_vite_port()
+        private,trust=service_environment(env,home,backend_port,vite_port)
+        artifacts.append(output/"seed.log")
+        fixture,originals=seed_subprocess(home,private)
         node=shutil.which("node.exe") or shutil.which("node")
         browser=choose_browser()
         entry=FRONTEND/"node_modules"/"vite"/"bin"/"vite.js"
@@ -241,22 +337,21 @@ def main()->int:
         if browser is None:
             raise RuntimeError("Chrome/Edge was not located; cannot claim a browser PASS.")
         backend_stream=backendlog.open("w",encoding="utf-8",errors="replace")
-        backend=subprocess.Popen([sys.executable,"-m","uvicorn","backend.main:app",
+        backend=subprocess.Popen([sys.executable,"-B","-m","uvicorn",
+             "tools.Verify_P2_Real_API_Integration_Local:owned_full_stack_app","--factory",
              "--host","127.0.0.1","--port",str(backend_port),
-             "--lifespan","off"],
-             cwd=ROOT,env=env,stdin=subprocess.DEVNULL,
+             "--lifespan","off","--no-proxy-headers","--no-access-log"],
+             cwd=ROOT,env=private,stdin=subprocess.DEVNULL,
              stdout=backend_stream,stderr=subprocess.STDOUT)
-        ready(f"http://127.0.0.1:{backend_port}/api/projects/{fixture['project_a']}/reports")
+        ready(private_request(trust,f"/api/projects/{fixture['project_a']}/reports"))
         backend_ok=True
         vite_stream=vitelog.open("w",encoding="utf-8",errors="replace")
         vite=subprocess.Popen([node,str(entry),"--host","127.0.0.1",
             "--port",str(vite_port),"--strictPort"],
-            cwd=FRONTEND,env=env,stdin=subprocess.DEVNULL,
+            cwd=FRONTEND,env=private,stdin=subprocess.DEVNULL,
             stdout=vite_stream,stderr=subprocess.STDOUT)
         from urllib.parse import urlencode
-        page=f"http://127.0.0.1:{vite_port}/p2_full_stack_test.html?"+urlencode({
-            "backend_port":backend_port,**fixture
-        })
+        page=f"http://127.0.0.1:{vite_port}/p2_full_stack_test.html?"+urlencode(fixture)
         ready(page)
         command=[str(browser),"--headless=new","--disable-gpu",
            "--disable-extensions","--disable-background-networking",
@@ -290,7 +385,7 @@ def main()->int:
         # have been verified through real HTTP, independently of headless Chrome.
         if backend_ok and fixture is not None and backend is not None and backend.poll() is None:
             try:
-                findings=verify_pdf_responses(backend_port,vite_port,fixture["report_id"])
+                findings=verify_pdf_responses(trust,fixture["report_id"])
                 pdflog.write_text("\n".join(findings)+"\n",encoding="utf-8")
                 pdf_ok=True
             except Exception as exc:
@@ -327,7 +422,7 @@ def main()->int:
       "headless_chrome_pdf_attachment_fetch":"NOT_VALIDATED",
       "native_browser_or_tauri_save_as":"NOT_TESTED",
       "user_projects_or_datasets":"NOT_ACCESSED",
-      "backend_isolation":"PILOTODIN_HOME temporary, random loopback port, no desktop session",
+      "backend_isolation":"Owned temporary workspace, private capability, dynamic loopback backend, same-origin browser proxy",
       "native_tauri_save_as":"NOT_TESTED",
       "offline_qwen_8gb_and_final_installer":"NOT_TESTED",
       "old_p0_p1_p3_p4_p5_suites":"NOT_RERUN"
@@ -344,4 +439,12 @@ def main()->int:
     return 0 if report["overall"]=="PASS" else 1
 
 if __name__=="__main__":
-    raise SystemExit(main())
+    if sys.argv[1:]==["--seed"]:
+        _,home=full_stack_contract(os.environ)
+        fixture,items=create_fixture(home)
+        with (home.parent/"seed-receipt.json").open("x",encoding="utf-8") as receipt:
+            json.dump({"fixture":fixture,"originals":[(pid,str(path),digest) for pid,path,digest in items]},receipt)
+    elif len(sys.argv)==1:
+        raise SystemExit(main())
+    else:
+        raise SystemExit("Unexpected P2 integration arguments.")

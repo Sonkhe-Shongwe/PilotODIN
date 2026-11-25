@@ -568,3 +568,34 @@ test('explicit hosted native proxy uses private capability, exact runner allocat
  assert.doesNotMatch(runnerSrc,/backend\.main:app/);
  assert.ok(runnerSrc.indexOf('One-shot approval excludes re-runs')<runnerSrc.indexOf('RandomNumberGenerator'));
 });
+
+
+test('P2 full-stack proxy uses allocated dynamic backend and no browser-selected destination',async()=>{
+ const {liveDevProxyTrust,liveDevProxyPlan}=await import('../scripts/live-dev-api-proxy.mjs');
+ const tmp=fs.realpathSync(require('node:os').tmpdir());
+ const env={PILOTODIN_SERVER_MODE:'p2-full-stack',PYTHONDONTWRITEBYTECODE:'1',VITE_PILOTODIN_AUTH_DEV:'1',
+  VITE_PILOTODIN_P2_FULL_STACK:'1',
+  PILOTODIN_HOME:path.join(tmp,'pilotodin-p2-full-stack-a1b2c3d4','workspace'),
+  PILOTODIN_DEV_PORT:'19281',PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5176',PILOTODIN_DEV_CAPABILITY:'a'.repeat(64)};
+ const trust=liveDevProxyTrust(env);
+ assert.ok(Object.isFrozen(trust));
+ const req={url:'/api/projects',method:'GET',socket:{remoteAddress:'127.0.0.1'},
+  rawHeaders:['Host','127.0.0.1:5176','Sec-Fetch-Site','same-origin','X-PilotODIN-Dev-Request','1']};
+ const plan=liveDevProxyPlan(req,trust);
+ assert.equal(plan.options.port,19281);
+ assert.equal(plan.options.headers['x-pilotodin-dev-capability'],'a'.repeat(64));
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:req.rawHeaders.slice(0,-2)},trust).status,403);
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:[...req.rawHeaders,'Origin','http://127.0.0.1:5174']},trust).status,403);
+ for(const change of [{PILOTODIN_DEV_PORT:'5176'},{PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5175'},
+  {PILOTODIN_HOME:path.join(tmp,'foreign','workspace')},{PILOTODIN_DEV_CAPABILITY:''},{VITE_PILOTODIN_P2_FULL_STACK:'0'},
+  {PILOTODIN_HOSTED_NATIVE_AUTH:'1'},{PILOTODIN_DESKTOP_SESSION:'b'.repeat(64)}])
+   assert.throws(()=>liveDevProxyTrust({...env,...change}));
+ const harness=fs.readFileSync(path.resolve(__dirname,'../src/p2ReportFullStackHarness.tsx'),'utf8');
+ assert.match(harness,/configureDevelopmentAPI\(location\.origin\)/);
+ assert.match(harness,/target\.origin!==location\.origin/);
+ assert.doesNotMatch(harness,/127\.0\.0\.1:8000|PILOTODIN_DEV_CAPABILITY|target\.port\s*=/);
+ const launcher=fs.readFileSync(path.resolve(__dirname,'../../tools/Verify_P2_Real_API_Integration_Local.py'),'utf8');
+ assert.doesNotMatch(launcher,/backend\.main:app|"backend_port":backend_port/);
+ assert.match(launcher,/--no-proxy-headers/);
+ assert.match(launcher,/seed_subprocess\(home,private\)/);
+});

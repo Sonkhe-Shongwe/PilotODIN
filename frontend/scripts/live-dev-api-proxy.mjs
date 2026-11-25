@@ -2,12 +2,17 @@
 // A local dev frontdoor, not authentication against a hostile process running
 // as the developer. Browser cross-site/DNS rebinding requests are refused.
 import http from 'node:http';
+import {tmpdir} from 'node:os';
+import {realpathSync} from 'node:fs';
 import {isAbsolute, basename, dirname, resolve, relative} from 'node:path';
 
 const LIVE_ORIGIN='http://127.0.0.1:5173';
 const A4_ORIGIN='http://127.0.0.1:5174';
 const HOSTED_ORIGIN='http://127.0.0.1:5178';
 const REPORT_CHAIN_ORIGIN='http://127.0.0.1:5176';
+const P2_FULL_STACK_PORTS=new Set([5174,5176,5177,5178]);
+const fullStackOrigin=origin=>typeof origin==='string'&&
+  [...P2_FULL_STACK_PORTS].some(port=>origin==='http://127.0.0.1:'+port);
 const METHODS=new Set(['GET','HEAD','POST','PUT','PATCH','DELETE']);
 const UNIQUE=new Set(['host','origin','referer','sec-fetch-site','x-pilotodin-dev-request',
   'content-type','content-length','transfer-encoding']);
@@ -21,7 +26,7 @@ export function liveDevProxyTrust(env){
   // Dev frontdoor. Its relay does not receive or discover a backend secret.
   if(env.PILOTODIN_A4_RELAY!==undefined){
     if(env.PILOTODIN_A4_RELAY!=='1'||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
-       env.VITE_PILOTODIN_NATIVE_SMOKE!=='1'||env.PILOTODIN_HOME||
+       env.VITE_PILOTODIN_NATIVE_SMOKE!=='1'||env.VITE_PILOTODIN_P2_FULL_STACK!==undefined||env.PILOTODIN_HOME||
        env.PILOTODIN_HOSTED_NATIVE_AUTH||env.PILOTODIN_SERVER_MODE||env.PILOTODIN_DEV_ORIGIN||
        env.PILOTODIN_DEV_PORT||env.PILOTODIN_DEV_CAPABILITY||
        env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
@@ -67,8 +72,17 @@ export function liveDevProxyTrust(env){
     basename(home)==='workspace'&&/^P2-NATIVE-CHAIN-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{10}$/.test(basename(dirname(home)))&&
     resolve(dirname(dirname(home)))===resolve(localAppData,'PilotODIN','DevQA','runs')&&
     /^[1-9][0-9]{3,4}$/.test(rawPort)&&backendPort>=1024&&backendPort<=65535&&backendPort!==5176;
-  if((!live&&!hosted&&!native&&!chain&&!fixed)||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
-     (!chain&&env.PILOTODIN_DEV_PORT!=='8000')||
+  const fullStack=env.PILOTODIN_SERVER_MODE==='p2-full-stack'&&env.VITE_PILOTODIN_P2_FULL_STACK==='1'&&
+    fullStackOrigin(env.PILOTODIN_DEV_ORIGIN)&&env.PYTHONDONTWRITEBYTECODE==='1'&&
+    isAbsolute(home)&&!home.split(/[\\/]/).includes('..')&&basename(home)==='workspace'&&
+    /^pilotodin-p2-full-stack-[a-z0-9_]{8}$/.test(runName)&&
+    resolve(dirname(dirname(home)))===resolve(realpathSync(tmpdir()))&&
+    /^[1-9][0-9]{3,4}$/.test(rawPort)&&backendPort>=1024&&backendPort<=65535&&
+    !(backendPort>=5173&&backendPort<=5179)&&
+    !env.P1_REAL_HTTP_E2E&&!env.RL_invariant&&!env.VITE_PILOTODIN_NATIVE_SMOKE;
+  if((!live&&!hosted&&!native&&!chain&&!fixed&&!fullStack)||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
+     (env.VITE_PILOTODIN_P2_FULL_STACK!==undefined&&!fullStack)||
+     (!chain&&!fullStack&&env.PILOTODIN_DEV_PORT!=='8000')||
      !/^[0-9a-f]{64}$/.test(env.PILOTODIN_DEV_CAPABILITY??'')||
      env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
      env.PILOTODIN_DESKTOP_WATCH_STDIN||env.PILOTODIN_CONTROL_MODE||
@@ -76,6 +90,9 @@ export function liveDevProxyTrust(env){
      (env.PILOTODIN_DESKTOP_ALLOW_DEV??'0')!=='0'){
     throw new Error('Invalid isolated Live Dev proxy configuration');
   }
+  if(fullStack)return Object.freeze({kind:'p2-full-stack',capability:env.PILOTODIN_DEV_CAPABILITY,
+    origin:env.PILOTODIN_DEV_ORIGIN,host:env.PILOTODIN_DEV_ORIGIN.slice(7),
+    port:Number(env.PILOTODIN_DEV_ORIGIN.slice(-4)),backendPort});
   if(native)return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:LIVE_ORIGIN,host:'127.0.0.1:5173',port:5173});
   if(fixed)return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:env.PILOTODIN_DEV_ORIGIN,
     host:'127.0.0.1:'+phasePorts[phase],port:phasePorts[phase]});
@@ -94,8 +111,12 @@ export function liveDevProxyPlan(req,trust){
   const relay=trust?.kind==='a4-relay'&&trust.origin===A4_ORIGIN&&
     trust.host==='127.0.0.1:5174'&&trust.port===5174&&
     trust.capability===undefined&&trust.backendPort===undefined;
+  const fullStack=trust?.kind==='p2-full-stack'&&fullStackOrigin(trust.origin)&&
+    trust.host===trust.origin.slice(7)&&trust.port===Number(trust.origin.slice(-4))&&
+    Number.isInteger(trust.backendPort)&&trust.backendPort>=1024&&trust.backendPort<=65535&&
+    !(trust.backendPort>=5173&&trust.backendPort<=5179);
   if(!METHODS.has(req.method)||req.socket?.remoteAddress!=='127.0.0.1'||
-     /[\x00-\x20\x7f\\#]/.test(url)||!trust||(!relay&&(trust.kind!==undefined||!/^[0-9a-f]{64}$/.test(trust.capability??'')))){
+     /[\x00-\x20\x7f\\#]/.test(url)||!trust||(!relay&&((trust.kind!==undefined&&!fullStack)||!/^[0-9a-f]{64}$/.test(trust.capability??'')))){
     return {status:403};
   }
   const raw=req.rawHeaders;
@@ -131,7 +152,7 @@ export function liveDevProxyPlan(req,trust){
   }
   const backendPort=trust.backendPort??8000;
   if(!Number.isInteger(backendPort)||backendPort<1024||backendPort>65535||
-     (trust.backendPort!==undefined&&(trust.origin!==REPORT_CHAIN_ORIGIN||backendPort===5176)))return {status:403};
+     (trust.backendPort!==undefined&&!fullStack&&(trust.origin!==REPORT_CHAIN_ORIGIN||backendPort===5176)))return {status:403};
   const outgoing={host:'127.0.0.1:'+backendPort,origin:trust.origin,
     'x-pilotodin-dev-capability':trust.capability};
   for(const key of REQUEST_HEADERS)if(headers[key]!==undefined)outgoing[key]=headers[key];
