@@ -1,0 +1,31 @@
+name: C5 selected-wheel metadata v2 offline integration
+on:
+  push:
+    branches: [feature/live-dev-workspace-20261023]
+    paths:
+      - .github/workflows/c5-wheel-metadata-v2-review.yml
+      - qa/c5_wheel_metadata/collect_v2.py
+permissions:
+  contents: read
+jobs:
+  offline-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: python3 -I -B qa/c5_wheel_metadata/collect_v2.py --self-test
+      - name: Assert CLI refuses collection
+        run: |
+          set +e
+          python3 -I -B qa/c5_wheel_metadata/collect_v2.py --collect
+          code=$?
+          set -e
+          test "$code" = 2
+  collect-once:
+    if: ${{ false }} # No new owner approval, no live activation.
+    runs-on: ubuntu-24.04
+    steps:
+      - run: exit 2
