@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | RECONCILING |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 216624223d16beae02275228f098654804f2586a |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-TOOLCHAIN-CHECKSUMS-ONCE-20261125 |
-| Operation state | ISSUED exact activation 56d01294f4e6c66b9ae0fcfbdac7cd673ac1deb5, run 45715282364 attempt 1 observed queued; approval consumed, live branch source/workflow disarmed at this checkpoint. Reconcile immutable issued run, no replay. |
+| Operation state | RECONCILED: run 45715282364 attempt 1 on 56d0129, job 139559651464 FAILURE exit 2; 2 requests, 991 response bytes, 0/4 live parser verified, 0 artifacts. Disarmed e193b4f; receipt 30f1115 independently hash-verified. Windows manifest uses uppercase SHA256 and one separator space; offline interpretation recovered candidate archive hash, not actual archive verification. Remaining three documents not requested. |
 | Intended files | Isolated qa/c5_wheel_metadata/collect_toolchain_checksums.py and dedicated offline workflow; no product or prior receipt changes. Archive inspector remains independent. |
-| Approval | Eleven prior restricted approvals consumed/disarmed. Fresh one-use approval: four exact checksum documents, six HTTPS GETs maximum including permitted redirects, 5 MiB total, 991/821 bytes exact Python, 64 KiB Node, 4 MiB Rust, 15s/request, 10min/job. No retries, binary downloads, signature/key requests, installs, registry, native/model, owner device or expanded scope. |
+| Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
-| Pending runs | 45715282364 attempt 1, job 139559651464, terminal receipt pending. |
+| Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Fresh explicit owner approval required for one checksum-only hosted attempt: four exact documents from pinned plan (two Actions Python hashes.sha256, Node 22.23.5 SHASUMS256.txt and Rust 1.100.0 channel TOML), max 6 HTTP GETs including one narrowly permitted authenticated GitHub redirect per Python document; 991/821 bytes exact, 64 KiB Node, 4 MiB Rust, 5 MiB aggregate, 15s/request, 10min/job. No retries, signature/key requests, binary/artifact downloads, registry, install, execution, native/model, owner device or expanded scope. After approval publish exact marker-only trigger, exact commit message, attempt 1 and blob pin; reconcile raw receipt and disarm. Independently proceed with bounded offline wheel archive inspector before separate acquisition proposal. |
+| Recovery action | Offline only: implement and test narrowly scoped Actions Python checksum grammar (uppercase/lowercase hexadecimal and observed single-space separator; preserve strict filename, duplicate, target, digest, exact-length and scope checks); revalidate persisted 991-byte refused body and independently recovered Windows candidate hash, retain original failure. Propose a fresh remaining-three-documents-only attempt for Linux Python, Node and Rust with separate owner approval, no re-request of Windows document. Independently implement/test bounded wheel archive/RECORD/notice inspector before separate acquisition-only proposal. No new live requests, binary/artifact acquisition, installation, native/model, owner device or installer authorized. Four profiles BLOCKED. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
@@ -28,4 +28,4 @@ C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125: [`bd7c163`](https://github.com/Son
 
 ## Unresolved or interrupted operations
 
-A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. All eleven restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
+A/B and C1–C4 source closed; C5 outstanding. Source 14/17 (82.4%), official P4 14/20 (70%). Native DPAPI, actual desktop/physical egress and durability, physical 8 GB and G2/D evidence deferred. Owner-local tree uninspected. All twelve restricted approvals consumed/disarmed; preserve local work, installer freeze unchanged. Historical failures and exact receipts retained in C ledger.
