@@ -92,7 +92,11 @@ test('secondary panes are barred from primary global controls',()=>{
  assert.match(app,/if\(embedded && pid!==embeddedProjectId\)/);
  assert.match(app,/if\(embedded\)\{setError\('Import a new dataset from the primary workspace/);
  assert.match(app,/if\(embedded\)return;\s*const handler=\(event:KeyboardEvent\)/);
- assert.match(app,/if\(embedded\)return;\s*let live=true/);
+ const passive=app.slice(app.indexOf('// Saved status is passive;'),app.indexOf('const availableCommands='));
+ assert.match(passive,/if\(embedded\|\|consentSession\.pending\)return;\s*let live=true;\s*const generation=consentSession\.generation;\s*get<SavedCloudPermission>\('\/ai\/settings'\)/);
+ assert.match(passive,/if\(live&&cloudConsentIsCurrent\(generation\)\)setSavedStatus/);
+ assert.match(passive,/return\(\)=>\{live=false\}/);
+ assert.doesNotMatch(passive,/post\(|\/ai\/test\/|\/ai\/verify-connected/);
 });
 
 test('Ask ODIN labels deterministic fallback and exposes the explicit offline model route',()=>{

@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 6bb35badb979ecdaf4fdd1276ddc45867a0c2c66 |
 | Product baseline | C4 C1 frontend e576ccd; P1/P2 SUCCESS, P4 one obsolete assertion FAILURE. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C1-PANE-GUARD-CONTRACT-20261125 |
-| Operation state | PREPARED; test-only correction not issued. |
+| Operation state | ISSUED; reconcile source commit from prepared parent 2ef1736; do not replay |
 | Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and canonical records only. No product or workflow change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact e576ccd P1 206 Node and 7 browser passed, P2 100 Node and 5 standalone Rust passed; P4 backend 1086 passed/6 skipped/552 subtests, Node 135 passed/1 failed, Windows 68/133 subtests and browser 13 passed. Collector skipped. |
