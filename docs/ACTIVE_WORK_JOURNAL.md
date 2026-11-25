@@ -7,13 +7,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | PREPARED |
+| State | PUBLISHED |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | e951e2d734f1fa0ca4471fd9fd3569f61982bb7e |
 | Product baseline | 736a0fe9def039f07936dbc52ecfb6e162e63e84; six exact workflows SUCCESS, P4 source-contract failure. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-FIXED-DEVQA-ORIGIN-TEST-20261125 |
-| Operation state | PREPARED |
+| Operation state | ISSUED |
 | Intended files | frontend/tests/desktop-ai-boundaries.test.cjs and .github/workflows/p4-target-ranking.yml (add this already-executed test to routine trigger filter only), journal. Test every explicit allowed development origin 5173/5176/5177/5178 with same-origin marker; reject unapproved, localhost and non-loopback origins; retain mixed-desktop rejection. No product change or restricted workflow activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact 736a0fe six workflows SUCCESS: P1 frontend 45562258510, P1 HTTP 45562258591, P2 source preflight 45562258483, P2 export 45562258528, P3 source/parser 45562258476, P3 HTTP 45562258609. P4 45562258444 failed only source contract step job 139028529938, 115/116 Node, obsolete assertion rejecting newly admitted 5177, build skipped. Backend focused tests success, Windows job 139028529451 and browser job 139028529781 success; restricted 139028531202 SKIPPED. Corrected exact CI not yet issued. |

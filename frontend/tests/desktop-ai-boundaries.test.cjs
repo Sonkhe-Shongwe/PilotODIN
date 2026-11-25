@@ -227,18 +227,29 @@ test('C2 both actual panels bind request ownership, late results and truthful ow
 });
 
 
-test('C3 explicit Live Dev API uses only same-origin proxy marker, never a credential',async()=>{
- const seen=[];
- const api=loadAPI(async()=>{},async(url,options)=>{
-   seen.push({url,headers:options.headers});
-   return {ok:true,json:async()=>({status:'ok'})};
- });
- assert.throws(()=>api.configureDevelopmentAPI('http://127.0.0.1:5177'));
- api.configureDevelopmentAPI('http://127.0.0.1:5173');
- assert.equal(api.apiBase(),'http://127.0.0.1:5173/api');
- await api.get('/health');
- assert.deepEqual(seen,[{url:'http://127.0.0.1:5173/api/health',headers:{'X-PilotODIN-Dev-Request':'1'}}]);
- assert.throws(()=>api.configureDesktopAPI({port:12345,token:'fixture'}));
+test('C3 explicit development API accepts only approved origins and sends only a same-origin proxy marker',async()=>{
+ for(const port of [5173,5176,5177,5178]){
+   const origin='http://127.0.0.1:'+port;
+   const seen=[];
+   const api=loadAPI(async()=>{throw Error('Unexpected native IPC');},async(url,options)=>{
+     seen.push({url,headers:options.headers});
+     return {ok:true,json:async()=>({status:'ok'})};
+   });
+   for(const invalid of ['http://127.0.0.1:5174','http://127.0.0.1:5175',
+     'http://127.0.0.1:5179','http://127.0.0.1:8000','http://localhost:'+port,
+     'http://192.0.2.1:'+port,'https://127.0.0.1:'+port,origin+'/',origin+'/api','']){
+     assert.throws(()=>api.configureDevelopmentAPI(invalid),invalid);
+   }
+   api.configureDevelopmentAPI(origin);
+   assert.equal(api.apiBase(),origin+'/api');
+   await api.get('/health');
+   assert.deepEqual(seen,[{url:origin+'/api/health',headers:{'X-PilotODIN-Dev-Request':'1'}}]);
+   assert.throws(()=>api.configureDesktopAPI({port:12345,token:'fixture'}));
+ }
+ const desktop=loadAPI();
+ desktop.configureDesktopAPI({port:12345,token:'fixture'});
+ for(const port of [5173,5176,5177,5178])
+   assert.throws(()=>desktop.configureDevelopmentAPI('http://127.0.0.1:'+port));
 });
 
 test('C3 Live Dev proxy enforces local origin, marker and fixed private backend',async()=>{
