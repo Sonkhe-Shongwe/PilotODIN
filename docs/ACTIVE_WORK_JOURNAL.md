@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5404001d7571c5c2718ae3ecf35a4293cdb73b9e; prepared 69aa0b965e6761a6d370352bbdb8a245c275c9d9; published d53651b0923840d10af7e5189122bec52028d262 |
+| Observed starting HEAD | b5b4712e4a1dfe6e2acc8b69d85406b59b6ae2ce |
 | Product baseline | b74f0fa exact P1 SUCCESS; c901eb7 native smoke exact P4 SUCCESS; d53651b corrective exact P1 SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-NATIVE-SMOKE-SOURCE-ASSERTION-20261125-fix |
-| Operation state | RECONCILED |
-| Intended files | frontend/tests/p1-playwright-pilot-contract.test.cjs: update stale A4-only error-text source assertion to exact new fail-closed smoke error and preserve all relay/header checks; no product edit. Journal. |
+| Operation ID | C3-FRONTEND-EXPLICIT-API-20261125-source |
+| Operation state | PREPARED |
+| Intended files | frontend/src/api.ts, main.tsx, vite.config.ts, playwright.config.ts, e2e/isolated-workspace.spec.ts, tests/desktop-ai-boundaries.test.cjs, tests/p1-playwright-pilot-contract.test.cjs. Remove unconfigured port and empty auth header fallback; exact lowercase 64-hex desktop session and port; reject unconfigured browser bootstrap before shell. Explicit DEV-only intercepted-fixture Vite mode on existing 5187, no proxy or backend, Vite middleware denies escaped API requests; separate exact fixture config and mock marker, no real credentials. Migrate intercepted URLs to same 5187 origin, preserve synthetic request validation, existing negative preflight contract, import and read-only calculation scope; reject legacy port and missing marker. Actual intercepted browser test bypasses route via APIRequestContext only to 5187 and expects Vite refusal. No new listener/port, no product native or model operation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Corrective d53651b P1 #45589119957 job 139118322808 terminal SUCCESS (202 Node, seven Chromium, TypeScript/Vite); original c901eb7 P4 #45588860715 terminal SUCCESS (139117423358 Linux 1061 Python, six skipped, one warning, 552 subtests, 127 Node, 15 standalone Rust; 139117423774 13 Chromium; 139117423965 Windows 68 and 133 subtests, five model-free answers PASS; restricted collector 139117427002 SKIPPED). Original P1 #45588860686 stale assertion FAILURE retained. Status audit reconfirmed bare main authorization fallback, frontend default port, explicit intercepted fixture gap, direct bundled verifier redirect risk, C4 legacy settings/cloud and C5 range inputs. No product changes. |
-| Pending runs | None; both terminal SUCCESS. Restricted collector SKIPPED. |
+| Verification | Reviewed exact frontend API/bootstrap, native token generation (two UUID simple strings), current fixture routing and source assertions. Expected P1 isolated frontend, P1 real HTTP, P3 real HTTP, P4 routine synthetic/Chromium/Windows smoke, restricted P4 collector false; no native activation. Preserve existing A4/P2/P3 and hosted dev frontdoor. No owner access. Previous c901eb7 P4 and d53651b P1 terminal SUCCESS. |
+| Pending runs | None; new operation not issued. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Next explicit 5187 synthetic browser fixture bootstrap and frontend default-port removal; review direct inference verifier transport and classify remaining callers, then bare main fail-closed authorization and route/caller closure matrix. C4/C5 in order, G2 method resolution and D fresh approvals. No activation. |
+| Recovery action | Publish atomic source/test integration using expected HEAD, verify exact diff and all triggered CI. Then source-only direct bundled verifier transport and remaining direct callers, backend fail-closed guard and final C3 route/caller matrix. No activation. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
