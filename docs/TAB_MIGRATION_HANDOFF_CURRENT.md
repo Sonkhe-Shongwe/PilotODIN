@@ -22,7 +22,7 @@ C1/C2 source closed: shared admission, owned host bridge, async inference and sy
 
 ## 3. Product-source CI and historical failure
 
-C4 foundation exact [P1 #45619321655](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45619321655) at `89b2631`: **FAILURE**, C4 direct tests **48/48 PASS**, historical desktop/import assertion failed (15 passed/1 failed); three downstream test steps skipped. Correction and committed-source inventory publication prepared at `f20dc88`, operation C4-A-HISTORICAL-REGRESSION-INVENTORY-20261125. Resolve exact new P1 run; review inventory and production lease/API redaction before integration. No earlier pending source CI. Exact terminal results are recorded in the [C ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md); use its receipts rather than repeating chronology.
+C4 foundation exact [P1 #45619321655](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45619321655) at `89b2631`: **FAILURE**, C4 direct tests **48/48 PASS**, historical desktop/import assertion failed (15 passed/1 failed); three downstream test steps skipped. Test-only correction and inventory published at [`17b9477`](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/17b9477f04f310d775e893331b299f8fec3a6041); [exact P1 #45622084263](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622084263) **IN_PROGRESS; no terminal result**. Five scanner fixtures and scan steps PASS; detailed logs/candidate review and complete regression result pending. Review production lease/API redaction before integration. No earlier pending source CI. Exact terminal results are recorded in the [C ledger](./PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md); use its receipts rather than repeating chronology.
 
 | Exact source scope | Verification |
 | --- | --- |

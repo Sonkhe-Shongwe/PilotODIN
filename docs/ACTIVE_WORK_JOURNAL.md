@@ -13,13 +13,13 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-A-HISTORICAL-REGRESSION-INVENTORY-20261125 |
-| Operation state | ISSUED; identify source publication by parent f20dc88 and operation marker before retry |
+| Operation state | RECONCILED: published exact [17b9477](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/17b9477f04f310d775e893331b299f8fec3a6041); no replay |
 | Intended files | tests/test_desktop_foundation.py (retarget obsolete URL assertion to exact shared authenticated transport); tools/c4_settings_inventory.py, tests/test_c4_settings_inventory.py, existing P1 isolated workflow wiring; canonical records. No product source or live settings changes. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Historical authentication assertion retargeted and committed-source C4 candidate inventory plus five inert tests added; no live source changes. Exact P1 CI pending. |
-| Pending runs | Exact P1 Ubuntu source CI expected; prior failed run preserved. Resolve run ID before any retry. |
+| Verification | Historical authentication test corrected; five inert scanner fixtures and exact committed-source inventory steps PASS in job metadata. New full CI IN_PROGRESS; no terminal result. Detailed job logs unavailable at last read (404 BlobNotFound during in-progress run); do not claim candidate counts or full pass. |
+| Pending runs | [P1 #45622084263](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45622084263), job 139232607395 at exact 17b9477: IN_PROGRESS; no terminal result. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Correct historical assertion without weakening authenticated method/destination/redirect checks; run static settings candidate inventory on exact committed source via existing P1 Ubuntu workflow. Confirm non-force publication and exact run; review inventory candidates and strict production lease/fixture and API redaction before integrating live settings. No native, actual DPAPI/provider or owner data. |
+| Recovery action | Reconcile exact P1 #45622084263 terminal result and full log, especially historical desktop/import and C4_INV/C4_SUMMARY paths/counts. Review candidates for actual readers/writers/fixtures; backup manifest allows only SQLite, datasets and model artifacts, builder explicit PDF assets. Resolve lease/fixture and strict redaction integration, then wire existing settings services. No native, real DPAPI/provider or owner data. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
