@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | a931ff9775af8d32d391f2490cbaa15f2527aef6 |
 | Product baseline | Frontend version/draft integration ee5985c exact P1/P4 SUCCESS; backend pin d16cfd6 exact eight workflows SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-DESKTOP-PROJECT-CLOUD-SOURCE-GATE-20261125 |
-| Operation state | PREPARED; narrow authenticated desktop source gate plus existing intercepted fixture. Development/QA proxy origins held. No real cloud operation. |
+| Operation state | ISSUED from prepared parent 436b54bf91560739ce65f3f5280536a59e8a81d8; authenticated desktop source gate and dedicated confirmed POST. Other dev/QA frontdoors held. No live cloud operation. |
 | Intended files | frontend/src/api.ts, cloudConsentSession.ts, AIWorkspace.tsx, AssistantWorkspace.tsx, frontend/tests/desktop-ai-boundaries.test.cjs; C specification and canonical records. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact frontend integration `ee5985c5722935dd91f9a896f7d728d20df098fe`: P1 #45672477038 SUCCESS (206 Node, TypeScript/Vite, 11/11 Chromium including all four C4 mounted scenarios; job 139411144989); P4 #45672477045 SUCCESS (routine source/frontend, disposable HTTP and simulated Windows jobs 139411146680, 139411146523, 139411146169; restricted collector 139411148643 skipped). Prior exact d16cfd6 eight workflows SUCCESS; selected C4 backend 252 passed. |
-| Pending runs | None for ee5985c. |
+| Pending runs | Exact P1 frontend, P3 real HTTP semantic and P4 expected; discover IDs and reconcile. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Review narrow product-source enablement of explicit Gemini/Groq project requests in authenticated supported local API paths, retain OpenRouter hold, no implicit sends or real cloud execution; preserve fixture isolation, exact consent/version/currentness checks and local-only defaults. Add source and synthetic regression for actual gate, verify matching CI and formal C4 closure matrix; then C5. |
+| Recovery action | Reconcile exact desktop gate source CI, including dedicated authenticated POST mocks, unsupported dev refusal, stale/invalid payloads and mounted synthetic confirmation. No live cloud operation. Complete formal C4 closure matrix only after exact evidence; then C5. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation

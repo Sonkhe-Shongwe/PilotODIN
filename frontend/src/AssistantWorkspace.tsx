@@ -3,7 +3,7 @@ import {cloudConsentSnapshot,subscribeCloudConsent,cloudConsentIsCurrent,isLocal
 import type {SavedCloudPermission} from './cloudConsentSession';
 import {createInsightRequestFence} from './insightRequestFence';
 import {BrainCircuit, Send, ShieldCheck, Sparkles, LoaderCircle} from 'lucide-react';
-import {usesOwnedInference,usesInterceptedFixtureAPI,get,post} from './api';
+import {usesOwnedInference,usesInterceptedFixtureAPI,usesProjectCloudAPI,postConfirmedProjectCloud,get,post} from './api';
 import {RichText} from './RichText';
 type MissingReport={column:string;missing_rows:number;missing_pct:number;row_numbers:number[];numeric_comparisons:{column:string;missing_group_median:number;other_group_median:number}[];categorical_comparisons:{column:string;groups:{label:string;missing_count:number;total_count:number}[]}[];caution:string};
 type GroupStat={group:string|null;matching_rows:number}&(
@@ -74,15 +74,16 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
   const [savedCloud,setSavedCloud]=useState<SavedCloudPermission|null>(null);
   const [savedCloudAt,setSavedCloudAt]=useState(-1);
   const cloudFixture=usesInterceptedFixtureAPI();
-  const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,provider,version));
+  const cloudAPI=usesProjectCloudAPI();
+  const cloudAvailable=cloudAPI&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,provider,version));
   useLayoutEffect(()=>fence.enter(),[fence,projectId,version,provider,session.generation]);
   useEffect(()=>{
     let live=true;setSavedCloud(null);setSavedCloudAt(-1);
-    if(cloudFixture&&cloudName&&!session.pending)get<SavedCloudPermission>('/ai/settings').then(saved=>{
+    if(cloudAPI&&cloudName&&!session.pending)get<SavedCloudPermission>('/ai/settings').then(saved=>{
       if(live&&cloudConsentIsCurrent(session.generation)){setSavedCloud(saved);setSavedCloudAt(session.generation)}
     }).catch(()=>{});
     return()=>{live=false};
-  },[provider,session,cloudFixture,cloudName]);
+  },[provider,session,cloudAPI,cloudName]);
   async function ask(q:string,continuation?:string){
     const last=messages[messages.length-1];
     if(continuation&&(!last||last.role!=='assistant'||!localPanelMayContinue(last.answerSource)||last.content!==continuation))return;
@@ -104,7 +105,7 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
         const outcome=await confirmedProjectCloud<Response>(savedCloud,provider,version,
           ()=>window.confirm(projectCloudConfirmationText(provider,'assistant',version,q,false)),
           ()=>get<SavedCloudPermission>('/ai/settings'),
-          cloudRoute=>post<Response>(`/projects/${projectId}/ai/insight`,{context:'assistant',question:q,...cloudRoute}),current);
+          cloudRoute=>postConfirmedProjectCloud<Response>(projectId,{context:'assistant',question:q,...cloudRoute},()=>current()&&cloudConsentCrossWindowAvailable()),current);
         if(!current())return;
         if(outcome.status==='cancelled')return;
         if(outcome.status!=='result'||!cloudResponseMatches(outcome.response,provider,'assistant',version)){
@@ -128,7 +129,7 @@ export function AssistantWorkspace({projectId,version,onSettings}:{projectId:str
     finally{if(fence.finish(ticket))setBusy(false)}
   }
   return <div className="assistant-page"><section className="quality-banner"><div><div className="eyebrow">DATA SCIENCE COPILOT · HYBRID AI</div><h2>Ask your dataset</h2><p>Choose a local route for verified analysis. Smart Auto never sends data to cloud providers.</p></div><BrainCircuit size={43}/></section>
-    <div className="panel chat-panel"><div className="ai-choice"><label htmlFor="assistant-provider">Choose intelligence</label><select id="assistant-provider" className="input" value={provider} disabled={busy} onChange={e=>{localFollowUp.current=null;setProvider(e.target.value);if(isLocalPanelProvider(e.target.value))localStorage.setItem('pilotodin-ai-provider-assistant',e.target.value)}}><option value="auto">Smart Auto (local only)</option><option value="ollama">Offline Qwen3 (desktop) / Ollama (dev)</option><option value="gemini">Google Gemini (cloud)</option><option value="groq">GroqCloud (cloud)</option><option value="openrouter">OpenRouter (project sharing disabled)</option><option value="local">Local analytics</option></select></div>{cloudName&&<div className="ai-incomplete" role="status"><strong>Selected destination: {cloudName}</strong><p>{projectCloudDisclosure}</p><p>{cloudFixture&&provider!=='openrouter'?(cloudAvailable?'Synthetic fixture: confirm each request.':'Saved permission or credential is unavailable; review settings.'):projectCloudHold(provider)}</p></div>}<div className="chat-messages">{messages.map((m,i)=><div key={i} className={'chat-message '+m.role}><span className="chat-role">{m.role==='assistant'?<Sparkles size={15}/>:null}{m.role==='assistant'?'PilotODIN':'You'} {m.source&&<small>· {m.source}</small>}</span><div className="chat-body">{m.role==='user'||m.facts?<p>{m.content}</p>:<RichText text={m.content}/>}
+    <div className="panel chat-panel"><div className="ai-choice"><label htmlFor="assistant-provider">Choose intelligence</label><select id="assistant-provider" className="input" value={provider} disabled={busy} onChange={e=>{localFollowUp.current=null;setProvider(e.target.value);if(isLocalPanelProvider(e.target.value))localStorage.setItem('pilotodin-ai-provider-assistant',e.target.value)}}><option value="auto">Smart Auto (local only)</option><option value="ollama">Offline Qwen3 (desktop) / Ollama (dev)</option><option value="gemini">Google Gemini (cloud)</option><option value="groq">GroqCloud (cloud)</option><option value="openrouter">OpenRouter (project sharing disabled)</option><option value="local">Local analytics</option></select></div>{cloudName&&<div className="ai-incomplete" role="status"><strong>Selected destination: {cloudName}</strong><p>{projectCloudDisclosure}</p><p>{cloudAPI&&provider!=='openrouter'?(cloudAvailable?(cloudFixture?'Synthetic fixture: confirm each request.':'Confirm each request before sending.'):'Saved permission, credential or request safeguard is unavailable; review settings.'):projectCloudHold(provider)}</p></div>}<div className="chat-messages">{messages.map((m,i)=><div key={i} className={'chat-message '+m.role}><span className="chat-role">{m.role==='assistant'?<Sparkles size={15}/>:null}{m.role==='assistant'?'PilotODIN':'You'} {m.source&&<small>· {m.source}</small>}</span><div className="chat-body">{m.role==='user'||m.facts?<p>{m.content}</p>:<RichText text={m.content}/>}
         {m.facts&&<LocalResult facts={m.facts} version={m.version}/>}
         {m.investigation&&<div className="verified-investigation"><strong>Verified investigation · {m.investigation.column}</strong><p>{m.investigation.missing_rows} missing ({m.investigation.missing_pct}%). Local row numbers: {m.investigation.row_numbers.slice(0,30).join(', ')}.</p>
           {m.investigation.numeric_comparisons.map(c=><p key={c.column}><b>{c.column}:</b> median for missing rows {c.missing_group_median.toLocaleString()} vs other rows {c.other_group_median.toLocaleString()}.</p>)}

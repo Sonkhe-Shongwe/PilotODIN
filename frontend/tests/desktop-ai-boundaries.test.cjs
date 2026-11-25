@@ -556,7 +556,7 @@ test('C4 C2 saved cloud preference cannot become a local panel route or request'
  assert.equal(session.localPanelMayContinue('local_llm'),true);
  for(const value of ['cloud_llm','local_rules',null,undefined])assert.equal(session.localPanelMayContinue(value),false);
 });
-test('C4 C2 named destinations and disclosure remain held before project cloud enablement',()=>{
+test('C4 named destinations and disclosure preserve unsupported connection and OpenRouter holds',()=>{
  const session=loadCloudConsentSession();
  assert.equal(session.projectCloudProviderName('gemini'),'Google Gemini');
  assert.equal(session.projectCloudProviderName('groq'),'GroqCloud');
@@ -624,7 +624,7 @@ test('C4 C3 two simulated renderers invalidate saved state at begin and finish w
  assert.equal(sent[0].id,sent[1].id);
 });
 
-test('C4 held project routes restrict reviewed consent to Gemini/Groq and require exact version/provider responses',()=>{
+test('C4 project routes restrict reviewed consent to Gemini/Groq and require exact version/provider responses',()=>{
  const session=loadCloudConsentSession();
  const saved={cloud_enabled:true,share_aggregates:true,intelligence_mode:'hybrid',providers:[{id:'gemini',connected:true},{id:'groq',connected:true},{id:'openrouter',connected:true}],cloud_consent_witness:'a'.repeat(32)+':1'};
  assert.deepEqual(session.projectCloudRoute(saved,saved,'gemini',3),{selected_provider:'gemini',cloud_intent:true,cloud_consent_witness:saved.cloud_consent_witness,expected_dataset_version:3});
@@ -637,18 +637,86 @@ test('C4 held project routes restrict reviewed consent to Gemini/Groq and requir
   assert.equal(session.cloudResponseMatches(value,'gemini','assistant',3),false);
  assert.equal(session.cloudResponseMatches({...r,source:'local_computed_rules',provider:'local',fallback:true},'gemini','assistant',3),true);
 });
-test('C4 mounted project send is held outside the explicitly intercepted API fixture',()=>{
+test('C4 mounted project send requires authenticated desktop or intercepted fixture API',()=>{
  const api=fs.readFileSync(path.join(__dirname,'../src/api.ts'),'utf8');
  const ui=fs.readFileSync(path.join(__dirname,'../src/AIWorkspace.tsx'),'utf8');
  const assistant=fs.readFileSync(path.join(__dirname,'../src/AssistantWorkspace.tsx'),'utf8');
  assert.match(api,/function usesInterceptedFixtureAPI\(\):boolean\{\s*return developmentOrigin==='http:\/\/127\.0\.0\.1:5187'&&desktopEndpoint===null/);
  for(const panel of [ui.slice(ui.indexOf('export function AIInsight')),assistant]){
    assert.match(panel,/const cloudFixture=usesInterceptedFixtureAPI\(\)/);
-   assert.match(panel,/const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable\(\)/);
+   assert.match(panel,/const cloudAPI=usesProjectCloudAPI\(\)/);
+   assert.match(panel,/const cloudAvailable=cloudAPI&&cloudConsentCrossWindowAvailable\(\)/);
+   assert.match(panel,/cloudRoute=>postConfirmedProjectCloud<[^>]+>\(projectId,/);
+   assert.match(panel,/\(\)=>current\(\)&&cloudConsentCrossWindowAvailable\(\)/);
    assert.match(panel,/confirmedProjectCloud<[^>]+>\(savedCloud,(?:selectedProvider|provider),version,/);
    assert.match(panel,/window.confirm\(projectCloudConfirmationText/);
    assert.match(panel,/cloudResponseMatches/);
  }
  assert.match(ui,/!route&&\(!manual\|\|!cloudAvailable\)/);
  assert.match(assistant,/filter\(m=>!m.cloudRequest\)/);
+});
+
+test('C4 authenticated desktop and intercepted confirmed cloud POST use only exact local transport',async()=>{
+ const project='synthetic-project',witness='a'.repeat(32)+':3';
+ for(const mode of ['desktop-legacy','desktop-owned','fixture']){
+  const events=[];
+  const api=loadAPI(async()=>assert.fail('Confirmed project request must not start native IPC'),async(url,options)=>{
+   events.push(url);
+   assert.equal(options.method,'POST');assert.equal(options.redirect,'error');
+   assert.equal(options.headers['Content-Type'],'application/json');
+   if(mode==='fixture'){
+    assert.equal(url,'http://127.0.0.1:5187/api/projects/'+project+'/ai/insight');
+    assert.equal(options.headers['X-PilotODIN-Dev-Request'],'1');
+    assert.equal(options.headers['X-PilotODIN-Session'],undefined);
+   }else{
+    assert.equal(url,'http://127.0.0.1:18042/api/projects/'+project+'/ai/insight');
+    assert.equal(options.headers['X-PilotODIN-Session'],'b'.repeat(64));
+    assert.equal(options.headers['X-PilotODIN-Dev-Request'],undefined);
+   }
+   const body=JSON.parse(options.body);
+   assert.deepEqual(body,{context:'assistant',question:'Synthetic only',selected_provider:'gemini',
+    cloud_intent:true,cloud_consent_witness:witness,expected_dataset_version:0});
+   return Response.json({source:'cloud_llm',answer:'Inert fixture'});
+  });
+  assert.equal(api.usesProjectCloudAPI(),false);
+  if(mode==='fixture')api.configureInterceptedFixtureAPI('http://127.0.0.1:5187');
+  else api.configureDesktopAPI({port:18042,token:'b'.repeat(64),backend_driven_inference:mode==='desktop-owned'});
+  assert.equal(api.usesProjectCloudAPI(),true);
+  const body={context:'assistant',question:'Synthetic only',selected_provider:'gemini',
+    cloud_intent:true,cloud_consent_witness:witness,expected_dataset_version:0};
+  const pending=api.postConfirmedProjectCloud(project,body,()=>true);
+  assert.equal(events.length,1,'exact local fetch starts before yielding; no preflight await');
+  assert.equal((await pending).answer,'Inert fixture');
+  await assert.rejects(api.postConfirmedProjectCloud(project,body,()=>false),/no longer current/);
+  for(const bad of [{...body,selected_provider:'openrouter'},{...body,cloud_intent:false},
+   {...body,cloud_consent_witness:undefined},{...body,expected_dataset_version:undefined},
+   {...body,expected_dataset_version:-1},{...body,expected_dataset_version:'0'},
+   {...body,prediction:{raw:1}},{...body,continuation_text:'private'},{...body,local_follow_up:{}}]){
+   await assert.rejects(api.postConfirmedProjectCloud(project,bad,()=>true),/Invalid confirmed/);
+  }
+  await assert.rejects(api.postConfirmedProjectCloud('../elsewhere',body,()=>true),/Invalid confirmed/);
+  assert.equal(events.length,1);
+ }
+});
+test('C4 other development frontdoors and unconfigured clients cannot send confirmed cloud projects',async()=>{
+ const body={context:'assistant',question:'Synthetic only',selected_provider:'groq',cloud_intent:true,
+  cloud_consent_witness:'a'.repeat(32)+':1',expected_dataset_version:1};
+ for(const origin of [null,5173,5174,5176,5177,5178]){
+  const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async()=>assert.fail('Unexpected fetch'));
+  if(origin!==null)api.configureDevelopmentAPI('http://127.0.0.1:'+origin);
+  assert.equal(api.usesProjectCloudAPI(),false);
+  await assert.rejects(api.postConfirmedProjectCloud('synthetic-project',body,()=>true),/Invalid confirmed/);
+ }
+});
+test('C4 confirmed project POST refuses redirects without retry',async()=>{
+ let calls=0;
+ const api=loadAPI(async()=>assert.fail('Unexpected IPC'),async(url,options)=>{
+  calls++;assert.equal(options.redirect,'error');
+  return new Response(null,{status:307,headers:{location:'https://example.invalid/'}});
+ });
+ api.configureDesktopAPI({port:18042,token:'b'.repeat(64)});
+ await assert.rejects(api.postConfirmedProjectCloud('synthetic-project',{context:'overview',question:'Synthetic only',
+  selected_provider:'groq',cloud_intent:true,cloud_consent_witness:'a'.repeat(32)+':1',expected_dataset_version:1},
+  ()=>true),/redirect refused/);
+ assert.equal(calls,1);
 });

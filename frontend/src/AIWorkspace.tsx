@@ -2,7 +2,7 @@ import {useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore} from 're
 import {beginCloudSettingsOperation,finishCloudSettingsOperation,cloudConsentSnapshot,subscribeCloudConsent,cloudConsentIsCurrent,canTestCloud,cloudConsentCrossWindowAvailable,cloudSettingsOperationIsCurrent,savedCloudWitness,explicitHandshakeRequest,isLocalPanelProvider,localPanelProvider,projectCloudProviderName,projectCloudHold,projectCloudDisclosure,localPanelRequest,localPanelMayContinue,projectCloudRoute,projectCloudConfirmationText,confirmedProjectCloud,cloudResponseMatches} from './cloudConsentSession';
 import {createInsightRequestFence} from './insightRequestFence';
 import {BrainCircuit,CheckCircle2,Cloud,KeyRound,LoaderCircle,LockKeyhole,RefreshCw,ShieldCheck,Sparkles,WifiOff} from 'lucide-react';
-import {get,post,put,usesOwnedInference,usesInterceptedFixtureAPI} from './api';
+import {get,post,put,usesOwnedInference,usesInterceptedFixtureAPI,usesProjectCloudAPI,postConfirmedProjectCloud} from './api';
 import {RichText} from './RichText';
 import {ResourceSettings} from './ResourceSettings';
 
@@ -136,10 +136,10 @@ export function AIInsight({projectId,scope,version,target,experimentId,predictio
   const routeAvailable=isLocalPanelProvider(selectedProvider);
   const [savedCloud,setSavedCloud]=useState<Settings|null>(null);
   const [savedCloudAt,setSavedCloudAt]=useState(-1);
-  // Product sends remain held. Only the existing intercepted fixture can
-  // exercise the mounted path; no actual backend/provider is reachable there.
+  // Only the authenticated desktop API and the existing intercepted fixture.
   const cloudFixture=usesInterceptedFixtureAPI();
-  const cloudAvailable=cloudFixture&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,selectedProvider,version));
+  const cloudAPI=usesProjectCloudAPI();
+  const cloudAvailable=cloudAPI&&cloudConsentCrossWindowAvailable()&&savedCloudAt===session.generation&&!session.pending&&Boolean(projectCloudRoute(savedCloud,savedCloud,selectedProvider,version));
   const fingerprint=JSON.stringify([projectId,scope,version,target,experimentId,prediction??null,selectedProvider,session.generation]);
   useLayoutEffect(()=>fence.enter(),[fence,fingerprint]);
   useEffect(()=>{
@@ -170,7 +170,7 @@ export function AIInsight({projectId,scope,version,target,experimentId,predictio
         const outcome=await confirmedProjectCloud<Analysis>(savedCloud,selectedProvider,version,
           ()=>window.confirm(projectCloudConfirmationText(selectedProvider,scope,version,question,deep)),
           ()=>get<Settings>('/ai/settings'),
-          cloudRoute=>post<Analysis>(`/projects/${projectId}/ai/insight`,{...body,prediction:null,...cloudRoute}),current);
+          cloudRoute=>postConfirmedProjectCloud<Analysis>(projectId,{...body,prediction:null,...cloudRoute},()=>current()&&cloudConsentCrossWindowAvailable()),current);
         if(!current())return;
         if(outcome.status==='result'&&cloudResponseMatches(outcome.response,selectedProvider,scope,version))setResult(outcome.response);
         else if(outcome.status!=='cancelled'){setResult(null);setSavedCloud(null);setSavedCloudAt(-1);setError('Cloud permission or context changed. Result not shown; review saved settings before a new request.')}
@@ -195,7 +195,7 @@ export function AIInsight({projectId,scope,version,target,experimentId,predictio
     {busy&&<div className="ai-working" role="status" aria-live="polite"><LoaderCircle size={18} className="spin"/><span><strong>{selectedProvider==='local'?'Computing verified local analysis…':usesOwnedInference()&&selectedProvider==='auto'?'Preparing context and requesting offline resource admission…':`Requesting ${selectedProvider==='auto'?'Hybrid intelligence':selectedProvider}…`}</strong><small>{elapsed}s elapsed · {usesOwnedInference()?'waiting for the selected route; verified fallback will be labelled if used':'waiting for local reasoning; verified fallback will be labelled if used'} · no dataset rows are sent</small></span></div>}
     {error&&<div className="alert-error">{error}</div>}
     <div className="ai-choice"><label htmlFor={'odin-provider-'+scope}>Intelligence</label><select id={'odin-provider-'+scope} className="input" value={selectedProvider} disabled={busy} onChange={e=>{chosen.current=true;setSelectedProvider(e.target.value);if(isLocalPanelProvider(e.target.value))localStorage.setItem('pilotodin-ai-provider-'+scope,e.target.value);setResult(null)}}><option value="auto">Smart Auto (local only)</option><option value="ollama">Offline model only</option><option value="gemini">Google Gemini (cloud)</option><option value="groq">GroqCloud (cloud)</option><option value="openrouter">OpenRouter (project sharing disabled)</option><option value="local">Verified local analytics (no LLM)</option></select></div>
-    {cloudName&&<div className="ai-incomplete" role="status"><strong>Selected destination: {cloudName}</strong><p>{projectCloudDisclosure}</p><p>{cloudFixture&&selectedProvider!=='openrouter'?(cloudAvailable?'Synthetic fixture: confirm each request.':'Saved permission or credential is unavailable; review settings.'):projectCloudHold(selectedProvider)}</p></div>}
+    {cloudName&&<div className="ai-incomplete" role="status"><strong>Selected destination: {cloudName}</strong><p>{projectCloudDisclosure}</p><p>{cloudAPI&&selectedProvider!=='openrouter'?(cloudAvailable?(cloudFixture?'Synthetic fixture: confirm each request.':'Confirm each request before sending.'):'Saved permission, credential or request safeguard is unavailable; review settings.'):projectCloudHold(selectedProvider)}</p></div>}
     <div className="ai-panel-actions"><button className="btn primary" disabled={busy||(!routeAvailable&&!cloudAvailable)||session.pending} onClick={()=>void run(false,true)}>{busy?<LoaderCircle className="spin" size={16}/>:<Sparkles size={16}/>} {cloudName?'Send to '+cloudName:result?'Refresh analysis':'Investigate with ODIN'}</button><button className="btn" disabled={busy||(!routeAvailable&&!cloudAvailable)||session.pending} onClick={()=>void run(true,true)}>{cloudName?'Send deeper request to '+cloudName:'Deeper reasoning'}</button><button className="btn" onClick={onOpenSettings}><RefreshCw size={15}/> AI Settings</button></div>
     <details className="odin-toolbox"><summary>Verified local investigations · no AI code execution</summary><div className="ai-choice"><select className="input" value={investigation} disabled={busy} onChange={e=>setInvestigation(e.target.value)} aria-label="Choose analytical investigation"><option value="">Choose investigation…</option><option value="overview">Dataset facts</option><option value="quality_summary">Quality and outlier warnings</option><option value="recommend_charts">Recommended charts</option></select><button className="btn" disabled={!investigation||busy} onClick={()=>void investigate()}>Run investigation</button></div>{investigationResult&&<pre className="investigation-output">{investigationResult}</pre>}</details>
     <p className="muted-caption">Offline reasoning stays on this device. Smart Auto never sends cloud requests. AI explanations are suggestions, never verified computations or authorisation to change data.</p>

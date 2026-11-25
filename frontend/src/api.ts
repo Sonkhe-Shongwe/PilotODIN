@@ -1,6 +1,7 @@
 import {invoke} from '@tauri-apps/api/core';
 import {verifyDatasetDownload} from './datasetExportDownload';
 import type {DatasetExportRequest,VerifiedDatasetDownload} from './datasetExportDownload';
+import type {ProjectCloudRoute} from './cloudConsentSession';
 
 // Every API client must first select an explicit connection. Desktop uses a
 // per-launch session; paired development uses its same-origin frontdoor.
@@ -37,6 +38,11 @@ export function configureDesktopAPI(connection:DesktopConnection) {
 // origin. Vite refuses every un-intercepted API call there; no real backend.
 export function usesInterceptedFixtureAPI():boolean{
  return developmentOrigin==='http://127.0.0.1:5187'&&desktopEndpoint===null;
+}
+// Other dev origins can also be QA/hosted relays. Do not infer product
+// cloud eligibility from those origins. The intercepted fixture has no backend.
+export function usesProjectCloudAPI():boolean {
+ return desktopEndpoint!==null||usesInterceptedFixtureAPI();
 }
 export function usesOwnedInference():boolean {return desktopEndpoint?.backend_driven_inference===true;}
 export function apiBase():string {
@@ -154,6 +160,31 @@ export async function post<T>(path:string, body:unknown):Promise<T>{
   return {...result,local_startup_issue:startupIssue} as T;
  }
  return result as T;
+}
+type ConfirmedProjectCloudBody=ProjectCloudRoute&{context:string;question:string;target?:string|null;
+ experiment_id?:string|null;deep?:boolean;prediction?:null};
+// Dedicated local request boundary for confirmed cloud intent. Do not await
+// a model preflight or launch IPC before starting this exact authenticated POST.
+// Server consent and dataset-version fences still apply.
+export async function postConfirmedProjectCloud<T>(projectId:string,body:ConfirmedProjectCloudBody,current:()=>boolean):Promise<T>{
+ const allowed=['context','question','target','experiment_id','deep','prediction','selected_provider',
+  'cloud_intent','cloud_consent_witness','expected_dataset_version'];
+ if(!usesProjectCloudAPI()||typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,128}$/.test(projectId)||
+    !body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!allowed.includes(key))||
+    (body.selected_provider!=='gemini'&&body.selected_provider!=='groq')||body.cloud_intent!==true||
+    typeof body.cloud_consent_witness!=='string'||body.cloud_consent_witness.length>80||
+    !/^[0-9a-f]{32}:[0-9]+$/.test(body.cloud_consent_witness)||
+    !Number.isSafeInteger(body.expected_dataset_version)||body.expected_dataset_version<0||
+    typeof body.context!=='string'||!body.context||typeof body.question!=='string'||body.question.length>900||
+    (body.prediction!==undefined&&body.prediction!==null)||
+    (body.target!==undefined&&body.target!==null&&typeof body.target!=='string')||
+    (body.experiment_id!==undefined&&body.experiment_id!==null&&typeof body.experiment_id!=='string')||
+    (body.deep!==undefined&&typeof body.deep!=='boolean'))
+   throw new Error('Invalid confirmed project cloud request');
+ const path='/projects/'+projectId+'/ai/insight';
+ const options={method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)};
+ if(!current())throw new Error('Cloud request is no longer current');
+ return check(await fetchLocal(path,options));
 }
 export async function put<T>(path:string, body:unknown):Promise<T>{return check(await fetchLocal(path,{method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)}));}
 export async function upload(file:File):Promise<{id:string;name:string;profile:Profile}>{

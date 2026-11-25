@@ -108,11 +108,10 @@ export function projectCloudProviderName(value:unknown):string|null{
     default:return null;
   }
 }
-// Intermediate C4 batch: the project-data path remains closed pending
-// server-generation binding and cross-renderer result invalidation.
+// Project-data requests remain unavailable on unsupported API connections.
 export function projectCloudHold(value:unknown):string{
   return value==='openrouter'?'OpenRouter project-data sharing is disabled because downstream destinations are not established.':
-    'Project-data cloud requests are not available until consent and response safeguards are verified.';
+    'Project-data cloud requests are not available on this connection. Use an authenticated PilotODIN desktop session.';
 }
 export const projectCloudDisclosure='A cloud request may include bounded column names, row counts, supported aggregate statistics, quality issue categories, aggregate model metrics and your question. Summaries are not guaranteed anonymous. Do not include private information in the question. Uploaded rows, local paths, individual prediction inputs and previous answers are excluded. Only the selected provider is intended; no automatic fallback to another provider. Already sent data cannot be recalled.';
 export function localPanelRequest(value:unknown):{selected_provider:LocalPanelProvider;cloud_intent:false}|null{
