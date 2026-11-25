@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 6987abf83fd3ea0da9dd3996ab3128928a841736 |
-| Product baseline | B8 strict wire 970a158; test-only correction 536656a exact P1/P4 SUCCESS. |
+| Observed starting HEAD | ffe6e58b1a99c1e37971ef8a71ec380d652b02b3 |
+| Product baseline | B8 deadline 5db2032 exact P1/P4 SUCCESS; final worker/test compatibility review. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C4-B8-DEADLINE-LIFETIME-20261125 |
-| Operation state | RECONCILED; deadline source published at [5db2032](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/5db2032bdd7ffdf60c743534acf189c445024ada), prepared at 82ca340; exact CI outstanding. |
-| Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py and canonical records only. No workflow/schema/activation change. |
+| Operation ID | C4-B8-WORKER-REGRESSION-INTEGRITY-20261125 |
+| Operation state | PREPARED; final B8 correction not yet issued. |
+| Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py, five historical AI test modules (multi_ai, hybrid_local_ai, v05_release, v06_experience, v08_intelligence), existing P1 isolated backend test selection and canonical records. No schema, approval or activation change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Corrected strict wire P1/P4 SUCCESS; deadline worker and HTTPS late-write fences with nine new inert cases published, exact CI pending. Review worker BaseException handling: synthetic pytest.fail could be swallowed by the new thread boundary; preserve negative-test integrity before closure. |
-| Pending runs | [P1 Isolated Backend Source Recovery #45660697895](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45660697895) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45660698005](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45660698005) IN_PROGRESS |
+| Verification | Exact 5db2032 P1 180 focused cases and downstream SUCCESS; P4 1086 backend/6 skipped/552 subtests, Windows 68/133 subtests, browser 13, Node 133/Vite SUCCESS. |
+| Pending runs | None from 5db2032; expect existing P1/P4 source/synthetic workflows. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile both exact 5db2032 terminal runs/jobs/logs. Review worker exception semantics (propagate unexpected test/fatal BaseException on completed caller, keep ordinary provider errors sanitized), start-failure retention and historical callers; correct evidenced issues without weakening safety. Deadline bounds caller wait, not physical OS cancellation. Then frontend consent/cache/disclosure; no score increment. |
+| Recovery action | Preserve worker test/fatal exception integrity, sanitized fault observable at caller or late thread hook; normal provider failures fallback. Keep slot retention, ambiguous start fail-closed. Adapt historical explicit consent/no-probe/no-retry/response-completeness tests with inert adapters, add exact selected cases to existing P1 CI (no fitting/inference). Reconcile P1/P4 exact result before B8 closure and frontend. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
