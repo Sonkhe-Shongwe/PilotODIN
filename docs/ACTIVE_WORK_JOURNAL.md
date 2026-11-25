@@ -7,22 +7,24 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 679f5643828dbd234f5a048c8f018c0f66d7a675 |
-| Product baseline | Last terminal product 6b257546734f01808c9dee8c6ef840ea63200fb1; diagnostic 860678c exact P1 SUCCESS; new product 16f3cf135f26a3b63d997f6b15d117ec845a6041 verification pending. |
+| Observed starting HEAD | ec26dce8e8d0a933001cf250d15f453903ba98a9 |
+| Product baseline | 16f3cf135f26a3b63d997f6b15d117ec845a6041: 7/8 terminal workflows SUCCESS; P1 source recovery FAIL before new route matrix. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-MANDATORY-INNER-AUTH-20261125 |
-| Operation state | RECONCILED (product publication verified at 16f3cf135f26a3b63d997f6b15d117ec845a6041; exact CI not yet reconciled) |
-| Intended files | backend/main.py; tests/test_c1_product_integration.py; canonical journal, handoff and evidence. No route inventory, native, settings, workspace migration, dependency, activation or approval change. |
+| Operation ID | C3-FSYNC-FIXTURE-COMPATIBILITY-20261125 |
+| Operation state | PREPARED (test-only compatibility correction; resolve publication by parent and operation marker) |
+| Intended files | tests/test_p1_upload_atomic_staging.py; journal, compact handoff and C ledger. No product source or workflow change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Diagnostic exact P1 SUCCESS. Reviewed 67 main application references and active serving launchers; archived bare R03 preflight unconditionally refuses. Mandatory identity witness now required by main HTTP guard and local-control helper; bare requests and all inner OPTIONS refused before archive/scratch. Existing inner actual-response CORS and archive/scratch order retained. New 9 parameterized matrix/ordering cases exercising both compositions and all 76 routes, including raw no-body refusal, desktop/dev negative cases, bounded preflight and authorized health. Eight routine CI workflows expected; no native activation, no C3 closure claim. Wider credential/caller disposition and exit matrix remain pending. |
-| Pending runs | Exact `16f3cf1`: [45603771567](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603771567) P3 User-Described Semantic Business Context IN_PROGRESS; [45603767991](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603767991) P1 Isolated Backend Source Recovery IN_PROGRESS; [45603768054](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603768054) P1 Project Lifecycle Disposable Backend Acceptance IN_PROGRESS; [45603767938](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603767938) P3 Real HTTP Semantic Context Browser Acceptance IN_PROGRESS; [45603768309](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603768309) P1 Disposable Real HTTP Browser/Backend Acceptance IN_PROGRESS; [45603767757](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603767757) P4 Target Review Queue and Transparent Ranking IN_PROGRESS; [45603767798](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603767798) P2 Real HTTP Saved Revision Comparison IN_PROGRESS; [45603767738](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603767738) P2 Immutable Report Revision Idempotency IN_PROGRESS. Resolve all terminal runs/jobs before further source changes. |
+| Verification | Exact 16f3cf1 run and job results independently reconciled; P1 job 139169172324 199 passed, 1 failed, 2 subtests passed; AttributeError main.os at test_fsync_failure_cleans_partial_upload_before_metadata, later matrix step SKIPPED. Dataset publication owns actual fsync; replace stale test target with dataset_publication.os, retain every assertion and same injected error. Reviewed all 85 exact workflow triggers and P1 job; only P1 matches intended test/docs push. Seven other workflows passed; P4 restricted collector skipped. No new restricted authority. Full P1 regression including 76-route matrix required. |
+| Pending runs | None (all eight previous runs terminal; one failure retained). |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact product CI, inspect any failure before further source changes, finish semantic credential/caller dispositions and C-D05/section 10 matrix. C3 not closed. |
+| Recovery action | Publish minimal test-only correction, verify exact P1; use time during CI for independent read-only credential audit, no further product edit before reconciliation. Close C3 only on full exit evidence. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
+
+C3-MANDATORY-INNER-AUTH-20261125: [16f3cf1](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/16f3cf135f26a3b63d997f6b15d117ec845a6041), seven of eight routine workflows SUCCESS; [P1 #45603767991](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45603767991) FAIL, stale fsync monkeypatch target, route matrix SKIPPED. Prior journal [ec26dce](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/ec26dce8e8d0a933001cf250d15f453903ba98a9).
 
 C3-HISTORICAL-DIAGNOSTIC-20261125: [860678c](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/860678c398bb4ae75977ac86b7d5632889735f55), exact [P1 #45602844010](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45602844010) terminal SUCCESS; prior journal at [679f564](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/679f5643828dbd234f5a048c8f018c0f66d7a675).
 
