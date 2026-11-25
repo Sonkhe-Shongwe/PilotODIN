@@ -7,14 +7,14 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 5a49917bde5ae253aa303069d33ffe83fb8aed3f |
+| Observed starting HEAD | 896bb22cc00e2c193b1ea828bbfc1d40f173825e |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-PLATFORM-LOCK-CANDIDATES-20261125 |
-| Operation state | RECONCILED: exact b0ca078, run 45703125465 job 139518102626 SUCCESS; 98 source-test candidate rows, 62 distinct wheels/222779129 expected bytes; runtime subsets 36/37, six additional freezer names missing and packaging 26.4 reuse candidate. Zero actual wheels verified, installable locks or live requests. Evidence only. |
-| Intended files | Isolated qa/c5_wheel_metadata/lock_candidates.py, dedicated offline workflow, generated evidence-only JSON, canonical records; preserve previous source, receipts, policy, locks, markers and product. |
+| Operation ID | C5-FREEZER-METADATA-PROPOSAL-20261125 |
+| Operation state | PREPARED: offline freezer-only candidate selection and bounded metadata collector tests; proposed fixed two historical roots plus deterministic stable compatible candidate for four unpinned names. No live registry request or resolver, production selection, installation or executable lock. |
+| Intended files | Isolated qa/c5_wheel_metadata/collect_freezer.py and dedicated offline-only workflow, canonical records, evidence-only toolchain/licence summary; preserve prior collectors, receipts, product and locks. |
 | Approval | Ten restricted approvals consumed/disarmed (six native, four metadata). No additional registry requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
