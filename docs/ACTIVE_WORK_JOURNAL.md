@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 44841cfb3e5796bbca7013f2a75bc1dbf87657a9 |
-| Product baseline | 0d9fe4b2aca6280cd3c4eef5cd8aadfd86408650; exact inventory P4 #45690254550 SUCCESS. |
+| Observed starting HEAD | eb216a634ec1442579a89651c39f809ccf997cce |
+| Product baseline | a573c254b53f0a9af6738d652a92dca1636aefbe; exact historical P2 CLI P4 #45691933928 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
-| Operation ID | C5-HISTORICAL-DEVQA-FRONTDOORS-20261125 |
-| Operation state | RECONCILED publication at a573c254b53f0a9af6738d652a92dca1636aefbe; exact historical frontdoor CI IN_PROGRESS. No restricted action. |
-| Intended files | Seven historical P2 .bat launchers and matching seven tools/p2_pdf_* Python CLI modules; tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml and canonical docs. No production font gate, approval, dependency lock or native workflow changes. |
+| Operation ID | C5-NATIVE-ENTRYPOINT-FREEZE-20261125 |
+| Operation state | PREPARED; close direct legacy P2 native export and installer verification entrypoints; A4 non-preflight refusal before setup; native npm dev executable frontdoor unconditional refusal (pure planning preserved). |
+| Intended files | tools/Verify_A4_Native_Windows.ps1, tools/Verify_P2_Native_Export_Local.ps1, Run_PilotODIN_P2_Native_Export.bat, desktop/Verify_Installed_PilotODIN.ps1, frontend/scripts/p4-isolated-native-dev.mjs, frontend/tests/p4-native-dev-isolation.test.cjs, tests/test_c5_build_input_preflight.py, .github/workflows/p4-target-ranking.yml, canonical docs. Owner QA kit verification scripts unchanged. |
 | Approval | C5 metadata-only approval CONSUMED; no replay. Exact run 45686334903 attempt 1 only. All six native approvals still consumed/disarmed. No artifact bytes, native, model, installer, owner device, OS/network change or additional metadata dispatch authorized. |
-| Verification | Exact 0d9fe4b P4 SUCCESS: 1223 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 refusal; Windows 136 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. Tree 1462 entries, 86 workflow files; targeted historical acquisition/build/staging/recheck frontdoors identified. |
-| Pending runs | P4 #45691933928 IN_PROGRESS; 139479337780 in_progress; 139479337960 in_progress; 139479338191 in_progress; 139479340906 skipped. |
+| Verification | Exact a573c25 P4 SUCCESS: 1237 Python/6 skipped/552 subtests, 15 Rust, 160 Node/Vite, 3 refusal; Windows 150 C5/1 skipped, parser, 3 refusal, 68/133 subtests; HTTP 13; restricted collector skipped. |
+| Pending runs | None. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact frontdoor CI before further edits. Seven historical launcher and CLI mutation frontdoors refuse, inspection and synthetic helper APIs retained; no arbitrary Python import security guarantee. Finish remaining historical entrypoint audit in targeted batches (local owner/native launchers and historical wrapper transitive calls still unreviewed), then prepare bounded provenance decision: selected wheel METADATA and remaining toolchain/asset evidence need independent review; no repeat of consumed metadata approval. No restricted action authorised. |
+| Recovery action | Keep old native/export/installer implementation and exact receipts in Git; reject non-preflight A4, all legacy P2 native export and actual installer verification before setup, no native npm exec even if historical consent env present. Preserve pure native plan tests and A4 PreflightOnly mode; no owner kit launcher changes. Test static early PowerShell refusal and JS consent bypass rejection in existing source CI. Do not invoke PowerShell scripts or native processes. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
