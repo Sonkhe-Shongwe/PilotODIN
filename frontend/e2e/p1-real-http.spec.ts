@@ -1,4 +1,5 @@
-import {expect,test} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 import {Buffer} from 'node:buffer';
@@ -6,7 +7,7 @@ import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backe
 import type {DisposableBackend} from './p1-real-http-backend';
 
 const UI='http://127.0.0.1:5178';
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const A_FILENAME='pilotodin_p1_http_A.csv';
 const B_FILENAME='pilotodin_p1_http_B.csv';
 // Keep A byte-for-byte compatible with its original pinned-source tests.
@@ -35,7 +36,7 @@ async function allowOnlyDisposableHTTP(context:BrowserContext,expectedB:string,
   const audit:Audit={imports:0,blockedWrites:[],unexpectedReads:[],blockedOrigins:[],backendReads:[]};
   await context.route('**/*',async(route:Route)=>{
     const req=route.request(),url=new URL(req.url()),method=req.method();
-    if(url.origin===UI){
+    if(url.origin===UI&&!url.pathname.startsWith('/api/')){
       if(method==='GET'||method==='HEAD'){await route.continue();return;}
       audit.blockedWrites.push(method+' '+url.pathname+' [UI]');
       await route.fulfill({status:403,json:{detail:'Unapproved frontend write'}});return;

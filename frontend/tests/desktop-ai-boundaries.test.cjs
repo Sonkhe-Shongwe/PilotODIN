@@ -233,7 +233,7 @@ test('C3 explicit Live Dev API uses only same-origin proxy marker, never a crede
    seen.push({url,headers:options.headers});
    return {ok:true,json:async()=>({status:'ok'})};
  });
- assert.throws(()=>api.configureDevelopmentAPI('http://127.0.0.1:5178'));
+ assert.throws(()=>api.configureDevelopmentAPI('http://127.0.0.1:5177'));
  api.configureDevelopmentAPI('http://127.0.0.1:5173');
  assert.equal(api.apiBase(),'http://127.0.0.1:5173/api');
  await api.get('/health');
@@ -275,4 +275,27 @@ test('C3 Live Dev proxy enforces local origin, marker and fixed private backend'
    {rawHeaders:raw.slice(0,4)},{url:'/api/\\evil'},{url:'/api'}]){
    assert.ok([400,403].includes(liveDevProxyPlan({...req,...bad},trust).status));
  }
+});
+
+
+test('C3 hosted browser proxy uses distinct exact origin and keeps private capability server-side',async()=>{
+ const {liveDevProxyTrust,liveDevProxyPlan}=await import('../scripts/live-dev-api-proxy.mjs');
+ const env={PILOTODIN_SERVER_MODE:'hosted-fixture',VITE_PILOTODIN_AUTH_DEV:'1',
+   PILOTODIN_DEV_ORIGIN:'http://127.0.0.1:5178',PILOTODIN_DEV_PORT:'8000',
+   PILOTODIN_DEV_CAPABILITY:'a'.repeat(64),CI:'true',GITHUB_ACTIONS:'true',
+   P1_REAL_HTTP_E2E:'1',GITHUB_RUN_ID:'123',RUNNER_TEMP:'/tmp/runner',
+   PILOTODIN_HOME:'/tmp/runner/pilotodin-p1-real-http-123'};
+ const trust=liveDevProxyTrust(env);
+ assert.equal(trust.port,5178);
+ assert.throws(()=>liveDevProxyTrust({...env,P1_REAL_HTTP_E2E:''}));
+ assert.throws(()=>liveDevProxyTrust({...env,PILOTODIN_HOME:'/tmp/other'}));
+ const req={url:'/api/health',method:'GET',socket:{remoteAddress:'127.0.0.1'},
+   rawHeaders:['Host','127.0.0.1:5178','X-PilotODIN-Dev-Request','1','Origin','http://127.0.0.1:5178']};
+ assert.equal(liveDevProxyPlan(req,trust).options.headers.origin,'http://127.0.0.1:5178');
+ assert.equal(liveDevProxyPlan({...req,rawHeaders:req.rawHeaders.slice(0,4)},trust).status,403);
+ const seen=[];const api=loadAPI(async()=>{},async(url,options)=>{
+   seen.push({url,headers:options.headers});return {ok:true,json:async()=>({status:'ok'})};
+ });
+ api.configureDevelopmentAPI('http://127.0.0.1:5178');await api.get('/health');
+ assert.deepEqual(seen,[{url:'http://127.0.0.1:5178/api/health',headers:{'X-PilotODIN-Dev-Request':'1'}}]);
 });

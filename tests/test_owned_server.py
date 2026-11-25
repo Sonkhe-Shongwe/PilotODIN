@@ -31,7 +31,9 @@ class OwnedServerTests(unittest.TestCase):
             env = {**os.environ, "PILOTODIN_SERVER_MODE": "hosted-fixture",
                    "PILOTODIN_HOME": str(home), "PILOTODIN_DESKTOP_SESSION": "",
                    "CI": "true", "GITHUB_ACTIONS": "true", "GITHUB_RUN_ID": "123",
-                   "RUNNER_TEMP": str(root)}
+                   "RUNNER_TEMP": str(root), "P1_REAL_HTTP_E2E":"1",
+                   "PILOTODIN_DEV_CAPABILITY":"a"*64, "PILOTODIN_DEV_PORT":"8000",
+                   "PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5178"}
             self.assertEqual(admitted_home(env), home)
             for invalid in ({"GITHUB_RUN_ID": "456"}, {"CI": "false"},
                             {"PILOTODIN_HOME": str(root / "other")}):
@@ -431,6 +433,21 @@ class C3RequestTrustTests(unittest.TestCase):
             with self.subTest(change=tuple(change)):
                 with self.assertRaises(ValueError):
                     live_dev_trust_from_environ({**env,**change})
+
+    def test_c3_hosted_browser_contract_requires_private_fixture_capability(self):
+        from backend.request_auth import hosted_browser_trust_from_environ, authorize
+        env={"PILOTODIN_SERVER_MODE":"hosted-fixture","CI":"true","GITHUB_ACTIONS":"true",
+             "P1_REAL_HTTP_E2E":"1","GITHUB_RUN_ID":"123",
+             "PILOTODIN_DEV_PORT":"8000","PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5178",
+             "PILOTODIN_DEV_CAPABILITY":self.secret}
+        trust=hosted_browser_trust_from_environ(env)
+        self.assertTrue(authorize(self.scope(trust,origin=trust.dev_origin),trust).allowed)
+        for change in ({"P1_REAL_HTTP_E2E":""},{"CI":"false"},{"PILOTODIN_DEV_CAPABILITY":""},
+                       {"PILOTODIN_DEV_ORIGIN":"http://127.0.0.1:5173"},
+                       {"PILOTODIN_DESKTOP_SESSION":self.secret}):
+            with self.subTest(change=tuple(change)):
+                with self.assertRaises(ValueError):
+                    hosted_browser_trust_from_environ({**env,**change})
 
     def test_c3_live_dev_missing_capability_refuses_before_workspace(self):
         from backend import server_entry

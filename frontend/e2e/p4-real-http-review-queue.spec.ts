@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Locator,Page,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {mkdtemp,rm} from 'node:fs/promises';
@@ -11,7 +12,7 @@ import {p4QualityFixture,reloadP4SyntheticWorkspace,verifyP4QualityAfterRelaunch
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const csv=[
  'row_id,churn,fraud_reported,outcome,failure_flag,future_cost,feature',
@@ -35,7 +36,7 @@ async function readOnlyBrowserGuard(context:BrowserContext,projectId:string,allo
  const blocked:string[]=[];
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
-  if(url.origin===UI&&(method==='GET'||method==='HEAD')){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')&&(method==='GET'||method==='HEAD')){
    await route.continue();return;
   }
   if(url.origin===API&&method==='GET'&&url.pathname.startsWith('/api/')){

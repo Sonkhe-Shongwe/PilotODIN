@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {spawnSync} from 'node:child_process';
@@ -7,7 +8,7 @@ import type {DisposableBackend} from './p1-real-http-backend';
 
 // Only GitHub's owned, temporary Uvicorn + Vite services are available.
 // Browser mutation is limited to ONE validated synthetic report creation.
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const csv='RecordID,Region,Revenue\n0001,West,120.00\n0002,East,240.00\n0003,West,180.00\n';
 const title='Synthetic Human-Authored Evidence Report';
@@ -29,7 +30,7 @@ async function guardBrowser(context:BrowserContext,pid:string,evidenceId:string)
  const audit:Audit={allowedPosts:0,blocked:[],remote:[],reads:[]};
  await context.route('**/*',async(route:Route)=>{
   const req=route.request(),url=new URL(req.url()),method=req.method();
-  if(url.origin===UI){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')){
    if(method==='GET'||method==='HEAD'){await route.continue();return;}
    audit.blocked.push(method+' unapproved UI operation');await route.abort('blockedbyclient');return;
   }

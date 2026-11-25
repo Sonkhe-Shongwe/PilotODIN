@@ -1,4 +1,5 @@
 import {defineConfig} from '@playwright/test';
+import {prepareHostedHttp} from './e2e/hosted-http-config';
 
 // Reuse the existing CI-owned disposable Uvicorn helper and its exact
 // PILOTODIN_HOME/port protections. No local or owner-data execution allowed.
@@ -7,6 +8,7 @@ if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
    !process.env.RUNNER_TEMP||!process.env.PILOTODIN_HOME){
  throw new Error('P2 real HTTP report acceptance requires the isolated GitHub runner');
 }
+prepareHostedHttp();
 export default defineConfig({
  testDir:'./e2e',
  testMatch:['p2-real-http-report-comparison.spec.ts','p2-real-http-guided-report-persistence.spec.ts','p2-real-http-mounted-handoff.spec.ts'],

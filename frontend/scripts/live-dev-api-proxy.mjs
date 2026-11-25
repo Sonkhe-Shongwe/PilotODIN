@@ -3,8 +3,8 @@
 // as the developer. Browser cross-site/DNS rebinding requests are refused.
 import http from 'node:http';
 
-const ORIGIN='http://127.0.0.1:5173';
-const HOST='127.0.0.1:5173';
+const LIVE_ORIGIN='http://127.0.0.1:5173';
+const HOSTED_ORIGIN='http://127.0.0.1:5178';
 const METHODS=new Set(['GET','HEAD','POST','PUT','PATCH','DELETE']);
 const UNIQUE=new Set(['host','origin','referer','sec-fetch-site','x-pilotodin-dev-request',
   'content-type','content-length','transfer-encoding']);
@@ -14,14 +14,20 @@ const RESPONSE_HEADERS=['content-type','content-length','content-disposition','c
   'x-pilotodin-export-project','x-pilotodin-export-operation','x-pilotodin-export-mac'];
 
 export function liveDevProxyTrust(env){
-  if(env.PILOTODIN_SERVER_MODE!=='dev'||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
-     env.PILOTODIN_DEV_ORIGIN!==ORIGIN||env.PILOTODIN_DEV_PORT!=='8000'||
+  const live=env.PILOTODIN_SERVER_MODE==='dev'&&env.PILOTODIN_DEV_ORIGIN===LIVE_ORIGIN;
+  const hosted=env.PILOTODIN_SERVER_MODE==='hosted-fixture'&&env.PILOTODIN_DEV_ORIGIN===HOSTED_ORIGIN&&
+    env.CI==='true'&&env.GITHUB_ACTIONS==='true'&&env.P1_REAL_HTTP_E2E==='1'&&
+    /^\d+$/.test(env.GITHUB_RUN_ID??'')&&
+    !!env.RUNNER_TEMP&&env.PILOTODIN_HOME===`${env.RUNNER_TEMP}/pilotodin-p1-real-http-${env.GITHUB_RUN_ID}`;
+  if((!live&&!hosted)||env.VITE_PILOTODIN_AUTH_DEV!=='1'||
+     env.PILOTODIN_DEV_PORT!=='8000'||
      !/^[0-9a-f]{64}$/.test(env.PILOTODIN_DEV_CAPABILITY??'')||
      env.PILOTODIN_DESKTOP_SESSION||env.PILOTODIN_DESKTOP_PORT||
      (env.PILOTODIN_DESKTOP_ALLOW_DEV??'0')!=='0'){
     throw new Error('Invalid isolated Live Dev proxy configuration');
   }
-  return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY});
+  return Object.freeze({capability:env.PILOTODIN_DEV_CAPABILITY,origin:env.PILOTODIN_DEV_ORIGIN,
+    host:live?'127.0.0.1:5173':'127.0.0.1:5178',port:live?5173:5178});
 }
 
 // Raw headers are used before Node's combined-header view. Never forward
@@ -46,18 +52,18 @@ export function liveDevProxyPlan(req,trust){
     if(UNIQUE.has(key)&&Object.hasOwn(headers,key))return {status:400};
     headers[key]=value;
   }
-  if(headers.host!==HOST||headers['x-pilotodin-dev-request']!=='1'||
-     (headers.origin!==undefined&&headers.origin!==ORIGIN)||
+  if(headers.host!==trust.host||headers['x-pilotodin-dev-request']!=='1'||
+     (headers.origin!==undefined&&headers.origin!==trust.origin)||
      (headers['sec-fetch-site']!==undefined&&headers['sec-fetch-site']!=='same-origin')||
-     (headers['sec-fetch-site']!=='same-origin'&&headers.origin!==ORIGIN)){
+     (headers['sec-fetch-site']!=='same-origin'&&headers.origin!==trust.origin)){
     return {status:403};
   }
   if(headers.referer!==undefined){
-    try{if(new URL(headers.referer).origin!==ORIGIN)return {status:403};}
+    try{if(new URL(headers.referer).origin!==trust.origin)return {status:403};}
     catch{return {status:403};}
   }
   if(headers['content-length']!==undefined&&headers['transfer-encoding']!==undefined)return {status:400};
-  const outgoing={host:'127.0.0.1:8000',origin:ORIGIN,
+  const outgoing={host:'127.0.0.1:8000',origin:trust.origin,
     'x-pilotodin-dev-capability':trust.capability};
   for(const key of REQUEST_HEADERS)if(headers[key]!==undefined)outgoing[key]=headers[key];
   return {status:200,options:{hostname:'127.0.0.1',port:8000,path:url,

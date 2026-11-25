@@ -1,10 +1,11 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const firstDomain='Owner-described insurance claim processing dataset';
 const revisedDomain='Owner-described synthetic insurance cases, revised locally';
@@ -22,7 +23,7 @@ async function protectBrowser(context:BrowserContext,ids:[string,string]):Promis
  const audit:Audit={saved:0,blocked:[],remote:[],reads:[]};
  await context.route('**/*',async(route:Route)=>{
   const req=route.request(),url=new URL(req.url()),method=req.method();
-  if(url.origin===UI){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')){
    if(method==='GET'||method==='HEAD'){await route.continue();return;}
    audit.blocked.push('UI '+method);await route.abort('blockedbyclient');return;
   }

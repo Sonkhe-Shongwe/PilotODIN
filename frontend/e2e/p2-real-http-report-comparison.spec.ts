@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
@@ -7,7 +8,7 @@ import type {DisposableBackend} from './p1-real-http-backend';
 // One owned, temporary Uvicorn on CI :8000, dedicated Vite :5178.
 // All source CSV/report revisions are synthetic and only CI-runner-local.
 // Browser can READ the reviewed report paths but cannot mutate API state.
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const csv=[
  'OrderID,Region,Revenue',
@@ -23,7 +24,7 @@ async function protectBrowser(context:BrowserContext,pid:string,rid:string,evide
  const audit:ReadAudit={reads:[],readOnlyCalculations:0,unexpected:[],blockedWrites:[],remote:[]};
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
-  if(url.origin===UI){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')){
    if(method==='GET'||method==='HEAD'){await route.continue();return;}
    audit.blockedWrites.push(method+' '+url.pathname+' [UI]');
    await route.fulfill({status:403,json:{detail:'Unapproved browser write'}});return;

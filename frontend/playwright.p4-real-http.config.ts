@@ -1,4 +1,5 @@
 import {defineConfig} from '@playwright/test';
+import {prepareHostedHttp} from './e2e/hosted-http-config';
 
 // One CI-only P4-05 browser scenario on disposable Uvicorn/SQLite. The borrowed
 // P1 backend helper only permits an exact runner-owned temporary location.
@@ -7,6 +8,7 @@ if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
    !process.env.RUNNER_TEMP||!process.env.PILOTODIN_HOME){
  throw Error('P4 real HTTP tests require trusted disposable GitHub CI');
 }
+prepareHostedHttp();
 export default defineConfig({
  testDir:'./e2e',
  testMatch:'p4-real-http-review-queue.spec.ts',

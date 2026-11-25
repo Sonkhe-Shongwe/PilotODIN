@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
@@ -6,7 +7,7 @@ import type {DisposableBackend} from './p1-real-http-backend';
 
 // Scope: explicit human opinion about one *unverified* field role, never
 // automated truth, data modification, target selection, or actual owner data.
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const source=(prefix:string)=>[
  'claim_id,claim_amount,policy_number',
@@ -20,7 +21,7 @@ async function guard(context:BrowserContext,one:string,two:string):Promise<Brows
  const audit:BrowserAudit={posts:0,blocked:[],remote:[]};
  await context.route('**/*',async(route:Route)=>{
   const req=route.request(),url=new URL(req.url()),method=req.method();
-  if(url.origin===UI){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')){
    if(method==='GET'||method==='HEAD'){await route.continue();return;}
    audit.blocked.push('UI '+method);await route.abort('blockedbyclient');return;
   }

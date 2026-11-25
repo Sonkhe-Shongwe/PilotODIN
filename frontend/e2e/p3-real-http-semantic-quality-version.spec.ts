@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
@@ -7,7 +8,7 @@ import type {DisposableBackend} from './p1-real-http-backend';
 // P3-04 W5 precursor: actual browser approval and fresh Your data semantics.
 // Runs ONLY in trusted CI with the already audited disposable Uvicorn owner.
 // This is NOT an owner native Tauri WebView2 test or a release acceptance.
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const DOMAIN='Synthetic claim records, owner-described for version zero';
 const GRAIN='One synthetic submitted insurance claim per data row';
@@ -31,7 +32,7 @@ async function scopeBrowser(context:BrowserContext,pid:string,issueId:string){
  let permitCommit=false;
  await context.route('**/*',async(route:Route)=>{
   const r=route.request(),url=new URL(r.url()),method=r.method();
-  if(url.origin===UI){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')){
    if(method==='GET'||method==='HEAD'){await route.continue();return;}
    audit.blocked.push('UI '+method);await route.fulfill({status:403,json:{detail:'Blocked UI write'}});return;
   }

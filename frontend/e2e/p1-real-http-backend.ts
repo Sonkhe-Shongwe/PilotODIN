@@ -43,6 +43,12 @@ async function portUnoccupied():Promise<void>{
 export async function startDisposableBackend():Promise<DisposableBackend>{
   guardRunner();
   await portUnoccupied(); // Never attach to or kill somebody else's service.
+  const capability=process.env.PILOTODIN_DEV_CAPABILITY;
+  if(!capability||!/^[0-9a-f]{64}$/.test(capability)||
+     process.env.PILOTODIN_DEV_ORIGIN!=='http://127.0.0.1:5178'||
+     process.env.PILOTODIN_DEV_PORT!=='8000'){
+    throw new Error('Missing private hosted fixture capability');
+  }
   // Playwright loads spec helpers as ES modules; __dirname is unavailable.
   // The dedicated CI job runs the test from <repository>/frontend only.
   const working=realpathSync(process.cwd());
@@ -53,7 +59,7 @@ export async function startDisposableBackend():Promise<DisposableBackend>{
   }
   const child=spawn('python',
     ['-m','uvicorn','backend.server_entry:owned_app','--factory','--host','127.0.0.1',
-     '--port','8000','--no-access-log'],
+     '--port','8000','--no-access-log','--no-proxy-headers','--ws','none'],
     {cwd:repoRoot,env:{...process.env,PILOTODIN_DESKTOP_SESSION:'',
        PILOTODIN_DESKTOP_ALLOW_DEV:'0',PILOTODIN_SERVER_MODE:'hosted-fixture'},stdio:['ignore','pipe','pipe']});
   if(!child.pid)throw new Error('Temporary backend process did not start.');
@@ -71,8 +77,17 @@ export async function startDisposableBackend():Promise<DisposableBackend>{
       throw new Error('Temporary backend exited before health check: '+recent);
     }
     try{
-      const res=await fetch(BASE,{signal:AbortSignal.timeout(900)});
-      if(res.status===200 && (await res.json()).status==='ok')return handle;
+      const res=await fetch(BASE,{signal:AbortSignal.timeout(900),redirect:'error',
+        headers:{'X-PilotODIN-Dev-Capability':capability}});
+      if(res.status===200 && (await res.json()).status==='ok'){
+        const missing=await fetch(BASE,{redirect:'error',signal:AbortSignal.timeout(900)});
+        const wrong=await fetch(BASE,{redirect:'error',signal:AbortSignal.timeout(900),
+          headers:{'X-PilotODIN-Dev-Capability':capability[0]==='a'?'b'.repeat(64):'a'.repeat(64)}});
+        const proxy=await fetch('http://127.0.0.1:5178/api/health',{redirect:'error',
+          signal:AbortSignal.timeout(900),headers:{'X-PilotODIN-Dev-Request':'1','Origin':'http://127.0.0.1:5178'}});
+        const refused=await fetch('http://127.0.0.1:5178/api/health',{redirect:'error',signal:AbortSignal.timeout(900)});
+        if(missing.status===401&&wrong.status===401&&proxy.status===200&&refused.status===403)return handle;
+      }
     }catch{/* The owned child can still be starting. */}
     await sleep(180);
   }

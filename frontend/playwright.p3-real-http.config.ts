@@ -1,4 +1,5 @@
 import {defineConfig} from '@playwright/test';
+import {prepareHostedHttp} from './e2e/hosted-http-config';
 
 // CI-only real HTTP with a dedicated Vite port and an owned disposable Uvicorn.
 // Reuses the audited backend process guard; no local/owner-data execution.
@@ -7,6 +8,7 @@ if(process.env.CI!=='true'||process.env.GITHUB_ACTIONS!=='true'||
    !process.env.RUNNER_TEMP||!process.env.PILOTODIN_HOME){
  throw Error('P3 real HTTP requires an isolated GitHub CI runner');
 }
+prepareHostedHttp();
 export default defineConfig({
  testDir:'./e2e',
  testMatch:'p3-real-http-semantic-*.spec.ts',

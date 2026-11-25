@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
@@ -7,7 +8,7 @@ import type {DisposableBackend} from './p1-real-http-backend';
 // Only the isolated CI runner may mount the actual ReportWorkspace with new props.
 // Browser can GET verified synthetic evidence, never save a report, edit Quality,
 // fetch remote resources or invoke training.
-const API='http://127.0.0.1:8000', UI='http://127.0.0.1:5178';
+const API='http://127.0.0.1:5178', UI='http://127.0.0.1:5178';
 const csv=['OrderID,Region,Revenue','001,West,120','002,East,200','003,West,300'].join('\n')+'\n';
 let backend:DisposableBackend|null=null;
 test.beforeEach(async()=>{backend=await startDisposableBackend()});
@@ -21,7 +22,7 @@ async function protectBrowser(context:BrowserContext,projectId:string){
  ]);
  await context.route('**/*',async(route:Route)=>{
   const req=route.request(),url=new URL(req.url()),method=req.method();
-  if(url.origin===UI&&(method==='GET'||method==='HEAD')){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')&&(method==='GET'||method==='HEAD')){
    await route.continue();return;
   }
   if(method==='GET'&&url.origin==='https://fonts.googleapis.com'&&url.pathname==='/css2'){

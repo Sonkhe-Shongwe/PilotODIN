@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route,APIRequestContext,Page} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
@@ -6,7 +7,7 @@ import type {DisposableBackend} from './p1-real-http-backend';
 
 // One independent, generated project; never the A/B recovery fixtures or owner data.
 // The browser is allowed only bounded v0->v1->v2->v3 review/commit traffic.
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const C_FILENAME='pilotodin_p1_http_approval_C.csv';
 const source=[
@@ -31,7 +32,7 @@ async function limitBrowserToSyntheticConsent(context:BrowserContext,pid:string)
   let nextReceipt:{proposal_id:string;proposal_hash:string}|null=null;
   await context.route('**/*',async(route:Route)=>{
     const request=route.request(),url=new URL(request.url()),method=request.method();
-    if(url.origin===UI){
+    if(url.origin===UI&&!url.pathname.startsWith('/api/')){
       if(method==='GET'||method==='HEAD'){await route.continue();return;}
       audit.blockedWrites.push(method+' '+url.pathname+' [UI]');
       await route.fulfill({status:403,json:{detail:'UI writes blocked'}});return;

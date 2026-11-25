@@ -418,3 +418,8 @@ Exact published `aa3cd9c6973106be79b662baff278a14cf3f0c7b`; observed workflows: 
 ## 25 November | C3 Live Dev regression reconciliation
 
 Exact aa3cd9c P1 #45512716006 and P3 #45512715867 SUCCESS; P4 #45512716374 source 138864248298 FAILURE only copied Vite config missing newly imported scripts/live-dev-api-proxy.mjs; 54 unittest, 1059 pytest + 552 subtests (6 skips), 113/114 Node, new C3 tests pass. Windows 138864248396 SUCCESS 59 + 80 subtests, browser SUCCESS, restricted SKIPPED. Prepare one coherent hosted browser migration and fixture-copy correction. No native activation or acceptance credit.
+
+
+## 25 November | C3 hosted browser capability migration published
+
+Prepared 17ce886. Fixed isolated Vite loader fixture by copying its new exact dependency. Hosted browser mode now requires explicit ephemeral capability and exact CI fixture identity; paired Playwright config initializes private process env, Vite and backend inherit it, not config trace or VITE values. Same-origin :5178 proxy for all 11 real HTTP specs and alternate P2 mount; asset/API allowlists preserved by excluding /api/ from asset branches, direct fixture requests use nonsecret marker, raw export abort remains direct fixed backend capability outside Playwright traces. Owned backend readiness checks missing/wrong direct credential and positive/negative proxy requests. Added hosted contract and proxy tests. P4-71 native and local-devqa and bare in-process fallback remain pending; no native run or production activation. Exact CI pending; 12/17 unchanged.

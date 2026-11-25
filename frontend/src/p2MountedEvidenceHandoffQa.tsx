@@ -1,12 +1,15 @@
 import {useCallback,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {ReportWorkspace} from './ReportWorkspace';
+import {configureDevelopmentAPI} from './api';
 
 /** CI-only source-true React mount; no stub API, user dataset or production route. */
 if(import.meta.env.VITE_P2_MOUNTED_HANDOFF_QA!=='1'||!import.meta.env.DEV||
    location.hostname!=='127.0.0.1'||location.port!=='5178') {
  throw new Error('Mounted P2 handoff QA is restricted to the isolated CI Vite server.');
 }
+if(import.meta.env.VITE_PILOTODIN_AUTH_DEV!=='1')throw new Error('Missing authenticated fixture bootstrap');
+configureDevelopmentAPI(location.origin);
 const params=new URLSearchParams(location.search);
 const projectId=params.get('project')??'';
 const first=params.get('first')??'';

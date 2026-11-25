@@ -18,7 +18,7 @@ export default defineConfig(({command})=>{
     server.middlewares.use(createLiveDevProxy(trust));
   }}]:[],
   server: {
-    ...(trust?{host:'127.0.0.1',port:5173,strictPort:true}:{}),
+    ...(trust?{host:'127.0.0.1',port:trust.port,strictPort:true}:{}),
     watch: {
       ignored: [
         '**/src-tauri/target',

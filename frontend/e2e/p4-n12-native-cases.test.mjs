@@ -55,6 +55,8 @@ test('the Vite config runner loads the QA configuration without a temporary bund
       await symlink(vite, join(dependencies, 'vite'), 'junction');
       await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module' }));
       await copyFile(configuration, configFile);
+      await mkdir(join(root, 'scripts'));
+      await copyFile(new URL('../scripts/live-dev-api-proxy.mjs', import.meta.url), join(root, 'scripts', 'live-dev-api-proxy.mjs'));
 
       const config = await resolveConfig({ root, configLoader }, 'serve');
 

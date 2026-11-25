@@ -1,10 +1,11 @@
-import {expect,test} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './hosted-http-test';
 import type {BrowserContext,Route} from '@playwright/test';
 import {Buffer} from 'node:buffer';
 import {startDisposableBackend,stopDisposableBackend} from './p1-real-http-backend';
 import type {DisposableBackend} from './p1-real-http-backend';
 
-const API='http://127.0.0.1:8000';
+const API='http://127.0.0.1:5178';
 const UI='http://127.0.0.1:5178';
 const names={D:'pilotodin_p1_manage_D.csv',E:'pilotodin_p1_manage_E.csv'};
 const csv=(prefix:'D'|'E')=>[
@@ -24,7 +25,7 @@ async function guardBrowser(context:BrowserContext,did:string,eid:string){
   ={writes:[],blocked:[],unexpectedReads:[],remote:[]};
  await context.route('**/*',async(route:Route)=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
-  if(url.origin===UI){
+  if(url.origin===UI&&!url.pathname.startsWith('/api/')){
    if(method==='GET'||method==='HEAD'){await route.continue();return}
    audit.blocked.push('UI '+method+' '+url.pathname);
    await route.fulfill({status:403,json:{detail:'Unapproved UI request'}});return;

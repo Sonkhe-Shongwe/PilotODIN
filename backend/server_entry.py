@@ -181,11 +181,18 @@ def admitted_home(env):
 
 
 def owned_app():
-    # The paired Live Dev launcher is migrated first. Existing hosted/local
-    # QA paths are still legacy pending their explicit capability migration.
-    from backend.request_auth import RequestGuard, live_dev_trust_from_environ
+    # Browser serving paths require explicit capabilities. Native QA and
+    # in-process fixture compatibility remains pending C3 migration.
+    from backend.request_auth import (RequestGuard, live_dev_trust_from_environ,
+                                      hosted_browser_trust_from_environ)
     mode = os.environ.get("PILOTODIN_SERVER_MODE")
-    trust = live_dev_trust_from_environ(os.environ) if mode == "dev" else None
+    trust = None
+    if mode == "dev":
+        trust = live_dev_trust_from_environ(os.environ)
+    elif mode == "hosted-fixture" and (
+            os.environ.get("P1_REAL_HTTP_E2E") == "1" or
+            Path(os.environ.get("PILOTODIN_HOME", "")).name.startswith("pilotodin-p1-real-http-")):
+        trust = hosted_browser_trust_from_environ(os.environ)
     if trust is None and any(os.environ.get(key) for key in (
             "PILOTODIN_DEV_CAPABILITY", "PILOTODIN_DEV_ORIGIN", "PILOTODIN_DEV_PORT")):
         raise WorkspaceBoundaryError("Mixed non-desktop serving configuration")

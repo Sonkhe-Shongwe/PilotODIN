@@ -1,4 +1,5 @@
 import {defineConfig} from '@playwright/test';
+import {prepareHostedHttp} from './e2e/hosted-http-config';
 
 // Dedicated test refuses local runs. Playwright owns Vite; the test owns the
 // Uvicorn child by its process handle so it can explicitly stop/restart it.
@@ -7,6 +8,7 @@ if (process.env.CI !== 'true' || process.env.P1_REAL_HTTP_E2E !== '1'
   || !process.env.RUNNER_TEMP) {
   throw new Error('P1 real-HTTP acceptance requires the isolated GitHub CI runner.');
 }
+prepareHostedHttp();
 export default defineConfig({
   testDir:'./e2e',
   testMatch:['p1-real-http.spec.ts','p1-real-http-quality-approval.spec.ts','p1-real-http-project-management.spec.ts','p1-real-http-export.spec.ts'],
