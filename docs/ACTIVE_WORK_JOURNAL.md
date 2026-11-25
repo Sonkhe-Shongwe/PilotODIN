@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C3-EXPLICIT-STARTUP-AUTH-20261125 |
-| State | VERIFYING |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | c26a67fd25e6f348e65eacabc3c40176d9812e3f; write-ahead 064bda6a3daeff876575ab13994f439b2654ced1; verified published 1fb15af2fcb7fe519d454e1d9c1f00d2ce630277. |
-| Product baseline | 1fb15af2fcb7fe519d454e1d9c1f00d2ce630277 (A4 launch plan and test registration; exact CI pending); 8f12e8f N12 and strict factory four exact CI SUCCESS. |
+| Observed starting HEAD | fd0b5400a6dcd85a9151ecca8be22515e43306ca |
+| Product baseline | 1fb15af2fcb7fe519d454e1d9c1f00d2ce630277, both exact routine workflows SUCCESS. |
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
-| Operation ID | C3-A4-FIXED-LAUNCH-PLAN-20261125-source |
-| Operation state | RECONCILED |
-| Intended files | frontend/scripts/p4-isolated-native-dev.mjs, new pure frontend/scripts/native-dev-plan.mjs, tools/Verify_A4_Native_Windows.ps1, frontend/tests/p4-native-dev-isolation.test.cjs, frontend/tests/a4-native-smoke-runner.test.cjs, .github/workflows/p4-target-ranking.yml (add existing A4 source-only test and watch it), journal. Preserve consent requirement, no arbitrary arguments, only exact existing A4 overlay and exact relay flags; P4 default unchanged. Validate all four identities and both unbundled overlays; no raw Tauri bypass, no config changes, no actual compilation. Correct stale A4 test expecting bare 8000 health, add pure plan positives/negatives. |
+| Operation ID | C3-BYTECODE-DIRECT-TRUST-20261125-source |
+| Operation state | PREPARED |
+| Intended files | backend/request_auth.py, qa/p4_research/n12_backend_bytecode.py, tests/test_owned_server.py, .github/workflows/p4-target-ranking.yml (source triggers only), journal. Explicit origin-free diagnostic-direct immutable trust, existing one-use hosted bytecode environment + exact runner-temp allocation and case name, guarded QA-only factory, dynamic port and private per-case credential, no redirect or proxy; no change to hosted native approvals, case workload, observation/reducer or diagnostic workflow. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | Seven-file diff verified. Existing guarded wrapper selects only fixed P4 default or exact A4 config with separate relay flags, validates four identities, no app directory overrides, bundle-free profiles and fixed dev hooks/origins, rejects arbitrary CLI/inherited Tauri config. A4 PS runner preserves authenticated relay readiness and refuses native sequence before regression without existing separate owner opt-in; no consent set by runner. Corrected stale A4 bare health assertion and registered existing source test in routine P4. Pure launch-plan tests do not invoke Tauri. No native execution or configuration/approval marker changes. Read-only caller audit confirms direct bare uvicorn in tools/Verify_Local_Analytics_Windows_Native.py:335, tools/Verify_P2_Real_API_Integration_Local.py:244 plus TestClient at 95, qa/p4_research/n12_backend_bytecode.py:96; main.py guard at 103 and _local_request at 1135, frontend apiBase at 28 retain legacy fallback. Full inventory not yet complete. P4-71 inherited native process capability remains outstanding. |
-| Pending runs | P4 Target Review Queue and Transparent Ranking #45569446599 in_progress; P1 Isolated Frontend Verification #45569446683 in_progress. No restricted dispatch; native workflow guards unchanged. |
+| Verification | 1fb15af P1 frontend #45569446683 and P4 #45569446599 terminal SUCCESS; P4 jobs p4-disposable-real-http-browser 139052183720 success; p4-synthetic-source-and-frontend 139052184322 success; p4-r03-windows-local-answers 139052184690 success; Exercise preservation/hash collector on synthetic Windows fixture ONLY 139052186507 skipped. A4 launch plan source verified only. Bytecode workflow job literal false, approval marker consumed by #44268706863, no new diagnostic execution. Existing direct HTTP callers confirmed in bytecode, P2 real API and local analytics native; broader inventory incomplete. |
+| Pending runs | None prior; expected P1 real HTTP, P4 routine source/HTTP/Windows synthetic, no restricted dispatch. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact 1fb15af CI; if stale source contract fails correct test-only with actual evidence. Then full direct-call inventory: separate dynamic-port n12_backend_bytecode and local analytics/P2 probes, P4-71 inherited native process capability, explicit in-process TestClient/ASGI adapter, native smoke and general API fallback removal; do not silently widen existing trust modes or change historic evidence methods. Complete C3 matrix and closure; C4 deferred. |
+| Recovery action | Publish bounded bytecode direct trust; reconcile exact CI before overlap. Next local P2 dynamic-port real API, owner native analytics, P4-71 capability confinement and full direct/in-process caller matrix. General bare main/frontend fallback retained pending migration. No C4. |
 | Resume after closure | C4, C5 in order; D separately approved. |
 
 ## Prior operation
