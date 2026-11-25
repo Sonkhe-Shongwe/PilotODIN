@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | READY |
+| State | PREPARED |
 | Branch | feature/live-dev-workspace-20261023 |
-| Observed starting HEAD | 2dde2894218f0de3b0cf004edba833b7d4359dd7 |
+| Observed starting HEAD | 7db2f60e7daa4e4f975822503b4e78008f4977e2 |
 | Product baseline | C3 source exit supported at 78c8672, latest product ebd01f4 and verified fixture/historical changes c329e0d/83c83f8. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
-| Operation ID | C3-SOURCE-EXIT-MATRIX-20261125 |
-| Operation state | RECONCILED (C3 source closure receipt; docs-only publication identified by prepared parent 2dde289 and operation marker; verify live SHA) |
-| Intended files | C3 closure journal/handoff/ledger/directive/policy only. Next C4 source inventory before preparing a concrete write. |
+| Operation ID | C4-RESEARCH-AND-IMPLEMENTATION-PLAN-20261125 |
+| Operation state | PREPARED (documentation-only research/implementation proposal; no product or controlling contract change) |
+| Intended files | docs/ACTIVE_WORK_JOURNAL.md; docs/TAB_MIGRATION_HANDOFF_CURRENT.md; docs/PILOTODIN_PACKAGE_C_EVIDENCE_2026-11-24.md. Same docs-only paths as prior closure; no workflow definitions changed. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | C3 scoped source exit matrix PASS, exact relevant CI terminal success; 13/17 source, C 3/5, official P4 14/20 unchanged. No native acceptance; all six native approvals consumed/disarmed; historical overlays frozen. |
-| Pending runs | None; no product or workflow changes in closure. |
+| Verification | Reviewed C-D06/07 and Master Reconstruction Blueprint, live backend settings/provider/context/storage/lease/legacy+owned route code, frontend settings/insight/assistant/startup, existing regression contracts. External reference research only (Microsoft DPAPI, Python 3.11 stdlib, OWASP, OpenRouter provider routing). Confirmed source hazards; proposed plan, not implemented/tested. No real external provider requests, native or owner operations. Exact same docs-only paths previously reviewed; unchanged 85 workflow definitions. |
+| Pending runs | None; no new code CI expected. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Start C4 reader/writer/secret-store and provider consent inventory; write-ahead concrete scoped batch after exact source review. No actual cloud request, owner data, native activation or migration. |
+| Recovery action | Publish dated C4 baseline/architecture/verification proposal in existing evidence ledger, update handoff and journal to READY for first bounded source batch. No closure or source credit. Preserve existing spec/blueprint and all approval freezes; review any new product disclosure decision before shipping. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
