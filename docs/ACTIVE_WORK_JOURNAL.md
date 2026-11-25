@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C5-REPRODUCIBLE-BUILD-INPUTS-20261125 |
-| State | PREPARED |
+| State | READY |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | ccdbf4b3fca677dfb6afd83266a3f1d41783e3cc |
 | Product baseline | 8da7f33cb418e453a7b5c250b960fb6370e9e9d0; exact P1/P4 SUCCESS. |
 | Scope | C-D08 and C5 exit: read-only dependency/toolchain/asset inventory, source locks and fail-closed preflight; no acquisition, packaging, installer or D activation. |
 | Operation ID | C5-CHECKSUM-REMAINING-REVIEW-20261126 |
-| Operation state | PREPARED: publisher-specific parser correction, pinned historical Windows receipt replay, remaining-three-only disabled collector and offline controls. Preserve original failure/collector/marker. |
+| Operation state | RECONCILED: exact 17df008fe505bd9c120e6085ff5e499534fc092d, collector blob 5f65d13d657ea2455e9fcc8239b68eacb4c53d43, run 45718196315 job 139569558338 SUCCESS, 42 checks, 4 synthetic requests, prior Windows receipt independently revalidated, original refusal reproduced, live false, CLI FRESH_APPROVAL_REQUIRED; restricted job 139569560787 skipped. No live requests. |
 | Intended files | New qa/c5_wheel_metadata/collect_remaining_checksums.py and dedicated offline workflow; no product or prior receipt changes. Wheel inspector remains independent. |
 | Approval | Twelve restricted approvals consumed/disarmed (six native, six metadata). No additional registry/metadata requests, artifacts, installs, native/model, owner device/data or installer authorized. |
 | Verification | Exact 8da7f33: P4 #45693703789 SUCCESS, 1242 Python/6 skipped/1 warning/552 subtests, 15 Rust, 161 Node/Vite, 3 bundle refusal, 13 HTTP, 155 Windows C5/1 skipped, parser, 3 refusal, 68 Windows/133 subtests; restricted collector skipped. P1 #45693704390 SUCCESS, 206 Node/TypeScript/Vite, 11 Chromium. |
 | Pending runs | None for this operation. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Offline only: implement and test narrowly scoped Actions Python checksum grammar (uppercase/lowercase hexadecimal and observed single-space separator; preserve strict filename, duplicate, target, digest, exact-length and scope checks); revalidate persisted 991-byte refused body and independently recovered Windows candidate hash, retain original failure. Propose a fresh remaining-three-documents-only attempt for Linux Python, Node and Rust with separate owner approval, no re-request of Windows document. Independently implement/test bounded wheel archive/RECORD/notice inspector before separate acquisition-only proposal. No new live requests, binary/artifact acquisition, installation, native/model, owner device or installer authorized. Four profiles BLOCKED. |
+| Recovery action | Fresh explicit owner approval required for one remaining-three checksum-only attempt: Linux Python 3.11.18 hashes.sha256 (821 exact bytes, pinned document and target SHA256), Node 22.23.5 SHASUMS256.txt (64 KiB), Rust 1.100.0 exact channel TOML (4 MiB). Maximum four HTTPS GETs incl. one permitted authenticated GitHub redirect for Linux Python, 4260661 aggregate body bytes, 15s/request, 10min/job. No Windows checksum request, retries, binaries, signatures/keys, registry, installs, native/model, owner device or expanded scope. After explicit approval exact marker-only activation, exact commit message, attempt 1, blob pin, reconcile/disarm. Independently implement/test bounded wheel archive inspector; no wheel acquisition approved. |
 | Resume after closure | D only after C5 source closure, G2 resolution and separately approved scope. |
 
 ## Prior operation
