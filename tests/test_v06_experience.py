@@ -8,12 +8,12 @@ import sys
 import urllib.error
 from pathlib import Path
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from backend.main import app
 from backend import ai_provider
 
-client=TestClient(app)
+client=fixture_client(app)
 
 @pytest.fixture(autouse=True)
 def isolate(tmp_path,monkeypatch):

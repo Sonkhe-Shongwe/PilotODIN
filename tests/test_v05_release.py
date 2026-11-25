@@ -12,14 +12,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from tests.quality_compat_client import LegacyQualityClient
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from backend import ai_provider,analytics,engine
 from backend.main import app
 
-client=LegacyQualityClient(TestClient(app))
+client=LegacyQualityClient(fixture_client(app))
 
 @pytest.fixture(autouse=True)
 def isolate_ai(tmp_path,monkeypatch):

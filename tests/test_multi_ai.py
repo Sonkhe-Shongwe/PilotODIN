@@ -14,11 +14,11 @@ from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend import ai_provider,ai_context,quality,storage
 from backend.main import app
 
-client=TestClient(app)
+client=fixture_client(app)
 
 @pytest.fixture(autouse=True)
 def clean_ai_config(tmp_path,monkeypatch):

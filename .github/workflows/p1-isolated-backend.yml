@@ -44,6 +44,20 @@ on:
       - desktop/verify_packaged_engine.py
       - tests/test_c3_local_verifier_trust.py
       - tests/test_p2_legacy_pdf_visual_source.py
+      - tests/test_build_d_unified_journey.py
+      - tests/test_canvas_investigations.py
+      - tests/test_end_to_end.py
+      - tests/test_hybrid_local_ai.py
+      - tests/test_macro_workspace.py
+      - tests/test_ml_a3_preparation_and_split_safety.py
+      - tests/test_multi_ai.py
+      - tests/test_non_ai_correctness_gates.py
+      - tests/test_p0_ml_persistence_version_journey.py
+      - tests/test_p5_training_cancellation.py
+      - tests/test_p5_training_progress.py
+      - tests/test_v05_release.py
+      - tests/test_v06_experience.py
+      - tests/test_v08_intelligence.py
       - tests/test_desktop_foundation.py
       - tests/test_cf01_upload_http.py
       - tests/test_cf02_xlsx_identifier_parity.py
@@ -177,6 +191,40 @@ jobs:
           tests/test_desktop_foundation.py
           tests/test_cf01_upload_http.py
           tests/test_cf02_xlsx_identifier_parity.py
+
+      - name: Compile all migrated historical fixture modules without importing them
+        run: >-
+          python -m py_compile
+          tests/test_build_d_unified_journey.py
+          tests/test_canvas_investigations.py
+          tests/test_end_to_end.py
+          tests/test_hybrid_local_ai.py
+          tests/test_macro_workspace.py
+          tests/test_ml_a3_preparation_and_split_safety.py
+          tests/test_multi_ai.py
+          tests/test_non_ai_correctness_gates.py
+          tests/test_p0_ml_persistence_version_journey.py
+          tests/test_p5_training_cancellation.py
+          tests/test_p5_training_progress.py
+          tests/test_v05_release.py
+          tests/test_v06_experience.py
+          tests/test_v08_intelligence.py
+
+      - name: Verify selected historical HTTP cases without fitting or inference
+        run: |
+          set -euo pipefail
+          for case in \
+            tests/test_build_d_unified_journey.py \
+            tests/test_canvas_investigations.py \
+            tests/test_non_ai_correctness_gates.py::test_outlier_preview_shows_outliers_not_all_rows \
+            tests/test_end_to_end.py::test_reject_unrelated_file \
+            tests/test_p5_training_cancellation.py::test_queued_cancellation_is_immediate_idempotent_and_frees_slot \
+            tests/test_p5_training_progress.py::test_read_only_experiment_endpoint_exposes_persisted_progress \
+            tests/test_v08_intelligence.py::test_local_origin_development_ports_are_restricted; do
+            name="${case%%::*}"
+            name="${name##*/}"
+            PILOTODIN_HOME="${RUNNER_TEMP}/pilotodin-c3-historical-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${name}" python -m pytest -q "$case"
+          done
 
       - name: Exercise nine isolated authenticated P2 PDF export route cases
         run: |

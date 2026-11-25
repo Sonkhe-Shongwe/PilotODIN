@@ -4,11 +4,11 @@ UI/visual checks live separately; this checks the real contracts consumed by Bui
 """
 from pathlib import Path
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend.main import app
 from backend import storage
 
-client=TestClient(app)
+client=fixture_client(app)
 
 
 def test_build_d_import_investigate_compare_quality_resume_without_mutating_source():

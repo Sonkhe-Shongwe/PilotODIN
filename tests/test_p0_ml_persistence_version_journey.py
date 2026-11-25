@@ -24,7 +24,7 @@ if not _safe:
                 allow_module_level=True)
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import quality, storage
 from backend.main import app
@@ -68,7 +68,7 @@ def test_p0_import_train_select_reopen_predict_version_and_project_isolation(
             "SELECT name FROM sqlite_master WHERE type='table'"
         ).fetchall()}
     assert required <= existing, required - existing
-    client = TestClient(app)
+    client = fixture_client(app)
     original = _dataset()
 
     def import_project(filename):
@@ -154,7 +154,7 @@ def test_p0_import_train_select_reopen_predict_version_and_project_isolation(
     # Simulate re-opening the saved experiment through a freshly constructed
     # API client. Final metrics and selection must be read from SQLite rather
     # than recomputed or silently replaced by a different model.
-    reopened = TestClient(app).get(f"/api/experiments/{eid}")
+    reopened = fixture_client(app).get(f"/api/experiments/{eid}")
     assert reopened.status_code == 200, reopened.text
     again = reopened.json()
     assert again["selected_model"] == "logistic_regression"

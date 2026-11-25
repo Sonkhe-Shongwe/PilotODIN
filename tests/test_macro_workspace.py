@@ -9,12 +9,12 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from tests.quality_compat_client import LegacyQualityClient
 from backend.main import app
 from backend import storage,quality
 
-c=LegacyQualityClient(TestClient(app))
+c=LegacyQualityClient(fixture_client(app))
 
 
 def upload(frame,name='retail.csv'):

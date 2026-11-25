@@ -9,7 +9,7 @@ from hashlib import sha256
 
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import main, quality, storage
 
@@ -142,7 +142,7 @@ def test_read_only_experiment_endpoint_exposes_persisted_progress(home, monkeypa
     pid, _ = home
     eid = storage.new_experiment(pid, config())
     monkeypatch.setattr(main.quality, "current_version", lambda _: 0)
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     reply = client.get(f"/api/experiments/{eid}")
     assert reply.status_code == 200, reply.text
     data = reply.json()

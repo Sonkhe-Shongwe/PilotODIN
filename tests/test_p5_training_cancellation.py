@@ -7,7 +7,7 @@ from hashlib import sha256
 
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import engine, main, quality, storage
 
@@ -44,7 +44,7 @@ def stages(eid):
 def test_queued_cancellation_is_immediate_idempotent_and_frees_slot(local_home):
     pid, _ = local_home
     eid = storage.new_experiment_with_capacity(pid, config())
-    client = TestClient(main.app)
+    client = fixture_client(main.app)
     response = client.post(f"/api/experiments/{eid}/cancel", json={})
     assert response.status_code == 200, response.text
     assert response.json()["status"] == "cancelled"

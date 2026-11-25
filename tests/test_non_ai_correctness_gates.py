@@ -2,7 +2,7 @@
 import pandas as pd
 import pytest
 from backend import engine
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from backend.main import app
 
 
@@ -25,7 +25,7 @@ def test_predicted_clock_hour_and_count_domains():
 
 
 def test_outlier_preview_shows_outliers_not_all_rows():
-    client=TestClient(app)
+    client=fixture_client(app)
     data=pd.DataFrame({"RecordID":[f"REC{i:03d}" for i in range(30)],"Amount":[float(10+i%7) for i in range(29)]+[2000.0]})
     response=client.post("/api/projects",files={"file":("outliers.csv",data.to_csv(index=False).encode(),"text/csv")})
     assert response.status_code==201,response.text

@@ -8,12 +8,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from tests.quality_compat_client import LegacyQualityClient
 from backend import ai_provider, analytics, quality, storage
 from backend.main import app
 
-client=LegacyQualityClient(TestClient(app))
+client=LegacyQualityClient(fixture_client(app))
 
 
 def property_frame():
@@ -190,12 +190,20 @@ def test_cloud_investigation_uses_only_redacted_aggregates(monkeypatch,tmp_path)
 
 
 def test_local_origin_development_ports_are_restricted():
-    accepted=client.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5175'})
-    assert accepted.status_code==200,accepted.text
-    denied=client.get('/api/ai/settings',headers={'Origin':'http://evil.example:5175'})
-    assert denied.status_code==403
-    denied2=client.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5555'})
-    assert denied2.status_code==403
+    from contextlib import closing
+    from secrets import token_hex
+    from backend.request_auth import RequestTrust
+    trust = RequestTrust("dev", 8000, token_hex(32), "http://127.0.0.1:5175")
+    with closing(fixture_client(app, trust=trust)) as scoped:
+        accepted=scoped.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5175'})
+        assert accepted.status_code==200,accepted.text
+        denied=scoped.get('/api/ai/settings',headers={'Origin':'http://evil.example:5175'})
+        assert denied.status_code==403
+        denied2=scoped.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5555'})
+        assert denied2.status_code==403
+        assert scoped.get('/api/ai/settings',headers={'Origin':'http://127.0.0.1:5173'}).status_code==403
+    with closing(fixture_client(app, trust=trust, authenticated=False)) as scoped:
+        assert scoped.get('/api/ai/settings',headers={'Origin':trust.dev_origin}).status_code==401
 
 
 def test_imputation_is_never_part_of_unapproved_autopilot():

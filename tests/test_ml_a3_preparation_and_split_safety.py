@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from fastapi import BackgroundTasks, HTTPException
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 
 from backend import engine, main, storage
 
@@ -85,7 +85,7 @@ def test_fitted_experiment_reopens_with_original_preprocessing_and_quality_versi
         assert commit.status_code == 200, commit.text
         return commit.json()["version"]
 
-    with TestClient(main.app) as client:
+    with fixture_client(main.app) as client:
         created = client.post("/api/projects", files={"file": ("synthetic.csv", original, "text/csv")})
         assert created.status_code == 201, created.text
         project_id = created.json()["id"]
@@ -109,7 +109,7 @@ def test_fitted_experiment_reopens_with_original_preprocessing_and_quality_versi
         }
         assert completed["results"]["features"] == ["Amount", "Channel"]
 
-    with TestClient(main.app) as reopened:
+    with fixture_client(main.app) as reopened:
         history = reopened.get(project_url).json()["experiments"]
         assert [(item["id"], item["status"]) for item in history] == [(experiment_id, "completed")]
         assert reopened.get(experiment_url).json() == completed

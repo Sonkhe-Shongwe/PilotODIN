@@ -4,13 +4,13 @@ import importlib
 from pathlib import Path
 
 import pandas as pd
-from fastapi.testclient import TestClient
+from tests.fixture_http import fixture_client
 from tests.quality_compat_client import LegacyQualityClient
 
 from backend.main import app
 from backend import quality, storage, investigations
 
-client = LegacyQualityClient(TestClient(app))
+client = LegacyQualityClient(fixture_client(app))
 
 
 def new_project():
