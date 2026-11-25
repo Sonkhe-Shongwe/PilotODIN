@@ -7,19 +7,19 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | VERIFYING |
+| State | PAUSED at verified checkpoint (owner requested stop) |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | c6ffd7939c12aeedc093cb4565506b6a2e260701 |
 | Product baseline | C4 C2 panel controls fb97119 exact P1/P4 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-C3-SERVER-CONSENT-WITNESS-20261125 |
-| Operation state | RECONCILED; C3 server witness published at [77de1c5](https://github.com/Sonkhe-Shongwe/PilotODIN/commit/77de1c5261ef448a57a3c4b9c5138ac9204c9800), prepared at a9d83b6; exact CI outstanding. |
+| Operation state | RECONCILED; C3 server witness source 77de1c5, prepared a9d83b6, all eight exact routine CI workflows SUCCESS. No next implementation issued. |
 | Intended files | backend/ai_provider.py, backend/main.py, tests/test_c4_cloud_intent.py and canonical records only. No new route, persistent schema, workflow or activation. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
-| Verification | C2 exact P1/P4 SUCCESS. C3 nonpersistent process/generation witness, no-store saved status, early stale-witness refusal in both compositions and handshake admission, 14 new inert cases plus existing route race cases extended; exact new CI pending. |
-| Pending runs | [P3 User-Described Semantic Business Context #45666735321](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735321) IN_PROGRESS; [P2 Real HTTP Saved Revision Comparison #45666735570](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735570) IN_PROGRESS; [P4 Target Review Queue and Transparent Ranking #45666735554](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735554) IN_PROGRESS; [P1 Project Lifecycle Disposable Backend Acceptance #45666735515](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735515) IN_PROGRESS; [P1 Disposable Real HTTP Browser/Backend Acceptance #45666735494](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735494) IN_PROGRESS; [P2 Immutable Report Revision Idempotency #45666735568](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735568) IN_PROGRESS; [P1 Isolated Backend Source Recovery #45666735324](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735324) IN_PROGRESS; [P3 Real HTTP Semantic Context Browser Acceptance #45666735384](https://github.com/Sonkhe-Shongwe/PilotODIN/actions/runs/45666735384) IN_PROGRESS |
+| Verification | Exact 77de1c5: P1 236 focused cases and downstream SUCCESS; P4 1086 Python passed/6 skipped/552 subtests, 15 Rust storage, 139 Node/Vite, Windows 68/133 subtests, browser 13 SUCCESS. All eight workflows passed, restricted collector skipped. |
+| Pending runs | None from 77de1c5. |
 | Unpublished work | Owner-local tree not inspected. |
-| Recovery action | Reconcile exact 77de1c5 routine terminal jobs and logs, correct evidenced failures. Then require fresh witness in manual frontend connection tests and project panels, cross-renderer invalidation and per-click confirmation, stale result rejection and mounted browser witnesses. Existing explicit API callers may omit witness; UI must not. Keep project cloud sending disabled until safeguards verified; OpenRouter sharing held. No score increment. |
+| Recovery action | On owner continuation, verify live HEAD; then require fresh server witness in explicit frontend connection tests and project panels, cross-renderer invalidation and per-click confirmation, stale response rejection and mounted browser witnesses. Keep project cloud sending held until safeguards verified; OpenRouter project sharing disabled. Legacy explicit API clients may omit witness. Then C4 source closure, C5. No restricted scope or official score increment. |
 | Resume after closure | C5 then D with separately approved scope. |
 
 ## Prior operation
