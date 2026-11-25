@@ -7,17 +7,17 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Field | Value |
 | --- | --- |
 | Task ID | C4-DURABLE-SETTINGS-CONSENT-20261125 |
-| State | PREPARED |
+| State | VERIFYING |
 | Branch | feature/live-dev-workspace-20261023 |
 | Observed starting HEAD | 5a599dfc814e1c9302aed6e647024e7198ab690a |
 | Product baseline | B6 support refinement 0aafb61, test correction 7e3df06; exact P1 45655159516 SUCCESS; prior exact P4 45636512838 SUCCESS. |
 | Scope | C4 bounded owned settings replacement, compatible preferences/encrypted secrets, explicit provider selection/consent and revocation; C-D06/07 and section 10. No C5 or D activation. |
 | Operation ID | C4-B7-COMMON-BOUNDARY-20261125 |
-| Operation state | PREPARED; source change not yet issued |
+| Operation state | ISSUED; reconcile source by parent 1462025 and operation ID, do not replay |
 | Intended files | backend/ai_provider.py, tests/test_c4_cloud_intent.py and canonical records only. No workflow or persistent schema change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | Exact B6 P1 119 focused tests passed and downstream stages passed. B7 pending synthetic admission/revocation tests and exact CI. |
-| Pending runs | None from B6. Expected P1 isolated backend and P4 routine CI for ai_provider.py source change. |
+| Pending runs | Expected P1 isolated backend and P4 routine source CI; discover exact runs after publication. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Implement process-wide single-flight cloud slot, capture revision before projection (no key on malformed payload), one-use dispatch fence, retain slot until transport returns, generation/current recheck on publication and health. Tests use inert barriers only. Route-level pre-context generation and frontend stale-response fences remain separate follow-up; do not claim full B7 closure. |
 | Resume after closure | C5 then D with separately approved scope. |

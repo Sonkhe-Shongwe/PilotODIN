@@ -1,6 +1,8 @@
 """C4-B1 common request intent; all provider and local model seams inert."""
 import asyncio
 import json
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 
 import pytest
 import pandas as pd
@@ -353,3 +355,101 @@ def test_holdout_support_never_authorizes_cv_scores(dispatch):
     local=json.loads(ai._encode_insight_prompt(context,"evaluate","Question",None,limit=9000))
     assert local["verified_context"]["experiment"]==context["experiment"]
 
+
+
+# B7: inert barriers, one shared slot, no external network or model.
+@pytest.mark.parametrize("first",["insight","probe"])
+def test_cloud_single_flight_across_insight_and_probe(dispatch,monkeypatch,first):
+    cfg,calls=dispatch
+    entered=Event()
+    release=Event()
+    original=ai._call_provider
+    def blocked(*args,**kwargs):
+        assert kwargs["still_authorized"]()
+        calls.append(args[0])
+        entered.set()
+        assert release.wait(5)
+        return ai.ProviderText("Late fixture","stop",False)
+    monkeypatch.setattr(ai,"_call_provider",blocked)
+    def insight():
+        return ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)
+    def probe():
+        return ai.owned_test_connection("groq")
+    initial=ai._consent_revision
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future=pool.submit(insight if first=="insight" else probe)
+        try:
+            assert entered.wait(5)
+            assert insight()["fallback"]
+            assert probe()["status"]=="busy"
+            # Simulate revoke then re-enable: identical flags/key do not restore
+            # the old generation, and a pending network call retains its slot.
+            with ai._lock:
+                monkeypatch.setattr(ai,"_consent_revision",initial+2)
+            assert insight()["fallback"]
+            assert probe()["status"]=="busy"
+            assert len(calls)==1
+        finally:
+            release.set()
+        result=future.result(timeout=5)
+    if first=="insight":
+        assert result["fallback"] and result["answer"]=="Rules"
+    else:
+        assert result["status"]=="unavailable"
+        assert not ai._health
+    monkeypatch.setattr(ai,"_call_provider",original)
+    assert insight()["provider"]=="gemini"
+    assert probe()["status"]=="connected"
+
+
+def test_cloud_revision_change_during_projection_never_reads_key(dispatch,monkeypatch):
+    cfg,calls=dispatch
+    original=ai._cloud_project
+    def project(context):
+        with ai._lock:
+            monkeypatch.setattr(ai,"_consent_revision",ai._consent_revision+2)
+        return original(context)
+    monkeypatch.setattr(ai,"_cloud_project",project)
+    monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Revoked preparation reached credentials"))
+    result=ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)
+    assert result["fallback"] and not calls and ai._cloud_slot is None
+
+
+def test_cloud_revision_change_before_dispatch_denies_callback(dispatch,monkeypatch):
+    cfg,calls=dispatch
+    def revoked(*args,**kwargs):
+        with ai._lock:
+            monkeypatch.setattr(ai,"_consent_revision",ai._consent_revision+2)
+        assert not kwargs["still_authorized"]()
+        raise RuntimeError("inert refusal")
+    monkeypatch.setattr(ai,"_call_provider",revoked)
+    assert ai.respond({},"assistant","Question","Rules",selected_provider="gemini",cloud_intent=True)["fallback"]
+    assert not calls and ai._cloud_slot is None
+
+
+def test_cloud_dispatch_is_one_use_and_context_change_discards(dispatch,monkeypatch):
+    cfg,calls=dispatch
+    active=True
+    def transport(*args,**kwargs):
+        nonlocal active
+        assert kwargs["still_authorized"]()
+        assert not kwargs["still_authorized"]()
+        active=False
+        return ai.ProviderText("Stale fixture","stop",False)
+    monkeypatch.setattr(ai,"_call_provider",transport)
+    result=ai.respond({},"assistant","Question","Rules",selected_provider="gemini",
+                      cloud_intent=True,still_current=lambda:active)
+    assert result["fallback"] and result["answer"]=="Rules" and ai._cloud_slot is None
+
+
+def test_cloud_transport_exception_releases_shared_slot(dispatch,monkeypatch):
+    cfg,calls=dispatch
+    original=ai._call_provider
+    def fail(*args,**kwargs):
+        assert kwargs["still_authorized"]()
+        raise TimeoutError("inert")
+    monkeypatch.setattr(ai,"_call_provider",fail)
+    assert ai.owned_test_connection("gemini")["status"]=="unavailable"
+    assert ai._cloud_slot is None
+    monkeypatch.setattr(ai,"_call_provider",original)
+    assert ai.respond({},"assistant","Question","Rules",selected_provider="groq",cloud_intent=True)["provider"]=="groq"

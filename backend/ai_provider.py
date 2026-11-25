@@ -38,6 +38,7 @@ _cooldowns:dict[str,float] = {}
 _health:dict[str,dict] = {}
 _last_background_check:float = 0.0
 _consent_revision = 0
+_cloud_slot = None  # one process-wide cloud operation, including connection checks
 DEFAULTS = settings_storage.ai_defaults()  # compatibility for synthetic callers
 _config_inhibited = False
 _keys_inhibited = False
@@ -848,14 +849,52 @@ def _owned_consent(provider):
         return None
 
 
+@contextmanager
+def _cloud_admission():
+    """Reserve one operation before preparing data; never queue or release on revoke."""
+    global _cloud_slot
+    with _lock:
+        ticket = None
+        if _cloud_slot is None:
+            ticket = {"revision": _consent_revision, "dispatched": False}
+            _cloud_slot = ticket
+    try:
+        yield ticket
+    finally:
+        if ticket is not None:
+            with _lock:
+                if _cloud_slot is ticket:
+                    _cloud_slot = None
+
+
+def _cloud_ticket_consent(ticket, provider):
+    # Check generation before reading credentials, including revoke/re-enable.
+    with _lock:
+        if _cloud_slot is not ticket or ticket["revision"] != _consent_revision:
+            return None
+        return _owned_consent(provider)
+
+
+def _cloud_ticket_valid(ticket, provider, consent, *, dispatch=False):
+    """Linearize admission or publication against settings/key mutations.
+
+    Dispatch is conservatively committed at the final callback, before open.
+    A later revoke cannot recall bytes; the slot remains held until return.
+    """
+    with _lock:
+        if consent is None or _cloud_ticket_consent(ticket, provider) != consent:
+            return False
+        if dispatch:
+            if ticket["dispatched"]:
+                return False
+            ticket["dispatched"] = True
+            return True
+        return ticket["dispatched"]
+
+
 def owned_cloud_insight(context,task,question,local_answer,deep,selected_provider,
                         continuation_text=None,*,still_current=lambda:True):
-    """One explicit destination, one bounded request, no implicit escalation.
-
-    Recheck consent and version immediately before transport entry and before
-    result publication. Do not hold settings locks across network I/O. Bytes
-    already submitted cannot be recalled by a later revocation.
-    """
+    """One explicit destination and one bounded shared cloud operation."""
     fallback=local_rules_result(local_answer,reason="Explicit cloud consent or provider unavailable")
     if selected_provider not in PROVIDERS:
         return fallback
@@ -872,45 +911,53 @@ def owned_cloud_insight(context,task,question,local_answer,deep,selected_provide
             return still_current() is True
         except Exception:
             return False
-    if not current():
-        return fallback
-    try:
-        if type(task) is not str or task not in _CLOUD_TASKS or type(question) is not str or len(question)>900:
-            raise ValueError("Invalid cloud request")
-        cloud_context=_cloud_project(context)
-        user=_encode_insight_prompt(cloud_context,task,question,None,
-                                   limit=CLOUD_PROMPT_LIMIT,cloud=True)
-        fits=user is not None and len(user.encode("utf-8"))<=CLOUD_PROMPT_LIMIT
-    except (ValueError, TypeError, OverflowError):
-        # Invalid Unicode/serialization cannot reach credentials or transport.
-        fits=False
-    if not fits:
-        fallback["reason"]="Verified context exceeds the provider prompt limit"
-        return fallback
-    provider=selected_provider
-    model=MODELS[provider]["deep" if deep else "routine"]
-    system=SYSTEM
-    if task=="predict":
-        system+="\nExplain aggregate model evidence only; individual prediction remains local."
-    consent=_owned_consent(provider)
-    if consent is None or not current() or _owned_consent(provider)!=consent:
-        return fallback
-    try:
-        answer=_call_provider(provider,model,system,user,consent[2],consent[1],strict=True,
-                              still_authorized=lambda:current() and _owned_consent(provider)==consent)
-        if not isinstance(answer,str) or not answer.strip():
-            raise ValueError("Empty provider response")
-    except Exception:
-        fallback["reason"]="Selected cloud provider unavailable; verified deterministic analysis used"
-        fallback["attempts"]=[{"provider":provider,"status":"unavailable"}]
-        return fallback
-    if not current() or _owned_consent(provider)!=consent:
-        fallback["reason"]="Cloud consent or context changed; response discarded"
-        return fallback
-    return {"answer":str(answer),"source":"cloud_llm","provider":provider,"model":model,
-            "fallback":False,"reason":None,"attempts":[],"intelligence_mode":"cloud",
-            "local_status":"not_requested","incomplete":bool(getattr(answer,"incomplete",False)),
-            "finish_reason":getattr(answer,"finish_reason","unknown")}
+
+    with _cloud_admission() as ticket:
+        if ticket is None:
+            fallback["reason"]="Another cloud request is in progress; verified deterministic analysis used"
+            return fallback
+        if not current():
+            return fallback
+        try:
+            if type(task) is not str or task not in _CLOUD_TASKS or type(question) is not str or len(question)>900:
+                raise ValueError("Invalid cloud request")
+            cloud_context=_cloud_project(context)
+            user=_encode_insight_prompt(cloud_context,task,question,None,
+                                       limit=CLOUD_PROMPT_LIMIT,cloud=True)
+            fits=user is not None and len(user.encode("utf-8"))<=CLOUD_PROMPT_LIMIT
+        except (ValueError, TypeError, OverflowError):
+            # Invalid Unicode/serialization cannot reach credentials or transport.
+            fits=False
+        if not fits:
+            fallback["reason"]="Verified context exceeds the provider prompt limit"
+            return fallback
+        provider=selected_provider
+        model=MODELS[provider]["deep" if deep else "routine"]
+        system=SYSTEM
+        if task=="predict":
+            system+="\nExplain aggregate model evidence only; individual prediction remains local."
+        consent=_cloud_ticket_consent(ticket,provider)
+        if consent is None or not current() or _cloud_ticket_consent(ticket,provider)!=consent:
+            return fallback
+        try:
+            answer=_call_provider(provider,model,system,user,consent[2],consent[1],strict=True,
+                                  still_authorized=lambda:current() and _cloud_ticket_valid(ticket,provider,consent,dispatch=True))
+            if not isinstance(answer,str) or not answer.strip():
+                raise ValueError("Empty provider response")
+        except Exception:
+            fallback["reason"]="Selected cloud provider unavailable; verified deterministic analysis used"
+            fallback["attempts"]=[{"provider":provider,"status":"unavailable"}]
+            return fallback
+        # Project freshness may access storage; never hold settings lock for it.
+        context_current=current()
+        with _lock:
+            if not context_current or not _cloud_ticket_valid(ticket,provider,consent):
+                fallback["reason"]="Cloud consent or context changed; response discarded"
+                return fallback
+            return {"answer":str(answer),"source":"cloud_llm","provider":provider,"model":model,
+                    "fallback":False,"reason":None,"attempts":[],"intelligence_mode":"cloud",
+                    "local_status":"not_requested","incomplete":bool(getattr(answer,"incomplete",False)),
+                    "finish_reason":getattr(answer,"finish_reason","unknown")}
 
 
 def owned_provider_status():
@@ -923,22 +970,23 @@ def owned_provider_status():
 def owned_test_connection(provider):
     if provider not in PROVIDERS:
         raise ValueError("Unknown AI provider")
-    consent=_owned_consent(provider)
-    if consent is None:
-        return {"provider":provider,"status":"not_configured"}
-    if _owned_consent(provider)!=consent:
-        return {"provider":provider,"status":"unavailable"}
-    try:
-        answer=_call_provider(provider,MODELS[provider]["routine"],
-                              "You are testing an API connection. Reply READY.","Say READY",
-                              consent[2],consent[1],strict=True,
-                              still_authorized=lambda:_owned_consent(provider)==consent)
-        status="connected" if isinstance(answer,str) and answer.strip() else "unavailable"
-    except Exception:
-        status="unavailable"
-    with _lock:
-        if _owned_consent(provider)!=consent:
-            return {"provider":provider,"status":"unavailable"}
-        result={"provider":provider,"status":status}
-        _health[provider]=result
-        return result
+    with _cloud_admission() as ticket:
+        if ticket is None:
+            return {"provider":provider,"status":"busy"}
+        consent=_cloud_ticket_consent(ticket,provider)
+        if consent is None:
+            return {"provider":provider,"status":"not_configured"}
+        try:
+            answer=_call_provider(provider,MODELS[provider]["routine"],
+                                  "You are testing an API connection. Reply READY.","Say READY",
+                                  consent[2],consent[1],strict=True,
+                                  still_authorized=lambda:_cloud_ticket_valid(ticket,provider,consent,dispatch=True))
+            status="connected" if isinstance(answer,str) and answer.strip() else "unavailable"
+        except Exception:
+            status="unavailable"
+        with _lock:
+            if not _cloud_ticket_valid(ticket,provider,consent):
+                return {"provider":provider,"status":"unavailable"}
+            result={"provider":provider,"status":status}
+            _health[provider]=result
+            return result
