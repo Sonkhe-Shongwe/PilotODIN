@@ -33,7 +33,9 @@ class P2LegacyPDFVisualSource(unittest.TestCase):
             'os.environ.pop("PILOTODIN_HOME", None)',
             'pdf_release_font_loader.RELEASE_APPROVAL_STATUS == "NOT_GRANTED"',
             "pdf_release_font_loader.RELEASE_PINNED_FILES == ()",
-            "client = TestClient(app)",
+            "client = _visual_client(home)",
+            "hold_fresh_fixture_workspace(str(home), canonical)",
+            'fixture_client(app, trust=RequestTrust("diagnostic-direct", 8000, token_hex(32)))',
             'zipfile.ZipFile(archive, "x", zipfile.ZIP_DEFLATED)',
         ):
             self.assertIn(phrase, s)
@@ -41,6 +43,11 @@ class P2LegacyPDFVisualSource(unittest.TestCase):
             r"(?im)^\s*(?:import requests|from requests|import urllib|from urllib)|"
             r"\b(?:subprocess\.Popen|shutil\.rmtree|os\.remove|os\.unlink|pip install|tauri build)\b"
         ))
+        self.assertNotIn("TestClient(app)", s)
+        self.assertLess(s.index("hold_fresh_fixture_workspace(str(home), canonical)"),
+                        s.index("from backend.main import app"))
+        self.assertLess(s.index('RELEASE_APPROVAL_STATUS == "NOT_GRANTED"'),
+                        s.index("created = request(client"))
         self.assertEqual(s.count("os.startfile("), 1)
 
     def test_three_frozen_exhibits_and_actual_standard_export_are_verified(self):
