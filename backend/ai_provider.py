@@ -12,6 +12,7 @@ from itertools import zip_longest
 import json
 import math
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -428,6 +429,200 @@ def local_rules_result(answer: str, *, mode: str = 'local', reason: str = 'Deter
             'intelligence_mode':mode,'local_status':'not_requested'}
 
 
+
+# Cloud context is not the local report. Only these typed fields cross the
+# common explicit-request boundary. The minimum support is a conservative
+# suppression rule, not an anonymization or PII-detection guarantee.
+_CLOUD_MIN_SUPPORT = 5
+_CLOUD_TASKS = frozenset(("overview","understand","quality","explore","prepare",
+                          "model","evaluate","predict","assistant"))
+_CLOUD_MODELS = frozenset(("logistic_regression","linear_regression","ridge",
+    "elastic_net","decision_tree","random_forest","extra_trees","gradient_boosting",
+    "hist_gradient_boosting","knn","svm","svr","naive_bayes"))
+_CLOUD_METRICS = ("accuracy","f1_macro","precision_macro","recall_macro","roc_auc",
+                  "mae","rmse","r2","baseline_cv","cv_score","baseline_test_metric")
+_CLOUD_ISSUES = frozenset(("exact_duplicates","missing","identifier","outliers",
+    "whitespace","ambiguous_dates","numeric_text","case_variant","spelling"))
+_PRIVATE_NAME = re.compile(
+    r"[/\\@\x00-\x1f\x7f]|(?:[A-Za-z]:)|(?:\d{7,})|"
+    r"(?:^|[^a-z0-9])(?:id|identifier|passport|email|phone|mobile|address|"
+    r"password|secret|token|credential|name|ssn|birth)(?:$|[^a-z0-9])|"
+    r"(?:id|key|code|number)$",re.IGNORECASE)
+
+
+def _cloud_name(value):
+    if type(value) is not str or not value.strip():
+        return None
+    # A malformed recognized name is not silently coerced or truncated.
+    value.encode("utf-8")
+    if len(value)>100:
+        raise ValueError("Cloud field exceeds name limit")
+    if _PRIVATE_NAME.search(value):
+        return None
+    return value
+
+
+def _cloud_count(value):
+    return value if type(value) is int and 0<=value<=2**53-1 else None
+
+
+def _cloud_number(value):
+    if type(value) not in (int,float) or abs(value)>1e100:
+        return None
+    return value if math.isfinite(value) else None
+
+
+def _cloud_enum(value,allowed):
+    return value if type(value) is str and value in allowed else None
+
+
+def _cloud_object(value):
+    return value if type(value) is dict else {}
+
+
+def _cloud_records(value,limit):
+    return (x for x in value[:limit] if type(x) is dict) if type(value) is list else ()
+
+
+def _cloud_fields(source,keys,validator):
+    result={}
+    for key in keys:
+        value=validator(source.get(key))
+        if value is not None:
+            result[key]=value
+    return result
+
+
+def _cloud_pct(value):
+    value=_cloud_number(value)
+    return value if value is not None and 0<=value<=100 else None
+
+
+def _cloud_project(context):
+    """Fresh, bounded positive projection; never stringify unknown objects."""
+    if type(context) is not dict:
+        raise ValueError("Invalid cloud evidence")
+    result=_cloud_fields(context,("dataset_version","row_count","column_count",
+                                  "missing_cells","duplicate_rows"),_cloud_count)
+    rows=result.get("row_count")
+    eligible=set()
+    columns=[]
+    for item in _cloud_records(context.get("columns"),50):
+        name=_cloud_name(item.get("name"))
+        kind=_cloud_enum(item.get("kind"),("numeric","categorical"))
+        if name is None or kind is None:
+            continue
+        out={"name":name,"kind":kind}
+        out.update(_cloud_fields(item,("missing_count","unique_count"),_cloud_count))
+        out.update(_cloud_fields(item,("missing_pct",),_cloud_pct))
+        missing=out.get("missing_count")
+        distinct=out.get("unique_count")
+        if (kind=="numeric" and rows is not None and missing is not None
+                and distinct is not None and rows-missing>=distinct>=_CLOUD_MIN_SUPPORT):
+            eligible.add(name)
+            out.update(_cloud_fields(item,("mean","median","std"),_cloud_number))
+        columns.append(out)
+    if "columns" in context:
+        result["columns"]=columns
+    findings=[]
+    for item in _cloud_records(context.get("quality_findings"),25):
+        kind=_cloud_enum(item.get("kind"),_CLOUD_ISSUES)
+        name=_cloud_name(item.get("column"))
+        if kind is None or (name is None and kind!="exact_duplicates"):
+            continue
+        out={"kind":kind,"column":name or ""}
+        out.update(_cloud_fields(item,("affected_rows",),_cloud_count))
+        out.update(_cloud_fields(item,("decision",),lambda v:_cloud_enum(v,("pending","approved","rejected"))))
+        out.update(_cloud_fields(item,("severity",),lambda v:_cloud_enum(v,("automatic","review","information"))))
+        findings.append(out)
+    if "quality_findings" in context:
+        result["quality_findings"]=findings
+    patterns=[]
+    for item in _cloud_records(context.get("computed_patterns"),35):
+        name=_cloud_name(item.get("column"))
+        if name in eligible:
+            out={"column":name}
+            out.update(_cloud_fields(item,("mean","median"),_cloud_number))
+            if "mean" in out and "median" in out:
+                patterns.append(out)
+    if "computed_patterns" in context:
+        result["computed_patterns"]=patterns
+    target=_cloud_name(context.get("target"))
+    if target is not None:
+        result["target"]=target
+    features=[]
+    for item in _cloud_records(context.get("feature_screening"),40):
+        name=_cloud_name(item.get("column"))
+        risk=_cloud_enum(item.get("risk"),("low","review","high"))
+        if name is None or risk is None:
+            continue
+        out={"column":name,"risk":risk}
+        out.update(_cloud_fields(item,("recommendation",),lambda v:_cloud_enum(v,("review exclusion","investigate","consider"))))
+        out.update(_cloud_fields(item,("missing_pct",),_cloud_pct))
+        features.append(out)
+    if "feature_screening" in context:
+        result["feature_screening"]=features
+    exp=_cloud_object(context.get("experiment"))
+    if exp:
+        out=_cloud_fields(exp,("target",),_cloud_name)
+        out.update(_cloud_fields(exp,("task",),lambda v:_cloud_enum(v,("classification","regression"))))
+        out.update(_cloud_fields(exp,("dataset_version",),_cloud_count))
+        out.update(_cloud_fields(exp,("selected_model",),lambda v:_cloud_enum(v,_CLOUD_MODELS)))
+        if type(exp.get("stale")) is bool:
+            out["stale"]=exp["stale"]
+        metrics=_cloud_object(exp.get("metrics"))
+        sample=_cloud_count(metrics.get("sample_count"))
+        approved={}
+        if sample is not None:
+            approved["sample_count"]=sample
+        if sample is not None and sample>=_CLOUD_MIN_SUPPORT:
+            approved.update(_cloud_fields(metrics,_CLOUD_METRICS,_cloud_number))
+            approved.update(_cloud_fields(metrics,("baseline_test_label",),lambda v:_cloud_enum(v,("Macro F1","MAE"))))
+            if type(metrics.get("beats_heldout_baseline")) is bool:
+                approved["beats_heldout_baseline"]=metrics["beats_heldout_baseline"]
+            level=_cloud_enum(_cloud_object(metrics.get("reliability")).get("level"),("warning","review"))
+            if level is not None:
+                approved["reliability"]={"level":level}
+        out["metrics"]=approved
+        comparisons=[]
+        for item in _cloud_records(exp.get("comparison"),5):
+            model=_cloud_enum(item.get("key"),_CLOUD_MODELS)
+            status=_cloud_enum(item.get("status"),("ready","failed"))
+            if model is None or status is None:
+                continue
+            entry={"key":model,"status":status}
+            if status=="ready" and sample is not None and sample>=_CLOUD_MIN_SUPPORT:
+                entry.update(_cloud_fields(item,("cv_metric","cv_std"),_cloud_number))
+            comparisons.append(entry)
+        out["comparison"]=comparisons
+        result["experiment"]=out
+    investigation=_cloud_object(context.get("verified_investigation"))
+    if investigation:
+        name=_cloud_name(investigation.get("column"))
+        if name is not None and investigation.get("operation")=="missingness":
+            out={"operation":"missingness","column":name}
+            out.update(_cloud_fields(investigation,("missing_rows","total_rows"),_cloud_count))
+            out.update(_cloud_fields(investigation,("missing_pct",),_cloud_pct))
+            comparisons=[]
+            for item in _cloud_records(investigation.get("numeric_comparisons"),8):
+                name=_cloud_name(item.get("column"))
+                a=_cloud_count(item.get("missing_group_count"))
+                b=_cloud_count(item.get("other_group_count"))
+                total=out.get("total_rows")
+                missing=out.get("missing_rows")
+                if (name is None or a is None or b is None or total is None or missing is None
+                        or not _CLOUD_MIN_SUPPORT<=a<=missing
+                        or not _CLOUD_MIN_SUPPORT<=b<=total-missing):
+                    continue
+                entry={"column":name,"missing_group_count":a,"other_group_count":b}
+                entry.update(_cloud_fields(item,("missing_group_median","other_group_median",
+                    "missing_group_mean","other_group_mean"),_cloud_number))
+                comparisons.append(entry)
+            out["numeric_comparisons"]=comparisons
+            result["verified_investigation"]=out
+    return result
+
+
 def _prompt_value(value):
     """Copy the context and represent non-finite statistics as unavailable."""
     if isinstance(value, dict):
@@ -447,7 +642,8 @@ def _encode_insight_prompt(context: dict, task: str, question: str, continuation
         return None
 
     def encode(value) -> str:
-        return json.dumps(value, ensure_ascii=False, default=str, allow_nan=False, separators=(',', ':'))
+        options={} if cloud else {"default":str}
+        return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(',', ':'), **options)
 
     def size(serialized: str) -> int:
         return len(serialized.encode('utf-8')) if cloud else len(serialized)
@@ -661,10 +857,10 @@ def owned_cloud_insight(context,task,question,local_answer,deep,selected_provide
             return False
     if not current():
         return fallback
-    # Positive nested payload projection follows in B; retain the existing
-    # bounded prompt and individual prediction exclusion at this step.
-    cloud_context={k:v for k,v in context.items() if k!="prediction"}
     try:
+        if type(task) is not str or task not in _CLOUD_TASKS or type(question) is not str or len(question)>900:
+            raise ValueError("Invalid cloud request")
+        cloud_context=_cloud_project(context)
         user=_encode_insight_prompt(cloud_context,task,question,None,
                                    limit=CLOUD_PROMPT_LIMIT,cloud=True)
         fits=user is not None and len(user.encode("utf-8"))<=CLOUD_PROMPT_LIMIT

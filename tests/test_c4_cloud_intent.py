@@ -128,10 +128,9 @@ def test_legacy_http_named_request_requires_intent(product_composition,dispatch)
 
 
 @pytest.mark.parametrize("value",["é", "漢", "😀", '"\\\n\u0001'])
-def test_cloud_serialized_byte_boundary(dispatch,value):
-    cfg,calls=dispatch
-    # Compute the exact remaining budget from a minimal fresh cloud envelope.
-    # JSON escape sequences can take more bytes than the original characters.
+def test_cloud_serialized_byte_boundary(value):
+    # Isolated serializer stress: arbitrary required keys must never be sent
+    # through the actual dispatch path (covered by the projection tests).
     empty=ai._encode_insight_prompt({"required":""},"assistant","Question",None,
                                     limit=ai.CLOUD_PROMPT_LIMIT,cloud=True)
     overhead=len(empty.encode("utf-8"))
@@ -139,24 +138,22 @@ def test_cloud_serialized_byte_boundary(dispatch,value):
     budget=ai.CLOUD_PROMPT_LIMIT-overhead
     required=value*(budget//encoded_unit)+"a"*(budget%encoded_unit)
     context={"required":required}
-    result=ai.respond(context,"assistant","Question","Rules",
-                      selected_provider="gemini",cloud_intent=True)
-    assert result["provider"]=="gemini" and len(calls)==1
-    wire=calls[0][2]
+    wire=ai._encode_insight_prompt(context,"assistant","Question",None,
+                                   limit=ai.CLOUD_PROMPT_LIMIT,cloud=True)
     assert len(wire.encode("utf-8"))==ai.CLOUD_PROMPT_LIMIT
     assert json.loads(wire)=={"task":"assistant","question":"Question",
                               "verified_context":context}
-    result=ai.respond({"required":required+"a"},"assistant","Question","Rules",
-                      selected_provider="gemini",cloud_intent=True)
-    assert result["fallback"] and len(calls)==1
+    assert ai._encode_insight_prompt({"required":required+"a"},"assistant","Question",None,
+                                    limit=ai.CLOUD_PROMPT_LIMIT,cloud=True) is None
 
 
 def test_cloud_wide_unicode_retains_required_metrics_and_whole_prefix(dispatch):
     cfg,calls=dispatch
-    columns=[{"name":f"{i:02d} "+'漢😀é"\\'*40,"mean":i} for i in range(50)]
+    columns=[{"name":f"{i:02d} "+'漢😀é"'*24,"kind":"numeric",
+              "missing_count":0,"unique_count":50,"mean":i} for i in range(50)]
     context={"dataset_version":3,"row_count":50,"columns":columns,
-             "experiment":{"metrics":{"accuracy":0.8},
-                           "comparison":[{"key":"model","cv_metric":0.81}]},
+             "experiment":{"metrics":{"accuracy":0.8,"sample_count":50},
+                           "comparison":[{"key":"logistic_regression","status":"ready","cv_metric":0.81}]},
              "prediction":{"outcome":"PRIVATE_PREDICTION"}}
     original=json.dumps(context,ensure_ascii=False)
     question="Explain the \"score\" — 統計"
@@ -182,7 +179,7 @@ def test_cloud_invalid_unicode_refused_before_credential_read(dispatch,monkeypat
     def unexpected(*args):
         pytest.fail("Invalid prompt reached credential read")
     monkeypatch.setattr(ai,"_get_key",unexpected)
-    result=ai.respond({"column":"\ud800"},"assistant","Question","Rules",
+    result=ai.respond({"columns":[{"name":"\ud800","kind":"numeric"}]},"assistant","Question","Rules",
                       selected_provider="gemini",cloud_intent=True)
     assert result["fallback"] and calls==[]
 
@@ -197,4 +194,83 @@ def test_cloud_encoder_refuses_history_and_keeps_local_format():
                                                limit=9000))
     assert local["continuation"]["previous_answer_tail"]=="Prior answer"
     assert local["verified_context"]==context
+
+
+@pytest.mark.parametrize("entry",["legacy","owned"])
+def test_positive_projection_omits_nested_private_data(dispatch,entry):
+    cfg,calls=dispatch
+    class NoString:
+        def __str__(self):
+            pytest.fail("Unknown object was stringified")
+    context={"dataset_version":2,"row_count":30,"column_count":4,"missing_cells":3,
+             "project_id":"PRIVATE_PROJECT","dataset_path":"PRIVATE_PATH",
+             "required":NoString(),"rows":[{"amount":"PRIVATE_ROW"}],
+             "prediction":{"outcome":"PRIVATE_PREDICTION"},
+             "columns":[
+                 {"name":"amount","kind":"numeric","missing_count":0,"unique_count":20,
+                  "mean":12.0,"median":11.0,"std":3.0,"min":-123456,"max":987654,
+                  "sample_values":["PRIVATE_VALUE"],"future":{"secret":"PRIVATE_NESTED"}},
+                 {"name":"email","kind":"categorical","unique_count":30},
+                 {"name":"C:/PRIVATE_PATH","kind":"numeric","mean":123},
+                 {"name":"small","kind":"numeric","missing_count":27,"unique_count":3,"mean":321.0},
+                 {"name":"code","kind":"numeric","missing_count":0,"unique_count":30,"mean":999.0}],
+             "quality_findings":[{"kind":"missing","column":"amount","affected_rows":3,
+                                  "decision":"pending","severity":"review","details":"PRIVATE_DETAILS"}],
+             "computed_patterns":[{"column":"amount","mean":12.0,"median":11.0,"observation":"PRIVATE_PROSE"},
+                                  {"column":"small","mean":321.0,"median":321.0}],
+             "feature_screening":[{"column":"amount","risk":"review","recommendation":"investigate",
+                                    "missing_pct":0,"reasons":["PRIVATE_REASON"]}],
+             "experiment":{"target":"amount","task":"regression","selected_model":"ridge",
+                           "metrics":{"sample_count":20,"rmse":3.5,"accuracy":True,
+                                      "evaluation_rows":["PRIVATE_HELDOUT"],"reliability":{"level":"review","issues":["PRIVATE_NOTE"]}},
+                           "comparison":[{"key":"ridge","status":"ready","cv_metric":3.1,"error":"PRIVATE_ERROR"},
+                                         {"key":"PRIVATE_MODEL","status":"ready","cv_metric":7}]},
+             "verified_investigation":{"operation":"missingness","column":"amount","total_rows":30,"missing_rows":6,
+                "missing_pct":20,"row_numbers":[1,2,3],"caution":"PRIVATE_CAUTION",
+                "categorical_group_counts":[{"column":"group","groups":[{"label":"PRIVATE_CATEGORY","total_count":10}]}],
+                "numeric_comparisons":[{"column":"premium","missing_group_count":6,"other_group_count":24,
+                                         "missing_group_mean":1.5,"other_group_mean":2.5,"detail":"PRIVATE_COMPARISON"},
+                                        {"column":"small","missing_group_count":1,"other_group_count":20,
+                                         "missing_group_mean":321.0,"other_group_mean":2.5}]}}
+    if entry=="legacy":
+        r=ai.respond(context,"assistant","Typed question","Rules",selected_provider="gemini",cloud_intent=True)
+    else:
+        r=ai.owned_cloud_insight(context,"assistant","Typed question","Rules",False,"gemini")
+    assert r["provider"]=="gemini" and len(calls)==1
+    wire=calls[0][2]
+    assert "PRIVATE_" not in wire and "321.0" not in wire and "-123456" not in wire and "987654" not in wire
+    payload=json.loads(wire)
+    assert payload["question"]=="Typed question" and "continuation" not in payload
+    actual=payload["verified_context"]
+    assert actual["columns"]==[
+        {"name":"amount","kind":"numeric","missing_count":0,"unique_count":20,"mean":12.0,"median":11.0,"std":3.0},
+        {"name":"small","kind":"numeric","missing_count":27,"unique_count":3}]
+    assert actual["quality_findings"]==[{"kind":"missing","column":"amount","affected_rows":3,"decision":"pending","severity":"review"}]
+    assert actual["computed_patterns"]==[{"column":"amount","mean":12.0,"median":11.0}]
+    assert actual["feature_screening"]==[{"column":"amount","risk":"review","recommendation":"investigate","missing_pct":0}]
+    assert actual["experiment"]["metrics"]=={"sample_count":20,"rmse":3.5,"reliability":{"level":"review"}}
+    assert actual["experiment"]["comparison"]==[{"key":"ridge","status":"ready","cv_metric":3.1}]
+    assert actual["verified_investigation"]["numeric_comparisons"]==[
+        {"column":"premium","missing_group_count":6,"other_group_count":24,"missing_group_mean":1.5,"other_group_mean":2.5}]
+    assert "categorical_group_counts" not in actual["verified_investigation"]
+    assert context["columns"][0]["min"]==-123456 and context["prediction"]["outcome"]=="PRIVATE_PREDICTION"
+
+
+@pytest.mark.parametrize("support",[None,0,4,True,"50"])
+def test_unknown_or_small_support_excludes_metrics(support):
+    actual=ai._cloud_project({"row_count":4,"columns":[{"name":"amount","kind":"numeric",
+                     "missing_count":0,"unique_count":4,"mean":999}],
+                     "experiment":{"metrics":{"sample_count":support,"accuracy":0.9},
+                     "comparison":[{"key":"ridge","status":"ready","cv_metric":0.9}]}})
+    assert "mean" not in actual["columns"][0]
+    assert "accuracy" not in actual["experiment"]["metrics"]
+    assert actual["experiment"]["comparison"]==[{"key":"ridge","status":"ready"}]
+
+
+def test_invalid_required_name_does_not_dispatch(dispatch,monkeypatch):
+    cfg,calls=dispatch
+    monkeypatch.setattr(ai,"_get_key",lambda *_:pytest.fail("Invalid context reached credentials"))
+    result=ai.respond({"target":"x"*101},"assistant","Question","Rules",
+                      selected_provider="gemini",cloud_intent=True)
+    assert result["fallback"] and not calls
 

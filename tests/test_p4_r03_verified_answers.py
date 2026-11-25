@@ -411,7 +411,7 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
 
     def test_wide_prompt_keeps_question_and_metrics_without_cloud_continuation(self):
         build = ai_context.build
-        columns = [{'name': f'{index:02d} ' + 'é"\\' * 32, 'kind': 'numeric',
+        columns = [{'name': f'{index:02d} ' + '漢😀é"' * 24, 'kind': 'numeric',
                     'missing_count': 0, 'missing_pct': 0.0, 'unique_count': 4,
                     'min': 0.0, 'max': 3.0, 'mean': 1.5, 'median': 1.5, 'std': 1.29}
                    for index in range(50)]
@@ -436,7 +436,13 @@ class CloudEvaluationPrivacyTests(unittest.TestCase):
         self.assertEqual(context['experiment']['metrics']['accuracy'], 0.8)
         self.assertEqual(context['experiment']['comparison'][0]['cv_metric'], 0.81)
         self.assertTrue(context['columns'])
-        self.assertEqual(context['columns'], columns[:len(context['columns'])])
+        # Four-row fixture cannot disclose numerical column statistics. Whole
+        # projected metadata records still fit as a prefix.
+        projected = [{k: v for k, v in col.items() if k in
+                      ('name', 'kind', 'missing_count', 'missing_pct', 'unique_count')}
+                     for col in columns]
+        self.assertEqual(context['columns'], projected[:len(context['columns'])])
+        self.assertTrue(all('mean' not in col and 'min' not in col for col in context['columns']))
         self.assertEqual(prompt['omitted_context_items']['columns'], 50 - len(context['columns']))
         self.assertNotIn('continuation', prompt)
         self.assertNotIn('Dernière phrase.', json.dumps(prompt))
