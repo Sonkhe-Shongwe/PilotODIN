@@ -32,6 +32,13 @@ on:
       - backend/storage.py
       - backend/main.py
       - frontend/e2e/p1-real-http-backend.ts
+      # Authentication changes must exercise real HTTP recovery, not only unit tests.
+      - frontend/scripts/live-dev-api-proxy.mjs
+      - frontend/e2e/hosted-http-config.ts
+      - frontend/e2e/hosted-http-test.ts
+      - frontend/vite.config.ts
+      - backend/request_auth.py
+      - backend/server_entry.py
       # Rerun actual disposable-backend Quality recovery whenever its
       # production view or snapshot-ordering code changes.
       - frontend/src/QualityWorkspace.tsx

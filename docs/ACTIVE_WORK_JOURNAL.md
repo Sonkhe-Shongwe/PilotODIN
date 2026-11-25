@@ -14,10 +14,10 @@ Replace this record in place. It owns in-flight task recovery, not project progr
 | Scope | C3 explicit production/dev startup and authentication contract, existing route/direct-call compatibility inventory, disposable source/HTTP negative tests; section 10 and C-D05. No expansion into C4/C5. |
 | Operation ID | C3-HOSTED-HTTP-RECOVERY-COMPAT-20261125-source |
 | Operation state | ISSUED |
-| Intended files | frontend/scripts/live-dev-api-proxy.mjs, frontend/e2e/p4-real-http-review-queue.spec.ts, frontend/e2e/p4-n12-native-cases.mjs, frontend/tests/desktop-ai-boundaries.test.cjs, continuity. Preserve native helper default and all allowlists. |
+| Intended files | Proxy and hosted test correction published d8ea85a; P1 real-HTTP path filters only, continuity. No job/permission change. |
 | Approval | All six native approvals consumed and disarmed. Source/docs and routine synthetic CI permitted; no new restricted operation, activation, model, owner data, OS modification or installer. |
 | Verification | C1/C2 SOURCE CLOSED, unchanged. C3 kernel exact 5fc531e source job 138854868629 SUCCESS: all five named C3 cases passed, workspace/owned-server 48 tests, 1058 Python + 544 subtests (6 skipped), 112 Node, Vite; disposable browser job 138854868635 SUCCESS. Windows job SUCCESS 53 passed, 66 subtests; restricted 138854871137 SKIPPED. No live auth integration. |
-| Pending runs | Exact hosted recovery compatibility correction published with this checkpoint; routine CI IDs pending. |
+| Pending runs | Exact correction d8ea85a010c446f6426bfaaa0c5877d69f1f7372: P4 #45540644826 and P1 frontend #45540644808 queued at observation. P1 real-HTTP trigger omitted proxy dependencies; this trigger-only checkpoint adds exact source dependencies without changing jobs, dispatch authority, permissions or concurrency. Reconcile exact P1 real-HTTP run on this checkpoint plus both correction runs. |
 | Unpublished work | Owner-local tree not inspected. |
 | Recovery action | Distinguish upstream unavailable (502) from authentication refusal (400/403), preserve P1 recovery wording. Use authenticated direct fixture read for exact intercepted P4 history request instead of route.fetch, and explicit nonsecret hosted marker on peer lifecycle call only, preserving native default and exact permit. Add focused regression coverage; reconcile exact routine CI then migrate remaining QA and remove bare fallback. |
 | Resume after closure | C4, C5 in order; D separately approved. |
